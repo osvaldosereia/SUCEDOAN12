@@ -2,7 +2,7 @@ import {attendanceAuthorizedFetch,attendanceJsonApi} from '../atendimento/attend
 
 const CAMPAIGN_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-marketing-campaigns-v1';
 const ADMIN_PUBLIC_KEY=['sb','publishable','tFXHtH0HCXZepVtwgKElIg','DxS76Gu8'].join('_');
-const CSS_URL='/vitrine/admin/marketing/campaign-center.css?v=marketing-campaign-v3';
+const CSS_URL='/vitrine/admin/marketing/campaign-center.css?v=marketing-campaign-v4';
 const PREFILL_KEY='da_marketing_campaign_prefill_v1';
 const STATUS_LABELS={draft:'Rascunho',ready_for_review:'Pronta para revisão',approved:'Aprovada',scheduled:'Agendada',running:'Em execução',paused:'Pausada',completed:'Concluída',failed:'Falhou',cancelled:'Cancelada'};
 const EXECUTION_STATUSES=new Set(['approved','scheduled','running','paused','completed','failed','cancelled']);
@@ -168,14 +168,16 @@ function executionGateOpen(state){const runtime=state?.runtime||{};return runtim
 function progressCard(label,value,key){return `<article data-execution-count="${key}"><small>${label}</small><strong>${Number(value||0)}</strong></article>`}
 function executionPanelHtml(state,campaign){
   const status=state?.status||campaign?.status||'approved',runtime=state?.runtime||{},counts=state?.counts||{},gateOpen=executionGateOpen(state),scheduled=state?.scheduled_for||campaign?.scheduled_for||'';
-  const canSchedule=status==='approved',canPause=['scheduled','running'].includes(status),canResume=status==='paused',canCancel=['scheduled','running','paused'].includes(status);
+  const canPause=['scheduled','running'].includes(status),canResume=status==='paused'&&state?.manual_batch_mode!==true,canCancel=['scheduled','running','paused'].includes(status);
+  const canSendManual=gateOpen&&(status==='approved'||(status==='paused'&&(Number(counts.pending||0)+Number(counts.retry||0)>0)));
   const gateLabel=gateOpen?(runtime.mode==='canary'?'Canário habilitado':'Campanhas habilitadas'):'Campanhas desligadas';
   const gateDetail=gateOpen?`Runtime ${esc(runtime.mode)} · envio controlado pelo backend.`:`Runtime ${esc(runtime.mode||'off')} · campaigns_enabled=${runtime.campaigns_enabled===true?'true':'false'}. Nenhuma mensagem pode iniciar.`;
   return `<div class="marketing-campaign-execution-head"><div><h4>Execução</h4><p>Status: <b>${esc(STATUS_LABELS[status]||status)}</b>${scheduled?` · ${esc(fmtDate(scheduled))}`:''}</p></div><span class="marketing-campaign-execution-gate ${gateOpen?'open':'closed'}">${esc(gateLabel)}</span></div>
     <p class="marketing-campaign-execution-gate-detail">${gateDetail}</p>
     <div class="marketing-campaign-execution-counts">${progressCard('Total',counts.total,'total')}${progressCard('Pendentes',counts.pending,'pending')}${progressCard('Pulados',counts.skipped,'skipped')}${progressCard('Aceitos',counts.accepted,'accepted')}${progressCard('Retry',counts.retry,'retry')}${progressCard('Incertos',counts.uncertain,'uncertain')}${progressCard('Falhas',counts.failed,'failed')}</div>
+    <p class="marketing-campaign-execution-gate-detail">Campanhas iniciadas manualmente ficam fora do processador automático. Cada confirmação processa até 10 destinatários; outro lote exige um novo clique.</p>
     <div class="marketing-campaign-execution-controls">
-      ${canSchedule?`<label><span>Data e hora</span><input type="datetime-local" data-campaign-schedule-at value="${esc(localDateTimeValue(scheduled))}" ${gateOpen?'':'disabled'}></label><button type="button" data-campaign-schedule ${gateOpen?'':'disabled'}>Agendar</button><button type="button" class="primary" data-campaign-start-now ${gateOpen?'':'disabled'}>Enviar agora</button>`:''}
+      ${canSendManual?'<button type="button" class="primary" data-campaign-send-manual-batch>Enviar próximo lote (até 10 contatos)</button>':''}
       ${canPause?'<button type="button" data-campaign-pause>Pausar</button>':''}
       ${canResume?`<button type="button" data-campaign-resume ${gateOpen?'':'disabled'}>Retomar</button>`:''}
       ${canCancel?'<button type="button" class="danger" data-campaign-cancel-execution>Cancelar execução</button>':''}
@@ -183,12 +185,12 @@ function executionPanelHtml(state,campaign){
 }
 async function runExecutionAction(root,form,action,body,question,busyLabel){
   if(!currentCampaign?.id||busy)return;if(question&&!confirm(question))return;const button=form.querySelector(`[data-campaign-${action.replaceAll('_','-')}]`);
-  try{busy=true;setBusy(button,true,busyLabel);await apiPost(action,body);await loadCampaigns();renderList(root);await openCampaign(root,currentCampaign.id)}catch(error){notice(form,`Não foi possível executar a ação: ${String(error?.message||error)}`,'error')}finally{busy=false;setBusy(button,false)}
+  const campaignId=currentCampaign.id;
+  try{busy=true;setBusy(button,true,busyLabel);await apiPost(action,body);await loadCampaigns();renderList(root);await openCampaign(root,campaignId)}catch(error){if(action==='send_manual_batch'){try{await loadCampaigns();renderList(root);await openCampaign(root,campaignId)}catch{}}notice(root,`Não foi possível executar a ação: ${String(error?.message||error)}. Atualize o estado da campanha antes de tentar outro lote.`,'error')}finally{busy=false;setBusy(button,false)}
 }
 function bindExecutionActions(root,form,state){
   const gateOpen=executionGateOpen(state),campaignId=currentCampaign?.id,revision=currentCampaign?.revision;if(!campaignId)return;
-  form.querySelector('[data-campaign-schedule]')?.addEventListener('click',()=>{if(!gateOpen)return;const value=form.querySelector('[data-campaign-schedule-at]')?.value;if(!value){notice(form,'Informe a data e hora do agendamento.','error');return}const date=new Date(value);if(Number.isNaN(date.getTime())){notice(form,'Data/hora inválida.','error');return}runExecutionAction(root,form,'schedule',{campaign_id:campaignId,expected_revision:revision,scheduled_for:date.toISOString()},'Confirmar o agendamento desta campanha?','Agendando…')});
-  form.querySelector('[data-campaign-start-now]')?.addEventListener('click',()=>{if(!gateOpen)return;runExecutionAction(root,form,'start_now',{campaign_id:campaignId,expected_revision:revision},'Confirmar início desta campanha agora?','Iniciando…')});
+  form.querySelector('[data-campaign-send-manual-batch]')?.addEventListener('click',()=>{if(!gateOpen)return;runExecutionAction(root,form,'send_manual_batch',{campaign_id:campaignId,expected_revision:revision,idempotency_key:`admin:${campaignId}:${crypto.randomUUID()}`},`Enviar até 10 contatos da campanha “${currentCampaign?.name||'Campanha'}” agora? O envio será real pelo template aprovado e não poderá ser desfeito. Para continuar depois, será necessária outra confirmação.`,'Enviando lote…')});
   form.querySelector('[data-campaign-pause]')?.addEventListener('click',()=>runExecutionAction(root,form,'pause',{campaign_id:campaignId,reason:'admin_marketing_ui'},'Pausar a execução desta campanha?','Pausando…'));
   form.querySelector('[data-campaign-resume]')?.addEventListener('click',()=>{if(!gateOpen)return;runExecutionAction(root,form,'resume',{campaign_id:campaignId},'Retomar a execução desta campanha?','Retomando…')});
   form.querySelector('[data-campaign-cancel-execution]')?.addEventListener('click',()=>runExecutionAction(root,form,'cancel_execution',{campaign_id:campaignId,reason:'admin_marketing_ui'},'Cancelar esta execução? Destinatários ainda não enviados serão pulados.','Cancelando…'));

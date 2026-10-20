@@ -8,6 +8,7 @@ const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com
 const FORBIDDEN_FIELDS=new Set(["waba_id","phone_number_id","to_phone_e164","template_id","template_name","outbox_id","send","dispatch","service_role","service_key"]);
 const PREVIEW_FIELDS=new Set(["filters","limit","offset"]);
 const CONSENT_FIELDS=new Set(["customer_id","decision","source_ref","source_event_key","consent_text_version","consent_text_snapshot","metadata"]);
+const REPURCHASE_RECALC_FIELDS=new Set(["customer_ids"]);
 
 const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {
   "Access-Control-Allow-Origin":ORIGINS.has(origin)?origin:"https://www.donaantonia.com.br",
@@ -96,6 +97,44 @@ async function overview(){
   const latest=await db.from("marketing_consent_events_v1").select("occurred_at").order("occurred_at",{ascending:false}).limit(1).maybeSingle();
   if(latest.error)throw latest.error;
   return {ok:true,counts,last_event_at:(latest.data as any)?.occurred_at||null};
+}
+
+async function repurchaseState(params:URLSearchParams){
+  const status=clean(params.get("status"),30).toLowerCase();
+  const allowedStatuses=new Set(["no_purchase","blocked_opt_out","not_eligible","sent","scheduled","ready"]);
+  if(status&&!allowedStatuses.has(status))return {status:400,data:{ok:false,error:"invalid_repurchase_status"}};
+  const channel=clean(params.get("channel"),4);
+  if(channel&&!['0975','1018'].includes(channel))return {status:400,data:{ok:false,error:"invalid_channel"}};
+  const limit=Number(params.get("limit")||25),offset=Number(params.get("offset")||0);
+  if(!Number.isInteger(limit)||limit<1||limit>100||!Number.isInteger(offset)||offset<0)return {status:400,data:{ok:false,error:"invalid_pagination"}};
+  let query=db.from("marketing_repurchase_state_v1")
+    .select("customer_id,last_purchase_order_id,last_purchase_order_number,last_purchase_at,due_at,status,marketing_opt_in,phone_e164,send_channel_e164,template_name,last_sent_at,last_sent_order_id,blocked_reason,metadata",{count:"exact"});
+  if(status)query=query.eq("status",status);
+  if(channel)query=query.like("send_channel_e164",`%${channel}`);
+  const [page,all]=await Promise.all([
+    query.order("due_at",{ascending:true,nullsFirst:false}).range(offset,offset+limit-1),
+    db.from("marketing_repurchase_state_v1").select("status")
+  ]);
+  if(page.error)throw page.error;if(all.error)throw all.error;
+  const counts:Record<string,number>={no_purchase:0,blocked_opt_out:0,not_eligible:0,sent:0,scheduled:0,ready:0};
+  for(const row of all.data||[]){const key=String((row as any).status||'');if(key in counts)counts[key]+=1}
+  const customerIds=[...new Set((page.data||[]).map((row:any)=>String(row.customer_id||'')).filter(Boolean))];
+  const names=new Map<string,string>();
+  if(customerIds.length){const customers=await db.from("customers").select("id,name").in("id",customerIds);if(customers.error)throw customers.error;for(const customer of customers.data||[])names.set(String(customer.id),clean(customer.name,180))}
+  return {status:200,data:{ok:true,counts,total:Number(page.count||0),limit,offset,has_more:offset+(page.data||[]).length<Number(page.count||0),items:(page.data||[]).map((row:any)=>({...row,customer_name:names.get(String(row.customer_id))||"Cliente"}))}};
+}
+
+async function recalculateRepurchase(body:Record<string,unknown>){
+  if(!onlyKeys(body,REPURCHASE_RECALC_FIELDS))return {status:400,data:{ok:false,error:"fields_not_allowed"}};
+  const ids=Array.isArray(body.customer_ids)?[...new Set(body.customer_ids.map(validUuid).filter(Boolean))]:[];
+  if(!ids.length||ids.length>50)return {status:400,data:{ok:false,error:"invalid_customer_ids",limit:50}};
+  const result=[];
+  for(const customerId of ids){
+    const row=await db.rpc("marketing_repurchase_recalc_v1",{p_customer_id:customerId});
+    if(row.error)throw row.error;
+    result.push(row.data||{ok:false,error:"recalculation_failed",customer_id:customerId});
+  }
+  return {status:200,data:{ok:result.every(row=>row?.ok===true),recalculated:result.filter(row=>row?.ok===true).length,items:result}};
 }
 
 async function preview(body:Record<string,unknown>){
@@ -192,6 +231,10 @@ Deno.serve(async(req:Request)=>{
 
     if(req.method==="GET"){
       if(action==="overview")return json(req,await overview());
+      if(action==="repurchase_state"){
+        const result=await repurchaseState(url.searchParams);
+        return json(req,result.data,result.status);
+      }
       if(action==="consent_history"){
         const customerId=validUuid(url.searchParams.get("customer_id"));
         if(!customerId)return json(req,{ok:false,error:"invalid_customer_id"},400);
@@ -209,6 +252,10 @@ Deno.serve(async(req:Request)=>{
     }
     if(action==="record_consent"){
       const result=await recordConsent(parsed.body,auth.user_id);
+      return json(req,result.data,result.status);
+    }
+    if(action==="repurchase_recalc"){
+      const result=await recalculateRepurchase(parsed.body);
       return json(req,result.data,result.status);
     }
     return json(req,{ok:false,error:"action_not_allowed"},404);
