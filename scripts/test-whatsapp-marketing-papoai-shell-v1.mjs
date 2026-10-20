@@ -18,7 +18,7 @@ assert.doesNotMatch(polish,/consents:\s*'Consentimentos'/,'Consentimentos não d
 assert.match(polish,/PRIMARY_MARKETING_VIEWS\.includes\(view\)/,'shell deve remover views que não fazem parte da navegação principal');
 assert.match(polish,/button\.remove\(\)/,'shell deve remover aba secundária criada por submódulos antigos');
 assert.match(polish,/button\.dataset\.marketingView\s*=\s*view/,'shell deve criar a aba Estratégia quando submódulos antigos não a renderizaram');
-assert.match(polish,/strategy-center\.js\?v=marketing-strategy-v2/,'aba Estratégia deve carregar o módulo dedicado');
+assert.match(polish,/strategy-center\.js\?v=marketing-strategy-v3/,'aba Estratégia deve carregar o módulo dedicado');
 assert.match(polish,/data-marketing-admin-consents/,'Consentimentos deve permanecer acessível como ação administrativa secundária');
 
 assert.match(polish,/setText\(gate,'Estado do envio em Campanhas'\)/,'gate deve apontar para o estado operacional em Campanhas');

@@ -20,12 +20,12 @@ const overviewPath=new URL('../vitrine/admin/marketing/marketing-overview-data.j
 const overview=existsSync(overviewPath)?readFileSync(overviewPath,'utf8'):'';
 
 test('Marketing keeps advanced subviews active after normalizing the subnavigation',()=>{
-  assert.match(polish,/function activeView\\(root\\)\\{\\s*return root\\.querySelector\\('\\[data-marketing-subnav\\] \\[data-marketing-view\\]\\.active'\\)/);
-  assert.match(polish,/const currentView=activeView\\(root\\)[\\s\\S]{0,700}const active=button\\.dataset\\.marketingView===currentView;[\\s\\S]{0,120}classList\\.toggle\\('active',active\\)/);
+  assert.match(polish,/function activeView\\(root\\)\\{\\s*return root\.querySelector\\('\\[data-marketing-subnav\\] \\[data-marketing-view\\]\.active'\\)/);
+  assert.match(polish,/const currentView=activeView\\(root\\)[\\s\\S]{0,700}const active=button\.dataset\.marketingView===currentView;[\\s\\S]{0,120}classList\.toggle\\('active',active\\)/);
 });
 
 test('Marketing reuses an existing Mais menu instead of rendering a duplicate',()=>{
-  assert.match(polish,/let more=nav\\.querySelector\\('\\[data-marketing-more-menu\\],\\.marketing-admin-more'\\)/);
+  assert.match(polish,/let more=nav\.querySelector\\('\\[data-marketing-more-menu\\],\.marketing-admin-more'\\)/);
 });
 
 test('Marketing routes reused Mais menus with one delegated handler',()=>{
@@ -47,14 +47,14 @@ test('Pós-venda opens its own view instead of redirecting to Orders',()=>{
 });
 
 test('Marketing coordinator invalidates cached view code after navigation changes',()=>{
-  assert.match(campaignEntry,/marketing-polish\.js\?v=marketing-polish-v5/);
+  assert.match(campaignEntry,/marketing-polish\.js\?v=marketing-polish-v6/);
   assert.match(campaignEntry,/marketing-polish\.css\?v=marketing-polish-v2/);
-  assert.match(adminIndex,/basket-lot-image\.js\?v=marketing-workspace-v4/);
+  assert.match(adminIndex,/basket-lot-image\.js\?v=marketing-workspace-v5/);
   assert.match(adminIndex,/admin-runtime\.js\?v=marketing-workspace-v2/);
 });
 
 test('Marketing campaign-entry cache key is current in every secondary navigation module',()=>{
-  for(const source of [postSale,repurchase,strategy,polish])assert.match(source,/campaign-entry\.js\?v=marketing-campaign-entry-v7/);
+  for(const source of [postSale,repurchase,strategy,polish])assert.match(source,/campaign-entry\.js\?v=marketing-campaign-entry-v8/);
   assert.doesNotMatch([postSale,repurchase,strategy,polish].join('\n'),/campaign-entry\.js\?v=marketing-campaign-entry-v4/);
 });
 
@@ -108,17 +108,28 @@ test('monthly replenishment uses cadence states, offers recalculation, and never
 
 test('Marketing refreshes the template view and all parent module cache keys',()=>{
   assert.match(basketLotImage,/template-center\.js\?v=marketing-template-center-v2/);
-  assert.match(basketLotImage,/campaign-entry\.js\?v=marketing-campaign-entry-v7/);
-  assert.match(campaignEntry,/marketing-polish\.js\?v=marketing-polish-v5/);
-  assert.match(polish,/post-sale-center\.js\?v=marketing-post-sale-v2/);
-  assert.match(polish,/repurchase-center\.js\?v=marketing-repurchase-v2/);
-  assert.match(adminIndex,/basket-lot-image\.js\?v=marketing-workspace-v4/);
+  assert.match(basketLotImage,/campaign-entry\.js\?v=marketing-campaign-entry-v8/);
+  assert.match(campaignEntry,/marketing-polish\.js\?v=marketing-polish-v6/);
+  assert.match(polish,/post-sale-center\.js\?v=marketing-post-sale-v3/);
+  assert.match(polish,/repurchase-center\.js\?v=marketing-repurchase-v3/);
+  assert.match(adminIndex,/basket-lot-image\.js\?v=marketing-workspace-v5/);
 });
 
 test('Marketing Strategy module parses as an ES module',()=>{
   const path=new URL('../vitrine/admin/marketing/strategy-center.js',import.meta.url);
   const result=spawnSync(process.execPath,['--check','--input-type=module'],{input:readFileSync(path,'utf8'),encoding:'utf8'});
   assert.equal(result.status,0,result.stderr||result.stdout);
+});
+
+test('Marketing Strategy syntax fix invalidates every cached module in its import chain',()=>{
+  assert.match(adminIndex,/basket-lot-image\.js\?v=marketing-workspace-v5/);
+  assert.match(basketLotImage,/campaign-entry\.js\?v=marketing-campaign-entry-v8/);
+  assert.match(campaignEntry,/marketing-polish\.js\?v=marketing-polish-v6/);
+  assert.match(polish,/strategy-center\.js\?v=marketing-strategy-v3/);
+  assert.match(polish,/post-sale-center\.js\?v=marketing-post-sale-v3/);
+  assert.match(polish,/repurchase-center\.js\?v=marketing-repurchase-v3/);
+  assert.match(postSale,/strategy-center\.js\?v=marketing-strategy-v3/);
+  assert.match(repurchase,/strategy-center\.js\?v=marketing-strategy-v3/);
 });
 
 test('template center exposes the mount function to dynamically imported navigation modules',()=>{
