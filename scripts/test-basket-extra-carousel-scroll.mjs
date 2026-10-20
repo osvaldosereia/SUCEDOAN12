@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_PATH || 'playwright');
 const source = fs.readFileSync('vitrine/index.html', 'utf8');
-const css = source.match(/<style>([\\s\\S]*?)<\\/style>/)?.[1];
+const css = source.match(/<style>([\s\S]*?)<\/style>/)?.[1];
 assert.ok(css, 'expected storefront CSS');
 
 const cards = Array.from({ length: 18 }, (_, i) =>
