@@ -51,13 +51,13 @@ function loadRecentCampaignModule(){
 
 function loadPostSaleModule(){
   if(window.DAMarketingPostSale?.mountPostSaleView)return Promise.resolve(window.DAMarketingPostSale);
-  if(!postSaleModulePromise)postSaleModulePromise=import('/vitrine/admin/marketing/post-sale-center.js?v=marketing-post-sale-v2');
+  if(!postSaleModulePromise)postSaleModulePromise=import('/vitrine/admin/marketing/post-sale-center.js?v=marketing-post-sale-v3');
   return postSaleModulePromise;
 }
 
 function loadRepurchaseModule(){
   if(window.DAMarketingRepurchase?.mountRepurchaseView)return Promise.resolve(window.DAMarketingRepurchase);
-  if(!repurchaseModulePromise)repurchaseModulePromise=import('/vitrine/admin/marketing/repurchase-center.js?v=marketing-repurchase-v2');
+  if(!repurchaseModulePromise)repurchaseModulePromise=import('/vitrine/admin/marketing/repurchase-center.js?v=marketing-repurchase-v3');
   return repurchaseModulePromise;
 }
 
@@ -155,11 +155,11 @@ async function openOverviewView(root,view,{create=false}={}){
       return module?.mountRepurchaseView?.(root);
     }
     if(view==='strategy'){
-      const module=window.DAMarketingStrategyCenter||await import('/vitrine/admin/marketing/strategy-center.js?v=marketing-strategy-v2');
+      const module=window.DAMarketingStrategyCenter||await import('/vitrine/admin/marketing/strategy-center.js?v=marketing-strategy-v3');
       return module?.mountStrategyView?.(root);
     }
     if(view==='campaigns'){
-      const entry=window.DAMarketingCampaignEntry||await import('/vitrine/admin/marketing/campaign-entry.js?v=marketing-campaign-entry-v7');
+      const entry=window.DAMarketingCampaignEntry||await import('/vitrine/admin/marketing/campaign-entry.js?v=marketing-campaign-entry-v8');
       return entry?.openCampaigns?.();
     }
     if(view==='templates'){
