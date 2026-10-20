@@ -262,6 +262,15 @@ header small{display:none!important}
   <div id="entries"><div class="empty">Carregando registros…</div></div>
   <button id="more" hidden type="button">Ver mais</button>
 </section>
+<section class="card" aria-labelledby="productReviewTitle">
+ <div class="row between">
+  <div><h2 id="productReviewTitle">Revisão de produtos existentes <span id="productReviewCount" class="tag pending">0</span></h2>
+   <p class="note">Sugestões da consulta automática ao OSCBR. Confira os dados e atualize o cadastro manualmente em Produtos; nada é alterado automaticamente.</p>
+  </div>
+  <button id="productReviewRefresh" type="button">Atualizar fila</button>
+ </div>
+ <div id="productReviewList"><div class="empty">Carregando revisões…</div></div>
+</section>
 </main>
 <div id="photoViewer" class="photo-viewer" hidden role="dialog" aria-modal="true" aria-label="Foto salva do produto">
   <button id="photoViewerClose" class="photo-viewer-close" type="button" aria-label="Fechar foto">×</button>
@@ -932,8 +941,57 @@ $("barcodePhoto").addEventListener("change",async(event)=>{
 });
 document.addEventListener("visibilitychange",()=>{if(document.hidden&&cameraRunning)stopCamera()});
 window.addEventListener("pagehide",stopCamera);
+async function loadProductReviews(){
+ const list=$("productReviewList"),badge=$("productReviewCount");
+ if(!list||!badge)return;
+ list.innerHTML='<div class="empty">Carregando revisões…</div>';
+ try{
+  const data=await call("product_research");
+  const items=data.items||[];
+  badge.textContent=String(data.count??items.length);
+  if(!items.length){list.innerHTML='<div class="empty">Nenhuma revisão de produto existente aguardando.</div>';return}
+  list.innerHTML=items.map(item=>{
+   const p=item.product||{},s=item.proposal||{};
+   const status=item.status==="not_found"?"EAN não localizado no fornecedor":item.status==="error"?"Consulta esgotou as tentativas":"Sugestões disponíveis";
+   const googleUrl="https://www.google.com/search?tbm=isch&q="+encodeURIComponent([s.description||p.name,s.brand||p.brand,item.gtin].filter(Boolean).join(" "));
+   const fields=[
+    ["Nome",s.description],["Marca",s.brand],["Categoria",s.category],
+    ["NCM sugerido",s.ncm_candidate],["CEST sugerido",s.cest_candidate],
+    ["Unidade",s.unit_description||s.unit],["Embalagem",s.packaging],["Fabricante",s.manufacturer],
+    ["Peso líquido",s.net_weight_raw],["Peso bruto",s.gross_weight_raw]
+   ].filter(x=>x[1]!==null&&x[1]!==undefined&&String(x[1])!=="");
+   const facts=fields.length?fields.map(x=>'<div><b>'+esc(x[0])+':</b> '+esc(x[1])+'</div>').join(""):'<div>O fornecedor não retornou dados para sugerir.</div>';
+   return '<article class="entry product-review" data-product-review="'+esc(item.product_id)+'">'+
+    '<div class="entry-left"><div class="entry-code">'+esc(p.name||"Produto sem nome")+'</div>'+
+    '<div class="entry-meta">EAN '+esc(item.gtin||p.gtin||"—")+' · Cadastro atual: NCM '+esc(p.ncm||"não informado")+
+    (p.brand?' · '+esc(p.brand):'')+' · consulta '+esc(fmt(item.researched_at||item.updated_at))+'</div>'+
+    '<div class="entry-meta"><span class="tag '+(item.status==="review"?"found":item.status==="not_found"?"not_found":"pending")+'">'+esc(status)+'</span></div>'+
+    '<div class="entry-meta" style="margin-top:9px">'+facts+'</div>'+
+    (item.last_error?'<div class="entry-meta">Detalhe: '+esc(item.last_error)+'</div>':'')+
+    '<div class="row" style="margin-top:10px"><a href="'+esc(googleUrl)+'" target="_blank" rel="noopener noreferrer">Buscar imagens no Google</a>'+
+    '<button type="button" data-review-done="'+esc(item.product_id)+'">Marcar revisão concluída</button></div></div>'+
+    (p.image_url?'<div class="entry-right"><img loading="lazy" decoding="async" src="'+esc(p.image_url)+'" alt="" style="width:64px;height:64px;object-fit:contain"></div>':'')+
+    '</article>';
+  }).join("");
+ }catch(e){
+  badge.textContent="!";
+  list.innerHTML='<div class="empty">Não foi possível carregar a fila: '+esc(e.message||e)+'</div>';
+ }
+}
+$("productReviewRefresh").addEventListener("click",async()=>{
+ const button=$("productReviewRefresh");button.disabled=true;
+ try{await loadProductReviews();msg("Fila de revisão atualizada.")}finally{button.disabled=false}
+});
+$("productReviewList").addEventListener("click",async(event)=>{
+ const button=event.target.closest("[data-review-done]");if(!button)return;
+ if(busy)return;
+ const id=button.dataset.reviewDone;button.disabled=true;
+ try{await call("product_review_mark",{product_id:id});await loadProductReviews();msg("Revisão marcada como concluída.")}
+ catch(e){button.disabled=false;msg("Não foi possível marcar a revisão: "+e.message,true)}
+});
+
 (async()=>{
- try{await load();msg("Pronto para começar a leitura.");}
+ try{await load();await loadProductReviews();msg("Pronto para começar a leitura.");}
  catch(e){$("entries").innerHTML='<div class="empty">Não foi possível carregar as leituras.</div>';msg("Falha ao conectar: "+e.message,true)}
 })();
 })();
