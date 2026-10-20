@@ -17,6 +17,7 @@ const LANGUAGE_RE=/^[a-z]{2,3}(?:_[A-Z]{2})?$/;
 const TEMPLATE_CATEGORIES=new Set(['MARKETING','UTILITY']);
 const TEMPLATE_COMPONENT_TYPES=new Set(['HEADER','BODY','FOOTER','BUTTONS']);
 const TEMPLATE_BUTTON_TYPES=new Set(['URL','QUICK_REPLY','CATALOG']);
+const TEMPLATE_MEDIA_FORMATS=new Set(['IMAGE','VIDEO']);
 
 export function normalizeMetaTemplate(raw){
   const item=raw&&typeof raw==='object'?raw:{};
@@ -160,6 +161,11 @@ export function validateTemplateDraft(input){
       headerCount++;
       if(headerCount>1)throw fail('meta_template_components_invalid');
       const format=clean(component.format,20).toUpperCase();
+      if(TEMPLATE_MEDIA_FORMATS.has(format)){
+        const handles=component?.example?.header_handle;
+        if(!Array.isArray(handles)||handles.length!==1||!clean(handles[0],4096))throw fail('meta_template_examples_required');
+        return {type,format,example:{header_handle:[clean(handles[0],4096)]}};
+      }
       if(format!=='TEXT')throw fail('meta_template_component_unsupported');
       const text=clean(component.text,60);
       if(!text)throw fail('meta_template_header_invalid');

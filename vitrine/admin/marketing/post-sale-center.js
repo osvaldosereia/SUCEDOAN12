@@ -135,7 +135,7 @@ async function openMarketingView(root,view){
   if(view==='post_sale')return mountPostSaleView(root);
   if(view==='repurchase')return import('/vitrine/admin/marketing/repurchase-center.js?v=marketing-repurchase-v2').then(module=>module.mountRepurchaseView(root));
   if(view==='campaigns')return (await import('/vitrine/admin/marketing/campaign-entry.js?v=marketing-campaign-entry-v8')).openCampaigns();
-  if(view==='templates')return (await import('/vitrine/admin/marketing/template-center.js?v=marketing-template-center-v2')).mountTemplateView(root);
+  if(view==='templates')return (await import('/vitrine/admin/marketing/template-center.js?v=marketing-image-bank-v1')).mountTemplateView(root);
   if(view==='strategy')return (await import('/vitrine/admin/marketing/strategy-center.js?v=marketing-strategy-v3')).mountStrategyView(root);
   if(view==='audiences')return (await import('/vitrine/admin/marketing/audience-center.js?v=marketing-audience-v1')).mountAudienceView(root);
   if(view==='consents')return (await import('/vitrine/admin/marketing/audience-center.js?v=marketing-audience-v1')).mountConsentView(root);

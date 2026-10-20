@@ -331,7 +331,14 @@ function bindTemplateView(root){
   root.querySelector('[data-marketing-view="templates"]')?.addEventListener('click',()=>{});
   root.querySelector('[data-template-channel]')?.addEventListener('change',event=>{activeChannel=String(event.target.value||'0975');setSyncButtonState('idle',activeChannel);templates=[];templatesLoaded=false;lastLoadError='';renderList(root);loadTemplates({channel:activeChannel}).catch(()=>{})});
   root.querySelector('[data-template-sync]')?.addEventListener('click',()=>loadTemplates({sync:true,channel:activeChannel}));
-  root.querySelector('[data-template-create]')?.addEventListener('click',()=>openBuilder('create'));
+  root.querySelector('[data-template-create]')?.addEventListener('click',async()=>{
+    try{const module=await import('/vitrine/admin/marketing/template-type-picker.js?v=marketing-image-bank-v1');module.openTemplateTypePicker()}
+    catch(error){notify(`Não foi possível abrir o criador: ${String(error?.message||error)}`,'error')}
+  });
+  root.querySelector('[data-template-basket-carousel]')?.addEventListener('click',async()=>{
+    try{const module=await import('/vitrine/admin/marketing/template-carousel-editor.js?v=marketing-carousel-image-bank-v2');await module.openCarouselEditor({preset:'basket_categories'})}
+    catch(error){notify(`Não foi possível abrir o preset: ${String(error?.message||error)}`,'error')}
+  });
   root.querySelector('[data-postorder-provision]')?.addEventListener('click',async()=>{
     const btn=root.querySelector('[data-postorder-provision]');if(btn.disabled)return;
     btn.disabled=true;btn.textContent='Solicitando...';
@@ -351,7 +358,7 @@ async function mountTemplateView(root=document.querySelector('#content')){
   root.innerHTML=`<div class="marketing-template-center">
     <div class="page-head"><div><h1>Marketing</h1><p>Templates oficiais da Meta. Gestão separada de campanhas.</p></div><span class="marketing-campaign-gate">Campanhas desligadas</span></div>
     <div class="marketing-template-subnav" data-marketing-subnav>${marketingNavHtml('templates')}</div>
-    <div class="marketing-template-head"><div><h2>Templates Meta</h2><p>Crie, revise e sincronize templates. Esta tela não dispara mensagens.</p></div><div class="marketing-template-head-actions"><button type="button" data-template-sync data-sync-state="idle" aria-busy="false">Sincronizar</button><button type="button" data-postorder-provision>Preparar botões dos pedidos</button><button type="button" class="primary" data-template-create>Criar template</button></div></div>
+    <div class="marketing-template-head"><div><h2>Templates Meta</h2><p>Crie, revise e sincronize templates. Esta tela não dispara mensagens.</p></div><div class="marketing-template-head-actions"><button type="button" data-template-sync data-sync-state="idle" aria-busy="false">Sincronizar</button><button type="button" data-postorder-provision>Preparar botões dos pedidos</button><button type="button" data-template-basket-carousel>Rascunho carrossel D+20</button><button type="button" class="primary" data-template-create>Criar template</button></div></div>
     ${renderFilters(root)}
     <div class="marketing-template-status" data-template-center-status>Carregando somente quando esta aba é aberta…</div>
     <div class="marketing-template-list" data-template-list></div>

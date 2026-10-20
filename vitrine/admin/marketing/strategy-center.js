@@ -37,7 +37,7 @@ async function loadAccounts(){if(accounts.length)return accounts;const data=awai
 function navMarkup(){const item=(key,label)=>`<button type="button" class="${key==='strategy'?'active':''}" data-marketing-view="${key}">${label}</button>`;return `<div class="marketing-template-subnav marketing-strategy-nav" data-marketing-subnav>${item('overview','Visão geral')}${item('strategy','Estratégia')}${item('templates','Templates')}${item('campaigns','Campanhas')}${item('audiences','Públicos')}<span class="marketing-campaign-gate">Envios desativados</span></div>`}
 async function openMarketingView(view,root){
   if(view==='overview')return document.querySelector('[data-tab="marketing"]')?.click();if(view==='strategy')return;
-  if(view==='templates'){const module=window.DAMarketingTemplateCenter||await import('/vitrine/admin/marketing/template-center.js?v=marketing-template-center-v2');return module?.mountTemplateView?.(root)}
+if(view==='templates'){const module=window.DAMarketingTemplateCenter||await import('/vitrine/admin/marketing/template-center.js?v=marketing-image-bank-v1');return module?.mountTemplateView?.(root)}
   if(view==='campaigns'){const module=window.DAMarketingCampaignEntry||await import('/vitrine/admin/marketing/campaign-entry.js?v=marketing-campaign-entry-v8');return module?.openCampaigns?.()}
   if(view==='audiences'){const module=window.DAMarketingAudienceCenter||await import('/vitrine/admin/marketing/audience-center.js?v=marketing-audience-v1');return module?.mountAudienceView?.(root)}
 }
