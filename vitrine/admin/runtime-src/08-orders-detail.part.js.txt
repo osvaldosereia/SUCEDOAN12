@@ -268,6 +268,14 @@
     frame.src='/vitrine/admin/atendimento/?'+params.toString();
     requestAnimationFrame(()=>{sheet.classList.add('open');overlay.classList.add('open');$('#orderChatClose').focus({preventScroll:true})});
   }
+  document.addEventListener('marketing:open-order',async event=>{
+    const orderId=String(event.detail?.order_id||'');if(!orderId)return;
+    try{await setTab('orders');await openOrder(orderId)}catch(error){toast('Não foi possível abrir o pedido')}
+  });
+  document.addEventListener('marketing:open-conversation',async event=>{
+    const orderId=String(event.detail?.order_id||'');if(!orderId)return;
+    try{await setTab('orders');openOrderChatSheet(orderId,event.detail?.trigger||null)}catch(error){toast('Não foi possível abrir a conversa')}
+  });
   $('#orderChatClose').onclick=closeOrderChatSheet;
   $('#orderChatOverlay').onclick=closeOrderChatSheet;
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('#orderChatSheet').hidden){event.preventDefault();closeOrderChatSheet()}});

@@ -19,7 +19,7 @@ for(const rpc of ['marketing_campaign_worker_internal_key_v1','marketing_claim_d
   assert.match(source,new RegExp(rpc),`worker deve chamar ${rpc}`);
 }
 assert.match(source,/DEFAULT_BATCH\s*=\s*10/,'batch padrão deve ser 10');
-assert.match(source,/MAX_BATCH\s*=\s*25/,'batch máximo deve ser 25');
+assert.match(source,/MAX_BATCH\s*=\s*10/,'batch máximo deve ser 10');
 assert.match(source,/x-dona-antonia-marketing-worker-key/i,'worker deve exigir chave interna server-side');
 assert.match(source,/campaigns_enabled/,'worker deve revalidar campaigns_enabled antes do claim');
 assert.match(source,/mode[\s\S]*off/i,'worker deve no-op em mode off');
@@ -65,9 +65,9 @@ assert.match(sql,/revoke\s+all[\s\S]*marketing_accept_meta_dispatch_v1[\s\S]*ano
   assert.deepEqual(requests[0].template.components,components,'transporte deve preservar componente carousel seguro');
 }
 
-function buildHarness({mode='live',campaignsEnabled=true,revalidate='ok',meta='ok',attemptCount=0,toPhone='+5565998150975'}={}){
+function buildHarness({mode='live',campaignsEnabled=true,revalidate='ok',meta='ok',attemptCount=0,toPhone='+5565998150975',manual=false}={}){
   let handler;
-  const calls={meta:[],finish:[],accept:[],claim:[],revalidate:[],tracking:[]};
+  const calls={meta:[],finish:[],accept:[],claim:[],revalidate:[],tracking:[],manualAcquire:[],manualFinish:[]};
   const accountId='308660df-72a0-4e23-b3e9-b36d7307bb20';
   const dispatchId='10000000-0000-4000-8000-000000000001';
   const expectedKey='worker-test-secret';
@@ -80,6 +80,7 @@ function buildHarness({mode='live',campaignsEnabled=true,revalidate='ok',meta='o
     async maybeSingle(){
       if(table==='whatsapp_channel_runtime_v1')return {data:channel,error:null};
       if(table==='whatsapp_accounts')return {data:account,error:null};
+      if(table==='marketing_campaign_execution_runtime_v1')return {data:executionRows[0]||null,error:null};
       return {data:null,error:null};
     },
     then(resolve){
@@ -96,6 +97,11 @@ function buildHarness({mode='live',campaignsEnabled=true,revalidate='ok',meta='o
         calls.claim.push(args);
         return {data:{ok:true,mode,items:[{id:dispatchId,whatsapp_account_id:accountId,attempt_count:attemptCount}],count:1},error:null};
       }
+      if(name==='marketing_acquire_manual_campaign_batch_v1'){
+        calls.manualAcquire.push(args);
+        return {data:{ok:true,batch_id:args.p_batch_id,campaign_id:'50000000-0000-4000-8000-000000000005',whatsapp_account_id:accountId,items:[{id:dispatchId,whatsapp_account_id:accountId,attempt_count:attemptCount}],count:1},error:null};
+      }
+      if(name==='marketing_finish_manual_campaign_batch_v1'){calls.manualFinish.push(args);return {data:{ok:true,batch_status:'completed',campaign_status:'paused',remaining_count:2},error:null};}
       if(name==='marketing_revalidate_dispatch_v1'){
         calls.revalidate.push(args);
         if(revalidate==='skip')return {data:{ok:false,error:'dispatch_skipped',skip_reason:'no_consent',dispatch_id:dispatchId},error:null};
@@ -141,6 +147,14 @@ function buildHarness({mode='live',campaignsEnabled=true,revalidate='ok',meta='o
 }
 {
   const h=buildHarness({mode:'off'});await h.invoke();assert.equal(h.calls.meta.length,0,'mode off deve ser no-op');assert.equal(h.calls.claim.length,0,'mode off não deve claimar');
+}
+{
+  const h=buildHarness({manual:true});const result=await h.invoke({manual_batch_id:'60000000-0000-4000-8000-000000000006'});
+  assert.equal(result.response.status,200,'lote manual deve concluir com retorno positivo');
+  assert.equal(h.calls.claim.length,0,'lote manual não deve usar claim amplo do cron');
+  assert.equal(h.calls.manualAcquire.length,1,'lote manual deve adquirir batch idempotente');
+  assert.equal(h.calls.manualFinish.length,1,'lote manual deve fechar batch ao final');
+  assert.equal(h.calls.meta.length,1,'teste usa transporte Meta mockado e processa só dispatch do lote');
 }
 {
   const h=buildHarness({revalidate:'skip'});await h.invoke();assert.equal(h.calls.meta.length,0,'skip deve ocorrer antes do transporte');assert.equal(h.calls.tracking.length,0,'skip não deve emitir tracking');

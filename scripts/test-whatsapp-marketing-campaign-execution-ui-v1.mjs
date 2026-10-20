@@ -11,16 +11,18 @@ const css=fs.readFileSync(cssPath,'utf8');
 for(const [status,label] of Object.entries({scheduled:'Agendada',running:'Em execução',paused:'Pausada',completed:'Concluída',failed:'Falhou'})){
   assert.match(source,new RegExp(`${status}:["']${label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}["']`,'i'),`status operacional ausente: ${status}`);
 }
-assert.match(source,/type=["']datetime-local["']/i,'agendamento deve usar data/hora local');
-assert.match(source,/data-campaign-schedule/i,'botão Agendar deve existir');
-assert.match(source,/data-campaign-start-now/i,'botão Enviar agora deve existir');
+assert.doesNotMatch(source,/type=["']datetime-local["']/i,'agendamento futuro não deve estar disponível');
+assert.doesNotMatch(source,/data-campaign-schedule|runExecutionAction\([^\n]*["']schedule["']/i,'agendamento futuro deve permanecer removido');
+assert.match(source,/data-campaign-send-manual-batch/i,'UI deve oferecer envio manual em lote');
+assert.match(source,/até 10 contatos/i,'UI deve informar o limite do lote');
+assert.match(source,/outro lote exige um novo clique/i,'UI deve deixar claro que cada lote exige confirmação própria');
 assert.match(source,/data-campaign-pause/i,'botão Pausar deve existir');
 assert.match(source,/data-campaign-resume/i,'botão Retomar deve existir');
 assert.match(source,/data-campaign-cancel-execution/i,'botão Cancelar deve existir');
 assert.match(source,/Campanhas desligadas/i,'kill-switch deve ficar visível');
 assert.match(source,/execution_status/i,'UI deve consultar status operacional server-side');
 assert.match(source,/async\s+function\s+runExecutionAction[\s\S]*apiPost\(action,body\)/i,'wrapper operacional deve delegar somente à API Admin');
-for(const action of ['schedule','start_now','pause','resume','cancel_execution']){
+for(const action of ['pause','resume','cancel_execution']){
   assert.match(source,new RegExp(`runExecutionAction\\([^\\n]*["']${action}["']`,'i'),`UI deve usar wrapper Admin para: ${action}`);
 }
 assert.match(source,/campaigns_enabled/i,'UI deve considerar kill-switch do canal');
