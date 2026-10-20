@@ -125,7 +125,10 @@ async function researchCosmosForCapture(captureId,actorId){
     last_http_status:null,last_error:null,attempted_at:attemptedAt,researched_at:null,
     researched_by:actorId,updated_at:attemptedAt
   },{onConflict:"capture_id"});
-  if(queued.error)throw queued.error;
+  if(queued.error){
+    if(queued.error.code==="23503")return {error:"leitura_nao_encontrada",status:404};
+    throw queued.error;
+  }
   const finish=async(status,httpStatus,proposal={},summary={},error=null)=>{
     const now=new Date().toISOString();
     const saved=await db.from("cosmos_ean_capture_research_v1").update({
