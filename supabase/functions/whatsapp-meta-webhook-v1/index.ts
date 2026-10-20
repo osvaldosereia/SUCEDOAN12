@@ -4,6 +4,7 @@ import { redactWebhookPayload } from "../_shared/whatsapp-core-v1.mjs";
 import { classifyCustomerConfirmation } from "../_shared/ana-customer-confirmation-v1.mjs";
 import { findPostorderReply } from "../_shared/order-postorder-quickreply-v1.mjs";
 import {sendTextViaMeta} from "../_shared/whatsapp-meta-transport-v1.mjs";
+import { isExactMarketingOptOutReply } from "../_shared/marketing-optout-keyword-v1.mjs";
 import {
   extractMetaPhoneNumberIds,
   hasMetaMessageOrStatusEvents,
@@ -235,6 +236,91 @@ async function enqueueAnaForInbound(message: any, ingestResult: any) {
     }
   })());
   return true;
+}
+
+async function applyMarketingOptOut(message: any, ingestResult: any) {
+  if (message?.event_type !== "message.received" || message?.message?.direction !== "inbound") return null;
+  if (!["text", "button", "interactive"].includes(String(message?.message?.type || ""))) return null;
+
+  // Read the persisted message. For a retried Meta callback, resolve it by its
+  // WAMID so a transient database failure cannot lose the opt-out event.
+  let canonicalQuery = db.from("whatsapp_messages_v1")
+    .select("id,conversation_id,customer_id,whatsapp_account_id,direction,message_type,text_body,received_at,created_at");
+  if (ingestResult?.message_id) {
+    canonicalQuery = canonicalQuery.eq("id", ingestResult.message_id);
+  } else if (message?.provider_message_id && message?.whatsapp_account_id) {
+    canonicalQuery = canonicalQuery
+      .eq("whatsapp_account_id", message.whatsapp_account_id)
+      .eq("provider_message_id", message.provider_message_id);
+  } else {
+    return null;
+  }
+
+  const canonicalResult = await canonicalQuery.maybeSingle();
+  if (canonicalResult.error) throw canonicalResult.error;
+  const canonicalMessage = canonicalResult.data;
+  if (!canonicalMessage || canonicalMessage.direction !== "inbound") return null;
+  if (!["text", "button", "interactive"].includes(String(canonicalMessage.message_type || ""))) return null;
+  if (!isExactMarketingOptOutReply(canonicalMessage.text_body)) return null;
+
+  let customerId = canonicalMessage.customer_id;
+  if (!customerId && canonicalMessage.conversation_id) {
+    const conversation = await db.from("conversations")
+      .select("customer_id")
+      .eq("id", canonicalMessage.conversation_id)
+      .maybeSingle();
+    if (conversation.error) throw conversation.error;
+    customerId = conversation.data?.customer_id || null;
+  }
+  if (!customerId) return { matched: true, ok: false, missing_customer: true };
+
+  const recorded = await db.rpc("marketing_record_consent_v1", {
+    p_customer_id: customerId,
+    p_decision: "opt_out",
+    p_source: "customer_whatsapp_marketing_optout",
+    p_source_ref: String(canonicalMessage.conversation_id || ""),
+    p_source_event_key: `whatsapp-marketing-optout:${canonicalMessage.id}`,
+    p_consent_text_version: "whatsapp-marketing-optout-keyword-v1",
+    p_consent_text_snapshot: String(canonicalMessage.text_body || ""),
+    p_occurred_at: canonicalMessage.received_at || canonicalMessage.created_at,
+    p_recorded_by: "customer_whatsapp",
+    p_metadata: {
+      scope: "all_marketing",
+      channel: "whatsapp",
+      incoming_message_id: canonicalMessage.id,
+      matching: "exact_normalized_message",
+      keyword: "SAIR",
+    },
+  });
+  if (recorded.error) throw recorded.error;
+  if (recorded.data?.ok !== true) {
+    throw new Error(String(recorded.data?.error || "marketing_optout_record_failed"));
+  }
+  return {
+    matched: true,
+    ok: true,
+    idempotent: recorded.data?.idempotent === true,
+    event_id: recorded.data?.event_id || null,
+  };
+}
+
+async function acknowledgeMarketingOptOut(message: any, outcome: any) {
+  if (!META_ACCESS_TOKEN || !outcome?.matched || outcome?.idempotent === true) return;
+  const text = outcome.ok
+    ? "Pronto! Seu número foi descadastrado das mensagens de marketing da Dona Antônia. Você ainda poderá receber mensagens necessárias sobre pedidos."
+    : "Não consegui localizar seu cadastro para confirmar o descadastro. Por favor, fale com a Dona Antônia para remover seu número das ofertas.";
+  try {
+    await sendTextViaMeta({
+      accessToken: META_ACCESS_TOKEN,
+      phoneNumberId: String(message.phone_number_id || ""),
+      toE164: String(message.phone_e164 || ""),
+      text,
+      graphVersion: META_GRAPH_VERSION,
+      timeoutMs: 9000,
+    });
+  } catch (error) {
+    console.warn("marketing_optout_ack_failed", String((error as Error)?.name || "unavailable").slice(0, 80));
+  }
 }
 
 async function applyCustomerConfirmationSignal(message: any, ingestResult: any) {
@@ -477,6 +563,8 @@ Deno.serve(async (req: Request) => {
     let anaConfirmationsApplied = 0;
     let anaJobsQueued = 0;
     let postorderRepliesApplied = 0;
+    let marketingOptOutMatches = 0;
+    let marketingOptOutsApplied = 0;
     for (const message of normalized.messages) {
       const result = await persistMessage(message, normalized.payloadHash, safePayload);
       const isEcho = message?.message?.direction === "outbound" && message?.message?.metadata?.source_event === "smb_message_echoes";
@@ -495,6 +583,14 @@ Deno.serve(async (req: Request) => {
         if(postorder.ok)postorderRepliesApplied+=1;
         await acknowledgePostorderQuickReply(message,postorder);
         // Do not send a second ANA answer to a structured purchase button.
+        continue;
+      }
+      const marketingOptOut = await applyMarketingOptOut(message, result);
+      if (marketingOptOut?.matched === true) {
+        marketingOptOutMatches += 1;
+        if (marketingOptOut.ok === true) marketingOptOutsApplied += 1;
+        await acknowledgeMarketingOptOut(message, marketingOptOut);
+        // A marketing unsubscribe must never be answered by the sales assistant.
         continue;
       }
       const confirmation = await applyCustomerConfirmationSignal(message, result);
@@ -521,6 +617,8 @@ Deno.serve(async (req: Request) => {
       ana_confirmations_applied: anaConfirmationsApplied,
       ana_jobs_queued: anaJobsQueued,
       postorder_quickreplies_applied: postorderRepliesApplied,
+      marketing_optout_matches: marketingOptOutMatches,
+      marketing_optouts_applied: marketingOptOutsApplied,
       statuses_captured: statusesCaptured,
       statuses_recorded: statusesRecorded,
       statuses_pending: statusesPending,
