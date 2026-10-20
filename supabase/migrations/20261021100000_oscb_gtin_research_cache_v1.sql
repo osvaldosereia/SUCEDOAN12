@@ -93,12 +93,6 @@ select distinct on (gtin) gtin, status, coalesce(proposal,'{}'::jsonb), coalesce
  order by gtin, researched_at desc
 on conflict (gtin) do nothing;
 
-insert into public.oscb_gtin_research_attempts_v1(gtin,capture_id,actor_id,attempted_at,outcome,http_status)
-select gtin,capture_id,researched_by,attempted_at,status,last_http_status
-  from public.cosmos_ean_capture_research_v1
- where attempted_at is not null
-on conflict do nothing;
-
 alter table public.oscb_gtin_research_cache_v1 enable row level security;
 alter table public.oscb_gtin_research_attempts_v1 enable row level security;
 revoke all on public.oscb_gtin_research_cache_v1 from public, anon, authenticated;
