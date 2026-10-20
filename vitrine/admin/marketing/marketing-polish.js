@@ -28,7 +28,7 @@ function marketingRoot(){
 function setText(node,value){if(node&&text(node)!==value)node.textContent=value}
 
 function activeView(root){
-  return root.querySelector('[data-marketing-subnav] > [data-marketing-view].active')?.dataset?.marketingView||'overview';
+  return root.querySelector('[data-marketing-subnav] [data-marketing-view].active')?.dataset?.marketingView||'overview';
 }
 
 function loadConsentModule(){
@@ -62,12 +62,12 @@ function loadRepurchaseModule(){
 }
 
 function ensureAdminMoreMenu(root,nav){
-  let more=nav.querySelector('[data-marketing-more-menu]');
+  let more=nav.querySelector('[data-marketing-more-menu],.marketing-admin-more');
   if(!more){
     more=document.createElement('details');
     more.className='marketing-admin-more';
     more.dataset.marketingMoreMenu='1';
-    more.innerHTML='<summary>Mais</summary><div class="marketing-admin-more-menu"><button type="button" data-marketing-view="strategy">Estratégia</button><button type="button" data-marketing-view="audiences">Públicos</button><button type="button" data-marketing-admin-consents>Consentimentos</button></div>';
+    more.innerHTML='<summary>Mais</summary><div class="marketing-admin-more-menu"><button type="button" data-marketing-view="strategy">Estratégia</button><button type="button" data-marketing-view="audiences">Públicos</button><button type="button" data-marketing-view="consents" data-marketing-admin-consents>Consentimentos</button></div>';
     const gate=nav.querySelector('.marketing-campaign-gate');
     if(gate)nav.insertBefore(more,gate);else nav.appendChild(more);
     more.querySelectorAll('[data-marketing-view]').forEach(button=>button.addEventListener('click',()=>{
@@ -82,6 +82,7 @@ function ensureAdminMoreMenu(root,nav){
       }catch(error){console.warn('marketing-consents-load',String(error?.message||error).slice(0,160))}
     });
   }
+  more.dataset.marketingMoreMenu='1';
 }
 
 function ensurePrimaryViewButtons(root,nav){
@@ -100,13 +101,18 @@ function ensurePrimaryViewButtons(root,nav){
 function polishNav(root){
   const nav=root.querySelector('[data-marketing-subnav]');
   if(!nav)return;
+  const currentView=activeView(root);
   ensurePrimaryViewButtons(root,nav);
   ensureAdminMoreMenu(root,nav);
   nav.querySelectorAll(':scope > [data-marketing-view]').forEach(button=>{
     const view=String(button.dataset.marketingView||'');
     if(!PRIMARY_MARKETING_VIEWS.includes(view)){button.remove();return}
     setText(button,PRIMARY_MARKETING_LABELS[view]);
-    if(button.classList.contains('active')){if(button.getAttribute('aria-current')!=='page')button.setAttribute('aria-current','page')}else if(button.hasAttribute('aria-current'))button.removeAttribute('aria-current');
+  });
+  nav.querySelectorAll('[data-marketing-view]').forEach(button=>{
+    const active=button.dataset.marketingView===currentView;
+    button.classList.toggle('active',active);
+    if(active){if(button.getAttribute('aria-current')!=='page')button.setAttribute('aria-current','page')}else if(button.hasAttribute('aria-current'))button.removeAttribute('aria-current');
   });
   removeDuplicateGateBadges(root);
   const gate=nav.querySelector('.marketing-campaign-gate');
