@@ -346,17 +346,18 @@ async function products(u:URL){
     const productIds=linkedGroups.map((g:any)=>g.product_id);
     const productRows:any[]=[];
     for(let i=0;i<productIds.length;i+=100){
-      let q=filterProductsByValidity(db.from("products").select("*").in("id",productIds.slice(i,i+100)).order("id"),sort,today);
-      if(sub)q=q.eq("subcategory",sub);
-      if(act==="true")q=q.eq("is_active",true);
-      if(act==="false")q=q.eq("is_active",false);
-      if(qv)q=q.or("name.ilike.%"+qv+"%,gtin.ilike.%"+qv+"%,sku.ilike.%"+qv+"%");
+      const q=filterProductsByValidity(db.from("products").select("*").in("id",productIds.slice(i,i+100)).order("id"),sort,today);
       const r=await q;if(r.error)throw r.error;productRows.push(...(r.data||[]));
     }
+    const existingProductIds=new Set(productRows.map((p:any)=>String(p.id)));
     const wanted=cat?inventorySheetCanonicalCategory(cat):"";
     const memberIds=(basketKit||lotStatus==="pending")?await basketKitProductIds():null;
     const linkedById=new Map(linkedGroups.map((g:any)=>[String(g.product_id),g]));
     const filteredProducts=productRows.filter((p:any)=>{
+      if(sub&&String(p.subcategory||"")!==sub)return false;
+      if(act==="true"&&p.is_active!==true)return false;
+      if(act==="false"&&p.is_active!==false)return false;
+      if(qv&&!([p.name,p.gtin,p.sku].some((v:any)=>String(v||"").toLocaleLowerCase("pt-BR").includes(qv.toLocaleLowerCase("pt-BR")))))return false;
       const category=inventorySheetCanonicalCategory(p.sales_category||p.storefront_category||p.category);
       if(wanted&&category!==wanted)return false;
       if(basketKit&&memberIds&&!memberIds.has(String(p.id)))return false;
@@ -368,7 +369,7 @@ async function products(u:URL){
       const g:any=linkedById.get(String(p.id)),latest=g?.latest||{};
       return {...p,__ean_capture_count:g?.records?.length||0,__ean_capture_last_at:latest.created_at||null,__ean_capture_quantity:Number(latest.quantity||0)};
     });
-    const placeholders=[...groups.values()].filter((g:any)=>!g.product_id&&g.ean).filter((g:any)=>{
+    const placeholders=[...groups.values()].filter((g:any)=>(!g.product_id||!existingProductIds.has(String(g.product_id)))&&g.ean).filter((g:any)=>{
       if(act||cat||sub||basketKit||lotStatus)return false;
       const searchedEan=dg(qv,30);
       if(qv&&(!searchedEan||!g.ean.includes(searchedEan)))return false;
