@@ -54,6 +54,6 @@ const deferred=htmlFor('media',2);
 assert.ok(deferred.includes('data-basket-src="'+photos.media+'"'),'non-priority photos should load lazily');
 assert.ok(deferred.includes('loading="lazy"'),'non-priority photos should use native lazy loading');
 assert.ok(html.includes('.basket-size-card-photo'),'home card photo sizing styles are present');
-assert.match(html,/basket-carousel\.js\?v=20261019-basket-size-photos-v2/,'the carousel script URL is cache busted');
+assert.match(html,/basket-carousel\.js\?v=20261020-progressive-baskets-v1/,'the carousel script URL is cache busted');
 assert.ok(Object.values(photos).reduce((sum,path)=>sum+fs.statSync(path.slice(1)).size,0)<350_000,'all five above-the-fold size photos stay under 350 KB total');
 console.log('Home basket size photos: PASS');
