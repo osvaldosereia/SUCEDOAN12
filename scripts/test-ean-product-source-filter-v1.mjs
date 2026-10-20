@@ -11,6 +11,11 @@ assert.ok(source.includes('state.productFilters.sourceSystem'),"source selection
 assert.ok(source.includes("source_system:filters.sourceSystem"),"selected source is sent with product queries");
 assert.ok(runtime.includes('id="productSource"'),"generated admin runtime includes the source segment");
 assert.ok(api.includes('u.searchParams.get("source_system")'),"products API reads the source filter");
-assert.ok(api.includes('q.eq("source_system",sourceSystem)'),"products API filters at the database query");
+assert.ok(api.includes('db.from("ean_capture_records_v1")'),"EAN source filter reads scanner history");
+assert.ok(api.includes("matched_product_id"),"EAN scanner history includes linked products");
+assert.ok(api.includes("__ean_capture_placeholder"),"unresolved scanner reads are returned");
+assert.ok(source.includes("eanCapturePlaceholderDesktopRow"),"desktop list renders unresolved scanner reads");
+assert.ok(source.includes("eanCapturePlaceholderMobileCard"),"mobile list renders unresolved scanner reads");
+assert.ok(source.includes("Passaram pelo leitor EAN"),"source segment label includes all read statuses");
 assert.ok(migration.includes("'ean_capture_admin','local'"),"products created by EAN carry a stable source marker");
 console.log("EAN product source segmentation: PASS");
