@@ -32,6 +32,8 @@ assert.equal(ui,root,'the public root and vitrine pages must stay mirrored');
 assert.match(ui,/data-extra-theme-toggle/);
 assert.match(ui,/data-extra-product-add/);
 assert.match(ui,/basket-extra-products/);
+assert.match(ui,/data-extra-carousel/);
+assert.match(ui,/extraCarouselScroll=new Map/);
 assert.ok(ui.includes('.basket-extra-product strong{font-size:14px'));
 assert.ok(ui.includes('.basket-extra-product>b{font-size:16px'));
 assert.match(ui,/d\.openExtraThemes\|\|\[\]/);
