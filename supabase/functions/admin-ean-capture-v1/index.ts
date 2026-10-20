@@ -48,13 +48,23 @@ async function withCosmosResearch(rows){
     .in("capture_id",ids);
   if(result.error)throw result.error;
   const byId=new Map((result.data||[]).map(item=>[String(item.capture_id),item]));
+  const gtins=[...new Set(rows.map(row=>String(row.ean||"")).filter(eanOk))];
+  const prior=gtins.length?await db.from("oscb_gtin_research_cache_v1")
+    .select("gtin,status,proposal,response_summary,last_http_status,last_error,researched_at,attempted_at")
+    .in("gtin",gtins).in("status",["review","not_found"]).not("researched_at","is",null)
+    .order("researched_at",{ascending:false}):{data:[],error:null};
+  if(prior.error)throw prior.error;
+  const byGtin=new Map();
+  for(const item of prior.data||[])if(!byGtin.has(String(item.gtin)))byGtin.set(String(item.gtin),item);
   return rows.map(row=>{
-    const research=byId.get(String(row.id));
-    if(!research||String(research.gtin)!==String(row.ean))return row;
+    const direct=byId.get(String(row.id));
+    const research=direct&&String(direct.gtin)===String(row.ean)?direct:byGtin.get(String(row.ean||""));
+    if(!research)return row;
     return {...row,cosmos_research:{
       gtin:research.gtin,status:research.status,proposal:research.proposal||{},
       summary:research.response_summary||{},http_status:research.last_http_status,
-      error:research.last_error,researched_at:research.researched_at,attempted_at:research.attempted_at
+      error:research.last_error,researched_at:research.researched_at,attempted_at:research.attempted_at,
+      cached_by_gtin:String(research.gtin)===String(row.ean)
     }};
   });
 }
@@ -79,8 +89,8 @@ function oscbCandidate(item,gtin){
     gpc_code:null,
     gpc_description:cosmosClean(item?.categoria??item?.category,160)||null,
     category:cosmosClean(item?.categoria??item?.category,160)||null,
-    ncm_candidate:/^\\d{8}$/.test(ncm)?ncm:null,
-    cest_candidate:/^\\d{7}$/.test(cestDigits)?cestDigits:null,
+    ncm_candidate:/^\d{8}$/.test(ncm)?ncm:null,
+    cest_candidate:/^\d{7}$/.test(cestDigits)?cestDigits:null,
     unit:cosmosClean(item?.unid_abr??item?.unit,24)||null,
     unit_description:cosmosClean(item?.unid_desc??item?.unit_description,80)||null,
     packaging:cosmosClean(item?.embalagem??item?.packaging,100)||null,
@@ -102,44 +112,74 @@ async function researchCosmosForCapture(captureId,actorId){
     .eq("capture_id",captureId).maybeSingle();
   if(existing.error)throw existing.error;
   const cached=existing.data;
-  if(cached&&cached.gtin===gtin&&["review","not_found"].includes(cached.status)
-     &&cached.researched_at&&Date.now()-new Date(cached.researched_at).getTime()<30*24*60*60*1000)
+  const terminal=cached&&cached.gtin===gtin&&["review","not_found"].includes(cached.status)&&cached.researched_at;
+  if(terminal)
     return {research:{gtin,status:cached.status,proposal:cached.proposal||{},summary:cached.response_summary||{},
       http_status:cached.last_http_status,error:cached.last_error,researched_at:cached.researched_at,cached:true}};
-  if(cached&&cached.gtin===gtin&&cached.status==="researching"&&cached.attempted_at
-     &&Date.now()-new Date(cached.attempted_at).getTime()<3*60*1000)
-    return {error:"pesquisa_em_andamento",status:409};
-  if(cached&&cached.gtin===gtin&&cached.status==="error"&&cached.attempted_at
-     &&Date.now()-new Date(cached.attempted_at).getTime()<5*60*1000)
-    return {error:"aguarde_5_minutos_antes_de_tentar_novamente",status:429};
-  const username=Deno.env.get("OSCBR_USERNAME")||"";
-  const password=Deno.env.get("OSCBR_PASSWORD")||"";
-  if(!username||!password)return {error:"credenciais_oscb_nao_configuradas",status:503};
+  // Reserve quota atomically and reuse a durable result by GTIN, even if this
+  // capture is deleted, recreated or corrected later.
   const config=await db.from("cosmos_research_config").select("daily_limit").eq("id",true).maybeSingle();
   if(config.error)throw config.error;
-  const dailyLimit=Math.max(1,Math.min(20,Number(config.data?.daily_limit)||20));
-  const dayStart=new Date();dayStart.setUTCHours(0,0,0,0);
-  const used=await db.from("cosmos_ean_capture_research_v1").select("id",{count:"exact",head:true})
-    .gte("attempted_at",dayStart.toISOString());
-  if(used.error)throw used.error;
-  if((used.count||0)>=dailyLimit)return {error:"limite_diario_cosmos_atingido",status:429};
+  const dailyLimit=Math.max(1,Math.min(45,Number(config.data?.daily_limit)||45));
+  const reservation=await db.rpc("oscb_reserve_gtin_lookup_v1",{
+    p_gtin:gtin,p_capture_id:captureId,p_actor_id:actorId,p_daily_limit:dailyLimit
+  });
+  if(reservation.error)throw reservation.error;
+  const reserved=reservation.data||{};
+  if(reserved.reason==="cached"&&reserved.cache){
+    const c=reserved.cache;
+    const row={capture_id:captureId,gtin,status:c.status,proposal:c.proposal||{},
+      response_summary:{...(c.response_summary||{}),reused_by_gtin:true},
+      last_http_status:c.last_http_status,last_error:c.last_error,
+      attempted_at:c.attempted_at,researched_at:c.researched_at,researched_by:actorId,updated_at:new Date().toISOString()};
+    const saved=await db.from("cosmos_ean_capture_research_v1").upsert(row,{onConflict:"capture_id"});
+    if(saved.error)throw saved.error;
+    return {research:{gtin,status:row.status,proposal:row.proposal,summary:row.response_summary,
+      http_status:row.last_http_status,error:row.last_error,researched_at:row.researched_at,cached:true}};
+  }
+  if(!reserved.allowed){
+    const errors:Record<string,{error:string,status:number}>={
+      in_progress:{error:"pesquisa_em_andamento",status:409},
+      retry_later:{error:"aguarde_5_minutos_antes_de_tentar_novamente",status:429},
+      daily_limit:{error:"limite_diario_oscb_atingido",status:429},
+      rate_limit:{error:"limite_de_2_consultas_por_minuto_oscb",status:429}
+    };
+    return errors[reserved.reason]||{error:"consulta_oscb_nao_autorizada",status:409};
+  }
+  const attemptId=String(reserved.attempt_id||"");
+  const username=Deno.env.get("OSCBR_USERNAME")||"";
+  const password=Deno.env.get("OSCBR_PASSWORD")||"";
+  if(!username||!password){
+    await db.from("oscb_gtin_research_cache_v1").update({status:"error",last_error:"credentials_missing",updated_at:new Date().toISOString()}).eq("gtin",gtin);
+    if(attemptId)await db.from("oscb_gtin_research_attempts_v1").update({outcome:"error",http_status:503}).eq("id",attemptId);
+    return {error:"credenciais_oscb_nao_configuradas",status:503};
+  }
   const attemptedAt=new Date().toISOString();
   const queued=await db.from("cosmos_ean_capture_research_v1").upsert({
-    capture_id:captureId,gtin,status:"researching",proposal:{},response_summary:{source:"cosmos"},
+    capture_id:captureId,gtin,status:"researching",proposal:{},response_summary:{source:"oscb"},
     last_http_status:null,last_error:null,attempted_at:attemptedAt,researched_at:null,
     researched_by:actorId,updated_at:attemptedAt
   },{onConflict:"capture_id"});
   if(queued.error){
+    await db.from("oscb_gtin_research_cache_v1").update({status:"error",last_error:"capture_mirror_failed",updated_at:new Date().toISOString()}).eq("gtin",gtin);
+    if(attemptId)await db.from("oscb_gtin_research_attempts_v1").update({outcome:"error",http_status:500}).eq("id",attemptId);
     if(queued.error.code==="23503")return {error:"leitura_nao_encontrada",status:404};
     throw queued.error;
   }
   const finish=async(status,httpStatus,proposal={},summary={},error=null)=>{
     const now=new Date().toISOString();
-    const saved=await db.from("cosmos_ean_capture_research_v1").update({
+    const state={
       gtin,status,proposal,response_summary:summary,last_http_status:httpStatus,last_error:error,
       researched_at:["review","not_found"].includes(status)?now:null,updated_at:now
-    }).eq("capture_id",captureId).eq("gtin",gtin);
+    };
+    const saved=await db.from("cosmos_ean_capture_research_v1").update(state).eq("capture_id",captureId).eq("gtin",gtin);
     if(saved.error)throw saved.error;
+    const globalSaved=await db.from("oscb_gtin_research_cache_v1").update({
+      status,proposal,response_summary:summary,last_http_status:httpStatus,last_error:error,
+      researched_at:["review","not_found"].includes(status)?now:null,updated_at:now
+    }).eq("gtin",gtin);
+    if(globalSaved.error)throw globalSaved.error;
+    if(attemptId){const attempt=await db.from("oscb_gtin_research_attempts_v1").update({outcome:status,http_status:httpStatus}).eq("id",attemptId);if(attempt.error)throw attempt.error;}
     return {gtin,status,proposal,summary,http_status:httpStatus,error,researched_at:["review","not_found"].includes(status)?now:null};
   };
   try{
@@ -204,8 +244,8 @@ async function researchCosmosForCapture(captureId,actorId){
     });
     return {research};
   }catch(error){
-    await finish("error",0,{}, {source:"cosmos",gtin},error instanceof Error?error.name:"network_error");
-    return {error:"falha_de_rede_cosmos",status:502};
+    await finish("error",0,{}, {source:"oscb",gtin},error instanceof Error?error.name:"network_error");
+    return {error:"falha_de_rede_oscb",status:502};
   }
 }
 async function withProductNamesOnRow(payload:Record<string,unknown>){
