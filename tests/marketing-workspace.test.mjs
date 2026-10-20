@@ -98,7 +98,16 @@ test('monthly replenishment uses cadence states, offers recalculation, and never
   assert.doesNotMatch(audienceApi,/marketing_repurchase_runtime_v1[\s\S]{0,80}update\(/);
 });
 
-test('Marketing refreshes the template view and all parent module cache keys',()=>{\n  assert.match(basketLotImage,/template-center\\.js\\?v=marketing-template-center-v2/);\n  assert.match(basketLotImage,/campaign-entry\\.js\\?v=marketing-campaign-entry-v6/);\n  assert.match(campaignEntry,/marketing-polish\\.js\\?v=marketing-polish-v4/);\n  assert.match(polish,/post-sale-center\\.js\\?v=marketing-post-sale-v2/);\n  assert.match(polish,/repurchase-center\\.js\\?v=marketing-repurchase-v2/);\n  assert.match(adminIndex,/basket-lot-image\\.js\\?v=marketing-workspace-v3/);\n});\n\ntest('template center exposes the mount function to dynamically imported navigation modules',()=>{
+test('Marketing refreshes the template view and all parent module cache keys',()=>{
+  assert.match(basketLotImage,/template-center\.js\?v=marketing-template-center-v2/);
+  assert.match(basketLotImage,/campaign-entry\.js\?v=marketing-campaign-entry-v6/);
+  assert.match(campaignEntry,/marketing-polish\.js\?v=marketing-polish-v4/);
+  assert.match(polish,/post-sale-center\.js\?v=marketing-post-sale-v2/);
+  assert.match(polish,/repurchase-center\.js\?v=marketing-repurchase-v2/);
+  assert.match(adminIndex,/basket-lot-image\.js\?v=marketing-workspace-v3/);
+});
+
+test('template center exposes the mount function to dynamically imported navigation modules',()=>{
   assert.match(template,/async function mountTemplateView\(/);
   assert.match(template,/export \{mountTemplateView\}/);
 });
