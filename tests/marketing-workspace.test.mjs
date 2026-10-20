@@ -11,8 +11,13 @@ const worker=readFileSync(new URL('../supabase/functions/whatsapp-marketing-work
 const orders=readFileSync(new URL('../vitrine/admin/runtime-src/08-orders-detail.part.js.txt',import.meta.url),'utf8');
 const adminIndex=readFileSync(new URL('../vitrine/admin/index.html',import.meta.url),'utf8');
 const audienceApi=readFileSync(new URL('../supabase/functions/admin-marketing-audiences-v1/index.ts',import.meta.url),'utf8');
+const adminProducts=readFileSync(new URL('../supabase/functions/admin-products-live-v1/index.ts',import.meta.url),'utf8');
 const overviewPath=new URL('../vitrine/admin/marketing/marketing-overview-data.js',import.meta.url);
 const overview=existsSync(overviewPath)?readFileSync(overviewPath,'utf8'):'';
+
+test('orders API permits the public API key header from the storefront origin',()=>{
+  assert.match(adminProducts,/\"Access-Control-Allow-Headers\":\"content-type,authorization,apikey\"/);
+});
 
 test('Pós-venda opens its own view instead of redirecting to Orders',()=>{
   assert.match(polish,/function loadPostSaleModule\(\)[\s\S]*?post-sale-center\.js/);
