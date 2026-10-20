@@ -346,7 +346,7 @@ async function products(u:URL){
     const productIds=linkedGroups.map((g:any)=>g.product_id);
     const productRows:any[]=[];
     for(let i=0;i<productIds.length;i+=100){
-      const q=filterProductsByValidity(db.from("products").select("*").in("id",productIds.slice(i,i+100)).order("id"),sort,today);
+      const q=db.from("products").select("*").in("id",productIds.slice(i,i+100)).order("id");
       const r=await q;if(r.error)throw r.error;productRows.push(...(r.data||[]));
     }
     const existingProductIds=new Set(productRows.map((p:any)=>String(p.id)));
@@ -369,7 +369,8 @@ async function products(u:URL){
       const g:any=linkedById.get(String(p.id)),latest=g?.latest||{};
       return {...p,__ean_capture_count:g?.records?.length||0,__ean_capture_last_at:latest.created_at||null,__ean_capture_quantity:Number(latest.quantity||0)};
     });
-    const placeholders=[...groups.values()].filter((g:any)=>(!g.product_id||!existingProductIds.has(String(g.product_id)))&&g.ean).filter((g:any)=>{
+    const linkedEans=new Set(linkedGroups.map((g:any)=>String(g.ean||"")).filter(Boolean));
+    const placeholders=[...groups.values()].filter((g:any)=>(!g.product_id||!existingProductIds.has(String(g.product_id)))&&g.ean&&!linkedEans.has(String(g.ean))).filter((g:any)=>{
       if(act||cat||sub||basketKit||lotStatus)return false;
       const searchedEan=dg(qv,30);
       if(qv&&(!searchedEan||!g.ean.includes(searchedEan)))return false;
@@ -396,6 +397,15 @@ async function products(u:URL){
       if(sort==="updated_desc")return timeOf(b,"updated_at")-timeOf(a,"updated_at");
       if(sort==="updated_asc")return timeOf(a,"updated_at")-timeOf(b,"updated_at");
       if(sort==="name_desc")return sortName(b).localeCompare(sortName(a),"pt-BR");
+      if(sort==="expiry_asc"||sort==="expiry_desc"){
+        const av=a.validity_date?Date.parse(String(a.validity_date+"T12:00:00Z")):Number.POSITIVE_INFINITY;
+        const bv=b.validity_date?Date.parse(String(b.validity_date+"T12:00:00Z")):Number.POSITIVE_INFINITY;
+        if(av!==bv)return sort==="expiry_asc"?av-bv:bv-av;
+      }
+      if(sort==="gondola_asc"||sort==="gondola_desc"){
+        const av=Number(a.gondola||0),bv=Number(b.gondola||0);
+        if(av!==bv)return sort==="gondola_asc"?av-bv:bv-av;
+      }
       return sortName(a).localeCompare(sortName(b),"pt-BR");
     });
     rows=filtered.slice(off,off+lim);
