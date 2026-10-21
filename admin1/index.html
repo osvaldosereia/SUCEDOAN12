@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/admin1/styles.css?v=3">
+  <link rel="stylesheet" href="/admin1/styles.css?v=4">
 </head>
 <body>
   <div class="app-shell">
@@ -38,7 +38,18 @@
       </section>
     </main>
   </div>
-  <script type="module" src="/admin1/src/app.js?v=3"></script>
+  <dialog id="productDialog" class="product-dialog" aria-labelledby="productDialogTitle">
+    <div class="product-dialog-shell">
+      <header class="product-dialog-head">
+        <div><span class="eyebrow">CATÁLOGO · SOMENTE LEITURA</span><h2 id="productDialogTitle">Detalhes do produto</h2></div>
+        <button class="icon-button" id="closeProductDialog" type="button" aria-label="Fechar detalhes">×</button>
+      </header>
+      <div id="productDialogContent" class="product-dialog-content"></div>
+      <footer class="product-dialog-foot"><span class="readonly-badge"><i aria-hidden="true"></i>Consulta somente leitura</span></footer>
+    </div>
+  </dialog>
+  <script type="module" src="/admin1/src/app.js?v=4"></script>
 </body>
 </html>
+
 
