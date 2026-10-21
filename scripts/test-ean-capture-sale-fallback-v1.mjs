@@ -60,7 +60,7 @@ assert.equal(second.next_offset,null);
 
 
 assert.match(api,/const POSTGREST_IN_BATCH_SIZE=100;/,'product ID lookups must use bounded request batches');
-assert.equal((api.match(/queryRowsByIds\\("products","id",eanIds/g)||[]).length,3,'offers, subcategories and product search must use batched product lookups');
+assert.equal(api.split('queryRowsByIds("products","id",eanIds').length-1,3,'offers, subcategories and product search must use batched product lookups');
 const batchHelperStart=api.indexOf('const POSTGREST_IN_BATCH_SIZE=100;');
 const batchHelperEnd=api.indexOf('async function sellableMap(',batchHelperStart);
 assert.ok(batchHelperStart>=0&&batchHelperEnd>batchHelperStart,'batch helper must be defined before catalog endpoints');
