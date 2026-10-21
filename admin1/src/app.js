@@ -1,8 +1,9 @@
 import { adminApi } from './api.js?v=4';
 import { filterProducts, getProductStockState, listProductCategories } from './products.js';
+import { createProductDraft, findCatalogMatch, getFiscalChecklist, parseNfeXml, readProductDrafts, saveProductDraft } from './product-drafts.js?v=5';
 
 const $ = (selector, root = document) => root.querySelector(selector);
-const state = { products: [], nextOffset: null, query: '', category: '', stock: '' };
+const state = { products: [], nextOffset: null, query: '', category: '', stock: '', xmlItems: [] };
 const workspace = $('#workspace');
 const productDialog = $('#productDialog');
 const productDialogContent = $('#productDialogContent');
@@ -78,7 +79,7 @@ function renderProducts() {
   workspace.innerHTML = `
     <div class="page-heading">
       <div><span class="eyebrow">CATÁLOGO ATIVO</span><h1>Produtos</h1><p>Encontre e confira rapidamente os produtos disponíveis na loja.</p></div>
-      <span class="readonly-badge"><i aria-hidden="true"></i>Catálogo conectado</span>
+      <div class="product-actions"><button class="button secondary" id="openDrafts" type="button">Rascunhos <span class="draft-count">${readProductDrafts().length}</span></button><button class="button primary" id="importXml" type="button"><span aria-hidden="true">＋</span> Conferir XML</button><input id="xmlFile" type="file" accept=".xml,text/xml,application/xml" hidden><span class="readonly-badge"><i aria-hidden="true"></i>Leitura segura</span></div>
     </div>
     <section class="metric-row product-metrics" aria-label="Resumo dos produtos carregados">
       <article class="metric-card"><span>Carregados</span><strong>${state.products.length}</strong><small>Produtos nesta consulta</small></article>
@@ -99,7 +100,7 @@ function renderProducts() {
       ` : `<div class="empty-state"><span class="empty-icon" aria-hidden="true">⌕</span><strong>${state.products.length ? 'Nenhum produto encontrado' : 'Nenhum produto disponível'}</strong><span>${state.products.length ? 'Tente ajustar os filtros ou a busca.' : 'Atualize a lista para consultar novamente.'}</span></div>`}
       <div class="panel-foot products-footer"><span>${state.products.length} carregados nesta consulta</span>${state.nextOffset !== null ? '<button class="quiet-button" id="loadMore" type="button">Carregar mais produtos <span aria-hidden="true">→</span></button>' : ''}</div>
     </section>
-    <p class="readonly-note">Esta tela consulta o catálogo da loja. Edição e cadastro serão liberados em uma próxima etapa.</p>`;
+    <p class="readonly-note">Catálogo Supabase em somente leitura. A conferência de XML gera rascunhos salvos apenas neste navegador.</p>`;
 
   $('#productSearch').addEventListener('input', event => {
     clearTimeout(searchTimer);
@@ -118,6 +119,25 @@ function renderProducts() {
     renderProducts();
   });
   $('#refreshProducts').addEventListener('click', () => loadProducts());
+  $('#importXml').addEventListener('click', () => $('#xmlFile').click());
+  $('#xmlFile').addEventListener('change', async event => {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    if (!file) return;
+    try {
+      if (file.size > 10 * 1024 * 1024) throw new Error('O XML passou do limite de 10 MB.');
+      state.xmlItems = parseNfeXml(await file.text());
+      renderXmlReview(file.name);
+      if (!productDialog.open) productDialog.showModal();
+    } catch (error) {
+      productDialogContent.innerHTML = `<div class="detail-error"><strong>Não consegui ler este XML</strong><span>${escapeHtml(error.message || 'Confira se o arquivo é uma NF-e válida.')}</span><button class="button secondary" id="retryXml" type="button">Escolher outro arquivo</button></div>`;
+      $('#productDialogTitle').textContent = 'Conferir XML de entrada';
+      $('#productDialogFoot').innerHTML = '<span class="readonly-badge"><i aria-hidden="true"></i>Arquivo processado somente neste navegador</span>';
+      if (!productDialog.open) productDialog.showModal();
+      $('#retryXml').addEventListener('click', () => $('#xmlFile').click());
+    } finally { input.value = ''; }
+  });
+  $('#openDrafts').addEventListener('click', renderDraftList);
   $('#clearFilters')?.addEventListener('click', () => {
     state.category = '';
     state.stock = '';
@@ -126,6 +146,78 @@ function renderProducts() {
   });
   $('#loadMore')?.addEventListener('click', () => loadProducts({ append: true }));
 }
+
+function renderXmlReview(fileName) {
+  const items = state.xmlItems;
+  productDialogContent.innerHTML = `
+    <div class="draft-intro"><span class="eyebrow">CONFERÊNCIA LOCAL</span><strong>${escapeHtml(fileName)}</strong><p>${items.length} ${items.length === 1 ? 'produto encontrado' : 'produtos encontrados'}. O XML não foi enviado. O vínculo compara somente os produtos carregados da vitrine ativa.</p></div>
+    <div class="xml-review-list">${items.map((item, index) => {
+      const match = findCatalogMatch(item, state.products);
+      return `<article class="xml-review-card"><div class="xml-review-main"><span class="eyebrow">ITEM ${item.item_number || index + 1} · ${escapeHtml(item.supplier_item_code || 'SEM CÓDIGO')}</span><strong>${escapeHtml(item.description)}</strong><small>${escapeHtml([item.purchase_unit && `${item.purchase_quantity ?? '—'} ${item.purchase_unit}`, item.supplier_name].filter(Boolean).join(' · ') || 'Dados da NF-e')}</small><div class="xml-tags"><span>NCM ${escapeHtml(item.ncm || 'pendente')}</span><span>GTIN ${escapeHtml(item.commercial_gtin || 'sem GTIN')}</span>${item.cest ? `<span>CEST ${escapeHtml(item.cest)}</span>` : ''}</div></div><div class="xml-review-action">${match ? `<span class="status-pill good"><i aria-hidden="true"></i>Encontrado por ${escapeHtml(match.matched_by)}</span><small>${escapeHtml(match.name)}</small>` : '<span class="status-pill attention"><i aria-hidden="true"></i>Não localizado</span><small>Pode existir fora dos produtos carregados. Confira antes de cadastrar.</small>'}<button class="button secondary" data-create-draft="${index}" type="button">Revisar rascunho</button></div></article>`;
+    }).join('')}</div>`;
+  $('#productDialogTitle').textContent = 'Conferir produtos do XML';
+  $('#productDialogFoot').innerHTML = '<span class="readonly-badge"><i aria-hidden="true"></i>Sem gravação no Supabase</span><span class="local-storage-note">Rascunhos ficam neste navegador</span>';
+}
+
+function renderDraftList() {
+  const drafts = readProductDrafts().sort((a, b) => String(b.updated_at || b.created_at).localeCompare(String(a.updated_at || a.created_at)));
+  productDialogContent.innerHTML = drafts.length ? `<div class="draft-intro"><span class="eyebrow">SALVOS NESTE NAVEGADOR</span><strong>${drafts.length} ${drafts.length === 1 ? 'rascunho' : 'rascunhos'}</strong><p>Rascunhos não alteram o catálogo da loja. Abra um para continuar a conferência.</p></div><div class="xml-review-list">${drafts.map(draft => `<article class="xml-review-card"><div class="xml-review-main"><span class="eyebrow">${escapeHtml(draft.catalog_product_id ? `VINCULADO · ${draft.matched_by || 'CATÁLOGO'}` : 'CADASTRO A CONFIRMAR')}</span><strong>${escapeHtml(draft.name || 'Produto sem nome')}</strong><small>${escapeHtml([draft.sku, draft.supplier_name].filter(Boolean).join(' · ') || 'Dados fiscais pendentes')}</small><div class="xml-tags"><span>${getFiscalChecklist(draft).length} pendências fiscais</span><span>NCM ${escapeHtml(draft.ncm || 'pendente')}</span></div></div><div class="xml-review-action"><span class="status-pill attention"><i aria-hidden="true"></i>Rascunho local</span><button class="button secondary" data-edit-draft="${escapeHtml(draft.id)}" type="button">Continuar</button></div></article>`).join('')}</div>` : '<div class="empty-state"><span class="empty-icon" aria-hidden="true">▤</span><strong>Nenhum rascunho ainda</strong><span>Selecione “Conferir XML” para criar uma revisão local.</span></div>';
+  $('#productDialogTitle').textContent = 'Rascunhos de produtos';
+  $('#productDialogFoot').innerHTML = '<span class="readonly-badge"><i aria-hidden="true"></i>Armazenamento local</span><span class="local-storage-note">Visível apenas neste navegador</span>';
+  if (!productDialog.open) productDialog.showModal();
+}
+
+function renderDraftEditor(draft) {
+  const checklist = getFiscalChecklist(draft);
+  const input = (key, label, value = '', placeholder = '') => {
+    const inputMode = ['ncm', 'cest', 'commercial_gtin', 'tax_gtin'].includes(key) ? 'numeric' : ['sale_price', 'tax_quantity'].includes(key) ? 'decimal' : 'text';
+    return `<label><span>${label}</span><input name="${key}" inputmode="${inputMode}" value="${escapeHtml(value)}" placeholder="${placeholder}" autocomplete="off"></label>`;
+  };
+  const select = (key, label, value, options) => `<label><span>${label}</span><select name="${key}"><option value="">Selecione</option>${options.map(([code, name]) => `<option value="${code}" ${String(value) === String(code) ? 'selected' : ''}>${code} · ${name}</option>`).join('')}</select></label>`;
+  productDialogContent.innerHTML = `<form id="productDraftForm" class="draft-form" data-draft-id="${escapeHtml(draft.id)}">
+    <div class="draft-warning"><strong>Rascunho local · não altera o produto do site</strong><span>O preço de custo veio da nota. Preço de venda, estoque e publicação não são alterados.</span></div>
+    <fieldset><legend>Identificação</legend><div class="draft-fields">${input('name','Nome do produto',draft.name)}${input('sku','SKU / código interno',draft.sku)}${input('brand','Marca',draft.brand)}${input('packaging','Embalagem',draft.packaging)}<label><span>Categoria do site</span><select name="category"><option value="">Selecione</option>${listProductCategories(state.products).map(category => `<option value="${escapeHtml(category)}" ${draft.category === category ? 'selected' : ''}>${escapeHtml(category)}</option>`).join('')}</select></label>${input('sale_price','Preço de venda (R$)',draft.sale_price,'0,00')}</div></fieldset>
+    <fieldset><legend>Dados fiscais para conferência</legend><div class="draft-fields">${input('ncm','NCM',draft.ncm,'8 dígitos')}${input('cest','CEST',draft.cest,'7 dígitos, se aplicável')}${select('origin_code','Origem da mercadoria',draft.origin_code,[['0','Nacional'],['1','Importação direta'],['2','Importação adquirida no mercado interno'],['3','Nacional com conteúdo de importação acima de 40%'],['4','Nacional conforme processo produtivo básico'],['5','Nacional com conteúdo de importação até 40%'],['6','Importação direta sem similar nacional'],['7','Importação adquirida sem similar nacional'],['8','Nacional com conteúdo de importação acima de 70%']])}${input('commercial_gtin','GTIN comercial / principal',draft.commercial_gtin,'Use SEM GTIN quando aplicável')}${input('tax_gtin','GTIN tributável',draft.tax_gtin,'Pode ser diferente do comercial')}${input('commercial_unit','Unidade comercial',draft.commercial_unit,'UN, CX, FD…')}${input('tax_unit','Unidade tributável',draft.tax_unit,'UN, KG, L…')}${input('tax_quantity','Quantidade tributável',draft.tax_quantity)}</div></fieldset>
+    <fieldset><legend>Origem do XML</legend><div class="xml-source-grid"><div><small>Fornecedor</small><strong>${escapeHtml(draft.supplier_name || '—')}</strong></div><div><small>NF-e</small><strong>${escapeHtml(draft.invoice_number || '—')}</strong></div><div><small>Código do produto no fornecedor</small><strong>${escapeHtml(draft.supplier_item_code || '—')}</strong></div><div><small>GTIN comercial no XML</small><strong>${escapeHtml(draft.xml_commercial_gtin || 'Sem GTIN no XML')}</strong></div><div><small>Unidade e quantidade de compra</small><strong>${escapeHtml([draft.purchase_quantity, draft.purchase_unit].filter(x => x !== null && x !== '').join(' ') || '—')}</strong></div><div><small>Unidade tributável e quantidade</small><strong>${escapeHtml([draft.tax_quantity, draft.tax_unit].filter(x => x !== null && x !== '').join(' ') || '—')}</strong></div><div><small>NCM / CEST no XML</small><strong>${escapeHtml([draft.ncm || 'sem NCM', draft.cest || 'sem CEST'].join(' · '))}</strong></div><div><small>CST / CSOSN na nota</small><strong>${escapeHtml(draft.tax_code_from_xml || '—')}</strong></div><div><small>Custo unitário informado no XML</small><strong>${draft.cost === null || draft.cost === '' ? '—' : formatMoney(Math.round(Number(draft.cost) * 100))}</strong></div><div><small>CFOP informado nesta nota</small><strong>${escapeHtml(draft.cfop_from_xml || '—')}</strong></div></div><p class="draft-hint">O código do fornecedor não será usado automaticamente como SKU. CFOP e CST/CSOSN são dados desta operação e não viram regra fixa do produto. Confirme classificação e unidades com o responsável fiscal antes de emitir.</p></fieldset>
+    <div class="draft-bottom"><span>${checklist.length ? `${checklist.length} campos para completar` : 'Campos básicos preenchidos'}${checklist.length ? ` · ${checklist.map(item => item.label).join(', ')}` : ''}</span><button class="button primary" type="submit">Salvar rascunho local</button></div>
+  </form>`;
+  $('#productDialogTitle').textContent = draft.catalog_product_id ? 'Revisar produto relacionado' : 'Rascunho de cadastro';
+  $('#productDialogFoot').innerHTML = '<span class="readonly-badge"><i aria-hidden="true"></i>Não salva no Supabase</span><span class="local-storage-note">Este rascunho fica neste navegador</span>';
+  $('#productDraftForm').addEventListener('submit', event => {
+    event.preventDefault();
+    const values = Object.fromEntries(new FormData(event.currentTarget));
+    try {
+      const drafts = saveProductDraft({ ...draft, ...values, gtin: values.commercial_gtin });
+      const count = $('.draft-count', workspace);
+      if (count) count.textContent = String(drafts.length);
+      renderDraftList();
+    } catch (error) {
+      let notice = $('#draftSaveError');
+      if (!notice) {
+        notice = document.createElement('p');
+        notice.id = 'draftSaveError';
+        notice.className = 'draft-save-error';
+        event.currentTarget.append(notice);
+      }
+      notice.textContent = error.message || 'Não foi possível salvar o rascunho neste navegador.';
+    }
+  });
+}
+
+productDialogContent.addEventListener('click', event => {
+  const createButton = event.target.closest('[data-create-draft]');
+  if (createButton) {
+    const item = state.xmlItems[Number(createButton.dataset.createDraft)];
+    const match = findCatalogMatch(item, state.products);
+    renderDraftEditor(createProductDraft(item, new Date(), match));
+    return;
+  }
+  const editButton = event.target.closest('[data-edit-draft]');
+  if (editButton) {
+    const draft = readProductDrafts().find(item => item.id === editButton.dataset.editDraft);
+    if (draft) renderDraftEditor(draft);
+  }
+});
 
 function renderProductDetail(product) {
   const attributes = Array.isArray(product.characteristics) ? product.characteristics : [];
@@ -164,6 +256,7 @@ async function openProductDetail(productId) {
   if (!product) return;
   const currentVersion = ++detailRequestVersion;
   productDialogContent.innerHTML = '<div class="detail-loading"><span class="spinner" aria-hidden="true"></span><strong>Carregando detalhes do produto…</strong></div>';
+  $('#productDialogFoot').innerHTML = '<span class="readonly-badge"><i aria-hidden="true"></i>Consulta somente leitura</span>';
   $('#productDialogTitle').textContent = product.name || 'Detalhes do produto';
   if (!productDialog.open) productDialog.showModal();
   try {
