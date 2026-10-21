@@ -12,8 +12,8 @@ test('adapta os detalhes públicos para o modelo usado pela interface', async ()
       json: async () => ({
         ok: true,
         product: {
-          id: 'p1', name: 'Arroz', price_cents: 1234, stock_quantity: 4,
-          description: 'Tipo 1', characteristics: [{ label: 'Marca', value: 'Dona Antônia' }]
+          id: 'p1', name: 'Arroz', price: '12.34', stock: 4, is_active: true,
+          description_long: 'Tipo 1', brand: 'Dona Antônia'
         }
       })
     };
@@ -23,9 +23,10 @@ test('adapta os detalhes públicos para o modelo usado pela interface', async ()
     assert.equal(result.product.id, 'p1');
     assert.equal(result.product.sale_price_cents, 1234);
     assert.equal(result.product.description, 'Tipo 1');
-    assert.deepEqual(result.product.characteristics, [{ label: 'Marca', value: 'Dona Antônia' }]);
+    assert.equal(result.product.brand, 'Dona Antônia');
     assert.equal(calls.length, 1);
     assert.equal(calls[0].options.method, 'GET');
+    assert.match(calls[0].url, /admin1-products-read-v1/);
     assert.match(calls[0].url, /action=product/);
   } finally {
     globalThis.fetch = originalFetch;
@@ -35,3 +36,4 @@ test('adapta os detalhes públicos para o modelo usado pela interface', async ()
 test('a camada da interface não aceita uma ação de gravação', async () => {
   await assert.rejects(adminApi('product_save', { id: 'p1' }), /não disponível/);
 });
+

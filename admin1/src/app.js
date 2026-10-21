@@ -1,9 +1,10 @@
-import { adminApi } from './api.js?v=4';
+import { adminApi } from './api.js?v=6';
 import { filterProducts, getProductStockState, listProductCategories } from './products.js';
-import { createProductDraft, findCatalogMatch, getFiscalChecklist, parseNfeXml, readProductDrafts, saveProductDraft } from './product-drafts.js?v=5';
+import { createProductDraft, findCatalogMatch, getFiscalChecklist, parseNfeXml, readProductDrafts, saveProductDraft } from './product-drafts.js?v=6';
+import { findIdentifierConflicts, PRODUCT_CATEGORY_OPTIONS } from './product-management.js?v=1';
 
 const $ = (selector, root = document) => root.querySelector(selector);
-const state = { products: [], nextOffset: null, query: '', category: '', stock: '', xmlItems: [] };
+const state = { products: [], nextOffset: null, total: 0, categories: [], query: '', category: '', stock: 'all', status: 'all', xmlItems: [], xmlMatches: [] };
 const workspace = $('#workspace');
 const productDialog = $('#productDialog');
 const productDialogContent = $('#productDialogContent');
@@ -43,7 +44,7 @@ function productRow(product) {
   const secondary = [product.brand, product.packaging].filter(Boolean).join(' · ');
   return `<tr>
     <td><div class="product-cell">${productImage(product)}<span><strong>${escapeHtml(product.name || 'Produto sem nome')}</strong><small>${escapeHtml(secondary || '—')}</small></span></div></td>
-    <td>${escapeHtml(product.category || 'Sem categoria')}</td>
+    <td>${escapeHtml(product.category || 'Sem categoria')} ${product.active ? '' : '<span class="status-pill muted">Inativo</span>'}</td>
     <td>${escapeHtml(product.sku || '—')}</td>
     <td class="money-cell">${formatMoney(product.sale_price_cents)}</td>
     <td><div class="stock-cell"><strong>${formatQuantity(product.stock_quantity)}</strong>${stockBadge(product)}</div></td>
@@ -60,37 +61,38 @@ function productCard(product) {
       <strong>${escapeHtml(product.name || 'Produto sem nome')}</strong>
       <small>${escapeHtml(secondary || product.sku || '—')}</small>
       <div class="product-mobile-meta"><b>${formatMoney(product.sale_price_cents)}</b><span>Estoque ${formatQuantity(product.stock_quantity)}</span></div>
-      ${stockBadge(product)}
+      ${product.active ? '' : '<span class="status-pill muted">Inativo</span>'} ${stockBadge(product)}
       <button class="text-button detail-button" type="button" data-product-detail="${escapeHtml(product.id)}">Ver detalhes</button>
     </div>
   </article>`;
 }
 
 function getVisibleProducts() {
-  return filterProducts(state.products, { query: '', category: state.category, stock: state.stock });
+  return filterProducts(state.products, { query: '', category: state.category, stock: state.stock, status: state.status });
 }
 
 function renderProducts() {
   const visibleProducts = getVisibleProducts();
-  const categories = listProductCategories(state.products);
+  const categories = state.categories.length ? state.categories : listProductCategories(state.products);
   const lowStock = state.products.filter(product => ['low', 'out'].includes(getProductStockState(product.stock_quantity).key)).length;
-  const hasFilters = Boolean(state.category || state.stock);
+  const hasFilters = Boolean(state.category || state.stock !== 'all' || state.status !== 'all');
 
   workspace.innerHTML = `
     <div class="page-heading">
-      <div><span class="eyebrow">CATÁLOGO ATIVO</span><h1>Produtos</h1><p>Encontre e confira rapidamente os produtos disponíveis na loja.</p></div>
+      <div><span class="eyebrow">CATÁLOGO COMPLETO</span><h1>Produtos</h1><p>Consulte produtos ativos, inativos e sem estoque em um só lugar.</p></div>
       <div class="product-actions"><button class="button secondary" id="openDrafts" type="button">Rascunhos <span class="draft-count">${readProductDrafts().length}</span></button><button class="button primary" id="importXml" type="button"><span aria-hidden="true">＋</span> Conferir XML</button><input id="xmlFile" type="file" accept=".xml,text/xml,application/xml" hidden><span class="readonly-badge"><i aria-hidden="true"></i>Leitura segura</span></div>
     </div>
     <section class="metric-row product-metrics" aria-label="Resumo dos produtos carregados">
-      <article class="metric-card"><span>Carregados</span><strong>${state.products.length}</strong><small>Produtos nesta consulta</small></article>
+      <article class="metric-card"><span>Catálogo</span><strong>${state.total.toLocaleString('pt-BR')}</strong><small>Produtos no cadastro</small></article>
       <article class="metric-card"><span>Estoque baixo</span><strong>${lowStock}</strong><small>Até 5 unidades</small></article>
-      <article class="metric-card"><span>Categorias</span><strong>${categories.length}</strong><small>Nesta lista carregada</small></article>
+      <article class="metric-card"><span>Categorias</span><strong>${categories.length}</strong><small>Categorias cadastradas</small></article>
     </section>
     <section class="panel products-panel" aria-label="Lista de produtos">
       <div class="panel-toolbar products-toolbar">
         <label class="search-wrap"><span aria-hidden="true">⌕</span><input id="productSearch" type="search" autocomplete="off" placeholder="Buscar nome, SKU, EAN ou marca" value="${escapeHtml(state.query)}" aria-label="Buscar produtos"></label>
         <label class="filter-field"><span>Categoria</span><select id="categoryFilter" aria-label="Filtrar por categoria"><option value="">Todas as categorias</option>${categories.map(category => `<option value="${escapeHtml(category)}" ${state.category === category ? 'selected' : ''}>${escapeHtml(category)}</option>`).join('')}</select></label>
-        <label class="filter-field"><span>Estoque</span><select id="stockFilter" aria-label="Filtrar por estoque"><option value="">Todos</option><option value="available" ${state.stock === 'available' ? 'selected' : ''}>Disponível</option><option value="low" ${state.stock === 'low' ? 'selected' : ''}>Estoque baixo</option></select></label>
+        <label class="filter-field"><span>Status</span><select id="statusFilter" aria-label="Filtrar por status"><option value="all" ${state.status === 'all' ? 'selected' : ''}>Todos</option><option value="active" ${state.status === 'active' ? 'selected' : ''}>Ativos</option><option value="inactive" ${state.status === 'inactive' ? 'selected' : ''}>Inativos</option></select></label>
+        <label class="filter-field"><span>Estoque</span><select id="stockFilter" aria-label="Filtrar por estoque"><option value="all" ${state.stock === 'all' ? 'selected' : ''}>Todos</option><option value="available" ${state.stock === 'available' ? 'selected' : ''}>Com estoque</option><option value="out" ${state.stock === 'out' ? 'selected' : ''}>Sem estoque</option></select></label>
         <button class="button secondary refresh-button" id="refreshProducts" type="button"><span aria-hidden="true">↻</span> Atualizar</button>
       </div>
       <div class="list-summary"><span><strong>${visibleProducts.length}</strong> ${visibleProducts.length === 1 ? 'produto exibido' : 'produtos exibidos'}${hasFilters ? ' com os filtros atuais' : ''}</span>${hasFilters ? '<button class="text-button" id="clearFilters" type="button">Limpar filtros</button>' : ''}</div>
@@ -110,14 +112,9 @@ function renderProducts() {
       loadProducts();
     }, 250);
   });
-  $('#categoryFilter').addEventListener('change', event => {
-    state.category = event.currentTarget.value;
-    renderProducts();
-  });
-  $('#stockFilter').addEventListener('change', event => {
-    state.stock = event.currentTarget.value;
-    renderProducts();
-  });
+  $('#categoryFilter').addEventListener('change', event => { state.category = event.currentTarget.value; loadProducts(); });
+  $('#stockFilter').addEventListener('change', event => { state.stock = event.currentTarget.value; loadProducts(); });
+  $('#statusFilter').addEventListener('change', event => { state.status = event.currentTarget.value; loadProducts(); });
   $('#refreshProducts').addEventListener('click', () => loadProducts());
   $('#importXml').addEventListener('click', () => $('#xmlFile').click());
   $('#xmlFile').addEventListener('change', async event => {
@@ -127,6 +124,11 @@ function renderProducts() {
     try {
       if (file.size > 10 * 1024 * 1024) throw new Error('O XML passou do limite de 10 MB.');
       state.xmlItems = parseNfeXml(await file.text());
+      state.xmlMatches = [];
+      try {
+        const result = await adminApi('product_matches', { items: state.xmlItems });
+        state.xmlMatches = state.xmlItems.map(item => findCatalogMatch(item, result.products));
+      } catch { state.xmlMatches = state.xmlItems.map(item => findCatalogMatch(item, state.products)); }
       renderXmlReview(file.name);
       if (!productDialog.open) productDialog.showModal();
     } catch (error) {
@@ -140,7 +142,8 @@ function renderProducts() {
   $('#openDrafts').addEventListener('click', renderDraftList);
   $('#clearFilters')?.addEventListener('click', () => {
     state.category = '';
-    state.stock = '';
+    state.stock = 'all';
+    state.status = 'all';
     state.query = '';
     loadProducts();
   });
@@ -150,10 +153,15 @@ function renderProducts() {
 function renderXmlReview(fileName) {
   const items = state.xmlItems;
   productDialogContent.innerHTML = `
-    <div class="draft-intro"><span class="eyebrow">CONFERÊNCIA LOCAL</span><strong>${escapeHtml(fileName)}</strong><p>${items.length} ${items.length === 1 ? 'produto encontrado' : 'produtos encontrados'}. O XML não foi enviado. O vínculo compara somente os produtos carregados da vitrine ativa.</p></div>
+    <div class="draft-intro"><span class="eyebrow">CONFERÊNCIA LOCAL</span><strong>${escapeHtml(fileName)}</strong><p>${items.length} ${items.length === 1 ? 'produto encontrado' : 'produtos encontrados'}. O XML não foi enviado. O vínculo por SKU/GTIN consulta o catálogo completo.</p></div>
     <div class="xml-review-list">${items.map((item, index) => {
-      const match = findCatalogMatch(item, state.products);
-      return `<article class="xml-review-card"><div class="xml-review-main"><span class="eyebrow">ITEM ${item.item_number || index + 1} · ${escapeHtml(item.supplier_item_code || 'SEM CÓDIGO')}</span><strong>${escapeHtml(item.description)}</strong><small>${escapeHtml([item.purchase_unit && `${item.purchase_quantity ?? '—'} ${item.purchase_unit}`, item.supplier_name].filter(Boolean).join(' · ') || 'Dados da NF-e')}</small><div class="xml-tags"><span>NCM ${escapeHtml(item.ncm || 'pendente')}</span><span>GTIN ${escapeHtml(item.commercial_gtin || 'sem GTIN')}</span>${item.cest ? `<span>CEST ${escapeHtml(item.cest)}</span>` : ''}</div></div><div class="xml-review-action">${match ? `<span class="status-pill good"><i aria-hidden="true"></i>Encontrado por ${escapeHtml(match.matched_by)}</span><small>${escapeHtml(match.name)}</small>` : '<span class="status-pill attention"><i aria-hidden="true"></i>Não localizado</span><small>Pode existir fora dos produtos carregados. Confira antes de cadastrar.</small>'}<button class="button secondary" data-create-draft="${index}" type="button">Revisar rascunho</button></div></article>`;
+      const match = state.xmlMatches[index] || null;
+      const matchDisplay = match?.ambiguous
+        ? `<span class="status-pill attention"><i aria-hidden="true"></i>Mais de uma correspondência</span>${match.candidates.map(candidate => `<button class="text-button" data-select-match="${index}" data-product-id="${escapeHtml(candidate.id)}" type="button">Vincular: ${escapeHtml(candidate.name)}</button>`).join('')}`
+        : match
+          ? `<span class="status-pill good"><i aria-hidden="true"></i>Encontrado por ${escapeHtml(match.matched_by)}</span><small>${escapeHtml(match.name)}</small>`
+          : '<span class="status-pill attention"><i aria-hidden="true"></i>Não localizado</span><small>Confira os identificadores antes de iniciar o cadastro.</small>';
+      return `<article class="xml-review-card"><div class="xml-review-main"><span class="eyebrow">ITEM ${item.item_number || index + 1} · ${escapeHtml(item.supplier_item_code || 'SEM CÓDIGO')}</span><strong>${escapeHtml(item.description)}</strong><small>${escapeHtml([item.purchase_unit && `${item.purchase_quantity ?? '—'} ${item.purchase_unit}`, item.supplier_name].filter(Boolean).join(' · ') || 'Dados da NF-e')}</small><div class="xml-tags"><span>NCM ${escapeHtml(item.ncm || 'pendente')}</span><span>GTIN ${escapeHtml(item.commercial_gtin || 'sem GTIN')}</span>${item.cest ? `<span>CEST ${escapeHtml(item.cest)}</span>` : ''}</div></div><div class="xml-review-action">${matchDisplay}<button class="button secondary" data-create-draft="${index}" type="button">Revisar rascunho</button></div></article>`;
     }).join('')}</div>`;
   $('#productDialogTitle').textContent = 'Conferir produtos do XML';
   $('#productDialogFoot').innerHTML = '<span class="readonly-badge"><i aria-hidden="true"></i>Sem gravação no Supabase</span><span class="local-storage-note">Rascunhos ficam neste navegador</span>';
@@ -176,18 +184,25 @@ function renderDraftEditor(draft) {
   const select = (key, label, value, options) => `<label><span>${label}</span><select name="${key}"><option value="">Selecione</option>${options.map(([code, name]) => `<option value="${code}" ${String(value) === String(code) ? 'selected' : ''}>${code} · ${name}</option>`).join('')}</select></label>`;
   productDialogContent.innerHTML = `<form id="productDraftForm" class="draft-form" data-draft-id="${escapeHtml(draft.id)}">
     <div class="draft-warning"><strong>Rascunho local · não altera o produto do site</strong><span>O preço de custo veio da nota. Preço de venda, estoque e publicação não são alterados.</span></div>
-    <fieldset><legend>Identificação</legend><div class="draft-fields">${input('name','Nome do produto',draft.name)}${input('sku','SKU / código interno',draft.sku)}${input('brand','Marca',draft.brand)}${input('packaging','Embalagem',draft.packaging)}<label><span>Categoria do site</span><select name="category"><option value="">Selecione</option>${listProductCategories(state.products).map(category => `<option value="${escapeHtml(category)}" ${draft.category === category ? 'selected' : ''}>${escapeHtml(category)}</option>`).join('')}</select></label>${input('sale_price','Preço de venda (R$)',draft.sale_price,'0,00')}</div></fieldset>
+    <fieldset><legend>Identificação</legend><div class="draft-fields">${input('name','Nome do produto',draft.name)}${input('sku','SKU / código interno',draft.sku)}${input('brand','Marca',draft.brand)}${input('packaging','Embalagem',draft.packaging)}<label><span>Categoria do site</span><select name="category"><option value="">Selecione</option>${PRODUCT_CATEGORY_OPTIONS.map(category => `<option value="${escapeHtml(category)}" ${draft.category === category ? 'selected' : ''}>${escapeHtml(category)}</option>`).join('')}</select></label>${input('sale_price','Preço de venda (R$)',draft.sale_price,'0,00')}</div></fieldset>
     <fieldset><legend>Dados fiscais para conferência</legend><div class="draft-fields">${input('ncm','NCM',draft.ncm,'8 dígitos')}${input('cest','CEST',draft.cest,'7 dígitos, se aplicável')}${select('origin_code','Origem da mercadoria',draft.origin_code,[['0','Nacional'],['1','Importação direta'],['2','Importação adquirida no mercado interno'],['3','Nacional com conteúdo de importação acima de 40%'],['4','Nacional conforme processo produtivo básico'],['5','Nacional com conteúdo de importação até 40%'],['6','Importação direta sem similar nacional'],['7','Importação adquirida sem similar nacional'],['8','Nacional com conteúdo de importação acima de 70%']])}${input('commercial_gtin','GTIN comercial / principal',draft.commercial_gtin,'Use SEM GTIN quando aplicável')}${input('tax_gtin','GTIN tributável',draft.tax_gtin,'Pode ser diferente do comercial')}${input('commercial_unit','Unidade comercial',draft.commercial_unit,'UN, CX, FD…')}${input('tax_unit','Unidade tributável',draft.tax_unit,'UN, KG, L…')}${input('tax_quantity','Quantidade tributável',draft.tax_quantity)}</div></fieldset>
-    <fieldset><legend>Origem do XML</legend><div class="xml-source-grid"><div><small>Fornecedor</small><strong>${escapeHtml(draft.supplier_name || '—')}</strong></div><div><small>NF-e</small><strong>${escapeHtml(draft.invoice_number || '—')}</strong></div><div><small>Código do produto no fornecedor</small><strong>${escapeHtml(draft.supplier_item_code || '—')}</strong></div><div><small>GTIN comercial no XML</small><strong>${escapeHtml(draft.xml_commercial_gtin || 'Sem GTIN no XML')}</strong></div><div><small>Unidade e quantidade de compra</small><strong>${escapeHtml([draft.purchase_quantity, draft.purchase_unit].filter(x => x !== null && x !== '').join(' ') || '—')}</strong></div><div><small>Unidade tributável e quantidade</small><strong>${escapeHtml([draft.tax_quantity, draft.tax_unit].filter(x => x !== null && x !== '').join(' ') || '—')}</strong></div><div><small>NCM / CEST no XML</small><strong>${escapeHtml([draft.ncm || 'sem NCM', draft.cest || 'sem CEST'].join(' · '))}</strong></div><div><small>CST / CSOSN na nota</small><strong>${escapeHtml(draft.tax_code_from_xml || '—')}</strong></div><div><small>Custo unitário informado no XML</small><strong>${draft.cost === null || draft.cost === '' ? '—' : formatMoney(Math.round(Number(draft.cost) * 100))}</strong></div><div><small>CFOP informado nesta nota</small><strong>${escapeHtml(draft.cfop_from_xml || '—')}</strong></div></div><p class="draft-hint">O código do fornecedor não será usado automaticamente como SKU. CFOP e CST/CSOSN são dados desta operação e não viram regra fixa do produto. Confirme classificação e unidades com o responsável fiscal antes de emitir.</p></fieldset>
+    <fieldset><legend>Origem do XML</legend><div class="xml-source-grid"><div><small>Fornecedor</small><strong>${escapeHtml(draft.supplier_name || '—')}</strong></div><div><small>NF-e</small><strong>${escapeHtml(draft.invoice_number || '—')}</strong></div><div><small>Código do produto no fornecedor</small><strong>${escapeHtml(draft.supplier_item_code || '—')}</strong></div><div><small>GTIN comercial no XML</small><strong>${escapeHtml(draft.xml_commercial_gtin || 'Sem GTIN no XML')}</strong></div><div><small>Unidade e quantidade de compra</small><strong>${escapeHtml([draft.purchase_quantity, draft.purchase_unit].filter(x => x !== null && x !== '').join(' ') || '—')}</strong></div><div><small>Unidade tributável e quantidade</small><strong>${escapeHtml([draft.tax_quantity, draft.tax_unit].filter(x => x !== null && x !== '').join(' ') || '—')}</strong></div><div><small>NCM / CEST no XML</small><strong>${escapeHtml([draft.ncm || 'sem NCM', draft.cest || 'sem CEST'].join(' · '))}</strong></div><div><small>CST / CSOSN na nota</small><strong>${escapeHtml(draft.tax_code_from_xml || '—')}</strong></div><div><small>Custo unitário informado no XML</small><strong>${draft.cost === null || draft.cost === '' ? '—' : formatMoney(Math.round(Number(draft.cost) * 100))}</strong></div><div><small>Conversão calculada</small><strong>${draft.units_per_purchase_unit ? `${formatQuantity(draft.units_per_purchase_unit)} ${escapeHtml(draft.tax_unit)} por ${escapeHtml(draft.purchase_unit)} · custo estimado ${formatMoney(Math.round(Number(draft.cost_per_tax_unit) * 100)} / ${escapeHtml(draft.tax_unit)}` : 'Não calculada: confira quantidades e unidades'}</strong></div><div><small>CFOP informado nesta nota</small><strong>${escapeHtml(draft.cfop_from_xml || '—')}</strong></div></div><p class="draft-hint">O código do fornecedor não será usado automaticamente como SKU. CFOP e CST/CSOSN são dados desta operação e não viram regra fixa do produto. Confirme classificação e unidades com o responsável fiscal antes de emitir.</p></fieldset>
     <div class="draft-bottom"><span>${checklist.length ? `${checklist.length} campos para completar` : 'Campos básicos preenchidos'}${checklist.length ? ` · ${checklist.map(item => item.label).join(', ')}` : ''}</span><button class="button primary" type="submit">Salvar rascunho local</button></div>
   </form>`;
   $('#productDialogTitle').textContent = draft.catalog_product_id ? 'Revisar produto relacionado' : 'Rascunho de cadastro';
   $('#productDialogFoot').innerHTML = '<span class="readonly-badge"><i aria-hidden="true"></i>Não salva no Supabase</span><span class="local-storage-note">Este rascunho fica neste navegador</span>';
-  $('#productDraftForm').addEventListener('submit', event => {
+  $('#productDraftForm').addEventListener('submit', async event => {
     event.preventDefault();
     const values = Object.fromEntries(new FormData(event.currentTarget));
     try {
-      const drafts = saveProductDraft({ ...draft, ...values, gtin: values.commercial_gtin });
+      const button = event.currentTarget.querySelector('[type="submit"]');
+      button.disabled = true;
+      button.textContent = 'Conferindo identificadores…';
+      const candidate = { ...draft, ...values, gtin: values.commercial_gtin };
+      const lookup = await adminApi('product_matches', { items: [{ sku: values.sku, commercial_gtin: values.commercial_gtin, tax_gtin: values.tax_gtin }] });
+      const conflicts = findIdentifierConflicts(candidate, lookup.products);
+      if (conflicts.length) throw new Error(conflicts.map(issue => issue.label).join(' '));
+      const drafts = saveProductDraft(candidate);
       const count = $('.draft-count', workspace);
       if (count) count.textContent = String(drafts.length);
       renderDraftList();
@@ -200,15 +215,26 @@ function renderDraftEditor(draft) {
         event.currentTarget.append(notice);
       }
       notice.textContent = error.message || 'Não foi possível salvar o rascunho neste navegador.';
+      const button = event.currentTarget.querySelector('[type="submit"]');
+      if (button) { button.disabled = false; button.textContent = 'Salvar rascunho local'; }
     }
   });
 }
 
 productDialogContent.addEventListener('click', event => {
+  const selectMatch = event.target.closest('[data-select-match]');
+  if (selectMatch) {
+    const index = Number(selectMatch.dataset.selectMatch);
+    const current = state.xmlMatches[index];
+    const candidate = current?.candidates?.find(item => String(item.id) === selectMatch.dataset.productId);
+    if (candidate) state.xmlMatches[index] = { ...candidate, matched_by: current.matched_by };
+    renderXmlReview('XML da nota');
+    return;
+  }
   const createButton = event.target.closest('[data-create-draft]');
   if (createButton) {
     const item = state.xmlItems[Number(createButton.dataset.createDraft)];
-    const match = findCatalogMatch(item, state.products);
+    const match = state.xmlMatches[Number(createButton.dataset.createDraft)] || null;
     renderDraftEditor(createProductDraft(item, new Date(), match));
     return;
   }
@@ -245,6 +271,10 @@ function renderProductDetail(product) {
     <section class="detail-section"><h3>Informações do produto</h3><dl class="detail-attributes">
       <div><dt>SKU</dt><dd>${escapeHtml(product.sku || '—')}</dd></div>
       <div><dt>EAN</dt><dd>${escapeHtml(product.gtin || '—')}</dd></div>
+      <div><dt>NCM cadastrado</dt><dd>${escapeHtml(product.ncm || 'Não informado')}</dd></div>
+      <div><dt>Unidade</dt><dd>${escapeHtml(product.unit || '—')}</dd></div>
+      <div><dt>Status na loja</dt><dd>${product.active ? 'Ativo' : 'Inativo'}</dd></div>
+      <div><dt>Estoque mínimo</dt><dd>${formatQuantity(product.min_stock)}</dd></div>
       ${visibleAttributes.map(item => `<div><dt>${escapeHtml(item.label || 'Informação')}</dt><dd>${escapeHtml(item.value)}</dd></div>`).join('')}
     </dl></section>
     <section class="detail-section"><h3>Descrição</h3><p class="detail-description">${escapeHtml(description)}</p></section>`;
@@ -291,11 +321,12 @@ async function loadProducts({ append = false } = {}) {
     const result = await adminApi('products', {
       limit: 36,
       offset: append ? state.nextOffset : 0,
-      q: state.query
+      q: state.query, category: state.category, status: state.status, stock: state.stock
     });
     if (currentVersion !== requestVersion) return;
     state.products = append ? [...state.products, ...result.products] : result.products;
     state.nextOffset = result.next_offset;
+    state.total = Number(result.total || 0);
     renderProducts();
   } catch (error) {
     if (currentVersion !== requestVersion) return;
@@ -304,7 +335,9 @@ async function loadProducts({ append = false } = {}) {
   }
 }
 
+adminApi('categories').then(result => { state.categories = result.categories || []; if (state.products.length) renderProducts(); }).catch(() => {});
 $('#sessionLabel').textContent = 'Somente leitura';
 $('#currentSection').textContent = 'Produtos';
 loadProducts();
+
 

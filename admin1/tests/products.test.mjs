@@ -33,3 +33,18 @@ test('classifica o estoque para leitura rápida', () => {
 test('lista categorias únicas, organizadas para o filtro', () => {
   assert.deepEqual(listProductCategories(products), ['Higiene', 'Mercearia']);
 });
+
+
+test('filtra produtos inativos e sem estoque para revisão do catálogo completo', () => {
+  const products = [
+    { id: 'a', name: 'Ativo', active: true, stock_quantity: 4 },
+    { id: 'b', name: 'Inativo', active: false, stock_quantity: 0 }
+  ];
+  assert.deepEqual(filterProducts(products, { status: 'inactive' }).map(item => item.id), ['b']);
+  assert.deepEqual(filterProducts(products, { stock: 'out' }).map(item => item.id), ['b']);
+});
+
+test('o filtro Todos mantém produtos de qualquer situação de estoque', () => {
+  const products = [{ id: '1', stock_quantity: 0 }, { id: '2', stock_quantity: 12 }];
+  assert.deepEqual(filterProducts(products, { stock: 'all' }).map(item => item.id), ['1', '2']);
+});
