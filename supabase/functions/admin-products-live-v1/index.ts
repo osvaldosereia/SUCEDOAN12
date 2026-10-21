@@ -66,6 +66,7 @@ function mp(p:any){
     deactivation_reason:m.deactivation_reason||null,deactivated_at:m.deactivated_at||null,created_at:p.created_at,updated_at:p.updated_at,
     packaging:p.packaging||"",subcategory:p.subcategory||"",detailed_subcategory:p.subsubcategory||"",
     category:p.sales_category||p.storefront_category||p.category||"",
+    catalog_enrichment_status:m.catalog_enrichment_status||null,
     gondola_number:p.gondola&&/^\d+$/.test(String(p.gondola))?Number(p.gondola):null,shelf_label:p.shelf||null,offer:offer(p)
   };
 }
@@ -346,11 +347,16 @@ async function products(u:URL){
     }
     const linkedGroups=[...groups.values()].filter((g:any)=>g.product_id);
     const productIds=linkedGroups.map((g:any)=>g.product_id);
-    const productRows:any[]=[];
+    const linkedProductRows:any[]=[];
     for(let i=0;i<productIds.length;i+=100){
       const q=db.from("products").select("*").in("id",productIds.slice(i,i+100)).order("id");
-      const r=await q;if(r.error)throw r.error;productRows.push(...(r.data||[]));
+      const r=await q;if(r.error)throw r.error;linkedProductRows.push(...(r.data||[]));
     }
+    const eanCatalogResult=await db.from("products").select("*").eq("metadata->>ean_reader_segment_visible","true").order("created_at",{ascending:false}).limit(5000);
+    if(eanCatalogResult.error)throw eanCatalogResult.error;
+    const productMap=new Map<string,any>();
+    for(const p of [...linkedProductRows,...(eanCatalogResult.data||[])])productMap.set(String(p.id),p);
+    const productRows=[...productMap.values()];
     const existingProductIds=new Set(productRows.map((p:any)=>String(p.id)));
     const wanted=cat?inventorySheetCanonicalCategory(cat):"";
     const memberIds=(basketKit||lotStatus==="pending")?await basketKitProductIds():null;
@@ -371,7 +377,7 @@ async function products(u:URL){
       const g:any=linkedById.get(String(p.id)),latest=g?.latest||{};
       return {...p,__ean_capture_count:g?.records?.length||0,__ean_capture_last_at:latest.created_at||null,__ean_capture_quantity:Number(latest.quantity||0)};
     });
-    const linkedEans=new Set(captures.filter((c:any)=>c.matched_product_id).map((c:any)=>dg(c.ean,30)).filter(Boolean));
+    const linkedEans=new Set([...captures.filter((c:any)=>c.matched_product_id).map((c:any)=>dg(c.ean,30)),...(eanCatalogResult.data||[]).map((p:any)=>dg(p.gtin,30))].filter(Boolean));
     const placeholders=[...groups.values()].filter((g:any)=>(!g.product_id||!existingProductIds.has(String(g.product_id)))&&g.ean&&!linkedEans.has(String(g.ean))).filter((g:any)=>{
       if(act||cat||sub||basketKit||lotStatus)return false;
       const searchedEan=dg(qv,30);
@@ -416,7 +422,7 @@ async function products(u:URL){
     const products=rows.map((x:any)=>{
       if(x.__ean_capture_placeholder)return x;
       const s:any=sm.get(String(x.id))||{},o:any=om.get(String(x.id))||{};
-      return {...mp({...x,__stock_breakdown:s,__ops_meta:o}),__ean_capture_count:x.__ean_capture_count,__ean_capture_last_at:x.__ean_capture_last_at,__ean_capture_quantity:x.__ean_capture_quantity};
+      return {...mp({...x,__stock_breakdown:s,__ops_meta:o}),__ean_capture_count:x.__ean_capture_count,__ean_capture_last_at:x.__ean_capture_last_at,__ean_capture_quantity:x.__ean_capture_quantity,__ean_catalog_origin:meta(x.metadata).purchase_xml_created===true?"purchase_xml":null};
     });
     return {products,next_offset:off+lim<filtered.length?off+lim:null,total:filtered.length};
   }
