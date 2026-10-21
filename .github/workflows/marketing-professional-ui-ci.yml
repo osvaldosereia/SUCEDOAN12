@@ -18,6 +18,7 @@ on:
       - 'supabase/functions/admin-marketing-strategy-v1/**'
       - 'supabase/functions/admin-marketing-strategy-campaign-v1/**'
       - 'supabase/functions/admin-marketing-strategy-learnings-v1/**'
+      - 'supabase/functions/admin-marketing-journeys-v1/**'
       - 'supabase/functions/whatsapp-marketing-worker-v1/**'
       - 'supabase/functions/whatsapp-post-sale-worker-v1/**'
       - 'supabase/functions/whatsapp-repurchase-worker-v1/**'
@@ -33,6 +34,7 @@ on:
       - 'supabase/migrations/*marketing_repurchase*'
       - 'img/marketing-post-sale/**'
       - 'scripts/test-marketing-post-sale-queue-v1.mjs'
+      - 'scripts/test-marketing-journey-health-ui-v1.mjs'
       - 'scripts/test-whatsapp-marketing-post-sale-worker-v1.mjs'
       - 'scripts/test-marketing-repurchase-d28-gates-v1.mjs'
       - 'scripts/test-marketing-repurchase-worker-runtime-v1.mjs'
@@ -81,6 +83,8 @@ jobs:
         run: node scripts/test-marketing-post-sale-queue-v1.mjs
       - name: D+20 post-sale Meta carousel worker
         run: node scripts/test-whatsapp-marketing-post-sale-worker-v1.mjs
+      - name: Marketing journey health UI
+        run: node scripts/test-marketing-journey-health-ui-v1.mjs
       - name: Marketing strategy deterministic engine contract
         run: node scripts/test-marketing-strategy-engine-v1.mjs
       - name: Marketing strategy Admin API contract
