@@ -41,6 +41,7 @@ jobs:
       - run: node "$RUNNER_TEMP/carousel-tests/node_modules/playwright/cli.js" install --with-deps chromium
       - run: node --test tests/public-basket-item-controls.test.mjs
       - run: node scripts/test-basket-mold-storefront-r5.mjs
+      - run: node scripts/test-basket-mold-composition-cache-v1.mjs
       - run: node scripts/test-basket-carousel-service.mjs
       - run: node scripts/test-home-basket-size-photos-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-carousel-service.mjs

@@ -22,8 +22,12 @@ let homePromise:Promise<any>|null=null;
 let homeRefreshPromise:Promise<void>|null=null;
 let homeRefreshNextAttemptAt=0;
 const MOLD_COMPOSITION_CACHE_TTL_MS=120_000;
-const moldCompositionCache=new Map<string,{expiresAt:number,data:any}>();
+// The storefront still checks current products, prices and stock on every detail/quote.
+// Only the generator's default position choices may be reused for up to 60 seconds.
+const MOLD_DETAIL_CACHE_MAX_AGE_MS=60_000;
+const moldCompositionCache=new Map<string,{expiresAt:number,data:any,createdAt:number}>();
 const moldCompositionInFlight=new Map<string,Promise<any[]>>();
+const moldDetailCompositionInFlight=new Map<string,Promise<any>>();
 const ALLOWED_ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
 const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {"Access-Control-Allow-Origin":ALLOWED_ORIGINS.has(origin)?origin:"https://donaantonia.com.br","Vary":"Origin","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"GET, POST, OPTIONS"}};
 const json=(req:Request,v:any,s=200,h:Record<string,string>={})=>new Response(JSON.stringify(v),{status:s,headers:{...cors(req),"Content-Type":"application/json; charset=utf-8",...h}});
@@ -173,7 +177,7 @@ async function moldPublicCompositions(basketIds:string[]){
       moldCompositionInFlight.set(key,request);
     }
     const generated=await request;
-    for(const data of generated){const id=String(data?.basket_id||"");if(id){moldCompositionCache.set(id,{expiresAt:Date.now()+MOLD_COMPOSITION_CACHE_TTL_MS,data});out.set(id,data)}}
+    for(const data of generated){const id=String(data?.basket_id||"");if(id){moldCompositionCache.set(id,{expiresAt:Date.now()+MOLD_COMPOSITION_CACHE_TTL_MS,data,createdAt:Date.now()});out.set(id,data)}}
   }
   return out;
 }
@@ -222,17 +226,37 @@ async function moldHomeCards(priorityOnly=false){
   }
   cards.sort((a,b)=>a.category_sort_order-b.category_sort_order||a.subcategory_sort_order-b.subcategory_sort_order||a.composition_number-b.composition_number||String(a.id).localeCompare(String(b.id)));return cards;
 }
+// Reuse the generator's recent choices, including compositions already loaded for home.
+// Do NOT cache final basket responses: prices and sellable stock remain real-time.
+async function moldDetailComposition(basketId:string){
+  const now=Date.now(),cached=moldCompositionCache.get(basketId);
+  if(cached&&cached.expiresAt>now&&Number.isFinite(cached.createdAt)&&now-cached.createdAt<MOLD_DETAIL_CACHE_MAX_AGE_MS)return cached.data;
+  let request=moldDetailCompositionInFlight.get(basketId);
+  if(!request){
+    request=db.rpc("basket_mold_public_compositions_v2",{p_basket_id:basketId}).then((q:any)=>{
+      if(q.error)throw q.error;
+      // Fail closed: do not cache missing or invalid generator results.
+      if(q.data&&Array.isArray(q.data.compositions)&&String(q.data.basket_id||"")===basketId){
+        const stamp=Date.now();
+        moldCompositionCache.set(basketId,{data:q.data,createdAt:stamp,expiresAt:stamp+MOLD_COMPOSITION_CACHE_TTL_MS});
+      }
+      return q.data;
+    }).finally(()=>moldDetailCompositionInFlight.delete(basketId));
+    moldDetailCompositionInFlight.set(basketId,request);
+  }
+  return request;
+}
 async function moldDetail(basketId:string,compositionNumber:number,selections:any[]|null=null,includeAlternatives=true){
   // Independent reads run in parallel, avoiding an extra database round trip.
   const [gate,mq,bq,pq]=await Promise.all([
     db.rpc("basket_mold_cutover_ready_v1",{p_basket_id:basketId}),
     db.from("basket_molds").select("id,basket_id,hidden_adjustment,conditional_hidden_enabled,conditional_hidden_product_id,conditional_hidden_adjustment,public_composition_count,metadata").eq("basket_id",basketId).maybeSingle(),
     db.from("basket_templates").select("id,name,image_url,is_active").eq("id",basketId).maybeSingle(),
-    db.rpc("basket_mold_public_compositions_v2",{p_basket_id:basketId})
-  ]);if(gate.error)throw gate.error;if(gate.data!==true)return null;if(mq.error)throw mq.error;if(bq.error)throw bq.error;if(pq.error)throw pq.error;const mold=mq.data,basket=bq.data;if(!mold||!basket||basket.is_active!==true)return null;if(compositionNumber<1||compositionNumber>Number(mold.public_composition_count||1))return null;
+    moldDetailComposition(basketId)
+  ]);if(gate.error)throw gate.error;if(gate.data!==true)return null;if(mq.error)throw mq.error;if(bq.error)throw bq.error;const mold=mq.data,basket=bq.data;if(!mold||!basket||basket.is_active!==true)return null;if(compositionNumber<1||compositionNumber>Number(mold.public_composition_count||1))return null;
   const posq=await db.from("basket_mold_positions").select("id,label,quantity,sort_order").eq("mold_id",mold.id).order("sort_order");if(posq.error)throw posq.error;const positions=posq.data||[];if(!positions.length)return null;
   const positionIds=positions.map((p:any)=>String(p.id)),oq=await db.from("basket_mold_position_options").select("position_id,product_id,sort_order").in("position_id",positionIds).order("sort_order");if(oq.error)throw oq.error;const options=oq.data||[],productIds=options.map((o:any)=>String(o.product_id));
-  const generated=(pq.data?.compositions||[]).find((c:any)=>Number(c.number)===compositionNumber);if(!generated)return null;const defaultSelected=new Map((generated.items||[]).map((i:any)=>[String(i.position_id),String(i.product_id)])),requested=new Map<string,string>();if(Array.isArray(selections))for(const row of selections){const pid=uid(row?.position_id),product=uid(row?.product_id);if(pid&&product)requested.set(pid,product)}
+  const generated=(pq?.compositions||[]).find((c:any)=>Number(c.number)===compositionNumber);if(!generated)return null;const defaultSelected=new Map((generated.items||[]).map((i:any)=>[String(i.position_id),String(i.product_id)])),requested=new Map<string,string>();if(Array.isArray(selections))for(const row of selections){const pid=uid(row?.position_id),product=uid(row?.product_id);if(pid&&product)requested.set(pid,product)}
   if(selections&&requested.size!==positions.length)throw new Error("basket_mold_component_invalid");
   // On lightweight basket/detail/quote, read the selected SKUs only.
   // Full alternative product names, pictures and prices are read by moldPositionOptions upon a click.
