@@ -68,3 +68,7 @@ verify_jwt = false
 # D+28 worker authenticates its private internal key before claim/send.
 [functions.whatsapp-repurchase-worker-v1]
 verify_jwt = false
+
+# D+20 post-sale worker is internal-key authenticated; rollout remains runtime-off.
+[functions.whatsapp-post-sale-worker-v1]
+verify_jwt = false

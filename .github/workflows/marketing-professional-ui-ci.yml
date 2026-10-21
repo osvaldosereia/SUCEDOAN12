@@ -19,12 +19,23 @@ on:
       - 'supabase/functions/admin-marketing-strategy-campaign-v1/**'
       - 'supabase/functions/admin-marketing-strategy-learnings-v1/**'
       - 'supabase/functions/whatsapp-marketing-worker-v1/**'
+      - 'supabase/functions/whatsapp-post-sale-worker-v1/**'
+      - 'supabase/functions/whatsapp-repurchase-worker-v1/**'
+      - 'supabase/functions/_shared/marketing-post-sale-worker-v1.mjs'
+      - 'supabase/functions/_shared/marketing-repurchase-worker-v1.mjs'
       - 'supabase/functions/_shared/marketing-strategy-engine-v1.mjs'
       - 'supabase/functions/_shared/marketing-template-strategy-v1.mjs'
       - 'supabase/functions/_shared/whatsapp-meta-templates-v1.mjs'
       - 'supabase/functions/_shared/whatsapp-meta-carousel-v1.mjs'
       - 'supabase/functions/_shared/whatsapp-meta-transport-v1.mjs'
       - 'supabase/migrations/*marketing_strategy*'
+      - 'supabase/migrations/*marketing_post_sale*'
+      - 'supabase/migrations/*marketing_repurchase*'
+      - 'img/marketing-post-sale/**'
+      - 'scripts/test-marketing-post-sale-queue-v1.mjs'
+      - 'scripts/test-whatsapp-marketing-post-sale-worker-v1.mjs'
+      - 'scripts/test-marketing-repurchase-d28-gates-v1.mjs'
+      - 'scripts/test-marketing-repurchase-worker-runtime-v1.mjs'
       - 'scripts/test-marketing-strategy-foundation-v1.mjs'
       - 'scripts/test-marketing-strategy-engine-v1.mjs'
       - 'scripts/test-admin-marketing-strategy-v1.mjs'
@@ -62,6 +73,14 @@ jobs:
         with: {node-version: '22'}
       - name: Marketing strategy foundation contract
         run: node scripts/test-marketing-strategy-foundation-v1.mjs
+      - name: D+28 repurchase queue safety gate
+        run: node scripts/test-marketing-repurchase-d28-gates-v1.mjs
+      - name: D+28 repurchase worker runtime
+        run: node scripts/test-marketing-repurchase-worker-runtime-v1.mjs
+      - name: D+20 post-sale queue safety gate
+        run: node scripts/test-marketing-post-sale-queue-v1.mjs
+      - name: D+20 post-sale Meta carousel worker
+        run: node scripts/test-whatsapp-marketing-post-sale-worker-v1.mjs
       - name: Marketing strategy deterministic engine contract
         run: node scripts/test-marketing-strategy-engine-v1.mjs
       - name: Marketing strategy Admin API contract
