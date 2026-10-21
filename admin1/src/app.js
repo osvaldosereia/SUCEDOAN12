@@ -1,7 +1,8 @@
-import { adminApi } from './api.js?v=7';
-import { filterProducts, getProductStockState, listProductCategories } from './products.js?v=2';
+import { adminApi } from './api.js?v=8';
+import { filterProducts, getProductStockState, listProductCategories } from './products.js?v=3';
 import { createProductDraft, findCatalogMatch, getFiscalChecklist, getNfeItemReviewIssues, parseNfeXml, readProductDrafts, saveProductDraft } from './product-drafts.js?v=8';
 import { findIdentifierConflicts, getProductListEmptyState, PRODUCT_CATEGORY_OPTIONS } from './product-management.js?v=2';
+import { getProductAvailability } from './product-availability.js?v=1';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const state = { products: [], nextOffset: null, total: 0, categories: [], query: '', category: '', stock: 'all', status: 'all', xmlItems: [], xmlMatches: [], xmlMatchStatus: 'unchecked' };
@@ -26,6 +27,10 @@ function formatQuantity(quantity) {
   return Number(quantity || 0).toLocaleString('pt-BR', { maximumFractionDigits: 3 });
 }
 
+function formatProductStock(product) {
+  return product.stock_known === false ? '—' : formatQuantity(product.stock_quantity);
+}
+
 function productImage(product) {
   const imageUrl = String(product.image_url || '');
   if (/^https:\/\//i.test(imageUrl)) {
@@ -35,34 +40,44 @@ function productImage(product) {
 }
 
 function stockBadge(product) {
-  const status = getProductStockState(product.stock_quantity);
+  const status = getProductStockState(product.stock_quantity, product.min_stock, product.stock_known !== false);
   const className = status.key === 'available' ? 'good' : status.key === 'low' ? 'attention' : 'muted';
   return `<span class="status-pill ${className}"><i aria-hidden="true"></i>${status.label}</span>`;
 }
 
+function productStatusAction(product) {
+  const availability = getProductAvailability(product);
+  const activeInStore = product.active === true;
+  const label = activeInStore ? 'Desativar' : 'Ativar';
+  const disabled = !activeInStore && !availability.canActivate;
+  return `<button class="product-status-action ${activeInStore ? 'is-active' : ''}" type="button" data-toggle-product-active="${escapeHtml(product.id)}" data-next-active="${activeInStore ? 'false' : 'true'}" ${disabled ? 'disabled title="Produto sem estoque não pode ser ativado"' : ''}>${label}</button>`;
+}
+
 function productRow(product) {
   const secondary = [product.brand, product.packaging].filter(Boolean).join(' · ');
+  const availability = getProductAvailability(product);
   return `<tr>
     <td><div class="product-cell">${productImage(product)}<span><strong>${escapeHtml(product.name || 'Produto sem nome')}</strong><small>${escapeHtml(secondary || '—')}</small></span></div></td>
-    <td>${escapeHtml(product.category || 'Sem categoria')} ${product.active ? '' : '<span class="status-pill muted">Inativo</span>'}</td>
+    <td>${escapeHtml(product.category || 'Sem categoria')} ${availability.active ? '' : `<span class="status-pill muted">${escapeHtml(availability.label)}</span>`}</td>
     <td>${escapeHtml(product.sku || '—')}<small class="table-secondary-code">GTIN ${escapeHtml(product.gtin || '—')}</small></td>
     <td class="money-cell">${formatMoney(product.sale_price_cents)}</td>
-    <td><div class="stock-cell"><strong>${formatQuantity(product.stock_quantity)}</strong>${stockBadge(product)}</div></td>
-    <td><button class="text-button detail-button" type="button" data-product-detail="${escapeHtml(product.id)}">Ver detalhes</button></td>
+    <td><div class="stock-cell"><strong>${formatProductStock(product)}</strong>${stockBadge(product)}</div></td>
+    <td><div class="product-row-actions">${productStatusAction(product)}<button class="text-button detail-button" type="button" data-product-detail="${escapeHtml(product.id)}">Detalhes</button></div></td>
   </tr>`;
 }
 
 function productCard(product) {
   const secondary = [product.brand, product.packaging].filter(Boolean).join(' · ');
+  const availability = getProductAvailability(product);
   return `<article class="product-mobile-card">
     <div class="product-mobile-image">${productImage(product)}</div>
     <div class="product-mobile-main">
       <span class="product-mobile-category">${escapeHtml(product.category || 'Sem categoria')}</span>
       <strong>${escapeHtml(product.name || 'Produto sem nome')}</strong>
       <small>${escapeHtml([secondary, product.sku && `SKU ${product.sku}`, product.gtin && `GTIN ${product.gtin}`].filter(Boolean).join(' · ') || '—')}</small>
-      <div class="product-mobile-meta"><b>${formatMoney(product.sale_price_cents)}</b><span>Estoque ${formatQuantity(product.stock_quantity)}</span></div>
-      ${product.active ? '' : '<span class="status-pill muted">Inativo</span>'} ${stockBadge(product)}
-      <button class="text-button detail-button" type="button" data-product-detail="${escapeHtml(product.id)}">Ver detalhes</button>
+      <div class="product-mobile-meta"><b>${formatMoney(product.sale_price_cents)}</b><span>Estoque ${formatProductStock(product)}</span></div>
+      ${availability.active ? '' : `<span class="status-pill muted">${escapeHtml(availability.label)}</span>`} ${stockBadge(product)}
+      <div class="product-mobile-actions">${productStatusAction(product)}<button class="text-button detail-button" type="button" data-product-detail="${escapeHtml(product.id)}">Detalhes</button></div>
     </div>
   </article>`;
 }
@@ -74,14 +89,14 @@ function getVisibleProducts() {
 function renderProducts() {
   const visibleProducts = getVisibleProducts();
   const categories = state.categories.length ? state.categories : listProductCategories(state.products);
-  const lowStock = state.products.filter(product => ['low', 'out'].includes(getProductStockState(product.stock_quantity).key)).length;
+  const lowStock = state.products.filter(product => ['low', 'out'].includes(getProductStockState(product.stock_quantity, product.min_stock, product.stock_known !== false).key)).length;
   const emptyState = getProductListEmptyState(state);
   const hasFilters = emptyState.hasFilters;
 
   workspace.innerHTML = `
     <div class="page-heading">
       <div><span class="eyebrow">CATÁLOGO COMPLETO</span><h1>Produtos</h1><p>Consulte produtos ativos, inativos e sem estoque em um só lugar.</p></div>
-      <div class="product-actions"><button class="button secondary" id="openDrafts" type="button">Rascunhos <span class="draft-count">${readProductDrafts().length}</span></button><button class="button primary" id="importXml" type="button"><span aria-hidden="true">＋</span> Conferir XML</button><input id="xmlFile" type="file" accept=".xml,text/xml,application/xml" hidden><span class="readonly-badge"><i aria-hidden="true"></i>Leitura segura</span></div>
+      <div class="product-actions"><button class="button secondary" id="openDrafts" type="button">Rascunhos <span class="draft-count">${readProductDrafts().length}</span></button><button class="button primary" id="importXml" type="button"><span aria-hidden="true">＋</span> Conferir XML</button><input id="xmlFile" type="file" accept=".xml,text/xml,application/xml" hidden><span class="readonly-badge"><i aria-hidden="true"></i>Estoque e status</span></div>
     </div>
     <section class="metric-row product-metrics" aria-label="Resumo dos produtos carregados">
       <article class="metric-card"><span>Catálogo</span><strong>${state.total.toLocaleString('pt-BR')}</strong><small>Produtos no cadastro</small></article>
@@ -103,7 +118,7 @@ function renderProducts() {
       ` : `<div class="empty-state"><span class="empty-icon" aria-hidden="true">⌕</span><strong>${emptyState.title}</strong><span>${emptyState.description}</span></div>`}
       <div class="panel-foot products-footer"><span>${state.products.length} carregados nesta consulta</span>${state.nextOffset !== null ? '<button class="quiet-button" id="loadMore" type="button">Carregar mais produtos <span aria-hidden="true">→</span></button>' : ''}</div>
     </section>
-    <p class="readonly-note">Catálogo Supabase em somente leitura. A conferência de XML gera rascunhos salvos apenas neste navegador.</p>`;
+    <p class="readonly-note">Ativar ou desativar altera somente o status do produto. XML e rascunhos continuam locais neste navegador.</p>`;
 
   $('#productSearch').addEventListener('input', event => {
     clearTimeout(searchTimer);
@@ -288,7 +303,7 @@ function renderProductDetail(product) {
         <h3>${escapeHtml(product.name || 'Produto sem nome')}</h3>
         <p>${escapeHtml([product.brand, product.packaging].filter(Boolean).join(' · ') || 'Produto do catálogo da loja')}</p>
         <strong class="detail-price">${formatMoney(product.sale_price_cents)}</strong>
-        <div class="detail-stock">${stockBadge(product)} <span>${formatQuantity(product.stock_quantity)} em estoque</span></div>
+        <div class="detail-stock">${stockBadge(product)} <span>${formatProductStock(product)} vendável</span></div>
       </div>
     </div>
     <section class="detail-section"><h3>Informações do produto</h3><dl class="detail-attributes">
@@ -296,7 +311,7 @@ function renderProductDetail(product) {
       <div><dt>EAN</dt><dd>${escapeHtml(product.gtin || '—')}</dd></div>
       <div><dt>NCM cadastrado</dt><dd>${escapeHtml(product.ncm || 'Não informado')}</dd></div>
       <div><dt>Unidade</dt><dd>${escapeHtml(product.unit || '—')}</dd></div>
-      <div><dt>Status na loja</dt><dd>${product.active ? 'Ativo' : 'Inativo'}</dd></div>
+      <div><dt>Status na loja</dt><dd>${escapeHtml(getProductAvailability(product).label)}</dd></div>
       <div><dt>Estoque mínimo</dt><dd>${formatQuantity(product.min_stock)}</dd></div>
       ${visibleAttributes.map(item => `<div><dt>${escapeHtml(item.label || 'Informação')}</dt><dd>${escapeHtml(item.value)}</dd></div>`).join('')}
     </dl></section>
@@ -309,7 +324,7 @@ async function openProductDetail(productId) {
   if (!product) return;
   const currentVersion = ++detailRequestVersion;
   productDialogContent.innerHTML = '<div class="detail-loading"><span class="spinner" aria-hidden="true"></span><strong>Carregando detalhes do produto…</strong></div>';
-  $('#productDialogFoot').innerHTML = '<span class="readonly-badge"><i aria-hidden="true"></i>Consulta somente leitura</span>';
+  $('#productDialogFoot').innerHTML = '<span class="readonly-badge"><i aria-hidden="true"></i>Consulta do catálogo</span>';
   $('#productDialogTitle').textContent = product.name || 'Detalhes do produto';
   if (!productDialog.open) productDialog.showModal();
   try {
@@ -324,6 +339,22 @@ async function openProductDetail(productId) {
 }
 
 workspace.addEventListener('click', event => {
+  const statusButton = event.target.closest('[data-toggle-product-active]');
+  if (statusButton) {
+    const product = state.products.find(item => String(item.id) === statusButton.dataset.toggleProductActive);
+    if (!product || statusButton.disabled) return;
+    const nextActive = statusButton.dataset.nextActive === 'true';
+    statusButton.disabled = true;
+    statusButton.textContent = nextActive ? 'Ativando…' : 'Desativando…';
+    adminApi('set_product_active', { id: product.id, active: nextActive })
+      .then(() => loadProducts())
+      .catch(error => {
+        statusButton.disabled = false;
+        statusButton.textContent = nextActive ? 'Ativar' : 'Desativar';
+        window.alert(error.message || 'Não foi possível atualizar o status do produto.');
+      });
+    return;
+  }
   const button = event.target.closest('[data-product-detail]');
   if (button) openProductDetail(button.dataset.productDetail);
 });
@@ -359,7 +390,7 @@ async function loadProducts({ append = false } = {}) {
 }
 
 adminApi('categories').then(result => { state.categories = result.categories || []; if (state.products.length) renderProducts(); }).catch(() => {});
-$('#sessionLabel').textContent = 'Somente leitura';
+$('#sessionLabel').textContent = 'Produtos';
 $('#currentSection').textContent = 'Produtos';
 loadProducts();
 
