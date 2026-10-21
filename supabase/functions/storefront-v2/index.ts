@@ -123,8 +123,9 @@ async function moldAvailableStockMap(productIds:string[]){
   for(const r of sq.data||[]){
     const id=String(r.product_id),observedAt=Date.parse(String(r.mirror_observed_at||""));
     const freshBling=r.stock_authority==="bling"&&r.link_status==="matched"&&r.bling_product_id!=null&&r.selected_deposit_id!=null&&r.sellable_virtual!=null&&Number.isFinite(observedAt)&&observedAt<=now+5*60_000&&now-observedAt<=INACTIVE_BASKET_STOCK_MAX_AGE_MS;
-    // EAN quantities are already net of reservations and consumed orders in SQL.
-    const eanAvailable=r.ean_sellable_stock!=null;
+    // Use the configured inventory authority: EAN captures override legacy
+    // stock, but must not replace a live Bling stock mirror.
+    const eanAvailable=r.stock_authority!=="bling"&&r.ean_sellable_stock!=null;
     const base=eanAvailable?Number(r.ean_sellable_stock):r.is_active===true?Number(r.loose_sellable_stock||0):freshBling?Number(r.sellable_virtual||0)-Number(r.basket_locked_quantity||0):0;
     out.set(id,Math.max(0,base-(eanAvailable?0:(reservedOrders.get(id)||0))));
   }
