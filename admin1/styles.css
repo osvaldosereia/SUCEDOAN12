@@ -171,6 +171,34 @@ button { -webkit-tap-highlight-color: transparent; }
 .draft-bottom>span { color: #8a909a; font-size: 10px; line-height: 1.5; }
 .draft-bottom>span { min-width: 0; }
 .draft-save-error { margin: 0; color: #a82f37; font-size: 11px; }
+.product-editor-form { display: grid; gap: 13px; }
+.product-editor-form fieldset { min-width: 0; margin: 0; padding: 15px; border: 1px solid var(--line); border-radius: 11px; background: #fff; }
+.product-editor-form legend { padding: 0 6px; color: #353a44; font: 700 12px Manrope, sans-serif; }
+.product-editor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.editor-field { min-width: 0; display: grid; align-content: start; gap: 6px; color: #707782; font-size: 10px; font-weight: 600; }
+.editor-field>span b { color: var(--red); }
+.editor-field input, .editor-field select, .editor-field textarea { width: 100%; min-width: 0; border: 1px solid #dfe2e7; border-radius: 8px; background: #fff; color: #353a44; font: 500 12px 'DM Sans', sans-serif; }
+.editor-field input, .editor-field select { height: 40px; padding: 0 10px; }
+.editor-field textarea { min-height: 82px; padding: 10px; resize: vertical; }
+.editor-field input:focus, .editor-field select:focus, .editor-field textarea:focus { outline: 2px solid #a82f3725; border-color: #bc6970; }
+.field-wide { grid-column: 1 / -1; }
+.image-upload input[type=file] { padding: 8px; height: auto; background: #fbfbfc; }
+.image-upload>small { color: #8a909a; font-size: 10px; font-weight: 400; }
+.image-preview { min-height: 130px; display: flex; align-items: center; justify-content: center; gap: 9px; padding: 10px; border: 1px dashed #d9dde3; border-radius: 9px; background: #fbfbfc; color: #8a909a; font-size: 10px; }
+.image-preview img { width: 100px; height: 100px; object-fit: contain; border-radius: 6px; background: #fff; }
+.image-preview .product-placeholder { font-size: 25px; }
+.active-toggle { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+.active-toggle input { width: 17px; height: 17px; accent-color: var(--red); }
+.active-toggle span, .active-toggle small { display: block; }
+.active-toggle strong { color: #3c424c; font-size: 12px; }
+.active-toggle small { margin-top: 4px; color: #858b95; font-size: 10px; line-height: 1.5; }
+.editor-readiness { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid #eee2c7; border-radius: 8px; background: #fffaf0; color: #806628; font-size: 10px; line-height: 1.5; }
+.editor-readiness strong { font-size: 11px; }
+.detail-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 18px; }
+.workspace-notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 14px; padding: 10px 12px; border: 1px solid #eee2c7; border-radius: 9px; background: #fffaf0; color: #806628; font-size: 11px; }
+.product-row-actions { gap: 8px; }
+.product-actions { flex-wrap: wrap; }
+.product-editor-form .draft-bottom { border-top: 1px solid var(--line); padding-top: 13px; }
 .detail-product-hero { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 20px; align-items: center; }
 .detail-product-image { min-height: 175px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 12px; background: #fbfbfc; }
 .detail-product-image img, .detail-product-image .product-placeholder { width: 100%; height: 175px; object-fit: contain; border-radius: 12px; }
@@ -217,6 +245,12 @@ button { -webkit-tap-highlight-color: transparent; }
   .product-dialog-head h2 { font-size: 18px; }
   .product-dialog-content { padding: 16px; }
   .product-dialog-foot { padding: 10px 16px; }
+  .product-editor-grid { grid-template-columns: 1fr; }
+  .product-editor-form fieldset { padding: 12px; }
+  .field-wide { grid-column: auto; }
+  .product-editor-form .draft-bottom, .detail-actions { align-items: stretch; flex-direction: column; }
+  .product-editor-form .draft-bottom>div { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .product-editor-form .draft-bottom>div .button { width: 100%; }
   .detail-product-hero { grid-template-columns: 105px minmax(0, 1fr); gap: 13px; align-items: start; }
   .detail-product-image { min-height: 105px; }
   .detail-product-image img, .detail-product-image .product-placeholder { height: 105px; }

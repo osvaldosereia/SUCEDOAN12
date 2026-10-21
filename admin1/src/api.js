@@ -1,4 +1,4 @@
-import { normalizeAdminProduct, requestAdminCatalog, requestAdminProductStatus } from './public-api.js?v=8';
+import { normalizeAdminProduct, requestAdminCatalog, requestAdminProductStatus } from './public-api.js?v=9';
 
 export async function adminApi(action, params = {}) {
   if (action === 'product_detail') {

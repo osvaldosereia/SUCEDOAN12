@@ -68,7 +68,7 @@ export function findCatalogMatch(item = {}, products = []) {
 }
 
 export function findIdentifierConflicts(draft = {}, matches = []) {
-  const linkedId = text(draft.catalog_product_id);
+  const linkedId = text(draft.catalog_product_id || draft.id);
   const sku = normalize(draft.sku);
   const gtins = new Set([draft.commercial_gtin || draft.gtin, draft.tax_gtin]
     .map(value => text(value).toUpperCase() === 'SEM GTIN' ? '' : digits(value))
@@ -94,7 +94,7 @@ export function getProductReadinessIssues(product = {}) {
   if (!allowed) add('category', 'Categoria controlada');
   const rawPrice = product.sale_price_cents ?? product.price_cents;
   const price = rawPrice === undefined
-    ? Number(String(product.sale_price ?? '').trim().replace(',', '.')) * 100
+    ? Number(parseProductAmount(product.price ?? product.sale_price) ?? 0) * 100
     : Number(rawPrice);
   if (!Number.isFinite(price) || price <= 0) add('sale_price_cents', 'Preço de venda');
   const ncm = digits(product.ncm);
@@ -118,4 +118,121 @@ export function getProductListEmptyState({ query = '', category = '', stock = 'a
   return hasFilters
     ? { hasFilters, title: 'Nenhum produto encontrado', description: 'Tente ajustar os filtros ou a busca.' }
     : { hasFilters, title: 'Nenhum produto disponível', description: 'Atualize a lista para consultar novamente.' };
+}
+
+export function parseProductAmount(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  const raw = text(value).replace(/\s/g, '');
+  if (!raw) return null;
+  const normalized = raw.includes(',') ? raw.replace(/\./g, '').replace(',', '.') : raw;
+  const amount = Number(normalized);
+  return Number.isFinite(amount) ? amount : null;
+}
+
+function normalizeProductCode(value, key, length, errors) {
+  const raw = text(value);
+  if (!raw) return '';
+  if (!/^[\d.\-/\s]+$/.test(raw)) {
+    errors.push({ key, message: `${key.toUpperCase()} deve conter apenas números.` });
+    return digits(raw);
+  }
+  const code = digits(raw);
+  if (code.length !== length) errors.push({ key, message: `${key.toUpperCase()} deve ter ${length} dígitos.` });
+  return code;
+}
+
+export function buildAdminProductRecord(input = {}, now = new Date()) {
+  const price = input.price !== undefined || input.sale_price !== undefined
+    ? parseProductAmount(input.price ?? input.sale_price)
+    : input.sale_price_cents !== undefined
+      ? Number(input.sale_price_cents) / 100
+      : null;
+  const cost = parseProductAmount(input.cost);
+  const stock = parseProductAmount(input.stock_quantity ?? input.stock) ?? 0;
+  const minStock = parseProductAmount(input.min_stock) ?? 0;
+  const errors = [];
+  if (price === null || !Number.isFinite(price) || price < 0) errors.push({ key: 'price', message: 'Informe um preço de venda válido.' });
+  if (cost !== null && cost < 0) errors.push({ key: 'cost', message: 'O custo não pode ser negativo.' });
+  if (stock < 0) errors.push({ key: 'stock', message: 'O estoque não pode ser negativo.' });
+  if (minStock < 0) errors.push({ key: 'min_stock', message: 'O estoque mínimo não pode ser negativo.' });
+  if (text(input.stock_quantity ?? input.stock) && parseProductAmount(input.stock_quantity ?? input.stock) === null) {
+    errors.push({ key: 'stock', message: 'Informe um estoque válido.' });
+  }
+  if (!text(input.stock_quantity ?? input.stock)) errors.push({ key: 'stock', message: 'Informe a quantidade em estoque, mesmo que seja zero.' });
+  if (text(input.cost) && cost === null) errors.push({ key: 'cost', message: 'Informe um custo válido.' });
+  if (text(input.price ?? input.sale_price) && price === null) errors.push({ key: 'price', message: 'Informe um preço de venda válido.' });
+  const ncm = normalizeProductCode(input.ncm, 'ncm', 8, errors);
+  const cest = normalizeProductCode(input.cest, 'cest', 7, errors);
+  const originCode = text(input.origin_code);
+  if (originCode && !validOrigin(originCode)) errors.push({ key: 'origin_code', message: 'Origem da mercadoria deve ser de 0 a 8.' });
+  const gtin = text(input.gtin || input.commercial_gtin);
+  const commercialGtin = text(input.commercial_gtin || input.gtin);
+  const taxGtin = text(input.tax_gtin);
+  for (const [key, value] of [['gtin', gtin], ['commercial_gtin', commercialGtin], ['tax_gtin', taxGtin]]) {
+    if (value && value.toUpperCase() !== 'SEM GTIN' && !isValidGtin(value)) {
+      errors.push({ key, message: 'GTIN inválido; confira os números ou informe SEM GTIN quando aplicável.' });
+    }
+  }
+  const activeRequested = input.active ?? input.is_active ?? false;
+  const id = text(input.id) || globalThis.crypto?.randomUUID?.() || `local-${now.getTime()}-${Math.random().toString(36).slice(2, 8)}`;
+  return {
+    ...input,
+    id,
+    name: text(input.name),
+    sku: text(input.sku),
+    gtin: gtin || commercialGtin,
+    commercial_gtin: commercialGtin,
+    tax_gtin: taxGtin,
+    ncm,
+    cest,
+    origin_code: originCode,
+    category: text(input.category),
+    subcategory: text(input.subcategory),
+    brand: text(input.brand),
+    packaging: text(input.packaging),
+    unit: text(input.unit || input.commercial_unit),
+    commercial_unit: text(input.commercial_unit || input.unit),
+    tax_unit: text(input.tax_unit || input.unit),
+    price: price === null ? null : Number(price.toFixed(2)),
+    sale_price_cents: price === null ? null : Math.round(price * 100),
+    cost: cost === null ? null : Number(cost.toFixed(4)),
+    stock: stock,
+    stock_quantity: stock,
+    stock_known: true,
+    min_stock: minStock,
+    validity_date: text(input.validity_date || input.expiration_date),
+    gondola: text(input.gondola),
+    shelf: text(input.shelf),
+    supplier: text(input.supplier || input.supplier_name),
+    image_url: text(input.image_url),
+    description_short: text(input.description_short),
+    description_long: text(input.description_long || input.description),
+    active: stock > 0 && activeRequested === true,
+    is_active: stock > 0 && activeRequested === true,
+    validation_errors: errors,
+    source_system: 'admin1-local',
+    sync_status: 'local_only',
+    updated_at: now.toISOString()
+  };
+}
+
+export function getProductEditorErrors(product = {}) {
+  const errors = Array.isArray(product.validation_errors) ? [...product.validation_errors] : [];
+  if (!text(product.name)) errors.push({ key: 'name', message: 'Informe o nome do produto.' });
+  if (!text(product.sku)) errors.push({ key: 'sku', message: 'Informe o SKU ou código interno.' });
+  if (!text(product.category)) errors.push({ key: 'category', message: 'Selecione a categoria do produto.' });
+  const price = product.sale_price_cents !== undefined ? Number(product.sale_price_cents) / 100 : parseProductAmount(product.price);
+  if (price === null || !Number.isFinite(price) || price <= 0) errors.push({ key: 'price', message: 'Informe um preço de venda maior que zero.' });
+  const stock = parseProductAmount(product.stock_quantity ?? product.stock);
+  if (stock === null || stock < 0) errors.push({ key: 'stock', message: 'Informe um estoque igual ou maior que zero.' });
+  if ((product.active === true || product.is_active === true) && !text(product.image_url)) {
+    errors.push({ key: 'image_url', message: 'Adicione uma imagem do produto antes de ativar.' });
+  }
+  const seen = new Set();
+  return errors.filter(error => {
+    const key = String(error.key || error.message);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { PRODUCT_CATEGORY_OPTIONS, calculateUnitConversion, findCatalogMatch, findIdentifierConflicts, getProductListEmptyState, getProductReadinessIssues } from '../src/product-management.js';
+import { PRODUCT_CATEGORY_OPTIONS, buildAdminProductRecord, calculateUnitConversion, findCatalogMatch, findIdentifierConflicts, getProductEditorErrors, getProductListEmptyState, getProductReadinessIssues } from '../src/product-management.js';
 
 test('calcula conversão da embalagem de compra para unidade tributável', () => {
   assert.deepEqual(calculateUnitConversion({ purchase_quantity: 2, purchase_unit_price: 42.5, tax_quantity: 20 }), { units_per_purchase_unit: 10, cost_per_tax_unit: 4.25 });
@@ -45,6 +45,14 @@ test('valida preço em reais informado no rascunho sem perder os centavos', () =
   assert.ok(!issues.some(issue => issue.key === 'sale_price_cents'));
 });
 
+test('reconhece preço em reais informado diretamente pelo novo formulário', () => {
+  const pending = getProductReadinessIssues({
+    name: 'Arroz', sku: 'AR-1', category: 'Mercearia', price: '8,90', ncm: '10063021',
+    origin_code: '0', commercial_gtin: 'SEM GTIN', tax_gtin: 'SEM GTIN', commercial_unit: 'UN', tax_unit: 'UN'
+  });
+  assert.equal(pending.some(issue => issue.key === 'sale_price_cents'), false);
+});
+
 test('detecta GTIN tributável duplicado mesmo quando difere do GTIN comercial', () => {
   const draft = { sku: 'A1', commercial_gtin: '7891234567895', tax_gtin: '7891234567802' };
   const conflicts = findIdentifierConflicts(draft, [{ id: 'existing', sku: 'OTHER', gtin: '7891234567802' }]);
@@ -64,4 +72,37 @@ test('diferencia catálogo sem itens de busca ou filtros sem resultados', () => 
     description: 'Tente ajustar os filtros ou a busca.'
   });
   assert.equal(getProductListEmptyState({ stock: 'out' }).hasFilters, true);
+});
+
+test('normaliza cadastro de produto e força inativo quando estoque é zero', () => {
+  const product = buildAdminProductRecord({
+    id: 'p1', name: 'Azeite', sku: 'AZ-1', category: 'Mercearia', price: '23,45', cost: '15,10',
+    stock: '0', min_stock: '2', ncm: '1509.20.00', cest: '17.062.00', origin_code: '0',
+    gtin: 'SEM GTIN', commercial_gtin: 'SEM GTIN', tax_gtin: 'SEM GTIN', commercial_unit: 'UN', tax_unit: 'UN',
+    validity_date: '2027-08-01', gondola: 'A', shelf: '03', image_url: 'data:image/webp;base64,AA==', active: true
+  });
+
+  assert.equal(product.sale_price_cents, 2345);
+  assert.equal(product.cost, 15.1);
+  assert.equal(product.stock_quantity, 0);
+  assert.equal(product.ncm, '15092000');
+  assert.equal(product.cest, '1706200');
+  assert.equal(product.validity_date, '2027-08-01');
+  assert.equal(product.gondola, 'A');
+  assert.equal(product.shelf, '03');
+  assert.equal(product.active, false);
+});
+
+test('mantém produto inativo após reposição até ativação manual', () => {
+  const product = buildAdminProductRecord({ name: 'Arroz', sku: 'AR-1', category: 'Mercearia', price: '8,90', stock: '4', active: false });
+  assert.equal(product.stock_quantity, 4);
+  assert.equal(product.active, false);
+});
+
+test('exige imagem para ativar e bloqueia identificadores e valores inválidos', () => {
+  assert.deepEqual(getProductEditorErrors({ name: 'Arroz', sku: 'AR-1', category: 'Mercearia', price: 8.9, stock: 4, active: true }), [
+    { key: 'image_url', message: 'Adicione uma imagem do produto antes de ativar.' }
+  ]);
+  const product = buildAdminProductRecord({ name: 'Arroz', sku: 'AR-1', category: 'Mercearia', price: '-1,00', stock: '-2', ncm: '123', cest: '12', origin_code: '9', active: false });
+  assert.deepEqual(getProductEditorErrors(product).map(issue => issue.key), ['price', 'stock', 'ncm', 'cest', 'origin_code']);
 });

@@ -68,4 +68,15 @@ A habilitação de gravações persistentes depende de uma autorização separad
 - A unidade comercial do catálogo é iniciada pela unidade tributável da NF-e, mantendo separadas as unidades e quantidades originais. Associações continuam restritas a SKU/GTIN exatos, com ambiguidade visível.
 - A busca de duplicidade indisponível fica marcada como pendente; não é apresentada como verificação concluída. Rascunhos permanecem apenas no navegador.
 
-**Limite desta etapa:** revisão e salvamento de rascunhos locais apenas. Não habilitar cadastro persistente, edição do catálogo, publicação, estoque, integração Bling ou escrita no Supabase sem autorização posterior.
+**Limite de persistência:** o Admin1 pode cadastrar e editar produtos no workspace local do navegador para validar o fluxo completo. A persistência no Supabase, publicação no site, movimentação oficial de estoque e integração com Bling continuam desligadas até uma autorização posterior.
+
+## Estratégia permanente de execução aprovada pelo usuário
+
+- Implementar ferramentas operacionais de ponta a ponta; não deixar botões ou telas como protótipo quando a ação puder ser feita no escopo aprovado.
+- Priorizar a operação de produtos até ela estar concluída antes de avançar para cestas.
+- O Admin1 pode ler o catálogo ativo do Supabase. Toda gravação de produto, imagem, estoque ou status deve continuar local ao navegador enquanto o bloqueio de escrita estiver ativo. Não aplicar migrations, publicar Edge Functions ou alterar a loja pública nesta fase.
+- A experiência local deve ser utilizável de verdade para criar, editar, conferir, ativar e desativar produtos; deve deixar explícito que os dados ficam neste navegador e não sincronizam com outros dispositivos nem com a loja.
+- Produto com estoque zero fica inativo. Reposição não ativa automaticamente. A ativação exige estoque positivo e imagem válida.
+- Imagem escolhida pelo usuário deve ser convertida no navegador para WebP, redimensionada e reduzida para no máximo 30 KB antes de salvar no workspace local.
+- Quando o teste automatizado ou técnico for possível, executar e apresentar o resultado. Se o fluxo depender de navegador real, login ou acesso indisponível, informar exatamente o que falta e pedir teste manual, sem afirmar que foi validado visualmente.
+- Manter módulos pequenos, responsabilidades explícitas e testes sobre regras de negócio; a persistência local é um adaptador temporário substituível, não deve contaminar regras de produto nem chamadas de leitura do catálogo.

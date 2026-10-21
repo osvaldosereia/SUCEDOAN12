@@ -2,6 +2,7 @@ const PROJECT_URL = 'https://ssbesxgaijknwsjbsbcz.supabase.co';
 const PUBLISHABLE_KEY = 'sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8';
 const PREVIEW_READ_ACTIONS = new Set(['products', 'product']);
 const ADMIN_READ_ACTIONS = new Set(['products', 'product', 'matches', 'categories']);
+export const ADMIN1_SUPABASE_WRITES_ENABLED = false;
 
 export function normalizePublicProduct(product = {}) {
   return {
@@ -37,6 +38,8 @@ export async function requestPreview(action, params = {}, fetchImpl = fetch) {
 
 export function normalizeAdminProduct(product = {}) {
   const price = Number(product.price || 0);
+  const stockKnown = product.stock !== null && product.stock !== undefined && Number.isFinite(Number(product.stock));
+  const stockQuantity = Math.max(0, Number(product.stock || 0));
   return {
     id: String(product.id || ''),
     name: String(product.name || ''),
@@ -49,10 +52,17 @@ export function normalizeAdminProduct(product = {}) {
     category: String(product.category || ''),
     subcategory: String(product.subcategory || ''),
     unit: String(product.unit || ''),
+    cost: product.cost === null || product.cost === undefined ? null : Number(product.cost),
+    supplier: String(product.supplier || ''),
+    validity_date: String(product.validity_date || ''),
+    gondola: String(product.gondola || ''),
+    shelf: String(product.shelf || ''),
+    cest: String(product.cest || ''),
+    origin_code: product.origin_code === null || product.origin_code === undefined ? '' : String(product.origin_code),
     sale_price_cents: Math.max(0, Math.round((Number.isFinite(price) ? price : 0) * 100)),
-    stock_quantity: Math.max(0, Number(product.stock || 0)),
-    stock_known: product.stock !== null && product.stock !== undefined && Number.isFinite(Number(product.stock)),
-    active: product.is_active === true,
+    stock_quantity: stockQuantity,
+    stock_known: stockKnown,
+    active: product.is_active === true && !(stockKnown && stockQuantity <= 0),
     description: String(product.description_long || product.description_short || ''),
     tags: Array.isArray(product.tags) ? product.tags.map(String) : [],
     min_stock: Math.max(0, Number(product.min_stock || 0))
@@ -60,7 +70,7 @@ export function normalizeAdminProduct(product = {}) {
 }
 
 export async function requestAdminCatalog(action, params = {}, fetchImpl = fetch) {
-  if (!ADMIN_READ_ACTIONS.has(action)) throw new Error('Ação de leitura não permitida.');
+  if (!ADMIN_READ_ACTIONS.has(action)) throw new Error('Ação não permitida: somente leitura.');
   const query = new URLSearchParams({ action });
   for (const key of ['limit', 'offset', 'q', 'category', 'status', 'stock', 'product_id']) {
     const value = params[key];
@@ -82,6 +92,9 @@ export async function requestAdminCatalog(action, params = {}, fetchImpl = fetch
 export async function requestAdminProductStatus({ id, active }, fetchImpl = fetch) {
   if (!/^[0-9a-f-]{36}$/i.test(String(id || '')) || typeof active !== 'boolean') {
     throw new Error('Dados inválidos para alterar o status do produto.');
+  }
+  if (!ADMIN1_SUPABASE_WRITES_ENABLED) {
+    throw new Error('Gravações no Supabase estão bloqueadas; a situação será salva somente neste navegador.');
   }
   const response = await fetchImpl(`${PROJECT_URL}/functions/v1/admin1-product-status-v1`, {
     method: 'POST',
