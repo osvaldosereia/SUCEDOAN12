@@ -832,9 +832,9 @@
       '<details class="panel purchase-import-options"><summary>Outras opções de importação</summary>'+
         '<div class="purchase-toolbar-actions">'+
           '<button class="secondary" id="purchaseXmlSingle" type="button">Enviar apenas 1 XML</button>'+
-          '<button class="secondary" id="purchaseXmlCatalogOnly" type="button">Catalogar XML sem cadastrar produtos</button>'+
+          '<button class="secondary" id="purchaseXmlCatalogOnly" type="button">Importar XML e atualizar catálogo</button>'+
         '</div>'+
-        '<p class="sub">Importar uma nota não lança estoque automaticamente. A opção de catalogar serve apenas para pesquisa e revisão, sem alterar produtos, preços, estoque ou financeiro. Notas em CPF não geram contas a pagar.</p>'+
+        '<p class="sub">A automação pode criar produtos novos inativos e atualizar fornecedor e custo quando EAN e conversão estiverem confirmados. NCM e CEST ficam para revisão fiscal. Não lança estoque nem cria registros financeiros. Notas em CPF não geram contas a pagar.</p>'+
       '</details>'+
       '<input id="purchaseXmlInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>'+
       '<input id="purchaseXmlCatalogOnlyInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>'+

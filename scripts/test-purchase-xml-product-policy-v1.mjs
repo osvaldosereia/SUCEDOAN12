@@ -1,0 +1,42 @@
+import fs from "node:fs";
+import assert from "node:assert/strict";
+import { autoConversion, baseUnitCost, isSafeBaseIdentity, shouldApplyLatestPurchase } from "../supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/xml-catalog-automation-policy.mjs";
+
+const migration=fs.readFileSync("supabase/migrations/20261022090000_purchase_xml_product_stock_policy_v1.sql","utf8");
+assert.match(migration,/purchase_xml_stock_update boolean not null default true/i);
+assert.match(migration,/distinct on\s*\(.*product_id/i);
+assert.match(migration,/order by .*updated_at desc/i);
+assert.doesNotMatch(migration,/update\s+public\.purchase_xml_items/i);
+assert.doesNotMatch(migration,/purchase_stock_receipt_plans_v1/i);
+
+assert.equal(isSafeBaseIdentity({role:"base_unit",gtin:"7891910000197"}),true);
+assert.equal(isSafeBaseIdentity({role:"package",gtin:"7891910000197"}),false);
+assert.equal(isSafeBaseIdentity({role:"base_unit",gtin:"7891910000190"}),false);
+assert.equal(isSafeBaseIdentity({role:"base_unit",gtin:""}),false);
+assert.equal(autoConversion({status:"known",factor:12}),true);
+assert.equal(autoConversion({status:"inferred_xml",factor:12,suggestion_source:"xml_qtrib_ratio_unit_safe"}),true);
+assert.equal(autoConversion({status:"inferred_xml",factor:12,suggestion_source:"description_pack_count_x_size"}),false);
+assert.equal(autoConversion({status:"review_required",factor:null}),false);
+assert.equal(autoConversion({status:"known",factor:0}),false);
+assert.equal(baseUnitCost({quantity:24,factor:12,net_line_total:60}),Math.round((60/288)*1000000)/1000000);
+assert.equal(baseUnitCost({quantity:24,factor:0,net_line_total:60}),null);
+assert.equal(shouldApplyLatestPurchase({invoiceIssuedAt:"2026-10-21T10:00:00Z",latestPurchaseAt:"2026-10-20T10:00:00Z"}),true);
+assert.equal(shouldApplyLatestPurchase({invoiceIssuedAt:"2026-10-19T10:00:00Z",latestPurchaseAt:"2026-10-20T10:00:00Z"}),false);
+assert.equal(shouldApplyLatestPurchase({invoiceIssuedAt:"2026-10-20T10:00:00Z",latestPurchaseAt:"2026-10-20T10:00:00Z",invoiceItemId:"old",latestItemId:"new"}),false);
+assert.equal(shouldApplyLatestPurchase({invoiceIssuedAt:"2026-10-20T10:00:00Z",latestPurchaseAt:"2026-10-20T10:00:00Z",invoiceItemId:"same",latestItemId:"same"}),true);
+assert.equal(shouldApplyLatestPurchase({invoiceIssuedAt:null,latestPurchaseAt:"2026-10-20T10:00:00Z"}),false);
+assert.equal(shouldApplyLatestPurchase({invoiceIssuedAt:"2026-10-20T10:00:00Z",latestPurchaseAt:null}),true);
+
+const worker=fs.readFileSync("supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts","utf8");
+assert.match(worker,/async function processCatalogItems\(/);
+assert.match(worker,/purchase_xml_stock_update/);
+assert.match(worker,/stock_update_requested/);
+assert.match(worker,/isSafeBaseIdentity\(/);
+assert.match(worker,/autoConversion\(/);
+assert.match(worker,/is_active:false,is_whatsapp_active:false/);
+assert.match(worker,/purchase_catalog_review_required:true/);
+const processor=worker.slice(worker.indexOf("async function processCatalogItems("),worker.indexOf("async function linkedXml(",worker.indexOf("async function processCatalogItems(")));
+assert.doesNotMatch(processor,/\.update\(\s*\{[^}]*\bstock\s*:/s,"XML catalog processing must not write local stock");
+assert.match(processor,/product_purchase_history[\s\S]*?shouldApplyLatestPurchase/,"old invoice replay must not replace newer catalog cost");
+assert.match(processor,/applyCurrentPurchase\?\{supplier:[\s\S]*?cost/s,"supplier and cost fields must be gated by invoice chronology");
+console.log("PASS: product stock policy, confirmed conversion and cost rules");

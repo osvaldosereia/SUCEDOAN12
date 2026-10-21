@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
+import { ensureXmlProductInBling as ensureXmlPublication } from "./xml-product-publication-policy.mjs";
 const U=Deno.env.get("SUPABASE_URL")||"";
 const K=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
 const db=createClient(U,K,{auth:{persistSession:false,autoRefreshToken:false}});
@@ -53,6 +54,7 @@ function mp(p:any){
   return {
     id:p.id,sku:p.sku||null,gtin:p.gtin||null,name:p.name||"",description:p.description_short||p.description_long||"",
     active:p.is_active!==false,sale_price_cents:Math.round(Number(p.price||0)*100),cost_cents:Math.round(Number(p.cost||0)*100),
+    purchase_xml_stock_update:p.purchase_xml_stock_update===null||p.purchase_xml_stock_update===undefined?null:p.purchase_xml_stock_update!==false,
     stock_quantity:displayStock,recorded_stock_quantity:recorded,physical_stock_quantity:physical,sellable_stock_quantity:sellable,virtual_stock_quantity:sellable,loose_stock_quantity:loose,sellable_loose_stock_quantity:sellableLoose,basket_locked_quantity:locked,
     stock_breakdown_warning:locked>physical+0.0001,stock_breakdown_difference:Math.max(0,locked-physical),
     bling_stock_ready:s.bling_stock_ready===true,
@@ -511,7 +513,7 @@ async function deleteProduct(p:any,auth:any){
 async function saveProduct(p:any){
   const authority=await stockAuthority(),pid=id(p?.id),duplicateFromId=!pid?id(p?.duplicate_from_id):"";
   const name=tx(p?.name,300);if(!name)return {error:"name_required",status:400};
-  const b=pid?await one(pid):null;
+  let b=pid?await one(pid):null;
   const source=duplicateFromId?await one(duplicateFromId):null;
   if(duplicateFromId&&!source)return {error:"duplicate_source_not_found",status:404};
   const editorCheck=await validateProductEditorExtras(pid,p);if(editorCheck)return editorCheck;
@@ -599,8 +601,18 @@ async function saveProduct(p:any){
     is_offer:io,
     offer_price:op,
     metadata:nmeta,
+    ...(own(p,"purchase_xml_stock_update")?{purchase_xml_stock_update:p.purchase_xml_stock_update!==false}:
+      {purchase_xml_stock_update:pid?b?.purchase_xml_stock_update!==false:duplicateFromId?source?.purchase_xml_stock_update!==false:true}),
     updated_at:new Date().toISOString()
   };
+
+  const xmlDraft=meta(b?.metadata).purchase_xml_created===true||meta(b?.metadata).purchase_xml_created==="true";
+  const xmlPublishFlags={is_active:active,is_whatsapp_active:own(p,"is_whatsapp_active")?p.is_whatsapp_active===true:b?.is_whatsapp_active===true};
+  const xmlPublishRequested=Boolean(xmlDraft&&(
+    (xmlPublishFlags.is_active&&b?.is_active!==true)||
+    (xmlPublishFlags.is_whatsapp_active&&b?.is_whatsapp_active!==true)
+  ));
+  if(xmlPublishRequested){patch.is_active=false;patch.is_whatsapp_active=false}
 
   let r:any;
   if(pid){
@@ -630,6 +642,15 @@ async function saveProduct(p:any){
   }
   if(own(p,"additional_gtins")){const sr=await syncProductEditorIdentifiers(r.data.id,p?.gtin,p.additional_gtins,p?.operator);if(sr?.error)return sr;}
   if(p?.fiscal&&typeof p.fiscal==="object")await saveProductEditorFiscal(r.data.id,p.fiscal,p?.operator);
+  if(xmlPublishRequested){
+    const gate=await ensureXmlProductInBling(r.data);
+    if(!gate.ok)return {error:"xml_product_bling_link_unconfirmed",status:409,reason:gate.error||null,
+      detail:gate.result||null,product_id:r.data.id,active:false};
+    const activated=await db.from("products").update({...xmlPublishFlags,updated_at:new Date().toISOString()})
+      .eq("id",r.data.id).select("*").single();
+    if(activated.error)throw activated.error;
+    r.data=activated.data;
+  }
   if(b)await aud(b,r.data,p,"product_save");
   await rec();
   const fr=await one(r.data.id);
@@ -742,6 +763,15 @@ async function ensureProductLinkedForStock(pid:string,operator:string){
     bling_product_id:blingId,sync_status:"synced",last_bling_sync_at:now,sync_error:null,updated_at:now
   }).eq("id",pid);
   return {ok:true,bling_id:blingId,created:job?.result?.created===true,linked:true,job_id:jobId};
+}
+
+async function ensureXmlProductInBling(product:any){
+  return await ensureXmlPublication(product,async(input:any)=>{
+    const linked=await ensureProductLinkedForStock(String(input.product_id),"Publicação de produto XML");
+    return {ok:linked.ok===true,bling_id:linked.bling_id,created:linked.created===true,
+      error:linked.error||null,job_id:linked.job_id||null,job_status:linked.job_status||null,
+      error_code:linked.error_code||null,error_message:linked.error_message||null};
+  });
 }
 
 async function setProductStockOfficial(p:any,auth:any){

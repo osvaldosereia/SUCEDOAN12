@@ -9,10 +9,10 @@ const sql=readFileSync("supabase/migrations/20261021150000_purchase_xml_note_dat
 
 assert.match(ui,/data-purchase-stock-update/);
 assert.match(ui,/stock_update_requested/);
-assert.match(ui,/Divisor: unidades vendidas em cada/);
+assert.match(ui,/Unidades vendidas em cada/);
 assert.match(ui,/update_cost:true,update_sale_price:false,stock_update_requested:stockUpdate/);
 assert.match(ui,/dados fiscais da nota aplicados/);
-assert.ok(page.includes("admin-runtime.js?v=purchase-xml-fiscal-evidence-20261021"));
+assert.ok(page.includes("admin-runtime.js?v=purchase-xml-automation-v1-20261022"));
 assert.match(runtime,/data-purchase-stock-update/);
 assert.match(runtime,/stock_update_requested:Boolean\(card\.querySelector/);
 assert.match(api,/classification_source:"purchase_xml"/);

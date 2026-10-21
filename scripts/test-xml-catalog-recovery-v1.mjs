@@ -7,7 +7,7 @@ const b=read("supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/i
 const standalone=read("supabase/functions/purchase-xml-v1/index.ts");
 const x=read("supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/xml-catalog-extractor.mjs");
 const xOther=read("supabase/functions/purchase-xml-v1/xml-catalog-extractor.mjs");
-const html=read("vitrine/admin/index.html");
+const html=read("vitrine/admin/admin-runtime.js");
 const sql=read("supabase/migrations/20261009051500_purchase_xml_catalog_observations_v1.sql");
 
 assert.equal(b,standalone,"Both purchase XML backend source copies must be identical");
@@ -27,7 +27,9 @@ const manualOnly=b.slice(b.indexOf("async function manualCatalogOnlyImport("),b.
 assert.doesNotMatch(manualOnly,/await oauth\(|await bg\(|await bw\(/);
 assert.doesNotMatch(manualOnly,/\.from\(["']products["']\)/);
 assert.match(manualOnly,/financial_eligible:false/);
-assert.match(manualOnly,/products_updated:false,stock_updated:false,finance_updated:false/);
+assert.match(manualOnly,/processCatalogItems|xmlCatalogReprocess/);
+assert.match(manualOnly,/writes_products:true,products_created:productsCreated,products_updated:productsUpdated/);
+assert.match(manualOnly,/products_updated_count:productsUpdated,stock_updated:false,finance_updated:false/);
 assert.match(b,/ex\.data\.metadata\?\.catalog_only===true/,
  "Catalog-only invoice must not be promoted by later Bling import");
 
@@ -35,6 +37,8 @@ assert.match(b,/await persistXmlCatalogEvidence\(d\.id,d\.document_key,xml,hash\
 assert.match(b,/ignoreDuplicates:true/);
 const reprocess=b.slice(b.indexOf("async function xmlCatalogReprocess("),b.indexOf("async function catalogQueue("));
 assert.doesNotMatch(reprocess,/\.from\(["']products["']\)/);
+assert.match(reprocess,/processCatalogItems\(d\.id,catalogSource/);
+assert.match(reprocess,/products_created:automation\.created,products_updated:automation\.updated/);
 assert.doesNotMatch(reprocess,/\.from\(["']product_fiscal_profiles["']\)/);
 assert.doesNotMatch(reprocess,/await oauth\(/);
 assert.match(x,/XMLValidator\.validate\(xml\)/);
@@ -57,7 +61,7 @@ assert.match(ui,/if\(state\.xmlCatalogOpen\)await loadXmlCatalog\(\)/);
 assert.match(ui,/if\(!confirm\('Ler até 3 XMLs originais/);
 assert.match(html,/xmlCatalogSectionHtml\(\)\+/);
 assert.match(html,/bindXmlCatalog\(\)/);
-assert.match(html,/Catalogar XML sem cadastrar produtos/);
+assert.match(html,/Importar XML e atualizar catálogo/);
 assert.match(html,/xml_catalog_only_import/);
 assert.match(html,/purchaseXmlCatalogOnlyInput/);
 

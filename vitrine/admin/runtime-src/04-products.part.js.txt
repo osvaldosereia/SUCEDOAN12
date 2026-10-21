@@ -40,7 +40,8 @@
       '<label><span>Preço de custo</span><input name="cost" inputmode="decimal" value="'+esc(((Number(p?.cost_cents||0)/100).toFixed(2)).replace('.',','))+'"></label>'+
       '<label><span>Unidade</span><input name="unit" value="'+esc(p?.unit||'')+'" placeholder="UN, KG, LT…"></label>'+
       '<label><span>Estoque mínimo</span><input name="min_stock" inputmode="decimal" value="'+esc(p?.min_stock??'')+'"></label>'+
-      '<label class="span-2"><span>Fornecedor principal</span><input name="supplier" value="'+esc(p?.supplier||'')+'"></label>';
+      '<label class="span-2"><span>Fornecedor principal</span><input name="supplier" value="'+esc(p?.supplier||'')+'"></label>'+
+      '<label class="check span-2"><input name="purchase_xml_stock_update" type="checkbox" '+(p?.purchase_xml_stock_update!==false?'checked':'')+'><span><strong>Incluir em futuras entradas XML</strong><small>Padrão deste produto; cada nota ainda pode ser conferida.</small></span></label>';
     const classification=
       '<label><span>Categoria da vitrine</span><select name="category">'+categoryOptions(p?.category||'')+'</select></label>'+
       '<label><span>Subcategoria</span><input name="subcategory" value="'+esc(p?.subcategory||'')+'"></label>'+
@@ -155,6 +156,7 @@
           id,duplicate_from_id:duplicateFromId||null,name:form.get('name'),sku:form.get('sku'),gtin:form.get('gtin'),
           sale_price_cents:centsFromInput(form.get('price')),cost_cents:centsFromInput(form.get('cost')),
           stock_quantity:requestedStock,
+          purchase_xml_stock_update:form.get('purchase_xml_stock_update')==='on',
           expiration_date:form.get('expiration_date')||null,
           auto_expiry_offer_enabled:autoExpiry,
           category:form.get('category'),subcategory:form.get('subcategory'),subsubcategory:form.get('subsubcategory'),packaging:form.get('packaging'),
