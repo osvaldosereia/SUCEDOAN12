@@ -816,6 +816,52 @@ select,input,textarea {
 .note-panel p {
   margin:0
 }
+.bling-check-panel {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:14px;
+  margin-top:14px;
+  padding:19px
+}
+.bling-check-panel h2 {
+  font:700 14px Manrope,sans-serif;
+  margin:5px 0
+}
+.bling-check-panel p {
+  color:#858b95;
+  font-size:11px;
+  line-height:1.55;
+  margin:0
+}
+.bling-check-results {
+  grid-column:1/-1;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+  gap:8px;
+  padding-top:13px;
+  border-top:1px solid var(--line)
+}
+.bling-check-results div {
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:#fbfbfc
+}
+.bling-check-results span,.bling-check-results strong {
+  display:block
+}
+.bling-check-results span {
+  color:#858b95;
+  font-size:9px;
+  text-transform:capitalize
+}
+.bling-check-results strong {
+  margin-top:5px;
+  color:#373c46;
+  font-size:11px;
+  overflow-wrap:anywhere
+}
 .loading-inline {
   display:flex;
   align-items:center;
@@ -1065,6 +1111,13 @@ select,input,textarea {
 }
 .integration-details strong {
   font-size:10px
+}
+.bling-check-panel {
+  grid-template-columns:1fr;
+  align-items:stretch
+}
+.bling-check-panel>.button {
+  width:100%
 }
 .toast {
   width:calc(100% - 30px);

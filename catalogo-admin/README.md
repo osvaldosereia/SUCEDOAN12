@@ -14,7 +14,7 @@ Painel independente para administrar produtos e modelos de cestas do site. A pri
 
 - Produtos: busca, consulta, cadastro e edição pelo gateway `admin-products-live-v1`.
 - Cestas: preço, nome, imagem, ativação e itens da composição pelo mesmo gateway.
-- Bling: consulta do estado da integração. Importação e publicação automáticas ficam para a próxima etapa, com regras explícitas para nome, categoria, preço, estoque e ativação.
+- Bling: consulta do estado da integração e conferência somente leitura dos vínculos do catálogo. Importação e publicação automáticas ficam para a próxima etapa, com regras explícitas para nome, categoria, preço, estoque e ativação.
 - Nenhuma chave secreta fica no navegador; o acesso a dados e mutações é autorizado pelas Edge Functions e pelo cadastro `admin_users`.
 
 ## Abrir localmente

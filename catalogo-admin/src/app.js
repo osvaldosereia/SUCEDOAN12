@@ -3,7 +3,7 @@ import { clearSession, ensureSession } from './auth.js';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-const state = { view: 'products', products: [], basketProducts: [], nextProductsOffset: null, productFacets: { categories: [], subcategories: [] }, baskets: [], basket: null, editorProduct: null, search: '', status: '', loading: false, bling: null };
+const state = { view: 'products', products: [], basketProducts: [], nextProductsOffset: null, productFacets: { categories: [], subcategories: [] }, baskets: [], basket: null, editorProduct: null, search: '', status: '', loading: false, bling: null, blingCheck: null, blingChecking: false };
 const workspace = $('#workspace');
 const dialog = $('#editorDialog');
 let toastTimer;
@@ -239,8 +239,21 @@ async function loadBling() {
 function renderBling() {
   const data = state.bling || {};
   const healthy = data.connected === true || data.ready === true || data.ok === true || data.status === 'connected';
-  workspace.innerHTML = '<div class="page-heading"><div><span class="eyebrow">INTEGRAÇÃO</span><h1>Bling</h1><p>Confira o vínculo entre o catálogo da loja e a conta Bling.</p></div><button class="button secondary" id="refreshBling">Atualizar status</button></div><section class="integration-card"><div class="integration-icon">↔</div><div class="integration-copy"><span class="eyebrow">ERP E CATÁLOGO</span><h2>Conexão com o Bling</h2><p>O painel usa a integração já configurada no projeto principal. Chaves e tokens permanecem no servidor.</p><span class="status-pill ' + (healthy ? 'good' : 'attention') + '"><i></i>' + (healthy ? 'Conexão disponível' : 'Requer verificação') + '</span></div><div class="integration-details"><div><span>Projeto conectado</span><strong>Supabase canônico</strong></div><div><span>Operações desta tela</span><strong>Consulta do estado da conexão</strong></div><div><span>Retorno</span><strong>' + escape(data.mode || data.message || data.status || 'Status consultado no servidor') + '</strong></div></div></section><section class="panel note-panel"><span class="note-icon">i</span><div><strong>Sincronização gradual</strong><p>A próxima etapa pode adicionar importação, atualização e vínculo de produtos com regras de origem de dados, mantendo preço, estoque e publicação sob controle.</p></div></section>';
+  const result = state.blingCheck;
+  const summary = result ? (result.summary && typeof result.summary === 'object' ? result.summary : result) : null;
+  const details = summary ? Object.entries(summary).filter(([, value]) => value === null || ['string', 'number', 'boolean'].includes(typeof value) || Array.isArray(value)).slice(0, 10).map(([key, value]) => '<div><span>' + escape(key.replaceAll('_', ' ')) + '</span><strong>' + escape(Array.isArray(value) ? value.length + ' registros' : String(value ?? '—')) + '</strong></div>').join('') : '';
+  workspace.innerHTML = '<div class="page-heading"><div><span class="eyebrow">INTEGRAÇÃO</span><h1>Bling</h1><p>Confira o vínculo entre o catálogo da loja e a conta Bling.</p></div><button class="button secondary" id="refreshBling">Atualizar status</button></div><section class="integration-card"><div class="integration-icon">↔</div><div class="integration-copy"><span class="eyebrow">ERP E CATÁLOGO</span><h2>Conexão com o Bling</h2><p>O painel usa a integração já configurada no projeto principal. Chaves e tokens permanecem no servidor.</p><span class="status-pill ' + (healthy ? 'good' : 'attention') + '"><i></i>' + (healthy ? 'Conexão disponível' : 'Requer verificação') + '</span></div><div class="integration-details"><div><span>Projeto conectado</span><strong>Supabase canônico</strong></div><div><span>Operações desta tela</span><strong>Consulta e conferência somente leitura</strong></div><div><span>Retorno</span><strong>' + escape(data.mode || data.message || data.status || 'Status consultado no servidor') + '</strong></div></div></section><section class="panel bling-check-panel"><div><span class="eyebrow">CATÁLOGO</span><h2>Conferir vínculos de produtos</h2><p>Compara os produtos ativos do site com os vínculos encontrados no Bling. Esta conferência é somente leitura.</p></div><button class="button primary" id="runBlingCheck" ' + (state.blingChecking ? 'disabled' : '') + '>' + (state.blingChecking ? 'Conferindo…' : 'Conferir catálogo') + '</button>' + (details ? '<div class="bling-check-results">' + details + '</div>' : '') + '</section><section class="panel note-panel"><span class="note-icon">i</span><div><strong>Sincronização gradual</strong><p>A edição local já usa o catálogo canônico. Importação, criação e atualização de produtos no Bling ficam para uma etapa própria, com regras definidas para nome, categoria, preço, estoque e ativação.</p></div></section>';
   $('#refreshBling').onclick = loadBling;
+  $('#runBlingCheck').onclick = runBlingCheck;
+}
+async function runBlingCheck() {
+  state.blingChecking = true;
+  renderBling();
+  try {
+    state.blingCheck = await adminWrite('bling_reconcile_catalog_readonly', {});
+    toast('Conferência de catálogo concluída.');
+  } catch (error) { showError(error); }
+  finally { state.blingChecking = false; renderBling(); }
 }
 function renderError(view) {
   const retry = view === 'products' ? 'loadProducts' : view === 'baskets' ? 'loadBaskets' : 'loadBling';
