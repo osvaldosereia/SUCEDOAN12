@@ -389,7 +389,8 @@ async function home(priorityOnly=false){
 // R2: Persist a public, read-only catalog snapshot between Edge Function instances.
 // Never trust snapshot prices/stock when quoting a basket or submitting an order.
 function isValidPublicHome(value:any):boolean{
-  return Boolean(value?.ok===true&&value?.priority!==true&&Array.isArray(value.baskets)&&value.baskets.length>0&&Array.isArray(value.basket_categories));
+  // An empty current catalog is valid: it clears stale cards for baskets that cannot be sold.
+  return Boolean(value?.ok===true&&value?.priority!==true&&Array.isArray(value.baskets)&&Array.isArray(value.basket_categories));
 }
 function priorityFromPublicHome(full:any){
   const group=(full.basket_categories||[]).find((c:any)=>c.slug==="cestas-completas");
