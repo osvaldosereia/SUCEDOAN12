@@ -222,7 +222,7 @@ async function moldHomeCards(priorityOnly=false){
   }
   cards.sort((a,b)=>a.category_sort_order-b.category_sort_order||a.subcategory_sort_order-b.subcategory_sort_order||a.composition_number-b.composition_number||String(a.id).localeCompare(String(b.id)));return cards;
 }
-async function moldDetail(basketId:string,compositionNumber:number,selections:any[]|null=null){
+async function moldDetail(basketId:string,compositionNumber:number,selections:any[]|null=null,includeAlternatives=true){
   const gate=await db.rpc("basket_mold_cutover_ready_v1",{p_basket_id:basketId});if(gate.error)throw gate.error;if(gate.data!==true)return null;
   const [mq,bq,pq]=await Promise.all([
     db.from("basket_molds").select("id,basket_id,hidden_adjustment,conditional_hidden_enabled,conditional_hidden_product_id,conditional_hidden_adjustment,public_composition_count,metadata").eq("basket_id",basketId).maybeSingle(),
@@ -230,10 +230,43 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
     db.rpc("basket_mold_public_compositions_v2",{p_basket_id:basketId})
   ]);if(mq.error)throw mq.error;if(bq.error)throw bq.error;if(pq.error)throw pq.error;const mold=mq.data,basket=bq.data;if(!mold||!basket||basket.is_active!==true)return null;if(compositionNumber<1||compositionNumber>Number(mold.public_composition_count||1))return null;
   const posq=await db.from("basket_mold_positions").select("id,label,quantity,sort_order").eq("mold_id",mold.id).order("sort_order");if(posq.error)throw posq.error;const positions=posq.data||[];if(!positions.length)return null;
-  const positionIds=positions.map((p:any)=>String(p.id)),oq=await db.from("basket_mold_position_options").select("position_id,product_id,sort_order").in("position_id",positionIds).order("sort_order");if(oq.error)throw oq.error;const options=oq.data||[],productIds=options.map((o:any)=>String(o.product_id)),[products,available]=await Promise.all([moldProductsMap(productIds),moldAvailableStockMap(productIds)]);
+  const positionIds=positions.map((p:any)=>String(p.id)),oq=await db.from("basket_mold_position_options").select("position_id,product_id,sort_order").in("position_id",positionIds).order("sort_order");if(oq.error)throw oq.error;const options=oq.data||[],productIds=options.map((o:any)=>String(o.product_id));
   const generated=(pq.data?.compositions||[]).find((c:any)=>Number(c.number)===compositionNumber);if(!generated)return null;const defaultSelected=new Map((generated.items||[]).map((i:any)=>[String(i.position_id),String(i.product_id)])),requested=new Map<string,string>();if(Array.isArray(selections))for(const row of selections){const pid=uid(row?.position_id),product=uid(row?.product_id);if(pid&&product)requested.set(pid,product)}
-  if(selections&&requested.size!==positions.length)throw new Error("basket_mold_component_invalid");let productTotal=0,capacity=30;const items:any[]=[];
-  for(const pos of positions){const pid=String(pos.id),qty=Number(pos.quantity||0),alts=options.filter((o:any)=>String(o.position_id)===pid).map((o:any)=>{const p=products.get(String(o.product_id)),stock=available.get(String(o.product_id))||0;return p&&stock>=qty?{product_id:p.id,name:p.name,sku:p.sku,gtin:p.gtin,image_url:p.image_url||"",packaging:p.packaging||"",stock_quantity:stock,price_cents:moldEffectivePriceCents(p)}:null}).filter(Boolean) as any[];if(!alts.length)return null;alts.sort((a:any,b:any)=>Number(a.price_cents||0)-Number(b.price_cents||0)||String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));// Offer up to ten in-stock alternatives, cheapest first; no random rotation.
+  if(selections&&requested.size!==positions.length)throw new Error("basket_mold_component_invalid");
+  // On lightweight basket/detail/quote, read the selected SKUs only.
+  // Full alternative product names, pictures and prices are read by moldPositionOptions upon a click.
+  const selectedIds=positions.map((pos:any)=>requested.get(String(pos.id))||defaultSelected.get(String(pos.id))||"").filter(Boolean);
+  const readIds=includeAlternatives?productIds:selectedIds;
+  const [products,available]=await Promise.all([moldProductsMap(readIds),moldAvailableStockMap(readIds)]);
+  let productTotal=0,capacity=30;const items:any[]=[];
+  for(const pos of positions){const pid=String(pos.id),qty=Number(pos.quantity||0);
+    if(!includeAlternatives){
+      const linkedOptions=options.filter((o:any)=>String(o.position_id)===pid),candidateIds=linkedOptions.map((o:any)=>String(o.product_id));
+      const requestedId=requested.get(pid),selectedId=requestedId||defaultSelected.get(pid)||"";
+      if(!selectedId||!candidateIds.includes(selectedId)){
+        if(selections)throw new Error("basket_mold_option_invalid");
+        return null;
+      }
+      const buildSelected=(productsMap:Map<string,any>,stockMap:Map<string,number>,productId:string)=>{
+        const p=productsMap.get(productId),stock=stockMap.get(productId)||0;
+        return p&&stock>=qty?{product_id:p.id,name:p.name,sku:p.sku,gtin:p.gtin,image_url:p.image_url||"",packaging:p.packaging||"",stock_quantity:stock,price_cents:moldEffectivePriceCents(p)}:null;
+      };
+      let selected=buildSelected(products,available,selectedId);
+      // Inventory changed after the composition was generated: find a sellable fallback
+      // only for this unavailable position, rather than loading every brand upfront.
+      if(!selected&&!selections){
+        const [fallbackProducts,fallbackStock]=await Promise.all([moldProductsMap(candidateIds),moldAvailableStockMap(candidateIds)]);
+        const fallbacks=candidateIds.map((id:string)=>buildSelected(fallbackProducts,fallbackStock,id)).filter(Boolean) as any[];
+        fallbacks.sort((a:any,b:any)=>Number(a.price_cents||0)-Number(b.price_cents||0)||String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));
+        selected=fallbacks[0]||null;
+      }
+      if(!selected){if(selections)throw new Error("basket_mold_option_invalid");return null}
+      productTotal+=Math.round(Number(selected.price_cents)*qty);
+      capacity=Math.min(capacity,Math.floor(Number(selected.stock_quantity||0)/qty));
+      items.push({position_id:pid,label:pos.label,product_id:selected.product_id,name:selected.name,sku:selected.sku,gtin:selected.gtin,image_url:selected.image_url,packaging:selected.packaging,stock_quantity:selected.stock_quantity,base_quantity:qty,quantity:qty,price_cents:selected.price_cents,alternative_count:linkedOptions.length,alternatives_loaded:false,alternatives:[]});
+      continue;
+    }
+    const alts=options.filter((o:any)=>String(o.position_id)===pid).map((o:any)=>{const p=products.get(String(o.product_id)),stock=available.get(String(o.product_id))||0;return p&&stock>=qty?{product_id:p.id,name:p.name,sku:p.sku,gtin:p.gtin,image_url:p.image_url||"",packaging:p.packaging||"",stock_quantity:stock,price_cents:moldEffectivePriceCents(p)}:null}).filter(Boolean) as any[];if(!alts.length)return null;alts.sort((a:any,b:any)=>Number(a.price_cents||0)-Number(b.price_cents||0)||String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));// Offer up to ten in-stock alternatives, cheapest first; no random rotation.
     const publicAlts=alts.slice(0,10);
     const selectedId=requested.get(pid)||publicAlts[0]?.product_id||defaultSelected.get(pid)||"";
     const selected=alts.find((a:any)=>String(a.product_id)===String(selectedId));
@@ -242,12 +275,43 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
       publicAlts[publicAlts.length-1]=selected;
       publicAlts.sort((a:any,b:any)=>Number(a.price_cents||0)-Number(b.price_cents||0)||String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));
     }
-    if(!selected){if(selections)throw new Error("basket_mold_option_invalid");return null}productTotal+=Math.round(Number(selected.price_cents)*qty);capacity=Math.min(capacity,Math.floor(Number(selected.stock_quantity||0)/qty));items.push({position_id:pid,label:pos.label,product_id:selected.product_id,name:selected.name,sku:selected.sku,gtin:selected.gtin,image_url:selected.image_url,packaging:selected.packaging,stock_quantity:selected.stock_quantity,base_quantity:qty,quantity:qty,alternatives:publicAlts})}
+    if(!selected){if(selections)throw new Error("basket_mold_option_invalid");return null}productTotal+=Math.round(Number(selected.price_cents)*qty);capacity=Math.min(capacity,Math.floor(Number(selected.stock_quantity||0)/qty));items.push({position_id:pid,label:pos.label,product_id:selected.product_id,name:selected.name,sku:selected.sku,gtin:selected.gtin,image_url:selected.image_url,packaging:selected.packaging,stock_quantity:selected.stock_quantity,base_quantity:qty,quantity:qty,price_cents:selected.price_cents,alternative_count:alts.length,alternatives_loaded:includeAlternatives,alternatives:includeAlternatives?publicAlts:[]})}
   const legacyExtras=Array.isArray(mold.metadata?.optional_items)?mold.metadata.optional_items:[];
   const extras=await publicBasketExtraThemes(legacyExtras);
   if(capacity<1)return null;const conditionalHidden=mold.conditional_hidden_enabled===true&&mold.conditional_hidden_product_id&&items.some((i:any)=>String(i.product_id)===String(mold.conditional_hidden_product_id)&&Number(i.quantity||i.base_quantity||0)>0)?cents(mold.conditional_hidden_adjustment||0):0;return {basket:{id:basket.id,name:String(basket.name).replace(/\s+Completa$/i,""),image_url:basket.image_url||"",mold_mode:true,mold_id:mold.id,composition_number:compositionNumber,public_composition_count:Number(mold.public_composition_count||1),hidden_adjustment_cents:cents(mold.hidden_adjustment||0),conditional_hidden_enabled:mold.conditional_hidden_enabled===true,conditional_hidden_product_id:mold.conditional_hidden_product_id||null,conditional_hidden_adjustment_cents:cents(mold.conditional_hidden_adjustment||0),conditional_hidden_applied_cents:conditionalHidden,display_price_cents:Math.max(0,productTotal+cents(mold.hidden_adjustment||0)+conditionalHidden),stock_quantity:capacity},items,extras};
 }
-async function moldQuote(payload:any){const id=uid(payload?.basket_id),n=Math.trunc(Number(payload?.composition_number||1));if(!id)return {error:"invalid_basket",status:400};try{const d=await moldDetail(id,n,Array.isArray(payload?.items)?payload.items:[]);if(!d)return {error:"basket_mold_unavailable",status:409};return {ok:true,total_cents:d.basket.display_price_cents,basket:d.basket,items:d.items,extras:d.extras}}catch(e:any){const code=txt(e?.message,100);return {error:["basket_mold_option_invalid","basket_mold_component_invalid"].includes(code)?code:"basket_mold_unavailable",status:409}}
+// Read the available brands of one basket position only when requested by the customer.
+async function moldPositionOptions(basketId:string,compositionNumber:number,positionId:string,selectedProductId:string){
+  const id=uid(basketId),position=uid(positionId),selectedId=uid(selectedProductId);
+  if(!id||!position||!Number.isInteger(compositionNumber)||compositionNumber<1||compositionNumber>6)return {error:"invalid_basket_mold_options",status:400};
+  const [ready,mq,bq]=await Promise.all([
+    db.rpc("basket_mold_cutover_ready_v1",{p_basket_id:id}),
+    db.from("basket_molds").select("id,public_composition_count").eq("basket_id",id).maybeSingle(),
+    db.from("basket_templates").select("id,is_active").eq("id",id).maybeSingle()
+  ]);
+  if(ready.error)throw ready.error;if(mq.error)throw mq.error;if(bq.error)throw bq.error;
+  const mold=mq.data;
+  if(ready.data!==true||!mold||bq.data?.is_active!==true||compositionNumber>Number(mold.public_composition_count||1))return {error:"basket_mold_unavailable",status:404};
+  const pq=await db.from("basket_mold_positions").select("id,quantity").eq("id",position).eq("mold_id",mold.id).maybeSingle();
+  if(pq.error)throw pq.error;if(!pq.data)return {error:"basket_mold_position_not_found",status:404};
+  const oq=await db.from("basket_mold_position_options").select("product_id,sort_order").eq("position_id",position).order("sort_order");
+  if(oq.error)throw oq.error;
+  const ids=(oq.data||[]).map((r:any)=>String(r.product_id));
+  const [products,stock]=await Promise.all([moldProductsMap(ids),moldAvailableStockMap(ids)]);
+  const qty=Number(pq.data.quantity||0);
+  const alternatives=(oq.data||[]).map((row:any)=>{
+    const p=products.get(String(row.product_id)),available=stock.get(String(row.product_id))||0;
+    return p&&available>=qty?{product_id:p.id,name:p.name,sku:p.sku,gtin:p.gtin,image_url:p.image_url||"",packaging:p.packaging||"",stock_quantity:available,price_cents:moldEffectivePriceCents(p)}:null;
+  }).filter(Boolean) as any[];
+  alternatives.sort((a:any,b:any)=>Number(a.price_cents||0)-Number(b.price_cents||0)||String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));
+  const shown=alternatives.slice(0,10),selected=alternatives.find((a:any)=>String(a.product_id)===selectedId);
+  if(selected&&shown.length>0&&!shown.some((a:any)=>String(a.product_id)===selectedId)){
+    shown[shown.length-1]=selected;
+    shown.sort((a:any,b:any)=>Number(a.price_cents||0)-Number(b.price_cents||0)||String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));
+  }
+  return {ok:true,alternatives:shown,alternative_count:alternatives.length};
+}
+async function moldQuote(payload:any){const id=uid(payload?.basket_id),n=Math.trunc(Number(payload?.composition_number||1));if(!id)return {error:"invalid_basket",status:400};try{const d=await moldDetail(id,n,Array.isArray(payload?.items)?payload.items:[],payload?.lightweight!==true);if(!d)return {error:"basket_mold_unavailable",status:409};return {ok:true,total_cents:d.basket.display_price_cents,basket:d.basket,items:d.items,extras:d.extras}}catch(e:any){const code=txt(e?.message,100);return {error:["basket_mold_option_invalid","basket_mold_component_invalid"].includes(code)?code:"basket_mold_unavailable",status:409}}
 }
 
 // The catalog view computes lot availability for every basket. It is unnecessary when
@@ -677,7 +741,11 @@ Deno.serve(async(req:Request)=>{
     if(req.method==="GET"&&action==="subcategories")return json(req,await subcats(u),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
     if(req.method==="GET"&&action==="products")return json(req,await productList(u),200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="product"){const id=uid(u.searchParams.get("product_id"));if(!id)return json(req,{ok:false,error:"invalid_product"},400);const p=await oneProduct(id);return p?json(req,{ok:true,product:p},200,{"Cache-Control":"no-store"}):json(req,{ok:false,error:"product_not_found"},404)}
-    if(req.method==="GET"&&action==="basket"){const raw=txt(u.searchParams.get("basket_id"),100),mm=raw.match(/^([0-9a-f-]{36})@([1-6])$/i);if(mm){const id=uid(mm[1]);if(!id)return json(req,{ok:false,error:"invalid_basket"},400);const b=await moldDetail(id,Number(mm[2]));return b?json(req,{ok:true,...b},200,{"Cache-Control":"no-store"}):json(req,{ok:false,error:"basket_mold_unavailable"},404)}const id=uid(raw);if(!id)return json(req,{ok:false,error:"invalid_basket"},400);const b=await basket(id);return b?json(req,{ok:true,...b},200,{"Cache-Control":"no-store"}):json(req,{ok:false,error:"basket_not_found"},404)}
+    if(req.method==="GET"&&action==="basket"){const raw=txt(u.searchParams.get("basket_id"),100),mm=raw.match(/^([0-9a-f-]{36})@([1-6])$/i);if(mm){const id=uid(mm[1]);if(!id)return json(req,{ok:false,error:"invalid_basket"},400);const b=await moldDetail(id,Number(mm[2]),null,u.searchParams.get("lightweight")!=="1");return b?json(req,{ok:true,...b},200,{"Cache-Control":"no-store"}):json(req,{ok:false,error:"basket_mold_unavailable"},404)}const id=uid(raw);if(!id)return json(req,{ok:false,error:"invalid_basket"},400);const b=await basket(id);return b?json(req,{ok:true,...b},200,{"Cache-Control":"no-store"}):json(req,{ok:false,error:"basket_not_found"},404)}
+    if(req.method==="GET"&&action==="basket_mold_options"){
+      const r=await moldPositionOptions(u.searchParams.get("basket_id")||"",Math.trunc(Number(u.searchParams.get("composition_number")||0)),u.searchParams.get("position_id")||"",u.searchParams.get("selected_product_id")||"");
+      return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,r,200,{"Cache-Control":"no-store"});
+    }
     if(req.method==="GET"&&action==="basket_extra_products"){const r=await basketExtraProducts(u.searchParams.get("basket_id")||"",u.searchParams.get("theme_id")||"");return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,r,200,{"Cache-Control":"no-store"})}
     if(req.method==="GET"&&action==="resolve_identity_code"){const r=await resolveCode(req,u.searchParams.get("code"));return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,{ok:true,...r},200,{"Cache-Control":"no-store"})}
     if(req.method==="GET"&&action==="resolve_identity_token"){const r=await resolveToken(u.searchParams.get("token"));return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,{ok:true,...r},200,{"Cache-Control":"no-store"})}
