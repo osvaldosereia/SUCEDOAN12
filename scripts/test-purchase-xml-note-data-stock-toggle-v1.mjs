@@ -17,6 +17,8 @@ assert.match(api,/classification_source:"purchase_xml"/);
 assert.match(api,/product_fiscal_evidence"\)\.upsert/);
 assert.match(api,/stock_receipt_plan_locked/);
 assert.match(api,/eq\("stock_update_requested",true\)/);
+assert.match(api,/if\(x\.stock_update_requested===false\)return false/);
+assert.match(ui,/selectedItems=items\.filter\(x=>x\.stock_update_requested!==false\)/);
 assert.match(sql,/add column if not exists stock_update_requested boolean not null default true/);
 assert.match(sql,/get_purchase_xml_receipt_preflight_v1/);
 assert.match(sql,/i\.stock_update_requested is true/);
