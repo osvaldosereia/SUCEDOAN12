@@ -61,7 +61,8 @@
 - Create: `scripts/test-purchase-xml-daily-dedup-v1.mjs`
 
 **Interfaces:**
-- Produces: `function isCompleteImportedInvoice(document: KnownPurchaseDocument | null): boolean`; true only when document key, storage path, content hash, and catalog processing state prove the invoice is complete.
+- Produces: `type KnownPurchaseDocument = { bling_nfe_id: number | null; document_key: string; storage_path: string | null; content_sha256: string | null; item_count: number; catalog_only: boolean; catalog_evidence_count: number; staged_item_count: number; catalog_recovery_failed: boolean }`.
+- Produces: `function isCompleteImportedInvoice(document: KnownPurchaseDocument | null): boolean`; true only when key, path, hash, `catalog_only`, both evidence counts equal `item_count`, and no catalog recovery failure are confirmed.
 - Produces: `async function knownBlingDocuments(rows: BlingNfeRow[]): Promise<Map<string, KnownPurchaseDocument>>`; keys by Bling invoice ID and access key.
 
 - [ ] **Step 1: Write failing regression assertions** for an already complete invoice, an incomplete invoice, a previously unseen invoice, and a duplicate run with 0 new item-review counts.
