@@ -1,30 +1,3 @@
-import { ADMIN_API } from './config.js';
-import { clearSession, ensureSession } from './auth.js';
-
-async function request(url, { method = 'GET', params = {}, body = null, retry = true } = {}) {
-  const token = await ensureSession();
-  const target = new URL(url);
-  for (const [key, value] of Object.entries(params)) {
-    if (value !== '' && value !== null && value !== undefined) target.searchParams.set(key, String(value));
-  }
-  const response = await fetch(target, {
-    method,
-    headers: { Authorization: 'Bearer ' + token, ...(body ? { 'Content-Type': 'application/json' } : {}) },
-    ...(body ? { body: JSON.stringify(body) } : {}),
-    cache: 'no-store'
-  });
-  if (response.status === 401 && retry) {
-    clearSession();
-    return request(url, { method, params, body, retry: false });
-  }
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok || data.ok === false) {
-    const error = new Error(data.message || data.error || 'service_error');
-    error.status = response.status;
-    throw error;
-  }
-  return data;
-}
-
-export const adminApi = (action, params = {}) => request(ADMIN_API, { params: { action, ...params } });
-export const adminWrite = (action, body = {}) => request(ADMIN_API, { method: 'POST', params: { action }, body });
+import { normalizePublicBasket,normalizePublicProduct,requestPreview } from './public-api.js';
+export async function adminApi(action,params={}){if(action==='products'){const r=await requestPreview('products',{limit:Math.min(36,Number(params.limit)||36),offset:params.offset||0,q:params.q||''});return {products:(r.products||[]).map(normalizePublicProduct),next_offset:r.next_offset??null}}if(action==='product_facets')return {categories:[],subcategories:[]};if(action==='baskets_admin'){const r=await requestPreview('home');const baskets=(r.baskets||[]).map(normalizePublicBasket);return {baskets,summary:{templates:baskets.length,active:baskets.length,ready_units:0}}}throw new Error('preview_action_not_allowed')}
+export async function adminWrite(){throw new Error('preview_read_only')}
