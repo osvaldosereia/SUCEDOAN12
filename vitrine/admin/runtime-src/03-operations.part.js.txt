@@ -712,7 +712,7 @@
 
   function productRow(p){
     if(p.__ean_capture_placeholder)return eanCapturePlaceholderDesktopRow(p);
-    const eanCaptureSummary=(p.__ean_catalog_origin==='purchase_xml'?'<span class="sub">XML · revisão do cadastro</span>':'')+(p.__ean_capture_count?'<span class="sub">Leitor EAN · '+esc(p.__ean_capture_count)+' leitura(s) · quantidade lida: '+esc(fmtQty(p.__ean_capture_quantity??0))+(p.bling_stock_ready?'':' · Bling pendente')+'</span>':'');
+    const eanCaptureSummary=(p.__ean_catalog_origin==='purchase_xml'?'<span class="sub">XML · revisão do cadastro</span>':'')+(p.__ean_capture_count?'<span class="sub">Leitor EAN · '+esc(p.__ean_capture_count)+' leitura(s) · quantidade lida: '+esc(fmtQty(p.__ean_capture_quantity??0))+(p.bling_stock_ready?'':' · Bling pendente')+'</span>':'';
     const classification=[categoryLabel(p.category),p.detailed_subcategory||p.subcategory].filter(Boolean).join(' › ');
     const identity=[p.sku,p.gtin,p.packaging].filter(Boolean).join(' · ');
     const expiredInactive=p.active===false&&p.deactivation_reason==='expired';
