@@ -1,11 +1,14 @@
-import { adminApi } from './api.js';
+import { adminApi } from './api.js?v=4';
 import { filterProducts, getProductStockState, listProductCategories } from './products.js';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const state = { products: [], nextOffset: null, query: '', category: '', stock: '' };
 const workspace = $('#workspace');
+const productDialog = $('#productDialog');
+const productDialogContent = $('#productDialogContent');
 let searchTimer;
 let requestVersion = 0;
+let detailRequestVersion = 0;
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, character => ({
@@ -22,8 +25,9 @@ function formatQuantity(quantity) {
 }
 
 function productImage(product) {
-  if (product.image_url) {
-    return `<img src="${escapeHtml(product.image_url)}" alt="" loading="lazy" referrerpolicy="no-referrer">`;
+  const imageUrl = String(product.image_url || '');
+  if (/^https:\/\//i.test(imageUrl)) {
+    return `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer">`;
   }
   return '<span class="product-placeholder" aria-hidden="true">▦</span>';
 }
@@ -42,6 +46,7 @@ function productRow(product) {
     <td>${escapeHtml(product.sku || '—')}</td>
     <td class="money-cell">${formatMoney(product.sale_price_cents)}</td>
     <td><div class="stock-cell"><strong>${formatQuantity(product.stock_quantity)}</strong>${stockBadge(product)}</div></td>
+    <td><button class="text-button detail-button" type="button" data-product-detail="${escapeHtml(product.id)}">Ver detalhes</button></td>
   </tr>`;
 }
 
@@ -55,6 +60,7 @@ function productCard(product) {
       <small>${escapeHtml(secondary || product.sku || '—')}</small>
       <div class="product-mobile-meta"><b>${formatMoney(product.sale_price_cents)}</b><span>Estoque ${formatQuantity(product.stock_quantity)}</span></div>
       ${stockBadge(product)}
+      <button class="text-button detail-button" type="button" data-product-detail="${escapeHtml(product.id)}">Ver detalhes</button>
     </div>
   </article>`;
 }
@@ -88,7 +94,7 @@ function renderProducts() {
       </div>
       <div class="list-summary"><span><strong>${visibleProducts.length}</strong> ${visibleProducts.length === 1 ? 'produto exibido' : 'produtos exibidos'}${hasFilters ? ' com os filtros atuais' : ''}</span>${hasFilters ? '<button class="text-button" id="clearFilters" type="button">Limpar filtros</button>' : ''}</div>
       ${visibleProducts.length ? `
-        <div class="table-scroll"><table class="data-table products-table"><thead><tr><th scope="col">Produto</th><th scope="col">Categoria</th><th scope="col">SKU</th><th scope="col">Preço</th><th scope="col">Estoque</th></tr></thead><tbody>${visibleProducts.map(productRow).join('')}</tbody></table></div>
+        <div class="table-scroll"><table class="data-table products-table"><thead><tr><th scope="col">Produto</th><th scope="col">Categoria</th><th scope="col">SKU</th><th scope="col">Preço</th><th scope="col">Estoque</th><th scope="col"><span class="sr-only">Ações</span></th></tr></thead><tbody>${visibleProducts.map(productRow).join('')}</tbody></table></div>
         <div class="products-mobile-list">${visibleProducts.map(productCard).join('')}</div>
       ` : `<div class="empty-state"><span class="empty-icon" aria-hidden="true">⌕</span><strong>${state.products.length ? 'Nenhum produto encontrado' : 'Nenhum produto disponível'}</strong><span>${state.products.length ? 'Tente ajustar os filtros ou a busca.' : 'Atualize a lista para consultar novamente.'}</span></div>`}
       <div class="panel-foot products-footer"><span>${state.products.length} carregados nesta consulta</span>${state.nextOffset !== null ? '<button class="quiet-button" id="loadMore" type="button">Carregar mais produtos <span aria-hidden="true">→</span></button>' : ''}</div>
@@ -121,6 +127,66 @@ function renderProducts() {
   $('#loadMore')?.addEventListener('click', () => loadProducts({ append: true }));
 }
 
+function renderProductDetail(product) {
+  const attributes = Array.isArray(product.characteristics) ? product.characteristics : [];
+  const fallbackAttributes = [
+    { label: 'Marca', value: product.brand },
+    { label: 'Embalagem', value: product.packaging },
+    { label: 'Categoria', value: product.category }
+  ];
+  const visibleAttributes = (attributes.length ? attributes : fallbackAttributes).filter(item => item?.value);
+  const description = product.description || 'A vitrine não informa uma descrição para este produto.';
+  const image = product.image_url && /^https:\/\//i.test(product.image_url)
+    ? `<img src="${escapeHtml(product.image_url)}" alt="Imagem de ${escapeHtml(product.name)}" referrerpolicy="no-referrer">`
+    : '<span class="product-placeholder" aria-hidden="true">▦</span>';
+  productDialogContent.innerHTML = `
+    <div class="detail-product-hero">
+      <div class="detail-product-image">${image}</div>
+      <div class="detail-product-primary">
+        <span class="eyebrow">${escapeHtml(product.category || 'PRODUTO')}</span>
+        <h3>${escapeHtml(product.name || 'Produto sem nome')}</h3>
+        <p>${escapeHtml([product.brand, product.packaging].filter(Boolean).join(' · ') || 'Produto do catálogo da loja')}</p>
+        <strong class="detail-price">${formatMoney(product.sale_price_cents)}</strong>
+        <div class="detail-stock">${stockBadge(product)} <span>${formatQuantity(product.stock_quantity)} em estoque</span></div>
+      </div>
+    </div>
+    <section class="detail-section"><h3>Informações do produto</h3><dl class="detail-attributes">
+      <div><dt>SKU</dt><dd>${escapeHtml(product.sku || '—')}</dd></div>
+      <div><dt>EAN</dt><dd>${escapeHtml(product.gtin || '—')}</dd></div>
+      ${visibleAttributes.map(item => `<div><dt>${escapeHtml(item.label || 'Informação')}</dt><dd>${escapeHtml(item.value)}</dd></div>`).join('')}
+    </dl></section>
+    <section class="detail-section"><h3>Descrição</h3><p class="detail-description">${escapeHtml(description)}</p></section>`;
+  $('#productDialogTitle').textContent = product.name || 'Detalhes do produto';
+}
+
+async function openProductDetail(productId) {
+  const product = state.products.find(item => String(item.id) === String(productId));
+  if (!product) return;
+  const currentVersion = ++detailRequestVersion;
+  productDialogContent.innerHTML = '<div class="detail-loading"><span class="spinner" aria-hidden="true"></span><strong>Carregando detalhes do produto…</strong></div>';
+  $('#productDialogTitle').textContent = product.name || 'Detalhes do produto';
+  if (!productDialog.open) productDialog.showModal();
+  try {
+    const result = await adminApi('product_detail', { id: productId });
+    if (currentVersion !== detailRequestVersion || !productDialog.open) return;
+    renderProductDetail(result.product);
+  } catch (error) {
+    if (currentVersion !== detailRequestVersion || !productDialog.open) return;
+    productDialogContent.innerHTML = `<div class="detail-error"><strong>Não foi possível carregar os detalhes</strong><span>${escapeHtml(error.message || 'Tente novamente.')}</span><button class="button secondary" id="retryProductDetail" type="button">Tentar novamente</button></div>`;
+    $('#retryProductDetail').addEventListener('click', () => openProductDetail(productId));
+  }
+}
+
+workspace.addEventListener('click', event => {
+  const button = event.target.closest('[data-product-detail]');
+  if (button) openProductDetail(button.dataset.productDetail);
+});
+$('#closeProductDialog').addEventListener('click', () => productDialog.close());
+productDialog.addEventListener('click', event => {
+  if (event.target === productDialog) productDialog.close();
+});
+productDialog.addEventListener('close', () => { detailRequestVersion += 1; });
+
 function renderLoading() {
   workspace.innerHTML = '<div class="loading-card"><span class="spinner" aria-hidden="true"></span><strong>Carregando produtos…</strong><small>Consultando o catálogo da loja.</small></div>';
 }
@@ -148,3 +214,4 @@ async function loadProducts({ append = false } = {}) {
 $('#sessionLabel').textContent = 'Somente leitura';
 $('#currentSection').textContent = 'Produtos';
 loadProducts();
+
