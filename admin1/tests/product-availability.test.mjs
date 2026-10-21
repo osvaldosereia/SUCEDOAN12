@@ -31,7 +31,7 @@ test('não reativa automaticamente após reposição: reativação é uma ação
 test('não confunde estoque sem confirmação recente com estoque zerado', () => {
   assert.deepEqual(getProductAvailability({ active: true, stock_quantity: 0, stock_known: false }), {
     active: true, canActivate: false, action: 'deactivate',
-    label: 'Estoque indisponível', reason: 'Não foi possível confirmar o estoque vendável.'
+    label: 'Ativo · estoque indisponível', reason: 'Não foi possível confirmar o estoque vendável.'
   });
   assert.equal(canSetProductActive({ stock_quantity: 0, stock_known: false }, true), false);
 });
