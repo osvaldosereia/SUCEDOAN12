@@ -1,6 +1,6 @@
-import { adminApi } from './api.js?v=6';
+import { adminApi } from './api.js?v=7';
 import { filterProducts, getProductStockState, listProductCategories } from './products.js';
-import { createProductDraft, findCatalogMatch, getFiscalChecklist, parseNfeXml, readProductDrafts, saveProductDraft } from './product-drafts.js?v=6';
+import { createProductDraft, findCatalogMatch, getFiscalChecklist, parseNfeXml, readProductDrafts, saveProductDraft } from './product-drafts.js?v=7';
 import { findIdentifierConflicts, PRODUCT_CATEGORY_OPTIONS } from './product-management.js?v=1';
 
 const $ = (selector, root = document) => root.querySelector(selector);
