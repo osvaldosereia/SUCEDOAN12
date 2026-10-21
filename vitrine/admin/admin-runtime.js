@@ -2604,8 +2604,7 @@
     if(p?.id&&p?._detail_loaded!==true){
       $('#editorTitle').textContent=isDuplicate?'Duplicar produto':'Editar produto';
       $('#editorBody').innerHTML='<div class="loading">Carregando cadastro completo…</div>';
-      $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Cancelar</button>';
-      $('#cancelEditor').onclick=()=>productEditor.close();
+      $('#editorActions').innerHTML='';
       productEditor.classList.add('product-editor-dialog');
       if(!productEditor.open){productEditor.addEventListener('close',()=>productEditor.classList.remove('product-editor-dialog'),{once:true});productEditor.showModal()}
       try{
@@ -2689,8 +2688,7 @@
       (isDuplicate?'<div class="offer-note span-2"><strong>Novo produto baseado em '+esc(p?.name||'produto')+'.</strong><br>SKU/EAN, estoque, validade, EANs adicionais e ofertas foram limpos. Os demais dados ficam disponíveis para revisão antes de criar.</div>':'')+
       (expiredLifecycle?'<div class="offer-note span-2"><strong>Produto desativado automaticamente por vencimento.</strong><br>Corrija a validade antes de reativá-lo.</div>':'')+
       editorSection('Identificação',identification,true)+editorSection('Comercial',commercial,true)+editorSection('Classificação e canais',classification,true)+editorSection('Estoque, localização e validade',stock,true)+editorSection('Fiscal',fiscalBody,false)+editorSection('Imagem e descrição',imageBody,false)+editorSection('Integrações e auditoria',integrationBody,false)+editorSection('Status e ofertas',offerBody,false)+'</form>';
-    $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Cancelar</button>'+(p&&!isDuplicate?'<button class="secondary" id="manageProductLots">Lotes/validades</button><button class="secondary" id="duplicateFromEditor">Duplicar</button>':'')+'<button class="primary" id="saveProduct">'+(isDuplicate?'Criar produto duplicado':'Salvar produto')+'</button>';
-    $('#cancelEditor').onclick=()=>productEditor.close();
+    $('#editorActions').innerHTML=(p&&!isDuplicate?'<button class="secondary" id="manageProductLots">Lotes/validades</button><button class="secondary" id="duplicateFromEditor">Duplicar</button>':'')+'<button class="primary" id="saveProduct">'+(isDuplicate?'Criar produto duplicado':'Salvar produto')+'</button>';
     if($('#manageProductLots'))$('#manageProductLots').onclick=()=>openProductLotsEditor(p);
     if($('#duplicateFromEditor'))$('#duplicateFromEditor').onclick=()=>openProductEditor(p,true);
     $('#saveProduct').onclick=()=>saveProduct(isDuplicate?'':(p?.id||''),isDuplicate?p.id:'');
