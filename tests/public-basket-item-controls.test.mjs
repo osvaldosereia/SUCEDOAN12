@@ -58,7 +58,7 @@ for (const file of files) {
   test(`${file} initially hides alternative brands behind an accessible disclosure button`, () => {
     const html=readFileSync(new URL(`../${file}`, import.meta.url),'utf8');
     assert.match(html,/data-mold-brand-toggle=/);
-    assert.match(html,/Trocar a marca/);
+    assert.match(html,/Clique para trocar este produto/);
     assert.match(html,/data-mold-brand-toggle=.*aria-expanded=/);
     assert.match(html,/data-mold-brand-panel=/);
     assert.match(html,/\+\(expanded\?'':'hidden'\)/);
