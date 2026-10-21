@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const ui=readFileSync("vitrine/admin/runtime-src/06-purchases.part.js.txt","utf8");
+const page=readFileSync("vitrine/admin/index.html","utf8");
 const runtime=readFileSync("vitrine/admin/admin-runtime.js","utf8");
 const api=readFileSync("supabase/functions/purchase-xml-v1/index.ts","utf8");
 const sql=readFileSync("supabase/migrations/20261021150000_purchase_xml_note_data_stock_toggle_v1.sql","utf8");
@@ -11,6 +12,7 @@ assert.match(ui,/stock_update_requested/);
 assert.match(ui,/Divisor: unidades vendidas em cada/);
 assert.match(ui,/update_cost:true,update_sale_price:false,stock_update_requested:stockUpdate/);
 assert.match(ui,/dados fiscais da nota aplicados/);
+assert.match(page,/admin-runtime\\.js\\?v=purchase-xml-stock-20261021/);
 assert.match(runtime,/data-purchase-stock-update/);
 assert.match(runtime,/stock_update_requested:Boolean\(card\.querySelector/);
 assert.match(api,/classification_source:"purchase_xml"/);
