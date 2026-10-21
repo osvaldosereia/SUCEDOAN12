@@ -2076,6 +2076,7 @@
     }
     bindMobileProductCards(root);
     root.querySelectorAll('[data-zero-product-stock]').forEach(b=>b.onclick=()=>zeroProductStock(b.dataset.zeroProductStock,b));
+    root.querySelectorAll('[data-delete-product]').forEach(b=>b.onclick=()=>deleteProductFromList(b.dataset.deleteProduct,b));
   }
   function watchNextProducts(q,mobile){
     disconnectProductScrollObserver();
@@ -2340,7 +2341,7 @@
         '<label class="mobile-product-field"><span>Estoque</span><input data-mobile-product-field="stock" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(fmtQty(p.stock_quantity||0))+'"></label>'+
         '<label class="mobile-product-field"><span>Gôndola</span><select data-mobile-product-field="gondola" data-product-id="'+esc(p.id)+'">'+gondolas+'</select></label>'+
         '<label class="mobile-product-field full"><span>Validade</span><input data-mobile-product-field="expiration" data-product-id="'+esc(p.id)+'" type="date" value="'+esc(p.expiration_date||'')+'"></label>'+
-      '</div>'+productKitLinks(p,true)+'<div class="mobile-product-card-foot"><span class="mobile-product-save-status saved" data-mobile-product-status="'+esc(p.id)+'">✓ Salvo</span><button class="mobile-product-detail mobile-product-zero-btn" type="button" data-zero-product-stock="'+esc(p.id)+'">Zerar estoque</button><button class="mobile-product-detail" type="button" data-edit-product="'+esc(p.id)+'">Detalhes</button></div></article>';
+      '</div>'+productKitLinks(p,true)+'<div class="mobile-product-card-foot"><span class="mobile-product-save-status saved" data-mobile-product-status="'+esc(p.id)+'">✓ Salvo</span><button class="mobile-product-detail mobile-product-zero-btn" type="button" data-zero-product-stock="'+esc(p.id)+'">Zerar estoque</button><button class="mobile-product-detail" type="button" data-edit-product="'+esc(p.id)+'">Detalhes</button><button class="mobile-product-detail product-delete-btn" type="button" data-delete-product="'+esc(p.id)+'">Excluir</button></div></article>';
   }
   function scheduleMobileProductQuickSave(id,field,value){
     const product=state.products.find(p=>String(p.id)===String(id));if(!product)return;let draft=mobileProductQuickDrafts.get(id)||{};
@@ -2462,9 +2463,35 @@
       '<div class="product-quick-fields"><label class="product-inline-field"><span>Venda</span><input data-mobile-product-field="price" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(price)+'"></label><label class="product-inline-field"><span>Custo</span><input data-mobile-product-field="cost" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(cost)+'"></label><span class="mobile-product-save-status saved product-save-inline" data-mobile-product-status="'+esc(p.id)+'">✓ Salvo</span></div>'+
       '<div class="product-stock-validity"><label class="product-inline-field"><span>Estoque total</span><input data-mobile-product-field="stock" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(fmtQty(p.stock_quantity||0))+'"></label>'+validity+'<span class="product-stock-breakdown-inline">'+esc(fmtQty(p.loose_stock_quantity??p.stock_quantity??0))+' avulso · '+esc(fmtQty(p.basket_locked_quantity||0))+' em cestas/kits</span></div>'+
       '<div class="product-operational-status"><button class="pill product-active-toggle '+(p.active?'':'off')+'" type="button" data-product-active="'+esc(p.id)+'" title="'+esc(statusTitle)+'">'+esc(desktopStatus)+'</button>'+productKitLinks(p)+'</div>'+
-      '<div class="product-row-actions"><button class="product-action-btn product-zero-stock-btn" type="button" data-zero-product-stock="'+esc(p.id)+'">Zerar estoque</button><button class="product-action-btn" data-product-lots="'+esc(p.id)+'">Lotes</button><button class="product-action-btn" data-duplicate-product="'+esc(p.id)+'">Duplicar</button><button class="product-action-btn primary-action" data-edit-product="'+esc(p.id)+'">Editar completo</button></div></div>';
+      '<div class="product-row-actions"><button class="product-action-btn product-zero-stock-btn" type="button" data-zero-product-stock="'+esc(p.id)+'">Zerar estoque</button><button class="product-action-btn" data-product-lots="'+esc(p.id)+'">Lotes</button><button class="product-action-btn" data-duplicate-product="'+esc(p.id)+'">Duplicar</button><button class="product-action-btn product-delete-btn" type="button" data-delete-product="'+esc(p.id)+'">Excluir</button><button class="product-action-btn primary-action" data-edit-product="'+esc(p.id)+'">Editar completo</button></div></div>';
   }
 
+  async function deleteProductFromList(id,button){
+    const product=state.products.find(p=>String(p.id)===String(id));if(!product)return;
+    const confirmation=window.prompt('Exclusão permanente. Digite exatamente o nome do produto para confirmar:\\n\\n'+product.name);
+    if(confirmation===null)return;
+    if(confirmation!==product.name){toast('O nome não confere. O produto não foi excluído.');return}
+    if(button){button.disabled=true;button.textContent='Excluindo…'}
+    try{
+      await api('product_delete',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({product_id:id,confirmation,operator:requireOperator()})
+      });
+      toast('Produto excluído do banco.');
+      await loadProducts($('#productSearch')?.value?.trim()||'',false);
+    }catch(e){
+      const messages={
+        product_has_stock:'Produto ainda tem estoque. Zere o saldo antes de excluir.',
+        product_linked_to_bling:'Produto vinculado ao Bling. Desvincule/reconcilie antes de excluir.',
+        product_has_history:'Produto tem leituras, vendas, lotes ou histórico e foi preservado.',
+        product_in_use:'Produto está sendo usado em outro cadastro e não pode ser excluído.',
+        product_name_confirmation_mismatch:'Confirmação inválida. Produto não excluído.',
+        product_not_found:'Este produto já não existe.'
+      };
+      toast(messages[e.message]||('Não foi possível excluir: '+errorMessage(e.message)));
+      if(button){button.disabled=false;button.textContent='Excluir'}
+    }
+  }
   async function toggleProductActive(id,btn){
     const product=state.products.find(p=>p.id===id);
     if(!product)return;
