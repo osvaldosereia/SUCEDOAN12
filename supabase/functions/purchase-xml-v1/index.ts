@@ -1764,10 +1764,11 @@ async function signedXml(id:string){
   const s=await sb.storage.from("purchase-xml").createSignedUrl(d.data.storage_path,300,{download:true});if(s.error)throw s.error;return {ok:true,url:s.data.signedUrl,expires_in:300};
 }
 async function refreshDocumentReadiness(documentId:string){
-  const q=await sb.from("purchase_xml_items").select("id,product_id,purchase_unit,description,conversion_factor,conversion_status,processing_status,converted_quantity").eq("document_id",documentId);
+  const q=await sb.from("purchase_xml_items").select("id,product_id,purchase_unit,description,conversion_factor,conversion_status,processing_status,converted_quantity,stock_update_requested").eq("document_id",documentId);
   if(q.error)throw q.error;
   const rows=q.data||[];
   const pending=rows.filter((x:any)=>{
+    if(x.stock_update_requested===false)return false;
     const pack=itemLooksPackaged(x);
     return !x.product_id||x.processing_status==="review_required"||x.processing_status==="failed"||x.processing_status==="pending"||x.conversion_status==="review_required"||Number(x.converted_quantity||0)<=0||(pack.packaged&&Number(x.conversion_factor||0)<=1);
   });
