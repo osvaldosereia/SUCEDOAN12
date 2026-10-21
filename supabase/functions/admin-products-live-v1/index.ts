@@ -29,7 +29,7 @@ async function effectiveStockMap(ids:string[]){
 async function mappedProduct(p:any){
   if(!p?.id)return mp(p);
   const m=await stockBreakdownMap([p.id]),s:any=m.get(String(p.id))||{};
-  return mp({...p,stock:s.effective_stock??0,__stock_breakdown:s});
+  return mp({...p,__stock_breakdown:s});
 }
 const O=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
 const OP_SOURCES=["vitrine","storefront_v2","manual_whatsapp","papoai","reorder"];
@@ -49,11 +49,11 @@ function days(a:string,b:string){return Math.round((Date.parse(b+"T12:00:00Z")-D
 function offer(p:any){if(!p.is_offer||p.offer_price==null)return null;const m=meta(p.metadata);return {id:p.id,product_id:p.id,title:p.name,sale_price_cents:Math.round(Number(p.offer_price||0)*100),starts_at:m.offer_starts_at||null,ends_at:m.offer_ends_at||null,active:true,metadata:{source:m.offer_source||"manual",discount_percent:m.offer_discount_percent??null,duration_mode:m.offer_duration_mode||"stock_zero"}}}
 function mp(p:any){
   const m=meta(p.metadata),s=meta(p.__stock_breakdown),o=meta(p.__ops_meta);
-  const sellable=Number(p.stock||0),physical=Math.max(0,Number(s.physical_stock??sellable)),locked=Math.max(0,Number(s.basket_locked||0)),loose=Math.max(0,physical-locked),sellableLoose=Math.max(0,Number(s.loose_stock??sellable));
+  const recorded=Math.max(0,Number(p.stock||0)),physical=Math.max(0,Number(s.physical_stock??recorded)),sellable=Math.max(0,Number(s.effective_stock??recorded)),displayStock=s.bling_stock_ready===true?physical:recorded,locked=Math.max(0,Number(s.basket_locked||0)),loose=Math.max(0,physical-locked),sellableLoose=Math.max(0,Number(s.loose_stock??sellable));
   return {
     id:p.id,sku:p.sku||null,gtin:p.gtin||null,name:p.name||"",description:p.description_short||p.description_long||"",
     active:p.is_active!==false,sale_price_cents:Math.round(Number(p.price||0)*100),cost_cents:Math.round(Number(p.cost||0)*100),
-    stock_quantity:physical,physical_stock_quantity:physical,sellable_stock_quantity:sellable,virtual_stock_quantity:sellable,loose_stock_quantity:loose,sellable_loose_stock_quantity:sellableLoose,basket_locked_quantity:locked,
+    stock_quantity:displayStock,recorded_stock_quantity:recorded,physical_stock_quantity:physical,sellable_stock_quantity:sellable,virtual_stock_quantity:sellable,loose_stock_quantity:loose,sellable_loose_stock_quantity:sellableLoose,basket_locked_quantity:locked,
     stock_breakdown_warning:locked>physical+0.0001,stock_breakdown_difference:Math.max(0,locked-physical),
     bling_stock_ready:s.bling_stock_ready===true,
     image_url:p.image_url||"",image_original_url:p.image_original_url||"",image_ai_url:p.image_ai_url||"",
@@ -414,7 +414,7 @@ async function products(u:URL){
     const products=rows.map((x:any)=>{
       if(x.__ean_capture_placeholder)return x;
       const s:any=sm.get(String(x.id))||{},o:any=om.get(String(x.id))||{};
-      return {...mp({...x,stock:s.effective_stock??0,__stock_breakdown:s,__ops_meta:o}),__ean_capture_count:x.__ean_capture_count,__ean_capture_last_at:x.__ean_capture_last_at,__ean_capture_quantity:x.__ean_capture_quantity};
+      return {...mp({...x,__stock_breakdown:s,__ops_meta:o}),__ean_capture_count:x.__ean_capture_count,__ean_capture_last_at:x.__ean_capture_last_at,__ean_capture_quantity:x.__ean_capture_quantity};
     });
     return {products,next_offset:off+lim<filtered.length?off+lim:null,total:filtered.length};
   }
@@ -436,7 +436,7 @@ async function products(u:URL){
       if(lotStatus==="complete"&&!complete)return false;if(lotStatus==="pending"&&complete)return false;return true;
     }),sort,lotStatus,memberIds);
     rows=filtered.slice(off,off+lim);const [sm,om]=await Promise.all([stockBreakdownMap(rows.map((x:any)=>x.id)),productOperationalMetaMap(rows.map((x:any)=>x.id))]);
-    return {products:rows.map((x:any)=>{const s:any=sm.get(String(x.id))||{},o:any=om.get(String(x.id))||{};return mp({...x,stock:s.effective_stock??0,__stock_breakdown:s,__ops_meta:o})}),next_offset:off+lim<filtered.length?off+lim:null,total:filtered.length};
+    return {products:rows.map((x:any)=>{const s:any=sm.get(String(x.id))||{},o:any=om.get(String(x.id))||{};return mp({...x,__stock_breakdown:s,__ops_meta:o})}),next_offset:off+lim<filtered.length?off+lim:null,total:filtered.length};
   }
   let q=filterProductsByValidity(db.from("products").select("*"),sort,today);
   if(sort==="created_desc")q=q.order("created_at",{ascending:false}).order("name");
@@ -448,7 +448,7 @@ async function products(u:URL){
   q=q.range(off,off+lim-1);if(sub)q=q.eq("subcategory",sub);if(act==="true")q=q.eq("is_active",true);if(act==="false")q=q.eq("is_active",false);
   if(qv)q=q.or("name.ilike.%"+qv+"%,gtin.ilike.%"+qv+"%,sku.ilike.%"+qv+"%");
   const r=await q;if(r.error)throw r.error;rows=r.data||[];const [sm,om]=await Promise.all([stockBreakdownMap(rows.map((x:any)=>x.id)),productOperationalMetaMap(rows.map((x:any)=>x.id))]);
-  return {products:rows.map((x:any)=>{const s:any=sm.get(String(x.id))||{},o:any=om.get(String(x.id))||{};return mp({...x,stock:s.effective_stock??0,__stock_breakdown:s,__ops_meta:o})}),next_offset:rows.length===lim?off+lim:null};
+  return {products:rows.map((x:any)=>{const s:any=sm.get(String(x.id))||{},o:any=om.get(String(x.id))||{};return mp({...x,__stock_breakdown:s,__ops_meta:o})}),next_offset:rows.length===lim?off+lim:null};
 }
 async function facets(c:string,act=""){
   const all:any[]=[];
