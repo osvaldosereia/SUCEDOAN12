@@ -24,6 +24,7 @@ assert.ok(dispatch.includes('r.campaigns_enabled is true and r.send_enabled is t
 assert.ok(dispatch.includes('s.due_at>=mr.activated_at'));
 assert.ok(dispatch.includes("s.due_at>=now()-interval '24 hours'"));
 assert.ok(dispatch.includes("coalesce(o.status,'') not in ('cancelled','returned')"));
+assert.equal((dispatch.match(/s\\.due_at=o\\.confirmed_at \\+ interval '28 days'/g)||[]).length,3,'claim, validation and worker count must reject legacy D+10 due dates');
 assert.doesNotMatch(dispatch,/cron\.schedule\(/i,'no scheduler before approvals');
 
 assert.ok(worker.includes('marketing_campaign_worker_internal_key_v1'));
