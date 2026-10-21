@@ -1,5 +1,5 @@
 import { adminApi } from './api.js?v=7';
-import { filterProducts, getProductStockState, listProductCategories } from './products.js';
+import { filterProducts, getProductStockState, listProductCategories } from './products.js?v=2';
 import { createProductDraft, findCatalogMatch, getFiscalChecklist, parseNfeXml, readProductDrafts, saveProductDraft } from './product-drafts.js?v=7';
 import { findIdentifierConflicts, PRODUCT_CATEGORY_OPTIONS } from './product-management.js?v=1';
 
