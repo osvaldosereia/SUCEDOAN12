@@ -23,8 +23,12 @@ const renderOptions=new Function("esc","money","safeImage","moldSelectedProduct"
 const singleOption=renderOptions({name:"Arroz",product_id:"p1",alternatives:[{product_id:"p1",name:"Arroz",price_cents:100}]},0);
 assert.equal(singleOption,"","products with one available option do not render a redundant selector");
 const multipleOptions=renderOptions({name:"Arroz",product_id:"p1",alternatives:[{product_id:"p1",name:"Arroz",price_cents:100},{product_id:"p2",name:"Arroz tipo 1",price_cents:110}]},1);
-assert.ok(multipleOptions.includes("basket-option-carousel-track"),"products with multiple options keep the carousel");
-assert.equal((multipleOptions.match(/class="basket-option-choice /g)||[]).length,2,"all product options remain selectable");
+assert.ok(multipleOptions.includes("Clique para trocar este produto"),"collapsed products offer an explicit disclosure");
+assert.ok(!multipleOptions.includes("basket-option-carousel-track"),"closed cards never render their carousel");
+assert.equal((multipleOptions.match(/class="basket-option-choice /g)||[]).length,0,"closed cards do not create product images or options");
+const openedOptions=renderOptions({name:"Arroz",product_id:"p1",alternatives:[{product_id:"p1",name:"Arroz",price_cents:100},{product_id:"p2",name:"Arroz tipo 1",price_cents:110}]},1,true);
+assert.ok(openedOptions.includes("basket-option-carousel-track"),"carousels appear after expansion");
+assert.equal((openedOptions.match(/class="basket-option-choice /g)||[]).length,2,"all available options can be selected after expansion");
 
 
 assert.ok(style.includes(".product-card .name{font-size:16px"),"catalog product names use readable 16px sizing");
