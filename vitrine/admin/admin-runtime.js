@@ -2640,7 +2640,8 @@
       '<label><span>Preço de custo</span><input name="cost" inputmode="decimal" value="'+esc(((Number(p?.cost_cents||0)/100).toFixed(2)).replace('.',','))+'"></label>'+
       '<label><span>Unidade</span><input name="unit" value="'+esc(p?.unit||'')+'" placeholder="UN, KG, LT…"></label>'+
       '<label><span>Estoque mínimo</span><input name="min_stock" inputmode="decimal" value="'+esc(p?.min_stock??'')+'"></label>'+
-      '<label class="span-2"><span>Fornecedor principal</span><input name="supplier" value="'+esc(p?.supplier||'')+'"></label>';
+      '<label class="span-2"><span>Fornecedor principal</span><input name="supplier" value="'+esc(p?.supplier||'')+'"></label>'+
+      '<label class="check span-2"><input name="purchase_xml_stock_update" type="checkbox" '+(p?.purchase_xml_stock_update!==false?'checked':'')+'><span><strong>Incluir em futuras entradas XML</strong><small>Padrão deste produto; cada nota ainda pode ser conferida.</small></span></label>';
     const classification=
       '<label><span>Categoria da vitrine</span><select name="category">'+categoryOptions(p?.category||'')+'</select></label>'+
       '<label><span>Subcategoria</span><input name="subcategory" value="'+esc(p?.subcategory||'')+'"></label>'+
@@ -2755,6 +2756,7 @@
           id,duplicate_from_id:duplicateFromId||null,name:form.get('name'),sku:form.get('sku'),gtin:form.get('gtin'),
           sale_price_cents:centsFromInput(form.get('price')),cost_cents:centsFromInput(form.get('cost')),
           stock_quantity:requestedStock,
+          purchase_xml_stock_update:form.get('purchase_xml_stock_update')==='on',
           expiration_date:form.get('expiration_date')||null,
           auto_expiry_offer_enabled:autoExpiry,
           category:form.get('category'),subcategory:form.get('subcategory'),subsubcategory:form.get('subsubcategory'),packaging:form.get('packaging'),
@@ -4490,9 +4492,9 @@
       '<details class="panel purchase-import-options"><summary>Outras opções de importação</summary>'+
         '<div class="purchase-toolbar-actions">'+
           '<button class="secondary" id="purchaseXmlSingle" type="button">Enviar apenas 1 XML</button>'+
-          '<button class="secondary" id="purchaseXmlCatalogOnly" type="button">Catalogar XML sem cadastrar produtos</button>'+
+          '<button class="secondary" id="purchaseXmlCatalogOnly" type="button">Importar XML e atualizar catálogo</button>'+
         '</div>'+
-        '<p class="sub">Importar uma nota não lança estoque automaticamente. A opção de catalogar serve apenas para pesquisa e revisão, sem alterar produtos, preços, estoque ou financeiro. Notas em CPF não geram contas a pagar.</p>'+
+        '<p class="sub">A automação pode criar produtos novos inativos e atualizar fornecedor e custo quando EAN e conversão estiverem confirmados. NCM e CEST ficam para revisão fiscal. Não lança estoque nem cria registros financeiros. Notas em CPF não geram contas a pagar.</p>'+
       '</details>'+
       '<input id="purchaseXmlInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>'+
       '<input id="purchaseXmlCatalogOnlyInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>'+
@@ -4655,6 +4657,11 @@
       ?'Preço atual já está acima do mínimo de '+purchaseMoney(minimum)+' e será mantido.'
       :hasMinimum?'Sugestão mínima com 40%: '+purchaseMoney(minimum)+'.':'Confira o preço antes de autorizar.';
     const existing=Boolean(prod?.id),inactive=existing&&prod.is_active===false,newFromXml=Boolean(prod?.metadata?.purchase_xml_created);
+    const hasStockPolicy=typeof prod?.purchase_xml_stock_update==='boolean';
+    const stockIncluded=hasStockPolicy?prod.purchase_xml_stock_update:x.stock_update_requested!==false;
+    const stockPolicyText=hasStockPolicy?(prod.purchase_xml_stock_update?'Padrão do produto: incluir nas próximas entradas XML.':'Padrão do produto: não incluir nas próximas entradas XML.'):'Padrão do produto ainda não carregado; esta nota mantém a opção atual.';
+    const purchaseUnitKey=String(x.purchase_unit||'').trim().toUpperCase();
+    const showFactor=Boolean(p.requires_conversion_confirmation||Number(factor)>1||['CX','FD','FAR','FARDO','CAIXA','FDO','PCT','DP'].includes(purchaseUnitKey));
     const approved=Boolean(x?.metadata?.catalog_approved_at),sync=x?.metadata?.bling_sale_status||'',costSync=x?.metadata?.bling_supplier_cost_status||'';
     const statusText=approved
       ?'<div class="purchase-sync-status"><strong>✓ Atualizado no Admin</strong> · '+(sync==='confirmed'?'Preço confirmado no Bling':sync==='pending'||sync==='missing_link'?'Preço no Bling pendente':sync==='not_requested'?'Preço do Bling não foi alterado':'Preço no Bling não conferido')+
@@ -4680,27 +4687,22 @@
     const qtyText=(factor&&Number(factor)>0)
       ?esc(fmtQty(x.purchase_quantity||0))+' '+esc(x.purchase_unit||'')+' × '+esc(fmtQty(factor))+' = '+esc(fmtQty(Number(x.purchase_quantity||0)*Number(factor)))+' UN'
       :esc(fmtQty(x.purchase_quantity||0))+' '+esc(x.purchase_unit||'');
-    const workflowStatus=!existing?'Vincular':approved?(sync==='pending'||sync==='missing_link'?'Bling pendente':'Salvo'):needsFactor?'Conferir embalagem':'Conferir';
+    const workflowStatus=!existing?'Vincular produto':needsFactor?'Conferir divisor':approved?(sync==='pending'||sync==='missing_link'?'Bling pendente':'Atualizado'):newFromXml&&inactive?'Novo inativo · revisar':'Revisar dados';
     return '<div class="purchase-item-card" data-purchase-item="'+esc(x.id)+'" data-document-id="'+esc(x.document_id)+'">'+
       '<details class="purchase-item-collapsible"><summary class="purchase-item-compact-summary"><span class="purchase-item-compact-name"><strong>'+esc(prod.name||x.description||'Produto')+'</strong><small>'+esc(x.description||'')+'</small></span><span class="purchase-item-compact-qty">'+qtyText+'</span><span class="pill '+(!existing||needsFactor?'warn':approved?'':'warn')+'">'+esc(workflowStatus)+'</span></summary><div class="purchase-item-compact-body">'+
       '<div class="purchase-item-title"><div><strong>'+esc(prod.name||x.description||'Produto')+'</strong>'+
         '<small>'+esc(x.description||'')+' · EAN '+esc(x.commercial_gtin||x.tax_gtin||prod.gtin||'não informado')+'</small>'+
         '<small><b>Compra:</b> '+qtyText+'</small></div>'+
-        '<div class="purchase-item-badges">'+
-          '<span class="pill '+(existing?'':'warn')+'">'+(existing?'Produto identificado':'1. Vincular produto')+'</span>'+
-          (newFromXml?'<span class="pill warn">Novo pelo XML</span>':'')+
-          (inactive?'<span class="pill off">Inativo</span>':'')+
-          (needsFactor?'<span class="pill warn">2. Conferir unidades da embalagem</span>':'<span class="pill">Unidade de venda</span>')+
         '</div></div>'+statusText+matchHtml+
       '<div class="purchase-price-grid">'+
-        '<div class="purchase-field"><label>Divisor: unidades vendidas em cada '+esc(x.purchase_unit||'embalagem')+'</label><input type="number" min="1" step="1" data-purchase-factor value="'+esc(purchaseNumberInput(factor))+'"><div class="purchase-factor-hint '+(needsFactor?'warn-text':'')+'" data-purchase-factor-hint>'+factorHint+'</div></div>'+
+        (showFactor?'<div class="purchase-field"><label>Unidades vendidas em cada '+esc(x.purchase_unit||'embalagem')+'</label><input type="number" min="1" step="1" data-purchase-factor value="'+esc(purchaseNumberInput(factor))+'"><div class="purchase-factor-hint '+(needsFactor?'warn-text':'')+'" data-purchase-factor-hint>'+factorHint+'</div></div>':'<input type="hidden" data-purchase-factor value="'+esc(purchaseNumberInput(factor||1))+'">')+
         '<div class="purchase-price-box"><small>Quantidade final</small><strong data-purchase-base-qty>'+((factor&&Number(factor)>0)?esc(fmtQty(Number(x.purchase_quantity||0)*Number(factor)))+' UN':'—')+'</strong></div>'+
         '<div class="purchase-price-box"><small>Custo atual</small><strong>'+purchaseMaybeMoney(prod.cost)+'</strong></div>'+
         '<div class="purchase-price-box"><small>Custo novo / UN</small><strong class="accent" data-purchase-unit-cost>'+purchaseMaybeMoney(unitCost)+'</strong></div>'+
         '<div class="purchase-price-box"><small>Preço atual</small><strong>'+purchaseMaybeMoney(prod.price)+'</strong></div>'+
         '<div class="purchase-field"><label>Preço de venda</label><input type="number" min="0" step="0.01" data-purchase-sale value="'+esc(purchaseNumberInput(saleValue))+'"><div class="purchase-factor-hint" data-purchase-sale-hint>'+esc(saleHint)+'</div></div>'+
       '</div>'+
-      '<div class="purchase-item-controls"><div><div class="purchase-checks"><label><input type="checkbox" data-purchase-update-cost checked> Atualizar custo</label><label><input type="checkbox" data-purchase-update-sale '+(shouldUpdateSale?'checked':'')+'> Atualizar preço de venda</label><label><input type="checkbox" data-purchase-stock-update '+(x.stock_update_requested===false?'':'checked')+'> Incluir esta quantidade na entrada do estoque</label></div><div class="purchase-stock-note">Estoque atual: '+esc(fmtQty(prod.stock||0))+' · autorizar este item não altera o estoque.</div></div>'+
+      '<div class="purchase-item-controls"><div><div class="purchase-checks"><label><input type="checkbox" data-purchase-update-cost checked> Atualizar custo</label><label><input type="checkbox" data-purchase-update-sale '+(shouldUpdateSale?'checked':'')+'> Atualizar preço de venda</label><label><input type="checkbox" data-purchase-stock-update '+(stockIncluded?'checked':'')+'> Incluir esta quantidade na entrada do estoque</label></div><div class="purchase-stock-note">'+esc(stockPolicyText)+' Estoque atual: '+esc(fmtQty(prod.stock||0))+' · salvar não altera o estoque.</div></div>'+
         '<div><button class="primary" type="button" data-purchase-approve-item="'+esc(x.id)+'" '+(!existing?'disabled title="Vincule primeiro o produto acima"':'')+'>'+(approved&&['pending','missing_link'].includes(sync)?'Reenviar ao Bling':approved?'Revisar atualização':'Salvar e sincronizar')+'</button><span class="purchase-approval-result" data-purchase-result role="status"></span></div></div>'+
       '</div></details></div>';
   }
@@ -5668,7 +5670,7 @@
         }).join(''):'<div class="empty">Nenhuma nota importada neste período. Clique em “Buscar no Bling” ou “Importar XML”.</div>')+
         '<div class="empty" id="purchaseNoFilterResults" style="display:none">Nenhuma nota corresponde à pesquisa.</div>'+
       '</section>'+
-      '<details id="purchaseAdvanced" class="panel purchase-extra" '+(state.purchaseAdvancedOpen?'open':'')+'><summary>Ferramentas avançadas: catálogo, produtos e integração</summary>'+
+      '<details id="purchaseAdvanced" class="panel purchase-extra" '+(state.purchaseAdvancedOpen?'open':'')+'><summary>Opções adicionais: catálogo e integração</summary>'+
       (!state.purchaseAdvancedLoaded||state.purchaseAdvancedError?'<div class="purchase-compact-note">'+esc(state.purchaseAdvancedError|| (state.purchaseAdvancedLoading?'Carregando índice…':'Abra para carregar a conferência avançada.'))+'</div>'+(state.purchaseAdvancedError?'<button class="secondary" type="button" id="purchaseRetryAdvanced">Tentar novamente</button>':''):'')+
       purchaseCatalogQueueHtml()+
       xmlCatalogSectionHtml()+
@@ -5760,10 +5762,10 @@
     const input=$('#purchaseXmlCatalogOnlyInput');if(input)input.value='';
     const valid=(files||[]).filter(f=>/\.xml$/i.test(f.name)||/xml/i.test(f.type||''));
     if(!valid.length){toast('Selecione arquivos XML');return}
-    if(!confirm('Catalogar '+valid.length+' XML(s) sem cadastrar produtos, alterar estoque, custos, NCM ou financeiro?'))return;
+    if(!confirm('Importar '+valid.length+' XML(s)? A automação pode criar produtos inativos e atualizar fornecedor/custo quando EAN e conversão estiverem confirmados. Não lança estoque nem cria financeiro; NCM/CEST ficam para revisão fiscal.'))return;
     const button=$('#purchaseXmlCatalogOnly');
-    if(button){button.disabled=true;button.textContent='Catalogando XMLs…'}
-    let ok=0,dup=0,fail=0,items=0;
+    if(button){button.disabled=true;button.textContent='Enviando XMLs…'}
+    let ok=0,dup=0,fail=0,items=0,productsCreated=0,productsUpdated=0;
     try{
       for(let i=0;i<valid.length;i+=5){
         const part=valid.slice(i,i+5),payload=[];
@@ -5771,8 +5773,9 @@
         const r=await purchaseApi('xml_catalog_only_import',{files:payload});
         ok+=Number(r.processed||0);dup+=Number(r.duplicates||0);
         fail+=Number(r.failed||0);items+=Number(r.items||0);
+        productsCreated+=Number(r.products_created||0);productsUpdated+=Number(r.products_updated_count||0);
       }
-      toast('Catálogo: '+ok+' nota(s), '+items+' itens'+(dup?' · '+dup+' repetida(s)':'')+(fail?' · '+fail+' erro(s)':''));
+      toast('Catálogo: '+ok+' nota(s), '+items+' itens · '+productsCreated+' produto(s) novo(s) · '+productsUpdated+' atualizado(s)'+(dup?' · '+dup+' repetida(s)':'')+(fail?' · '+fail+' erro(s)':''));
       await loadPurchases();
     }catch(e){toast(errorMessage(e.message))}
     finally{if(button){button.disabled=false;button.textContent='Enviar XMLs ao catálogo'}}

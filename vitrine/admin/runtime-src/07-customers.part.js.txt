@@ -229,7 +229,7 @@
         }).join(''):'<div class="empty">Nenhuma nota importada neste período. Clique em “Buscar no Bling” ou “Importar XML”.</div>')+
         '<div class="empty" id="purchaseNoFilterResults" style="display:none">Nenhuma nota corresponde à pesquisa.</div>'+
       '</section>'+
-      '<details id="purchaseAdvanced" class="panel purchase-extra" '+(state.purchaseAdvancedOpen?'open':'')+'><summary>Ferramentas avançadas: catálogo, produtos e integração</summary>'+
+      '<details id="purchaseAdvanced" class="panel purchase-extra" '+(state.purchaseAdvancedOpen?'open':'')+'><summary>Opções adicionais: catálogo e integração</summary>'+
       (!state.purchaseAdvancedLoaded||state.purchaseAdvancedError?'<div class="purchase-compact-note">'+esc(state.purchaseAdvancedError|| (state.purchaseAdvancedLoading?'Carregando índice…':'Abra para carregar a conferência avançada.'))+'</div>'+(state.purchaseAdvancedError?'<button class="secondary" type="button" id="purchaseRetryAdvanced">Tentar novamente</button>':''):'')+
       purchaseCatalogQueueHtml()+
       xmlCatalogSectionHtml()+
@@ -321,10 +321,10 @@
     const input=$('#purchaseXmlCatalogOnlyInput');if(input)input.value='';
     const valid=(files||[]).filter(f=>/\.xml$/i.test(f.name)||/xml/i.test(f.type||''));
     if(!valid.length){toast('Selecione arquivos XML');return}
-    if(!confirm('Catalogar '+valid.length+' XML(s) sem cadastrar produtos, alterar estoque, custos, NCM ou financeiro?'))return;
+    if(!confirm('Importar '+valid.length+' XML(s)? A automação pode criar produtos inativos e atualizar fornecedor/custo quando EAN e conversão estiverem confirmados. Não lança estoque nem cria financeiro; NCM/CEST ficam para revisão fiscal.'))return;
     const button=$('#purchaseXmlCatalogOnly');
-    if(button){button.disabled=true;button.textContent='Catalogando XMLs…'}
-    let ok=0,dup=0,fail=0,items=0;
+    if(button){button.disabled=true;button.textContent='Enviando XMLs…'}
+    let ok=0,dup=0,fail=0,items=0,productsCreated=0,productsUpdated=0;
     try{
       for(let i=0;i<valid.length;i+=5){
         const part=valid.slice(i,i+5),payload=[];
@@ -332,8 +332,9 @@
         const r=await purchaseApi('xml_catalog_only_import',{files:payload});
         ok+=Number(r.processed||0);dup+=Number(r.duplicates||0);
         fail+=Number(r.failed||0);items+=Number(r.items||0);
+        productsCreated+=Number(r.products_created||0);productsUpdated+=Number(r.products_updated_count||0);
       }
-      toast('Catálogo: '+ok+' nota(s), '+items+' itens'+(dup?' · '+dup+' repetida(s)':'')+(fail?' · '+fail+' erro(s)':''));
+      toast('Catálogo: '+ok+' nota(s), '+items+' itens · '+productsCreated+' produto(s) novo(s) · '+productsUpdated+' atualizado(s)'+(dup?' · '+dup+' repetida(s)':'')+(fail?' · '+fail+' erro(s)':''));
       await loadPurchases();
     }catch(e){toast(errorMessage(e.message))}
     finally{if(button){button.disabled=false;button.textContent='Enviar XMLs ao catálogo'}}

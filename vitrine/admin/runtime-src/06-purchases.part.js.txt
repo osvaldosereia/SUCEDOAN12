@@ -100,6 +100,11 @@
       ?'Preço atual já está acima do mínimo de '+purchaseMoney(minimum)+' e será mantido.'
       :hasMinimum?'Sugestão mínima com 40%: '+purchaseMoney(minimum)+'.':'Confira o preço antes de autorizar.';
     const existing=Boolean(prod?.id),inactive=existing&&prod.is_active===false,newFromXml=Boolean(prod?.metadata?.purchase_xml_created);
+    const hasStockPolicy=typeof prod?.purchase_xml_stock_update==='boolean';
+    const stockIncluded=hasStockPolicy?prod.purchase_xml_stock_update:x.stock_update_requested!==false;
+    const stockPolicyText=hasStockPolicy?(prod.purchase_xml_stock_update?'Padrão do produto: incluir nas próximas entradas XML.':'Padrão do produto: não incluir nas próximas entradas XML.'):'Padrão do produto ainda não carregado; esta nota mantém a opção atual.';
+    const purchaseUnitKey=String(x.purchase_unit||'').trim().toUpperCase();
+    const showFactor=Boolean(p.requires_conversion_confirmation||Number(factor)>1||['CX','FD','FAR','FARDO','CAIXA','FDO','PCT','DP'].includes(purchaseUnitKey));
     const approved=Boolean(x?.metadata?.catalog_approved_at),sync=x?.metadata?.bling_sale_status||'',costSync=x?.metadata?.bling_supplier_cost_status||'';
     const statusText=approved
       ?'<div class="purchase-sync-status"><strong>✓ Atualizado no Admin</strong> · '+(sync==='confirmed'?'Preço confirmado no Bling':sync==='pending'||sync==='missing_link'?'Preço no Bling pendente':sync==='not_requested'?'Preço do Bling não foi alterado':'Preço no Bling não conferido')+
@@ -125,27 +130,22 @@
     const qtyText=(factor&&Number(factor)>0)
       ?esc(fmtQty(x.purchase_quantity||0))+' '+esc(x.purchase_unit||'')+' × '+esc(fmtQty(factor))+' = '+esc(fmtQty(Number(x.purchase_quantity||0)*Number(factor)))+' UN'
       :esc(fmtQty(x.purchase_quantity||0))+' '+esc(x.purchase_unit||'');
-    const workflowStatus=!existing?'Vincular':approved?(sync==='pending'||sync==='missing_link'?'Bling pendente':'Salvo'):needsFactor?'Conferir embalagem':'Conferir';
+    const workflowStatus=!existing?'Vincular produto':needsFactor?'Conferir divisor':approved?(sync==='pending'||sync==='missing_link'?'Bling pendente':'Atualizado'):newFromXml&&inactive?'Novo inativo · revisar':'Revisar dados';
     return '<div class="purchase-item-card" data-purchase-item="'+esc(x.id)+'" data-document-id="'+esc(x.document_id)+'">'+
       '<details class="purchase-item-collapsible"><summary class="purchase-item-compact-summary"><span class="purchase-item-compact-name"><strong>'+esc(prod.name||x.description||'Produto')+'</strong><small>'+esc(x.description||'')+'</small></span><span class="purchase-item-compact-qty">'+qtyText+'</span><span class="pill '+(!existing||needsFactor?'warn':approved?'':'warn')+'">'+esc(workflowStatus)+'</span></summary><div class="purchase-item-compact-body">'+
       '<div class="purchase-item-title"><div><strong>'+esc(prod.name||x.description||'Produto')+'</strong>'+
         '<small>'+esc(x.description||'')+' · EAN '+esc(x.commercial_gtin||x.tax_gtin||prod.gtin||'não informado')+'</small>'+
         '<small><b>Compra:</b> '+qtyText+'</small></div>'+
-        '<div class="purchase-item-badges">'+
-          '<span class="pill '+(existing?'':'warn')+'">'+(existing?'Produto identificado':'1. Vincular produto')+'</span>'+
-          (newFromXml?'<span class="pill warn">Novo pelo XML</span>':'')+
-          (inactive?'<span class="pill off">Inativo</span>':'')+
-          (needsFactor?'<span class="pill warn">2. Conferir unidades da embalagem</span>':'<span class="pill">Unidade de venda</span>')+
         '</div></div>'+statusText+matchHtml+
       '<div class="purchase-price-grid">'+
-        '<div class="purchase-field"><label>Divisor: unidades vendidas em cada '+esc(x.purchase_unit||'embalagem')+'</label><input type="number" min="1" step="1" data-purchase-factor value="'+esc(purchaseNumberInput(factor))+'"><div class="purchase-factor-hint '+(needsFactor?'warn-text':'')+'" data-purchase-factor-hint>'+factorHint+'</div></div>'+
+        (showFactor?'<div class="purchase-field"><label>Unidades vendidas em cada '+esc(x.purchase_unit||'embalagem')+'</label><input type="number" min="1" step="1" data-purchase-factor value="'+esc(purchaseNumberInput(factor))+'"><div class="purchase-factor-hint '+(needsFactor?'warn-text':'')+'" data-purchase-factor-hint>'+factorHint+'</div></div>':'<input type="hidden" data-purchase-factor value="'+esc(purchaseNumberInput(factor||1))+'">')+
         '<div class="purchase-price-box"><small>Quantidade final</small><strong data-purchase-base-qty>'+((factor&&Number(factor)>0)?esc(fmtQty(Number(x.purchase_quantity||0)*Number(factor)))+' UN':'—')+'</strong></div>'+
         '<div class="purchase-price-box"><small>Custo atual</small><strong>'+purchaseMaybeMoney(prod.cost)+'</strong></div>'+
         '<div class="purchase-price-box"><small>Custo novo / UN</small><strong class="accent" data-purchase-unit-cost>'+purchaseMaybeMoney(unitCost)+'</strong></div>'+
         '<div class="purchase-price-box"><small>Preço atual</small><strong>'+purchaseMaybeMoney(prod.price)+'</strong></div>'+
         '<div class="purchase-field"><label>Preço de venda</label><input type="number" min="0" step="0.01" data-purchase-sale value="'+esc(purchaseNumberInput(saleValue))+'"><div class="purchase-factor-hint" data-purchase-sale-hint>'+esc(saleHint)+'</div></div>'+
       '</div>'+
-      '<div class="purchase-item-controls"><div><div class="purchase-checks"><label><input type="checkbox" data-purchase-update-cost checked> Atualizar custo</label><label><input type="checkbox" data-purchase-update-sale '+(shouldUpdateSale?'checked':'')+'> Atualizar preço de venda</label><label><input type="checkbox" data-purchase-stock-update '+(x.stock_update_requested===false?'':'checked')+'> Incluir esta quantidade na entrada do estoque</label></div><div class="purchase-stock-note">Estoque atual: '+esc(fmtQty(prod.stock||0))+' · autorizar este item não altera o estoque.</div></div>'+
+      '<div class="purchase-item-controls"><div><div class="purchase-checks"><label><input type="checkbox" data-purchase-update-cost checked> Atualizar custo</label><label><input type="checkbox" data-purchase-update-sale '+(shouldUpdateSale?'checked':'')+'> Atualizar preço de venda</label><label><input type="checkbox" data-purchase-stock-update '+(stockIncluded?'checked':'')+'> Incluir esta quantidade na entrada do estoque</label></div><div class="purchase-stock-note">'+esc(stockPolicyText)+' Estoque atual: '+esc(fmtQty(prod.stock||0))+' · salvar não altera o estoque.</div></div>'+
         '<div><button class="primary" type="button" data-purchase-approve-item="'+esc(x.id)+'" '+(!existing?'disabled title="Vincule primeiro o produto acima"':'')+'>'+(approved&&['pending','missing_link'].includes(sync)?'Reenviar ao Bling':approved?'Revisar atualização':'Salvar e sincronizar')+'</button><span class="purchase-approval-result" data-purchase-result role="status"></span></div></div>'+
       '</div></details></div>';
   }

@@ -7,6 +7,8 @@ import { xmlFieldApplyGateway } from "./xml-catalog-field-apply-gateway.mjs";
 import { catalogXmlComparison } from "./xml-catalog-comparison.mjs";
 import { compareCandidateFullHistory } from "./xml-catalog-full-comparison.mjs";
 import { loadFiscalDossier } from "./xml-catalog-fiscal-dossier.mjs";
+import { isCompleteImportedInvoice } from "./purchase-xml-dedup.mjs";
+import { autoConversion, baseUnitCost, isSafeBaseIdentity, shouldApplyLatestPurchase } from "./xml-catalog-automation-policy.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_ROLE=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
@@ -440,7 +442,7 @@ async function confirmedIdentifier(kind:string,value:any,supplierDocument=""){
 }
 async function canonicalProduct(id:any){
   if(!id)return null;
-  const q=await sb.from("products").select("id,bling_product_id,sku,name,gtin,ncm,cost,price,stock,unit,packaging,supplier,metadata,is_active,image_url,brand,category,subcategory").eq("id",id).maybeSingle();
+  const q=await sb.from("products").select("id,bling_product_id,sku,name,gtin,ncm,cost,price,stock,unit,packaging,supplier,metadata,is_active,image_url,brand,category,subcategory,purchase_xml_stock_update").eq("id",id).maybeSingle();
   if(q.error)throw q.error;return q.data||null;
 }
 async function ensureProductSafe(_token:string,p:any,item:any){
@@ -460,7 +462,7 @@ async function ensureProductSafe(_token:string,p:any,item:any){
     if(h){const product=await canonicalProduct(h.product_id);if(product)return {ok:true,product,bling_id:Number(product.bling_product_id||0)||null,created:false,gtin_role:role,match_method:"supplier_code_confirmed",identifier:h,conversion_factor:null}}
   }
   if(role!=="package"&&codes.length){
-    const q=await sb.from("products").select("id,bling_product_id,sku,name,gtin,ncm,cost,price,stock,unit,packaging,supplier,metadata,is_active,image_url,brand,category,subcategory").in("gtin",codes).limit(3);
+    const q=await sb.from("products").select("id,bling_product_id,sku,name,gtin,ncm,cost,price,stock,unit,packaging,supplier,metadata,is_active,image_url,brand,category,subcategory,purchase_xml_stock_update").in("gtin",codes).limit(3);
     if(q.error)throw q.error;
     if((q.data||[]).length===1){const product=q.data![0];return {ok:true,product,bling_id:Number(product.bling_product_id||0)||null,created:false,gtin_role:"base_unit",match_method:"legacy_gtin_exact",conversion_factor:null}}
     if((q.data||[]).length>1)return {ok:false,review:"multiple_local_gtin",product:null,bling_id:null,created:false,gtin_role:role};
@@ -828,7 +830,8 @@ async function processXml(token:string,xml:string,source:string,runId:string|nul
   const contact=await ensureContact(token,p);
   const docUp=await sb.from("purchase_xml_documents").upsert({import_run_id:runId,source,source_document_id:sourceId,bling_nfe_id:blingId,document_key:p.document_key,content_sha256:hash,storage_path:storagePath,issued_at:p.issued_at,supplier_document:p.supplier_document,supplier_name:p.supplier_name,supplier_bling_contact_id:contact.id||null,recipient_document:p.recipient_document,recipient_kind:p.recipient_kind,financial_eligible:eligible,finance_status:p.recipient_kind==="CPF"?"blocked_personal":eligible?"eligible":p.recipient_kind==="CNPJ"&&!company?"pending_company_match":"not_applicable",receipt_status:"not_received",processing_status:"processing",total_amount:p.total_amount,item_count:p.items.length,metadata:{invoice_number:p.invoice_number,series:p.series,company_document:company||null,contact_created:Boolean(contact.created),installments:p.installments,payments:p.payments||[],payment_summary:p.payment_summary||{},source_mode:source},updated_at:new Date().toISOString()},{onConflict:"document_key"}).select("id").single();
   if(docUp.error)throw docUp.error;const documentId=docUp.data.id;
-  // Event-driven cataloging: no scheduler, no product/cost/stock writes.
+  // Persist source evidence only at this stage. Product and cost processing is
+  // handled below by the purchase flow; this call never writes local stock.
   // A malformed external XML cannot block existing purchase/finance processing.
   try{
     await persistXmlCatalogEvidence(documentId,p.document_key,xml,hash);
@@ -906,6 +909,172 @@ async function processXml(token:string,xml:string,source:string,runId:string|nul
   const dfin=await sb.from("purchase_xml_documents").update({matched_item_count:matched,review_item_count:review,processing_status:finalStatus,finance_status:finance.status,finance_reference:finance,receipt_status:matched&&review===0?"ready":"review",processed_at:new Date().toISOString(),updated_at:new Date().toISOString(),last_error:review?String(review)+" item(ns) requer(em) revisão":null}).eq("id",documentId);if(dfin.error)throw dfin.error;
   await sb.from("bling_hub_audit_v2").insert({event_type:"purchase_xml_processed",severity:review?"warning":"info",domain:"fiscal",source_system:"canonical",source_id:documentId,details:{document_key:p.document_key,source,recipient_kind:p.recipient_kind,financial_eligible:eligible,finance_status:finance.status,items:p.items.length,matched,review,new_products:created,raw_xml_stored:true,make_used:false}});
   return {duplicate:false,document_id:documentId,items:p.items.length,matched,review,new_products:created,finance_status:finance.status};
+}
+
+async function processCatalogItems(documentId:string,source:"bling_daily"|"manual_xml"|"bulk_xml"="manual_xml"):
+Promise<{matched:number;created:number;updated:number;review:number;failed:number}>{
+  const dq=await sb.from("purchase_xml_documents")
+    .select("id,document_key,issued_at,supplier_document,supplier_name,source,metadata")
+    .eq("id",documentId).maybeSingle();
+  if(dq.error)throw dq.error;if(!dq.data)throw new Error("purchase_xml_document_not_found");
+  const doc:any=dq.data;
+  const iq=await sb.from("purchase_xml_items").select("*").eq("document_id",documentId).order("item_number");
+  if(iq.error)throw iq.error;
+  const plan=await sb.from("purchase_stock_receipt_plans_v1").select("status").eq("document_id",documentId).maybeSingle();
+  if(plan.error)throw plan.error;
+  const receiptLocked=Boolean(plan.data&&["awaiting_bling_receipt","verified","review_required"].includes(String(plan.data.status||"")));
+  let matched=0,created=0,updated=0,review=0,failed=0;
+  for(const item of iq.data||[]){
+    try{
+      const role=inferredPurchaseGtinRole(item),rawGtin=role==="base_unit"?
+        (validGtin(item.commercial_gtin)?digits(item.commercial_gtin):digits(item.tax_gtin)):"";
+      let ep:any=null,product:any=null,isNew=false;
+      if(item.product_id){
+        product=await canonicalProduct(item.product_id);
+        if(product)ep={ok:true,product,bling_id:Number(product.bling_product_id||0)||null,created:false,
+          gtin_role:role,match_method:item.match_method||"human_confirmed_existing"};
+      }else{
+        ep=await ensureProductSafe("",doc,item);
+        if(ep?.ok&&ep.product)product=ep.product;
+      }
+      let conversion:any=null,net=Number(obj(item.metadata).net_line_total);
+      if(!Number.isFinite(net)||net<=0)net=Number(item.line_total);
+      if((!Number.isFinite(net)||net<=0)&&Number.isFinite(Number(item.purchase_unit_price)))
+        net=Number(item.purchase_unit_price)*Number(item.purchase_quantity||0);
+      if(!product&&ep?.ok!==true&&isSafeBaseIdentity({role,gtin:rawGtin})){
+        const draft={id:"",unit:"UN"};
+        conversion=await conversionFor(draft,doc,item);
+        const cost=autoConversion(conversion)?baseUnitCost({quantity:item.purchase_quantity,factor:conversion.factor,net_line_total:net}):null;
+        if(cost!==null){
+          const sku="XML-"+String(item.id).replace(/-/g,"").slice(0,12).toUpperCase();
+          const metadata={purchase_xml_created:true,purchase_xml_document_key:doc.document_key,
+            purchase_xml_created_at:new Date().toISOString(),new_product_review_required:true,
+            purchase_catalog_review_required:true,fiscal_review_required:true,
+            xml_ncm_candidate:item.ncm||null,xml_cest_candidate:item.cest||null,
+            last_purchase_xml_at:doc.issued_at||new Date().toISOString(),
+            last_purchase_supplier:doc.supplier_name||null,
+            last_purchase_conversion_factor:Number(conversion.factor)};
+          const ins=await sb.from("products").insert({sku,name:clean(item.description,300)||("Produto "+rawGtin),
+            gtin:rawGtin,ncm:null,price:null,cost,stock:0,is_active:false,is_whatsapp_active:false,
+            is_offer:false,supplier:doc.supplier_name||null,unit:"UN",packaging:item.purchase_unit||null,
+            source_system:"operational",sync_status:"local",desired_bling_status:"A",metadata})
+            .select("id,bling_product_id,sku,name,gtin,ncm,cost,price,stock,unit,packaging,supplier,metadata,is_active,image_url,brand,category,subcategory,purchase_xml_stock_update").single();
+          if(ins.error){
+            if(String((ins.error as any).code||"")==="23505"){
+              const retry=await ensureProductSafe("",doc,item);
+              if(retry?.ok&&retry.product){product=retry.product;ep=retry}
+              else throw new Error("xml_catalog_gtin_conflict");
+            }else throw ins.error;
+          }else{
+            product=ins.data;ep={ok:true,product,bling_id:null,created:true,gtin_role:"base_unit",match_method:"xml_base_gtin_exact"};isNew=true;created++;
+          }
+        }
+      }
+      if(!product||!ep?.ok){
+        review++;
+        await sb.from("purchase_xml_items").update({processing_status:"review_required",
+          match_method:ep?.review||"identity_confirmation_required",
+          metadata:{...obj(item.metadata),identity_state:"unresolved",identity_reason:ep?.review||"identity_confirmation_required",
+            source:"xml_catalog_automation"},updated_at:new Date().toISOString()}).eq("id",item.id);
+        continue;
+      }
+      conversion=conversion||await conversionFor(product,doc,item);
+      const factorSafe=autoConversion(conversion),cost=factorSafe?
+        baseUnitCost({quantity:item.purchase_quantity,factor:conversion.factor,net_line_total:net}):null;
+      const now=new Date().toISOString(),meta=obj(item.metadata),qty=Number(item.purchase_quantity||0),baseQty=factorSafe?qty*Number(conversion.factor):null;
+      const history=await sb.from("product_purchase_history").select("purchase_item_id,issued_at")
+        .eq("product_id",product.id).not("issued_at","is",null)
+        .order("issued_at",{ascending:false}).order("created_at",{ascending:false}).limit(1).maybeSingle();
+      if(history.error)throw history.error;
+      const latestPurchaseAt=history.data?.issued_at||obj(product.metadata).last_purchase_xml_at||null;
+      const latestItemId=history.data?.purchase_item_id||obj(product.metadata).last_purchase_item_id||null;
+      const applyCurrentPurchase=shouldApplyLatestPurchase({invoiceIssuedAt:doc.issued_at,latestPurchaseAt,
+        invoiceItemId:item.id,latestItemId});
+      const nextProductMeta={...obj(product.metadata),
+        ...(applyCurrentPurchase?{last_purchase_xml_at:doc.issued_at||now,
+          last_purchase_document_key:doc.document_key,last_purchase_item_id:item.id,last_purchase_supplier:doc.supplier_name||null,
+          last_purchase_unit:item.purchase_unit||null,purchase_cost_update_skipped_stale_invoice:false,
+          ...(factorSafe?{last_purchase_conversion_factor:Number(conversion.factor)}:{})}:{}),
+        purchase_catalog_review_required:true,purchase_catalog_review_item_id:item.id,
+        fiscal_review_required:Boolean(item.ncm||item.cest)||obj(product.metadata).fiscal_review_required===true,
+        ...(!applyCurrentPurchase?{purchase_cost_update_skipped_stale_invoice:true}:{}),
+        ...(isNew?{purchase_xml_created:true,new_product_review_required:true,xml_ncm_candidate:item.ncm||null,xml_cest_candidate:item.cest||null}:{})};
+      const productUpdate=await sb.from("products").update({
+        ...(applyCurrentPurchase?{supplier:doc.supplier_name||product.supplier||null,...(cost!==null?{cost}:{})}:{}),
+        metadata:nextProductMeta,updated_at:now}).eq("id",product.id);
+      if(productUpdate.error)throw productUpdate.error;
+      if(!isNew)updated++;
+      await evidence({document_key:doc.document_key,supplier_document:doc.supplier_document,
+        supplier_name:doc.supplier_name,recipient_kind:"CNPJ",issued_at:doc.issued_at},item,product.id);
+      if(!factorSafe||cost===null){
+        review++;
+        const suggestion=Number(conversion?.suggested_factor||0)||null;
+        await sb.from("purchase_xml_items").update({product_id:product.id,bling_product_id:product.bling_product_id||null,
+          match_method:ep.match_method||"gtin_exact",conversion_status:"review_required",conversion_factor:null,
+          converted_quantity:null,base_unit_cost:null,processing_status:"review_required",
+          ...(!receiptLocked?{stock_update_requested:product.purchase_xml_stock_update!==false}:{}),
+          metadata:{...meta,identity_state:"resolved",identity_reason:ep.match_method||"gtin_exact",
+            conversion_suggestion_factor:suggestion,conversion_suggestion_source:conversion?.suggestion_source||null,
+            conversion_suggestion_evidence:conversion?.suggestion_evidence||null,source:"xml_catalog_automation"},
+          updated_at:new Date().toISOString()}).eq("id",item.id);
+        continue;
+      }
+      if(role==="base_unit"&&rawGtin){
+        await persistConfirmedIdentifier({product_id:product.id,identifier_value:rawGtin,identifier_kind:"base_gtin",
+          source:"purchase_xml_automation",metadata:{purchase_item_id:item.id,document_key:doc.document_key}});
+      }
+      if(clean(item.supplier_item_code,120)&&digits(doc.supplier_document)){
+        await persistConfirmedIdentifier({product_id:product.id,identifier_value:item.supplier_item_code,
+          identifier_kind:"supplier_code",supplier_document:doc.supplier_document,source:"purchase_xml_automation",
+          metadata:{purchase_item_id:item.id,document_key:doc.document_key}});
+      }
+      if(Number(conversion.factor)>1){
+        const packaging=await sb.from("product_supplier_packaging").upsert({product_id:product.id,
+          supplier_document:digits(doc.supplier_document)||"",supplier_bling_contact_id:null,
+          supplier_item_code:clean(item.supplier_item_code,120)||"",purchase_unit:unit(item.purchase_unit)||"UN",
+          base_unit:"UN",conversion_factor:Number(conversion.factor),conversion_chain:conversion.chain||[],
+          confidence:Number(conversion.confidence||.99),status:"confirmed",source_document_key:doc.document_key,
+          metadata:{source:"nfe_qtrib_ratio_or_confirmed_mapping",confirmed_by_catalog_policy:true},updated_at:now},
+          {onConflict:"product_id,supplier_document,supplier_item_code,purchase_unit"});
+        if(packaging.error)throw packaging.error;
+      }
+      const ph=await sb.from("product_purchase_history").upsert({document_id:documentId,purchase_item_id:item.id,
+        product_id:product.id,document_key:doc.document_key,issued_at:doc.issued_at||null,
+        supplier_document:doc.supplier_document||null,supplier_name:doc.supplier_name||null,
+        original_unit:item.purchase_unit,original_quantity:qty,conversion_factor:Number(conversion.factor),
+        conversion_chain:conversion.chain||[],base_unit:"UN",base_quantity:baseQty,line_total:item.line_total,
+        purchase_unit_cost:item.purchase_unit_price,base_unit_cost:cost,source,metadata:{source:"xml_catalog_automation"}},
+        {onConflict:"purchase_item_id"});
+      if(ph.error)throw ph.error;
+      const itemUpdate=await sb.from("purchase_xml_items").update({product_id:product.id,
+        bling_product_id:product.bling_product_id||null,match_method:ep.match_method||"gtin_exact",
+        base_unit:"UN",conversion_status:conversion.status,conversion_factor:Number(conversion.factor),
+        conversion_chain:conversion.chain||[],converted_quantity:baseQty,base_unit_cost:cost,
+        processing_status:"matched",...(!receiptLocked?{stock_update_requested:product.purchase_xml_stock_update!==false}:{}),
+        metadata:{...meta,identity_state:"resolved",identity_reason:ep.match_method||"gtin_exact",
+          conversion_confidence:Number(conversion.confidence||0),conversion_suggestion_source:conversion.suggestion_source||null,
+          net_line_total:net,source:"xml_catalog_automation",catalog_automated_at:now},updated_at:now})
+        .eq("id",item.id);
+      if(itemUpdate.error)throw itemUpdate.error;
+      matched++;
+    }catch(e){
+      failed++;review++;
+      const reason=clean((e as Error)?.message||e,400);
+      await sb.from("purchase_xml_items").update({processing_status:"failed",
+        match_method:"catalog_processing_failed",metadata:{...obj(item.metadata),catalog_error:reason,
+          source:"xml_catalog_automation"},updated_at:new Date().toISOString()}).eq("id",item.id);
+      console.warn("xml_catalog_item_failed",item.id,reason);
+    }
+  }
+  const status=failed||review?"review_required":"processed";
+  const documentUpdate=await sb.from("purchase_xml_documents").update({matched_item_count:matched,
+    review_item_count:review,processing_status:status,receipt_status:matched&&review===0?"ready":"review",
+    metadata:{...obj(doc.metadata),catalog_only:true,catalog_processed_at:new Date().toISOString(),
+      catalog_processing_source:source,catalog_processing_failed:failed},
+    last_error:failed?String(failed)+" item(ns) falharam no processamento":review?String(review)+" item(ns) requer(em) revisão":null,
+    updated_at:new Date().toISOString()}).eq("id",documentId);
+  if(documentUpdate.error)throw documentUpdate.error;
+  return {matched,created,updated,review,failed};
 }
 
 async function linkedXml(urlRaw:any){
@@ -1075,52 +1244,105 @@ async function closeStalePurchaseRuns(){
   }
   return {runs_closed:ids.length,documents_repaired:repaired};
 }
+type KnownPurchaseDocument={
+  bling_nfe_id:number|null;document_key:string;storage_path:string|null;content_sha256:string|null;
+  item_count:number;catalog_only:boolean;catalog_evidence_count:number;staged_item_count:number;
+  catalog_recovery_failed:boolean;
+};
+async function knownBlingDocuments(rows:any[]):Promise<Map<string,KnownPurchaseDocument>>{
+  const ids=[...new Set(rows.map((x:any)=>Number(x?.id||0)).filter((x:number)=>Number.isSafeInteger(x)&&x>0))];
+  const keys=[...new Set(rows.map((x:any)=>digits(x?.chaveAcesso)).filter((x:string)=>x.length===44))];
+  const out=new Map<string,KnownPurchaseDocument>();
+  if(!ids.length&&!keys.length)return out;
+  const select="id,bling_nfe_id,document_key,storage_path,content_sha256,item_count,metadata";
+  const queries:any[]=[];
+  if(ids.length)queries.push(sb.from("purchase_xml_documents").select(select).in("bling_nfe_id",ids));
+  if(keys.length)queries.push(sb.from("purchase_xml_documents").select(select).in("document_key",keys));
+  const results=await Promise.all(queries);
+  for(const result of results)if(result.error)throw result.error;
+  const docs=new Map<string,any>();
+  for(const result of results)for(const row of result.data||[])docs.set(String(row.id),row);
+  const docRows=[...docs.values()];
+  if(!docRows.length)return out;
+  const readiness=await sb.from("purchase_xml_catalog_reconciliation_v1")
+    .select("document_id,items_staged,xml_verified_items")
+    .in("document_id",docRows.map((x:any)=>x.id));
+  if(readiness.error)throw readiness.error;
+  const readyById=new Map((readiness.data||[]).map((x:any)=>[String(x.document_id),x]));
+  const errors=await sb.from("purchase_xml_catalog_ingest_errors_v1").select("document_id")
+    .in("document_id",docRows.map((x:any)=>x.id)).is("resolved_at",null);
+  if(errors.error)throw errors.error;
+  const failed=new Set((errors.data||[]).map((x:any)=>String(x.document_id)));
+  for(const row of docRows){
+    const metadata=obj(row.metadata);
+    const ready:any=readyById.get(String(row.id))||{};
+    const known:KnownPurchaseDocument={
+      bling_nfe_id:Number(row.bling_nfe_id||0)||null,document_key:String(row.document_key||""),
+      storage_path:row.storage_path||null,content_sha256:row.content_sha256||null,
+      item_count:Number(row.item_count||0),catalog_only:metadata.catalog_only===true,
+      catalog_evidence_count:Number(ready.xml_verified_items||0),staged_item_count:Number(ready.items_staged||0),
+      catalog_recovery_failed:failed.has(String(row.id))
+    };
+    if(known.bling_nfe_id)out.set("id:"+known.bling_nfe_id,known);
+    if(known.document_key)out.set("key:"+known.document_key,known);
+  }
+  return out;
+}
 async function runBlingSync(source="bling_daily",windowInput:any=null){
   await closeStalePurchaseRuns();
   const token=await oauth(),settings=await sb.from("purchase_xml_settings").select("*").eq("id",1).single();if(settings.error)throw settings.error;
-  // R2: reading incoming XML must never create products, supplier links or payables.
-  // The only import operation is catalog evidence; the user decides changes later.
-  const run=await sb.from("purchase_xml_import_runs").insert({source,status:"running",metadata:{mode:"catalog_only",writes_products:false,writes_stock:false,writes_finance:false}}).select("id").single();if(run.error)throw run.error;
+  // Catalog automation may create inactive drafts and update confirmed supplier,
+  // cost and review metadata. It never writes local stock or financial entries.
+  const run=await sb.from("purchase_xml_import_runs").insert({source,status:"running",metadata:{mode:"catalog_only",writes_products:true,products_created:0,products_updated:0,writes_stock:false,writes_finance:false}}).select("id").single();if(run.error)throw run.error;
   const fallback=source==="bling_daily"?Number(settings.data.daily_lookback_days||3):90,window=purchaseWindow(windowInput,fallback);
   const id=run.data.id,start=window.start,end=window.end,look=window.span_days;
-  let seen=0,processed=0,dup=0,failed=0,items=0,matched=0,review=0;
+  let seen=0,processed=0,dup=0,failed=0,items=0,matched=0,review=0,productsCreated=0,productsUpdated=0,duplicateRecoveryAttempts=0,duplicateRecoveryFailures=0;
   try{
     for(let page=1;page<=20;page++){
       const q=new URLSearchParams({tipo:"0",pagina:String(page),limite:"100",dataEmissaoInicial:start+" 00:00:00",dataEmissaoFinal:end+" 23:59:59"});
       const ls=await bg(token,"/nfe?"+q.toString());if(!ls.ok)throw new Error("bling_nfe_list_http_"+ls.status);
       const rows=Array.isArray(ls.data?.data)?ls.data.data:[];seen+=rows.length;
+      const known=await knownBlingDocuments(rows);
       for(const row of rows){
+        let recoveringDuplicate=false;
         try{
           let key=digits(row?.chaveAcesso);const bid=Number(row?.id||0)||null;
+          const existing=(bid?known.get("id:"+bid):null)||(key.length===44?known.get("key:"+key):null);
+          if(existing&&isCompleteImportedInvoice(existing)){dup++;continue}
+          if(existing){recoveringDuplicate=true;duplicateRecoveryAttempts++}
           if(key.length!==44&&bid){const d=await bg(token,"/nfe/"+bid);if(d.ok)key=digits(d.data?.data?.chaveAcesso)}
-          if(key.length!==44){failed++;continue}
+          if(key.length!==44){failed++;if(recoveringDuplicate)duplicateRecoveryFailures++;continue}
           let x=await blingXml(token,key),detail:any=null;
           if(bid){
             const det=await bg(token,"/nfe/"+bid);
             if(det.ok){detail=det.data?.data||null;if(!x.ok)x=await linkedXml(detail?.xml)}
           }
-          if(!x.ok){failed++;continue}
+          if(!x.ok){failed++;if(recoveringDuplicate)duplicateRecoveryFailures++;continue}
           const catalog=await manualCatalogOnlyImport([{name:"bling-nfe-"+key+".xml",xml:x.xml}],{source,runId:id});
           const result=catalog.results?.[0];
           if(!result?.ok)throw new Error(result?.error||"bling_catalog_import_failed");
-          // Attach the Bling source reference only; no product/finance/stock mutations.
+          productsCreated+=Number(result.products_created||0);
+          productsUpdated+=Number(result.products_updated_count||0);
+          // Attach the Bling source reference. Product catalog changes are counted;
+          // this step does not write stock or finance.
           if(bid&&result.document_id){
             const linked=await sb.from("purchase_xml_documents").update({
               bling_nfe_id:bid,updated_at:new Date().toISOString()
             }).eq("id",result.document_id).is("bling_nfe_id",null);
             if(linked.error)throw linked.error;
           }
-          const rr={items:result.items||0,matched:0,review:result.items||0,duplicate:result.duplicate===true};
-          items+=rr.items||0;matched+=rr.matched||0;review+=rr.review||0;if(rr.duplicate)dup++;else processed++;
-        }catch{failed++}
+          if(result.duplicate){dup++;continue}
+          const rr={items:result.items||0,matched:result.matched||0,review:result.review??result.items??0};
+          items+=rr.items||0;matched+=rr.matched||0;review+=rr.review||0;processed++;
+        }catch{failed++;if(recoveringDuplicate)duplicateRecoveryFailures++}
       }
       if(rows.length<100)break;
     }
     const status=failed||review?"completed_with_review":"completed";
-    await sb.from("purchase_xml_import_runs").update({status,finished_at:new Date().toISOString(),documents_seen:seen,documents_processed:processed,documents_duplicate:dup,documents_failed:failed,items_seen:items,items_matched:matched,items_review:review,metadata:{start,end,period:window.period,label:window.label,span_days:window.span_days},updated_at:new Date().toISOString()}).eq("id",id);
-    return {ok:true,run_id:id,status,window,lookback_days:look,source_scope:"bling_imported_entry_nfe",sefaz_received_queue_exposed_by_public_api:false,documents_seen:seen,processed,duplicates:dup,failed,items,matched,review};
+    await sb.from("purchase_xml_import_runs").update({status,finished_at:new Date().toISOString(),documents_seen:seen,documents_processed:processed,documents_duplicate:dup,documents_failed:failed,items_seen:items,items_matched:matched,items_review:review,metadata:{mode:"catalog_only",writes_products:true,products_created:productsCreated,products_updated:productsUpdated,writes_stock:false,writes_finance:false,start,end,period:window.period,label:window.label,span_days:window.span_days,duplicate_recovery_attempts:duplicateRecoveryAttempts,duplicate_recovery_failures:duplicateRecoveryFailures},updated_at:new Date().toISOString()}).eq("id",id);
+    return {ok:true,run_id:id,status,window,lookback_days:look,source_scope:"bling_imported_entry_nfe",sefaz_received_queue_exposed_by_public_api:false,documents_seen:seen,processed,duplicates:dup,failed,duplicate_recovery_attempts:duplicateRecoveryAttempts,duplicate_recovery_failures:duplicateRecoveryFailures,items,matched,review,products_created:productsCreated,products_updated:productsUpdated,stock_updated:false,finance_updated:false};
   }catch(e){
-    await sb.from("purchase_xml_import_runs").update({status:"failed",finished_at:new Date().toISOString(),documents_seen:seen,documents_processed:processed,documents_duplicate:dup,documents_failed:failed+1,items_seen:items,items_matched:matched,items_review:review,metadata:{start,end,period:window.period,label:window.label,span_days:window.span_days,error:clean((e as Error)?.message||e,500)},updated_at:new Date().toISOString()}).eq("id",id);
+    await sb.from("purchase_xml_import_runs").update({status:"failed",finished_at:new Date().toISOString(),documents_seen:seen,documents_processed:processed,documents_duplicate:dup,documents_failed:failed+1,items_seen:items,items_matched:matched,items_review:review,metadata:{mode:"catalog_only",writes_products:true,products_created:productsCreated,products_updated:productsUpdated,writes_stock:false,writes_finance:false,start,end,period:window.period,label:window.label,span_days:window.span_days,error:clean((e as Error)?.message||e,500)},updated_at:new Date().toISOString()}).eq("id",id);
     throw e;
   }
 }
@@ -1419,8 +1641,8 @@ async function persistXmlCatalogEvidence(documentId:string,documentKey:string,xm
       if(saved.error)throw new Error("catalog_observation_save_failed:"+saved.error.message);
       return parsed;
 }
-// Manual XML catalog-only ingestion. Does not call OAuth, Bling or product mutations.
-// Legacy manual_import is routed here by the dispatcher; no operational writes.
+// Manual XML catalog-only ingestion. Does not call OAuth or Bling; it runs the
+// safe catalog processor, which may create inactive drafts and update catalog data.
 async function manualCatalogOnlyImport(input:any,options:{source?:string;runId?:string}={}){
   const files=Array.isArray(input)?input:[];
   if(!files.length||files.length>10)return {ok:false,status:400,error:"catalog_xml_1_to_10_files_required"};
@@ -1430,12 +1652,12 @@ async function manualCatalogOnlyImport(input:any,options:{source?:string;runId?:
   if(!runId){
     const run=await sb.from("purchase_xml_import_runs").insert({
       source,status:"running",documents_seen:files.length,
-      metadata:{mode:"catalog_only",writes_products:false,writes_stock:false,writes_finance:false}
+      metadata:{mode:"catalog_only",writes_products:true,products_created:0,products_updated:0,writes_stock:false,writes_finance:false}
     }).select("id").single();
     if(run.error)throw run.error;
     runId=run.data.id;
   }
-  const results:any[]=[];let processed=0,duplicates=0,failed=0,items=0;
+  const results:any[]=[];let processed=0,duplicates=0,failed=0,items=0,matched=0,review=0,productsCreated=0,productsUpdated=0;
   for(const file of files){
     const filename=clean(file?.name,160);
     try{
@@ -1453,8 +1675,13 @@ async function manualCatalogOnlyImport(input:any,options:{source?:string;runId?:
         assertExistingXmlDigest(exist.data.content_sha256,hash);
         const replay=await xmlCatalogReprocess({document_id:exist.data.id});
         if(!replay.results?.[0]?.ok)throw new Error(replay.results?.[0]?.error||"duplicate_replay_failed");
+        const recovered=replay.results?.[0]||{};
+        const createdCount=Number(recovered.products_created||0),updatedCount=Number(recovered.products_updated||0);
+        const matchedCount=Number(recovered.matched||0),reviewCount=Number(recovered.review||0);
+        productsCreated+=createdCount;productsUpdated+=updatedCount;matched+=matchedCount;review+=reviewCount;
         duplicates++;
-        results.push({name:filename,ok:true,duplicate:true,items:evidence.items.length,document_id:exist.data.id});
+        results.push({name:filename,ok:true,duplicate:true,items:evidence.items.length,document_id:exist.data.id,
+          matched:matchedCount,review:reviewCount,products_created:createdCount,products_updated_count:updatedCount});
         continue;
       }
       const issued=day(original.issued_at)||new Date().toISOString().slice(0,10);
@@ -1491,8 +1718,13 @@ async function manualCatalogOnlyImport(input:any,options:{source?:string;runId?:
       const replay=await xmlCatalogReprocess({document_id:inserted.data.id});
       if(!replay.results?.[0]?.ok)
         throw new Error(replay.results?.[0]?.error||"catalog_recovery_pending");
+      const recovered=replay.results?.[0]||{};
+      const createdCount=Number(recovered.products_created||0),updatedCount=Number(recovered.products_updated||0);
+      const matchedCount=Number(recovered.matched||0),reviewCount=Number(recovered.review||0);
+      productsCreated+=createdCount;productsUpdated+=updatedCount;matched+=matchedCount;review+=reviewCount;
       processed++;items+=evidence.items.length;
-      results.push({name:filename,ok:true,document_id:inserted.data.id,items:evidence.items.length});
+      results.push({name:filename,ok:true,document_id:inserted.data.id,items:evidence.items.length,
+        matched:matchedCount,review:reviewCount,products_created:createdCount,products_updated_count:updatedCount});
     }catch(e){
       failed++;
       results.push({name:filename,ok:false,error:clean((e as Error)?.message||e,220)});
@@ -1502,14 +1734,15 @@ async function manualCatalogOnlyImport(input:any,options:{source?:string;runId?:
   const done=await sb.from("purchase_xml_import_runs").update({
     status:failed?"completed_with_review":"completed",finished_at:new Date().toISOString(),
     documents_processed:processed,documents_duplicate:duplicates,documents_failed:failed,
-    items_seen:items,items_matched:0,items_review:items,
-    metadata:{mode:"catalog_only",writes_products:false,writes_stock:false,writes_finance:false},
+    items_seen:items,items_matched:matched,items_review:review,
+    metadata:{mode:"catalog_only",writes_products:true,products_created:productsCreated,products_updated:productsUpdated,writes_stock:false,writes_finance:false},
     updated_at:new Date().toISOString()
   }).eq("id",runId);
   if(done.error)throw done.error;
   }
-  return {ok:true,catalog_only:true,processed,duplicates,failed,items,results,
-    bling_called:false,products_updated:false,stock_updated:false,finance_updated:false};
+  return {ok:true,catalog_only:true,processed,duplicates,failed,items,matched,review,results,
+    bling_called:false,writes_products:true,products_created:productsCreated,products_updated:productsUpdated>0,
+    products_updated_count:productsUpdated,stock_updated:false,finance_updated:false};
 }
 
 // Return source evidence and any existing product link; no modification is permitted.
@@ -1590,7 +1823,7 @@ async function xmlCatalogReprocess(body:any){
   const limit=Math.max(1,Math.min(5,Math.trunc(Number(body?.limit)||3)));
   const offset=Math.max(0,Math.min(100000,Math.trunc(Number(body?.offset)||0)));
   const id=clean(body?.document_id,80);
-  let query=sb.from("purchase_xml_documents").select("id,document_key,storage_path,item_count,content_sha256,created_at")
+  let query=sb.from("purchase_xml_documents").select("id,document_key,storage_path,item_count,content_sha256,created_at,source")
     .order("created_at",{ascending:true}).order("id",{ascending:true});
   if(id){
     if(!/^[0-9a-f-]{36}$/i.test(id))return {ok:false,error:"invalid_document"};
@@ -1600,7 +1833,7 @@ async function xmlCatalogReprocess(body:any){
   }
   const docs=await query;
   if(docs.error)throw docs.error;
-  const result:any[]=[];
+  const result:any[]=[];let productsCreated=0,productsUpdated=0;
   for(const d of docs.data||[]){
     try{
       if(!d.storage_path)throw new Error("xml_storage_path_missing");
@@ -1638,9 +1871,15 @@ async function xmlCatalogReprocess(body:any){
           .upsert(staged,{onConflict:"document_id,item_number",ignoreDuplicates:true});
         if(recovered.error)throw new Error("recover_purchase_items_failed:"+recovered.error.message);
       }
+      const documentSource=String(d.source||"");
+      const catalogSource=documentSource.startsWith("bling_")?"bling_daily":documentSource==="bulk_xml"?"bulk_xml":"manual_xml";
+      const automation=await processCatalogItems(d.id,catalogSource as "bling_daily"|"manual_xml"|"bulk_xml");
+      if(automation.failed)await recordXmlCatalogFailure(d.id,new Error("catalog_item_processing_failed:"+automation.failed));
+      productsCreated+=automation.created;productsUpdated+=automation.updated;
       result.push({document_id:d.id,ok:true,items_in_xml:parsed.items.length,
+        products_created:automation.created,products_updated:automation.updated,
         items_declared:Number(d.item_count||0),new_staged_items:missing.length,
-        count_mismatch:parsed.items.length!==Number(d.item_count||0)});
+        count_mismatch:parsed.items.length!==Number(d.item_count||0),...automation});
     }catch(e){
       await recordXmlCatalogFailure(d.id,e);
       result.push({document_id:d.id,ok:false,error:clean((e as Error)?.message||e,200)});
@@ -1648,7 +1887,8 @@ async function xmlCatalogReprocess(body:any){
   }
   return {ok:true,processed:result.length,results:result,
     next_offset:id?null:offset+result.length,has_more:!id&&result.length===limit,
-    products_updated:false,stock_updated:false,bling_called:false,finance_updated:false};
+    writes_products:true,products_created:productsCreated,products_updated:productsUpdated,
+    stock_updated:false,bling_called:false,finance_updated:false};
 }
 
 async function catalogQueue(windowInput:any=null){
@@ -1671,7 +1911,7 @@ async function catalogQueue(windowInput:any=null){
   const docMap=new Map(docRows.map((d:any)=>[String(d.id),d]));
   const ids=docRows.map((d:any)=>d.id);
   const iq=await sb.from("purchase_xml_items")
-    .select("id,document_id,item_number,supplier_item_code,description,commercial_gtin,tax_gtin,ncm,cest,cfop,purchase_unit,purchase_quantity,purchase_unit_price,line_total,base_unit,conversion_status,conversion_factor,converted_quantity,base_unit_cost,product_id,bling_product_id,match_method,processing_status,metadata,created_at,products(id,name,gtin,bling_product_id,cost,price,stock,unit,is_active,category,subcategory,packaging,supplier,metadata)")
+    .select("id,document_id,item_number,supplier_item_code,description,commercial_gtin,tax_gtin,ncm,cest,cfop,purchase_unit,purchase_quantity,purchase_unit_price,line_total,base_unit,conversion_status,conversion_factor,converted_quantity,base_unit_cost,product_id,bling_product_id,match_method,processing_status,metadata,created_at,products(id,name,gtin,bling_product_id,cost,price,stock,unit,is_active,category,subcategory,packaging,supplier,metadata,purchase_xml_stock_update)")
     .in("document_id",ids)
     .limit(3000);
   if(iq.error)throw iq.error;
