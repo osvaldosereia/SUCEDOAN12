@@ -25,6 +25,9 @@ assert.doesNotMatch(sql,/insert\s+into\s+public\.basket_stock_lots/i,'R5 must no
 
 assert.match(api,/basket_mold_public_compositions_v2/i,'storefront must consume the canonical mold generator');
 assert.match(api,/const \[gate,mq,bq,pq\]=await Promise\.all\(/,'independent basket configuration reads must be concurrent');
+assert.match(api,/moldDetailComposition\(basketId\)/,'detail must reuse generator choices in memory');
+assert.match(api,/MOLD_DETAIL_CACHE_MAX_AGE_MS=60_000/,'generator cache must be freshness bounded');
+assert.match(api,/const \[products,available,extras\]=await Promise\.all\(/,'stock, price and extras remain fresh reads');
 assert.match(api,/const \[products,available,extras\]=await Promise\.all\(/,'optional themes must not delay selected-product stock reads');
 assert.match(api,/ops2_loose_sellable_stock_v1/i,'storefront mold detail must use canonical loose sellable stock');
 assert.match(api,/loose_sellable_stock/i,'storefront mold detail must read loose sellable stock values');
