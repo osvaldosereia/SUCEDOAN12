@@ -64,3 +64,15 @@ verify_jwt = false
 # Public post-order capability validates a 256-bit secret internally; no Supabase JWT required.
 [functions.order-customer-actions-v1]
 verify_jwt = false
+
+# D+28 worker authenticates its private internal key before claim/send.
+[functions.whatsapp-repurchase-worker-v1]
+verify_jwt = false
+
+# D+20 post-sale worker is internal-key authenticated; rollout remains runtime-off.
+[functions.whatsapp-post-sale-worker-v1]
+verify_jwt = false
+
+# Read-only status for purchase-based marketing journeys; the function verifies admin_users.
+[functions.admin-marketing-journeys-v1]
+verify_jwt = true
