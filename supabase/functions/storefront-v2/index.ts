@@ -115,7 +115,7 @@ const INACTIVE_BASKET_STOCK_MAX_AGE_MS=48*60*60_000;
 async function moldAvailableStockMap(productIds:string[]){
   const ids=[...new Set(productIds.filter(Boolean))];const out=new Map<string,number>();if(!ids.length)return out;
   const [sq,oq]=await Promise.all([
-    db.from("ops2_loose_sellable_stock_v1").select("product_id,loose_sellable_stock,is_active,stock_authority,link_status,bling_product_id,selected_deposit_id,sellable_virtual,mirror_observed_at,basket_locked_quantity").in("product_id",ids),
+    db.from("storefront_ean_sellable_stock_v1").select("product_id,loose_sellable_stock,ean_sellable_stock,is_active,stock_authority,link_status,bling_product_id,selected_deposit_id,sellable_virtual,mirror_observed_at,basket_locked_quantity").in("product_id",ids),
     db.from("vitrine_stock_reservations").select("product_id,quantity,status,expires_at").in("product_id",ids).in("status",["reserved","allocated"])
   ]);if(sq.error)throw sq.error;if(oq.error)throw oq.error;
   const reservedOrders=new Map<string,number>(),now=Date.now();
@@ -123,8 +123,10 @@ async function moldAvailableStockMap(productIds:string[]){
   for(const r of sq.data||[]){
     const id=String(r.product_id),observedAt=Date.parse(String(r.mirror_observed_at||""));
     const freshBling=r.stock_authority==="bling"&&r.link_status==="matched"&&r.bling_product_id!=null&&r.selected_deposit_id!=null&&r.sellable_virtual!=null&&Number.isFinite(observedAt)&&observedAt<=now+5*60_000&&now-observedAt<=INACTIVE_BASKET_STOCK_MAX_AGE_MS;
-    const base=r.is_active===true?Number(r.loose_sellable_stock||0):freshBling?Number(r.sellable_virtual||0)-Number(r.basket_locked_quantity||0):0;
-    out.set(id,Math.max(0,base-(reservedOrders.get(id)||0)));
+    // EAN quantities are already net of reservations and consumed orders in SQL.
+    const eanAvailable=r.ean_sellable_stock!=null;
+    const base=eanAvailable?Number(r.ean_sellable_stock):r.is_active===true?Number(r.loose_sellable_stock||0):freshBling?Number(r.sellable_virtual||0)-Number(r.basket_locked_quantity||0):0;
+    out.set(id,Math.max(0,base-(eanAvailable?0:(reservedOrders.get(id)||0))));
   }
   return out;
 }
@@ -492,8 +494,8 @@ async function cachedHomePriority(){
 }
 async function sellableMap(ids:string[]){
   const out=new Map<string,number>();if(!ids.length)return out;
-  const {data,error}=await db.from("ops2_loose_sellable_stock_v1").select("product_id,loose_sellable_stock").in("product_id",ids);
-  if(error)throw error;for(const r of data||[])out.set(String(r.product_id),Math.max(0,Number(r.loose_sellable_stock||0)));return out;
+  const {data,error}=await db.from("storefront_ean_sellable_stock_v1").select("product_id,loose_sellable_stock,ean_sellable_stock").in("product_id",ids);
+  if(error)throw error;for(const r of data||[])out.set(String(r.product_id),Math.max(0,Number(r.ean_sellable_stock??r.loose_sellable_stock??0)));return out;
 }
 async function eanCaptureProductIds(){
   const {data,error}=await db.from("ean_capture_records_v1").select("matched_product_id,created_at").eq("sync_status","found").not("matched_product_id","is",null).order("created_at",{ascending:false}).limit(10000);
