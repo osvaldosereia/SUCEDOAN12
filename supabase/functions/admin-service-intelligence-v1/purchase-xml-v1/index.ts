@@ -1241,8 +1241,8 @@ async function summary(windowInput:any=null){
 
 async function receiptLotPlanStatus(documentId:string){
   const iq=await sb.from("purchase_xml_items")
-    .select("id,document_id,product_id,description,converted_quantity,conversion_factor,purchase_quantity,purchase_unit,inventory_lot_id,lot_expiration_date")
-    .eq("document_id",documentId).order("item_number");
+    .select("id,document_id,product_id,description,converted_quantity,conversion_factor,purchase_quantity,purchase_unit,inventory_lot_id,lot_expiration_date,stock_update_requested")
+    .eq("document_id",documentId).eq("stock_update_requested",true).order("item_number");
   if(iq.error)throw iq.error;
   const items=iq.data||[];
   const lotIds=[...new Set(items.map((x:any)=>x.inventory_lot_id).filter(Boolean))];
@@ -1277,11 +1277,11 @@ async function saveReceiptLotPlan(body:any,userId:string|null){
   if(!/^[0-9a-f-]{36}$/i.test(documentId))return {ok:false,status:400,error:"invalid_document"};
   const requested=Array.isArray(body?.items)?body.items:[];
   const iq=await sb.from("purchase_xml_items")
-    .select("id,document_id,product_id,converted_quantity,inventory_lot_id,lot_expiration_date")
-    .eq("document_id",documentId).order("item_number");
+    .select("id,document_id,product_id,converted_quantity,inventory_lot_id,lot_expiration_date,stock_update_requested")
+    .eq("document_id",documentId).eq("stock_update_requested",true).order("item_number");
   if(iq.error)throw iq.error;
   const items=iq.data||[];
-  if(!items.length)return {ok:false,status:404,error:"document_without_items"};
+  if(!items.length)return {ok:false,status:409,error:"no_stock_items_selected"};
   const byId=new Map(items.map((x:any)=>[String(x.id),x]));
   if(requested.length!==items.length)return {ok:false,status:409,error:"all_receipt_items_required"};
   for(const entry of requested){
@@ -1810,6 +1810,11 @@ async function applyItemUpdate(body:any,userId:string|null){
   const prodQ=await sb.from("products").select("id,name,gtin,bling_product_id,cost,price,unit,stock,is_active,supplier,metadata").eq("id",item.product_id).maybeSingle();
   if(prodQ.error)throw prodQ.error;if(!prodQ.data)return {ok:false,status:404,error:"product_not_found"};
   const product:any=prodQ.data,pack=itemLooksPackaged(item);
+  const stockUpdateRequested=body?.stock_update_requested!==false;
+  const planQ=await sb.from("purchase_stock_receipt_plans_v1").select("status").eq("document_id",item.document_id).maybeSingle();
+  if(planQ.error)throw planQ.error;
+  if(planQ.data&&["awaiting_bling_receipt","verified","review_required"].includes(String(planQ.data.status))&&Boolean(item.stock_update_requested)!==stockUpdateRequested)
+    return {ok:false,status:409,error:"stock_receipt_plan_locked"};
   let factor=Number(body?.conversion_factor??item.conversion_factor??0);
   if(!Number.isFinite(factor)||factor<=0)factor=pack.packaged?0:1;
   if(pack.packaged&&factor<=1)return {ok:false,status:409,error:"packaging_factor_must_be_greater_than_one"};
@@ -1834,19 +1839,30 @@ async function applyItemUpdate(body:any,userId:string|null){
   if(updateSale&&(!Number.isFinite(salePrice)||salePrice<0))return {ok:false,status:400,error:"invalid_sale_price"};
   const chain=factor>1?[{unit:unit(item.purchase_unit)||"EMB",contains:factor,next_unit:"UN"},{unit:"UN",quantity:1}]:[{unit:"UN",quantity:1}];
   const now=new Date().toISOString(),operator=clean(body?.operator_name,80)||null;
-  const itemMeta={...meta,catalog_approved_at:now,catalog_approved_by:userId,catalog_operator:operator,approved_cost:updateCost?baseCost:null,approved_sale_price:updateSale?salePrice:null};
-  const iu=await sb.from("purchase_xml_items").update({base_unit:"UN",conversion_status:factor>1?"known":"not_needed",conversion_factor:factor,conversion_chain:chain,converted_quantity:baseQty,base_unit_cost:baseCost,processing_status:"matched",metadata:itemMeta,updated_at:now}).eq("id",id);if(iu.error)throw iu.error;
+  const itemMeta={...meta,catalog_approved_at:now,catalog_approved_by:userId,catalog_operator:operator,approved_cost:updateCost?baseCost:null,approved_sale_price:updateSale?salePrice:null,stock_update_requested:stockUpdateRequested};
+  const iu=await sb.from("purchase_xml_items").update({base_unit:"UN",conversion_status:factor>1?"known":"not_needed",conversion_factor:factor,conversion_chain:chain,converted_quantity:baseQty,base_unit_cost:baseCost,processing_status:"matched",stock_update_requested:stockUpdateRequested,metadata:itemMeta,updated_at:now}).eq("id",id);if(iu.error)throw iu.error;
   if(factor>1){
     const pr=await sb.from("product_supplier_packaging").upsert({product_id:item.product_id,supplier_document:digits(doc.supplier_document)||"",supplier_bling_contact_id:doc.supplier_bling_contact_id,supplier_item_code:clean(item.supplier_item_code,120)||"",purchase_unit:unit(item.purchase_unit),base_unit:"UN",conversion_factor:factor,conversion_chain:chain,confidence:1,status:"confirmed",source_document_key:doc.document_key,metadata:{approved_from_admin:true,approved_at:now},updated_at:now},{onConflict:"product_id,supplier_document,supplier_item_code,purchase_unit"});if(pr.error)throw pr.error;
   }
   await sb.from("product_purchase_history").update({conversion_factor:factor,conversion_chain:chain,base_unit:"UN",base_quantity:baseQty,base_unit_cost:baseCost,metadata:{approved_from_admin:true,approved_at:now,operator}}).eq("purchase_item_id",id);
-  const pmeta={...obj(product.metadata),purchase_catalog_review_required:false,last_purchase_catalog_approval_at:now,last_purchase_catalog_document_key:doc.document_key,last_purchase_catalog_item_id:id,last_purchase_conversion_factor:factor,last_purchase_supplier:doc.supplier_name||null,last_purchase_unit_cost:baseCost};
-  // R2: Existing product names and sales tax profiles are never overwritten
-  // by the supplier's incoming invoice. Keep XML NCM as evidence for review.
-  const upd:any={unit:"UN",supplier:doc.supplier_name||product.supplier||null,metadata:pmeta,last_admin_edit_at:now,last_admin_edit_by:userId,updated_at:now};
+  const noteData={description:item.description||null,ncm:item.ncm||null,cest:item.cest||null,cfop:item.cfop||null,tax_code:item.tax_code||null,origin_code:item.origin_code??null,commercial_gtin:item.commercial_gtin||null,tax_gtin:item.tax_gtin||null,purchase_unit:item.purchase_unit||null,purchase_quantity:qty,converted_quantity:baseQty,base_unit_cost:baseCost,document_key:doc.document_key,issued_at:doc.issued_at||null};
+  const pmeta={...obj(product.metadata),purchase_catalog_review_required:false,last_purchase_catalog_approval_at:now,last_purchase_catalog_document_key:doc.document_key,last_purchase_catalog_item_id:id,last_purchase_conversion_factor:factor,last_purchase_supplier:doc.supplier_name||null,last_purchase_unit_cost:baseCost,purchase_xml_last_note_data:noteData};
+  const upd:any={unit:"UN",supplier:doc.supplier_name||product.supplier||null,packaging:item.purchase_unit||product.packaging||null,metadata:pmeta,last_admin_edit_at:now,last_admin_edit_by:userId,updated_at:now};
   if(updateCost)upd.cost=baseCost;
   if(updateSale)upd.price=Math.round(salePrice*100)/100;
-  const pu=await sb.from("products").update(upd).eq("id",item.product_id).select("id,name,cost,price,unit,stock,is_active,bling_product_id").single();if(pu.error)throw pu.error;
+  if(item.ncm)upd.ncm=String(item.ncm);
+  const pu=await sb.from("products").update(upd).eq("id",item.product_id).select("id,name,ncm,cost,price,unit,stock,is_active,bling_product_id").single();if(pu.error)throw pu.error;
+  const fiscalQ=await sb.from("product_fiscal_profiles").select("*").eq("product_id",item.product_id).maybeSingle();
+  if(fiscalQ.error)throw fiscalQ.error;
+  const priorFiscal:any=fiscalQ.data||{};
+  if(item.ncm||item.cest||item.origin_code!==null||item.commercial_gtin||item.tax_gtin){
+    const fiscalProfile:any={product_id:item.product_id,ncm:item.ncm||priorFiscal.ncm||null,cest:item.cest||priorFiscal.cest||null,origin_code:item.origin_code??priorFiscal.origin_code??null,commercial_gtin:item.commercial_gtin||priorFiscal.commercial_gtin||null,tax_gtin:item.tax_gtin||priorFiscal.tax_gtin||null,fiscal_description:item.description||priorFiscal.fiscal_description||null,classification_source:"purchase_xml",classification_confidence:0.95,review_status:"pending",metadata:{...obj(priorFiscal.metadata),last_purchase_xml_document_key:doc.document_key,last_purchase_xml_item_id:id,last_purchase_xml_observed_at:now},updated_at:now};
+    const pf=await sb.from("product_fiscal_profiles").upsert(fiscalProfile,{onConflict:"product_id"});
+    if(pf.error)throw pf.error;
+  }
+  const evidence={product_id:item.product_id,evidence_type:"purchase_xml_invoice",source_name:doc.supplier_name||"NF-e de compra",document_key:doc.document_key,supplier_document:digits(doc.supplier_document)||null,gtin:item.tax_gtin||item.commercial_gtin||null,ncm:item.ncm||null,cest:item.cest||null,origin_code:item.origin_code??null,cfop:item.cfop||null,tax_code:item.tax_code||null,fiscal_description:item.description||null,evidence_confidence:0.95,observed_at:doc.issued_at||now,evidence_payload:{purchase_unit:item.purchase_unit||null,purchase_quantity:qty,converted_quantity:baseQty,base_unit_cost:baseCost,line_total:item.line_total??null,unit_price:item.purchase_unit_price??null,tax_unit:item.tax_unit||null,tax_quantity:item.tax_quantity??null,metadata:meta},evidence_key:"purchase-xml:"+String(doc.document_key||id)+":"+String(item.item_number||"")+":"+String(item.product_id)};
+  const ev=await sb.from("product_fiscal_evidence").upsert(evidence,{onConflict:"evidence_key"});
+  if(ev.error)throw ev.error;
   let supplierStatus="not_requested",supplierMessage="";
   if(updateCost){
     if(!product.bling_product_id)supplierStatus="missing_product_link";
@@ -1870,7 +1886,7 @@ async function applyItemUpdate(body:any,userId:string|null){
   const im=await sb.from("purchase_xml_items").update({metadata:itemSyncMeta}).eq("id",id);
   if(im.error)console.error("purchase_item_bling_sync_audit",im.error.message);
   const readiness=await refreshDocumentReadiness(item.document_id);
-  await sb.from("bling_hub_audit_v2").insert({event_type:"purchase_catalog_item_approved",severity:"info",domain:"catalog",source_system:"vitrine_admin",source_id:id,details:{document_id:item.document_id,document_key:doc.document_key,product_id:item.product_id,operator,user_id:userId,conversion_factor:factor,base_unit_cost:baseCost,old_cost:product.cost,old_price:product.price,new_cost:updateCost?baseCost:product.cost,new_price:updateSale?Math.round(salePrice*100)/100:product.price,update_cost:updateCost,update_sale_price:updateSale,stock_unchanged:true}});
+  await sb.from("bling_hub_audit_v2").insert({event_type:"purchase_catalog_item_approved",severity:"info",domain:"catalog",source_system:"vitrine_admin",source_id:id,details:{document_id:item.document_id,document_key:doc.document_key,product_id:item.product_id,operator,user_id:userId,conversion_factor:factor,base_unit_cost:baseCost,old_cost:product.cost,old_price:product.price,new_cost:updateCost?baseCost:product.cost,new_price:updateSale?Math.round(salePrice*100)/100:product.price,update_cost:updateCost,update_sale_price:updateSale,stock_update_requested:stockUpdateRequested,stock_unchanged:true}});
   return {ok:true,item_id:id,document_id:item.document_id,product:pu.data,conversion_factor:factor,
     base_unit_cost:baseCost,stock_unchanged:true,catalog_sync:sync,...readiness};
 }
