@@ -44,12 +44,12 @@ const products=[
 const balances=new Map([['a',4],['b',8],['c',0],['d',9],['e',2],['f',30]]);
 const query={select(){return this},in(){return this},limit(){return this},eq(){return this},or(){return this},
  then(resolve){return Promise.resolve({data:products,error:null}).then(resolve)}};
-const getList=new Function('db','eanCaptureProductIds','sellableMap','pub','txt','safeQ','clamp',
+const getList=new Function('db','eanCaptureProductIds','sellableMap','pub','txt','safeQ','clamp','fetchProductRowsByIds',
  definition+'; return productList;')(
  {from:()=>query},async()=>products.map(x=>x.id),
  async ids=>new Map(ids.map(id=>[id,balances.get(id)||0])),
  (p,stock)=>({id:p.id,stock_quantity:stock,price_available:p.price>0}),
- v=>String(v||''),v=>String(v||''),(v,min,max)=>Math.min(max,Math.max(min,Number(v)))
+ v=>String(v||''),v=>String(v||''),(v,min,max)=>Math.min(max,Math.max(min,Number(v))),async()=>products
 );
 const first=await getList(new URL('https://example.test/?limit=2'));
 assert.deepEqual(first.products.map(x=>x.id),['a','d']);
@@ -57,5 +57,26 @@ assert.equal(first.next_offset,4);
 const second=await getList(new URL('https://example.test/?limit=2&offset='+first.next_offset));
 assert.deepEqual(second.products.map(x=>x.id),['e']);
 assert.equal(second.next_offset,null);
+
+
+assert.match(api,/const PRODUCT_ID_QUERY_BATCH_SIZE=100;/,'product ID lookups must use bounded request batches');
+assert.equal((api.match(/fetchProductRowsByIds\\(eanIds/g)||[]).length,3,'offers, subcategories and product search must use batched product lookups');
+const batchHelperStart=api.indexOf('const PRODUCT_ID_QUERY_BATCH_SIZE=100;');
+const batchHelperEnd=api.indexOf('async function offerList(',batchHelperStart);
+assert.ok(batchHelperStart>=0&&batchHelperEnd>batchHelperStart,'batch helper must be defined before catalog endpoints');
+const batchHelper=api.slice(batchHelperStart,batchHelperEnd);
+const requestedBatches=[];
+const batchDb={from(table){
+  assert.equal(table,'products');
+  let ids=[];
+  return {select(){return this},in(column,values){assert.equal(column,'id');ids=values;requestedBatches.push([...values]);return this},eq(){return this},
+    then(resolve,reject){return Promise.resolve({data:ids.map(id=>({id})),error:null}).then(resolve,reject)}};
+}};
+const fetchRows=new Function('db',batchHelper+';return fetchProductRowsByIds;')(batchDb);
+const manyIds=Array.from({length:238},(_,index)=>'product-'+index);
+const fetched=await fetchRows(manyIds,'id',query=>query.eq('sales_category','mercearia'));
+assert.deepEqual(requestedBatches.map(batch=>batch.length),[100,100,38]);
+assert.deepEqual(fetched.map(row=>row.id),manyIds);
+assert.ok(requestedBatches.every(batch=>batch.length<=100),'no PostgREST request should carry an oversized ID filter');
 
 console.log('EAN public stock authority contracts PASS: latest scan, expiration, pricing, consumed and pending reservations, checkout and public stock parity');
