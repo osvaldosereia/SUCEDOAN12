@@ -1,4 +1,4 @@
-import { normalizeAdminProduct, requestAdminCatalog } from './public-api.js?v=6';
+import { normalizeAdminProduct, requestAdminCatalog, requestAdminProductStatus } from './public-api.js?v=8';
 
 export async function adminApi(action, params = {}) {
   if (action === 'product_detail') {
@@ -23,6 +23,10 @@ export async function adminApi(action, params = {}) {
     return { categories: result.categories || [], assignment_categories: result.assignment_categories || [] };
   }
 
+  if (action === 'set_product_active') {
+    return requestAdminProductStatus({ id: params.id, active: params.active });
+  }
+
   if (action !== 'products') throw new Error('Ação não disponível nesta etapa.');
 
   const result = await requestAdminCatalog('products', {
@@ -39,8 +43,3 @@ export async function adminApi(action, params = {}) {
     total: Number(result.total || 0)
   };
 }
-
-export async function adminWrite() {
-  throw new Error('Somente leitura: alterações estão bloqueadas.');
-}
-
