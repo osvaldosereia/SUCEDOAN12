@@ -62,7 +62,7 @@ const sample={
   ]
 };
 const first=renderMoldRow(sample,0);
-assert.match(first,/Trocar a marca/);
+assert.match(first,/Clique para trocar este produto/);
 assert.doesNotMatch(first,/data-mold-option-choice=/,'closed row must not create alternative product cards');
 const openFirst=renderMoldRow(sample,0,true);
 assert.match(openFirst,/data-mold-option-choice=/,'expanded row renders alternatives');
@@ -93,7 +93,8 @@ assert.doesNotMatch(tenHtml,/data-product-id="product-0" role="option"/,'the 11t
 assert.match(root,/scroll-snap-type:x mandatory/,'carousel must support touch scroll snapping');
 assert.match(root,/carouselScroll=new Map/,'requoting must retain user carousel scroll position');
 assert.match(api,/publicAlts=alts\.slice\(0,10\)/,'API exposes the ten cheapest available options');
-assert.match(api,/includeAlternatives\?publicAlts:\[\]/,'initial lightweight response excludes alternatives');
+assert.match(api,/const readIds=includeAlternatives\?productIds:selectedIds/,'initial lightweight response reads selected products only');
+assert.match(api,/alternatives_loaded:false,alternatives:\[\]/,'lightweight response excludes alternatives');
 assert.match(api,/action==="basket_mold_options"/,'separate lazy options route');
 assert.match(root,/lightweight:1/,'initial basket request uses small payload');
 assert.match(root,/lightweight:true/,'quote request uses small payload');
