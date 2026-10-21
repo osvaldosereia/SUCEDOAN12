@@ -64,7 +64,7 @@ assert.equal(api.split('queryRowsByIds("products","id",eanIds').length-1,3,'offe
 const batchHelperStart=api.indexOf('const POSTGREST_IN_BATCH_SIZE=100;');
 const batchHelperEnd=api.indexOf('async function sellableMap(',batchHelperStart);
 assert.ok(batchHelperStart>=0&&batchHelperEnd>batchHelperStart,'batch helper must be defined before catalog endpoints');
-const batchHelper=api.slice(batchHelperStart,batchHelperEnd);
+const batchHelper=api.slice(batchHelperStart,batchHelperEnd).replaceAll(':string[][]','').replaceAll(':string[]','').replaceAll(':string','').replace(':(query:any)=>any','').replaceAll('(query:any)','(query)').replaceAll(':Promise<any[]>','');
 const requestedBatches=[];
 const batchDb={from(table){
   assert.equal(table,'products');
