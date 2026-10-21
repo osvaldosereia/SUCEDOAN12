@@ -98,6 +98,7 @@ begin
       s.template_name,a.id whatsapp_account_id
     from public.marketing_repurchase_state_v1 s
     join public.orders o on o.id=s.last_purchase_order_id and o.customer_id=s.customer_id
+      and o.confirmed_at is not null and s.due_at=o.confirmed_at + interval '28 days'
       and o.cancelled_at is null and coalesce(o.status,'') not in ('cancelled','returned')
       and o.returned_at is null
     join public.whatsapp_accounts a on a.id=o.whatsapp_account_id
@@ -169,6 +170,7 @@ begin
     and consent.marketing_opt_in is true and consent.phone_e164=d.to_phone_e164
   join public.orders o on o.id=d.order_id and o.customer_id=d.customer_id
     and o.whatsapp_account_id=d.whatsapp_account_id
+    and o.confirmed_at is not null and s.due_at=o.confirmed_at + interval '28 days'
     and o.cancelled_at is null and o.returned_at is null
     and coalesce(o.status,'') not in ('cancelled','returned')
   join public.whatsapp_accounts a on a.id=d.whatsapp_account_id
@@ -248,6 +250,7 @@ begin
   select count(*)::integer into v_active
   from public.marketing_repurchase_state_v1 s
   join public.orders o on o.id=s.last_purchase_order_id and o.customer_id=s.customer_id
+    and o.confirmed_at is not null and s.due_at=o.confirmed_at + interval '28 days'
     and o.cancelled_at is null and o.returned_at is null
     and coalesce(o.status,'') not in ('cancelled','returned')
   join public.whatsapp_accounts a on a.id=o.whatsapp_account_id and a.is_active is true and a.phone_e164=s.send_channel_e164
