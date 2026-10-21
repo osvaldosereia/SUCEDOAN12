@@ -492,10 +492,21 @@ async function cachedHomePriority(){
   // Both public endpoints share the same snapshot and cold-build promise.
   return priorityFromPublicHome(await cachedHome());
 }
+const POSTGREST_IN_BATCH_SIZE=100;
+async function queryRowsByIds(table:string,column:string,ids:string[],selection:string,configure:(query:any)=>any=(query:any)=>query):Promise<any[]>{
+  const unique=[...new Set(ids.filter(Boolean))];if(!unique.length)return [];
+  const batches:string[][]=[];
+  for(let i=0;i<unique.length;i+=POSTGREST_IN_BATCH_SIZE)batches.push(unique.slice(i,i+POSTGREST_IN_BATCH_SIZE));
+  const results=await Promise.all(batches.map(async(batch:string[])=>{
+    const query=configure(db.from(table).select(selection).in(column,batch));
+    const {data,error}=await query;if(error)throw error;return data||[];
+  }));
+  return results.flat();
+}
 async function sellableMap(ids:string[]){
   const out=new Map<string,number>();if(!ids.length)return out;
-  const {data,error}=await db.from("storefront_ean_sellable_stock_v1").select("product_id,loose_sellable_stock,ean_sellable_stock").in("product_id",ids);
-  if(error)throw error;for(const r of data||[])out.set(String(r.product_id),Math.max(0,Number(r.ean_sellable_stock??r.loose_sellable_stock??0)));return out;
+  const rows=await queryRowsByIds("storefront_ean_sellable_stock_v1","product_id",ids,"product_id,loose_sellable_stock,ean_sellable_stock");
+  for(const r of rows)out.set(String(r.product_id),Math.max(0,Number(r.ean_sellable_stock??r.loose_sellable_stock??0)));return out;
 }
 async function eanCaptureProductIds(){
   const {data,error}=await db.from("ean_capture_records_v1").select("matched_product_id,created_at").eq("sync_status","found").not("matched_product_id","is",null).order("created_at",{ascending:false}).limit(10000);
@@ -505,25 +516,26 @@ async function eanCaptureProductIds(){
 }
 async function offerList(){
   const eanIds=await eanCaptureProductIds();if(!eanIds.length)return {ok:true,offers:[]};
-  const {data,error}=await db.from("products").select("id,sku,gtin,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit,metadata,is_active").eq("is_active",true).eq("is_offer",true).not("offer_price","is",null).in("id",eanIds).order("name").limit(200);
-  if(error)throw error;const rows=data||[],sm=await sellableMap(rows.map((p:any)=>p.id));
+  const rows=(await queryRowsByIds("products","id",eanIds,"id,sku,gtin,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit,metadata,is_active",query=>query.eq("is_active",true).eq("is_offer",true).not("offer_price","is",null).order("name"))).sort((a:any,b:any)=>String(a.name||"").localeCompare(String(b.name||""),"pt-BR")).slice(0,200);
+  const sm=await sellableMap(rows.map((p:any)=>p.id));
   return {ok:true,offers:rows.map((p:any)=>({...pub(p,sm.get(p.id)||0),product_id:p.id,offer_priority:p.metadata?.offer_source==="auto_expiry"?0:1})).filter((p:any)=>p.stock_quantity>0).sort((a:any,b:any)=>a.offer_priority-b.offer_priority||a.name.localeCompare(b.name,"pt-BR")).slice(0,160)};
 }
 async function subcats(url:URL){
   const c=txt(url.searchParams.get("category"),48);if(!c)return {ok:true,subcategories:[]};
   const eanIds=await eanCaptureProductIds();if(!eanIds.length)return {ok:true,subcategories:[]};
-  const {data,error}=await db.from("products").select("customer_subsubcategory,subcategory").in("id",eanIds).eq("sales_category",c).limit(5000);
-  if(error)throw error;const m=new Map<string,number>();for(const p of data||[]){const n=txt(p.customer_subsubcategory||p.subcategory,100);if(n)m.set(n,(m.get(n)||0)+1)}
+  const data=await queryRowsByIds("products","id",eanIds,"customer_subsubcategory,subcategory",query=>query.eq("sales_category",c).limit(5000));
+  const m=new Map<string,number>();for(const p of data){const n=txt(p.customer_subsubcategory||p.subcategory,100);if(n)m.set(n,(m.get(n)||0)+1)}
   return {ok:true,subcategories:[...m.entries()].map(([name,count])=>({name,count})).sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name,"pt-BR"))};
 }
 async function productList(url:URL){
   const c=txt(url.searchParams.get("category"),48),sc=txt(url.searchParams.get("subcategory"),100),q=safeQ(url.searchParams.get("q")),limit=Math.floor(clamp(url.searchParams.get("limit")||24,1,36)),offset=Math.floor(clamp(url.searchParams.get("offset")||0,0,5000));
   const eanIds=await eanCaptureProductIds();if(!eanIds.length)return {ok:true,products:[],next_offset:null};
-  let x=db.from("products").select("id,sku,gtin,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit,is_active,is_whatsapp_active,sales_category").in("id",eanIds).limit(10000);
-  if(c)x=x.eq("sales_category",c);if(sc)x=x.eq("customer_subsubcategory",sc);
-  if(q){for(const t of q.split(/\s+/).filter(Boolean).slice(0,4))x=x.or("name.ilike.%"+t+"%,gtin.ilike.%"+t+"%,sku.ilike.%"+t+"%,brand.ilike.%"+t+"%")}
-  const {data,error}=await x;if(error)throw error;
-  const byId=new Map((data||[]).map((p:any)=>[String(p.id),p])),ordered=eanIds.filter(id=>byId.has(id));
+  const data=await queryRowsByIds("products","id",eanIds,"id,sku,gtin,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit,is_active,is_whatsapp_active,sales_category",query=>{
+    if(c)query=query.eq("sales_category",c);if(sc)query=query.eq("customer_subsubcategory",sc);
+    if(q){for(const t of q.split(/\s+/).filter(Boolean).slice(0,4))query=query.or("name.ilike.%"+t+"%,gtin.ilike.%"+t+"%,sku.ilike.%"+t+"%,brand.ilike.%"+t+"%")}
+    return query.limit(10000);
+  });
+  const byId=new Map(data.map((p:any)=>[String(p.id),p])),ordered=eanIds.filter(id=>byId.has(id));
   // Paginate BUYABLE items only; retain the scan order and never create unavailable cards.
   const publicRows:any[]=[];
   let cursor=offset;
