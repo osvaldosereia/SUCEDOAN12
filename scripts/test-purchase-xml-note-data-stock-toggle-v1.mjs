@@ -1,0 +1,27 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+
+const ui=readFileSync("vitrine/admin/runtime-src/06-purchases.part.js.txt","utf8");
+const runtime=readFileSync("vitrine/admin/admin-runtime.js","utf8");
+const api=readFileSync("supabase/functions/purchase-xml-v1/index.ts","utf8");
+const sql=readFileSync("supabase/migrations/20261021150000_purchase_xml_note_data_stock_toggle_v1.sql","utf8");
+
+assert.match(ui,/data-purchase-stock-update/);
+assert.match(ui,/stock_update_requested/);
+assert.match(ui,/Divisor: unidades vendidas em cada/);
+assert.match(ui,/update_cost:true,update_sale_price:false,stock_update_requested:stockUpdate/);
+assert.match(ui,/dados fiscais da nota aplicados/);
+assert.match(runtime,/data-purchase-stock-update/);
+assert.match(runtime,/stock_update_requested:Boolean\(card\.querySelector/);
+assert.match(api,/classification_source:"purchase_xml"/);
+assert.match(api,/product_fiscal_evidence"\)\.upsert/);
+assert.match(api,/stock_receipt_plan_locked/);
+assert.match(api,/eq\("stock_update_requested",true\)/);
+assert.match(sql,/add column if not exists stock_update_requested boolean not null default true/);
+assert.match(sql,/get_purchase_xml_receipt_preflight_v1/);
+assert.match(sql,/i\.stock_update_requested is true/);
+assert.match(sql,/no_stock_items_selected/);
+assert.match(sql,/prepare_purchase_stock_receipt_plan_v1/);
+assert.match(sql,/apply_purchase_stock_receipt_v1/);
+assert.match(sql,/activate_purchase_xml_inventory_lots_v1/);
+console.log("OK: XML fiscal data, unit divisor, and per-item stock receipt contracts");
