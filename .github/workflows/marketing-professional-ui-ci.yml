@@ -35,6 +35,7 @@ on:
       - 'img/marketing-post-sale/**'
       - 'scripts/test-marketing-post-sale-queue-v1.mjs'
       - 'scripts/test-marketing-journey-health-ui-v1.mjs'
+      - 'scripts/test-marketing-carousel-draft-safety-v1.mjs'
       - 'scripts/test-whatsapp-marketing-post-sale-worker-v1.mjs'
       - 'scripts/test-marketing-repurchase-d28-gates-v1.mjs'
       - 'scripts/test-marketing-repurchase-worker-runtime-v1.mjs'
@@ -85,6 +86,8 @@ jobs:
         run: node scripts/test-whatsapp-marketing-post-sale-worker-v1.mjs
       - name: Marketing journey health UI
         run: node scripts/test-marketing-journey-health-ui-v1.mjs
+      - name: Marketing carousel draft safety
+        run: node scripts/test-marketing-carousel-draft-safety-v1.mjs
       - name: Marketing strategy deterministic engine contract
         run: node scripts/test-marketing-strategy-engine-v1.mjs
       - name: Marketing strategy Admin API contract
