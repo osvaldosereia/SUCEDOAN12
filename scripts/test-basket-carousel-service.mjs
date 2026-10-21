@@ -31,6 +31,7 @@ assert.match(rendered,/12 itens/);
 assert.doesNotMatch(rendered,/no total/);
 assert.match(rendered,/Ver produtos/);
 assert.match(rendered,/basket-size-grande/);
+assert.match(rendered,/<span class="basket-price-prefix">A partir de:<\/span><strong class="basket-price-amount">/,'starting-price label appears on a separate, smaller line before the amount');
 assert.doesNotMatch(rendered,/Personalizar/);
 const sizePhotos={
   grande:'/img/CESTA-GRANDE-ALVINO.webp',
@@ -52,7 +53,12 @@ assert.ok(lazyPhoto.includes('data-basket-src="'+sizePhotos.media+'"'),'non-prio
 assert.match(lazyPhoto,/loading="lazy"/,'non-priority basket photos keep native lazy loading');
 assert.ok(photoBytes<350_000,'all five basket photos stay under 350 KB total');
 assert.match(root,/basket-size-card-photo/,'home page styles the basket size photos');
-assert.ok(root.includes('basket-carousel.js?v=20261020-progressive-baskets-v1'),'home page refreshes the carousel asset cache');
+assert.ok(root.includes('basket-carousel.js?v=20261021-price-hierarchy-v1'),'home page refreshes the carousel asset cache');
+assert.ok(vitrine.includes('basket-carousel.js?v=20261021-price-hierarchy-v1'),'vitrine page refreshes the carousel asset cache');
+for(const [name,html] of [['home',root],['vitrine',vitrine]]){
+  assert.match(html,/\.basket-price-prefix\\?\{[^}]*font-size:clamp\(11px/,'starting-price label uses a smaller font on '+name);
+  assert.match(html,/\.basket-price-amount\\?\{[^}]*font-size:clamp\(16px/,'amount remains prominent and responsive on '+name);
+}
 assert.match(home,/basket_commercial_catalog_v1/);assert.match(home,/public_name/);assert.match(home,/sale_price/);assert.match(home,/public_available/);
 assert.match(detail,/basket_commercial_catalog_v1/);assert.match(detail,/splitLotItems/);assert.match(detail,/basket_stock_lot_items/);
 assert.match(quote,/basket_commercial_catalog_v1/);assert.match(quote,/let total=Number\(c\.sale_price\|\|0\)/);
