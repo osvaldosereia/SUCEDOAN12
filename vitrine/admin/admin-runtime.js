@@ -4994,11 +4994,13 @@
   }
   function purchaseReceiptLotsHtml(d,items,lotPlan){
     if(!Array.isArray(items)||!items.length)return '';
+    const selectedItems=items.filter(x=>x.stock_update_requested!==false);
+    if(!selectedItems.length)return '<div class="purchase-lot-compact"><strong>Nenhum item marcado para entrada de estoque.</strong><small>Os dados da nota foram salvos; nenhum estoque será incluído para esta nota.</small></div>';
     const complete=lotPlan?.complete===true;
     const planItems=Array.isArray(lotPlan?.items)?lotPlan.items:[];
     return '<div class="purchase-lot-compact">'+
       '<div class="purchase-lot-head"><strong>Lotes desta entrada</strong><span>Validade opcional · '+(complete?'Lotes preparados':'Conferir identificação e quantidade')+'</span></div>'+
-      '<div class="purchase-lot-rows">'+items.map((item,idx)=>{
+      '<div class="purchase-lot-rows">'+selectedItems.map((item,idx)=>{
         const planItem=planItems.find(x=>String(x.item_id)===String(item.id))||{};
         const lot=item.entry_inventory_lot||planItem.inventory_lot||null;
         const lotId=String(lot?.id||item.inventory_lot_id||planItem.inventory_lot_id||'');
@@ -5047,6 +5049,7 @@
       return '<div class="purchase-safe '+(review?'purchase-danger':'')+'" style="margin:14px 0 0"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><strong>'+(review?'Entrada ainda não confirmada':'Aguardando entrada no Bling')+'</strong><small>'+esc(detail)+'</small></div><button class="primary" type="button" data-purchase-verify-receipt="'+esc(d.id)+'">Verificar entrada no Bling</button></div></div>';
     }
     if(d?.receipt_status==='ready'){
+      if(!lotPlan?.item_count)return '<div class="purchase-safe purchase-danger" style="margin:14px 0 0"><strong>Nenhum produto selecionado para entrada</strong><small>Marque pelo menos um item no seletor de estoque para preparar o recebimento físico.</small></div>';
       if(lotPlan?.complete!==true)return '<div class="purchase-safe purchase-danger" style="margin:14px 0 0"><strong>Recebimento físico</strong><small>O lote interno de algum item ainda não foi gerado. Revise o vínculo do produto e a conversão antes de preparar a entrada.</small></div>';
       return '<div class="purchase-safe" style="margin:14px 0 0"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><strong>Recebimento físico</strong><small>Produtos e lotes internos estão prontos. A validade é opcional. Preparar cria um marco de conferência; não soma estoque local. O recebimento deve aparecer no estoque físico do Bling antes de ser concluído.</small></div><button class="primary" type="button" data-purchase-inline-receive="'+esc(d.id)+'">Preparar entrada</button></div></div>';
     }
