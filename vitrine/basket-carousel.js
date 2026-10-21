@@ -72,7 +72,7 @@ window.BasketCarousel={
     const image=imagePath?'<div class="basket-size-card-photo"><img '+imageAttrs+' decoding="async" alt="Cesta '+esc(name)+'"></div>':'';
     const actionLabel=sizeCard?'Ver produtos':'Personalizar';
     const actionAria=sizeCard?'Ver produtos da cesta ':'Personalizar cesta ';
-    return '<article class="card basket-card'+sizeClass+'">'+image+'<div class="card-body basket-card-info"><div class="basket-card-title name">'+esc(name)+'</div>'+itemSummary+'<div class="price">A partir de: '+money(b.display_price_cents)+'</div><button type="button" class="add" data-basket="'+esc(key)+'" aria-label="'+actionAria+esc(name)+'">'+actionLabel+'</button></div></article>';
+    return '<article class="card basket-card'+sizeClass+'">'+image+'<div class="card-body basket-card-info"><div class="basket-card-title name">'+esc(name)+'</div>'+itemSummary+'<div class="price"><span class="basket-price-prefix">A partir de:</span><strong class="basket-price-amount">'+money(b.display_price_cents)+'</strong></div><button type="button" class="add" data-basket="'+esc(key)+'" aria-label="'+actionAria+esc(name)+'">'+actionLabel+'</button></div></article>';
   },
   prepareHome(host){
     const section=host?.closest?.('.section');if(!section)return;
