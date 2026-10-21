@@ -1,17 +1,150 @@
-import {adminApi} from './api.js';
-const $=(s,r=document)=>r.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const state={view:'products',products:[],baskets:[],nextOffset:null,search:''},workspace=$('#workspace');let timer,version=0;
-function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function money(v){return (Number(v||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-function heading(k,t,d){return '<div class="page-heading"><div><span class="eyebrow">'+k+'</span><h1>'+t+'</h1><p>'+d+'</p></div><span class="readonly-badge">Supabase ativo · somente leitura</span></div>'}
-function loading(t){workspace.innerHTML='<div class="loading-card"><span class="spinner"></span><strong>'+t+'</strong><small>Leitura do catálogo publicado.</small></div>'}
-function setView(view){state.view=view;$$('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===view));$('#currentSection').textContent={products:'Produtos',baskets:'Cestas',bling:'Bling'}[view];if(view==='products')loadProducts();else if(view==='baskets')loadBaskets();else renderBling()}
-async function loadProducts({append=false,quiet=false}={}){const v=++version;if(!quiet)loading('Carregando produtos disponíveis…');try{const r=await adminApi('products',{limit:36,offset:append?state.nextOffset:0,q:state.search});if(v!==version)return;state.products=append?[...state.products,...r.products]:r.products;state.nextOffset=r.next_offset;renderProducts()}catch(e){error(e)}}
-function productCard(p){return '<article class="preview-product"><div class="preview-photo">'+(p.image_url?'<img src="'+esc(p.image_url)+'" alt="" loading="lazy">':'DA')+'</div><div class="preview-product-main"><span class="preview-category">'+esc(p.category||'Produto')+'</span><h3>'+esc(p.name)+'</h3><p>'+esc([p.brand,p.packaging].filter(Boolean).join(' · ')||'Disponível na loja')+'</p><div class="preview-product-meta"><span>Estoque: '+esc(p.stock_quantity)+'</span><strong>'+money(p.sale_price_cents)+'</strong></div></div></article>'}
-function renderProducts(){workspace.innerHTML=heading('CATÁLOGO ATIVO','Produtos','Itens publicados e disponíveis para venda na loja neste momento.')+'<div class="preview-notice"><b>i</b><p>Consulta ao catálogo ativo por uma rota pública somente de leitura. Cadastro, edição e exclusão estão bloqueados.</p></div><section class="panel"><div class="panel-toolbar"><label class="search-wrap"><span>⌕</span><input id="productSearch" type="search" placeholder="Buscar por nome, SKU ou EAN" value="'+esc(state.search)+'"></label><button class="button secondary" id="refresh">Atualizar</button></div><div class="preview-product-grid">'+(state.products.map(productCard).join('')||'<div class="empty-state"><strong>Nenhum produto disponível</strong></div>')+'</div><div class="panel-foot">'+state.products.length+' produtos carregados '+(state.nextOffset!==null?'<button class="quiet-button" id="more">Carregar mais →</button>':'')+'</div></section>';$('#refresh').onclick=()=>loadProducts();$('#productSearch').oninput=e=>{clearTimeout(timer);timer=setTimeout(()=>{state.search=e.target.value.trim();loadProducts({quiet:true})},250)};if($('#more'))$('#more').onclick=()=>loadProducts({append:true})}
-async function loadBaskets(){workspace.innerHTML=heading('CATÁLOGO','Cestas','A consulta segura de cestas será adicionada em uma próxima etapa.')+'<section class="panel preview-locked"><h2>Consulta de cestas ainda não disponível</h2><p>Esta área não consulta ou altera o banco. Os produtos ativos já podem ser visualizados no catálogo.</p></section>'}
-function renderBaskets(){const cards=state.baskets.map(b=>'<article class="basket-card preview-basket"><div class="basket-image">'+(b.image_url?'<img src="'+esc(b.image_url)+'" alt="" loading="lazy">':'<span>◈</span>')+'<span class="status-pill good"><i></i>Disponível</span></div><div class="basket-card-body"><div><span class="eyebrow">CESTA BÁSICA</span><h3>'+esc(b.name)+'</h3><p>'+b.template_item_count+' itens na composição publicada</p></div><div class="basket-card-foot"><strong>'+money(b.base_price_cents)+'</strong></div></div></article>').join('');workspace.innerHTML=heading('EXEMPLO VISUAL','Cestas','Cestas disponíveis na loja.')+'<div class="preview-notice"><b>i</b><p>Consulta pública da vitrine. Composição administrativa não é exposta ou editável nesta prévia.</p></div><section class="preview-basket-grid">'+(cards||'<div class="empty-state"><strong>Nenhuma cesta disponível</strong></div>')+'</section>'}
-function renderBling(){workspace.innerHTML=heading('INTEGRAÇÃO','Bling','Conexão do catálogo com o ERP.')+'<section class="panel preview-locked"><div class="integration-icon">↔</div><h2>Área administrativa protegida</h2><p>Status e conferência do Bling exigem autenticação. Nenhuma credencial ou informação interna é exposta na prévia pública.</p></section>'}
-function error(e){workspace.innerHTML='<div class="empty-state error-state"><strong>Não foi possível carregar o catálogo</strong><span>'+esc(e.message||'Verifique sua conexão.')+'</span><button class="button secondary" id="retry">Tentar novamente</button></div>';$('#retry').onclick=()=>state.view==='products'?loadProducts():loadBaskets()}
-$$('.nav-item').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));$('#logoutButton')?.remove();$('#sessionDot')?.classList.add('online');$('#sessionLabel').textContent='Catálogo ativo · somente leitura';setView('products');
+import { adminApi } from './api.js';
+import { filterProducts, getProductStockState, listProductCategories } from './products.js';
 
+const $ = (selector, root = document) => root.querySelector(selector);
+const state = { products: [], nextOffset: null, query: '', category: '', stock: '' };
+const workspace = $('#workspace');
+let searchTimer;
+let requestVersion = 0;
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, character => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[character]);
+}
+
+function formatMoney(cents) {
+  return (Number(cents || 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function formatQuantity(quantity) {
+  return Number(quantity || 0).toLocaleString('pt-BR', { maximumFractionDigits: 3 });
+}
+
+function productImage(product) {
+  if (product.image_url) {
+    return `<img src="${escapeHtml(product.image_url)}" alt="" loading="lazy" referrerpolicy="no-referrer">`;
+  }
+  return '<span class="product-placeholder" aria-hidden="true">▦</span>';
+}
+
+function stockBadge(product) {
+  const status = getProductStockState(product.stock_quantity);
+  const className = status.key === 'available' ? 'good' : status.key === 'low' ? 'attention' : 'muted';
+  return `<span class="status-pill ${className}"><i aria-hidden="true"></i>${status.label}</span>`;
+}
+
+function productRow(product) {
+  const secondary = [product.brand, product.packaging].filter(Boolean).join(' · ');
+  return `<tr>
+    <td><div class="product-cell">${productImage(product)}<span><strong>${escapeHtml(product.name || 'Produto sem nome')}</strong><small>${escapeHtml(secondary || '—')}</small></span></div></td>
+    <td>${escapeHtml(product.category || 'Sem categoria')}</td>
+    <td>${escapeHtml(product.sku || '—')}</td>
+    <td class="money-cell">${formatMoney(product.sale_price_cents)}</td>
+    <td><div class="stock-cell"><strong>${formatQuantity(product.stock_quantity)}</strong>${stockBadge(product)}</div></td>
+  </tr>`;
+}
+
+function productCard(product) {
+  const secondary = [product.brand, product.packaging].filter(Boolean).join(' · ');
+  return `<article class="product-mobile-card">
+    <div class="product-mobile-image">${productImage(product)}</div>
+    <div class="product-mobile-main">
+      <span class="product-mobile-category">${escapeHtml(product.category || 'Sem categoria')}</span>
+      <strong>${escapeHtml(product.name || 'Produto sem nome')}</strong>
+      <small>${escapeHtml(secondary || product.sku || '—')}</small>
+      <div class="product-mobile-meta"><b>${formatMoney(product.sale_price_cents)}</b><span>Estoque ${formatQuantity(product.stock_quantity)}</span></div>
+      ${stockBadge(product)}
+    </div>
+  </article>`;
+}
+
+function getVisibleProducts() {
+  return filterProducts(state.products, { query: '', category: state.category, stock: state.stock });
+}
+
+function renderProducts() {
+  const visibleProducts = getVisibleProducts();
+  const categories = listProductCategories(state.products);
+  const lowStock = state.products.filter(product => ['low', 'out'].includes(getProductStockState(product.stock_quantity).key)).length;
+  const hasFilters = Boolean(state.category || state.stock);
+
+  workspace.innerHTML = `
+    <div class="page-heading">
+      <div><span class="eyebrow">CATÁLOGO ATIVO</span><h1>Produtos</h1><p>Encontre e confira rapidamente os produtos disponíveis na loja.</p></div>
+      <span class="readonly-badge"><i aria-hidden="true"></i>Catálogo conectado</span>
+    </div>
+    <section class="metric-row product-metrics" aria-label="Resumo dos produtos carregados">
+      <article class="metric-card"><span>Carregados</span><strong>${state.products.length}</strong><small>Produtos nesta consulta</small></article>
+      <article class="metric-card"><span>Estoque baixo</span><strong>${lowStock}</strong><small>Até 5 unidades</small></article>
+      <article class="metric-card"><span>Categorias</span><strong>${categories.length}</strong><small>Nesta lista carregada</small></article>
+    </section>
+    <section class="panel products-panel" aria-label="Lista de produtos">
+      <div class="panel-toolbar products-toolbar">
+        <label class="search-wrap"><span aria-hidden="true">⌕</span><input id="productSearch" type="search" autocomplete="off" placeholder="Buscar nome, SKU, EAN ou marca" value="${escapeHtml(state.query)}" aria-label="Buscar produtos"></label>
+        <label class="filter-field"><span>Categoria</span><select id="categoryFilter" aria-label="Filtrar por categoria"><option value="">Todas as categorias</option>${categories.map(category => `<option value="${escapeHtml(category)}" ${state.category === category ? 'selected' : ''}>${escapeHtml(category)}</option>`).join('')}</select></label>
+        <label class="filter-field"><span>Estoque</span><select id="stockFilter" aria-label="Filtrar por estoque"><option value="">Todos</option><option value="available" ${state.stock === 'available' ? 'selected' : ''}>Disponível</option><option value="low" ${state.stock === 'low' ? 'selected' : ''}>Estoque baixo</option></select></label>
+        <button class="button secondary refresh-button" id="refreshProducts" type="button"><span aria-hidden="true">↻</span> Atualizar</button>
+      </div>
+      <div class="list-summary"><span><strong>${visibleProducts.length}</strong> ${visibleProducts.length === 1 ? 'produto exibido' : 'produtos exibidos'}${hasFilters ? ' com os filtros atuais' : ''}</span>${hasFilters ? '<button class="text-button" id="clearFilters" type="button">Limpar filtros</button>' : ''}</div>
+      ${visibleProducts.length ? `
+        <div class="table-scroll"><table class="data-table products-table"><thead><tr><th scope="col">Produto</th><th scope="col">Categoria</th><th scope="col">SKU</th><th scope="col">Preço</th><th scope="col">Estoque</th></tr></thead><tbody>${visibleProducts.map(productRow).join('')}</tbody></table></div>
+        <div class="products-mobile-list">${visibleProducts.map(productCard).join('')}</div>
+      ` : `<div class="empty-state"><span class="empty-icon" aria-hidden="true">⌕</span><strong>${state.products.length ? 'Nenhum produto encontrado' : 'Nenhum produto disponível'}</strong><span>${state.products.length ? 'Tente ajustar os filtros ou a busca.' : 'Atualize a lista para consultar novamente.'}</span></div>`}
+      <div class="panel-foot products-footer"><span>${state.products.length} carregados nesta consulta</span>${state.nextOffset !== null ? '<button class="quiet-button" id="loadMore" type="button">Carregar mais produtos <span aria-hidden="true">→</span></button>' : ''}</div>
+    </section>
+    <p class="readonly-note">Esta tela consulta o catálogo da loja. Edição e cadastro serão liberados em uma próxima etapa.</p>`;
+
+  $('#productSearch').addEventListener('input', event => {
+    clearTimeout(searchTimer);
+    const query = event.currentTarget.value.trim();
+    searchTimer = setTimeout(() => {
+      state.query = query;
+      loadProducts();
+    }, 250);
+  });
+  $('#categoryFilter').addEventListener('change', event => {
+    state.category = event.currentTarget.value;
+    renderProducts();
+  });
+  $('#stockFilter').addEventListener('change', event => {
+    state.stock = event.currentTarget.value;
+    renderProducts();
+  });
+  $('#refreshProducts').addEventListener('click', () => loadProducts());
+  $('#clearFilters')?.addEventListener('click', () => {
+    state.category = '';
+    state.stock = '';
+    state.query = '';
+    loadProducts();
+  });
+  $('#loadMore')?.addEventListener('click', () => loadProducts({ append: true }));
+}
+
+function renderLoading() {
+  workspace.innerHTML = '<div class="loading-card"><span class="spinner" aria-hidden="true"></span><strong>Carregando produtos…</strong><small>Consultando o catálogo da loja.</small></div>';
+}
+
+async function loadProducts({ append = false } = {}) {
+  const currentVersion = ++requestVersion;
+  if (!append) renderLoading();
+  try {
+    const result = await adminApi('products', {
+      limit: 36,
+      offset: append ? state.nextOffset : 0,
+      q: state.query
+    });
+    if (currentVersion !== requestVersion) return;
+    state.products = append ? [...state.products, ...result.products] : result.products;
+    state.nextOffset = result.next_offset;
+    renderProducts();
+  } catch (error) {
+    if (currentVersion !== requestVersion) return;
+    workspace.innerHTML = `<div class="empty-state error-state"><strong>Não foi possível carregar os produtos</strong><span>${escapeHtml(error.message || 'Verifique a conexão e tente novamente.')}</span><button class="button secondary" id="retryProducts" type="button">Tentar novamente</button></div>`;
+    $('#retryProducts').addEventListener('click', () => loadProducts());
+  }
+}
+
+$('#sessionLabel').textContent = 'Somente leitura';
+$('#currentSection').textContent = 'Produtos';
+loadProducts();

@@ -1,7 +1,28 @@
-# Admin1 do catálogo Dona Antônia
+# Admin de produtos · Dona Antônia
 
-Painel de consulta conectado somente à ação GET `products` da função pública `storefront-v2` do projeto Supabase ativo. A API retorna apenas itens publicados e disponíveis, com seus campos públicos (imagem, categoria, preço, estoque, SKU e EAN).
+Painel independente em `/admin1`, focado na consulta rápida do catálogo de produtos da loja.
 
-A camada `src/public-api.js` permite somente o método HTTP GET e a ação `products`. As operações de cadastro, edição, exclusão, integração e sincronização não são incluídas. Nenhuma chave secreta, sessão administrativa ou endpoint de escrita é usado.
+## Nesta etapa
 
-Cestas permanecem desabilitadas neste incremento porque a listagem pública atual pode atualizar um snapshot interno no banco.
+- Lista de produtos publicados com imagem, categoria, SKU, preço e estoque.
+- Busca no catálogo por nome, SKU, EAN e marca.
+- Filtros rápidos por categoria e situação do estoque.
+- Paginação para carregar mais produtos e versão responsiva para desktop e celular.
+- Somente leitura: a interface chama apenas `GET storefront-v2?action=products`.
+
+Cadastro, edição, exclusão, integração com Bling e gestão de cestas ficam para etapas futuras. A camada da API bloqueia ações diferentes de `products` e não contém operações de escrita.
+
+## Organização
+
+- `index.html` e `styles.css`: estrutura visual e design responsivo.
+- `src/app.js`: tela, eventos e carregamento.
+- `src/products.js`: regras pequenas de busca, filtros e leitura do estoque.
+- `src/api.js`: adaptador da interface para a API de leitura.
+- `src/public-api.js`: chamada GET permitida ao Supabase.
+- `tests/`: testes das regras de filtro e da política somente leitura.
+
+## Verificação local
+
+```sh
+node --test tests/*.test.mjs
+```
