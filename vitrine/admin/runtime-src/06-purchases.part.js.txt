@@ -107,7 +107,7 @@
       :'';
     const matchHtml=existing?'':'<div class="purchase-match-panel" data-purchase-match-panel>'+
       '<strong>Identificar produto</strong>'+
-      '<small class="purchase-match-help">Ao vincular, a nota atualiza custo unitário, fornecedor, embalagem e dados fiscais com origem registrada. NCM/CEST ficam pendentes de conferência.</small>'+
+      '<small class="purchase-match-help">Ao vincular, a nota atualiza custo unitário, fornecedor, embalagem e dados fiscais com origem registrada. NCM/CEST ficam registrados para revisão fiscal; CFOP e CST/CSOSN permanecem vinculados à evidência desta nota.</small>'+
       '<div class="purchase-match-search"><input type="search" data-purchase-match-query placeholder="EAN ou nome do produto" value="'+esc(x.commercial_gtin||x.tax_gtin||x.description||'')+'"><button class="secondary" type="button" data-purchase-match-search>Buscar produto</button></div>'+
       '<div data-purchase-match-results class="purchase-match-results"></div>'+
       '<div data-purchase-match-selected class="purchase-match-selection" aria-live="polite">Aguardando correspondência…</div>'+
