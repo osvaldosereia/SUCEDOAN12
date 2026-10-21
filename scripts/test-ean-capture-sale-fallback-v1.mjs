@@ -60,7 +60,7 @@ assert.equal(second.next_offset,null);
 
 
 assert.match(api,/const PRODUCT_ID_QUERY_BATCH_SIZE=100;/,'product ID lookups must use bounded request batches');
-assert.equal((api.match(/fetchProductRowsByIds\\(eanIds/g)||[]).length,3,'offers, subcategories and product search must use batched product lookups');
+assert.equal((api.match(/fetchProductRowsByIds\(eanIds/g)||[]).length,3,'offers, subcategories and product search must use batched product lookups');
 const batchHelperStart=api.indexOf('const PRODUCT_ID_QUERY_BATCH_SIZE=100;');
 const batchHelperEnd=api.indexOf('async function offerList(',batchHelperStart);
 assert.ok(batchHelperStart>=0&&batchHelperEnd>batchHelperStart,'batch helper must be defined before catalog endpoints');
