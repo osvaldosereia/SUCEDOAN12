@@ -6,10 +6,10 @@ function normalizeText(value) {
     .trim();
 }
 
-export function getProductStockState(quantity) {
+export function getProductStockState(quantity, lowStockThreshold = 5) {
   const stock = Number(quantity) || 0;
   if (stock <= 0) return { key: 'out', label: 'Sem estoque' };
-  if (stock <= 5) return { key: 'low', label: 'Estoque baixo' };
+  if (stock <= Math.max(0, Number(lowStockThreshold) || 5)) return { key: 'low', label: 'Estoque baixo' };
   return { key: 'available', label: 'Disponível' };
 }
 
@@ -22,13 +22,21 @@ export function filterProducts(products = [], filters = {}) {
   const query = normalizeText(filters.query);
   const category = String(filters.category || '');
   const stock = String(filters.stock || '');
+  const status = String(filters.status || 'all');
 
   return products.filter(product => {
     const matchesQuery = !query || [product.name, product.sku, product.gtin, product.brand, product.packaging]
       .some(value => normalizeText(value).includes(query));
     const matchesCategory = !category || product.category === category;
-    const stockKey = getProductStockState(product.stock_quantity).key;
-    const matchesStock = !stock || stockKey === stock;
-    return matchesQuery && matchesCategory && matchesStock;
+    const stockKey = getProductStockState(product.stock_quantity, product.min_stock).key;
+    const matchesStock = !stock || stock === 'all' || stockKey === stock;
+    const matchesStatus = status === 'all' || (status === 'active' ? product.active === true : product.active !== true);
+    return matchesQuery && matchesCategory && matchesStock && matchesStatus;
   });
+}
+
+export function listCategoryOptions(categories = []) {
+  const values = categories.map(item => typeof item === 'string' ? item : item?.value || item?.category).filter(Boolean);
+  return [...new Set(values.map(value => String(value).trim()).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, 'pt-BR'));
 }

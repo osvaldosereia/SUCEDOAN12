@@ -1,3 +1,6 @@
+import { calculateUnitConversion, findCatalogMatch, isValidGtin, PRODUCT_CATEGORY_OPTIONS } from './product-management.js';
+export { findCatalogMatch } from './product-management.js';
+
 const digits = value => String(value ?? '').replace(/\D/g, '');
 const text = value => String(value ?? '').trim();
 
@@ -26,14 +29,9 @@ function decimal(value) {
 }
 
 function validGtin(value) {
+  if (text(value).toUpperCase() === 'SEM GTIN') return 'SEM GTIN';
   const code = digits(value);
-  if (![8, 12, 13, 14].includes(code.length)) return '';
-  const check = Number(code.at(-1));
-  let sum = 0;
-  for (let index = code.length - 2, weight = 0; index >= 0; index -= 1, weight += 1) {
-    sum += Number(code[index]) * (weight % 2 === 0 ? 3 : 1);
-  }
-  return (10 - (sum % 10)) % 10 === check ? code : '';
+  return isValidGtin(code) ? code : '';
 }
 
 export function readNfeDocument(document) {
@@ -85,6 +83,7 @@ export function parseNfeXml(xml, DOMParserImpl = globalThis.DOMParser) {
 }
 
 export function createProductDraft(item, now = new Date(), existing = null) {
+  const conversion = calculateUnitConversion(item);
   return {
     id: globalThis.crypto?.randomUUID?.() || `draft-${now.getTime()}-${Math.random().toString(36).slice(2, 8)}`,
     source: 'purchase_xml',
@@ -106,6 +105,8 @@ export function createProductDraft(item, now = new Date(), existing = null) {
     purchase_unit: text(item.purchase_unit),
     purchase_quantity: item.purchase_quantity,
     cost: item.purchase_unit_price,
+    units_per_purchase_unit: conversion?.units_per_purchase_unit ?? null,
+    cost_per_tax_unit: conversion?.cost_per_tax_unit ?? null,
     tax_unit: text(item.tax_unit),
     tax_quantity: item.tax_quantity,
     cfop_from_xml: text(item.cfop),
@@ -121,22 +122,14 @@ export function createProductDraft(item, now = new Date(), existing = null) {
   };
 }
 
-export function findCatalogMatch(item, products = []) {
-  const ean = validGtin(item.commercial_gtin || item.gtin);
-  if (ean) {
-    const byEan = products.find(product => validGtin(product.gtin) === ean);
-    if (byEan) return { ...byEan, matched_by: 'GTIN' };
-  }
-  const sku = text(item.supplier_item_code || item.sku).toLocaleUpperCase('pt-BR');
-  if (!sku) return null;
-  const bySku = products.find(product => text(product.sku).toLocaleUpperCase('pt-BR') === sku);
-  return bySku ? { ...bySku, matched_by: 'SKU' } : null;
-}
+
 
 export function getFiscalChecklist(product = {}) {
   const required = [
     ['name', 'Descrição do produto'],
     ['sku', 'SKU ou código interno'],
+    ['category', 'Categoria do catálogo'],
+    ['sale_price', 'Preço de venda'],
     ['ncm', 'NCM'],
     ['origin_code', 'Origem da mercadoria'],
     ['commercial_gtin', 'GTIN comercial'],
@@ -146,6 +139,8 @@ export function getFiscalChecklist(product = {}) {
   ];
   const pending = required.filter(([key]) => !text(product[key])).map(([key, label]) => ({ key, label }));
   const invalid = [];
+  if (text(product.category) && !PRODUCT_CATEGORY_OPTIONS.includes(text(product.category))) invalid.push({ key: 'category', label: 'Categoria fora da lista do catálogo' });
+  if (text(product.sale_price) && (!Number.isFinite(Number(String(product.sale_price).replace(',', '.'))) || Number(String(product.sale_price).replace(',', '.')) <= 0)) invalid.push({ key: 'sale_price', label: 'Preço de venda deve ser maior que zero' });
   if (text(product.ncm) && !/^\d{8}$/.test(digits(product.ncm))) invalid.push({ key: 'ncm', label: 'NCM deve ter 8 dígitos' });
   if (text(product.cest) && !/^\d{7}$/.test(digits(product.cest))) invalid.push({ key: 'cest', label: 'CEST deve ter 7 dígitos' });
   if (text(product.origin_code) && !/^[0-8]$/.test(text(product.origin_code))) invalid.push({ key: 'origin_code', label: 'Origem deve ser de 0 a 8' });
@@ -173,4 +168,5 @@ export function saveProductDraft(draft, storage = globalThis.localStorage) {
   storage.setItem('dona-antonia.admin1.product-drafts', JSON.stringify(next));
   return next;
 }
+
 

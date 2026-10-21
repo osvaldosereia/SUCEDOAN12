@@ -43,6 +43,13 @@ test('lê os campos de produto e da nota sem perder unidades e códigos fiscais 
   assert.equal(item.supplier_name, 'Fornecedor Teste');
 });
 
+test('preserva SEM GTIN indicado explicitamente pela NF-e', () => {
+  const document = xmlDocument();
+  const productNode = document.getElementsByTagNameNS('*', 'prod')[0];
+  productNode.children.find(child => child.localName === 'cEAN').textContent = 'SEM GTIN';
+  assert.equal(readNfeDocument(document)[0].commercial_gtin, 'SEM GTIN');
+});
+
 test('cria rascunho local preservando dados fiscais e unidade comercial e tributável do XML', () => {
   const draft = createProductDraft({
     description: 'Arroz tipo 1 5 kg', supplier_item_code: 'ARZ-5', commercial_gtin: '7891234567895',
@@ -70,19 +77,19 @@ test('associa produto apenas por GTIN ou SKU exatos e não por nome aproximado',
     { id: '2', name: 'Arroz Tipo 1 1 kg', sku: 'ARZ1', gtin: '7891234567802' }
   ];
   assert.equal(findCatalogMatch({ commercial_gtin: '7891234567895', supplier_item_code: 'OTHER' }, catalog).id, '1');
-  assert.equal(findCatalogMatch({ commercial_gtin: '', supplier_item_code: 'ARZ1' }, catalog).id, '2');
+  assert.equal(findCatalogMatch({ commercial_gtin: '', sku: 'ARZ1' }, catalog).id, '2');
   assert.equal(findCatalogMatch({ description: 'Arroz Tipo 1 5kg' }, catalog), null);
 });
 
 test('lista pendências fiscais sem tratar CEST como obrigatório para todo produto', () => {
   const checklist = getFiscalChecklist({ name: 'Produto', sku: 'P1', ncm: '10063021', origin_code: 0 });
-  assert.deepEqual(checklist.map(item => item.key), ['commercial_gtin', 'tax_gtin', 'commercial_unit', 'tax_unit']);
-  const complete = getFiscalChecklist({ name: 'Produto', sku: 'P1', ncm: '10063021', origin_code: 0, cest: '', commercial_gtin: 'SEM GTIN', tax_gtin: 'SEM GTIN', commercial_unit: 'UN', tax_unit: 'UN' });
+  assert.deepEqual(checklist.map(item => item.key), ['category', 'sale_price', 'commercial_gtin', 'tax_gtin', 'commercial_unit', 'tax_unit']);
+  const complete = getFiscalChecklist({ name: 'Produto', sku: 'P1', category: 'Mercearia', sale_price: '9,99', ncm: '10063021', origin_code: 0, cest: '', commercial_gtin: 'SEM GTIN', tax_gtin: 'SEM GTIN', commercial_unit: 'UN', tax_unit: 'UN' });
   assert.deepEqual(complete, []);
 });
 
 test('aponta NCM e GTIN em formato inválido para revisão antes da conclusão do rascunho', () => {
-  const checklist = getFiscalChecklist({ name: 'Produto', sku: 'P1', ncm: '123', origin_code: '9', commercial_gtin: '12345678', tax_gtin: 'SEM GTIN', commercial_unit: 'UN', tax_unit: 'UN' });
+  const checklist = getFiscalChecklist({ name: 'Produto', sku: 'P1', category: 'Mercearia', sale_price: '9,99', ncm: '123', origin_code: '9', commercial_gtin: '12345678', tax_gtin: 'SEM GTIN', commercial_unit: 'UN', tax_unit: 'UN' });
   assert.deepEqual(checklist.map(item => item.key), ['ncm', 'origin_code', 'commercial_gtin']);
 });
 
@@ -95,3 +102,4 @@ test('salva e atualiza rascunhos somente no armazenamento local do navegador', (
   assert.equal(readProductDrafts(storage)[0].name, 'Arroz 5 kg revisado');
   assert.equal(readProductDrafts(storage)[0].status, 'draft');
 });
+
