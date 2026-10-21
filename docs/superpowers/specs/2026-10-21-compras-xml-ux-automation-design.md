@@ -42,8 +42,8 @@ O uso diário deve exigir poucas decisões. Produtos novos permanecem inativos n
 
 - Vínculo automático somente por identificador confirmado: EAN de unidade, EAN de embalagem ou código do fornecedor já associado ao CNPJ correto.
 - Conflito, identificador ausente ou correspondência apenas pelo nome permanece em revisão manual; a IA não escolhe sozinha entre produtos parecidos.
-- Ao encontrar vínculo seguro, registrar fornecedor, divisor e todos os campos recebidos da nota. NCM/CEST podem atualizar os campos de catálogo e ficam marcados para revisão fiscal. CFOP/CST permanecem ligados à evidência da nota, com a origem preservada.
-- Nome de produto existente não é reescrito pela nota. Produto novo usa a descrição da nota como nome inicial, recebe os dados disponíveis e fica inativo na vitrine.
+- Ao encontrar vínculo seguro, atualizar fornecedor e custo unitário com base na quantidade e conversão confirmadas. Registrar também todos os campos recebidos da nota. NCM/CEST podem atualizar os campos de catálogo e ficam marcados para revisão fiscal. CFOP/CST permanecem ligados à evidência da nota, com a origem preservada. Preço de venda não é recalculado a partir do custo sem aprovação.
+- Nome de produto existente não é reescrito pela nota. Produto novo usa a descrição da nota como nome inicial, recebe os dados disponíveis, incluindo custo unitário calculado, e fica inativo na vitrine. Preço de venda não é inventado.
 - A rotina não atualiza estoque local diretamente. Quando a preferência permanente do produto permitir entrada, o item é incluído no plano de recebimento e a confirmação continua dependente do processo no Bling.
 
 ### IA e imagens
@@ -61,7 +61,7 @@ A busca de imagem deve usar uma fonte/API autorizada e guardar URL de origem, da
 
 ## Segurança e limites
 
-- Produto novo permanece `is_active=false` e `is_whatsapp_active=false` até publicação humana.
+- Produto novo permanece `is_active=false` e `is_whatsapp_active=false` até publicação humana. Ao aprovar a publicação, o sistema primeiro procura o produto no Bling pelo identificador confirmado e salva o vínculo; se não existir, cria no Bling com os dados revisados. Sem confirmação do Bling, o produto continua inativo e pode ser reenviado sem duplicação.
 - Nenhum produto é excluído, publicado ou renomeado automaticamente se já existir.
 - Nenhuma movimentação de estoque é criada diretamente pelo agente.
 - O agente não cria contas financeiras nem envia pagamentos.
@@ -86,6 +86,8 @@ Cada etapa deve entrar por branch/PR, executar os testes da sessão XML e verifi
 - Identificador confirmado associa o produto correto; conflito não associa automaticamente.
 - Produto criado automaticamente fica inativo na vitrine, com GTIN preservado, estoque inicial preservado e sem publicação.
 - A preferência persistente de estoque controla a inclusão em recebimentos futuros; o recebimento é verificado no Bling e não soma estoque duas vezes.
+- O custo unitário resultante da nota atualiza o custo do produto após confirmação da conversão; o preço de venda existente é preservado.
+- Antes de publicar produto novo, o fluxo cria ou confirma seu cadastro no Bling e grava o ID; falhas do Bling mantêm o produto inativo e permitem repetir com segurança.
 - A conversão confirmada é recuperada para o mesmo fornecedor e não é aplicada a outro fornecedor.
 - A tela inicial continua rápida; pendências e ações comuns ficam na primeira área, enquanto ferramentas secundárias permanecem acessíveis e recolhidas.
 - Erro de Bling, banco, IA ou imagem não descarta XML nem interrompe processamento de outros itens; a fila mostra uma razão compreensível para revisão.
