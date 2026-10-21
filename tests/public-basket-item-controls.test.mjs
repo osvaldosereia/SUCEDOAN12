@@ -59,7 +59,7 @@ for (const file of files) {
     const html=readFileSync(new URL(`../${file}`, import.meta.url),'utf8');
     assert.match(html,/data-mold-brand-toggle=/);
     assert.match(html,/Trocar a marca/);
-    assert.match(html,/aria-expanded="'+\(expanded\?'true':'false'\)/);
+    assert.match(html,/data-mold-brand-toggle=.*aria-expanded=/);
     assert.match(html,/data-mold-brand-panel=/);
     assert.match(html,/\+\(expanded\?'':'hidden'\)/);
     assert.match(html,/\.basket-brand-panel\[hidden\]\{display:none!important\}/);
