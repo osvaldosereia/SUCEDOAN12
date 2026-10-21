@@ -2,7 +2,6 @@
 -- The global Bling stock authority and its operational inventory views are unchanged.
 -- Local reservations are deducted once, and consumed orders are deducted only
 -- if they consumed stock AFTER the physical EAN count was recorded.
-BEGIN;
 
 CREATE OR REPLACE VIEW public.storefront_ean_sellable_stock_v1
 WITH (security_invoker = true) AS
@@ -127,4 +126,3 @@ END;
 $patch$;
 
 NOTIFY pgrst,'reload schema';
-COMMIT;
