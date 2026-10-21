@@ -519,14 +519,27 @@ async function subcats(url:URL){
 async function productList(url:URL){
   const c=txt(url.searchParams.get("category"),48),sc=txt(url.searchParams.get("subcategory"),100),q=safeQ(url.searchParams.get("q")),limit=Math.floor(clamp(url.searchParams.get("limit")||24,1,36)),offset=Math.floor(clamp(url.searchParams.get("offset")||0,0,5000));
   const eanIds=await eanCaptureProductIds();if(!eanIds.length)return {ok:true,products:[],next_offset:null};
-  let x=db.from("products").select("id,sku,gtin,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit,is_active,sales_category").in("id",eanIds).limit(10000);
+  let x=db.from("products").select("id,sku,gtin,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit,is_active,is_whatsapp_active,sales_category").in("id",eanIds).limit(10000);
   if(c)x=x.eq("sales_category",c);if(sc)x=x.eq("customer_subsubcategory",sc);
   if(q){for(const t of q.split(/\s+/).filter(Boolean).slice(0,4))x=x.or("name.ilike.%"+t+"%,gtin.ilike.%"+t+"%,sku.ilike.%"+t+"%,brand.ilike.%"+t+"%")}
   const {data,error}=await x;if(error)throw error;
   const byId=new Map((data||[]).map((p:any)=>[String(p.id),p])),ordered=eanIds.filter(id=>byId.has(id));
-  const rows=ordered.slice(offset,offset+limit).map(id=>byId.get(id));
-  const sm=await sellableMap(rows.map((p:any)=>p.id)),publicRows=rows.map((p:any)=>pub(p,sm.get(p.id)||0));
-  return {ok:true,products:publicRows,next_offset:offset+rows.length<ordered.length?offset+rows.length:null};
+  // Paginate BUYABLE items only; retain the scan order and never create unavailable cards.
+  const publicRows:any[]=[];
+  let cursor=offset;
+  while(cursor<ordered.length&&publicRows.length<limit){
+    const chunk=ordered.slice(cursor,cursor+Math.max(24,limit+12));
+    const sm=await sellableMap(chunk);
+    for(const id of chunk){
+      cursor++;
+      const p=byId.get(id);
+      if(!p||p.is_active!==true||p.is_whatsapp_active!==true)continue;
+      const candidate=pub(p,sm.get(id)||0);
+      if(candidate.stock_quantity>0&&candidate.price_available)publicRows.push(candidate);
+      if(publicRows.length>=limit)break;
+    }
+  }
+  return {ok:true,products:publicRows,next_offset:cursor<ordered.length?cursor:null};
 }
 async function oneProduct(id:string){
   const eanIds=await eanCaptureProductIds();if(!eanIds.includes(id))return null;
