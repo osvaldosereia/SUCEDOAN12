@@ -4,10 +4,11 @@ const edge = fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts
 const checks = [
   ['reads physical Bling stock separately in both stock queries', (edge.match(/product_id,sellable_physical,effective_sellable_stock/g) || []).length === 2],
   ['maps physical stock separately', edge.includes('physical_stock:Math.max(0,Number(x.sellable_physical??x.effective_sellable_stock??0))')],
-  ['Admin stock quantity is physical', edge.includes('stock_quantity:physical,physical_stock_quantity:physical')],
-  ['sellable/virtual stock remains available', edge.includes('sellable_stock_quantity:sellable,virtual_stock_quantity:sellable')],
+  ['admin keeps captured stock visible until Bling is ready', edge.includes('displayStock=s.bling_stock_ready===true?physical:recorded') && edge.includes('stock_quantity:displayStock,recorded_stock_quantity:recorded')],
+  ['sellable/virtual stock stays separate from registered stock', edge.includes('sellable_stock_quantity:sellable,virtual_stock_quantity:sellable') && edge.includes('Number(s.effective_stock??recorded)')],
   ['loose physical breakdown subtracts basket stock', edge.includes('loose=Math.max(0,physical-locked)')],
   ['breakdown warning compares against physical', edge.includes('stock_breakdown_warning:locked>physical+0.0001')],
+  ['list/detail mappings preserve raw product stock', !edge.includes('stock:s.effective_stock??0')],
   ['old virtual-as-physical mapping is gone', !edge.includes('stock_quantity:total,physical_stock_quantity:total')],
 ];
 
