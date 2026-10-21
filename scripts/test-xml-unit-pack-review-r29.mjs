@@ -2,7 +2,7 @@ import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 const backend=readFileSync('supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts','utf8');
 const mirror=readFileSync('supabase/functions/purchase-xml-v1/index.ts','utf8');
-const ui=readFileSync('vitrine/admin/index.html','utf8');
+const ui=readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const sql=readFileSync('supabase/migrations/20261010154700_purchase_xml_unit_pack_review_r29.sql','utf8');
 assert.equal(backend,mirror,'Edge XML mirrors must match');
 assert.match(backend,/purchase_xml_resolve_catalog_identity_v2/,'use atomic v2 DB function');

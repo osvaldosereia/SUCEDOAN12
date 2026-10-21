@@ -3,21 +3,23 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 
 const html=readFileSync('vitrine/admin/index.html','utf8');
+const runtime=readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const css=readFileSync('vitrine/admin/purchase-xml-simple.css','utf8');
-const a=html.indexOf('  async function purchaseSearchMatch(card){');
-const b=html.indexOf('  async function purchaseConfirmMatch(',a);
+const a=runtime.indexOf('  async function purchaseSearchMatch(card){');
+const b=runtime.indexOf('  async function purchaseConfirmMatch(',a);
 assert.ok(a>0&&b>a,'purchase matcher exists');
-const source=html.slice(a,b);
+const source=runtime.slice(a,b);
 assert.match(html,/purchase-xml-simple\.css\?v=xml-r(?:32|33)/);
-assert.match(html,/purchase-completed-items/);
-assert.match(html,/pending\.map\(purchaseItemCardHtml\)/);
-assert.match(html,/finished\.map\(purchaseItemCardHtml\)/);
+assert.match(runtime,/purchase-completed-items/);
+assert.match(runtime,/pending\.map\(purchaseItemCardHtml\)/);
+assert.match(runtime,/finished\.map\(purchaseItemCardHtml\)/);
 assert.match(css,/#content \.purchase-item-card/);
 assert.match(source,/exact\.length===1/);
 assert.match(source,/card\._purchaseSearchToken!==token/);
 assert.doesNotMatch(source,/resolve_item_identity|apply_item_update/,'search cannot write');
 const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
 scripts.forEach((script,i)=>assert.doesNotThrow(()=>new Function(script),'inline script '+i+' must parse'));
+assert.doesNotThrow(()=>new Function(runtime),'Admin runtime must parse');
 
 async function scenario(gtin,products){
   const selected={textContent:''},confirm={disabled:true},sourceSelect={value:'commercial'};

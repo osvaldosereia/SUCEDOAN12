@@ -107,7 +107,7 @@
       :'';
     const matchHtml=existing?'':'<div class="purchase-match-panel" data-purchase-match-panel>'+
       '<strong>Identificar produto</strong>'+
-      '<small class="purchase-match-help">Selecione a unidade vendida. Vincular não altera estoque nem dados fiscais.</small>'+
+      '<small class="purchase-match-help">Ao vincular, a nota atualiza custo unitário, fornecedor, embalagem e dados fiscais com origem registrada. NCM/CEST ficam pendentes de conferência.</small>'+
       '<div class="purchase-match-search"><input type="search" data-purchase-match-query placeholder="EAN ou nome do produto" value="'+esc(x.commercial_gtin||x.tax_gtin||x.description||'')+'"><button class="secondary" type="button" data-purchase-match-search>Buscar produto</button></div>'+
       '<div data-purchase-match-results class="purchase-match-results"></div>'+
       '<div data-purchase-match-selected class="purchase-match-selection" aria-live="polite">Aguardando correspondência…</div>'+
@@ -138,14 +138,14 @@
           (needsFactor?'<span class="pill warn">2. Conferir unidades da embalagem</span>':'<span class="pill">Unidade de venda</span>')+
         '</div></div>'+statusText+matchHtml+
       '<div class="purchase-price-grid">'+
-        '<div class="purchase-field"><label>Unidades vendidas em cada '+esc(x.purchase_unit||'embalagem')+'</label><input type="number" min="1" step="1" data-purchase-factor value="'+esc(purchaseNumberInput(factor))+'"><div class="purchase-factor-hint '+(needsFactor?'warn-text':'')+'" data-purchase-factor-hint>'+factorHint+'</div></div>'+
+        '<div class="purchase-field"><label>Divisor: unidades vendidas em cada '+esc(x.purchase_unit||'embalagem')+'</label><input type="number" min="1" step="1" data-purchase-factor value="'+esc(purchaseNumberInput(factor))+'"><div class="purchase-factor-hint '+(needsFactor?'warn-text':'')+'" data-purchase-factor-hint>'+factorHint+'</div></div>'+
         '<div class="purchase-price-box"><small>Quantidade final</small><strong data-purchase-base-qty>'+((factor&&Number(factor)>0)?esc(fmtQty(Number(x.purchase_quantity||0)*Number(factor)))+' UN':'—')+'</strong></div>'+
         '<div class="purchase-price-box"><small>Custo atual</small><strong>'+purchaseMaybeMoney(prod.cost)+'</strong></div>'+
         '<div class="purchase-price-box"><small>Custo novo / UN</small><strong class="accent" data-purchase-unit-cost>'+purchaseMaybeMoney(unitCost)+'</strong></div>'+
         '<div class="purchase-price-box"><small>Preço atual</small><strong>'+purchaseMaybeMoney(prod.price)+'</strong></div>'+
         '<div class="purchase-field"><label>Preço de venda</label><input type="number" min="0" step="0.01" data-purchase-sale value="'+esc(purchaseNumberInput(saleValue))+'"><div class="purchase-factor-hint" data-purchase-sale-hint>'+esc(saleHint)+'</div></div>'+
       '</div>'+
-      '<div class="purchase-item-controls"><div><div class="purchase-checks"><label><input type="checkbox" data-purchase-update-cost checked> Atualizar custo</label><label><input type="checkbox" data-purchase-update-sale '+(shouldUpdateSale?'checked':'')+'> Atualizar preço de venda</label></div><div class="purchase-stock-note">Estoque atual: '+esc(fmtQty(prod.stock||0))+' · autorizar este item não altera o estoque.</div></div>'+
+      '<div class="purchase-item-controls"><div><div class="purchase-checks"><label><input type="checkbox" data-purchase-update-cost checked> Atualizar custo</label><label><input type="checkbox" data-purchase-update-sale '+(shouldUpdateSale?'checked':'')+'> Atualizar preço de venda</label><label><input type="checkbox" data-purchase-stock-update '+(x.stock_update_requested===false?'':'checked')+'> Incluir esta quantidade na entrada do estoque</label></div><div class="purchase-stock-note">Estoque atual: '+esc(fmtQty(prod.stock||0))+' · autorizar este item não altera o estoque.</div></div>'+
         '<div><button class="primary" type="button" data-purchase-approve-item="'+esc(x.id)+'" '+(!existing?'disabled title="Vincule primeiro o produto acima"':'')+'>'+(approved&&['pending','missing_link'].includes(sync)?'Reenviar ao Bling':approved?'Revisar atualização':'Salvar e sincronizar')+'</button><span class="purchase-approval-result" data-purchase-result role="status"></span></div></div>'+
       '</div></details></div>';
   }
@@ -164,7 +164,9 @@
       packaging_factor_must_be_greater_than_one:'Informe quantas unidades existem no fardo ou caixa (maior que 1).',
       invalid_sale_price:'Digite um preço de venda válido.',
       existing_product_name_preserved:'O nome cadastrado não é alterado pela nota de compra.',
-      xml_identity_operational_lot_review_required:'Já existe um recebimento vinculado a este item. Precisa de revisão antes de trocar o produto.'
+      xml_identity_operational_lot_review_required:'Já existe um recebimento vinculado a este item. Precisa de revisão antes de trocar o produto.',
+      stock_receipt_plan_locked:'O recebimento já foi preparado ou verificado no Bling. A opção de estoque desta nota não pode mais ser alterada.',
+      no_stock_items_selected:'Marque ao menos um produto para incluir na entrada de estoque.'
     };
     return map[code]||((errorMessage(code)!=='Não consegui salvar agora.')?errorMessage(code):code.replace(/_/g,' ').slice(0,230));
   }
@@ -228,17 +230,21 @@
     if(role==='package'&&factor<=1){feedback.textContent='Se o EAN é da embalagem, ela precisa conter mais de uma unidade.';return}
     if(createNew&&name.length<3){feedback.textContent='Informe o nome completo da unidade vendida.';return}
     const button=card.querySelector(createNew?'[data-purchase-match-create]':'[data-purchase-match-confirm]');
-    button.disabled=true;feedback.textContent='Confirmando vínculo sem alterar estoque…';
+    button.disabled=true;feedback.textContent='Vinculando produto e aplicando os dados da nota…';
+    let identityResolved=false;
     try{
+      const stockUpdate=Boolean(card.querySelector('[data-purchase-stock-update]')?.checked);
       const payload={item_id:id,product_id:productId,create_new:createNew,proposed_name:createNew?name:null,
         catalog_evidence_only:true,gtin_source:source,gtin_role:role,
         conversion_factor:role==='package'?factor:1,
         purchase_pack_units_for_review:role==='base_unit'&&factor>1?factor:null,
         confirmation:createNew?'CRIAR_INATIVO_XML':'VINCULAR_ITEM_XML'};
       await purchaseApi('resolve_item_identity',payload);
-      feedback.textContent='Produto vinculado. Carregando custo e preço…';
+      identityResolved=true;
+      await purchaseApi('apply_item_update',{item_id:id,conversion_factor:factor,update_cost:true,update_sale_price:false,stock_update_requested:stockUpdate});
+      feedback.textContent='Vinculado: custo unitário e dados fiscais da nota aplicados. Estoque ficará para o recebimento confirmado.';
       await refreshPurchaseAfterApproval(docId);
-    }catch(e){feedback.textContent=purchaseXmlError(e);button.disabled=false}
+    }catch(e){feedback.textContent=(identityResolved?'Produto vinculado, mas os dados da nota não foram aplicados: ':'')+purchaseXmlError(e);button.disabled=false;if(identityResolved)await refreshPurchaseAfterApproval(docId)}
   }
   function recalcPurchaseItemCard(card,resetSale=true){
     if(!card)return;
@@ -433,11 +439,13 @@
   }
   function purchaseReceiptLotsHtml(d,items,lotPlan){
     if(!Array.isArray(items)||!items.length)return '';
+    const selectedItems=items.filter(x=>x.stock_update_requested!==false);
+    if(!selectedItems.length)return '<div class="purchase-lot-compact"><strong>Nenhum item marcado para entrada de estoque.</strong><small>Os dados da nota foram salvos; nenhum estoque será incluído para esta nota.</small></div>';
     const complete=lotPlan?.complete===true;
     const planItems=Array.isArray(lotPlan?.items)?lotPlan.items:[];
     return '<div class="purchase-lot-compact">'+
       '<div class="purchase-lot-head"><strong>Lotes desta entrada</strong><span>Validade opcional · '+(complete?'Lotes preparados':'Conferir identificação e quantidade')+'</span></div>'+
-      '<div class="purchase-lot-rows">'+items.map((item,idx)=>{
+      '<div class="purchase-lot-rows">'+selectedItems.map((item,idx)=>{
         const planItem=planItems.find(x=>String(x.item_id)===String(item.id))||{};
         const lot=item.entry_inventory_lot||planItem.inventory_lot||null;
         const lotId=String(lot?.id||item.inventory_lot_id||planItem.inventory_lot_id||'');
@@ -486,6 +494,7 @@
       return '<div class="purchase-safe '+(review?'purchase-danger':'')+'" style="margin:14px 0 0"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><strong>'+(review?'Entrada ainda não confirmada':'Aguardando entrada no Bling')+'</strong><small>'+esc(detail)+'</small></div><button class="primary" type="button" data-purchase-verify-receipt="'+esc(d.id)+'">Verificar entrada no Bling</button></div></div>';
     }
     if(d?.receipt_status==='ready'){
+      if(!lotPlan?.item_count)return '<div class="purchase-safe purchase-danger" style="margin:14px 0 0"><strong>Nenhum produto selecionado para entrada</strong><small>Marque pelo menos um item no seletor de estoque para preparar o recebimento físico.</small></div>';
       if(lotPlan?.complete!==true)return '<div class="purchase-safe purchase-danger" style="margin:14px 0 0"><strong>Recebimento físico</strong><small>O lote interno de algum item ainda não foi gerado. Revise o vínculo do produto e a conversão antes de preparar a entrada.</small></div>';
       return '<div class="purchase-safe" style="margin:14px 0 0"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><strong>Recebimento físico</strong><small>Produtos e lotes internos estão prontos. A validade é opcional. Preparar cria um marco de conferência; não soma estoque local. O recebimento deve aparecer no estoque físico do Bling antes de ser concluído.</small></div><button class="primary" type="button" data-purchase-inline-receive="'+esc(d.id)+'">Preparar entrada</button></div></div>';
     }
@@ -622,7 +631,7 @@
     if(updateSale&&(!Number.isFinite(sale)||sale<0)){if(!quiet)toast('Informe um preço de venda válido');return false}
     const btn=card.querySelector('[data-purchase-approve-item]');if(btn){btn.disabled=true;btn.textContent='Atualizando…'}
     try{
-      const response=await purchaseApi('apply_item_update',{item_id:itemId,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,operator_name:operator});
+      const response=await purchaseApi('apply_item_update',{item_id:itemId,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,stock_update_requested:Boolean(card.querySelector('[data-purchase-stock-update]')?.checked),operator_name:operator});
       const sync=response.catalog_sync||{},result=card.querySelector('[data-purchase-result]');
       const message=sync.bling_price==='confirmed'?'✓ Admin e preço Bling confirmados':
         sync.bling_price==='pending'||sync.bling_price==='missing_link'?'Admin atualizado · Bling pendente: '+(sync.bling_price_message||'revisar vínculo'):
@@ -660,7 +669,7 @@
       const updateCost=Boolean(card.querySelector('[data-purchase-update-cost]')?.checked),updateSale=Boolean(card.querySelector('[data-purchase-update-sale]')?.checked);
       const btn=card.querySelector('[data-purchase-approve-item]');if(btn){btn.disabled=true;btn.textContent='Atualizando…'}
       try{
-        const response=await purchaseApi('apply_item_update',{item_id:itemId,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,operator_name:operator});
+        const response=await purchaseApi('apply_item_update',{item_id:itemId,conversion_factor:factor,sale_price:sale,update_cost:updateCost,update_sale_price:updateSale,stock_update_requested:Boolean(card.querySelector('[data-purchase-stock-update]')?.checked),operator_name:operator});
         ok++;const result=card.querySelector('[data-purchase-result]');if(result)result.textContent='Admin atualizado · Bling '+(response.catalog_sync?.bling_price||'sem atualização de preço');
       }catch(e){fail++;const result=card.querySelector('[data-purchase-result]');if(result)result.textContent=purchaseXmlError(e);if(btn){btn.disabled=false;btn.textContent='Tentar novamente'}}
     }

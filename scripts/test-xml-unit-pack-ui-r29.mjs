@@ -1,10 +1,10 @@
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
-const html=readFileSync('vitrine/admin/index.html','utf8');
-const start=html.indexOf('  function xmlCatalogDetailMarkup(){');
-const end=html.indexOf('  function bindXmlCatalog(){',start);
+const runtime=readFileSync('vitrine/admin/admin-runtime.js','utf8');
+const start=runtime.indexOf('  function xmlCatalogDetailMarkup(){');
+const end=runtime.indexOf('  function bindXmlCatalog(){',start);
 assert(start>=0&&end>start,'catalog detail UI must be present');
-const ui=html.slice(start,end);
+const ui=runtime.slice(start,end);
 assert.match(ui,/id="xmlDetailGtinSource"/,'explicit XML GTIN source');
 assert.match(ui,/id="xmlDetailRole"/,'base-unit/package GTIN role');
 assert.match(ui,/id="xmlDetailFactorWrap"/,'EAN package factor is separate');
