@@ -1,7 +1,7 @@
 import { adminApi } from './api.js?v=7';
 import { filterProducts, getProductStockState, listProductCategories } from './products.js?v=2';
 import { createProductDraft, findCatalogMatch, getFiscalChecklist, getNfeItemReviewIssues, parseNfeXml, readProductDrafts, saveProductDraft } from './product-drafts.js?v=8';
-import { findIdentifierConflicts, PRODUCT_CATEGORY_OPTIONS } from './product-management.js?v=1';
+import { findIdentifierConflicts, getProductListEmptyState, PRODUCT_CATEGORY_OPTIONS } from './product-management.js?v=2';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const state = { products: [], nextOffset: null, total: 0, categories: [], query: '', category: '', stock: 'all', status: 'all', xmlItems: [], xmlMatches: [], xmlMatchStatus: 'unchecked' };
@@ -75,7 +75,8 @@ function renderProducts() {
   const visibleProducts = getVisibleProducts();
   const categories = state.categories.length ? state.categories : listProductCategories(state.products);
   const lowStock = state.products.filter(product => ['low', 'out'].includes(getProductStockState(product.stock_quantity).key)).length;
-  const hasFilters = Boolean(state.category || state.stock !== 'all' || state.status !== 'all');
+  const emptyState = getProductListEmptyState(state);
+  const hasFilters = emptyState.hasFilters;
 
   workspace.innerHTML = `
     <div class="page-heading">
@@ -99,7 +100,7 @@ function renderProducts() {
       ${visibleProducts.length ? `
         <div class="table-scroll"><table class="data-table products-table"><thead><tr><th scope="col">Produto</th><th scope="col">Categoria</th><th scope="col">SKU</th><th scope="col">Preço</th><th scope="col">Estoque</th><th scope="col"><span class="sr-only">Ações</span></th></tr></thead><tbody>${visibleProducts.map(productRow).join('')}</tbody></table></div>
         <div class="products-mobile-list">${visibleProducts.map(productCard).join('')}</div>
-      ` : `<div class="empty-state"><span class="empty-icon" aria-hidden="true">⌕</span><strong>${state.products.length ? 'Nenhum produto encontrado' : 'Nenhum produto disponível'}</strong><span>${state.products.length ? 'Tente ajustar os filtros ou a busca.' : 'Atualize a lista para consultar novamente.'}</span></div>`}
+      ` : `<div class="empty-state"><span class="empty-icon" aria-hidden="true">⌕</span><strong>${emptyState.title}</strong><span>${emptyState.description}</span></div>`}
       <div class="panel-foot products-footer"><span>${state.products.length} carregados nesta consulta</span>${state.nextOffset !== null ? '<button class="quiet-button" id="loadMore" type="button">Carregar mais produtos <span aria-hidden="true">→</span></button>' : ''}</div>
     </section>
     <p class="readonly-note">Catálogo Supabase em somente leitura. A conferência de XML gera rascunhos salvos apenas neste navegador.</p>`;

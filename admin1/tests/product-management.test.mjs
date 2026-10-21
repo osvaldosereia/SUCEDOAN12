@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { PRODUCT_CATEGORY_OPTIONS, calculateUnitConversion, findCatalogMatch, findIdentifierConflicts, getProductReadinessIssues } from '../src/product-management.js';
+import { PRODUCT_CATEGORY_OPTIONS, calculateUnitConversion, findCatalogMatch, findIdentifierConflicts, getProductListEmptyState, getProductReadinessIssues } from '../src/product-management.js';
 
 test('calcula conversão da embalagem de compra para unidade tributável', () => {
   assert.deepEqual(calculateUnitConversion({ purchase_quantity: 2, purchase_unit_price: 42.5, tax_quantity: 20 }), { units_per_purchase_unit: 10, cost_per_tax_unit: 4.25 });
@@ -51,3 +51,17 @@ test('detecta GTIN tributável duplicado mesmo quando difere do GTIN comercial',
   assert.deepEqual(conflicts.map(issue => issue.key), ['gtin']);
 });
 
+
+test('diferencia catálogo sem itens de busca ou filtros sem resultados', () => {
+  assert.deepEqual(getProductListEmptyState({}), {
+    hasFilters: false,
+    title: 'Nenhum produto disponível',
+    description: 'Atualize a lista para consultar novamente.'
+  });
+  assert.deepEqual(getProductListEmptyState({ query: 'produto que não existe' }), {
+    hasFilters: true,
+    title: 'Nenhum produto encontrado',
+    description: 'Tente ajustar os filtros ou a busca.'
+  });
+  assert.equal(getProductListEmptyState({ stock: 'out' }).hasFilters, true);
+});
