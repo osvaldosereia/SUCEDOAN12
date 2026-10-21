@@ -275,3 +275,11 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 
 
+.product-row-actions,.product-mobile-actions{display:flex;align-items:center;gap:12px;white-space:nowrap}
+.product-status-action{min-height:34px;padding:0 12px;border:1px solid #d7e3d9;border-radius:999px;background:#f4f8f4;color:#1b6240;font:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:background .15s ease,border-color .15s ease,opacity .15s ease}
+.product-status-action:hover:not(:disabled){background:#e7f2e9;border-color:#b8d1bd}
+.product-status-action.is-active{background:#fff;color:#6d4d45;border-color:#eadbd7}
+.product-status-action.is-active:hover:not(:disabled){background:#faf0ed;border-color:#dfc5bf}
+.product-status-action:disabled{opacity:.55;cursor:not-allowed}
+.product-mobile-actions{margin-top:8px}
+@media(max-width:760px){.product-mobile-actions{justify-content:flex-start}.product-status-action{min-height:38px}}
