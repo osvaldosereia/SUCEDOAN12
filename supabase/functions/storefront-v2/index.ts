@@ -230,10 +230,43 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
     db.rpc("basket_mold_public_compositions_v2",{p_basket_id:basketId})
   ]);if(mq.error)throw mq.error;if(bq.error)throw bq.error;if(pq.error)throw pq.error;const mold=mq.data,basket=bq.data;if(!mold||!basket||basket.is_active!==true)return null;if(compositionNumber<1||compositionNumber>Number(mold.public_composition_count||1))return null;
   const posq=await db.from("basket_mold_positions").select("id,label,quantity,sort_order").eq("mold_id",mold.id).order("sort_order");if(posq.error)throw posq.error;const positions=posq.data||[];if(!positions.length)return null;
-  const positionIds=positions.map((p:any)=>String(p.id)),oq=await db.from("basket_mold_position_options").select("position_id,product_id,sort_order").in("position_id",positionIds).order("sort_order");if(oq.error)throw oq.error;const options=oq.data||[],productIds=options.map((o:any)=>String(o.product_id)),[products,available]=await Promise.all([moldProductsMap(productIds),moldAvailableStockMap(productIds)]);
+  const positionIds=positions.map((p:any)=>String(p.id)),oq=await db.from("basket_mold_position_options").select("position_id,product_id,sort_order").in("position_id",positionIds).order("sort_order");if(oq.error)throw oq.error;const options=oq.data||[],productIds=options.map((o:any)=>String(o.product_id));
   const generated=(pq.data?.compositions||[]).find((c:any)=>Number(c.number)===compositionNumber);if(!generated)return null;const defaultSelected=new Map((generated.items||[]).map((i:any)=>[String(i.position_id),String(i.product_id)])),requested=new Map<string,string>();if(Array.isArray(selections))for(const row of selections){const pid=uid(row?.position_id),product=uid(row?.product_id);if(pid&&product)requested.set(pid,product)}
-  if(selections&&requested.size!==positions.length)throw new Error("basket_mold_component_invalid");let productTotal=0,capacity=30;const items:any[]=[];
-  for(const pos of positions){const pid=String(pos.id),qty=Number(pos.quantity||0),alts=options.filter((o:any)=>String(o.position_id)===pid).map((o:any)=>{const p=products.get(String(o.product_id)),stock=available.get(String(o.product_id))||0;return p&&stock>=qty?{product_id:p.id,name:p.name,sku:p.sku,gtin:p.gtin,image_url:p.image_url||"",packaging:p.packaging||"",stock_quantity:stock,price_cents:moldEffectivePriceCents(p)}:null}).filter(Boolean) as any[];if(!alts.length)return null;alts.sort((a:any,b:any)=>Number(a.price_cents||0)-Number(b.price_cents||0)||String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));// Offer up to ten in-stock alternatives, cheapest first; no random rotation.
+  if(selections&&requested.size!==positions.length)throw new Error("basket_mold_component_invalid");
+  // On lightweight basket/detail/quote, read the selected SKUs only.
+  // Full alternative product names, pictures and prices are read by moldPositionOptions upon a click.
+  const selectedIds=positions.map((pos:any)=>requested.get(String(pos.id))||defaultSelected.get(String(pos.id))||"").filter(Boolean);
+  const readIds=includeAlternatives?productIds:selectedIds;
+  const [products,available]=await Promise.all([moldProductsMap(readIds),moldAvailableStockMap(readIds)]);
+  let productTotal=0,capacity=30;const items:any[]=[];
+  for(const pos of positions){const pid=String(pos.id),qty=Number(pos.quantity||0);
+    if(!includeAlternatives){
+      const linkedOptions=options.filter((o:any)=>String(o.position_id)===pid),candidateIds=linkedOptions.map((o:any)=>String(o.product_id));
+      const requestedId=requested.get(pid),selectedId=requestedId||defaultSelected.get(pid)||"";
+      if(!selectedId||!candidateIds.includes(selectedId)){
+        if(selections)throw new Error("basket_mold_option_invalid");
+        return null;
+      }
+      const buildSelected=(productsMap:Map<string,any>,stockMap:Map<string,number>,productId:string)=>{
+        const p=productsMap.get(productId),stock=stockMap.get(productId)||0;
+        return p&&stock>=qty?{product_id:p.id,name:p.name,sku:p.sku,gtin:p.gtin,image_url:p.image_url||"",packaging:p.packaging||"",stock_quantity:stock,price_cents:moldEffectivePriceCents(p)}:null;
+      };
+      let selected=buildSelected(products,available,selectedId);
+      // Inventory changed after the composition was generated: find a sellable fallback
+      // only for this unavailable position, rather than loading every brand upfront.
+      if(!selected&&!selections){
+        const [fallbackProducts,fallbackStock]=await Promise.all([moldProductsMap(candidateIds),moldAvailableStockMap(candidateIds)]);
+        const fallbacks=candidateIds.map((id:string)=>buildSelected(fallbackProducts,fallbackStock,id)).filter(Boolean) as any[];
+        fallbacks.sort((a:any,b:any)=>Number(a.price_cents||0)-Number(b.price_cents||0)||String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));
+        selected=fallbacks[0]||null;
+      }
+      if(!selected){if(selections)throw new Error("basket_mold_option_invalid");return null}
+      productTotal+=Math.round(Number(selected.price_cents)*qty);
+      capacity=Math.min(capacity,Math.floor(Number(selected.stock_quantity||0)/qty));
+      items.push({position_id:pid,label:pos.label,product_id:selected.product_id,name:selected.name,sku:selected.sku,gtin:selected.gtin,image_url:selected.image_url,packaging:selected.packaging,stock_quantity:selected.stock_quantity,base_quantity:qty,quantity:qty,price_cents:selected.price_cents,alternative_count:linkedOptions.length,alternatives_loaded:false,alternatives:[]});
+      continue;
+    }
+    const alts=options.filter((o:any)=>String(o.position_id)===pid).map((o:any)=>{const p=products.get(String(o.product_id)),stock=available.get(String(o.product_id))||0;return p&&stock>=qty?{product_id:p.id,name:p.name,sku:p.sku,gtin:p.gtin,image_url:p.image_url||"",packaging:p.packaging||"",stock_quantity:stock,price_cents:moldEffectivePriceCents(p)}:null}).filter(Boolean) as any[];if(!alts.length)return null;alts.sort((a:any,b:any)=>Number(a.price_cents||0)-Number(b.price_cents||0)||String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));// Offer up to ten in-stock alternatives, cheapest first; no random rotation.
     const publicAlts=alts.slice(0,10);
     const selectedId=requested.get(pid)||publicAlts[0]?.product_id||defaultSelected.get(pid)||"";
     const selected=alts.find((a:any)=>String(a.product_id)===String(selectedId));
