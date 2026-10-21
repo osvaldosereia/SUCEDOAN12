@@ -1420,7 +1420,7 @@
       paintCart();
       let fullFinished=false,received=false;
       const accept=(data,partial)=>{
-        if(!Array.isArray(data?.baskets)||!data.baskets.length||partial&&fullFinished)return false;
+        if(data?.ok!==true||data?.priority!==partial||!Array.isArray(data?.baskets)||!Array.isArray(data?.basket_categories)||partial&&!data.baskets.length||partial&&fullFinished)return false;
         received=true;
         const prev=JSON.stringify([state.home?.baskets,state.home?.basket_categories,state.home?.categories]);
         state.home={...state.home,...data,categories:data.categories?.length?data.categories:STATIC_CATEGORIES};

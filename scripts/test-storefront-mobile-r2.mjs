@@ -38,7 +38,7 @@ const full={
  categories:[{key:'mercearia',label:'Mercearia'}]
 };
 assert.equal(pure.isValidPublicHome(full),true);
-assert.equal(pure.isValidPublicHome({...full,baskets:[]}),false,'empty responses must not replace a good snapshot');
+assert.equal(pure.isValidPublicHome({...full,baskets:[]}),true,'an empty current catalog must replace stale unavailable baskets');
 assert.equal(pure.isValidPublicHome({...full,priority:true}),false,'never store a priority-only response');
 const priority=pure.priorityFromPublicHome(full);
 assert.equal(priority.priority,true);
