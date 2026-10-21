@@ -7700,7 +7700,8 @@
   });
 
   $('#closeEditor').onclick=()=>$('#editor').close();
-  $('#editor').addEventListener('click',e=>{if(e.target===$('#editor'))$('#editor').close()});
+  $('#editor').addEventListener('cancel',e=>{if($('#editor').classList.contains('product-editor-dialog'))e.preventDefault()});
+  $('#editor').addEventListener('click',e=>{if(e.target===$('#editor')&&!$('#editor').classList.contains('product-editor-dialog'))$('#editor').close()});
 
   window.DonaAntoniaAdminBridge={
     api,
