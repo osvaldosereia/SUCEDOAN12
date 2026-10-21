@@ -10,7 +10,7 @@ export function getProductAvailability(product = {}) {
       active,
       canActivate: false,
       action: active ? 'deactivate' : null,
-      label: 'Estoque indisponível',
+      label: active ? 'Ativo · estoque indisponível' : 'Inativo · estoque indisponível',
       reason: 'Não foi possível confirmar o estoque vendável.'
     };
   }
