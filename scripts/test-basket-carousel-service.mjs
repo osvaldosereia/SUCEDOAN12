@@ -71,6 +71,14 @@ const carouselHome=source.slice(source.indexOf('async function basketCarouselIte
 assert.match(carouselHome,/carousel_items:\[\.\.\.items\.values\(\)\]\.slice\(0,6\)/,'legacy basket cards preload six items for instant opening preview');
 const moldHome=source.slice(source.indexOf('function moldHomeCards('),source.indexOf('async function moldDetail('));
 assert.match(moldHome,/carousel_items:carousel\.slice\(0,6\)/,'mold basket cards preload six items for instant opening preview');
+assert.match(moldHome,/alternative_count:candidates\.length/,'home preview knows which basket items have a brand selector without extra queries');
+for(const page of [root,vitrine]){
+  assert.match(page,/basketOpeningActionPreview\(id\)/,'opening and final cards have the same fixed footer');
+  assert.match(page,/return moldItemRow\(\{\.\.\.item,base_quantity:qty,quantity:qty,alternatives:\[\],alternatives_loaded:false,alternative_count:Number\(item\.alternative_count\|\|0\)\},i,false,true\)/,'opening draws real products through the final row renderer');
+  assert.match(page,/if\(cached\?\.mold_mode===true\)/,'mold preloaded cards follow the final editor layout');
+  assert.match(page,/function moldItemRow\(x,i,expanded=false,pending=false\)/,'row supports safe disabled pending state');
+  assert.doesNotMatch(page,/Preparando os outros produtos…/,'no alternate tiny provisional product-card UI');
+}
 assert.match(root,/basketOpeningPreview\(id\)/,'opening uses the cached home composition while detail loads');
 assert.match(source,/async function basketExtraProducts\(/,'extra products have a dedicated on-demand loader');
 assert.match(source,/action===["']basket_extra_products["']/,'the public API exposes the on-demand extras action');
