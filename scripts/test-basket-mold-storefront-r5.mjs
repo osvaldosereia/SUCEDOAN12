@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
+import './test-ean-capture-sale-fallback-v1.mjs';
 
 // R5 release contract: public mold composition, loose-stock parity, truthful reservation state and fail-closed personalization.
 const sqlPath='supabase/sql/20261006_basket_mold_storefront_checkout_v1.sql';
