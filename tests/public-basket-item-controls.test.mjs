@@ -63,11 +63,14 @@ for (const file of files) {
     assert.match(html,/data-mold-brand-panel=/);
     assert.match(html,/\+\(expanded\?'':'hidden'\)/);
     assert.match(html,/\.basket-brand-panel\[hidden\]\{display:none!important\}/);
-    assert.match(html,/panel\.hidden=!expanded/);
+    assert.match(html,/const details=!expanded\?'':/);
+    assert.match(html,/await api\('basket_mold_options'/);
+    assert.match(html,/Carregando marcas…/);
+    assert.match(html,/paintMoldBasketSheet\(\)/);
     assert.match(html,/d\.openOptionIndices\.add\(index\)/);
     assert.match(html,/d\.openOptionIndices\.delete\(index\)/);
     assert.match(html,/moldItemRow\(x,i,d\.openOptionIndices\?\.has\(i\)===true\)/);
-    assert.match(html,/if\(alternatives\.length<=1\)return '';/);
+    assert.match(html,/if\(count<=1\)return '';/);
   });
 
 test('optional product carousel stays inside the basket modal and scrolls horizontally', () => {
