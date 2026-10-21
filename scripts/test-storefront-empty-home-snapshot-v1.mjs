@@ -6,7 +6,7 @@ const source=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8')
 const start=source.indexOf('function isValidPublicHome(');
 const end=source.indexOf('function keepHomeInMemory(',start);
 assert.ok(start>=0&&end>start,'snapshot validator exists');
-const functions=source.slice(start,end).replace(/:any\\b|:boolean\\b/g,'');
+const functions=source.slice(start,end).replace(/:(?:any|boolean)/g,'');
 const validator=vm.runInNewContext(functions+';isValidPublicHome');
 const freshEmptyCatalog={
   ok:true,
