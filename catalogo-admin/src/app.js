@@ -95,7 +95,7 @@ function productRow(product) {
   return '<tr><td><div class="product-cell">' + (product.image_url ? '<img src="' + escape(product.image_url) + '" alt="" loading="lazy">' : '<span class="product-placeholder">□</span>') + '<span><strong>' + escape(product.name) + '</strong><small>' + escape(product.brand || product.packaging || 'Produto') + '</small></span></div></td><td><strong>' + escape(product.sku || '—') + '</strong><small class="subline">' + escape(product.gtin || 'Sem EAN') + '</small></td><td>' + escape(category) + '</td><td class="money-cell">' + formatMoney(product.sale_price_cents, true) + '</td><td>' + escape(product.stock_quantity ?? 0) + '</td><td><span class="status-pill ' + (available ? 'good' : product.active ? 'attention' : 'muted') + '"><i></i>' + (available ? 'Disponível' : product.active ? 'Revisar venda' : 'Inativo') + '</span></td><td><button class="icon-button edit-product" data-id="' + escape(product.id) + '" aria-label="Editar ' + escape(product.name) + '">•••</button></td></tr>';
 }
 function options(values, selected) {
-  const unique = [...new Set((values || []).filter(Boolean).map(value => typeof value === 'string' ? value : value.name))];
+  const unique = [...new Set((values || []).map(value => typeof value === 'string' ? value : (value?.value || value?.name || value?.label)).filter(Boolean))];
   return '<option value="">Selecione</option>' + unique.map(value => '<option value="' + escape(value) + '" ' + (value === selected ? 'selected' : '') + '>' + escape(value) + '</option>').join('');
 }
 function openProductEditor(product = null) {
@@ -129,7 +129,7 @@ async function saveProduct() {
     auto_expiry_offer_enabled: product.auto_expiry_offer_enabled === true,
     is_whatsapp_active: product.is_whatsapp_active === true, whatsapp_category: product.whatsapp_category || '',
     storefront_featured: product.storefront_featured === true, is_upsell: product.is_upsell === true,
-    subsubcategory: product.subsubcategory || '', unit: product.unit || '', supplier: product.supplier || '',
+    subsubcategory: product.subsubcategory || product.detailed_subcategory || '', unit: product.unit || '', supplier: product.supplier || '',
     min_stock: product.min_stock ?? '', tags: Array.isArray(product.tags) ? product.tags : [],
     purchase_xml_stock_update: product.purchase_xml_stock_update !== false
   };
