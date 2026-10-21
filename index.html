@@ -451,6 +451,11 @@
       .basket-item-mold-card .checkout-thumb{grid-row:1!important}
       .basket-item-mold-card .basket-item-actions{grid-column:1/-1!important;grid-row:2!important}
     }
+  
+    /* Basket card price hierarchy: label first, amount on its own line. */
+    .basket-card .price{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;max-width:100%;margin:0;line-height:1.1;white-space:normal}
+    .basket-card .basket-price-prefix{display:block;color:#69756e;font-size:clamp(11px,0.8vw + 8px,13px);font-weight:650;line-height:1.2;letter-spacing:0;white-space:nowrap}
+    .basket-card .basket-price-amount{display:block;max-width:100%;color:#155d3e;font-size:clamp(16px,1.3vw + 12px,21px);font-weight:850;line-height:1.12;letter-spacing:-.02em;white-space:nowrap;font-variant-numeric:tabular-nums}
   </style>
 </head>
 <body>
@@ -495,7 +500,7 @@
   </div>
   <div class="toast" id="toast"></div>
 
-  <script src="/vitrine/basket-carousel.js?v=20261020-progressive-baskets-v1"></script>
+  <script src="/vitrine/basket-carousel.js?v=20261021-price-hierarchy-v1"></script>
   <script>
   (() => {
     'use strict';
