@@ -50,7 +50,10 @@ function productStatusAction(product) {
   const activeInStore = product.active === true;
   const label = activeInStore ? 'Desativar' : 'Ativar';
   const disabled = !activeInStore && !availability.canActivate;
-  return `<button class="product-status-action ${activeInStore ? 'is-active' : ''}" type="button" data-toggle-product-active="${escapeHtml(product.id)}" data-next-active="${activeInStore ? 'false' : 'true'}" ${disabled ? 'disabled title="Produto sem estoque não pode ser ativado"' : ''}>${label}</button>`;
+  const title = product.stock_known === false
+    ? 'Estoque vendável ainda não confirmado'
+    : 'Produto sem estoque não pode ser ativado';
+  return `<button class="product-status-action ${activeInStore ? 'is-active' : ''}" type="button" data-toggle-product-active="${escapeHtml(product.id)}" data-next-active="${activeInStore ? 'false' : 'true'}" ${disabled ? `disabled title="${title}"` : ''}>${label}</button>`;
 }
 
 function productRow(product) {
