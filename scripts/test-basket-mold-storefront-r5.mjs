@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
+import './test-ean-capture-sale-fallback-v1.mjs';
 
 // R5 release contract: public mold composition, loose-stock parity, truthful reservation state and fail-closed personalization.
 const sqlPath='supabase/sql/20261006_basket_mold_storefront_checkout_v1.sql';
@@ -29,7 +30,7 @@ assert.match(api,/moldDetailComposition\(basketId\)/,'detail must reuse generato
 assert.match(api,/MOLD_DETAIL_CACHE_MAX_AGE_MS=60_000/,'generator cache must be freshness bounded');
 assert.match(api,/const \[products,available,extras\]=await Promise\.all\(/,'stock, price and extras remain fresh reads');
 assert.match(api,/const \[products,available,extras\]=await Promise\.all\(/,'optional themes must not delay selected-product stock reads');
-assert.match(api,/ops2_loose_sellable_stock_v1/i,'storefront mold detail must use canonical loose sellable stock');
+assert.match(api,/storefront_ean_sellable_stock_v1/i,'storefront mold detail must use scanner-aware sellable stock backed by the canonical Bling view');
 assert.match(api,/loose_sellable_stock/i,'storefront mold detail must read loose sellable stock values');
 assert.match(api,/mold_mode\s*:\s*true/i,'public cards must identify mold compositions');
 assert.match(api,/composition_number/i,'public cards/details must keep composition identity');
