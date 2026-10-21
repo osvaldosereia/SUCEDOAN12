@@ -32,3 +32,9 @@ test('normaliza produto inativo preservando campos para conferência administrat
   assert.equal(product.unit, 'UN');
 });
 
+test('trata produto com estoque zero como inativo mesmo se o indicador remoto estiver inconsistente', () => {
+  const product = normalizeAdminProduct({ id: 'p2', name: 'Produto', price: '12.00', stock: 0, is_active: true });
+  assert.equal(product.active, false);
+  assert.equal(product.stock_known, true);
+});
+

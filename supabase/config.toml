@@ -64,3 +64,8 @@ verify_jwt = false
 # Public post-order capability validates a 256-bit secret internally; no Supabase JWT required.
 [functions.order-customer-actions-v1]
 verify_jwt = false
+
+
+# Admin1 product status endpoint for the staged read/edit flow.
+[functions.admin1-product-status-v1]
+verify_jwt = false

@@ -48,3 +48,18 @@ test('o filtro Todos mantém produtos de qualquer situação de estoque', () => 
   const products = [{ id: '1', stock_quantity: 0 }, { id: '2', stock_quantity: 12 }];
   assert.deepEqual(filterProducts(products, { stock: 'all' }).map(item => item.id), ['1', '2']);
 });
+
+test('distingue estoque vendável sem confirmação de estoque zerado', () => {
+  assert.equal(getProductStockState(0, 5, false).key, 'unknown');
+  assert.equal(getProductStockState(0, 5, true).key, 'out');
+});
+
+test('não inclui estoque desconhecido nos filtros de disponível ou sem estoque', () => {
+  const products = [
+    { id: 'available', stock_quantity: 8 },
+    { id: 'out', stock_quantity: 0 },
+    { id: 'unknown', stock_quantity: 0, stock_known: false }
+  ];
+  assert.deepEqual(filterProducts(products, { stock: 'available' }).map(product => product.id), ['available']);
+  assert.deepEqual(filterProducts(products, { stock: 'out' }).map(product => product.id), ['out']);
+});

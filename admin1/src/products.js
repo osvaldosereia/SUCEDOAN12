@@ -1,12 +1,9 @@
 function normalizeText(value) {
-  return String(value ?? '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLocaleLowerCase('pt-BR')
-    .trim();
+  return String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').trim();
 }
 
-export function getProductStockState(quantity, lowStockThreshold = 5) {
+export function getProductStockState(quantity, lowStockThreshold = 5, known = true) {
+  if (!known) return { key: 'unknown', label: 'Estoque indisponível' };
   const stock = Number(quantity) || 0;
   if (stock <= 0) return { key: 'out', label: 'Sem estoque' };
   if (stock <= Math.max(0, Number(lowStockThreshold) || 5)) return { key: 'low', label: 'Estoque baixo' };
@@ -28,7 +25,7 @@ export function filterProducts(products = [], filters = {}) {
     const matchesQuery = !query || [product.name, product.sku, product.gtin, product.brand, product.packaging]
       .some(value => normalizeText(value).includes(query));
     const matchesCategory = !category || product.category === category;
-    const stockKey = getProductStockState(product.stock_quantity, product.min_stock).key;
+    const stockKey = getProductStockState(product.stock_quantity, product.min_stock, product.stock_known !== false).key;
     const matchesStock = !stock || stock === 'all' || stockKey === stock;
     const matchesStatus = status === 'all' || (status === 'active' ? product.active === true : product.active !== true);
     return matchesQuery && matchesCategory && matchesStock && matchesStatus;

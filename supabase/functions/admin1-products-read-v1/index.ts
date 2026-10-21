@@ -34,24 +34,25 @@ async function productRows(query) {
 }
 
 async function products(params) {
-  let query = db.from("products").select(PRODUCT_SELECT, { count: "exact" });
-  if (params.q) {
-    const term = params.q;
-    query = query.or(["name", "sku", "gtin", "brand"].map(column => column + ".ilike.%"+term+"%").join(","));
-  }
-  if (params.category) query = query.eq("category", params.category);
-  if (params.status === "active") query = query.eq("is_active", true);
-  if (params.status === "inactive") query = query.or("is_active.eq.false,is_active.is.null");
-  if (params.stock === "available") query = query.gt("stock", 0);
-  if (params.stock === "out") query = query.or("stock.lte.0,stock.is.null");
-  query = query.order("name", { ascending: true }).range(params.offset, params.offset + params.limit - 1);
-  const result = await productRows(query);
-  return { ok: true, products: result.data, total: result.count, next_offset: params.offset + result.data.length < result.count ? params.offset + result.data.length : null };
+  const { data, error } = await db.rpc("admin1_products_page_v1", {
+    p_limit: params.limit,
+    p_offset: params.offset,
+    p_query: params.q,
+    p_category: params.category,
+    p_status: params.status,
+    p_stock: params.stock
+  });
+  if (error) throw error;
+  return data;
 }
 
 async function product(productId) {
   const result = await productRows(db.from("products").select(PRODUCT_SELECT).eq("id", productId).limit(1));
-  return { ok: true, product: result.data[0] || null };
+  const row = result.data[0];
+  if (!row) return { ok: true, product: null };
+  const { data: stock, error } = await db.rpc("basket_component_fresh_sellable_stock_v1", { p_product_id: productId });
+  if (error) throw error;
+  return { ok: true, product: { ...row, stock } };
 }
 
 async function matches(params) {
