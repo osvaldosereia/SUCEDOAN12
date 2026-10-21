@@ -55,6 +55,21 @@ for (const file of files) {
     assert.match(html,/\.basket-hero-compact\s*\{[^}]*grid-template-columns:\s*1fr/s);
   });
 
+  test(`${file} initially hides alternative brands behind an accessible disclosure button`, () => {
+    const html=readFileSync(new URL(`../${file}`, import.meta.url),'utf8');
+    assert.match(html,/data-mold-brand-toggle=/);
+    assert.match(html,/Trocar a marca/);
+    assert.match(html,/aria-expanded="'+\(expanded\?'true':'false'\)/);
+    assert.match(html,/data-mold-brand-panel=/);
+    assert.match(html,/\+\(expanded\?'':'hidden'\)/);
+    assert.match(html,/\.basket-brand-panel\[hidden\]\{display:none!important\}/);
+    assert.match(html,/panel\.hidden=!expanded/);
+    assert.match(html,/d\.openOptionIndices\.add\(index\)/);
+    assert.match(html,/d\.openOptionIndices\.delete\(index\)/);
+    assert.match(html,/moldItemRow\(x,i,d\.openOptionIndices\?\.has\(i\)===true\)/);
+    assert.match(html,/if\(alternatives\.length<=1\)return '';/);
+  });
+
 test('optional product carousel stays inside the basket modal and scrolls horizontally', () => {
   const html = readFileSync(new URL('../vitrine/index.html', import.meta.url), 'utf8');
   assert.match(html, /\.basket-extras\{[^}]*grid-template-columns:minmax\(0,1fr\)/, 'the extras grid must not size itself to the full product row');
