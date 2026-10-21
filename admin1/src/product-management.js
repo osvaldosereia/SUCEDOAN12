@@ -112,3 +112,10 @@ export function getProductReadinessIssues(product = {}) {
   return issues;
 }
 
+
+export function getProductListEmptyState({ query = '', category = '', stock = 'all', status = 'all' } = {}) {
+  const hasFilters = Boolean(text(query) || text(category) || stock !== 'all' || status !== 'all');
+  return hasFilters
+    ? { hasFilters, title: 'Nenhum produto encontrado', description: 'Tente ajustar os filtros ou a busca.' }
+    : { hasFilters, title: 'Nenhum produto disponível', description: 'Atualize a lista para consultar novamente.' };
+}
