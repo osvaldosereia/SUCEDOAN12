@@ -57,3 +57,15 @@ Só avançar para Cestas quando:
 5. nenhuma gravação real no Supabase, no site ou no Bling estiver habilitada nesta fase.
 
 A habilitação de gravações persistentes depende de uma autorização separada. Até lá, a conclusão significa deixar o fluxo de trabalho preparado, revisado e testado, sem efetivar cadastros no catálogo.
+
+
+## Revisão técnica concluída nesta rodada
+
+- O card agora expõe SKU e GTIN; a conferência do XML distingue corretamente um item sem correspondência de uma consulta do catálogo que falhou.
+- A NF-e mantém identificadores originais para revisão mesmo quando um campo do catálogo é corrigido manualmente. Campos ausentes permanecem ausentes, não são convertidos em zero.
+- A leitura preserva fornecedor, documento, número/série/data/chave da nota, código de origem do fornecedor, GTINs brutos, NCM, CEST, CFOP, origem, unidades e quantidades comerciais/tributáveis, valores unitários e totais, despesas/abatimentos da linha, escala/fabricante, informações adicionais e classificadores fiscais de ICMS, PIS, COFINS, IPI e IBS/CBS quando informados.
+- CFOP, CST/CSOSN e demais classificadores recebidos na nota permanecem referências da operação de compra. Não são copiados como regras padrão de venda. Frete, desconto, seguro e outras despesas são exibidos, sem rateio automático.
+- A unidade comercial do catálogo é iniciada pela unidade tributável da NF-e, mantendo separadas as unidades e quantidades originais. Associações continuam restritas a SKU/GTIN exatos, com ambiguidade visível.
+- A busca de duplicidade indisponível fica marcada como pendente; não é apresentada como verificação concluída. Rascunhos permanecem apenas no navegador.
+
+**Limite desta etapa:** revisão e salvamento de rascunhos locais apenas. Não habilitar cadastro persistente, edição do catálogo, publicação, estoque, integração Bling ou escrita no Supabase sem autorização posterior.
