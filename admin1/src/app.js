@@ -67,7 +67,6 @@ function renderProducts() {
   const visibleProducts = getVisibleProducts();
   const categories = listProductCategories(state.products);
   const lowStock = state.products.filter(product => ['low', 'out'].includes(getProductStockState(product.stock_quantity).key)).length;
-  const outOfStock = state.products.filter(product => getProductStockState(product.stock_quantity).key === 'out').length;
   const hasFilters = Boolean(state.category || state.stock);
 
   workspace.innerHTML = `
@@ -78,13 +77,13 @@ function renderProducts() {
     <section class="metric-row product-metrics" aria-label="Resumo dos produtos carregados">
       <article class="metric-card"><span>Carregados</span><strong>${state.products.length}</strong><small>Produtos nesta consulta</small></article>
       <article class="metric-card"><span>Estoque baixo</span><strong>${lowStock}</strong><small>Até 5 unidades</small></article>
-      <article class="metric-card"><span>Sem estoque</span><strong>${outOfStock}</strong><small>Confira antes de vender</small></article>
+      <article class="metric-card"><span>Categorias</span><strong>${categories.length}</strong><small>Nesta lista carregada</small></article>
     </section>
     <section class="panel products-panel" aria-label="Lista de produtos">
       <div class="panel-toolbar products-toolbar">
         <label class="search-wrap"><span aria-hidden="true">⌕</span><input id="productSearch" type="search" autocomplete="off" placeholder="Buscar nome, SKU, EAN ou marca" value="${escapeHtml(state.query)}" aria-label="Buscar produtos"></label>
         <label class="filter-field"><span>Categoria</span><select id="categoryFilter" aria-label="Filtrar por categoria"><option value="">Todas as categorias</option>${categories.map(category => `<option value="${escapeHtml(category)}" ${state.category === category ? 'selected' : ''}>${escapeHtml(category)}</option>`).join('')}</select></label>
-        <label class="filter-field"><span>Estoque</span><select id="stockFilter" aria-label="Filtrar por estoque"><option value="">Todos</option><option value="available" ${state.stock === 'available' ? 'selected' : ''}>Disponível</option><option value="low" ${state.stock === 'low' ? 'selected' : ''}>Estoque baixo</option><option value="out" ${state.stock === 'out' ? 'selected' : ''}>Sem estoque</option></select></label>
+        <label class="filter-field"><span>Estoque</span><select id="stockFilter" aria-label="Filtrar por estoque"><option value="">Todos</option><option value="available" ${state.stock === 'available' ? 'selected' : ''}>Disponível</option><option value="low" ${state.stock === 'low' ? 'selected' : ''}>Estoque baixo</option></select></label>
         <button class="button secondary refresh-button" id="refreshProducts" type="button"><span aria-hidden="true">↻</span> Atualizar</button>
       </div>
       <div class="list-summary"><span><strong>${visibleProducts.length}</strong> ${visibleProducts.length === 1 ? 'produto exibido' : 'produtos exibidos'}${hasFilters ? ' com os filtros atuais' : ''}</span>${hasFilters ? '<button class="text-button" id="clearFilters" type="button">Limpar filtros</button>' : ''}</div>
