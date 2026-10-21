@@ -28,7 +28,9 @@ assert.doesNotMatch(dispatch,/cron\.schedule\(/i,'no scheduler before approvals'
 
 assert.ok(worker.includes('marketing_campaign_worker_internal_key_v1'));
 assert.ok(worker.includes('safeEquals'));
-assert.ok(worker.includes('runRepurchaseWorkerBatch'));
+assert.ok(worker.includes('marketing_repurchase_claim_due_v1'));
+assert.ok(worker.includes('marketing_repurchase_validate_dispatch_v1'));
+assert.ok(worker.includes('sendTemplateViaMeta'));
 assert.match(config,/\[functions\.whatsapp-repurchase-worker-v1\][\s\S]*?verify_jwt = false/);
 
 console.log('marketing repurchase D+28 gates: ok');
