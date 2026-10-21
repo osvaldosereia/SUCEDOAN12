@@ -2332,7 +2332,7 @@
     const price=(Number(p.sale_price_cents||0)/100).toFixed(2).replace('.',','),cost=(Number(p.cost_cents||0)/100).toFixed(2).replace('.',','),g=Number(p.gondola_number||0),identity=p.gtin||p.sku||'Sem EAN';
     const gondolas='<option value="">—</option>'+Array.from({length:30},(_,i)=>i+1).map(n=>'<option value="'+n+'" '+(g===n?'selected':'')+'>'+n+'</option>').join('');
     return '<article class="mobile-product-card" data-mobile-product-card="'+esc(p.id)+'">'+
-      '<div class="mobile-product-card-head"><img class="mobile-product-thumb" src="'+esc(p.image_url||'/img/logoantonia5.png')+'" alt="" loading="lazy"><div><div class="mobile-product-card-name">'+esc(p.name)+'</div><span class="mobile-product-card-id">'+esc(identity)+'</span>'+(p.__ean_capture_count?'<span class="mobile-product-card-id">Leitor EAN · '+esc(p.__ean_capture_count)+' leitura(s)</span>':'')+'</div></div>'+
+      '<div class="mobile-product-card-head"><img class="mobile-product-thumb" src="'+esc(p.image_url||'/img/logoantonia5.png')+'" alt="" loading="lazy"><div><div class="mobile-product-card-name">'+esc(p.name)+'</div><span class="mobile-product-card-id">'+esc(identity)+'</span>'+(p.__ean_capture_count?'<span class="mobile-product-card-id">Leitor EAN · '+esc(p.__ean_capture_count)+' leitura(s) · quantidade lida: '+esc(fmtQty(p.__ean_capture_quantity??0))+(p.bling_stock_ready?'':' · Bling pendente')+'</span>':'')+'</div></div>'+
       '<label class="mobile-product-switch"><input type="checkbox" data-mobile-product-active="'+esc(p.id)+'" '+(p.active!==false?'checked':'')+'><span class="mobile-product-switch-track"><span class="mobile-product-switch-knob"></span></span><b data-mobile-product-active-label="'+esc(p.id)+'">'+(p.active!==false?'ATIVO':'INATIVO')+'</b></label>'+
       '<div class="mobile-product-quick-grid">'+
         '<label class="mobile-product-field"><span>Venda</span><input data-mobile-product-field="price" data-product-id="'+esc(p.id)+'" inputmode="decimal" value="'+esc(price)+'"></label>'+
@@ -2445,7 +2445,7 @@
 
   function productRow(p){
     if(p.__ean_capture_placeholder)return eanCapturePlaceholderDesktopRow(p);
-    const eanCaptureSummary=p.__ean_capture_count?'<span class="sub">Leitor EAN · '+esc(p.__ean_capture_count)+' leitura(s)</span>':'';
+    const eanCaptureSummary=p.__ean_capture_count?'<span class="sub">Leitor EAN · '+esc(p.__ean_capture_count)+' leitura(s) · quantidade lida: '+esc(fmtQty(p.__ean_capture_quantity??0))+(p.bling_stock_ready?'':' · Bling pendente')+'</span>':'';
     const classification=[categoryLabel(p.category),p.detailed_subcategory||p.subcategory].filter(Boolean).join(' › ');
     const identity=[p.sku,p.gtin,p.packaging].filter(Boolean).join(' · ');
     const expiredInactive=p.active===false&&p.deactivation_reason==='expired';
