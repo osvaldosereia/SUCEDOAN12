@@ -8,26 +8,27 @@
   <link rel="canonical" href="https://donaantonia.com.br/site/">
   <link rel="preload" href="/img/logoantonia5.png" as="image">
   <link rel="preload" href="/img/CESTA-GRANDE-ALVINO.webp" as="image" fetchpriority="high">
-  <link rel="stylesheet" href="/site/styles.css?v=3">
+  <link rel="stylesheet" href="/site/styles.css?v=4">
   <title>Pedidos · Dona Antônia</title>
 </head>
 <body>
   <header class="topbar">
     <div class="topbar-inner">
       <a class="brand" href="/site/" aria-label="Dona Antônia, início"><img src="/img/logoantonia5.png" width="168" height="58" alt="Super Cestas Básicas Dona Antônia"></a>
-      <div class="location"><span aria-hidden="true">⌖</span><span>Entregas em<br><strong>Cuiabá e Várzea Grande</strong></span></div>
-      <button class="cart-top" id="openCart" type="button" aria-label="Abrir pedido">Pedido <span id="cartCount">0</span></button>
+      <div class="location"><span class="icon" aria-hidden="true" data-icon="pin"></span><span>Entrega em<br><strong>Cuiabá e Várzea Grande</strong></span></div>
+      <button class="cart-top" id="openCart" type="button" aria-label="Abrir pedido"><span class="icon" data-icon="cart" aria-hidden="true"></span><span id="cartCount" class="cart-badge">0</span></button>
     </div>
   </header>
   <main id="app" class="page" aria-live="polite">
-    <section class="welcome"><div><p class="eyebrow">DA NOSSA FAMÍLIA PARA A SUA</p><h1>Uma compra mais simples para o seu dia.</h1><p>Cestas prontas e produtos de mercado, com atendimento de verdade.</p></div><div class="welcome-mark"><img src="/img/CESTA-GRANDE-ALVINO.webp" width="200" height="200" alt="" fetchpriority="high" decoding="async"></div></section>
-    <form id="searchForm" class="search" role="search"><label class="sr-only" for="searchInput">Buscar produto</label><span aria-hidden="true">⌕</span><input id="searchInput" type="search" placeholder="O que você está procurando?" autocomplete="off"><button type="submit">Buscar</button></form>
-    <nav class="category-nav" id="categoryNav" aria-label="Categorias"><button class="pill selected" data-category="baskets">Cestas básicas</button></nav>
-    <section id="content" class="content"><div class="section-title"><p class="eyebrow">FEITAS PARA A SUA CASA</p><h2>Escolha o tamanho da cesta</h2><p>Veja o que vem em cada opção. Você pode ajustar antes de pedir.</p></div><div class="loading-cards" aria-label="Carregando cestas"><i></i><i></i><i></i></div></section>
+    <form id="searchForm" class="search" role="search"><label class="sr-only" for="searchInput">Buscar produto</label><span class="icon" data-icon="search" aria-hidden="true"></span><input id="searchInput" type="search" placeholder="O que você precisa hoje?" autocomplete="off"><button type="submit">Buscar</button></form>
+    <section class="welcome"><div><h1>Cestas básicas<br>para sua casa</h1><a href="#content" class="hero-link">Ver cestas <span class="icon" data-icon="arrow" aria-hidden="true"></span></a></div></section>
+    <nav class="category-nav" id="categoryNav" aria-label="Categorias"></nav>
+    <section id="content" class="content"><div class="section-title"><h2>Nossas cestas</h2><p>Produtos essenciais com qualidade e economia.</p></div><div class="loading-cards" aria-label="Carregando cestas"><i></i><i></i></div></section>
   </main>
   <aside id="notice" class="notice" role="status" aria-live="polite"></aside>
   <div id="dialogRoot"></div>
+  <div class="floating-cart" id="floatingCart"><span class="floating-icon"><span class="icon" data-icon="cart" aria-hidden="true"></span><b id="cartCountBottom">0</b></span><strong id="floatingCount">Seu pedido · 0 itens</strong><button id="openCartBottom" type="button">Ver pedido <span class="icon" data-icon="arrow" aria-hidden="true"></span></button><span class="floating-total" id="floatingTotal">R$ 0,00</span></div>
   <footer class="footer"><p><strong>Super Cestas Básicas Dona Antônia</strong><br>Pedido sujeito à confirmação de disponibilidade. Pagamento na entrega.</p></footer>
-  <script type="module" src="/site/src/app.js?v=4"></script>
+  <script type="module" src="/site/src/app.js?v=5"></script>
 </body>
 </html>
