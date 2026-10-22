@@ -35,8 +35,8 @@ try{
   assert.deepEqual(await page.evaluate(()=>window.__basketTabCalls),['molds','store','kits']);
 
   const text=await page.locator('body').innerText();
-  assert.match(text,/Cestas Molde/);
-  assert.match(text,/Ferramentas avançadas/);
+  assert.match(text,/Cestas do Site/);
+  assert.match(text,/Manutenção avançada/);
   assert.equal(/primeiro crie os kits internos/i.test(text),false,'normal operation copy must not teach internal kit workflow');
   console.log('basket simple tabs browser v1: PASS');
 }finally{await browser.close()}
