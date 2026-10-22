@@ -1,27 +1,29 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
+import {readAdminUiSource} from './helpers/admin-ui-source.mjs';
 
 const require=createRequire(import.meta.url);
 const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const adminUi=readAdminUiSource();
 const section=fs.readFileSync('vitrine/admin/basket-admin-section.js','utf8');
 const orderVisualSource=fs.readFileSync('vitrine/admin/orders-visual-v1.js','utf8');
 const orderVisual=require('../vitrine/admin/orders-visual-v1.js');
 
-const start=admin.indexOf('  async function renderBaskets(){');
-const end=admin.indexOf('\n  async function renderProducts',start);
-assert.ok(start>0&&end>start,'index must retain only the basket page delegator');
-const delegate=admin.slice(start,end);
+const start=adminUi.indexOf('  async function renderBaskets(){');
+const end=adminUi.indexOf('\n  async function renderProducts',start);
+assert.ok(start>0&&end>start,'Admin runtime must retain only the basket page delegator');
+const delegate=adminUi.slice(start,end);
 assert.match(delegate,/DonaAntoniaBasketAdmin\?\.render/,'index must delegate baskets to one section controller');
 assert.doesNotMatch(delegate,/basket_commercial_admin|basketCommercialCard|kitLotRow/,'index must not host a second baskets implementation');
 
 assert.match(section,/Cestas do Site/,'primary page must use the simplified Cestas do Site heading');
-assert.match(section,/Cestas Molde/,'day-to-day editor must be Cestas Molde');
-assert.match(section,/tab\s*:\s*['"]molds['"]/,'Cestas Molde must be the default workspace');
-assert.match(section,/Ferramentas avançadas/,'legacy tooling must be explicitly secondary');
+assert.match(section,/molds:\{label:'Cestas'/,'daily basket tab must open the molds workspace');
+assert.match(section,/tab\s*:\s*['"]molds['"]/,'molds must remain the default workspace');
+assert.match(section,/Manutenção avançada/,'legacy tooling must be explicitly secondary');
 assert.match(section,/data-basket-advanced/,'legacy tooling must be inside an advanced disclosure');
-assert.match(section,/Criador de Kits/,'internal kit maintenance may remain available as an advanced tool');
-assert.match(section,/Operação anterior/,'previous basket operation may remain available as an advanced tool');
+assert.match(section,/Receitas de kits \(legado\)/,'internal kit maintenance must remain available as an advanced tool');
+assert.match(section,/Operação de lotes antigos/,'previous basket operation may remain available as an advanced tool');
 assert.match(section,/DonaAntoniaBasketMolds/,'section must delegate normal work to the mold editor');
 assert.match(section,/DonaAntoniaKitBuilder/,'section must preserve internal-kit maintenance compatibility');
 assert.match(section,/DonaAntoniaStoreBaskets/,'section must preserve previous basket operation compatibility');

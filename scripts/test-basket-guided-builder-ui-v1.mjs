@@ -1,14 +1,15 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
+import {readAdminUiSource} from './helpers/admin-ui-source.mjs';
 
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const admin=readAdminUiSource();
 const section=fs.readFileSync('vitrine/admin/basket-admin-section.js','utf8');
 const uiPath='vitrine/admin/basket-guided-builder.js';
 assert.equal(fs.existsSync(uiPath),true,'guided compatibility UI module must exist');
 const ui=fs.readFileSync(uiPath,'utf8');
 
 assert.match(admin,/basket-guided-builder\.js\?v=guided-v3/,'admin may load guided compatibility builder during migration');
-assert.match(admin,/basket-admin-section\.js\?v=canonical-v3/,'admin must load the simple basket section controller');
+assert.match(admin,/basket-admin-section\.js\?v=basket-admin-simple-20261020/,'admin must load the simple basket section controller');
 assert.match(admin,/DonaAntoniaAdminBridge/,'admin must expose one stable bridge from its main runtime');
 assert.doesNotMatch(admin,/DonaAntoniaGuidedBridge/,'retired basket-specific bridge must not remain');
 assert.doesNotMatch(section,/DonaAntoniaBasketGuided|function openGuided|data-basket-new-lot|data-basket-edit-lot/,'normal section must not route users into guided lot operations');

@@ -1,7 +1,9 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
+import {readAdminUiSource} from './helpers/admin-ui-source.mjs';
 
 const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const adminUi=readAdminUiSource();
 const section=fs.readFileSync('vitrine/admin/basket-admin-section.js','utf8');
 const storeUi=fs.readFileSync('vitrine/admin/store-baskets-builder.js','utf8');
 const guided=fs.readFileSync('vitrine/admin/basket-guided-builder.js','utf8');
@@ -31,9 +33,10 @@ assert.match(categorySql,/check \(category_id is not null\)/i,'category constrai
 // Compatibility backend may keep the old action, but normal UI no longer calls it.
 assert.match(backend,/"basket_commercial_create"/,'compatibility admin action must remain registered');
 assert.match(backend,/create_basket_commercial_model_v1/,'compatibility backend must retain legacy creator');
-assert.match(admin,/DonaAntoniaBasketAdmin\?\.render/,'index must delegate the Cestas/Kits page');
-assert.match(section,/Criador de Kits/,'primary page must expose the internal recipe workspace');
+assert.match(adminUi,/DonaAntoniaBasketAdmin\?\.render/,'admin runtime must delegate the Cestas/Kits page');
+assert.match(section,/Receitas de kits \(legado\)/,'advanced maintenance must expose legacy internal recipes');
 assert.match(section,/Cestas do Site/,'primary page must expose external basket workspace');
+assert.match(section,/data-basket-advanced/,'legacy internal recipes must remain behind advanced maintenance');
 assert.doesNotMatch(section,/basket_commercial_create|openGuided|DonaAntoniaBasketGuided/,'normal section must not use legacy commercial/guided creation');
 assert.match(storeUi,/Nova cesta/,'external basket workspace must expose one simple create action');
 assert.match(storeUi,/admin-store-baskets-v1/,'external basket workspace must use isolated recipe API');
@@ -42,7 +45,7 @@ assert.match(storeUi,/Valor oculto/,'external basket workspace must expose hidde
 assert.doesNotMatch(storeUi,/position_products|family_key|Adicionar termo/,'external basket workspace must not expose guided positions/families');
 assert.match(guided,/Criar lote \/ reservar/,'technical guided lot creation remains available for compatibility');
 
-for(const source of [publicRoot,publicVitrine]){
+for(const source of [publicRoot]){
   assert.match(source,/basket_categories/,'public site must consume basket categories separately');
   assert.match(source,/basketCategory/,'public site must track the active Cesta\/Kit category');
   assert.match(source,/category_slug/,'basket cards must be filtered by their Cesta\/Kit category');
@@ -51,7 +54,9 @@ for(const source of [publicRoot,publicVitrine]){
   assert.match(source,/Itens do kit/,'kit composition must not be mislabeled as food');
   assert.match(source,/basketGroupTitle\(group,b\)/,'composition label must consider the commercial category');
 }
-assert.equal(publicRoot,publicVitrine,'root and /vitrine public storefronts must stay identical');
+assert.match(publicVitrine,/<meta http-equiv="refresh" content="0;url=\/">/,'legacy /vitrine/ must redirect to the canonical root');
+assert.match(publicVitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'legacy redirect must preserve query and hash');
+assert.doesNotMatch(publicVitrine,/basket_categories|checkoutWhatsappUnified|submit_order/,'legacy /vitrine/ must not duplicate storefront or checkout behavior');
 
 const promotionPath='supabase/migrations/20261005021000_basket_promote_legacy_standalone_kits_v1.sql';
 assert.ok(fs.existsSync(promotionPath),'legacy standalone kits must be promoted into the unified commercial model');
