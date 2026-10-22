@@ -1,5 +1,5 @@
 import { request, loadHome, loadBasket, loadProducts, loadDeliveryDates, submitOrder, loadBasketAlternatives } from './api.js?v=11';
-import { cartTotalCents, orderLines, orderPayload, minimumOrderStatus, basketQuoteRequest } from './cart.js?v=11';
+import { cartTotalCents, orderLines, orderPayload, minimumOrderStatus, basketQuoteRequest } from './cart.js?v=12';
 import { normalizeWhatsapp, addressSummary } from './customer.js';
 import { mergeProductPages, nextPageOffset, sortProducts } from './products.js';
 import { CATEGORY_SHORTCUTS } from './category-shortcuts.js';
@@ -20,7 +20,7 @@ function readCart() {
     return Array.isArray(value) ? value.filter(item => item && ['basket', 'product'].includes(item.type) && item.id).map(item => ({ ...item, qty: Math.max(1, Number(item.qty) || 1) })) : [];
   } catch { return []; }
 }
-function saveCart() { localStorage.setItem('da_site_cart_v1', JSON.stringify(state.cart)); paintCartCount(); }
+function saveCart() { localStorage.setItem('da_site_cart_v1', JSON.stringify(state.cart.map(({ quote_pending, quote_version, ...item }) => item))); paintCartCount(); }
 function paintCartCount() { const count=state.cart.reduce((sum, item) => sum + Number(item.qty || 1), 0); $('#cartCount').textContent=String(count); $('#cartCountBottom').textContent=String(count); const total=$('#floatingTotal'), label=$('#floatingCount'); if(total) total.textContent=money(cartTotalCents(state.cart)); if(label) label.textContent=`Seu pedido · ${count} ${count===1?'item':'itens'}`; }
 function toast(message) { const notice = $('#notice'); notice.textContent = message; notice.classList.add('show'); clearTimeout(toast.timer); toast.timer = setTimeout(() => notice.classList.remove('show'), 2800); }
 function image(url, name) { const safeUrl = /^https:\/\//i.test(String(url || '')) ? url : '/img/logoantonia5.png'; return `<img src="${esc(safeUrl)}" alt="${esc(name)}" loading="lazy" decoding="async" width="500" height="360">`; }
@@ -47,7 +47,7 @@ async function openBasket(id, existing = null) {
       return { ...item, ...(basket.mold_mode && previous ? previous : {}), base_quantity: Number(item.base_quantity ?? item.quantity ?? 0), quantity: Number(previous?.quantity ?? item.quantity ?? item.base_quantity ?? 0), alternatives: [], next_offset: 0, alternatives_loading: false };
     });
     const price = basketPrice(basket);
-    const body = `<p class="subtle">Escolha as opções para montar sua cesta.</p><div class="basket-offer"><span>A partir de</span><strong>${money(price)}</strong><span class="basket-illustration">🧺</span></div><div class="basket-items">${items.map((item, index) => `<section class="basket-component" data-basket-position="${index}"><div class="basket-component-title"><span class="basket-type-icon">${icon(/arroz|feijão|feijao|grão/i.test(item.name)?'basket':/óleo|oleo/i.test(item.name)?'bottle':'soap')}</span><div class="component-main"><strong>${esc(item.name)} <small>· <span data-item-qty-label>${item.quantity} unidade${item.quantity===1?'':'s'}</span></small></strong><small>${basket.mold_mode ? 'Escolha uma marca; o total acompanha sua seleção.' : 'Escolha a quantidade para sua cesta.'}</small></div><span class="component-chevron" aria-hidden="true">⌄</span></div><div class="basket-product-strip" data-options-strip>${moldChoiceHtml(item, item.product_id, index)}</div><div class="basket-quantity"><span>Quantidade</span><div class="qty"><button type="button" aria-label="Diminuir ${esc(item.name)}" data-component-qty="${index}" data-delta="-1">−</button><b data-quantity-value>${item.quantity}</b><button type="button" aria-label="Aumentar ${esc(item.name)}" data-component-qty="${index}" data-delta="1">+</button></div></div></section>`).join('')}</div><p id="basketQuoteStatus" class="subtle" role="status"></p><button class="outline" id="retryBasketQuote" type="button" hidden>Tentar calcular novamente</button>`;
+    const body = `<p class="subtle">Escolha as opções para montar sua cesta.</p><div class="basket-items">${items.map((item, index) => `<section class="basket-component" data-basket-position="${index}"><div class="basket-component-title"><span class="basket-type-icon">${icon(/arroz|feijão|feijao|grão/i.test(item.name)?'basket':/óleo|oleo/i.test(item.name)?'bottle':'soap')}</span><div class="component-main"><strong>${esc(item.name)} <small>· <span data-item-qty-label>${item.quantity} unidade${item.quantity===1?'':'s'}</span></small></strong><small>${basket.mold_mode ? 'Escolha uma marca; o total acompanha sua seleção.' : 'Escolha a quantidade para sua cesta.'}</small></div><span class="component-chevron" aria-hidden="true">⌄</span></div><div class="basket-product-strip" data-options-strip>${moldChoiceHtml(item, item.product_id, index)}</div><div class="basket-quantity"><span>Quantidade</span><div class="qty"><button type="button" aria-label="Diminuir ${esc(item.name)}" data-component-qty="${index}" data-delta="-1">−</button><b data-quantity-value>${item.quantity}</b><button type="button" aria-label="Aumentar ${esc(item.name)}" data-component-qty="${index}" data-delta="1">+</button></div></div></section>`).join('')}</div><p id="basketQuoteStatus" class="subtle" role="status"></p><button class="outline" id="retryBasketQuote" type="button" hidden>Tentar calcular novamente</button>`;
     openDrawer(`Cesta ${basket.name}`, body, `<div class="basket-sticky-total"><span>Total da cesta<strong id="basketTotal">${money(existing?.price_cents ?? price)}</strong></span><button class="primary" id="addBasket" type="button">${existing ? 'Salvar e ver pedido' : 'Adicionar ao pedido'}</button><button class="basket-view-order" id="viewBasketOrder" type="button">Ver pedido</button></div>`);
     const drawer = $('#dialogRoot .drawer');
     let quoted = !basket.mold_mode && !items.some(item => item.quantity !== Number(item.base_quantity)) && !existing, quoteRevision = 0;
@@ -105,7 +105,7 @@ async function openBasket(id, existing = null) {
       const qtyButton = event.target.closest('[data-component-qty]');
       if (qtyButton) {
         const item = items[Number(qtyButton.dataset.componentQty)], next = item.quantity + Number(qtyButton.dataset.delta), max = basket.mold_mode ? Number(item.stock_quantity || 0) : Number(item.stock_quantity || 30);
-        if (next < 1 || next > Math.max(1, max)) return;
+        if (next < 0 || next > Math.max(1, max)) return;
         item.quantity = next;
         const section = qtyButton.closest('[data-basket-position]'); section.querySelector('[data-quantity-value]').textContent = String(next); section.querySelector('[data-item-qty-label]').textContent = `${next} unidade${next === 1 ? '' : 's'}`;
         updateQuote();
@@ -126,7 +126,11 @@ function renderProducts(title, products, token, emptyText = 'Não encontramos pr
   state.productSort = 'default';
   content.innerHTML = `<div class="section-title"><h2>${esc(title || 'Mercearia')}</h2><p>O essencial para o seu dia a dia, com qualidade e variedade.</p></div><div class="product-toolbar"><span>${products.length ? 'Produtos disponíveis' : 'Nenhum produto encontrado'}</span><label>Ordenar <select id="productSort" aria-label="Ordenar produtos"><option value="default">Recomendados</option><option value="name">Nome</option><option value="price">Menor preço entre os carregados</option></select></label></div>${products.length ? `<div class="product-grid" id="productGrid">${sortProducts(products, state.productSort, productPrice).map(productCardHtml).join('')}</div>${state.nextProductOffset == null ? '' : '<button class="outline more-products" id="loadMore" type="button">Mostrar mais produtos</button>'}` : `<div class="empty">${esc(emptyText)}</div>`}`;
 }
-function productCardHtml(product) { return `<article class="product-card">${image(product.image_url, product.name)}<div class="product-card-body"><h3>${esc(product.name)}</h3><p>${esc(product.packaging || product.unit || product.category || '')}</p><div class="product-price">${money(productPrice(product))}</div><small class="availability"><i></i> Disponível</small><button class="add-product" type="button" aria-label="Adicionar ${esc(product.name)}" data-add-product="${esc(product.product_id || product.id)}">${icon('plus')}</button></div></article>`; }
+function productCardHtml(product) {
+  const id = String(product.product_id || product.id), qty = Number(state.cart.find(row => row.type === 'product' && row.id === id)?.qty || 0);
+  const control = qty ? `<div class="qty product-card-qty" aria-label="Quantidade no pedido"><button type="button" data-product-qty="${esc(id)}" data-delta="-1" aria-label="Diminuir ${esc(product.name)}">−</button><b aria-live="polite">${qty}</b><button type="button" data-product-qty="${esc(id)}" data-delta="1" aria-label="Aumentar ${esc(product.name)}">+</button></div>` : `<button class="add-product" type="button" aria-label="Adicionar ${esc(product.name)}" data-add-product="${esc(id)}">${icon('plus')}</button>`;
+  return `<article class="product-card" data-product-card="${esc(id)}">${image(product.image_url, product.name)}<div class="product-card-body"><h3>${esc(product.name)}</h3><p>${esc(product.packaging || product.unit || product.category || '')}</p><div class="product-price">${money(productPrice(product))}</div><small class="availability"><i></i> Disponível</small>${control}</div></article>`;
+}
 async function loadProductPage(category = '', query = '') {
   const token = ++state.viewToken;
   content.innerHTML = `<div class="section-title"><p class="eyebrow">MERCADO DONA ANTÔNIA</p><h2>${esc(query || category || 'Produtos')}</h2><p>Carregando opções…</p></div><div class="loading-cards"><i></i><i></i></div>`;
@@ -175,15 +179,15 @@ function cartContent() {
     return `<div class="checkout-form"><label>Nome completo<input id="customerName" maxlength="180" autocomplete="name" value="${draftValue('customerName', customer.display_name || '')}" required></label><label>CPF ou CNPJ<input id="customerDocument" inputmode="numeric" maxlength="18" autocomplete="off" value="${draftValue('customerDocument', customer.document || '')}" required></label><label>Rua<input id="customerStreet" maxlength="180" autocomplete="address-line1" value="${draftValue('customerStreet', address.street || '')}" required></label><div class="action-row"><label>Número<input id="customerNumber" maxlength="40" value="${draftValue('customerNumber', address.number || '')}" required></label><label>Bairro<input id="customerNeighborhood" maxlength="120" value="${draftValue('customerNeighborhood', address.neighborhood || address.district || '')}" required></label></div><label>Cidade<select id="customerCity" required><option value="">Selecione</option><option ${draftValue('customerCity', address.city) === 'Cuiabá' ? 'selected' : ''}>Cuiabá</option><option ${draftValue('customerCity', address.city) === 'Várzea Grande' ? 'selected' : ''}>Várzea Grande</option></select></label><label>CEP (opcional)<input id="customerPostal" inputmode="numeric" maxlength="9" value="${draftValue('customerPostal', address.postal_code || '')}"></label><label>Complemento (opcional)<input id="customerComplement" maxlength="180" value="${draftValue('customerComplement', address.complement || '')}"></label><label>Referência (opcional)<input id="customerReference" maxlength="220" value="${draftValue('customerReference', address.reference || '')}"></label><button id="saveCustomer" class="outline" type="button">Salvar cadastro e endereço</button></div>`;
   };
   const markup = `<div class="checkout-view"><div class="checkout-list">${lines.map(line => {
-    if (line.type === 'component') return `<div class="checkout-row">${image(line.image_url, line.name)}<div class="component-main"><strong>${esc(line.name)}</strong><small>Incluído na cesta</small></div><span>× ${Number(line.quantity || 1)}</span></div>`;
+    if (line.type === 'component') return `<div class="checkout-row component-row">${image(line.image_url, line.name)}<div class="component-main"><strong>${esc(line.name)}</strong></div><div class="qty qty-compact"><button data-component-cart-qty="${esc(line.basket_id)}" data-component-index="${line.component_index}" data-delta="-1" type="button" aria-label="Diminuir ${esc(line.name)}">−</button><b>${Number(line.quantity ?? 0)}</b><button data-component-cart-qty="${esc(line.basket_id)}" data-component-index="${line.component_index}" data-delta="1" type="button" aria-label="Aumentar ${esc(line.name)}">+</button></div></div>`;
     const isBasket = line.type === 'basket';
-    return `<div class="cart-section"><div class="checkout-row">${image(line.image_url, line.name)}<div class="component-main"><strong>${esc(line.name)}</strong><small>${isBasket ? 'Cesta completa' : esc(line.packaging || 'Produto avulso')}</small></div><span class="checkout-price">${money(Number(line.price_cents) * Number(line.qty || 1))}</span></div><div class="action-row"><button class="outline" data-remove="${esc(line.id)}" data-kind="${line.type}" type="button">Remover</button>${isBasket ? `<button class="outline" data-edit-basket="${esc(line.id)}" type="button">Editar cesta</button>` : ''}${!isBasket ? `<div class="qty"><button data-cart-qty="${esc(line.id)}" data-delta="-1" type="button" aria-label="Diminuir">−</button><b>${Number(line.qty || 1)}</b><button data-cart-qty="${esc(line.id)}" data-delta="1" type="button" aria-label="Aumentar">+</button></div>` : `<span class="subtle">${Number(line.qty || 1)} cesta(s)</span>`}</div></div>`;
-  }).join('')}</div><div class="drawer-total"><span>Total estimado</span><span>${money(cartTotalCents(state.cart))}</span></div><div class="minimum" id="minimumStatus" role="status"></div><section aria-labelledby="customerTitle"><h3 id="customerTitle">Seus dados para entrega</h3><label class="checkout-form">WhatsApp com DDD<input id="customerPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(65) 99999-9999" value="${esc(state.customer.phone)}"></label><button class="outline" id="lookupCustomer" type="button">Consultar cadastro</button><div id="customerPanel">${customerPanel()}</div></section><form id="checkoutForm" class="checkout-form"><label>Data disponível para entrega<select name="deliveryDate" required><option value="">${state.deliveryDateStatus === 'loading' ? 'Carregando datas…' : state.deliveryDateStatus === 'error' ? 'Não foi possível carregar as datas' : 'Selecione uma data'}</option>${state.deliveryDates.map(date => `<option value="${esc(date.date)}">${esc(date.label)}</option>`).join('')}</select></label><label>Como pretende pagar?<select name="payment"><option value="">Escolher depois</option><option>PIX</option><option>Dinheiro</option><option>Cartão de crédito</option><option>Cartão alimentação/refeição</option></select></label><p class="subtle">Pagamento na entrega. Nenhum dado de cartão é solicitado.</p><button class="primary" type="submit" ${cartTotalCents(state.cart) < 7500 ? 'disabled' : ''}>Enviar pedido para confirmação</button><button class="outline" type="button" id="continueShopping">Continuar escolhendo</button></form></div>`;
+    return `<div class="cart-section"><div class="checkout-row">${image(line.image_url, line.name)}<div class="component-main"><strong>${esc(line.name)}</strong><small>${isBasket ? '' : esc(line.packaging || '')}</small></div><span class="checkout-price">${money(Number(line.price_cents) * Number(line.qty || 1))}</span></div><div class="action-row">${isBasket ? `<button class="outline" data-remove="${esc(line.id)}" data-kind="basket" type="button">Remover cesta</button><button class="outline" data-edit-basket="${esc(line.id)}" type="button">Editar cesta</button><span class="subtle">${Number(line.qty || 1)} cesta(s)</span>` : `<div class="qty qty-compact"><button data-cart-qty="${esc(line.id)}" data-delta="-1" type="button" aria-label="Diminuir ${esc(line.name)}">−</button><b>${Number(line.qty || 1)}</b><button data-cart-qty="${esc(line.id)}" data-delta="1" type="button" aria-label="Aumentar ${esc(line.name)}">+</button></div>`}</div></div>`;
+  }).join('')}</div><div class="drawer-total"><span>Total estimado</span><span aria-live="polite">${state.cart.some(item => item.quote_pending) ? 'Recalculando…' : money(cartTotalCents(state.cart))}</span></div><div class="minimum" id="minimumStatus" role="status"></div><section aria-labelledby="customerTitle"><h3 id="customerTitle">Seus dados para entrega</h3><label class="checkout-form">WhatsApp com DDD<input id="customerPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(65) 99999-9999" value="${esc(state.customer.phone)}"></label><button class="outline" id="lookupCustomer" type="button">Consultar cadastro</button><div id="customerPanel">${customerPanel()}</div></section><form id="checkoutForm" class="checkout-form"><label>Data disponível para entrega<select name="deliveryDate" required><option value="">${state.deliveryDateStatus === 'loading' ? 'Carregando datas…' : state.deliveryDateStatus === 'error' ? 'Não foi possível carregar as datas' : 'Selecione uma data'}</option>${state.deliveryDates.map(date => `<option value="${esc(date.date)}">${esc(date.label)}</option>`).join('')}</select></label><label>Como pretende pagar?<select name="payment"><option value="">Escolher depois</option><option>PIX</option><option>Dinheiro</option><option>Cartão de crédito</option><option>Cartão alimentação/refeição</option></select></label><p class="subtle">Pagamento na entrega. Nenhum dado de cartão é solicitado.</p><button class="primary" type="submit" ${cartTotalCents(state.cart) < 7500 ? 'disabled' : ''}>Enviar pedido para confirmação</button><button class="outline" type="button" id="continueShopping">Continuar escolhendo</button></form></div>`;
   openDrawer('Revisar pedido', markup, '');
   $('#dialogRoot .drawer').classList.add('checkout-drawer');
   $('#dialogRoot .drawer').scrollTop = previousScroll;
   const minimum = minimumOrderStatus(cartTotalCents(state.cart), 7500);
-  $('#minimumStatus').textContent = minimum.meetsMinimum ? 'Pedido mínimo atingido. A equipe confirma disponibilidade e horário.' : `Pedido mínimo: ${money(7500)}. Faltam ${money(minimum.remainingCents)}.`;
+  $('#minimumStatus').textContent = minimum.meetsMinimum ? 'Pedido mínimo atingido.' : `Faltam ${money(minimum.remainingCents)} para o pedido mínimo.`;
   $('#continueShopping').onclick = closeDrawer;
   $('#customerPanel').addEventListener('input', event => { if (event.target.id) state.customerDraft[event.target.id] = event.target.value; });
   $('#customerPanel').addEventListener('change', event => { if (event.target.id) state.customerDraft[event.target.id] = event.target.value; });
@@ -219,10 +223,36 @@ function cartContent() {
     catch { state.customer = { status: 'error', phone: $('#customerPhone').value, data: null, complete: false }; $('#customerPanel').innerHTML = '<p class="subtle">Não consegui consultar agora. Verifique sua conexão e tente novamente.</p>'; }
     finally { $('#lookupCustomer').disabled = false; $('#lookupCustomer').textContent = 'Consultar cadastro'; if (['new', 'found'].includes(state.customer.status)) renderCustomerPanel(); }
   });
-  $('#checkoutForm').querySelector('[type=submit]').disabled = cartTotalCents(state.cart) < 7500;
-  dialogRoot.querySelectorAll('[data-edit-basket]').forEach(button => button.addEventListener('click', () => { const item = state.cart.find(row => row.type === 'basket' && row.id === button.dataset.editBasket); if (item) openBasket(item.basket_request_id || (item.mold_mode ? `${item.id}@${Number(item.composition_number || 1)}` : item.id), item); }));
+  $('#checkoutForm').querySelector('[type=submit]').disabled = cartTotalCents(state.cart) < 7500 || state.cart.some(item => item.quote_pending);
   dialogRoot.querySelectorAll('[data-remove]').forEach(button => button.addEventListener('click', () => { state.cart = state.cart.filter(item => !(item.id === button.dataset.remove && item.type === button.dataset.kind)); saveCart(); cartContent(); }));
-  dialogRoot.querySelectorAll('[data-cart-qty]').forEach(button => button.addEventListener('click', () => { const item = state.cart.find(row => row.id === button.dataset.cartQty); if (!item) return; item.qty = Math.max(1, Number(item.qty || 1) + Number(button.dataset.delta)); saveCart(); cartContent(); }));
+  dialogRoot.querySelectorAll('[data-edit-basket]').forEach(button => button.addEventListener('click', () => { const item = state.cart.find(row => row.type === 'basket' && row.id === button.dataset.editBasket); if (item) openBasket(item.basket_request_id || (item.mold_mode ? `${item.id}@${Number(item.composition_number || 1)}` : item.id), item); }));
+  dialogRoot.querySelectorAll('[data-cart-qty]').forEach(button => button.addEventListener('click', () => { const item = state.cart.find(row => row.type === 'product' && row.id === button.dataset.cartQty); if (!item) return; const qty = Number(item.qty || 1) + Number(button.dataset.delta); state.cart = qty < 1 ? state.cart.filter(row => row !== item) : state.cart.map(row => row === item ? { ...row, qty } : row); saveCart(); cartContent(); }));
+  dialogRoot.querySelectorAll('[data-component-cart-qty]').forEach(button => button.addEventListener('click', async () => {
+    const basket = state.cart.find(row => row.type === 'basket' && row.id === button.dataset.componentCartQty);
+    const component = basket?.components?.[Number(button.dataset.componentIndex)];
+    if (!basket || !component || basket.quote_pending) return;
+    const previous = Number(component.quantity ?? component.base_quantity ?? 0), next = Math.max(0, previous + Number(button.dataset.delta));
+    const max = basket.mold_mode ? Math.floor(Number(component.stock_quantity || 0) / Number(basket.qty || 1)) : Number(component.max_quantity ?? component.stock_quantity ?? 1000);
+    if (next === previous || next > max) return;
+    component.quantity = next;
+    basket.quote_pending = true;
+    const quoteVersion = basket.quote_version = Number(basket.quote_version || 0) + 1;
+    paintCartCount(); cartContent();
+    try {
+      const quote = basketQuoteRequest(basket, basket.components);
+      const result = await request(quote.action, {}, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(quote.payload) });
+      if (basket.quote_version !== quoteVersion) return;
+      basket.price_cents = Number(result.total_cents);
+      basket.components = basket.components.map((row, index) => ({ ...row, ...(result.items?.[index] || {}) }));
+      basket.quote_pending = false;
+      saveCart(); cartContent();
+    } catch {
+      if (basket.quote_version === quoteVersion) {
+        component.quantity = previous; basket.quote_pending = false; saveCart(); cartContent();
+        toast('Não foi possível recalcular. Tente novamente.');
+      }
+    }
+  }));
 }
 function showCart() {
   state.deliveryDateStatus = 'loading';
@@ -244,13 +274,21 @@ async function start() {
   content.addEventListener('click', event => {
     const basketButton = event.target.closest('[data-open-basket]'); if (basketButton) return openBasket(basketButton.dataset.openBasket);
     if (event.target.closest('#loadMore')) return loadMoreProducts();
-    const addButton = event.target.closest('[data-add-product]'); if (!addButton) return;
-    const product = state.products.find(row => String(row.product_id || row.id) === addButton.dataset.addProduct); if (!product) return;
-    const id = String(product.product_id || product.id);
+    const quantityButton = event.target.closest('[data-product-qty]');
+    const addButton = event.target.closest('[data-add-product]');
+    if (!quantityButton && !addButton) return;
+    const id = quantityButton?.dataset.productQty || addButton.dataset.addProduct;
+    const product = state.products.find(row => String(row.product_id || row.id) === id); if (!product) return;
     const existing = state.cart.find(row => row.type === 'product' && row.id === id);
-    if (existing) existing.qty += 1;
-    else state.cart.push({ type: 'product', id, name: product.name, image_url: product.image_url, packaging: product.packaging, price_cents: productPrice(product), stock_quantity: Number(product.stock_quantity || product.stock || 30), qty: 1 });
-    saveCart(); toast(`${product.name} adicionado.`);
+    const next = Number(existing?.qty || 0) + Number(quantityButton?.dataset.delta || 1), max = Number(product.stock_quantity || product.stock || 1000);
+    if (next > max) return;
+    if (!next) state.cart = state.cart.filter(row => row !== existing);
+    else if (existing) existing.qty = next;
+    else state.cart.push({ type: 'product', id, name: product.name, image_url: product.image_url, packaging: product.packaging, price_cents: productPrice(product), stock_quantity: max, qty: next });
+    saveCart();
+    const card = content.querySelector(`[data-product-card="${CSS.escape(id)}"]`);
+    if (card) card.outerHTML = productCardHtml(product);
+    if (!existing && next) toast('Adicionado');
   });
   content.addEventListener('change', event => { if(event.target.id !== 'productSort') return; state.productSort = event.target.value; const grid=$('#productGrid'); if(grid) grid.innerHTML=sortProducts(state.products,state.productSort,productPrice).map(productCardHtml).join(''); });
   $('#searchForm').addEventListener('submit', event => { event.preventDefault(); const query = $('#searchInput').value.trim(); if (query) { setCategory(''); loadProductPage('', query); } });
