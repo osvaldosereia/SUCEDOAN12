@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
+import {readAdminUiSource} from './helpers/admin-ui-source.mjs';
 const hub=readFileSync(new URL('../supabase/functions/admin-service-intelligence-v1/index.ts',import.meta.url),'utf8');
 const gateway=readFileSync(new URL('../supabase/functions/admin-products-live-v1/index.ts',import.meta.url),'utf8');
-const ui=readFileSync(new URL('../vitrine/admin/index.html',import.meta.url),'utf8');
+const ui=readAdminUiSource();
 const migration=readFileSync(new URL('../supabase/migrations/20261009190000_fiscal_nfe_autorecovery_v1.sql',import.meta.url),'utf8');
 const start=hub.indexOf('function blingHubFiscalFailureItems(');
 const end=hub.indexOf('function blingHubFiscalNormalizeName(',start);
