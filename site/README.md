@@ -1,6 +1,6 @@
 # Site público Dona Antônia
 
-Aplicação estática para pedidos em `/site/`, separada da interface administrativa.
+Aplicação estática para pedidos em `/site/`, separada da interface administrativa.\n\n**Antes de qualquer alteração de código, leia [`AGENTS.md`](./AGENTS.md):** ele define a revisão obrigatória para evitar código morto, estilos sobrepostos e regressões.
 
 ## Organização
 
