@@ -71,6 +71,10 @@ const sample={
   ]
 };
 const first=renderMoldRow(sample,0);
+const preview=renderMoldRow(sample,0,true);
+assert.match(preview,/class="[^"]*basket-item-mold-card[^\"]*is-preview/,'opening preview preserves its pending state');
+assert.match(preview,/data-mold-option-choice="0"[^>]*disabled/,'opening preview disables product changes while stock refreshes');
+assert.match(preview,/data-mold-inc="0"[^>]*disabled/,'opening preview disables quantity changes while stock refreshes');
 assert.match(first,/data-mold-option-choice=/,'alternative cards are visible without opening another control');
 assert.match(first,/class="basket-option-carousel-track"/,'product choices use a horizontal carousel');
 assert.match(first,/data-product-id="minuano" role="option" aria-selected="true"/);
