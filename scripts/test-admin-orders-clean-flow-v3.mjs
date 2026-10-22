@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
+import {readAdminUiSource} from './helpers/admin-ui-source.mjs';
 
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8')+'\n'+fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
+const admin=readAdminUiSource();
 const backend=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 const publicView=fs.readFileSync('supabase/functions/order-public-view-v1/index.ts','utf8');
 const publicPage=fs.readFileSync('pedido/index.html','utf8');
