@@ -5,7 +5,8 @@ import vm from 'node:vm';
 const root=fs.readFileSync('index.html','utf8');
 const nested=fs.readFileSync('vitrine/index.html','utf8');
 const carousel=fs.readFileSync('vitrine/basket-carousel.js','utf8');
-assert.equal(root,nested,'both public entrypoints must remain byte-identical');
+assert.match(nested,/rel="canonical" href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
+assert.match(nested,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'/vitrine/ must preserve query and hash while redirecting');
 const inline=[...root.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)?.[1];
 assert.ok(inline,'public inline app script must exist');
 new vm.Script(inline,{filename:'index.html'});
@@ -16,7 +17,7 @@ assert.ok(mobileStart>=0,'mobile CSS should isolate the decorative banner');
 const mobileRules=root.slice(mobileStart,root.indexOf('@media(min-width:760px){',mobileStart));
 assert.match(mobileRules,/\.home-hero\{[^}]*background-image:none/,'4G/mobile should never fetch decorative hero image');
 assert.match(root,/\.home-hero\{[^}]*home-grocery\.webp/,'desktop should retain existing hero photo');
-assert.match(root,/basket-carousel\.js\?v=20261013-mobile-r4/,'changed image JS must bust browser caches');
+assert.match(root,/basket-carousel\.js\?v=20261021-price-hierarchy-v1/,'changed image JS must bust browser caches');
 assert.match(root,/rel="preconnect" href="https:\/\/ssbesxgaijknwsjbsbcz\.supabase\.co"/,'early API handshake must be retained');
 
 const shell=root.slice(root.indexOf('function renderInitialShell(){'),root.indexOf('function basketCategoryControls('));
@@ -37,7 +38,7 @@ const storage={getItem:()=>null,setItem(){},removeItem(){}};
 new Function('window','document','localStorage','sessionStorage','location','history',carousel)(
   testEnv,{addEventListener(){}},storage,storage,{href:'https://donaantonia.com.br/'},{replaceState(){}}
 );
-const card={id:'c1',name:'Cesta Grande',display_price_cents:10000,carousel_items:[{image_url:'https://images.test/arroz.webp',name:'Arroz'}]};
+const card={id:'c1',name:'Cesta Grande',size_key:'grande',size_card:true,image_url:'https://images.test/arroz.webp',display_price_cents:10000};
 const esc=s=>String(s),money=x=>String(x),name=x=>String(x);
 const first=testEnv.BasketCarousel.card(card,esc,money,name,0);
 const other=testEnv.BasketCarousel.card(card,esc,money,name,1);

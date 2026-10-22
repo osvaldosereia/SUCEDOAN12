@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
+import {readAdminUiSource} from './helpers/admin-ui-source.mjs';
 
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const admin=readAdminUiSource();
 const hub=fs.readFileSync('supabase/functions/admin-service-intelligence-v1/index.ts','utf8');
 
 // A ordem local READY não basta: a UI só pode dizer SEPARADO quando a conclusão real existe.

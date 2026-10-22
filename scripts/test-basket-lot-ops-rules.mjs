@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
+import {readAdminUiSource} from './helpers/admin-ui-source.mjs';
 
-const adminUi=fs.readFileSync('vitrine/admin/index.html','utf8');
+const adminUi=readAdminUiSource();
 const section=fs.readFileSync('vitrine/admin/basket-admin-section.js','utf8');
 const guided=fs.readFileSync('vitrine/admin/basket-guided-builder.js','utf8');
 const guidedApi=fs.readFileSync('supabase/functions/admin-basket-guided-v1/index.ts','utf8');
@@ -10,10 +11,10 @@ const migration=fs.readFileSync('supabase/sql/20261004_basket_lot_linked_hygiene
 const optionalHygiene=fs.readFileSync('supabase/sql/20261004_optional_hygiene_per_food_lot_v1.sql','utf8');
 const draftLinkMigrationPath='supabase/sql/20261004_basket_link_draft_selection_v1.sql';
 
-// O controlador normal foi simplificado. Operação de lote permanece apenas na camada técnica de compatibilidade.
+// O controlador normal prioriza moldes; receitas antigas ficam na manutenção avançada.
 assert.doesNotMatch(section,/kitLotRow|paintBasketKitAdmin|basket_lot_sale_toggle|data-basket-edit-lot/,'controlador simples não deve possuir operação de lote');
 for(const label of ['Pausar venda','Retomar venda','Editar lote','Imprimir'])assert.doesNotMatch(section,new RegExp(label),`operação normal não deve expor ${label}`);
-assert.match(section,/Criador de Kits/,'operação normal deve começar no criador de kits');
+assert.match(section,/Receitas de kits \(legado\)/,'receitas antigas devem permanecer disponíveis na manutenção avançada');
 assert.match(section,/Cestas do Site/,'operação normal deve separar cestas externas');
 
 assert.ok(guided.includes('id="bgLotPublicName"'),'compatibilidade de lote deve manter nome público próprio');

@@ -18,7 +18,7 @@ try{
   await page.addScriptTag({content:code});
   await page.evaluate(()=>window.DonaAntoniaBasketAdmin.render());
   await page.waitForSelector('[data-test-basket-molds]');
-  assert.equal(await page.locator('[data-basket-simple-tab]').count(),4,'must expose mold editor, taxonomy and two advanced legacy tools');
+  assert.equal(await page.locator('[data-basket-simple-tab]').count(),5,'must expose baskets, basket extras, taxonomy and two advanced legacy tools');
   assert.equal(await page.locator('[data-basket-simple-tab="molds"]').getAttribute('aria-selected'),'true','molds tab must be default');
   assert.deepEqual(await page.evaluate(()=>window.__basketTabCalls),['molds']);
   assert.equal(await page.locator('[data-basket-advanced]').count(),1,'legacy tools must be grouped under advanced disclosure');
@@ -35,8 +35,8 @@ try{
   assert.deepEqual(await page.evaluate(()=>window.__basketTabCalls),['molds','store','kits']);
 
   const text=await page.locator('body').innerText();
-  assert.match(text,/Cestas Molde/);
-  assert.match(text,/Ferramentas avançadas/);
+  assert.match(text,/Cestas do Site/);
+  assert.match(text,/Manutenção avançada/);
   assert.equal(/primeiro crie os kits internos/i.test(text),false,'normal operation copy must not teach internal kit workflow');
   console.log('basket simple tabs browser v1: PASS');
 }finally{await browser.close()}

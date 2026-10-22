@@ -4,7 +4,8 @@ import vm from 'node:vm';
 
 const page=fs.readFileSync('index.html','utf8');
 const nested=fs.readFileSync('vitrine/index.html','utf8');
-assert.equal(page,nested,'public root and nested storefront must remain identical');
+assert.match(nested,/rel="canonical" href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
+assert.match(nested,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'/vitrine/ must preserve query and hash while redirecting');
 new vm.Script([...page.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)[1],{filename:'index.html'});
 const start=page.slice(page.indexOf('async function start(){'),page.indexOf('\n    start();'));
 assert.ok(start.indexOf('renderInitialShell()')<start.indexOf('resolveEntryWhatsappPhone()'),'initial shell must render before identity lookup');
@@ -29,8 +30,13 @@ const service=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8'
 const home=service.slice(service.indexOf('async function home('),service.indexOf('async function sellableMap('));
 const carousel=service.slice(service.indexOf('async function basketCarouselItems('),service.indexOf('function basketCategoryFields('));
 const molds=service.slice(service.indexOf('async function moldHomeCards('),service.indexOf('async function moldDetail('));
-assert.match(carousel,/carousel_items:\[\.\.\.items\.values\(\)\]\.slice\(0,1\)/,'home payload should keep only the lead photo shown for legacy baskets');
-assert.match(molds,/carousel_items:carousel\.slice\(0,1\)/,'home payload should keep only the lead photo shown for molded baskets');
+assert.match(carousel,/carousel_items:\[\.\.\.items\.values\(\)\]\.slice\(0,6\)/,'legacy home payload should be capped to the six rows in the immediate basket preview');
+assert.match(molds,/carousel_items:carousel\.slice\(0,6\)/,'mold home payload should be capped to the six rows in the immediate basket preview');
+const initialPreviewCount=page.match(/BASKET_INITIAL_RENDER_COUNT=(\d+)/);
+assert.equal(Number(initialPreviewCount?.[1]),6,'opening preview should match the server-provided first batch');
+assert.match(page,/const items=\(cached\?\.carousel_items\|\|\[\]\)\.slice\(0,BASKET_INITIAL_RENDER_COUNT\)/,'opening preview should use only its bounded first batch');
+const openBasket=page.slice(page.indexOf('async function openBasket('),page.indexOf('function basketGroupTitle',page.indexOf('async function openBasket(')));
+assert.ok(openBasket.indexOf('basketOpeningPreview(id)')<openBasket.indexOf("api('basket'"),'show cached preview before fetching full basket details');
 assert.match(home,/basketCarouselItems\(baskets\)/,'legacy basket cards should keep their lead photo');
 assert.match(home,/home\(priorityOnly=false\)/,'home builder should support a separately scoped priority response');
 assert.match(home,/priorityOnly[\s\S]*cestas-completas[\s\S]*grande/i,'priority response should include only Cestas Completas > Grande');

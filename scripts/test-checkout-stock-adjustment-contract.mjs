@@ -7,11 +7,13 @@ const resilience = fs.readFileSync('checkout-resilience.js', 'utf8');
 const storefront = fs.readFileSync('supabase/functions/storefront-v2/index.ts', 'utf8');
 const orders = fs.readFileSync('supabase/functions/admin-orders-v1/index.ts', 'utf8');
 
-for (const site of [rootSite, vitrineSite]) {
+for (const site of [rootSite]) {
   assert.ok(site.includes('Finalizar pedido'), 'checkout final CTA must remain Finalizar pedido');
   assert.ok(site.includes('/checkout-resilience.js?v=20261001'), 'public checkout must load resilient stock handling');
   assert.ok(site.includes('Até 10:59') && site.includes('A partir das 11h'), 'visible delivery cutoff must be 11:00 Cuiaba');
 }
+assert.match(vitrineSite,/rel="canonical" href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
+assert.match(vitrineSite,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'/vitrine/ must preserve query and hash while redirecting');
 
 assert.ok(resilience.includes('const CUTOFF_HOUR=11'), 'frontend resilience contract must use 11:00 Cuiaba');
 assert.ok(resilience.includes('confirmStockAdjustment'), 'checkout must require acknowledgement of automatic stock adjustment before WhatsApp return');

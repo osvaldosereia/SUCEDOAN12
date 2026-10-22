@@ -6,7 +6,7 @@
 
 O usuário definiu a reforma gradual do sistema e site existentes. Não criar outro site, outro Admin, outro banco ou implementação paralela. Em 2026-10-22, esclareceu que o trabalho fica no Vitrine Admin existente em `/vitrine/admin/`; migração para `/admin/` está fora do escopo agora. A estratégia canônica está em IMPLEMENTATION-ROADMAP.md, seção “REFORMA CONTÍNUA DO SISTEMA E DO SITE PÚBLICO”.
 
-Baseline observado:
+Baseline inicial observado em 2026-10-22:
 - Repositório canônico osvaldosereia/SUCEDOAN12; main em 24719f9c57b2d362b1e7c5b197dc57fc66a6b8f5.
 - Supabase canônico ssbesxgaijknwsjbsbcz.
 - Site público ao vivo em /. Admin existente abre em /vitrine/admin/. `/admin/` ainda volta à raiz, mas sua migração foi expressamente adiada e não faz parte do próximo lote.
@@ -14,17 +14,17 @@ Baseline observado:
 - Nenhuma mudança de runtime, banco ou deploy foi feita nesta atualização documental.
 - Rotina "Reforma Dona Antônia" programada para começar em 22/10/2026 às 12:00 (America/Cuiaba) e repetir de hora em hora. Cada rodada deve maximizar ajustes validados dentro de um domínio coerente, com branch/PR, testes e sem mutações operacionais em produção.
 
-### Rodada executada em 2026-10-22
+### Rodada inicial de 2026-10-22 (histórico anterior às integrações posteriores)
 
 - O mapeamento inicial do Admin confirmou 19 áreas/entradas em `/vitrine/admin/`: Central, Atendimento, ANA, Pedidos, Expedição, Entregador, Fechamento, Produtos, Cestas, Validades, Orçamentos, Clientes, Marketing, Compras/XML, Leitura EAN, Balanço, Gôndolas, Financeiro e Bling técnico.
-- A sessão Produtos foi implementada na PR #1270 (`agent/vitrine-products-hardening`, HEAD `5197aa4a8e9951a9a1a942fb0d93e9ed4425cd96`): categorias novas preservando valores legados, retomada de salvamento parcial pelo mesmo ID, cache curto de facetas invalidado após mudanças e paginação real. A PR está aberta e não foi publicada.
+- A sessão Produtos foi implementada na PR #1270 (`agent/vitrine-products-hardening`, HEAD `5197aa4a8e9951a9a1a942fb0d93e9ed4425cd96`): categorias novas preservando valores legados, retomada de salvamento parcial pelo mesmo ID, cache curto de facetas invalidado após mudanças e paginação real. Naquele snapshot, a PR ainda estava aberta; depois foi integrada em `main` no commit `b75035006a064c5939d7e1dbb4fe8c8ad5307c88`.
 - CI direcionado `products-session`: passou integralmente — `python3 scripts/build-vitrine-admin-runtime.py --check`, sintaxe JS e os testes de lista, edição rápida móvel e editor completo. O CI amplo terminou com 10 de 19 checks em falha (pedidos/fiscal, checkout, marketing, ANA/Admin legado e cesta simples); por isso a PR #1270 não foi integrada nem implantada.
 - Smoke do mesmo sistema em uso: `/` recalculou a cesta de R$ 419,30 para R$ 425,70 ao escolher Arroz Tio Bonini; o fluxo foi encerrado sem adicionar a cesta nem criar pedido. `/vitrine/admin/` abriu; a lista Produtos carregou 5 itens e ofereceu mais 5. Nenhuma gravação operacional foi feita.
 - Supabase canônico confirmado: `ssbesxgaijknwsjbsbcz`. `admin1-products-read-v1` segue ativa (v3) e teve chamadas reais em 24 h: 56 GET products, 42 categories, 13 product, 2 matches e 1 health; origem não identificada nos logs. Não desativar. Nenhuma migration, Edge Function ou configuração foi aplicada.
 - O ledger do banco tem 1.244 versões; `main` contém 180 arquivos SQL de migration (175 com prefixo timestamp, 8 timestamps duplicados), com apenas 31 timestamps compartilhados. Há 1.213 versões do banco sem arquivo correspondente e 136 timestamps únicos apenas no repositório. O banco avança até `20261022114704`; o repositório até `20261022103000`. Não aplicar DDL até reconciliar essa divergência.
 - Rollback: sem efeito em produção para reverter. Antes de merge, basta reverter/remover a PR de código; não há alteração de banco ou deploy para desfazer.
 
-Próxima tarefa concreta: reproduzir os 10 checks vermelhos no SHA de `main` `24719f9c57b2d362b1e7c5b197dc57fc66a6b8f5`, separar falhas preexistentes de regressões da PR #1270 e corrigir em lote apenas os contratos de Admin/runtime que estiverem obsoletos; então repetir o CI e integrar pela via normal se os gates estiverem verdes. Em paralelo, manter alterações de Supabase bloqueadas até reconciliar o ledger de migrations.
+A próxima tarefa daquela fotografia — comparar os contratos de Admin/runtime com a base e a PR #1270 — foi concluída nas rodadas subsequentes. O checkpoint atual abaixo supersede SHAs, estado das PRs e próxima tarefa.
 
 
 > Documento canônico de continuidade. Atualizar ao final de cada rodada relevante.
@@ -33,7 +33,20 @@ Próxima tarefa concreta: reproduzir os 10 checks vermelhos no SHA de `main` `24
 ## Objetivo
 Simplificar a operação da Dona Antônia usando:
 - donaantonia.com.br como canal de venda;
-- Vitrine/Admin como interface operacional simples para funcionários;
+- Vitrine/Admin como i### Revalidação e onda de ofertas da home — 2026-10-22
+
+- Revalidação de GitHub: `main` atual em `b75035006a064c5939d7e1dbb4fe8c8ad5307c88`; #1269 e #1270 estão merged. A PR #1271 (`agent/admin-runtime-contract-tests`) permanece aberta, mergeable, baseada nesse SHA. O commit de código desta onda é `89d1e46f368ea2811fc9ff5cbe9e206f85b533c0`.
+- Diagnóstico: R3/R4 reproduziram que a home não inseria `#homeOffersMount` e não iniciava `observeOffers()`. A home passa a inserir uma seção adiada de ofertas no shell inicial e na navegação nova; a hidratação do shell ativa o observer uma vez, mantém respostas carregadas na montagem existente e pinta ofertas em cache sem refazer requisição em atualizações só do catálogo.
+- A mesma correção mantém o índice de imagens cumulativo entre categorias/subcategorias: somente o primeiro card da home fica `eager`/prioritário; os seguintes continuam protegidos pelo carregamento lazy horizontal. Os testes R3/R4 agora usam os campos públicos reais de `BasketCarousel.card`; R3 inclui o helper de subcategorias no harness. R5 abre a lista de alternativas no teste, injeta a pré-validação assíncrona já usada no checkout e respeita os atributos lazy/decoding existentes.
+- Arquivos desta onda: `index.html`, `scripts/test-storefront-mobile-r3.mjs`, `scripts/test-storefront-mobile-r4.mjs` e `scripts/test-storefront-mobile-r5.mjs`. A PR #1271 tem 53 arquivos ao todo, incluindo `pedido/index.html`, `scripts/helpers/admin-ui-source.mjs` e contratos do Admin. Na etapa anterior da mesma PR, os commits `65938f4`, `15ec7d2` e `4544862` alinharam 15 testes do Admin/Pedidos ao runtime modular e ao harness ESM: `test-order-separation-completion-feedback-v4.mjs`, `test-admin-orders-clean-flow-v3.mjs`, `test-order-manual-queue-v1.mjs`, `test-separator-assignment-repair-v1.mjs`, `test-montar-picking-v1.mjs`, `test-order-customer-notifications-v1.mjs`, `test-admin-attendance-native-v1.mjs`, `test-admin-attendance-offers-tab-v1.mjs`, `test-admin-ana-section-v1.mjs`, `test-fiscal-nfe-autorecovery-v1.mjs`, `test-basket-simple-tabs-v1.mjs`, `test-basket-lot-ops-rules.mjs`, `test-customer-postorder-flow-v1.mjs`, `test-order-public-summary.mjs` e `test-admin-order-public-vitrine.mjs`. A rota administrativa continua em `/vitrine/admin/`.
+- Verificações: os testes `scripts/test-storefront-mobile-r1.mjs` a `r5.mjs` passaram, executados contra a fonte da PR. `python3 scripts/build-vitrine-admin-runtime.py --check` passou no workspace disponível (9 fragmentos, 638.778 caracteres); o runtime do Admin não foi alterado nesta onda. Em `89d1e46`, os 13 workflows de CI aplicáveis terminaram `success` (13/13).
+- Smoke pré-integração, leitura somente: o site publicado `/` mostrava cinco cestas e carrinho vazio; `/vitrine/admin/` abriu a Central com 19 áreas. Esse smoke antecede a implantação deste commit. Nenhum pedido, mensagem, checkout, estoque ou dado operacional foi criado ou alterado.
+- Supabase canônico confirmado: `ssbesxgaijknwsjbsbcz`, `ACTIVE_HEALTHY`, PostgreSQL `17.6.1.166`; 1.244 migrations, última `20261022114704`; 142 Edge Functions. `admin1-products-read-v1` continua ativa na versão 3. Nenhuma migration, função, configuração, policy/grant, advisor ou dado foi alterado nesta onda. Divergência do ledger permanece: 1.244 versões aplicadas, 180 SQLs versionados e 31 timestamps compartilhados; DDL segue aguardando reconciliação.
+- Integração/publicação: a PR ainda não foi integrada neste checkpoint. Sem evidência de implantação do novo commit. Rollback: reverter o merge da #1271; não há rollback de Supabase.
+- Próxima tarefa exata, após merge e smoke em produção: mapear, somente por leitura, os consumidores atuais de `admin1-products-read-v1` correlacionando chamadas reais/logs do Supabase com callsites e autenticação no repositório/runtime; manter a função ativa até identificar todos os consumidores e decidir seu destino dentro do sistema existente. Depois, reconciliar o ledger de migrations antes de qualquer DDL.
+
+
+nterface operacional simples para funcionários;
 - Bling como ERP oficial (produtos, estoque operacional, compras, fornecedores, vendas, fiscal e financeiro);
 - ChatGPT como camada de gestão, análise, automações e acompanhamento;
 - Supabase apenas para regras e integrações específicas que o Bling não resolve adequadamente.

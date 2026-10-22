@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 
 const html=fs.readFileSync('index.html','utf8');
-assert.equal(html,fs.readFileSync('vitrine/index.html','utf8'));
+const legacyVitrine=fs.readFileSync('vitrine/index.html','utf8');
+assert.match(legacyVitrine,/rel="canonical" href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
+assert.match(legacyVitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'/vitrine/ must preserve query and hash while redirecting');
 new vm.Script([...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)[1]);
 function source(from,to){
   const start=html.indexOf(from);
@@ -73,15 +75,15 @@ const brandedOptions=[
   {product_id:'oeste',name:'Sabão em Pó Oeste 800 g',image_url:'/oeste.webp',packaging:'800 g',price_cents:599}
 ];
 const moldRow={position_id:'pos1',label:wrongLabel,product_id:'minuano',name:wrongLabel,image_url:'/old-omo.webp',quantity:1,stock_quantity:10,alternatives:brandedOptions};
-const selectedHtml=displayFns.moldItemRow(moldRow,0);
+const selectedHtml=displayFns.moldItemRow(moldRow,0,true);
 assert.match(selectedHtml,/<strong class="checkout-name">Sabão em Pó Minuano 400 g<\/strong>/);
-assert.match(selectedHtml,/<img src="\/minuano.webp" alt="Sabão em Pó Minuano 400 g">/);
+assert.match(selectedHtml,/<img\b(?=[^>]*\bsrc="\/minuano\.webp")(?=[^>]*\balt="Sabão em Pó Minuano 400 g")[^>]*>/);
 assert.match(selectedHtml,/data-product-detail="minuano"/);
 assert.doesNotMatch(selectedHtml,/<strong class="checkout-name">Sabão em Pó Lavagem Perfeita OMO 700 g<\/strong>/);
 assert.match(selectedHtml,/data-product-id="minuano" role="option" aria-selected="true"/);
-const changedHtml=displayFns.moldItemRow({...moldRow,product_id:'oeste'},0);
+const changedHtml=displayFns.moldItemRow({...moldRow,product_id:'oeste'},0,true);
 assert.match(changedHtml,/<strong class="checkout-name">Sabão em Pó Oeste 800 g<\/strong>/);
-assert.match(changedHtml,/<img src="\/oeste.webp" alt="Sabão em Pó Oeste 800 g">/);
+assert.match(changedHtml,/<img\b(?=[^>]*\bsrc="\/oeste\.webp")(?=[^>]*\balt="Sabão em Pó Oeste 800 g")[^>]*>/);
 assert.match(changedHtml,/data-product-detail="oeste"/);
 assert.match(changedHtml,/data-product-id="oeste" role="option" aria-selected="true"/);
 
@@ -144,13 +146,14 @@ assert.match(html,/state\.checkoutQuoteTimers\.get\(item\)/,'timers must be tied
 const send=source('async function sendWhatsApp(){',"$('#globalSearchForm').onsubmit=");
 let sent=0,saved=0,rendered=0;
 const orderWait=deferred(),orderState={cart:[{type:'product',id:'p',qty:1}],orderSubmitting:false,checkoutDeliveryDate:'',whatsappOrigin:'0975'};
-const sendFn=new Function('state','checkoutHasPendingQuotes','cartTotal','MINIMUM_ORDER_CENTS','toast','money','document','checkoutPhoneData','$','updateCheckoutSubmitState','api','saveCart','paintCart','renderOrderSuccess',send+'return sendWhatsApp;')(
+const sendFn=new Function('state','checkoutHasPendingQuotes','cartTotal','MINIMUM_ORDER_CENTS','toast','money','document','checkoutPhoneData','$','updateCheckoutSubmitState','validateMoldCartBeforeCheckout','api','saveCart','paintCart','renderOrderSuccess',send+'return sendWhatsApp;')(
   orderState,()=>false,()=>10000,7500,m=>toasts.push(m),x=>String(x),
-  {querySelector:()=>({value:'PIX'})},()=>({valid:true,full:'+5565999999999'}),()=>null,stub,
+  {querySelector:()=>({value:'PIX'})},()=>({valid:true,full:'+5565999999999'}),()=>null,stub,async()=>true,
   action=>{assert.equal(action,'submit_order');sent++;return orderWait.promise},
   ()=>{saved++},stub,()=>{rendered++}
 );
 const firstOrder=sendFn(),secondOrder=sendFn();
+await Promise.resolve(); // allow asynchronous mold preflight to reach the stubbed order API
 assert.equal(sent,1,'a second click must not create a concurrent order');
 orderWait.resolve({order_id:'test-order'});
 await Promise.all([firstOrder,secondOrder]);

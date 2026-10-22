@@ -2,23 +2,24 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url),{chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
-const html=fs.readFileSync('vitrine/index.html','utf8');
+const html=fs.readFileSync('index.html','utf8');
+const legacyVitrine=fs.readFileSync('vitrine/index.html','utf8');
 const css=html.match(/<style>([\s\S]*?)<\/style>/)[1]+'#basketGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}@media(min-width:1080px){#basketGrid{grid-template-columns:repeat(5,minmax(0,1fr))!important}}';
 const js=fs.readFileSync('vitrine/basket-carousel.js','utf8');
-const basket={id:'basket',name:'Cesta exemplo',display_price_cents:9200,carousel_items:Array.from({length:24},(_,i)=>({product_id:'p'+i,name:'Produto '+i,quantity:i===1?3:1,image_url:'https://photos.test/p'+i+'.svg'}))};
+const basket={id:'basket',name:'Cesta exemplo',display_price_cents:9200,size_card:true,size_key:'grande',image_url:'https://photos.test/cesta.svg',carousel_items:Array.from({length:24},(_,i)=>({product_id:'p'+i,name:'Produto '+i,quantity:i===1?3:1,image_url:'https://photos.test/p'+i+'.svg'}))};
 const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHANNEL?{channel:process.env.PLAYWRIGHT_CHANNEL}:{})});
 try{
  const page=await browser.newPage({viewport:{width:390,height:844}});const fetched=new Set();
  await page.route('https://photos.test/**',async route=>{fetched.add(route.request().url());await route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="100" height="130"><rect x="20" y="10" width="60" height="110" fill="green"/></svg>'})});
  await page.setContent('<style>'+css+'</style><main class="wrap"><div id="basketGrid" class="grid basket-grid"></div></main>');await page.addScriptTag({content:js});
  await page.evaluate(b=>{const escape=s=>String(s).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;');window.opened=[];window.b=b;document.querySelector('#basketGrid').innerHTML=Array.from({length:9},(_,i)=>BasketCarousel.card({...b,id:b.id+i},escape,x=>'R$ '+(x/100).toFixed(2),x=>x));document.querySelectorAll('[data-basket]').forEach(x=>x.onclick=()=>opened.push(x.dataset.basket));BasketCarousel.mount(document.querySelector('#basketGrid'));},basket);
- await page.waitForFunction(()=>document.querySelector('.basket-card-photo img')?.hasAttribute('src'));
+ await page.waitForFunction(()=>document.querySelector('.basket-size-card-photo img')?.hasAttribute('src'));
  await page.waitForTimeout(150);
- assert.ok(fetched.has('https://photos.test/p0.svg'));
+ assert.ok(fetched.has('https://photos.test/cesta.svg'));
  assert.ok(!fetched.has('https://photos.test/p23.svg'));
  assert.equal(await page.locator('.basket-card').count(),9);
- assert.equal(await page.locator('.basket-card-photo img').count(),9);
- assert.equal(await page.locator('.basket-product').count(),0,'um cartão mostra apenas a foto do primeiro produto');
+ assert.equal(await page.locator('.basket-size-card-photo img').count(),9);
+ assert.equal(await page.locator('.basket-product').count(),0,'size cards show the basket photo without rendering item photos');
  const mobile=await page.evaluate(()=>({cols:getComputedStyle(document.querySelector('#basketGrid')).gridTemplateColumns.split(' ').length,overflow:document.documentElement.scrollWidth>innerWidth}));
  assert.equal(mobile.cols,2);assert.equal(mobile.overflow,false);
  await page.locator('[data-basket]').first().click();assert.deepEqual(await page.evaluate(()=>opened),['basket0']);
@@ -45,7 +46,7 @@ try{
      const action=u.searchParams.get('action');
      const taxonomy=[{id:'cat',slug:'cestas-completas',name:'Cestas Completas',subcategories:[{id:'sub',name:'Grande'},{id:'sub2',name:'Média'}]},{id:'food',slug:'cestas-so-alimentos',name:'Cestas Só Alimentos',subcategories:[]},{id:'kits',slug:'kits-promocionais',name:'Kits Promocionais',subcategories:[]}];
      if(action==='home_priority'){await priorityCatalogGate;return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,priority:true,baskets:[offered],basket_categories:taxonomy,categories:[]})});}
-     if(action==='home'){await fullCatalogGate;return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,baskets:[offered,later],basket_categories:taxonomy,categories:[]})})}
+     if(action==='home'){await fullCatalogGate;return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,priority:false,baskets:[offered,later],basket_categories:taxonomy,categories:[]})})}
      if(action==='products'){await categoryProductsGate;return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,products:[],next_offset:null})})}
      if(action==='subcategories')return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,subcategories:[]})});
      if(action==='basket_quote'){
@@ -65,44 +66,46 @@ try{
  await app.locator('#basketSections .home-loading-status').waitFor();
  const firstShell=await app.evaluate(()=>{
    window.__r4ShellHero=document.querySelector('.home-hero');
-   window.__r4ShellOffers=document.querySelector('#homeOffersMount');
+   window.__r4ShellHeroOffers=document.querySelector('#heroOffers');
    return {
      sections:document.querySelectorAll('#basketSections').length,
      hasHero:Boolean(window.__r4ShellHero),
-     hasOffers:Boolean(window.__r4ShellOffers)
+     hasHeroOffers:Boolean(window.__r4ShellHeroOffers)
    };
  });
- assert.deepEqual(firstShell,{sections:1,hasHero:true,hasOffers:true},'initial loading shell must include the final homepage containers');
+ assert.deepEqual(firstShell,{sections:1,hasHero:true,hasHeroOffers:true},'initial loading shell must include the hero and its offers action');
  releasePriorityCatalog();
- await app.locator('.basket-card-photo img').first().waitFor();
+ await app.locator('.basket-size-card-photo img').first().waitFor();
  assert.equal(await app.evaluate(()=>document.querySelector('.home-hero')===window.__r4ShellHero),true,'priority cards must not recreate initial hero');
- assert.equal(await app.evaluate(()=>document.querySelector('#homeOffersMount')===window.__r4ShellOffers),true,'priority cards must preserve offers mount');
- assert.ok(await app.locator('#basketSections .basket-card-photo img').first().getAttribute('src'),'first photo must start loading immediately');
- assert.equal(await app.locator('.basket-card-photo img').count(),1,'priority basket subgroup should render before the full catalog response');
- assert.deepEqual(await app.locator('#basketSections .basket-subgroup-title').allTextContents(),['Grande'],'first render should only show the first visible subgroup');
+ assert.equal(await app.evaluate(()=>document.querySelector('#heroOffers')===window.__r4ShellHeroOffers),true,'priority cards must preserve the hero offers action');
+ assert.ok(await app.locator('#basketSections .basket-size-card-photo img').first().getAttribute('src'),'first photo must start loading immediately');
+ assert.equal(await app.locator('.basket-size-card-photo img').count(),1,'priority basket subgroup should render before the full catalog response');
+ assert.deepEqual(await app.locator('#basketSections .basket-subgroup-title').allTextContents(),['Escolha o tamanho da cesta'],'home uses one size-picker subgroup');
+ assert.deepEqual(await app.locator('#basketSections .basket-card-title').allTextContents(),['Grande'],'priority response should show only the Grande size card');
  assert.ok(await app.locator('#homeRemainingBaskets').isVisible(),'remaining basket groups should have a non-blocking loading placeholder');
  // Wait until the priority basket is visible before releasing the full API response.
  await app.evaluate(()=>{
    window.__r3PriorityCard=document.querySelector('#basketSections .basket-card');
-   window.__r3PriorityPhoto=document.querySelector('#basketSections .basket-card-photo img');
+   window.__r3PriorityPhoto=document.querySelector('#basketSections .basket-size-card-photo img');
    window.__r3Hero=document.querySelector('.home-hero');
-   window.__r3Offers=document.querySelector('#homeOffersMount');
-   window.__r3Offers.dataset.r3Sentinel='kept';
+   window.__r3HeroOffers=document.querySelector('#heroOffers');
+   window.__r3HeroOffers.dataset.r3Sentinel='kept';
  });
- assert.equal(await app.locator('#basketSections .basket-card-photo img').first().getAttribute('fetchpriority'),'high');
+ assert.equal(await app.locator('#basketSections .basket-size-card-photo img').first().getAttribute('fetchpriority'),'high');
  releaseFullCatalog();
- await app.locator('#basketSections .basket-subgroup-title').filter({hasText:'Média'}).waitFor();
- assert.equal(await app.locator('.basket-card-photo img').count(),2,'the full basket list should fill in after the priority subgroup');
+ await app.locator('#basketSections .basket-card-title').filter({hasText:'Média'}).waitFor();
+ assert.deepEqual(await app.locator('#basketSections .basket-card-title').allTextContents(),['Grande','Média'],'full catalog should add the remaining size card');
+ assert.equal(await app.locator('.basket-size-card-photo img').count(),2,'the full basket list should fill in after the priority subgroup');
  assert.equal(await app.locator('#homeRemainingBaskets').count(),0,'the loading placeholder should be replaced by the full basket list');
  const preserved=await app.evaluate(()=>({
    card:document.querySelector('#basketSections .basket-card')===window.__r3PriorityCard,
-   photo:document.querySelector('#basketSections .basket-card-photo img')===window.__r3PriorityPhoto,
+   photo:document.querySelector('#basketSections .basket-size-card-photo img')===window.__r3PriorityPhoto,
    hero:document.querySelector('.home-hero')===window.__r3Hero,
-   offers:document.querySelector('#homeOffersMount')===window.__r3Offers,
-   offersSentinel:document.querySelector('#homeOffersMount')?.dataset.r3Sentinel
+   heroOffers:document.querySelector('#heroOffers')===window.__r3HeroOffers,
+   offersSentinel:document.querySelector('#heroOffers')?.dataset.r3Sentinel
  }));
- assert.deepEqual(preserved,{card:true,photo:true,hero:true,offers:true,offersSentinel:'kept'},'full catalog must not recreate visible cards, images, hero or offers');
- assert.equal(await app.locator('#basketSections .basket-card-photo img').nth(1).getAttribute('loading'),'lazy','non-priority photos must load lazily');
+ assert.deepEqual(preserved,{card:true,photo:true,hero:true,heroOffers:true,offersSentinel:'kept'},'full catalog must not recreate visible cards, images, hero or its offers action');
+ assert.equal(await app.locator('#basketSections .basket-size-card-photo img').nth(1).getAttribute('loading'),'lazy','non-priority photos must load lazily');
  assert.equal(await app.locator('.home-shortcuts button').count(),4);
  assert.equal(await app.locator('.home-hero h1').innerText(),'Sua compra do dia a dia');
  assert.equal(await app.locator('.nav-shell').isVisible(),false);
@@ -134,7 +137,11 @@ try{
  assert.ok((await app.locator('#sheetBody').innerText()).includes('Cesta exemplo'));
  assert.equal(quoteCount,1,'basket edit should quote exactly once');
  assert.deepEqual(errors,[],'no JavaScript errors during basket edit and checkout navigation');
- for(const entry of ['index.html','vitrine/index.html']){const pageSource=fs.readFileSync(entry,'utf8');assert.ok(pageSource.includes('BasketCarousel.mount('));assert.ok(pageSource.includes('da_storefront_home_carousel_v1'));assert.ok(pageSource.includes('/vitrine/basket-carousel.js?v='))}
+ assert.ok(html.includes('BasketCarousel.mount('),'canonical root mounts the basket carousel');
+ assert.ok(html.includes('da_storefront_home_carousel_v1'),'canonical root loads the public basket data');
+ assert.ok(html.includes('/vitrine/basket-carousel.js?v='),'canonical root loads its carousel asset');
+ assert.match(legacyVitrine,/<meta http-equiv="refresh" content="0;url=\/">/,'legacy /vitrine/ redirects to the canonical root');
+ assert.match(legacyVitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'legacy redirect preserves query and hash');
  const p=await app.evaluate(()=>window.DAStorefrontPerf?.snapshot?.()||null);
  assert.ok(p?.firstCestasMs!==null && p?.firstCestasMs!==undefined,'first baskets mark must exist');
  console.log('R6 synthetic browser paint:',JSON.stringify(p));

@@ -5,8 +5,8 @@ const migration=fs.readFileSync('supabase/migrations/20261020004000_shared_baske
 const admin=fs.readFileSync('vitrine/admin/basket-mold-extras-admin.js','utf8');
 const edge=fs.readFileSync('supabase/functions/admin-basket-molds-v1/index.ts','utf8');
 const storefront=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
-const ui=fs.readFileSync('vitrine/index.html','utf8');
 const root=fs.readFileSync('index.html','utf8');
+const legacyVitrine=fs.readFileSync('vitrine/index.html','utf8');
 
 assert.match(migration,/create table if not exists public\.basket_extra_themes/);
 assert.match(migration,/create table if not exists public\.basket_extra_theme_products/);
@@ -28,7 +28,10 @@ assert.match(storefront,/loose_sellable_stock|moldAvailableStockMap/);
 assert.match(storefront,/is_active===true&&available>0/);
 assert.match(storefront,/products:t\.items/);
 
-assert.equal(ui,root,'the public root and vitrine pages must stay mirrored');
+assert.match(legacyVitrine,/rel="canonical" href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
+assert.match(legacyVitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'/vitrine/ must preserve query and hash while redirecting');
+assert.doesNotMatch(legacyVitrine,/data-extra-theme-toggle|basket-extra-products/,'/vitrine/ must not duplicate storefront behavior');
+const ui=root;
 assert.match(ui,/data-extra-theme-toggle/);
 assert.match(ui,/data-extra-product-add/);
 assert.match(ui,/basket-extra-products/);

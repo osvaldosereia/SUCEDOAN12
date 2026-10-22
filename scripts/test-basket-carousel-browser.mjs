@@ -2,22 +2,23 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url),{chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
-const html=fs.readFileSync('vitrine/index.html','utf8');
+const html=fs.readFileSync('index.html','utf8');
+const legacyVitrine=fs.readFileSync('vitrine/index.html','utf8');
 const css=html.match(/<style>([\s\S]*?)<\/style>/)[1]+'#basketGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}@media(min-width:1080px){#basketGrid{grid-template-columns:repeat(5,minmax(0,1fr))!important}}';
 const js=fs.readFileSync('vitrine/basket-carousel.js','utf8');
-const basket={id:'basket',name:'Cesta exemplo',display_price_cents:9200,carousel_items:Array.from({length:24},(_,i)=>({product_id:'p'+i,name:'Produto '+i,quantity:i===1?3:1,image_url:'https://photos.test/p'+i+'.svg'}))};
+const basket={id:'basket',name:'Cesta exemplo',size_card:true,size_key:'grande',image_url:'https://photos.test/p0.svg',display_price_cents:9200,carousel_items:Array.from({length:24},(_,i)=>({product_id:'p'+i,name:'Produto '+i,quantity:i===1?3:1,image_url:'https://photos.test/p'+i+'.svg'}))};
 const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHANNEL?{channel:process.env.PLAYWRIGHT_CHANNEL}:{})});
 try{
  const page=await browser.newPage({viewport:{width:390,height:844}});const fetched=new Set();
  await page.route('https://photos.test/**',async route=>{fetched.add(route.request().url());await route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="100" height="130"><rect x="20" y="10" width="60" height="110" fill="green"/></svg>'})});
  await page.setContent('<style>'+css+'</style><main class="wrap"><div id="basketGrid" class="grid basket-grid"></div></main>');await page.addScriptTag({content:js});
- await page.evaluate(b=>{const escape=s=>String(s).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;');window.opened=[];window.b=b;document.querySelector('#basketGrid').innerHTML=Array.from({length:9},(_,i)=>BasketCarousel.card({...b,id:b.id+i},escape,x=>'R$ '+(x/100).toFixed(2),x=>x));document.querySelectorAll('[data-basket]').forEach(x=>x.onclick=()=>opened.push(x.dataset.basket));BasketCarousel.mount(document.querySelector('#basketGrid'));},basket);
- await page.waitForFunction(()=>document.querySelector('.basket-card-photo img')?.hasAttribute('src'));
+ await page.evaluate(b=>{const escape=s=>String(s).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;');window.opened=[];window.b=b;document.querySelector('#basketGrid').innerHTML=Array.from({length:9},(_,i)=>BasketCarousel.card({...b,id:b.id+i},escape,x=>'R$ '+(x/100).toFixed(2),x=>x,i));document.querySelectorAll('[data-basket]').forEach(x=>x.onclick=()=>opened.push(x.dataset.basket));BasketCarousel.mount(document.querySelector('#basketGrid'));},basket);
+ await page.waitForFunction(()=>document.querySelector('.basket-size-card-photo img')?.hasAttribute('src'));
  await page.waitForTimeout(150);
  assert.ok(fetched.has('https://photos.test/p0.svg'),'carregar a foto inicial da cesta');
  assert.ok(!fetched.has('https://photos.test/p23.svg'),'não carregar fotos de produtos secundários fora do cartão');
  assert.equal(await page.locator('.basket-card').count(),9);
- assert.equal(await page.locator('.basket-card-photo img').count(),9);
+ assert.equal(await page.locator('.basket-size-card-photo img').count(),9);
  assert.equal(await page.locator('.basket-product').count(),0,'cada cartão mostra apenas a foto do primeiro produto');
  const mobile=await page.evaluate(()=>({cols:getComputedStyle(document.querySelector('#basketGrid')).gridTemplateColumns.split(' ').length,overflow:document.documentElement.scrollWidth>innerWidth}));
  assert.equal(mobile.cols,2);assert.equal(mobile.overflow,false);
@@ -33,7 +34,7 @@ try{
    const u=new URL(route.request().url());
    if(u.pathname.includes('/functions/v1/storefront-v2')){
      const action=u.searchParams.get('action');
-     const response=action==='home'?{ok:true,baskets:[offered],basket_categories:[{id:'cat',slug:'cestas-completas',name:'Cestas Completas',subcategories:[{id:'sub',name:'Cestas Básicas'}]},{id:'food',slug:'cestas-so-alimentos',name:'Cestas Só Alimentos',subcategories:[]},{id:'kits',slug:'kits-promocionais',name:'Kits Promocionais',subcategories:[]}],categories:[]}:action==='basket'?{ok:true,basket:offered,items:offered.carousel_items.map(x=>({...x,base_quantity:x.quantity,stock_quantity:100}))}:{ok:true,offers:[]};
+     const response=action==='home'||action==='home_priority'?{ok:true,priority:action==='home_priority',baskets:[offered],basket_categories:[{id:'cat',slug:'cestas-completas',name:'Cestas Completas',subcategories:[{id:'sub',name:'Grande'}]},{id:'food',slug:'cestas-so-alimentos',name:'Cestas Só Alimentos',subcategories:[]},{id:'kits',slug:'kits-promocionais',name:'Kits Promocionais',subcategories:[]}],categories:[]}:action==='basket'?{ok:true,basket:offered,items:offered.carousel_items.map(x=>({...x,base_quantity:x.quantity,stock_quantity:100}))}:{ok:true,offers:[]};
      return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify(response)});
    }
    if(u.pathname==='/')return route.fulfill({contentType:'text/html',body:html});
@@ -41,12 +42,16 @@ try{
    if(u.pathname.endsWith('.js'))return route.fulfill({contentType:'application/javascript',body:''});
    return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="100" height="130"/>'});
  });
- await app.goto('https://app.test/');await app.locator('.basket-card-photo img').first().waitFor({timeout:10000}).catch(async error=>{throw new Error('home image did not render: '+JSON.stringify({errors,body:await app.locator('body').innerText(),cause:error.message}))});
+ await app.goto('https://app.test/');await app.locator('.basket-size-card-photo img').first().waitFor({timeout:10000}).catch(async error=>{throw new Error('home image did not render: '+JSON.stringify({errors,body:await app.locator('body').innerText(),cause:error.message}))});
  
  for(const heading of ['Cestas Completas','Cestas Só Alimentos','Kits Promocionais'])assert.equal(await app.getByRole('heading',{name:heading,exact:true}).count(),1,'show storefront group '+heading);
- assert.equal(await app.locator('.basket-card-photo img').count(),1,'a vitrine mostra só uma foto por cesta');
+ assert.equal(await app.locator('.basket-size-card-photo img').count(),1,'a vitrine mostra só uma foto por cesta');
  await app.locator('[data-basket]').click();await app.locator('#addBasket').waitFor();
  assert.ok((await app.locator('#sheetBody').innerText()).includes('Produto 1'));assert.deepEqual(errors,[]);
- for(const entry of ['index.html','vitrine/index.html']){const pageSource=fs.readFileSync(entry,'utf8');assert.ok(pageSource.includes('BasketCarousel.mount('));assert.ok(pageSource.includes('da_storefront_home_carousel_v1'));assert.ok(pageSource.includes('/vitrine/basket-carousel.js?v='))}
+ assert.ok(html.includes('BasketCarousel.mount('),'canonical root mounts the basket carousel');
+ assert.ok(html.includes('da_storefront_home_carousel_v1'),'canonical root loads the public basket data');
+ assert.ok(html.includes('/vitrine/basket-carousel.js?v='),'canonical root loads its carousel asset');
+ assert.match(legacyVitrine,/<meta http-equiv="refresh" content="0;url=\/">/,'legacy /vitrine/ redirects to the canonical root');
+ assert.match(legacyVitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'legacy redirect preserves query and hash');
  console.log('Basket storefront browser: one photo per basket, responsive 2/5-column grid, category groups and basket navigation passed');
 }finally{await browser.close()}

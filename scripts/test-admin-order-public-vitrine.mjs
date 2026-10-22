@@ -1,8 +1,8 @@
-import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
+import {readAdminUiSource} from './helpers/admin-ui-source.mjs';
 
-const admin = fs.readFileSync('vitrine/admin/index.html', 'utf8');
+const admin = readAdminUiSource();
 const blockStart = admin.indexOf('function publicOrderUrlFor');
 const blockEnd = admin.indexOf('async function openOrder(id)', blockStart);
 assert.ok(blockStart >= 0 && blockEnd > blockStart, 'bloco canônico da vitrine pública do pedido precisa existir');

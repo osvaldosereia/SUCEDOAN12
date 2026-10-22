@@ -40,7 +40,7 @@ assert.doesNotMatch(api,/stock_reserved:false,reservation_timing:"on_confirmatio
 assert.match(api,/stock_reserved:created\.data\?\.stock_reserved===true/i,'storefront event telemetry must reflect the database reservation result');
 assert.match(api,/reservation_timing:created\.data\?\.reservation_timing\|\|null/i,'storefront event telemetry must reflect the database reservation timing');
 
-for(const [name,html] of [['root',root],['vitrine',vitrine]]){
+for(const [name,html] of [['root',root]]){
   assert.match(html,/type:\s*['"]basket_mold['"]/i,`${name} must put mold compositions in cart as basket_mold`);
   assert.match(html,/composition_number/i,`${name} must keep selected composition number`);
   assert.match(html,/position_id/i,`${name} must send selected mold positions`);
@@ -51,6 +51,9 @@ for(const [name,html] of [['root',root],['vitrine',vitrine]]){
   assert.doesNotMatch(html,/food_lot_id:item\.type===['"]basket_mold['"]/i,`${name} must not attach a split physical lot to mold compositions`);
   assert.match(html,/const previous=\{\.\.\.item\}[\s\S]*?if\(!ok\)Object\.assign\(item,previous\)/i,`${name} must roll back a mold option rejected during re-quote`);
 }
+assert.match(vitrine,/<meta http-equiv="refresh" content="0;url=\/">/,'legacy /vitrine/ must redirect to the canonical public root');
+assert.match(vitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'legacy redirect must preserve query and hash');
+assert.doesNotMatch(vitrine,/type:\s*['"]basket_mold['"]|checkoutWhatsappUnified|submit_order/i,'legacy /vitrine/ must not duplicate basket or checkout behavior');
 
 
 const start=root.indexOf('function moldOptionShortName('),end=root.indexOf('function changeMoldQty(',start);

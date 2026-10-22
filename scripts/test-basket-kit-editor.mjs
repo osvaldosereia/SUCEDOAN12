@@ -1,7 +1,9 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
+import {readAdminUiSource} from './helpers/admin-ui-source.mjs';
 
 const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const adminUi=readAdminUiSource();
 const section=fs.readFileSync('vitrine/admin/basket-admin-section.js','utf8');
 const guided=fs.readFileSync('vitrine/admin/basket-guided-builder.js','utf8');
 
@@ -18,13 +20,14 @@ for(const legacy of [
   assert.equal(admin.includes(legacy),false,`legacy basket composer must stay retired: ${legacy}`);
 }
 
-assert.match(admin,/basket-admin-section\.js\?v=canonical-v3/,'Admin must load one Cestas/Kits section controller');
+assert.match(admin,/basket-admin-section\.js\?v=basket-admin-simple-20261020/,'Admin must load one Cestas/Kits section controller');
 assert.match(admin,/basket-guided-builder\.js\?v=guided-v3/,'technical guided editor may remain loaded during migration');
-assert.match(admin,/DonaAntoniaBasketAdmin\?\.render/,'renderBaskets must delegate to the section controller');
-assert.doesNotMatch(admin,/DonaAntoniaGuidedBridge/,'retired basket-specific bridge must not return');
+assert.match(adminUi,/DonaAntoniaBasketAdmin\?\.render/,'renderBaskets must delegate to the section controller');
+assert.doesNotMatch(adminUi,/DonaAntoniaGuidedBridge/,'retired basket-specific bridge must not return');
 
-assert.match(section,/Criador de Kits/,'normal operation must expose Criador de Kits');
+assert.match(section,/Receitas de kits \(legado\)/,'advanced maintenance must keep the legacy kit recipe workspace available');
 assert.match(section,/Cestas do Site/,'normal operation must expose Cestas do Site');
+assert.match(section,/data-basket-advanced/,'legacy maintenance must remain behind the advanced disclosure');
 assert.match(section,/DonaAntoniaKitBuilder/,'section must delegate internal recipes');
 assert.match(section,/DonaAntoniaStoreBaskets/,'section must delegate external baskets');
 for(const retired of ['data-basket-edit','data-basket-new-lot','data-basket-edit-lot','data-basket-print','data-basket-archive','DonaAntoniaBasketGuided']){

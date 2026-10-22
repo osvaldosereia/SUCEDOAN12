@@ -16,7 +16,7 @@ assert.equal(sum([{quantity:4},{quantity:4},{quantity:4}]),12,'sum all item quan
 assert.equal(sum([{quantity:4},{quantity:0},{quantity:-2},{quantity:'bad'}]),4,'ignore invalid/nonpositive quantities');
 assert.match(source,/total_item_count:basketTotalItems\(\[\.\.\.items\.values\(\)\]\)/,'legacy baskets expose total quantity');
 assert.match(source,/total_item_count:basketTotalItems\(carousel\)/,'mold baskets expose total selected composition quantity');
-for(const [name,html] of [['root',root],['vitrine',vitrine]]){
+for(const [name,html] of [['root',root]]){
   assert.match(html,/size_card:true,size_key:sizeKey/,'size picker marks its compact cards');
   assert.match(html,/basket-size-grande/,'Grande pastel background is defined');
   assert.match(html,/basket-size-economica/,'Economica pastel background is defined');
@@ -54,8 +54,10 @@ assert.match(lazyPhoto,/loading="lazy"/,'non-priority basket photos keep native 
 assert.ok(photoBytes<350_000,'all five basket photos stay under 350 KB total');
 assert.match(root,/basket-size-card-photo/,'home page styles the basket size photos');
 assert.ok(root.includes('basket-carousel.js?v=20261021-price-hierarchy-v1'),'home page refreshes the carousel asset cache');
-assert.ok(vitrine.includes('basket-carousel.js?v=20261021-price-hierarchy-v1'),'vitrine page refreshes the carousel asset cache');
-for(const [name,html] of [['home',root],['vitrine',vitrine]]){
+assert.match(vitrine,/<meta http-equiv="refresh" content="0;url=\/">/,'legacy /vitrine/ must redirect to the public root');
+assert.match(vitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'legacy redirect must preserve query and hash');
+assert.doesNotMatch(vitrine,/BasketCarousel\.mount|da_storefront_home_carousel_v1|checkoutWhatsappUnified/,'legacy route must not duplicate the public storefront');
+for(const [name,html] of [['home',root]]){
   assert.match(html,/\.basket-price-prefix\\?\{[^}]*font-size:clamp\(11px/,'starting-price label uses a smaller font on '+name);
   assert.match(html,/\.basket-price-amount\\?\{[^}]*font-size:clamp\(16px/,'amount remains prominent and responsive on '+name);
 }
@@ -72,7 +74,7 @@ assert.match(carouselHome,/carousel_items:\[\.\.\.items\.values\(\)\]\.slice\(0,
 const moldHome=source.slice(source.indexOf('function moldHomeCards('),source.indexOf('async function moldDetail('));
 assert.match(moldHome,/carousel_items:carousel\.slice\(0,6\)/,'mold basket cards preload six items for instant opening preview');
 assert.match(moldHome,/alternative_count:candidates\.length/,'home preview knows which basket items have a brand selector without extra queries');
-for(const page of [root,vitrine]){
+for(const page of [root]){
   assert.match(page,/basketOpeningActionPreview\(id\)/,'opening and final cards have the same fixed footer');
   assert.match(page,/return moldItemRow\(\{\.\.\.item,base_quantity:qty,quantity:qty,alternatives:\[\],alternatives_loaded:false,alternative_count:Number\(item\.alternative_count\|\|0\)\},i,false,true\)/,'opening draws real products through the final row renderer');
   assert.match(page,/if\(cached\?\.mold_mode===true\)/,'mold preloaded cards follow the final editor layout');

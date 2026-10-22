@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {Script} from 'node:vm';
+import {readAdminUiSource} from './helpers/admin-ui-source.mjs';
 
-const admin=readFileSync('vitrine/admin/index.html','utf8');
+const admin=readAdminUiSource();
 const backend=readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 const migration=readFileSync('supabase/sql/20261008_fix_separator_claudio_legacy_check_v1.sql','utf8');
 

@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
+import {readAdminUiSource} from './helpers/admin-ui-source.mjs';
 
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const admin=readAdminUiSource();
 const guided=fs.readFileSync('vitrine/admin/basket-guided-builder.js','utf8');
 const sectionPath='vitrine/admin/basket-admin-section.js';
 
@@ -15,7 +16,7 @@ assert.ok(bridgePos>0&&bridgePos<mainClose,'admin bridge must be created inside 
 assert.doesNotMatch(admin.slice(mainClose),/window\.DonaAntoniaGuidedBridge\s*=/,'post-runtime scripts must not own the basket/admin bridge');
 
 assert.match(admin,/basket-guided-builder\.js\?v=guided-v3/,'guided compatibility builder may remain loaded during migration');
-assert.match(admin,/basket-admin-section\.js\?v=canonical-v3/,'admin must load the single basket section controller');
+assert.match(admin,/basket-admin-section\.js\?v=basket-admin-simple-20261020/,'admin must load the single basket section controller');
 assert.match(guided,/window\.DonaAntoniaAdminBridge/,'technical guided builder must consume the stable admin bridge');
 assert.doesNotMatch(guided,/DonaAntoniaGuidedBridge/,'retired basket-specific bridge must not return');
 
@@ -26,8 +27,9 @@ const renderBlock=admin.slice(renderStart,renderEnd);
 assert.match(renderBlock,/DonaAntoniaBasketAdmin\?\.render/,'index renderBaskets must delegate to the section controller');
 assert.doesNotMatch(renderBlock,/basket_commercial_admin|basketCommercialCard|openBasketCommercialCreate/,'index must not keep another baskets implementation');
 
-assert.match(section,/Criador de Kits/,'controller must expose the internal-kit workspace');
+assert.match(section,/Receitas de kits \(legado\)/,'controller must preserve legacy internal-kit maintenance');
 assert.match(section,/Cestas do Site/,'controller must expose the store-basket workspace');
+assert.match(section,/data-basket-advanced/,'legacy internal-kit maintenance must remain behind advanced disclosure');
 assert.match(section,/DonaAntoniaKitBuilder/,'controller must delegate kit work');
 assert.match(section,/DonaAntoniaStoreBaskets/,'controller must delegate store-basket work');
 assert.match(section,/kit-builder\.js/,'controller must load kit builder lazily');

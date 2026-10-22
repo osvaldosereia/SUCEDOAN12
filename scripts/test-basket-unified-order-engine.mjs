@@ -30,5 +30,8 @@ assert.doesNotMatch(orderBlock,/create_canonical_cart_order_v2/,'storefront must
 for(const html of [root,vitrine]){
   assert.doesNotMatch(html,/state\.cart=state\.cart\.filter\(x=>x\.type!==['"]basket['"]\|\|x\.split_mode===true\)/,'public cart must not delete legacy baskets when modern lots exist');
 }
-assert.equal(root,vitrine,'public root and /vitrine must remain identical');
+assert.match(root,/<title>Dona Antônia/,'the canonical public storefront remains at /');
+assert.match(vitrine,/<meta http-equiv="refresh" content="0;url=\/">/,'legacy /vitrine/ must redirect to the canonical root');
+assert.match(vitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'legacy redirect must preserve query and hash');
+assert.doesNotMatch(vitrine,/checkoutWhatsappUnified|submit_order/,'legacy /vitrine/ must not duplicate checkout or submit behavior');
 console.log('basket unified mixed order engine: PASS');

@@ -4,10 +4,11 @@ import assert from 'node:assert/strict';
 // Mantém a suíte principal do checkout acionada neste PR de retorno ao WhatsApp.
 const capture=fs.readFileSync('checkout-resilience.js','utf8');
 const backendGuard=fs.readFileSync('supabase/migrations/20261002143000_require_storefront_checkout_basics.sql','utf8');
-for(const page of ['index.html','vitrine/index.html']){
-  const html=fs.readFileSync(page,'utf8');
-  assert.match(html,/checkout-resilience\.js/,`${page}: resilience layer must remain loaded`);
-}
+const storefront=fs.readFileSync('index.html','utf8');
+const legacyVitrine=fs.readFileSync('vitrine/index.html','utf8');
+assert.match(storefront,/checkout-resilience\.js/,'canonical store: resilience layer must remain loaded');
+assert.match(legacyVitrine,/rel="canonical" href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
+assert.match(legacyVitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'/vitrine/ must preserve query and hash while redirecting');
 
 assert.match(capture,/function liveCheckoutPhone\(/,'finalization must read the live WhatsApp fields');
 assert.match(capture,/function checkoutRegistrationDraft\(/,'finalization must capture the live registration fields');

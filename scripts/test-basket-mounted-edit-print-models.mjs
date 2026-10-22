@@ -20,8 +20,9 @@ assert.match(guided,/Editar lote/,'technical guided flow must still support rese
 assert.match(guided,/Em montagem|Montado/,'technical guided flow must still surface assembly states');
 
 // O cutover deliberadamente remove edição/impressão/arquivamento do controlador normal.
-assert.match(section,/Criador de Kits/,'normal operation must expose kit builder');
+assert.match(section,/Receitas de kits \(legado\)/,'advanced maintenance must keep the legacy kit recipe workspace available');
 assert.match(section,/Cestas do Site/,'normal operation must expose store baskets');
+assert.match(section,/data-basket-advanced/,'legacy recipe maintenance must remain behind the advanced disclosure');
 for(const retired of ['Editar lote','Imprimir','Excluir modelo'])assert.doesNotMatch(section,new RegExp(retired,'i'),`normal operation must not expose ${retired}`);
 assert.doesNotMatch(section,/data-basket-print|data-basket-edit|basket_archive|function printLot/,'simple controller must not own legacy lot/model actions');
 

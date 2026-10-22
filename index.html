@@ -887,7 +887,7 @@
       state.view='home';renderNav();const categories=STATIC_CATEGORIES;
       // Build the same outer shell used by renderHome: preserve hero and shortcuts
       // when the first priority response arrives instead of painting them twice.
-      content.innerHTML=homeIntro(categories)+'<div id="basketSections">'+section('Escolha suas Cestas e Kits','Escolha uma opção para conferir.','<p class="home-loading-status" role="status" aria-live="polite">Preparando suas cestas…</p><div class="grid" aria-busy="true"><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div></div>')+'</div>'+homeCategorySection(categories);
+      content.innerHTML=homeIntro(categories)+'<div id="basketSections">'+section('Escolha suas Cestas e Kits','Escolha uma opção para conferir.','<p class="home-loading-status" role="status" aria-live="polite">Preparando suas cestas…</p><div class="grid" aria-busy="true"><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div></div>')+'</div>'+section('Ofertas em destaque','Preços promocionais para aproveitar.','<div id="homeOffersMount">'+offersSkeleton()+'</div>','homeOffers')+homeCategorySection(categories);
       bindHomeIntro();content.querySelectorAll('[data-ean-catalog]').forEach(btn=>btn.onclick=renderEanProducts);
     }
     function basketCategoryControls(categories,active){
@@ -915,24 +915,36 @@
       });
     }
     function homeBasketGroupRecords(baskets,basketGroups){
+      let imageIndex=0;
       return basketGroups.map(group=>{
         if(String(group?.slug||'')==='cestas-completas'){
-          const items=homeBasketSizeCards(baskets,group),subgroupId='basket-sizes-'+String(group.id);
+          const items=homeBasketSizeCards(baskets,group),indexedItems=items.map(basket=>({basket,index:imageIndex++})),subgroupId='basket-sizes-'+String(group.id);
           return {id:String(group.id),name:group.name,subgroups:[{
             id:subgroupId,
             signature:JSON.stringify(items),
-            markup:()=>'<div class="basket-subgroup basket-size-picker" data-home-subgroup="'+esc(subgroupId)+'"><h3 class="basket-subgroup-title">Escolha o tamanho da cesta</h3><div class="grid basket-grid">'+(items.length?items.map((b,i)=>basketCard(b,i)).join(''):'<div class="empty">Nenhuma cesta disponível agora.</div>')+'</div></div>'
+            markup:()=>'<div class="basket-subgroup basket-size-picker" data-home-subgroup="'+esc(subgroupId)+'"><h3 class="basket-subgroup-title">Escolha o tamanho da cesta</h3><div class="grid basket-grid">'+(items.length?indexedItems.map(({basket,index})=>basketCard(basket,index)).join(''):'<div class="empty">Nenhuma cesta disponível agora.</div>')+'</div></div>'
           }]};
         }
         return {id:String(group.id),name:group.name,subgroups:homeBasketSubcategories(group).map(sub=>{
-          const items=baskets.filter(b=>String(b.category_id||'')===String(group.id)&&String(b.subcategory_id||'')===String(sub.id));
-          return {id:String(sub.id),signature:JSON.stringify([sub,items]),markup:()=>'<div class="basket-subgroup" data-home-subgroup="'+esc(sub.id)+'"><h3 class="basket-subgroup-title">'+esc(sub.name)+'</h3><div class="grid basket-grid">'+(items.length?items.map((b,i)=>basketCard(b,i)).join(''):'<div class="empty">Nenhum item disponível nesta subdivisão agora.</div>')+'</div></div>'};
+          const items=baskets.filter(b=>String(b.category_id||'')===String(group.id)&&String(b.subcategory_id||'')===String(sub.id)),indexedItems=items.map(basket=>({basket,index:imageIndex++}));
+          return {id:String(sub.id),signature:JSON.stringify([sub,items]),markup:()=>'<div class="basket-subgroup" data-home-subgroup="'+esc(sub.id)+'"><h3 class="basket-subgroup-title">'+esc(sub.name)+'</h3><div class="grid basket-grid">'+(items.length?indexedItems.map(({basket,index})=>basketCard(basket,index)).join(''):'<div class="empty">Nenhum item disponível nesta subdivisão agora.</div>')+'</div></div>'};
         })};
       });
     }
     function fragmentElement(markup){
       const template=document.createElement('template');template.innerHTML=markup.trim();
       return template.content.firstElementChild;
+    }
+    function preserveUnchangedBasketCards(previous,replacement){
+      const byBasket=new Map();
+      previous.querySelectorAll('.basket-card').forEach(card=>{
+        const key=card.querySelector('[data-basket]')?.getAttribute('data-basket');
+        if(key)byBasket.set(key,card);
+      });
+      replacement.querySelectorAll('.basket-card').forEach(card=>{
+        const key=card.querySelector('[data-basket]')?.getAttribute('data-basket'),existing=byBasket.get(key);
+        if(existing&&existing.outerHTML===card.outerHTML)card.replaceWith(existing);
+      });
     }
     function syncHomeBasketGroups(host,records){
       let changed=false;
@@ -952,6 +964,7 @@
           let subgroup=[...sectionNode.children].find(node=>node.dataset.homeSubgroup===sub.id);
           if(!subgroup||homeSubgroupSignatures.get(subgroup)!==sub.signature){
             const replacement=fragmentElement(sub.markup());
+            if(subgroup)preserveUnchangedBasketCards(subgroup,replacement);
             homeSubgroupSignatures.set(replacement,sub.signature);
             if(subgroup)subgroup.replaceWith(replacement);
             subgroup=replacement;changed=true;
@@ -974,7 +987,7 @@
     }
     function renderHome(){
       const existingHost=state.view==='home'?content.querySelector('#basketSections'):null;
-      const canPatch=Boolean(existingHost&&content.querySelector('#homeCategoryButtons'));
+      const canPatch=Boolean(existingHost&&content.querySelector('#homeOffersMount'));
       state.view='home';state.category=null;state.query='';
       const baskets=state.home?.baskets||[],categories=state.home?.categories?.length?state.home.categories:STATIC_CATEGORIES;
       let basketGroups=Array.isArray(state.home?.basket_categories)?state.home.basket_categories:[];
@@ -983,11 +996,13 @@
       const remainingBasketMarkup=state.homePartial?section('Outras cestas','Carregando as demais opções…','<div class="grid" aria-busy="true"><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div></div>','homeRemainingBaskets'):'';
       if(!canPatch){
         renderNav();$('#globalSearchInput').value='';
-        content.innerHTML=homeIntro(categories)+'<div id="basketSections"></div>'+remainingBasketMarkup+homeCategorySection(categories);
+        content.innerHTML=homeIntro(categories)+'<div id="basketSections"></div>'+remainingBasketMarkup+section('Ofertas em destaque','Preços promocionais para aproveitar.','<div id="homeOffersMount">'+offersSkeleton()+'</div>','homeOffers')+homeCategorySection(categories);
         content.querySelectorAll('[data-category]').forEach(btn=>btn.onclick=()=>renderCategory(btn.dataset.category,btn.textContent.replace('›','').trim()));
         content.querySelectorAll('[data-ean-catalog]').forEach(btn=>btn.onclick=renderEanProducts);
         bindHomeIntro();
-      }
+        observeOffers();
+      }else if(!state.offersLoaded&&!state.offersObserver){observeOffers()}
+      else if(state.offersLoaded&&content.querySelector('#homeOffersMount')&&!content.querySelector('#homeOffersMount').children.length){paintHomeOffers()}
       const host=content.querySelector('#basketSections');
       syncHomeBasketGroups(host,records);
       const existingRemaining=content.querySelector('#homeRemainingBaskets');

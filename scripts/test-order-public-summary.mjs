@@ -1,10 +1,11 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
+import {readAdminUiSource} from './helpers/admin-ui-source.mjs';
 const read=p=>fs.readFileSync(p,'utf8');
 const migration=read('supabase/migrations/20261003024500_order_public_summary.sql');
 const edge=read('supabase/functions/order-public-view-v1/index.ts');
 const page=read('pedido/index.html');
-const admin=read('vitrine/admin/index.html');
+const admin=readAdminUiSource();
 assert.match(migration,/order_public_snapshots_v1/,'snapshot table required');
 assert.match(migration,/enable row level security/i,'snapshot table must have RLS');
 assert.match(migration,/revoke all on table public\.order_public_snapshots_v1 from anon, authenticated/i,'snapshot table must not be directly public');

@@ -5,7 +5,8 @@ const ux=fs.readFileSync('checkout-resilience.js','utf8');
 const site=fs.readFileSync('index.html','utf8');
 const mirror=fs.readFileSync('vitrine/index.html','utf8');
 
-assert.equal(site,mirror,'public storefront mirrors must stay identical');
+assert.match(mirror,/rel="canonical" href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
+assert.match(mirror,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'/vitrine/ must preserve query and hash while redirecting');
 
 // Telefone: uma unica acao visivel e consulta automatica.
 assert.match(ux,/checkoutWhatsappUnified/,'checkout must expose one unified WhatsApp field');
