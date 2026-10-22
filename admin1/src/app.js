@@ -5,7 +5,7 @@ import { findIdentifierConflicts, getProductListEmptyState, getProductReadinessI
 import { getProductAvailability } from './product-availability.js?v=1';
 import { compressProductImage } from './product-images.js?v=1';
 import { normalizeEanSequence } from './admin1-data.js?v=3';
-import { renderBaskets } from './baskets.js?v=2';
+import { renderBaskets } from './baskets.js?v=3';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const state = { products: [], nextOffset: null, total: 0, categories: [], query: '', category: '', stock: 'all', status: 'all', xmlItems: [], xmlMatches: [], xmlMatchStatus: 'unchecked', catalogError: '', eanResults: [] };

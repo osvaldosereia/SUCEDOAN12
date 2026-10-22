@@ -40,3 +40,28 @@ test('normaliza produtos vinculados e quantidades de um tipo', async () => {
   assert.deepEqual(types[0].products.map(link => link.product.name), ['Arroz branco', 'Arroz integral']);
   assert.equal(types[0].quantities['s-1'], 2.5);
 });
+
+
+test('normaliza o valor oculto da cesta em centavos ao carregar cada tamanho', async () => {
+  const api = createAdmin1Data(async () => response([{ id: 'size-1', name: 'Econômica', sort_order: 0, is_active: true, hidden_value_cents: 1299 }]));
+  const sizes = await api.listBasketSizes();
+  assert.equal(sizes[0].hidden_value_cents, 1299);
+});
+
+test('salva o valor oculto digitado em reais como centavos sem alterar o restante do tamanho', async () => {
+  const calls = [];
+  const api = createAdmin1Data(async (url, options) => { calls.push({ url: String(url), options }); return response([{ id: 'size-1', name: 'Econômica', hidden_value_cents: 1299 }]); });
+  await api.saveBasketSize({ id: 'size-1', name: 'Econômica', hidden_value: '12,99', sort_order: 0, active: true });
+  const payload = JSON.parse(calls[0].options.body);
+  assert.equal(payload.hidden_value_cents, 1299);
+  assert.equal(payload.name, 'Econômica');
+  assert.equal(payload.is_active, true);
+});
+
+test('recusa valores ocultos negativos ou inválidos antes da gravação', async () => {
+  let calls = 0;
+  const api = createAdmin1Data(async () => { calls += 1; return response([]); });
+  await assert.rejects(api.saveBasketSize({ name: 'Econômica', hidden_value: '-1' }), /igual ou maior que zero/);
+  await assert.rejects(api.saveBasketSize({ name: 'Econômica', hidden_value: 'abc' }), /igual ou maior que zero/);
+  assert.equal(calls, 0);
+});
