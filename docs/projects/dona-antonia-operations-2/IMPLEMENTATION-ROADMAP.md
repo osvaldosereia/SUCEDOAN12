@@ -19,14 +19,32 @@ Fonte canônica: repositório osvaldosereia/SUCEDOAN12 e Supabase ssbesxgaijknws
 - A página pública raiz concentra cerca de 200 KB de HTML, com aproximadamente 138 KB de JavaScript embutido.
 - O Admin atual usa vitrine/admin/admin-runtime.js, com cerca de 642 KB, mais nove fragmentos de texto ordenados em runtime-src. Eles recompõem uma única IIFE e ainda não são módulos independentes. O CSS principal tem cerca de 126 KB.
 - O diretório tests/ tem três arquivos, além de dezenas de scripts/test-* na pasta scripts/. Há 66 workflows de GitHub; falta mapear quais executam os gates relevantes para cada área. Cada lote deve rodar o build e os testes direcionados correspondentes.
-- No projeto Supabase canônico há 142 Edge Functions ativas. Os advisors de segurança registravam 3 avisos de search_path mutável, 43 funções SECURITY DEFINER executáveis por authenticated, 1 aviso de proteção contra senhas vazadas e 228 tabelas com RLS sem policy. O último grupo inclui tabelas privadas e políticas de negação padrão; classificar tabela por tabela antes de mudar. Avisos de performance: 77 FKs sem índice e 97 índices sem uso, a revisar com consultas e carga reais. Há também admin1-products-read-v1 ativa (v3) e uma função admin1-legacy-catalog-read-v1 que a chama; isso requer reconciliar referências no runtime e no deploy antes de decidir qualquer remoção. Não desativar função pelo nome.
+- No projeto Supabase canônico há 142 Edge Functions ativas. Os advisors de segurança registravam 3 avisos de search_path mutável, 43 funções SECURITY DEFINER executáveis por authenticated, 1 aviso de proteção contra senhas vazadas e 228 tabelas com RLS sem policy. O último grupo inclui tabelas privadas e políticas de negação padrão; classificar tabela por tabela antes de mudar. Avisos de performance: 77 FKs sem índice e 97 índices sem uso, a revisar com consultas e carga reais. Há também admin1-products-read-v1 ativa (v3) A admin1-products-read-v1 (v3) teve chamadas reais nas últimas 24 h (56 GET products, 42 categories, 13 product, 2 matches e 1 health); origem e consumidor ainda não aparecem nos logs. O wrapper admin1-legacy-catalog-read-v1 existe no repositório, mas não constava como deployment ativo nesta revalidação. Manter a função ativa e identificar o consumidor antes de qualquer mudança.
 - Este snapshot é uma fotografia, não um valor permanente. Atualizar a baseline antes de cada onda; o roadmap operacional existente e parte do handoff têm datas de setembro e não substituem a leitura do runtime atual.
+
+### Checkpoint de execução — 2026-10-22
+
+
+
+- A PR #1270 (`agent/vitrine-products-hardening`, HEAD `5197aa4a8e9951a9a1a942fb0d93e9ed4425cd96`) implementa o primeiro lote da sessão Produtos. Seu workflow `products-session` passou: build/checker do runtime, sintaxe e três testes da área. O conjunto amplo terminou com 10/19 checks em falha em pedidos/fiscal, checkout, marketing, ANA/Admin legado e cesta simples; PR continua aberta e sem deploy.
+
+- No smoke da página publicada, `/` recalculou a cesta de R$ 419,30 para R$ 425,70 ao selecionar uma variação e nenhum pedido foi criado. `/vitrine/admin/` abriu; Produtos carregou 5 cards com mais 5 disponíveis. A navegação oferece 19 áreas/entradas (Central, Atendimento, ANA, Pedidos, Expedição, Entregador, Fechamento, Produtos, Cestas, Validades, Orçamentos, Clientes, Marketing, Compras/XML, Leitura EAN, Balanço, Gôndolas, Financeiro e Bling técnico).
+
+- No Supabase canônico `ssbesxgaijknwsjbsbcz`, `admin1-products-read-v1` está ativa (v3) e recebeu 114 GETs no último dia; origens não aparecem nos logs, então o consumidor permanece por identificar. `admin1-legacy-catalog-read-v1` não consta como deployment ativo observado. Nenhuma função foi desligada e nenhuma migration/configuração foi aplicada.
+
+- Há divergência impeditiva para DDL: 1.244 versões no ledger do banco contra 180 arquivos em `main`; somente 31 timestamps coincidem. O ledger mais recente é `20261022114704 basket_mold_zero_quantity_v1`, posterior ao último arquivo versionado (`20261022103000 basket_mold_editable_quantity_v1`). O projeto de staging consultado não compartilha o schema canônico; não serve para homologar essa correção.
+
+- Advisors continuam sem alteração: 3 avisos de search_path mutável, 43 funções SECURITY DEFINER executáveis por authenticated e 228 tabelas RLS sem policy (sem criação de policies abertas). Antes de mudar funções ou grants, primeiro reconstruir a correspondência entre migrations versionadas e estado real; em paralelo, identificar a origem das chamadas `admin1-*`.
+
+
+
+Próxima ação exata: executar no SHA atual de `main` os 10 checks que falharam na PR #1270, estabelecer a linha de base e corrigir o grupo de contratos Admin/runtime obsoletos que reproduzir em `main`; repetir o gate `products-session` e CI amplo antes de integrar. Não aplicar migrations no canônico até reconstruir e validar o ledger.
 
 ### Ordem de execução
 
 #### Onda 0 — ajustes urgentes e rede de segurança
 
-1. Preparar a rede de segurança do Admin em uso: mapear as 17 áreas, a entrada /vitrine/admin/, navegação, estado compartilhado, APIs, testes e workflows. Critério: escolher o primeiro lote de baixo risco com comportamento atual e comando de verificação conhecidos. Não migrar a URL nesta etapa.
+1. [Concluída parcialmente em 2026-10-22] Mapear a entrada /vitrine/admin/ e as 19 áreas/entradas observadas; o primeiro lote de baixo risco foi escolhido e codificado na PR #1270. A integração segue bloqueada pelo CI amplo vermelho (10/19 checks), embora o gate dedicado de Produtos esteja verde. Completar a matriz de dependências e corrigir os contratos falhos após confirmar quais já falham em main. Não migrar a URL.
 2. Registrar um conjunto curto de regressão da vitrine: carregamento inicial, preços de cesta, troca de opção, recálculo do total e estado sem pedido submetido. Critério: a correção recente de variação permanece coberta e não há chamada de criação de pedido no teste.
 3. Reconciliar a árvore publicada, o commit de main e as versões das funções críticas no Supabase, incluindo Admin1. Critério: cada função ativa do fluxo principal tem fonte versionada e consumidor identificado; divergências entram em uma lista de correção, sem deploy cego.
 4. Classificar os avisos de segurança do Supabase começando por funções SECURITY DEFINER, search_path e autenticação. Corrigir somente permissões comprovadamente excessivas, com teste de acesso permitido e negado. Não adicionar policies abertas para silenciar o advisor.
