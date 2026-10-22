@@ -24,7 +24,8 @@ assert.doesNotMatch(offers,/to_phone_e164|phone_number_id|whatsapp_account_id/,'
 assert.match(offers,/offer:\{active:true,price:Number\(item\.price_cents\|\|0\)\/100\}/,'preço do storefront deve virar oferta canônica para o envio');
 assert.match(storefront,/async function offerList\(\)/,'storefront deve manter lista canônica de ofertas');
 assert.match(storefront,/\.eq\(["']is_active["'],true\)\.eq\(["']is_offer["'],true\)/,'fonte canônica deve filtrar produtos ativos em oferta');
-assert.match(storefront,/ops2_loose_sellable_stock_v1/,'fonte canônica deve usar estoque vendável avulso');
+assert.match(storefront,/storefront_ean_sellable_stock_v1/,'ofertas devem consultar o read model atual de estoque vendável');
+assert.match(storefront,/async function sellableMap\(ids:string\[\]\)[\s\S]*?queryRowsByIds\("storefront_ean_sellable_stock_v1"/,'a filtragem de estoque deve usar o read model em lotes por ID');
 assert.match(storefront,/action={2,3}["']offers["']\)return json\(req,await offerList\(\)/,'rota pública de ofertas deve continuar ativa');
 assert.match(send,/product\?\.offer\?\.active\?product\?\.offer\?\.price:product\?\.sale_price/,'envio deve usar preço de oferta quando ativo');
 assert.match(send,/form\.set\(['"]caption['"],formatAttendanceProductCaption\(product\)\)/,'imagem deve levar nome e valor no caption');
