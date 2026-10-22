@@ -33,8 +33,8 @@ Painel independente para operar o catálogo próprio da Dona Antônia. A tela at
 - `src/product-drafts.js`: leitura da NF-e e rascunhos locais antes do cadastro.
 - `src/product-images.js`: conversão e redução de imagem.
 - `supabase/migrations/20261022100000_admin1_product_operations_v1.sql`: extensão do produto e rotina transacional de produto/estoque.
-- `supabase/migrations/20261022110000_admin1_baskets_v1.sql`: tabelas, índices, políticas e gatilho de disponibilidade de cestas.
-- `supabase/migrations/20261022111000_admin1_basket_save_v1.sql`: rotina atômica para salvar a cesta e seus componentes.
+- `supabase/migrations/20261022021445_admin1_baskets_v1.sql`: tabelas, índices, políticas e gatilho de disponibilidade de cestas.
+- `supabase/migrations/20261022021506_admin1_basket_save_v1.sql`: rotina atômica para salvar a cesta e seus componentes.
 - `tests/`: testes automatizados da lógica e dos adaptadores.
 
 ## Testes
