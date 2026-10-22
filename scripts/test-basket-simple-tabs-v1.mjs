@@ -3,15 +3,16 @@ import assert from 'node:assert/strict';
 
 const path='vitrine/admin/basket-admin-section.js';
 const source=fs.readFileSync(path,'utf8');
+const moldAdmin=fs.readFileSync('vitrine/admin/basket-mold-admin.js','utf8');
 
-assert.match(source,/Cestas Molde/,'simplified mold editor is required');
+assert.match(moldAdmin,/Cestas Molde/,'simplified mold editor is required');
 assert.match(source,/basket-mold-admin\.js/,'controller must load mold admin module');
 assert.match(source,/DonaAntoniaBasketMolds/,'controller must use mold workspace');
 assert.match(source,/tab\s*:\s*['"]molds['"]/,'Cestas Molde must be the default tab');
-assert.match(source,/Ferramentas avançadas/,'legacy tooling must be grouped under advanced disclosure');
+assert.match(source,/Manutenção avançada/,'legacy tooling must be grouped under advanced disclosure');
 assert.match(source,/data-basket-advanced/,'advanced disclosure is required');
 
-assert.match(source,/Criador de Kits/,'legacy kit builder remains available in advanced tools');
+assert.match(source,/Receitas de kits \(legado\)/,'legacy kit builder remains available in advanced tools');
 assert.match(source,/kit-builder\.js/,'controller must keep loading kit builder when requested');
 assert.match(source,/kit-builder\.js\?v=basket-products-v1/,'controller must preserve cache busting for kit builder');
 assert.match(source,/store-baskets-builder\.js/,'controller must keep the previous operational module available');
