@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { ADMIN_PRODUCT_COLUMNS, parseCatalogRequest } from "./read-contract.mjs";
+import { summarizeAdmin1Consumer } from "./consumer-context.mjs";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
@@ -113,6 +114,7 @@ Deno.serve(async req => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(req) });
   const parsed = parseCatalogRequest(req);
   if (!parsed.ok) return json(req, { ok: false, error: parsed.error }, parsed.status);
+  console.log("admin1-products-read-v1.consumer", JSON.stringify(summarizeAdmin1Consumer(req, parsed.action)));
   try {
     if (parsed.action === "health") return json(req, { ok: true, service: "admin1-products-read-v1", mode: "read-only" });
     if (parsed.action === "products") return json(req, await products(parsed.params));
