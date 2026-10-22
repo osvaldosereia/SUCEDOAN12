@@ -2,6 +2,26 @@
 
 > Atualização documental: 2026-10-22. Os checkpoints operacionais abaixo são históricos; confirme runtime e banco antes de qualquer ação operacional.
 
+## Checkpoint de execução — 2026-10-22 (R10: autenticação interna OPS2 e guarda de deploy XML)
+
+Este checkpoint corrige a hipótese anterior: o POST 401 observado era a recuperação EAN agendada, não a leitura da aba Produtos.
+
+- Baseline de código: main b68ebc2539878f031fdcbf5cf5db8683db9255fa após a PR #1278; a PR #1279 foi integrada em a307e4eadfe19e02fc212d25a344c484749f337b. A rota do Admin permanece /vitrine/admin/.
+- Causa do 401 do cron: admin-products-live-v1 v183 tinha verify_jwt=true, embora o contrato no repositório configure verify_jwt=false. O cron bling-hub-v2-cycle autentica a chamada interna pelo header compartilhado, sem JWT; o gateway rejeitava antes do handler. O handler agora compara o segredo interno em tempo constante. Os demais caminhos de Admin continuam exigindo adminAuth e associação administrativa ativa.
+- Arquivos de #1278: supabase/functions/admin-products-live-v1/internal-auth.mjs, supabase/functions/admin-products-live-v1/index.ts, scripts/test-admin-products-live-internal-auth.mjs e .github/workflows/admin-products-live-internal-auth-ci.yml. Commits da PR: 639e4368, e9cf388c, ffe80f63, f0937dbf; squash merge b68ebc2539878f031fdcbf5cf5db8683db9255fa.
+- No Supabase canônico ssbesxgaijknwsjbsbcz, admin-products-live-v1 está ACTIVE v184, verify_jwt=false, hash d087c872ed23fa03dc2c3c784255b2bada1129de62b07db6f558c8ab7fd6291e; as três fontes implantadas coincidem com main. Estado ACTIVE_HEALTHY, região sa-east-1. Flags existentes permaneceram live/ativas e não foram alteradas.
+- Evidência natural: function_edge_logs registrou 401 em 20:28:00.202Z na v183 e HTTP 200 em 20:30:02.678Z, 20:32:01.980Z e 20:34:02.289Z na v184. Leitura SQL entre 20:28Z e 20:35Z encontrou 0 sessões EAN verificadas e 0 auditorias Bling com target_key=verified; não houve recuperação externa nessa janela. O preflight tinha 20 pedidos pós-cutover elegíveis em potencial, mas nenhum com sessão física verificada e verified_at.
+- PR #1279 corrige o workflow .github/workflows/xml-r31-supabase-deploy-once.yml: publicação canônica não roda por PR nem push; só por workflow_dispatch no main. Removeu --debug e adicionou teste de contrato e CI. O run #39848977831 tentou deploy durante pull_request e falhou antes de publicar: API Supabase respondeu 401 Invalid access token. Nenhum segredo foi exibido/alterado e nenhuma função R31 foi implantada por esse run. PR #1279 mergeada em a307e4eadfe19e02fc212d25a344c484749f337b.
+- CI: contrato OPS2 39848425463 e Admin Products 39848977723 passaram; teste do guarda no PR 39850146584 e no main 39850198538 passaram. Basket Kit Editor 39848977652 passou. Pages main b68 39848967029 e Pages main a307 39850185015 passaram. O workflow de deploy XML continua sem credencial GitHub válida: run #39848977831 é falha autenticada e demanda atualizar o secret SUPABASE_ACCESS_TOKEN pelo proprietário antes de qualquer disparo manual.
+- Smoke sem escrita: / abriu a vitrine pública com cinco cestas e quatro ofertas; /vitrine/admin/ carregou a Central e navegação das 19 áreas. A lista Produtos carregou cinco itens em smoke de leitura anterior ao deploy. Nenhum pedido, checkout, mensagem ou efeito de estoque/fiscal foi criado.
+- Supabase: não houve migration, DDL, correção de dados, mudança de flags, RLS ou grants. Somente admin-products-live-v1 v184 foi implantada no projeto canônico. A branch de desenvolvimento da6-qa-20261009 segue MIGRATIONS_FAILED; não havia branch utilizável e não houve mudança de schema.
+- Rollback da função: redeploy da fonte preservada v183 com verify_jwt=true restaura o estado anterior, mas também reintroduz o 401 do cron. Não há rollback de banco. O guarda de deploy pode ser revertido pela PR #1279; isso voltaria a permitir que alterações da workflow acionassem tentativa automática em PR.
+- Rotas e regras comerciais foram preservadas: público em /, Admin em /vitrine/admin/; sem migração para /admin/, checkout sintético, mensagem, NF-e, pagamento ou movimento de estoque.
+
+### Próxima tarefa exata
+
+Continuar R10 com comparação somente leitura da versão publicada de admin-service-intelligence-v1 no Supabase canônico contra main e os arquivos de compras/XML versionados. Registrar versões/hash e a divergência funcional concreta antes de qualquer ação. Se houver drift que necessite implantação, preparar teste e preflight específicos; a workflow manual exige atualização do secret SUPABASE_ACCESS_TOKEN porque o run #39848977831 comprovou que o valor atual é inválido. Não disparar a workflow nem redeployar uma função sem essa reconciliação. Enquanto isso, observar apenas os ciclos naturais do cron EAN; aguardar conferência EAN física real e não invocar a recuperação manualmente.
+
 ## Checkpoint de execução — 2026-10-22 (diagnóstico Admin1 e teste rápido do Admin)
 
 Este checkpoint supersede as fotografias anteriores desta página. Revalidei main, PRs, CI, runtime e os projetos Supabase envolvidos.
@@ -19,7 +39,7 @@ Este checkpoint supersede as fotografias anteriores desta página. Revalidei mai
 
 ### Próxima tarefa exata
 
-Investigar a intermitência da aba Produtos do Admin existente: o primeiro smoke mostrou “Carregando…” e os logs registraram POST 401 de `admin-products-live-v1` v183; a rechecagem posterior carregou cinco produtos. Correlacionar os dois resultados com o fluxo JWT/step-up e a captura de erros; identificar se o 401 vem da leitura, de chamada auxiliar ou de uma tentativa recuperada. Reproduzir somente por leitura, preservar autenticação, adicionar teste de sucesso/401/erro de transporte e garantir que um erro visível não deixe spinner infinito; rodar `python3 scripts/build-vitrine-admin-runtime.py --check`, o teste da área e smoke em `/vitrine/admin/`. Observar chamadas naturais ao leitor Admin1 v4 e mapear consumidores do wrapper legado v2 antes de alterar qualquer função. Não mudar a rota nem executar DDL antes de reconciliar o ledger.
+Esta orientação histórica foi superada pelo checkpoint mais recente acima. O POST 401 era do cron de recuperação EAN, não do carregamento da aba Produtos. Consulte o checkpoint atual para a comparação de fonte publicada de admin-service-intelligence-v1, o estado do secret de deploy e os gates operacionais reais.
 
 
 ## Continuidade da reforma do site e Admin (2026-10-22)
