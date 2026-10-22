@@ -9,7 +9,6 @@ const legacyVitrine=fs.readFileSync('vitrine/index.html','utf8');
 assert.match(storefront,/checkout-resilience\.js/,'canonical store: resilience layer must remain loaded');
 assert.match(legacyVitrine,/rel="canonical" href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
 assert.match(legacyVitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'/vitrine/ must preserve query and hash while redirecting');
-}
 
 assert.match(capture,/function liveCheckoutPhone\(/,'finalization must read the live WhatsApp fields');
 assert.match(capture,/function checkoutRegistrationDraft\(/,'finalization must capture the live registration fields');

@@ -90,7 +90,6 @@ assert.match(canonicalStorefront,/\/vitrine\/basket-carousel\.js/i,'a loja em / 
 assert.match(legacyVitrine,/rel="canonical" href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
 assert.match(legacyVitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'/vitrine/ must preserve query and hash while redirecting');
 assert.doesNotMatch(legacyVitrine,/basket-carousel\.js/i,'/vitrine/ não deve duplicar o runtime da loja');
-}
 
 const worker=fs.readFileSync('supabase/functions/whatsapp-marketing-worker-v1/index.ts','utf8');
 assert.match(worker,/tracking_links/i,'worker deve receber links rastreáveis por dispatch/oferta');

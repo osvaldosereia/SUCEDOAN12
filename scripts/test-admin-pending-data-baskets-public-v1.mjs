@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
+import vm from 'node:vm';
 
 const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
 const adminRuntime=fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
@@ -44,6 +45,17 @@ assert.match(page,/channel_origin/,'Página deve usar o canal de origem devolvid
 assert.match(page,/5565998150975/,'Página deve conhecer o canal 0975');
 assert.match(page,/5565984491018/,'Página deve conhecer o canal 1018');
 assert.match(page,/whatsapp:\/\/send\?phone=/,'Botão deve tentar voltar diretamente ao app/conversa do WhatsApp');
+assert.match(page,/orderSupportWhatsappUrl\(data\.channel_origin\)/,'Contato deve usar o canal de origem retornado pelo backend');
+assert.match(page,/Falar com a Dona Antônia pelo WhatsApp/,'Página deve mostrar a ação de contato com a equipe');
+const pageScript=[...page.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)?.[1];
+assert.ok(pageScript,'Página pública do pedido deve incluir o runtime inline');
+new vm.Script(pageScript,{filename:'pedido/index.html'});
+const contactFunctions=page.match(/function orderSupportPhone\(channelOrigin\)\{[^}]*\}\s*function orderSupportWhatsappUrl\(channelOrigin\)\{[^}]*\}/)?.[0]||'';
+assert.ok(contactFunctions,'Mapeamento de canal do botão WhatsApp deve ser isolado e testável');
+const buildSupportUrl=new Function(contactFunctions+';return orderSupportWhatsappUrl;')();
+assert.equal(buildSupportUrl('0975'),'whatsapp://send?phone=5565998150975','origin 0975 must contact the 0975 account');
+assert.equal(buildSupportUrl('1018'),'whatsapp://send?phone=5565984491018','origin 1018 must contact the 1018 account');
+assert.equal(buildSupportUrl('unknown'),'whatsapp://send?phone=5565998150975','unknown origin must follow backend default');
 assert.match(shortPage,/pedido\/\?k=/,'Atalho /p deve encaminhar para a página de pedido com token curto');
 assert.match(resilience,/order_public_url/,'Fluxo de ajuste de estoque do checkout deve preferir o link curto');
 assert.match(adminOrders,/ops2_order_public_link_v1/,'PapoAI deve obter a identidade pública curta pela RPC canônica');
