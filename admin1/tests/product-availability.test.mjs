@@ -35,3 +35,4 @@ test('não confunde estoque sem confirmação recente com estoque zerado', () =>
   });
   assert.equal(canSetProductActive({ stock_quantity: 0, stock_known: false }, true), false);
 });
+

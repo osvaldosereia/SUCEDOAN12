@@ -112,3 +112,4 @@ export async function requestAdminProductStatus({ id, active }, fetchImpl = fetc
   }
   return result;
 }
+

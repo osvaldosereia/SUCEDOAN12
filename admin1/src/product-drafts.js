@@ -157,6 +157,7 @@ export function createProductDraft(item, now = new Date(), existing = null) {
     source: 'purchase_xml',
     status: 'draft',
     created_at: now.toISOString(),
+    item_number: Number(item.item_number) || 0,
     catalog_product_id: text(existing?.id),
     matched_by: text(existing?.matched_by),
     name: text(existing?.name || item.description),
@@ -209,7 +210,6 @@ export function createProductDraft(item, now = new Date(), existing = null) {
     supplier_cnpj: text(item.supplier_cnpj),
     supplier_cpf: text(item.supplier_cpf),
     commercial_unit: text(existing?.unit || item.tax_unit || item.purchase_unit),
-    brand: text(existing?.brand),
     packaging: text(existing?.packaging || item.purchase_unit),
     category: text(existing?.category),
     sale_price: existing ? String((Number(existing.sale_price_cents || 0) / 100).toFixed(2)) : '',
@@ -263,6 +263,7 @@ export function saveProductDraft(draft, storage = globalThis.localStorage) {
   storage.setItem('dona-antonia.admin1.product-drafts', JSON.stringify(next));
   return next;
 }
+
 
 
 

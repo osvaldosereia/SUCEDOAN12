@@ -19,3 +19,4 @@ test('não envia requisição para identificador ou status inválidos', async ()
   await assert.rejects(() => requestAdminProductStatus({ id: productId, active: 'true' }, fetchStub), /Dados inválidos/);
   assert.equal(calls, 0);
 });
+
