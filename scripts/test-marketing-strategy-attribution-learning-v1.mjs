@@ -84,9 +84,12 @@ assert.match(storefrontTracking,/track\(['"]open['"]\)/i,'abertura/clique deve s
 assert.match(storefrontTracking,/track\(['"]checkout['"]\)/i,'início/finalização do checkout deve ser registrado');
 assert.match(storefrontTracking,/localStorage/i,'token deve sobreviver à navegação dentro da janela de atribuição');
 
-for(const page of ['index.html','vitrine/index.html']){
-  const html=fs.readFileSync(page,'utf8');
-  assert.match(html,/\/vitrine\/basket-carousel\.js/i,`${page} deve carregar o coletor comum de tracking`);
+const canonicalStorefront=fs.readFileSync('index.html','utf8');
+const legacyVitrine=fs.readFileSync('vitrine/index.html','utf8');
+assert.match(canonicalStorefront,/\/vitrine\/basket-carousel\.js/i,'a loja em / deve carregar o coletor comum de tracking');
+assert.match(legacyVitrine,/canonical href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
+assert.match(legacyVitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'/vitrine/ must preserve query and hash while redirecting');
+assert.doesNotMatch(legacyVitrine,/basket-carousel\.js/i,'/vitrine/ não deve duplicar o runtime da loja');
 }
 
 const worker=fs.readFileSync('supabase/functions/whatsapp-marketing-worker-v1/index.ts','utf8');

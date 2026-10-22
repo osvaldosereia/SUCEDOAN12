@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 
 const html=fs.readFileSync('index.html','utf8');
-assert.equal(html,fs.readFileSync('vitrine/index.html','utf8'));
+const legacyVitrine=fs.readFileSync('vitrine/index.html','utf8');
+assert.match(legacyVitrine,/canonical href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
+assert.match(legacyVitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'/vitrine/ must preserve query and hash while redirecting');
 new vm.Script([...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)[1]);
 function source(from,to){
   const start=html.indexOf(from);

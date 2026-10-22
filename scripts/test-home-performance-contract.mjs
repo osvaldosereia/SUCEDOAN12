@@ -4,7 +4,8 @@ import vm from 'node:vm';
 
 const page=fs.readFileSync('index.html','utf8');
 const nested=fs.readFileSync('vitrine/index.html','utf8');
-assert.equal(page,nested,'public root and nested storefront must remain identical');
+assert.match(nested,/canonical href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
+assert.match(nested,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'/vitrine/ must preserve query and hash while redirecting');
 new vm.Script([...page.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)[1],{filename:'index.html'});
 const start=page.slice(page.indexOf('async function start(){'),page.indexOf('\n    start();'));
 assert.ok(start.indexOf('renderInitialShell()')<start.indexOf('resolveEntryWhatsappPhone()'),'initial shell must render before identity lookup');

@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
 const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const adminRuntime=fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const root=fs.readFileSync('index.html','utf8');
 const vitrine=fs.readFileSync('vitrine/index.html','utf8');
 const page=fs.readFileSync('pedido/index.html','utf8');
@@ -15,18 +16,21 @@ const shortMigration=fs.existsSync(shortMigrationPath)?fs.readFileSync(shortMigr
 const shortPagePath='p/index.html';
 const shortPage=fs.existsSync(shortPagePath)?fs.readFileSync(shortPagePath,'utf8'):'';
 
-assert.ok(admin.includes('function orderCustomerDataPending('),'Admin deve ter um gate explícito para dados essenciais do cliente');
-assert.ok(admin.includes('AGUARDANDO DADOS DO CLIENTE'),'Admin deve destacar pedido com dados essenciais pendentes');
-assert.ok(admin.includes("['Cliente não identificado','Telefone pendente','Endereço incompleto','CPF/CNPJ pendente']"),'Gate deve considerar nome, telefone, endereço e CPF/CNPJ');
-assert.ok(admin.includes('if(orderCustomerDataPending(o))'),'Próxima ação deve bloquear avanço quando dados do cliente estiverem pendentes');
+assert.match(admin,/src="\/vitrine\/admin\/admin-runtime\.js\?/,'Admin deve carregar seu runtime operacional');
+assert.ok(adminRuntime.includes('function orderCustomerDataPending('),'Runtime do Admin deve ter um gate explícito para dados essenciais do cliente');
+assert.ok(adminRuntime.includes('AGUARDANDO DADOS DO CLIENTE'),'Runtime deve destacar pedido com dados essenciais pendentes');
+assert.ok(adminRuntime.includes("['Cliente não identificado','Telefone pendente','Endereço incompleto','CPF/CNPJ pendente']"),'Gate deve considerar nome, telefone, endereço e CPF/CNPJ');
+assert.ok(adminRuntime.includes('if(orderCustomerDataPending(o))'),'Próxima ação deve bloquear avanço quando dados do cliente estiverem pendentes');
 
-for(const [name,html] of [['index.html',root],['vitrine/index.html',vitrine]]){
+for(const [name,html] of [['index.html',root]]){
   assert.ok(html.includes('function basketCard('),`${name}: deve continuar renderizando cartões de cesta`);
   assert.ok(html.includes('function basketPublicAvailabilityLabel('),`${name}: deve ter regra explícita de disponibilidade pública`);
   assert.ok(html.includes("function basketPublicAvailabilityLabel(){return ''}"),`${name}: não deve mostrar quantidade numérica de cesta ao cliente`);
   assert.ok(html.includes('order_public_url'),`${name}: checkout deve usar o link público curto retornado pelo backend`);
   assert.ok(html.includes('order_public_code'),`${name}: checkout deve exibir o código público curto do pedido`);
 }
+assert.match(vitrine,/canonical href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
+assert.match(vitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'/vitrine/ must preserve query and hash while redirecting');
 
 assert.match(shortMigration,/public_token/i,'Resumo público deve ter token curto independente do UUID interno');
 assert.match(shortMigration,/public_code/i,'Resumo público deve ter código curto de exibição');
