@@ -23,6 +23,8 @@ Painel independente para operar o catálogo próprio da Dona Antônia. A tela at
 ## Limite entre os bancos
 
 - Leitura do catálogo legado passa somente pela função `admin1-legacy-catalog-read-v1` (GET).
+- A segmentação “Lidos pelo Leitor EAN” consulta os IDs de produtos com leitura confirmada no banco legado e os cruza com `source_project` + `source_product_id` no Admin1. A atualização é manual, pelo botão “Atualizar produtos EAN”.
+- A edição desses produtos persiste no banco próprio do Admin1 (`admin1_save_product_v1`); não grava alterações no catálogo legado. Produtos lidos ainda sem vínculo/cadastro Admin1 aparecem como quantidade pendente de transferência.
 - Gravações do módulo de produtos usam `admin1_save_product_v1` e tabelas do projeto separado `xaoeldjuxzsdsblimzxo`.
 - O banco ligado ao site público e o Bling não são alterados por esse módulo.
 

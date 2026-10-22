@@ -21,6 +21,7 @@ export async function adminApi(action, params = {}) {
   if (action === 'basket_type_detail') return { type: await admin1Data.getBasketType(params.id) };
   if (action === 'save_basket_type') return { type: await admin1Data.saveBasketType(params.type || {}) };
   if (action === 'legacy_matches') return { products: await admin1Data.findLegacyByEans(params.eans || []) };
+  if (action === 'ean_reader_products') return admin1Data.listEanReaderProducts();
   if (action === 'save_product') return { product: await admin1Data.saveProduct(params.product || {}) };
   if (action === 'set_product_active') {
     return { product: await admin1Data.setProductActive(params.id, params.active) };
