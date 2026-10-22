@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 const read=p=>fs.readFileSync(p,'utf8');
 const root=read('index.html'),vitrine=read('vitrine/index.html'),resilience=read('checkout-resilience.js');
-assert.match(vitrine,/canonical href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
+assert.match(vitrine,/rel="canonical" href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
 assert.match(vitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'/vitrine/ must preserve query and hash while redirecting');
 assert.match(root,/Finalizar pedido/,'ready checkout button must say Finalizar pedido');
 assert.match(root,/function orderPublicUrl\(saved\)/,'checkout must build the private order summary URL');

@@ -29,7 +29,7 @@ for(const [name,html] of [['index.html',root]]){
   assert.ok(html.includes('order_public_url'),`${name}: checkout deve usar o link público curto retornado pelo backend`);
   assert.ok(html.includes('order_public_code'),`${name}: checkout deve exibir o código público curto do pedido`);
 }
-assert.match(vitrine,/canonical href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
+assert.match(vitrine,/rel="canonical" href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
 assert.match(vitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'/vitrine/ must preserve query and hash while redirecting');
 
 assert.match(shortMigration,/public_token/i,'Resumo público deve ter token curto independente do UUID interno');

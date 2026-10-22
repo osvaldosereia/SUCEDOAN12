@@ -28,7 +28,7 @@ assert.match(storefront,/loose_sellable_stock|moldAvailableStockMap/);
 assert.match(storefront,/is_active===true&&available>0/);
 assert.match(storefront,/products:t\.items/);
 
-assert.match(legacyVitrine,/canonical href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
+assert.match(legacyVitrine,/rel="canonical" href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
 assert.match(legacyVitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'/vitrine/ must preserve query and hash while redirecting');
 assert.doesNotMatch(legacyVitrine,/data-extra-theme-toggle|basket-extra-products/,'/vitrine/ must not duplicate storefront behavior');
 const ui=root;

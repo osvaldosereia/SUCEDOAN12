@@ -5,7 +5,7 @@ import vm from 'node:vm';
 const root=fs.readFileSync('index.html','utf8');
 const nested=fs.readFileSync('vitrine/index.html','utf8');
 const edge=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
-assert.match(nested,/canonical href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
+assert.match(nested,/rel="canonical" href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
 assert.match(nested,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'/vitrine/ must preserve query and hash while redirecting');
 const inline=[...root.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)?.[1];
 assert.ok(inline,'inline storefront JavaScript exists');

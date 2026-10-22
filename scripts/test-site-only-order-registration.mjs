@@ -38,7 +38,7 @@ assert.match(storefront, /Data de entrega <span class="muted">\(opcional\)<\/spa
 assert.match(storefront, /Como você vai pagar\? <span class="muted">\(opcional\)<\/span>/, 'payment must remain optional');
 assert.ok(storefront.includes('customer_register'), 'optional canonical registration endpoint required');
 assert.ok(storefront.includes('delivery_options'), 'optional delivery choices endpoint required');
-assert.match(legacyVitrine,/canonical href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
+assert.match(legacyVitrine,/rel="canonical" href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
 assert.match(legacyVitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'/vitrine/ must preserve query and hash while redirecting');
 
 assert.ok(exists('cadastro/index.html'), '/cadastro page must exist');

@@ -5,7 +5,7 @@ import vm from 'node:vm';
 const src=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
 const root=fs.readFileSync('index.html','utf8');
 const nested=fs.readFileSync('vitrine/index.html','utf8');
-assert.match(nested,/canonical href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
+assert.match(nested,/rel="canonical" href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
 assert.match(nested,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'/vitrine/ must preserve query and hash while redirecting');
 assert.match(src,/HOME_SNAPSHOT_TABLE="storefront_public_home_snapshot_v1"/);
 assert.match(src,/\.select\("payload,generated_at"\)\.eq\("snapshot_key","home"\)/);

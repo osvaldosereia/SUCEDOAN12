@@ -87,7 +87,7 @@ assert.match(storefrontTracking,/localStorage/i,'token deve sobreviver à navega
 const canonicalStorefront=fs.readFileSync('index.html','utf8');
 const legacyVitrine=fs.readFileSync('vitrine/index.html','utf8');
 assert.match(canonicalStorefront,/\/vitrine\/basket-carousel\.js/i,'a loja em / deve carregar o coletor comum de tracking');
-assert.match(legacyVitrine,/canonical href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
+assert.match(legacyVitrine,/rel="canonical" href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
 assert.match(legacyVitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'/vitrine/ must preserve query and hash while redirecting');
 assert.doesNotMatch(legacyVitrine,/basket-carousel\.js/i,'/vitrine/ não deve duplicar o runtime da loja');
 }

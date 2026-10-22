@@ -7,7 +7,7 @@ const backendGuard=fs.readFileSync('supabase/migrations/20261002143000_require_s
 const storefront=fs.readFileSync('index.html','utf8');
 const legacyVitrine=fs.readFileSync('vitrine/index.html','utf8');
 assert.match(storefront,/checkout-resilience\.js/,'canonical store: resilience layer must remain loaded');
-assert.match(legacyVitrine,/canonical href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
+assert.match(legacyVitrine,/rel="canonical" href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
 assert.match(legacyVitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'/vitrine/ must preserve query and hash while redirecting');
 }
 
