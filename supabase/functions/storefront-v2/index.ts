@@ -416,7 +416,7 @@ async function homeSizeCards(){
     if(!template)continue;
     const mold=molds.get(String(template.id)) as any;
     if(String(mold?.metadata?.transition_mode||"")==="legacy_first")continue;
-    const key=String(sub.name||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLocaleLowerCase("pt-BR");
+    const key=String(sub.name||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("pt-BR");
     sizeCards.push({id:String(template.id),card_key:String(template.id)+"@1",name:String(sub.name||template.name||"Cesta"),model_name:String(sub.name||template.name||"Cesta"),image_url:template.image_url||"",category_id:String(complete.id),category_name:complete.name,category_slug:complete.slug,category_sort_order:Number(complete.sort_order||0),subcategory_id:String(sub.id),subcategory_name:sub.name,subcategory_sort_order:Number(sub.sort_order||0),size_key:key,size_card:true,home_shell:true,mold_mode:true});
   }
   return {ok:true,version:"home-size-shell-v1",priority:false,home_size_cards:true,baskets:sizeCards,categories:CATEGORIES,basket_categories:[{...complete,subcategories:sizes}]};
