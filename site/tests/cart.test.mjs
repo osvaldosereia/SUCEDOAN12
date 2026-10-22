@@ -44,7 +44,19 @@ test('mold basket quote uses its current composition and selected position optio
     { position_id: 'position-1', product_id: 'product-2', quantity: 3 }
   ]);
   assert.equal(quote.action, 'basket_mold_quote');
-  assert.deepEqual(quote.payload, { basket_id: 'basket-1', composition_number: 2, items: [{ position_id: 'position-1', product_id: 'product-2' }] });
+  assert.deepEqual(quote.payload, { basket_id: 'basket-1', composition_number: 2, lightweight: true, items: [{ position_id: 'position-1', product_id: 'product-2', quantity: 3 }] });
+});
+
+test('mold basket checkout keeps the composition and adjusted component quantities', async () => {
+  const { orderPayload } = await import('../src/cart.js');
+  const payload = orderPayload([{
+    type: 'basket', id: 'basket-1', mold_mode: true, composition_number: 2,
+    qty: 1, components: [{ position_id: 'position-1', product_id: 'product-2', quantity: 5 }]
+  }]);
+  assert.deepEqual(payload.items[0], {
+    type: 'basket_mold', id: 'basket-1', qty: 1, composition_number: 2,
+    split_mode: false, lot_id: null, components: [{ position_id: 'position-1', product_id: 'product-2', quantity: 5 }]
+  });
 });
 
 test('split basket quote preserves both lot identifiers and component groups', async () => {
