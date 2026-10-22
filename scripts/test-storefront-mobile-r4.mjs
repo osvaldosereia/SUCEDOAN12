@@ -17,7 +17,7 @@ assert.ok(mobileStart>=0,'mobile CSS should isolate the decorative banner');
 const mobileRules=root.slice(mobileStart,root.indexOf('@media(min-width:760px){',mobileStart));
 assert.match(mobileRules,/\.home-hero\{[^}]*background-image:none/,'4G/mobile should never fetch decorative hero image');
 assert.match(root,/\.home-hero\{[^}]*home-grocery\.webp/,'desktop should retain existing hero photo');
-assert.match(root,/basket-carousel\.js\?v=20261013-mobile-r4/,'changed image JS must bust browser caches');
+assert.match(root,/basket-carousel\.js\?v=20261021-price-hierarchy-v1/,'changed image JS must bust browser caches');
 assert.match(root,/rel="preconnect" href="https:\/\/ssbesxgaijknwsjbsbcz\.supabase\.co"/,'early API handshake must be retained');
 
 const shell=root.slice(root.indexOf('function renderInitialShell(){'),root.indexOf('function basketCategoryControls('));
