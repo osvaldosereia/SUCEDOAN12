@@ -80,7 +80,8 @@ try{
  assert.equal(await app.evaluate(()=>document.querySelector('#heroOffers')===window.__r4ShellHeroOffers),true,'priority cards must preserve the hero offers action');
  assert.ok(await app.locator('#basketSections .basket-size-card-photo img').first().getAttribute('src'),'first photo must start loading immediately');
  assert.equal(await app.locator('.basket-size-card-photo img').count(),1,'priority basket subgroup should render before the full catalog response');
- assert.deepEqual(await app.locator('#basketSections .basket-subgroup-title').allTextContents(),['Grande'],'first render should only show the first visible subgroup');
+ assert.deepEqual(await app.locator('#basketSections .basket-subgroup-title').allTextContents(),['Escolha o tamanho da cesta'],'home uses one size-picker subgroup');
+ assert.deepEqual(await app.locator('#basketSections .basket-card-title').allTextContents(),['Grande'],'priority response should show only the Grande size card');
  assert.ok(await app.locator('#homeRemainingBaskets').isVisible(),'remaining basket groups should have a non-blocking loading placeholder');
  // Wait until the priority basket is visible before releasing the full API response.
  await app.evaluate(()=>{
@@ -92,7 +93,8 @@ try{
  });
  assert.equal(await app.locator('#basketSections .basket-size-card-photo img').first().getAttribute('fetchpriority'),'high');
  releaseFullCatalog();
- await app.locator('#basketSections .basket-subgroup-title').filter({hasText:'Média'}).waitFor();
+ await app.locator('#basketSections .basket-card-title').filter({hasText:'Média'}).waitFor();
+ assert.deepEqual(await app.locator('#basketSections .basket-card-title').allTextContents(),['Grande','Média'],'full catalog should add the remaining size card');
  assert.equal(await app.locator('.basket-size-card-photo img').count(),2,'the full basket list should fill in after the priority subgroup');
  assert.equal(await app.locator('#homeRemainingBaskets').count(),0,'the loading placeholder should be replaced by the full basket list');
  const preserved=await app.evaluate(()=>({
