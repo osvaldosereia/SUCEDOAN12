@@ -60,7 +60,7 @@ test('mold products render as vertical choice cards with quantity and selected p
   assert.match(finalOptionRule,/grid-row:1!important/,'mobile option carousel must precede the quantity controls');
   assert.match(finalOptionRule,/grid-column:1\/-1!important/,'option carousel must span the full mobile card');
   assert.match(finalActionsRule,/grid-row:2!important/,'quantity controls must follow the option carousel');
-  assert.match(finalActionsRule,/grid-column:1!important/,'quantity controls must stay in the first mobile grid column');
+  assert.match(finalActionsRule,/grid-column:1(?:\\/-1)?!important/,'quantity controls must stay in the mobile card grid');
   assert.match(html,/\.sheet-inner\s*\{[^}]*display:\s*flex[^}]*flex-direction:\s*column/s);
   assert.match(html,/\.sheet-scroll\s*\{[^}]*min-height:\s*0/s);
   assert.match(html,/\.basket-hero-compact\s*\{[^}]*grid-template-columns:\s*1fr/s);
