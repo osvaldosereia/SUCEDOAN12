@@ -68,3 +68,20 @@ test('split basket quote preserves both lot identifiers and component groups', a
   assert.equal(quote.payload.food_lot_id, 'food-1');
   assert.equal(quote.payload.items[0].component_group, 'food');
 });
+
+test('zero component quantity stays zero in quote and checkout payload', async () => {
+  const { basketQuoteRequest, orderPayload, orderLines } = await import('../src/cart.js');
+  const component = { position_id: 'position-1', product_id: 'product-2', quantity: 0, base_quantity: 4 };
+  const basket = { type: 'basket', id: 'basket-1', mold_mode: true, qty: 1, components: [component] };
+  assert.equal(basketQuoteRequest(basket, [component]).payload.items[0].quantity, 0);
+  assert.equal(orderPayload([basket]).items[0].components[0].quantity, 0);
+  assert.equal(orderLines([basket])[1].quantity, 0);
+});
+
+test('checkout component rows retain the basket and component index for quantity edits', () => {
+  const row = orderLines([{ type: 'basket', id: 'basket-1', qty: 1, components: [
+    { product_id: 'product-2', quantity: 2 }
+  ] }])[1];
+  assert.equal(row.basket_id, 'basket-1');
+  assert.equal(row.component_index, 0);
+});
