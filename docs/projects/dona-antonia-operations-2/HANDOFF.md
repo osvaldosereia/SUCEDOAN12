@@ -2,6 +2,22 @@
 
 > Atualização documental: 2026-10-22. Os checkpoints operacionais abaixo são históricos; confirme runtime e banco antes de qualquer ação operacional.
 
+## Checkpoint pós-integração — 2026-10-22 (PR #1284: ledger da migration)
+
+- Main atual: `d9af3d38bb197507f07d8773d74668a95eeef351`, squash merge da PR #1284. O commit de implementação foi `3c3f022a51d551de8305e341e26a0889f4743d37`; o checkpoint detalhado entrou na mesma PR no commit `c2511569ddab3c3839a39b5b601589f6cf52aff6`.
+- Arquivos: atualizado `.github/workflows/basket-lot-helper-grant-ci.yml`; atualizado `scripts/test-basket-lot-helper-grant.mjs`; removido `supabase/migrations/20261022205411_basket_lot_helper_direct_execute_revoke.sql`; adicionado `supabase/migrations/20261022205909_basket_lot_helper_direct_execute_revoke.sql`; atualizados este HANDOFF e `IMPLEMENTATION-ROADMAP.md`.
+- No projeto canônico `ssbesxgaijknwsjbsbcz`, o ledger segue com versão `20261022205909` e nome `20261022205411_basket_lot_helper_direct_execute_revoke`. A migration de ACL aplicada pela #1283 não foi reaplicada na #1284 nem após o merge. A #1284 é somente alinhamento do nome-fonte/teste/workflow.
+- Revalidação pós-merge: projeto ACTIVE_HEALTHY em sa-east-1, PostgreSQL 17.6.1.166; ACL do helper permanece `{postgres=X/postgres,service_role=X/postgres}`, `authenticated_execute=false`, `anon_execute=false`, SECDEF owner postgres, search_path vazio. A RPC protegida continua coberta pelos testes permitidos/negados da #1283.
+- Segurança: SECURITY DEFINER executáveis por authenticated = 42 (eram 43 antes da #1283); search_path mutável = 0; 228 RLS sem policy (INFO) e 1 proteção de senha vazada (WARN). Sem grants/policies amplos. Branch dev `da6-qa-20261009` permanece MIGRATIONS_FAILED.
+- CI: contrato da #1284 passou no run #39854085809 (commit `3c3f022a51d551de8305e341e26a0889f4743d37`); PR #1284 foi integrada pela rota normal, sem revisão solicitada. O workflow independente Basket kit editor #39854086139 ainda aparecia em andamento instalando Chromium; ele não alterou arquivos de Cestas e não impediu o merge. Nenhum gate obrigatório adicional foi informado pelo GitHub.
+- Publicação/smoke: sem alteração de runtime, frontend, rota ou Edge Function; portanto nenhuma publicação do site/Admin foi necessária. Não houve smoke interativo das rotas porque o navegador conectado não forneceu acesso ao site/Admin nesta rodada. Não declarar a implantação de UI como verificada.
+- Rollback: revert da PR #1284 restaura somente o nome anterior do arquivo e os caminhos do teste/workflow, sem efeito de banco. Rollback do ACL aplicado na #1283 é o GRANT exato: `GRANT EXECUTE ON FUNCTION public.basket_lot_admin_allowed_v1() TO authenticated;`.
+- Prefixo `admin1` revalidado e preservado: `admin1-products-read-v1` ACTIVE v4, `verify_jwt=false`, em ssbesxgaijknwsjbsbcz; `admin1-legacy-catalog-read-v1` ACTIVE v2, `verify_jwt=false`, em `xaoeldjuxzsdsblimzxo`. Sem migração, desligamento ou alteração de rota. Público continua em `/`; Admin em `/vitrine/admin/`.
+
+### Próxima tarefa exata
+
+Comparar somente leitura a versão/hash publicada de `admin-service-intelligence-v1` no projeto canônico com o código em main e os arquivos de compras/XML versionados; documentar drift funcional concreto antes de qualquer deploy. Se houver drift que exija publicação, preparar teste e preflight específicos. A workflow de deploy é manual em main, mas o secret `SUPABASE_ACCESS_TOKEN` segue inválido conforme run #39848977831; a atualização do segredo cabe ao proprietário. Não disparar deploy sem credencial válida. Acompanhar apenas ciclos naturais do cron EAN e aguardar sessão fisicamente verificada.
+
 ## Checkpoint de execução — 2026-10-22 (R11: ACL do helper de lotes e alinhamento do ledger)
 
 - Base revalidada antes da edição: main `a09f26a60ef774465f7872db3574613f799ad963`. A #1269 está integrada; a correção de ACL foi integrada pela PR #1283 no mesmo commit. Esta correção de versionamento está na PR #1284, branch `agent/basket-lot-ledger-align-20261022`, commit de implementação `3c3f022a51d551de8305e341e26a0889f4743d37`.
