@@ -31,3 +31,15 @@ export function orderPayload(cart, checkout = {}) {
     }))
   };
 }
+
+export function minimumOrderStatus(totalCents, minimumCents) {
+  const remainingCents = Math.max(0, Number(minimumCents) - Number(totalCents));
+  return { meetsMinimum: remainingCents === 0, remainingCents };
+}
+
+export function basketQuoteRequest(basket, items) {
+  if (basket?.mold_mode === true) return { action: 'basket_mold_quote', payload: { basket_id: basket.id, composition_number: Number(basket.composition_number || 1), items: items.map(item => ({ position_id: item.position_id, product_id: item.product_id })) } };
+  const rows = items.map(item => ({ product_id: item.product_id, quantity: Number(item.quantity || 0) }));
+  if (basket?.split_mode === true) return { action: 'basket_quote', payload: { basket_id: basket.id, food_lot_id: basket.food_lot_id, hygiene_lot_id: basket.hygiene_lot_id, food_lot_code: basket.food_lot_code, hygiene_lot_code: basket.hygiene_lot_code, items: items.map((item, index) => ({ ...rows[index], component_group: item.component_group })) } };
+  return { action: 'basket_quote', payload: { basket_id: basket.id, lot_id: basket.lot_id || null, items: rows } };
+}
