@@ -3,6 +3,20 @@
 > Aprovado para implantação segura em 2026-09-25. Executar por homologação, shadow/canary e rollback; não fazer big-bang.
 > Atualizado em 2026-10-22 após validação do estado real no GitHub, site em uso e Supabase.
 
+### Checkpoint de execução — 2026-10-22 (R13: telemetria segura de resultado por ação)
+
+- Main antes da mudança: 13edd3d43a837d33c62a084643fde909e68d269c. A implementação da PR #1290 foi integrada por squash em 9b8710e6981e5e664ce7f59fd186c552054e07f0; branch/head agent/admin-service-outcome-telemetry-20261022 / e4f966cb409fbc2c0999c91ee44b9cd370852837. PR: https://github.com/osvaldosereia/SUCEDOAN12/pull/1290.
+- Mudança: instrumentação de saída do dispatcher de admin-service-intelligence-v1 com allowlist fixa das 41 ações, status HTTP e classe de erro de baixa cardinalidade. Só quatro campos allowlisted são logados; payload, PII, identificadores e detalhes de erro/provedores são excluídos. Resposta original e propagação de exceções foram preservadas.
+- Arquivos: supabase/functions/admin-service-intelligence-v1/index.ts; supabase/functions/admin-service-intelligence-v1/_shared/admin-service-outcome-telemetry.mjs; scripts/test-admin-service-outcome-telemetry.mjs; .github/workflows/admin-service-outcome-telemetry-ci.yml. Commits de implementação/teste/CI: 97851f30b9c035a793ff108571020af49b3e9a2a, 12a1ea05c819539be52ba307c02d834e2985f5fe, 4a950744715d0832a77eb6bf588236d4f0c84133, cef284d15cf0192a79e221ff400c43fe775dc7f4 e e4f966cb409fbc2c0999c91ee44b9cd370852837.
+- Verificação: teste de contrato local passou em Node v24.19.0; workflow dedicado e nove workflows adicionais da PR passaram na head final (incluindo #39869720058); no merge, o workflow dedicado #39869839458 e os demais workflows de push iniciados para o commit também concluíram com sucesso. A tentativa inicial de verificar todo o entrypoint com Deno reportou 178 diagnósticos em código legado inalterado; o CI final verifica o contrato da integração e faz deno check somente do helper.
+- Supabase alvo: projeto canônico ssbesxgaijknwsjbsbcz, ACTIVE_HEALTHY em sa-east-1, PostgreSQL 17.6.1.166. Função ainda ACTIVE v377 com hash 543b00c23a468f361ce00c63a4ee81a537daed1a7e6f14cce33082e0676f5bb3; a telemetria nova não foi implantada. Nenhuma migration/configuração/dado/policy/grant/função foi aplicada. Deploy continua bloqueado pelo erro já registrado de SUPABASE_ACCESS_TOKEN no run #39848977831; não foi contornado.
+- Smoke somente leitura em 2026-10-22: site / e Vitrine Admin /vitrine/admin/ abriram; cesta vazia, sem pedido. A rota foi mantida. O check do runtime do Admin não se aplica porque nenhum arquivo desse runtime foi alterado.
+- Publicação confirmada: merge no repositório; não há evidência de deploy da função. Rollback: revert do merge da PR #1290; sem rollback de banco, porque não houve mutação Supabase.
+
+### Próxima tarefa de código/operação
+
+Após o proprietário renovar/validar SUPABASE_ACCESS_TOKEN, publicar o SHA atual de main no projeto canônico, conferir versão/hash e analisar telemetria agregada por ação/status/classe para reproduzir e corrigir a origem dos 502 com teste. Enquanto a credencial estiver inválida, não acionar o deploy nem contorná-lo por outra credencial; seguir uma tarefa independente do roadmap que possa ser implementada e verificada sem essa publicação.
+
 ## REFORMA CONTÍNUA DO SISTEMA E DO SITE PÚBLICO — 2026-10-22
 
 ### Checkpoint de execução — 2026-10-22 (R12: paridade do runtime de inteligência de serviço)
