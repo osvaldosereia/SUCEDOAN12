@@ -1,6 +1,6 @@
-import fs from 'node:fs';
+import {readAdminUiSource} from './helpers/admin-ui-source.mjs';
 
-const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+const html=readAdminUiSource();
 const must=(v,m)=>{if(!v)throw new Error(m)};
 
 must(html.includes("deliveryCatalog:{regions:[],drivers:[],vehicles:[]}"),'Smart Delivery catalog state missing');
