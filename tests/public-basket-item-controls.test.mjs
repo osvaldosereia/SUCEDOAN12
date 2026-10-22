@@ -54,6 +54,7 @@ test('mold products render as vertical choice cards with quantity and selected p
   assert.match(html,/data-mold-option-load=/);
   assert.match(html,/carouselScroll=new Map/);
   assert.match(html,/\.basket-edit-list \.basket-item-card\s*\{[^}]*grid-template-columns:\s*86px\s+minmax\(0,1fr\)/s);
+  assert.match(html,/\.basket-edit-list \.basket-item-mold-card\s*\{[^}]*grid-template-columns:\s*minmax\(0,1fr\)!important/s,'mold cards override the higher-specificity legacy basket grid on desktop');
   assert.match(html,/\.sheet-inner\s*\{[^}]*display:\s*flex[^}]*flex-direction:\s*column/s);
   assert.match(html,/\.sheet-scroll\s*\{[^}]*min-height:\s*0/s);
   assert.match(html,/\.basket-hero-compact\s*\{[^}]*grid-template-columns:\s*1fr/s);
