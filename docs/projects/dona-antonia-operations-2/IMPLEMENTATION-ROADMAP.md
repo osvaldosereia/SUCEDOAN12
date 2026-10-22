@@ -5,6 +5,16 @@
 
 ## REFORMA CONTÍNUA DO SISTEMA E DO SITE PÚBLICO — 2026-10-22
 
+### Checkpoint de execução — 2026-10-22 (R10: auth do cron EAN e guarda de deploy)
+
+- Main avançou de b68ebc2539878f031fdcbf5cf5db8683db9255fa para a307e4eadfe19e02fc212d25a344c484749f337b após #1279. #1278 corrigiu a autenticação do cron EAN: admin-products-live-v1 v183 estava com verify_jwt=true contra o contrato versionado false; como o cron usa header interno sem JWT, o gateway retornava 401 antes do handler. A v184 está ACTIVE, verify_jwt=false, hash d087c872ed23fa03dc2c3c784255b2bada1129de62b07db6f558c8ab7fd6291e no projeto canônico ssbesxgaijknwsjbsbcz.
+- Logs naturais mostram 401 às 20:28:00.202Z (v183) e 200 às 20:30:02.678Z, 20:32:01.980Z e 20:34:02.289Z (v184). A auditoria SQL entre 20:28Z e 20:35Z encontrou 0 sessões EAN verificadas e 0 auditorias target_key=verified; nenhum efeito Bling ocorreu. Não houve invocação manual. Flags live foram preservadas.
+- #1279 (merge a307e4eadfe19e02fc212d25a344c484749f337b) restringe .github/workflows/xml-r31-supabase-deploy-once.yml a workflow_dispatch em main, remove --debug e testa o gate. O run #39848977831 disparou por pull_request e falhou antes de deploy com 401 Invalid access token; o secret SUPABASE_ACCESS_TOKEN não foi exibido nem alterado. Próxima execução manual depende de atualizar essa credencial.
+- Testes/CI: node scripts/test-xml-r31-deploy-workflow-guard.mjs, parsing YAML e diff check passaram; CI do guarda #39850146584/#39850198538 passou. O teste OPS2 #39848425463 e Admin Products #39848977723 passaram. Pages no commit a307 #39850185015 passou.
+- Smoke sem escrita: site / abriu a vitrine (5 cestas, 4 ofertas); Admin /vitrine/admin/ carregou Central e as 19 áreas. Nenhum pedido, checkout, mensagem ou operação fiscal/financeira/estoque foi criado.
+- Sem migrations, DDL, correção de dados, RLS, grants ou flags Supabase nesta rodada. A única mudança canônica foi implantação de admin-products-live-v1 v184. Rollback da função é reimplantar a fonte v183 com JWT obrigatório (reintroduz o 401 do cron); sem rollback de DB. A workflow de deploy pode ser revertida pela #1279, o que reabre risco de tentativa de publicação em PR.
+- O checkpoint histórico que atribuía o 401 à leitura Produtos está corrigido: o 401 era exclusivamente do cron ops2_recover_ean_verified.
+
 ### Decisão de arquitetura
 
 Esta reforma é do sistema já usado pela Dona Antônia. Não criar outro site, outro Admin, outro app, outro banco ou um segundo fluxo operacional. O site público continua na raiz do domínio. O Admin atual em /vitrine/admin/ é a única aplicação administrativa e continuará sendo ajustado nesse caminho. A migração para /admin/ está fora do escopo atual; /admin/ pode ser reconsiderado depois, se houver necessidade. O catálogo em /catalogo-admin/ continua sendo somente uma prévia pública de leitura, não um segundo Admin.
@@ -114,7 +124,9 @@ Registrar em cada lote: arquivos, commit/PR, comando de teste e resultado, verif
 
 ### Próxima tarefa de código
 
-Investigar a intermitência da aba Produtos em `/vitrine/admin/`: correlacionar o POST 401 de `admin-products-live-v1` v183 com a rechecagem posterior que carregou cinco produtos; rastrear JWT/step-up e captura de erros para saber se o 401 vem da leitura, de chamada auxiliar ou de uma tentativa recuperada. Reproduzir sem escrita, preservar autenticação e cobrir sucesso/401/erro de transporte sem spinner infinito. Rodar o build check do runtime, testes da área e smoke de leitura. Observar chamadas naturais ao leitor Admin1 v4 e mapear o wrapper legado v2 em `xaoeldjuxzsdsblimzxo` antes de alterar qualquer função. Não mudar rota nem executar DDL antes de reconciliar o ledger.
+Fazer comparação somente leitura do deploy ativo admin-service-intelligence-v1 no projeto canônico com main/arquivos XML; listar versão/hash e drift concreto. Se houver divergência que exija implantação, criar teste e preflight específicos antes de executar. A workflow de deploy foi restringida a manual em main e exige atualizar o secret SUPABASE_ACCESS_TOKEN, inválido segundo o run #39848977831; não disparar enquanto isso não for resolvido. Em paralelo, acompanhar apenas o cron EAN natural até existir sessão fisicamente verificada; sem POST manual, pedido sintético ou alteração de status.
+
+
 
 ## Objetivo da programação
 Concluir a migração para o desenho Operations 2.0 sem interromper o site público, usando o Bling como ERP/fonte oficial dos domínios homologados e mantendo o Vitrine/Admin como camada operacional simples.
