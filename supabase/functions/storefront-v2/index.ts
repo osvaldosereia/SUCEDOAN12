@@ -403,7 +403,7 @@ async function homeSizeCards(){
   const categories=categoriesQ.data||[],subcategories=subcategoriesQ.data||[];
   const complete=categories.find((c:any)=>String(c.slug||"")==="cestas-completas");
   if(!complete)return {ok:true,version:"home-size-shell-v1",priority:false,home_size_cards:true,baskets:[],categories:CATEGORIES,basket_categories:[]};
-  const sizes=subcategories.filter((s:any)=>String(s.category_id)===String(complete.id));
+  const sizeOrder=["economica","mini","pequena","media","grande"];\n  const keyOf=(value:any)=>String(value||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLocaleLowerCase("pt-BR");\n  const sizes=subcategories.filter((s:any)=>String(s.category_id)===String(complete.id)&&sizeOrder.includes(keyOf(s.name))).sort((a:any,b:any)=>sizeOrder.indexOf(keyOf(a.name))-sizeOrder.indexOf(keyOf(b.name)));
   const templatesQ=await db.from("basket_templates").select("id,name,image_url,is_active,category_id,subcategory_id,sort_order").eq("is_active",true).eq("category_id",complete.id).order("sort_order");
   if(templatesQ.error)throw templatesQ.error;
   const templates=templatesQ.data||[],templateIds=templates.map((t:any)=>String(t.id));
@@ -416,10 +416,10 @@ async function homeSizeCards(){
     if(!template)continue;
     const mold=molds.get(String(template.id)) as any;
     if(String(mold?.metadata?.transition_mode||"")==="legacy_first")continue;
-    const key=String(sub.name||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("pt-BR");
+    const key=keyOf(sub.name);
     sizeCards.push({id:String(template.id),card_key:String(template.id)+"@1",name:String(sub.name||template.name||"Cesta"),model_name:String(sub.name||template.name||"Cesta"),image_url:template.image_url||"",category_id:String(complete.id),category_name:complete.name,category_slug:complete.slug,category_sort_order:Number(complete.sort_order||0),subcategory_id:String(sub.id),subcategory_name:sub.name,subcategory_sort_order:Number(sub.sort_order||0),size_key:key,size_card:true,home_shell:true,mold_mode:true});
   }
-  return {ok:true,version:"home-size-shell-v1",priority:false,home_size_cards:true,baskets:sizeCards,categories:CATEGORIES,basket_categories:[{...complete,subcategories:sizes}]};
+  if(sizeCards.length!==sizeOrder.length)throw new Error("home_size_cards_incomplete");\n  return {ok:true,version:"home-size-shell-v1",priority:false,home_size_cards:true,baskets:sizeCards,categories:CATEGORIES,basket_categories:[{...complete,subcategories:sizes}]};
 }
 
 function priorityFromPublicHome(full:any){
