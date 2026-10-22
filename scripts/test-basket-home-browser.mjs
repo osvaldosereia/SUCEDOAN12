@@ -46,7 +46,7 @@ try{
      const action=u.searchParams.get('action');
      const taxonomy=[{id:'cat',slug:'cestas-completas',name:'Cestas Completas',subcategories:[{id:'sub',name:'Grande'},{id:'sub2',name:'Média'}]},{id:'food',slug:'cestas-so-alimentos',name:'Cestas Só Alimentos',subcategories:[]},{id:'kits',slug:'kits-promocionais',name:'Kits Promocionais',subcategories:[]}];
      if(action==='home_priority'){await priorityCatalogGate;return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,priority:true,baskets:[offered],basket_categories:taxonomy,categories:[]})});}
-     if(action==='home'){await fullCatalogGate;return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,baskets:[offered,later],basket_categories:taxonomy,categories:[]})})}
+     if(action==='home'){await fullCatalogGate;return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,priority:false,baskets:[offered,later],basket_categories:taxonomy,categories:[]})})}
      if(action==='products'){await categoryProductsGate;return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,products:[],next_offset:null})})}
      if(action==='subcategories')return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,subcategories:[]})});
      if(action==='basket_quote'){
