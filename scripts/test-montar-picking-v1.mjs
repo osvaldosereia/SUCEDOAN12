@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
+import {readAdminUiSource} from './helpers/admin-ui-source.mjs';
 
 const page=readFileSync('montar/index.html','utf8');
 const script=readFileSync('montar/app.js','utf8');
 const css=readFileSync('montar/styles.css','utf8');
 const migration=readFileSync('supabase/sql/20261008_montar_manual_queue_feed_v1.sql','utf8');
-const admin=readFileSync('vitrine/admin/index.html','utf8');
+const admin=readAdminUiSource();
 new vm.Script(script,{filename:'montar/app.js'});
 
 assert.match(page,/<title>Separação de pedidos \| Dona Antônia<\/title>/);
