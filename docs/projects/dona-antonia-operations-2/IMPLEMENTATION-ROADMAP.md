@@ -7,7 +7,7 @@
 
 ### Decisão de arquitetura
 
-Esta reforma é do sistema já usado pela Dona Antônia. Não criar outro site, outro Admin, outro app, outro banco ou um segundo fluxo operacional. O site público continua na raiz do domínio. O Admin atual é a única aplicação administrativa; a entrada desejada é /admin/. A URL antiga /vitrine/admin/ deve continuar funcionando durante a transição ou redirecionar para /admin/, sem manter duas cópias do painel. O catálogo em /catalogo-admin/ continua sendo somente uma prévia pública de leitura, não um segundo Admin.
+Esta reforma é do sistema já usado pela Dona Antônia. Não criar outro site, outro Admin, outro app, outro banco ou um segundo fluxo operacional. O site público continua na raiz do domínio. O Admin atual em /vitrine/admin/ é a única aplicação administrativa e continuará sendo ajustado nesse caminho. A migração para /admin/ está fora do escopo atual; /admin/ pode ser reconsiderado depois, se houver necessidade. O catálogo em /catalogo-admin/ continua sendo somente uma prévia pública de leitura, não um segundo Admin.
 
 Fonte canônica: repositório osvaldosereia/SUCEDOAN12 e Supabase ssbesxgaijknwsjbsbcz. O projeto Supabase antigo não deve voltar a receber chamadas. Não remover caminhos, tabelas, funções, dados ou integrações até provar que não têm uso. Manter pedidos e histórico, catálogo, estoque Bling, fiscal, financeiro, WhatsApp e regras operacionais.
 
@@ -18,17 +18,17 @@ Fonte canônica: repositório osvaldosereia/SUCEDOAN12 e Supabase ssbesxgaijknws
 - A troca de produto em uma cesta pública foi testada: escolher Arroz Tio Bonini atualizou o item e o total de R$ 419,30 para R$ 425,70. O teste parou antes de adicionar a cesta ou enviar pedido.
 - A página pública raiz concentra cerca de 200 KB de HTML, com aproximadamente 138 KB de JavaScript embutido.
 - O Admin atual usa vitrine/admin/admin-runtime.js, com cerca de 642 KB, mais nove fragmentos de texto ordenados em runtime-src. Eles recompõem uma única IIFE e ainda não são módulos independentes. O CSS principal tem cerca de 126 KB.
-- Existem três arquivos de teste no repositório; a cobertura atual ainda depende bastante de verificações estáticas. Ampliar primeiro os testes diretamente relacionados à mudança feita.
-- No projeto Supabase canônico há 142 Edge Functions ativas. Os advisors de segurança registravam 3 avisos de search_path mutável, 43 funções SECURITY DEFINER executáveis por authenticated, 1 aviso de proteção contra senhas vazadas e 228 tabelas com RLS sem policy. O último grupo inclui tabelas privadas e políticas de negação padrão; classificar tabela por tabela antes de mudar. Avisos de performance: 77 FKs sem índice e 97 índices sem uso, a revisar com consultas e carga reais.
+- O diretório tests/ tem três arquivos, além de dezenas de scripts/test-* na pasta scripts/. Há 66 workflows de GitHub; falta mapear quais executam os gates relevantes para cada área. Cada lote deve rodar o build e os testes direcionados correspondentes.
+- No projeto Supabase canônico há 142 Edge Functions ativas. Os advisors de segurança registravam 3 avisos de search_path mutável, 43 funções SECURITY DEFINER executáveis por authenticated, 1 aviso de proteção contra senhas vazadas e 228 tabelas com RLS sem policy. O último grupo inclui tabelas privadas e políticas de negação padrão; classificar tabela por tabela antes de mudar. Avisos de performance: 77 FKs sem índice e 97 índices sem uso, a revisar com consultas e carga reais. Há também admin1-products-read-v1 ativa (v3) e uma função admin1-legacy-catalog-read-v1 que a chama; isso requer reconciliar referências no runtime e no deploy antes de decidir qualquer remoção. Não desativar função pelo nome.
 - Este snapshot é uma fotografia, não um valor permanente. Atualizar a baseline antes de cada onda; o roadmap operacional existente e parte do handoff têm datas de setembro e não substituem a leitura do runtime atual.
 
 ### Ordem de execução
 
 #### Onda 0 — ajustes urgentes e rede de segurança
 
-1. Corrigir /admin/ para abrir o mesmo painel atual, mantendo / como site público e dando compatibilidade à URL /vitrine/admin/. Critério: as três rotas levam aos destinos esperados e só há uma implementação administrativa.
+1. Preparar a rede de segurança do Admin em uso: mapear as 17 áreas, a entrada /vitrine/admin/, navegação, estado compartilhado, APIs, testes e workflows. Critério: escolher o primeiro lote de baixo risco com comportamento atual e comando de verificação conhecidos. Não migrar a URL nesta etapa.
 2. Registrar um conjunto curto de regressão da vitrine: carregamento inicial, preços de cesta, troca de opção, recálculo do total e estado sem pedido submetido. Critério: a correção recente de variação permanece coberta e não há chamada de criação de pedido no teste.
-3. Reconciliar a árvore publicada, o commit de main e as versões das funções críticas no Supabase. Critério: cada função ativa do fluxo principal tem fonte versionada identificada; divergências entram em uma lista de correção, sem deploy cego.
+3. Reconciliar a árvore publicada, o commit de main e as versões das funções críticas no Supabase, incluindo Admin1. Critério: cada função ativa do fluxo principal tem fonte versionada e consumidor identificado; divergências entram em uma lista de correção, sem deploy cego.
 4. Classificar os avisos de segurança do Supabase começando por funções SECURITY DEFINER, search_path e autenticação. Corrigir somente permissões comprovadamente excessivas, com teste de acesso permitido e negado. Não adicionar policies abertas para silenciar o advisor.
 
 #### Onda 1 — organizar o Admin existente
@@ -72,7 +72,7 @@ Registrar em cada lote: arquivos, commit/PR, comando de teste e resultado, verif
 
 ### Próxima tarefa de código
 
-Implementar a entrada /admin/ no mesmo Admin existente e cobrir a compatibilidade de /vitrine/admin/. Não modificar ainda os fluxos de negócio. Verificar /, /admin/ e /vitrine/admin/ e confirmar que cesta/checkout continuam presentes na raiz; só então prosseguir para o primeiro lote de organização estrutural do Admin.
+Trabalhar dentro de `vitrine/admin/`, mantendo a rota e o painel atuais. Mapear dependências e testes para selecionar um fluxo de baixo risco; então fazer um único ajuste estrutural pequeno, sem alterar regras de negócio. Executar `python3 scripts/build-vitrine-admin-runtime.py --check`, o teste direcionado encontrado e um smoke rápido da área alterada. Não criar outro Admin nem migrar a URL.
 
 ## Objetivo da programação
 Concluir a migração para o desenho Operations 2.0 sem interromper o site público, usando o Bling como ERP/fonte oficial dos domínios homologados e mantendo o Vitrine/Admin como camada operacional simples.
