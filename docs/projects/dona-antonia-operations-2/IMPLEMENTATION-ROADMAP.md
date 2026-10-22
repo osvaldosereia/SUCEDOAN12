@@ -1,7 +1,106 @@
 # Dona Antônia Operations 2.0 — IMPLEMENTATION ROADMAP
 
 > Aprovado para implantação segura em 2026-09-25. Executar por homologação, shadow/canary e rollback; não fazer big-bang.
-> Atualizado em 2026-09-25 após validação do estado real no GitHub e Supabase.
+> Atualizado em 2026-10-22 após validação do estado real no GitHub, site em uso e Supabase.
+
+## REFORMA CONTÍNUA DO SISTEMA E DO SITE PÚBLICO — 2026-10-22
+
+### Decisão de arquitetura
+
+Esta reforma é do sistema já usado pela Dona Antônia. Não criar outro site, outro Admin, outro app, outro banco ou um segundo fluxo operacional. O site público continua na raiz do domínio. O Admin atual em /vitrine/admin/ é a única aplicação administrativa e continuará sendo ajustado nesse caminho. A migração para /admin/ está fora do escopo atual; /admin/ pode ser reconsiderado depois, se houver necessidade. O catálogo em /catalogo-admin/ continua sendo somente uma prévia pública de leitura, não um segundo Admin.
+
+Fonte canônica: repositório osvaldosereia/SUCEDOAN12 e Supabase ssbesxgaijknwsjbsbcz. O projeto Supabase antigo não deve voltar a receber chamadas. Não remover caminhos, tabelas, funções, dados ou integrações até provar que não têm uso. Manter pedidos e histórico, catálogo, estoque Bling, fiscal, financeiro, WhatsApp e regras operacionais.
+
+### Baseline verificado em 2026-10-22
+
+- main estava no commit 24719f9c57b2d362b1e7c5b197dc57fc66a6b8f5. A árvore principal já não contém os diretórios experimentais /site e /admin1.
+- No site ao vivo, / abre a vitrine pública; /admin/ retorna para a raiz e não abre o painel; /vitrine/admin/ abre o Admin em uso.
+- A troca de produto em uma cesta pública foi testada: escolher Arroz Tio Bonini atualizou o item e o total de R$ 419,30 para R$ 425,70. O teste parou antes de adicionar a cesta ou enviar pedido.
+- A página pública raiz concentra cerca de 200 KB de HTML, com aproximadamente 138 KB de JavaScript embutido.
+- O Admin atual usa vitrine/admin/admin-runtime.js, com cerca de 642 KB, mais nove fragmentos de texto ordenados em runtime-src. Eles recompõem uma única IIFE e ainda não são módulos independentes. O CSS principal tem cerca de 126 KB.
+- O diretório tests/ tem três arquivos, além de dezenas de scripts/test-* na pasta scripts/. Há 66 workflows de GitHub; falta mapear quais executam os gates relevantes para cada área. Cada lote deve rodar o build e os testes direcionados correspondentes.
+- No projeto Supabase canônico há 142 Edge Functions ativas. Os advisors de segurança registravam 3 avisos de search_path mutável, 43 funções SECURITY DEFINER executáveis por authenticated, 1 aviso de proteção contra senhas vazadas e 228 tabelas com RLS sem policy. O último grupo inclui tabelas privadas e políticas de negação padrão; classificar tabela por tabela antes de mudar. Avisos de performance: 77 FKs sem índice e 97 índices sem uso, a revisar com consultas e carga reais. A admin1-products-read-v1 (v3) está ativa e teve chamadas reais nas últimas 24 h (56 GET products, 42 categories, 13 product, 2 matches e 1 health); origem e consumidor ainda não aparecem nos logs. O wrapper admin1-legacy-catalog-read-v1 existe no repositório, mas não constava como deployment ativo nesta revalidação. Manter a função ativa e identificar o consumidor antes de qualquer mudança.
+- Este snapshot é uma fotografia, não um valor permanente. Atualizar a baseline antes de cada onda; o roadmap operacional existente e parte do handoff têm datas de setembro e não substituem a leitura do runtime atual.
+
+### Checkpoint de execução — 2026-10-22
+
+
+
+- A PR #1270 (`agent/vitrine-products-hardening`, HEAD `5197aa4a8e9951a9a1a942fb0d93e9ed4425cd96`) implementa o primeiro lote da sessão Produtos. Seu workflow `products-session` passou: build/checker do runtime, sintaxe e três testes da área. O conjunto amplo terminou com 10/19 checks em falha em pedidos/fiscal, checkout, marketing, ANA/Admin legado e cesta simples; PR continua aberta e sem deploy.
+
+- No smoke da página publicada, `/` recalculou a cesta de R$ 419,30 para R$ 425,70 ao selecionar uma variação e nenhum pedido foi criado. `/vitrine/admin/` abriu; Produtos carregou 5 cards com mais 5 disponíveis. A navegação oferece 19 áreas/entradas (Central, Atendimento, ANA, Pedidos, Expedição, Entregador, Fechamento, Produtos, Cestas, Validades, Orçamentos, Clientes, Marketing, Compras/XML, Leitura EAN, Balanço, Gôndolas, Financeiro e Bling técnico).
+
+- No Supabase canônico `ssbesxgaijknwsjbsbcz`, `admin1-products-read-v1` está ativa (v3) e recebeu 114 GETs no último dia; origens não aparecem nos logs, então o consumidor permanece por identificar. `admin1-legacy-catalog-read-v1` não consta como deployment ativo observado. Nenhuma função foi desligada e nenhuma migration/configuração foi aplicada.
+
+- Há divergência impeditiva para DDL: 1.244 versões no ledger do banco contra 180 arquivos em `main`; somente 31 timestamps coincidem. O ledger mais recente é `20261022114704 basket_mold_zero_quantity_v1`, posterior ao último arquivo versionado (`20261022103000 basket_mold_editable_quantity_v1`). O projeto de staging consultado não compartilha o schema canônico; não serve para homologar essa correção.
+
+- Advisors continuam sem alteração: 3 avisos de search_path mutável, 43 funções SECURITY DEFINER executáveis por authenticated e 228 tabelas RLS sem policy (sem criação de policies abertas). Antes de mudar funções ou grants, primeiro reconstruir a correspondência entre migrations versionadas e estado real; em paralelo, identificar a origem das chamadas `admin1-*`.
+
+
+
+Próxima ação exata: executar no SHA atual de `main` os 10 checks que falharam na PR #1270, estabelecer a linha de base e corrigir o grupo de contratos Admin/runtime obsoletos que reproduzir em `main`; repetir o gate `products-session` e CI amplo antes de integrar. Não aplicar migrations no canônico até reconstruir e validar o ledger.
+
+### Ordem de execução
+
+#### Onda 0 — ajustes urgentes e rede de segurança
+
+1. [Concluída parcialmente em 2026-10-22] Mapear a entrada /vitrine/admin/ e as 19 áreas/entradas observadas; o primeiro lote de baixo risco foi escolhido e codificado na PR #1270. A integração segue bloqueada pelo CI amplo vermelho (10/19 checks), embora o gate dedicado de Produtos esteja verde. Completar a matriz de dependências e corrigir os contratos falhos após confirmar quais já falham em main. Não migrar a URL.
+2. Registrar um conjunto curto de regressão da vitrine: carregamento inicial, preços de cesta, troca de opção, recálculo do total e estado sem pedido submetido. Critério: a correção recente de variação permanece coberta e não há chamada de criação de pedido no teste.
+3. Reconciliar a árvore publicada, o commit de main e as versões das funções críticas no Supabase, incluindo Admin1. Critério: cada função ativa do fluxo principal tem fonte versionada e consumidor identificado; divergências entram em uma lista de correção, sem deploy cego.
+4. Classificar os avisos de segurança do Supabase começando por funções SECURITY DEFINER, search_path e autenticação. Corrigir somente permissões comprovadamente excessivas, com teste de acesso permitido e negado. Não adicionar policies abertas para silenciar o advisor.
+
+#### Onda 1 — organizar o Admin existente
+
+1. Mapear entrada, navegação, módulos, folhas de estilo, chamadas de API, estado compartilhado e pontos de inicialização.
+2. Manter o runtime servido estável enquanto os fragmentos são organizados. A cada lote: editar função ou grupo pequeno, regenerar o runtime e exigir python3 scripts/build-vitrine-admin-runtime.py --check.
+3. Extrair funções puras e dependências explícitas antes de separar módulos por domínio. Preservar ordem e nomes de eventos, funções globais, contratos Supabase e regras de negócio até que testes as protejam.
+4. Depois da paridade estrutural, organizar CSS por domínio sem alterar precedência visual. Testar navegação, modal e viewport correspondentes.
+5. Critério: o Admin atual fica mais fácil de localizar e alterar, sem mudar o comportamento operacional do lote.
+
+#### Onda 2 — organizar o site público existente
+
+1. Manter index.html como entrada de /. Inventariar os blocos de HTML, CSS e JavaScript e suas dependências.
+2. Extrair um bloco por lote para arquivos existentes ou novos dentro do mesmo projeto; não criar uma segunda pasta/site para servir a vitrine.
+3. Priorizar cesta, busca/categorias, produto, carrinho e checkout. Preservar preço, estoque, substituição, mínimo de pedido, região de entrega e integração com o Supabase canônico.
+4. Critério: a mesma URL pública carrega os mesmos fluxos; os testes da cesta e uma verificação visual simples passam depois de cada lote.
+
+#### Onda 3 — contratos do backend e módulos por domínio
+
+Trabalhar um domínio por vez: catálogo/produtos; cestas; clientes; pedidos; estoque; expedição/entregas; compras/XML; Bling; fiscal/financeiro; WhatsApp/atendimento. Documentar entrada, saída, autenticação, efeitos no banco e retries de cada Edge Function chamada pelo domínio. Extrair código compartilhado somente quando as responsabilidades e permissões forem claras. Evitar juntar ou renomear APIs durante uma extração estrutural.
+
+Critério por domínio: contrato registrado, teste do caminho feliz, teste de falha/retry quando houver efeito externo, fonte no GitHub alinhada com a função publicada e rollback conhecido.
+
+#### Onda 4 — dados, segurança e desempenho
+
+1. Auditar policies e grants com os papéis anon, authenticated e service_role; testar acesso negativo e positivo. RLS habilitado sem policy pode ser a negação correta.
+2. Revisar funções SECURITY DEFINER e fixar search_path explicitamente quando aplicável; confirmar proprietário, grants e chamadas antes de alterar.
+3. Medir consultas lentas e planos antes de adicionar ou remover índices. Não excluir índices somente porque o advisor marca “unused”.
+4. Fazer mudanças de schema aditivas, migradas e reversíveis. Preservar histórico e evitar renomear/apagar dados como parte de uma extração de frontend.
+5. Critério: o advisor é acompanhado por achados classificados e cada correção tem teste de segurança e de desempenho.
+
+#### Onda 5 — interface, acessibilidade e limpeza final
+
+Após estabilizar a estrutura e os contratos, corrigir navegação móvel, estados de carregamento/erro, acessibilidade, tempo de carregamento e consistência visual no próprio site e Admin. Remover código, funções, tabelas, crons ou rotas antigas somente depois de busca de referências no repositório, confirmação de ausência de uso no runtime/logs e plano de rollback.
+
+### Regra objetiva para cada ajuste
+
+Um lote contém uma mudança pequena e um domínio. Antes: identificar arquivo, comportamento atual e risco. Durante: preservar contratos e limitar o diff. Depois: executar somente as verificações que cobrem a mudança — sintaxe/build, teste direcionado e smoke de leitura quando necessário. Mudanças com efeitos em pedido, estoque, financeiro, fiscal ou Bling exigem teste em modo seguro e evidência antes da ativação. Não fazer compra, checkout real ou alteração operacional para testar.
+
+Registrar em cada lote: arquivos, commit/PR, comando de teste e resultado, verificação no site quando pertinente, eventual alteração Supabase e rollback. Se falhar, corrigir o lote atual antes de começar outro.
+
+### Execução autônoma horária
+
+- A cada hora, retomar do último checkpoint verificável no repositório, nas PRs e neste roadmap.
+- Buscar o máximo de progresso **validado** por rodada. Podem ser concluídos vários ajustes pequenos quando pertencem ao mesmo domínio, compartilham testes e têm rollback claro. Não misturar alterações independentes só para aumentar o volume.
+- Trabalhar no código em uso: vitrine/Admin em `/vitrine/admin/` e site público em `/`. Não criar Admin/site paralelo e não migrar a rota para `/admin/`.
+- Priorizar a próxima pendência das ondas acima; escolher uma área coerente por rodada. Se um teste falhar, corrigir e repetir os testes do mesmo lote antes de mudar de domínio.
+- Versionar em branch `agent/*`, fazer commits pequenos, manter/abrir PR e registrar arquivos, SHAs, testes, CI, smoke e rollback. Integrar/publicar apenas pelo fluxo já aprovado do repositório, depois dos gates correspondentes.
+- Não alterar diretamente dados operacionais do Supabase, pedidos, estoque, Bling, fiscal, financeiro ou enviar mensagens reais durante as rodadas. Preparar mudanças e testes seguros; qualquer ação sem rollback ou que dependa de evidência humana fica documentada como bloqueio.
+- Ao final de cada rodada, atualizar HANDOFF com resultado comprovado, o que ficou pendente e a próxima tarefa. Desativar a recorrência quando o plano técnico estiver concluído ou restarem somente bloqueios humanos, registrando a lista final.
+
+### Próxima tarefa de código
+
+Trabalhar dentro de `vitrine/admin/`, mantendo a rota e o painel atuais. Mapear dependências e testes para selecionar um fluxo de baixo risco; então fazer um único ajuste estrutural pequeno, sem alterar regras de negócio. Executar `python3 scripts/build-vitrine-admin-runtime.py --check`, o teste direcionado encontrado e um smoke rápido da área alterada. Não criar outro Admin nem migrar a URL.
 
 ## Objetivo da programação
 Concluir a migração para o desenho Operations 2.0 sem interromper o site público, usando o Bling como ERP/fonte oficial dos domínios homologados e mantendo o Vitrine/Admin como camada operacional simples.

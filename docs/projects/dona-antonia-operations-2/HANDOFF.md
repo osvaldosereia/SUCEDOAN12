@@ -1,7 +1,34 @@
 # Dona Antônia Operations 2.0 — HANDOFF
 
+> Atualização documental: 2026-10-22. Os checkpoints operacionais abaixo são históricos; confirme runtime e banco antes de qualquer ação operacional.
+
+## Continuidade da reforma do site e Admin (2026-10-22)
+
+O usuário definiu a reforma gradual do sistema e site existentes. Não criar outro site, outro Admin, outro banco ou implementação paralela. Em 2026-10-22, esclareceu que o trabalho fica no Vitrine Admin existente em `/vitrine/admin/`; migração para `/admin/` está fora do escopo agora. A estratégia canônica está em IMPLEMENTATION-ROADMAP.md, seção “REFORMA CONTÍNUA DO SISTEMA E DO SITE PÚBLICO”.
+
+Baseline observado:
+- Repositório canônico osvaldosereia/SUCEDOAN12; main em 24719f9c57b2d362b1e7c5b197dc57fc66a6b8f5.
+- Supabase canônico ssbesxgaijknwsjbsbcz.
+- Site público ao vivo em /. Admin existente abre em /vitrine/admin/. `/admin/` ainda volta à raiz, mas sua migração foi expressamente adiada e não faz parte do próximo lote.
+- Site público testado: troca de opção de cesta recalculou o total de R$ 419,30 para R$ 425,70; nenhum pedido foi enviado.
+- Nenhuma mudança de runtime, banco ou deploy foi feita nesta atualização documental.
+- Rotina "Reforma Dona Antônia" programada para começar em 22/10/2026 às 12:00 (America/Cuiaba) e repetir de hora em hora. Cada rodada deve maximizar ajustes validados dentro de um domínio coerente, com branch/PR, testes e sem mutações operacionais em produção.
+
+### Rodada executada em 2026-10-22
+
+- O mapeamento inicial do Admin confirmou 19 áreas/entradas em `/vitrine/admin/`: Central, Atendimento, ANA, Pedidos, Expedição, Entregador, Fechamento, Produtos, Cestas, Validades, Orçamentos, Clientes, Marketing, Compras/XML, Leitura EAN, Balanço, Gôndolas, Financeiro e Bling técnico.
+- A sessão Produtos foi implementada na PR #1270 (`agent/vitrine-products-hardening`, HEAD `5197aa4a8e9951a9a1a942fb0d93e9ed4425cd96`): categorias novas preservando valores legados, retomada de salvamento parcial pelo mesmo ID, cache curto de facetas invalidado após mudanças e paginação real. A PR está aberta e não foi publicada.
+- CI direcionado `products-session`: passou integralmente — `python3 scripts/build-vitrine-admin-runtime.py --check`, sintaxe JS e os testes de lista, edição rápida móvel e editor completo. O CI amplo terminou com 10 de 19 checks em falha (pedidos/fiscal, checkout, marketing, ANA/Admin legado e cesta simples); por isso a PR #1270 não foi integrada nem implantada.
+- Smoke do mesmo sistema em uso: `/` recalculou a cesta de R$ 419,30 para R$ 425,70 ao escolher Arroz Tio Bonini; o fluxo foi encerrado sem adicionar a cesta nem criar pedido. `/vitrine/admin/` abriu; a lista Produtos carregou 5 itens e ofereceu mais 5. Nenhuma gravação operacional foi feita.
+- Supabase canônico confirmado: `ssbesxgaijknwsjbsbcz`. `admin1-products-read-v1` segue ativa (v3) e teve chamadas reais em 24 h: 56 GET products, 42 categories, 13 product, 2 matches e 1 health; origem não identificada nos logs. Não desativar. Nenhuma migration, Edge Function ou configuração foi aplicada.
+- O ledger do banco tem 1.244 versões; `main` contém 180 arquivos SQL de migration (175 com prefixo timestamp, 8 timestamps duplicados), com apenas 31 timestamps compartilhados. Há 1.213 versões do banco sem arquivo correspondente e 136 timestamps únicos apenas no repositório. O banco avança até `20261022114704`; o repositório até `20261022103000`. Não aplicar DDL até reconciliar essa divergência.
+- Rollback: sem efeito em produção para reverter. Antes de merge, basta reverter/remover a PR de código; não há alteração de banco ou deploy para desfazer.
+
+Próxima tarefa concreta: reproduzir os 10 checks vermelhos no SHA de `main` `24719f9c57b2d362b1e7c5b197dc57fc66a6b8f5`, separar falhas preexistentes de regressões da PR #1270 e corrigir em lote apenas os contratos de Admin/runtime que estiverem obsoletos; então repetir o CI e integrar pela via normal se os gates estiverem verdes. Em paralelo, manter alterações de Supabase bloqueadas até reconciliar o ledger de migrations.
+
+
 > Documento canônico de continuidade. Atualizar ao final de cada rodada relevante.
-> Última atualização: 2026-09-25.
+
 
 ## Objetivo
 Simplificar a operação da Dona Antônia usando:
