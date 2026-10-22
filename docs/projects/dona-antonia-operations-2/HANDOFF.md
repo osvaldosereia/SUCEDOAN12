@@ -2,6 +2,22 @@
 
 > Atualização documental: 2026-10-22. Os checkpoints operacionais abaixo são históricos; confirme runtime e banco antes de qualquer ação operacional.
 
+## Checkpoint de execução — 2026-10-22 (R12: paridade do runtime de inteligência de serviço)
+
+- Base revalidada: `main` em `b315c1ab6569396ad1d171a917ca76b08f2f6400`; PR #1269 já está integrada. As PRs #1284 e #1285 estão fechadas e merged. Branch deste checkpoint: `agent/admin-service-audit-checkpoint-20261022`.
+- Alvo Supabase confirmado: projeto canônico `ssbesxgaijknwsjbsbcz`, ACTIVE_HEALTHY, sa-east-1, PostgreSQL 17.6.1.166. `admin-service-intelligence-v1` está ACTIVE v377, `verify_jwt=false`, hash publicado `543b00c23a468f361ce00c63a4ee81a537daed1a7e6f14cce33082e0676f5bb3`.
+- Paridade de fonte confirmada por leitura: os 14 arquivos retornados pela implantação v377 coincidem byte a byte com os caminhos equivalentes de main. As 10 fontes XML sob `supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/` também coincidem byte a byte com as 10 cópias standalone em `supabase/functions/purchase-xml-v1/`. Não há drift funcional ou de fonte que justifique deploy.
+- Telemetria agregada da função, janela exata 2026-10-21 22:04Z–2026-10-22 22:04Z: 1.162 POST — 1.060 respostas 200, 78 respostas 502 e 2 respostas 500 — mais 16 OPTIONS 200 e 22 respostas 409. Os 80 erros 5xx exibiram `EDGE_FUNCTION_ERROR`. Os 2 eventos de log `level=error` correspondem aos 2 HTTP 500; não houve evento `level=error` correlacionado às 78 respostas 502. Os logs disponíveis não identificam qual `action` estava no corpo; nenhum corpo, conteúdo de cliente, URL de busca ou identificador de pedido foi lido ou armazenado neste checkpoint.
+- Resultado operacional: a função está em uso, então não desativar nem substituir. A concentração de 502 inclui pico de 43 numa hora UTC e 10 na hora seguinte; a causa e a ação de origem ainda não estão comprovadas. 409 foi mantido como conflito sem inferir defeito.
+- Alterações desta rodada: somente este HANDOFF e o roadmap. Nenhuma migration, DDL, função, config, grant, policy ou dado foi aplicado no projeto canônico. Não houve chamada de produção, emissão fiscal, checkout ou mensagem.
+- CI observado antes deste checkpoint: os 10 workflows mais recentes associados ao HEAD atual de main foram concluídos com sucesso. O workflow `Basket lot helper grant CI` é o teste dirigido pelos caminhos documentais e será executado na PR deste checkpoint; registrar seu resultado após a execução.
+- Smoke/publicação: sem alteração de UI, runtime ou rotas; não foi feito smoke interativo nesta rodada. Não declaro implantação do site/Admin. Rotas permanecem `/` e `/vitrine/admin/`.
+- Rollback: reverter o commit/PR deste checkpoint restaura apenas documentação, sem efeito de runtime ou banco. Nenhum rollback de Supabase é necessário.
+
+### Próxima tarefa exata
+
+Adicionar ao dispatcher de `admin-service-intelligence-v1` telemetria de resultado por ação de uma allowlist fixa (ação, status HTTP e classe de erro), sem registrar corpo, IDs, IP, headers brutos, dados de clientes ou detalhes retornados por provedores. Criar teste de contrato que prove a allowlist e a ausência de payload/PII; usar a telemetria para isolar as 78 respostas 502 antes de mudar comportamento. Aplicar correção funcional somente quando a causa for reproduzida em teste. A publicação continua bloqueada até o proprietário renovar o secret inválido `SUPABASE_ACCESS_TOKEN` (run #39848977831); não disparar deploy enquanto a credencial não for validada.
+
 ## Checkpoint pós-integração — 2026-10-22 (PR #1284: ledger da migration)
 
 - Main atual: `d9af3d38bb197507f07d8773d74668a95eeef351`, squash merge da PR #1284. O commit de implementação foi `3c3f022a51d551de8305e341e26a0889f4743d37`; o checkpoint detalhado entrou na mesma PR no commit `c2511569ddab3c3839a39b5b601589f6cf52aff6`.
