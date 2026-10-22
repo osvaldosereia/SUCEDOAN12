@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-const shell=fs.readFileSync('vitrine/admin/index.html','utf8');
+import {readAdminUiSource} from './helpers/admin-ui-source.mjs';
+const shell=readAdminUiSource();
 const modulePath='vitrine/admin/ana/ana-admin.js';
 assert.match(shell,/data-tab="ana"[\s\S]*?ANA/);
 assert.match(shell,/tab==='ana'[\s\S]*ana-admin\.js/);
