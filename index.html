@@ -934,6 +934,17 @@
       const template=document.createElement('template');template.innerHTML=markup.trim();
       return template.content.firstElementChild;
     }
+    function preserveUnchangedBasketCards(previous,replacement){
+      const byBasket=new Map();
+      previous.querySelectorAll('.basket-card').forEach(card=>{
+        const key=card.querySelector('[data-basket]')?.getAttribute('data-basket');
+        if(key)byBasket.set(key,card);
+      });
+      replacement.querySelectorAll('.basket-card').forEach(card=>{
+        const key=card.querySelector('[data-basket]')?.getAttribute('data-basket'),existing=byBasket.get(key);
+        if(existing&&existing.outerHTML===card.outerHTML)card.replaceWith(existing);
+      });
+    }
     function syncHomeBasketGroups(host,records){
       let changed=false;
       const wantedGroups=new Set();
@@ -952,6 +963,7 @@
           let subgroup=[...sectionNode.children].find(node=>node.dataset.homeSubgroup===sub.id);
           if(!subgroup||homeSubgroupSignatures.get(subgroup)!==sub.signature){
             const replacement=fragmentElement(sub.markup());
+            if(subgroup)preserveUnchangedBasketCards(subgroup,replacement);
             homeSubgroupSignatures.set(replacement,sub.signature);
             if(subgroup)subgroup.replaceWith(replacement);
             subgroup=replacement;changed=true;
