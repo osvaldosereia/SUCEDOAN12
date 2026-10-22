@@ -9,6 +9,7 @@ Aplicação estática para pedidos em `/site/`, separada da interface administra
 - `src/app.js`: telas, estado de sessão, interação e renderização segura de conteúdo.
 - `src/api.js`: adaptador para a API pública existente `storefront-v2`.
 - `src/cart.js`: apresentação ordenada do pedido e montagem do payload do checkout.
+- `src/customer.js`: normalização do WhatsApp e resumo do endereço do cadastro; consulta e alteração usam `customer_lookup` e `customer_register` na API atual.
 - `tests/`: testes da lógica de carrinho com Node.js nativo.
 
 ## Desempenho e confiabilidade
