@@ -1,11 +1,12 @@
 import { request, loadHome, loadBasket, loadProducts, loadDeliveryDates, submitOrder } from './api.js';
 import { cartTotalCents, orderLines, orderPayload } from './cart.js';
 import { normalizeWhatsapp, addressSummary } from './customer.js';
+import { mergeProductPages, nextPageOffset } from './products.js';
 
 const $ = selector => document.querySelector(selector);
 const content = $('#content');
 const dialogRoot = $('#dialogRoot');
-const state = { home: null, cart: readCart(), activeCategory: 'baskets', search: '', deliveryDates: [], viewToken: 0, customer: { status: 'idle', phone: '', data: null, complete: false } };
+const state = { home: null, cart: readCart(), activeCategory: 'baskets', search: '', deliveryDates: [], viewToken: 0, productContext: null, products: [], nextProductOffset: null, customer: { status: 'idle', phone: '', data: null, complete: false } };
 const money = cents => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(cents || 0) / 100);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 function readCart() {
@@ -71,20 +72,37 @@ async function openBasket(id) {
 function productPrice(product) { return Number(product.price_cents ?? product.sale_price_cents ?? Math.round(Number(product.price || 0) * 100)); }
 function renderProducts(title, products, token, emptyText = 'Não encontramos produtos nesta categoria.') {
   if (token !== state.viewToken) return;
-  content.innerHTML = `<div class="section-title"><p class="eyebrow">MERCADO DONA ANTÔNIA</p><h2>${esc(title)}</h2><p>Adicione os itens avulsos ao mesmo pedido.</p></div>${products.length ? `<div class="product-grid">${products.map(product => `<article class="product-card">${image(product.image_url, product.name)}<div class="product-card-body"><h3>${esc(product.name)}</h3><p>${esc(product.packaging || product.unit || product.category || '')}</p><div class="product-price">${money(productPrice(product))}</div><button class="primary" type="button" data-add-product="${esc(product.id)}">Adicionar</button></div></article>`).join('')}</div>` : `<div class="empty">${esc(emptyText)}</div>`}`;
-  content.querySelectorAll('[data-add-product]').forEach(button => button.addEventListener('click', () => {
-    const product = products.find(row => String(row.id) === button.dataset.addProduct); if (!product) return;
-    const existing = state.cart.find(row => row.type === 'product' && row.id === String(product.id));
-    if (existing) existing.qty += 1;
-    else state.cart.push({ type: 'product', id: String(product.id), name: product.name, image_url: product.image_url, packaging: product.packaging, price_cents: productPrice(product), stock_quantity: Number(product.stock_quantity || product.stock || 30), qty: 1 });
-    saveCart(); toast(`${product.name} adicionado.`);
-  }));
+  state.products = products;
+  content.innerHTML = `<div class="section-title"><p class="eyebrow">MERCADO DONA ANTÔNIA</p><h2>${esc(title)}</h2><p>Adicione os itens avulsos ao mesmo pedido.</p></div>${products.length ? `<div class="product-grid" id="productGrid">${products.map(productCardHtml).join('')}</div>${state.nextProductOffset == null ? '' : '<button class="outline more-products" id="loadMore" type="button">Mostrar mais produtos</button>'}` : `<div class="empty">${esc(emptyText)}</div>`}`;
 }
+function productCardHtml(product) { return `<article class="product-card">${image(product.image_url, product.name)}<div class="product-card-body"><h3>${esc(product.name)}</h3><p>${esc(product.packaging || product.unit || product.category || '')}</p><div class="product-price">${money(productPrice(product))}</div><button class="primary" type="button" data-add-product="${esc(product.product_id || product.id)}">Adicionar</button></div></article>`; }
 async function loadProductPage(category = '', query = '') {
   const token = ++state.viewToken;
   content.innerHTML = `<div class="section-title"><p class="eyebrow">MERCADO DONA ANTÔNIA</p><h2>${esc(query || category || 'Produtos')}</h2><p>Carregando opções…</p></div><div class="loading-cards"><i></i><i></i></div>`;
-  try { const data = await loadProducts(category, 0, query); renderProducts(query ? `Busca: ${query}` : category, data.products || [], token, 'Não encontramos. Tente outra palavra.'); }
+  try {
+    const data = await loadProducts(category, 0, query);
+    state.productContext = { category, query, title: query ? `Busca: ${query}` : category, token };
+    state.nextProductOffset = nextPageOffset(data);
+    renderProducts(state.productContext.title, data.products || [], token, 'Não encontramos. Tente outra palavra.');
+  }
   catch { if (token === state.viewToken) content.innerHTML = '<div class="error-box">Não consegui carregar os produtos agora. Confira sua conexão e tente novamente.</div>'; }
+}
+async function loadMoreProducts() {
+  const context = state.productContext, offset = state.nextProductOffset, button = $('#loadMore');
+  if (!context || offset == null || !button) return;
+  button.disabled = true; button.textContent = 'Carregando…';
+  try {
+    const page = await loadProducts(context.category, offset, context.query);
+    if (context.token !== state.viewToken) return;
+    state.products = mergeProductPages(state.products, page.products || []);
+    state.nextProductOffset = nextPageOffset(page);
+    const grid = $('#productGrid');
+    if (grid) grid.innerHTML = state.products.map(productCardHtml).join('');
+    if (state.nextProductOffset == null) button.remove();
+    else { button.disabled = false; button.textContent = 'Mostrar mais produtos'; }
+  } catch {
+    if (context.token === state.viewToken && button.isConnected) { button.disabled = false; button.textContent = 'Tentar carregar mais'; }
+  }
 }
 function openDrawer(title, body, action) {
   dialogRoot.innerHTML = `<div class="drawer-backdrop" id="drawerBackdrop"><section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle"><header class="drawer-head"><h2 id="drawerTitle">${esc(title)}</h2><button class="icon-button" type="button" id="closeDrawer" aria-label="Fechar">×</button></header><div id="drawerBody">${body}</div>${action ? `<div class="drawer-action">${action}</div>` : ''}</section></div>`;
@@ -151,7 +169,17 @@ async function start() {
   paintCartCount();
   $('#openCart').addEventListener('click', showCart);
   $('#categoryNav').addEventListener('click', event => { const button = event.target.closest('[data-category]'); if (!button) return; setCategory(button.dataset.category); if (button.dataset.category === 'baskets') renderBaskets(); else loadProductPage(button.dataset.category); });
-  content.addEventListener('click', event => { const button = event.target.closest('[data-open-basket]'); if (button) openBasket(button.dataset.openBasket); });
+  content.addEventListener('click', event => {
+    const basketButton = event.target.closest('[data-open-basket]'); if (basketButton) return openBasket(basketButton.dataset.openBasket);
+    if (event.target.closest('#loadMore')) return loadMoreProducts();
+    const addButton = event.target.closest('[data-add-product]'); if (!addButton) return;
+    const product = state.products.find(row => String(row.product_id || row.id) === addButton.dataset.addProduct); if (!product) return;
+    const id = String(product.product_id || product.id);
+    const existing = state.cart.find(row => row.type === 'product' && row.id === id);
+    if (existing) existing.qty += 1;
+    else state.cart.push({ type: 'product', id, name: product.name, image_url: product.image_url, packaging: product.packaging, price_cents: productPrice(product), stock_quantity: Number(product.stock_quantity || product.stock || 30), qty: 1 });
+    saveCart(); toast(`${product.name} adicionado.`);
+  });
   $('#searchForm').addEventListener('submit', event => { event.preventDefault(); const query = $('#searchInput').value.trim(); if (query) { setCategory(''); loadProductPage('', query); } });
   try {
     let cached = null; try { cached = JSON.parse(localStorage.getItem('da_site_home_v1') || 'null'); } catch {}
