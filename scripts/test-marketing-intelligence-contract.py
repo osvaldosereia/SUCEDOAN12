@@ -1,7 +1,7 @@
 from pathlib import Path
 
 site = Path('index.html').read_text(encoding='utf-8')
-site_copy = Path('vitrine/index.html').read_text(encoding='utf-8')
+legacy_vitrine = Path('vitrine/index.html').read_text(encoding='utf-8')
 admin = Path('vitrine/admin/index.html').read_text(encoding='utf-8')
 admin_runtime = Path('vitrine/admin/admin-runtime.js').read_text(encoding='utf-8')
 admin_sources = admin + '\n' + admin_runtime
@@ -24,7 +24,8 @@ required_site_markers = [
 ]
 for marker in required_site_markers:
     assert marker in site, f'missing site marker: {marker}'
-    assert marker in site_copy, f'missing vitrine copy marker: {marker}'
+assert '<meta http-equiv="refresh" content="0;url=/">' in legacy_vitrine, 'legacy vitrine URL redirects to the canonical storefront'
+assert "window.location.replace('/'+window.location.search+window.location.hash)" in legacy_vitrine, 'legacy vitrine redirect preserves query and hash'
 
 assert "item.type==='product'" in site
 assert "item.components" in site

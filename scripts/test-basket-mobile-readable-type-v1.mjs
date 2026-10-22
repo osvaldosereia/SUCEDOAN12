@@ -1,7 +1,10 @@
 import fs from "node:fs";
 import assert from "node:assert/strict";
 
-const html=fs.readFileSync("vitrine/index.html","utf8");
+const html=fs.readFileSync("index.html","utf8");
+const legacyVitrine=fs.readFileSync("vitrine/index.html","utf8");
+assert.ok(legacyVitrine.includes('<meta http-equiv="refresh" content="0;url=/">'),"legacy vitrine URL redirects to the canonical storefront");
+assert.ok(legacyVitrine.includes("window.location.replace('/'+window.location.search+window.location.hash)"),"legacy vitrine redirect preserves query and hash");
 const style=html.slice(html.indexOf("<style>"),html.indexOf("</style>"));
 
 assert.ok(style.includes("/* Accessible typography for basket editor */"),"basket typography override is present");
