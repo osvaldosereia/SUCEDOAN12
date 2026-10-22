@@ -40,55 +40,81 @@ async function openBasket(id, existing = null) {
   try {
     const data = await loadBasket(id);
     if (!data.basket || !Array.isArray(data.items)) throw new Error('Cesta inválida');
-    const savedComponents = new Map((existing?.components || []).map(item => [String(data.basket.mold_mode ? item.position_id : item.product_id || item.id), item]));
-    const items = data.items.map(item => {
-      const saved = savedComponents.get(String(data.basket.mold_mode ? item.position_id : item.product_id || item.id));
-      return { ...item, ...(data.basket.mold_mode && saved ? saved : {}), base_quantity: Number(item.base_quantity ?? item.quantity ?? 0), quantity: Number(saved?.quantity ?? item.quantity ?? item.base_quantity ?? 0) };
-    });
     const basket = { ...data.basket, id: String(data.basket.id || id), name: data.basket.name || 'Cesta básica' };
+    const saved = new Map((existing?.components || []).map(item => [String(basket.mold_mode ? item.position_id : item.product_id || item.id), item]));
+    const items = data.items.map(item => {
+      const previous = saved.get(String(basket.mold_mode ? item.position_id : item.product_id || item.id));
+      return { ...item, ...(basket.mold_mode && previous ? previous : {}), base_quantity: Number(item.base_quantity ?? item.quantity ?? 0), quantity: Number(previous?.quantity ?? item.quantity ?? item.base_quantity ?? 0), alternatives: [], next_offset: 0, alternatives_loading: false };
+    });
     const price = basketPrice(basket);
-    const body = `<p class="subtle">Escolha as opções para montar sua cesta.</p><div class="basket-offer"><span>A partir de</span><strong>${money(price)}</strong><span class="basket-illustration">🧺</span></div><div class="basket-items">${items.map((item, index) => `<section class="basket-component"><div class="basket-component-title"><span class="basket-type-icon">${icon(/arroz|feijão|feijao|grão/i.test(item.name)?'basket':/óleo|oleo/i.test(item.name)?'bottle':'soap')}</span><div class="component-main"><strong>${esc(item.name)} <small>· ${item.base_quantity} unidade${item.base_quantity===1?'':'s'}</small></strong><small>${basket.mold_mode ? 'Escolha uma das marcas disponíveis.' : 'Escolha a quantidade para sua cesta.'}</small></div><span class="component-chevron">⌄</span></div><div class="basket-product-strip"><article class="basket-choice selected">${image(item.image_url, item.name)}<span>${esc(item.name)}</span><strong>${basket.mold_mode ? money(item.price_cents || 0) : 'Incluído na cesta'}</strong><i>${icon('check')}</i></article></div>${basket.mold_mode ? `<div class="basket-quantity"><span>Quantidade fixa: ${item.quantity}</span><button class="outline" type="button" data-load-mold-options="${index}">Ver marcas disponíveis</button></div>` : `<div class="basket-quantity"><span>Quantidade</span><div class="qty"><button type="button" aria-label="Diminuir ${esc(item.name)}" data-component-qty="${index}" data-delta="-1">−</button><b>${item.quantity}</b><button type="button" aria-label="Aumentar ${esc(item.name)}" data-component-qty="${index}" data-delta="1">+</button></div></div>`}</section>`).join('')}</div><div class="drawer-total"><span>Total da cesta</span><span id="basketTotal">${money(existing?.price_cents ?? price)}</span></div><p id="basketQuoteStatus" class="subtle" role="status"></p><button class="outline" id="retryBasketQuote" type="button" hidden>Tentar calcular novamente</button>`;
-    openDrawer(`Cesta ${basket.name}`, body, '<button class="primary" id="addBasket" type="button">Adicionar ao pedido</button>');
+    const body = `<p class="subtle">Escolha as opções para montar sua cesta.</p><div class="basket-offer"><span>A partir de</span><strong>${money(price)}</strong><span class="basket-illustration">🧺</span></div><div class="basket-items">${items.map((item, index) => `<section class="basket-component" data-basket-position="${index}"><div class="basket-component-title"><span class="basket-type-icon">${icon(/arroz|feijão|feijao|grão/i.test(item.name)?'basket':/óleo|oleo/i.test(item.name)?'bottle':'soap')}</span><div class="component-main"><strong>${esc(item.name)} <small>· <span data-item-qty-label>${item.quantity} unidade${item.quantity===1?'':'s'}</span></small></strong><small>${basket.mold_mode ? 'Escolha uma marca; o total acompanha sua seleção.' : 'Escolha a quantidade para sua cesta.'}</small></div><span class="component-chevron" aria-hidden="true">⌄</span></div><div class="basket-product-strip" data-options-strip>${moldChoiceHtml(item, item.product_id, index)}</div><div class="basket-quantity"><span>Quantidade</span><div class="qty"><button type="button" aria-label="Diminuir ${esc(item.name)}" data-component-qty="${index}" data-delta="-1">−</button><b data-quantity-value>${item.quantity}</b><button type="button" aria-label="Aumentar ${esc(item.name)}" data-component-qty="${index}" data-delta="1">+</button></div></div></section>`).join('')}</div><p id="basketQuoteStatus" class="subtle" role="status"></p><button class="outline" id="retryBasketQuote" type="button" hidden>Tentar calcular novamente</button>`;
+    openDrawer(`Cesta ${basket.name}`, body, `<div class="basket-sticky-total"><span>Total da cesta<strong id="basketTotal">${money(existing?.price_cents ?? price)}</strong></span><button class="primary" id="addBasket" type="button">${existing ? 'Salvar e ver pedido' : 'Adicionar ao pedido'}</button><button class="basket-view-order" id="viewBasketOrder" type="button">Ver pedido</button></div>`);
+    const drawer = $('#dialogRoot .drawer');
     let quoted = !basket.mold_mode && !items.some(item => item.quantity !== Number(item.base_quantity)) && !existing, quoteRevision = 0;
     const quoteInput = () => basketQuoteRequest(basket, items);
     const updateQuote = async () => {
       const revision = ++quoteRevision; quoted = false; $('#basketQuoteStatus').textContent = 'Calculando novo valor…'; $('#retryBasketQuote').hidden = true; $('#addBasket').disabled = true; $('#basketTotal').textContent = 'Calculando…';
-      try { const input = quoteInput(); const quote = await request(input.action, {}, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input.payload) }); if (revision !== quoteRevision) return; basket.price_cents = Number(quote.total_cents); $('#basketTotal').textContent = money(basket.price_cents); $('#basketQuoteStatus').textContent = ''; quoted = true; $('#addBasket').disabled = false; }
-      catch { if (revision !== quoteRevision) return; $('#basketTotal').textContent = 'Valor não calculado'; $('#basketQuoteStatus').textContent = 'Não foi possível confirmar o valor. Tente novamente.'; $('#retryBasketQuote').hidden = false; }
+      try { const input = quoteInput(); const quote = await request(input.action, {}, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input.payload) }); if (revision !== quoteRevision || !drawer.isConnected) return; basket.price_cents = Number(quote.total_cents); $('#basketTotal').textContent = money(basket.price_cents); $('#basketQuoteStatus').textContent = ''; quoted = true; $('#addBasket').disabled = false; }
+      catch { if (revision !== quoteRevision || !drawer.isConnected) return; $('#basketTotal').textContent = 'Valor não calculado'; $('#basketQuoteStatus').textContent = 'Não foi possível confirmar o valor. Tente novamente.'; $('#retryBasketQuote').hidden = false; }
+    };
+    const loadOptions = async (item, offset = 0) => {
+      if (item.alternatives_loading || item.next_offset == null && item.alternatives_loaded) return;
+      item.alternatives_loading = true;
+      const strip = drawer.querySelector(`[data-basket-position="${items.indexOf(item)}"] [data-options-strip]`);
+      if (offset === 0 && !item.alternatives_loaded) strip.insertAdjacentHTML('beforeend', '<span class="subtle options-loading">Carregando marcas…</span>');
+      try {
+        const result = await loadBasketAlternatives(basket.id, basket.composition_number, item.position_id, item.product_id, item.quantity, offset);
+        if (!drawer.isConnected) return;
+        item.alternatives = offset ? [...item.alternatives, ...(result.alternatives || [])] : (result.alternatives || []);
+        item.alternatives_loaded = true; item.next_offset = result.next_offset;
+        strip.querySelector('.options-loading')?.remove();
+        if (offset === 0) strip.innerHTML = '';
+        strip.insertAdjacentHTML('beforeend', item.alternatives.slice(offset).map(option => moldChoiceHtml(option, item.product_id, items.indexOf(item))).join(''));
+        if (item.next_offset != null && !strip.querySelector('[data-load-next-options]')) strip.insertAdjacentHTML('beforeend', '<button class="basket-load-more" type="button" data-load-next-options>Carregar mais opções</button>');
+        if (item.next_offset == null) strip.querySelector('[data-load-next-options]')?.remove();
+      } catch {
+        strip.querySelector('.options-loading')?.remove();
+        if (!item.alternatives_loaded) strip.insertAdjacentHTML('beforeend', '<button class="outline" type="button" data-retry-options>Toque para carregar as marcas</button>');
+      } finally { item.alternatives_loading = false; }
     };
     $('#retryBasketQuote').onclick = updateQuote;
+    $('#viewBasketOrder').onclick = () => showCart();
     if (existing || basket.mold_mode) updateQuote();
-    dialogRoot.querySelectorAll('[data-load-mold-options]').forEach(button => button.addEventListener('click', async () => {
-      const item = items[Number(button.dataset.loadMoldOptions)]; button.disabled = true; button.textContent = 'Carregando marcas…';
-      try {
-        const result = await loadBasketAlternatives(basket.id, basket.composition_number, item.position_id, item.product_id);
-        item.alternatives = result.alternatives || [];
-        const strip = button.closest('.basket-component').querySelector('.basket-product-strip');
-        strip.innerHTML = item.alternatives.map(option => moldChoiceHtml(option, item.product_id, items.indexOf(item))).join('');
-        button.remove();
-      } catch { button.disabled = false; button.textContent = 'Tentar carregar marcas'; }
-    }));
-    dialogRoot.addEventListener('click', event => {
-      const choice = event.target.closest('[data-select-mold-product]'); if (!choice) return;
-      const item = items[Number(choice.dataset.positionIndex)], selected = item?.alternatives?.find(option => String(option.product_id) === choice.dataset.selectMoldProduct); if (!item || !selected) return;
-      Object.assign(item, selected, { quantity: item.base_quantity });
-      const strip = choice.closest('.basket-product-strip');
-      strip.innerHTML = item.alternatives.map(option => moldChoiceHtml(option, item.product_id, items.indexOf(item))).join('');
-      updateQuote();
-    });
-    dialogRoot.querySelectorAll('[data-component-qty]').forEach(button => button.addEventListener('click', async () => {
-      const item = items[Number(button.dataset.componentQty)];
-      item.quantity = Math.max(0, item.quantity + Number(button.dataset.delta));
-      button.parentElement.querySelector('b').textContent = String(item.quantity);
-      if (!basket.mold_mode && items.every(row => row.quantity === Number(row.base_quantity))) {
-        basket.price_cents = price; $('#basketTotal').textContent = money(price); $('#basketQuoteStatus').textContent = ''; $('#retryBasketQuote').hidden = true; $('#addBasket').disabled = false; quoted = true; return;
+    const optionObserver = new IntersectionObserver(entries => entries.forEach(entry => { if (entry.isIntersecting) { const item = items[Number(entry.target.dataset.basketPosition)]; if (item && basket.mold_mode) loadOptions(item, 0); optionObserver.unobserve(entry.target); } }), { root: drawer, rootMargin: '180px 0px' });
+    if (basket.mold_mode) drawer.querySelectorAll('[data-basket-position]').forEach(section => optionObserver.observe(section));
+    drawer.querySelectorAll('[data-options-strip]').forEach(strip => strip.addEventListener('scroll', () => {
+      const section = strip.closest('[data-basket-position]'), item = items[Number(section.dataset.basketPosition)];
+      if (item?.alternatives_loaded && item.next_offset != null && strip.scrollLeft + strip.clientWidth >= strip.scrollWidth - 100) loadOptions(item, item.next_offset);
+    }, { passive: true }));
+    drawer.addEventListener('click', event => {
+      const more = event.target.closest('[data-load-next-options]');
+      if (more) { const section = more.closest('[data-basket-position]'), item = items[Number(section.dataset.basketPosition)]; more.remove(); return loadOptions(item, item.next_offset); }
+      const retry = event.target.closest('[data-retry-options]');
+      if (retry) { const section = retry.closest('[data-basket-position]'), item = items[Number(section.dataset.basketPosition)]; retry.remove(); return loadOptions(item, 0); }
+      const choice = event.target.closest('[data-select-mold-product]');
+      if (choice) {
+        const item = items[Number(choice.dataset.positionIndex)], selected = item?.alternatives?.find(option => String(option.product_id) === choice.dataset.selectMoldProduct); if (!item || !selected) return;
+        Object.assign(item, selected, { quantity: Number(item.quantity) });
+        const section = choice.closest('[data-basket-position]'), strip = section.querySelector('[data-options-strip]');
+        strip.querySelectorAll('.basket-choice').forEach(card => card.classList.toggle('selected', card.dataset.selectMoldProduct === String(item.product_id)));
+        section.querySelector('[data-item-qty-label]').textContent = `${item.quantity} unidade${item.quantity === 1 ? '' : 's'}`;
+        section.querySelector('[data-quantity-value]').textContent = String(item.quantity);
+        updateQuote();
+        return;
       }
-      updateQuote();
-    }));
+      const qtyButton = event.target.closest('[data-component-qty]');
+      if (qtyButton) {
+        const item = items[Number(qtyButton.dataset.componentQty)], next = item.quantity + Number(qtyButton.dataset.delta), max = basket.mold_mode ? Number(item.stock_quantity || 0) : Number(item.stock_quantity || 30);
+        if (next < 1 || next > Math.max(1, max)) return;
+        item.quantity = next;
+        const section = qtyButton.closest('[data-basket-position]'); section.querySelector('[data-quantity-value]').textContent = String(next); section.querySelector('[data-item-qty-label]').textContent = `${next} unidade${next === 1 ? '' : 's'}`;
+        updateQuote();
+      }
+    });
     $('#addBasket').addEventListener('click', () => {
       if (!items.some(item => item.quantity > 0)) return toast('Mantenha pelo menos um produto na cesta.');
       if ((basket.mold_mode || items.some(item => item.quantity !== Number(item.base_quantity))) && !quoted) return toast('Confirme o valor da cesta antes de adicionar.');
-      const item = { ...existing, type: 'basket', id: basket.id, mold_mode: basket.mold_mode === true, composition_number: Number(basket.composition_number || 1), name: basket.name, qty: Number(existing?.qty || 1), price_cents: Number(basket.price_cents ?? price), split_mode: basket.split_mode === true, lot_id: basket.lot_id || null, food_lot_id: basket.food_lot_id || null, hygiene_lot_id: basket.hygiene_lot_id || null, components: items.map(({ alternatives, ...component }) => component), basket_request_id: basket.mold_mode ? `${basket.id}@${Number(basket.composition_number || 1)}` : id };
+      const item = { ...existing, type: 'basket', id: basket.id, mold_mode: basket.mold_mode === true, composition_number: Number(basket.composition_number || 1), name: basket.name, qty: Number(existing?.qty || 1), price_cents: Number(basket.price_cents ?? price), split_mode: basket.split_mode === true, lot_id: basket.lot_id || null, food_lot_id: basket.food_lot_id || null, hygiene_lot_id: basket.hygiene_lot_id || null, components: items.map(({ alternatives, alternatives_loading, next_offset, ...component }) => component), basket_request_id: basket.mold_mode ? `${basket.id}@${Number(basket.composition_number || 1)}` : id };
       state.cart = [...state.cart.filter(row => !(row.id === item.id && row.type === 'basket')), item]; saveCart(); closeDrawer(); toast('Cesta adicionada ao pedido.');
     });
   } catch (error) { openDrawer('Cesta indisponível', `<div class="error-box">Não consegui carregar esta cesta. Verifique sua conexão e tente novamente.<br><br>${esc(error.message)}</div>`, '<button class="outline" type="button" id="retryBasket">Tentar novamente</button>'); $('#retryBasket').onclick = () => openBasket(id); }
