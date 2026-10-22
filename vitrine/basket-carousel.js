@@ -64,7 +64,7 @@ window.BasketCarousel={
     const sizeCard=b.size_card===true||hasSizePhoto;
     const sizeClass=sizeCard?' basket-size-card basket-size-'+esc(sizeKey):'';
     const itemCount=Math.max(0,Math.floor(Number(b.total_item_count)||0));
-    const itemSummary=sizeCard?'<div class="basket-card-item-total">'+itemCount+' itens</div>':'';
+    const itemSummary=sizeCard&&!b.home_shell?'<div class="basket-card-item-total">'+itemCount+' itens</div>':'';const priceMarkup=b.home_shell?'':'<div class="price"><span class="basket-price-prefix">A partir de:</span><strong class="basket-price-amount">'+money(b.display_price_cents)+'</strong></div>';
     const catalogImage=String(b.image_url||'').trim();
     const safeCatalogImage=(catalogImage.startsWith('/')&&!catalogImage.startsWith('//'))||/^https:\/\//i.test(catalogImage)?catalogImage:'';
     const imagePath=sizeCard?(safeCatalogImage||sizePhotos[sizeKey]||''):'';
@@ -72,7 +72,7 @@ window.BasketCarousel={
     const image=imagePath?'<div class="basket-size-card-photo"><img '+imageAttrs+' decoding="async" alt="Cesta '+esc(name)+'"></div>':'';
     const actionLabel=sizeCard?'Ver produtos':'Personalizar';
     const actionAria=sizeCard?'Ver produtos da cesta ':'Personalizar cesta ';
-    return '<article class="card basket-card'+sizeClass+'">'+image+'<div class="card-body basket-card-info"><div class="basket-card-title name">'+esc(name)+'</div>'+itemSummary+'<div class="price"><span class="basket-price-prefix">A partir de:</span><strong class="basket-price-amount">'+money(b.display_price_cents)+'</strong></div><button type="button" class="add" data-basket="'+esc(key)+'" aria-label="'+actionAria+esc(name)+'">'+actionLabel+'</button></div></article>';
+    return '<article class="card basket-card'+sizeClass+'">'+image+'<div class="card-body basket-card-info"><div class="basket-card-title name">'+esc(name)+'</div>'+itemSummary+priceMarkup+'<button type="button" class="add" data-basket="'+esc(key)+'" aria-label="'+actionAria+esc(name)+'">'+actionLabel+'</button></div></article>';
   },
   prepareHome(host){
     const section=host?.closest?.('.section');if(!section)return;
