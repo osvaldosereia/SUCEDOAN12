@@ -27,3 +27,4 @@ test('prepara imagem de produto em até 30.000 bytes e redimensiona para até 12
 test('falha com uma mensagem clara quando não consegue atingir o limite de 30 KB', async () => {
   await assert.rejects(compressProductImage({ type: 'image/png', size: 90_000 }, { ...mocks(() => 31_000), maxBytes: 30_000 }), /30 KB/);
 });
+

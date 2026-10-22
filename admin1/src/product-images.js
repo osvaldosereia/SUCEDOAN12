@@ -72,3 +72,4 @@ export async function compressProductImage(file, options = {}) {
   const sizeKb = smallest ? Math.ceil(smallest.blob.size / 1024) : 0;
   throw new Error(`Não foi possível reduzir a imagem a 30 KB (menor resultado: ${sizeKb} KB). Escolha outra imagem.`);
 }
+

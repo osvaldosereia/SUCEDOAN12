@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/admin1/styles.css?v=8">
+  <link rel="stylesheet" href="/admin1/styles.css?v=10">
 </head>
 <body>
   <div class="app-shell">
@@ -20,8 +20,8 @@
       </a>
       <div class="sidebar-label">CATÁLOGO</div>
       <nav class="nav-list" aria-label="Navegação principal">
-        <button class="nav-item active" data-view="products"><span class="nav-icon">▦</span>Produtos</button>
-        <button class="nav-item nav-item-disabled" type="button" disabled aria-label="Gestão de cestas será adicionada depois"><span class="nav-icon">◈</span>Cestas <small>depois</small></button>
+        <button class="nav-item active" type="button" data-view="products"><span class="nav-icon">▦</span>Produtos</button>
+        <button class="nav-item" type="button" data-view="baskets"><span class="nav-icon">◈</span>Cestas</button>
       </nav>
       <div class="sidebar-bottom">
         <div class="connection"><span class="connection-dot online" id="sessionDot"></span><span id="sessionLabel">Produtos</span></div>
@@ -48,6 +48,7 @@
       <footer class="product-dialog-foot" id="productDialogFoot"><span class="readonly-badge"><i aria-hidden="true"></i>Dados do catálogo</span></footer>
     </div>
   </dialog>
-  <script type="module" src="/admin1/src/app.js?v=12"></script>
+  <script type="module" src="/admin1/src/app.js?v=14"></script>
 </body>
 </html>
+

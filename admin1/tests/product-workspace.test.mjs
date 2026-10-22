@@ -46,3 +46,4 @@ test('permite desativar localmente um produto incompleto sem exigir correção c
   assert.equal(product.active, false);
   assert.equal(readProductWorkspace(storage)[0].id, 'incomplete');
 });
+

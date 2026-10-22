@@ -106,3 +106,4 @@ test('exige imagem para ativar e bloqueia identificadores e valores inválidos',
   const product = buildAdminProductRecord({ name: 'Arroz', sku: 'AR-1', category: 'Mercearia', price: '-1,00', stock: '-2', ncm: '123', cest: '12', origin_code: '9', active: false });
   assert.deepEqual(getProductEditorErrors(product).map(issue => issue.key), ['price', 'stock', 'ncm', 'cest', 'origin_code']);
 });
+

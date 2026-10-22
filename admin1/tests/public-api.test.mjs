@@ -49,3 +49,4 @@ test('bloqueia qualquer chamada que não seja consulta pública de produto', asy
   assert.equal(calls, 0);
 });
 
+

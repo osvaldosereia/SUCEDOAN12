@@ -49,3 +49,4 @@ export function mergeWorkspaceProducts(catalogProducts = [], localProducts = rea
   });
   return [...merged, ...localById.values()];
 }
+

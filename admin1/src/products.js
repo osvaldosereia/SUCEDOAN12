@@ -22,7 +22,7 @@ export function filterProducts(products = [], filters = {}) {
   const status = String(filters.status || 'all');
 
   return products.filter(product => {
-    const matchesQuery = !query || [product.name, product.sku, product.gtin, product.brand, product.packaging]
+    const matchesQuery = !query || [product.name, product.sku, product.gtin, product.packaging]
       .some(value => normalizeText(value).includes(query));
     const matchesCategory = !category || product.category === category;
     const stockKey = getProductStockState(product.stock_quantity, product.min_stock, product.stock_known !== false).key;
@@ -37,3 +37,4 @@ export function listCategoryOptions(categories = []) {
   return [...new Set(values.map(value => String(value).trim()).filter(Boolean))]
     .sort((a, b) => a.localeCompare(b, 'pt-BR'));
 }
+

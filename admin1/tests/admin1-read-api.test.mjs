@@ -38,3 +38,4 @@ test('trata produto com estoque zero como inativo mesmo se o indicador remoto es
   assert.equal(product.stock_known, true);
 });
 
+

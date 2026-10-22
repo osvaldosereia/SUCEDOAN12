@@ -40,3 +40,4 @@ export function canSetProductActive(product = {}, active) {
   if (product.stock_known === false) return false;
   return Number.isFinite(Number(product.stock_quantity)) && Number(product.stock_quantity) > 0;
 }
+
