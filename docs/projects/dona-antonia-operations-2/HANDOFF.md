@@ -12,6 +12,7 @@ Baseline observado:
 - Site público ao vivo em /. Admin existente abre em /vitrine/admin/. `/admin/` ainda volta à raiz, mas sua migração foi expressamente adiada e não faz parte do próximo lote.
 - Site público testado: troca de opção de cesta recalculou o total de R$ 419,30 para R$ 425,70; nenhum pedido foi enviado.
 - Nenhuma mudança de runtime, banco ou deploy foi feita nesta atualização documental.
+- Rotina "Reforma Dona Antônia" programada para começar em 22/10/2026 às 12:00 (America/Cuiaba) e repetir de hora em hora. Cada rodada deve maximizar ajustes validados dentro de um domínio coerente, com branch/PR, testes e sem mutações operacionais em produção.
 
 Próxima tarefa de código: mapear as áreas, dependências e gates do Vitrine Admin atual; selecionar e corrigir um fluxo de baixo risco dentro de `vitrine/admin/`, sem migrar URL nem alterar regras de negócio. Validar com o checker do runtime, teste direcionado e smoke da área afetada.
 
