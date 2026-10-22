@@ -48,6 +48,7 @@ test('mold products render as vertical choice cards with quantity and selected p
   assert.ok(itemRenderer.indexOf('moldItemOptions(x,i,pending)') < itemRenderer.indexOf('data-mold-inc='), 'quantity controls must render after the carousel');
   assert.match(itemRenderer,/data-mold-dec=/);
   assert.match(itemRenderer,/data-mold-inc=/);
+  assert.match(html,/return moldItemRow\(\{\.\.\.item,base_quantity:qty,quantity:qty,alternatives:\[\],alternatives_loaded:false,alternative_count:Number\(item\.alternative_count\|\|0\)\},i,true\)/,'opening preview keeps all controls safely disabled while stock is refreshing');
   assert.match(html,/function loadMoldOptions\(/);
   assert.match(html,/await api\('basket_mold_options'/);
   assert.match(html,/data-mold-option-load=/);
