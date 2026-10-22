@@ -1083,7 +1083,7 @@
         // Controls stay disabled until the canonical, stock-checked detail arrives.
         const rows=items.map((item,i)=>{
           const qty=Math.max(0,Number(item.quantity??item.quantity_per_basket??0));
-          return moldItemRow({...item,base_quantity:qty,quantity:qty,alternatives:[],alternatives_loaded:false,alternative_count:Number(item.alternative_count||0)},i,false,true);
+          return moldItemRow({...item,base_quantity:qty,quantity:qty,alternatives:[],alternatives_loaded:false,alternative_count:Number(item.alternative_count||0)},i,true);
         }).join('');
         return '<div class="basket-hero basket-hero-compact"><div><h3>'+esc(basketName(cached.name))+'</h3><small>Você pode retirar produtos ou ajustar as quantidades antes de adicionar a cesta.</small></div></div><div class="basket-edit-list" aria-busy="true">'+rows+'</div><div class="basket-opening-status" role="status" aria-live="polite">Conferindo estoque e preços…</div>';
       }
