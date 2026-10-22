@@ -4,7 +4,7 @@ on:
     paths:
       - .github/workflows/ops2-address-number-search-path-ci.yml
       - scripts/test-ops2-address-number-search-path.mjs
-      - supabase/migrations/20261022204000_ops2_address_number_search_path.sql
+      - supabase/migrations/20261022204312_ops2_address_number_search_path.sql
 permissions:
   contents: read
 jobs:
