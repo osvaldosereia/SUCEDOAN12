@@ -6,7 +6,7 @@ import { dirname, resolve } from "node:path";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const migrationPath = resolve(
   root,
-  "supabase/migrations/20261022204000_ops2_address_number_search_path.sql",
+  "supabase/migrations/20261022204312_ops2_address_number_search_path.sql",
 );
 const migration = await readFile(migrationPath, "utf8");
 
