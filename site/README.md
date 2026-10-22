@@ -2,6 +2,8 @@
 
 Aplicação estática para pedidos em `/site/`, separada da interface administrativa.
 
+**Antes de qualquer alteração de código, leia [`AGENTS.md`](./AGENTS.md):** ele define a revisão obrigatória para evitar código morto, estilos sobrepostos e regressões.
+
 ## Organização
 
 - `index.html`: estrutura sem conteúdo de catálogo embutido.
