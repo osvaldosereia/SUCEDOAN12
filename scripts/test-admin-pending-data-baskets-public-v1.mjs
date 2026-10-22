@@ -67,7 +67,7 @@ assert.match(storefront,/order_public_url/,'Checkout deve receber URL curta no r
 assert.match(storefront,/order_public_code/,'Checkout deve receber código público curto no retorno de submit_order');
 assert.match(adminProducts,/ops2_order_public_link_v1/,'Detalhe do Admin deve obter link público curto');
 assert.match(adminProducts,/public_order_url/,'Detalhe do Admin deve expor URL curta para os botões manuais');
-assert.match(admin,/o\?\.public_order_url|o\.public_order_url/,'Admin deve preferir URL pública curta nos envios manuais');
-assert.match(admin,/public_order_code/,'Admin deve preferir código público curto nas mensagens manuais');
+assert.match(adminRuntime,/o\?\.public_order_url|o\.public_order_url/,'Runtime do Admin deve preferir URL pública curta nos envios manuais');
+assert.match(adminRuntime,/public_order_code/,'Runtime do Admin deve preferir código público curto nas mensagens manuais');
 
 console.log('admin pending data + basket public stock + short order link contract: OK');
