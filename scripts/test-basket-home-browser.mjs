@@ -66,18 +66,18 @@ try{
  await app.locator('#basketSections .home-loading-status').waitFor();
  const firstShell=await app.evaluate(()=>{
    window.__r4ShellHero=document.querySelector('.home-hero');
-   window.__r4ShellOffers=document.querySelector('#homeOffersMount');
+   window.__r4ShellHeroOffers=document.querySelector('#heroOffers');
    return {
      sections:document.querySelectorAll('#basketSections').length,
      hasHero:Boolean(window.__r4ShellHero),
-     hasOffers:Boolean(window.__r4ShellOffers)
+     hasHeroOffers:Boolean(window.__r4ShellHeroOffers)
    };
  });
- assert.deepEqual(firstShell,{sections:1,hasHero:true,hasOffers:true},'initial loading shell must include the final homepage containers');
+ assert.deepEqual(firstShell,{sections:1,hasHero:true,hasHeroOffers:true},'initial loading shell must include the hero and its offers action');
  releasePriorityCatalog();
  await app.locator('.basket-size-card-photo img').first().waitFor();
  assert.equal(await app.evaluate(()=>document.querySelector('.home-hero')===window.__r4ShellHero),true,'priority cards must not recreate initial hero');
- assert.equal(await app.evaluate(()=>document.querySelector('#homeOffersMount')===window.__r4ShellOffers),true,'priority cards must preserve offers mount');
+ assert.equal(await app.evaluate(()=>document.querySelector('#heroOffers')===window.__r4ShellHeroOffers),true,'priority cards must preserve the hero offers action');
  assert.ok(await app.locator('#basketSections .basket-size-card-photo img').first().getAttribute('src'),'first photo must start loading immediately');
  assert.equal(await app.locator('.basket-size-card-photo img').count(),1,'priority basket subgroup should render before the full catalog response');
  assert.deepEqual(await app.locator('#basketSections .basket-subgroup-title').allTextContents(),['Grande'],'first render should only show the first visible subgroup');
@@ -87,8 +87,8 @@ try{
    window.__r3PriorityCard=document.querySelector('#basketSections .basket-card');
    window.__r3PriorityPhoto=document.querySelector('#basketSections .basket-size-card-photo img');
    window.__r3Hero=document.querySelector('.home-hero');
-   window.__r3Offers=document.querySelector('#homeOffersMount');
-   window.__r3Offers.dataset.r3Sentinel='kept';
+   window.__r3HeroOffers=document.querySelector('#heroOffers');
+   window.__r3HeroOffers.dataset.r3Sentinel='kept';
  });
  assert.equal(await app.locator('#basketSections .basket-size-card-photo img').first().getAttribute('fetchpriority'),'high');
  releaseFullCatalog();
@@ -99,10 +99,10 @@ try{
    card:document.querySelector('#basketSections .basket-card')===window.__r3PriorityCard,
    photo:document.querySelector('#basketSections .basket-size-card-photo img')===window.__r3PriorityPhoto,
    hero:document.querySelector('.home-hero')===window.__r3Hero,
-   offers:document.querySelector('#homeOffersMount')===window.__r3Offers,
-   offersSentinel:document.querySelector('#homeOffersMount')?.dataset.r3Sentinel
+   heroOffers:document.querySelector('#heroOffers')===window.__r3HeroOffers,
+   offersSentinel:document.querySelector('#heroOffers')?.dataset.r3Sentinel
  }));
- assert.deepEqual(preserved,{card:true,photo:true,hero:true,offers:true,offersSentinel:'kept'},'full catalog must not recreate visible cards, images, hero or offers');
+ assert.deepEqual(preserved,{card:true,photo:true,hero:true,heroOffers:true,offersSentinel:'kept'},'full catalog must not recreate visible cards, images, hero or its offers action');
  assert.equal(await app.locator('#basketSections .basket-size-card-photo img').nth(1).getAttribute('loading'),'lazy','non-priority photos must load lazily');
  assert.equal(await app.locator('.home-shortcuts button').count(),4);
  assert.equal(await app.locator('.home-hero h1').innerText(),'Sua compra do dia a dia');
