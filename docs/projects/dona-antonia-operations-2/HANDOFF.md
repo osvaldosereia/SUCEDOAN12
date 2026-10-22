@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 37605)
-Total output lines: 2615
-
 # Dona Antônia Operations 2.0 — HANDOFF
 
 > Atualização documental: 2026-10-22. Os checkpoints operacionais abaixo são históricos; confirme runtime e banco antes de qualquer ação operacional.
@@ -9,35 +6,25 @@ Total output lines: 2615
 
 O usuário definiu a reforma gradual do sistema e site existentes. Não criar outro site, outro Admin, outro banco ou implementação paralela. Em 2026-10-22, esclareceu que o trabalho fica no Vitrine Admin existente em `/vitrine/admin/`; migração para `/admin/` está fora do escopo agora. A estratégia canônica está em IMPLEMENTATION-ROADMAP.md, seção “REFORMA CONTÍNUA DO SISTEMA E DO SITE PÚBLICO”.
 
-Baseline observado na primeira rodada:
-- Repositório canônico osvaldosereia/SUCEDOAN12; main estava em 24719f9c57b2d362b1e7c5b197dc57fc66a6b8f5 e avançou para 9ec95df6b55e24f3964c22d4b2064d3163519de4 após a PR documental #1269.
+Baseline inicial observado em 2026-10-22:
+- Repositório canônico osvaldosereia/SUCEDOAN12; main em 24719f9c57b2d362b1e7c5b197dc57fc66a6b8f5.
 - Supabase canônico ssbesxgaijknwsjbsbcz.
 - Site público ao vivo em /. Admin existente abre em /vitrine/admin/. `/admin/` ainda volta à raiz, mas sua migração foi expressamente adiada e não faz parte do próximo lote.
 - Site público testado: troca de opção de cesta recalculou o total de R$ 419,30 para R$ 425,70; nenhum pedido foi enviado.
 - Nenhuma mudança de runtime, banco ou deploy foi feita nesta atualização documental.
 - Rotina "Reforma Dona Antônia" programada para começar em 22/10/2026 às 12:00 (America/Cuiaba) e repetir de hora em hora. Cada rodada deve maximizar ajustes validados dentro de um domínio coerente, com branch/PR, testes e sem mutações operacionais em produção.
 
-### Rodada executada em 2026-10-22
+### Rodada inicial de 2026-10-22 (histórico anterior às integrações posteriores)
 
 - O mapeamento inicial do Admin confirmou 19 áreas/entradas em `/vitrine/admin/`: Central, Atendimento, ANA, Pedidos, Expedição, Entregador, Fechamento, Produtos, Cestas, Validades, Orçamentos, Clientes, Marketing, Compras/XML, Leitura EAN, Balanço, Gôndolas, Financeiro e Bling técnico.
-- A sessão Produtos foi implementada na PR #1270 (`agent/vitrine-products-hardening`, HEAD `5197aa4a8e9951a9a1a942fb0d93e9ed4425cd96`): categorias novas preservando valores legados, retomada de salvamento parcial pelo mesmo ID, cache curto de facetas invalidado após mudanças e paginação real. A PR está aberta e não foi publicada.
+- A sessão Produtos foi implementada na PR #1270 (`agent/vitrine-products-hardening`, HEAD `5197aa4a8e9951a9a1a942fb0d93e9ed4425cd96`): categorias novas preservando valores legados, retomada de salvamento parcial pelo mesmo ID, cache curto de facetas invalidado após mudanças e paginação real. Naquele snapshot, a PR ainda estava aberta; depois foi integrada em `main` no commit `b75035006a064c5939d7e1dbb4fe8c8ad5307c88`.
 - CI direcionado `products-session`: passou integralmente — `python3 scripts/build-vitrine-admin-runtime.py --check`, sintaxe JS e os testes de lista, edição rápida móvel e editor completo. O CI amplo terminou com 10 de 19 checks em falha (pedidos/fiscal, checkout, marketing, ANA/Admin legado e cesta simples); por isso a PR #1270 não foi integrada nem implantada.
 - Smoke do mesmo sistema em uso: `/` recalculou a cesta de R$ 419,30 para R$ 425,70 ao escolher Arroz Tio Bonini; o fluxo foi encerrado sem adicionar a cesta nem criar pedido. `/vitrine/admin/` abriu; a lista Produtos carregou 5 itens e ofereceu mais 5. Nenhuma gravação operacional foi feita.
 - Supabase canônico confirmado: `ssbesxgaijknwsjbsbcz`. `admin1-products-read-v1` segue ativa (v3) e teve chamadas reais em 24 h: 56 GET products, 42 categories, 13 product, 2 matches e 1 health; origem não identificada nos logs. Não desativar. Nenhuma migration, Edge Function ou configuração foi aplicada.
 - O ledger do banco tem 1.244 versões; `main` contém 180 arquivos SQL de migration (175 com prefixo timestamp, 8 timestamps duplicados), com apenas 31 timestamps compartilhados. Há 1.213 versões do banco sem arquivo correspondente e 136 timestamps únicos apenas no repositório. O banco avança até `20261022114704`; o repositório até `20261022103000`. Não aplicar DDL até reconciliar essa divergência.
 - Rollback: sem efeito em produção para reverter. Antes de merge, basta reverter/remover a PR de código; não há alteração de banco ou deploy para desfazer.
 
-Próxima tarefa concreta da primeira rodada: reproduzir os 10 checks vermelhos na base e na PR #1270, separar falhas preexistentes e ajustar os contratos obsoletos do Admin. Executada no checkpoint abaixo; o ledger do Supabase segue bloqueando DDL até a reconciliação.
-
-### Revalidação e rodada de contratos do Admin — 2026-10-22
-
-- `main` revalidada em `9ec95df6b55e24f3964c22d4b2064d3163519de4`; #1269 está merged. A PR de Produtos #1270 (`5197aa4a8e9951a9a1a942fb0d93e9ed4425cd96`) segue aberta. Seu CI amplo tem 19 workflows: 9 success, 10 failure; o gate `products-session` passa. Os 10 scripts vermelhos foram reproduzidos também na base anterior `24719f9`, logo não são regressões do lote Produtos.
-- Implementada na PR #1271 (`agent/admin-runtime-contract-tests`, revisão de código `4544862784812ce91b074c829e059b5255ba98ee`) uma correção apenas dos contratos de teste. Além do helper `scripts/helpers/admin-ui-source.mjs`, foram atualizados 15 testes: `scripts/test-order-separation-completion-feedback-v4.mjs`, `scripts/test-admin-orders-clean-flow-v3.mjs`, `scripts/test-order-manual-queue-v1.mjs`, `scripts/test-separator-assignment-repair-v1.mjs`, `scripts/test-montar-picking-v1.mjs`, `scripts/test-order-customer-notifications-v1.mjs`, `scripts/test-admin-attendance-native-v1.mjs`, `scripts/test-admin-attendance-offers-tab-v1.mjs`, `scripts/test-admin-ana-section-v1.mjs`, `scripts/test-fiscal-nfe-autorecovery-v1.mjs`, `scripts/test-basket-simple-tabs-v1.mjs`, `scripts/test-basket-lot-ops-rules.mjs`, `scripts/test-customer-postorder-flow-v1.mjs`, `scripts/test-order-public-summary.mjs` e `scripts/test-admin-order-public-vitrine.mjs`. Os contratos leem a composição modular real do Admin; o harness pós-pedido remove `export` antes de compilar o módulo de UI com `vm.Script`. Nenhum runtime ou comportamento operacional foi alterado. Commits remotos desta atualização: `65938f4`, `15ec7d2`, `4544862`.
-- Validação local: 24/24 testes do lote Pedidos/Admin passaram; `python3 scripts/build-vitrine-admin-runtime.py --check`, `node --check vitrine/admin/admin-runtime.js` e `git diff --check` passaram. Na revisão de código `4544862`, cinco dos sete workflows passaram; ANA terminou o job com sucesso, embora o run ainda reporte `in_progress`, e Basket kit editor continua instalando Chromium. Não houve falha nos sete workflows; consultar estado final antes de integrar.
-- Smoke somente leitura em 2026-10-22 no site publicado: `/` exibiu cinco cestas e carrinho em 0 itens / R$ 0,00; `/vitrine/admin/` abriu a Central com 19 áreas. Nenhum pedido, mensagem ou gravação operacional foi criado. A rota do Admin continua `/vitrine/admin/`.
-- Revalidação do Supabase alvo `ssbesxgaijknwsjbsbcz`: `ACTIVE_HEALTHY`, PostgreSQL 17.6.1.166, 1.244 migrations no ledger (última `20261022114704 basket_mold_zero_quantity_v1`), 142 Edge Functions. `admin-products-live-v1` v183 e `admin1-products-read-v1` v3 estão ativas. Advisors: security — 228 RLS sem policy, 3 search_path mutáveis, 43 SECURITY DEFINER executáveis por authenticated, 1 proteção de senha vazada; performance — 77 FKs sem índice, 97 índices sem uso e 1 aviso de conexões. Nenhuma migration, função, configuração, grant/policy ou dado foi alterado.
-- O bloqueio de DDL permanece: 1.244 versões no banco contra 180 migrations no repositório, só 31 timestamps coincidentes. Não aplicar migration até reconciliar histórico. Não foi feito deploy; site publicado não mudou.
-- Rollback desta PR: fechar/reverter #1271; os arquivos alterados são testes/helper, sem efeito em runtime. Próxima tarefa exata: corrigir a jornada pública já existente em `/pedido/` para consumir `channel_origin` retornado por `order-public-view-v1` ao montar o contato WhatsApp, com teste de ambos os canais 0975/1018, sem enviar mensagem; revisar na mesma verificação os testes que ainda tratam `/vitrine/` como cópia do `index.html` da raiz. Manter `/` como vitrine e `/vitrine/admin/` como Admin.
+A próxima tarefa daquela fotografia — comparar os contratos de Admin/runtime com a base e a PR #1270 — foi concluída nas rodadas subsequentes. O checkpoint atual abaixo supersede SHAs, estado das PRs e próxima tarefa.
 
 
 > Documento canônico de continuidade. Atualizar ao final de cada rodada relevante.
@@ -46,7 +33,20 @@ Próxima tarefa concreta da primeira rodada: reproduzir os 10 checks vermelhos n
 ## Objetivo
 Simplificar a operação da Dona Antônia usando:
 - donaantonia.com.br como canal de venda;
-- Vitrine/Admin como interface operacional simples para funcionários;
+- Vitrine/Admin como i### Revalidação e onda de ofertas da home — 2026-10-22
+
+- Revalidação de GitHub: `main` atual em `b75035006a064c5939d7e1dbb4fe8c8ad5307c88`; #1269 e #1270 estão merged. A PR #1271 (`agent/admin-runtime-contract-tests`) permanece aberta, mergeable, baseada nesse SHA. O commit de código desta onda é `89d1e46f368ea2811fc9ff5cbe9e206f85b533c0`.
+- Diagnóstico: R3/R4 reproduziram que a home não inseria `#homeOffersMount` e não iniciava `observeOffers()`. A home passa a inserir uma seção adiada de ofertas no shell inicial e na navegação nova; a hidratação do shell ativa o observer uma vez, mantém respostas carregadas na montagem existente e pinta ofertas em cache sem refazer requisição em atualizações só do catálogo.
+- A mesma correção mantém o índice de imagens cumulativo entre categorias/subcategorias: somente o primeiro card da home fica `eager`/prioritário; os seguintes continuam protegidos pelo carregamento lazy horizontal. Os testes R3/R4 agora usam os campos públicos reais de `BasketCarousel.card`; R3 inclui o helper de subcategorias no harness. R5 abre a lista de alternativas no teste, injeta a pré-validação assíncrona já usada no checkout e respeita os atributos lazy/decoding existentes.
+- Arquivos desta onda: `index.html`, `scripts/test-storefront-mobile-r3.mjs`, `scripts/test-storefront-mobile-r4.mjs` e `scripts/test-storefront-mobile-r5.mjs`. A PR #1271 tem 53 arquivos ao todo, incluindo `pedido/index.html`, `scripts/helpers/admin-ui-source.mjs` e contratos do Admin. Na etapa anterior da mesma PR, os commits `65938f4`, `15ec7d2` e `4544862` alinharam 15 testes do Admin/Pedidos ao runtime modular e ao harness ESM: `test-order-separation-completion-feedback-v4.mjs`, `test-admin-orders-clean-flow-v3.mjs`, `test-order-manual-queue-v1.mjs`, `test-separator-assignment-repair-v1.mjs`, `test-montar-picking-v1.mjs`, `test-order-customer-notifications-v1.mjs`, `test-admin-attendance-native-v1.mjs`, `test-admin-attendance-offers-tab-v1.mjs`, `test-admin-ana-section-v1.mjs`, `test-fiscal-nfe-autorecovery-v1.mjs`, `test-basket-simple-tabs-v1.mjs`, `test-basket-lot-ops-rules.mjs`, `test-customer-postorder-flow-v1.mjs`, `test-order-public-summary.mjs` e `test-admin-order-public-vitrine.mjs`. A rota administrativa continua em `/vitrine/admin/`.
+- Verificações: os testes `scripts/test-storefront-mobile-r1.mjs` a `r5.mjs` passaram, executados contra a fonte da PR. `python3 scripts/build-vitrine-admin-runtime.py --check` passou no workspace disponível (9 fragmentos, 638.778 caracteres); o runtime do Admin não foi alterado nesta onda. Em `89d1e46`, os 13 workflows de CI aplicáveis terminaram `success` (13/13).
+- Smoke pré-integração, leitura somente: o site publicado `/` mostrava cinco cestas e carrinho vazio; `/vitrine/admin/` abriu a Central com 19 áreas. Esse smoke antecede a implantação deste commit. Nenhum pedido, mensagem, checkout, estoque ou dado operacional foi criado ou alterado.
+- Supabase canônico confirmado: `ssbesxgaijknwsjbsbcz`, `ACTIVE_HEALTHY`, PostgreSQL `17.6.1.166`; 1.244 migrations, última `20261022114704`; 142 Edge Functions. `admin1-products-read-v1` continua ativa na versão 3. Nenhuma migration, função, configuração, policy/grant, advisor ou dado foi alterado nesta onda. Divergência do ledger permanece: 1.244 versões aplicadas, 180 SQLs versionados e 31 timestamps compartilhados; DDL segue aguardando reconciliação.
+- Integração/publicação: a PR ainda não foi integrada neste checkpoint. Sem evidência de implantação do novo commit. Rollback: reverter o merge da #1271; não há rollback de Supabase.
+- Próxima tarefa exata, após merge e smoke em produção: mapear, somente por leitura, os consumidores atuais de `admin1-products-read-v1` correlacionando chamadas reais/logs do Supabase com callsites e autenticação no repositório/runtime; manter a função ativa até identificar todos os consumidores e decidir seu destino dentro do sistema existente. Depois, reconciliar o ledger de migrations antes de qualquer DDL.
+
+
+nterface operacional simples para funcionários;
 - Bling como ERP oficial (produtos, estoque operacional, compras, fornecedores, vendas, fiscal e financeiro);
 - ChatGPT como camada de gestão, análise, automações e acompanhamento;
 - Supabase apenas para regras e integrações específicas que o Bling não resolve adequadamente.
@@ -172,7 +172,7 @@ Fechar a Fase 1 com a matriz de fonte de verdade por entidade e o desenho TO-BE 
 
 
 ## Regra adicional de continuidade
-Regra histórica de 2026-09-25: aguardava conclusão e revisão do Projeto Final antes de programação/produção. Em 2026-10-22, o usuário autorizou explicitamente a implementação progressiva de correções seguras, inclusive no sistema em uso e no Supabase canônico, seguindo as validações, limites operacionais e gates descritos na seção “REFORMA CONTÍNUA DO SISTEMA E DO SITE PÚBLICO”. Esta autorização atual prevalece; mudanças de alto impacto continuam sujeitas à homologação e rollback específicos.
+O usuário determinou que não deve haver programação nem alteração de produção até toda a análise estar concluída, revisada e consolidada no Projeto Final detalhado. Documentação de análise pode ser atualizada para preservar continuidade.
 
 ## Novo requisito multicanal
 Clientes podem comprar diretamente pelo WhatsApp/PapoAI sem usar o site. O projeto final deve incluir venda manual e rascunho assistido pelo PapoAI, ambos convergindo para o mesmo motor canônico de pedido do site. Ver `ANALYSIS-NOTES.md` e `SOURCE-OF-TRUTH-DRAFT.md`.
@@ -273,7 +273,1872 @@ A análise foi ampliada para pós-venda, CDC/e-commerce, recall de alimentos, re
 Principais decisões:
 - usar Check-in de Recebimentos Bling antes de lançar estoque;
 - danificado/faltante/incorreto no recebimento vira pendência/crédito/devolução no próprio Bling;
-- site deve espelhar saldo virtual do …25605 tokens truncated…o: ignorados pelo novo fluxo automático.
+- site deve espelhar saldo virtual do depósito Geral, atualizado por webhooks;
+- Geral + Quarentena são suficientes;
+- pós-venda precisa tratar arrependimento, vício, troca, refund e devolução sem apagar a venda original;
+- recall por lote entra como fluxo simples de bloqueio + Quarentena + rastreabilidade;
+- operação custom fica limitada a cinco superfícies: Central, Pedidos/Nova venda WhatsApp, Tablet Separação, Balanço/Avaria/Retorno e Entregador;
+- compras/check-in/checkout/fiscal/financeiro ficam preferencialmente no Bling;
+- análise marcada como pronta para consolidação do PROJECT-MASTER; ainda não implementar.
+
+Novos documentos:
+- `POSTSALE-CONSUMER-RECALL-DRAFT.md`
+- `RECEIVING-SUPPLIER-RETURNS-DRAFT.md`
+- `STOCK-RECONCILIATION-DRAFT.md`
+- `MINIMAL-PROFESSIONAL-OPERATION-DRAFT.md`
+- `PROJECT-FINAL-READINESS.md`
+
+## Projeto Final Consolidado — 2026-09-25
+A fase de análise foi consolidada em documentos canônicos:
+
+1. `PROJECT-MASTER.md` — arquitetura e operação final;
+2. `SOURCE-OF-TRUTH.md` — autoridade final por domínio;
+3. `IMPLEMENTATION-ROADMAP.md` — ordem de homologação e implantação.
+
+Os arquivos `*-DRAFT.md` permanecem como evidência e pesquisa de apoio, mas decisões novas devem partir do PROJECT-MASTER e SOURCE-OF-TRUTH final.
+
+**Importante:** ainda não houve implementação de produção desta nova arquitetura. Próximo passo só deve começar após aprovação explícita do Projeto Final.
+
+## Como retomar em qualquer novo chat
+Dizer:
+"Retome Dona Antônia Operations 2.0. Leia docs/projects/dona-antonia-operations-2/HANDOFF.md no SUCEDOAN12, confirme o estado real no GitHub/Supabase antes de agir e continue do Próximo passo. Não altere produção sem homologação."
+
+## Regra de continuidade
+Ao terminar cada rodada importante:
+1. atualizar este HANDOFF;
+2. registrar o que foi realmente concluído;
+3. registrar pendências/bloqueios;
+4. atualizar Próximo passo;
+5. nunca depender apenas do histórico do chat.
+
+
+## Implantação em andamento — 2026-09-25
+A análise foi aprovada e a implantação segura já começou. A frase antiga de "não implementar" neste HANDOFF ficou histórica e não deve bloquear o trabalho atual.
+
+Concluído na onda atual:
+- fundação Control Tower/ledger/attention/approvals;
+- polling ocioso pausado;
+- Bling em modo homologação com Hub/Webhooks ainda OFF;
+- OAuth de reautorização Bling preparado;
+- reserva do checkout movida para a confirmação;
+- shadow readiness de early-order;
+- fila de impressão de picking;
+- motor canônico multicanal;
+- Nova venda WhatsApp;
+- PapoAI receiver capture-only no lugar do 410.
+
+Versões atuais:
+- admin-products-live-v1 v22;
+- storefront-v2 v16;
+- admin-service-intelligence-v1 v137;
+- papo-external-agent-v1 v105.
+
+Próximos gates:
+- capturar payload real do PapoAI e normalizar eventos;
+- reautorizar escopos de Situações no Bling e provar reserva/webhook;
+- depois canário de early-order no Bling;
+- POC de impressora física.
+
+
+### Ponte PapoAI de conversa operacional
+- payload real já é normalizado pelo adapter v2;
+- `papoai_ensure_conversation_v2` faz o vínculo do inbound com `conversations`;
+- receiver PapoAI v107 chama normalização + ponte inline, sem cron;
+- conversa local é espelho operacional, não fonte do canal;
+- cliente não é criado automaticamente;
+- texto livre não cria pedido;
+- rascunho versionado só deve receber eventos estruturados e determinísticos.
+
+Próximo passo PapoAI: observar eventos de botões/flows/ações estruturadas e mapear somente os que permitirem montar/revisar o draft com segurança.
+
+
+### Estado de implantação — separação/PapoAI
+- PapoAI receiver v107 + normalizer v2 + conversation bridge v2 estão recebendo tráfego real;
+- 9/9 eventos observados em 24h ficaram vinculados a conversas, sem revisão pendente;
+- nova aba Separação atende tablet vertical com fluxo mínimo;
+- picking 85 mm agora inclui foto, nome, EAN, quantidade e localização;
+- impressão silenciosa ainda depende da POC física;
+- próximo grande bloqueio externo continua sendo reautorizar o Bling para Situações/Módulos/Transições.
+
+
+### Estoque mobile auditável
+- `ops_inventory_counts` registra contagem física, saldo anterior, diferença, operador e estado de reconciliação;
+- `ops_inventory_incidents` registra avaria, vencido, perda, retorno e outras ocorrências;
+- Balanço não perde mais a causa/auditoria da diferença;
+- durante a transição, a contagem atualiza o espelho local para manter o site coerente, mas diferença segue aberta para reconciliação no Bling/fiscal;
+- avaria/vencido/perda saem imediatamente do estoque vendável local;
+- retorno fica fora do vendável até inspeção;
+- tela `Estoque mobile` no Admin usa leitor EAN + teclado na tela;
+- próximo passo deste domínio: após homologar estoque/depósitos no Bling, trocar o efeito local por movimento oficial Geral -> Quarentena / reconciliação de Balanço.
+
+
+### Pagamento efetivo na entrega
+- `order_payment_settlements` e `order_payment_parts` foram adicionadas;
+- o pagamento previsto no pedido não é mais tratado como pagamento efetivo;
+- entregador/operador registra o que realmente recebeu;
+- split de até 2 formas já está disponível na UI operacional, enquanto o backend suporta até 8 partes;
+- a soma precisa fechar exatamente o total;
+- somente depois da captura o pedido é marcado como Entregue;
+- se o pagamento falhar, usar `Não entregou`;
+- settlement fica `blocked_homologation` para Bling até o gate fiscal/financeiro;
+- não chamar mais o antigo `order_fiscal_confirm_payment` como confirmação simples da entrega.
+
+Próximo passo deste domínio: implementar retorno físico/não entrega como ocorrência explícita e depois, após homologação Bling, sincronizar recebimentos reais ao financeiro.
+
+
+### Não entrega / retorno físico
+- `order_delivery_return_cases` controla tentativas não concluídas e retorno da mercadoria;
+- `Não entregou` não volta mais o pedido diretamente para Pronto;
+- pedido permanece em entrega com overlay `returning` até a mercadoria voltar fisicamente;
+- no tablet do entregador aparece `CONFIRMAR RETORNO AO DEPÓSITO`;
+- ausente/endereço/reagendamento/veículo -> retorno confirmado -> `ready` para reentrega, sem restaurar estoque;
+- pagamento falhou/cliente recusou/outro -> retorno confirmado -> `returned_review`, bloqueado para nova saída e atenção do supervisor;
+- backend bloqueia captura de pagamento/Entregue enquanto houver retorno aberto;
+- backend bloqueia saída de pedido `ready` com retorno em revisão.
+
+Próximo passo: criar a resolução do retorno em revisão (mercadoria íntegra x avaria/falta) e só depois executar cancelamento/restauração de estoque/fluxo fiscal correspondente.
+
+
+### Resolução de retorno em revisão
+- supervisor pode liberar mercadoria íntegra para reentrega sem mexer no estoque;
+- supervisor pode cancelar apenas quando confirmar que TODO o retorno está íntegro;
+- nesse caso o estoque local consumido é restaurado e o pedido fica cancelado comercialmente;
+- sempre abre atenção fiscal `delivery_return_fiscal_review`; nenhuma NF-e é alterada automaticamente;
+- se existir pagamento capturado, o cancelamento íntegro é bloqueado até fluxo de reembolso;
+- se houver avaria/falta, usar Estoque mobile e não restaurar o pedido inteiro.
+
+
+## Gate Bling automatizado pós-OAuth — 2026-09-25
+- `admin-service-intelligence-v1` publicado em v139;
+- após uma reautorização OAuth bem-sucedida, o backend testa automaticamente `/situacoes/modulos`;
+- catálogo autorizado passa a gravar `state=ready` e `status_updates_enabled=true`;
+- a pendência `bling_scope_missing` é resolvida automaticamente quando o teste passa;
+- Hub, Webhooks e fiscal continuam desligados; nenhuma escrita de pedido é ativada automaticamente;
+- enquanto o Bling responder 403, o runtime permanece em homologação e o canário não avança.
+
+### Ação manual ainda necessária
+No cadastro do aplicativo Dona Antônia no Bling, liberar o acesso aos recursos de Situações/Módulos/Transições, salvar e reautorizar o aplicativo pelo botão **Reconectar Bling** do Vitrine/Admin. Depois disso a verificação é automática.
+
+
+## Bling — Situações + reserva de estoque homologadas — 2026-09-25
+
+### Escopos e catálogo
+- reconexão OAuth concluída com o aplicativo correto **GitHub - Sincronização de Produtos**;
+- `GET /situacoes/modulos` passou a responder HTTP 200;
+- módulo **Vendas** identificado de forma determinística;
+- catálogo de situações e transições gravado no runtime;
+- `status_updates_enabled=true`;
+- situações customizadas resolvidas:
+  - `Aguardando confirmação` = 915901;
+  - `Aprovado / Separar` = 915902;
+- transição `Aguardando confirmação -> Aprovado / Separar` = 504837238;
+- transição de rollback `Aprovado / Separar -> Aguardando confirmação` = 504838770.
+
+### Canário real
+Pedido Bling usado para homologação: `26967482613`.
+
+Estado inicial:
+- situação `Aguardando confirmação`;
+- sem NF-e;
+- saldo físico e saldo virtual iguais nos produtos amostrados.
+
+Após mudança para `Aprovado / Separar`:
+- situação alterada e confirmada por leitura da API;
+- saldo físico permaneceu inalterado;
+- saldo virtual caiu 1 unidade nos três produtos amostrados;
+- reserva de estoque portanto foi comprovada.
+
+Produtos amostrados:
+- Açafrão-da-terra Itapero 30 g: físico 10 / virtual 10 -> 9;
+- Achocolatado Apti 200 g: físico 3 / virtual 3 -> 2;
+- Arroz Tio Bonini 5 kg: físico 97 / virtual 97 -> 96.
+
+Rollback:
+- pedido voltou para `Aguardando confirmação`;
+- saldo virtual retornou a 10 / 3 / 97;
+- saldo físico continuou intacto;
+- liberação da reserva também foi comprovada.
+
+### Configuração Bling homologada
+Reserva de estoque configurada para considerar:
+- `Aprovado / Separar`;
+- `Verificado`.
+
+`Aguardando confirmação` não deve reservar.
+
+### Resultado
+Gate **Situações + Reserva** = HOMOLOGADO.
+
+O Hub geral continua em homologação e webhooks ainda não foram liberados para processamento. Próximo gate: homologar webhook real do Bling e reconciliação sem polling.
+
+
+## Bling — receiver e reconciliação de webhooks homologados internamente — 2026-09-25
+
+### Código/runtime
+- o código em produção estava 18,6 KB à frente do GitHub; o drift foi eliminado antes de novos deploys;
+- `admin-service-intelligence-v1` sincronizada no `SUCEDOAN12`;
+- v148 adicionou canário interno do receiver;
+- v149 adicionou reconciliação de pedido orientada a evento, somente leitura;
+- commits principais:
+  - `e3378907` — sincronização do runtime + canário do receiver;
+  - `ff680757` — reconciliação de webhook de pedido por evento.
+
+### Receiver canário
+Evento sintético assinado internamente:
+- assinatura HMAC válida -> HTTP 200;
+- evento armazenado com `signature_verified=true`;
+- como `hub_enabled=false` e `webhooks_enabled=false`, evento ficou `held`;
+- envio duplicado do mesmo `eventId/hash` -> HTTP 200 e `duplicate=true`, sem segunda linha;
+- assinatura inválida -> HTTP 401;
+- nenhum efeito externo e nenhuma mutação de pedido.
+
+### Reconciliação canário
+Evento: `c1acf430-cfd8-4018-b103-b0589025e05e`.
+Pedido Bling: `26967482613`.
+Pedido canônico: `2e464c9f-f5df-4d75-baa4-f6455addd6d4`.
+
+Resultado:
+- vínculo Bling <-> pedido local resolvido;
+- status local `storefront_received` mapeia para Bling `915901`;
+- leitura remota observou `915901`;
+- classificação `order_reconciled_noop`;
+- evento finalizado como `processed`;
+- `local_mutation=false`;
+- anti-loop preservado.
+
+### Gate atual
+Receiver + idempotência + assinatura + reconciliação de pedido = **PASSARAM internamente**.
+
+Ainda falta a prova de **entrega real pelo Bling**. A inbox estava vazia antes do canário, então o aplicativo ainda não está enviando webhooks para o endpoint.
+
+Ação manual necessária no aplicativo **GitHub - Sincronização de Produtos**:
+1. abrir aba **Webhooks**;
+2. cadastrar servidor:
+   `https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-service-intelligence-v1?source=bling-webhook-v2`
+3. habilitar versão `v1` para:
+   - Pedido de Venda (`order`);
+   - Produto (`product`);
+   - Estoque (`stock`);
+   - Nota Fiscal (`invoice`);
+4. habilitar ações disponíveis `created`, `updated`, `deleted`;
+5. salvar.
+
+O Bling habilita `virtual_stock` automaticamente junto com `stock`.
+
+Segurança:
+- manter `hub_enabled=false`;
+- manter `webhooks_enabled=false`;
+- eventos reais recebidos ficam `held` até a homologação final.
+
+
+## Bling — entrega real de webhooks homologada — 2026-09-25
+
+### Prova real
+Depois da configuração manual no aplicativo **GitHub - Sincronização de Produtos**, o Bling começou a entregar webhooks reais no receiver do Operations 2.0.
+
+Pedido canário:
+- Bling: `26967482613`;
+- canônico: `2e464c9f-f5df-4d75-baa4-f6455addd6d4`.
+
+Ao mudar `Aguardando confirmação -> Aprovado / Separar`:
+- chegou `order.updated` real com situação `915902`;
+- assinatura real foi validada;
+- evento ficou `held` porque processamento geral permanece desligado;
+- a reconciliação detectou corretamente drift entre local `storefront_received`/esperado `915901` e Bling `915902`;
+- nenhuma mutação local foi feita.
+
+Ao devolver `Aprovado / Separar -> Aguardando confirmação`:
+- chegou segundo `order.updated` real com situação `915901`;
+- assinatura válida;
+- reconciliação terminou como `order_reconciled_noop`;
+- local e Bling ficaram consistentes.
+
+### Estoque virtual
+A aprovação e o rollback geraram **56 eventos reais `virtual_stock.updated`**:
+- 28 produtos ao entrar a reserva;
+- os mesmos 28 produtos ao liberar a reserva;
+- todas as assinaturas verificadas;
+- saldo físico permaneceu intacto;
+- saldo virtual foi reservado e depois liberado.
+
+Os 56 eventos do canário foram classificados como teste e limpos da fila `held`, sem alterar estoque local.
+
+### Resultado
+Gate **Webhook real + assinatura + idempotência + reconciliação de pedido = HOMOLOGADO**.
+
+Estado de segurança preservado:
+- `mode=homologation`;
+- `hub_enabled=false`;
+- `webhooks_enabled=false`;
+- nenhum processamento geral foi ativado;
+- Make não foi usado.
+
+Próximo passo: homologar o processamento de `virtual_stock.updated` para atualizar de forma segura o espelho local usado pelo site, antes de liberar webhooks gerais.
+
+
+
+## Espelho de estoque Bling por webhook — HOMOLOGADO em 2026-09-25
+
+### Backfill
+O shadow mirror `bling_stock_mirror_v2` foi preenchido por leitura do Bling, sem escrita externa:
+- 1.634 produtos ativos;
+- 1.630 ativos com vínculo Bling exato;
+- 1.630/1.630 vinculados cobertos pelo mirror;
+- 4 ativos sem correspondência exata por GTIN/SKU no catálogo Bling;
+- 0 vinculados sem snapshot.
+
+Comparação do legado `products.stock` com o saldo virtual do depósito Geral:
+- 1.087 iguais;
+- 543 divergentes;
+- 168 com local acima do Bling;
+- 375 com local abaixo do Bling;
+- 11 vendáveis localmente enquanto o Bling estava zerado;
+- 3 zerados localmente enquanto o Bling tinha saldo.
+
+Os 4 sem vínculo ficaram em atenção; nenhum vínculo aproximado foi criado.
+
+### Atualização orientada a evento
+Foi implantada aplicação idempotente de `virtual_stock.updated` no mirror:
+- fonte: webhook Bling assinado;
+- depósito vendável: Geral;
+- proteção contra evento fora de ordem por `observed_at`;
+- nunca altera `products.stock`;
+- nunca escreve estoque de volta no Bling;
+- sem cron/worker de sincronização contínua.
+
+Durante a primeira ativação do trigger houve um erro de implementação: uso de `min(uuid)` no PostgreSQL causou respostas HTTP 500 para eventos de estoque. A flag shadow foi desligada imediatamente, o erro foi localizado nos logs e corrigido pela migration `ops2_virtual_stock_shadow_trigger_v1_fix`.
+
+Após a correção:
+- flag shadow reativada;
+- rollback real do pedido canário gerou 28 `virtual_stock.updated`;
+- 28/28 foram processados automaticamente;
+- receiver respondeu HTTP 200 em todos;
+- maior tempo observado: 2.214 ms;
+- mirror do Achocolatado fechou em físico 3 / virtual 3;
+- pedido canário voltou para `Aguardando confirmação`;
+- reserva ficou liberada;
+- 0 eventos `virtual_stock` canários permaneceram presos em `held`.
+
+Estado do gate: **PASSOU**.
+
+O Hub geral continua desligado:
+- `hub_enabled=false`;
+- `webhooks_enabled=false`;
+- somente o shadow mirror de `virtual_stock.updated` está ativo.
+
+### Próximo gate
+Antes de o site consumir o mirror, remover a dependência operacional do modelo legado:
+- checkout ainda valida `products.stock`;
+- confirmação ainda cria reserva local;
+- trigger legado ainda consome `products.stock` ao confirmar;
+- Admin ainda calcula readiness com `products.stock`;
+- esse ciclo precisa ser substituído de forma atômica para impedir dupla contagem com a reserva oficial do Bling.
+
+
+## Regra reforçada de continuidade — 2026-09-25
+
+O planejamento operacional detalhado foi atualizado em `IMPLEMENTATION-ROADMAP.md` no commit `ef3b60a0`.
+
+A partir desta rodada, é regra obrigatória:
+- nenhuma rodada importante termina sem atualizar o HANDOFF;
+- conferir GitHub + Supabase/runtime antes de retomar;
+- registrar commits, migrations, versões de Edge Functions, flags, testes, evidências, PASS/FAIL, rollback, pendências e próximo passo exato;
+- atualizar também `HOMOLOGATION-STATUS.md` quando um gate for testado/homologado;
+- não depender do histórico do chat para continuidade;
+- código escrito sem teste/evidência/documentação não conta como etapa concluída;
+- se houver interrupção, a retomada deve ser possível somente pelo repositório, Supabase/runtime e documentos canônicos.
+
+### Próximo bloco oficial
+Prioridade: fechar **pedido + estoque Bling** antes de limpeza ou expansão lateral.
+
+Sequência:
+1. baseline/documentação e 4 produtos sem vínculo;
+2. cobertura determinística do catálogo;
+3. cutover da leitura de estoque para saldo vendável Bling;
+4. remoção da dupla reserva/baixa local;
+5. early-order Bling em canário;
+6. canário ponta a ponta com reserva virtual, separação, Verificado, saída e baixa física;
+7. somente após PASS, ativação controlada das flags de produção.
+
+O roadmap completo contém os blocos seguintes: Separação/Checkout, Estoque operacional, Rota/Entrega/Pagamento, Fiscal/Financeiro, Compras/XML, PapoAI, Control Tower, Segurança e Cleanup.
+
+## Continuidade do próximo bloco — 2026-09-25
+O próximo bloco oficial permanece **Pedido + Estoque Bling**, seguindo exclusivamente o planejamento já registrado em `IMPLEMENTATION-ROADMAP.md`.
+
+Regra reforçada:
+- manter o padrão documental já existente nesta pasta;
+- não criar documentos paralelos de planejamento sem necessidade;
+- atualizar `HANDOFF.md` ao final de cada rodada relevante;
+- atualizar `HOMOLOGATION-STATUS.md` quando um gate for testado/homologado;
+- atualizar `IMPLEMENTATION-ROADMAP.md` somente quando houver mudança real de plano, ordem ou critério;
+- registrar commits, migrations, versões, flags, testes, PASS/FAIL, rollback, pendências e próximo passo exato;
+- nunca depender apenas do histórico do chat.
+
+### Próximo passo exato
+Seguir o **BLOCO A — Fechar pedido + estoque Bling** já existente no `IMPLEMENTATION-ROADMAP.md`, começando por **A1 — Atualizar documentação e baseline**, sem criar uma estrutura documental nova.
+
+
+## BLOCO A — A1 baseline atualizado — 2026-09-25
+
+Rodada executada somente em leitura/documentação. Nenhuma flag, estoque, pedido ou runtime foi alterado.
+
+### GitHub
+HEAD observado antes deste checkpoint: `c538766a`.
+Último commit funcional do Operations 2.0 antes das atualizações documentais: `af5fbc25` — homologação de lançamento/estorno físico de pedido.
+
+### Runtime Supabase/Bling
+- projeto canônico: `ssbesxgaijknwsjbsbcz`;
+- `mode=homologation`;
+- `hub_enabled=false`;
+- `webhooks_enabled=false`;
+- `ops2_direct_order_state_enabled=false`;
+- `stock_authority=legacy_shadow`;
+- `stock_cutover_at=null`;
+- physical stock gate: `verified`;
+- webhook gate: `real_delivery_verified`;
+- stock mirror gate: `verified`.
+
+Versões observadas:
+- `admin-service-intelligence-v1` v154;
+- `admin-products-live-v1` v36;
+- `storefront-v2` v16;
+- `papo-external-agent-v1` v107.
+
+### Baseline do estoque vendável
+- produtos ativos: 1.634;
+- prontos no mirror Bling: 1.630;
+- não prontos: 4;
+- iguais legado x Bling: 1.087;
+- divergentes: 543;
+- legado positivo / Bling zero: 11;
+- legado zero / Bling positivo: 3;
+- última observação do mirror no baseline: 2026-09-25T22:47:21Z.
+
+### 4 produtos ativos sem mirror Bling
+1. Desodorante antitranspirante roll-on NIVEA Dry Comfort Feminino — GTIN `4005808257584` — estoque local 3 — WhatsApp inativo.
+2. Flocão de Milho Urbano 500 g — GTIN `787896038300136` — estoque local 3 — WhatsApp inativo.
+3. Gel Dental Infantil Avengers Kids+ Morango Condor 50 g — GTIN `7891055394878` — estoque local 3 — WhatsApp inativo.
+4. Papel Higiênico Branquíssimo e Fofíssimo Folha Simples Personal 16 rolos — SKU/GTIN `7896110005874` — estoque local 10 — **WhatsApp ativo**.
+
+### Evidência / gate
+A1 baseline documental: **PASS**.
+Nenhuma tentativa de corrigir vínculo foi feita nesta rodada.
+
+### Observação técnica
+A consulta inicial tratou `status_updates_enabled` como coluna física, mas o runtime atual não possui essa coluna; esse estado deve ser lido do metadata/estrutura correspondente. Nenhuma alteração resultou dessa consulta.
+
+### Rollback
+Não aplicável: rodada sem escrita em produção.
+
+### Próximo passo exato
+Continuar o BLOCO A com **A2 — Resolver cobertura do catálogo** do `IMPLEMENTATION-ROADMAP.md`.
+Primeiro investigar deterministicamente os quatro produtos acima no catálogo Bling. Não criar vínculo aproximado. O produto Personal 16 rolos merece prioridade porque ainda está ativo no canal. Se não houver identidade exata comprovável, bloquear da venda antes do futuro cutover.
+
+
+## BLOCO A — A2 cobertura do catálogo — investigação — 2026-09-25
+
+Continuação executada sem criar vínculo aproximado e sem alterar flags de produção.
+
+### Resultado
+Os quatro produtos ativos fora do mirror continuam sem `bling_product_id` também na visão fiscal `product_fiscal_bling_diff_v1`. O banco local ainda não contém evidência suficiente para afirmar uma identidade Bling exata para nenhum deles.
+
+### Decisão de segurança
+Nenhum vínculo foi criado. A regra A2 exige identidade determinística por GTIN/SKU/ID confirmado; nome semelhante não é suficiente. O item Personal 16 rolos permanece como prioridade porque no baseline foi observado ativo no canal.
+
+### Gate
+A2: **EM ANDAMENTO / BLOQUEADO PARA VÍNCULO** até consulta exata ao catálogo Bling ou bloqueio comercial comprovado dos itens sem fonte de saldo.
+
+### Flags
+Sem alteração:
+- `ops2_direct_order_state_enabled=false`;
+- `stock_authority=legacy_shadow`;
+- `stock_cutover_at=null`.
+
+### Próximo passo exato
+Usar a integração Bling já existente para consultar os quatro identificadores diretamente no catálogo ERP. Vincular somente correspondências exatas. Para qualquer item sem correspondência inequívoca, bloquear da venda antes do cutover de leitura de estoque. Depois reexecutar `get_ops2_sellable_stock_status_v1()` e exigir cobertura segura antes de avançar ao cutover.
+
+
+## BLOCO A — A2 rodada pequena: caminho oficial de consulta Bling — 2026-09-25
+
+### Escopo
+Somente localizar e validar o mecanismo já existente no código para consulta determinística de produto no Bling. Nenhuma escrita de produto, vínculo, estoque ou flag nesta rodada.
+
+### Evidência
+O caminho já existe em `supabase/functions/purchase-xml-v1/index.ts`, função `remoteProductByGtin`:
+- consulta `GET /produtos` com `gtins[]`;
+- normaliza e compara o GTIN retornado;
+- aceita somente uma correspondência exata;
+- se houver mais de uma correspondência exata, gera `multiple_bling_gtin`.
+
+A função `ensureProduct` já utiliza esse mecanismo antes de qualquer criação/vínculo e também rejeita conflito entre `local.bling_product_id` e o produto encontrado por GTIN.
+
+### Gate
+A2 / mecanismo de identificação: **PASS**.
+O projeto já possui regra adequada para identidade determinística; não é necessário inventar novo mecanismo.
+
+### Alterações de produção
+Nenhuma.
+
+### Próximo passo exato
+Em uma nova rodada pequena, reutilizar esse caminho já existente em modo somente consulta para os quatro GTINs pendentes. Registrar os resultados exatos antes de qualquer vínculo ou bloqueio comercial.
+
+
+## BLOCO A — A2 cobertura do catálogo concluída — 2026-09-25
+
+### Evidência final
+O read model `ops2_sellable_stock_v1` mostrou os quatro produtos pendentes com:
+- `bling_product_id=null`;
+- `link_status=not_found`;
+- `bling_stock_ready=false`;
+- `stock_source_reason=unlinked`.
+
+Isso confirma que o mecanismo determinístico de matching já os procurou sem encontrar correspondência Bling segura.
+
+### Ação
+Os quatro produtos foram desativados comercialmente com `is_active=false` e `is_whatsapp_active=false`. Cadastro e estoque histórico foram preservados; nenhum produto foi apagado e nenhum vínculo artificial foi criado.
+
+Produtos desativados:
+- NIVEA Dry Comfort Feminino — GTIN 4005808257584 — estoque local preservado 3;
+- Flocão de Milho Urbano 500 g — GTIN 787896038300136 — estoque local preservado 3;
+- Gel Dental Infantil Avengers Kids+ 50 g — GTIN 7891055394878 — estoque local preservado 3;
+- Papel Higiênico Personal 16 rolos — GTIN 7896110005874 — estoque local preservado 10.
+
+### Revalidação
+Após a ação:
+- produtos ativos: 1.630;
+- `active_bling_ready=1630`;
+- `active_not_ready=0`;
+- `stock_authority=legacy_shadow`;
+- `stock_cutover_at=null`;
+- divergências legado x Bling permanecem 543 e serão tratadas no gate apropriado, sem cópia cega de saldos.
+
+### Gate
+**A2 — PASS.**
+100% do catálogo ativo restante possui cobertura segura do mirror Bling.
+
+### Rollback
+Os quatro cadastros permanecem intactos e podem ser reativados após vínculo Bling determinístico e mirror válido. Não restaurar venda antes disso.
+
+### Próximo passo exato
+Avançar para o próximo gate do BLOCO A no `IMPLEMENTATION-ROADMAP.md`: preparar e validar o cutover da **leitura de estoque** para `ops2_sellable_stock_v1`, ainda sem ligar globalmente `stock_authority=bling`. Mapear primeiro todos os consumidores de `products.stock` no site/checkout/admin para evitar fonte dupla.
+
+
+## BLOCO A — cutover de leitura: mapeamento de dependências — 2026-09-25
+
+### Escopo
+Rodada média de preparação. Nenhuma mudança de `stock_authority` e nenhum cutover global.
+
+### Dependências encontradas
+O estoque legado ainda participa diretamente de pontos críticos:
+- `storefront-v2`: listagem de ofertas e detalhe de produto consultam `products.stock`;
+- `create_vitrine_cart_order_v1`: disponibilidade de produto, limite de componente de cesta e validação final de demanda usam `products.stock`;
+- `reserve_vitrine_order_stock_v1`: calcula disponibilidade sobre `products.stock` menos reservas locais;
+- `consume_vitrine_order_stock_v1` e `release_vitrine_order_stock_v1`: ainda pertencem ao ciclo legado de baixa/restauração;
+- `admin-products-live-v1`: exibe e permite editar `products.stock`, portanto deve permanecer tratado como interface transitória até o gate de estoque operacional.
+
+### Evidência
+No banco atual, as quatro funções `create_vitrine_cart_order_v1`, `reserve_vitrine_order_stock_v1`, `consume_vitrine_order_stock_v1` e `release_vitrine_order_stock_v1` ainda contêm dependência direta de estoque legado.
+
+### Decisão
+Não alterar somente a vitrine isoladamente. O próximo patch deve manter catálogo + criação do pedido + validação de demanda coerentes com `ops2_sellable_stock_v1`. Reserva/consumo/release legado será desligado no gate específico de dupla reserva/baixa, não misturado silenciosamente nesta etapa.
+
+Enquanto `stock_authority=legacy_shadow`, o read model devolve o mesmo saldo legado, permitindo implantar a troca de leitura sem alterar a autoridade real.
+
+### Gate
+Mapeamento de consumidores críticos: **PASS**.
+Cutover de leitura: **AINDA NÃO EXECUTADO**.
+
+### Próximo passo exato
+Implementar uma migration versionada para fazer `create_vitrine_cart_order_v1` validar disponibilidade e limites através de `ops2_sellable_stock_v1.effective_sellable_stock`; em seguida adaptar `storefront-v2` para a mesma fonte. Manter `stock_authority=legacy_shadow`, executar smoke tests de produto simples, cesta e insuficiência, e só então avaliar o canário de autoridade Bling.
+
+
+## BLOCO A — leitura de estoque / storefront — 2026-09-25
+
+### Implementação
+`storefront-v2` foi migrado para consultar `ops2_sellable_stock_v1.effective_sellable_stock` nos pontos públicos de disponibilidade:
+- ofertas;
+- lista de produtos;
+- detalhe do produto;
+- composição de cesta;
+- cotação de cesta.
+
+A leitura de `vitrine_stock_reservations` foi removida desses caminhos públicos para evitar descontar duas vezes quando a autoridade passar a ser o saldo virtual Bling.
+
+### Deploy
+- `storefront-v2` publicado como **v17**;
+- commits de código: `7d02b300`, `fdbd3bd8`, `b0e92966`.
+
+### Segurança do rollout
+`stock_authority` continua `legacy_shadow`. Portanto, `effective_sellable_stock` ainda resolve para `products.stock`; a mudança desta rodada centraliza a leitura sem mudar a autoridade efetiva do saldo.
+
+### Validação
+- filtros diretos `.gt("stock",0)` removidos do storefront;
+- chamadas de `reservedMap` removidas do storefront;
+- catálogo ativo continua com cobertura Bling completa: 1.630/1.630, conforme gate A2.
+
+### Pendente nesta etapa
+O motor SQL `create_vitrine_cart_order_v1` ainda valida `products.stock` diretamente. Reserva/consumo/release locais também continuam legados. Não ativar `stock_authority=bling` antes de corrigir o motor e separar o gate de dupla reserva/baixa.
+
+### Gate
+Storefront read-model rollout: **PASS em legacy_shadow**.
+Cutover global: **NÃO AUTORIZADO AINDA**.
+
+### Rollback
+Reimplantar `storefront-v2` v16 se houver regressão de apresentação. Nenhuma alteração de saldo ou autoridade foi feita nesta rodada.
+
+### Próximo passo exato
+Criar migration versionada para `create_vitrine_cart_order_v1` validar disponibilidade/limites/demanda via `ops2_sellable_stock_v1.effective_sellable_stock`; aplicar com `legacy_shadow`; executar smoke tests transacionais sem deixar pedido de teste persistido. Depois tratar reserva/consumo/release local no gate seguinte.
+
+
+## BLOCO A — motor de pedido no read model de estoque — 2026-09-25
+
+### Implementação
+`create_vitrine_cart_order_v1` passou a usar `ops2_sellable_stock_v1.effective_sellable_stock` para:
+- disponibilidade inicial de produto;
+- limite automático de quantidade em componente de cesta;
+- validação final da demanda agregada.
+
+O lock de produto permanece antes da validação final para preservar serialização do fluxo atual.
+
+Migration versionada:
+- `supabase/sql/20260925_ops2_order_sellable_stock_read_v1.sql`;
+- commit `1276debb`.
+
+### Estado de rollout
+- `stock_authority=legacy_shadow`;
+- equivalência observada: **1.630/1.630** produtos ativos com `legacy_stock = effective_sellable_stock`;
+- nenhuma ativação global Bling nesta rodada.
+
+### Smoke tests
+1. Produto simples com saldo 1 e pedido de 1 unidade: **PASS**.
+2. Mesmo produto com pedido de 2 unidades: **PASS**, rejeitado com `insufficient_stock`.
+3. Cesta real `Grande Koblenz`, 27 componentes: **PASS**.
+4. Todos os testes de criação foram executados em transação com rollback; `leaked_test_orders=0`.
+
+### Gate
+Motor de criação/validação no read model: **PASS em legacy_shadow**.
+
+### Rollback
+A definição anterior permanece recuperável pelo histórico/migrations e commits. Como a autoridade continua legado, não houve alteração de saldo. Em regressão, restaurar a definição anterior de `create_vitrine_cart_order_v1`.
+
+### Próximo passo exato
+Tratar `reserve_vitrine_order_stock_v1`, `consume_vitrine_order_stock_v1` e `release_vitrine_order_stock_v1` para impedir dupla reserva/baixa quando `stock_authority=bling`. Não ativar Bling como autoridade até esse gate passar.
+
+
+## BLOCO A — guard contra dupla reserva/baixa local — 2026-09-25
+
+### Implementação
+As funções legadas receberam guard explícito por `ops2_stock_authority`:
+- `reserve_vitrine_order_stock_v1`: em autoridade `bling`, retorna `local_reservation_skipped=true`;
+- `consume_vitrine_order_stock_v1`: em autoridade `bling`, retorna `local_consume_skipped=true` e não baixa `products.stock`;
+- `release_vitrine_order_stock_v1`: em autoridade `bling`, retorna `local_release_skipped=true` e não restaura `products.stock`.
+
+Em `legacy_shadow`, o comportamento anterior é preservado.
+
+Migration:
+- `supabase/sql/20260925_ops2_disable_legacy_stock_mutations_on_bling_v1.sql`;
+- commit `2ebff6d8`.
+
+### Teste do modo Bling
+Foi feita simulação transacional alterando temporariamente `ops2_stock_authority=bling` e executando as três funções. Assertions confirmaram os três retornos de skip. A transação foi revertida e a autoridade final confirmada como `legacy_shadow`.
+
+### Ocorrência de teste e recuperação
+Uma chamada adicional em `legacy_shadow` usou um pedido existente apenas para validar o caminho legado e renovou `updated_at/expires_at` de 15 reservas. Não houve consumo/baixa de estoque nem mudança de status do pedido. Os 15 registros foram restaurados imediatamente para:
+- `updated_at = created_at = 2026-09-25 16:31:16.625974+00`;
+- `expires_at = created_at + 2h = 2026-09-25 18:31:16.625974+00`.
+Não reutilizar pedidos reais para testes futuros.
+
+### Gate
+Guard de dupla reserva/baixa local: **PASS**.
+Autoridade Bling continua **não ativada**.
+
+### Próximo passo exato
+Revisar os chamadores `storefront-v2` e `admin-products-live-v1` para que mensagens/eventos não afirmem “estoque local consumido” quando o retorno for `bling_authority`. Depois executar canário controlado de leitura com `stock_authority=bling` sem ativar ainda o fluxo geral de pedidos.
+
+
+## BLOCO A — canário de leitura Bling + semântica do Admin — 2026-09-25
+
+### Admin
+`admin-products-live-v1` foi ajustado para reconhecer o retorno `bling_authority` de `consume_vitrine_order_stock_v1`. Sob autoridade Bling:
+- não registra falsamente “estoque local consumido”;
+- evento informa que nenhuma baixa local foi executada;
+- retorno expõe `stock_status=bling_authority` e `local_consume_skipped=true`.
+
+Deploy:
+- `admin-products-live-v1` **v37**;
+- commit `bec25a53`.
+
+### Canário somente leitura
+Foi feita simulação transacional de `ops2_stock_authority=bling`, sem pedido e sem movimentação, usando produtos deliberadamente divergentes. O read model passou a devolver exatamente `sellable_virtual`:
+- Desinfetante Desaflora: legado 50 -> Bling 364;
+- Papel Higiênico Soberano 4 rolos: legado 3 -> Bling 300;
+- Arroz Koblenz 5 kg: legado 101 -> Bling 265.
+
+Assertions: **PASS**.
+Rollback executado; autoridade final confirmada `legacy_shadow`.
+
+### Barreira encontrada antes do cutover
+Entre 1.630 produtos ativos/cobertos:
+- 1.087 saldos iguais;
+- 543 divergentes;
+- 51 com Bling >= 5x o legado;
+- 6 com legado >= 5x o Bling;
+- 11 com legado positivo e Bling zero;
+- 3 com legado zero e Bling positivo.
+
+Essas diferenças tornam inseguro ativar `stock_authority=bling` globalmente sem reconciliação. Parte pode representar conversão caixa->unidade/cadastro histórico e deve ser comprovada, não normalizada por heurística.
+
+### Gate
+Canário técnico de troca da fonte de leitura: **PASS**.
+Cutover global: **BLOQUEADO por reconciliação de 543 divergências**.
+
+### Próximo passo exato
+Classificar as 543 divergências por risco e causa provável, começando pelos 71 casos extremos/zero (51 >=5x Bling, 6 >=5x legado, 11 local>0/Bling=0, 3 local=0/Bling>0; grupos podem se sobrepor). Cruzar GTIN/SKU, bindings, embalagem/conversão e dados de compra/XML existentes. Não corrigir saldos automaticamente. Produzir lote determinístico de reconciliação e só depois considerar canário real de autoridade.
+
+
+## BLOCO A — reconciliação de estoque por risco — 2026-09-25
+
+### Priorização escolhida
+A reconciliação começou pelos casos de maior risco comercial:
+1. local > 0 e Bling = 0;
+2. local = 0 e Bling > 0;
+3. razões extremas >=5x;
+4. demais diferenças.
+
+### Evidência dos 14 casos de cruzamento por zero
+Foram encontrados:
+- 11 produtos com estoque local positivo e saldo Bling físico/virtual zero;
+- desses 11, **9 possuem verificação física local recente** e **2 não possuem**;
+- 3 produtos com local zero e Bling físico/virtual = 1;
+- os 3 do sentido inverso **não possuem verificação física local**;
+- nenhum dos 14 possui histórico de compra/conversão já consolidado em `product_purchase_history` ou `product_supplier_packaging`.
+
+Conclusão operacional:
+- os 9 `local>0 / Bling=0` com verificação física são forte candidato a saldo inicial/movimentação ausente no Bling, mas ainda não foram corrigidos automaticamente;
+- os 2 `local>0 / Bling=0` sem verificação exigem nova contagem antes de qualquer ajuste;
+- os 3 `local=0 / Bling>0` exigem contagem física antes do cutover.
+
+### Novo read model
+Criada a view read-only `ops2_stock_reconciliation_v1`, com `security_invoker=true`, sem acesso anon/authenticated e leitura apenas via service_role.
+
+Classificação atual das 543 divergências:
+- 472 `quantity_difference`;
+- 51 `bling_extreme_high`;
+- 9 `bling_zero_local_verified`;
+- 6 `legacy_extreme_high`;
+- 3 `local_zero_recount_required`;
+- 2 `bling_zero_recount_required`.
+
+Migration:
+- `supabase/sql/20260925_ops2_stock_reconciliation_read_model_v1.sql`;
+- commit `fed9ce65`.
+
+### Segurança
+Advisors executados após DDL. Nenhuma nova finding específica da view apareceu. Permanecem avisos históricos do projeto (RLS sem policy em tabelas internas, índices não usados e 4 FKs sem índice), não tratados nesta rodada para evitar misturar escopo.
+
+### Gate
+Classificação determinística da fila de reconciliação: **PASS**.
+Alteração automática de saldos: **NÃO EXECUTADA**.
+Cutover Bling: **continua bloqueado**.
+
+### Próximo passo exato
+Tratar primeiro os 9 `bling_zero_local_verified`: confirmar que os vínculos GTIN/SKU estão corretos e preparar ajuste controlado do saldo físico no depósito Geral do Bling com base na última contagem física local, um lote pequeno por vez e com snapshot/rollback. Depois recontar fisicamente os 5 casos sem evidência local suficiente (2 local>0/Bling=0 e 3 local=0/Bling>0).
+
+
+## BLOCO A — gate de regularização antes do canário de escrita — 2026-09-25
+
+### Decisão de segurança operacional/fiscal
+Antes de executar POST `/estoques` com operação `B`, o código atual do Hub e o draft canônico de balanço foram revisados.
+
+O Hub já suporta:
+- leitura de saldo Bling por produto/depósito;
+- POST `/estoques` com `operacao=B`;
+- depósito Geral resolvido;
+- leitura pós-escrita e verificação exata do target;
+- tratamento de entrega incerta sem repetição cega.
+
+Porém, `INVENTORY-COUNT-BALANCE-DRAFT.md` registra a regra revisada: **contagem física != regularização automática**. Divergência precisa de causa antes de virar saldo fiscal/ERP.
+
+As 9 evidências locais anteriormente classificadas como “verificadas” têm datas entre 07/09 e 18/09/2026. Em 25/09 elas não são prova suficiente do saldo físico atual. Portanto **nenhum POST de balanço foi feito nesta rodada**.
+
+### Fila operacional criada
+Foram abertas 14 atenções idempotentes em `ops_attention`:
+- 9 prioridade `high`: local > 0 / Bling = 0 com verificação histórica;
+- 2 prioridade normal: local > 0 / Bling = 0 sem verificação;
+- 3 prioridade normal: local = 0 / Bling > 0 sem verificação.
+
+Cada atenção contém GTIN, SKU, Bling product id, saldo legado, físico/virtual Bling, data da verificação anterior e `automatic_stock_write=false`.
+
+### Gate
+Canário de escrita de saldo: **ADIADO CORRETAMENTE / BLOQUEADO por recontagem física atual e classificação da causa**.
+Nenhum saldo Bling ou local foi alterado.
+
+### Próximo passo exato
+Integrar essa fila à ferramenta Balanço/Estoque Mobile para que o operador leia os 14 EANs e registre a quantidade física atual. Para cada diferença:
+1. quantidade física = Bling -> resolver atenção sem escrita;
+2. quantidade física != Bling -> classificar origem documental/perda/sobra;
+3. somente após classificação, executar regularização adequada no Bling;
+4. revalidar espelho físico/virtual e fechar o blocker.
+
+
+## BLOCO A — fila de recontagem integrada ao Estoque Mobile — 2026-09-25
+
+### Implementado
+- RPC read-only `get_ops_stock_recount_queue_v1()`;
+- RPC interna `ops_apply_stock_recount_result_v1(...)`;
+- nova ação autenticada `stock_recount_queue` no `admin-products-live-v1`;
+- `admin-products-live-v1` publicado em **v39**;
+- Balanço/Estoque Mobile ganhou seção **Recontagem para Bling** antes das faltas de pedidos;
+- lista mostra prioridade, EAN, saldo local, físico Bling e virtual Bling;
+- botão **Contar** carrega o item no leitor/teclado já existente;
+- após uma contagem, a fila é recarregada.
+
+### Regra de segurança
+A recontagem **não escreve estoque no Bling**.
+- se a quantidade física atual coincidir com o físico Bling, o blocker é resolvido sem escrita ERP;
+- se diferir, a atenção permanece aberta e exige classificação da causa antes de regularização;
+- `automatic_stock_write=false` permanece explícito.
+
+### Evidência
+- fila: 14 itens = 9 high + 5 normal;
+- permissões RPC: anon=false, authenticated=false, service_role=true;
+- teste transacional/rollback não deixou alteração: fila continuou em 14;
+- nenhum POST de estoque Bling executado.
+
+### Código
+- `45281ee8` — read model da fila;
+- `502dfe99` — rota da fila no Admin;
+- `79a7cca8` — interface Estoque Mobile;
+- `fe4d28d1` — aplicar resultado da recontagem;
+- `b5efb401` — persistir SQL canônico.
+
+### Próximo passo exato
+Executar as 14 recontagens físicas no Estoque Mobile. A programação seguinte deve tratar somente os itens cuja nova contagem ainda divergir do físico Bling, exigindo causa antes de qualquer movimento/regularização oficial.
+
+
+## BLOCO A — classificação obrigatória de divergência de estoque — 2026-09-25
+
+### Implementado
+- tabela auditável `ops_stock_reconciliation_reviews` com RLS e acesso direto revogado;
+- divergência após recontagem cria revisão `classification_required`;
+- causas permitidas: entrada documentada, perda/avaria/vencimento, erro de contagem, movimento ERP faltante, sobra sem origem ou outro;
+- nota de causa obrigatória; referência de evidência opcional;
+- classificação muda somente para `ready_for_erp_review`;
+- não existe nesta etapa rotina automática de ajuste de saldo Bling;
+- `automatic_stock_write=false` persistido na revisão e na atenção;
+- gateway `admin-products-live-v1` publicado em **v40** com ação autenticada `stock_reconciliation_classify`.
+
+### Evidência
+- blockers físicos continuam 14, pois nenhuma contagem real foi inventada;
+- reviews atuais = 0, como esperado antes das recontagens;
+- RPC de classificação: anon=false, authenticated=false, service_role=true;
+- advisor de segurança executado; a nova tabela aparece com RLS sem policy, coerente com o padrão interno service-role-only. O advisor também mantém avisos preexistentes do projeto, incluindo leaked-password protection desabilitada; não foi alterado nesta rodada.
+
+### Código
+- `4aa1c672` — gateway de classificação;
+- `c869f42b` — persistência do gate SQL.
+
+### Próximo passo exato
+Aguardar/executar as 14 contagens físicas. Para cada divergência real, usar a classificação obrigatória. Só depois projetar/executar o movimento Bling correspondente, com revisão humana e evidência.
+
+
+## BLOCO A — pré-cutover amplo de estoque Bling — 2026-09-25
+
+### Gate determinístico
+Criada `get_ops2_stock_cutover_preflight_v1()`, read-only e restrita a service_role.
+Migration: `supabase/sql/20260925_ops2_stock_cutover_preflight_v1.sql`.
+Commit: `810e9e9f`.
+
+Estado medido:
+- authority: `legacy_shadow`;
+- depósito selecionado: Geral / 14887252169;
+- ativos: 1630;
+- ativos sem Bling stock ready: 0;
+- mirror gate: verified;
+- physical stock gate: verified;
+- controles físicos `review_required`: 0;
+- reservas locais **vivas**: 0;
+- reservas locais expiradas históricas: 15 linhas de 1 pedido `storefront_received`; expiração 25/09 18:31 UTC; não entram mais no cálculo de disponibilidade e não bloqueiam o cutover;
+- blockers de recontagem: 14;
+- resultado preflight: `ready=false`, único motivo: `physical_recount_pending`.
+
+### Validação dos 14 blockers
+- 14/14 `bling_stock_ready=true`;
+- 14 Bling product ids distintos;
+- 0 GTIN ausente;
+- 0 mirrors com mais de 24h na medição;
+- nenhuma vinculação foi inventada ou alterada.
+
+### Gate reserve/consume/release
+As funções legadas já possuem branch explícito para `ops2_stock_authority=bling`.
+Foi executado teste isolado em subtransação com rollback:
+- reserve -> `local_reservation_skipped=true`;
+- consume -> `local_consume_skipped=true`;
+- release -> `local_release_skipped=true`, `restored_physical_stock=false`;
+- hash completo de `products.stock`: inalterado;
+- hash completo de `vitrine_stock_reservations`: inalterado;
+- authority após rollback: `legacy_shadow`.
+A função temporária de teste foi removida após a prova.
+
+Conclusão: quando Bling virar autoridade, essas três rotinas não fazem dupla reserva nem baixa/restauração local.
+
+### Segurança
+`get_ops2_stock_cutover_preflight_v1`: anon=false, authenticated=false, service_role=true.
+Advisor executado. Nenhuma nova exposição executável anon/authenticated foi criada. Avisos históricos do projeto permanecem fora deste escopo.
+
+### Gate desta rodada
+Compatibilidade de reserve/consume/release com autoridade Bling: **PASS**.
+Pré-cutover técnico: **PASS exceto evidência física**.
+Cutover: **NÃO EXECUTADO**.
+Único blocker determinístico atual: **14 recontagens físicas**.
+
+### Próximo passo exato
+Realizar as 14 recontagens no Estoque Mobile. Se todas coincidirem com Bling, o preflight deve ficar `ready=true`. As que divergirem entram no gate de causa já implementado; somente depois de regularização controlada e revalidação o primeiro canário real de `ops2_stock_authority=bling` poderá ser executado.
+
+
+## BLOCO A — hardening final antes da contagem física — 2026-09-25
+
+### Inventory Mobile corrigido para a futura autoridade Bling
+Foi identificado e corrigido um risco pré-cutover: `ops_record_inventory_count_v1` ainda escrevia `products.stock` incondicionalmente.
+Agora:
+- em `legacy_shadow`, preserva o comportamento atual;
+- em `bling`, registra contagem/evidência e marca verificação física, mas `local_stock_applied=false` e NÃO altera `products.stock`;
+- `ops_apply_stock_recount_result_v1` deixou de comparar a contagem com o snapshot antigo da pendência e passa a buscar `sellable_physical` atual em `ops2_sellable_stock_v1`;
+- se o saldo Bling atual não estiver disponível, a pendência permanece aberta e falha fechada.
+
+Teste em subtransação/rollback sob `ops2_stock_authority=bling`:
+- produto blocker com local=5 e Bling físico=0;
+- contagem simulada=0;
+- retorno `local_stock_applied=false`;
+- `products.stock` antes=5 e depois=5;
+- zero contagens/reviews de teste vazaram;
+- autoridade após rollback=`legacy_shadow`.
+Checkpoint: `5510b95d`.
+
+### Ativação protegida + rollback
+Criadas funções internas service_role-only:
+- `ops2_activate_bling_stock_authority_v1()`: só ativa se `get_ops2_stock_cutover_preflight_v1().ready=true`; grava timestamp de cutover;
+- `ops2_rollback_bling_stock_authority_v1(reason)`: volta para `legacy_shadow` e exige motivo, registrando timestamp/motivo.
+Commit: `3a514fb0`.
+
+Teste negativo executado agora: tentativa de ativação foi corretamente recusada com `stock_cutover_preflight_failed`, mantendo `legacy_shadow`, porque existem 14 recontagens físicas abertas.
+Permissões confirmadas: anon/authenticated sem EXECUTE; service_role com EXECUTE.
+
+### Estado
+Não houve cutover. Nenhum saldo real foi alterado nesta rodada.
+O único blocker do preflight continua sendo `physical_recount_pending=14`.
+
+
+## BLOCO A — canário operacional + auditoria ampla de escritores de estoque — 2026-09-25
+
+### Auditoria ampla
+Busca em código + funções PostgreSQL identificou dois escritores locais adicionais que precisavam de proteção para a futura autoridade Bling:
+1. `ops_record_inventory_incident_v1` — avaria/vencido/perda;
+2. `apply_purchase_stock_receipt_v1` — recebimento de XML de compra.
+
+Correções live:
+- incidentes sob `stock_authority=bling` continuam registrados/auditados, mas `local_stock_applied=false`, delta local=0 e seguem para reconciliação/movimento oficial no Bling;
+- recebimento XML sob autoridade Bling agora falha fechado com `bling_stock_authority_requires_erp_receipt`, não escreve `products.stock` e registra auditoria;
+- comportamento `legacy_shadow` preservado.
+Teste de incidente em subtransação/rollback: local antes=5/depois=5, `local_stock_applied=false`, zero resíduos. Não havia documento XML disponível no banco para um canário real de compra nesta medição; a proteção é anterior a qualquer escrita.
+Commit: `1b379200`.
+
+### Canário operacional preparado
+Criada `ops2_stock_cutover_runs` (RLS, service-role-only) e funções:
+- `ops2_prepare_stock_cutover_canary_v1()`;
+- `ops2_check_stock_cutover_canary_v1(run_id)`.
+
+Run preparado: `b22e416d-9b3d-432c-b76a-7a7ebcbf2b17`.
+Resultado atual:
+- ready=false;
+- authority=legacy_shadow;
+- blockers=14 physical recount;
+- bad active stock rows=0;
+- mirrors >24h=0;
+- physical review required=0.
+O check só considera saudável autoridade Bling + zero blockers/reviews/linhas ruins/mirror antigo.
+Commit: `0cf4cc76`.
+
+### Admin
+`admin-products-live-v1` v41 expõe GET autenticado `stock_cutover_preflight` para visibilidade operacional, sem endpoint de ativação pública.
+Commit: `c2c1f0d6`.
+
+### Segurança
+Advisors executados. Nova tabela usa RLS sem policy e grants diretos anon/authenticated revogados, seguindo o padrão interno service-role-only. Permanecem avisos históricos do projeto fora desta rodada.
+
+### Estado final
+- Nenhum cutover executado;
+- nenhum saldo real alterado;
+- authority=`legacy_shadow`;
+- único blocker do preflight: 14 recontagens físicas.
+
+
+## BLOCO A — gate de integridade de entradas/saídas de estoque — 2026-09-25
+
+Revisão transversal executada em funções PostgreSQL, triggers e Edge Functions para todos os caminhos conhecidos que podem alterar disponibilidade/saldo.
+
+### Escritores mapeados e protegidos
+- pedido: reserve/consume/release — já guardados;
+- balanço: `ops_record_inventory_count_v1` — já guardado;
+- avaria/vencido/perda: `ops_record_inventory_incident_v1` — guardado;
+- compra/XML: `apply_purchase_stock_receipt_v1` — fail-closed sob Bling;
+- Admin product_save — corrigido para não sobrescrever `products.stock` ao editar produto sob Bling;
+- Admin expiry reconcile/expiration_save — corrigido para não zerar `products.stock` sob Bling;
+- trigger `enforce_zero_stock_inactive` — corrigido para não desativar produto por saldo legado <=0 sob Bling.
+
+O trigger foi testado em subtransação: estoque foi temporariamente zerado com autoridade Bling, produto não foi desativado e rollback restaurou saldo original=1.
+
+Admin atualizado/deploy: `admin-products-live-v1` v42.
+Commits Admin: `85fb8f39`, `093a98f5`.
+
+### Gate permanente
+Runtime ganhou `ops2_stock_writer_guard.state=verified` com escopo explícito dos sete caminhos acima.
+`get_ops2_stock_cutover_preflight_v1` agora exige também `writer_guard_verified=true`; se o gate deixar de estar verificado, cutover fica bloqueado automaticamente.
+Preflight atual:
+- writer_guard_verified=true;
+- active_not_bling_ready=0;
+- live local reservations=0;
+- physical review required=0;
+- único blocking_reason=`physical_recount_pending` (14).
+
+Commit do gate: `606d79ed`.
+
+### Observação arquitetural
+A rotina antiga de validade ainda trabalha com `products.validity_date`/ativação de produto. A escrita de saldo foi neutralizada, portanto não contorna a autoridade Bling. A substituição definitiva da lógica de validade por lotes/FEFO do Bling permanece uma etapa própria e não é necessária para inventar saldo no cutover.
+
+Estado final: `legacy_shadow`; nenhum saldo real alterado.
+
+
+## BLOCO B — separação com conferência obrigatória por EAN — 2026-09-25
+
+### Problema fechado
+A tela Tablet Separação permitia `processing -> ready` pelo botão SEPARADO sem conferência unitária. Isso foi removido do caminho da tela.
+
+### Implementação
+Criadas tabelas internas auditáveis:
+- `ops_order_check_sessions`;
+- `ops_order_check_items`.
+RLS habilitado, acesso direto anon/authenticated revogado; RPCs service-role-only:
+- `ops_start_order_check_v1`;
+- `ops_scan_order_check_v1`;
+- `ops_get_order_check_v1`;
+- `ops_finish_order_check_v1`.
+
+Regras:
+- só inicia com pedido em `processing`;
+- snapshot consolida quantidade esperada por produto + EAN;
+- EAN fora do pedido é rejeitado;
+- quantidade acima da esperada é rejeitada;
+- conclusão é rejeitada enquanto existir item incompleto;
+- somente após conferência exata o gateway muda pedido para `ready`;
+- evento `order.check_verified` é auditado.
+
+Admin:
+- Tablet Separação agora mostra **CONFERIR**;
+- diálogo mobile recebe leitor/entrada EAN, mostra conferido/esperado e mantém foco;
+- botão de conclusão só aparece habilitado quando a sessão está completa;
+- `admin-products-live-v1` publicado em **v43**.
+Commits: gateway `4f7b099c`; UI `6f8dc369`; SQL checkpoint `84dee6dc`.
+
+### Testes
+Teste sintético dentro de transação/rollback:
+- pedido processing com produto qty=2;
+- sessão criada;
+- primeira leitura -> 1/2;
+- tentativa de concluir incompleta bloqueada;
+- segunda leitura -> 2/2;
+- conclusão -> verified=true;
+- rollback;
+- zero pedido/sessão de teste persistido.
+Permissões RPC: anon/authenticated=false; service_role=true.
+Advisor de segurança executado; novas tabelas aparecem como RLS sem policy, coerente com o padrão interno service-role-only.
+
+### Limite desta rodada
+Não foi feito canário em pedido real nem teste de hardware de leitor/tablet. Pedidos antigos não foram alterados.
+Integração com o Checkout nativo do Bling continua como POC separado; o Admin agora já garante a regra mínima de conferência sem depender desse POC.
+
+### Próximo passo
+Fechar a proteção backend para impedir qualquer outro caminho `processing -> ready` sem sessão verificada e depois validar sincronização do estado Verificado com Bling em canário controlado.
+
+
+## BLOCO B — backend fechado + preparação do Verificado Bling — 2026-09-25
+- Regra permanente registrada no PROJECT-MASTER: sequência/prioridade/solução técnica ficam a cargo do executor.
+- Criado trigger `trg_ops_enforce_order_check_before_ready_v1`: qualquer `processing -> ready` sem sessão EAN `verified` falha com `order_check_required_before_ready`.
+- Teste transacional: bypass sem sessão bloqueado; com sessão verified permitido; rollback limpo.
+- SQL canônico atualizado: `20260925_ops2_order_ean_check_v1.sql`, commit `a7d297f0`.
+- Bling: confirmado no catálogo live que `Aprovado / Separar (915902) -> Verificado (24)` usa transição `504837240`, ativa e sem ações acopladas.
+- `admin-service-intelligence-v1` ganhou suporte canário a target `verified`, mas exige pedido local `ready` + sessão EAN verificada antes de qualquer escrita externa.
+- Hub publicado em **v155**; commit `d1d2f887`.
+- Nenhum pedido real foi usado e nenhum status Bling foi alterado nesta rodada.
+- `ops2_direct_order_state_enabled` continua fechado; integração automática continua deliberadamente OFF até canário controlado em pedido novo elegível.
+
+### Próxima prioridade autônoma
+Preparar o encadeamento idempotente pós-conferência para Bling Verificado em modo protegido, mantendo falha fechada e sem ativar rollout global; depois executar canário somente quando existir pedido novo elegível, nunca em pedido legado.
+
+
+## BLOCO B — encadeamento protegido EAN -> Verificado Bling — 2026-09-25
+- `order_check_finish` agora possui encadeamento pós-conferência para o Hub, porém protegido por flag própria `ops2_ean_verified_sync_enabled`.
+- Flag criada explicitamente como **false**; publicar a versão não altera pedidos.
+- Quando futuramente habilitada, a conclusão EAN monta snapshot canônico e solicita `ops2_ensure_order_state(target=verified)`.
+- O Hub também revalida independentemente: pedido local precisa estar `ready` e possuir sessão `ops_order_check_sessions.status=verified` com `verified_at`.
+- O caminho direto do Hub foi ampliado para `verified` e usa `mapping.verified_id=24`; a transição real conhecida é 915902 -> 24.
+- Admin Edge publicado em **v44**, commit `4cf1fc48`.
+- Hub publicado em **v156**, commit `11470a35`.
+- Estado da flag: `ops2_ean_verified_sync_enabled=false`.
+- Não há pedido novo em `processing` ou `ready` disponível para canário neste momento; nenhum pedido legado foi usado.
+- Nenhuma escrita externa Bling executada nesta rodada.
+- Preflight de estoque continua bloqueado somente por `physical_recount_pending`.
+- Advisor de segurança executado: permanecem INFOs históricos de RLS sem policy no padrão interno service-role-only; nenhuma exposição pública nova foi criada.
+
+### Próxima prioridade autônoma
+Manter o sync EAN->Bling desligado até existir pedido novo elegível para canário. Enquanto isso, avançar o próximo elo que pode ser validado sem pedido real: gate pós-Verificado para fiscal/DANFE e expedição, sem emitir NF-e automaticamente antes da homologação fiscal.
+
+
+## BLOCO C — gate fiscal de expedição fechado no banco — 2026-09-25
+- Revisado fluxo existente Verificado/ready -> fiscal -> DANFE -> expedição.
+- Configuração fiscal live permanece deliberadamente segura: `enabled=false`, `execution_mode=off`, `dispatch_gate_mode=enforce`, `require_fiscal_authorization_before_dispatch=true`, geração/autorização automáticas=false.
+- O Admin já consultava `fiscal_dispatch_gate` antes de `ready -> out_for_delivery`, porém existia bypass possível por escrita direta no status.
+- Criado trigger DB `trg_ops_enforce_fiscal_before_dispatch_v1` / função `ops_enforce_fiscal_before_dispatch_v1`.
+- Invariante: `ready -> out_for_delivery` só é aceito quando `order_fiscal_controls.dispatch_fiscal_status in ('authorized','not_required')`.
+- Teste sintético rollback: saída sem autorização bloqueada; controle `authorized` permite saída; zero resíduos.
+- Migration canônica: `20260925_ops2_fiscal_dispatch_db_guard_v1.sql`, commit `4f56f20b`.
+- Admin ganhou mensagens explícitas para bloqueio fiscal/DANFE e foi publicado em **v45**, commit `6f3e301d`.
+- DANFE continua obtido do documento oficial Bling e só abre quando fiscal autorizado + chave de acesso válida.
+- Nenhuma NF-e foi gerada/enviada nesta rodada; nenhuma escrita fiscal externa ocorreu.
+- Advisor executado após DDL.
+
+### Próxima prioridade autônoma
+Consolidar o estado operacional pós-fiscal para que a fila de Expedição derive somente de pedidos `ready` + fiscal autorizado, e revisar o momento exato da baixa física/saída Bling para evitar dupla baixa entre Verificado, NF-e e saída para entrega. Depois seguir para Entregador/pagamento.
+
+
+## BLOCO C — baixa física idempotente no ponto de expedição — 2026-09-25
+- Auditada a sequência real `Verificado/ready -> fiscal -> baixa física -> out_for_delivery`.
+- Confirmado que a baixa física Bling já tinha canário real homologado (28 linhas, lançamento/estorno restaurados), mas ainda não existia ação operacional ligada ao fluxo normal.
+- Criada no Bling Hub a ação `ops2_launch_physical_stock`:
+  - só opera quando `ops2_stock_authority='bling'`;
+  - exige `ops2_physical_stock_gate.state='verified'`;
+  - exige fiscal autorizado;
+  - exige pedido local `ready`;
+  - exige vínculo único com pedido Bling;
+  - exige situação remota Bling `Verificado`;
+  - usa `claim_bling_order_stock_action_v2` para idempotência;
+  - executa `lancar-estoque/{depositId}` uma única vez;
+  - comprova delta físico antes de marcar `launched`;
+  - resultado incerto/falha vira `review_required` + atenção crítica e NÃO deve ser repetido automaticamente.
+- Admin passa a chamar a baixa física antes de `ready -> out_for_delivery` somente sob autoridade Bling.
+- O trigger DB de expedição foi reforçado: sob autoridade Bling, além do fiscal autorizado, exige `bling_order_stock_controls_v2.state='launched'`. Escrita direta no banco não contorna a baixa.
+- Teste sintético transacional:
+  - autoridade temporária Bling + fiscal autorizado + sem baixa física => bloqueio correto;
+  - controle `launched` => transição para `out_for_delivery` aceita;
+  - rollback completo; nenhum pedido/controle sintético persistiu.
+- Estado real permanece seguro: autoridade continua `legacy_shadow`; portanto nenhuma baixa física real nova foi disparada nesta rodada.
+- Commits:
+  - `24a940e6` — ação operacional idempotente de baixa física no Hub;
+  - `edc828f8` — Admin aciona baixa física no ponto de expedição quando autoridade=bling;
+  - `605a6a55` — trigger DB exige baixa física lançada após cutover.
+- Deploys:
+  - `admin-service-intelligence-v1` **v157**;
+  - `admin-products-live-v1` **v46**.
+- O Hub v157 foi publicado com suas dependências compartilhadas existentes; nenhuma dependência foi removida para facilitar deploy.
+- Security Advisor após DDL: somente achados históricos já conhecidos (RLS sem policy no modelo service-role interno e configuração histórica); nenhum novo bypass identificado nesta rodada.
+
+### Sequência operacional consolidada
+`Conferência EAN -> ready/Verificado -> NF-e autorizada -> baixa física Bling comprovada/idempotente -> out_for_delivery -> Entregador -> pagamento/entrega`.
+
+### Próxima prioridade
+Revisar e fechar o Entregador para que pagamento real, entrega e retorno físico respeitem essa sequência, incluindo split payment e impedimento de `delivered` sem pagamento capturado exato.
+
+
+## BLOCO D — Entregador: pagamento obrigatório antes de concluir entrega — 2026-09-25/26
+- Auditados pagamento efetivo, split payment, falha de entrega e retorno físico já existentes.
+- Identificado que o Admin validava pagamento antes de `delivered`, porém faltava a mesma invariante diretamente no PostgreSQL.
+- Criado trigger `trg_ops_enforce_delivery_payment_before_delivered_v1` / função `ops_enforce_delivery_payment_before_delivered_v1`.
+- Regra DB para `out_for_delivery -> delivered`:
+  - não pode existir retorno ativo `returning/returned_review`;
+  - precisa existir exatamente um settlement válido de origem `delivery`;
+  - settlement precisa estar `captured/synced/needs_review`;
+  - `expected_total_cents == captured_total_cents == total do pedido`;
+  - soma real de `order_payment_parts` também precisa ser exatamente o total.
+- Isso protege inclusive escrita direta no banco, não apenas o Admin.
+- Admin foi endurecido para aceitar `delivered` somente a partir de `out_for_delivery` e ganhou mensagem explícita para ausência de pagamento.
+- Teste sintético rollback:
+  - pedido R$100 sem pagamento -> `delivered` bloqueado;
+  - split R$60 PIX + R$40 cartão -> captura aceita;
+  - depois do split exato -> `delivered` permitido;
+  - zero pedido/settlement/parts sintéticos persistidos.
+- Fluxo de falha continua correto: `Não entregou` é recusado se pagamento já foi capturado; mercadoria em retorno não volta automaticamente ao estoque vendável.
+- Migration: `supabase/sql/20260925_ops2_delivery_payment_db_guard_v1.sql`, commit `f96d1c37`.
+- Admin commit `86f5b43b`; `admin-products-live-v1` publicado em **v47**.
+- Security Advisor executado; permanecem achados históricos já conhecidos, sem nova exposição criada.
+
+### Sequência consolidada até aqui
+`Conferência EAN -> Verificado -> NF-e autorizada -> baixa física Bling comprovada -> out_for_delivery -> captura do pagamento real (1 ou split) -> delivered`.
+Falha antes do pagamento segue para `delivery_return_cases`, sem restauração automática do estoque.
+
+### Próxima prioridade autônoma
+Fechar a consistência da parada/rota após `delivered` e preparar o vínculo do pagamento real com o financeiro do Bling em modo de homologação, sem sincronizar recebimento externo até a representação fiscal/financeira estar comprovada.
+
+
+## BLOCO D — Pedido canônico ↔ parada/rota: sincronização DB — 2026-09-25/26
+- Identificado que a Edge tentava sincronizar a parada após mudanças operacionais, mas o vínculo não era uma invariante do banco; outro writer poderia deixar pedido e rota divergentes.
+- Criado trigger AFTER UPDATE `trg_ops_sync_delivery_stop_from_order_v1` em `orders.status`.
+- Função `ops_sync_delivery_stop_from_order_trigger_v1` delega para o read/write model já existente `ops_sync_delivery_stop_v1`.
+- Estados sincronizados: `out_for_delivery`, `delivered`, `ready`, `cancelled`.
+- A função existente mantém `failed` protegido e conclui a rota quando não restam paradas abertas.
+- Teste transacional PASS: pedido sintético em rota dispatched + pagamento exato -> pedido `delivered`, parada `delivered`, rota `completed`, `completed_at` preenchido.
+- Tudo em rollback; nenhuma rota/pedido real alterado.
+- SQL canônico: `supabase/sql/20260925_ops2_delivery_route_order_sync_guard_v1.sql`; commit `95e43c00`.
+- Security Advisor: somente achados históricos já conhecidos (RLS/no-policy INFO e leaked-password protection WARN); nenhuma nova exposição identificada.
+
+### Próxima prioridade autônoma
+Modelar e provar em shadow a representação do recebimento real no Bling (inclusive split), sem POST financeiro real até a homologação determinar endpoints/contas/formas e idempotência/reconciliação.
+
+
+## R1/12 — baseline do fechamento autônomo — 2026-09-26
+- Novo plano de 12 rodadas longas aprovado e registrado no `IMPLEMENTATION-ROADMAP.md`.
+- R1 toma como baseline os dois últimos gates homologados:
+  - `out_for_delivery -> delivered` exige pagamento delivery capturado exato, inclusive split;
+  - mudança do pedido sincroniza parada/rota no banco e pode concluir a rota quando não restam paradas abertas.
+- Evidências já válidas desta base: testes sintéticos/rollback PASS, SQL canônico versionado e nenhum pedido real usado para mutação.
+- A tentativa de uma consulta operacional agregada adicional via conector foi bloqueada pela camada de segurança da ferramenta; não houve contorno, repetição insegura nem escrita.
+- Regra para R1–R12: dependências humanas não interrompem trabalho seguro; registrar e acumular para uma lista única ao final da R12.
+- As próximas rodadas devem decidir tecnicamente a sequência interna, preservar gates fail-closed, não usar Make e não alterar pedidos legados.
+- Plano canônico registrado no commit `35f9db13dd9ad91e5c2ca28b945184b464a4443a`.
+
+### Próximo passo exato
+R2: modelar/provar em shadow o recebimento real/split no Bling, com idempotência, reconciliação e anti-duplicidade, sem POST financeiro real não homologado.
+
+
+## R2/12 — pagamento real/split -> Bling em shadow — 2026-09-26
+- Runtime revalidado: leitura de contas a receber e contas financeiras do Bling respondeu HTTP 200.
+- Não havia settlements reais persistidos; nenhum recebimento financeiro externo foi executado.
+- Migration Supabase `ops2_payment_bling_shadow_v1` aplicada.
+- Criados `ops_payment_bling_method_map_v1` e `ops_payment_bling_shadow_plans_v1`.
+- `ops_prepare_delivery_payment_bling_shadow_v1` valida settlement/partes/total, gera fingerprint idempotente e plano por parte do split, sempre com `external_write=false` e `automatic_retry=false`.
+- PIX, dinheiro, crédito, alimentação, refeição e outro começam `unmapped`; nenhum ID Bling foi inventado. O plano fica `blocked_mapping` até forma + conta + categoria serem comprovadas.
+- `ops_payment_bling_shadow_status_v1` expõe readiness do shadow.
+- Teste negativo com settlement inexistente PASS; 0 planos residuais. A ferramenta bloqueou o teste sintético que exigia INSERT de pedido e não houve contorno.
+- Advisors pós-DDL executados; nenhum write financeiro Bling e nenhum uso de Make.
+
+### Ações humanas acumuladas para pós-R12
+1. Homologar IDs exatos no Bling de forma de pagamento + conta financeira + categoria para PIX, dinheiro, crédito, alimentação e refeição.
+2. Depois da R12, executar canário financeiro real controlado somente após revisar a lista final.
+
+### Próximo passo exato
+R3: falha de entrega/retorno/reentrega/cancelamento, com reversões e proteção contra dupla restauração de estoque.
+
+
+## Esteira autônoma de fechamento — R1/20 — 2026-09-27
+O usuário autorizou 20 rodadas amplas autônomas, sem depender de escolhas técnicas humanas. R1 executada imediatamente; 19 execuções horárias subsequentes foram programadas. Cada rodada deve reler este HANDOFF, IMPLEMENTATION-ROADMAP.md, HOMOLOGATION-STATUS.md e o runtime real antes de agir.
+
+### Baseline real na abertura
+- Supabase canônico: ssbesxgaijknwsjbsbcz.
+- catálogo baseline run: 9db0ee8c-6954-4b21-8a54-4a273a9ce069.
+- 85 stock_update confirmados Supabase -> Bling.
+- 454 stock_update ainda planejados.
+- 86 restantes com delta absoluto 1.
+- Hub: hub_enabled=false, mode=homologation, write_canary_limit=1.
+- products/stock/customers/orders habilitados no domínio; webhooks_enabled=false; fiscal_enabled=false.
+- crons antigos Bling Hub e fiscal AI inativos; purchase-xml-daily-v1 ativo.
+- jobs atuais: 146 synced, 3 cancelled, 2 review_required históricos; nenhum pending/processing/retry aberto ao baseline.
+- advisors: security apenas INFO rls_enabled_no_policy no desenho interno fechado; performance apenas unused_index INFO.
+
+### Achado e correção R1
+O canário anterior mostrou que um worker de estoque pode permanecer processing além da janela curta do orquestrador. A recuperação manual segura foi comprovada por leitura readonly do Bling antes do retry.
+Nesta R1:
+- admin-service-intelligence-v1 alterado para lease de stock worker de 90s (antes 300s);
+- versão publicada: v160 ACTIVE;
+- commit de código: 5c0e0afe5dacc779f64f6e05dbcb52eca90aca1d;
+- proteção permanece: writes serializados, live_supabase_stock_drift, idempotency key e read-before/write/read-after;
+- qualquer recuperação de processing/stale deve observar o Bling readonly antes de retry;
+- nenhum cutover global foi feito.
+
+### Backlog autônomo priorizado para as rodadas seguintes
+1. concluir os 86 delta 1 restantes, com circuit breaker e recuperação segura;
+2. criar/validar observabilidade explícita de stale stock workers para não depender de inspeção manual;
+3. iniciar delta 2 em canário pequeno e ampliar apenas com PASS;
+4. avançar demais divergências de estoque por faixas de risco, sempre usando estoque atual do Supabase como target durante esta migração;
+5. reconciliar o plano/snapshot após writes e impedir target antigo;
+6. auditar e sincronizar preço de venda Supabase -> Bling separadamente de estoque, com dry-run e canário;
+7. auditar cadastro/identidade/status dos 1.630 produtos vinculados; não reativar legado Bling-only;
+8. construir saneamento seguro de produtos Bling obsoletos sem apagar histórico fiscal;
+9. revisar os 2 review_required históricos e classificar se são legado/resolvido/bug atual, sem alterar pedido legado;
+10. completar observabilidade Control Tower para catálogo/Bling/jobs/canários;
+11. revisar webhooks held/processing e preparar ativação sem ligá-la globalmente;
+12. revisar early-order/direct state e gates, mantendo desligados até evidência;
+13. revisar estoque mobile/balanço e preparar reconciliação para o futuro balanço físico;
+14. revisar compras/XML, conversão caixa->unidade, fornecedores e rotina diária;
+15. revisar lotes/validade/FEFO/ofertas e implementar o que for seguro sem ação humana;
+16. revisar PapoAI/Flow/link/associação cliente-pedido e logs operacionais;
+17. revisar rota/entregador/pagamento split/retorno em modo não destrutivo;
+18. revisar fiscal/DANFE/financeiro e implementar apenas infraestrutura/gates não destrutivos;
+19. hardening amplo: RLS, grants, functions, triggers, jobs, flags, Edge Functions e código morto com prova de substituição;
+20. reensaio integrado e reavaliação geral; se algum item estiver bloqueado por humano, registrar para a lista final e executar a próxima melhoria autônoma disponível.
+
+### Regra das rodadas
+- NÃO usar Make.
+- NÃO alterar pedidos legados.
+- NÃO fazer cutover global de estoque antes do balanço físico/homologação.
+- NÃO habilitar automação fiscal/financeira destrutiva.
+- Sempre preferir evidência real, canário, idempotência e rollback.
+- Sempre salvar progresso no GitHub.
+
+
+## Esteira autônoma — R5/20 — 2026-09-27 — PASS
+R5 executada manualmente sob autorização para continuar imediatamente.
+
+### Hardening de worker
+- migration Supabase `ops2_bling_stock_worker_health_v1`;
+- view interna `ops2_bling_stock_worker_health_v1` security_invoker e sem grants public/anon/authenticated;
+- função interna `ops2_bling_stock_worker_health_summary_v1()` security_invoker e sem grants public/anon/authenticated;
+- health model mede processing, stale_90s, retry, review_required, oldest_processing_at e last_stock_job_at;
+- baseline e fechamento: healthy=true, processing=0, stale_90s=0, retry=0, review_required=0.
+
+### Estoque Supabase -> Bling
+- 5 canários de 5 produtos, todos delta absoluto 1;
+- 25/25 novos jobs synced;
+- 25/25 read-after-write verified=true;
+- nenhum worker lento/stale nesta rodada;
+- nenhum review/failure;
+- live_supabase_stock_drift guard preservado;
+- acumulado: 110 stock_update confirmed;
+- 429 stock_update planejados restantes;
+- 61 delta absoluto 1 restantes;
+- drift dos 110 confirmados contra products.stock atual: 0.
+
+### Runtime ao fechar
+- hub_enabled=false;
+- mode=homologation;
+- write_canary_limit=1;
+- sem cutover global;
+- pedidos legados não alterados;
+- Make não usado.
+
+### Advisors
+- security: 75 INFO rls_enabled_no_policy no padrão interno fechado conhecido;
+- performance: 46 INFO unused_index; sem blocker novo.
+
+### Próximo passo exato — R6/20
+Concluir os 61 delta 1 restantes em blocos controlados com health gate. Se o grupo chegar a zero sem divergência, preparar e executar apenas um primeiro canário pequeno de delta 2, preservando homologation e circuit breaker.
+
+
+## Esteira autônoma — R6/20 — 2026-09-27 — PASS
+### Delta 1 concluído
+- baseline R6: 110 confirmados / 61 delta 1;
+- 12 canários completos de 5 = 60 novos produtos synced + verified;
+- acumulado: 170 confirmados;
+- delta 1 restante: 0;
+- 0 drift nos confirmados ao fechamento;
+- Hub desligado e homologation preservado.
+
+### Drift real corretamente bloqueado
+- um canário preparado foi recusado por live_supabase_stock_drift antes de qualquer write;
+- produto b22e8f53-bad5-440c-8b74-b72851c1e21a mudou no Supabase de target snapshot 19 para estoque atual 0;
+- leitura readonly do Bling mostrou current_stock=20 e target atual=0, external_write=false;
+- plano foi reconciliado para desired_stock=0/current_bling_physical=20;
+- canário antigo foi rolled_back, sem write incorreto;
+- este item saiu corretamente de delta 1 e será tratado na faixa de risco correspondente.
+
+### Delta 2 preparado com gate próprio
+- migration ops2_arm_catalog_stock_canary_delta2_v1 aplicada;
+- gate delta 1 original não foi relaxado;
+- novo gate exige confirmação literal própria, lote <=5, abs(delta)<=2 e live stock sem drift;
+- amostra de 5 itens delta -2 passou no gate DB;
+- canário foi rolled_back sem external write porque a Edge ainda conserva o limite delta 1; não foi contornado.
+
+### Estado
+- 170 confirmed;
+- 369 stock_update planejados;
+- delta1=0;
+- delta2=121;
+- stock authority global não alterada;
+- nenhum pedido legado alterado; Make não usado.
+
+### Próximo passo exato — R7/20
+Atualizar de forma estreita o executor interno da Edge para reconhecer explicitamente canário delta2 armado pelo novo gate, mantendo <=5, live-stock guard, binding exato, idempotência, read-before/write/read-after e write_canary_limit=1. Publicar/testar sem write; depois executar primeiro canário real delta2 de 5. Expandir somente após PASS.
+
+
+## Esteira ampla — R7/12 — checkpoint 2026-09-27 — EM PROGRESSO SEGURO
+R7 iniciou imediatamente por autorização do usuário. Escopo amplo Bling + catálogo.
+
+### Delta 2 habilitado fail-closed
+- código commit 3185098: executor aceita faixa delta2 somente para canário previamente armado; delta1 preservado;
+- Edge admin-service-intelligence-v1 publicada v161 ACTIVE com pacote completo e verify_jwt=false preservado por autenticação interna existente;
+- teste negativo: canário prepared não armado retornou 409 canary_not_armed / external_write=false;
+- primeiro canário delta2 real: 5/5 synced e verified.
+
+### Expansão e circuit breaker
+- segundo lote adicional 5/5 PASS;
+- terceiro lote: 4 synced/verified e 1 ficou processing; expansão interrompida automaticamente;
+- Hub desligado antes da recuperação;
+- após lease, preview readonly do produto 155b08fc-614c-4056-9504-17f5641155ff confirmou Bling=10, target=8, portanto write não havia sido aplicado;
+- o MESMO job e4284dd1-55ac-43c2-9e76-fb377a8d90e1 foi liberado para retry, sem criar duplicata;
+- após allowlist temporária e processamento, mesmo job synced/verified, previous_stock=10, stock=8;
+- canário completo reconciliado 5/5.
+
+### Recovery automatizado
+- commit d285920: novo subaction interno ops2_recover_stock_job;
+- Edge publicada v162 ACTIVE;
+- recovery só aceita stock/set_stock processing stale (>95s) ou retry;
+- valida live Supabase stock, binding exato e faz leitura readonly do Bling;
+- se remoto já estiver no target, finaliza synced sem write;
+- se remoto ainda divergir, libera o mesmo job para retry; não cria novo job;
+- teste fail-closed contra job já synced: 409 job_not_recoverable / external_write=false.
+
+### Estado neste checkpoint
+- 185 stock_update confirmed;
+- 354 stock_update planned;
+- delta2 restante 106;
+- drift dos 185 confirmados vs Supabase atual = 0;
+- hub_enabled=false, mode=homologation, write_canary_limit=1;
+- sem cutover global, sem Make, sem alteração de pedidos legados.
+
+### Continuação R7
+Continuar delta2 em blocos controlados usando recovery novo quando necessário. Depois avançar divergências maiores por bandas separadas; só então preço/cadastro/saneamento Bling, sem misturar writes de preço e estoque.
+
+
+## R7 continuidade — delta 2 + verificador por evidência read-after-write — 2026-09-27/28
+Estado: **PASS do canário / hardening aplicado**.
+
+- checkpoint real retomado em 185 produtos confirmados;
+- canário `83b65df1-c814-499b-9dad-01090ce39f90`: 5 produtos, todos delta absoluto 2, live-stock drift=0 e sem reserva concorrente;
+- 5/5 jobs `set_stock` concluíram `synced`;
+- worker confirmou read-after-write `verified=true` nos cinco: 18→16, 8→6, 14→12, 4→6 e 99→101;
+- foi detectada uma falsa divergência no verificador legado: ele dependia de `bling_stock_mirror_v2`, que permanece stale enquanto webhooks globais estão OFF;
+- migration `20260928022300_ops2_catalog_canary_verified_job_evidence_v2` cria verificador v2 que prioriza evidência auditada do read-after-write do próprio job e usa mirror como fallback;
+- migration `20260928022600_ops2_reconcile_verified_stock_canary_evidence_v1` reconciliou genericamente canários com jobs synced+verified, sem hardcode de IDs;
+- canário final = verified, `external_write_enabled=false`;
+- plano agora: 190 confirmed / 1440 planned; dentro dos planned há 1091 noop e 101 delta 2 ainda pendentes;
+- worker health: healthy=true, processing=0, stale_90s=0, retry=0, review_required=0;
+- runtime final: mode=homologation, hub_enabled=false, webhooks_enabled=false, fiscal_enabled=false, write_canary_limit=1;
+- stock authority global não foi alterada; nenhum pedido legado foi tocado.
+
+Commits:
+- `74a504a8` — verificação por evidência read-after-write;
+- `72e9d2b9` — reconciliação genérica de evidência verificada.
+
+Advisors:
+- security: sem novo blocker decorrente das migrations; permanece WARN de leaked-password protection desabilitada e INFO de RLS sem policy em tabelas internas fechadas;
+- performance: somente unused_index INFO.
+
+Rollback:
+- Hub e allowlist do canário foram desligados ao final;
+- não há write pendente/incerto;
+- caso o verificador v2 precise ser revertido, o v1 permanece disponível e as evidências dos jobs são append/auditáveis.
+
+Próximo passo:
+- continuar R7 pelos 101 delta 2 restantes em canários de até 5, usando o verificador v2;
+- após delta 2, abrir delta 3 em amostra pequena com gate separado; não ampliar silenciosamente o limite de risco;
+- manter Hub OFF entre janelas e parar em qualquer processing/retry/review_required ou live-stock drift.
+
+
+## Compras/XML — Notas recebidas SEFAZ x API Bling — 2026-09-28
+
+### Diagnóstico confirmado em conta real
+- busca automática de NF-e recebidas na SEFAZ: habilitada no Bling;
+- certificado A1 no servidor do Bling: válido;
+- aba **Notas recebidas**, loja **Nenhuma**, lista NF-e emitidas contra o CNPJ matriz;
+- API pública v3 usada pelo Admin lista NF-e já registradas/importadas no Bling; a fila pré-importação de **Notas recebidas** não é tratada como fonte equivalente pelo módulo;
+- regra de segurança preservada: o Admin **não manifesta** NF-e automaticamente e não força **Confirmação da Operação** apenas para alimentar integração.
+
+### Ajustes aplicados
+- commit `a36225d2`: sincronização manual `bling_sync` ampliada para **90 dias**; rotina diária continua usando o lookback configurado (3 dias);
+- resposta do módulo passou a declarar explicitamente `source_scope=bling_imported_entry_nfe` e que a fila SEFAZ recebida não é exposta pela integração pública usada;
+- commit `cff476a6`: Vitrine/Admin passou a separar visualmente **Notas recebidas SEFAZ** de **Notas importadas**;
+- botão principal agora é **Importar do Bling (90 dias)**;
+- novo botão **Abrir notas recebidas SEFAZ** abre a tela oficial do Bling;
+- mensagem de zero resultados não é mais interpretada como ausência de NF-e na SEFAZ;
+- Edge `admin-service-intelligence-v1` publicada como **v165 ACTIVE**, preservando os demais arquivos da v164 e substituindo somente o módulo Compras/XML.
+
+### Verificação
+Probe somente-leitura após deploy:
+- HTTP 200;
+- `company_document_resolved=true`;
+- empresa: 200;
+- NF-e: 200;
+- produto/fornecedor: 200;
+- contas a pagar: 200;
+- nenhum write externo executado no teste.
+
+### Limite oficial mantido
+Sem endpoint público oficial para consumir diretamente a fila pré-importação de **Notas recebidas** do Bling, não implementar scraping, endpoint interno ou segundo consumidor SEFAZ/NSU. Fluxo suportado:
+`SEFAZ -> Bling Notas recebidas -> manifestação/importação no Bling -> Admin reconcilia/importa XML`.
+Upload manual de XML no Admin continua disponível para exceções.
+
+
+## Compras/XML — filtros históricos por data — 2026-09-28
+
+Implementado no Vitrine/Admin:
+- **Este mês**;
+- **Mês passado**;
+- **Últimos 90 dias**;
+- **Últimos 120 dias**;
+- **Últimos 180 dias**;
+- **Escolher datas** (período personalizado, limitado a 365 dias).
+
+Comportamento:
+- o período filtra os XMLs já processados no Admin;
+- o mesmo período consulta, em modo **somente leitura**, as NF-e de entrada já registradas no Bling;
+- a tela separa **Notas no Bling** de **Notas processadas no Admin**;
+- o botão **Importar período do Bling** usa o período escolhido;
+- a fila pré-importação **Notas recebidas SEFAZ** continua separada e sem manifestação automática;
+- estoque continua exigindo confirmação humana.
+
+Implementação:
+- commit `02ead96f`: backend com janelas históricas + `browse_bling` read-only;
+- commit `e439204f`: UI do Vitrine/Admin com filtros e período personalizado;
+- Edge `admin-service-intelligence-v1` publicada **v166 ACTIVE**.
+
+Validação:
+- todos os presets retornaram HTTP 200;
+- Este mês: 2026-09-01 a 2026-09-30;
+- Mês passado: 2026-08-01 a 2026-08-31;
+- 90 dias: 2026-07-01 a 2026-09-28;
+- 120 dias: 2026-06-01 a 2026-09-28;
+- 180 dias: 2026-04-02 a 2026-09-28;
+- consulta read-only de 180 dias ao Bling: **36 NF-e**, sem truncamento;
+- no staging/Admin, **12 XMLs** já processados no recorte de 180 dias;
+- JavaScript do Admin validado sintaticamente após a alteração.
+
+
+## Bling — taxonomia de categorias/subcategorias igual ao Supabase — 2026-09-28
+
+Concluído:
+- fonte adotada: produtos **ativos** do Supabase canônico;
+- 1.610 produtos ativos considerados, todos com `bling_product_id`;
+- taxonomia canônica: **25 categorias principais + 111 subcategorias = 136 categorias**;
+- árvore criada no Bling e verificada sem categorias/subcategorias faltantes;
+- cobertura dos 1.610 produtos por lotes verificados: **1.610/1.610**, `drift=0`;
+- alterações de categoria foram parciais (`PATCH categoria.id`), sem alteração de preço, estoque ou fiscal;
+- verificação pós-escrita usou detalhe do produto e, nos lotes rápidos, webhook assinado `product.updated`, com fallback para leitura direta.
+
+Limpeza:
+- categoria órfã `Higiene e Perfumaria` removida;
+- `GERAL` e `A CLASSIFICAR` inicialmente preservadas por terem produtos legados;
+- 12 produtos legados foram realocados para subcategorias válidas (Fini, Dori, café, Remmus, Diodoro, Lola e um Azeite Allegro duplicado);
+- após a realocação, `GERAL` e `A CLASSIFICAR` ficaram sem uso e foram removidas;
+- verificação final do Bling: **136 categorias totais, 25 raízes, 111 filhas, 0 extras, 0 faltantes, 0 ambiguidades**.
+
+Implementação/auditoria:
+- commits principais: `581faf74`, `d4b0fafa`, `0a6171fa`, `4a02e831`, `30fe6afb`, `41cff1a5`, `62da853a`, `439757a4`, `be7c914f`, `93a2412f`;
+- Edge `admin-service-intelligence-v1` usada em produção controlada até **v181 ACTIVE**;
+- trilhas de auditoria: `catalog_taxonomy_structure_sync`, `catalog_taxonomy_product_sync`, `catalog_taxonomy_product_sync_fast`, `catalog_taxonomy_rehome_legacy_extras`, `catalog_taxonomy_cleanup_extras`.
+
+
+## Compras/XML — revisão de produtos, custo unitário e preço autorizado — 2026-09-28
+
+Implementado no Vitrine/Admin:
+- clicar na NF-e abre os produtos **para baixo, dentro da própria lista**;
+- cada item mostra produto/EAN, quantidade e unidade de compra, estoque atual, custo atual do cadastro, custo da nova nota por **UN**, preço de venda atual e sugestão de venda;
+- política de sugestão: **custo unitário x 1,40** (markup padrão de 40%), com preço final editável antes da confirmação;
+- controles separados **Atualizar custo** e **Atualizar preço de venda**;
+- botão por item **Autorizar atualização** e ação em lote **Autorizar itens prontos**;
+- autorização de cadastro/preço **não altera estoque**; recebimento físico permanece no botão separado **Dar entrada**;
+- produto novo/inativo permanece sinalizado; a aprovação de custo/preço não o ativa automaticamente.
+
+Regra obrigatória de embalagem:
+- operação vende produto em **UN**;
+- CX, FD, PCT e DP, além de descrições com evidência de embalagem, não podem mais ser silenciosamente interpretados como fator 1;
+- quando o XML fornece uma relação tributária/comercial segura, ela pode ser inferida;
+- regras já confirmadas por fornecedor/produto podem ser reutilizadas;
+- descrições como CX/0024, 60UN X 01FD ou 10PC X ... geram **sugestão** de fator, mas exigem confirmação humana quando o XML não comprova a conversão;
+- custo unitário é recalculado somente após a conversão para UN.
+
+Proteções adicionadas:
+- processamento do XML deixou de sobrescrever automaticamente products.cost/products.unit;
+- custo/preço do catálogo agora só mudam pela ação humana apply_item_update;
+- constraint purchase_xml_items_pack_factor_guard impede embalagem resolvida com fator <= 1;
+- dados antigos suspeitos foram reabertos para revisão: **21 itens / 2 documentos**;
+- validação pós-migração: **0 itens de embalagem inseguros marcados como resolvidos** e **0 documentos prontos para entrada contendo embalagem sem conversão**;
+- trilha de auditoria: purchase_catalog_item_approved.
+
+Implementação:
+- backend Compras/XML: commits 9d31f002, 2ac1b8c3;
+- Vitrine/Admin: commits dc485bbb, 268fe507;
+- migration versionada: commit bea65ca2, arquivo supabase/sql/20260928_purchase_xml_unit_pricing_approval_v2.sql;
+- migration Supabase aplicada: purchase_xml_unit_pricing_approval_v2;
+- Edge admin-service-intelligence-v1 publicada **v182 ACTIVE**;
+- JavaScript do Admin validado sintaticamente após a alteração.
+
+
+## Compras/XML — contas a pagar Bling v2 — 2026-09-28
+
+Corrigido o fluxo financeiro das NF-e de entrada.
+
+### Achado
+O XML era processado corretamente, mas a criação manual de parcelas por `POST /contas/pagar` retornava HTTP 400. O erro não impedia o restante do XML de ficar como processado, o que também dificultava a retentativa financeira.
+
+### Implementação
+- fonte oficial do contas a pagar continua sendo o Bling;
+- lançamento passou a usar a ação nativa da própria NF-e: `POST /nfe/{idNotaFiscal}/lancar-contas`;
+- `/contas/pagar` ficou para leitura/conciliação;
+- conciliação ocorre antes da escrita e novamente depois;
+- produtos/estoque e financeiro têm estados independentes;
+- notas duplicadas podem reconciliar o financeiro sem reprocessar produtos;
+- XML CPF continua sem financeiro empresarial;
+- entrada de estoque continua separada e humana;
+- falha financeira cria `ops_attention.type=purchase_finance`;
+- Admin ganhou Reconciliar com Bling, Lançar contas/Tentar novamente, tentativas, último erro, NF-e Bling e contas conciliadas;
+- ciclo diário das 06:00 também faz reconciliação somente leitura das pendências;
+- lançamentos aceitos mas ainda não confirmados continuam sendo rechecados até `finance_reconciled_at` existir.
+
+### Banco / deploy
+- migration: `purchase_xml_finance_reliability_v2`;
+- migration versionada: `supabase/sql/20260928_purchase_xml_finance_reliability_v2.sql`;
+- backend commits: `38232149`, `ee6db5c9`, `fa91c445`;
+- Admin: `166eceed`;
+- Edge `admin-service-intelligence-v1`: **v185 ACTIVE**.
+
+### Validação
+Dois ciclos internos retornaram HTTP 200 e a reconciliação declarou `write_external=false`.
+Snapshot após validação:
+- 18 NF-e conciliadas / confirmadas: R$ 34.682,17;
+- 15 NF-e em revisão financeira: R$ 31.273,76;
+- as pendentes permanecem com alerta aberto;
+- nenhuma NF-e antiga foi lançada em lote pela rotina de reconciliação;
+- uma importação manual paralela ainda estava em andamento no snapshot, então contagens podem evoluir.
+
+Critério final: somente financeiro `posted` com `finance_reconciled_at` preenchido é tratado como confirmado.
+
+
+## Compras do Bling — simplificação de uso + teste — 2026-09-28
+
+Revisada a experiência do módulo Compras/XML no Vitrine/Admin.
+
+### UX
+A tela foi reorganizada para um fluxo operacional de 3 passos:
+1. **Escolha o período**;
+2. **Buscar e importar notas**;
+3. **Revisar as notas importadas**.
+
+Mudanças:
+- título simplificado para **Compras do Bling**;
+- botão principal renomeado para **Buscar e importar notas**;
+- upload manual de XML movido para **Outras formas de importar XML**, recolhido por padrão;
+- a lista de notas retornadas pelo Bling deixou de competir visualmente com a lista de trabalho e foi movida para **Comparar com as notas do Bling**, recolhida por padrão;
+- cards principais agora mostram: No Bling, Já importadas, Ainda não importadas, Precisam de atenção, Financeiro confirmado e Prontas para estoque;
+- quando houver notas do Bling ainda ausentes no Admin, a tela explica diretamente qual botão usar;
+- última execução passou a usar textos humanos (Rotina automática / Importação manual / Concluída / Falhou);
+- mensagens do botão principal passaram a informar novas, já existentes e falhas com linguagem operacional.
+
+### Confiabilidade
+- execuções `running` abandonadas são encerradas automaticamente após 5 minutos;
+- o encerramento é registrado no metadata como `stale_closed=true`;
+- não há mais importação antiga presa indefinidamente como “em andamento”.
+
+### Testes
+- JavaScript inline do Admin validado sintaticamente: OK;
+- Edge `admin-service-intelligence-v1` publicada **v187 ACTIVE**;
+- ciclo real da rotina de importação disparado após o deploy: HTTP 200;
+- período testado: últimos 3 dias;
+- resultado do teste: 0 novas notas, 0 duplicadas, 0 falhas;
+- reconciliação financeira do teste: `write_external=false`, 15 pendências revisadas sem criação de contas;
+- execução antiga presa em `running` foi encerrada automaticamente com sucesso;
+- após o saneamento: 0 importações presas em `running`.
+
+Commits:
+- `63c48a81` — simplificação da tela;
+- `ba8a5efa` — saneamento inicial de runs;
+- `07a7feec` — correção final do saneamento seguro.
+
+
+## Compras do Bling — correção de processamento interrompido — 2026-09-28
+
+Durante a revisão final da UX foi encontrada 1 NF-e que tinha:
+- financeiro já confirmado no Bling;
+- 4 itens gravados no Admin, todos corretamente em revisão de conversão;
+- documento ainda marcado como `processing` porque uma execução anterior foi interrompida antes do fechamento do status.
+
+Correção:
+- o saneamento de execuções abandonadas agora também recompõe documentos presos em `processing` há mais de 5 minutos;
+- o status é reconstruído pelos itens já gravados, sem refazer financeiro, preço ou estoque;
+- documento sem itens vira `failed`;
+- documento com itens pendentes vira `review_required`;
+- documento totalmente resolvido vira `processed/ready`.
+
+Validação real:
+- NF-e de IRMAOS DOMINGOS LTDA, R$ 2.376,50, foi corrigida de `processing` para `review_required`;
+- 4/4 itens preservados e marcados para revisão;
+- financeiro permaneceu `posted`;
+- estoque permaneceu sem entrada automática;
+- 0 execuções de importação permanecem em `running`;
+- JavaScript atual do Admin passou novamente na validação sintática.
+
+Deploy:
+- backend commit `d14c8742`;
+- ajuste visual do aviso `cd8f885a`;
+- Edge `admin-service-intelligence-v1` **v188 ACTIVE**.
+
+
+## Compras do Bling — simplificação da nota expandida — 2026-09-28
+
+A revisão visual da NF-e aberta foi simplificada para uso operacional.
+
+### Financeiro
+- os dois botões **Reconciliar com Bling** e **Tentar lançamento novamente** foram substituídos por **Resolver financeiro**;
+- o botão primeiro faz conciliação somente leitura;
+- se o financeiro já existir, apenas confirma;
+- se não existir e for seguro lançar, pede confirmação antes da escrita;
+- divergências de parcela, fornecedor ou dados incompletos continuam bloqueando a escrita;
+- erros técnicos não ficam mais expostos como código cru na tela;
+- `installment_total_mismatch` passa a mostrar **Total da NF-e**, **Total das parcelas** e **Diferença** em linguagem humana;
+- detalhes como ID da NF-e/tentativas foram movidos para uma seção técnica recolhida.
+
+### Produtos e preços
+- ordem da nota expandida: **Produtos e preços → Financeiro → Entrada no estoque**;
+- texto principal mudou para **Confira antes de atualizar o produto**;
+- a margem de 40% passou a ser tratada como **mínimo sugerido**, não como ordem para reduzir preço;
+- quando o preço atual já é maior que o mínimo de 40%, o campo abre com o **preço atual** e a opção **Atualizar preço de venda** fica desmarcada;
+- só há alteração do preço se o operador marcar conscientemente a atualização;
+- mudar a conversão recalcula custo/margem, mas continua preservando preço atual quando ele já estiver acima do mínimo.
+
+### Estoque
+- removido o botão duplicado **Dar entrada** da linha recolhida;
+- entrada de estoque aparece somente dentro da nota aberta, depois da revisão de produtos e do financeiro;
+- nenhuma dessas alterações dá entrada automática no estoque.
+
+### Teste com a NF-e mostrada pelo operador
+NF-e Bling `26980521526`:
+- total da NF-e: **R$ 249,00**;
+- parcela informada: **R$ 250,00**;
+- diferença: **R$ 1,00**;
+- financeiro permanece bloqueado para escrita até correção da divergência;
+- produto Macarrão Espaguete com Ovos QDelícia 500 g: 5 CX × 20 = 100 UN;
+- custo unitário: **R$ 2,49**;
+- mínimo sugerido de 40%: **R$ 3,49**;
+- preço atual: **R$ 3,69**;
+- novo comportamento validado: campo mantém **R$ 3,69** e atualização de preço fica desmarcada.
+
+Validação técnica:
+- JavaScript inline do Admin: sintaxe OK;
+- sem botões antigos `data-purchase-finance-reconcile` / `data-purchase-finance-post`;
+- sem botão de entrada de estoque duplicado na linha recolhida.
+
+Commits:
+- `fa5b3dcb` — simplificação da nota expandida;
+- `d4cc2cd2` — rótulos financeiros em linguagem humana.
+
+
+## Compras do Bling — identificação de pagamento no ato — 2026-09-28
+
+Implementada leitura do grupo de pagamentos da NF-e (`pag/detPag`), preservando:
+- código `tPag`;
+- valor `vPag`;
+- data de pagamento;
+- troco `vTroco`;
+- dados de cartão quando presentes;
+- resumo normalizado em `metadata.payment_summary`.
+
+Classificação operacional:
+- dinheiro, cartão de crédito, cartão de débito, vales, depósito, PIX, transferência/carteira e crédito virtual podem ser classificados como **pagamento no ato provável** quando o valor líquido fecha com a NF-e;
+- boleto, duplicata e pagamento posterior continuam tratados como pagamento a prazo;
+- classificação serve apenas para alerta e orientação; **nenhuma baixa automática foi implementada**.
+
+Admin:
+- `finance_status=posted` deixou de ser exibido como “Financeiro OK” e passou a significar **Conta no Bling**;
+- quando a NF-e indicar pagamento no ato, a linha mostra **Confirmar baixa**;
+- a nota aberta mostra forma de pagamento, valor e orientação de qual conta financeira usar;
+- cartão de crédito orienta baixa na conta financeira do cartão e controle separado da fatura;
+- PIX/débito/transferência orientam baixa na conta bancária correspondente;
+- dinheiro orienta baixa em caixa;
+- botão **Ver contas a pagar no Bling** abre o financeiro sem executar alteração.
+
+Backfill produtivo:
+- 33 XMLs históricos reprocessados somente para metadados de pagamento;
+- 33/33 atualizados, 0 falhas;
+- 19 NF-e classificadas como provável pagamento no ato;
+- distribuição observada: cartão de débito, cartão de crédito, vale alimentação, combinações débito+PIX, PIX e dinheiro;
+- 8 dessas 19 já possuem contas registradas/conciliadas no Bling; 11 continuam em revisão financeira.
+
+Caso validado da NF-e Bling `26980521526`:
+- total NF-e: R$ 249,00;
+- XML: Dinheiro R$ 250,00;
+- troco: R$ 1,00;
+- pagamento efetivo: R$ 249,00;
+- portanto o pagamento fecha com a NF-e;
+- a antiga divergência de R$ 1,00 vem da parcela/cobrança de R$ 250,00, e não do pagamento;
+- UI ajustada para explicar essa diferença e impedir criação de outra conta enquanto houver divergência.
+
+Deploy/commits:
+- backend: `3c43bd9f`;
+- Admin: `7fecc103`, `d7886346`;
+- Edge `admin-service-intelligence-v1`: **v189 ACTIVE**;
+- JavaScript do Admin validado sintaticamente: OK.
+
+
+## Compras do Bling — contas financeiras e baixa assistida — 2026-09-28
+
+Implementado o próximo estágio do financeiro de compras.
+
+### API/arquitetura
+- contas financeiras/portadores do Bling são consultadas por `GET /contas-contabeis`;
+- baixa de conta a pagar preparada para `POST /contas/pagar/{id}/baixar`;
+- mapeamento forma de pagamento -> conta financeira fica local em `purchase_xml_settings.metadata.payment_account_mappings`;
+- nenhum mapeamento é presumido automaticamente.
+
+### Admin
+Nova seção **Contas financeiras para baixa**:
+- Cartão de crédito;
+- Cartão de débito;
+- PIX;
+- Dinheiro;
+- Vale alimentação/refeição;
+- Transferência/depósito.
+
+A tela consulta as contas existentes no Bling e permite salvar o vínculo. Salvar o vínculo não movimenta dinheiro.
+
+### Prévia da baixa
+O botão **Preparar baixa** é read-only e só fica pronto quando:
+- NF-e indica provável pagamento no ato;
+- conta a pagar está conciliada;
+- existe exatamente 1 conta a pagar elegível;
+- existe uma única forma de pagamento;
+- existe conta financeira mapeada;
+- saldo da conta a pagar = valor pago (tolerância R$ 0,05);
+- situação da conta permite baixa.
+
+Pagamento dividido, várias contas a pagar ou divergência de valor permanecem em revisão.
+
+### Baixa assistida
+A ação final foi programada, mas exige confirmação humana explícita `CONFIRMAR_BAIXA`.
+Proteções:
+- chamadas internas/automáticas são bloqueadas;
+- saldo e situação são reconsultados imediatamente antes da escrita;
+- mudança de saldo cancela a baixa;
+- após o POST, a conta é consultada novamente;
+- somente baixa verificada é registrada como `metadata.settlement.verified=true`;
+- auditoria `purchase_payable_settled`.
+
+### Estado real do Bling
+Consulta read-only retornou **1 conta financeira: Caixa (ID 14889129939)**.
+Por segurança:
+- Caixa não foi automaticamente associado a cartão, débito ou PIX;
+- nenhum mapeamento foi salvo automaticamente;
+- nenhuma baixa foi executada nesta rodada.
+
+Testes:
+- débito sem mapeamento -> `financial_account_mapping_missing`;
+- crédito sem mapeamento -> `financial_account_mapping_missing`;
+- pagamento dividido com 6 contas -> `requires_single_payable`;
+- JavaScript do Admin: sintaxe OK.
+
+Commits:
+- `595a13d5` — contas financeiras + prévia;
+- `7f1e0eee` — configuração visual;
+- `5705cefb` — baixa protegida;
+- `a3188900` — confirmação humana na UI.
+
+Edge: `admin-service-intelligence-v1` **v191 ACTIVE**.
+
+
+## R1 LIVE — cutover Bling para pedidos/estoque — 2026-09-28
+
+R1 executada e encerrada.
+
+### Marco de corte
+- UTC: `2026-09-28T14:44:46.627499Z`
+- política: `future_only`
+- pedidos anteriores ao marco: ignorados pelo novo fluxo automático.
 
 ### Runtime
 - Hub: `mode=live`, `hub_enabled=true`;
