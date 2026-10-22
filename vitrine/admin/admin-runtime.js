@@ -16,7 +16,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderStatusTab:'manual',manualQueueIds:new Set(),manualQueueLoaded:false,manualQueueError:false,orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productSort:'',baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',sourceSystem:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',balanceSubtab:'scanner',balanceGondola:'',balanceValidity:'',balanceLotId:'',balanceNeedsPhoto:false,balanceReadiness:null,balanceCameraStream:null,balanceCameraDetector:null,balanceCameraRunning:false,balanceLastCameraEan:'',balanceLastCameraAt:0,balanceManualSearchTimer:null,inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',purchaseAdvancedOpen:false,purchaseAdvancedLoaded:false,purchaseAdvancedLoading:false,purchaseAdvancedError:'',purchaseBlingCompareOpen:false,purchaseBlingCompareLoaded:false,purchaseBlingCompareLoading:false,purchaseBlingCompareError:'',purchaseBlingCompareKey:'',opsSummary:null,opsAttention:null,opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],deliveryCatalog:{regions:[],drivers:[],vehicles:[]},deliveryPlan:{region_id:'',driver_id:'',vehicle_id:''},driverVehicle:'all'};
+  const state={tab:'today',orderFilter:'all',orderStatusTab:'manual',manualQueueIds:new Set(),manualQueueLoaded:false,manualQueueError:false,orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productSort:'',baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',sourceSystem:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},productFacetsCache:{},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',balanceSubtab:'scanner',balanceGondola:'',balanceValidity:'',balanceLotId:'',balanceNeedsPhoto:false,balanceReadiness:null,balanceCameraStream:null,balanceCameraDetector:null,balanceCameraRunning:false,balanceLastCameraEan:'',balanceLastCameraAt:0,balanceManualSearchTimer:null,inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',purchaseAdvancedOpen:false,purchaseAdvancedLoaded:false,purchaseAdvancedLoading:false,purchaseAdvancedError:'',purchaseBlingCompareOpen:false,purchaseBlingCompareLoaded:false,purchaseBlingCompareLoading:false,purchaseBlingCompareError:'',purchaseBlingCompareKey:'',opsSummary:null,opsAttention:null,opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],deliveryCatalog:{regions:[],drivers:[],vehicles:[]},deliveryPlan:{region_id:'',driver_id:'',vehicle_id:''},driverVehicle:'all'};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -2046,7 +2046,11 @@
 
   async function loadProductFacets(category='',active=state.productFilters.active||''){
     try{
-      const data=await api('product_facets',{category,active});
+      const key=JSON.stringify([category||'',active||'']),cached=state.productFacetsCache?.[key];
+      const data=cached&&Date.now()-cached.at<30000
+        ?cached.data
+        :await api('product_facets',{category,active});
+      state.productFacetsCache[key]={at:Date.now(),data};
       state.productFacets=data;
       const cat=$('#productCategory'),sub=$('#productSubcategory');
       if(cat){
@@ -2477,6 +2481,7 @@
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({product_id:id,confirmation,operator:requireOperator()})
       });
+      state.productFacetsCache={};
       toast('Produto excluído do banco.');
       await loadProducts($('#productSearch')?.value?.trim()||'',false);
     }catch(e){
@@ -2515,6 +2520,7 @@
         image_url:product.image_url||'',description:product.description||'',active:next,operator
       })});
       const saved=data.product;
+      state.productFacetsCache={};
       if(next&&saved?.active===false&&saved?.deactivation_reason==='expired'){
         toast('Produto vencido · permanece inativo');
       }else{
@@ -2678,7 +2684,7 @@
     const integrationBody=!p||isDuplicate?'<div class="product-editor-helper">Os identificadores de integração aparecem depois que o produto é criado.</div>':
       '<div class="product-editor-readonly-grid"><div class="product-editor-readonly"><small>ID Bling</small><strong>'+esc(p?.bling_product_id||'—')+'</strong></div><div class="product-editor-readonly"><small>Status de sincronização</small><strong>'+esc(p?.sync_status||'—')+'</strong></div><div class="product-editor-readonly"><small>Origem</small><strong>'+esc(p?.source_system||'—')+'</strong></div><div class="product-editor-readonly"><small>Última sincronização Bling</small><strong>'+(p?.last_bling_sync_at?esc(dateTime(p.last_bling_sync_at)):'—')+'</strong></div><div class="product-editor-readonly"><small>Última contagem</small><strong>'+(p?.last_counted_at?esc(dateTime(p.last_counted_at)):'—')+'</strong></div><div class="product-editor-readonly"><small>Verificação física</small><strong>'+(p?.physically_verified?'Confirmada':'Não confirmada')+'</strong></div></div>';
     const offerBody=
-      '<label class="check span-2"><input name="active" type="checkbox" '+(!isDuplicate&&p?.active!==false?'checked':'')+'><strong>Produto ativo na vitrine</strong></label>'+
+      '<label class="check span-2"><input name="active" type="checkbox" '+(!isDuplicate&&p?.active!==false?'checked':'')+'><strong>Cadastro ativo</strong></label><div class="offer-note span-2">Regra temporária do site: a inclusão depende da leitura pelo Leitor EAN. Este status de cadastro não substitui essa regra.</div>'+
       '<label class="check span-2"><input name="auto_expiry_offer_enabled" type="checkbox" '+(autoExpiry?'checked':'')+'><span><strong>Ativar oferta automática pela validade</strong><small>60–90 dias: 10% · 30–59 dias: 20% · menos de 30 dias: 40%</small></span></label>'+
       '<div class="offer-note span-2" id="autoOfferNote">'+(autoExpiry?'A oferta automática está ligada. Desative-a acima para configurar uma oferta manual.':'Você pode definir uma oferta manual. Ao ativá-la, a oferta automática por validade será desligada.')+'</div>'+
       '<label class="check span-2"><input name="offer_active" type="checkbox" '+(manualOffer?.active?'checked':'')+'><strong>Oferta manual ativa</strong></label>'+
@@ -2729,8 +2735,14 @@
   }
 
   function categoryOptions(current){
-    const cats=[['','Sem categoria'],['mercearia','Mercearia'],['limpeza_lavanderia','Limpeza e lavanderia'],['higiene_beleza','Higiene e beleza'],['casa_pet','Casa e pet']];
-    return cats.map(([v,l])=>'<option value="'+v+'" '+(v===current?'selected':'')+'>'+l+'</option>').join('');
+    const cats=[
+      ['','Sem categoria'],['mercearia','Mercearia'],['limpeza','Limpeza'],['lavanderia','Lavanderia'],
+      ['higiene','Higiene'],['beleza','Beleza'],['casa','Casa'],['pet','Pet'],
+      ['limpeza_lavanderia','Limpeza e lavanderia · legado'],
+      ['higiene_beleza','Higiene e beleza · legado'],['casa_pet','Casa e pet · legado']
+    ];
+    if(current&&!cats.some(([v])=>v===current))cats.push([current,'Atual: '+current+' · manter']);
+    return cats.map(([v,l])=>'<option value="'+esc(v)+'" '+(v===current?'selected':'')+'>'+esc(l)+'</option>').join('');
   }
   function productFiscalDraft(form){return {ncm:form.querySelector('[name="fiscal_ncm"]')?.value||'',cest:form.querySelector('[name="fiscal_cest"]')?.value||'',origin_code:form.querySelector('[name="fiscal_origin_code"]')?.value||'',commercial_gtin:form.querySelector('[name="fiscal_commercial_gtin"]')?.value||'',tax_gtin:form.querySelector('[name="fiscal_tax_gtin"]')?.value||'',commercial_unit:form.querySelector('[name="fiscal_commercial_unit"]')?.value||'',tax_unit:form.querySelector('[name="fiscal_tax_unit"]')?.value||'',fiscal_description:form.querySelector('[name="fiscal_description"]')?.value||''}}
   function centsFromInput(v){
@@ -2746,7 +2758,7 @@
     const fiscalDraft=productFiscalDraft(formEl),fiscalOriginal=formEl.dataset.fiscalOriginal||'',fiscalChanged=JSON.stringify(fiscalDraft)!==fiscalOriginal;
     const operator=requireOperator();if(!operator)return;
     const requestedStock=Number(String(form.get('stock')||0).replace(',','.'))||0;
-    let productSaved=false,stockUpdateStarted=false;
+    let productSaved=false,stockSaved=false,offerSaved=false,savedProductId=id||'',stage='product';
     btn.disabled=true;btn.textContent='Salvando…';
     try{
       const autoExpiry=form.get('auto_expiry_offer_enabled')==='on';
@@ -2770,16 +2782,19 @@
         })
       });
       productSaved=true;
+      savedProductId=String(data.product_id||id||'');
       let stockResult=null;
       const currentEffective=Number(data.product?.stock_quantity??requestedStock);
       if(id&&Math.abs(currentEffective-requestedStock)>0.0001){
-        stockUpdateStarted=true;btn.textContent='Atualizando estoque no Bling…';
+        stage='stock';btn.textContent='Atualizando estoque no Bling…';
         stockResult=await api('product_stock_set',{},{
           method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({product_id:data.product_id,stock_quantity:requestedStock,operator})
         });
+        stockSaved=true;
       }
       if(!autoExpiry&&document.querySelector('#productForm [name="offer_active"]')){
+        stage='offer';btn.textContent='Salvando oferta…';
         await api('offer_save',{},{
           method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({
@@ -2790,14 +2805,23 @@
             duration:form.get('offer_duration')||'stock_zero'
           })
         });
+        offerSaved=true;
       }
+      state.productFacetsCache={};
       $('#editor').close();
       toast(stockResult?.verified===true?'Produto salvo · estoque '+fmtQty(requestedStock)+' confirmado no Bling':(duplicateFromId?'Produto duplicado e criado':'Produto salvo'));
       if(state.tab==='expiry')renderExpirations();else renderProducts($('#productSearch')?.value.trim()||'');
     }catch(e){
-      if(productSaved&&stockUpdateStarted)toast('Dados do produto salvos, mas estoque NÃO salvo: '+errorMessage(e.message));
-      else toast(errorMessage(e.message));
-      btn.disabled=false;btn.textContent='Salvar produto';
+      if(productSaved&&savedProductId){
+        btn.onclick=()=>saveProduct(savedProductId,'');
+        btn.disabled=false;btn.textContent='Tentar novamente';
+        if(stage==='stock')toast('Produto salvo, mas o estoque não foi confirmado no Bling. Tente novamente. '+errorMessage(e.message));
+        else if(stage==='offer')toast('Produto'+(stockSaved?' e estoque salvos':' salvo')+', mas a oferta não foi salva. Tente novamente. '+errorMessage(e.message));
+        else toast(errorMessage(e.message));
+      }else{
+        toast(errorMessage(e.message));
+        btn.disabled=false;btn.textContent='Salvar produto';
+      }
     }
   }
 
