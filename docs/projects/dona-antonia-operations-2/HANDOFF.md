@@ -2,7 +2,7 @@
 
 > Atualização documental: 2026-10-22. Os checkpoints operacionais abaixo são históricos; confirme runtime e banco antes de qualquer ação operacional.
 
-## Checkpoint de execução — 2026-10-22 (diagnóstico Admin1 e fumaça do Admin)
+## Checkpoint de execução — 2026-10-22 (diagnóstico Admin1 e teste rápido do Admin)
 
 Este checkpoint supersede as fotografias anteriores desta página. Revalidei main, PRs, CI, runtime e os projetos Supabase envolvidos.
 
