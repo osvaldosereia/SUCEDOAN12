@@ -46,12 +46,7 @@ jobs:
       - run: node scripts/test-home-basket-size-photos-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-carousel-service.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-storefront-canonical.mjs
-      - name: Verify extra product carousels scroll independently in /vitrine
-        run: node scripts/test-basket-extra-carousel-scroll.mjs
-        env:
-          PLAYWRIGHT_PATH: ${{ runner.temp }}/carousel-tests/node_modules/playwright
-          STOREFRONT_PATH: vitrine/index.html
-      - name: Verify extra product carousels scroll independently on public home
+      - name: Verify extra product carousels scroll independently on canonical public home
         run: node scripts/test-basket-extra-carousel-scroll.mjs
         env:
           PLAYWRIGHT_PATH: ${{ runner.temp }}/carousel-tests/node_modules/playwright

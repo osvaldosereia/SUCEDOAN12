@@ -5,7 +5,8 @@ const migration=fs.readFileSync('supabase/migrations/20261007114941_basket_mold_
 const admin=fs.readFileSync('vitrine/admin/basket-mold-admin.js','utf8');
 const edge=fs.readFileSync('supabase/functions/admin-basket-molds-v1/index.ts','utf8');
 const storefront=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
-const pages=[fs.readFileSync('index.html','utf8'),fs.readFileSync('vitrine/index.html','utf8')];
+const root=fs.readFileSync('index.html','utf8');
+const vitrine=fs.readFileSync('vitrine/index.html','utf8');
 
 for(const field of ['conditional_hidden_enabled','conditional_hidden_product_id','conditional_hidden_adjustment']){
   assert.match(migration,new RegExp(field,'i'));
@@ -20,8 +21,9 @@ for(const token of ['data-mold-conditional-enabled','data-mold-conditional-hidde
 assert.match(edge,/admin_save_basket_mold_v3/);
 assert.match(storefront,/conditional_hidden_applied_cents/);
 assert.match(storefront,/conditional_hidden_product_id/);
-for(const html of pages){
-  assert.match(html,/moldConditionalHiddenCents/);
-  assert.match(html,/Number\(x\.quantity\|\|0\)>0/);
-}
+assert.match(root,/moldConditionalHiddenCents/);
+assert.match(root,/Number\(x\.quantity\|\|0\)>0/);
+assert.match(vitrine,/<meta http-equiv="refresh" content="0;url=\/">/,'legacy /vitrine/ must redirect to the public root');
+assert.match(vitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'legacy redirect must preserve query and hash');
+assert.doesNotMatch(vitrine,/moldConditionalHiddenCents|checkoutWhatsappUnified|submit_order/,'legacy route must not duplicate storefront or checkout behavior');
 console.log('basket mold conditional hidden adjustment v1: PASS');

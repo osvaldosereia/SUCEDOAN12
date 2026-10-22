@@ -2,7 +2,8 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url),{chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
-const html=fs.readFileSync('vitrine/index.html','utf8');
+const html=fs.readFileSync('index.html','utf8');
+const legacyVitrine=fs.readFileSync('vitrine/index.html','utf8');
 const css=html.match(/<style>([\s\S]*?)<\/style>/)[1]+'#basketGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}@media(min-width:1080px){#basketGrid{grid-template-columns:repeat(5,minmax(0,1fr))!important}}';
 const js=fs.readFileSync('vitrine/basket-carousel.js','utf8');
 const basket={id:'basket',name:'Cesta exemplo',display_price_cents:9200,carousel_items:Array.from({length:24},(_,i)=>({product_id:'p'+i,name:'Produto '+i,quantity:i===1?3:1,image_url:'https://photos.test/p'+i+'.svg'}))};
@@ -47,6 +48,10 @@ try{
  assert.equal(await app.locator('.basket-card-photo img').count(),1,'a vitrine mostra só uma foto por cesta');
  await app.locator('[data-basket]').click();await app.locator('#addBasket').waitFor();
  assert.ok((await app.locator('#sheetBody').innerText()).includes('Produto 1'));assert.deepEqual(errors,[]);
- for(const entry of ['index.html','vitrine/index.html']){const pageSource=fs.readFileSync(entry,'utf8');assert.ok(pageSource.includes('BasketCarousel.mount('));assert.ok(pageSource.includes('da_storefront_home_carousel_v1'));assert.ok(pageSource.includes('/vitrine/basket-carousel.js?v='))}
+ assert.ok(html.includes('BasketCarousel.mount('),'canonical root mounts the basket carousel');
+ assert.ok(html.includes('da_storefront_home_carousel_v1'),'canonical root loads the public basket data');
+ assert.ok(html.includes('/vitrine/basket-carousel.js?v='),'canonical root loads its carousel asset');
+ assert.match(legacyVitrine,/<meta http-equiv="refresh" content="0;url=\/">/,'legacy /vitrine/ redirects to the canonical root');
+ assert.match(legacyVitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'legacy redirect preserves query and hash');
  console.log('Basket storefront browser: one photo per basket, responsive 2/5-column grid, category groups and basket navigation passed');
 }finally{await browser.close()}
