@@ -393,6 +393,35 @@ function isValidPublicHome(value:any):boolean{
   // An empty current catalog is valid: it clears stale cards for baskets that cannot be sold.
   return Boolean(value?.ok===true&&value?.priority!==true&&Array.isArray(value.baskets)&&Array.isArray(value.basket_categories));
 }
+
+async function homeSizeCards(){
+  const [categoriesQ,subcategoriesQ]=await Promise.all([
+    db.from("basket_categories").select("id,name,slug,sort_order,is_active").eq("is_active",true).order("sort_order"),
+    db.from("basket_subcategories").select("id,category_id,name,sort_order,is_active").eq("is_active",true).order("sort_order")
+  ]);
+  if(categoriesQ.error)throw categoriesQ.error;if(subcategoriesQ.error)throw subcategoriesQ.error;
+  const categories=categoriesQ.data||[],subcategories=subcategoriesQ.data||[];
+  const complete=categories.find((c:any)=>String(c.slug||"")==="cestas-completas");
+  if(!complete)return {ok:true,version:"home-size-shell-v1",priority:false,home_size_cards:true,baskets:[],categories:CATEGORIES,basket_categories:[]};
+  const sizes=subcategories.filter((s:any)=>String(s.category_id)===String(complete.id));
+  const templatesQ=await db.from("basket_templates").select("id,name,image_url,is_active,category_id,subcategory_id,sort_order").eq("is_active",true).eq("category_id",complete.id).order("sort_order");
+  if(templatesQ.error)throw templatesQ.error;
+  const templates=templatesQ.data||[],templateIds=templates.map((t:any)=>String(t.id));
+  const moldsQ=templateIds.length?await db.from("basket_molds").select("id,basket_id,metadata").in("basket_id",templateIds):{data:[],error:null} as any;
+  if(moldsQ.error)throw moldsQ.error;
+  const molds=new Map((moldsQ.data||[]).map((m:any)=>[String(m.basket_id),m]));
+  const sizeCards:any[]=[];
+  for(const sub of sizes){
+    const template=templates.find((t:any)=>String(t.subcategory_id)===String(sub.id)&&molds.has(String(t.id)));
+    if(!template)continue;
+    const mold=molds.get(String(template.id)) as any;
+    if(String(mold?.metadata?.transition_mode||"")==="legacy_first")continue;
+    const key=String(sub.name||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLocaleLowerCase("pt-BR");
+    sizeCards.push({id:String(template.id),card_key:String(template.id)+"@1",name:String(sub.name||template.name||"Cesta"),model_name:String(sub.name||template.name||"Cesta"),image_url:template.image_url||"",category_id:String(complete.id),category_name:complete.name,category_slug:complete.slug,category_sort_order:Number(complete.sort_order||0),subcategory_id:String(sub.id),subcategory_name:sub.name,subcategory_sort_order:Number(sub.sort_order||0),size_key:key,size_card:true,home_shell:true,mold_mode:true});
+  }
+  return {ok:true,version:"home-size-shell-v1",priority:false,home_size_cards:true,baskets:sizeCards,categories:CATEGORIES,basket_categories:[{...complete,subcategories:sizes}]};
+}
+
 function priorityFromPublicHome(full:any){
   const group=(full.basket_categories||[]).find((c:any)=>c.slug==="cestas-completas");
   const largeIds=new Set((group?.subcategories||[]).filter((s:any)=>String(s.name||"").trim().toLocaleLowerCase("pt-BR")==="grande").map((s:any)=>String(s.id)));
@@ -789,6 +818,7 @@ Deno.serve(async(req:Request)=>{
   try{
     const u=new URL(req.url),action=txt(u.searchParams.get("action")||(req.method==="POST"?"basket_quote":"home"),60);
     if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:81},200,{"Cache-Control":"no-store"});
+    if(req.method==="GET"&&action==="home_size_cards")return json(req,await homeSizeCards(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
     if(req.method==="GET"&&action==="home")return json(req,await cachedHome(),200,{"Cache-Control":"public, max-age=30, stale-while-revalidate=120"});
     if(req.method==="GET"&&action==="home_priority")return json(req,await cachedHomePriority(),200,{"Cache-Control":"public, max-age=30, stale-while-revalidate=120"});
     if(req.method==="GET"&&action==="offers")return json(req,await offerList(),200,{"Cache-Control":"no-store"});
