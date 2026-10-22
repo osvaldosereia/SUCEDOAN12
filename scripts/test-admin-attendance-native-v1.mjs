@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {readAdminUiSource} from './helpers/admin-ui-source.mjs';
 
-const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const admin=readAdminUiSource();
 const page=fs.readFileSync('vitrine/admin/atendimento/index.html','utf8');
 const css=fs.readFileSync('vitrine/admin/atendimento/attendance.css','utf8');
 
