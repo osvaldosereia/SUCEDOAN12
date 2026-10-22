@@ -70,6 +70,16 @@ Um lote contém uma mudança pequena e um domínio. Antes: identificar arquivo, 
 
 Registrar em cada lote: arquivos, commit/PR, comando de teste e resultado, verificação no site quando pertinente, eventual alteração Supabase e rollback. Se falhar, corrigir o lote atual antes de começar outro.
 
+### Execução autônoma horária
+
+- A cada hora, retomar do último checkpoint verificável no repositório, nas PRs e neste roadmap.
+- Buscar o máximo de progresso **validado** por rodada. Podem ser concluídos vários ajustes pequenos quando pertencem ao mesmo domínio, compartilham testes e têm rollback claro. Não misturar alterações independentes só para aumentar o volume.
+- Trabalhar no código em uso: vitrine/Admin em `/vitrine/admin/` e site público em `/`. Não criar Admin/site paralelo e não migrar a rota para `/admin/`.
+- Priorizar a próxima pendência das ondas acima; escolher uma área coerente por rodada. Se um teste falhar, corrigir e repetir os testes do mesmo lote antes de mudar de domínio.
+- Versionar em branch `agent/*`, fazer commits pequenos, manter/abrir PR e registrar arquivos, SHAs, testes, CI, smoke e rollback. Integrar/publicar apenas pelo fluxo já aprovado do repositório, depois dos gates correspondentes.
+- Não alterar diretamente dados operacionais do Supabase, pedidos, estoque, Bling, fiscal, financeiro ou enviar mensagens reais durante as rodadas. Preparar mudanças e testes seguros; qualquer ação sem rollback ou que dependa de evidência humana fica documentada como bloqueio.
+- Ao final de cada rodada, atualizar HANDOFF com resultado comprovado, o que ficou pendente e a próxima tarefa. Desativar a recorrência quando o plano técnico estiver concluído ou restarem somente bloqueios humanos, registrando a lista final.
+
 ### Próxima tarefa de código
 
 Trabalhar dentro de `vitrine/admin/`, mantendo a rota e o painel atuais. Mapear dependências e testes para selecionar um fluxo de baixo risco; então fazer um único ajuste estrutural pequeno, sem alterar regras de negócio. Executar `python3 scripts/build-vitrine-admin-runtime.py --check`, o teste direcionado encontrado e um smoke rápido da área alterada. Não criar outro Admin nem migrar a URL.
