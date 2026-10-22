@@ -6,7 +6,7 @@ Concluir e validar a gestão de produtos antes de iniciar qualquer trabalho na g
 
 ## Objetivo desta fase
 
-Concluir a operação de produtos usando o projeto Supabase exclusivo do Admin1. O catálogo antigo fica disponível somente para consulta exata por EAN/SKU; nenhuma gravação é feita no banco antigo, na loja pública ou no Bling.
+Concluir a operação de produtos usando o projeto Supabase exclusivo do Admin1. O catálogo antigo fica disponível somente para consulta exata por EAN/SKU; nenhuma gravação é feita no banco antigo, na loja pública ou no Bling. O trabalho de Produtos, XML e transferência por EAN está pronto para revisão manual; enquanto o usuário não está disponível para teste visual, avançamos com a base isolada de Cestas.
 
 ## Revisão obrigatória do produto
 
@@ -48,7 +48,7 @@ Revisar cada campo presente na NF-e e definir se ele pertence ao cadastro perman
 
 ## Critério para considerar Produtos concluído
 
-Só avançar para Cestas quando:
+Antes de declarar Produtos validado pelo usuário:
 
 1. o card, os detalhes e o formulário tiverem sido revisados em desktop e mobile;
 2. cada campo relevante do XML estiver mapeado e tiver origem e finalidade claras;
@@ -56,7 +56,7 @@ Só avançar para Cestas quando:
 4. busca, vínculo, validação e rascunhos tiverem testes e verificação funcional;
 5. gravações estiverem limitadas ao banco próprio do Admin1 e continuarem impossíveis no banco da loja pública e no Bling.
 
-O cadastro persistente no banco próprio do Admin1 está autorizado. A conclusão ainda depende da verificação automatizada e do teste manual do usuário em celular/desktop. Não iniciar Cestas antes desse fechamento.
+O cadastro persistente no banco próprio do Admin1 está autorizado. A verificação automatizada e a simulação de gravação foram concluídas. A revisão visual em celular/desktop e o teste com XML/EAN reais continuam pendentes do usuário.
 
 
 ## Revisão técnica concluída nesta rodada
@@ -80,6 +80,16 @@ O cadastro persistente no banco próprio do Admin1 está autorizado. A conclusã
 - Imagem escolhida pelo usuário deve ser convertida no navegador para WebP, redimensionada e reduzida para no máximo 30 KB antes de salvar no cadastro do Admin1.
 - Quando o teste automatizado ou técnico for possível, executar e apresentar o resultado. Se o fluxo depender de navegador real, login ou acesso indisponível, informar exatamente o que falta e pedir teste manual, sem afirmar que foi validado visualmente.
 - Manter módulos pequenos, responsabilidades explícitas e testes sobre regras de negócio. Separar claramente a consulta do catálogo legado, a escrita no banco próprio do Admin1 e a apresentação da tela.
+
+## Gestão de Cestas construída
+
+- A interface permite criar, consultar, buscar e editar cestas com SKU, nome, preço, imagem, descrição e composição por produtos do Admin1.
+- A composição referencia produtos reais por ID e é salva junto com a cesta em uma única operação do Postgres.
+- A ativação exige imagem, ao menos um componente e disponibilidade de estoque em todos os produtos.
+- O banco desativa automaticamente cestas ativas quando um produto da composição é desativado ou fica sem estoque.
+- Cestas e componentes são armazenados no projeto separado do Admin1; os dados do site público permanecem fora deste fluxo.
+- A validação transacional foi executada e revertida, sem deixar produto ou cesta de teste no banco.
+- A conferência visual e a operação pelo celular ainda dependem da sessão manual do usuário.
 
 ## Transferência em lote por EAN aprovada
 

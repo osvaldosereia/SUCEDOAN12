@@ -13,7 +13,7 @@ async function readJson(response, fallback) {
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
     const message = body?.message || body?.details || body?.hint || fallback;
-    if (body?.code === '23505') throw new Error('SKU, GTIN comercial ou GTIN tributável já cadastrado em outro produto.');
+    if (body?.code === '23505') throw new Error('Este SKU ou código já está cadastrado.');
     if (body?.code === '23503') throw new Error('Selecione uma das categorias oficiais do Admin1.');
     throw new Error(message || fallback);
   }
@@ -41,6 +41,22 @@ function normalizeProduct(row = {}) {
     description_long: String(row.description_long || ''), description: String(row.description_long || row.description_short || ''),
     active: row.is_active === true && stock > 0, is_active: row.is_active === true && stock > 0,
     validity_date: String(row.validity_date || lotDates[0] || ''), workspace_source: 'admin1'
+  };
+}
+
+function normalizeBasket(row = {}) {
+  const items = Array.isArray(row.admin1_basket_items) ? row.admin1_basket_items : [];
+  return {
+    ...row,
+    id: String(row.id || ''), name: String(row.name || ''), sku: String(row.sku || ''),
+    description: String(row.description || ''), image_url: String(row.image_url || ''),
+    price_cents: Number(row.price_cents || 0), price: Number(row.price_cents || 0) / 100,
+    active: row.is_active === true, is_active: row.is_active === true,
+    items: items.map(item => ({
+      id: String(item.id || ''), product_id: String(item.product_id || ''),
+      quantity: Number(item.quantity || 0), sort_order: Number(item.sort_order || 0),
+      product: item.product ? normalizeProduct(item.product) : null
+    }))
   };
 }
 
@@ -115,6 +131,19 @@ export function createAdmin1Data(fetchImpl = (...args) => globalThis.fetch(...ar
     return rows.map(row => row.name);
   }
 
+  async function searchProducts(query = '', limit = 24) {
+    const term = clean(query);
+    if (!term) return [];
+    const escaped = term.replace(/[\\(),"%_*]/g, character => `\\${character}`);
+    const params = new URLSearchParams({
+      select: 'id,name,sku,gtin,commercial_gtin,category,stock_quantity,min_stock,image_url,is_active',
+      order: 'name.asc', limit: String(Math.max(1, Math.min(50, Number(limit) || 24))),
+      or: `(name.ilike.*${escaped}*,sku.ilike.*${escaped}*,gtin.ilike.*${escaped}*)`
+    });
+    const rows = await rest(`admin1_products?${params}`, { method: 'GET' });
+    return rows.map(normalizeProduct);
+  }
+
   async function findProducts(items = []) {
     const digitIds = [...new Set(items.flatMap(item => [item.commercial_gtin, item.tax_gtin, item.gtin]).map(value => clean(value).replace(/\D/g, '')).filter(Boolean))];
     const skuIds = [...new Set(items.map(item => clean(item.sku)).filter(Boolean))];
@@ -175,6 +204,52 @@ export function createAdmin1Data(fetchImpl = (...args) => globalThis.fetch(...ar
     return saveProduct({ ...product, active: Boolean(active), stock_quantity: product.stock_quantity });
   }
 
+  async function listBaskets({ query = '' } = {}) {
+    const params = new URLSearchParams({
+      select: '*,admin1_basket_items(id,product_id,quantity,sort_order,product:admin1_products(id,name,sku,gtin,commercial_gtin,category,stock_quantity,min_stock,image_url,is_active))',
+      order: 'name.asc', limit: '200'
+    });
+    const term = clean(query);
+    if (term) {
+      const escaped = term.replace(/[\\(),"%_*]/g, character => `\\${character}`);
+      params.set('or', `(name.ilike.*${escaped}*,sku.ilike.*${escaped}*)`);
+    }
+    const rows = await rest(`admin1_baskets?${params}`, { method: 'GET' });
+    return rows.map(normalizeBasket);
+  }
+
+  async function getBasket(id) {
+    const params = new URLSearchParams({
+      select: '*,admin1_basket_items(id,product_id,quantity,sort_order,product:admin1_products(id,name,sku,gtin,commercial_gtin,category,stock_quantity,min_stock,image_url,is_active))',
+      id: `eq.${clean(id)}`, limit: '1'
+    });
+    const rows = await rest(`admin1_baskets?${params}`, { method: 'GET' });
+    if (!rows[0]) throw new Error('Cesta não encontrada no Admin1.');
+    return normalizeBasket(rows[0]);
+  }
+
+  async function saveBasket(basket) {
+    const priceCents = basket.price !== undefined && basket.price !== ''
+      ? Math.max(0, Math.round(Number(basket.price) * 100))
+      : Math.max(0, Number(basket.price_cents || 0));
+    const payload = {
+      ...basket,
+      price_cents: priceCents,
+      is_active: basket.active === true || basket.is_active === true,
+      image_url: clean(basket.image_url) || null,
+      description: clean(basket.description) || null,
+      items: (Array.isArray(basket.items) ? basket.items : []).map((item, index) => ({
+        product_id: clean(item.product_id), quantity: Number(item.quantity), sort_order: index
+      }))
+    };
+    const result = await rest('rpc/admin1_save_basket_v1', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_basket: payload })
+    });
+    const row = Array.isArray(result) ? result[0] : result;
+    return normalizeBasket(row);
+  }
+
   async function importLegacyProduct(product, category) {
     const payload = mapLegacyProduct(product, category);
     if (!payload.name || !payload.sku || !payload.gtin || !payload.category || !payload.source_product_id) {
@@ -185,7 +260,10 @@ export function createAdmin1Data(fetchImpl = (...args) => globalThis.fetch(...ar
     return saveProduct(payload);
   }
 
-  return { listProducts, getProduct, getCategories, findProducts, findLegacyByEans, saveProduct, setProductActive, importLegacyProduct };
+  return {
+    listProducts, getProduct, getCategories, searchProducts, findProducts, findLegacyByEans,
+    saveProduct, setProductActive, listBaskets, getBasket, saveBasket, importLegacyProduct
+  };
 }
 
 export const admin1Data = createAdmin1Data();

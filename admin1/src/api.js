@@ -1,4 +1,4 @@
-import { admin1Data } from './admin1-data.js?v=1';
+import { admin1Data } from './admin1-data.js?v=2';
 
 export async function adminApi(action, params = {}) {
   if (action === 'products') {
@@ -10,6 +10,10 @@ export async function adminApi(action, params = {}) {
   }
   if (action === 'product_detail') return { product: await admin1Data.getProduct(params.id) };
   if (action === 'product_matches') return { products: await admin1Data.findProducts(params.items || []) };
+  if (action === 'search_products') return { products: await admin1Data.searchProducts(params.query || '', params.limit) };
+  if (action === 'baskets') return { baskets: await admin1Data.listBaskets({ query: params.query || '' }) };
+  if (action === 'basket_detail') return { basket: await admin1Data.getBasket(params.id) };
+  if (action === 'save_basket') return { basket: await admin1Data.saveBasket(params.basket || {}) };
   if (action === 'legacy_matches') return { products: await admin1Data.findLegacyByEans(params.eans || []) };
   if (action === 'save_product') return { product: await admin1Data.saveProduct(params.product || {}) };
   if (action === 'set_product_active') {
