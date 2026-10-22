@@ -14,7 +14,11 @@ const start=root.slice(root.indexOf('async function start(){'),root.indexOf('\n 
 assert.ok(start.includes("const priority=hadCached?Promise.resolve(false):api('home_priority')"),'priority should be requested on cold visits');
 assert.ok(start.includes("const full=api('home')"),'full should start without a dependency on priority');
 assert.ok(!start.includes("await api('home_priority')"),'full load must not wait for priority');
-assert.match(start,/if\(!Array\.isArray\(data\?\.baskets\)\|\|!data\.baskets\.length\|\|partial&&fullFinished\)/,'late priority must not replace a completed catalog');
+assert.match(start,/data\?\.ok!==true/,'reject unsuccessful home payloads');
+assert.match(start,/data\?\.priority!==partial/,'ignore payloads returned by the wrong endpoint');
+assert.match(start,/!Array\.isArray\(data\?\.basket_categories\)/,'reject incomplete catalog structure');
+assert.match(start,/partial&&!data\.baskets\.length/,'priority payload must contain at least one basket');
+assert.match(start,/partial&&fullFinished/,'late priority must not replace a completed catalog');
 assert.match(root,/home-loading-status.*Preparando suas cestas/,'skeleton must explain what is loading');
 assert.match(root,/@media\(max-width:759px\)/,'mobile-first compact hero is expected');
 assert.match(edge,/async function needsLegacyBasketCatalog\(\):Promise<boolean>/,'legacy fallback detection is required');
