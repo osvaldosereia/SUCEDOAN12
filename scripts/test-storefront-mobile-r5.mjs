@@ -76,15 +76,15 @@ const brandedOptions=[
 ];
 const moldRow={position_id:'pos1',label:wrongLabel,product_id:'minuano',name:wrongLabel,image_url:'/old-omo.webp',quantity:1,stock_quantity:10,alternatives:brandedOptions};
 const selectedHtml=displayFns.moldItemRow(moldRow,0,true);
-assert.match(selectedHtml,/<strong class="checkout-name">Sabão em Pó Minuano 400 g<\/strong>/);
-assert.match(selectedHtml,/<img\b(?=[^>]*\bsrc="\/minuano\.webp")(?=[^>]*\balt="Sabão em Pó Minuano 400 g")[^>]*>/);
-assert.match(selectedHtml,/data-product-detail="minuano"/);
-assert.doesNotMatch(selectedHtml,/<strong class="checkout-name">Sabão em Pó Lavagem Perfeita OMO 700 g<\/strong>/);
+assert.match(selectedHtml,/<strong class="basket-option-choice-name">Sabão em Pó Minuano 400 g<\/strong>/);
+assert.match(selectedHtml,/<img\b(?=[^>]*\bsrc="\/minuano\.webp")[^>]*>/);
+assert.match(selectedHtml,/basket-selected-product-price[\s\S]*<strong>522<\/strong>/);
+assert.doesNotMatch(selectedHtml,/<strong class="basket-option-choice-name">Sabão em Pó Lavagem Perfeita OMO 700 g<\/strong>/);
 assert.match(selectedHtml,/data-product-id="minuano" role="option" aria-selected="true"/);
 const changedHtml=displayFns.moldItemRow({...moldRow,product_id:'oeste'},0,true);
-assert.match(changedHtml,/<strong class="checkout-name">Sabão em Pó Oeste 800 g<\/strong>/);
-assert.match(changedHtml,/<img\b(?=[^>]*\bsrc="\/oeste\.webp")(?=[^>]*\balt="Sabão em Pó Oeste 800 g")[^>]*>/);
-assert.match(changedHtml,/data-product-detail="oeste"/);
+assert.match(changedHtml,/<strong class="basket-option-choice-name">Sabão em Pó Oeste 800 g<\/strong>/);
+assert.match(changedHtml,/<img\b(?=[^>]*\bsrc="\/oeste\.webp")[^>]*>/);
+assert.match(changedHtml,/basket-selected-product-price[\s\S]*<strong>599<\/strong>/);
 assert.match(changedHtml,/data-product-id="oeste" role="option" aria-selected="true"/);
 
 // Mold options: no second selection while the first is being re-quoted.
@@ -178,8 +178,8 @@ const altState={basketDraft:{
   optionPending:false
 }};
 const originalBasketDraft=altState.basketDraft;
-const moldFns=new Function('state','api','stockNumber','paintMoldBasketSheet','closeMoldOptionMenus','moldDraftTotalCents',String.fromCharCode(36),'toast',optionSource+'return {changeMoldOption};')(
-  altState,()=>{moldCalls++;return altWait.promise},x=>Number(x),stub,stub,()=>800,()=>null,m=>toasts.push(m)
+const moldFns=new Function('state','api','stockNumber','paintMoldBasketSheet','closeMoldOptionMenus','moldDraftTotalCents',String.fromCharCode(36),'moldOptionsLoaded','toast',optionSource+'return {changeMoldOption};')(
+  altState,()=>{moldCalls++;return altWait.promise},x=>Number(x),stub,stub,()=>800,()=>null,x=>Array.isArray(x.alternatives)&&x.alternatives.length>0,m=>toasts.push(m)
 );
 const firstChange=moldFns.changeMoldOption(0,'other');
 await moldFns.changeMoldOption(0,'original');
