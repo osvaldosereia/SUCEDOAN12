@@ -24,19 +24,14 @@ Fonte canônica: repositório osvaldosereia/SUCEDOAN12 e Supabase ssbesxgaijknws
 
 ### Checkpoint de execução — 2026-10-22
 
-
-
-- A PR #1270 (`agent/vitrine-products-hardening`, HEAD `5197aa4a8e9951a9a1a942fb0d93e9ed4425cd96`) implementa o primeiro lote da sessão Produtos. Seu workflow `products-session` passou: build/checker do runtime, sintaxe e três testes da área. O conjunto amplo terminou com 10/19 checks em falha em pedidos/fiscal, checkout, marketing, ANA/Admin legado e cesta simples; PR continua aberta e sem deploy.
-
-- No smoke da página publicada, `/` recalculou a cesta de R$ 419,30 para R$ 425,70 ao selecionar uma variação e nenhum pedido foi criado. `/vitrine/admin/` abriu; Produtos carregou 5 cards com mais 5 disponíveis. A navegação oferece 19 áreas/entradas (Central, Atendimento, ANA, Pedidos, Expedição, Entregador, Fechamento, Produtos, Cestas, Validades, Orçamentos, Clientes, Marketing, Compras/XML, Leitura EAN, Balanço, Gôndolas, Financeiro e Bling técnico).
-
-- No Supabase canônico `ssbesxgaijknwsjbsbcz`, `admin1-products-read-v1` está ativa (v3) e recebeu 114 GETs no último dia; origens não aparecem nos logs, então o consumidor permanece por identificar. `admin1-legacy-catalog-read-v1` não consta como deployment ativo observado. Nenhuma função foi desligada e nenhuma migration/configuração foi aplicada.
-
-- Há divergência impeditiva para DDL: 1.244 versões no ledger do banco contra 180 arquivos em `main`; somente 31 timestamps coincidem. O ledger mais recente é `20261022114704 basket_mold_zero_quantity_v1`, posterior ao último arquivo versionado (`20261022103000 basket_mold_editable_quantity_v1`). O projeto de staging consultado não compartilha o schema canônico; não serve para homologar essa correção.
-
-- Advisors continuam sem alteração: 3 avisos de search_path mutável, 43 funções SECURITY DEFINER executáveis por authenticated e 228 tabelas RLS sem policy (sem criação de policies abertas). Antes de mudar funções ou grants, primeiro reconstruir a correspondência entre migrations versionadas e estado real; em paralelo, identificar a origem das chamadas `admin1-*`.
-
-
+- Main atual em `383fc5062483dacb61541ec2624b526633ee4d4a`; #1269 já está mergeada em `9ec95df6b55e24f3964c22d4b2064d3163519de4`, portanto os documentos que vieram dela já estão em main. #1273 foi integrada em `52c7ca0a75a0e7bb55f3cd4d99b7cf969bcb6627`; #1275 em `383fc5062483dacb61541ec2624b526633ee4d4a`. A branch main está sem proteção/checks obrigatórios configurados.
+- #1275 adicionou diagnóstico categorizado limitado ao GET válido de `admin1-products-read-v1` e teste de contrato. Arquivos: `.github/workflows/admin1-products-read-context-ci.yml`, `scripts/test-admin1-consumer-context.mjs`, `supabase/functions/admin1-products-read-v1/consumer-context.mjs`, `supabase/functions/admin1-products-read-v1/index.ts`. Sem parâmetros ou identificadores de busca, IP, Referer completo ou User-Agent bruto no logger customizado.
+- Projeto canônico `ssbesxgaijknwsjbsbcz` está ACTIVE_HEALTHY, região sa-east-1, PostgreSQL 17.6.1.166. A função canônica `admin1-products-read-v1` está ACTIVE v4, `verify_jwt=false`, hash `b61be132530350da259e006674038c458c0d2aac3d5142c70e6ff2eeb8f58ff9`. O GET controlado `?action=health` retornou 200 e logou `health / unknown / browser / fetchSite=none`; isso valida execução do logger, não comprova uso pelo frontend.
+- Foi revalidada `admin1-legacy-catalog-read-v1` ACTIVE v2 em outro projeto, `xaoeldjuxzsdsblimzxo`, `verify_jwt=false`; o código publicado encaminha ao leitor canônico. Não desligar nem migrar até mapear chamadas naturais e dependências.
+- Testes direcionados da #1275 passaram (teste de contexto, sintaxe JS e TS); `python3 scripts/build-vitrine-admin-runtime.py --check` passou (9 fragmentos, 640.167 caracteres). Os quatro testes ajustados pela #1273 também passaram. Na main, Pages deploy run `39845023999` e Admin1 reader run `39845026219` concluíram success. No snapshot geral consultado, Basket kit editor seguia in progress e o workflow independente XML R31 one-shot falhou 401 por token inválido.
+- Smoke do site publicado: `/` abriu a vitrine pública com cinco cestas/ofertas e carrinho vazio; `/vitrine/admin/` abriu a Central. A aba Produtos ficou em “Carregando…”; log canônico registrou POST 401 em `admin-products-live-v1` v183 em 22/10/2026 20:04:02Z. A causa ainda não está isolada. Nenhuma mutação de catálogo/pedido/estoque, mensagem, emissão fiscal ou pagamento ocorreu.
+- Supabase: foi aplicado somente deploy v4 do leitor canônico no projeto `ssbesxgaijknwsjbsbcz`. Sem migration/schema/dados/policies/grants/configuração; sem advisors de banco, pois não houve alteração desses itens. O wrapper legado permaneceu intacto. Rollback da função é redeploy da fonte v3 anterior; rollback do código é revert dos commits #1275/#1273.
+- Rotas preservadas: site `/`; Admin `/vitrine/admin/`. Sem `/admin/`, aplicação paralela, pedido/check-out sintético ou efeitos em Bling, WhatsApp, fiscal ou financeiro.
 
 ### Rodada anterior concluída — contratos do Admin e jornada pública — 2026-10-22 (histórico)
 
@@ -118,7 +113,7 @@ Registrar em cada lote: arquivos, commit/PR, comando de teste e resultado, verif
 
 ### Próxima tarefa de código
 
-Correlacionar, somente por leitura, a função Edge ativa `admin1-products-read-v1` (v3) com seus consumidores atuais: pesquisar callsites na `main`/runtime e comparar com logs de invocação e autenticação no Supabase canônico. Manter a função ativa até mapear todos os consumidores e decidir o destino sem criar `/admin1` ou mudar `/vitrine/admin/`. Em seguida reconciliar o ledger (1.244 versões aplicadas, 180 arquivos SQL, 31 timestamps compartilhados) antes de propor DDL.
+Diagnosticar e corrigir a aba Produtos que permanece em “Carregando…” em `/vitrine/admin/`: rastrear o POST 401 de `admin-products-live-v1` v183 pelo fluxo existente de JWT/step-up e pelo tratamento de erros no cliente; reproduzir sem salvar dados; preservar as verificações de autenticação; incluir teste de regressão para sucesso, 401 e falha de transporte; rodar o build check do runtime, os testes da área e smoke de leitura. Durante essa investigação, observar chamadas naturais a `admin1-products-read-v1` v4 e mapear o wrapper legado v2 ativo em `xaoeldjuxzsdsblimzxo` antes de mudar qualquer função. Não mudar a rota nem executar DDL antes de reconciliar o ledger divergente.
 
 ## Objetivo da programação
 Concluir a migração para o desenho Operations 2.0 sem interromper o site público, usando o Bling como ERP/fonte oficial dos domínios homologados e mantendo o Vitrine/Admin como camada operacional simples.
