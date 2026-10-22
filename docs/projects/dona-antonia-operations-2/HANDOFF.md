@@ -2,6 +2,23 @@
 
 > Atualização documental: 2026-10-22. Os checkpoints operacionais abaixo são históricos; confirme runtime e banco antes de qualquer ação operacional.
 
+## Checkpoint de execução — 2026-10-22 (R11: ACL do helper de lotes e alinhamento do ledger)
+
+- Base revalidada antes da edição: main `a09f26a60ef774465f7872db3574613f799ad963`. A #1269 está integrada; a correção de ACL foi integrada pela PR #1283 no mesmo commit. Esta correção de versionamento está na PR #1284, branch `agent/basket-lot-ledger-align-20261022`, commit de implementação `3c3f022a51d551de8305e341e26a0889f4743d37`.
+- O helper `public.basket_lot_admin_allowed_v1()` deixou de ter execução direta por `authenticated`; as duas RPCs administrativas de substituição continuam executáveis e chamam o helper dentro do contexto protegido. A migration já foi aplicada ao projeto canônico `ssbesxgaijknwsjbsbcz`; não a reaplicar.
+- O ledger do projeto registra versão `20261022205909`, nome `20261022205411_basket_lot_helper_direct_execute_revoke`. A #1284 apenas renomeia o arquivo versionado para `supabase/migrations/20261022205909_basket_lot_helper_direct_execute_revoke.sql` e atualiza seu caminho no teste/workflow. O SQL continua byte a byte igual; nenhuma DDL, função, grant, dado ou configuração é aplicada por esta PR.
+- Preflight canônico: `ACTIVE_HEALTHY`, região `sa-east-1`, PostgreSQL `17.6.1.166`. A única branch de desenvolvimento `da6-qa-20261009` continua `MIGRATIONS_FAILED`; não foi possível usá-la para teste de migration.
+- Comportamento validado depois da aplicação, em transação revertida: chamada direta ao helper por authenticated foi negada; administrador ativo sem papel viewer conseguiu chamar a RPC de catálogo; identidade não administrativa recebeu `admin_forbidden`. Consulta persistida do ACL: postgres e service_role têm EXECUTE; authenticated, anon e PUBLIC não têm. O helper segue SECURITY DEFINER do owner postgres com search_path vazio. Nenhuma linha de negócio foi alterada.
+- Security advisor no canônico: aviso `authenticated_security_definer_function_executable` caiu de 43 para 42; `function_search_path_mutable` está zerado. Permanecem 228 achados INFO de RLS sem policy e 1 WARN de proteção a senhas vazadas. Não foram adicionadas policies/grants abrangentes.
+- Testes da #1283: contrato de migration #39853165695, Basket Kit #39853165540 e attendance #39853165574 passaram. Na #1284, o workflow dedicado do contrato passou no run #39854085809 para o commit de implementação; o run independente Basket kit #39854086139 ainda estava em andamento neste checkpoint. O script verifica o revoke único e o rollback exato. Build do runtime Admin não se aplica: nenhum arquivo de runtime foi alterado.
+- Nenhuma função Edge foi implantada nesta rodada. As funções com prefixo `admin1` foram revalidadas e preservadas: `admin1-products-read-v1` ACTIVE v4, `verify_jwt=false`, no projeto canônico; `admin1-legacy-catalog-read-v1` ACTIVE v2, `verify_jwt=false`, no projeto separado `xaoeldjuxzsdsblimzxo` (“Dona Antonia Admin1”). Sem redirecionamento, remoção ou mudança de rota.
+- Smoke: este lote não muda o site/Admin e não requer publicação de frontend. A conexão de navegador disponível não permitiu uma verificação interativa de `/` e `/vitrine/admin/`; não declaro smoke nem implantação dessas rotas. As rotas permanecem `/` e `/vitrine/admin/`.
+- Rollback do ACL de produção, se necessário: `GRANT EXECUTE ON FUNCTION public.basket_lot_admin_allowed_v1() TO authenticated;`. Reverter a #1284 restaura apenas o nome anterior do arquivo e seus caminhos de teste/workflow, sem efeito no banco.
+
+### Próxima tarefa exata
+
+Seguir a tarefa já priorizada no roadmap: comparar em modo somente leitura a versão/hash de `admin-service-intelligence-v1` publicada no projeto canônico com o código em main e os arquivos versionados de compras/XML; registrar divergência funcional concreta antes de qualquer deploy. Se houver drift, preparar teste e preflight específico. A publicação manual segue bloqueada até o proprietário renovar o secret inválido `SUPABASE_ACCESS_TOKEN` (run #39848977831); não disparar deploy enquanto isso não for resolvido. Continuar observando apenas o cron EAN natural, sem POST manual; aguardar sessão EAN fisicamente verificada.
+
 ## Checkpoint de execução — 2026-10-22 (R10: autenticação interna OPS2 e guarda de deploy XML)
 
 Este checkpoint corrige a hipótese anterior: o POST 401 observado era a recuperação EAN agendada, não a leitura da aba Produtos.
