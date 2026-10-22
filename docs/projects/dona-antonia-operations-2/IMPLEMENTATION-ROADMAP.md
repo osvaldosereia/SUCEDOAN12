@@ -13,7 +13,7 @@ Fonte canônica: repositório osvaldosereia/SUCEDOAN12 e Supabase ssbesxgaijknws
 
 ### Baseline verificado em 2026-10-22
 
-- main estava no commit 24719f9c57b2d362b1e7c5b197dc57fc66a6b8f5. A árvore principal já não contém os diretórios experimentais /site e /admin1.
+- No snapshot inicial, main estava em 24719f9c57b2d362b1e7c5b197dc57fc66a6b8f5; revalidada em 9ec95df6b55e24f3964c22d4b2064d3163519de4 após a PR #1269. A árvore principal já não contém os diretórios experimentais /site e /admin1.
 - No site ao vivo, / abre a vitrine pública; /admin/ retorna para a raiz e não abre o painel; /vitrine/admin/ abre o Admin em uso.
 - A troca de produto em uma cesta pública foi testada: escolher Arroz Tio Bonini atualizou o item e o total de R$ 419,30 para R$ 425,70. O teste parou antes de adicionar a cesta ou enviar pedido.
 - A página pública raiz concentra cerca de 200 KB de HTML, com aproximadamente 138 KB de JavaScript embutido.
@@ -38,7 +38,15 @@ Fonte canônica: repositório osvaldosereia/SUCEDOAN12 e Supabase ssbesxgaijknws
 
 
 
-Próxima ação exata: executar no SHA atual de `main` os 10 checks que falharam na PR #1270, estabelecer a linha de base e corrigir o grupo de contratos Admin/runtime obsoletos que reproduzir em `main`; repetir o gate `products-session` e CI amplo antes de integrar. Não aplicar migrations no canônico até reconstruir e validar o ledger.
+### Rodada seguinte — contratos dos testes do Admin — 2026-10-22
+
+- A PR #1269 está merged; main é `9ec95df6b55e24f3964c22d4b2064d3163519de4`. PR #1270 continua aberta, com 19 workflows (9 success, 10 failure); o gate direcionado `products-session` passa. As dez falhas foram reproduzidas no SHA-base `24719f9c57b2d362b1e7c5b197dc57fc66a6b8f5` e no HEAD de #1270 antes dos ajustes, sem diferença atribuível ao código de Produtos.
+- PR #1271 (`agent/admin-runtime-contract-tests`, revisão de código `4544862784812ce91b074c829e059b5255ba98ee`) atualiza somente contratos de teste do Admin modular e dos pedidos. O helper `scripts/helpers/admin-ui-source.mjs` compõe HTML, runtime e folhas de estilo realmente servidos; 15 testes foram ajustados, incluindo harness de sintaxe ESM e testes da vitrine pública do pedido. Commits desta atualização: `65938f4`, `15ec7d2` e `4544862`. Nenhum runtime ou comportamento operacional mudou.
+- Passaram localmente 24/24 testes do lote, o build check do runtime, `node --check vitrine/admin/admin-runtime.js` e `git diff --check`. Na última consulta da revisão de código `4544862`, cinco de sete workflows estavam concluídos com sucesso; o job ANA já havia passado e o workflow de Cestas ainda instalava Chromium. Nenhum dos sete workflows reportou falha; consultar o estado final antes da integração. Smoke de leitura confirmou `/` com cinco cestas e carrinho vazio e `/vitrine/admin/` na Central com 19 áreas. Nenhuma publicação ocorreu.
+- Supabase canônico `ssbesxgaijknwsjbsbcz`: ACTIVE_HEALTHY, PostgreSQL 17.6.1.166, 1.244 migrations (última `20261022114704`), 142 funções. Advisors atuais seguem com 228 RLS sem policy, 3 search_path mutáveis, 43 SECURITY DEFINER executáveis por authenticated, 1 aviso de proteção de senha; performance 77 FKs sem índice, 97 índices sem uso e 1 aviso de conexões. Não houve migration, deploy de função, alteração de configuração ou dados. O descompasso de migration (1.244 no banco / 180 arquivos, 31 timestamps comuns) continua bloqueando DDL.
+- Rollback: reverter ou fechar #1271; só contratos de teste/helper foram alterados. Sem efeito no runtime ou banco.
+
+Próxima ação exata: corrigir a jornada pública existente em `pedido/index.html` para usar o `channel_origin` que `order-public-view-v1` já retorna ao montar o link de WhatsApp para os canais 0975/1018; cobrir os dois casos sem enviar mensagem. No mesmo domínio, ajustar `scripts/test-admin-pending-data-baskets-public-v1.mjs` e `scripts/test-checkout-simple-ux.mjs` para validar `/` como entrada pública e `/vitrine/` como redirecionamento legado, em vez de exigir cópias HTML. Preservar `/` e `/vitrine/admin/`; executar testes de link curto/cliente e smoke de leitura. Não aplicar migrations no canônico até reconciliar o ledger.
 
 ### Ordem de execução
 
@@ -100,7 +108,7 @@ Registrar em cada lote: arquivos, commit/PR, comando de teste e resultado, verif
 
 ### Próxima tarefa de código
 
-Trabalhar dentro de `vitrine/admin/`, mantendo a rota e o painel atuais. Mapear dependências e testes para selecionar um fluxo de baixo risco; então fazer um único ajuste estrutural pequeno, sem alterar regras de negócio. Executar `python3 scripts/build-vitrine-admin-runtime.py --check`, o teste direcionado encontrado e um smoke rápido da área alterada. Não criar outro Admin nem migrar a URL.
+Consertar a jornada já existente em `/pedido/`: selecionar o link WhatsApp com base no `channel_origin` devolvido pela Edge Function, mantendo suporte aos canais 0975 e 1018 e sem iniciar o envio de mensagem automaticamente. Corrigir junto os testes de espelho para reconhecer o site real em `/` e o redirecionamento legado `/vitrine/`. Preservar o Admin em `/vitrine/admin/`; não criar app nem mudar rota. Testar os dois canais e a leitura pública sem criar pedido sintético.
 
 ## Objetivo da programação
 Concluir a migração para o desenho Operations 2.0 sem interromper o site público, usando o Bling como ERP/fonte oficial dos domínios homologados e mantendo o Vitrine/Admin como camada operacional simples.
