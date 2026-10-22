@@ -55,7 +55,7 @@ async function openBasket(id, existing = null) {
     const updateQuote = async () => {
       const revision = ++quoteRevision; quoted = false; $('#basketQuoteStatus').textContent = 'Calculando novo valor…'; $('#retryBasketQuote').hidden = true; $('#addBasket').disabled = true; $('#basketTotal').textContent = 'Calculando…';
       try { const input = quoteInput(); const quote = await request(input.action, {}, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input.payload) }); if (revision !== quoteRevision || !drawer.isConnected) return; basket.price_cents = Number(quote.total_cents); $('#basketTotal').textContent = money(basket.price_cents); $('#basketQuoteStatus').textContent = ''; quoted = true; $('#addBasket').disabled = false; }
-      catch { if (revision !== quoteRevision || !drawer.isConnected) return; $('#basketTotal').textContent = 'Valor não calculado'; $('#basketQuoteStatus').textContent = 'Não foi possível confirmar o valor. Tente novamente.'; $('#retryBasketQuote').hidden = false; }
+      catch (error) { if (revision !== quoteRevision || !drawer.isConnected) return; console.error('Falha ao cotar cesta', error); $('#basketTotal').textContent = 'Valor não calculado'; $('#basketQuoteStatus').textContent = 'Não foi possível confirmar o valor. Tente novamente.'; $('#retryBasketQuote').hidden = false; }
     };
     const loadOptions = async (item, offset = 0) => {
       if (item.alternatives_loading || item.next_offset == null && item.alternatives_loaded) return;
