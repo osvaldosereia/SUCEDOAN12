@@ -121,7 +121,11 @@ async function moldAvailableStockMap(productIds:string[]){
   const reservedOrders=new Map<string,number>(),now=Date.now();
   for(const r of oq.data||[]){if(r.expires_at&&new Date(r.expires_at).getTime()<=now)continue;const id=String(r.product_id);reservedOrders.set(id,(reservedOrders.get(id)||0)+Number(r.quantity||0))}
   for(const r of sq.data||[]){
-    const id=String(r.product_id),observedAt=Date.parse(String(r.mirror_observed_at||""));
+    const id=String(r.product_id);
+    // During EAN reconciliation, public basket components must be products
+    // read by the EAN session, even when Bling is the stock authority.
+    if(r.ean_sellable_stock==null){out.set(id,0);continue}
+    const observedAt=Date.parse(String(r.mirror_observed_at||""));
     const freshBling=r.stock_authority==="bling"&&r.link_status==="matched"&&r.bling_product_id!=null&&r.selected_deposit_id!=null&&r.sellable_virtual!=null&&Number.isFinite(observedAt)&&observedAt<=now+5*60_000&&now-observedAt<=INACTIVE_BASKET_STOCK_MAX_AGE_MS;
     // Use the configured inventory authority: EAN captures override legacy
     // stock, but must not replace a live Bling stock mirror.
