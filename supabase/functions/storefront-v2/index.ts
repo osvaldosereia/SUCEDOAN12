@@ -402,7 +402,7 @@ async function homeSizeCards(){
   if(categoriesQ.error)throw categoriesQ.error;if(subcategoriesQ.error)throw subcategoriesQ.error;
   const categories=categoriesQ.data||[],subcategories=subcategoriesQ.data||[];
   const complete=categories.find((c:any)=>String(c.slug||"")==="cestas-completas");
-  if(!complete)return {ok:true,version:"home-size-shell-v1",priority:false,home_size_cards:true,baskets:[],categories:CATEGORIES,basket_categories:[]};
+  if(!complete)throw new Error("home_size_category_missing");
   const sizeOrder=["economica","mini","pequena","media","grande"];
   const keyOf=(value:any)=>String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("pt-BR");
   const sizes=subcategories.filter((s:any)=>String(s.category_id)===String(complete.id)&&sizeOrder.includes(keyOf(s.name))).sort((a:any,b:any)=>sizeOrder.indexOf(keyOf(a.name))-sizeOrder.indexOf(keyOf(b.name)));
