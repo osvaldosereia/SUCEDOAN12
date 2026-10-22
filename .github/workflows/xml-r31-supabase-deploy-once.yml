@@ -1,17 +1,11 @@
 name: XML R31 deploy Supabase CLI (one-shot)
 on:
-  pull_request:
-    paths:
-      - .github/workflows/xml-r31-supabase-deploy-once.yml
-  push:
-    branches:
-      - agent/xml-operacao-simples-20261012
-    paths:
-      - .github/workflows/xml-r31-supabase-deploy-once.yml
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
   deploy-xml:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -30,4 +24,4 @@ jobs:
       - name: Deploy existing canonical Edge Function with API bundler
         shell: bash
         run: |
-          supabase functions deploy admin-service-intelligence-v1 --project-ref ssbesxgaijknwsjbsbcz --use-api --debug
+          supabase functions deploy admin-service-intelligence-v1 --project-ref ssbesxgaijknwsjbsbcz --use-api

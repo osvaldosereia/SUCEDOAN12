@@ -1,0 +1,25 @@
+name: XML R31 deploy guard CI
+on:
+  pull_request:
+    paths:
+      - .github/workflows/xml-r31-supabase-deploy-once.yml
+      - .github/workflows/xml-r31-deploy-guard-ci.yml
+      - scripts/test-xml-r31-deploy-workflow-guard.mjs
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/xml-r31-supabase-deploy-once.yml
+      - .github/workflows/xml-r31-deploy-guard-ci.yml
+      - scripts/test-xml-r31-deploy-workflow-guard.mjs
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node scripts/test-xml-r31-deploy-workflow-guard.mjs
