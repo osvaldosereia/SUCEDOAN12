@@ -6,7 +6,7 @@ Concluir e validar a gestão de produtos antes de iniciar qualquer trabalho na g
 
 ## Objetivo desta fase
 
-Preparar o módulo de produtos para operação correta a partir das informações de notas fiscais XML, com interface simples e completa. Nesta fase, implementar e validar o fluxo no código sem habilitar gravações de produtos no Supabase, no site ou no Bling.
+Concluir a operação de produtos usando o projeto Supabase exclusivo do Admin1. O catálogo antigo fica disponível somente para consulta exata por EAN/SKU; nenhuma gravação é feita no banco antigo, na loja pública ou no Bling.
 
 ## Revisão obrigatória do produto
 
@@ -54,9 +54,9 @@ Só avançar para Cestas quando:
 2. cada campo relevante do XML estiver mapeado e tiver origem e finalidade claras;
 3. os casos de produto existente, produto novo, GTIN ausente, unidades diferentes, conversão incompleta, duplicidade e dados fiscais pendentes estiverem cobertos;
 4. busca, vínculo, validação e rascunhos tiverem testes e verificação funcional;
-5. nenhuma gravação real no Supabase, no site ou no Bling estiver habilitada nesta fase.
+5. gravações estiverem limitadas ao banco próprio do Admin1 e continuarem impossíveis no banco da loja pública e no Bling.
 
-A habilitação de gravações persistentes depende de uma autorização separada. Até lá, a conclusão significa deixar o fluxo de trabalho preparado, revisado e testado, sem efetivar cadastros no catálogo.
+O cadastro persistente no banco próprio do Admin1 está autorizado. A conclusão ainda depende da verificação automatizada e do teste manual do usuário em celular/desktop. Não iniciar Cestas antes desse fechamento.
 
 
 ## Revisão técnica concluída nesta rodada
@@ -68,15 +68,32 @@ A habilitação de gravações persistentes depende de uma autorização separad
 - A unidade comercial do catálogo é iniciada pela unidade tributável da NF-e, mantendo separadas as unidades e quantidades originais. Associações continuam restritas a SKU/GTIN exatos, com ambiguidade visível.
 - A busca de duplicidade indisponível fica marcada como pendente; não é apresentada como verificação concluída. Rascunhos permanecem apenas no navegador.
 
-**Limite de persistência:** o Admin1 pode cadastrar e editar produtos no workspace local do navegador para validar o fluxo completo. A persistência no Supabase, publicação no site, movimentação oficial de estoque e integração com Bling continuam desligadas até uma autorização posterior.
+**Limite de persistência:** produtos, imagens, lotes e movimentos são gravados somente no projeto Supabase próprio do Admin1. O catálogo legado é usado por uma função proxy somente GET. Não publicar alterações no site público nem conectar o Bling nesta etapa.
 
 ## Estratégia permanente de execução aprovada pelo usuário
 
 - Implementar ferramentas operacionais de ponta a ponta; não deixar botões ou telas como protótipo quando a ação puder ser feita no escopo aprovado.
 - Priorizar a operação de produtos até ela estar concluída antes de avançar para cestas.
-- O Admin1 pode ler o catálogo ativo do Supabase. Toda gravação de produto, imagem, estoque ou status deve continuar local ao navegador enquanto o bloqueio de escrita estiver ativo. Não aplicar migrations, publicar Edge Functions ou alterar a loja pública nesta fase.
-- A experiência local deve ser utilizável de verdade para criar, editar, conferir, ativar e desativar produtos; deve deixar explícito que os dados ficam neste navegador e não sincronizam com outros dispositivos nem com a loja.
+- O Admin1 consulta o catálogo antigo por uma função somente leitura e grava produtos exclusivamente no banco próprio `Dona Antonia Admin1`. Nunca escrever no projeto Supabase ligado ao site público.
+- A experiência deve criar, editar, conferir, ativar e desativar produtos no banco Admin1 e sincronizar os dados entre dispositivos.
 - Produto com estoque zero fica inativo. Reposição não ativa automaticamente. A ativação exige estoque positivo e imagem válida.
-- Imagem escolhida pelo usuário deve ser convertida no navegador para WebP, redimensionada e reduzida para no máximo 30 KB antes de salvar no workspace local.
+- Imagem escolhida pelo usuário deve ser convertida no navegador para WebP, redimensionada e reduzida para no máximo 30 KB antes de salvar no cadastro do Admin1.
 - Quando o teste automatizado ou técnico for possível, executar e apresentar o resultado. Se o fluxo depender de navegador real, login ou acesso indisponível, informar exatamente o que falta e pedir teste manual, sem afirmar que foi validado visualmente.
-- Manter módulos pequenos, responsabilidades explícitas e testes sobre regras de negócio; a persistência local é um adaptador temporário substituível, não deve contaminar regras de produto nem chamadas de leitura do catálogo.
+- Manter módulos pequenos, responsabilidades explícitas e testes sobre regras de negócio. Separar claramente a consulta do catálogo legado, a escrita no banco próprio do Admin1 e a apresentação da tela.
+
+## Transferência em lote por EAN aprovada
+
+- Leitor ou sequência colada aceita um EAN por linha e remove duplicatas.
+- Consultar somente a função proxy `admin1-legacy-catalog-read-v1` por GET.
+- Exibir itens encontrados, não encontrados e já transferidos antes de qualquer gravação.
+- Exigir categoria oficial entre Mercearia, Limpeza, Lavanderia, Higiene, Beleza, Casa e Pet quando não houver correspondência inequívoca.
+- Transferir somente após confirmação. Produto entra inativo e com estoque zero; SKU/EAN/origem e imagem disponível são preservados.
+- A origem é marcada com projeto e ID do produto para impedir transferência duplicada.
+
+## Fluxo de produto vindo de XML
+
+- Ler XML no navegador, associar produto existente somente por GTIN ou SKU exatos e manter os campos fiscais da nota como referência.
+- Permitir revisar todos os campos permanentes do produto e gravar no banco Admin1.
+- Para a quantidade da nota, mostrar uma opção explícita para somar o estoque. A entrada cria lote e movimento no banco Admin1, com validade quando informada.
+- Repetir a mesma linha de NF-e não deve duplicar entrada do mesmo lote.
+

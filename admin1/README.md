@@ -1,39 +1,40 @@
-# Administração de produtos · Dona Antônia
+# Admin1 · Produtos
 
-Painel independente em `/admin1`, com foco em uma operação de catálogo rápida, direta e responsiva.
+Painel independente para operar o catálogo próprio da Dona Antônia. A tela atende desktop e celular e não publica mudanças na loja atual.
 
-## Recursos desta etapa
+## Operação implementada
 
-- Lista responsiva de produtos, com imagem, categoria, SKU, GTIN, preço, estoque e situação.
-- Busca por nome, SKU, EAN e marca, filtros por categoria, situação e estoque, e paginação.
-- Detalhes fiscais e comerciais do catálogo.
-- Cadastro e edição locais com dados comerciais e fiscais, validade, localização, estoque e fornecedor.
-- Ativação e desativação explícitas armazenadas somente no navegador.
-- Produto sem estoque vendável confirmado não pode ser ativado. A reposição não publica automaticamente um produto inativo.
-- O estoque exibido usa a fonte atual de estoque vendável e sua confirmação recente, em vez do campo legado de quantidade.
-- Imagens de produto convertidas no navegador para WebP, limitadas a 1.200 px e 30 KB.
-- Conferência local de XML de NF-e e rascunhos do produto armazenados apenas no navegador.
-- Correspondência conservadora de produto somente por GTIN ou SKU exatos.
+- Cadastro, edição, busca, filtros, paginação, detalhes e ativação de produtos persistidos no projeto Supabase `Dona Antonia Admin1`.
+- Categorias fixas: Mercearia, Limpeza, Lavanderia, Higiene, Beleza, Casa e Pet.
+- Validação de SKU, EAN/GTIN, categoria, preço, estoque e dados fiscais disponíveis.
+- Imagens convertidas para WebP no navegador, até 1.200 px e no máximo 30 KB.
+- Estoque ligado a lotes e movimentos; quantidade zero deixa o produto inativo e uma reposição não o reativa automaticamente.
+- Conferência de XML no navegador, vínculo por GTIN/SKU exatos e rascunhos locais até o usuário salvar o produto no Admin1.
+- Entrada da quantidade de XML é explícita e registra lote/movimento no banco próprio do Admin1.
+- Transferência de uma sequência de EANs: consulta somente leitura ao catálogo antigo, prévia dos resultados e confirmação antes de gravar no Admin1.
+- Produtos transferidos entram inativos e com estoque zero; a chave de origem impede importação duplicada.
 
-## Dados e efeitos
+## Limite entre os bancos
 
-O catálogo é consultado pela Edge Function de leitura `admin1-products-read-v1`. A camada de escrita permanece bloqueada por `ADMIN1_SUPABASE_WRITES_ENABLED = false`; o adaptador recusa qualquer alteração antes de fazer uma requisição. Cadastro, edição, imagem e mudança de status são gravados apenas no `localStorage` deste navegador.
+- Leitura do catálogo legado passa somente pela função `admin1-legacy-catalog-read-v1` (GET).
+- Gravações do módulo de produtos usam `admin1_save_product_v1` e tabelas do projeto separado `xaoeldjuxzsdsblimzxo`.
+- O banco ligado ao site público e o Bling não são alterados por esse módulo.
 
-Esta versão não aplica migrations nem implanta Edge Functions e não altera os dados do Supabase ativo ou da loja pública. O workspace local é útil para testar a operação, mas não sincroniza entre navegadores e não persiste no catálogo. XML, correspondências e rascunhos permanecem locais.
+## Estrutura
 
-## Organização
+- `src/app.js`: interface, eventos e estados da tela.
+- `src/api.js`: ações da interface e adaptação para os dados Admin1.
+- `src/admin1-data.js`: acesso ao banco Admin1, busca legada somente leitura, cadastro e transferência EAN.
+- `src/product-management.js`: validação de campos fiscais/comerciais e categorias permitidas.
+- `src/product-drafts.js`: leitura da NF-e e rascunhos locais antes do cadastro.
+- `src/product-images.js`: conversão e redução de imagem.
+- `supabase/migrations/20261022100000_admin1_product_operations_v1.sql`: extensão do produto e rotina transacional de produto/estoque.
+- `tests/`: testes automatizados da lógica e dos adaptadores.
 
-- `index.html` e `styles.css`: interface e comportamento responsivo.
-- `src/app.js`: apresentação e eventos da tela.
-- `src/api.js` e `src/public-api.js`: adaptadores de leitura e bloqueio explícito de escrita no Supabase.
-- `src/product-availability.js`: regra de ativação por estoque.
-- `src/product-management.js`: validações de cadastro e identificadores.
-- `src/product-drafts.js`: leitura local do XML e rascunhos.
-- `tests/`: testes de regras, chamadas de status e leitura de XML.
-- `supabase/functions/admin1-product-status-v1/` e `supabase/migrations/`: proposta futura versionada; não implantada nem aplicada.
-
-## Verificação local
+## Testes
 
 ```sh
 node --test admin1/tests/*.test.mjs
 ```
+
+O teste visual em celular e a validação manual com uma NF-e real e uma sequência real de EANs ficam para a próxima sessão do usuário.

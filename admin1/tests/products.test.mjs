@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { filterProducts, getProductStockState, listProductCategories } from '../src/products.js';
 
 const products = [
-  { id: '1', name: 'Arroz Branco', sku: 'ARZ-5', brand: 'DA', category: 'Mercearia', stock_quantity: 12 },
-  { id: '2', name: 'Feijão Carioca', sku: 'FEI-1', brand: 'DA', category: 'Mercearia', stock_quantity: 2 },
-  { id: '3', name: 'Sabonete', sku: 'SAB-1', brand: 'Flor', category: 'Higiene', stock_quantity: 0 }
+  { id: '1', name: 'Arroz Branco', sku: 'ARZ-5', packaging: '5 kg', category: 'Mercearia', stock_quantity: 12 },
+  { id: '2', name: 'Feijão Carioca', sku: 'FEI-1', packaging: '1 kg', category: 'Mercearia', stock_quantity: 2 },
+  { id: '3', name: 'Sabonete', sku: 'SAB-1', category: 'Higiene', stock_quantity: 0 }
 ];
 
 test('filtra produtos por categoria sem alterar a lista de origem', () => {
@@ -14,13 +14,13 @@ test('filtra produtos por categoria sem alterar a lista de origem', () => {
   assert.equal(products.length, 3);
 });
 
-test('busca por nome, marca e SKU sem diferenciar acentos ou caixa', () => {
+test('busca por nome, embalagem e SKU sem diferenciar acentos ou caixa', () => {
   assert.deepEqual(filterProducts(products, { query: 'feijao' }).map(product => product.id), ['2']);
   assert.deepEqual(filterProducts(products, { query: 'sab' }).map(product => product.id), ['3']);
 });
 
 test('combina busca com categoria e disponibilidade', () => {
-  assert.deepEqual(filterProducts(products, { query: 'DA', category: 'Mercearia', stock: 'low' }).map(product => product.id), ['2']);
+  assert.deepEqual(filterProducts(products, { query: 'FEI', category: 'Mercearia', stock: 'low' }).map(product => product.id), ['2']);
   assert.deepEqual(filterProducts(products, { stock: 'out' }).map(product => product.id), ['3']);
 });
 
@@ -63,3 +63,4 @@ test('não inclui estoque desconhecido nos filtros de disponível ou sem estoque
   assert.deepEqual(filterProducts(products, { stock: 'available' }).map(product => product.id), ['available']);
   assert.deepEqual(filterProducts(products, { stock: 'out' }).map(product => product.id), ['out']);
 });
+

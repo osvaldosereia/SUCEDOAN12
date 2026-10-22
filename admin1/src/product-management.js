@@ -5,19 +5,12 @@ const validOrigin = value => /^[0-8]$/.test(text(value));
 
 export const PRODUCT_CATEGORY_OPTIONS = Object.freeze([
   'Mercearia',
-  'Limpeza e lavanderia',
-  'Higiene e beleza',
-  'Casa e pet'
-]);
-
-const categoryAliases = new Map([
-  ['mercearia', 'mercearia'],
-  ['limpeza e lavanderia', 'limpeza_lavanderia'],
-  ['limpeza_lavanderia', 'limpeza_lavanderia'],
-  ['higiene e beleza', 'higiene_beleza'],
-  ['higiene_beleza', 'higiene_beleza'],
-  ['casa e pet', 'casa_pet'],
-  ['casa_pet', 'casa_pet']
+  'Limpeza',
+  'Lavanderia',
+  'Higiene',
+  'Beleza',
+  'Casa',
+  'Pet'
 ]);
 
 export function isValidGtin(value) {
@@ -89,8 +82,7 @@ export function getProductReadinessIssues(product = {}) {
   if (!text(product.name)) add('name', 'Nome do produto');
   if (!text(product.sku)) add('sku', 'SKU interno');
   const category = normalize(product.category);
-  const categoryCode = categoryAliases.get(category);
-  const allowed = PRODUCT_CATEGORY_OPTIONS.some(option => normalize(option) === category) || Boolean(categoryCode);
+  const allowed = PRODUCT_CATEGORY_OPTIONS.some(option => normalize(option) === category);
   if (!allowed) add('category', 'Categoria controlada');
   const rawPrice = product.sale_price_cents ?? product.price_cents;
   const price = rawPrice === undefined
@@ -188,7 +180,6 @@ export function buildAdminProductRecord(input = {}, now = new Date()) {
     origin_code: originCode,
     category: text(input.category),
     subcategory: text(input.subcategory),
-    brand: text(input.brand),
     packaging: text(input.packaging),
     unit: text(input.unit || input.commercial_unit),
     commercial_unit: text(input.commercial_unit || input.unit),
@@ -236,3 +227,4 @@ export function getProductEditorErrors(product = {}) {
     return true;
   });
 }
+

@@ -316,4 +316,18 @@ button { -webkit-tap-highlight-color: transparent; }
 .product-status-action.is-active:hover:not(:disabled){background:#faf0ed;border-color:#dfc5bf}
 .product-status-action:disabled{opacity:.55;cursor:not-allowed}
 .product-mobile-actions{margin-top:8px}
+.ean-sequence-field,.ean-category-field{display:grid;gap:7px;margin:12px 0;color:#555d68;font-size:12px;font-weight:600}
+.ean-sequence-field textarea,.ean-category-field select{width:100%;min-height:42px;padding:10px 12px;border:1px solid #dfe3e8;border-radius:9px;background:#fff;color:#252a32;font:inherit;font-weight:400;resize:vertical}
+.ean-import-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0}
+.ean-import-summary{display:flex;justify-content:space-between;gap:10px;margin:18px 0 10px;color:#727985;font-size:12px}
+.ean-import-summary strong{color:#343943}
+.ean-transfer-card{display:grid;grid-template-columns:auto 64px minmax(0,1fr) minmax(150px,auto);align-items:center}
+.ean-transfer-card .product-mobile-image img,.ean-transfer-card .product-mobile-image .product-placeholder{width:58px;height:58px;object-fit:contain;border:1px solid #eff0f3;border-radius:9px;background:#fbfbfc}
+.ean-transfer-select{display:grid;place-items:center}
+.ean-transfer-select input{width:18px;height:18px;accent-color:#2f7651}
+.ean-transfer-card .xml-review-action{display:grid;min-width:150px;gap:6px}
+.ean-transfer-card .xml-review-main{min-width:0}
+.ean-category-field{margin:8px 0 0}
 @media(max-width:760px){.product-mobile-actions{justify-content:flex-start}.product-status-action{min-height:38px}}
+@media(max-width:760px){.ean-transfer-card{grid-template-columns:24px 58px minmax(0,1fr);align-items:start}.ean-transfer-card .xml-review-action{grid-column:2/-1;min-width:0}.ean-transfer-card .product-mobile-image img,.ean-transfer-card .product-mobile-image .product-placeholder{width:52px;height:52px}.ean-import-summary{align-items:flex-start;flex-direction:column}}
+
