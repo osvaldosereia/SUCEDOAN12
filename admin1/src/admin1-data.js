@@ -5,6 +5,14 @@ const SOURCE_PROJECT = 'ssbesxgaijknwsjbsbcz';
 
 const clean = value => String(value ?? '').trim();
 
+function hiddenValueToCents(value) {
+  const amount = Number(String(value ?? '0').trim().replace(',', '.'));
+  if (!Number.isFinite(amount) || amount < 0) throw new Error('O valor oculto deve ser igual ou maior que zero.');
+  const cents = Math.round((amount + Number.EPSILON) * 100);
+  if (!Number.isSafeInteger(cents)) throw new Error('O valor oculto está fora do limite permitido.');
+  return cents;
+}
+
 function headers(extra = {}) {
   return { apikey: ADMIN1_KEY, Authorization: `Bearer ${ADMIN1_KEY}`, Accept: 'application/json', ...extra };
 }
@@ -252,11 +260,14 @@ export function createAdmin1Data(fetchImpl = (...args) => globalThis.fetch(...ar
 
   async function listBasketSizes() {
     const rows = await rest('admin1_basket_sizes?select=*&order=sort_order.asc,name.asc', { method: 'GET' });
-    return rows.map(row => ({ ...row, id: String(row.id), name: String(row.name || ''), sort_order: Number(row.sort_order || 0), active: row.is_active === true }));
+    return rows.map(row => ({ ...row, id: String(row.id), name: String(row.name || ''), sort_order: Number(row.sort_order || 0), active: row.is_active === true, hidden_value_cents: Math.max(0, Number(row.hidden_value_cents || 0)) }));
   }
 
   async function saveBasketSize(size) {
-    const payload = { name: clean(size.name), sort_order: Number(size.sort_order || 0), is_active: size.active !== false };
+    const hiddenValueCents = size.hidden_value !== undefined
+      ? hiddenValueToCents(size.hidden_value)
+      : hiddenValueToCents(Number(size.hidden_value_cents || 0) / 100);
+    const payload = { name: clean(size.name), sort_order: Number(size.sort_order || 0), is_active: size.active !== false, hidden_value_cents: hiddenValueCents };
     if (!payload.name) throw new Error('Informe o nome do tamanho.');
     if (size.id) payload.id = clean(size.id);
     const rows = await rest('admin1_basket_sizes?on_conflict=id', {

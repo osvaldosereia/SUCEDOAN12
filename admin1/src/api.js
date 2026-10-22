@@ -1,4 +1,4 @@
-import { admin1Data } from './admin1-data.js?v=3';
+import { admin1Data } from './admin1-data.js?v=4';
 
 export async function adminApi(action, params = {}) {
   if (action === 'products') {
