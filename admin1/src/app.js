@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 16114)
-Total output lines: 735
-
 import { adminApi } from './api.js?v=11';
 import { filterProducts, getProductStockState, listProductCategories } from './products.js?v=4';
 import { createProductDraft, findCatalogMatch, getFiscalChecklist, getNfeItemReviewIssues, parseNfeXml, readProductDrafts, saveProductDraft } from './product-drafts.js?v=8';
@@ -295,7 +292,67 @@ function renderDraftEditor(draft) {
     <div class="draft-warning"><strong>Rascunho local · não altera o produto do site</strong><span>O preço de custo veio da nota. Preço de venda, estoque e publicação não são alterados.</span></div>
     <fieldset><legend>Identificação do produto</legend><div class="draft-fields">${input('name','Nome do produto no catálogo',draft.name)}${input('sku','SKU / código interno',draft.sku)}${input('packaging','Embalagem de venda',draft.packaging)}<label><span>Categoria do site</span><select name="category"><option value="">Selecione</option>${PRODUCT_CATEGORY_OPTIONS.map(category => `<option value="${escapeHtml(category)}" ${draft.category === category ? 'selected' : ''}>${escapeHtml(category)}</option>`).join('')}</select></label>${input('sale_price','Preço de venda (R$)',draft.sale_price,'0,00')}${input('commercial_unit','Unidade usada no catálogo',draft.commercial_unit,'UN, KG, L…')}${input('tax_unit','Unidade tributável do produto',draft.tax_unit,'UN, KG, L…')}</div><p class="draft-hint">O código do fornecedor e o GTIN do XML ficam como referência. Eles não viram SKU interno automaticamente. O nome original da nota aparece abaixo.</p></fieldset>
     <fieldset><legend>Dados fiscais do produto para conferência</legend><div class="draft-fields">${input('ncm','NCM',draft.ncm,'8 dígitos')}${input('cest','CEST',draft.cest,'7 dígitos, se aplicável')}${select('origin_code','Origem da mercadoria',draft.origin_code,[['0','Nacional'],['1','Importação direta'],['2','Importação adquirida no mercado interno'],['3','Nacional com conteúdo de importação acima de 40%'],['4','Nacional conforme processo produtivo básico'],['5','Nacional com conteúdo de importação até 40%'],['6','Importação direta sem similar nacional'],['7','Importação adquirida sem similar nacional'],['8','Nacional com conteúdo de importação acima de 70%']])}${input('commercial_gtin','GTIN principal / comercial',draft.commercial_gtin,'Use SEM GTIN quando aplicável')}${input('tax_gtin','GTIN tributável',draft.tax_gtin,'Pode ser diferente do comercial')}</div></fieldset>
-    <fieldset><legend>Dados da nota de entrada (somente referência)</legend><div class="xml-source-grid"><div><small>Descrição original da NF-e</small><strong>${escapeHtml(draft.description_from_xml || '—')}</strong></div><div><small>Fornecedor · CNPJ/CPF</small><strong>${escapeHtml([draft.supplier_name, draft.supplier_cnpj || draft.supplier_cpf].filter(Boolean).join(' · ') || '—')}</strong></div><div><small>NF-e · série · emissão</small><strong>${escapeHtml([draft.invoice_number && `nº ${draft.invoice_number}`, draft.invoice_series && `série ${draft.invoice_series}`, draft.invoice_date].filter(Boolean).join(' · ') || '—')}</strong></div><div><small>Chave de acesso</small><strong>${escapeHtml(draft.invoice_key || '—')}</strong></div><div><small>Código do produto no fornecedor</small><strong>${escapeHtml(draft.supplier_item_code || '—')}</strong></div><div><small>GTIN comercial / tributável no XML</small><strong>${escapeHtml([draft.raw_commercial_gtin || draft.xml_commercial_gtin || '—', draft.raw_tax_gtin || '—'].join(' · '))}</strong></div><div><small>Valor e quantidade comercial (uCom, qCom, vUnCom)</small><strong>${escapeHtml([draft.purchase_…2114 tokens truncated…">Consultar produtos</button><span id="eanLookupStatus" class="local-storage-note">Até 100 códigos por consulta</span></div>
+    <fieldset><legend>Dados da nota de entrada (somente referência)</legend><div class="xml-source-grid"><div><small>Descrição original da NF-e</small><strong>${escapeHtml(draft.description_from_xml || '—')}</strong></div><div><small>Fornecedor · CNPJ/CPF</small><strong>${escapeHtml([draft.supplier_name, draft.supplier_cnpj || draft.supplier_cpf].filter(Boolean).join(' · ') || '—')}</strong></div><div><small>NF-e · série · emissão</small><strong>${escapeHtml([draft.invoice_number && `nº ${draft.invoice_number}`, draft.invoice_series && `série ${draft.invoice_series}`, draft.invoice_date].filter(Boolean).join(' · ') || '—')}</strong></div><div><small>Chave de acesso</small><strong>${escapeHtml(draft.invoice_key || '—')}</strong></div><div><small>Código do produto no fornecedor</small><strong>${escapeHtml(draft.supplier_item_code || '—')}</strong></div><div><small>GTIN comercial / tributável no XML</small><strong>${escapeHtml([draft.raw_commercial_gtin || draft.xml_commercial_gtin || '—', draft.raw_tax_gtin || '—'].join(' · '))}</strong></div><div><small>Valor e quantidade comercial (uCom, qCom, vUnCom)</small><strong>${escapeHtml([draft.purchase_quantity, draft.purchase_unit, draft.purchase_unit_price !== null && draft.purchase_unit_price !== undefined ? formatMoney(Math.round(Number(draft.purchase_unit_price) * 100)) : null].filter(x => x !== null && x !== '').join(' · ') || '—')}</strong></div><div><small>Valor e quantidade tributável da nota (uTrib, qTrib, vUnTrib)</small><strong>${escapeHtml([draft.tax_quantity, draft.tax_unit_from_xml ?? draft.tax_unit, draft.tax_unit_price !== null && draft.tax_unit_price !== undefined ? formatMoney(Math.round(Number(draft.tax_unit_price) * 100)) : null].filter(x => x !== null && x !== '').join(' · ') || '—')}</strong></div><div><small>Total dos produtos desta linha (vProd)</small><strong>${draft.product_line_total === null || draft.product_line_total === '' ? '—' : formatMoney(Math.round(Number(draft.product_line_total) * 100))}</strong></div><div><small>Frete · seguro · desconto · outras despesas</small><strong>${escapeHtml([['frete', draft.product_line_freight], ['seguro', draft.product_line_insurance], ['desconto', draft.product_line_discount], ['outras', draft.product_line_other_expenses]].filter(([, value]) => value !== null && value !== undefined).map(([label, value]) => `${label}: ${formatMoney(Math.round(Number(value) * 100))}`).join(' · ') || '—')}</strong></div><div><small>NCM / CEST / CFOP da nota</small><strong>${escapeHtml([draft.raw_ncm_from_xml || draft.ncm || 'sem NCM', draft.raw_cest_from_xml || draft.cest || 'sem CEST', draft.cfop_from_xml || 'sem CFOP'].join(' · '))}</strong></div><div><small>Origem / escala / fabricante</small><strong>${escapeHtml([draft.origin_code_from_xml ?? draft.origin_code ?? 'origem ausente', draft.scale_indicator && `escala ${draft.scale_indicator}`, draft.extipi && `EX TIPI ${draft.extipi}`, draft.manufacturer_cnpj && `CNPJ fabricante ${draft.manufacturer_cnpj}`].filter(Boolean).join(' · ') || '—')}</strong></div><div><small>Conversão informada na nota</small><strong>${draft.units_per_purchase_unit ? `${formatQuantity(draft.units_per_purchase_unit)} ${escapeHtml(draft.tax_unit_from_xml ?? draft.tax_unit)} por ${escapeHtml(draft.purchase_unit)}` : 'Não calculada a partir de qCom/qTrib'}</strong></div><div><small>Custo por unidade tributável</small><strong>${draft.cost_per_tax_unit === null || draft.cost_per_tax_unit === '' ? '—' : formatMoney(Math.round(Number(draft.cost_per_tax_unit) * 100))}</strong></div><div><small>ICMS · CST / CSOSN</small><strong>${escapeHtml([draft.tax_codes_from_xml?.icms_cst && `CST ${draft.tax_codes_from_xml.icms_cst}`, draft.tax_codes_from_xml?.icms_csosn && `CSOSN ${draft.tax_codes_from_xml.icms_csosn}`].filter(Boolean).join(' · ') || '—')}</strong></div><div><small>PIS · COFINS · IPI CST</small><strong>${escapeHtml([draft.tax_codes_from_xml?.pis_cst && `PIS ${draft.tax_codes_from_xml.pis_cst}`, draft.tax_codes_from_xml?.cofins_cst && `COFINS ${draft.tax_codes_from_xml.cofins_cst}`, draft.tax_codes_from_xml?.ipi_cst && `IPI ${draft.tax_codes_from_xml.ipi_cst}`].filter(Boolean).join(' · ') || '—')}</strong></div><div><small>IBS/CBS CST · classificação</small><strong>${escapeHtml([draft.tax_codes_from_xml?.ibs_cbs_cst, draft.tax_codes_from_xml?.ibs_cbs_classification].filter(Boolean).join(' · ') || '—')}</strong></div><div><small>Benefício fiscal (cBenef)</small><strong>${escapeHtml(draft.cbenef_from_xml || '—')}</strong></div><div><small>Item incluso no total da NF-e</small><strong>${escapeHtml(draft.included_in_invoice_total || '—')}</strong></div>${draft.item_additional_info ? `<div><small>Informações adicionais do item</small><strong>${escapeHtml(draft.item_additional_info)}</strong></div>` : ''}</div><p class="draft-hint">Valores e códigos fiscais acima são os da operação de compra. Não devem ser copiados automaticamente como regra de venda. O custo base da nota é de compra; o custo por unidade tributável vem de vUnTrib quando presente. Frete, descontos e outras despesas são exibidos sem rateio automático.</p></fieldset>
+    <div class="draft-bottom"><span>${checklist.length ? `${checklist.length} campos do produto para completar` : 'Campos básicos do produto preenchidos'}${checklist.length ? ` · ${checklist.map(item => item.label).join(', ')}` : ''}${xmlReviewIssues.length ? `<small class="review-issue-list">${xmlReviewIssues.length} pontos da nota para conferir: ${xmlReviewIssues.map(issue => escapeHtml(issue.label)).join(' ')}</small>` : ''}${draft.identifier_check_status === 'unavailable' ? '<small class="review-issue-list">A consulta de identificadores não concluiu. Confirme duplicidades antes de qualquer cadastro.</small>' : ''}</span><button class="button primary" type="submit">Salvar rascunho local</button></div>
+  </form>`;
+  $('#productDialogTitle').textContent = draft.catalog_product_id ? 'Revisar produto relacionado' : 'Rascunho de cadastro';
+  $('#productDialogFoot').innerHTML = '<span class="readonly-badge"><i aria-hidden="true"></i>Não salva no Supabase</span><span class="local-storage-note">Este rascunho fica neste navegador</span>';
+  $('#productDraftForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const values = Object.fromEntries(new FormData(event.currentTarget));
+    try {
+      const button = event.currentTarget.querySelector('[type="submit"]');
+      button.disabled = true;
+      button.textContent = 'Conferindo identificadores…';
+      const candidate = { ...draft, ...values, gtin: values.commercial_gtin };
+      let lookup;
+      try {
+        lookup = await adminApi('product_matches', { items: [{ sku: values.sku, commercial_gtin: values.commercial_gtin, tax_gtin: values.tax_gtin }] });
+        if (!Array.isArray(lookup?.products)) throw new Error('Resposta inválida do catálogo.');
+      } catch { candidate.identifier_check_status = 'unavailable'; }
+      if (lookup) {
+        const conflicts = findIdentifierConflicts(candidate, lookup.products);
+        if (conflicts.length) throw new Error(conflicts.map(issue => issue.label).join(' '));
+        candidate.identifier_check_status = 'complete';
+      }
+      const drafts = saveProductDraft(candidate);
+      const count = $('.draft-count', workspace);
+      if (count) count.textContent = String(drafts.length);
+      renderDraftList();
+    } catch (error) {
+      let notice = $('#draftSaveError');
+      if (!notice) {
+        notice = document.createElement('p');
+        notice.id = 'draftSaveError';
+        notice.className = 'draft-save-error';
+        event.currentTarget.append(notice);
+      }
+      notice.textContent = error.message || 'Não foi possível salvar o rascunho neste navegador.';
+      const button = event.currentTarget.querySelector('[type="submit"]');
+      if (button) { button.disabled = false; button.textContent = 'Salvar rascunho local'; }
+    }
+  });
+}
+
+function suggestedImportCategory(product) {
+  const value = String(product.category || product.subcategory || '').trim().toLocaleLowerCase('pt-BR');
+  const exact = PRODUCT_CATEGORY_OPTIONS.find(category => category.toLocaleLowerCase('pt-BR') === value);
+  if (exact) return exact;
+  if (value === 'mercearia completa' || value === 'alimentos' || value === 'alimento') return 'Mercearia';
+  if (value === 'limpeza doméstica' || value === 'limpeza domestica') return 'Limpeza';
+  if (value === 'produtos de lavanderia') return 'Lavanderia';
+  if (value === 'perfumaria' || value === 'cuidados pessoais') return 'Higiene';
+  if (value === 'cosméticos' || value === 'cosmeticos') return 'Beleza';
+  if (value === 'utilidades domésticas' || value === 'utilidades domesticas') return 'Casa';
+  if (value === 'ração' || value === 'racao' || value === 'pet shop') return 'Pet';
+  return '';
+}
+
+function renderEanImporter() {
+  state.eanResults = [];
+  productDialogContent.innerHTML = `<div class="draft-intro"><span class="eyebrow">TRANSFERÊNCIA PARA O ADMIN1</span><strong>Importar produtos por EAN</strong><p>Leia os códigos com o leitor ou cole uma sequência. A consulta ao catálogo antigo é somente leitura; os itens só entram no Admin1 quando você confirmar.</p></div>
+    <label class="ean-sequence-field"><span>EANs · um por linha</span><textarea id="eanSequence" rows="6" inputmode="numeric" autocomplete="off" placeholder="Leia o primeiro código\nLeia o próximo código\n..."></textarea></label>
+    <div class="ean-import-actions"><button class="button primary" id="lookupEans" type="button">Consultar produtos</button><span id="eanLookupStatus" class="local-storage-note">Até 100 códigos por consulta</span></div>
     <div id="eanImportResults"></div>`;
   $('#productDialogTitle').textContent = 'Importar por EAN';
   $('#productDialogFoot').innerHTML = '<span class="readonly-badge"><i aria-hidden="true"></i>Origem: somente leitura</span><span class="local-storage-note">Destino: banco do Admin1</span>';
