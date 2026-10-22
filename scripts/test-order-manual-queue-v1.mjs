@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {Script} from 'node:vm';
+import {readAdminUiSource} from './helpers/admin-ui-source.mjs';
 
-const html=readFileSync('vitrine/admin/index.html','utf8');
+const html=readAdminUiSource();
 const sql=readFileSync('supabase/sql/20261008_order_manual_separation_queue_v1.sql','utf8');
 const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
 for(const [i,source] of scripts.entries())new Script(source,{filename:'admin-inline-'+i+'.js'});
