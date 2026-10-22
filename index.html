@@ -471,7 +471,7 @@
 
     /* Mold product choices use one vertical-card carousel per product type. */
     .basket-edit-list .basket-item-mold-card{display:grid;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto auto!important;gap:10px!important;padding:10px!important;align-items:stretch!important}
-    .basket-item-mold-card .basket-item-option{position:static;grid-column:1;grid-row:1;width:100%;min-width:0;margin:0!important}
+    .basket-item-mold-card .basket-item-option{position:static;grid-column:1/-1!important;grid-row:1!important;width:100%;min-width:0;margin:0!important}
     .basket-item-mold-card .basket-option-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 7px}
     .basket-item-mold-card .basket-option-label{margin:0;color:var(--muted);font-size:12px;font-weight:800;line-height:1.25}
     .basket-option-carousel-track,.basket-option-single{display:flex;align-items:stretch;gap:8px;width:100%;min-width:0;margin:0;padding:2px 2px 7px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:#c4d6c8 transparent;-webkit-overflow-scrolling:touch}
@@ -485,7 +485,7 @@
     .basket-option-selected-mark{position:absolute;top:7px;right:7px;width:18px;height:18px;border:2px solid var(--brand);border-radius:50%;background:#fff;color:var(--brand);font-size:12px;font-weight:900;line-height:14px;text-align:center}
     .basket-brand-loading,.basket-option-retry{min-height:34px;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;font-weight:650}
     .basket-option-retry button{min-height:34px;border:1px solid #cbd8cf;border-radius:9px;background:#fff;color:var(--brand);font-weight:800;padding:4px 10px}
-    .basket-item-mold-card .basket-item-actions{grid-column:1;grid-row:2;width:100%;display:flex;align-items:center;justify-content:flex-start;gap:8px;flex-wrap:nowrap;min-width:0;padding:0}
+    .basket-item-mold-card .basket-item-actions{grid-column:1!important;grid-row:2!important;width:100%;display:flex;align-items:center;justify-content:flex-start;gap:8px;flex-wrap:nowrap;min-width:0;padding:0}
     .basket-item-mold-card .basket-item-actions .checkout-qty{grid-template-columns:40px 32px 40px;min-height:44px;flex:0 0 auto}
     .basket-item-mold-card .basket-item-actions .checkout-qty button{width:40px;min-width:40px;height:42px;font-size:22px}
     .basket-selected-product-price{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}

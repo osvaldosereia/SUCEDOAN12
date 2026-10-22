@@ -55,6 +55,12 @@ test('mold products render as vertical choice cards with quantity and selected p
   assert.match(html,/carouselScroll=new Map/);
   assert.match(html,/\.basket-edit-list \.basket-item-card\s*\{[^}]*grid-template-columns:\s*86px\s+minmax\(0,1fr\)/s);
   assert.match(html,/\.basket-edit-list \.basket-item-mold-card\s*\{[^}]*grid-template-columns:\s*minmax\(0,1fr\)!important/s,'mold cards override the higher-specificity legacy basket grid on desktop');
+  const finalOptionRule=[...html.matchAll(/\.basket-item-mold-card \.basket-item-option\{[^}]*\}/g)].at(-1)?.[0]||'';
+  const finalActionsRule=[...html.matchAll(/\.basket-item-mold-card \.basket-item-actions\{[^}]*\}/g)].at(-1)?.[0]||'';
+  assert.match(finalOptionRule,/grid-row:1!important/,'mobile option carousel must precede the quantity controls');
+  assert.match(finalOptionRule,/grid-column:1\/-1!important/,'option carousel must span the full mobile card');
+  assert.match(finalActionsRule,/grid-row:2!important/,'quantity controls must follow the option carousel');
+  assert.match(finalActionsRule,/grid-column:1(?:\/-1)?!important/,'quantity controls must stay in the mobile card grid');
   assert.match(html,/\.sheet-inner\s*\{[^}]*display:\s*flex[^}]*flex-direction:\s*column/s);
   assert.match(html,/\.sheet-scroll\s*\{[^}]*min-height:\s*0/s);
   assert.match(html,/\.basket-hero-compact\s*\{[^}]*grid-template-columns:\s*1fr/s);
