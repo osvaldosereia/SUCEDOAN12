@@ -4,16 +4,16 @@
 
 ## Continuidade da reforma do site e Admin (2026-10-22)
 
-O usuário definiu a reforma gradual do sistema e site existentes. Não criar outro site, outro Admin, outro banco ou implementação paralela. A estratégia canônica está em IMPLEMENTATION-ROADMAP.md, seção “REFORMA CONTÍNUA DO SISTEMA E DO SITE PÚBLICO”.
+O usuário definiu a reforma gradual do sistema e site existentes. Não criar outro site, outro Admin, outro banco ou implementação paralela. Em 2026-10-22, esclareceu que o trabalho fica no Vitrine Admin existente em `/vitrine/admin/`; migração para `/admin/` está fora do escopo agora. A estratégia canônica está em IMPLEMENTATION-ROADMAP.md, seção “REFORMA CONTÍNUA DO SISTEMA E DO SITE PÚBLICO”.
 
 Baseline observado:
 - Repositório canônico osvaldosereia/SUCEDOAN12; main em 24719f9c57b2d362b1e7c5b197dc57fc66a6b8f5.
 - Supabase canônico ssbesxgaijknwsjbsbcz.
-- Site público ao vivo em /. Admin existente abre em /vitrine/admin/. A URL /admin/ ainda volta à raiz pública.
+- Site público ao vivo em /. Admin existente abre em /vitrine/admin/. `/admin/` ainda volta à raiz, mas sua migração foi expressamente adiada e não faz parte do próximo lote.
 - Site público testado: troca de opção de cesta recalculou o total de R$ 419,30 para R$ 425,70; nenhum pedido foi enviado.
 - Nenhuma mudança de runtime, banco ou deploy foi feita nesta atualização documental.
 
-Próxima tarefa de código: fazer /admin/ abrir o mesmo Admin existente, manter compatibilidade com /vitrine/admin/ e validar as três rotas sem alterar fluxos de negócio.
+Próxima tarefa de código: mapear as áreas, dependências e gates do Vitrine Admin atual; selecionar e corrigir um fluxo de baixo risco dentro de `vitrine/admin/`, sem migrar URL nem alterar regras de negócio. Validar com o checker do runtime, teste direcionado e smoke da área afetada.
 
 
 > Documento canônico de continuidade. Atualizar ao final de cada rodada relevante.
