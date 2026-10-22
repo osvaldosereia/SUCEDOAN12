@@ -5,6 +5,17 @@
 
 ## REFORMA CONTÍNUA DO SISTEMA E DO SITE PÚBLICO — 2026-10-22
 
+### Checkpoint de execução — 2026-10-22 (R11: helper de lotes e ledger Supabase)
+
+- Main foi revalidada em `a09f26a60ef774465f7872db3574613f799ad963`; #1269 e #1283 estão integradas. A #1283 removeu somente EXECUTE direto por `authenticated` do helper `public.basket_lot_admin_allowed_v1()`; os dois RPCs protegidos de substituição continuam disponíveis. O projeto canônico `ssbesxgaijknwsjbsbcz` confirmou: chamada direta negada, administrador permitido na RPC e não-admin negado. O ACL persistido deixa EXECUTE a postgres/service_role; não a authenticated/anon/PUBLIC.
+- Advisor de funções SECURITY DEFINER executáveis por authenticated reduziu 43→42; search_path mutável continua 0. Permanecem 228 avisos INFO de RLS sem policy e 1 WARN de proteção de senha. Nenhuma policy ampla foi criada.
+- A migration aplicada aparece no ledger como versão `20261022205909`, nome `20261022205411_basket_lot_helper_direct_execute_revoke`. A #1284 (branch `agent/basket-lot-ledger-align-20261022`, implementação `3c3f022a51d551de8305e341e26a0889f4743d37`) alinha somente o prefixo do arquivo e os caminhos do teste/workflow; SQL byte a byte preservado, sem reaplicar no banco. CI dedicado #39854085809 passou no commit de código. Sem alteração de runtime/Admin; build check não aplicável e smoke interativo não declarado. Rollback do banco permanece o GRANT exato documentado no HANDOFF.
+- Projeto canônico permanece ACTIVE_HEALTHY (sa-east-1, PostgreSQL 17.6.1.166); a branch dev `da6-qa-20261009` está MIGRATIONS_FAILED. `admin1-products-read-v1` continua ACTIVE v4 em ssbesxgaijknwsjbsbcz e `admin1-legacy-catalog-read-v1` ACTIVE v2 no projeto separado `xaoeldjuxzsdsblimzxo`; sem desativar ou migrar essas funções. Admin continua em `/vitrine/admin/`.
+
+### Próxima tarefa de código
+
+Comparar somente leitura a versão/hash publicada de `admin-service-intelligence-v1` no projeto canônico com main e os arquivos versionados de compras/XML; registrar primeiro o drift funcional concreto. Caso exija deploy, preparar teste e preflight próprios. A workflow só permite publicação manual em main e o secret `SUPABASE_ACCESS_TOKEN` está inválido conforme o run #39848977831; não fazer deploy até o proprietário renovar o secret. Em paralelo, acompanhar somente os ciclos naturais do cron EAN e aguardar sessão fisicamente verificada.
+
 ### Checkpoint de execução — 2026-10-22 (R10: auth do cron EAN e guarda de deploy)
 
 - Main avançou de b68ebc2539878f031fdcbf5cf5db8683db9255fa para a307e4eadfe19e02fc212d25a344c484749f337b após #1279. #1278 corrigiu a autenticação do cron EAN: admin-products-live-v1 v183 estava com verify_jwt=true contra o contrato versionado false; como o cron usa header interno sem JWT, o gateway retornava 401 antes do handler. A v184 está ACTIVE, verify_jwt=false, hash d087c872ed23fa03dc2c3c784255b2bada1129de62b07db6f558c8ab7fd6291e no projeto canônico ssbesxgaijknwsjbsbcz.
