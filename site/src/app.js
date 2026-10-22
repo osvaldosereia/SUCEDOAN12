@@ -8,7 +8,14 @@ const dialogRoot = $('#dialogRoot');
 const state = { home: null, cart: readCart(), activeCategory: 'baskets', search: '', deliveryDates: [], viewToken: 0, customer: { status: 'idle', phone: '', data: null, complete: false } };
 const money = cents => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(cents || 0) / 100);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
-function readCart() { try { const value = JSON.parse(localStorage.getItem('da_site_cart_v1') || '[]'); return Array.isArray(value) ? value : []; } catch { return []; } }
+function readCart() {
+  try {
+    const current = localStorage.getItem('da_site_cart_v1');
+    const legacy = current ? null : localStorage.getItem('da_simple_storefront_cart_v2');
+    const value = JSON.parse(current || legacy || '[]');
+    return Array.isArray(value) ? value.filter(item => item && ['basket', 'product'].includes(item.type) && item.id).map(item => ({ ...item, qty: Math.max(1, Number(item.qty) || 1) })) : [];
+  } catch { return []; }
+}
 function saveCart() { localStorage.setItem('da_site_cart_v1', JSON.stringify(state.cart)); paintCartCount(); }
 function paintCartCount() { $('#cartCount').textContent = String(state.cart.reduce((sum, item) => sum + Number(item.qty || 1), 0)); }
 function toast(message) { const notice = $('#notice'); notice.textContent = message; notice.classList.add('show'); clearTimeout(toast.timer); toast.timer = setTimeout(() => notice.classList.remove('show'), 2800); }
@@ -36,9 +43,13 @@ async function openBasket(id) {
     let quoted = false, quoteRevision = 0;
     dialogRoot.querySelectorAll('[data-component-qty]').forEach(button => button.addEventListener('click', async () => {
       const item = items[Number(button.dataset.componentQty)];
+      const revision = ++quoteRevision;
       item.quantity = Math.max(0, item.quantity + Number(button.dataset.delta));
       button.parentElement.querySelector('b').textContent = String(item.quantity);
-      const revision = ++quoteRevision;
+      if (items.every(row => row.quantity === Number(row.base_quantity))) {
+        basket.price_cents = price; $('#basketTotal').textContent = money(price); quoted = true; return;
+      }
+      quoted = false;
       $('#basketTotal').textContent = 'Calculando…';
       try {
         const quoteInput = basket.split_mode
@@ -143,7 +154,7 @@ async function start() {
   content.addEventListener('click', event => { const button = event.target.closest('[data-open-basket]'); if (button) openBasket(button.dataset.openBasket); });
   $('#searchForm').addEventListener('submit', event => { event.preventDefault(); const query = $('#searchInput').value.trim(); if (query) { setCategory(''); loadProductPage('', query); } });
   try {
-    const cached = JSON.parse(localStorage.getItem('da_site_home_v1') || 'null');
+    let cached = null; try { cached = JSON.parse(localStorage.getItem('da_site_home_v1') || 'null'); } catch {}
     if (cached?.baskets?.length) { state.home = cached; renderBaskets(); }
     const priority = cached?.baskets?.length ? Promise.resolve(null) : loadHome(true).catch(() => null);
     const full = loadHome();
@@ -156,6 +167,6 @@ async function start() {
     renderCategoryNav();
     if (state.activeCategory === 'baskets') renderBaskets();
   }
-  catch { if (!state.home?.baskets?.length) content.innerHTML = '<div class="error-box">Não conseguimos carregar as cestas agora. Verifique sua conexão e tente novamente. <button class="outline" id="retryHome" type="button">Tentar novamente</button></div>'; if (state.home) renderCategoryNav(); $('#retryHome')?.addEventListener('click', start); }
+  catch { if (!state.home?.baskets?.length) content.innerHTML = '<div class="error-box">Não conseguimos carregar as cestas agora. Verifique sua conexão e tente novamente. <button class="outline" id="retryHome" type="button">Tentar novamente</button></div>'; if (state.home) renderCategoryNav(); $('#retryHome')?.addEventListener('click', () => location.reload()); }
 }
 start();
