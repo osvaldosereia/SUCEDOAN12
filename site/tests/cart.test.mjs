@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { orderLines, cartTotalCents, orderPayload } from '../src/cart.js';
+import { orderLines, cartTotalCents, orderPayload, canAdjustBasketComponent, basketWouldBeEmpty } from '../src/cart.js';
 import { normalizeWhatsapp } from '../src/customer.js';
 
 test('checkout keeps basket first, hides component prices, and prices loose products', () => {
@@ -84,4 +84,21 @@ test('checkout component rows retain the basket and component index for quantity
   ] }])[1];
   assert.equal(row.basket_id, 'basket-1');
   assert.equal(row.component_index, 0);
+});
+
+test('basket quantity controls respect minimums, removability, editability, and stock', () => {
+  const basket = { type: 'basket', qty: 1 };
+  assert.equal(canAdjustBasketComponent(basket, { quantity: 1, min_quantity: 0, max_quantity: 3, removable: true }, -1), true);
+  assert.equal(canAdjustBasketComponent(basket, { quantity: 1, min_quantity: 1, max_quantity: 3, removable: true }, -1), false);
+  assert.equal(canAdjustBasketComponent(basket, { quantity: 1, base_quantity: 1, removable: false }, -1), false);
+  assert.equal(canAdjustBasketComponent(basket, { quantity: 1, quantity_editable: false, removable: false }, 1), false);
+  assert.equal(canAdjustBasketComponent(basket, { quantity: 3, max_quantity: 3 }, 1), false);
+});
+
+test('mold quantities can reach zero but cannot empty the whole basket', () => {
+  const basket = { type: 'basket', mold_mode: true, qty: 1 };
+  const components = [{ quantity: 1 }, { quantity: 2 }];
+  assert.equal(canAdjustBasketComponent(basket, components[0], -1), true);
+  assert.equal(basketWouldBeEmpty(components, 0, 0), false);
+  assert.equal(basketWouldBeEmpty([{ quantity: 1 }], 0, 0), true);
 });
