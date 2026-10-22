@@ -1,7 +1,23 @@
 # Dona Antônia Operations 2.0 — HANDOFF
 
+> Atualização documental: 2026-10-22. Os checkpoints operacionais abaixo são históricos; confirme runtime e banco antes de qualquer ação operacional.
+
+## Continuidade da reforma do site e Admin (2026-10-22)
+
+O usuário definiu a reforma gradual do sistema e site existentes. Não criar outro site, outro Admin, outro banco ou implementação paralela. A estratégia canônica está em IMPLEMENTATION-ROADMAP.md, seção “REFORMA CONTÍNUA DO SISTEMA E DO SITE PÚBLICO”.
+
+Baseline observado:
+- Repositório canônico osvaldosereia/SUCEDOAN12; main em 24719f9c57b2d362b1e7c5b197dc57fc66a6b8f5.
+- Supabase canônico ssbesxgaijknwsjbsbcz.
+- Site público ao vivo em /. Admin existente abre em /vitrine/admin/. A URL /admin/ ainda volta à raiz pública.
+- Site público testado: troca de opção de cesta recalculou o total de R$ 419,30 para R$ 425,70; nenhum pedido foi enviado.
+- Nenhuma mudança de runtime, banco ou deploy foi feita nesta atualização documental.
+
+Próxima tarefa de código: fazer /admin/ abrir o mesmo Admin existente, manter compatibilidade com /vitrine/admin/ e validar as três rotas sem alterar fluxos de negócio.
+
+
 > Documento canônico de continuidade. Atualizar ao final de cada rodada relevante.
-> Última atualização: 2026-09-25.
+
 
 ## Objetivo
 Simplificar a operação da Dona Antônia usando:
