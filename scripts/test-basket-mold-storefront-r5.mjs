@@ -71,29 +71,29 @@ const sample={
   ]
 };
 const first=renderMoldRow(sample,0);
-assert.match(first,/Clique para trocar este produto/);
-assert.doesNotMatch(first,/data-mold-option-choice=/,'closed row must not create alternative product cards');
-const openFirst=renderMoldRow(sample,0,true);
-assert.match(openFirst,/data-mold-option-choice=/,'expanded row renders alternatives');
-assert.match(renderMoldRow({...sample,alternatives:[],alternative_count:2,alternatives_loaded:false},0,true),/Carregando marcas…/,'lightweight response waits for a click');
-assert.match(first,/<strong class="checkout-name">Sabão em Pó Minuano 400 g<\/strong>/);
-assert.match(first,/<img\b[^>]*src="\/minuano.webp"[^>]*alt="Sabão em Pó Minuano 400 g">/);
-assert.match(first,/data-product-detail="minuano"/);
-assert.match(openFirst,/data-product-id="minuano" role="option" aria-selected="true"/);
-assert.doesNotMatch(first,/<strong class="checkout-name">Sabão em Pó Lavagem Perfeita OMO 700 g<\/strong>/);
-const second=renderMoldRow({...sample,product_id:'oeste'},0,true);
-assert.match(second,/<strong class="checkout-name">Sabão em Pó Oeste 800 g<\/strong>/);
-assert.match(second,/<img\b[^>]*src="\/oeste.webp"[^>]*alt="Sabão em Pó Oeste 800 g">/);
-assert.match(second,/data-product-detail="oeste"/);
+const preview=renderMoldRow(sample,0,true);
+assert.match(preview,/class="[^"]*basket-item-mold-card[^\"]*is-preview/,'opening preview preserves its pending state');
+assert.match(preview,/data-mold-option-choice="0"[^>]*disabled/,'opening preview disables product changes while stock refreshes');
+assert.match(preview,/data-mold-inc="0"[^>]*disabled/,'opening preview disables quantity changes while stock refreshes');
+assert.match(first,/data-mold-option-choice=/,'alternative cards are visible without opening another control');
+assert.match(first,/class="basket-option-carousel-track"/,'product choices use a horizontal carousel');
+assert.match(first,/data-product-id="minuano" role="option" aria-selected="true"/);
+assert.match(first,/basket-selected-product-price[\s\S]*?<strong>522<\/strong>/,'selected unit price is repeated below quantity controls');
+assert.doesNotMatch(first,/Clique para trocar este produto|data-product-detail=/,'the old disclosure and separate selected-product panel are removed');
+const loading=renderMoldRow({...sample,alternatives:[],alternative_count:2,alternatives_loaded:false},0);
+assert.match(loading,/Carregando opções…|As opções serão carregadas ao aparecer na tela/,'unloaded options keep the selected product visible while loading');
+const second=renderMoldRow({...sample,product_id:'oeste'},0);
+assert.match(second,/basket-option-choice-name">Sabão em Pó Oeste 800 g/);
 assert.match(second,/data-product-id="oeste" role="option" aria-selected="true"/);
+assert.match(second,/basket-selected-product-price[\s\S]*?<strong>599<\/strong>/,'changing the selected option updates the unit price');
 
 
 const variants=Array.from({length:12},(_,i)=>({product_id:'product-'+i,name:'Marca '+i,image_url:'/test-'+i+'.webp',packaging:'1 kg',price_cents:1200-i*70,stock_quantity:100}));
 const unsortedItem={...sample,product_id:'product-11',alternatives:variants};
 const tenHtml=renderMoldRow(unsortedItem,0,true);
 assert.equal((tenHtml.match(/data-mold-option-choice="0"/g)||[]).length,10,'at most ten available options');
-assert.match(tenHtml,/class="basket-option-grid basket-option-carousel-track"/,'horizontal carousel track');
-assert.match(tenHtml,/data-mold-option-arrow="0"/,'previous and next arrows');
+assert.match(tenHtml,/class="basket-option-carousel-track"/,'horizontal carousel track');
+assert.doesNotMatch(tenHtml,/data-mold-option-arrow=/,'the carousel supports touch scrolling without arrow controls');
 assert.match(tenHtml,/data-mold-option-track="0"/,'preserve scroll offset on quote');
 const ids=[...tenHtml.matchAll(/data-product-id="(product-\d+)" role="option"/g)].map(m=>m[1]);
 assert.deepEqual(ids,Array.from({length:10},(_,i)=>'product-'+(11-i)),'ten alternatives must appear cheapest first');
@@ -107,7 +107,7 @@ assert.match(api,/alternatives_loaded:false,alternatives:\[\]/,'lightweight resp
 assert.match(api,/action==="basket_mold_options"/,'separate lazy options route');
 assert.match(root,/lightweight:1/,'initial basket request uses small payload');
 assert.match(root,/lightweight:true/,'quote request uses small payload');
-assert.match(root,/await api\('basket_mold_options'/,'alternative brands fetched after click');
+assert.match(root,/await api\('basket_mold_options'/,'alternative products are fetched on demand');
 assert.doesNotMatch(api,/randomized=alts\.slice/,'API must not randomize price ordering');
 
 console.log('basket mold storefront R5: PASS');

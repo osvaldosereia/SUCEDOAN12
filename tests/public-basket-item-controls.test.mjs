@@ -28,43 +28,35 @@ test('root storefront spaces editable basket rows and controls', () => {
   assert.match(html, /basket-item-actions/);
 });
 
-test('root storefront renders a swipeable carousel ordered by price with compact product names', () => {
-  assert.match(html,/class="basket-item-option" data-mold-option-wrap=/);
-  assert.match(html,/class="basket-option-grid basket-option-carousel-track"/);
-  assert.match(html,/data-mold-option-track=/);
-  assert.match(html,/data-mold-option-arrow=/);
+test('mold products render as vertical choice cards with quantity and selected price below', () => {
+  const optionRenderer = html.match(/function moldItemOptions\([\s\S]*?(?=function moldExtraThemeRow)/)?.[0];
+  const itemRenderer = html.match(/function moldItemRow\([\s\S]*?(?=function changeMoldQty)/)?.[0];
+  assert.ok(optionRenderer, 'expected mold product option renderer');
+  assert.ok(itemRenderer, 'expected mold basket item renderer');
+  assert.match(optionRenderer,/basket-option-carousel-track/);
+  assert.match(optionRenderer,/data-mold-option-track=/);
+  assert.match(optionRenderer,/data-mold-option-choice=/);
+  assert.match(optionRenderer,/safeImage\(a\.image_url\)/);
+  assert.match(optionRenderer,/money\(a\.price_cents\)/);
   assert.match(html,/scroll-snap-type:x mandatory/);
   assert.match(html,/overflow-x:auto/);
-  assert.match(html,/scrollBy\(\{left:/);
+  assert.match(html,/\.basket-option-choice\s*\{[^}]*flex-direction:\s*column/s);
+  assert.match(optionRenderer,/choicesList\.sort\(\(a,b\)=>Number\(a\.price_cents/);
+  assert.doesNotMatch(optionRenderer,/data-mold-brand-toggle|Clique para trocar este produto/);
+  assert.match(itemRenderer,/moldItemOptions\(x,i,pending\)/);
+  assert.match(itemRenderer,/basket-selected-product-price[\s\S]*?money\(selected\.price_cents/);
+  assert.ok(itemRenderer.indexOf('moldItemOptions(x,i,pending)') < itemRenderer.indexOf('data-mold-inc='), 'quantity controls must render after the carousel');
+  assert.match(itemRenderer,/data-mold-dec=/);
+  assert.match(itemRenderer,/data-mold-inc=/);
+  assert.match(html,/return moldItemRow\(\{\.\.\.item,base_quantity:qty,quantity:qty,alternatives:\[\],alternatives_loaded:false,alternative_count:Number\(item\.alternative_count\|\|0\)\},i,true\)/,'opening preview keeps all controls safely disabled while stock is refreshing');
+  assert.match(html,/function loadMoldOptions\(/);
+  assert.match(html,/await api\('basket_mold_options'/);
+  assert.match(html,/data-mold-option-load=/);
   assert.match(html,/carouselScroll=new Map/);
-  assert.match(html,/\.basket-item-mold-card \.checkout-copy \.checkout-name\{font-size:11\.3px/);
-  assert.match(html,/\.basket-item-mold-card \.basket-option-grid\.basket-option-carousel-track/);
-  assert.match(html,/\.basket-option-choice-price/);
-  assert.match(html,/safeImage\(a\.image_url\)/);
-  assert.doesNotMatch(html,/<select class="basket-item-option"/);
   assert.match(html,/\.basket-edit-list \.basket-item-card\s*\{[^}]*grid-template-columns:\s*86px\s+minmax\(0,1fr\)/s);
-  assert.match(html,/\.basket-item-mold-card\s*\{[^}]*grid-template-columns:\s*(?:86px|clamp\([^)]*\))\s+minmax\(0,1fr\)\s+auto/s);
-  assert.match(html,/@media\s*\(max-width:\s*760px\)[\s\S]*?\.basket-item-option\s*\{[^}]*grid-column:\s*1\s*\/\s*-1[^}]*grid-row:\s*3/s);
   assert.match(html,/\.sheet-inner\s*\{[^}]*display:\s*flex[^}]*flex-direction:\s*column/s);
   assert.match(html,/\.sheet-scroll\s*\{[^}]*min-height:\s*0/s);
   assert.match(html,/\.basket-hero-compact\s*\{[^}]*grid-template-columns:\s*1fr/s);
-});
-
-test('root storefront initially hides alternative brands behind an accessible disclosure button', () => {
-  assert.match(html,/data-mold-brand-toggle=/);
-  assert.match(html,/Clique para trocar este produto/);
-  assert.match(html,/data-mold-brand-toggle=.*aria-expanded=/);
-  assert.match(html,/data-mold-brand-panel=/);
-  assert.match(html,/\+\(expanded\?'':'hidden'\)/);
-  assert.match(html,/\.basket-brand-panel\[hidden\]\{display:none!important\}/);
-  assert.match(html,/const details=!expanded\?'':/);
-  assert.match(html,/await api\('basket_mold_options'/);
-  assert.match(html,/Carregando marcas…/);
-  assert.match(html,/paintMoldBasketSheet\(\)/);
-  assert.match(html,/d\.openOptionIndices\.add\(index\)/);
-  assert.match(html,/d\.openOptionIndices\.delete\(index\)/);
-  assert.match(html,/moldItemRow\(x,i,d\.openOptionIndices\?\.has\(i\)===true\)/);
-  assert.match(html,/if\(count<=1\)return '';/);
 });
 
 test('/vitrine/ redirects to the canonical root without a duplicate storefront', () => {

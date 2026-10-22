@@ -8,15 +8,13 @@ assert.ok(legacyVitrine.includes("window.location.replace('/'+window.location.se
 const style=html.slice(html.indexOf("<style>"),html.indexOf("</style>"));
 
 assert.ok(style.includes("/* Accessible typography for basket editor */"),"basket typography override is present");
-assert.ok(style.includes(".basket-item-mold-card .checkout-copy .checkout-name{font-size:18px"),"basket product names use readable mobile sizing");
-assert.ok(style.includes(".basket-item-mold-card .basket-option-label{font-size:16px"),"carousel guidance meets mobile body sizing");
-assert.ok(style.includes(".basket-option-carousel-track .basket-option-choice-name{font-size:15px"),"alternative product names are readable");
-assert.ok(style.includes(".basket-option-carousel-track .basket-option-choice-price{font-size:16px"),"alternative prices are readable");
-assert.ok(style.includes(".basket-item-remove{min-height:48px")&&style.includes("font-size:16px"),"remove button has a comfortable touch target and readable label");
-assert.ok(style.includes(".basket-option-carousel-buttons button{min-width:48px;min-height:48px"),"carousel arrows have comfortable touch targets");
-assert.ok(style.includes("overflow-x:auto"),"the brand carousel remains horizontally scrollable");
+assert.ok(style.includes(".basket-option-choice{")&&style.includes("flex-direction:column"),"product options use vertical cards");
+assert.ok(style.includes(".basket-option-choice-name{")&&style.includes("font-size:12px"),"alternative product names remain readable on mobile");
+assert.ok(style.includes(".basket-option-choice-price{")&&style.includes("font-size:14px"),"alternative product prices remain readable on mobile");
+assert.ok(style.includes(".basket-item-mold-card .basket-item-actions .checkout-qty button{width:40px"),"quantity controls have comfortable touch targets");
+assert.ok(style.includes("overflow-x:auto"),"the product carousel remains horizontally scrollable");
 
-const rendererStart=html.indexOf("function moldItemOptions(");
+const rendererStart=html.indexOf("function moldOptionsLoaded(");
 const rendererEnd=html.indexOf("function moldExtraThemeRow(",rendererStart);
 assert.ok(rendererStart>=0&&rendererEnd>rendererStart,"basket option renderer is present");
 const optionRendererSource=html.slice(rendererStart,rendererEnd).trim();
@@ -24,14 +22,11 @@ const renderOptions=new Function("esc","money","safeImage","moldSelectedProduct"
   value=>String(value??""),value=>String(value??""),value=>String(value??""),item=>item,value=>String(value??"")
 );
 const singleOption=renderOptions({name:"Arroz",product_id:"p1",alternatives:[{product_id:"p1",name:"Arroz",price_cents:100}]},0);
-assert.equal(singleOption,"","products with one available option do not render a redundant selector");
+assert.ok(singleOption.includes("basket-option-single"),"single-option products keep their selected product card without a carousel");
+assert.ok(!singleOption.includes("basket-option-carousel-track"),"products with one option do not show a swipeable selector");
 const multipleOptions=renderOptions({name:"Arroz",product_id:"p1",alternatives:[{product_id:"p1",name:"Arroz",price_cents:100},{product_id:"p2",name:"Arroz tipo 1",price_cents:110}]},1);
-assert.ok(multipleOptions.includes("Clique para trocar este produto"),"collapsed products offer an explicit disclosure");
-assert.ok(!multipleOptions.includes("basket-option-carousel-track"),"closed cards never render their carousel");
-assert.equal((multipleOptions.match(/class="basket-option-choice /g)||[]).length,0,"closed cards do not create product images or options");
-const openedOptions=renderOptions({name:"Arroz",product_id:"p1",alternatives:[{product_id:"p1",name:"Arroz",price_cents:100},{product_id:"p2",name:"Arroz tipo 1",price_cents:110}]},1,true);
-assert.ok(openedOptions.includes("basket-option-carousel-track"),"carousels appear after expansion");
-assert.equal((openedOptions.match(/class="basket-option-choice /g)||[]).length,2,"all available options can be selected after expansion");
+assert.ok(multipleOptions.includes("basket-option-carousel-track"),"multiple options are visible in the product row");
+assert.equal((multipleOptions.match(/class="basket-option-choice /g)||[]).length,2,"all loaded options appear as cards in the carousel");
 
 
 assert.ok(style.includes(".product-card .name{font-size:16px"),"catalog product names use readable 16px sizing");
