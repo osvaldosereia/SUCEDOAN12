@@ -312,7 +312,11 @@
 
   async function loadProductFacets(category='',active=state.productFilters.active||''){
     try{
-      const data=await api('product_facets',{category,active});
+      const key=JSON.stringify([category||'',active||'']),cached=state.productFacetsCache?.[key];
+      const data=cached&&Date.now()-cached.at<30000
+        ?cached.data
+        :await api('product_facets',{category,active});
+      state.productFacetsCache[key]={at:Date.now(),data};
       state.productFacets=data;
       const cat=$('#productCategory'),sub=$('#productSubcategory');
       if(cat){
@@ -743,6 +747,7 @@
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({product_id:id,confirmation,operator:requireOperator()})
       });
+      state.productFacetsCache={};
       toast('Produto excluído do banco.');
       await loadProducts($('#productSearch')?.value?.trim()||'',false);
     }catch(e){
@@ -781,6 +786,7 @@
         image_url:product.image_url||'',description:product.description||'',active:next,operator
       })});
       const saved=data.product;
+      state.productFacetsCache={};
       if(next&&saved?.active===false&&saved?.deactivation_reason==='expired'){
         toast('Produto vencido · permanece inativo');
       }else{

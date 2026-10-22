@@ -1,11 +1,11 @@
 import fs from 'node:fs';
 
-const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+const html=fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const edge=fs.readFileSync('supabase/functions/admin-products-live-v1/index.ts','utf8');
 
 const checks=[
-  ['carrega 5 produtos por vez',html.includes('const limit=5;')],
-  ['botao explicito ver mais 5',html.includes('Ver mais 5')],
+  ['carrega 5 produtos por vez',html.includes('const limit=mobile?6:5;')],
+  ['botao explicito ver mais 5',html.includes("Ver mais '+limit+")],
   ['cabecalho operacional',html.includes('<span>Venda / custo</span><span>Estoque / validade</span><span>Status / kits</span><span>Ações</span>')],
   ['edicao rapida preco venda',html.includes('data-mobile-product-field="price"')],
   ['edicao rapida preco custo',html.includes('data-mobile-product-field="cost"')],
@@ -18,7 +18,8 @@ const checks=[
   ['backend aceita custo rapido',edge.includes('cost_cents')&&edge.includes('patch.cost=Math.round(cents)/100')],
   ['backend enriquece lotes e kits',edge.includes('async function productOperationalMetaMap')&&edge.includes('linked_kits')&&edge.includes('next_expiration_date')],
   ['backend inclui basket_id nos kits vinculados',edge.includes('id,name,kind,is_active,basket_id')&&edge.includes('basket_id:k.basket_id||null')],
-  ['backend enriquece somente pagina atual',edge.includes('productOperationalMetaMap(rows.map((x:any)=>x.id))')]
+  ['backend enriquece somente pagina atual',edge.includes('productOperationalMetaMap(rows.map((x:any)=>x.id))')],
+  ['regra temporaria do Leitor EAN explicita no editor',html.includes('a inclusão depende da leitura pelo Leitor EAN')]
 ];
 
 let fail=0;
