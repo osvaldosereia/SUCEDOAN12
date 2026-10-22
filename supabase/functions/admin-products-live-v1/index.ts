@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { ensureXmlProductInBling as ensureXmlPublication } from "./xml-product-publication-policy.mjs";
+import { constantTimeEquals } from "./internal-auth.mjs";
 const U=Deno.env.get("SUPABASE_URL")||"";
 const K=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
 const db=createClient(U,K,{auth:{persistSession:false,autoRefreshToken:false}});
@@ -4190,7 +4191,7 @@ Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{
   const expected=await db.rpc("get_bling_hub_key_v2");
   if(expected.error||!expected.data)return js(r,{ok:false,error:"internal_auth_unavailable"},503);
   const provided=tx(r.headers.get("x-dona-antonia-bling-hub-key"),500);
-  if(!provided||provided!==String(expected.data))return js(r,{ok:false,error:"internal_auth_required"},401);
+  if(!provided||!constantTimeEquals(provided,expected.data))return js(r,{ok:false,error:"internal_auth_required"},401);
   let internalBody:any={};try{internalBody=await r.json()}catch{}
   const out=await recoverPendingEanVerified(internalBody?.limit??3);
   return js(r,out,out.ok===false?500:200);
