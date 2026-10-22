@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const migration = readFileSync(
-  'supabase/migrations/20261022205411_basket_lot_helper_direct_execute_revoke.sql',
+  'supabase/migrations/20261022205909_basket_lot_helper_direct_execute_revoke.sql',
   'utf8',
 );
 const sql = migration.replace(/--.*$/gm, '').toLowerCase();
