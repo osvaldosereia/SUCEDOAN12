@@ -38,6 +38,25 @@ export function minimumOrderStatus(totalCents, minimumCents) {
   return { meetsMinimum: remainingCents === 0, remainingCents };
 }
 
+export function canAdjustBasketComponent(basket, component, delta) {
+  const current = Number(component.quantity ?? component.base_quantity ?? 0);
+  const next = current + Number(delta);
+  if (!Number.isInteger(next) || next < 0) return false;
+  if (delta < 0 && basket?.mold_mode !== true && component.quantity_editable === false && component.removable !== true) return false;
+  if (delta > 0 && basket?.mold_mode !== true && component.quantity_editable === false) return false;
+  if (basket?.mold_mode === true) {
+    const max = component.stock_quantity == null ? 1000 : Math.floor(Number(component.stock_quantity) / Math.max(1, Number(basket.qty || 1)));
+    return next <= max;
+  }
+  const min = Math.max(0, Number(component.min_quantity ?? (component.removable === false ? component.base_quantity ?? current : 0)));
+  const max = Number(component.max_quantity ?? (component.stock_quantity == null ? 1000 : Number(component.base_quantity ?? current) + Number(component.stock_quantity)));
+  return next >= min && next <= max && !(next === 0 && component.removable === false);
+}
+
+export function basketWouldBeEmpty(components, componentIndex, nextQuantity) {
+  return !components.some((item, index) => (index === componentIndex ? nextQuantity : Number(item.quantity ?? item.base_quantity ?? 0)) > 0);
+}
+
 export function basketQuoteRequest(basket, items) {
   if (basket?.mold_mode === true) return { action: 'basket_mold_quote', payload: { basket_id: basket.id, composition_number: Number(basket.composition_number || 1), lightweight: true, items: items.map(item => ({ position_id: item.position_id, product_id: item.product_id, quantity: Number(item.quantity ?? item.base_quantity ?? 1) })) } };
   const rows = items.map(item => ({ product_id: item.product_id, quantity: Number(item.quantity || 0) }));
