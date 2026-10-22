@@ -20,15 +20,17 @@ export function filterProducts(products = [], filters = {}) {
   const category = String(filters.category || '');
   const stock = String(filters.stock || '');
   const status = String(filters.status || 'all');
+  const readerOnly = filters.readerOnly === true;
 
   return products.filter(product => {
+    const matchesReader = !readerOnly || product.ean_reader_match === true;
     const matchesQuery = !query || [product.name, product.sku, product.gtin, product.packaging]
       .some(value => normalizeText(value).includes(query));
     const matchesCategory = !category || product.category === category;
     const stockKey = getProductStockState(product.stock_quantity, product.min_stock, product.stock_known !== false).key;
     const matchesStock = !stock || stock === 'all' || stockKey === stock;
     const matchesStatus = status === 'all' || (status === 'active' ? product.active === true : product.active !== true);
-    return matchesQuery && matchesCategory && matchesStock && matchesStatus;
+    return matchesReader && matchesQuery && matchesCategory && matchesStock && matchesStatus;
   });
 }
 

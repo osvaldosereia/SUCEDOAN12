@@ -35,6 +35,29 @@ test('consulta o catálogo antigo exclusivamente por GET e apenas pela função 
   assert.match(calls[0].url, /gtin=7891234567895/);
 });
 
+test('carrega leituras EAN pela função somente leitura e resolve os produtos no catálogo Admin1', async () => {
+  const calls = [];
+  const api = createAdmin1Data(async (url, options) => {
+    calls.push({ url: String(url), options });
+    if (String(url).includes('/functions/v1/admin1-legacy-catalog-read-v1')) {
+      return json({ ok: true, products: ['11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222222'], total: 2 });
+    }
+    return json([
+      { id: 'admin-1', source_project: 'ssbesxgaijknwsjbsbcz', source_product_id: '11111111-1111-4111-8111-111111111111', name: 'Arroz', sku: 'A1', is_active: false, stock_quantity: 4 },
+      { id: 'admin-2', source_project: 'ssbesxgaijknwsjbsbcz', source_product_id: '22222222-2222-4222-8222-222222222222', name: 'Feijão', sku: 'F1', is_active: false, stock_quantity: 2 }
+    ]);
+  });
+  const result = await api.listEanReaderProducts();
+  assert.equal(result.products.length, 2);
+  assert.equal(result.products[0].ean_reader_match, true);
+  assert.equal(result.products[0].source_product_id, '11111111-1111-4111-8111-111111111111');
+  assert.equal(result.reader_total, 2);
+  assert.equal(result.missing_admin1_total, 0);
+  assert.ok(calls.every(call => call.options.method === 'GET'));
+  assert.ok(calls[0].url.includes('action=reader_products'));
+  assert.ok(calls[1].url.startsWith('https://xaoeldjuxzsdsblimzxo.supabase.co/rest/v1/admin1_products?'));
+});
+
 test('normaliza sequência escaneada removendo separadores e duplicatas', () => {
   assert.deepEqual(normalizeEanSequence('7891234567895\n7891234567895; 7890000000000'), ['7891234567895', '7890000000000']);
 });

@@ -64,3 +64,13 @@ test('não inclui estoque desconhecido nos filtros de disponível ou sem estoque
   assert.deepEqual(filterProducts(products, { stock: 'out' }).map(product => product.id), ['out']);
 });
 
+test('filtra apenas produtos vinculados a leituras do Leitor EAN', () => {
+  const products = [
+    { id: 'a', ean_reader_match: true },
+    { id: 'b', ean_reader_match: false },
+    { id: 'c' }
+  ];
+  assert.deepEqual(filterProducts(products, { readerOnly: true }).map(item => item.id), ['a']);
+  assert.deepEqual(filterProducts(products, { readerOnly: false }).map(item => item.id), ['a', 'b', 'c']);
+});
+

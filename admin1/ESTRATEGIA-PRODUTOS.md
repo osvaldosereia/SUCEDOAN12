@@ -72,6 +72,12 @@ A habilitação de gravações persistentes depende de uma autorização separad
 
 ## Estratégia permanente de execução aprovada pelo usuário
 
+### Escopo autorizado para o Leitor EAN no Admin1
+
+- A lista do Leitor EAN é consultada no projeto legado em modo somente leitura e atualizada manualmente pelo operador.
+- A correspondência do produto é feita pelo `source_product_id` ligado ao projeto legado, sem associação por nome ou escrita no catálogo antigo.
+- A edição de uma cópia já cadastrada no Admin1 é persistida no banco próprio do Admin1. Essa autorização não habilita gravações no Vitrine/Admin legado nem sincronização automática das próximas leituras.
+
 - Implementar ferramentas operacionais de ponta a ponta; não deixar botões ou telas como protótipo quando a ação puder ser feita no escopo aprovado.
 - Priorizar a operação de produtos até ela estar concluída antes de avançar para cestas.
 - O Admin1 pode ler o catálogo ativo do Supabase. Toda gravação de produto, imagem, estoque ou status deve continuar local ao navegador enquanto o bloqueio de escrita estiver ativo. Não aplicar migrations, publicar Edge Functions ou alterar a loja pública nesta fase.

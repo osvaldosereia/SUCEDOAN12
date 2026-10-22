@@ -83,6 +83,32 @@ async function categories() {
   };
 }
 
+async function eanProducts() {
+  const ids = new Set<string>();
+  const pageSize = 1000;
+  for (let offset = 0; ; offset += pageSize) {
+    const result = await productRows(db.from("ean_capture_records_v1")
+      .select("id,matched_product_id")
+      .eq("sync_status", "found")
+      .not("matched_product_id", "is", null)
+      .order("id", { ascending: true })
+      .range(offset, offset + pageSize - 1));
+    for (const row of result.data) {
+      const id = String(row.matched_product_id || "");
+      if (!id) continue;
+      ids.add(id);
+    }
+    if (result.data.length < pageSize) break;
+  }
+
+  const productIds = [...ids];
+  return {
+    ok: true,
+    products: productIds.map(id => ({ id })),
+    total: productIds.length
+  };
+}
+
 Deno.serve(async req => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(req) });
   const parsed = parseCatalogRequest(req);
@@ -93,6 +119,7 @@ Deno.serve(async req => {
     if (parsed.action === "product") return json(req, await product(parsed.params.product_id));
     if (parsed.action === "matches") return json(req, await matches(parsed.params));
     if (parsed.action === "categories") return json(req, await categories());
+    if (parsed.action === "ean-products") return json(req, await eanProducts());
     return json(req, { ok: false, error: "read_action_not_allowed" }, 400);
   } catch (error) {
     console.error("admin1-products-read-v1", error);

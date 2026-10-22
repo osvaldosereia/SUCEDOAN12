@@ -1,6 +1,6 @@
 const ADMIN1_URL = 'https://xaoeldjuxzsdsblimzxo.supabase.co';
 const ADMIN1_KEY = 'sb_publishable_eTLpVSFd4ZCNQXIPYASyWw_Y-5Mzhfs';
-const LEGACY_MATCH_URL = `${ADMIN1_URL}/functions/v1/admin1-legacy-catalog-read-v1`;
+const LEGACY_READ_URL = `${ADMIN1_URL}/functions/v1/admin1-legacy-catalog-read-v1`;
 const SOURCE_PROJECT = 'ssbesxgaijknwsjbsbcz';
 
 const clean = value => String(value ?? '').trim();
@@ -171,12 +171,48 @@ export function createAdmin1Data(fetchImpl = (...args) => globalThis.fetch(...ar
   async function findLegacyByEans(eans = []) {
     const query = new URLSearchParams({ action: 'matches' });
     for (const ean of [...new Set(eans.map(value => String(value).replace(/\D/g, '')).filter(Boolean))]) query.append('gtin', ean);
-    const response = await fetchImpl(`${LEGACY_MATCH_URL}?${query}`, {
+    const response = await fetchImpl(`${LEGACY_READ_URL}?${query}`, {
       method: 'GET', headers: headers(), cache: 'no-store'
     });
     const result = await readJson(response, 'Não foi possível consultar o catálogo antigo.');
     if (result?.ok !== true || !Array.isArray(result.products)) throw new Error('A consulta ao catálogo antigo retornou uma resposta inválida.');
     return result.products;
+  }
+
+  async function listEanReaderProducts() {
+    const response = await fetchImpl(`${LEGACY_READ_URL}?action=reader_products`, {
+      method: 'GET', headers: headers(), cache: 'no-store'
+    });
+    const result = await readJson(response, 'Não foi possível carregar as leituras do Leitor EAN.');
+    if (result?.ok !== true || !Array.isArray(result.products)) throw new Error('O Leitor EAN retornou uma resposta inválida.');
+
+    const sourceIds = [...new Set(result.products.map(clean).filter(id => /^[0-9a-f-]{36}$/i.test(id)))];
+    const adminRows = [];
+    for (let start = 0; start < sourceIds.length; start += 100) {
+      const batch = sourceIds.slice(start, start + 100);
+      if (!batch.length) continue;
+      const params = new URLSearchParams({
+        select: '*,admin1_product_lots(expiration_date,available_quantity)',
+        source_project: `eq.${SOURCE_PROJECT}`,
+        source_product_id: `in.(${batch.join(',')})`,
+        order: 'name.asc', limit: '100'
+      });
+      const rows = await rest(`admin1_products?${params}`, { method: 'GET' });
+      adminRows.push(...rows);
+    }
+
+    const products = adminRows.map(row => {
+      const product = normalizeProduct(row);
+      return {
+        ...product,
+        ean_reader_match: true
+      };
+    });
+    return {
+      products,
+      reader_total: Math.max(sourceIds.length, Number(result.total || 0)),
+      missing_admin1_total: Math.max(0, sourceIds.length - products.length)
+    };
   }
 
   async function saveProduct(product) {
@@ -338,7 +374,7 @@ export function createAdmin1Data(fetchImpl = (...args) => globalThis.fetch(...ar
   }
 
   return {
-    listProducts, getProduct, getCategories, searchProducts, findProducts, findLegacyByEans,
+    listProducts, getProduct, getCategories, searchProducts, findProducts, findLegacyByEans, listEanReaderProducts,
     saveProduct, setProductActive, listBaskets, getBasket, saveBasket, importLegacyProduct,
     listBasketSizes, saveBasketSize, reorderBasketSizes, listBasketTypes, getBasketType, saveBasketType
   };

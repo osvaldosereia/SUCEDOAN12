@@ -5,7 +5,7 @@ export const ADMIN_PRODUCT_COLUMNS = Object.freeze([
 ]);
 
 export const ADMIN1_READ_ACTIONS = Object.freeze(new Set([
-  'products', 'product', 'matches', 'categories', 'health'
+  'products', 'product', 'matches', 'categories', 'ean-products', 'health'
 ]));
 
 const clampInteger = (value, fallback, max) => {
