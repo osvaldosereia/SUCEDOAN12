@@ -5,6 +5,19 @@
 
 ## REFORMA CONTÍNUA DO SISTEMA E DO SITE PÚBLICO — 2026-10-22
 
+### Checkpoint pós-integração — 2026-10-22 (PR #1284)
+
+- Main `d9af3d38bb197507f07d8773d74668a95eeef351` contém a PR #1284 (merge squash); commits da branch: implementação `3c3f022a51d551de8305e341e26a0889f4743d37`, checkpoint `c2511569ddab3c3839a39b5b601589f6cf52aff6`.
+- Arquivos: workflow `.github/workflows/basket-lot-helper-grant-ci.yml`, teste `scripts/test-basket-lot-helper-grant.mjs`, renomeação da migration de `20261022205411_...` para `20261022205909_basket_lot_helper_direct_execute_revoke.sql`, e este roadmap/HANDOFF.
+- CI de contrato #39854085809 passou. A #1284 não reaplicou a migration nem alterou o banco; ledger e ACL foram consultados após o merge e permaneceram iguais. O workflow Basket kit #39854086139 estava em andamento na instalação Chromium, sem alterações relacionadas a Cestas nesta PR.
+- No canônico `ssbesxgaijknwsjbsbcz`, migration version `20261022205909`; helper sem EXECUTE para authenticated/anon/PUBLIC, EXECUTE preservado para postgres/service_role. Advisors: 42 SECURITY DEFINER para authenticated, search_path mutável 0, 228 RLS INFO e 1 leaked-password WARN.
+- Sem runtime/frontend/Edge Function alterado e sem publicação de UI. Acesso de navegador não permitiu smoke interativo nesta rodada. Rotas mantidas em `/` e `/vitrine/admin/`; funções `admin1` ativas continuam nos respectivos projetos, sem migração.
+- Rollback da fonte: revert da #1284; rollback do ACL aplicado pela #1283: GRANT exato ao helper, documentado no HANDOFF.
+
+### Próxima tarefa de código
+
+Comparar somente leitura a versão/hash publicada de `admin-service-intelligence-v1` no canônico com main e os arquivos versionados de compras/XML; registrar a divergência concreta antes de qualquer ação. Para qualquer deploy, o teste e preflight específicos vêm primeiro; o secret `SUPABASE_ACCESS_TOKEN` está inválido conforme #39848977831 e precisa ser renovado pelo proprietário. Não disparar deploy enquanto isso não estiver resolvido. Observar somente o cron EAN natural e aguardar sessão fisicamente verificada.
+
 ### Checkpoint de execução — 2026-10-22 (R11: helper de lotes e ledger Supabase)
 
 - Main foi revalidada em `a09f26a60ef774465f7872db3574613f799ad963`; #1269 e #1283 estão integradas. A #1283 removeu somente EXECUTE direto por `authenticated` do helper `public.basket_lot_admin_allowed_v1()`; os dois RPCs protegidos de substituição continuam disponíveis. O projeto canônico `ssbesxgaijknwsjbsbcz` confirmou: chamada direta negada, administrador permitido na RPC e não-admin negado. O ACL persistido deixa EXECUTE a postgres/service_role; não a authenticated/anon/PUBLIC.
