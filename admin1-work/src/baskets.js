@@ -179,7 +179,9 @@ function openTypeEditor(type = {}) {
       const name = String(formData.get('name') || '').trim();
       if (!name) throw new Error('Informe o nome do tipo de produto.');
       if (!state.draft.products.length) throw new Error('Adicione ao menos um produto ao tipo.');
-      await state.api('save_basket_type', { type: { ...state.draft, name, active: form.elements.active.checked, products: state.draft.products.map(product => ({ product_id: product.id })), quantities: state.draft.quantities } });
+      const quantities = { ...state.draft.quantities };
+      form.querySelectorAll('[data-size-quantity]').forEach(input => { quantities[input.dataset.sizeQuantity] = Number(input.value || 0); });
+      await state.api('save_basket_type', { type: { ...state.draft, name, active: form.elements.active.checked, products: state.draft.products.map(product => ({ product_id: product.id })), quantities } });
       dialog.close(); state.tab = 'types'; await load();
     } catch (cause) { error.textContent = cause.message || 'Não foi possível salvar o tipo.'; error.hidden = false; submit.disabled = false; }
   });
