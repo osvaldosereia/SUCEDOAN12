@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { orderLines, cartTotalCents, orderPayload } from '../src/cart.js';
+import { normalizeWhatsapp } from '../src/customer.js';
 
 test('checkout keeps basket first, hides component prices, and prices loose products', () => {
   const cart = [
@@ -11,6 +12,12 @@ test('checkout keeps basket first, hides component prices, and prices loose prod
   assert.deepEqual(orderLines(cart).map(x => x.type), ['basket', 'component', 'product']);
   assert.equal(cartTotalCents(cart), 12300);
   assert.equal(orderLines(cart)[1].price_cents, undefined);
+});
+
+test('WhatsApp normalization adds Brazil country code without changing an existing one', () => {
+  assert.equal(normalizeWhatsapp('(65) 99999-1234'), '+5565999991234');
+  assert.equal(normalizeWhatsapp('+55 65 99999-1234'), '+5565999991234');
+  assert.equal(normalizeWhatsapp('999'), '');
 });
 
 test('public submission maps order rows without exposing an online payment flow', () => {
