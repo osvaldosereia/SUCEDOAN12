@@ -94,7 +94,9 @@ assert.match(templatesApi,/await syncTemplates\(account\)/,'remote sync required
 assert.match(templatesApi,/buildPostorderTemplate\(channel\)/,'provider uses canonical template builder');
 assert.match(templatesAdmin,/data-postorder-provision/,'admin exposes official CTA creation');
 assert.match(templatesAdmin,/adminPost\(TEMPLATE_API,'postorder_provision',\{\}\)/,'admin submits via authenticated endpoint');
-new vm.Script(templatesAdmin.replace(/^import[^\n]*\n/gm,''),{filename:'template-center.js'});
+new vm.Script(templatesAdmin
+  .replace(/^import[^\n]*\n/gm,'')
+  .replace(/^export\s+/gm,''),{filename:'template-center.js'});
 new vm.Script(canonicalMeta.replace(/^export /gm,''),{filename:'canonical-template.mjs'});
 // Behavioral smoke tests: execute the public panel with a mocked DOM and API.
 // A hidden optional button must not crash the confirmation panel.
