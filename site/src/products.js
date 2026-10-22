@@ -19,3 +19,10 @@ export function nextPageOffset(page = {}) {
   const offset = Number(page.next_offset);
   return page.next_offset != null && Number.isSafeInteger(offset) && offset >= 0 ? offset : null;
 }
+
+export function sortProducts(products = [], mode = 'default', getPrice = product => Number(product.price_cents || 0)) {
+  const sorted = products.slice();
+  if (mode === 'name') sorted.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR'));
+  if (mode === 'price') sorted.sort((a, b) => getPrice(a) - getPrice(b));
+  return sorted;
+}

@@ -28,3 +28,5 @@ export const loadBasket = id => request('basket', { basket_id: id, lightweight: 
 export const loadProducts = (category, offset = 0, query = '') => request('products', query ? { q: query, limit: 24, offset } : { category, limit: 24, offset });
 export const loadDeliveryDates = () => request('delivery_options', {}, { cache: 'no-store' });
 export const submitOrder = payload => request('submit_order', {}, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+
+export const loadBasketAlternatives = (basketId, compositionNumber, positionId, selectedProductId) => request('basket_mold_options', { basket_id: basketId, composition_number: compositionNumber, position_id: positionId, selected_product_id: selectedProductId });

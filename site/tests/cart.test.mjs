@@ -31,3 +31,28 @@ test('public submission maps order rows without exposing an online payment flow'
   assert.equal(payload.items[0].components[0].quantity, 2);
   assert.equal('payment_token' in payload, false);
 });
+
+test('minimum order status shows remaining amount and turns ready at the threshold', async () => {
+  const { minimumOrderStatus } = await import('../src/cart.js');
+  assert.deepEqual(minimumOrderStatus(6500, 7500), { meetsMinimum: false, remainingCents: 1000 });
+  assert.deepEqual(minimumOrderStatus(7500, 7500), { meetsMinimum: true, remainingCents: 0 });
+});
+
+test('mold basket quote uses its current composition and selected position options', async () => {
+  const { basketQuoteRequest } = await import('../src/cart.js');
+  const quote = basketQuoteRequest({ id: 'basket-1', mold_mode: true, composition_number: 2 }, [
+    { position_id: 'position-1', product_id: 'product-2', quantity: 3 }
+  ]);
+  assert.equal(quote.action, 'basket_mold_quote');
+  assert.deepEqual(quote.payload, { basket_id: 'basket-1', composition_number: 2, items: [{ position_id: 'position-1', product_id: 'product-2' }] });
+});
+
+test('split basket quote preserves both lot identifiers and component groups', async () => {
+  const { basketQuoteRequest } = await import('../src/cart.js');
+  const quote = basketQuoteRequest({ id: 'basket-1', split_mode: true, food_lot_id: 'food-1', hygiene_lot_id: 'hygiene-1' }, [
+    { product_id: 'product-1', quantity: 2, component_group: 'food' }
+  ]);
+  assert.equal(quote.action, 'basket_quote');
+  assert.equal(quote.payload.food_lot_id, 'food-1');
+  assert.equal(quote.payload.items[0].component_group, 'food');
+});
