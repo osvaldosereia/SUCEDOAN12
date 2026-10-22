@@ -1,5 +1,5 @@
-import { request, loadHome, loadBasket, loadProducts, loadDeliveryDates, submitOrder, loadBasketAlternatives } from './api.js';
-import { cartTotalCents, orderLines, orderPayload, minimumOrderStatus, basketQuoteRequest } from './cart.js';
+import { request, loadHome, loadBasket, loadProducts, loadDeliveryDates, submitOrder, loadBasketAlternatives } from './api.js?v=11';
+import { cartTotalCents, orderLines, orderPayload, minimumOrderStatus, basketQuoteRequest } from './cart.js?v=11';
 import { normalizeWhatsapp, addressSummary } from './customer.js';
 import { mergeProductPages, nextPageOffset, sortProducts } from './products.js';
 import { CATEGORY_SHORTCUTS } from './category-shortcuts.js';
