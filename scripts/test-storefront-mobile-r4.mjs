@@ -38,7 +38,7 @@ const storage={getItem:()=>null,setItem(){},removeItem(){}};
 new Function('window','document','localStorage','sessionStorage','location','history',carousel)(
   testEnv,{addEventListener(){}},storage,storage,{href:'https://donaantonia.com.br/'},{replaceState(){}}
 );
-const card={id:'c1',name:'Cesta Grande',display_price_cents:10000,carousel_items:[{image_url:'https://images.test/arroz.webp',name:'Arroz'}]};
+const card={id:'c1',name:'Cesta Grande',size_key:'grande',size_card:true,image_url:'https://images.test/arroz.webp',display_price_cents:10000};
 const esc=s=>String(s),money=x=>String(x),name=x=>String(x);
 const first=testEnv.BasketCarousel.card(card,esc,money,name,0);
 const other=testEnv.BasketCarousel.card(card,esc,money,name,1);

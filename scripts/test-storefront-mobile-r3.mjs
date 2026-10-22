@@ -23,7 +23,7 @@ assert.match(region,/if\(!canPatch\)\{[\s\S]*observeOffers\(\)/,'existing loaded
 assert.match(region,/function syncHomeBasketGroups\(host,records\)/);
 assert.match(page,/BasketCarousel\.card\(b,esc,money,basketName,index\)/,'card must receive global image index');
 
-const start=page.indexOf('function homeBasketGroupRecords(');
+const start=page.indexOf('const homeSubgroupSignatures=');
 const end=page.indexOf('function fragmentElement(',start);
 assert.ok(start>=0&&end>start);
 const groupFactory=new Function('esc','basketCard',page.slice(start,end)+'return homeBasketGroupRecords;');
@@ -48,7 +48,7 @@ const testStorage={getItem:()=>null,removeItem(){},setItem(){}};
 const environment=new Function('window','document','localStorage','sessionStorage','location','history',carousel);
 environment(mockWindow,{addEventListener(){}},testStorage,testStorage,{href:'https://donaantonia.com.br/'},{replaceState(){}});
 assert.ok(mockWindow.BasketCarousel?.card,'carousel must expose its public API');
-const b={id:'basket',name:'Grande Completa',display_price_cents:9500,carousel_items:[{name:'Arroz',image_url:'https://example.test/arroz.webp'}]};
+const b={id:'basket',name:'Grande Completa',size_key:'grande',size_card:true,image_url:'https://example.test/arroz.webp',display_price_cents:9500};
 const esc=v=>String(v);
 const money=v=>'R$ '+(v/100).toFixed(2);
 const priorityPhoto=mockWindow.BasketCarousel.card(b,esc,money,v=>v,0);
