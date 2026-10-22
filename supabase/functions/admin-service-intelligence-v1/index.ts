@@ -4,6 +4,7 @@ import { planPapoAiTurn } from "./_shared/papoai-ai-planner-v1.mjs";
 import { deterministicCommerceIntent, contextualCommerceIntent } from "./_shared/papoai-commerce-intent-v1.mjs";
 import { handlePurchaseXmlRequest } from "./purchase-xml-v1/index.ts";
 import { inspectBlingNfeR2, isFiscalRecoveryNewOrderR2 } from "./_shared/fiscal-r2-nfe-inspector.mjs";
+import { withAdminServiceOutcomeTelemetry } from "./_shared/admin-service-outcome-telemetry.mjs";
 
 const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type,x-dona-antonia-bling-hub-key,x-bling-signature-256","Access-Control-Allow-Methods":"GET,POST,OPTIONS"};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...CORS,"Content-Type":"application/json","Cache-Control":"no-store"}});
@@ -9717,6 +9718,7 @@ Deno.serve(async(req:Request)=>{
   let body:any={};try{body=await req.json()}catch{return json({ok:false,error:"invalid_json"},400)}
   const action=clean(body?.action||"dashboard",60).toLowerCase();
 
+  return withAdminServiceOutcomeTelemetry(action, async () => {
   if(action==="purchase_xml"){
     return await handlePurchaseXmlRequest(req,body,false);
   }
@@ -10349,4 +10351,5 @@ Deno.serve(async(req:Request)=>{
   if(action==="preview_bundle"){const {data,error}=await sb.rpc("get_service_intelligence_bundle_v1",{p_channel:"whatsapp",p_intent:clean(body?.intent,80)||null,p_stage:clean(body?.stage,80)||null});if(error)return json({ok:false,error:"preview_failed",detail:error.message},400);return json({ok:true,bundle:data});}
   if(action==="product_search"){const {data,error}=await sb.rpc("search_whatsapp_sellable_products_v1",{p_query:clean(body?.q,120),p_limit:Math.max(1,Math.min(20,Number(body?.limit||10)))});if(error)return json({ok:false,error:"product_search_failed",detail:error.message},400);return json({ok:true,products:data||[],source:"counter_verified"});}
   return json({ok:false,error:"unknown_action"},400);
+  });
 });
