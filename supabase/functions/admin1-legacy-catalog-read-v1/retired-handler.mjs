@@ -6,14 +6,14 @@ const corsHeaders = {
   "Vary": "Origin"
 };
 
-function json(body: unknown, status: number) {
+function json(body, status) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" }
   });
 }
 
-export function handleRetiredLegacyCatalogRequest(request: Request): Response {
+export function handleRetiredLegacyCatalogRequest(request) {
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
   }
