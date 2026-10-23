@@ -1,5 +1,14 @@
 # Ponte Loja Integrada → Dona Antônia (fase 1)
 
+## Identidade da loja confirmada (23/10/2026)
+
+Subdomínio provisório exibido no painel da Loja Integrada da **Super Cestas Dona Antônia**: **https://dona-antonia-1.lojaintegrada.com.br**. Plano Crescimento indicado na captura de tela. O domínio próprio **donaantonia.com.br não foi configurado** nessa nova plataforma. Preservar a operação atual enquanto a nova loja passa por testes.
+
+Autenticação API confirmada na documentação oficial: `Authorization: Basic <personal token>`. **Isso valida o formato implementado, mas não comprova ainda a autenticação da credencial configurada no Supabase.** Não publicar token ou service-role em logs, GitHub ou mensagens.
+
+Estado atual: função `loja-integrada-readonly-v1` ativa no Supabase com `verify_jwt=true`; ainda não há invocação autenticada comprovada nem conexão direta do ChatGPT com a loja. Não declarar integração operacional antes do teste real.
+
+
 Integração **somente leitura** e isolada. Não altera o site público, pedidos ou produtos.
 
 ## Credencial
