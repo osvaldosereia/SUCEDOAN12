@@ -24,6 +24,7 @@ on:
     paths:
       - 'checkout-resilience.js'
       - 'scripts/test-checkout*.mjs'
+      - 'supabase/migrations/20261023170000_allow_pending_registration_storefront_orders.sql'
       - 'scripts/test-registration-catalog-return.mjs'
       - 'scripts/test-customer-identity-admin-v2.mjs'
       - 'supabase/migrations/20261002150000_checkout_whatsapp_return_channel.sql'
