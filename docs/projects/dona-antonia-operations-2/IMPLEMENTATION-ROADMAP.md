@@ -1,5 +1,17 @@
 # Dona Antônia Operations 2.0 — IMPLEMENTATION ROADMAP
 
+### Acompanhamento R16 — recorte inicial de observação — 2026-10-23 04:03 UTC
+
+- Main `1dbacf0856e66d0fd4873d22db09d8e307c8e9c8`; PR #1269 integrada; PR #1315 integrada. As rotas continuam `/` e `/vitrine/admin/`.
+- Todos os 42 workflows de push da main passaram.
+- No projeto canônico `ssbesxgaijknwsjbsbcz`, a função `admin1-products-read-v1` permanece ACTIVE v5 com hash `6a2c730ddbab268c0f95c4b08a9a3f443bbfa8bf8745584ed21dd2cbd8f7aa51`. Na janela inicial de 03:20:07–04:03 UTC houve apenas o GET de smoke HTTP 410; a única linha de telemetria interpretável é `products/browser/none/unknown/none` (ação/caller/origem/página/fetch-site). A janela de 24h segue incompleta.
+- Smoke read-only confirmou cinco tamanhos de cesta, quatro ofertas e pedido vazio na homepage; a lista de produtos carregou no Admin existente. Nenhuma alteração real foi executada.
+- Sem alteração funcional, Supabase, migration, configuração ou publicação nesta rodada. O rollback limita-se ao commit documental; runtime permaneceu inalterado.
+
+### Próxima tarefa exata
+
+Revisar 24h do proxy separado `admin1-legacy-catalog-read-v1` v3 a partir de 2026-10-24 02:14:07 UTC; depois fechar 24h da função canônica v5 a partir de 2026-10-23 03:20:07 UTC em 2026-10-24 03:20:07 UTC. Excluir o smoke conhecido, agregar somente campos allowlisted e manter 410 até decisão sustentada por tráfego/dependências. R13 segue bloqueada pela renovação do `SUPABASE_ACCESS_TOKEN` pelo proprietário.
+
 ### Conclusão R16 — leitor Admin1 exposto aposentado — 2026-10-23 03:23 UTC
 
 - Base `main`: `acdc4d2118c833e0945f551f747a88aa85fec0bc`; PR #1269 integrada. Rotas preservadas: `/` e `/vitrine/admin/`.

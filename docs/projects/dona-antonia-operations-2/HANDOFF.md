@@ -1,5 +1,18 @@
 # Dona Antônia Operations 2.0 — HANDOFF
 
+## Acompanhamento R16 — observação inicial do endpoint — 2026-10-23 04:03 UTC
+
+- Main revalidada em `1dbacf0856e66d0fd4873d22db09d8e307c8e9c8`; PR #1269 permanece integrada e os documentos estão na main. A PR #1315 que registrou o deploy v5 também está merged em `1dbacf0856e66d0fd4873d22db09d8e307c8e9c8`. Rotas preservadas: homepage `/` e Admin `/vitrine/admin/`.
+- CI de push para `1dbacf0856e66d0fd4873d22db09d8e307c8e9c8`: 42/42 workflows concluídos com sucesso, sem pendências/falhas.
+- O projeto canônico `ssbesxgaijknwsjbsbcz` segue ACTIVE_HEALTHY em sa-east-1, PostgreSQL 17.6.1.166. `admin1-products-read-v1` segue ACTIVE v5, `verify_jwt=false`, SHA `6a2c730ddbab268c0f95c4b08a9a3f443bbfa8bf8745584ed21dd2cbd8f7aa51`.
+- Agregação de `function_edge_logs` entre 2026-10-23 03:20:07 e 04:03 UTC: uma chamada GET, HTTP 410, no endpoint retirado; corresponde ao smoke já registrado às 03:20:29.940 UTC. Não houve outra chamada ao endpoint nesse recorte. A telemetria allowlisted classificou `action=products`, `caller=browser`, `origin=none`, `page=unknown`, `fetchSite=none`; dois registros sem esses campos não foram interpretados como chamadas. Nenhum payload, query, IP, cabeçalho ou identificador foi consultado.
+- No mesmo recorte curto, os logs agregados de `admin-products-live-v1` mostraram 11 POST 200, 2 GET 200 e 2 OPTIONS 204. O smoke visual somente leitura confirmou linhas de produtos no Admin existente; na homepage confirmou cinco tamanhos de cesta e, após rolar, quatro ofertas, com pedido vazio. Nenhum formulário de alteração, pedido, checkout, mensagem, NF-e, ação de estoque, Bling ou financeiro foi executado.
+- Esta rodada não alterou código funcional, runtime, Edge Function, schema, dados, grants, policies ou configuração; não houve novo deploy Supabase/Pages nem rollback de dados. O check de build do runtime não foi necessário porque o runtime não mudou. Reverter o checkpoint documental significa reverter o commit desta PR; sem impacto no sistema.
+
+### Próxima tarefa exata
+
+Em ou após 2026-10-24 02:14:07 UTC, agregar os 24h completos do projeto separado `xaoeldjuxzsdsblimzxo` para `admin1-legacy-catalog-read-v1` v3, distinguindo o GET de smoke conhecido. Em ou após 2026-10-24 03:20:07 UTC, fechar as primeiras 24h de `admin1-products-read-v1` v5 no canônico, excluir da interpretação o GET de smoke das 03:20:29.940 UTC e atribuir somente chamadas adicionais pelos campos allowlisted. Manter ambas as respostas 410; não remover funções sem evidência de zero dependências/chamadas. R13 continua bloqueada pela renovação de `SUPABASE_ACCESS_TOKEN` pelo proprietário; não usar credencial alternativa.
+
 ## Conclusão R16 — aposentadoria do leitor Admin1 exposto — 2026-10-23 03:23 UTC
 
 - Base revalidada: `main` em `acdc4d2118c833e0945f551f747a88aa85fec0bc`; PR #1269 está integrada e os documentos estão na main. As rotas permanecem na homepage `/` e Admin `/vitrine/admin/`.
