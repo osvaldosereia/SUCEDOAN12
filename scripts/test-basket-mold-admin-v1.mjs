@@ -15,11 +15,13 @@ const api=fs.readFileSync(apiPath,'utf8');
 const sql=fs.readFileSync(sqlPath,'utf8');
 
 // The day-to-day tab is labeled Cestas; internal kit tools stay advanced.
-assert.match(section,/molds:\s*\{[^}]*label:'Cestas'/s);
-assert.match(section,/const state=\{tab:'molds'/);
-assert.match(section,/data-basket-advanced/i);
-assert.match(section,/Manutenção avançada/i);
-assert.match(section,/DonaAntoniaBasketMolds/);
+assert.match(section,/data-basket-config-tab="types"/);
+assert.match(section,/data-basket-config-tab="quantities"/);
+assert.match(section,/data-basket-config-tab="carousel"/);
+assert.match(section,/DonaAntoniaBasketAdminTypes/);
+assert.match(section,/DonaAntoniaBasketAdminQuantities/);
+assert.match(section,/DonaAntoniaBasketAdminCarousel/);
+assert.doesNotMatch(section,/data-basket-simple-tab|Manutenção avançada|DonaAntoniaBasketMolds/);
 
 // Simplified editor exposes only business concepts.
 assert.match(ui,/data-mold-name/);
@@ -41,7 +43,7 @@ assert.match(ui,/data-mold-save/);
 assert.equal(/kit interno|kit base|assembly_kit/i.test(ui),false,'normal mold editor must not teach internal kits');
 
 const adminHtml=fs.readFileSync('vitrine/admin/index.html','utf8');
-assert.match(adminHtml,/basket-admin-section\.js\?v=basket-admin-simple-20261020/);
+assert.match(adminHtml,/basket-admin-section\\.js\\?v=basket-admin-three-tabs-20261023/);
 const compositionSQL=fs.readFileSync('supabase/migrations/20261013122000_basket_mold_preferred_product_v1.sql','utf8');
 assert.match(compositionSQL,/metadata.*preferred/);
 assert.match(compositionSQL,/bool_or\(s\.is_preferred\)/);
@@ -60,8 +62,7 @@ assert.match(multiPreferredSQL,/count\(\*\) filter \(where s\.is_preferred\)/);
 assert.match(multiPreferredSQL,/\(\(sl\.composition_number - 1\) % r\.preferred_count\) \+ 1/);
 assert.match(multiPreferredSQL,/when c\.is_preferred then 'preferred_in_stock'/);
 assert.match(multiPreferredSQL,/where greatest\(0, coalesce\(s\.loose_sellable_stock/);
-assert.match(section,/20261019-shared-brands-v3/);
-assert.match(section,/extras:\s*\{[^}]*label:'Extras das cestas'/s);
+assert.equal((section.match(/data-basket-config-tab=/g)||[]).length,3,'basket admin exposes exactly three tabs');
 
 // Gateway forwards the logged-in admin JWT and never loads a privileged server key.
 assert.match(api,/SUPABASE_ANON_KEY/);
@@ -99,9 +100,10 @@ assert.match(v3sql,/admin_upsert_basket_mold_shared_item_v2/);
 assert.match(v3sql,/sort_order between 0 and 39/);
 assert.match(v3sql,/coalesce\(v_limit,3\)/);
 const storefrontV3=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
-assert.match(storefrontV3,/Offer up to ten in-stock alternatives, cheapest first; no random rotation/);
-assert.match(storefrontV3,/alts\.sort\(\(a:any,b:any\)=>Number\(a\.price_cents\|\|0\)-Number\(b\.price_cents\|\|0\)/);
-assert.doesNotMatch(storefrontV3,/randomized=alts\.slice/);
-assert.match(storefrontV3,/selected=alts\.find/);
+assert.match(storefrontV3,/Show available alternatives in the order configured by the administrator/);
+assert.match(storefrontV3,/Number\\(a\\.sort_order\\|\\|0\\)-Number\\(b\\.sort_order\\|\\|0\\)/);
+assert.match(storefrontV3,/alternative_count:alternatives.length/);
+assert.doesNotMatch(storefrontV3,/randomized=alts\\.slice/);
+assert.match(storefrontV3,/selected=alternatives\\.find/);
 console.log('basket mold admin shared brands v3: PASS');
 
