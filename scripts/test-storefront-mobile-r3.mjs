@@ -100,9 +100,9 @@ const fakeDocument={createElement(type){
 }};
 const carouselSpy={mountCalls:0,mount(){this.mountCalls++}};
 const domFunctions=page.slice(page.indexOf('const homeSubgroupSignatures='),page.indexOf('function renderHome(){'));
-const runtime=new Function('document','section','esc','basketCard','BasketCarousel','openBasket',domFunctions+'return {homeBasketGroupRecords,syncHomeBasketGroups};')(
+const runtime=new Function('document','section','basketCard','BasketCarousel','openBasket',domFunctions+'return {homeBasketGroupRecords,syncHomeBasketGroups};')(
   fakeDocument,(name,subtitle,content)=>'<section class="section"><h2>'+name+'</h2>'+content+'</section>',
-  esc,(basket,index)=>'<article data-index="'+index+'">'+basket.name+'</article>',carouselSpy,()=>{}
+  (basket,index)=>'<article data-index="'+index+'">'+basket.name+'</article>',carouselSpy,()=>{}
 );
 const host=new TestElement('host');
 runtime.syncHomeBasketGroups(host,runtime.homeBasketGroupRecords([largeBasket],initial));
