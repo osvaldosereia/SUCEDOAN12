@@ -1027,19 +1027,22 @@
       return selected?{...item,...selected,quantity:item.quantity,base_quantity:item.base_quantity,label:item.label}:item;
     }
     function moldOptionsLoaded(item){if(!item)return false;const count=Number(item.alternative_count??(item.alternatives||[]).length);return count<=1||(Array.isArray(item.alternatives)&&item.alternatives.length>0&&item.alternatives_loaded!==false)}
+    function sortMoldAlternativesByAdminOrder(options){
+      return options.sort((a,b)=>Number(a.sort_order??Number.MAX_SAFE_INTEGER)-Number(b.sort_order??Number.MAX_SAFE_INTEGER)||String(a.product_id||'').localeCompare(String(b.product_id||'')));
+    }
     function moldItemOptions(item,index,pending=false){
       const count=Number(item.alternative_count??(item.alternatives||[]).length),selected=moldSelectedProduct(item),hasChoices=count>1;
       const optionsLoaded=moldOptionsLoaded(item),choicesList=hasChoices&&optionsLoaded?(item.alternatives||[]).slice():[selected];
       if(!choicesList.some(a=>String(a.product_id)===String(item.product_id)))choicesList.push(selected);
-      const alternatives=choicesList.sort((a,b)=>Number(a.price_cents||0)-Number(b.price_cents||0)||String(a.name||'').localeCompare(String(b.name||''),'pt-BR')).slice(0,10);
+      const alternatives=sortMoldAlternativesByAdminOrder(choicesList).slice(0,10);
       const loading=hasChoices&&!optionsLoaded;
       const choices=alternatives.map(a=>{
         const isSelected=String(a.product_id)===String(item.product_id),disabled=pending?' disabled aria-disabled="true"':'';
         return '<button type="button" class="basket-option-choice '+(isSelected?'is-selected':'')+'" '+(hasChoices?'data-mold-option-choice="'+index+'" data-product-id="'+esc(a.product_id)+'" role="option" aria-selected="'+(isSelected?'true':'false')+'"':'aria-pressed="true"')+disabled+' aria-label="'+esc(a.name||'Produto')+', '+money(a.price_cents)+'"><img loading="lazy" decoding="async" src="'+esc(safeImage(a.image_url))+'" alt=""><strong class="basket-option-choice-name">'+esc(moldOptionShortName(a.name,36))+'</strong><b class="basket-option-choice-price">'+money(a.price_cents)+'</b>'+(isSelected?'<span class="basket-option-selected-mark" aria-hidden="true">✓</span>':'')+'</button>';
       }).join('');
       const status=loading?((item.option_loading||item.option_queued)?'<div class="basket-brand-loading" role="status">Carregando opções…</div>':item.alternatives_error?'<div class="basket-option-retry" role="status">Não foi possível carregar as opções.<button type="button" data-mold-option-retry="'+index+'">Tentar novamente</button></div>':'<div class="basket-brand-loading" role="status">As opções serão carregadas ao aparecer na tela.</div>'):'';
-      const heading=hasChoices?'<div class="basket-option-toolbar"><span class="basket-option-label">Escolha uma opção · menor preço primeiro</span></div>':'';
-      const track=hasChoices?'<div class="basket-option-carousel-track" data-mold-option-track="'+index+'" role="listbox" aria-label="Opções de '+esc(item.subtitle||selected.name||item.name)+' em ordem de preço">'+choices+'</div>':'<div class="basket-option-single" aria-label="Produto selecionado">'+choices+'</div>';
+      const heading=hasChoices?'<div class="basket-option-toolbar"><span class="basket-option-label">Escolha uma opção · ordem definida no admin</span></div>':'';
+      const track=hasChoices?'<div class="basket-option-carousel-track" data-mold-option-track="'+index+'" role="listbox" aria-label="Opções de '+esc(item.subtitle||selected.name||item.name)+' na ordem definida no admin">'+choices+'</div>':'<div class="basket-option-single" aria-label="Produto selecionado">'+choices+'</div>';
       return '<div class="basket-item-option" data-mold-option-wrap="'+index+'">'+heading+track+status+'</div>';
     }
     function moldExtraThemeRow(theme,index,d){
