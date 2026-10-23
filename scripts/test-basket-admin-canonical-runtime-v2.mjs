@@ -31,7 +31,9 @@ assert.deepEqual([...section.matchAll(/data-basket-config-tab="([^"]+)"/g)].map(
 assert.match(section,/basket-admin-types\.js/,'controller must load the basket type editor');
 assert.match(section,/basket-admin-quantities\.js/,'controller must load the quantity matrix editor');
 assert.match(section,/basket-admin-carousel\.js/,'controller must load the carousel editor');
-assert.doesNotMatch(section,/Receitas de kits|Cestas do Site|data-basket-advanced|DonaAntoniaKitBuilder|DonaAntoniaStoreBaskets/,'replaced session must not expose legacy editor navigation');
+assert.doesNotMatch(section,/data-basket-advanced|data-basket-config-tab="(?:kits|store)"/,'replaced session must not expose legacy modules as tabs');
+assert.match(section,/kits:\{label:'Receitas de kits \(legado\)'/,'legacy kit routing stays for operational integration');
+assert.match(section,/store:\{label:'Operação de lotes antigos'/,'legacy lot routing stays for operational integration');
 assert.match(section,/window\.DonaAntoniaBasketAdmin=\{state,render,refresh,setTab\}/,'stable DonaAntoniaBasketAdmin adapter must remain');
 assert.doesNotMatch(section,/basket_commercial_admin|basket_commercial_create|basket_lot_sale_toggle|basket_archive/,'simple controller must not own basket business APIs');
 assert.doesNotMatch(section,/DonaAntoniaBasketGuided|openGuided|data-basket-edit-lot|function printLot/,'simple controller must not route normal operation into guided lot UI');
