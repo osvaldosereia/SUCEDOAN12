@@ -27,6 +27,7 @@ on:
       - 'supabase/functions/admin-basket-configuration-v1/**'
       - 'supabase/functions/storefront-v2/index.ts'
       - 'supabase/migrations/20261023120000_basket_admin_three_tabs.sql'
+      - 'supabase/migrations/20261023160000_basket_quantity_save_merge_duplicates.sql'
       - 'scripts/test-basket-admin-three-tabs.mjs'
       - 'supabase/functions/admin-basket-molds-v1/**'
       - 'supabase/sql/20261006_basket_mold_admin_v1.sql'
