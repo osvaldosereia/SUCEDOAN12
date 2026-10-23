@@ -40,6 +40,7 @@ const gateway = read('../supabase/functions/admin-basket-configuration-v1/index.
 const storefront = read('../supabase/functions/storefront-v2/index.ts');
 const publicSite = read('../index.html');
 const adminIndex = read('../vitrine/admin/index.html');
+const featureBridges = read('../vitrine/admin/admin-feature-bridges.js');
 const tabNames = [...section.matchAll(/data-basket-config-tab="([^"]+)"/g)].map(match => match[1]);
 assert.deepEqual(tabNames, ['types', 'quantities', 'carousel']);
 for (const globalScript of [
@@ -49,8 +50,9 @@ for (const globalScript of [
   'baskets-operational-polish.js'
 ]) {
   assert.equal(section.includes(globalScript), false, `basket config must not own the unrelated ${globalScript} loader`);
-  assert.ok(adminIndex.includes(globalScript), `admin entry point must explicitly load ${globalScript}`);
+  assert.ok(featureBridges.includes(globalScript), `feature bridge entry point must own ${globalScript}`);
 }
+assert.ok(adminIndex.includes('admin-feature-bridges.js'), 'admin entry point must load cross-feature bridges separately');
 assert.ok(storefront.includes('async function basketBySize(sizeKey:string)'));
 assert.ok(storefront.includes('const detail=await moldDetail(match[1],Number(match[2]),null,false)'));
 assert.ok(storefront.includes('action==="basket_by_size"'));
