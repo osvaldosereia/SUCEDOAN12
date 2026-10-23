@@ -171,15 +171,16 @@ assert.match(checkoutOpen,/requestId!==state\.sheetSeq/,'checkout navigation mus
 let moldCalls=0;
 const altWait=deferred();
 const altState={basketDraft:{
-  basket:{mold_mode:true,id:'basket',composition_number:1,hidden_adjustment_cents:0},
+  basket:{mold_mode:true,id:'basket',composition_number:1,hidden_adjustment_cents:0,stock_quantity:0},
   items:[{position_id:'pos1',product_id:'original',name:'Arroz original',quantity:1,stock_quantity:5,
-    alternatives:[{product_id:'other',name:'Arroz alternativo',stock_quantity:5,price_cents:800}]}],
+    alternatives:[{product_id:'other',name:'Arroz alternativo',stock_quantity:5,price_cents:800}]},
+    {position_id:'pos2',product_id:'unavailable',name:'Feijão sem estoque',quantity:1,stock_quantity:0,alternatives:[]}],
   total_cents:1200,
   optionPending:false
 }};
 const originalBasketDraft=altState.basketDraft;
 const moldFns=new Function('state','basketApi','stockNumber','paintMoldBasketSheet','closeMoldOptionMenus','moldDraftTotalCents',String.fromCharCode(36),'moldOptionsLoaded','toast',optionSource+'return {changeMoldOption};')(
-  altState,(d,action)=>{assert.equal(action,'basket_mold_quote');moldCalls++;return altWait.promise},x=>Number(x),stub,stub,()=>800,()=>null,x=>Array.isArray(x.alternatives)&&x.alternatives.length>0,m=>toasts.push(m)
+  altState,(d,action,_params,options)=>{assert.equal(action,'basket_mold_quote');moldCalls++;const payload=JSON.parse(options.body);assert.equal(payload.allow_unavailable_preview,true);assert.deepEqual(payload.items.map(x=>x.quantity),[1,1]);return altWait.promise},x=>Number(x),stub,stub,()=>800,()=>null,x=>Array.isArray(x.alternatives)&&x.alternatives.length>0,m=>toasts.push(m)
 );
 const firstChange=moldFns.changeMoldOption(0,'other');
 await moldFns.changeMoldOption(0,'original');
@@ -188,9 +189,10 @@ assert.equal(originalBasketDraft.optionPending,true);
 altWait.resolve({basket:{...originalBasketDraft.basket},items:[{
   position_id:'pos1',product_id:'other',name:'Arroz alternativo',quantity:1,stock_quantity:5,
   alternatives:originalBasketDraft.items[0].alternatives
-}]});
+},{position_id:'pos2',product_id:'unavailable',name:'Feijão sem estoque',quantity:1,stock_quantity:0,alternatives:[]}]});
 await firstChange;
 assert.equal(originalBasketDraft.optionPending,false);
 assert.equal(originalBasketDraft.items[0].product_id,'other');
+assert.equal(originalBasketDraft.items[1].quantity,1,'one product switch must preserve other unavailable rows for adjustment');
 
 console.log('R5: basket quote races, mold guards, checkout and single order submission passed');
