@@ -1,3 +1,11 @@
+## Checkpoint R24 — janela incremental Admin1 e smoke read-only — 2026-10-23 09:06:00 UTC
+
+- Main `3223dc4c5b1e17a8ec2b9981803f7ad67a5f9ecb`; R23 (#1327) merged. Push CI: 41/42 success, sem falhas; run #39928928242 (`Basket product carousel`) ainda em andamento. Nenhuma PR/branch Admin1 nova aberta identificada.
+- Logs agregados allowlisted entre 09:00:54 e 09:06:00 UTC: zero eventos para as duas funções Admin1 aposentadas nos projetos canônico e separado. Ambas seguem 410; sem leitura de payload ou dados pessoais.
+- Ambos os Supabase estão ACTIVE_HEALTHY, versões/SHA estáveis; runtime check passou (9 fragmentos); smoke read-only confirma `/` e `/vitrine/admin/` ativos, cinco cestas, quatro ofertas e carrinho vazio.
+- Alterados somente HANDOFF e este roadmap. Nenhuma migration, Edge Function, configuração, RLS/grant, dado ou deploy foi aplicado.
+- Próxima tarefa: após 2026-10-24 02:14:07.824 UTC, fechar 24h do proxy legado e atribuir chamadas, excluindo o smoke conhecido; após 03:20:07.529 UTC, fechar 24h do leitor canônico. Manter endpoints 410. Publicar R13 somente após renovação do token pelo proprietário e preflight.
+
 # Dona Antônia Operations 2.0 — IMPLEMENTATION ROADMAP
 
 ## Checkpoint R23 — observação Admin1 e smoke somente leitura — 2026-10-23 09:00:54 UTC
