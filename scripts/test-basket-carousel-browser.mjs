@@ -47,7 +47,7 @@ try{
    if(u.pathname.endsWith('.js'))return route.fulfill({contentType:'application/javascript',body:''});
    return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="100" height="130"/>'});
  });
- await app.goto('https://app.test/');assert.ok(storefrontActions.includes('home_size_cards'),'canonical homepage requests the home size cards contract');await app.locator('.basket-size-card-photo img').first().waitFor({timeout:10000}).catch(async error=>{throw new Error('home image did not render: '+JSON.stringify({errors,body:await app.locator('body').innerText(),cause:error.message}))});
+ await app.goto('https://app.test/');await app.locator('.basket-size-card-photo img').first().waitFor({timeout:10000}).catch(async error=>{throw new Error('home image did not render: '+JSON.stringify({errors,body:await app.locator('body').innerText(),cause:error.message}))});assert.equal(storefrontActions.includes('home_size_cards'),false,'cold homepage renders before requesting basket data');
  
  assert.equal(await app.getByRole('heading',{name:'Cestas Completas',exact:true}).count(),1,'lightweight home shows the complete-basket size group');
  assert.equal(await app.getByRole('heading',{name:'Cestas Só Alimentos',exact:true}).count(),0,'lightweight home response contains only the complete-basket size group');
@@ -57,7 +57,7 @@ try{
  assert.equal(await app.locator('.basket-size-card-photo img').count(),5,'the homepage renders all five lightweight basket size cards');
  assert.deepEqual(await app.locator('.basket-card-title').allTextContents(),homeSizeNames,'the homepage preserves the five configured basket sizes in order');
  for(const size of homeSizeNames)assert.equal(await app.getByRole('button',{name:'Ver produtos da cesta '+size,exact:true}).count(),1,'every size has a product action: '+size);
- await app.getByRole('button',{name:'Ver produtos da cesta Mini',exact:true}).click();await app.locator('#addBasket').waitFor();
+ await app.getByRole('button',{name:'Ver produtos da cesta Mini',exact:true}).click();assert.ok(storefrontActions.includes('home_size_cards'),'opening a size card lazily requests its basket ID');await app.locator('#addBasket').waitFor();
  assert.ok((await app.locator('#sheetBody').innerText()).includes('Produto 1'));assert.deepEqual(errors,[]);
  assert.match(html,/firstCestasMs:performance\.getEntriesByName\('da-home-size-cards'\)/,'home cards use the current performance marker');
  assert.ok(html.includes('BasketCarousel.mount('),'canonical root mounts the basket carousel');

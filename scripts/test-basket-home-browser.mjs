@@ -74,34 +74,25 @@ try{
    return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="100" height="130"/>'});
  });
  await app.goto('https://app.test/');
- await app.locator('#basketSections .home-loading-status').waitFor();
- const firstShell=await app.evaluate(()=>{
-   window.__homeShellHero=document.querySelector('.home-hero');
-   window.__homeShellOffers=document.querySelector('#heroOffers');
-   return {
-     sections:document.querySelectorAll('#basketSections').length,
-     hasHero:Boolean(window.__homeShellHero),
-     hasHeroOffers:Boolean(window.__homeShellOffers)
-   };
- });
- assert.deepEqual(firstShell,{sections:1,hasHero:true,hasHeroOffers:true},'initial loading shell must include the hero and its offers action');
- releaseSizeCards();
  await app.locator('#basketSections .basket-size-card-photo img').first().waitFor();
- assert.equal(await app.evaluate(()=>document.querySelector('.home-hero')===window.__homeShellHero),true,'lightweight cards must not recreate initial hero');
- assert.equal(await app.evaluate(()=>document.querySelector('#heroOffers')===window.__homeShellOffers),true,'lightweight cards must preserve the hero offers action');
- assert.ok(await app.locator('#basketSections .basket-size-card-photo img').first().getAttribute('src'),'first basket photo must start loading immediately');
- assert.equal(await app.locator('#basketSections .basket-size-card-photo img').count(),5,'the lightweight response renders all five basket sizes');
- assert.deepEqual(await app.locator('#basketSections .basket-subgroup-title').allTextContents(),['Escolha o tamanho da cesta'],'home uses one size-picker subgroup');
- assert.deepEqual(await app.locator('#basketSections .basket-card-title').allTextContents(),homeNames,'home preserves the five configured size cards in order');
+ assert.equal(await app.locator('#basketSections .basket-size-card-photo img').count(),5,'the five static basket size cards render before basket data is requested');
+ assert.deepEqual(await app.locator('#basketSections .basket-card-title').allTextContents(),homeNames,'static size cards render in configured order');
  assert.equal(await app.locator('#basketSections .basket-card-item-total').count(),0,'home size cards hide item counts');
- assert.equal(await app.locator('#basketSections .basket-price-amount').count(),0,'home size cards hide prices until opened');
- assert.equal(await app.locator('#homeRemainingBaskets').count(),0,'size cards do not wait for a second full-catalog request');
+ assert.equal(await app.locator('#basketSections .basket-price-amount').count(),0,'home size cards hide prices');
+ assert.equal(await app.locator('#homeRemainingBaskets').count(),0,'home does not wait for a full catalog request');
  assert.equal(await app.locator('.home-shortcuts button').count(),4);
  assert.equal(await app.locator('.home-hero h1').innerText(),'Sua compra do dia a dia');
  assert.equal(await app.locator('.nav-shell').isVisible(),false);
  assert.equal(await app.locator('#globalSearchInput').getAttribute('placeholder'),'O que você precisa hoje?');
  assert.equal(await app.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
- assert.ok(storefrontActions.includes('home_size_cards'),'initial entry requests the lightweight home payload');
+ assert.equal(storefrontActions.includes('home_size_cards'),false,'cold homepage must render cards without waiting for basket API data');
+ await app.getByRole('button',{name:'Ver produtos da cesta Mini',exact:true}).click();
+ assert.ok(storefrontActions.includes('home_size_cards'),'the first basket-card click resolves the lightweight basket IDs');
+ releaseSizeCards();
+ await app.locator('#addBasket').waitFor();
+ assert.ok((await app.locator('#sheetBody').innerText()).includes('Produto 1'),'clicking a static size card loads its basket products');
+ await app.locator('#closeSheet').click();
+ assert.equal(await app.locator('#homeOffersMount').count(),1);
  await app.locator('#heroOffers').click();
  await app.locator('#offerGrid').waitFor();
  assert.equal(await app.locator('.nav-shell').isVisible(),true);
