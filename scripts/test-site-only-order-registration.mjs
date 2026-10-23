@@ -30,7 +30,7 @@ assert.match(sf, /registration_complete/i, 'registration state may still be retu
 const storefront=read('index.html');
 const legacyVitrine=read('vitrine/index.html');
 assert.ok(!storefront.includes('Confirmar este endereço'), 'saved address must not require an extra confirmation click');
-assert.match(storefront, /confirmamos tudo pelo WhatsApp depois do pedido/i, 'missing or outdated registration details must be handled over WhatsApp after order submission');
+assert.match(storefront, /confirma tudo pelo WhatsApp depois do pedido/i, 'missing or outdated registration details must be handled over WhatsApp after order submission');
 assert.ok(!storefront.includes('checkoutDocument'), 'public checkout must not request CPF/CNPJ before order creation');
 assert.match(storefront, /WhatsApp para contato \(obrigatório\)/, 'checkout must identify WhatsApp as required');
 assert.match(storefront, /Data de entrega \(obrigatória\)/, 'checkout must identify delivery date as required');
