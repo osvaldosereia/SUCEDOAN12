@@ -103,7 +103,8 @@ assert.doesNotMatch(tenHtml,/data-product-id="product-9" role="option"|data-prod
 assert.match(root,/scroll-snap-type:x mandatory/,'carousel must support touch scroll snapping');
 assert.match(root,/carouselScroll=new Map/,'requoting must retain user carousel scroll position');
 assert.match(api,/publicAlts=alts\.slice\(0,10\)/,'API exposes the first ten available options in administrator order');
-assert.match(api,/const readIds=includeAlternatives\?productIds:selectedIds/,'initial lightweight response reads selected products only');
+assert.match(api,/moldProductIdsForRead\(positions,options,requested,defaultSelected,includeAlternatives\)/,'initial lightweight response reads selected products plus options only for missing defaults');
+assert.match(api,/moldFirstAvailableOption\(linkedOptions,products,available,qty\)/,'missing generated defaults use an available configured option without failing the basket');
 assert.match(api,/alternatives_loaded:false,alternatives:\[\]/,'lightweight response excludes alternatives');
 assert.match(api,/action==="basket_mold_options"/,'separate lazy options route');
 assert.match(root,/lightweight:1/,'initial basket request uses small payload');
