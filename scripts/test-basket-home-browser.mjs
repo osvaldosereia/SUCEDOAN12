@@ -133,6 +133,6 @@ try{
  assert.match(legacyVitrine,/<meta http-equiv="refresh" content="0;url=\/">/,'legacy /vitrine/ redirects to the canonical root');
  assert.match(legacyVitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'legacy redirect preserves query and hash');
  const p=await app.evaluate(()=>window.DAStorefrontPerf?.snapshot?.()||null);
- assert.ok(p?.firstCestasMs!==null && p?.firstCestasMs!==undefined,'first baskets mark must exist'); console.log('R6 synthetic browser paint:',JSON.stringify(p));
+ assert.ok(p?.firstCestasMs!==null && p?.firstCestasMs!==undefined,'first home size-card timing must be present in the snapshot'); console.log('R6 synthetic browser paint:',JSON.stringify(p));
  console.log('Basket storefront browser: one photo per basket, responsive grid, home and basket navigation passed');
 }finally{await browser.close()}
