@@ -3,7 +3,7 @@
   const MODULES={
     types:{label:'Tipos de cestas',src:'/vitrine/admin/basket-admin-types.js?v=20261023-1',global:'DonaAntoniaBasketAdminTypes'},
     quantities:{label:'Tipos e quantidades',src:'/vitrine/admin/basket-admin-quantities.js?v=20261023-1',global:'DonaAntoniaBasketAdminQuantities'},
-    carousel:{label:'Produtos do carrossel',src:'/vitrine/admin/basket-admin-carousel.js?v=20261023-1',global:'DonaAntoniaBasketAdminCarousel'}
+    carousel:{label:'Produtos do carrossel',src:'/vitrine/admin/basket-admin-carousel.js?v=20261023-2',global:'DonaAntoniaBasketAdminCarousel'}
   };
   const COMPATIBILITY_MODULES={
     kits:{label:'Receitas de kits (legado)',src:'/vitrine/admin/kit-builder.js?v=basket-products-v1',global:'DonaAntoniaKitBuilder'},
