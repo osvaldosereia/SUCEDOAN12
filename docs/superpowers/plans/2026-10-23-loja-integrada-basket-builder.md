@@ -103,7 +103,7 @@
 
 - [ ] **Step 1: Escrever testes de comportamento que falham**
   
-  Em tests/loja-integrada-basket-builder.test.mjs, criar testes Node nativos para: seleção dos cinco modelos; troca apenas por alternativa aprovada; incremento/decremento e limite de estoque; inclusão/remoção de extra; exibição apenas do total fornecido pela cotação; ausência de preço individual, ajuste ou campo de ajuste no estado/HTML do browser; falha fechada para dados de estoque/preço incompletos. A regra de uma única cotação e a exclusão de campos condicionais pertencem ao teste do adaptador server-side da Task 4.
+  Em tests/loja-integrada-basket-builder.test.mjs, criar testes Node nativos para: seleção de Cesta Mini, Cesta Econômica, Cesta Pequena, Cesta Média e Cesta Grande; troca apenas por alternativa aprovada; incremento/decremento e limite de estoque; inclusão/remoção de extra; exibição apenas do total fornecido pela cotação; ausência de preço individual, ajuste ou campo de ajuste no estado/HTML do browser; falha fechada para dados de estoque/preço incompletos. A regra de uma única cotação e a exclusão de campos condicionais pertencem ao teste do adaptador server-side da Task 4.
 
 - [ ] **Step 2: Executar os testes para confirmar falha**
   
