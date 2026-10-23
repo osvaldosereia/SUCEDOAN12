@@ -11,8 +11,10 @@ on:
       - 'scripts/test-basket-carousel-*.mjs'
       - 'scripts/test-basket-extra-carousel-scroll.mjs'
       - 'scripts/test-basket-storefront-*.mjs'
+      - 'scripts/test-storefront-mobile-r6-live-browser.mjs'
       - 'scripts/test-basket-unified-*.mjs'
       - 'scripts/test-home-basket-size-photos-v1.mjs'
+      - 'scripts/test-storefront-mobile-r6-live-browser.mjs'
       - '.github/workflows/basket-carousel-ci.yml'
   push:
     branches: [main]
