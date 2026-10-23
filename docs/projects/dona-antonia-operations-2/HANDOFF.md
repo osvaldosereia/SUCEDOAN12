@@ -1,5 +1,23 @@
 # Dona Antônia Operations 2.0 — HANDOFF
 
+## Checkpoint R21 — janela Admin1 e smoke read-only — 2026-10-23 07:02:40 UTC
+
+- Base consultada imediatamente antes da edição: `main` `f9cd3e93ce8e1faa7269748473dedec2bd2f723c`. PR #1269 está merged e seus documentos já estão na main; PRs #1321/R19 e #1322/R20 também estão merged. Não havia PR Admin1 aberta. Os 42 workflows associados à main retornaram `success` (42/42); os dois checks obrigatórios de #1322 passaram.
+- Observação de logs de Edge Functions, agregada e allowlisted, sem payload, headers, IP ou dados de cliente: consultas para 06:07:39–07:02:00 UTC e 07:02:00–07:02:40 UTC não retornaram linhas para nenhuma das duas rotas Admin1, inclusive no intervalo do smoke.
+- Projeto canônico `ssbesxgaijknwsjbsbcz`: ACTIVE_HEALTHY, sa-east-1, Postgres 17.6.1.166. `admin1-products-read-v1` continua ACTIVE v5, `verify_jwt=false`, SHA `6a2c730ddbab268c0f95c4b08a9a3f443bbfa8bf8745584ed21dd2cbd8f7aa51`; a fonte publicada continua respondendo 410 `legacy_endpoint_retired`. A função `admin-service-intelligence-v1` permanece ACTIVE v377, `verify_jwt=false`, SHA `543b00c23a468f361ce00c63a4ee81a537daed1a7e6f14cce33082e0676f5bb3`.
+- Projeto Admin1 separado `xaoeldjuxzsdsblimzxo`: ACTIVE_HEALTHY, sa-east-1, Postgres 17.11.0.003. `admin1-legacy-catalog-read-v1` continua ACTIVE v3, `verify_jwt=false`, SHA `5f9d03ed30d6b5d125de6693b82a7e86c154148cfd2baee292ffa1a3731d4ae6`; a fonte publicada continua respondendo 410 `legacy_endpoint_retired`.
+- Ledger Supabase canônica: 1.247 migrations; uma única linha para `allow_validated_hidden_basket_components`, versão `20261020230115`. Nenhuma migration foi aplicada nesta rodada. Nenhuma Edge Function, policy, grant, configuração ou dado foi alterado em qualquer projeto.
+- Smoke visual read-only em produção: `/` abriu com as cinco cestas; após recarregar, quatro ofertas foram renderizadas e o carrinho permaneceu vazio (`0 itens · R$ 0,00`). `/vitrine/admin/` abriu a Central e navegação. Admin e rotas permanecem no endereço atual. Não houve criação de pedido/checkout, envio de mensagem, emissão fiscal, chamada de estoque/Bling, pagamento ou efeito financeiro.
+- Check do runtime: `python3 scripts/build-vitrine-admin-runtime.py --check` passou: 9 fragmentos de origem, 638.778 caracteres. Foi executado somente para leitura no checkout local `agent/admin-runtime-contract-tests`, HEAD `fdad74b683d461b8581074f2c139332123cf5728`; havia alterações pré-existentes em testes/docs/workflow, preservadas. Nenhum arquivo do runtime foi modificado; a PR deste checkpoint é documental.
+- Arquivos: este HANDOFF e `IMPLEMENTATION-ROADMAP.md`. Commit-base `f9cd3e93ce8e1faa7269748473dedec2bd2f723c`; os novos commits estão no histórico da PR deste checkpoint. CI de main: 42/42 sucesso. A PR R21 executará seus próprios checks obrigatórios antes do merge.
+- Deploy/publicação: nenhuma publicação de código, Pages ou Supabase nesta rodada; o smoke confirmou o site/Admin existentes. O deploy R13 segue bloqueado pelo token `SUPABASE_ACCESS_TOKEN` inválido registrado em #39848977831. Não usei credencial alternativa nem tentei deploy.
+- Rollback: reverter os commits documentais R21. Não existe rollback de banco/runtime porque não houve mutação nesses sistemas.
+
+### Próxima tarefa exata
+
+Em/apos 2026-10-24 02:14:07.824 UTC, fechar a janela de 24h do proxy `admin1-legacy-catalog-read-v1` e atribuir qualquer caller, excluindo o GET 410 conhecido de smoke em 02:15:44.718 UTC. Em/apos 2026-10-24 03:20:07.529 UTC, fechar a janela do leitor canônico `admin1-products-read-v1` e atribuir qualquer caller. Manter ambos em 410 até as janelas concluírem. Separadamente, quando o proprietário renovar `SUPABASE_ACCESS_TOKEN`, executar preflight, publicar a instrumentação R13 já testada em `admin-service-intelligence-v1`, confirmar versão/hash e então analisar outcomes/502 agregados. Sem token renovado, não tentar publicação nem usar outra credencial.
+
+
 ## Checkpoint R20 — drift R13 confirmado e verificação pós-R19 — 2026-10-23 06:07:39 UTC
 
 - Base revalidada: `main` `fc50bead81bc87baaafbbf4c5a9e96324a7e676c`, squash da PR #1321. A PR #1321 está merged; os dois checks da PR passaram (`Admin service outcome telemetry CI` run #39909293923 e `Basket lot helper grant CI` run #39909293874). No push de main, 42/42 workflows terminaram com sucesso às 06:07 UTC.
