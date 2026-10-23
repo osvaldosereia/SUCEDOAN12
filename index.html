@@ -1278,7 +1278,7 @@
       quote.pending=true;quote.error=false;updateCheckoutSubmitState();
       try{
         const payload=item.split_mode?{basket_id:item.id,food_lot_id:item.food_lot_id,hygiene_lot_id:item.hygiene_lot_id,food_lot_code:item.food_lot_code,hygiene_lot_code:item.hygiene_lot_code,items:(item.components||[]).map(c=>({product_id:c.product_id,quantity:Number(c.quantity||0),component_group:c.component_group}))}:{basket_id:item.id,lot_id:item.lot_id,items:(item.components||[]).map(c=>({product_id:c.product_id,quantity:Number(c.quantity||0)}))};
-        const data=await basketApi(d,'basket_quote',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        const data=await api('basket_quote',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
         // Another adjustment or removal may have occurred before this HTTP response.
         if(!state.cart.includes(item)||checkoutQuoteStatus(item).revision!==revision)return false;
         if(!Number.isFinite(Number(data.total_cents))||Number(data.total_cents)<0)throw new Error('invalid_basket_quote');
