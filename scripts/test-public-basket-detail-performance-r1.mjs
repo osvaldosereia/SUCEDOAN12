@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 const root=fs.readFileSync('index.html','utf8');
 const api=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
-const sql=fs.readFileSync('supabase/migrations/20261023024649_public_basket_composition_stock_cache.sql','utf8');
+const sql=fs.readFileSync('supabase/migrations/20261023195656_public_basket_composition_set_based_stock.sql','utf8');
 const carousel=fs.readFileSync('vitrine/basket-carousel.js','utf8');
 
 const openStart=root.indexOf('async function openBasket(');
@@ -44,6 +44,9 @@ assert.ok(batchStart>=0,'batch composition SQL function exists');
 const batch=sql.slice(batchStart);
 assert.match(batch,/stock_candidates as\s*\([\s\S]*?\),\s*fresh_stock as materialized\s*\(/i,'fresh sellable stock is materialized once for distinct option products');
 assert.match(batch,/join fresh_stock fs on fs\.product_id = p\.id/i,'composition rows reuse one computed stock value per product');
-assert.doesNotMatch(batch,/basket_component_fresh_sellable_stock_v1\(p\.id\)/,'expensive scalar stock lookup is not repeated for every option row');
+assert.match(batch,/join public\.storefront_ean_sellable_stock_v1 s on s\.product_id = sc\.product_id/i,'candidate stock is read from the storefront stock view in one set-based join');
+assert.doesNotMatch(batch,/basket_component_fresh_sellable_stock_v1\(/,'basket composition avoids a per-candidate scalar stock function');
+assert.match(batch,/s\.stock_authority\s*=\s*'bling'[\s\S]*?s\.bling_stock_ready/i,'set-based stock keeps the Bling inventory-authority rules');
+assert.match(batch,/s\.ean_sellable_stock is not null[\s\S]*?s\.is_active/i,'set-based stock keeps EAN overrides and active-product fallback rules');
 
 console.log('public basket detail performance contract: PASS');
