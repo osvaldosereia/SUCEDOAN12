@@ -816,6 +816,39 @@
       });
       return {baskets,categories:STATIC_CATEGORIES,basket_categories:[{id:categoryId,slug:'cestas-completas',name:'Cestas Completas',subcategories}]};
     }
+    let basketPreviewPrefetchPromise=null;
+    async function prefetchBasketPreviews(){
+      if(basketPreviewPrefetchPromise)return basketPreviewPrefetchPromise;
+      const cards=state.home?.baskets||[];
+      if(cards.length&&cards.every(card=>Array.isArray(card.carousel_items)&&card.carousel_items.length))return;
+      basketPreviewPrefetchPromise=(async()=>{
+        try{
+          const catalog=await api('home');
+          const category=(catalog.basket_categories||[]).find(group=>String(group.slug||'')==='cestas-completas');
+          if(!category||!Array.isArray(catalog.baskets))return;
+          const previews=new Map(homeBasketSizeCards(catalog.baskets,category).map(card=>[card.size_key,card]));
+          let changed=false;
+          state.home.baskets=(state.home.baskets||[]).map(card=>{
+            const preview=previews.get(card.size_key||normalizeBasketSizeName(card.name));
+            if(!preview||!Array.isArray(preview.carousel_items)||!preview.carousel_items.length)return card;
+            changed=true;
+            return {...card,carousel_items:preview.carousel_items.slice(0,BASKET_INITIAL_RENDER_COUNT),display_price_cents:preview.display_price_cents,image_url:preview.image_url||card.image_url,stock_quantity:preview.stock_quantity,availability_reason:preview.availability_reason,mold_mode:preview.mold_mode===true};
+          });
+          if(changed)writeCache(HOME_CACHE_KEY,state.home);
+        }catch(error){
+          console.warn('basket-preview-prefetch',error?.message||error);
+        }finally{
+          basketPreviewPrefetchPromise=null;
+        }
+      })();
+      return basketPreviewPrefetchPromise;
+    }
+    function scheduleBasketPreviewPrefetch(){
+      const schedule=window.requestIdleCallback
+        ?callback=>window.requestIdleCallback(callback,{timeout:1800})
+        :callback=>window.setTimeout(callback,250);
+      schedule(()=>void prefetchBasketPreviews());
+    }
     function normalizeBasketSizeName(value){return String(value||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR')}
     function homeBasketSubcategories(group){
       const subcategories=Array.isArray(group?.subcategories)?group.subcategories:[];
@@ -962,6 +995,14 @@
       if('IntersectionObserver'in window){d.progressObserver=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting))loadNext()},{root:sheetBody,rootMargin:'160px 0px'});d.progressObserver.observe(sentinel)}
       else{d.progressFallback=()=>{if(sentinel.getBoundingClientRect().top<sheetBody.getBoundingClientRect().bottom+160)loadNext()};sheetBody.addEventListener('scroll',d.progressFallback,{passive:true})}
     }
+    function rememberBasketPreview(card,basket,items){
+      if(card?.home_shell!==true||!card?.size_key)return;
+      const index=(state.home.baskets||[]).findIndex(item=>String(item.size_key||'')===String(card.size_key));
+      if(index<0)return;
+      const current=state.home.baskets[index];
+      state.home.baskets[index]={...current,carousel_items:items.slice(0,BASKET_INITIAL_RENDER_COUNT),display_price_cents:basket.display_price_cents,image_url:basket.image_url||current.image_url,stock_quantity:basket.stock_quantity,availability_reason:basket.availability_reason,mold_mode:basket.mold_mode===true};
+      writeCache(HOME_CACHE_KEY,state.home);
+    }
     function basketOpeningPreview(id){
       const cached=(state.home?.baskets||[]).find(b=>String(b.card_key||b.id)===String(id));
       const items=(cached?.carousel_items||[]).slice(0,BASKET_INITIAL_RENDER_COUNT);
@@ -1005,6 +1046,7 @@
         const data=await api(action,params,{signal:controller.signal});
         if(requestId!==state.sheetSeq||!overlay.classList.contains('open'))return;
         if(!data?.basket||!Array.isArray(data.items))throw new Error('invalid_basket_response');
+        rememberBasketPreview(cachedBasket,data.basket,data.items);
         state.basketDraft={basket:data.basket,items:data.items.map(x=>({...x,base_quantity:Number(x.base_quantity??x.quantity??0),quantity:Number(x.quantity??0)})),renderedItemCount:BASKET_INITIAL_RENDER_COUNT,extras:(data.extras||[]).map(x=>({...x,products:x.products||[]})),addedExtras:[],openExtraThemes:[],loadingExtraThemes:[],total_cents:Number(data.basket.display_price_cents||0),quoteTimer:null,quoteRevision:0,quotePending:false,quoteError:false,optionPending:false,traceId,requests:new Set(),optionQueue:[],optionLoadsActive:0};
         paintBasketSheet();
         loadMoldOptions(0,state.basketDraft);
@@ -1359,6 +1401,7 @@
       applyMarketingEntryContext();
       void resolveEntryWhatsappPhone().then(phone=>{state.whatsappPhone=phone;if(phone){const d=phoneDigits(phone).replace(/^55/,'');if(d.length===11){state.checkoutDdd=d.slice(0,2);state.checkoutPhone=d.slice(2)}}}).catch(()=>{state.whatsappPhone=''});
       paintCart();
+      scheduleBasketPreviewPrefetch();
     }
     start();
   })();
