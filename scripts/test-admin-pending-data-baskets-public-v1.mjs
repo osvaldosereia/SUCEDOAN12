@@ -25,6 +25,8 @@ assert.ok(adminRuntime.includes('if(orderCustomerDataPending(o))'),'Próxima aç
 
 for(const [name,html] of [['index.html',root]]){
   assert.ok(html.includes('function basketCard('),`${name}: deve continuar renderizando cartões de cesta`);
+  assert.ok(html.includes('order_public_url'),`${name}: checkout deve usar o link público curto retornado pelo backend`);
+  assert.ok(html.includes('order_public_code'),`${name}: checkout deve exibir o código público curto do pedido`);
 }
 const basketCarousel=fs.readFileSync('vitrine/basket-carousel.js','utf8');
 const carouselContext={
@@ -43,9 +45,6 @@ const homeShellMarkup=carouselContext.window.BasketCarousel.card(
 assert.ok(homeShellMarkup.includes('Ver produtos'),'home size shell should keep its primary action');
 assert.doesNotMatch(homeShellMarkup,/basket-card-item-total|basket-price-amount|class="price"|98\.76|773/,
   'home size shell must not expose composition count, price or stock');
-  assert.ok(html.includes('order_public_url'),`${name}: checkout deve usar o link público curto retornado pelo backend`);
-  assert.ok(html.includes('order_public_code'),`${name}: checkout deve exibir o código público curto do pedido`);
-}
 assert.match(vitrine,/rel="canonical" href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
 assert.match(vitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'/vitrine/ must preserve query and hash while redirecting');
 
