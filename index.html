@@ -1275,7 +1275,7 @@
       const unavailable=[];
       for(const item of basketItems){
         try{
-          await basketApi(d,'basket_mold_quote',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({basket_id:item.id,composition_number:Number(item.composition_number||1),items:(item.components||[]).map(component=>({position_id:component.position_id,product_id:component.product_id}))})});
+          await api('basket_mold_quote',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({basket_id:item.id,composition_number:Number(item.composition_number||1),items:(item.components||[]).map(component=>({position_id:component.position_id,product_id:component.product_id}))})});
         }catch(error){
           if(!invalidCodes.has(error?.message))throw error;
           unavailable.push(item);
