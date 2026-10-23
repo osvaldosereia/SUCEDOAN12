@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
+import { moldFirstAvailableOption, moldProductIdsForRead } from "./basket-lightweight.js";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const KEY=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
@@ -263,8 +264,7 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
   if(selections&&requested.size!==positions.length)throw new Error("basket_mold_component_invalid");
   // On lightweight basket/detail/quote, read the selected SKUs only.
   // Full alternative product names, pictures and prices are read by moldPositionOptions upon a click.
-  const selectedIds=positions.map((pos:any)=>requested.get(String(pos.id))?.product_id||defaultSelected.get(String(pos.id))||"").filter(Boolean);
-  const readIds=includeAlternatives?productIds:selectedIds;
+  const readIds=moldProductIdsForRead(positions,options,requested,defaultSelected,includeAlternatives);
   // Optional theme headers are independent of inventory and can load concurrently.
   const legacyExtras=Array.isArray(mold.metadata?.optional_items)?mold.metadata.optional_items:[];
   const [products,available,extras]=await Promise.all([moldProductsMap(readIds),moldAvailableStockMap(readIds),publicBasketExtraThemes(legacyExtras)]);
@@ -281,14 +281,19 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
         const p=productsMap.get(productId),stock=stockMap.get(productId)||0;
         return p&&stock>=qty?{product_id:p.id,name:p.name,sku:p.sku,gtin:p.gtin,image_url:p.image_url||"",packaging:p.packaging||"",stock_quantity:stock,price_cents:moldEffectivePriceCents(p)}:null;
       };
-      let selected=buildSelected(products,available,selectedId);
-      // Inventory changed after the composition was generated: find a sellable fallback
-      // only for this unavailable position, rather than loading every brand upfront.
+      let selected=selectedId?buildSelected(products,available,selectedId):null;
+      // Fill positions omitted from the generated composition using only their own options.
+      // For an unavailable saved default, re-read every option only for that position.
       if(!selected&&!selections){
-        const [fallbackProducts,fallbackStock]=await Promise.all([moldProductsMap(candidateIds),moldAvailableStockMap(candidateIds)]);
-        const fallbacks=candidateIds.map((id:string)=>buildSelected(fallbackProducts,fallbackStock,id)).filter(Boolean) as any[];
-        fallbacks.sort((a:any,b:any)=>Number(a.price_cents||0)-Number(b.price_cents||0)||String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));
-        selected=fallbacks[0]||null;
+        if(selectedId){
+          const [fallbackProducts,fallbackStock]=await Promise.all([moldProductsMap(candidateIds),moldAvailableStockMap(candidateIds)]);
+          const fallbacks=candidateIds.map((id:string)=>buildSelected(fallbackProducts,fallbackStock,id)).filter(Boolean) as any[];
+          fallbacks.sort((a:any,b:any)=>Number(a.price_cents||0)-Number(b.price_cents||0)||String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));
+          selected=fallbacks[0]||null;
+        }else{
+          const fallback=moldFirstAvailableOption(linkedOptions,products,available,qty);
+          if(fallback)selected=buildSelected(products,available,String(fallback.id));
+        }
       }
       if(!selected){if(selections)throw new Error("basket_mold_option_invalid");return null}
       productTotal+=Math.round(Number(selected.price_cents)*qty);
