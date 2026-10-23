@@ -44,8 +44,8 @@ assert.equal(configuredFallback.id, 'first-choice', 'the composition remains vis
 
 import { readFile } from 'node:fs/promises';
 const [publicPage, edge] = await Promise.all([
-  readFile(new URL('../../../index.html', import.meta.url), 'utf8'),
-  readFile(new URL('./index.ts', import.meta.url), 'utf8')
+  readFile(new URL('../index.html', import.meta.url), 'utf8'),
+  readFile(new URL('../supabase/functions/storefront-v2/index.ts', import.meta.url), 'utf8')
 ]);
 const prefetchStart = publicPage.indexOf('function prefetchBasketPreviews(){');
 const prefetchEnd = publicPage.indexOf('function scheduleBasketPreviewPrefetch()', prefetchStart);
