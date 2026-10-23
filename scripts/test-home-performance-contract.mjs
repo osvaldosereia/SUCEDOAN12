@@ -15,6 +15,7 @@ assert.doesNotMatch(start,/api\('home_priority'\)|api\('home'\)/,'homepage must 
 assert.match(start,/home_size_cards/,'accept only the dedicated lightweight response');
 assert.match(start,/writeCache\(HOME_CACHE_KEY,state\.home\)/,'cache the accepted lightweight home payload');
 assert.match(start,/performance\.mark/,'home load performance markers must exist');
+assert.match(page,/firstCestasMs:performance\.getEntriesByName\('da-home-size-cards'\)/,'first basket timing reads the current lightweight cards marker');
 assert.match(page,/home-loading-status[^\n]*Preparando suas cestas/,'mobile loading status must be understandable');
 const storefrontApi=page.slice(page.indexOf('async function api('),page.indexOf('async function productExtra('));
 assert.match(storefrontApi,/retryableRead/,'safe catalog reads must retry transient failures');
