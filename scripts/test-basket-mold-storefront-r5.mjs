@@ -88,20 +88,21 @@ assert.match(second,/data-product-id="oeste" role="option" aria-selected="true"/
 assert.match(second,/basket-selected-product-price[\s\S]*?<strong>599<\/strong>/,'changing the selected option updates the unit price');
 
 
-const variants=Array.from({length:12},(_,i)=>({product_id:'product-'+i,name:'Marca '+i,image_url:'/test-'+i+'.webp',packaging:'1 kg',price_cents:1200-i*70,stock_quantity:100}));
-const unsortedItem={...sample,product_id:'product-11',alternatives:variants};
+const variants=Array.from({length:12},(_,i)=>({product_id:'product-'+i,name:'Marca '+i,image_url:'/test-'+i+'.webp',packaging:'1 kg',price_cents:1200-i*70,stock_quantity:100,sort_order:i}));
+const configuredPage=[...variants.slice(0,9),variants[11]];
+const unsortedItem={...sample,product_id:'product-11',alternatives:configuredPage};
 const tenHtml=renderMoldRow(unsortedItem,0,true);
 assert.equal((tenHtml.match(/data-mold-option-choice="0"/g)||[]).length,10,'at most ten available options');
 assert.match(tenHtml,/class="basket-option-carousel-track"/,'horizontal carousel track');
 assert.doesNotMatch(tenHtml,/data-mold-option-arrow=/,'the carousel supports touch scrolling without arrow controls');
 assert.match(tenHtml,/data-mold-option-track="0"/,'preserve scroll offset on quote');
 const ids=[...tenHtml.matchAll(/data-product-id="(product-\d+)" role="option"/g)].map(m=>m[1]);
-assert.deepEqual(ids,Array.from({length:10},(_,i)=>'product-'+(11-i)),'ten alternatives must appear cheapest first');
-assert.match(tenHtml,/data-product-id="product-11" role="option" aria-selected="true"/,'the lowest-priced in-stock option is selected first');
-assert.doesNotMatch(tenHtml,/data-product-id="product-0" role="option"/,'the 11th and 12th expensive options are not visible');
+assert.deepEqual(ids,[...Array.from({length:9},(_,i)=>'product-'+i),'product-11'],'ten alternatives must follow admin order while keeping the selected product visible');
+assert.match(tenHtml,/data-product-id="product-11" role="option" aria-selected="true"/,'the selected in-stock product stays selected when included after the first nine admin positions');
+assert.doesNotMatch(tenHtml,/data-product-id="product-9" role="option"|data-product-id="product-10" role="option"/,'options beyond the first ten configured entries stay hidden unless one is already selected');
 assert.match(root,/scroll-snap-type:x mandatory/,'carousel must support touch scroll snapping');
 assert.match(root,/carouselScroll=new Map/,'requoting must retain user carousel scroll position');
-assert.match(api,/publicAlts=alts\.slice\(0,10\)/,'API exposes the ten cheapest available options');
+assert.match(api,/publicAlts=alts\.slice\(0,10\)/,'API exposes the first ten available options in administrator order');
 assert.match(api,/const readIds=includeAlternatives\?productIds:selectedIds/,'initial lightweight response reads selected products only');
 assert.match(api,/alternatives_loaded:false,alternatives:\[\]/,'lightweight response excludes alternatives');
 assert.match(api,/action==="basket_mold_options"/,'separate lazy options route');
