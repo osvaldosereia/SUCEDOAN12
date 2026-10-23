@@ -22,10 +22,11 @@ function validate({known=false, phone='(65) 99982-8360', date='2026-10-24', paym
     documentElement:{},
     head:{appendChild(){}},
   };
-  const window = {fetch:async()=>new Response('{}'),setTimeout:()=>0};
+  const requests=[];
+  const window = {fetch:async(url,options)=>{requests.push({url:String(url),options});return new Response('{}')},setTimeout:()=>0};
   const context = {window,document,MutationObserver:class{observe(){}},URL,Response,Set,clearTimeout(){}};
   vm.runInNewContext(resilience,context);
-  return {checkout:window.__DA_CHECKOUT_RESILIENCE__,context,fields};
+  return {checkout:window.__DA_CHECKOUT_RESILIENCE__,context,fields,requests};
 }
 
 for (const known of [false,true]) {
@@ -38,15 +39,11 @@ assert.ok(validate({phone:''}).checkout.validateCheckoutBasics().issues.some(iss
 assert.ok(validate({date:''}).checkout.validateCheckoutBasics().issues.some(issue=>issue.id==='checkoutDeliveryDate'),'delivery date remains required');
 assert.ok(validate({payment:false}).checkout.validateCheckoutBasics().issues.some(issue=>issue.id==='payment'),'payment method remains required');
 
-const requestBodies=[];
 const requestHarness=validate();
-requestHarness.context.window.fetch=async()=>new Response('{}');
-const realFetch=requestHarness.context.window.fetch;
-const request=async(url,options)=>{requestBodies.push({url,body:JSON.parse(options.body)});return new Response('{}')};
-requestHarness.context.window.fetch=request;
 await requestHarness.context.window.fetch('https://example.test/functions/v1/storefront-v2?action=submit_order',{method:'POST',body:JSON.stringify({items:[{type:'product',id:'x',qty:1}]})});
-assert.equal(requestBodies[0].body.checkout_registration,undefined,'checkout must not make customer registration a prerequisite to submitting an order');
-assert.equal(requestBodies[0].body.whatsapp_phone,'+5565999828360','valid WhatsApp must be attached for manual follow-up');
+const submitted=JSON.parse(requestHarness.requests[0].options.body);
+assert.equal(submitted.checkout_registration,undefined,'checkout must not make customer registration a prerequisite to submitting an order');
+assert.equal(submitted.whatsapp_phone,'+5565999828360','valid WhatsApp must be attached for manual follow-up');
 
 assert.match(store,/confirmaremos[^<]{0,100}WhatsApp|WhatsApp[^<]{0,100}confirmaremos/i,'checkout must explain that registration is completed after the order');
 assert.ok(fs.existsSync(migrationPath),'forward migration must relax the active database trigger');
