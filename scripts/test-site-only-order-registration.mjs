@@ -33,9 +33,9 @@ assert.ok(!storefront.includes('Confirmar este endereço'), 'saved address must 
 assert.ok(storefront.includes('Trocar endereço'), 'saved address must offer one clear edit action');
 assert.match(storefront, /state\.addressConfirmed=data\.found&&data\.customer\?\.registration_complete===true/, 'complete saved address must be accepted automatically');
 assert.ok(storefront.includes('CPF'), 'optional registration CPF field must remain available');
-assert.match(storefront, /Seu WhatsApp <span class="muted">\(opcional\)<\/span>/, 'WhatsApp must remain optional');
-assert.match(storefront, /Data de entrega <span class="muted">\(opcional\)<\/span>/, 'delivery date must remain optional');
-assert.match(storefront, /Como você vai pagar\? <span class="muted">\(opcional\)<\/span>/, 'payment must remain optional');
+assert.match(storefront, /WhatsApp para contato \(obrigatório\)/, 'checkout must identify WhatsApp as required');
+assert.match(storefront, /Data de entrega \(obrigatória\)/, 'checkout must identify delivery date as required');
+assert.match(storefront, /Como você vai pagar\? <span class="muted">\(obrigatório\)<\/span>/, 'checkout must identify payment as required');
 assert.ok(storefront.includes('customer_register'), 'optional canonical registration endpoint required');
 assert.ok(storefront.includes('delivery_options'), 'optional delivery choices endpoint required');
 assert.match(legacyVitrine,/rel="canonical" href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
