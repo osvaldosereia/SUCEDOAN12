@@ -2,6 +2,8 @@
 
 ## Checkpoint R21 — observação incremental Admin1 — 2026-10-23 07:02:40 UTC
 
+- Commits de conteúdo deste checkpoint: HANDOFF `d3065c98c6254fb7ee9695a65ab333231658befe`; roadmap `ea1dfc4646058ebd9dae66043c54e4e678b77246`.
+
 - Branch `agent/admin1-observation-r21-0702-20261023`, baseada no SHA mais recente de `main` consultado antes da edição: `f9cd3e93ce8e1faa7269748473dedec2bd2f723c`. PR #1269, #1321 e #1322 estão merged; os 42 workflows associados à main passaram e não havia PR Admin1 aberta.
 - Duas consultas somente leitura e agregadas de logs (06:07:39–07:02:00 e 07:02:00–07:02:40 UTC) retornaram zero linhas para `admin1-products-read-v1` em `ssbesxgaijknwsjbsbcz` e `admin1-legacy-catalog-read-v1` em `xaoeldjuxzsdsblimzxo`, inclusive no período do smoke. As duas funções seguem ACTIVE e respondem 410; manter esse estado até completar as janelas de 24h e atribuir eventuais callers.
 - Revalidado projeto canônico ACTIVE_HEALTHY, 1.247 migrations (uma linha alvo `20261020230115`), funções v5 e v377; projeto Admin1 separado ACTIVE_HEALTHY, função proxy v3. Nenhuma migration, função, configuração, RLS/grant ou dado alterado. A publicação R13 segue bloqueada por `SUPABASE_ACCESS_TOKEN` inválido; nenhuma credencial alternativa foi usada.
