@@ -10,10 +10,11 @@ new vm.Script([...page.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)[1],{fil
 const start=page.slice(page.indexOf('async function start(){'),page.indexOf('\n    start();'));
 assert.ok(start.indexOf('renderInitialShell()')<start.indexOf('resolveEntryWhatsappPhone()'),'initial shell must render before identity lookup');
 assert.match(start,/void resolveEntryWhatsappPhone\(\)\.then/,'identity lookup cannot block public catalog');
-assert.match(start,/await api\('home_size_cards'\)/,'homepage must request the lightweight basket cards payload');
-assert.doesNotMatch(start,/api\('home_priority'\)|api\('home'\)/,'homepage must not load the full basket catalog on initial entry');
-assert.match(start,/home_size_cards/,'accept only the dedicated lightweight response');
-assert.match(start,/writeCache\(HOME_CACHE_KEY,state\.home\)/,'cache the accepted lightweight home payload');
+assert.doesNotMatch(start,/api\('home_size_cards'\)|api\('home_priority'\)|api\('home'\)/,'cold homepage must not wait for a basket catalog request');
+assert.match(start,/homeSizeShell/,'cold homepage must build its five cards from local shell data');
+assert.match(page,/async function loadHomeSizeCardForOpen\(id\)/,'basket IDs are resolved lazily by size when a card is opened');
+assert.match(page,/await loadHomeSizeCardForOpen\(id\)/,'basket detail flow resolves the selected static card before loading its products');
+assert.match(page,/writeCache\(HOME_CACHE_KEY,state\.home\)/,'cache the lightweight basket IDs after the first card click');
 assert.match(start,/performance\.mark/,'home load performance markers must exist');
 assert.match(page,/firstCestasMs:performance\.getEntriesByName\('da-home-size-cards'\)/,'first basket timing reads the current lightweight cards marker');
 assert.match(page,/home-loading-status[^\n]*Preparando suas cestas/,'mobile loading status must be understandable');
