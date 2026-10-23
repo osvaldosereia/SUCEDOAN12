@@ -30,8 +30,8 @@ const groupFactory=new Function('esc','basketCard',page.slice(start,end)+'return
 const records=groupFactory(v=>String(v).replaceAll('&','&amp;').replaceAll('"','&quot;'),(b,i)=>'<article data-card="'+b.id+'" data-index="'+i+'"></article>');
 const grande={id:'large',name:'Grande'};
 const mini={id:'small',name:'Mini'};
-const initial=[{id:'complete',name:'Cestas Completas',subcategories:[grande]}];
-const complete=[{id:'complete',name:'Cestas Completas',subcategories:[grande,mini]}];
+const initial=[{id:'complete',slug:'cestas-completas',name:'Cestas Completas',subcategories:[grande]}];
+const complete=[{id:'complete',slug:'cestas-completas',name:'Cestas Completas',subcategories:[grande,mini]}];
 const largeBasket={id:'big',category_id:'complete',subcategory_id:'large',display_price_cents:9500,carousel_items:[{name:'Arroz'}]};
 const smallBasket={...largeBasket,id:'small',subcategory_id:'small'};
 const initialRecords=records([largeBasket],initial);
