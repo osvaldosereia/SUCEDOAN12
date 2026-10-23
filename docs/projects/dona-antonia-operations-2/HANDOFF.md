@@ -2,6 +2,8 @@
 
 ## Checkpoint R21 — janela Admin1 e smoke read-only — 2026-10-23 07:02:40 UTC
 
+- Commits de conteúdo deste checkpoint: HANDOFF `d3065c98c6254fb7ee9695a65ab333231658befe`; roadmap `ea1dfc4646058ebd9dae66043c54e4e678b77246`.
+
 - Base consultada imediatamente antes da edição: `main` `f9cd3e93ce8e1faa7269748473dedec2bd2f723c`. PR #1269 está merged e seus documentos já estão na main; PRs #1321/R19 e #1322/R20 também estão merged. Não havia PR Admin1 aberta. Os 42 workflows associados à main retornaram `success` (42/42); os dois checks obrigatórios de #1322 passaram.
 - Observação de logs de Edge Functions, agregada e allowlisted, sem payload, headers, IP ou dados de cliente: consultas para 06:07:39–07:02:00 UTC e 07:02:00–07:02:40 UTC não retornaram linhas para nenhuma das duas rotas Admin1, inclusive no intervalo do smoke.
 - Projeto canônico `ssbesxgaijknwsjbsbcz`: ACTIVE_HEALTHY, sa-east-1, Postgres 17.6.1.166. `admin1-products-read-v1` continua ACTIVE v5, `verify_jwt=false`, SHA `6a2c730ddbab268c0f95c4b08a9a3f443bbfa8bf8745584ed21dd2cbd8f7aa51`; a fonte publicada continua respondendo 410 `legacy_endpoint_retired`. A função `admin-service-intelligence-v1` permanece ACTIVE v377, `verify_jwt=false`, SHA `543b00c23a468f361ce00c63a4ee81a537daed1a7e6f14cce33082e0676f5bb3`.
