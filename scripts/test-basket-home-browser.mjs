@@ -125,7 +125,7 @@ try{
  assert.equal(await app.locator('#cartBadge').innerText(),'1');
  await app.locator('#cartTop').click();
  await app.locator('#checkoutTotal').waitFor();
- assert.ok((await app.locator('#sheetBody').innerText()).includes('Cesta exemplo'));
+ assert.ok((await app.locator('#sheetBody').innerText()).includes('Mini'));
  assert.equal(quoteCount,1,'basket edit should quote exactly once');
  assert.deepEqual(errors,[],'no JavaScript errors during basket edit and checkout navigation');
  assert.ok(!storefrontActions.includes('home')&&!storefrontActions.includes('home_priority'),'initial home must not fetch the full basket catalog');
