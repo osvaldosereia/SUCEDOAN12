@@ -53,6 +53,7 @@ try{
  assert.equal(await app.locator('.basket-size-card-photo img').count(),1,'a vitrine mostra só uma foto por cesta');
  await app.locator('[data-basket]').click();await app.locator('#addBasket').waitFor();
  assert.ok((await app.locator('#sheetBody').innerText()).includes('Produto 1'));assert.deepEqual(errors,[]);
+ assert.match(html,/firstCestasMs:performance\.getEntriesByName\('da-home-size-cards'\)/,'home cards use the current performance marker');
  assert.ok(html.includes('BasketCarousel.mount('),'canonical root mounts the basket carousel');
  assert.ok(html.includes('da_storefront_home_carousel_v1'),'canonical root loads the public basket data');
  assert.ok(html.includes('/vitrine/basket-carousel.js?v='),'canonical root loads its carousel asset');
