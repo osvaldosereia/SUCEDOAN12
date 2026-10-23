@@ -50,7 +50,9 @@ for(const source of [publicRoot]){
   assert.match(source,/basketCategory/,'public site must track the active Cesta\/Kit category');
   assert.match(source,/category_slug/,'basket cards must be filtered by their Cesta\/Kit category');
   assert.match(source,/Cestas e Kits/,'public heading must use the unified name');
-  assert.match(source,/data-basket-category/,'public site must render category controls for Cestas\/Kits');
+  assert.match(source,/data-category=/,'public site must retain public product category controls');
+  assert.match(source,/data-category-label=/,'public category buttons must include accessible labels');
+  assert.match(source,/renderCategory\(btn\.dataset\.category/,'public product category controls must keep their render handler');
   assert.match(source,/Itens do kit/,'kit composition must not be mislabeled as food');
   assert.match(source,/basketGroupTitle\(group,b\)/,'composition label must consider the commercial category');
 }
