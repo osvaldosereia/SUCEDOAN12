@@ -35,6 +35,7 @@ import { readFileSync } from 'node:fs';
 const read = path => readFileSync(new URL(path, import.meta.url), 'utf8');
 const section = read('../vitrine/admin/basket-admin-section.js');
 const migration = read('../supabase/migrations/20261023120000_basket_admin_three_tabs.sql');
+const quantityFix = read('../supabase/migrations/20261023160000_basket_quantity_save_merge_duplicates.sql');
 const gateway = read('../supabase/functions/admin-basket-configuration-v1/index.ts');
 const storefront = read('../supabase/functions/storefront-v2/index.ts');
 const tabNames = [...section.matchAll(/data-basket-config-tab="([^"]+)"/g)].map(match => match[1]);
