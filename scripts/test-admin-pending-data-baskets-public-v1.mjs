@@ -25,8 +25,24 @@ assert.ok(adminRuntime.includes('if(orderCustomerDataPending(o))'),'Próxima aç
 
 for(const [name,html] of [['index.html',root]]){
   assert.ok(html.includes('function basketCard('),`${name}: deve continuar renderizando cartões de cesta`);
-  assert.ok(html.includes('function basketPublicAvailabilityLabel('),`${name}: deve ter regra explícita de disponibilidade pública`);
-  assert.ok(html.includes("function basketPublicAvailabilityLabel(){return ''}"),`${name}: não deve mostrar quantidade numérica de cesta ao cliente`);
+}
+const basketCarousel=fs.readFileSync('vitrine/basket-carousel.js','utf8');
+const carouselContext={
+  window:{},location:{href:'https://donaantonia.com.br/'},URL,history:{replaceState(){}},
+  localStorage:{getItem(){return null},removeItem(){},setItem(){}},
+  sessionStorage:{getItem(){return null},setItem(){}},document:{addEventListener(){}},console,Date,setTimeout
+};
+vm.runInNewContext(basketCarousel,carouselContext,{filename:'vitrine/basket-carousel.js'});
+const homeShellMarkup=carouselContext.window.BasketCarousel.card(
+  {id:'home-shell-mini',name:'Mini',size_key:'mini',size_card:true,home_shell:true,total_item_count:12,display_price_cents:9876,stock_quantity:773},
+  value=>String(value??''),
+  value=>'R$ '+(Number(value)/100).toFixed(2),
+  value=>String(value??''),
+  0
+);
+assert.ok(homeShellMarkup.includes('Ver produtos'),'home size shell should keep its primary action');
+assert.doesNotMatch(homeShellMarkup,/basket-card-item-total|basket-price-amount|class="price"|98\.76|773/,
+  'home size shell must not expose composition count, price or stock');
   assert.ok(html.includes('order_public_url'),`${name}: checkout deve usar o link público curto retornado pelo backend`);
   assert.ok(html.includes('order_public_code'),`${name}: checkout deve exibir o código público curto do pedido`);
 }
