@@ -839,7 +839,7 @@
           });
           state.home={...state.home,...data,baskets};
           writeCache(HOME_CACHE_KEY,state.home);
-          renderHome();
+          if(state.view==='home')renderHome();
           return true;
         }catch(error){
           console.warn('basket-size-card-resolution',error?.message||error);
