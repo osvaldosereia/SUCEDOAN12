@@ -55,6 +55,6 @@ assert.doesNotMatch(migration,/registration_incomplete|cpf_cnpj|customer_address
 const submit=submitSource.match(/async function submit\(req:Request,p:any\)\{[\s\S]*?\n\}/)?.[0]||'';
 assert.ok(submit,'storefront submit handler must exist');
 assert.doesNotMatch(submit,/registration_incomplete|customer\.registration_complete!==true/,'incomplete customer registration must not reject an order');
-assert.match(submit,/customerStatus=customer\?"registered":"pending_registration"/,'orders without a completed registration must be marked for follow-up');
+assert.match(submit,/customerStatus=customer\?\.registration_complete===true\?"registered":"pending_registration"/,'orders without a completed registration must be marked for follow-up');
 
 console.log('checkout accepts pending customer registration and preserves operational requirements: PASS');
