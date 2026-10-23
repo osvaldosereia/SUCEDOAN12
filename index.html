@@ -816,6 +816,10 @@
       });
       return {baskets,categories:STATIC_CATEGORIES,basket_categories:[{id:categoryId,slug:'cestas-completas',name:'Cestas Completas',subcategories}]};
     }
+    function resolvedHomeBasketKey(card){
+      const key=String(card?.resolved_card_key||card?.card_key||'');
+      return /^[0-9a-f-]{36}@[1-6]$/i.test(key)?key:'';
+    }
     let basketPreviewPrefetchPromise=null;
     async function prefetchBasketPreviews(){
       if(basketPreviewPrefetchPromise)return basketPreviewPrefetchPromise;
@@ -826,7 +830,13 @@
         try{
           await Promise.all(pending.map(async card=>{
             try{
-              const data=await api('basket_by_size',{size_key:card.size_key,lightweight:1});
+              const resolvedKey=resolvedHomeBasketKey(card),resolveHomeSize=!resolvedKey;
+              const traceId=globalThis.crypto?.randomUUID?.()||('bp-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10));
+              const action=resolveHomeSize?'basket_by_size':'basket';
+              const params=resolveHomeSize
+                ?{size_key:card.size_key,lightweight:1,trace_id:traceId}
+                :{basket_id:resolvedKey,lightweight:1,trace_id:traceId};
+              const data=await api(action,params);
               if(data?.basket&&Array.isArray(data.items))rememberBasketPreview(card,data.basket,data.items);
             }catch(error){
               console.warn('basket-preview-prefetch',card.size_key,error?.message||error);
@@ -995,7 +1005,9 @@
       const index=(state.home.baskets||[]).findIndex(item=>String(item.size_key||'')===String(card.size_key));
       if(index<0)return;
       const current=state.home.baskets[index];
-      state.home.baskets[index]={...current,carousel_items:items.slice(0,BASKET_INITIAL_RENDER_COUNT),display_price_cents:basket.display_price_cents,image_url:basket.image_url||current.image_url,stock_quantity:basket.stock_quantity,availability_reason:basket.availability_reason,mold_mode:basket.mold_mode===true};
+      const basketId=String(basket?.id||''),composition=Number(basket?.composition_number||1);
+      const resolvedCardKey=basket?.mold_mode===true&&/^[0-9a-f-]{36}$/i.test(basketId)&&Number.isInteger(composition)&&composition>=1&&composition<=6?basketId+'@'+composition:current.resolved_card_key||'';
+      state.home.baskets[index]={...current,resolved_card_key:resolvedCardKey,carousel_items:items.slice(0,BASKET_INITIAL_RENDER_COUNT),display_price_cents:basket.display_price_cents,image_url:basket.image_url||current.image_url,stock_quantity:basket.stock_quantity,availability_reason:basket.availability_reason,mold_mode:basket.mold_mode===true};
       writeCache(HOME_CACHE_KEY,state.home);
     }
     function basketOpeningPreview(id){
@@ -1035,10 +1047,14 @@
       openSheet(basketName(cachedBasket?.name||'Cesta básica'),basketOpeningPreview(id),basketOpeningActionPreview(id));
       const requestId=state.sheetSeq;
       try{
-        // The home card already carries the canonical template@composition key.
-        // Pass it directly and skip re-reading category, size and template metadata.
-        const basketId=cachedBasket?.home_shell===true?String(cachedBasket.card_key||id):id;
-        const data=await api('basket',{basket_id:basketId,lightweight:1,trace_id:traceId},{signal:controller.signal});
+        const resolvedBasketKey=resolvedHomeBasketKey(cachedBasket);
+        const resolveHomeSize=cachedBasket?.home_shell===true&&!resolvedBasketKey;
+        const basketId=resolvedBasketKey||id;
+        const action=resolveHomeSize?'basket_by_size':'basket';
+        const params=resolveHomeSize
+          ?{size_key:cachedBasket.size_key,lightweight:1,trace_id:traceId}
+          :{basket_id:basketId,lightweight:1,trace_id:traceId};
+        const data=await api(action,params,{signal:controller.signal});
         if(requestId!==state.sheetSeq||!overlay.classList.contains('open'))return;
         if(!data?.basket||!Array.isArray(data.items))throw new Error('invalid_basket_response');
         rememberBasketPreview(cachedBasket,data.basket,data.items);
