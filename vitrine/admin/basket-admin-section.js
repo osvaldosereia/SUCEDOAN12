@@ -5,6 +5,10 @@
     quantities:{label:'Tipos e quantidades',src:'/vitrine/admin/basket-admin-quantities.js?v=20261023-1',global:'DonaAntoniaBasketAdminQuantities'},
     carousel:{label:'Produtos do carrossel',src:'/vitrine/admin/basket-admin-carousel.js?v=20261023-1',global:'DonaAntoniaBasketAdminCarousel'}
   };
+  const COMPATIBILITY_MODULES={
+    kits:{label:'Receitas de kits (legado)',src:'/vitrine/admin/kit-builder.js?v=basket-products-v1',global:'DonaAntoniaKitBuilder'},
+    store:{label:'Operação de lotes antigos',src:'/vitrine/admin/store-baskets-builder.js?v=component-edit-v1',global:'DonaAntoniaStoreBaskets'}
+  };
   const DEPENDENCIES=[
     {src:'/vitrine/admin/basket-admin-domain.js?v=20261023-1',global:'DonaAntoniaBasketAdminDomain'},
     {src:'/vitrine/admin/basket-admin-api.js?v=20261023-1',global:'DonaAntoniaBasketAdminApi'}
@@ -55,15 +59,15 @@
     state.loaders.set(config.global,promise);promise.catch(()=>state.loaders.delete(config.global));return promise;
   }
   async function activate(){
-    const root=host();if(!root)return;const config=MODULES[state.tab]||MODULES.types;paintTabState();
+    const root=host();if(!root)return;const config=MODULES[state.tab]||COMPATIBILITY_MODULES[state.tab]||MODULES.types;paintTabState();
     const workspace=root.querySelector('[data-basket-config-workspace]');if(!workspace)return;
     const generation=++state.generation;workspace.innerHTML='<div class="basket-config-loading">Carregando '+config.label+'…</div>';
     try{const module=await loadModule(config);if(generation!==state.generation)return;await module.open(workspace)}
     catch(error){if(generation!==state.generation)return;workspace.innerHTML='<div class="basket-config-error"><strong>Não consegui carregar '+config.label+'.</strong><br><small>Atualize a página ou tente novamente.</small><br><button type="button" data-basket-config-retry>Tentar novamente</button></div>';workspace.querySelector('[data-basket-config-retry]')?.addEventListener('click',()=>void activate());toast('Não consegui carregar '+config.label+'.')}
   }
-  async function setTab(tab){state.tab=Object.hasOwn(MODULES,tab)?tab:'types';await activate()}
+  async function setTab(tab){state.tab=Object.hasOwn(MODULES,tab)||Object.hasOwn(COMPATIBILITY_MODULES,tab)?tab:'types';await activate()}
   async function render(){if(!host())return;renderShell();await activate()}
-  async function refresh(){if(!host())return;const config=MODULES[state.tab]||MODULES.types;const module=window[config.global];const workspace=host().querySelector('[data-basket-config-workspace]');if(module&&workspace){await module.open(workspace);return}await activate()}
+  async function refresh(){if(!host())return;const config=MODULES[state.tab]||COMPATIBILITY_MODULES[state.tab]||MODULES.types;const module=window[config.global];const workspace=host().querySelector('[data-basket-config-workspace]');if(module&&workspace){await module.open(workspace);return}await activate()}
   window.DonaAntoniaBasketAdmin={state,render,refresh,setTab};
 })();
 (() => {
