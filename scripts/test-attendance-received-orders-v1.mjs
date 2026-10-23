@@ -6,6 +6,7 @@ const migration=fs.readFileSync('supabase/migrations/20261012184500_attendance_r
 const app=fs.readFileSync('vitrine/admin/atendimento/attendance-app.js','utf8');
 const page=fs.readFileSync('vitrine/admin/atendimento/index.html','utf8');
 const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const adminRuntime=fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
 const css=fs.readFileSync('vitrine/admin/atendimento/attendance.css','utf8');
 
 assert.match(migration,/o\.status='storefront_received'/,'use the exact status of Recebidos');
@@ -24,9 +25,9 @@ assert.match(app,/function syncReceivedOrderButton\(/,'button state must follow 
 assert.match(app,/window\.open\('\/vitrine\/admin\/\?pedido='/,'deep link to existing Admin');
 assert.match(page,/id="openReceivedOrderBtn" hidden/,'no order button for ordinary conversations');
 assert.match(css,/\.queue-card\.received-order-priority/,'distinct color highlight');
-assert.match(admin,/params\.get\('pedido'\)/,'Admin supports direct order view');
-assert.match(admin,/await openOrder\(directOrderId\)/,'Admin opens the actual order');
-assert.match(admin,/state\.orderStatusTab='received'/,'Admin keeps context of Recebidos');
+assert.match(adminRuntime,/params\.get\('pedido'\)/,'Admin supports direct order view');
+assert.match(adminRuntime,/await openOrder\(directOrderId\)/,'Admin opens the actual order');
+assert.match(adminRuntime,/state\.orderStatusTab='new'/,'Admin opens direct order links within a valid four-stage tab');
 const scripts=[...admin.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]).filter(Boolean);
 scripts.forEach((text,i)=>new vm.Script(text,{filename:'admin-inline-'+i+'.js'}));
 new vm.Script(app.replace(/^import[^\n]*\n/gm,''),{filename:'attendance-app.js'});
