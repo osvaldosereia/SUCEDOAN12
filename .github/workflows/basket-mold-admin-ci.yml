@@ -4,6 +4,11 @@ on:
     paths:
       - 'vitrine/admin/basket-admin-section.js'
       - 'vitrine/admin/basket-mold-admin.js'
+      - 'vitrine/admin/basket-admin-*.js'
+      - 'supabase/functions/admin-basket-configuration-v1/**'
+      - 'supabase/functions/storefront-v2/index.ts'
+      - 'supabase/migrations/20261023120000_basket_admin_three_tabs.sql'
+      - 'scripts/test-basket-admin-three-tabs.mjs'
       - 'supabase/functions/admin-basket-molds-v1/**'
       - 'supabase/sql/20261006_basket_mold_admin_v1.sql'
       - 'supabase/migrations/20261006070000_basket_mold_admin_v1.sql'
@@ -36,6 +41,7 @@ jobs:
         with:
           node-version: '24'
       - run: node scripts/test-basket-mold-admin-v1.mjs
+      - run: node scripts/test-basket-admin-three-tabs.mjs
       - run: node scripts/test-basket-mold-conditional-hidden-v1.mjs
       - run: npm install --prefix "$RUNNER_TEMP/basket-mold-admin-tests" --no-save --package-lock=false playwright@1.62.1
       - run: node "$RUNNER_TEMP/basket-mold-admin-tests/node_modules/playwright/cli.js" install --with-deps chromium
