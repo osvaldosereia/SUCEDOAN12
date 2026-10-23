@@ -1024,8 +1024,10 @@
       const cachedBasket=(state.home?.baskets||[]).find(b=>String(b.card_key||b.id)===String(id));
       openSheet(basketName(cachedBasket?.name||'Cesta básica'),basketOpeningPreview(id),basketOpeningActionPreview(id));
       const requestId=state.sheetSeq;
+      let basketId=id;
       try{
-        const basketId=await loadHomeSizeCardForOpen(id);
+        basketId=await loadHomeSizeCardForOpen(id);
+        if(requestId!==state.sheetSeq||!overlay.classList.contains('open'))return;
         const data=await api('basket',{basket_id:basketId,lightweight:1});
         if(requestId!==state.sheetSeq||!overlay.classList.contains('open'))return;
         if(!data?.basket||!Array.isArray(data.items))throw new Error('invalid_basket_response');
@@ -1035,7 +1037,7 @@
         if(requestId!==state.sheetSeq||!overlay.classList.contains('open'))return;
         sheetBody.innerHTML='<div class="empty">Não consegui abrir esta cesta agora. Verifique a conexão e tente novamente.</div>';
         sheetAction.innerHTML='<button class="primary" type="button" id="retryBasket">Tentar novamente</button>';
-        $('#retryBasket').onclick=()=>openBasket(id);
+        $('#retryBasket').onclick=()=>openBasket(basketId);
       }
     }
     function basketGroupTitle(group,basket){const slug=String(basket?.category_slug||'');if(group==='food')return slug.startsWith('kits-')?'Itens do kit':'Alimentos';return group==='hygiene'?'Limpeza e higiene':'Itens da cesta'}
