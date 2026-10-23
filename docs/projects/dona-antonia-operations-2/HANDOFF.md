@@ -1,5 +1,21 @@
 # Dona Antônia Operations 2.0 — HANDOFF
 
+## Checkpoint R23 — observação Admin1 e smoke somente leitura — 2026-10-23 09:00:54 UTC
+
+- Base consultada antes da branch: `main` `1fa2dc3a52d5cce4914b1c772ed5338729862890`. PRs #1325 e #1326 estão merged; os checks dedicados da main do SHA atual passaram (2/2). Não há PR aberta identificada com Admin1 no título ou branch.
+- Em consultas somente leitura, usei campos allowlisted `function_id`, `version`, `request.method` e `response.status_code`. No intervalo contínuo 08:05:08–09:00:54 UTC (duas sub-janelas contíguas), não houve linhas para `admin1-products-read-v1` no projeto canônico nem para `admin1-legacy-catalog-read-v1` no projeto separado. A segunda sub-janela inclui o smoke. Não li corpos, buscas, headers, IPs, URLs completos nem dados de clientes.
+- Supabase canônico `ssbesxgaijknwsjbsbcz`: ACTIVE_HEALTHY, sa-east-1, PostgreSQL 17.6.1.166. `admin1-products-read-v1` continua ACTIVE v5, `verify_jwt=false`, SHA `6a2c730ddbab268c0f95c4b08a9a3f443bbfa8bf8745584ed21dd2cbd8f7aa51`, retornando 410 `legacy_endpoint_retired`. `admin-service-intelligence-v1` permanece ACTIVE v377, SHA `543b00c23a468f361ce00c63a4ee81a537daed1a7e6f14cce33082e0676f5bb3`.
+- O projeto separado `xaoeldjuxzsdsblimzxo` também está ACTIVE_HEALTHY, sa-east-1, PostgreSQL 17.11.0.003. `admin1-legacy-catalog-read-v1` permanece ACTIVE v3, `verify_jwt=false`, SHA `5f9d03ed30d6b5d125de6693b82a7e86c154148cfd2baee292ffa1a3731d4ae6`, retornando 410. Essas são as únicas funções com prefixo `admin1-` encontradas nos dois projetos; ambas foram preservadas.
+- Runtime: `python3 scripts/build-vitrine-admin-runtime.py --check` passou — 9 fragmentos, 638.778 caracteres. O checkout local continua em `agent/admin-runtime-contract-tests`, HEAD `fdad74b683d461b8581074f2c139332123cf5728`, com alterações locais anteriores em testes/docs/workflow; foram preservadas e o check não escreveu arquivos.
+- Smoke de leitura em produção, às 09:00 UTC: `/` exibiu as cinco cestas; quatro ofertas carregaram após a atualização assíncrona e o carrinho ficou em `0 itens · R$ 0,00`. `/vitrine/admin/` abriu a Central e sua navegação. Rotas preservadas; nenhum pedido, mensagem, emissão fiscal, operação de estoque/Bling ou pagamento foi iniciado.
+- Alteração desta rodada: somente este HANDOFF e o roadmap, na branch `agent/admin1-observation-r23-0900-20261023` criada do SHA `1fa2dc3a52d5cce4914b1c772ed5338729862890`. Nenhuma migration, função, configuração, policy, grant ou dado foi alterado nos projetos Supabase. Nenhum deploy Pages/runtime/Supabase é necessário para este checkpoint documental. Checks do PR atual devem passar antes da integração normal.
+- R13 permanece sem publicação: o workflow #39848977831 falhou pelo secret inválido `SUPABASE_ACCESS_TOKEN`; a renovação do valor depende do proprietário. Nenhuma credencial alternativa foi usada nem houve tentativa de deploy.
+- Rollback: reverter o merge documental; sem rollback de aplicação ou Supabase.
+
+### Próxima tarefa exata
+
+Após 2026-10-24 02:14:07.824 UTC, concluir a janela de 24h de `admin1-legacy-catalog-read-v1`, desconsiderando o GET 410 de smoke já identificado em 02:15:44.718 UTC, e atribuir qualquer chamada adicional. Após 03:20:07.529 UTC, fechar a janela de `admin1-products-read-v1` e atribuir qualquer caller. Manter ambos em 410 até a análise. Quando o proprietário renovar `SUPABASE_ACCESS_TOKEN`, executar preflight e publicar R13 pelo fluxo normal; conferir versão/hash antes de avaliar os erros 502 agregados. Não usar credenciais alternativas.
+
 ## Checkpoint R22 — observação Admin1 e smoke read-only — 2026-10-23 08:05:08 UTC
 
 - Base consultada imediatamente antes da branch: `main` `50399ef8ade9f6a7db8ad6373077eb0a2a203cc1`. PR #1269, #1323 e #1324 estão merged; documentos do roadmap original estão na main. Os 42 workflows do SHA mais recente da main retornaram sucesso (42/42); não havia PR Admin1 aberta.
