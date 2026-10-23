@@ -9,7 +9,7 @@ const orders = fs.readFileSync('supabase/functions/admin-orders-v1/index.ts', 'u
 
 for (const site of [rootSite]) {
   assert.ok(site.includes('Finalizar pedido'), 'checkout final CTA must remain Finalizar pedido');
-  assert.ok(site.includes('/checkout-resilience.js?v=20261001'), 'public checkout must load resilient stock handling');
+  assert.ok(site.includes('/checkout-resilience.js?v=20261023-1'), 'public checkout must load resilient stock handling');
   assert.ok(site.includes('Até 10:59') && site.includes('A partir das 11h'), 'visible delivery cutoff must be 11:00 Cuiaba');
 }
 assert.match(vitrineSite,/rel="canonical" href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
