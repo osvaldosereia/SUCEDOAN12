@@ -1,6 +1,8 @@
 # Dona Antônia Operations 2.0 — IMPLEMENTATION ROADMAP
 
 ## Checkpoint R22 — janela incremental Admin1 — 2026-10-23 08:05:08 UTC
+- Finalização verificada: conteúdo em #1325, commits `54804fffbd5fdffbe575dd857f53194dea48e883` e `7e5a13e3f2b3a35bd6dcf8cbc7ed7e4e11dbced5`; checks PR `verify`/run `39922307804` e `contract`/run `39922307745` success. Squash merge em `e5746f2e35fced371e7059bd10f35b41d7dbbb93` (`main` revalidada nesse SHA). Os dois workflows de push da main — `Basket lot helper grant CI` #39922384228 e `Admin service outcome telemetry CI` #39922384081 — success. Como só documentação mudou, nenhum deploy Pages/runtime/Supabase era necessário; smoke read-only de `/` e `/vitrine/admin/` passou. Rollback: reverter o merge documental; próximo gate: janelas de 24h e renovação do token owner, detalhadas no HANDOFF.
+
 
 - Branch `agent/admin1-observation-r22-0805-20261023`, criada a partir do SHA atual `50399ef8ade9f6a7db8ad6373077eb0a2a203cc1`. PRs #1269, #1323 e #1324 estão merged; 42/42 workflows da main e os checks obrigatórios anteriores passaram; não havia PR Admin1 aberta.
 - Consultas agregadas allowlisted (07:02:40–08:04:22 e 08:04:22–08:05:08 UTC) retornaram zero eventos para `admin1-products-read-v1` no projeto `ssbesxgaijknwsjbsbcz` e `admin1-legacy-catalog-read-v1` no projeto `xaoeldjuxzsdsblimzxo`. As duas funções seguem ACTIVE e respondem 410; preservar até fechar as janelas de 24h e atribuir eventuais callers.
