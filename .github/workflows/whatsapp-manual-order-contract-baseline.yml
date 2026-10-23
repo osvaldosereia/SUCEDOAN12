@@ -1,0 +1,30 @@
+name: WhatsApp manual order contract baseline
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/admin-products-live-v1/index.ts'
+      - 'vitrine/admin/index.html'
+      - 'scripts/test-manual-whatsapp-order-contract-characterization.mjs'
+      - '.github/workflows/whatsapp-manual-order-contract-baseline.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Manual WhatsApp order characterization (no production access)
+        run: node scripts/test-manual-whatsapp-order-contract-characterization.mjs
+      - name: Existing orders clean flow contract
+        run: node scripts/test-admin-orders-clean-flow-v3.mjs
+      - name: Existing fiscal and delivery contract
+        run: node scripts/test-admin-orders-fiscal-flow-v4.mjs
+      - name: Existing WhatsApp order integration contract
+        run: node scripts/test-admin-order-whatsapp-ui-integration.mjs
