@@ -1,5 +1,15 @@
 # Dona Antônia Operations 2.0 — IMPLEMENTATION ROADMAP
 
+## Checkpoint R22 — janela incremental Admin1 — 2026-10-23 08:05:08 UTC
+
+- Branch `agent/admin1-observation-r22-0805-20261023`, criada a partir do SHA atual `50399ef8ade9f6a7db8ad6373077eb0a2a203cc1`. PRs #1269, #1323 e #1324 estão merged; 42/42 workflows da main e os checks obrigatórios anteriores passaram; não havia PR Admin1 aberta.
+- Consultas agregadas allowlisted (07:02:40–08:04:22 e 08:04:22–08:05:08 UTC) retornaram zero eventos para `admin1-products-read-v1` no projeto `ssbesxgaijknwsjbsbcz` e `admin1-legacy-catalog-read-v1` no projeto `xaoeldjuxzsdsblimzxo`. As duas funções seguem ACTIVE e respondem 410; preservar até fechar as janelas de 24h e atribuir eventuais callers.
+- Estado Supabase revalidado: canônico ACTIVE_HEALTHY, 1.247 migrations e uma entrada alvo `20261020230115`; projeto legado separado ACTIVE_HEALTHY. Funções Admin1 v5 e v3; função Admin de inteligência v377. Nenhuma migration, função, configuração, policy, grant ou dado alterado. R13 permanece aguardando renovação do `SUPABASE_ACCESS_TOKEN`.
+- Smoke read-only de `/`: cinco cestas, quatro ofertas após o carregamento e carrinho vazio. `/vitrine/admin/`: Central e navegação acessíveis. O runtime passou em `python3 scripts/build-vitrine-admin-runtime.py --check` (9 fragmentos, 638.778 caracteres); checkout local preexistente com alterações fora do runtime preservado.
+- Arquivos modificados: HANDOFF e este roadmap. Nenhuma publicação ou deploy necessário, pois não houve mudança de app/runtime/banco. Rollback: reverter somente os commits documentais deste checkpoint.
+- Próxima tarefa: fechar a janela do proxy legado após 2026-10-24 02:14:07.824 UTC; fechar a janela do leitor canônico após 03:20:07.529 UTC; identificar callers antes de qualquer remoção. Manter 410 até lá. Com token R13 renovado, fazer preflight e publicação normal, confirmar versão/hash e analisar telemetria por ação/status/classe.
+
+
 ## Checkpoint R21 — observação incremental Admin1 — 2026-10-23 07:02:40 UTC
 
 - Commits de conteúdo deste checkpoint: HANDOFF `d3065c98c6254fb7ee9695a65ab333231658befe`; roadmap `ea1dfc4646058ebd9dae66043c54e4e678b77246`.
