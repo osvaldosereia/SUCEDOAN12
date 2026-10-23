@@ -54,6 +54,7 @@ jobs:
           node scripts/test-checkout-simple-ux.mjs
           node scripts/test-checkout-customer-capture-v1.mjs
           node --disable-warning=ExperimentalWarning scripts/test-checkout-existing-registration.mjs
+          node scripts/test-checkout-existing-missing-document.mjs
           node --disable-warning=ExperimentalWarning scripts/test-checkout-whatsapp-payload-audit.mjs
           node --disable-warning=ExperimentalWarning scripts/test-checkout-address-reference.mjs
           node --disable-warning=ExperimentalWarning scripts/test-admin-stock-readiness-pagination.mjs
