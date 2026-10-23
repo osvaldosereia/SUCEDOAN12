@@ -22,7 +22,7 @@ assert.match(src,/async function submit\(/,'order submission remains dynamic');
 assert.match(src,/offer_priority:p\.metadata\?\.offer_source/,'expiry offers must remain enabled');
 
 const fns=src.slice(src.indexOf('function isValidPublicHome('),src.indexOf('function keepHomeInMemory('))
-  .replace(/:any\b|:boolean\b/g,'');
+  .replace(/:any\b|:boolean\b/g,'').replace(/\s+as any\b/g,'');
 assert.ok(fns.includes('function priorityFromPublicHome'),'extract the same production priority selector');
 const pure=vm.runInNewContext(fns+';({isValidPublicHome,priorityFromPublicHome})');
 const full={
