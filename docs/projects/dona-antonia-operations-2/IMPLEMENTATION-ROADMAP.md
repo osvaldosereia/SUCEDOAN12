@@ -1,4 +1,14 @@
-# Dona Antônia Operations 2.0 — IMPLEMENTATION ROADMAP
+## Checkpoint R25 — limpeza do storefront público — 2026-10-23 10:16 UTC
+
+- Base pré-código `e904b468e666f217bd662ec91ced95c9dfad3f3b`; PR #1330 merged por squash em `9453acd081cec936e2b30ff377bacd87da1c0e5e`. Commits: `afee2482322e72be787d9c9192ed5a1f25f0a6e7`, `2d09902eb3a83335cf02cf5763944356c2fc1777`. PR: https://github.com/osvaldosereia/SUCEDOAN12/pull/1330.
+- Feito em `index.html` e `scripts/test-marketing-intelligence-contract.py`: removidos somente `buildMarketingSignals`, `marketingInterestForProduct`, `MARKETING_CTA_PRIORITY` e props `signal` sem referência ativa no client. Preservados captura de entrada/campanha/canal, `marketing_context` no checkout e cálculo canônico em `supabase/functions/admin-orders-v1/index.ts`. Nenhuma rota mudou: o Admin permanece em `/vitrine/admin/`. HTML reduziu 2.177 bytes; gzip -9, 732 bytes.
+- Verificações locais PASS: `test-marketing-intelligence-contract.py`, `test-home-performance-contract.mjs`, `test-basket-carousel-service.mjs`, `test-checkout-order-meta-cutover-v1.mjs`, runtime `build-vitrine-admin-runtime.py --check` (9 fragmentos/640.167 caracteres) e `git diff --check`. O teste de marketing foi conduzido em TDD. O script opcional `test-papoai-order-signal-bridge-v1.mjs` falha por procurar um dispatcher ausente em main; o contrato de cutover ativo passa e exige não reenfileirar os sinais PapoAI. O lote não alterou backend; reconciliar os testes numa tarefa própria.
+- Gates da PR #1330: 8/8 workflows success (incluindo Basket kit editor #39936700088, concluído success 10:16:30 UTC). Na main após merge, 41/42 success, sem failures; Basket product carousel #39937410187 ainda in progress em 10:16:53 UTC. Integração ocorreu pelo merge normal com o SHA esperado.
+- Smoke publicado read-only: https://donaantonia.com.br/?r25_check=20261023T1011Z confirmou ausência do helper e presença de captura/envio do contexto. `/` exibiu cinco tamanhos de cesta, quatro ofertas e carrinho vazio; `/vitrine/admin/` carregou Central/navegação. Sem pedidos, checkout sintético, mensagens, efeitos Bling/estoque, NF-e ou pagamentos.
+- Supabase alvo conferido: canônico `ssbesxgaijknwsjbsbcz`; nenhuma migration/função/configuração/RLS/grant/dado foi mudado nem publicado. Funções Admin1 seguem 410; R13 segue bloqueado pelo secret `SUPABASE_ACCESS_TOKEN` inválido (run #39848977831). Última consulta agregada permitida (09:06–10:03:41 UTC, anterior ao merge) registrou zero chamadas às duas funções Admin1.
+- Rollback: reverter merge `9453acd081cec936e2b30ff377bacd87da1c0e5e`; não há rollback Supabase.
+- Próxima tarefa: manter as funções Admin1 em 410; após 2026-10-24 02:14:07.824 UTC fechar a janela de 24h do proxy `admin1-legacy-catalog-read-v1` e atribuir callers, excluindo só o GET smoke já conhecido de 02:15:44.718 UTC; após 03:20:07.529 UTC fazer o mesmo para `admin1-products-read-v1`. Retomar R13 somente depois de renovar o secret pelo proprietário e fazer preflight. Não mover o Admin de `/vitrine/admin/`.
+
 
 ## Checkpoint R24 — janela incremental Admin1 e smoke read-only — 2026-10-23 09:06:00 UTC
 
