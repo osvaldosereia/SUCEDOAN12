@@ -309,6 +309,7 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
   if(capacity<1)return null;const conditionalHidden=mold.conditional_hidden_enabled===true&&mold.conditional_hidden_product_id&&items.some((i:any)=>String(i.product_id)===String(mold.conditional_hidden_product_id)&&Number(i.quantity??i.base_quantity??0)>0)?cents(mold.conditional_hidden_adjustment||0):0;return {basket:{id:basket.id,name:String(basket.name).replace(/\s+Completa$/i,""),image_url:basket.image_url||"",mold_mode:true,mold_id:mold.id,composition_number:compositionNumber,public_composition_count:Number(mold.public_composition_count||1),hidden_adjustment_cents:cents(mold.hidden_adjustment||0),conditional_hidden_enabled:mold.conditional_hidden_enabled===true,conditional_hidden_product_id:mold.conditional_hidden_product_id||null,conditional_hidden_adjustment_cents:cents(mold.conditional_hidden_adjustment||0),conditional_hidden_applied_cents:conditionalHidden,display_price_cents:Math.max(0,productTotal+cents(mold.hidden_adjustment||0)+conditionalHidden),stock_quantity:capacity},items,extras};
 }
 // Read the available brands of one basket position only when requested by the customer.
+function compareMoldPositionOptionOrder(a:any,b:any){return Number(a.sort_order||0)-Number(b.sort_order||0)||String(a.product_id||'').localeCompare(String(b.product_id||''))}
 async function moldPositionOptions(basketId:string,compositionNumber:number,positionId:string,selectedProductId:string,requestedQuantity:number,offset:number){
   const id=uid(basketId),position=uid(positionId),selectedId=uid(selectedProductId);
   if(!id||!position||!Number.isInteger(compositionNumber)||compositionNumber<1||compositionNumber>6)return {error:"invalid_basket_mold_options",status:400};
@@ -331,11 +332,11 @@ async function moldPositionOptions(basketId:string,compositionNumber:number,posi
     const p=products.get(String(row.product_id)),available=stock.get(String(row.product_id))||0;
     return p&&available>=qty?{product_id:p.id,name:p.name,sku:p.sku,gtin:p.gtin,image_url:p.image_url||"",packaging:p.packaging||"",stock_quantity:available,price_cents:moldEffectivePriceCents(p),sort_order:Number(row.sort_order||0)}:null;
   }).filter(Boolean) as any[];
-  alternatives.sort((a:any,b:any)=>Number(a.sort_order||0)-Number(b.sort_order||0)||String(a.product_id||"").localeCompare(String(b.product_id||"")));
+  alternatives.sort(compareMoldPositionOptionOrder);
   const safeOffset=Math.max(0,Math.min(Math.trunc(offset||0),Math.max(0,alternatives.length-1))),shown=alternatives.slice(safeOffset,safeOffset+10),selected=alternatives.find((a:any)=>String(a.product_id)===selectedId);
   if(selected&&safeOffset===0&&shown.length>0&&!shown.some((a:any)=>String(a.product_id)===selectedId)){
     shown[shown.length-1]=selected;
-    shown.sort((a:any,b:any)=>Number(a.price_cents||0)-Number(b.price_cents||0)||String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));
+    shown.sort(compareMoldPositionOptionOrder);
   }
   return {ok:true,alternatives:shown,alternative_count:alternatives.length,offset:safeOffset,next_offset:safeOffset+shown.length<alternatives.length?safeOffset+shown.length:null};
 }
