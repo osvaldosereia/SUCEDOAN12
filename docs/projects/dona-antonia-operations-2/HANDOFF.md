@@ -1,3 +1,5 @@
+# Dona Antônia Operations 2.0 — HANDOFF
+
 ## Checkpoint R25 — limpeza do classificador de marketing sem uso no storefront — 2026-10-23 10:16 UTC
 
 - Objetivo: remover somente o classificador e propriedades de marketing que não tinham callers no JavaScript público. O contrato ativo de contexto de entrada, canal, captura de campanha e envio de `marketing_context` no checkout foi preservado. O cálculo de interesses, marcas, CTA e campanha continua no backend canônico `supabase/functions/admin-orders-v1/index.ts`. A rota Admin continua em `/vitrine/admin/`; nenhuma rota ou aplicação paralela foi criada.
