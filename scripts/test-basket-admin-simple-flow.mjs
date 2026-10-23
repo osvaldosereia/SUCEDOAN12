@@ -7,6 +7,7 @@ const require=createRequire(import.meta.url);
 const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
 const adminUi=readAdminUiSource();
 const section=fs.readFileSync('vitrine/admin/basket-admin-section.js','utf8');
+const bridges=fs.readFileSync('vitrine/admin/admin-feature-bridges.js','utf8');
 const orderVisualSource=fs.readFileSync('vitrine/admin/orders-visual-v1.js','utf8');
 const orderVisual=require('../vitrine/admin/orders-visual-v1.js');
 
@@ -26,8 +27,8 @@ assert.doesNotMatch(section,/basket_commercial_admin|basket_commercial_create|ca
 for(const label of ['Novo lote','Duplicar','Pausar venda','Retomar venda','Imprimir','Excluir modelo'])assert.doesNotMatch(section,new RegExp(label),label+' must stay out of normal operation');
 assert.doesNotMatch(section,/openBasketKitAdmin|startBasketKitLotDraft|paintBasketKitAdmin|kitLotRow|DonaAntoniaBasketGuided/,'simple section must not route into legacy/guided editors');
 
-assert.match(section,/orders-visual-v1\.js\?v=20261005-1/,'admin runtime must keep loading the order status visual enhancer');
-assert.match(section,/data-orders-visual-v1/,'order visual enhancer must be loaded at most once');
+assert.match(bridges,/orders-visual-v1\.js\?v=20261005-1/,'admin feature bridge must keep loading the order status visual enhancer');
+assert.match(bridges,/data-orders-visual-v1/,'order visual enhancer must be loaded at most once');
 assert.equal(orderVisual.resolveState(['CONFIRMADO']),'confirmed','confirmed order must receive the green separation cue');
 assert.equal(orderVisual.resolveState(['CONFIRMADO','SEPARADO']),'separated','separated order must switch to orange cue');
 assert.equal(orderVisual.resolveState(['CONFIRMADO','SEPARADO','ENTREGUE']),'neutral','delivered order must clear separation cue');

@@ -38,8 +38,26 @@ const migration = read('../supabase/migrations/20261023120000_basket_admin_three
 const quantityFix = read('../supabase/migrations/20261023160000_basket_quantity_save_merge_duplicates.sql');
 const gateway = read('../supabase/functions/admin-basket-configuration-v1/index.ts');
 const storefront = read('../supabase/functions/storefront-v2/index.ts');
+const publicSite = read('../index.html');
+const adminIndex = read('../vitrine/admin/index.html');
+const featureBridges = read('../vitrine/admin/admin-feature-bridges.js');
 const tabNames = [...section.matchAll(/data-basket-config-tab="([^"]+)"/g)].map(match => match[1]);
 assert.deepEqual(tabNames, ['types', 'quantities', 'carousel']);
+for (const globalScript of [
+  'orders-visual-v1.js',
+  'store-baskets-ops-overview.js',
+  'product-basket-link-cutover.js',
+  'baskets-operational-polish.js'
+]) {
+  assert.equal(section.includes(globalScript), false, `basket config must not own the unrelated ${globalScript} loader`);
+  assert.ok(featureBridges.includes(globalScript), `feature bridge entry point must own ${globalScript}`);
+}
+assert.ok(adminIndex.includes('admin-feature-bridges.js'), 'admin entry point must load cross-feature bridges separately');
+assert.ok(storefront.includes('async function basketBySize(sizeKey:string)'));
+assert.ok(storefront.includes('const detail=await moldDetail(match[1],Number(match[2]),null,false)'));
+assert.ok(storefront.includes('action==="basket_by_size"'));
+assert.ok(publicSite.includes("const action=isHomeShell?'basket_by_size':'basket'"));
+assert.ok(publicSite.includes("if(!data?.basket||!Array.isArray(data.items))"));
 assert.ok(migration.includes("('Doação',0,null::text)"));
 assert.ok(migration.includes("('Família',6,null::text)"));
 assert.ok(migration.includes('enable row level security'));
