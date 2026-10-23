@@ -1,0 +1,42 @@
+import assert from 'node:assert/strict';
+import { moldFirstAvailableOption, moldProductIdsForRead } from '../supabase/functions/storefront-v2/basket-lightweight.js';
+
+const positions = [{id:'selected'}, {id:'defaulted'}, {id:'unconfigured'}];
+const options = [
+  {position_id:'selected', product_id:'selected-product', sort_order:0},
+  {position_id:'selected', product_id:'selected-alternative', sort_order:1},
+  {position_id:'defaulted', product_id:'default-product', sort_order:0},
+  {position_id:'unconfigured', product_id:'first-choice', sort_order:0},
+  {position_id:'unconfigured', product_id:'second-choice', sort_order:1}
+];
+const requested = new Map();
+const defaults = new Map([['selected','selected-product'],['defaulted','default-product']]);
+
+assert.deepEqual(
+  moldProductIdsForRead(positions, options, requested, defaults, false),
+  ['selected-product','default-product','first-choice','second-choice'],
+  'lightweight detail reads selected products plus alternatives only for positions without a saved default'
+);
+assert.deepEqual(
+  moldProductIdsForRead(positions, options, requested, defaults, true),
+  ['selected-product','selected-alternative','default-product','first-choice','second-choice'],
+  'full detail still reads every carousel option'
+);
+assert.deepEqual(
+  moldProductIdsForRead(positions, options, new Map([['selected',{product_id:'requested-product'}]]), defaults, false),
+  ['requested-product','default-product','first-choice','second-choice'],
+  'a customer selection replaces the saved default for that position'
+);
+
+const products = new Map([
+  ['first-choice',{id:'first-choice'}],
+  ['second-choice',{id:'second-choice'}]
+]);
+const stock = new Map([['first-choice',0],['second-choice',4]]);
+assert.equal(
+  moldFirstAvailableOption(options.slice(3), products, stock, 2).id,
+  'second-choice',
+  'an unconfigured position chooses the first option in admin order that meets requested quantity'
+);
+assert.equal(moldFirstAvailableOption(options.slice(3), products, stock, 5), null);
+console.log('storefront basket lightweight defaults: PASS');
