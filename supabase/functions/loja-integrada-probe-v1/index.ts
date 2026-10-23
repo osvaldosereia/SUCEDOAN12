@@ -91,36 +91,70 @@ Deno.serve(async (req: Request) => {
   if (lockError || !locked) return send(409, { ok: false, error: "already_processed" });
 
   let outcome: Record<string, unknown>;
-  const token = Deno.env.get("LI_PERSONAL_TOKEN")?.trim().replace(/^Basic\s+/i, "") || "";
+  const token = Deno.env.get("LI_PERSONAL_TOKEN")?.trim().replace(/^Basic\\s+/i, "") || "";
+  const expectedHost = "dona-antonia-1.lojaintegrada.com.br";
+
   if (!token) {
     outcome = { ok: false, error: "li_token_not_configured" };
   } else {
-    const path = job.action === "categories" ? "/v1/categoria" : "/v1/produto";
-    const upstream = new URL(path, "https://api.awsli.com.br");
-    const { limit, offset } = pagination(job.args ?? {});
-    upstream.searchParams.set("limit", String(job.action === "status" ? 1 : limit));
-    upstream.searchParams.set("offset", String(job.action === "status" ? 0 : offset));
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 12000);
+    const basicAuth = { Authorization: `Basic ${token}`, Accept: "application/json" };
+
+    const checkedGet = async (url: URL) => {
+      const res = await fetch(url, { method: "GET", headers: basicAuth, redirect: "error", signal: controller.signal });
+      if (!res.ok) return { status: res.status, data: null as Record<string, unknown> | null };
+      return { status: res.status, data: await res.json() as Record<string, unknown> };
+    };
     try {
-      const res = await fetch(upstream, {
-        method: "GET",
-        headers: { Authorization: `Basic ${token}`, Accept: "application/json" },
-        redirect: "error",
-        signal: controller.signal,
-      });
-      if (!res.ok) {
-        outcome = { ok: false, error: "li_http_error", upstream_status: res.status };
+      // The Personal Token authenticates *a single store*. Identify the store
+      // by product URLs before returning catalog data (no cross-store reads).
+      const identityUrl = new URL("/v1/produto", "https://api.awsli.com.br");
+      identityUrl.searchParams.set("limit", "10");
+      identityUrl.searchParams.set("offset", "0");
+      const identity = await checkedGet(identityUrl);
+      if (!identity.data) {
+        outcome = { ok: false, error: "li_http_error", upstream_status: identity.status };
       } else {
-        const json = await res.json() as { meta?: { total_count?: number }; objects?: Record<string, unknown>[] };
-        outcome = {
-          ok: true,
-          service: "loja_integrada",
-          action: job.action,
-          total_count: typeof json.meta?.total_count === "number" ? json.meta.total_count : null,
-          ...(job.action === "status" ? {} :
-            { objects: Array.isArray(json.objects) ? json.objects.slice(0, 20).map(stripProduct) : [] }),
-        };
+        const identityMeta = identity.data.meta as { total_count?: number } | undefined;
+        const sample = Array.isArray(identity.data.objects) ? identity.data.objects as Record<string, unknown>[] : [];
+        const hosts = sample.map((p) => {
+          try { return typeof p.url === "string" ? new URL(p.url).hostname.toLowerCase() : null; }
+          catch { return null; }
+        }).filter((h): h is string => typeof h === "string");
+        const detectedHost = hosts[0] ?? null;
+        const count = typeof identityMeta?.total_count === "number" ? identityMeta.total_count : null;
+
+        if (detectedHost && detectedHost !== expectedHost) {
+          outcome = { ok: false, error: "wrong_store_token", expected_host: expectedHost, detected_host: detectedHost };
+        } else if (count !== 0 && !detectedHost) {
+          outcome = { ok: false, error: "store_identity_unverified", expected_host: expectedHost };
+        } else if (count === 0 && job.action !== "status") {
+          outcome = { ok: false, error: "empty_store_cannot_verify_identity", expected_host: expectedHost };
+        } else if (job.action === "status") {
+          outcome = { ok: true, service: "loja_integrada", action: "status", total_count: count, identity_verified: detectedHost === expectedHost, detected_host: detectedHost };
+        } else {
+          const route = job.action === "categories" ? "/v1/categoria" : "/v1/produto";
+          const upstream = new URL(route, "https://api.awsli.com.br");
+          const { limit, offset } = pagination(job.args ?? {});
+          upstream.searchParams.set("limit", String(limit));
+          upstream.searchParams.set("offset", String(offset));
+          const result = await checkedGet(upstream);
+          if (!result.data) {
+            outcome = { ok: false, error: "li_http_error", upstream_status: result.status };
+          } else {
+            const data = result.data as { meta?: { total_count?: number }; objects?: Record<string, unknown>[] };
+            outcome = {
+              ok: true,
+              service: "loja_integrada",
+              action: job.action,
+              identity_verified: true,
+              detected_host: detectedHost,
+              total_count: typeof data.meta?.total_count === "number" ? data.meta.total_count : null,
+              objects: Array.isArray(data.objects) ? data.objects.slice(0, 20).map(stripProduct) : [],
+            };
+          }
+        }
       }
     } catch (error) {
       outcome = { ok: false, error: error instanceof DOMException && error.name === "AbortError" ? "timeout" : "li_upstream_unavailable" };
