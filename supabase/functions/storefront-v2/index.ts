@@ -792,16 +792,11 @@ async function submit(req:Request,p:any){
     if(phoneLimit.error)return {error:"rate_limit_unavailable",status:503};
     if(phoneLimit.data!==true)return {error:"rate_limited",status:429};
   }
+  // Customer lookup enriches the order when available; registration is completed later via WhatsApp.
   let customer:any=null;
-  if(ph&&p?.checkout_registration&&typeof p.checkout_registration==="object"){
-    // Resolve this checkout through its validated registration, never an arbitrary
-    // phone match when legacy imports contain more than one customer for a number.
-    const registered=await registerCustomer(req,{...p.checkout_registration,phone:ph,source:"checkout"});
-    if(registered.error)return {error:registered.error,status:registered.status||400};
-    customer=registered.customer;
-    if(!customer||customer.registration_complete!==true)return {error:"registration_incomplete",status:400};
-  }else if(ph){
-    try{const found=await lookupCustomer(ph);if(found?.found&&found?.customer)customer=found.customer}catch(e){console.error("optional_customer_lookup",txt((e as any)?.message,180))}
+  if(ph){
+    try{const found=await lookupCustomer(ph);if(found?.found&&found?.customer)customer=found.customer}
+    catch(e){console.error("optional_customer_lookup",txt((e as any)?.message,180))}
   }
   const marketingCampaign=txt(p?.marketing_context?.campaign,80);
   const customerSnapshot={...(customer?{found:true,id:customer.id,display_name:customer.display_name||null,address:customer.address||null,marketing_opt_in:customer.marketing_opt_in===true,identity_status:"existing_optional"}:{}),...(whatsappOrigin?{whatsapp_origin:whatsappOrigin}:{}),...(marketingCampaign?{marketing_campaign:marketingCampaign}:{}),...(stock.stock_adjustment?{stock_adjusted_retry:true,stock_adjustments:stock.adjusted_items}:{})};
@@ -811,7 +806,7 @@ async function submit(req:Request,p:any){
   if(orderId&&ph){try{const linked=await db.rpc("ops2_link_storefront_order_from_identity_v1",{p_order_id:orderId});if(!linked.error)papoaiLink=linked.data||null}catch(e){console.error("papoai_identity_order_link",txt((e as any)?.message,180))}}
   if(orderId){try{const publicLink=await db.rpc("ops2_order_public_link_v1",{p_order_id:orderId});if(!publicLink.error)publicOrderLink=publicLink.data||null}catch(e){console.error("order_public_link",txt((e as any)?.message,180))}}
   if(orderId&&ph)kickWhatsappOrderOutbound(orderId);
-  const customerStatus=customer?"registered":"pending_registration";
+  const customerStatus=customer?.registration_complete===true?"registered":"pending_registration";
   await recordOpsEvent("order.received","Pedido recebido pelo site e aguardando confirmação.",orderId,{source:"vitrine",customer_status:customerStatus,payment_method:pay||null,delivery_date:deliveryDate||null,stock_reserved:created.data?.stock_reserved===true,reservation_timing:created.data?.reservation_timing||null,reservation_status:created.data?.reservation_status||null,papoai_conversation_linked:Boolean(papoaiLink?.linked),stock_adjustment:stock.stock_adjustment,adjusted_items:stock.adjusted_items},"order-received:"+orderId);
   return {...created.data,order_public_url:publicOrderLink?.public_url||null,order_public_code:publicOrderLink?.public_code||null,phone_attached:Boolean(ph),customer_status:customerStatus,registration_complete:customer?.registration_complete===true,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,customer:customer||null,history_synced:Boolean(customer),papoai_conversation_linked:Boolean(papoaiLink?.linked),stock_adjustment:stock.stock_adjustment,adjusted_items:stock.adjusted_items};
 }
