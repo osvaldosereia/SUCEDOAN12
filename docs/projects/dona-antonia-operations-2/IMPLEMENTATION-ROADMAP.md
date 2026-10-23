@@ -1,3 +1,5 @@
+# Dona Antônia Operations 2.0 — IMPLEMENTATION ROADMAP
+
 ## Checkpoint R24 — janela incremental Admin1 e smoke read-only — 2026-10-23 09:06:00 UTC
 
 - Main `3223dc4c5b1e17a8ec2b9981803f7ad67a5f9ecb`; R23 (#1327) merged. Push CI: 41/42 success, sem falhas; run #39928928242 (`Basket product carousel`) ainda em andamento. Nenhuma PR/branch Admin1 nova aberta identificada.
@@ -6,7 +8,6 @@
 - Alterados somente HANDOFF e este roadmap. Nenhuma migration, Edge Function, configuração, RLS/grant, dado ou deploy foi aplicado.
 - Próxima tarefa: após 2026-10-24 02:14:07.824 UTC, fechar 24h do proxy legado e atribuir chamadas, excluindo o smoke conhecido; após 03:20:07.529 UTC, fechar 24h do leitor canônico. Manter endpoints 410. Publicar R13 somente após renovação do token pelo proprietário e preflight.
 
-# Dona Antônia Operations 2.0 — IMPLEMENTATION ROADMAP
 
 ## Checkpoint R23 — observação Admin1 e smoke somente leitura — 2026-10-23 09:00:54 UTC
 
@@ -51,6 +52,8 @@
 - A janela Admin1 de 24h continua aberta: proxy `admin1-legacy-catalog-read-v1` v3 no projeto `xaoeldjuxzsdsblimzxo` fecha em/apos 2026-10-24 02:14:07.824 UTC; leitor canônico `admin1-products-read-v1` v5 fecha em/apos 2026-10-24 03:20:07.529 UTC. Os dois permanecem 410 e não devem ser removidos até que as janelas fechem e qualquer chamada seja atribuída.
 - Check local do runtime já executado nesta rodada: `python3 scripts/build-vitrine-admin-runtime.py --check` retornou OK (9 fragmentos, 638.778 caracteres) no checkout disponível `agent/admin-runtime-contract-tests`/HEAD `fdad74b683d461b8581074f2c139332123cf5728`; alterações locais preexistentes foram preservadas. Esta PR é documental, não modifica runtime nem exige novo teste de domínio. Nenhuma implantação de Pages/Supabase foi solicitada por este checkpoint; o smoke confirma as rotas em produção após o merge.
 - Rollback: reverter somente os commits do checkpoint documental; não há rollback de Supabase ou runtime.
+
+- Fechamento PR #1328: checks obrigatórios `Admin service outcome telemetry CI` (#39929491169) e `Basket lot helper grant CI` (#39929491064) passaram. Squash merge concluído; `main` agora está em `d515ce403edbe62f8416477e69da446deef5f95c`. O último snapshot de CI da main-base registrou 41/42 success e o run #39928928242 ainda em andamento, sem falhas; o merge R24 é apenas documental.
 
 ### Próxima tarefa exata
 
