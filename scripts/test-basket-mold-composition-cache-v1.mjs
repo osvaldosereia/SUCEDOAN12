@@ -33,5 +33,5 @@ assert.equal(lookupCount,2,'expired choices are regenerated');
 assert.equal(inFlight.size,0,'inflight promises are cleaned up');
 assert.match(source,/const \[products,available,extras\]=await Promise\.all\(/,'products and stock stay outside the cache');
 assert.match(source,/payload\?\.lightweight!==true/,'quotes keep canonical selection validation');
-assert.match(source,/if\(!selectedId\|\|!candidateIds\.includes\(selectedId\)\)/,'selection cannot escape configured options');
+assert.match(source,/if\(\(!selectedId\|\|!candidateIds\.includes\(selectedId\)\)&&!allowUnavailablePreview\)/,'only the non-preview path rejects an unavailable configured selection');
 console.log('Basket mold composition cache: concurrent dedup, expiry and live stock contracts PASS');
