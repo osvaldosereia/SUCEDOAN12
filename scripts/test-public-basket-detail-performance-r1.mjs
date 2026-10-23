@@ -10,9 +10,10 @@ const openStart=root.indexOf('async function openBasket(');
 const openEnd=root.indexOf('function basketGroupTitle',openStart);
 assert.ok(openStart>=0&&openEnd>openStart,'basket open function exists');
 const open=root.slice(openStart,openEnd);
-assert.match(open,/action=isHomeShell\?'basket_by_size':'basket'/,'first-open basket size uses a single detail request');
+assert.match(open,/const basketId=cachedBasket\?\.home_shell===true\?String\(cachedBasket\.card_key\|\|id\):id/,'home basket opens from its already known composition key');
+assert.match(open,/api\('basket',\{basket_id:basketId,lightweight:1,trace_id:traceId\}/,'basket open sends one stock-sensitive detail request by composition ID');
+assert.doesNotMatch(open,/basket_by_size|homeSizeCards/,'basket open does not re-query size and template metadata');
 assert.doesNotMatch(open,/loadHomeSizeCardForOpen/,'first-open no longer resolves card IDs in a separate browser request');
-assert.match(root,/basket_by_size/,'basket detail action is marked stock-sensitive and sent without cache');
 assert.match(open,/markBasketPerformance\('open-start'/,'basket opening has a client performance mark');
 assert.match(open,/markBasketPerformance\('detail-ready'/,'first usable basket render has a client performance mark');
 assert.match(open,/paintBasketSheet\(\);[\s\S]{0,120}loadMoldOptions\(0,state\.basketDraft\)/,'the first basket carousel is prioritized immediately after the basket renders');
@@ -25,8 +26,8 @@ assert.doesNotMatch(root,/\.cart-line(?:-top)?\b|\.cart-controls\b/,'unused lega
 assert.doesNotMatch(carousel,/basket-product-strip|basket-scroll-track|basket-scroll-thumb/,'unused legacy home product-strip behavior removed');
 assert.match(root,/basket-carousel\.js\?v=20261023-basket-priority-clean-v1/,'the cleaned carousel asset receives a fresh cache key');
 assert.match(root,/abortBasketDraftRequests\(/,'closing or replacing a basket aborts in-flight basket requests');
-assert.match(root,/basket_by_size/,'edge function exposes the combined size-to-detail action');
-assert.match(api,/async function basketBySize\(/,'edge function resolves size and returns its detail in one request');
+assert.match(api,/async function basketBySize\(/,'edge function keeps its direct size resolver for non-home callers');
+assert.match(api,/action===\"basket\"[\s\S]{0,600}const mm=raw\.match\(\/\^\(\[0-9a-f-\]\{36\}\)@\(\[1-6\]\)\$\/i\)/,'edge function accepts the cached UUID@composition key');
 
 const batchStart=sql.search(/create or replace function public\.basket_mold_public_compositions_batch_v1/i);
 assert.ok(batchStart>=0,'batch composition SQL function exists');
