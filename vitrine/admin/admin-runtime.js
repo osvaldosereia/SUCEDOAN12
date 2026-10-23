@@ -158,6 +158,11 @@
     if(state.tab==='balance'&&tab!=='balance')stopBalanceCamera();
     if(tab!=='orders')document.body.classList.remove('orders-tab-active');
     state.tab=tab;
+    try{
+      sessionStorage.setItem('da_admin_current_tab_v1',tab);
+      const hash='#'+encodeURIComponent(tab);
+      if(location.hash!==hash)history.replaceState(history.state,'',location.pathname+location.search+hash);
+    }catch{}
     document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
     syncNavGroups();
     closeNavMenus();
@@ -2519,14 +2524,29 @@
         category:product.category||'',subcategory:product.subcategory||'',packaging:product.packaging||'',
         image_url:product.image_url||'',description:product.description||'',active:next,operator
       })});
-      const saved=data.product;
+      const saved=data.product||{};
+      const active=saved.active!==false;
+      product.active=active;
+      product.deactivation_reason=saved.deactivation_reason||null;
       state.productFacetsCache={};
-      if(next&&saved?.active===false&&saved?.deactivation_reason==='expired'){
+      btn.disabled=false;
+      btn.textContent=active?'Ativo':product.deactivation_reason==='expired'?'Vencido · inativo':'Inativo';
+      btn.title=active?'Clique para desativar':product.deactivation_reason==='expired'?'Vencido: corrija a validade antes de ativar':'Clique para ativar';
+      btn.classList.toggle('off',!active);
+      if(next&&saved.active===false&&saved.deactivation_reason==='expired'){
         toast('Produto vencido · permanece inativo');
       }else{
         toast(next?'Produto ativado':'Produto desativado · fora da vitrine e das validades');
       }
-      await loadProducts($('#productSearch')?.value.trim()||'',false);
+      const activeFilter=String(state.productFilters.active||'');
+      if(activeFilter&&activeFilter!==String(active)){
+        const row=btn.closest('.product-operational-row');
+        if(row)row.remove();
+        state.products=state.products.filter(item=>String(item.id)!==String(id));
+        const host=$('#productRows');
+        if(state.productNext!=null)await loadProducts($('#productSearch')?.value.trim()||'',true);
+        else if(host&&!host.querySelector('.product-operational-row'))host.innerHTML='<div class="empty">Nenhum produto encontrado com esses filtros.</div>';
+      }
     }catch(e){
       toast(errorMessage(e.message));
       btn.disabled=false;
@@ -7732,6 +7752,15 @@
 
   window.DonaAntoniaAdminBridge={
     api,
+    openProductEditor:async productId=>{
+      const id=String(productId||'');
+      if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)){
+        toast('Produto inválido');
+        return;
+      }
+      setTab('products');
+      await openProductEditor({id});
+    },
     token:adminStepUp,
     operator:requireOperator,
     toast,
@@ -7798,7 +7827,17 @@
       history.replaceState({},'',location.pathname+location.hash);
       return;
     }
-    if(!uuid.test(sharedSeparationId)){setTab('today');return}
+    if(!uuid.test(sharedSeparationId)){
+      const isValidTab=tab=>Array.from(document.querySelectorAll('#adminNav [data-tab]')).some(item=>item.dataset.tab===tab);
+      let restored='';
+      try{
+        const hashTab=decodeURIComponent(location.hash.replace(/^#/,''));
+        const sessionTab=sessionStorage.getItem('da_admin_current_tab_v1')||'';
+        restored=isValidTab(sessionTab)?sessionTab:isValidTab(hashTab)?hashTab:'';
+      }catch{}
+      setTab(restored||'today');
+      return;
+    }
     await setTab('orders');
     await openOrderSeparationSheet(sharedSeparationId);
     history.replaceState({},'',location.pathname+location.hash);

@@ -158,6 +158,11 @@
     if(state.tab==='balance'&&tab!=='balance')stopBalanceCamera();
     if(tab!=='orders')document.body.classList.remove('orders-tab-active');
     state.tab=tab;
+    try{
+      sessionStorage.setItem('da_admin_current_tab_v1',tab);
+      const hash='#'+encodeURIComponent(tab);
+      if(location.hash!==hash)history.replaceState(history.state,'',location.pathname+location.search+hash);
+    }catch{}
     document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
     syncNavGroups();
     closeNavMenus();

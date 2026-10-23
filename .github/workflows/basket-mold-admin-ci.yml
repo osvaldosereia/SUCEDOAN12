@@ -2,6 +2,14 @@ name: Basket mold admin
 on:
   pull_request:
     paths:
+      - 'index.html'
+      - 'vitrine/admin/runtime-src/01-core-navigation.part.js.txt'
+      - 'vitrine/admin/runtime-src/03-operations.part.js.txt'
+      - 'vitrine/admin/runtime-src/09-bootstrap.part.js.txt'
+      - 'vitrine/admin/admin-runtime.js'
+      - 'vitrine/admin/index.html'
+      - 'supabase/migrations/20261023190000_basket_admin_selected_product_active_status.sql'
+      - 'scripts/test-basket-admin-carousel-product-status.mjs'
       - 'vitrine/admin/basket-admin-section.js'
       - 'vitrine/admin/basket-mold-admin.js'
       - 'vitrine/admin/basket-admin-*.js'
@@ -23,6 +31,14 @@ on:
   push:
     branches: [main]
     paths:
+      - 'index.html'
+      - 'vitrine/admin/runtime-src/01-core-navigation.part.js.txt'
+      - 'vitrine/admin/runtime-src/03-operations.part.js.txt'
+      - 'vitrine/admin/runtime-src/09-bootstrap.part.js.txt'
+      - 'vitrine/admin/admin-runtime.js'
+      - 'vitrine/admin/index.html'
+      - 'supabase/migrations/20261023190000_basket_admin_selected_product_active_status.sql'
+      - 'scripts/test-basket-admin-carousel-product-status.mjs'
       - 'vitrine/admin/basket-admin-section.js'
       - 'vitrine/admin/basket-mold-admin.js'
       - 'vitrine/admin/basket-admin-*.js'
@@ -53,6 +69,7 @@ jobs:
           node-version: '24'
       - run: node scripts/test-basket-mold-admin-v1.mjs
       - run: node scripts/test-basket-admin-three-tabs.mjs
+      - run: node scripts/test-basket-admin-carousel-product-status.mjs
       - run: node scripts/test-basket-admin-inactive-carousel-options.mjs
       - run: node scripts/test-basket-mold-conditional-hidden-v1.mjs
       - run: npm install --prefix "$RUNNER_TEMP/basket-mold-admin-tests" --no-save --package-lock=false playwright@1.62.1

@@ -12,6 +12,8 @@ on:
       - "vitrine/admin/admin-runtime.js"
       - "vitrine/admin/runtime-src/01-core-navigation.part.js.txt"
       - "vitrine/admin/runtime-src/03-operations.part.js.txt"
+      - "vitrine/admin/runtime-src/09-bootstrap.part.js.txt"
+      - "scripts/test-basket-admin-carousel-product-status.mjs"
       - "vitrine/admin/runtime-src/04-products.part.js.txt"
       - "vitrine/admin/styles/admin-main.css"
       - "supabase/functions/admin-products-live-v1/index.ts"
@@ -27,6 +29,8 @@ on:
       - "vitrine/admin/admin-runtime.js"
       - "vitrine/admin/runtime-src/01-core-navigation.part.js.txt"
       - "vitrine/admin/runtime-src/03-operations.part.js.txt"
+      - "vitrine/admin/runtime-src/09-bootstrap.part.js.txt"
+      - "scripts/test-basket-admin-carousel-product-status.mjs"
       - "vitrine/admin/runtime-src/04-products.part.js.txt"
       - "vitrine/admin/styles/admin-main.css"
       - "supabase/functions/admin-products-live-v1/index.ts"
@@ -52,6 +56,8 @@ jobs:
         run: node --check vitrine/admin/admin-runtime.js
       - name: Test operational products list
         run: node scripts/test-products-operational-list.mjs
+      - name: Test basket carousel product status and navigation
+        run: node scripts/test-basket-admin-carousel-product-status.mjs
       - name: Test mobile quick edit
         run: node scripts/test-mobile-products-quick-edit.mjs
       - name: Test complete product editor
