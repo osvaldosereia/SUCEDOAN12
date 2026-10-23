@@ -32,7 +32,7 @@ try{
  const offered={...basket,total_item_count:basket.carousel_items.length,id:'11111111-1111-4111-8111-111111111111',lot_id:'22222222-2222-4222-8222-222222222222',stock_quantity:10,category_id:'cat',subcategory_id:'sub',category_slug:'cestas-completas',category_name:'Cestas Completas'};
  const homeSizeNames=['Econômica','Mini','Pequena','Média','Grande'];
  const homeSizeKeys=['economica','mini','pequena','media','grande'];
- const homeSizeBaskets=homeSizeNames.map((name,index)=>({...offered,id:'basket-'+index,name,size_key:homeSizeKeys[index],subcategory_id:'sub-'+index}));
+ const homeSizeBaskets=homeSizeNames.map((name,index)=>{const id=index===1?offered.id:'00000000-0000-4000-8000-'+String(index+1).padStart(12,'0');return {...offered,id,card_key:id+'@1',name,size_key:homeSizeKeys[index],subcategory_id:'sub-'+index,home_shell:true,mold_mode:true}});
  const homeSizeSubcategories=homeSizeNames.map((name,index)=>({id:'sub-'+index,name}));
  const storefrontActions=[];
  let releaseHomeSizeCards;
