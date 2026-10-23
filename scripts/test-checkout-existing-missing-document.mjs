@@ -4,12 +4,12 @@ import assert from 'node:assert/strict';
 
 const fields={
   checkoutWhatsappUnified:{value:'(65) 99982-8360'},
-  checkoutName:{value:'Cliente Existente'},
+  checkoutName:{value:''},
   checkoutDocument:{value:''},
-  checkoutStreet:{value:'Rua de teste'},
-  checkoutNumber:{value:'10'},
-  checkoutNeighborhood:{value:'Centro'},
-  checkoutCity:{value:'Cuiabá'},
+  checkoutStreet:{value:''},
+  checkoutNumber:{value:''},
+  checkoutNeighborhood:{value:''},
+  checkoutCity:{value:''},
   checkoutDeliveryDate:{value:'2026-10-24'},
 };
 let documentPresent=false;
@@ -29,14 +29,11 @@ const context={window,document:doc,MutationObserver:class{observe(){}},URL,Respo
 vm.runInNewContext(fs.readFileSync('checkout-resilience.js','utf8'),context);
 const checkout=window.__DA_CHECKOUT_RESILIENCE__;
 
-assert.equal(checkout.checkoutDocumentRequired(),true,'existing customer without a stored document must be asked to provide it');
-assert.ok(checkout.validateCheckoutBasics().issues.some(issue=>issue.id==='checkoutDocument'),'empty CPF/CNPJ must block an incomplete existing customer before submit');
-
-documentPresent=true;
-assert.equal(checkout.checkoutDocumentRequired(),false,'existing customer with a private stored document may reuse it without retyping');
-assert.ok(!checkout.validateCheckoutBasics().issues.some(issue=>issue.id==='checkoutDocument'),'stored private CPF/CNPJ must not be exposed or requested again');
+const existingResult=checkout.validateCheckoutBasics();
+assert.equal(existingResult.ok,true,'existing customers with incomplete cadastral data must be allowed to finish the order');
+assert.ok(!existingResult.issues.some(issue=>/^checkout(Name|Document|Street|Number|Neighborhood|City)$/.test(issue.id)),'registration data must not block checkout');
 
 customerFound=false;
-documentPresent=false;
-assert.equal(checkout.checkoutDocumentRequired(),true,'new customers must still provide CPF/CNPJ');
-console.log('checkout CPF/CNPJ requirement for new and incomplete existing customers: PASS');
+const newResult=checkout.validateCheckoutBasics();
+assert.equal(newResult.ok,true,'new customers must also be able to finish before registration');
+console.log('checkout completion with optional customer registration: PASS');
