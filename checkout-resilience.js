@@ -50,6 +50,10 @@
     const result=byId('customerLookupResult');
     return Boolean(result?.classList?.contains('found')&&!byId('checkoutName'));
   }
+  function checkoutDocumentRequired(){
+    const result=byId('customerLookupResult');
+    return !result?.classList?.contains('found')||result?.dataset?.documentPresent!=='true';
+  }
   function validCpf(value){
     const d=digits(value,11);if(d.length!==11||/^(\d)\1{10}$/.test(d))return false;
     let sum=0;for(let i=0;i<9;i++)sum+=Number(d[i])*(10-i);let check=(sum*10)%11;if(check===10)check=0;if(check!==Number(d[9]))return false;
@@ -146,7 +150,7 @@
     if(waHeading&&waBox){const sec=makeSection('WhatsApp (obrigatório)','', 'whatsapp');waHeading.parentNode.insertBefore(sec,waHeading);waHeading.remove();sec.appendChild(waBox);setupUnifiedWhatsapp(waBox)}
     const formName=byId('checkoutName');
     if(formName){const grid=formName.closest('div[style*="display:grid"]')||formName.parentElement?.parentElement,personal=makeSection('Seus dados','', 'personal'),personalGrid=document.createElement('div');personalGrid.className='da-checkout-grid';personal.appendChild(personalGrid);const delivery=makeSection('Endereço','', 'delivery'),deliveryGrid=document.createElement('div');deliveryGrid.className='da-checkout-grid';delivery.appendChild(deliveryGrid),anchor=dateHeading||grid;if(anchor?.parentNode){anchor.parentNode.insertBefore(personal,anchor);anchor.parentNode.insertBefore(delivery,anchor)}
-      const nameLabel=byId('checkoutName')?.closest('label'),docLabel=byId('checkoutDocument')?.closest('label');if(nameLabel){nameLabel.classList.add('span-all');personalGrid.appendChild(nameLabel);appendRequired(nameLabel)}if(docLabel){personalGrid.appendChild(docLabel);if(!byId('customerLookupResult')?.classList?.contains('found'))appendRequired(docLabel)}const marketing=byId('checkoutMarketing')?.closest('label');if(marketing){marketing.classList.add('span-all');personalGrid.appendChild(marketing)}
+      const nameLabel=byId('checkoutName')?.closest('label'),docLabel=byId('checkoutDocument')?.closest('label');if(nameLabel){nameLabel.classList.add('span-all');personalGrid.appendChild(nameLabel);appendRequired(nameLabel)}if(docLabel){personalGrid.appendChild(docLabel);if(checkoutDocumentRequired())appendRequired(docLabel)}const marketing=byId('checkoutMarketing')?.closest('label');if(marketing){marketing.classList.add('span-all');personalGrid.appendChild(marketing)}
       for(const id of ['checkoutStreet','checkoutNumber','checkoutNeighborhood','checkoutCity','checkoutPostal','checkoutComplement','checkoutReference']){const label=byId(id)?.closest('label');if(!label)continue;if(['checkoutStreet','checkoutComplement','checkoutReference'].includes(id))label.classList.add('span-all');deliveryGrid.appendChild(label);if(['checkoutStreet','checkoutNumber','checkoutNeighborhood','checkoutCity'].includes(id))appendRequired(label)}const save=byId('saveCheckoutRegistration');if(save)delivery.appendChild(save);if(grid&&grid.children.length===0)grid.remove();const oldNotice=[...body.querySelectorAll('.rule-notice')].find(x=>/Cadastro opcional|Cadastro do cliente|pedido pode ser finalizado/i.test(String(x.textContent||'')));if(oldNotice)oldNotice.remove();
     }else if(existingRegistrationComplete()){const delivery=makeSection('Endereço','', 'delivery'),addressNotice=byId('editAddress')?.closest('.rule-notice'),anchor=dateHeading||addressNotice;if(anchor?.parentNode)anchor.parentNode.insertBefore(delivery,anchor);if(addressNotice){addressNotice.classList.add('da-address-confirm');delivery.appendChild(addressNotice)}const edit=byId('editAddress');if(edit)edit.textContent='Trocar endereço'}
     if(dateHeading){const sec=makeSection('Data de entrega (obrigatória)','', 'date');dateHeading.parentNode.insertBefore(sec,dateHeading);dateHeading.remove();const select=byId('checkoutDeliveryDate'),label=select?.closest('label'),note=label?.nextElementSibling;if(label){sec.appendChild(label);appendRequired(label)}setupDateChoices(sec,select,label);if(note?.classList?.contains('note'))note.remove()}
@@ -174,7 +178,7 @@
     if(byId('checkoutName')){
       if(!draft.name)issues.push(issue('checkoutName','Digite seu nome completo.'));
       const known=byId('customerLookupResult')?.classList?.contains('found');
-      if(!known&&!digits(draft.document,14))issues.push(issue('checkoutDocument','Digite seu CPF ou CNPJ.'));
+      if(checkoutDocumentRequired()&&!digits(draft.document,14))issues.push(issue('checkoutDocument','Digite seu CPF ou CNPJ.'));
       else if(digits(draft.document,14)&&!validDocument(draft.document))issues.push(issue('checkoutDocument','Confira o CPF/CNPJ. Parece que algum número está errado.'));
       if(!draft.street)issues.push(issue('checkoutStreet','Digite o nome da rua.'));
       if(!draft.number)issues.push(issue('checkoutNumber','Digite o número da casa. Se não tiver número, digite SN.'));
@@ -308,7 +312,7 @@
   observer.observe(document.documentElement,{subtree:true,childList:true,characterData:true});
   originalSetTimeout(()=>{organizeCheckoutSections();refreshCheckoutPresentation()},0);
 
-  window.__DA_CHECKOUT_RESILIENCE__={CUTOFF_HOUR,applyStockAdjustment,confirmStockAdjustment,formatUnifiedPhone,liveCheckoutPhone,checkoutRegistrationDraft,registrationDraftComplete,existingRegistrationComplete,validateCheckoutBasics,showCheckoutValidation};
+  window.__DA_CHECKOUT_RESILIENCE__={CUTOFF_HOUR,applyStockAdjustment,confirmStockAdjustment,formatUnifiedPhone,liveCheckoutPhone,checkoutRegistrationDraft,registrationDraftComplete,existingRegistrationComplete,checkoutDocumentRequired,validateCheckoutBasics,showCheckoutValidation};
 })();
 
 // Public storefront recovery for constrained in-app browsers (Instagram/Facebook webviews).
