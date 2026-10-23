@@ -6,7 +6,7 @@ const resilience = fs.readFileSync('checkout-resilience.js', 'utf8');
 
 assert.match(html, /WhatsApp para contato \(obrigatório\)/, 'checkout must identify WhatsApp as required');
 assert.match(html, /Data de entrega \(obrigatória\)/, 'checkout must identify delivery date as required');
-assert.ok(html.includes('checkout-resilience.js?v=20261023-1'), 'checkout must request a fresh validation script after deployment');
+assert.ok(html.includes('checkout-resilience.js?v=20261023-2'), 'checkout must request a fresh validation script after deployment');
 assert.match(html, /Revise os itens e ajuste as quantidades pelos botões − e \+/i, 'checkout must explain how to edit the order');
 for (const term of ['function checkoutProductRow', 'function checkoutMoldBlock', 'function checkoutBasketBlock']) {
   const start = html.indexOf(term);
