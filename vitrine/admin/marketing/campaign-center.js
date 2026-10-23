@@ -168,7 +168,7 @@ function executionGateOpen(state){const runtime=state?.runtime||{};return runtim
 function progressCard(label,value,key){return `<article data-execution-count="${key}"><small>${label}</small><strong>${Number(value||0)}</strong></article>`}
 function executionPanelHtml(state,campaign){
   const status=state?.status||campaign?.status||'approved',runtime=state?.runtime||{},counts=state?.counts||{},gateOpen=executionGateOpen(state),scheduled=state?.scheduled_for||campaign?.scheduled_for||'';
-  const canPause=['scheduled','running'].includes(status),canResume=status==='paused'&&state?.manual_batch_mode!==true,canCancel=['scheduled','running','paused'].includes(status);
+  const canPause=['scheduled','running'].includes(status),canCancel=['scheduled','running','paused'].includes(status);
   const canSendManual=gateOpen&&(status==='approved'||(status==='paused'&&(Number(counts.pending||0)+Number(counts.retry||0)>0)));
   const gateLabel=gateOpen?(runtime.mode==='canary'?'Canário habilitado':'Campanhas habilitadas'):'Campanhas desligadas';
   const gateDetail=gateOpen?`Runtime ${esc(runtime.mode)} · envio controlado pelo backend.`:`Runtime ${esc(runtime.mode||'off')} · campaigns_enabled=${runtime.campaigns_enabled===true?'true':'false'}. Nenhuma mensagem pode iniciar.`;
@@ -179,7 +179,6 @@ function executionPanelHtml(state,campaign){
     <div class="marketing-campaign-execution-controls">
       ${canSendManual?'<button type="button" class="primary" data-campaign-send-manual-batch>Enviar próximo lote (até 10 contatos)</button>':''}
       ${canPause?'<button type="button" data-campaign-pause>Pausar</button>':''}
-      ${canResume?`<button type="button" data-campaign-resume ${gateOpen?'':'disabled'}>Retomar</button>`:''}
       ${canCancel?'<button type="button" class="danger" data-campaign-cancel-execution>Cancelar execução</button>':''}
     </div>`;
 }
@@ -192,7 +191,6 @@ function bindExecutionActions(root,form,state){
   const gateOpen=executionGateOpen(state),campaignId=currentCampaign?.id,revision=currentCampaign?.revision;if(!campaignId)return;
   form.querySelector('[data-campaign-send-manual-batch]')?.addEventListener('click',()=>{if(!gateOpen)return;runExecutionAction(root,form,'send_manual_batch',{campaign_id:campaignId,expected_revision:revision,idempotency_key:`admin:${campaignId}:${crypto.randomUUID()}`},`Enviar até 10 contatos da campanha “${currentCampaign?.name||'Campanha'}” agora? O envio será real pelo template aprovado e não poderá ser desfeito. Para continuar depois, será necessária outra confirmação.`,'Enviando lote…')});
   form.querySelector('[data-campaign-pause]')?.addEventListener('click',()=>runExecutionAction(root,form,'pause',{campaign_id:campaignId,reason:'admin_marketing_ui'},'Pausar a execução desta campanha?','Pausando…'));
-  form.querySelector('[data-campaign-resume]')?.addEventListener('click',()=>{if(!gateOpen)return;runExecutionAction(root,form,'resume',{campaign_id:campaignId},'Retomar a execução desta campanha?','Retomando…')});
   form.querySelector('[data-campaign-cancel-execution]')?.addEventListener('click',()=>runExecutionAction(root,form,'cancel_execution',{campaign_id:campaignId,reason:'admin_marketing_ui'},'Cancelar esta execução? Destinatários ainda não enviados serão pulados.','Cancelando…'));
 }
 async function renderExecutionPanel(root,form,campaign){

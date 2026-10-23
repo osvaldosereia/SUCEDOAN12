@@ -6,6 +6,8 @@ const read=path=>readFileSync(path,'utf8');
 const worker=read('supabase/functions/whatsapp-marketing-worker-v1/index.ts');
 const strategy=read('vitrine/admin/marketing/strategy-center.js');
 const bridge=read('supabase/functions/admin-marketing-strategy-campaign-v1/index.ts');
+const campaignsApi=read('supabase/functions/admin-marketing-campaigns-v1/index.ts');
+const campaignUi=read('vitrine/admin/marketing/campaign-center.js');
 const repurchase=read('vitrine/admin/marketing/repurchase-center.js');
 const basketImage=read('vitrine/admin/basket-lot-image.js');
 const admin=read('vitrine/admin/index.html');
@@ -51,4 +53,19 @@ test('Marketing bootstrap is explicit and independent from basket image generati
   assert.match(bootstrap,/template-center\.js/);
   assert.match(bootstrap,/campaign-entry\.js/);
   assert.match(bootstrap,/template-center\.css/);
+});
+
+test('repurchase handoff uses the same cache-busted campaign entry as the bootstrap',()=>{
+  const bootstrap=read('vitrine/admin/marketing/marketing-bootstrap.js');
+  const entryVersion=bootstrap.match(/campaign-entry\.js\?v=([^']+)/)?.[1];
+  assert.ok(entryVersion,'Marketing bootstrap must declare a cache version for campaign entry');
+  assert.ok(repurchase.includes(`campaign-entry.js?v=${entryVersion}`),'Repurchase handoff must load the current campaign-entry module');
+});
+
+test('campaign execution has no schedule, start-now, or resume route',()=>{
+  assert.match(campaignsApi,/action==="send_manual_batch"/,'manual batches remain available');
+  assert.match(campaignsApi,/ALLOWED_TRANSITIONS=new Set\(\["draft","ready_for_review","approved"\]\)/);
+  assert.doesNotMatch(campaignsApi,/scheduleCampaign|resumeCampaign|marketing_schedule_campaign_v1|marketing_resume_campaign_v1|action==="schedule"|action==="start_now"|action==="resume"/);
+  assert.match(campaignUi,/data-campaign-send-manual-batch/);
+  assert.doesNotMatch(campaignUi,/data-campaign-resume|runExecutionAction\([^\n]*'resume'/);
 });

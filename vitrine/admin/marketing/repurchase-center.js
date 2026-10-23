@@ -56,7 +56,7 @@ async function openCampaigns(){
   const customerIds=repurchaseCampaignCustomerIds(visibleItems());
   const note=rootActive?.querySelector('[data-repurchase-notice]');
   if(!customerIds.length){if(note)note.textContent='Nenhum cliente “Pronto” nesta página para levar à campanha.';return}
-  try{return await (await import('/vitrine/admin/marketing/campaign-entry.js?v=marketing-campaign-entry-v8')).openCampaigns({filters:{customer_ids:customerIds}})}
+  try{return await (await import('/vitrine/admin/marketing/campaign-entry.js?v=marketing-campaign-entry-v9')).openCampaigns({filters:{customer_ids:customerIds}})}
   catch(error){if(note)note.textContent=`Não foi possível preparar o rascunho: ${String(error?.message||error)}.`}
 }
 function openView(root,view){if(view==='overview')return document.querySelector('[data-tab="marketing"]')?.click();if(view==='repurchase')return mountRepurchaseView(root);if(view==='post_sale')return import('/vitrine/admin/marketing/post-sale-center.js?v=marketing-post-sale-v2').then(module=>module.mountPostSaleView(root));if(view==='campaigns')return openCampaigns();if(view==='templates')return import('/vitrine/admin/marketing/template-center.js?v=marketing-image-bank-v1').then(module=>module.mountTemplateView(root));if(view==='strategy')return import('/vitrine/admin/marketing/strategy-center.js?v=marketing-strategy-v3').then(module=>module.mountStrategyView(root));if(view==='audiences')return import('/vitrine/admin/marketing/audience-center.js?v=marketing-audience-v1').then(module=>module.mountAudienceView(root));if(view==='consents')return import('/vitrine/admin/marketing/audience-center.js?v=marketing-audience-v1').then(module=>module.mountConsentView(root))}
