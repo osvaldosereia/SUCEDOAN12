@@ -1,24 +1,31 @@
 # Desenho: Montador de Cestas na Loja Integrada
 
-**Status:** proposta para revisão; não implementada  
+**Status:** proposta corrigida para revisão; integração de preço ao carrinho ainda é um gate técnico  
 **Loja-alvo:** Super Cestas Dona Antônia  
 **Branch:** `agent/li-basket-builder-design-20261023`
 
 ## Objetivo
 
-Oferecer, dentro da própria Loja Integrada, um montador para Cesta Mini, Econômica, Pequena, Média e Grande. O cliente escolhe o modelo, troca marcas entre produtos equivalentes, ajusta quantidades, inclui extras e envia cada produto como linha individual ao carrinho e checkout nativos.
+Oferecer, dentro da própria Loja Integrada, um montador para Cesta Mini, Econômica, Pequena, Média e Grande. O cliente escolhe o modelo, troca marcas entre produtos equivalentes, ajusta quantidades, inclui extras e finaliza pelo carrinho e checkout nativos.
 
-## Restrições e decisões
+## Regras de preço — decisão corrigida
+
+- As cestas têm preço comercial próprio. O total **não** é a soma pública dos preços dos componentes.
+- Preservar o ajuste oculto fixo de cada molde. Preservar também a configuração do ajuste condicional, que só se aplica quando a regra está habilitada e o produto condicionado participa da composição.
+- A consulta atual do catálogo interno mostra ajuste fixo preenchido para os cinco moldes ativos. Os valores condicionais também estão cadastrados, mas a flag de aplicação está desativada nos cinco registros atuais. Não ativar essa regra nem trocar valores sem uma decisão explícita.
+- O preço inicial permanece o preço comercial definido para o molde. Trocas e quantidades alteradas mudam o total apenas pela diferença de preço dos produtos afetados; remover produto aplica a redução configurada; extras somam seu preço vigente.
+- O cliente vê o total atualizado da cesta e a composição por nome/marca/quantidade. Não vê preço unitário, subtotal de componentes ou o valor do ajuste oculto, nem recebe SKU como parte da apresentação pública. SKU permanece no dado do produto que vai ao pedido.
+- Valores ocultos não podem ser embutidos em JavaScript público nem retornados separadamente ao navegador. Se for necessário calcular um orçamento no servidor, reutilizar a fonte Vitrine/Admin existente e retornar somente o total calculado.
+
+## Restrições
 
 - A loja antiga continua em funcionamento; domínio definitivo e DNS ficam intocados.
 - A loja nova permanece em manutenção durante configuração e testes.
 - Não usar o código do montador antigo, extensões pagas de kits, banco paralelo, checkout próprio, sistema próprio de pedidos ou integração fiscal própria.
 - Preservar o pagamento na entrega já ativo.
-- Cada item vendido permanece um produto real da Loja Integrada, com SKU e estoque sincronizados pelo Bling.
-- O total é a soma dos preços vigentes na Loja Integrada para os itens e quantidades selecionados. Não há ajuste oculto por cesta.
-- Reutilizar os dados de composição somente como referência para reconstruir os cinco modelos. Validar cada alternativa contra o catálogo atual da Loja Integrada depois de confirmar a origem do catálogo no Bling. Descartar opções sem SKU utilizável, inativas ou sem disponibilidade.
+- Os componentes selecionados devem continuar sendo produtos reais, com SKU e estoque sincronizados pelo Bling.
 - Não importar/exportar produtos enquanto a conta/canal e o catálogo do Bling não estiverem confirmados. A Loja Integrada está sem produtos e já possui categorias; importar às cegas pode criar duplicidade ou sobrescrever uma árvore incompatível.
-- Não alterar, desativar ou reutilizar os 13 trechos existentes de código (incluindo os legados “CF - ...”).
+- Não alterar, desativar ou reutilizar os 13 trechos de código existentes (incluindo os legados “CF - ...”).
 
 ## Ambiente verificado
 
@@ -29,48 +36,55 @@ Oferecer, dentro da própria Loja Integrada, um montador para Cesta Mini, Econô
 - Categorias ativas existentes: Cestas Básicas, Material de Limpeza e Mercearia Básica. Há também duas categorias de canecas inativas. A origem/compatibilidade com a árvore do Bling precisa ser conciliada antes da sincronização.
 - Aplicativo Bling aparece instalado no painel da Loja Integrada. Isso, por si só, não comprova que o canal correto e a sincronização estão configurados no Bling.
 - Pagamento na Entrega aparece ativo.
-- O gerenciador permite scripts em páginas de loja, mas a Loja Integrada fecha o checkout para código personalizado. Portanto, o montador não tentará modificar checkout nem página de finalização.
-- A documentação pública consultada descreve links de carrinho montados pelo lojista, não um fluxo documentado para escolhas dinâmicas do comprador. A inserção de itens escolhidos pelo visitante precisa ser verificada no carrinho nativo com produtos reais antes de liberar.
+- O gerenciador permite scripts em páginas de loja, mas o checkout fica fechado para código personalizado. O montador não tentará modificar checkout nem página de finalização.
+- A documentação consultada descreve links de carrinho montados pelo lojista, não um fluxo documentado para escolhas dinâmicas do comprador nem para transportar um ajuste oculto a um carrinho com componentes individuais.
+- A Loja Integrada atualiza preço e disponibilidade ao validar o carrinho no checkout. Por isso, um total calculado apenas na página do montador não é prova de que o checkout cobrará esse valor.
 
-## Abordagem selecionada
+## Abordagem proposta
 
-1. Criar uma página de conteúdo nativa, mantida inativa até a aprovação do fluxo, com uma região de montagem identificável e conteúdo acessível sem JavaScript.
-2. Desenvolver um script pequeno, sem dependências externas, versionado neste repositório. Inserir esse script no gerenciador de código da Loja Integrada no rodapé das páginas permitidas, com uma guarda de caminho: ele só carrega e inicializa na página do montador.
-3. Manter a configuração dos modelos no próprio script versionado, formada por grupos de produtos e alternativas identificadas por SKU. O script não usa token, chave privada, Supabase ou chamadas de servidor.
-4. Carregar preço, disponibilidade, identificação e SKU a partir de dados públicos/visíveis da própria loja, ou usar os dados de produto fornecidos pelo mecanismo nativo que a validação técnica confirmar. Nunca confiar em estoque ou preço antigo vindo do Supabase ou embutido na configuração.
-5. Acrescentar as linhas selecionadas ao carrinho usando o mesmo formulário/ação que a página nativa de produto da Loja Integrada usa. Verificar sucesso no carrinho e manter as linhas separadas, para que o Bling reconheça SKU e quantidade de cada componente.
-6. Deixar o fechamento e a seleção de Pagamento na Entrega para o checkout nativo.
+1. Criar uma página de conteúdo nativa, inicialmente inativa, com uma região de montagem identificável.
+2. Desenvolver um script pequeno, sem dependências externas, versionado neste repositório. Inserir no gerenciador de código da Loja Integrada no rodapé das páginas permitidas, com uma guarda de caminho para inicializar somente no montador.
+3. Buscar composição, alternativas e regras a partir da fonte de dados existente, após validar no catálogo da própria Loja Integrada os produtos, SKUs, marcas, preços e disponibilidade reais. Não usar estoque/preço antigo do Supabase como disponibilidade da LI.
+4. Manter a regra de preço oculta no servidor ou na fonte interna. O navegador recebe apenas a composição pública permitida e o total comercial já calculado, sem ajuste fixo/condicional separado.
+5. Adicionar ao carrinho cada componente individualmente pelo fluxo nativo, caso a plataforma aceite esse fluxo sem alterar o preço dos produtos.
+6. Manter o checkout nativo e preservar Pagamento na Entrega.
 
-O ponto 5 é um gate técnico: até um produto real ser sincronizado e o comportamento nativo de adicionar ao carrinho ser observado, não há confirmação suficiente para escrever ou publicar um integrador. Se a plataforma não expuser um caminho compatível com o formulário nativo, a decisão volta para revisão; não será substituída por uma API não documentada sem teste controlado.
+### Gate obrigatório de compatibilidade de preço e carrinho
+
+A interface só poderá ser considerada pronta se o total que o cliente vê no montador for igual ao total cobrado pelo carrinho/checkout, incluindo os ajustes ocultos aplicáveis, e se o pedido continuar identificando cada SKU/componente para o Bling.
+
+Ainda não foi confirmado um mecanismo oficial de carrinho de comprador que aceite o preço calculado do molde enquanto mantém produtos individuais como linhas do carrinho. Esse comportamento precisa ser comprovado com produto real. Não basta exibir um total diferente na página do montador, pois o checkout nativo valida os preços vigentes da LI.
+
+Se o carrinho nativo não aceitar esse total com as linhas individuais exigidas, pausar esse requisito e trazer as alternativas para decisão. Não contornar com preço fictício, alteração em massa de catálogo, ajuste separado exposto ao cliente, checkout externo ou API não documentada.
 
 ## Comportamento proposto
 
-- Seleção de um dos cinco modelos e carregamento das quantidades-base.
-- Em cada grupo, seleção entre marcas/itens equivalentes válidos no catálogo atual.
-- Aumento e redução de quantidades com limite derivado da disponibilidade atual do produto; impedir quantidades negativas e impedir quantidade maior que o estoque visível.
-- Remoção de itens opcionais e restauração dos itens-base.
-- Inclusão de extras somente por ação explícita do cliente.
-- Resumo sempre visível com produto, marca, SKU quando disponível, quantidade e subtotal; total atualizado a cada mudança.
-- Estado vazio, indisponibilidade, erro ao carregar produto e falha no carrinho apresentados com mensagens claras.
-- Sem desconto oculto por modelo, arredondamento artificial ou preço fixo de demonstração.
+- Seleção de um dos cinco modelos e carregamento de suas quantidades-base.
+- Troca de marcas apenas por opções equivalentes aprovadas e disponíveis.
+- Aumento/redução de quantidades respeitando estoque atual; impedir quantidades negativas e acima da disponibilidade.
+- Remoção de itens opcionais e restauração da composição-base.
+- Inclusão de extras somente por ação explícita.
+- Resumo com nomes/marcas e quantidades, sem preços individuais; o total comercial é recalculado a cada alteração.
+- Mensagens claras para estado vazio, indisponibilidade, erro ao carregar a cesta e falha ao adicionar ao carrinho.
 
 ## Plano de validação
 
-1. Reconstruir a composição de cada modelo com produtos atualmente ativos, SKUs válidos, preço e disponibilidade do catálogo da Loja Integrada.
-2. Com pelo menos um produto real da conta confirmado, validar a submissão nativa de uma linha e observar o carrinho sem finalizar o pedido.
-3. Validar seleção de cada modelo, substituição de marca, quantidades, extras, soma de preço, estoque zero/limite e atualização do carrinho.
-4. Conferir se carrinho/pedido preservam SKUs e linhas individuais conforme o mapeamento esperado pelo Bling.
-5. Abrir o checkout para leitura e confirmar que permanece nativo e que Pagamento na Entrega continua oferecido. Não enviar pedido, iniciar pagamento ou emitir NF-e.
-6. Manter loja em manutenção e página do montador inativa até que o usuário aprove a publicação de teste; domínio e DNS permanecem inalterados.
+1. Reconciliar os cinco moldes e suas regras com os produtos reais da Loja Integrada depois de confirmar o canal correto do Bling.
+2. Com produto real sincronizado, adicionar uma linha ao carrinho pelo mecanismo nativo e observar o total e o SKU.
+3. Validar modelo padrão, substituição de marca, quantidade, remoção e extra; comparar total do montador com carrinho/checkout.
+4. Validar o molde com e sem o produto condicionado segundo a flag atual, sem ativar regra desativada.
+5. Conferir se preço individual e ajuste oculto não aparecem como valores separados ao cliente e se o pedido mantém os componentes/SKUs esperados pelo Bling.
+6. Abrir checkout para leitura e confirmar comportamento nativo e Pagamento na Entrega. Não enviar pedido, iniciar pagamento nem emitir NF-e.
+7. Manter a loja em manutenção e a página do montador inativa até aprovação; DNS e domínio permanecem inalterados.
 
 ## Limitações e riscos conhecidos
 
-- Não existe catálogo de produtos na Loja Integrada neste momento; logo, preços, disponibilidade, troca de marcas, carrinho e checkout não podem ser testados de ponta a ponta ainda.
-- A identidade do canal/conta do Bling e a origem dos 178 produtos observados na ponte antiga continuam sem confirmação. Essa ponte/token não será usada para escrita.
-- Alterações de código personalizado podem afetar o tema e não têm suporte de código pela Loja Integrada; limitar o carregamento à página do montador e fazer teste visual em desktop e celular.
+- Não há produtos na Loja Integrada hoje; preço, disponibilidade, substituições, carrinho e checkout não podem ser testados de ponta a ponta.
+- A identidade do canal/conta do Bling e a origem dos 178 produtos vistos pela ponte antiga continuam sem confirmação. A ponte/token não será usada para escrita.
+- O carrinho pode recalcular o total usando apenas os preços atuais dos produtos individuais e ignorar o total comercial do molde; este é o gate principal.
+- Alterações de código podem afetar o tema e não têm suporte de código pela Loja Integrada. O script deve carregar somente na página do montador.
 - O checkout não aceita personalização por esses trechos de código.
-- A integração carrinho precisa de verificação empírica com produto real; a existência de campo de código HTML/JS não comprova uma API de carrinho oficialmente suportada.
 
 ## Fora do escopo
 
-Trocar tema, ativar a loja, mudar DNS/domínio, publicar preços inventados, cadastrar produtos fictícios, alterar configurações ou estoque do Bling, criar pedidos de teste, executar pagamento, emitir NF-e, ou modificar a PR #1357.
+Trocar tema, ativar a loja, mudar DNS/domínio, publicar preços inventados, cadastrar produtos fictícios, alterar estoque ou regras do Bling, criar pedidos de teste, executar pagamento, emitir NF-e ou modificar a PR #1357.
