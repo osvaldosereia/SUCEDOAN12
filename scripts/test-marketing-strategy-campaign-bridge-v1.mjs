@@ -43,23 +43,19 @@ assert.equal(fs.existsSync(edgePath),true,'Edge Admin dedicada da ponte deve exi
 const edge=fs.readFileSync(edgePath,'utf8');
 assert.match(edge,/db\.auth\.getUser\s*\(/,'Edge bridge deve validar sessão Admin');
 assert.match(edge,/from\(["']admin_users["']\)/,'Edge bridge deve exigir admin_users ativo');
-for(const action of ['materialize_campaign','approve_send','schedule_send','start_send']){
-  assert.ok(edge.includes(`"${action}"`)||edge.includes(`'${action}'`),`action ausente na Edge bridge: ${action}`);
-}
-for(const rpc of ['marketing_strategy_materialize_campaign_v1','marketing_strategy_approve_send_v1','marketing_strategy_schedule_send_v1']){
-  assert.match(edge,new RegExp(`rpc\\(["']${rpc}["']`,'i'),`Edge deve delegar à RPC da ponte: ${rpc}`);
-}
+assert.match(edge,/ACTIONS=new Set\(\["materialize_campaign"\]\)/,'Edge só permite preparar rascunho');
+assert.match(edge,/rpc\(["']marketing_strategy_materialize_campaign_v1["']/i,'Edge delega à RPC de rascunho');
+assert.doesNotMatch(edge,/approve_send|schedule_send|start_send/,'Edge não pode aprovar, agendar ou iniciar envio');
 assert.doesNotMatch(edge,/marketing_materialize_dispatches_v1|marketing_claim_dispatch_batch_v1|sendTemplateViaMeta|graph\.facebook\.com/i,'Edge bridge não pode despachar/chamar Meta diretamente');
 assert.doesNotMatch(edge,/campaigns_enabled\s*[:=]\s*true|ana_enabled\s*[:=]\s*true|runtime_mode\s*[:=]\s*["']live["']/i,'Edge bridge não pode ativar runtime');
 
 const uiPath='vitrine/admin/marketing/strategy-center.js';
 const ui=fs.readFileSync(uiPath,'utf8');
-for(const label of ['Preparar campanha','Aprovar e enviar agora','Aprovar e agendar']) assert.ok(ui.includes(label),`UI deve mostrar ação: ${label}`);
+assert.match(ui,/Preparar campanha/,'UI deve preparar rascunho de campanha');
 assert.match(ui,/submit_template/,'UI deve permitir concluir Portão B pela Edge de Estratégia');
 assert.match(ui,/materialize_campaign/,'UI deve preparar campanha pelo bridge');
-assert.match(ui,/approve_send/,'UI deve registrar Portão C antes de agendar/enviar');
-assert.match(ui,/schedule_send/,'UI deve delegar agendamento à Edge bridge');
-assert.match(ui,/start_send/,'UI deve delegar envio imediato à Edge bridge');
+assert.match(ui,/Envio manual na aba Campanhas/,'UI deve orientar o fluxo manual de envio');
+assert.doesNotMatch(ui,/scheduleControls|approveThen|sendApproved|approve_send|schedule_send|start_send/,'Estratégia não pode aprovar, agendar ou iniciar envio');
 assert.match(ui,/admin-marketing-strategy-campaign-v1/,'UI deve usar Edge bridge dedicada');
 assert.doesNotMatch(ui,/graph\.facebook\.com|META_WHATSAPP_ACCESS_TOKEN|service_role/i,'browser não pode conter Graph/token/service-role');
 

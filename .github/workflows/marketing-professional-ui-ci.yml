@@ -42,6 +42,9 @@ on:
       - 'scripts/test-whatsapp-marketing-template-simple-ui-v1.mjs'
       - 'scripts/test-whatsapp-marketing-papoai-responsive-v1.mjs'
       - 'scripts/test-marketing-stability-unified-v1.mjs'
+      - 'scripts/test-marketing-audit-adjustments-v1.mjs'
+      - 'vitrine/admin/marketing/marketing-bootstrap.js'
+      - 'vitrine/admin/marketing/marketing-repurchase-campaign-audience-v1.mjs'
       - 'vitrine/admin/basket-lot-image.js'
       - 'vitrine/admin/index.html'
       - 'scripts/test-whatsapp-marketing-campaign-simple-audience-v1.mjs'
@@ -108,6 +111,8 @@ jobs:
         run: node scripts/test-whatsapp-marketing-audience-progressive-v1.mjs
       - name: Storefront tracking collector syntax
         run: node --check vitrine/basket-carousel.js
+      - name: Marketing approved audit adjustments
+        run: node scripts/test-marketing-audit-adjustments-v1.mjs
       - name: Marketing responsiveness and template-channel regression
         run: node scripts/test-marketing-stability-unified-v1.mjs
       - name: Marketing polish syntax

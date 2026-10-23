@@ -10,13 +10,14 @@ const campaignEntry=read('vitrine/admin/marketing/campaign-entry.js');
 const campaignList=read('vitrine/admin/marketing/campaign-list-simple.js');
 const campaignSimple=read('vitrine/admin/marketing/campaign-simple-ui.js');
 const bootstrap=read('vitrine/admin/basket-lot-image.js');
+const marketingBootstrap=read('vitrine/admin/marketing/marketing-bootstrap.js');
 const admin=read('vitrine/admin/index.html');
 const backend=read('supabase/functions/admin-whatsapp-templates-v1/index.ts');
 
 for(const [file,source] of Object.entries({
  'marketing-polish.js':polish,'template-center.js':templates,
  'template-type-picker.js':picker,'campaign-entry.js':campaignEntry,
- 'campaign-list-simple.js':campaignList,'campaign-simple-ui.js':campaignSimple,'basket-lot-image.js':bootstrap
+ 'campaign-list-simple.js':campaignList,'campaign-simple-ui.js':campaignSimple,'basket-lot-image.js':bootstrap,'marketing-bootstrap.js':marketingBootstrap
 })){
   const normalized=source.replace(/^import[^\n]*\n/gm,'').replace(/^export\s*\{[^}]*\};?/gm,'');
   new vm.Script(normalized,{filename:file});
@@ -59,9 +60,10 @@ assert.match(templates,/pendingTemplateLoads/,'busy user requests must not be dr
 assert.match(backend,/channel_or_account_required/);
 assert.match(backend,/\.eq\("slug","dona-antonia-"\+channel\)/,'backend only accepts the two official channels');
 assert.match(backend,/const auth=await adminAuth\(req\)/,'all list and sync reads remain authenticated');
-assert.match(bootstrap,/marketing-template-center-v2/,'force new template center module');
-assert.match(bootstrap,/marketing-campaign-entry-v8/,'force new campaign entry module');
-assert.match(admin,/basket-lot-image\.js\?v=marketing-workspace-v5/,'force browser to load the current Marketing bootstrap');
+assert.doesNotMatch(bootstrap,/marketing\/(template-center|campaign-entry)\.js/,'basket image generator must not bootstrap Marketing');
+assert.match(marketingBootstrap,/template-center\.js\?v=marketing-template-center-v3/,'dedicated bootstrap loads Templates');
+assert.match(marketingBootstrap,/campaign-entry\.js\?v=marketing-campaign-entry-v9/,'dedicated bootstrap loads Campaigns');
+assert.match(admin,/marketing-bootstrap\.js\?v=marketing-bootstrap-v1/,'Admin loads Marketing explicitly');
 for(const route of ['overview','strategy','templates','campaigns','audiences'])
  assert.match(polish,new RegExp(route),'retain '+route+' navigation');
 assert.match(polish,/data-marketing-admin-consents/,'retain consent access');
