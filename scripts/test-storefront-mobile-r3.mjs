@@ -18,7 +18,7 @@ assert.match(region,/homeSubgroupSignatures\.get\(subgroup\)!==sub\.signature/,'
 assert.match(region,/if\(host\.children\[index\]!==sectionNode\)/,'category ordering must be preserved');
 assert.match(region,/if\(changed\)[\s\S]*BasketCarousel\.mount\(host\)/,'only altered sections remount observers');
 assert.match(region,/if\(!canPatch\)\{[\s\S]*content\.innerHTML=homeIntro/,'full page replacement must occur only on fresh navigation');
-assert.match(region,/if\(!state\.homePartial&&existingRemaining\)existingRemaining\.remove\(\)/,'progressive loading placeholder must disappear');
+assert.match(region,/if\(state\.homeSizeCards\)basketGroups=basketGroups\.filter/,'home renders only complete basket size cards from the lightweight response');
 assert.match(region,/if\(!canPatch\)\{[\s\S]*observeOffers\(\)/,'existing loaded offers must not be reloaded on catalog updates');
 assert.match(region,/function syncHomeBasketGroups\(host,records\)/);
 assert.match(page,/BasketCarousel\.card\(b,esc,money,basketName,index\)/,'card must receive global image index');
