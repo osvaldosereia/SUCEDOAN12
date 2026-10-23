@@ -66,7 +66,7 @@ assert.deepEqual(opened, [inactiveId]);
 root.onchange({target:{matches:selector=>selector==='[data-product-active]',closest:()=>({dataset:{productRow:inactiveId}}),value:'true'}});
 root.onclick({target:{closest:()=>({dataset:{productInlineSave:inactiveId},hasAttribute:name=>name==='data-product-inline-save'})}});
 await new Promise(resolve=>setTimeout(resolve,0));
-assert.deepEqual(inlineSaves, [{id:inactiveId,stock:0,active:true}], 'zero-stock inactive product can be activated inline');
+assert.deepEqual(JSON.parse(JSON.stringify(inlineSaves)), [{id:inactiveId,stock:0,active:true}], 'zero-stock inactive product can be activated inline');
 
 const productCalls=[];
 const apiWindow={DonaAntoniaAdminBridge:{operator:()=> 'QA',api:async(action,params={},options={})=>{
