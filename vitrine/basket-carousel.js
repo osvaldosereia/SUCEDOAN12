@@ -83,42 +83,11 @@ window.BasketCarousel={
   mount(host){
     this.dispose?.();if(!host)return;
     this.prepareHome(host);
-    const abort=new AbortController(),signal=abort.signal;
     const images=host.querySelectorAll('img[data-basket-src]');
     const load=img=>{img.src=img.dataset.basketSrc;img.removeAttribute('data-basket-src')};
-    // Viewport intersection also respects the horizontal clipping of each carousel.
-    // Native lazy loading alone may eagerly fetch far outside a horizontal strip.
+    // Load card photos only when their cards approach the viewport.
     const observer='IntersectionObserver'in window?new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting){load(entry.target);observer.unobserve(entry.target)}},{threshold:.01}):null;
     if(observer)images.forEach(img=>observer.observe(img));else images.forEach(load);
-    const updates=[];
-    host.querySelectorAll('.basket-carousel').forEach(carousel=>{
-      const strip=carousel.querySelector('.basket-product-strip'),track=carousel.querySelector('.basket-scroll-track'),thumb=track.firstElementChild;
-      const update=()=>{
-        const max=strip.scrollWidth-strip.clientWidth,width=Math.max(24,track.clientWidth*strip.clientWidth/Math.max(1,strip.scrollWidth)),left=max>0?(track.clientWidth-width)*strip.scrollLeft/max:0;
-        track.setAttribute('aria-disabled',String(max<=1));track.tabIndex=max>1?0:-1;
-        thumb.style.width=width+'px';thumb.style.transform='translateX('+left+'px)';track.setAttribute('aria-valuenow',String(max>0?Math.round(strip.scrollLeft/max*100):0));
-      };updates.push(update);
-      strip.addEventListener('scroll',update,{passive:true,signal});
-      const key=e=>{
-        if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;
-        e.preventDefault();const max=strip.scrollWidth-strip.clientWidth;
-        strip.scrollLeft=e.key==='Home'?0:e.key==='End'?max:strip.scrollLeft+(e.key==='ArrowLeft'?-1:1)*Math.max(108,strip.clientWidth*.7);
-      };strip.addEventListener('keydown',key,{signal});track.addEventListener('keydown',key,{signal});
-      let drag=null;
-      track.addEventListener('pointerdown',e=>{
-        if(e.button!==0)return;e.preventDefault();track.focus();
-        const rect=track.getBoundingClientRect(),t=thumb.getBoundingClientRect();
-        const offset=e.target===thumb?e.clientX-t.left:t.width/2;
-        drag={offset};track.setPointerCapture(e.pointerId);
-        const range=rect.width-t.width;strip.scrollLeft=range>0?Math.max(0,Math.min(range,e.clientX-rect.left-offset))/range*(strip.scrollWidth-strip.clientWidth):0;update();
-      },{signal});
-      track.addEventListener('pointermove',e=>{if(!drag)return;const rect=track.getBoundingClientRect(),range=rect.width-thumb.getBoundingClientRect().width;strip.scrollLeft=range>0?Math.max(0,Math.min(range,e.clientX-rect.left-drag.offset))/range*(strip.scrollWidth-strip.clientWidth):0;update()},{signal});
-      const end=()=>{drag=null};track.addEventListener('pointerup',end,{signal});track.addEventListener('pointercancel',end,{signal});track.addEventListener('lostpointercapture',end,{signal});
-      update();
-    });
-    const resize='ResizeObserver'in window?new ResizeObserver(()=>updates.forEach(fn=>fn())):null;
-    if(resize)host.querySelectorAll('.basket-product-strip').forEach(x=>resize.observe(x));
-    else window.addEventListener('resize',()=>updates.forEach(fn=>fn()),{signal});
-    this.dispose=()=>{observer?.disconnect();resize?.disconnect();abort.abort()};
+    this.dispose=()=>observer?.disconnect();
   }
 };
