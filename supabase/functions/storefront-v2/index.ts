@@ -816,6 +816,17 @@ async function submit(req:Request,p:any){
   return {...created.data,order_public_url:publicOrderLink?.public_url||null,order_public_code:publicOrderLink?.public_code||null,phone_attached:Boolean(ph),customer_status:customerStatus,registration_complete:customer?.registration_complete===true,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,customer:customer||null,history_synced:Boolean(customer),papoai_conversation_linked:Boolean(papoaiLink?.linked),stock_adjustment:stock.stock_adjustment,adjusted_items:stock.adjusted_items};
 }
 
+async function basketBySize(sizeKey:string){
+  const key=txt(sizeKey,40).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("pt-BR");
+  if(!["economica","mini","pequena","media","grande"].includes(key))return {error:"invalid_basket_size",status:400};
+  const shell=await homeSizeCards();
+  const card=(shell.baskets||[]).find((item:any)=>String(item.size_key||"")===key);
+  const match=String(card?.card_key||"").match(/^([0-9a-f-]{36})@([1-6])$/i);
+  if(!match)return {error:"basket_mold_unavailable",status:404};
+  const detail=await moldDetail(match[1],Number(match[2]),null,false);
+  return detail?{ok:true,...detail}:{error:"basket_mold_unavailable",status:404};
+}
+
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
   try{
@@ -828,6 +839,10 @@ Deno.serve(async(req:Request)=>{
     if(req.method==="GET"&&action==="subcategories")return json(req,await subcats(u),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
     if(req.method==="GET"&&action==="products")return json(req,await productList(u),200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="product"){const id=uid(u.searchParams.get("product_id"));if(!id)return json(req,{ok:false,error:"invalid_product"},400);const p=await oneProduct(id);return p?json(req,{ok:true,product:p},200,{"Cache-Control":"no-store"}):json(req,{ok:false,error:"product_not_found"},404)}
+    if(req.method==="GET"&&action==="basket_by_size"){
+      const r=await basketBySize(u.searchParams.get("size_key")||"");
+      return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,r,200,{"Cache-Control":"no-store"});
+    }
     if(req.method==="GET"&&action==="basket"){const raw=txt(u.searchParams.get("basket_id"),100),mm=raw.match(/^([0-9a-f-]{36})@([1-6])$/i);if(mm){const id=uid(mm[1]);if(!id)return json(req,{ok:false,error:"invalid_basket"},400);const b=await moldDetail(id,Number(mm[2]),null,u.searchParams.get("lightweight")!=="1");return b?json(req,{ok:true,...b},200,{"Cache-Control":"no-store"}):json(req,{ok:false,error:"basket_mold_unavailable"},404)}const id=uid(raw);if(!id)return json(req,{ok:false,error:"invalid_basket"},400);const b=await basket(id);return b?json(req,{ok:true,...b},200,{"Cache-Control":"no-store"}):json(req,{ok:false,error:"basket_not_found"},404)}
     if(req.method==="GET"&&action==="basket_mold_options"){
       const r=await moldPositionOptions(u.searchParams.get("basket_id")||"",Math.trunc(Number(u.searchParams.get("composition_number")||0)),u.searchParams.get("position_id")||"",u.searchParams.get("selected_product_id")||"",Math.trunc(Number(u.searchParams.get("quantity")||0)),Math.trunc(Number(u.searchParams.get("offset")||0)));
