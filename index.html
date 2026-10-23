@@ -563,6 +563,7 @@
       categorySubcategories: {},
       subcategoriesExpanded: {}
     };
+    const homeSubgroupSignatures=new WeakMap();
 
     // Quotes belong to live cart item objects, not changing numeric positions.
     // Keep these flags out of localStorage so a reload can never inherit a stuck "pending" state.
