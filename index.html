@@ -823,7 +823,7 @@
     let homeSizeCardsPromise=null;
     let basketPreviewPrefetchPromise=null;
     const homeBasketDetailRequests=new Map();
-    const BASKET_PREVIEW_PREFETCH_CONCURRENCY=2;
+    const BASKET_PREVIEW_PREFETCH_CONCURRENCY=1;
     async function resolveHomeSizeCards(){
       const unresolved=(state.home?.baskets||[]).some(card=>card.home_shell===true&&card.size_key&&!resolvedHomeBasketKey(card));
       if(!unresolved)return true;
@@ -895,7 +895,7 @@
         :callback=>window.setTimeout(callback,250);
       schedule(()=>void prefetchBasketPreviews());
     }
-        function normalizeBasketSizeName(value){return String(value||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR')}
+    function normalizeBasketSizeName(value){return String(value||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR')}
     function homeBasketSubcategories(group){
       const subcategories=Array.isArray(group?.subcategories)?group.subcategories:[];
       if(String(group?.slug||'')!=='cestas-completas')return subcategories;
