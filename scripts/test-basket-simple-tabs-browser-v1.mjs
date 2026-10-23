@@ -3,40 +3,47 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url);
 const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
-const code=fs.readFileSync('vitrine/admin/basket-admin-section.js','utf8');
+const section=fs.readFileSync('vitrine/admin/basket-admin-section.js','utf8');
 
 const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHANNEL?{channel:process.env.PLAYWRIGHT_CHANNEL}:{})});
 try{
   const page=await browser.newPage({viewport:{width:1280,height:900}});
-  await page.setContent(`<!doctype html><html><body><main id="content"></main><script>
-    window.__basketTabCalls=[];
-    window.DonaAntoniaAdminBridge={toast:(m)=>window.__toast=m};
-    window.DonaAntoniaBasketMolds={open:async host=>{window.__basketTabCalls.push('molds');host.innerHTML='<div data-test-basket-molds>CESTAS MOLDE</div>'}};
-    window.DonaAntoniaKitBuilder={open:async host=>{window.__basketTabCalls.push('kits');host.innerHTML='<div data-test-kit-builder>CRIADOR DE KITS</div>'}};
-    window.DonaAntoniaStoreBaskets={open:async host=>{window.__basketTabCalls.push('store');host.innerHTML='<div data-test-store-baskets>CESTAS DO SITE</div>'}};
-  <\/script></body></html>`);
-  await page.addScriptTag({content:code});
+  await page.setContent('<main id="content"></main>');
+  await page.addScriptTag({content:`
+    window.calls=[];window.toasts=[];
+    window.DonaAntoniaAdminBridge={toast:m=>window.toasts.push(m)};
+    const original=HTMLHeadElement.prototype.appendChild;
+    const modules={
+      'basket-admin-domain.js':'DonaAntoniaBasketAdminDomain',
+      'basket-admin-api.js':'DonaAntoniaBasketAdminApi',
+      'basket-admin-types.js':'DonaAntoniaBasketAdminTypes',
+      'basket-admin-quantities.js':'DonaAntoniaBasketAdminQuantities',
+      'basket-admin-carousel.js':'DonaAntoniaBasketAdminCarousel'
+    };
+    HTMLHeadElement.prototype.appendChild=function(node){
+      const key=Object.keys(modules).find(name=>String(node.src||'').includes(name));
+      if(!key)return original.call(this,node);
+      const globalName=modules[key];
+      window[globalName]=key.endsWith('-domain.js')||key.endsWith('-api.js')?{}:{
+        open:async host=>{window.calls.push(globalName);host.innerHTML='<div data-admin-module="'+globalName+'">'+globalName+'</div>'}
+      };
+      setTimeout(()=>node.dispatchEvent(new Event('load')),0);
+      return node;
+    };
+  `});
+  await page.addScriptTag({content:section});
   await page.evaluate(()=>window.DonaAntoniaBasketAdmin.render());
-  await page.waitForSelector('[data-test-basket-molds]');
-  assert.equal(await page.locator('[data-basket-simple-tab]').count(),5,'must expose baskets, basket extras, taxonomy and two advanced legacy tools');
-  assert.equal(await page.locator('[data-basket-simple-tab="molds"]').getAttribute('aria-selected'),'true','molds tab must be default');
-  assert.deepEqual(await page.evaluate(()=>window.__basketTabCalls),['molds']);
-  assert.equal(await page.locator('[data-basket-advanced]').count(),1,'legacy tools must be grouped under advanced disclosure');
+  await page.waitForSelector('[data-admin-module="DonaAntoniaBasketAdminTypes"]');
+  assert.deepEqual(await page.locator('[data-basket-config-tab]').evaluateAll(nodes=>nodes.map(node=>node.dataset.basketConfigTab)),['types','quantities','carousel']);
 
-  await page.locator('[data-basket-advanced] summary').click();
-  await page.click('[data-basket-simple-tab="store"]');
-  await page.waitForSelector('[data-test-store-baskets]');
-  assert.equal(await page.locator('[data-basket-simple-tab="store"]').getAttribute('aria-selected'),'true');
-
-  await page.locator('[data-basket-advanced] summary').click().catch(()=>{});
-  if(!(await page.locator('[data-basket-advanced]').getAttribute('open')))await page.locator('[data-basket-advanced] summary').click();
-  await page.click('[data-basket-simple-tab="kits"]');
-  await page.waitForSelector('[data-test-kit-builder]');
-  assert.deepEqual(await page.evaluate(()=>window.__basketTabCalls),['molds','store','kits']);
-
-  const text=await page.locator('body').innerText();
-  assert.match(text,/Cestas do Site/);
-  assert.match(text,/Manutenção avançada/);
-  assert.equal(/primeiro crie os kits internos/i.test(text),false,'normal operation copy must not teach internal kit workflow');
-  console.log('basket simple tabs browser v1: PASS');
+  await page.click('[data-basket-config-tab="quantities"]');
+  await page.waitForSelector('[data-admin-module="DonaAntoniaBasketAdminQuantities"]');
+  assert.equal(await page.locator('[data-basket-config-tab="quantities"]').getAttribute('aria-selected'),'true');
+  await page.click('[data-basket-config-tab="carousel"]');
+  await page.waitForSelector('[data-admin-module="DonaAntoniaBasketAdminCarousel"]');
+  assert.equal(await page.locator('[data-basket-config-tab="carousel"]').getAttribute('aria-selected'),'true');
+  assert.deepEqual(await page.evaluate(()=>window.calls),['DonaAntoniaBasketAdminTypes','DonaAntoniaBasketAdminQuantities','DonaAntoniaBasketAdminCarousel']);
+  assert.equal(await page.locator('[data-basket-simple-tab]').count(),0);
+  assert.equal(await page.locator('[data-basket-advanced]').count(),0);
+  console.log('basket three-tab browser navigation: PASS');
 }finally{await browser.close()}
