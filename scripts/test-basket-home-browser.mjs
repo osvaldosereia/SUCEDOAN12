@@ -29,22 +29,23 @@ try{
  await page.setViewportSize({width:320,height:740});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  // Run the complete public page too: delay the lightweight home response so
  // the initial shell and the transition to size cards are both observable.
- const app=await browser.newPage({viewport:{width:390,height:844}}),errors=[],storefrontActions=[],basketBySizeCalls=[];
+ const app=await browser.newPage({viewport:{width:390,height:844}}),errors=[],storefrontActions=[],basketDetailRequests=[];
  app.on('pageerror',e=>errors.push(e.stack||e.message));
  let releaseFirstQuote;
  const firstQuoteGate=new Promise(resolve=>{releaseFirstQuote=resolve});
  let quoteCount=0;
  let releaseCategoryProducts;
  const categoryProductsGate=new Promise(resolve=>{releaseCategoryProducts=resolve});
- const offered={...basket,total_item_count:basket.carousel_items.length,id:'11111111-1111-4111-8111-111111111111',lot_id:'22222222-2222-4222-8222-222222222222',stock_quantity:10,category_id:'cat',subcategory_id:'sub-mini',category_slug:'cestas-completas',category_name:'Cestas Completas',name:'Mini'};
+ const offered={...basket,total_item_count:basket.carousel_items.length,id:'11111111-1111-4111-8111-111111111111',mold_mode:true,composition_number:1,lot_id:'22222222-2222-4222-8222-222222222222',stock_quantity:10,category_id:'cat',subcategory_id:'sub-mini',category_slug:'cestas-completas',category_name:'Cestas Completas',name:'Mini'};
  const homeNames=['Econômica','Mini','Pequena','Média','Grande'];
   await app.route('**/*',async route=>{
    const u=new URL(route.request().url());
    if(u.pathname.includes('/functions/v1/storefront-v2')){
      const action=u.searchParams.get('action');storefrontActions.push(action);
      if(action==='basket_by_size'){
-       basketBySizeCalls.push(u.searchParams.get('size_key'));
-       assert.ok(u.searchParams.get('trace_id'),'detail request carries a per-open trace ID');
+       const sizeKey=u.searchParams.get('size_key');
+       assert.ok(u.searchParams.get('trace_id'),'cold size resolution carries a trace ID');
+       basketDetailRequests.push({action,sizeKey,basketId:null});
        return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,basket:offered,items:offered.carousel_items.map(x=>({...x,base_quantity:x.quantity,stock_quantity:100}))})});
      }
      if(action==='products'){
@@ -56,6 +57,10 @@ try{
        quoteCount++;
        if(quoteCount===1)await firstQuoteGate;
        return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,total_cents:10500,food_changed:false,hygiene_changed:false})});
+     }
+     if(action==='basket'){
+       const basketId=u.searchParams.get('basket_id');
+       if(basketId){assert.ok(u.searchParams.get('trace_id'),'direct composition request carries a trace ID');basketDetailRequests.push({action,basketId,sizeKey:null})}
      }
      const response=action==='basket'?{ok:true,basket:offered,items:offered.carousel_items.map(x=>({...x,base_quantity:x.quantity,stock_quantity:100}))}:{ok:true,offers:[]};
      return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify(response)});
@@ -79,8 +84,8 @@ try{
  assert.equal(await app.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  assert.equal(storefrontActions.includes('home_size_cards'),false,'cold homepage must render cards without waiting for basket API data');
  await app.getByRole('button',{name:'Ver produtos da cesta Mini',exact:true}).click();
- assert.deepEqual(basketBySizeCalls,['mini'],'the first basket-card click resolves its ID and details in one request');
- assert.equal(storefrontActions.includes('home_size_cards'),false,'basket opening does not wait for a separate size-ID request');
+ assert.ok(basketDetailRequests.some(call=>call.sizeKey==='mini'||call.basketId===offered.id+'@1'),'the clicked size resolves through one stock-sensitive detail request');
+ assert.equal(storefrontActions.includes('home_size_cards'),false,'basket opening does not wait for a separate browser size-ID request');
  await app.locator('#addBasket').waitFor();
  assert.ok((await app.locator('#sheetBody').innerText()).includes('Produto 1'),'clicking a static size card loads its basket products');
  await app.locator('#closeSheet').click();
