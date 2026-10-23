@@ -20,16 +20,13 @@ for(const legacy of [
   assert.equal(admin.includes(legacy),false,`legacy basket composer must stay retired: ${legacy}`);
 }
 
-assert.match(admin,/basket-admin-section\.js\?v=basket-admin-simple-20261020/,'Admin must load one Cestas/Kits section controller');
+assert.match(admin,/basket-admin-section\.js\?v=basket-admin-three-tabs-20261023/,'Admin must load the three-tab Cestas controller');
 assert.match(admin,/basket-guided-builder\.js\?v=guided-v3/,'technical guided editor may remain loaded during migration');
 assert.match(adminUi,/DonaAntoniaBasketAdmin\?\.render/,'renderBaskets must delegate to the section controller');
 assert.doesNotMatch(adminUi,/DonaAntoniaGuidedBridge/,'retired basket-specific bridge must not return');
 
-assert.match(section,/Receitas de kits \(legado\)/,'advanced maintenance must keep the legacy kit recipe workspace available');
-assert.match(section,/Cestas do Site/,'normal operation must expose Cestas do Site');
-assert.match(section,/data-basket-advanced/,'legacy maintenance must remain behind the advanced disclosure');
-assert.match(section,/DonaAntoniaKitBuilder/,'section must delegate internal recipes');
-assert.match(section,/DonaAntoniaStoreBaskets/,'section must delegate external baskets');
+assert.deepEqual([...section.matchAll(/data-basket-config-tab="([^"]+)"/g)].map(match=>match[1]),['types','quantities','carousel'],'Cestas exposes exactly three requested tabs');
+assert.doesNotMatch(section,/Receitas de kits|Cestas do Site|data-basket-advanced|DonaAntoniaKitBuilder|DonaAntoniaStoreBaskets/,'legacy editors are removed from the replaced session');
 for(const retired of ['data-basket-edit','data-basket-new-lot','data-basket-edit-lot','data-basket-print','data-basket-archive','DonaAntoniaBasketGuided']){
   assert.doesNotMatch(section,new RegExp(retired),`normal operation must stay free of ${retired}`);
 }
