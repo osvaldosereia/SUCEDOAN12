@@ -1,8 +1,21 @@
 # Dona Antônia Operations 2.0 — IMPLEMENTATION ROADMAP
 
 > Aprovado para implantação segura em 2026-09-25. Executar por homologação, shadow/canary e rollback; não fazer big-bang.
-> Atualizado em 2026-10-22 após validação do estado real no GitHub, site em uso e Supabase.
+> Atualizado em 2026-10-23 após validação do estado real no GitHub, site em uso e Supabase.
 
+### Checkpoint de execução — 2026-10-23 (R14: cards leves da homepage e contrato de CI)
+
+- Main revalidada: `5d24cd70d4c609dcdd4ea8aeb94b0c867ccaff10`; PR #1300 integrada. PR #1301 aberta/mergeable na base `483d30e6ee811a5a9eb290f6cc0367abd9db1a4d`, branch `agent/fix-public-basket-card-contracts-20261023`, head `31184b23385c536e7a86e4f8902de60079a83ed3`.
+- A PR alinha testes e fixtures de navegador ao contrato atual `home_size_cards`, preserva as cinco opções de Cestas Completas sem preço/contagem no carregamento inicial e corrige `firstCestasMs` para ler o marco ativo `da-home-size-cards`. O teste R2 agora avalia somente os dois helpers puros; a reprodução isolada passou.
+- Arquivos: `index.html`; `scripts/test-admin-pending-data-baskets-public-v1.mjs`; `scripts/test-basket-carousel-browser.mjs`; `scripts/test-basket-home-browser.mjs`; `scripts/test-basket-unified-commercial-model.mjs`; `scripts/test-home-performance-contract.mjs`; `scripts/test-storefront-mobile-r1.mjs` até `r4.mjs`.
+- Head CI #31184b2: seis workflows passaram (#39881247833, #39881247867, #39881247838, #39881247841, #39881247844 e #39881247805). Os gates #39881248170 (Basket product carousel) e #39881247911 (Basket kit editor) permaneciam `in_progress` na instalação de Playwright/Chromium às 2026-10-23 01:04 UTC; sem resultado final, portanto não integrar ainda.
+- Smoke somente leitura em 2026-10-23 confirmou a homepage acessível em `/`, título da Vitrine e pedido vazio. O leitor web não executou a UI dinâmica nem abriu o Admin; o smoke visual mais recente do Admin disponível no histórico do handoff foi em 2026-10-22. Nenhum pedido/checkout/mensagem, NF-e, ação Bling, estoque ou financeiro foi acionado. Sem evidência de publicação desta PR.
+- Supabase canônico `ssbesxgaijknwsjbsbcz` revalidado ACTIVE_HEALTHY, sa-east-1, PostgreSQL 17.6.1.166, 142 funções. `storefront-v2` v99/hash `5bd0b5ab9ec2b21c00c6a185daaf45ef6d75aee2dc4c0598a165b43b00d7dfd2`; `admin-service-intelligence-v1` v377/hash `543b00c23a468f361ce00c63a4ee81a537daed1a7e6f14cce33082e0676f5bb3`; `admin-products-live-v1` v184/hash `d087c872ed23fa03dc2c3c784255b2bada1129de62b07db6f558c8ab7fd6291e`. `admin1-products-read-v1` continua ACTIVE v4 no canônico e `admin1-legacy-catalog-read-v1` ACTIVE v2 no projeto `xaoeldjuxzsdsblimzxo`. Nenhuma alteração Supabase; advisors não se aplicam.
+- Sem runtime visual do Admin: build check do runtime não aplicável. Rollback, se a #1301 for integrada, é revert do squash; sem rollback de banco.
+
+### Próxima tarefa exata
+
+Aguardar os runs #39881248170 e #39881247911; integrá-la por squash somente quando os gates concluírem com sucesso. Se instalador de Chromium continuar pendente/falhar, registrar o bloqueio exato e não contornar a proteção. Após o merge, confirmar Pages e smoke somente leitura em `/` e `/vitrine/admin/`; então encerrar PRs sobrepostas #1302 e #1298 após conferir que os deltas estão cobertos.
 ### Checkpoint de execução — 2026-10-22 (R13: telemetria segura de resultado por ação)
 
 - Main antes da mudança: 13edd3d43a837d33c62a084643fde909e68d269c. A implementação da PR #1290 foi integrada por squash em 9b8710e6981e5e664ce7f59fd186c552054e07f0; branch/head agent/admin-service-outcome-telemetry-20261022 / e4f966cb409fbc2c0999c91ee44b9cd370852837. PR: https://github.com/osvaldosereia/SUCEDOAN12/pull/1290.
