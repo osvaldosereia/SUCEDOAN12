@@ -43,7 +43,7 @@ assert.match(ui,/data-mold-save/);
 assert.equal(/kit interno|kit base|assembly_kit/i.test(ui),false,'normal mold editor must not teach internal kits');
 
 const adminHtml=fs.readFileSync('vitrine/admin/index.html','utf8');
-assert.match(adminHtml,/basket-admin-section\\.js\\?v=basket-admin-three-tabs-20261023/);
+assert.ok(adminHtml.includes('basket-admin-section.js?v=basket-admin-three-tabs-20261023'));
 const compositionSQL=fs.readFileSync('supabase/migrations/20261013122000_basket_mold_preferred_product_v1.sql','utf8');
 assert.match(compositionSQL,/metadata.*preferred/);
 assert.match(compositionSQL,/bool_or\(s\.is_preferred\)/);
@@ -101,9 +101,9 @@ assert.match(v3sql,/sort_order between 0 and 39/);
 assert.match(v3sql,/coalesce\(v_limit,3\)/);
 const storefrontV3=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
 assert.match(storefrontV3,/Show available alternatives in the order configured by the administrator/);
-assert.match(storefrontV3,/Number\\(a\\.sort_order\\|\\|0\\)-Number\\(b\\.sort_order\\|\\|0\\)/);
+assert.ok(storefrontV3.includes('Number(a.sort_order||0)-Number(b.sort_order||0)'));
 assert.match(storefrontV3,/alternative_count:alternatives.length/);
-assert.doesNotMatch(storefrontV3,/randomized=alts\\.slice/);
-assert.match(storefrontV3,/selected=alternatives\\.find/);
+assert.equal(storefrontV3.includes('randomized=alts.slice'),false);
+assert.ok(storefrontV3.includes('selected=alternatives.find'));
 console.log('basket mold admin shared brands v3: PASS');
 
