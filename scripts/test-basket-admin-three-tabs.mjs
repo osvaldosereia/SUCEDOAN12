@@ -58,7 +58,13 @@ assert.ok(storefront.includes('const detail=await moldDetail(match[1],Number(mat
 assert.ok(storefront.includes('u.searchParams.get("lightweight")==="1"'));
 assert.ok(storefront.includes('basketBySize(u.searchParams.get("size_key")||"",u.searchParams.get("lightweight")==="1")'));
 assert.ok(storefront.includes('action==="basket_by_size"'));
-assert.ok(publicSite.includes("const action=isHomeShell?'basket_by_size':'basket'"));
+const basketOpenStart=publicSite.indexOf('async function openBasket(');
+const basketOpenEnd=publicSite.indexOf('function basketGroupTitle',basketOpenStart);
+assert.ok(basketOpenStart>=0&&basketOpenEnd>basketOpenStart,'public basket open function exists');
+const basketOpen=publicSite.slice(basketOpenStart,basketOpenEnd);
+assert.ok(basketOpen.includes('const basketId=cachedBasket?.home_shell===true?String(cachedBasket.card_key||id):id'));
+assert.ok(basketOpen.includes("api('basket',{basket_id:basketId,lightweight:1,trace_id:traceId}"));
+assert.equal(basketOpen.includes('basket_by_size'),false,'opening a home basket must not re-resolve its size');
 assert.ok(publicSite.includes("if(!data?.basket||!Array.isArray(data.items))"));
 assert.ok(migration.includes("('Doação',0,null::text)"));
 assert.ok(migration.includes("('Família',6,null::text)"));
