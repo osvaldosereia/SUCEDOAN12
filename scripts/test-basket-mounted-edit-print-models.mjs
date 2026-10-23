@@ -21,7 +21,9 @@ assert.match(guided,/Em montagem|Montado/,'technical guided flow must still surf
 
 // O cutover deliberadamente remove edição/impressão/arquivamento do controlador normal.
 assert.deepEqual([...section.matchAll(/data-basket-config-tab="([^"]+)"/g)].map(match=>match[1]),['types','quantities','carousel'],'the replacement session must expose only its three tabs');
-assert.doesNotMatch(section,/Receitas de kits|Cestas do Site|data-basket-advanced/,'legacy navigation is removed from the replacement session');
+assert.doesNotMatch(section,/data-basket-advanced|data-basket-config-tab="(?:kits|store)"/,'legacy modules are not exposed as additional tabs');
+assert.match(section,/kits:\{label:'Receitas de kits \(legado\)'/,'legacy kit operational routing remains available');
+assert.match(section,/store:\{label:'Operação de lotes antigos'/,'legacy lot operational routing remains available');
 for(const retired of ['Editar lote','Imprimir','Excluir modelo'])assert.doesNotMatch(section,new RegExp(retired,'i'),`normal operation must not expose ${retired}`);
 assert.doesNotMatch(section,/data-basket-print|data-basket-edit|basket_archive|function printLot/,'simple controller must not own legacy lot/model actions');
 
