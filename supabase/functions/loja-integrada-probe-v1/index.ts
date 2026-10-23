@@ -128,7 +128,7 @@ Deno.serve(async (req: Request) => {
         if (detectedHost && detectedHost !== expectedHost) {
           outcome = { ok: false, error: "wrong_store_token", expected_host: expectedHost, detected_host: detectedHost };
         } else if (count !== 0 && !detectedHost) {
-          outcome = { ok: false, error: "store_identity_unverified", expected_host: expectedHost };
+          outcome = { ok: false, error: "store_identity_unverified", expected_host: expectedHost, total_count: count, sample_names: sample.slice(0, 4).map((p) => typeof p.nome === "string" ? p.nome.slice(0, 100) : null) };
         } else if (count === 0 && job.action !== "status") {
           outcome = { ok: false, error: "empty_store_cannot_verify_identity", expected_host: expectedHost };
         } else if (job.action === "status") {
