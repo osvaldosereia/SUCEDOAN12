@@ -1,0 +1,30 @@
+name: Loja Integrada - Gateway Read Only
+
+on:
+  push:
+    branches:
+      - agent/loja-integrada-readonly-20261023
+    paths:
+      - 'supabase/functions/loja-integrada-readonly-v1/**'
+      - 'tests/loja-integrada-readonly.test.mjs'
+      - '.github/workflows/loja-integrada-gateway-ci.yml'
+  pull_request:
+    paths:
+      - 'supabase/functions/loja-integrada-readonly-v1/**'
+      - 'tests/loja-integrada-readonly.test.mjs'
+      - '.github/workflows/loja-integrada-gateway-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  readonly-gateway-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Offline security and routing tests (no live credentials)
+        run: node --test tests/loja-integrada-readonly.test.mjs
