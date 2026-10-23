@@ -13,6 +13,7 @@ const createSql=fs.readFileSync('supabase/sql/20261004_basket_commercial_create_
 const storeSql=fs.readFileSync('supabase/sql/20261005_store_baskets_recipe_v1.sql','utf8');
 const categorySql=fs.readFileSync('supabase/sql/20261004_basket_category_required_v1.sql','utf8');
 const publicRoot=fs.readFileSync('index.html','utf8');
+const publicCarousel=fs.readFileSync('vitrine/basket-carousel.js','utf8');
 const publicVitrine=fs.readFileSync('vitrine/index.html','utf8');
 
 const catalog=commerce.slice(commerce.indexOf('create or replace view public.basket_commercial_catalog_v1'),commerce.indexOf('create or replace view public.basket_current_lot_v1'));
@@ -52,10 +53,11 @@ for(const source of [publicRoot]){
   assert.match(source,/basketCategory/,'public site must track the active Cesta\/Kit category');
   assert.match(source,/category_slug/,'basket cards must be filtered by their Cesta\/Kit category');
   assert.match(source,/Cestas e Kits/,'public heading must use the unified name');
-  assert.match(source,/data-basket=/,'public basket cards must provide an action to open the selected basket');
+  assert.match(source,/function basketCard\(b,index=99\)\{return BasketCarousel\.card\(/,'public home must delegate basket-card markup to the carousel module');
   assert.match(source,/Itens do kit/,'kit composition must not be mislabeled as food');
   assert.match(source,/basketGroupTitle\(group,b\)/,'composition label must consider the commercial category');
 }
+assert.match(publicCarousel,/data-basket=/,'carousel module must mark the basket action button with its selected basket id');
 assert.match(publicVitrine,/<meta http-equiv="refresh" content="0;url=\/">/,'legacy /vitrine/ must redirect to the canonical root');
 assert.match(publicVitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'legacy redirect must preserve query and hash');
 assert.doesNotMatch(publicVitrine,/basket_categories|checkoutWhatsappUnified|submit_order/,'legacy /vitrine/ must not duplicate storefront or checkout behavior');
