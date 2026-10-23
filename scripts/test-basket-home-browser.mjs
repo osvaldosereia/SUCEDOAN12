@@ -45,7 +45,7 @@ try{
      if(action==='home_size_cards'){
        const sizeCards=homeNames.map((name,index)=>{
          const id=index===1?offered.id:'00000000-0000-4000-8000-'+String(index+1).padStart(12,'0');
-         const sizeKey=name.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLocaleLowerCase('pt-BR');
+         const sizeKey=name==='Média'?'media':name.toLocaleLowerCase('pt-BR');
          return {id,card_key:id+'@1',name,model_name:name,size_key:sizeKey,size_card:true,home_shell:true,mold_mode:true,category_id:'cat',category_name:'Cestas Completas',category_slug:'cestas-completas',subcategory_id:'sub-'+sizeKey,subcategory_name:name};
        });
        return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,home_size_cards:true,baskets:sizeCards,categories:[],basket_categories:[{id:'cat',slug:'cestas-completas',name:'Cestas Completas',subcategories:sizeCards.map(card=>({id:card.subcategory_id,category_id:'cat',name:card.name}))}]})});
