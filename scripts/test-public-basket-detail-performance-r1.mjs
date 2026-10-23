@@ -27,7 +27,12 @@ assert.doesNotMatch(carousel,/basket-product-strip|basket-scroll-track|basket-sc
 assert.match(root,/basket-carousel\.js\?v=20261023-basket-priority-clean-v1/,'the cleaned carousel asset receives a fresh cache key');
 assert.match(root,/abortBasketDraftRequests\(/,'closing or replacing a basket aborts in-flight basket requests');
 assert.match(api,/async function basketBySize\(/,'edge function keeps its direct size resolver for non-home callers');
-assert.match(api,/action===\"basket\"[\s\S]{0,600}const mm=raw\.match\(\/\^\(\[0-9a-f-\]\{36\}\)@\(\[1-6\]\)\$\/i\)/,'edge function accepts the cached UUID@composition key');
+const basketRouteStart=api.indexOf('if(req.method==="GET"&&action==="basket"){');
+const basketRouteEnd=api.indexOf('if(req.method==="GET"&&action==="basket_mold_options")',basketRouteStart);
+assert.ok(basketRouteStart>=0&&basketRouteEnd>basketRouteStart,'basket detail route exists');
+const basketRoute=api.slice(basketRouteStart,basketRouteEnd);
+assert.ok(basketRoute.includes('raw.match(/^([0-9a-f-]{36})@([1-6])$/i)'),'edge function accepts the cached UUID@composition key');
+assert.match(basketRoute,/moldDetail\(id,Number\(mm\[2\]\),null,u\.searchParams\.get\("lightweight"\)!=="1"\)/,'direct composition requests still use fresh basket validation');
 
 const batchStart=sql.search(/create or replace function public\.basket_mold_public_compositions_batch_v1/i);
 assert.ok(batchStart>=0,'batch composition SQL function exists');
