@@ -19,7 +19,8 @@ assert.doesNotMatch(delegate,/basket_commercial_admin|basketCommercialCard|kitLo
 
 const configTabs=[...section.matchAll(/data-basket-config-tab="([^"]+)"/g)].map(match=>match[1]);
 assert.deepEqual(configTabs,['types','quantities','carousel'],'Cestas must expose the three requested configuration tabs');
-assert.doesNotMatch(section,/DonaAntoniaBasketMolds|DonaAntoniaKitBuilder|DonaAntoniaStoreBaskets|data-basket-advanced/,'the replaced session must not route into legacy basket editors');
+assert.doesNotMatch(section,/DonaAntoniaBasketMolds|data-basket-advanced|data-basket-config-tab="(?:kits|store)"/,'legacy editors must not become visible tabs');
+assert.match(section,/COMPATIBILITY_MODULES/,'operational legacy editor routes remain available outside the three-tab UI');
 
 assert.doesNotMatch(section,/basket_commercial_admin|basket_commercial_create|category_slug|public_available|availability_reason/,'simple controller must not own basket business data');
 for(const label of ['Novo lote','Duplicar','Pausar venda','Retomar venda','Imprimir','Excluir modelo'])assert.doesNotMatch(section,new RegExp(label),label+' must stay out of normal operation');
