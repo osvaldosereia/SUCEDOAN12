@@ -821,6 +821,16 @@
       bindHomeIntro();content.querySelectorAll('[data-ean-catalog]').forEach(btn=>btn.onclick=renderEanProducts);
     }
     const BASKET_SIZE_DISPLAY_ORDER=Object.freeze(['economica','mini','pequena','media','grande']);
+    const BASKET_SIZE_LABELS=Object.freeze({economica:'Econômica',mini:'Mini',pequena:'Pequena',media:'Média',grande:'Grande'});
+    function homeSizeShell(){
+      const categoryId='home-shell-cestas-completas';
+      const subcategories=BASKET_SIZE_DISPLAY_ORDER.map(sizeKey=>({id:'home-size-'+sizeKey,name:BASKET_SIZE_LABELS[sizeKey]}));
+      const baskets=subcategories.map(subcategory=>{
+        const sizeKey=normalizeBasketSizeName(subcategory.name),id='home-size:'+sizeKey;
+        return {id,card_key:id,name:subcategory.name,model_name:subcategory.name,category_id:categoryId,subcategory_id:subcategory.id,size_card:true,size_key:sizeKey,home_shell:true};
+      });
+      return {baskets,categories:STATIC_CATEGORIES,basket_categories:[{id:categoryId,slug:'cestas-completas',name:'Cestas Completas',subcategories}]};
+    }
     function normalizeBasketSizeName(value){return String(value||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR')}
     function homeBasketSubcategories(group){
       const subcategories=Array.isArray(group?.subcategories)?group.subcategories:[];
@@ -836,6 +846,22 @@
         const sizeKey=normalizeBasketSizeName(sub.name);
         return candidates[0]?[{...candidates[0],name:sub.name,model_name:sub.name,size_card:true,size_key:sizeKey,home_shell:true}]:[];
       });
+    }
+    async function loadHomeSizeCardForOpen(id){
+      const shell=(state.home?.baskets||[]).find(b=>String(b.card_key||b.id)===String(id)&&b.home_shell===true);
+      if(!shell)return id;
+      const data=await api('home_size_cards');
+      if(data?.ok!==true||data?.priority!==false||data?.home_size_cards!==true||!Array.isArray(data?.baskets)||!Array.isArray(data?.basket_categories)||!data.baskets.length)throw new Error('invalid_home_size_cards_response');
+      state.home={...state.home,...data,categories:data.categories?.length?data.categories:STATIC_CATEGORIES};
+      state.homeSizeCards=true;
+      writeCache(HOME_CACHE_KEY,state.home);
+      if(state.view==='home')renderHome();
+      try{performance.mark('da-home-size-cards')}catch{}
+      const group=state.home.basket_categories.find(item=>String(item?.slug||'')==='cestas-completas');
+      const resolved=group?homeBasketSizeCards(state.home.baskets,group).find(b=>b.size_key===shell.size_key):null;
+      const basketId=String(resolved?.card_key||resolved?.id||'');
+      if(!basketId)throw new Error('home_size_card_not_found');
+      return basketId;
     }
     function homeBasketGroupRecords(baskets,basketGroups){
       let imageIndex=0;
@@ -999,7 +1025,8 @@
       openSheet(basketName(cachedBasket?.name||'Cesta básica'),basketOpeningPreview(id),basketOpeningActionPreview(id));
       const requestId=state.sheetSeq;
       try{
-        const data=await api('basket',{basket_id:id,lightweight:1});
+        const basketId=await loadHomeSizeCardForOpen(id);
+        const data=await api('basket',{basket_id:basketId,lightweight:1});
         if(requestId!==state.sheetSeq||!overlay.classList.contains('open'))return;
         if(!data?.basket||!Array.isArray(data.items))throw new Error('invalid_basket_response');
         state.basketDraft={basket:data.basket,items:data.items.map(x=>({...x,base_quantity:Number(x.base_quantity??x.quantity??0),quantity:Number(x.quantity??0)})),renderedItemCount:BASKET_INITIAL_RENDER_COUNT,extras:(data.extras||[]).map(x=>({...x,products:x.products||[]})),addedExtras:[],openExtraThemes:[],loadingExtraThemes:[],total_cents:Number(data.basket.display_price_cents||0),quoteTimer:null,quoteRevision:0,quotePending:false,quoteError:false,optionPending:false};
@@ -1326,28 +1353,14 @@
     async function start(){
       captureMarketingEntryContext();renderInitialShell();try{performance.mark('da-home-shell')}catch{}
       const cachedHome=readCache(HOME_CACHE_KEY,24*60*60*1000),hadCached=Boolean(cachedHome?.baskets?.length);
-      if(hadCached){state.home={...state.home,...cachedHome,categories:cachedHome.categories?.length?cachedHome.categories:STATIC_CATEGORIES};state.homeSizeCards=true;renderHome();try{performance.mark('da-home-cached-cestas')}catch{}}
+      if(hadCached){state.home={...state.home,...cachedHome,categories:cachedHome.categories?.length?cachedHome.categories:STATIC_CATEGORIES};try{performance.mark('da-home-cached-cestas')}catch{}}
+      else state.home=homeSizeShell();
+      state.homeSizeCards=true;
+      renderHome();
+      try{performance.mark('da-home-size-cards')}catch{}
+      applyMarketingEntryContext();
       void resolveEntryWhatsappPhone().then(phone=>{state.whatsappPhone=phone;if(phone){const d=phoneDigits(phone).replace(/^55/,'');if(d.length===11){state.checkoutDdd=d.slice(0,2);state.checkoutPhone=d.slice(2)}}}).catch(()=>{state.whatsappPhone=''});
       paintCart();
-      let received=false;
-      const accept=data=>{
-        if(data?.ok!==true||data?.priority!==false||data?.home_size_cards!==true||!Array.isArray(data?.baskets)||!Array.isArray(data?.basket_categories)||!data.baskets.length)return false;
-        received=true;
-        const prev=JSON.stringify([state.home?.baskets,state.home?.basket_categories,state.home?.categories]);
-        state.home={...state.home,...data,categories:data.categories?.length?data.categories:STATIC_CATEGORIES};
-        state.homeSizeCards=true;
-        writeCache(HOME_CACHE_KEY,state.home);
-        const next=JSON.stringify([state.home.baskets,state.home.basket_categories,state.home.categories]);
-        if(state.view==='home'&&(prev!==next||!hadCached))renderHome();
-        try{performance.mark('da-home-size-cards')}catch{}
-        applyMarketingEntryContext();
-        return true;
-      };
-      await api('home_size_cards').then(accept).catch(()=>false);
-      if(!received&&!state.home?.baskets?.length){
-        renderNav();content.innerHTML='<section class="section"><div class="empty">Não foi possível carregar as cestas agora.<button class="primary" style="margin-top:12px" id="retryHome">Tentar novamente</button><br><a class="text-btn" style="display:inline-block;margin-top:8px" href="https://wa.me/'+resolveWhatsappDestination()+'">Falar no WhatsApp</a></div></section>';
-        $('#retryHome').onclick=()=>location.reload();
-      }
     }
     start();
   })();
