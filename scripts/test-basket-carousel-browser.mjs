@@ -29,13 +29,13 @@ try{
  await page.setViewportSize({width:320,height:740});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  // Run the complete public page too: test script loading, home wiring and existing detail navigation.
  const app=await browser.newPage({viewport:{width:390,height:844}}),errors=[];app.on('pageerror',e=>errors.push(e.message));
- const offered={...basket,id:'11111111-1111-4111-8111-111111111111',lot_id:'22222222-2222-4222-8222-222222222222',stock_quantity:10,category_id:'cat',subcategory_id:'sub',category_slug:'cestas-completas',category_name:'Cestas Completas'};
+ const offered={...basket,total_item_count:basket.carousel_items.length,id:'11111111-1111-4111-8111-111111111111',lot_id:'22222222-2222-4222-8222-222222222222',stock_quantity:10,category_id:'cat',subcategory_id:'sub',category_slug:'cestas-completas',category_name:'Cestas Completas'};
  const storefrontActions=[];
  await app.route('**/*',async route=>{
    const u=new URL(route.request().url());
    if(u.pathname.includes('/functions/v1/storefront-v2')){
      const action=u.searchParams.get('action');storefrontActions.push(action);
-     const response=action==='home_size_cards'?{ok:true,priority:false,home_size_cards:true,baskets:[offered],basket_categories:[{id:'cat',slug:'cestas-completas',name:'Cestas Completas',subcategories:[{id:'sub',name:'Grande'}]},{id:'food',slug:'cestas-so-alimentos',name:'Cestas Só Alimentos',subcategories:[]},{id:'kits',slug:'kits-promocionais',name:'Kits Promocionais',subcategories:[]}],categories:[]}:action==='home'||action==='home_priority'?{ok:true,priority:action==='home_priority',baskets:[offered],basket_categories:[{id:'cat',slug:'cestas-completas',name:'Cestas Completas',subcategories:[{id:'sub',name:'Grande'}]},{id:'food',slug:'cestas-so-alimentos',name:'Cestas Só Alimentos',subcategories:[]},{id:'kits',slug:'kits-promocionais',name:'Kits Promocionais',subcategories:[]}],categories:[]}:action==='basket'?{ok:true,basket:offered,items:offered.carousel_items.map(x=>({...x,base_quantity:x.quantity,stock_quantity:100}))}:{ok:true,offers:[]};
+     const response=action==='home_size_cards'?{ok:true,priority:false,home_size_cards:true,baskets:[offered],basket_categories:[{id:'cat',slug:'cestas-completas',name:'Cestas Completas',subcategories:[{id:'sub',name:'Grande'}]}],categories:[]}:action==='home'||action==='home_priority'?{ok:true,priority:action==='home_priority',baskets:[offered],basket_categories:[{id:'cat',slug:'cestas-completas',name:'Cestas Completas',subcategories:[{id:'sub',name:'Grande'}]},{id:'food',slug:'cestas-so-alimentos',name:'Cestas Só Alimentos',subcategories:[]},{id:'kits',slug:'kits-promocionais',name:'Kits Promocionais',subcategories:[]}],categories:[]}:action==='basket'?{ok:true,basket:offered,items:offered.carousel_items.map(x=>({...x,base_quantity:x.quantity,stock_quantity:100}))}:{ok:true,offers:[]};
      return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify(response)});
    }
    if(u.pathname==='/')return route.fulfill({contentType:'text/html',body:html});
@@ -45,7 +45,11 @@ try{
  });
  await app.goto('https://app.test/');assert.ok(storefrontActions.includes('home_size_cards'),'canonical homepage requests the home size cards contract');await app.locator('.basket-size-card-photo img').first().waitFor({timeout:10000}).catch(async error=>{throw new Error('home image did not render: '+JSON.stringify({errors,body:await app.locator('body').innerText(),cause:error.message}))});
  
- for(const heading of ['Cestas Completas','Cestas Só Alimentos','Kits Promocionais'])assert.equal(await app.getByRole('heading',{name:heading,exact:true}).count(),1,'show storefront group '+heading);
+ assert.equal(await app.getByRole('heading',{name:'Cestas Completas',exact:true}).count(),1,'lightweight home shows the complete-basket size group');
+ assert.equal(await app.getByRole('heading',{name:'Cestas Só Alimentos',exact:true}).count(),0,'lightweight home response contains only the complete-basket size group');
+ assert.equal(await app.getByRole('heading',{name:'Kits Promocionais',exact:true}).count(),0,'lightweight home response contains only the complete-basket size group');
+ assert.equal(await app.locator('.basket-card-item-total').count(),0,'size cards hide item counts in the home shell');
+ assert.equal(await app.locator('.basket-price-amount').count(),0,'size cards hide prices until opened');
  assert.equal(await app.locator('.basket-size-card-photo img').count(),1,'a vitrine mostra só uma foto por cesta');
  await app.locator('[data-basket]').click();await app.locator('#addBasket').waitFor();
  assert.ok((await app.locator('#sheetBody').innerText()).includes('Produto 1'));assert.deepEqual(errors,[]);
@@ -54,5 +58,5 @@ try{
  assert.ok(html.includes('/vitrine/basket-carousel.js?v='),'canonical root loads its carousel asset');
  assert.match(legacyVitrine,/<meta http-equiv="refresh" content="0;url=\/">/,'legacy /vitrine/ redirects to the canonical root');
  assert.match(legacyVitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'legacy redirect preserves query and hash');
- console.log('Basket storefront browser: one photo per basket, responsive 2/5-column grid, category groups and basket navigation passed');
+ console.log('Basket storefront browser: lightweight home cards, responsive grid and basket navigation passed');
 }finally{await browser.close()}
