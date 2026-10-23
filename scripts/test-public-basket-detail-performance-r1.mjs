@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 const root=fs.readFileSync('index.html','utf8');
 const api=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
-const sql=fs.readFileSync('supabase/migrations/20261023024055_public_basket_composition_stock_cache.sql','utf8');
+const sql=fs.readFileSync('supabase/migrations/20261023024649_public_basket_composition_stock_cache.sql','utf8');
 
 const openStart=root.indexOf('async function openBasket(');
 const openEnd=root.indexOf('function basketGroupTitle',openStart);
