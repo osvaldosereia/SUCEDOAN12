@@ -3,6 +3,16 @@
 > Aprovado para implantação segura em 2026-09-25. Executar por homologação, shadow/canary e rollback; não fazer big-bang.
 > Atualizado em 2026-10-23 após validação do estado real no GitHub, site em uso e Supabase.
 
+### Conclusão R14 — 2026-10-23 01:30 UTC
+
+- Main de código: `727c44cd1bc86ae9395235f3979ab03caa2c0483`. PR #1301 (squash `daa0f9e`) alinhou `firstCestasMs` ao marco `da-home-size-cards` e os contratos/browser aos cinco tamanhos sem preço/contagem inicial. Oito checks da PR passaram e 48/48 workflows pós-merge passaram; Pages #39883669088 publicou o SHA `daa0f9e`.
+- O smoke R6 revelou que seu seletor de imagem estava obsoleto (`.basket-card-photo` vs. `.basket-size-card-photo`). PR #1305 corrigiu o observador/assertions, conectou esse arquivo aos filtros de CI e testou as cinco ações nos cards; squash `727c44c`. Basket product carousel #39884069118 e Basket kit editor #39884069147 passaram. Smoke R6 confirmou 5 cards, imagem carregada em 390×844 e 320×740, sem overflow/erros JS; `firstCestasMs` 2773/2816 ms. Pages #39884215611 também passou; na main ainda havia dois runs de Basket kit editor instalando Chromium, sem falhas reportadas às 01:30 UTC.
+- Sem mudança no Admin, Supabase ou dados; rota continua `/vitrine/admin/`. Estado/hash das funções, smoke, rollback e evidência detalhada no HANDOFF. PRs redundantes #1298/#1302 foram fechadas após reconciliação dos deltas.
+
+### Próxima tarefa exata
+
+Auditar por leitura as fontes/callers das funções ativas `admin1-products-read-v1` v4 no canônico e `admin1-legacy-catalog-read-v1` v2 em `xaoeldjuxzsdsblimzxo`; mapear projeto/hash/consumidor/rota. Não mover Admin/rotas nem fazer deploy até comprovar divergência com teste e plano de rollback. O deploy da telemetria R13 continua aguardando a renovação de `SUPABASE_ACCESS_TOKEN` pelo proprietário; seguir a reconciliação Admin1 como tarefa independente.
+
 ### Acompanhamento R14 — 2026-10-23 01:18 UTC
 
 - Main atual: `d228fdb521479794d96fe68805564fe229e3b1c3`. PR #1301 segue aberta na head `f911b9d93bcbc6aa934546235095d223a3eebf8f`; seis workflows passaram e os dois finais (#39882594973 e #39882595018) seguem em instalação de Chromium, antes dos testes. A reprodução V8 de R3 passou após limitar o harness aos helpers da homepage e marcar `cestas-completas` no fixture.
