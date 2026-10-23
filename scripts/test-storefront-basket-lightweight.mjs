@@ -41,4 +41,17 @@ assert.equal(
 assert.equal(moldFirstAvailableOption(options.slice(3), products, stock, 5), null);
 const configuredFallback = moldFirstConfiguredOption(options.slice(3), products);
 assert.equal(configuredFallback.id, 'first-choice', 'the composition remains visible when every configured choice is out of stock');
+
+import { readFile } from 'node:fs/promises';
+const [publicPage, edge] = await Promise.all([
+  readFile(new URL('../../../index.html', import.meta.url), 'utf8'),
+  readFile(new URL('./index.ts', import.meta.url), 'utf8')
+]);
+const prefetchStart = publicPage.indexOf('function prefetchBasketPreviews(){');
+const prefetchEnd = publicPage.indexOf('function scheduleBasketPreviewPrefetch()', prefetchStart);
+assert.ok(prefetchStart >= 0 && prefetchEnd > prefetchStart);
+assert.match(publicPage.slice(prefetchStart, prefetchEnd), /api\('basket_by_size'/, 'idle prefetch warms basket previews directly');
+assert.match(publicPage, /Sem estoque para esta quantidade/, 'unavailable products are visible in the basket editor');
+assert.match(publicPage, /Number\(b\.stock_quantity\|\|0\)<1/, 'basket cannot be added with no sellable capacity');
+assert.match(edge, /allowUnavailablePreview/);
 console.log('storefront basket lightweight defaults: PASS');
