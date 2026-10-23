@@ -3,10 +3,16 @@ import fs from "node:fs";
 import { handleRetiredAdmin1ProductsReadRequest } from "../supabase/functions/admin1-products-read-v1/retired-handler.mjs";
 
 const index = fs.readFileSync("supabase/functions/admin1-products-read-v1/index.ts", "utf8");
+const handler = fs.readFileSync("supabase/functions/admin1-products-read-v1/retired-handler.mjs", "utf8");
+const adminRuntime = fs.readFileSync("vitrine/admin/admin-runtime.js", "utf8");
 assert.ok(index.includes("Deno.serve(handleRetiredAdmin1ProductsReadRequest)"));
 assert.ok(index.includes("retired-handler.mjs"));
-for (const forbidden of ["createClient", "SERVICE_ROLE_KEY", "ADMIN_PRODUCT_COLUMNS", "parseCatalogRequest", "db.rpc(", ".from(", "fetch("]) {
-  assert.equal(index.includes(forbidden), false, `retired function must not retain ${forbidden}`);
+assert.ok(adminRuntime.includes("admin-products-live-v1"));
+assert.equal(adminRuntime.includes("admin1-products-read-v1"), false, "the active Admin must not depend on the retired endpoint");
+for (const source of [index, handler]) {
+  for (const forbidden of ["createClient", "SERVICE_ROLE_KEY", "ADMIN_PRODUCT_COLUMNS", "parseCatalogRequest", "db.rpc(", ".from(", "fetch("]) {
+    assert.equal(source.includes(forbidden), false, `retired endpoint must not retain ${forbidden}`);
+  }
 }
 
 const logLines = [];
