@@ -3,28 +3,42 @@ import vm from 'node:vm';
 import assert from 'node:assert/strict';
 import {stripTypeScriptTypes} from 'node:module';
 
-// Reproduces editing an existing address while the private CPF field is blank.
-const fields={checkoutDdd:'65',checkoutPhone:'999828360',checkoutName:'Antonia Guedes',checkoutDocument:'',checkoutStreet:'Delphina alves da costa',checkoutNumber:'10',checkoutNeighborhood:'Jardim Petrópolis',checkoutCity:'Cuiabá',checkoutPostal:'78070060',checkoutComplement:'Quadra: 15. Frente: Grade branca.',checkoutReference:'Teste checkout'};
-const requests=[];
-const context={URL,MutationObserver:class{observe(){}},document:{head:{appendChild(){}},createElement:()=>({}),documentElement:{},getElementById:id=>id in fields?{value:fields[id]}:null,querySelector:()=>null},window:{fetch:async(url,options)=>{requests.push({url:String(url),body:JSON.parse(options.body)});return new Response(JSON.stringify({ok:true}),{headers:{'Content-Type':'application/json'}})},setTimeout:()=>0}};
-vm.runInNewContext(fs.readFileSync('checkout-resilience.js','utf8'),context);
-await context.window.fetch('https://example.test/functions/v1/storefront-v2?action=submit_order',{method:'POST',body:JSON.stringify({items:[{type:'product',qty:1}]})});
-assert.equal(requests.length,1,'registration and order must use one submit without consuming the registration limit twice');
-assert.ok(requests[0].url.includes('action=submit_order'));
-assert.equal(requests[0].body.whatsapp_phone,'+5565999828360');
-assert.equal(requests[0].body.checkout_registration.reference,'Teste checkout','address must accompany the final submit for server validation');
-
 const source=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
-const functionSource=source.slice(source.indexOf('async function registerCustomer('),source.indexOf('\nfunction kickWhatsappOrderOutbound'));
-let registrationArgs;
-const db={from:()=>({select:()=>({eq:()=>({maybeSingle:async()=>({data:{name:'Antonia Guedes',cpf_cnpj:'12345678909'}})})})}),rpc:async(name,args)=>{if(name==='consume_public_rate_limit')return {data:true};registrationArgs=args;return {data:{ok:true,customer_id:'existing'}}}};
-const backend={db,phone:()=>'+5565999828360',sha:async()=>'',ip:()=>'',txt:(v,n)=>String(v??'').trim().slice(0,n),customerIdByPhone:async()=> 'existing',loadCustomerForCheckout:async()=>({id:'existing'})};
-vm.runInNewContext(stripTypeScriptTypes(functionSource)+'; this.registerCustomer=registerCustomer;',backend);
-await backend.registerCustomer({}, {...requests[0].body.checkout_registration,phone:requests[0].body.whatsapp_phone,source:'checkout',document:''});
-assert.equal(registrationArgs.p_document,'12345678909','server must reuse the private existing document without exposing it');
-assert.equal(registrationArgs.p_reference,'Teste checkout');
-registrationArgs=undefined;
-const mismatch=await backend.registerCustomer({}, {...requests[0].body.checkout_registration,phone:requests[0].body.whatsapp_phone,source:'checkout',name:'Another person',document:''});
-assert.equal(mismatch.error,'identity_mismatch','blank CPF must not permit changing the identity of an existing customer');
-assert.equal(registrationArgs,undefined);
-console.log('existing checkout registration without reentering CPF: OK');
+const start=source.indexOf('async function submit(req:Request,p:any)');
+const end=source.indexOf('\nasync function basketBySize',start);
+assert.ok(start>=0&&end>start,'submit_order implementation must be extractable');
+const code=source.slice(start,end);
+let createdArgs,registerAttempts=0;
+const incomplete={id:'existing-customer',display_name:'Cliente Existente',registration_complete:false,address:null,marketing_opt_in:false};
+const sandbox={
+  txt:(v,n)=>String(v??'').trim().slice(0,n),
+  MINIMUM_ORDER_CENTS:7500,
+  phone:()=>'+5565999823600',
+  sha:async()=> 'rate-key',
+  ip:()=> 'test-ip',
+  selectedDelivery:date=>({delivery_date:date}),
+  reconcileOrderItemsForStock:async items=>({items,adjusted_items:[],stock_adjustment:false}),
+  lookupCustomer:async()=>({found:true,customer:incomplete}),
+  registerCustomer:async()=>{registerAttempts++;return {error:'registration_incomplete',status:400}},
+  db:{rpc:async(name,args)=>{
+    if(name==='consume_public_rate_limit')return {data:true};
+    if(name==='create_vitrine_cart_order_v3'){createdArgs=args;return {data:{order_id:'test-order'}}}
+    return {data:{}};
+  }},
+  kickWhatsappOrderOutbound:()=>{},
+  recordOpsEvent:async()=>{},
+  console,
+};
+vm.runInNewContext(stripTypeScriptTypes(code)+';this.submit=submit;',sandbox);
+const result=await sandbox.submit({},{
+  whatsapp_phone:'+5565999823600',
+  payment_method:'PIX',
+  delivery_date:'2026-10-24',
+  items:[{type:'product',id:'product',qty:1}],
+  checkout_registration:{name:'Cliente sem cadastro completo',document:'documento inválido'},
+});
+assert.equal(result.order_id,'test-order','incomplete customer data must not prevent order creation');
+assert.equal(result.customer_status,'pending_registration','order must be routed for manual WhatsApp follow-up');
+assert.equal(createdArgs.p_customer_snapshot.id,'existing-customer','existing customer match can still be attached');
+assert.equal(registerAttempts,0,'submit_order must never call customer registration');
+console.log('existing customer can order with registration pending: OK');

@@ -15,10 +15,9 @@ assert.match(ux,/scheduleAutomaticLookup/,'valid WhatsApp must trigger customer 
 assert.doesNotMatch(ux,/Digite seu WhatsApp e toque em Continuar\./,'checkout must not require a Continue step after phone entry');
 assert.match(ux,/lookup\.hidden=true|lookup\.style\.display='none'/,'legacy lookup button must not be a visible required step');
 
-// CPF/CNPJ segue obrigatorio para cliente novo.
-assert.match(ux,/checkoutDocumentRequired\(\)&&!digits\(draft\.document,14\)/,'new and existing customers without a saved document must provide CPF/CNPJ');
-assert.match(ux,/Digite seu CPF ou CNPJ\./,'new customer must get a direct CPF/CNPJ validation message');
-
+// Cadastro: concluir pedido sem preencher CPF, nome ou endereço.
+assert.doesNotMatch(ux,/checkoutDocumentRequired|Digite seu CPF ou CNPJ/,'registration validation must not block the order');
+assert.match(site,/Finalize sem preencher o cadastro/,'checkout must clearly say customer details can be completed after the order');
 // Produtos precisam ficar sempre visiveis para o cliente conferir antes de confirmar.
 assert.doesNotMatch(ux,/function collapseOrderSummary\(/,'order items must not be hidden behind a collapsible summary');
 assert.doesNotMatch(ux,/da-checkout-cart-summary/,'checkout must not hide product list inside details');
@@ -28,18 +27,15 @@ assert.doesNotMatch(ux,/Ver ou alterar produtos/,'product list must already be v
 assert.match(site,/previousCheckoutScrollTop/,'checkout repaint must remember current scroll position');
 assert.match(site,/sheetBody\.scrollTop=previousCheckoutScrollTop/,'checkout repaint must restore current scroll position');
 
-// Endereco cadastrado ja vale como confirmado; so existe a acao de trocar.
-assert.doesNotMatch(site,/id=\\?"confirmAddress\\?"/,'saved address must not require a confirmation button');
-assert.doesNotMatch(ux,/Confirme se este é o endereço da entrega/,'validation must not require confirming a saved address');
-assert.match(site,/id=\\?"editAddress\\?"/,'saved address must still offer an edit action');
-assert.match(site,/state\.addressConfirmed=data\.found&&data\.customer\?\.registration_complete===true/,'complete saved address must be accepted automatically after lookup');
-
+// Endereço incompleto ou desatualizado pode ser confirmado manualmente depois.
+assert.doesNotMatch(site,/id=\\?"editAddress\\?"/,'checkout must not force an address edit before order submission');
+assert.match(site,/Se precisar corrigir ou completar seus dados/,'checkout must offer WhatsApp follow-up for missing or changed details');
 // Marketing: uma frase + checkbox, sem abrir formulario inteiro.
 assert.match(site,/Quero receber ofertas semanais por WhatsApp/,'marketing choice must use one plain-language sentence');
 assert.match(site,/checkoutMarketingExisting/,'existing customer must get an inline marketing checkbox');
 assert.match(site,/saveCheckoutMarketingPreference/,'existing marketing preference must save without entering edit mode');
 assert.doesNotMatch(site,/editMarketingPreference/,'checkout must not show the old confusing marketing edit button');
-assert.match(site,/marketingChecked=c\.marketing_opt_in===true/,'new customer marketing checkbox must start unchecked unless the customer explicitly opted in');
+assert.match(site,/checkoutMarketingExisting.*c\.marketing_opt_in/,'existing marketing preference must reflect the saved choice');
 
 // Primeira data disponivel ja vem selecionada.
 assert.match(site,/state\.checkoutDeliveryDate=state\.deliveryOptions\[0\]\?\.date\|\|''/,'first available delivery date must be selected automatically');
@@ -52,7 +48,7 @@ assert.doesNotMatch(ux,/Toque no dia em que deseja receber/,'delivery section mu
 assert.match(ux,/font-size:16px/,'typed form values must use at least 16px');
 assert.match(ux,/min-height:52px/,'primary form controls must have generous touch height');
 assert.match(ux,/@media\(max-width:560px\)[\s\S]*\.payments\{grid-template-columns:1fr!important/,'mobile payment choices must use one column');
-assert.match(ux,/Trocar endereço/,'saved-address action must use short plain language');
+
 
 // Rodape simples: total + uma acao dominante.
 assert.match(ux,/da-checkout-final-total/,'checkout footer must keep total visible');

@@ -5,6 +5,7 @@ on:
     paths:
       - 'checkout-resilience.js'
       - 'scripts/test-checkout*.mjs'
+      - 'supabase/migrations/20261023170000_allow_pending_registration_storefront_orders.sql'
       - 'scripts/test-registration-catalog-return.mjs'
       - 'scripts/test-customer-identity-admin-v2.mjs'
       - 'supabase/functions/storefront-v2/index.ts'
@@ -23,6 +24,7 @@ on:
     paths:
       - 'checkout-resilience.js'
       - 'scripts/test-checkout*.mjs'
+      - 'supabase/migrations/20261023170000_allow_pending_registration_storefront_orders.sql'
       - 'scripts/test-registration-catalog-return.mjs'
       - 'scripts/test-customer-identity-admin-v2.mjs'
       - 'supabase/migrations/20261002150000_checkout_whatsapp_return_channel.sql'
@@ -55,6 +57,7 @@ jobs:
           node scripts/test-checkout-customer-capture-v1.mjs
           node --disable-warning=ExperimentalWarning scripts/test-checkout-existing-registration.mjs
           node scripts/test-checkout-existing-missing-document.mjs
+          node scripts/test-checkout-pending-registration.mjs
           node --disable-warning=ExperimentalWarning scripts/test-checkout-whatsapp-payload-audit.mjs
           node --disable-warning=ExperimentalWarning scripts/test-checkout-address-reference.mjs
           node --disable-warning=ExperimentalWarning scripts/test-admin-stock-readiness-pagination.mjs
