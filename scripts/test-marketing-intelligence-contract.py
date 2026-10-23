@@ -26,7 +26,11 @@ assert "item.type==='product'" in site
 assert "item.components" in site
 signal_block = site[site.index('function buildMarketingSignals()'):site.index('function applyMarketingEntryContext()')]
 assert "item.components" not in signal_block, 'basket components must not feed marketing signals'
-assert "resolveWhatsappDestination()" in site[site.index('async function sendWhatsApp()'):], 'checkout must return to origin channel'
+order_success_block = site[site.index('function renderOrderSuccess(saved)'):site.index('async function validateMoldCartBeforeCheckout()')]
+assert "whatsappUrl='https://wa.me/'+resolveWhatsappDestination()" in order_success_block, 'success screen must link back to the origin channel'
+assert "esc(whatsappUrl)" in order_success_block, 'origin channel URL must be used by the success-screen link'
+checkout_submission_block = site[site.index('async function sendWhatsApp()'):site.index("$('#globalSearchForm')")]
+assert "whatsapp_origin:state.whatsappOrigin" in checkout_submission_block, 'checkout must send the captured origin channel'
 
 # Work report contract: PapoAI currently prepared only NIVEA and ELSEVE brand rules.
 brand_block = site[site.index('const CAMPAIGN_BRANDS='):site.index('const MARKETING_CATEGORIES=')]
