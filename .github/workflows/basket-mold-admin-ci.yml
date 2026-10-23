@@ -9,7 +9,9 @@ on:
       - 'supabase/functions/storefront-v2/index.ts'
       - 'supabase/migrations/20261023120000_basket_admin_three_tabs.sql'
       - 'supabase/migrations/20261023160000_basket_quantity_save_merge_duplicates.sql'
+      - 'supabase/migrations/20261023180000_basket_admin_save_inactive_carousel_options.sql'
       - 'scripts/test-basket-admin-three-tabs.mjs'
+      - 'scripts/test-basket-admin-inactive-carousel-options.mjs'
       - 'supabase/functions/admin-basket-molds-v1/**'
       - 'supabase/sql/20261006_basket_mold_admin_v1.sql'
       - 'supabase/migrations/20261006070000_basket_mold_admin_v1.sql'
@@ -28,7 +30,9 @@ on:
       - 'supabase/functions/storefront-v2/index.ts'
       - 'supabase/migrations/20261023120000_basket_admin_three_tabs.sql'
       - 'supabase/migrations/20261023160000_basket_quantity_save_merge_duplicates.sql'
+      - 'supabase/migrations/20261023180000_basket_admin_save_inactive_carousel_options.sql'
       - 'scripts/test-basket-admin-three-tabs.mjs'
+      - 'scripts/test-basket-admin-inactive-carousel-options.mjs'
       - 'supabase/functions/admin-basket-molds-v1/**'
       - 'supabase/sql/20261006_basket_mold_admin_v1.sql'
       - 'supabase/migrations/20261006070000_basket_mold_admin_v1.sql'
@@ -49,6 +53,7 @@ jobs:
           node-version: '24'
       - run: node scripts/test-basket-mold-admin-v1.mjs
       - run: node scripts/test-basket-admin-three-tabs.mjs
+      - run: node scripts/test-basket-admin-inactive-carousel-options.mjs
       - run: node scripts/test-basket-mold-conditional-hidden-v1.mjs
       - run: npm install --prefix "$RUNNER_TEMP/basket-mold-admin-tests" --no-save --package-lock=false playwright@1.62.1
       - run: node "$RUNNER_TEMP/basket-mold-admin-tests/node_modules/playwright/cli.js" install --with-deps chromium
