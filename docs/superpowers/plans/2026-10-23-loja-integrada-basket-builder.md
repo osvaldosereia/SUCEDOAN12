@@ -65,7 +65,7 @@
 
 **Interfaces:**
 - Consumes: o produto real reconciliado da Task 1 e a composição/ajuste fixo de um modelo existente.
-- Produces: decisão técnica documentada: o carrinho cobra o total comercial exato com uma única linha de ajuste oculto lógico e mantém cada componente/SKU como linha identificável, ou o trabalho de preço/carrinho é bloqueado.
+- Produces: decisão técnica documentada: o carrinho cobra o total comercial exato, incluindo exatamente um ajuste oculto fixo por cesta, sem expor uma linha ou preço separado para o ajuste, e mantém cada componente/SKU como linha identificável; caso contrário, o trabalho de preço/carrinho é bloqueado.
 
 - [ ] **Step 1: Selecionar um modelo e sua composição verificada**
   
@@ -103,7 +103,7 @@
 
 - [ ] **Step 1: Escrever testes de comportamento que falham**
   
-  Em tests/loja-integrada-basket-builder.test.mjs, criar testes Node nativos para: seleção dos cinco modelos; troca apenas por alternativa aprovada; incremento/decremento e limite de estoque; inclusão/remoção de extra; total com uma única cotação do servidor; campos condicionais ignorados; ausência de preço individual/valor do ajuste no HTML; falha fechada para dados de estoque/preço incompletos.
+  Em tests/loja-integrada-basket-builder.test.mjs, criar testes Node nativos para: seleção dos cinco modelos; troca apenas por alternativa aprovada; incremento/decremento e limite de estoque; inclusão/remoção de extra; exibição apenas do total fornecido pela cotação; ausência de preço individual, ajuste ou campo de ajuste no estado/HTML do browser; falha fechada para dados de estoque/preço incompletos. A regra de uma única cotação e a exclusão de campos condicionais pertencem ao teste do adaptador server-side da Task 4.
 
 - [ ] **Step 2: Executar os testes para confirmar falha**
   
@@ -121,7 +121,7 @@
 - [ ] **Step 5: Executar novamente os testes**
   
   Run: node --test tests/loja-integrada-basket-builder.test.mjs  
-  Expected: PASS; incluir casos de falha operacional listados em Review Focus 2–3.
+  Expected: PASS; incluir os casos de estoque e SKU divergente do Review Focus 3.
 
 - [ ] **Step 6: Commit**
   
@@ -146,7 +146,7 @@
 
 - [ ] **Step 1: Escrever testes de integração com adapters falsos**
   
-  Cobrir carregamento de modelos e composição, atualização de total após troca/quantidade/extra, rejeição de estoque desatualizado, clique repetido e falha parcial ao adicionar componentes. Confirmar que cada produto é adicionado como sua própria linha nativa com o identificador/SKU correspondente.
+  Cobrir carregamento de modelos e composição, atualização de total após troca/quantidade/extra, cotação com exatamente um ajuste fixo e campos condicionais ignorados, cotação pública sem o valor do ajuste, rejeição de estoque desatualizado, clique repetido e falha parcial. Confirmar que cada produto é adicionado como sua própria linha nativa com o identificador/SKU correspondente. Em falha parcial, bloquear nova tentativa até reconciliar as linhas que já entraram no carrinho.
 
 - [ ] **Step 2: Executar testes para confirmar falha**
   
@@ -155,7 +155,7 @@
 
 - [ ] **Step 3: Implementar controller e adapters**
   
-  Inicializar apenas quando o elemento #li-basket-builder existir na página e destruir/listeners ao sair da página. Atualizar o total usando a cotação confirmada. Adicionar itens individualmente pelo formulário/link oficial do carrinho. Se necessário, a Edge Function consulta somente os dados existentes necessários e mantém o ajuste server-side; ela não cria tabelas nem expõe o ajuste separado. Não ler nem reutilizar o código do montador antigo.
+  Inicializar apenas quando o elemento #li-basket-builder existir na página e destruir listeners ao sair da página. Atualizar o total usando a cotação confirmada. Adicionar itens individualmente pelo formulário/link oficial do carrinho. Se necessário, a Edge Function consulta somente os dados existentes necessários e mantém o ajuste server-side; seu teste valida a aplicação de exatamente um ajuste fixo, ignora dados condicionais e confirma que a resposta pública não inclui esse ajuste. Ela não cria tabelas nem expõe o ajuste separado. Em adição parcial, registrar a seleção como pendente e bloquear repetição até conferir o carrinho. Não ler nem reutilizar o código do montador antigo.
 
 - [ ] **Step 4: Executar a suíte**
   
@@ -164,7 +164,9 @@
 
 - [ ] **Step 5: Commit**
   
-      git add integrations/loja-integrada/basket-builder.js tests/loja-integrada-basket-builder.test.mjs supabase/functions/basket-builder-quote-v1/index.ts
+      git add integrations/loja-integrada/basket-builder.js tests/loja-integrada-basket-builder.test.mjs
+      # Se a Edge Function opcional tiver sido criada, adicioná-la também antes do commit.
+      git add supabase/functions/basket-builder-quote-v1/index.ts
       git commit -m "feat: connect basket builder to native cart"
 
 ---
