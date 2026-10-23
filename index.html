@@ -847,16 +847,23 @@
         return candidates[0]?[{...candidates[0],name:sub.name,model_name:sub.name,size_card:true,size_key:sizeKey,home_shell:true}]:[];
       });
     }
+    let homeSizeCardsPromise=null;
     async function loadHomeSizeCardForOpen(id){
       const shell=(state.home?.baskets||[]).find(b=>String(b.card_key||b.id)===String(id)&&b.home_shell===true);
       if(!shell)return id;
-      const data=await api('home_size_cards');
-      if(data?.ok!==true||data?.priority!==false||data?.home_size_cards!==true||!Array.isArray(data?.baskets)||!Array.isArray(data?.basket_categories)||!data.baskets.length)throw new Error('invalid_home_size_cards_response');
-      state.home={...state.home,...data,categories:data.categories?.length?data.categories:STATIC_CATEGORIES};
-      state.homeSizeCards=true;
-      writeCache(HOME_CACHE_KEY,state.home);
-      if(state.view==='home')renderHome();
-      try{performance.mark('da-home-size-cards')}catch{}
+      if(!homeSizeCardsPromise){
+        homeSizeCardsPromise=(async()=>{
+          const data=await api('home_size_cards');
+          if(data?.ok!==true||data?.priority!==false||data?.home_size_cards!==true||!Array.isArray(data?.baskets)||!Array.isArray(data?.basket_categories)||!data.baskets.length)throw new Error('invalid_home_size_cards_response');
+          state.home={...state.home,...data,categories:data.categories?.length?data.categories:STATIC_CATEGORIES};
+          state.homeSizeCards=true;
+          writeCache(HOME_CACHE_KEY,state.home);
+          if(state.view==='home')renderHome();
+          try{performance.mark('da-home-size-cards')}catch{}
+          return data;
+        })().finally(()=>{homeSizeCardsPromise=null});
+      }
+      await homeSizeCardsPromise;
       const group=state.home.basket_categories.find(item=>String(item?.slug||'')==='cestas-completas');
       const resolved=group?homeBasketSizeCards(state.home.baskets,group).find(b=>b.size_key===shell.size_key):null;
       const basketId=String(resolved?.card_key||resolved?.id||'');
