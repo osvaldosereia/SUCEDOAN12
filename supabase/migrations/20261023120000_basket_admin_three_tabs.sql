@@ -359,4 +359,23 @@ grant execute on function public.admin_basket_configuration_types_save_v1(jsonb)
 grant execute on function public.admin_basket_configuration_quantities_save_v1(jsonb) to authenticated,service_role;
 grant execute on function public.admin_basket_configuration_product_type_save_v1(jsonb) to authenticated,service_role;
 
+-- Linked complete-basket positions accept every configured option; other basket categories keep the existing three-option guard.
+create or replace function public.enforce_basket_mold_position_option_limit_v1()
+returns trigger language plpgsql set search_path=''
+as $function$
+declare v_category text; v_count integer;
+begin
+  select cat.slug into v_category
+  from public.basket_mold_positions pos
+  join public.basket_molds m on m.id=pos.mold_id
+  join public.basket_templates b on b.id=m.basket_id
+  join public.basket_categories cat on cat.id=b.category_id
+  where pos.id=new.position_id;
+  if v_category='cestas-completas' then return new; end if;
+  select count(*) into v_count from public.basket_mold_position_options where position_id=new.position_id;
+  if v_count>=3 then raise exception 'basket_mold_position_options_limit'; end if;
+  return new;
+end;
+$function$;
+
 commit;
