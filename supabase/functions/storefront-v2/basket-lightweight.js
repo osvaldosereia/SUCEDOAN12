@@ -31,3 +31,15 @@ export function moldFirstAvailableOption(options, products, availableStock, quan
   }
   return null;
 }
+
+export function moldFirstConfiguredOption(options, products) {
+  const ordered = options.slice().sort((a, b) =>
+    Number(a.sort_order || 0) - Number(b.sort_order || 0) ||
+    String(a.product_id || "").localeCompare(String(b.product_id || ""))
+  );
+  for (const option of ordered) {
+    const product = products.get(String(option.product_id || ""));
+    if (product) return product;
+  }
+  return null;
+}
