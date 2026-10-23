@@ -36,7 +36,7 @@ try{
  let quoteCount=0;
  let releaseCategoryProducts;
  const categoryProductsGate=new Promise(resolve=>{releaseCategoryProducts=resolve});
- const offered={...basket,total_item_count:basket.carousel_items.length,id:'11111111-1111-4111-8111-111111111111',mold_mode:true,composition_number:1,lot_id:'22222222-2222-4222-8222-222222222222',stock_quantity:10,category_id:'cat',subcategory_id:'sub-mini',category_slug:'cestas-completas',category_name:'Cestas Completas',name:'Mini'};
+ const offered={...basket,total_item_count:basket.carousel_items.length,id:'11111111-1111-4111-8111-111111111111',lot_id:'22222222-2222-4222-8222-222222222222',stock_quantity:10,category_id:'cat',subcategory_id:'sub-mini',category_slug:'cestas-completas',category_name:'Cestas Completas',name:'Mini'};
  const homeNames=['Econômica','Mini','Pequena','Média','Grande'];
   await app.route('**/*',async route=>{
    const u=new URL(route.request().url());
