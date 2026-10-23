@@ -42,6 +42,7 @@ const batch = api.slice(api.indexOf('async function moldPositionOptionsBatch('),
 assert.ok(batch.length > 0, 'edge function has a batched alternatives reader');
 assert.match(batch, /moldProductsMap\(productIds\)/, 'batched options read product data once');
 assert.match(batch, /moldAvailableStockMap\(productIds\)/, 'batched options read stock once');
+assert.match(batch, /product&&available>0\?/, 'substitutions with partial stock remain selectable and can reduce the draft quantity');
 assert.match(api, /action==="basket_mold_options_batch"/, 'edge function exposes the batch endpoint');
 const bodyParse = api.indexOf('const body=req.method==="POST"?await req.json().catch(()=>({})):{');
 const batchRoute = api.indexOf('action==="basket_mold_options_batch"');

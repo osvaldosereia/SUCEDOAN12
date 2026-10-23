@@ -388,7 +388,7 @@ async function moldPositionOptionsBatch(basketId:string,compositionNumber:number
     const position=positionMap.get(request.position_id),quantity=request.quantity!=null&&request.quantity>0?request.quantity:Number(position?.quantity||0);
     const alternatives=(byPosition.get(request.position_id)||[]).map((option:any)=>{
       const product=products.get(String(option.product_id)),available=stock.get(String(option.product_id))||0;
-      return product&&available>=quantity?{product_id:product.id,name:product.name,sku:product.sku,gtin:product.gtin,image_url:product.image_url||"",packaging:product.packaging||"",stock_quantity:available,price_cents:moldEffectivePriceCents(product),sort_order:Number(option.sort_order||0)}:null;
+      return product&&available>0?{product_id:product.id,name:product.name,sku:product.sku,gtin:product.gtin,image_url:product.image_url||"",packaging:product.packaging||"",stock_quantity:available,price_cents:moldEffectivePriceCents(product),sort_order:Number(option.sort_order||0)}:null;
     }).filter(Boolean) as any[];
     alternatives.sort(compareMoldPositionOptionOrder);
     const shown=alternatives.slice(0,10),selected=alternatives.find((option:any)=>String(option.product_id)===request.selected_product_id);
