@@ -128,7 +128,22 @@ Deno.serve(async (req: Request) => {
         if (detectedHost && detectedHost !== expectedHost) {
           outcome = { ok: false, error: "wrong_store_token", expected_host: expectedHost, detected_host: detectedHost };
         } else if (count !== 0 && !detectedHost) {
-          outcome = { ok: false, error: "store_identity_unverified", expected_host: expectedHost, total_count: count, sample_names: sample.slice(0, 4).map((p) => typeof p.nome === "string" ? p.nome.slice(0, 100) : null) };
+          const catsUrl = new URL("/v1/categoria", "https://api.awsli.com.br");
+          catsUrl.searchParams.set("limit", "100");
+          catsUrl.searchParams.set("offset", "0");
+          const cats = await checkedGet(catsUrl);
+          const catRows = Array.isArray(cats.data?.objects) ? cats.data.objects as Record<string, unknown>[] : [];
+          outcome = {
+            ok: false, error: "store_identity_unverified", expected_host: expectedHost,
+            total_count: count,
+            sample_names: sample.slice(0, 4).map((p) => typeof p.nome === "string" ? p.nome.slice(0, 100) : null),
+            category_count: typeof (cats.data?.meta as Record<string, unknown> | undefined)?.total_count === "number" ? (cats.data?.meta as Record<string, unknown>).total_count : null,
+            diagnostic_categories: catRows.slice(0, 100).map((p) => ({
+              id: typeof p.id === "number" ? p.id : null,
+              nome: typeof p.nome === "string" ? p.nome.slice(0, 100) : null
+            })),
+            category_fetch_status: cats.status
+          };
         } else if (count === 0 && job.action !== "status") {
           outcome = { ok: false, error: "empty_store_cannot_verify_identity", expected_host: expectedHost };
         } else if (job.action === "status") {
