@@ -15,7 +15,7 @@ for (const term of ['function checkoutProductRow', 'function checkoutMoldBlock',
   assert.match(block, /checkoutQtyControl\(itemIndex/, 'cart line must expose its quantity selector: ' + term);
 }
 assert.match(resilience, /validateCheckoutBasics/, 'submit guard keeps its required field checks');
-assert.match(resilience, /makeSection\\('WhatsApp \\(obrigatório\\)'/, 'organized checkout must keep WhatsApp marked required');
-assert.match(resilience, /makeSection\\('Data de entrega \\(obrigatória\\)'/, 'organized checkout must keep delivery date marked required');
-assert.match(resilience, /makeSection\\('Pagamento na entrega \\(obrigatório\\)'/, 'organized checkout must keep payment marked required');
+assert.ok(resilience.includes("makeSection('WhatsApp (obrigatório)'"), 'organized checkout must keep WhatsApp marked required');
+assert.ok(resilience.includes("makeSection('Data de entrega (obrigatória)'"), 'organized checkout must keep delivery date marked required');
+assert.ok(resilience.includes("makeSection('Pagamento na entrega (obrigatório)'"), 'organized checkout must keep payment marked required');
 console.log('checkout required labels and editable quantities: PASS');
