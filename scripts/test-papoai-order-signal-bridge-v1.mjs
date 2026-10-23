@@ -13,10 +13,6 @@ assert.match(worker,/x-internal-key/,'worker must require internal authenticatio
 assert.match(worker,/ops2_claim_papoai_order_signal_v1/,'worker must claim idempotent outbox');
 assert.match(worker,/ops2_papoai_signal_provider_url_v1/,'worker must resolve secret provider URL');
 assert.doesNotMatch(worker,/Access-Control-Allow-Origin/i,'internal worker must not expose CORS');
-assert.match(admin,/const keys=\["PEDIDO_SITE",/,'dispatcher must always emit PEDIDO_SITE');
-assert.match(admin,/details\.marketingInterests\.map/,'dispatcher must derive INT signals from canonical saved order details');
-assert.match(admin,/details\.marketingBrands\.map/,'dispatcher must derive BR signals');
-assert.match(admin,/CTA_\$\{details\.marketingCta\}/,'dispatcher must derive one CTA signal when eligible');
-assert.match(admin,/void enqueuePapoAiOrderSignals/,'customer confirmation must not wait for signal bridge');
+assert.doesNotMatch(admin,/papoai-order-signals-v1|ops2_enqueue_papoai_order_signals_v1|enqueuePapoAiOrderSignals/i,'checkout dispatcher must stay disconnected from the retired PapoAI signal bridge');
 assert.match(config,/\[functions\.papoai-order-signals-v1\][\s\S]*verify_jwt\s*=\s*false/i,'worker uses custom internal authentication');
-console.log('papoai order signal bridge contract: ok');
+console.log('papoai order signal bridge isolation contract: ok');
