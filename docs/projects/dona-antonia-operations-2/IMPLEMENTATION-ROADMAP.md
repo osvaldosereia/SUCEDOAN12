@@ -1,5 +1,14 @@
 # Dona Antônia Operations 2.0 — IMPLEMENTATION ROADMAP
 
+## Checkpoint R26 — isolamento do bridge de sinais legado — 2026-10-23 11:03 UTC
+
+- Baseline main bdd39c8dbe5fdcb2523bb07625349b07f520ac33; concluída a próxima tarefa concreta após R25: atualizar o teste de bridge PapoAI para refletir o dispatcher atual, que não deve enfileirar esse bridge, e habilitar o teste no CI do checkout.
+- Alterados somente scripts/test-papoai-order-signal-bridge-v1.mjs e .github/workflows/checkout-hotfix-ci.yml. Commits: d83ad0557768e72d8c7b18be016faec358adf51c e 52fda0ef412af0824e712660276e7b7027f00d15. PR #1332, https://github.com/osvaldosereia/SUCEDOAN12/pull/1332, squash merged em b6a833c5043acfb866803fc453a4c90993c9141d (2026-10-23 11:02:06 UTC).
+- Local: 17/17 verificações passaram; job CI checkout (Node 22) #39943182204 success. Pós-merge: 44/44 workflows associados a main success; Pages build/deployment #39943250712 success às 11:03:11 UTC.
+- Smoke read-only depois do merge confirmou / publicado (5 cestas, 4 ofertas, carrinho vazio) e Admin Central em /vitrine/admin/. Sem mudança de runtime, rota, backend de pedidos ou Supabase.
+- Supabase canônico confirmado como ssbesxgaijknwsjbsbcz; nenhuma migration/função/configuração/policy/grant/dado foi alterado ou aplicado. Rollback: reverter merge b6a833c5043acfb866803fc453a4c90993c9141d pelo fluxo normal; não há rollback Supabase.
+- Próxima tarefa: manter ambas as funções Admin1 em 410; após 2026-10-24 02:14:07.824 UTC fechar a janela agregada do proxy xaoeldjuxzsdsblimzxo/admin1-legacy-catalog-read-v1 e atribuir callers (excluir o GET 410 de smoke 02:15:44.718 UTC já identificado); após 03:20:07.529 UTC fazer o mesmo com ssbesxgaijknwsjbsbcz/admin1-products-read-v1. Retomar R13 depois da renovação do SUPABASE_ACCESS_TOKEN pelo proprietário. Admin permanece em /vitrine/admin/.
+
 ## Checkpoint R25 — limpeza do storefront público — 2026-10-23 10:16 UTC
 
 - Base pré-código `e904b468e666f217bd662ec91ced95c9dfad3f3b`; PR #1330 merged por squash em `9453acd081cec936e2b30ff377bacd87da1c0e5e`. Commits: `afee2482322e72be787d9c9192ed5a1f25f0a6e7`, `2d09902eb3a83335cf02cf5763944356c2fc1777`. PR: https://github.com/osvaldosereia/SUCEDOAN12/pull/1330.
