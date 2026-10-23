@@ -2,7 +2,11 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
 const section=fs.readFileSync('vitrine/admin/basket-admin-section.js','utf8');
-assert.match(section,/product-basket-link-cutover\.js\?v=20261006-1/,'basket section must load the canonical product→basket cutover');
+const adminIndex=fs.readFileSync('vitrine/admin/index.html','utf8');
+const bridges=fs.readFileSync('vitrine/admin/admin-feature-bridges.js','utf8');
+assert.doesNotMatch(section,/product-basket-link-cutover\.js\?v=20261006-1/,'basket section must not own the global product→basket cutover');
+assert.match(adminIndex,/admin-feature-bridges\.js\?v=20261023-1/,'admin entry point must load cross-feature bridges');
+assert.match(bridges,/product-basket-link-cutover\.js\?v=20261006-1/,'feature bridge must load the canonical product→basket cutover');
 
 const path='vitrine/admin/product-basket-link-cutover.js';
 assert.ok(fs.existsSync(path),'canonical product→basket cutover module must exist');
