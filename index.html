@@ -820,28 +820,69 @@
       const key=String(card?.resolved_card_key||card?.card_key||'');
       return /^[0-9a-f-]{36}@[1-6]$/i.test(key)?key:'';
     }
+    let homeSizeCardsPromise=null;
     let basketPreviewPrefetchPromise=null;
+    const homeBasketDetailRequests=new Map();
+    const BASKET_PREVIEW_PREFETCH_CONCURRENCY=2;
+    async function resolveHomeSizeCards(){
+      const unresolved=(state.home?.baskets||[]).some(card=>card.home_shell===true&&card.size_key&&!resolvedHomeBasketKey(card));
+      if(!unresolved)return true;
+      if(homeSizeCardsPromise)return homeSizeCardsPromise;
+      homeSizeCardsPromise=(async()=>{
+        try{
+          const data=await api('home_size_cards');
+          if(!data?.home_size_cards||!Array.isArray(data.baskets)||!data.baskets.length)return false;
+          const previousBySize=new Map((state.home?.baskets||[]).map(card=>[String(card.size_key||''),card]));
+          const baskets=data.baskets.map(card=>{
+            const previous=previousBySize.get(String(card.size_key||''));
+            return {...previous,...card,carousel_items:Array.isArray(previous?.carousel_items)?previous.carousel_items:[],display_price_cents:previous?.display_price_cents??card.display_price_cents};
+          });
+          state.home={...state.home,...data,baskets};
+          writeCache(HOME_CACHE_KEY,state.home);
+          renderHome();
+          return true;
+        }catch(error){
+          console.warn('basket-size-card-resolution',error?.message||error);
+          return false;
+        }finally{
+          homeSizeCardsPromise=null;
+        }
+      })();
+      return homeSizeCardsPromise;
+    }
+    function loadHomeBasketDetail(card,traceId,signal){
+      const resolvedKey=resolvedHomeBasketKey(card);
+      if(!resolvedKey)return api('basket_by_size',{size_key:card?.size_key,lightweight:1,trace_id:traceId},{signal});
+      const active=homeBasketDetailRequests.get(resolvedKey);
+      if(active)return active;
+      // Home detail reads are shared with the low-priority prefetch queue. The
+      // sequence guard in openBasket ignores a response after the sheet closes.
+      const request=api('basket',{basket_id:resolvedKey,lightweight:1,trace_id:traceId})
+        .finally(()=>{if(homeBasketDetailRequests.get(resolvedKey)===request)homeBasketDetailRequests.delete(resolvedKey)});
+      homeBasketDetailRequests.set(resolvedKey,request);
+      return request;
+    }
     async function prefetchBasketPreviews(){
       if(basketPreviewPrefetchPromise)return basketPreviewPrefetchPromise;
-      const cards=(state.home?.baskets||[]).filter(card=>card.home_shell===true&&card.size_key);
-      const pending=cards.filter(card=>!Array.isArray(card.carousel_items)||!card.carousel_items.length);
-      if(!pending.length)return;
       basketPreviewPrefetchPromise=(async()=>{
         try{
-          await Promise.all(pending.map(async card=>{
-            try{
-              const resolvedKey=resolvedHomeBasketKey(card),resolveHomeSize=!resolvedKey;
+          await resolveHomeSizeCards();
+          const cards=(state.home?.baskets||[]).filter(card=>card.home_shell===true&&card.size_key);
+          const pending=cards.filter(card=>!Array.isArray(card.carousel_items)||!card.carousel_items.length);
+          let cursor=0;
+          const worker=async()=>{
+            while(cursor<pending.length){
+              const card=pending[cursor++];
               const traceId=globalThis.crypto?.randomUUID?.()||('bp-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10));
-              const action=resolveHomeSize?'basket_by_size':'basket';
-              const params=resolveHomeSize
-                ?{size_key:card.size_key,lightweight:1,trace_id:traceId}
-                :{basket_id:resolvedKey,lightweight:1,trace_id:traceId};
-              const data=await api(action,params);
-              if(data?.basket&&Array.isArray(data.items))rememberBasketPreview(card,data.basket,data.items);
-            }catch(error){
-              console.warn('basket-preview-prefetch',card.size_key,error?.message||error);
+              try{
+                const data=await loadHomeBasketDetail(card,traceId);
+                if(data?.basket&&Array.isArray(data.items))rememberBasketPreview(card,data.basket,data.items);
+              }catch(error){
+                console.warn('basket-preview-prefetch',card.size_key,error?.message||error);
+              }
             }
-          }));
+          };
+          await Promise.all(Array.from({length:Math.min(BASKET_PREVIEW_PREFETCH_CONCURRENCY,pending.length)},worker));
         }finally{
           basketPreviewPrefetchPromise=null;
         }
@@ -854,7 +895,7 @@
         :callback=>window.setTimeout(callback,250);
       schedule(()=>void prefetchBasketPreviews());
     }
-    function normalizeBasketSizeName(value){return String(value||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR')}
+        function normalizeBasketSizeName(value){return String(value||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR')}
     function homeBasketSubcategories(group){
       const subcategories=Array.isArray(group?.subcategories)?group.subcategories:[];
       if(String(group?.slug||'')!=='cestas-completas')return subcategories;
@@ -1047,14 +1088,9 @@
       openSheet(basketName(cachedBasket?.name||'Cesta básica'),basketOpeningPreview(id),basketOpeningActionPreview(id));
       const requestId=state.sheetSeq;
       try{
-        const resolvedBasketKey=resolvedHomeBasketKey(cachedBasket);
-        const resolveHomeSize=cachedBasket?.home_shell===true&&!resolvedBasketKey;
-        const basketId=resolvedBasketKey||id;
-        const action=resolveHomeSize?'basket_by_size':'basket';
-        const params=resolveHomeSize
-          ?{size_key:cachedBasket.size_key,lightweight:1,trace_id:traceId}
-          :{basket_id:basketId,lightweight:1,trace_id:traceId};
-        const data=await api(action,params,{signal:controller.signal});
+        if(cachedBasket?.home_shell===true)await resolveHomeSizeCards();
+        const currentBasket=(state.home?.baskets||[]).find(card=>String(card.size_key||'')===String(cachedBasket?.size_key||''))||cachedBasket;
+        const data=await loadHomeBasketDetail(currentBasket,traceId,controller.signal);
         if(requestId!==state.sheetSeq||!overlay.classList.contains('open'))return;
         if(!data?.basket||!Array.isArray(data.items))throw new Error('invalid_basket_response');
         rememberBasketPreview(cachedBasket,data.basket,data.items);
@@ -1412,6 +1448,7 @@
       applyMarketingEntryContext();
       void resolveEntryWhatsappPhone().then(phone=>{state.whatsappPhone=phone;if(phone){const d=phoneDigits(phone).replace(/^55/,'');if(d.length===11){state.checkoutDdd=d.slice(0,2);state.checkoutPhone=d.slice(2)}}}).catch(()=>{state.whatsappPhone=''});
       paintCart();
+      void resolveHomeSizeCards();
       scheduleBasketPreviewPrefetch();
     }
     start();
