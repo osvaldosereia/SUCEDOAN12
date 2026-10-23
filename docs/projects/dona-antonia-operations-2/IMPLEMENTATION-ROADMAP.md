@@ -1,5 +1,18 @@
 # Dona Antônia Operations 2.0 — IMPLEMENTATION ROADMAP
 
+### Conclusão R16 — leitor Admin1 exposto aposentado — 2026-10-23 03:23 UTC
+
+- Base `main`: `acdc4d2118c833e0945f551f747a88aa85fec0bc`; PR #1269 integrada. Rotas preservadas: `/` e `/vitrine/admin/`.
+- PR #1314 integrada por squash; v4 de `admin1-products-read-v1` substituída por handler 410, sem consultas/service role, com telemetria sanitizada. CI do contrato (#39894257441) e consumidor Admin (#39894257433) aprovados.
+- Projeto canônico `ssbesxgaijknwsjbsbcz`: função ACTIVE v5, `verify_jwt=false`, hash `6a2c730ddbab268c0f95c4b08a9a3f443bbfa8bf8745584ed21dd2cbd8f7aa51`, atualizada às 03:20:07.529 UTC. O log real das 03:20:29.940 UTC comprova GET HTTP 410; JSON smoke `legacy_endpoint_retired`. Nenhuma migration/DDL, dado, policy, grant ou configuração foi alterada.
+- Smoke atual do Admin em `/vitrine/admin/` carregou cinco produtos sem mutações. Homepage já smokeada na rodada anterior; a recaptura AX desta rodada falhou antes de renderizar estado. Nenhum efeito real de pedido, mensagem, fiscal, estoque ou financeiro. Runtime Admin inalterado; verificação do build não aplicável sem checkout local.
+- Rollback: reverter squash #1314 e reimplantar v4 do pai `d90b7b1`; restaura comportamento vulnerável, somente se houver regressão funcional comprovada. Evidência detalhada em HANDOFF.
+  
+### Próxima tarefa exata
+
+Depois de `2026-10-24 03:20:07 UTC`, revisar 24h completos da v5 com agregação segura por status e telemetria allowlisted; separar o GET de smoke das chamadas posteriores e manter 410 até atribuir qualquer caller. Em seguida, após `2026-10-24 02:14:07 UTC`, revisar 24h do proxy separado `admin1-legacy-catalog-read-v1` v3. Não executar a remoção final sem comprovar zero dependências/chamadas e confirmar rollback. R13 continua pendente de `SUPABASE_ACCESS_TOKEN` renovado pelo proprietário.
+
+
 > Aprovado para implantação segura em 2026-09-25. Executar por homologação, shadow/canary e rollback; não fazer big-bang.
 > Atualizado em 2026-10-23 após validação do estado real no GitHub, site em uso e Supabase.
 
