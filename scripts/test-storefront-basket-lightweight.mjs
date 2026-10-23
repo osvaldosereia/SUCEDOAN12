@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { moldFirstAvailableOption, moldProductIdsForRead } from '../supabase/functions/storefront-v2/basket-lightweight.js';
+import { moldFirstAvailableOption, moldFirstConfiguredOption, moldProductIdsForRead } from '../supabase/functions/storefront-v2/basket-lightweight.js';
 
 const positions = [{id:'selected'}, {id:'defaulted'}, {id:'unconfigured'}];
 const options = [
@@ -39,4 +39,6 @@ assert.equal(
   'an unconfigured position chooses the first option in admin order that meets requested quantity'
 );
 assert.equal(moldFirstAvailableOption(options.slice(3), products, stock, 5), null);
+const configuredFallback = moldFirstConfiguredOption(options.slice(3), products);
+assert.equal(configuredFallback.id, 'first-choice', 'the composition remains visible when every configured choice is out of stock');
 console.log('storefront basket lightweight defaults: PASS');
