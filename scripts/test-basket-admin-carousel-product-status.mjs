@@ -58,6 +58,23 @@ root.onclick({ target: { closest: () => ({ dataset: { optionEdit: inactiveId }, 
 await Promise.resolve();
 assert.deepEqual(opened, [inactiveId]);
 
+root.onchange({target:{matches:selector=>selector==='[data-product-active]',closest:()=>({dataset:{productRow:inactiveId}}),value:'true'}});
+root.onclick({target:{closest:()=>({dataset:{productInlineSave:inactiveId},hasAttribute:name=>name==='data-product-inline-save'})}});
+await new Promise(resolve=>setTimeout(resolve,0));
+assert.deepEqual(inlineSaves, [{id:inactiveId,stock:0,active:true}], 'zero-stock inactive product can be activated inline');
+
+const productCalls=[];
+const apiWindow={DonaAntoniaAdminBridge:{operator:()=> 'QA',api:async(action,params={},options={})=>{
+  productCalls.push({action,params,options});
+  if(action==='product_detail')return {product:{id:inactiveId,name:'Produto inativo',sku:'',gtin:'',sale_price_cents:0,stock_quantity:0,active:false}};
+  if(action==='product_save'){assert.match(options.body, /"stock_quantity":0/);assert.match(options.body, /"active":true/);return {product_id:inactiveId,product:{stock_quantity:0,active:true}};}
+  throw new Error('unexpected_action_'+action);
+}}};
+vm.runInNewContext(apiModule,{window:apiWindow,Intl,Date,JSON,Error,Number,Math,String});
+const savedInline=await apiWindow.DonaAntoniaBasketAdminApi.saveProductInline({id:inactiveId,stock:0,active:true});
+assert.deepEqual(productCalls.map(call=>call.action),['product_detail','product_save']);
+assert.deepEqual(JSON.parse(JSON.stringify(savedInline)),{id:inactiveId,stock:0,active:true});
+
 const toggleStart = operations.indexOf('async function toggleProductActive');
 const toggleEnd = operations.indexOf('\n  async function openProductLotsEditor', toggleStart);
 assert.ok(toggleStart >= 0 && toggleEnd > toggleStart);
@@ -81,4 +98,4 @@ assert.match(publicPage, /requestIdleCallback/);
 assert.match(publicPage, /rememberBasketPreview\(cachedBasket,data\.basket,data\.items\)/);
 assert.match(migration, /'is_active',p\.is_active/);
 
-console.log('Basket status, in-place product activation, navigation recovery, and lightweight previews passed.');
+console.log('Basket carousel inline stock/status edits, zero-stock activation, navigation recovery, and lightweight previews passed.');
