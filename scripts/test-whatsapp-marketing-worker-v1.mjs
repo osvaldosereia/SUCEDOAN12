@@ -15,10 +15,11 @@ const sql=fs.readFileSync(supportPath,'utf8');
 assert.match(source,/sendTemplateViaMeta/,'worker deve reutilizar sendTemplateViaMeta');
 assert.match(source,/MetaTransportError/,'worker deve tratar MetaTransportError');
 assert.doesNotMatch(source,/graph\.facebook\.com/i,'worker não pode implementar Graph cru');
-for(const rpc of ['marketing_campaign_worker_internal_key_v1','marketing_claim_dispatch_batch_v1','marketing_revalidate_dispatch_v1','marketing_issue_tracking_links_v1','marketing_finish_dispatch_v1','marketing_accept_meta_dispatch_v1']){
+for(const rpc of ['marketing_campaign_worker_internal_key_v1','marketing_revalidate_dispatch_v1','marketing_issue_tracking_links_v1','marketing_finish_dispatch_v1','marketing_accept_meta_dispatch_v1']){
   assert.match(source,new RegExp(rpc),`worker deve chamar ${rpc}`);
 }
-assert.match(source,/DEFAULT_BATCH\s*=\s*10/,'batch padrão deve ser 10');
+assert.match(source,/mode:"manual_only"/,'tick do cron deve ser no-op sem lote manual');
+assert.doesNotMatch(source,/marketing_claim_dispatch_batch_v1/,'worker não pode claimar campanhas automaticamente');
 assert.match(source,/MAX_BATCH\s*=\s*10/,'batch máximo deve ser 10');
 assert.match(source,/x-dona-antonia-marketing-worker-key/i,'worker deve exigir chave interna server-side');
 assert.match(source,/campaigns_enabled/,'worker deve revalidar campaigns_enabled antes do claim');
@@ -139,11 +140,9 @@ function buildHarness({mode='live',campaignsEnabled=true,revalidate='ok',meta='o
 
 {
   const h=buildHarness({mode:'live'});const result=await h.invoke();
-  assert.equal(result.response.status,200);assert.equal(h.calls.meta.length,1,'live válido deve chamar Meta exatamente uma vez');
-  assert.equal(h.calls.accept.length,1,'sucesso deve aceitar WAMID pela RPC específica');
-  assert.equal(h.calls.tracking.length,1,'worker deve consultar tracking antes do transporte');
-  assert.equal(h.calls.accept[0].p_provider_message_id,'wamid.TEST_MARKETING');
-  assert.deepEqual(JSON.parse(JSON.stringify(h.calls.meta[0].components)),[{type:'body',parameters:[{type:'text',text:'Maria'},{type:'text',text:'Oferta'}]}]);
+  assert.equal(result.response.status,200);assert.equal(result.body.mode,'manual_only');
+  assert.equal(h.calls.claim.length,0,'tick sem lote manual não pode claimar dispatches');
+  assert.equal(h.calls.meta.length,0,'tick sem lote manual não pode chamar Meta');
 }
 {
   const h=buildHarness({mode:'off'});await h.invoke();assert.equal(h.calls.meta.length,0,'mode off deve ser no-op');assert.equal(h.calls.claim.length,0,'mode off não deve claimar');
@@ -157,25 +156,25 @@ function buildHarness({mode='live',campaignsEnabled=true,revalidate='ok',meta='o
   assert.equal(h.calls.meta.length,1,'teste usa transporte Meta mockado e processa só dispatch do lote');
 }
 {
-  const h=buildHarness({revalidate:'skip'});await h.invoke();assert.equal(h.calls.meta.length,0,'skip deve ocorrer antes do transporte');assert.equal(h.calls.tracking.length,0,'skip não deve emitir tracking');
+  const h=buildHarness({revalidate:'skip'});await h.invoke({manual_batch_id:'60000000-0000-4000-8000-000000000006'});assert.equal(h.calls.meta.length,0,'skip deve ocorrer antes do transporte');assert.equal(h.calls.tracking.length,0,'skip não deve emitir tracking');
 }
 {
-  const h=buildHarness({mode:'canary',toPhone:'+5565999999999'});await h.invoke();assert.equal(h.calls.meta.length,0,'canary externo não pode chamar Meta');assert.equal(h.calls.finish.at(-1)?.p_status,'skipped');assert.equal(h.calls.finish.at(-1)?.p_last_error,'canary_recipient_not_allowed');
+  const h=buildHarness({mode:'canary',toPhone:'+5565999999999'});await h.invoke({manual_batch_id:'60000000-0000-4000-8000-000000000006'});assert.equal(h.calls.meta.length,0,'canary externo não pode chamar Meta');assert.equal(h.calls.finish.at(-1)?.p_status,'skipped');assert.equal(h.calls.finish.at(-1)?.p_last_error,'canary_recipient_not_allowed');
 }
 {
-  const h=buildHarness({meta:'retryable',attemptCount:0});await h.invoke();assert.equal(h.calls.finish.at(-1)?.p_status,'retry');assert.equal(h.calls.finish.at(-1)?.p_retry_after_seconds,30);
+  const h=buildHarness({meta:'retryable',attemptCount:0});await h.invoke({manual_batch_id:'60000000-0000-4000-8000-000000000006'});assert.equal(h.calls.finish.at(-1)?.p_status,'retry');assert.equal(h.calls.finish.at(-1)?.p_retry_after_seconds,30);
 }
 {
-  const h=buildHarness({meta:'retryable',attemptCount:1});await h.invoke();assert.equal(h.calls.finish.at(-1)?.p_status,'retry');assert.equal(h.calls.finish.at(-1)?.p_retry_after_seconds,120);
+  const h=buildHarness({meta:'retryable',attemptCount:1});await h.invoke({manual_batch_id:'60000000-0000-4000-8000-000000000006'});assert.equal(h.calls.finish.at(-1)?.p_status,'retry');assert.equal(h.calls.finish.at(-1)?.p_retry_after_seconds,120);
 }
 {
-  const h=buildHarness({meta:'retryable',attemptCount:2});await h.invoke();assert.equal(h.calls.finish.at(-1)?.p_status,'failed','terceira tentativa retryable deve encerrar');
+  const h=buildHarness({meta:'retryable',attemptCount:2});await h.invoke({manual_batch_id:'60000000-0000-4000-8000-000000000006'});assert.equal(h.calls.finish.at(-1)?.p_status,'failed','terceira tentativa retryable deve encerrar');
 }
 {
-  const h=buildHarness({meta:'uncertain'});await h.invoke();assert.equal(h.calls.finish.at(-1)?.p_status,'uncertain','erro incerto nunca deve auto-retry');
+  const h=buildHarness({meta:'uncertain'});await h.invoke({manual_batch_id:'60000000-0000-4000-8000-000000000006'});assert.equal(h.calls.finish.at(-1)?.p_status,'uncertain','erro incerto nunca deve auto-retry');
 }
 {
-  const h=buildHarness({meta:'permanent'});await h.invoke();assert.equal(h.calls.finish.at(-1)?.p_status,'failed');
+  const h=buildHarness({meta:'permanent'});await h.invoke({manual_batch_id:'60000000-0000-4000-8000-000000000006'});assert.equal(h.calls.finish.at(-1)?.p_status,'failed');
 }
 
 console.log('PASS test-whatsapp-marketing-worker-v1');

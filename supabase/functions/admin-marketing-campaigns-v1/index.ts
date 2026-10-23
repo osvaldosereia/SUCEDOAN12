@@ -14,12 +14,10 @@ const PATCH_FIELDS=new Set(["name","whatsapp_account_id","template_id","filters"
 const SNAPSHOT_FIELDS=new Set(["campaign_id","expected_revision","idempotency_key"]);
 const TRANSITION_FIELDS=new Set(["campaign_id","expected_revision","to_status","reason"]);
 const INTERNAL_TEST_FIELDS=new Set(["campaign_id","expected_revision"]);
-const SCHEDULE_FIELDS=new Set(["campaign_id","expected_revision","scheduled_for"]);
 const PAUSE_FIELDS=new Set(["campaign_id","reason"]);
-const RESUME_FIELDS=new Set(["campaign_id","scheduled_for"]);
 const CANCEL_EXECUTION_FIELDS=new Set(["campaign_id","reason"]);
 const MANUAL_BATCH_FIELDS=new Set(["campaign_id","expected_revision","idempotency_key"]);
-const ALLOWED_TRANSITIONS=new Set(["draft","ready_for_review","approved","scheduled","running","paused","completed","failed","cancelled"]);
+const ALLOWED_TRANSITIONS=new Set(["draft","ready_for_review","approved"]);
 
 const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {
   "Access-Control-Allow-Origin":ORIGINS.has(origin)?origin:"https://www.donaantonia.com.br",
@@ -81,14 +79,6 @@ function validateFilters(filters:unknown){
   if(!objectLike(filters))return "invalid_filters";
   if(JSON.stringify(filters).length>MAX_FILTER_BYTES)return "filters_too_large";
   return null;
-}
-
-function normalizedDateTime(value:unknown){
-  const raw=String(value??"").trim();
-  if(!raw)return null;
-  const ms=Date.parse(raw);
-  if(!Number.isFinite(ms))return null;
-  return new Date(ms).toISOString();
 }
 
 async function listCampaigns(status:string|null){
@@ -205,30 +195,11 @@ async function transition(body:Record<string,unknown>){
   if(result.error)throw result.error;const data=result.data||{ok:false,error:"transition_failed"};return {status:rpcStatus(data),data};
 }
 
-async function scheduleCampaign(body:Record<string,unknown>,startNow=false){
-  if(!onlyKeys(body,SCHEDULE_FIELDS)||hasForbiddenField(body))return {status:400,data:{ok:false,error:"fields_not_allowed"}};
-  const campaignId=validUuid(body.campaign_id),revision=Number(body.expected_revision);
-  if(!campaignId||!Number.isInteger(revision)||revision<1)return {status:400,data:{ok:false,error:"invalid_payload"}};
-  const scheduledFor=startNow?new Date().toISOString():normalizedDateTime(body.scheduled_for);
-  if(!scheduledFor)return {status:400,data:{ok:false,error:"invalid_scheduled_for"}};
-  const result=await db.rpc("marketing_schedule_campaign_v1",{p_campaign_id:campaignId,p_expected_revision:revision,p_scheduled_for:scheduledFor});
-  if(result.error)throw result.error;const data=result.data||{ok:false,error:"schedule_failed"};return {status:rpcStatus(data),data};
-}
-
 async function pauseCampaign(body:Record<string,unknown>){
   if(!onlyKeys(body,PAUSE_FIELDS)||hasForbiddenField(body))return {status:400,data:{ok:false,error:"fields_not_allowed"}};
   const campaignId=validUuid(body.campaign_id);if(!campaignId)return {status:400,data:{ok:false,error:"invalid_campaign_id"}};
   const result=await db.rpc("marketing_pause_campaign_v1",{p_campaign_id:campaignId,p_reason:clean(body.reason,500)||null});
   if(result.error)throw result.error;const data=result.data||{ok:false,error:"pause_failed"};return {status:rpcStatus(data),data};
-}
-
-async function resumeCampaign(body:Record<string,unknown>){
-  if(!onlyKeys(body,RESUME_FIELDS)||hasForbiddenField(body))return {status:400,data:{ok:false,error:"fields_not_allowed"}};
-  const campaignId=validUuid(body.campaign_id);if(!campaignId)return {status:400,data:{ok:false,error:"invalid_campaign_id"}};
-  const scheduledFor=body.scheduled_for===undefined?new Date().toISOString():normalizedDateTime(body.scheduled_for);
-  if(!scheduledFor)return {status:400,data:{ok:false,error:"invalid_scheduled_for"}};
-  const result=await db.rpc("marketing_resume_campaign_v1",{p_campaign_id:campaignId,p_scheduled_for:scheduledFor});
-  if(result.error)throw result.error;const data=result.data||{ok:false,error:"resume_failed"};return {status:rpcStatus(data),data};
 }
 
 async function cancelExecution(body:Record<string,unknown>){
@@ -298,10 +269,7 @@ Deno.serve(async(req:Request)=>{
     else if(action==="create_snapshot")result=await createSnapshot(parsed.body);
     else if(action==="transition")result=await transition(parsed.body);
     else if(action==="prepare_internal_test")result=await prepareInternalTest(parsed.body);
-    else if(action==="schedule")result=await scheduleCampaign(parsed.body,false);
-    else if(action==="start_now")result=await scheduleCampaign(parsed.body,true);
     else if(action==="pause")result=await pauseCampaign(parsed.body);
-    else if(action==="resume")result=await resumeCampaign(parsed.body);
     else if(action==="cancel_execution")result=await cancelExecution(parsed.body);
     else if(action==="send_manual_batch")result=await sendManualBatch(parsed.body);
     else return json(req,{ok:false,error:"action_not_allowed"},404);

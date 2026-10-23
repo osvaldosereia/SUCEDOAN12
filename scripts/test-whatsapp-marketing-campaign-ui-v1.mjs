@@ -4,7 +4,7 @@ import fs from 'node:fs';
 const modulePath='vitrine/admin/marketing/campaign-center.js';
 const entryPath='vitrine/admin/marketing/campaign-entry.js';
 const cssPath='vitrine/admin/marketing/campaign-center.css';
-const loaderPath='vitrine/admin/basket-lot-image.js';
+const loaderPath='vitrine/admin/marketing/marketing-bootstrap.js';
 assert.equal(fs.existsSync(modulePath),true,'módulo de Campanhas deve existir');
 assert.equal(fs.existsSync(entryPath),true,'entrada leve de Campanhas deve existir');
 assert.equal(fs.existsSync(cssPath),true,'CSS de Campanhas deve existir');
@@ -13,7 +13,7 @@ const entry=fs.readFileSync(entryPath,'utf8');
 const css=fs.readFileSync(cssPath,'utf8');
 const loader=fs.readFileSync(loaderPath,'utf8');
 
-assert.match(loader,/import\([^)]*campaign-entry\.js/,'bootstrap leve deve carregar a entrada de Campanhas');
+assert.match(loader,/campaign-entry\.js\?v=/,'bootstrap leve deve carregar a entrada de Campanhas');
 assert.doesNotMatch(loader,/import\([^)]*campaign-center\.js/,'módulo pesado de Campanhas não pode carregar no bootstrap inicial');
 assert.match(entry,/Campanhas/,'navegação Marketing deve incluir Campanhas');
 assert.match(entry,/import\([^)]*campaign-center\.js/,'Campanhas deve ser lazy-loaded no clique');

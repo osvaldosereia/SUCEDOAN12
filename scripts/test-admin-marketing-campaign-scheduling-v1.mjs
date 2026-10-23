@@ -9,15 +9,17 @@ const source=fs.readFileSync(edgePath,'utf8');
 const sql=fs.readFileSync(supportPath,'utf8');
 
 assert.match(source,/async\s+function\s+adminAuth\s*\(/,'ações de execução devem continuar sob Admin auth');
-for(const action of ['schedule','start_now','pause','resume','cancel_execution','send_manual_batch','execution_status']){
-  assert.match(source,new RegExp(`action\\s*===\\s*["']${action}["']`,'i'),`ação de execução ausente: ${action}`);
+for(const action of ['pause','cancel_execution','send_manual_batch','execution_status']){
+  assert.match(source,new RegExp(`action\\s*===\\s*["']${action}["']`,'i'),`ação operacional ausente: ${action}`);
 }
-for(const rpc of ['marketing_schedule_campaign_v1','marketing_pause_campaign_v1','marketing_resume_campaign_v1','marketing_cancel_campaign_execution_v1','marketing_begin_manual_campaign_batch_v1','marketing_campaign_execution_status_v1']){
+for(const action of ['schedule','start_now','resume']){
+  assert.doesNotMatch(source,new RegExp(`action\\s*===\\s*["']${action}["']`,'i'),`ação automática proibida: ${action}`);
+}
+for(const rpc of ['marketing_pause_campaign_v1','marketing_cancel_campaign_execution_v1','marketing_begin_manual_campaign_batch_v1','marketing_campaign_execution_status_v1']){
   assert.match(source,new RegExp(`rpc\\(["']${rpc}["']`,'i'),`API deve usar RPC canônica: ${rpc}`);
 }
+assert.doesNotMatch(source,/marketing_schedule_campaign_v1|marketing_resume_campaign_v1|scheduleCampaign|resumeCampaign/i,'API não deve encaminhar agendamento ou retomada');
 assert.match(source,/campaigns_disabled/i,'API deve propagar kill-switch fechado');
-assert.match(source,/scheduled_for/i,'schedule deve aceitar data/hora explícita');
-assert.match(source,/new\s+Date\s*\(\s*\)\.toISOString|new\s+Date\s*\(\s*Date\.now/i,'start_now deve derivar horário no servidor');
 assert.match(source,/execution_status/i,'API deve expor progresso/estado operacional');
 
 for(const forbidden of ['runtime_mode','worker_url','waba_id','phone_number_id','destination_phone','to_phone_e164','outbox_id']){

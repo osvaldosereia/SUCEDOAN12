@@ -9,7 +9,6 @@ const META_TOKEN=Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||"";
 const GRAPH_VERSION=Deno.env.get("META_WHATSAPP_GRAPH_VERSION")||"";
 const db=createClient(SUPABASE_URL,SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 
-const DEFAULT_BATCH=10;
 const MAX_BATCH=10;
 const MAX_BODY_BYTES=4096;
 const INTERNAL_HEADER="x-dona-antonia-marketing-worker-key";
@@ -56,10 +55,6 @@ async function readBody(req:Request){
     if(body.manual_batch_id!==undefined&&(!/^[0-9a-f-]{36}$/i.test(String(body.manual_batch_id))||Object.keys(body).some(key=>key!=="manual_batch_id")))return {ok:false as const,error:"invalid_manual_batch"};
     return {ok:true as const,body:body as Record<string,unknown>};
   }catch{return {ok:false as const,error:"invalid_json_body"}}
-}
-
-function requestedLimit(value:unknown){
-  const n=Number(value??DEFAULT_BATCH);if(!Number.isInteger(n)||n<1)return DEFAULT_BATCH;return Math.min(n,MAX_BATCH);
 }
 
 function bodyComponents(templateComponents:unknown,variableValues:unknown,trackingLinks:any[]=[],customerName=""){
@@ -221,28 +216,6 @@ Deno.serve(async(req:Request)=>{
   if(!(await authenticate(req)))return json({ok:false,error:"worker_auth_failed"},401);
   const parsed=await readBody(req);if(!parsed.ok)return json({ok:false,error:parsed.error},parsed.error==="payload_too_large"?413:400);
   if(parsed.body.manual_batch_id)return processManualBatch(String(parsed.body.manual_batch_id));
-  const limit=requestedLimit(parsed.body.limit);
-
-  try{
-    const runtimes=await loadExecutionRows();
-    if(!runtimes.length)return json({ok:true,mode:"off",claimed:0,processed:0,results:[]});
-    if(!META_TOKEN||!/^v\d+\.\d+$/.test(GRAPH_VERSION))return json({ok:false,error:"meta_transport_not_configured"},503);
-    const canaryPhones=await officialCanaryPhones();
-    const results:any[]=[];
-    let claimed=0;
-    for(const runtime of runtimes){
-      const mode=String(runtime.mode||"off");if(mode==="off")continue;
-      const account=await loadRunnableAccount(String(runtime.whatsapp_account_id||""));if(!account)continue;
-      const batch=Math.min(limit,Number(runtime.max_batch_size||DEFAULT_BATCH),MAX_BATCH);
-      const claim=await db.rpc("marketing_claim_dispatch_batch_v1",{p_whatsapp_account_id:runtime.whatsapp_account_id,p_limit:batch});
-      if(claim.error||claim.data?.ok!==true)continue;
-      const items=Array.isArray(claim.data?.items)?claim.data.items:[];claimed+=items.length;
-      for(const item of items)results.push(await processDispatch(item,mode,account,canaryPhones));
-    }
-    return json({ok:true,claimed,processed:results.length,results});
-  }catch(error){
-    console.error("whatsapp_marketing_worker_v1",error instanceof Error?error.message:String(error));
-    return json({ok:false,error:"worker_internal_error"},500);
-  }
+  return json({ok:true,mode:"manual_only",claimed:0,processed:0,results:[]});
 });
 

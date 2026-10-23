@@ -6,9 +6,8 @@ const SERVICE_KEY=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS
 const db=createClient(SUPABASE_URL,SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
 const MAX_BODY_BYTES=8000;
-const ACTIONS=new Set(["materialize_campaign","approve_send","schedule_send","start_send"]);
+const ACTIONS=new Set(["materialize_campaign"]);
 const BASIC_FIELDS=new Set(["strategy_id","expected_revision"]);
-const SCHEDULE_FIELDS=new Set(["strategy_id","expected_revision","scheduled_for"]);
 const FORBIDDEN_FIELDS=new Set(["waba_id","phone_number_id","to_phone_e164","destination_phone","access_token","service_role","service_key","outbox_id","campaigns_enabled","ana_enabled","runtime_mode","worker_url"]);
 
 const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {
@@ -48,10 +47,6 @@ function statusFor(data:any){
   if(error==="account_not_available")return 422;
   return 400;
 }
-function normalizedDateTime(value:unknown){
-  const raw=String(value??"").trim();if(!raw)return null;
-  const ms=Date.parse(raw);return Number.isFinite(ms)?new Date(ms).toISOString():null;
-}
 function baseInput(body:Record<string,unknown>){
   const strategyId=validUuid(body.strategy_id),revision=Number(body.expected_revision);
   if(!strategyId||!Number.isInteger(revision)||revision<1)return null;
@@ -63,20 +58,6 @@ async function materialize(body:Record<string,unknown>,actor:string){
   const result=await db.rpc("marketing_strategy_materialize_campaign_v1",{p_strategy_id:input.strategyId,p_expected_revision:input.revision,p_actor_user_id:actor});
   if(result.error)throw result.error;const data=result.data||{ok:false,error:"materialize_failed"};return {status:statusFor(data),data};
 }
-async function approveSend(body:Record<string,unknown>,actor:string){
-  if(!onlyKeys(body,BASIC_FIELDS)||hasForbidden(body))return {status:400,data:{ok:false,error:"fields_not_allowed"}};
-  const input=baseInput(body);if(!input)return {status:400,data:{ok:false,error:"invalid_payload"}};
-  const result=await db.rpc("marketing_strategy_approve_send_v1",{p_strategy_id:input.strategyId,p_expected_revision:input.revision,p_actor_user_id:actor});
-  if(result.error)throw result.error;const data=result.data||{ok:false,error:"approve_send_failed"};return {status:statusFor(data),data};
-}
-async function scheduleSend(body:Record<string,unknown>,actor:string,startNow=false){
-  if(!onlyKeys(body,startNow?BASIC_FIELDS:SCHEDULE_FIELDS)||hasForbidden(body))return {status:400,data:{ok:false,error:"fields_not_allowed"}};
-  const input=baseInput(body);if(!input)return {status:400,data:{ok:false,error:"invalid_payload"}};
-  const scheduledFor=startNow?new Date().toISOString():normalizedDateTime(body.scheduled_for);
-  if(!scheduledFor)return {status:400,data:{ok:false,error:"invalid_scheduled_for"}};
-  const result=await db.rpc("marketing_strategy_schedule_send_v1",{p_strategy_id:input.strategyId,p_expected_revision:input.revision,p_scheduled_for:scheduledFor,p_actor_user_id:actor});
-  if(result.error)throw result.error;const data=result.data||{ok:false,error:"schedule_send_failed"};return {status:statusFor(data),data};
-}
 
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
@@ -87,11 +68,7 @@ Deno.serve(async(req:Request)=>{
   if(!ACTIONS.has(action))return json(req,{ok:false,error:"action_not_allowed"},404);
   const parsed=await readBody(req);if(!parsed.ok)return json(req,{ok:false,error:parsed.error},parsed.error==="payload_too_large"?413:400);
   try{
-    let result:{status:number,data:any};
-    if(action==="materialize_campaign")result=await materialize(parsed.body,auth.user_id);
-    else if(action==="approve_send")result=await approveSend(parsed.body,auth.user_id);
-    else if(action==="schedule_send")result=await scheduleSend(parsed.body,auth.user_id,false);
-    else result=await scheduleSend(parsed.body,auth.user_id,true);
+    const result=await materialize(parsed.body,auth.user_id);
     return json(req,result.data,result.status);
   }catch(error){
     console.error("admin_marketing_strategy_campaign_error",error instanceof Error?error.message:String(error));
