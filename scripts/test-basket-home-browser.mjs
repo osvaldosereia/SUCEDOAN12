@@ -60,7 +60,7 @@ try{
      }
      if(action==='basket'){
        const basketId=u.searchParams.get('basket_id');
-       if(basketId){assert.ok(u.searchParams.get('trace_id'),'direct composition request carries a trace ID');basketDetailRequests.push({action,basketId,sizeKey:null})}
+       if(basketId){if(/^[0-9a-f-]{36}@[1-6]$/i.test(basketId))assert.ok(u.searchParams.get('trace_id'),'canonical direct composition request carries a trace ID');basketDetailRequests.push({action,basketId,sizeKey:null})}
      }
      const response=action==='basket'?{ok:true,basket:offered,items:offered.carousel_items.map(x=>({...x,base_quantity:x.quantity,stock_quantity:100}))}:{ok:true,offers:[]};
      return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify(response)});
