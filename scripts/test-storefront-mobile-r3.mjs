@@ -26,8 +26,8 @@ assert.match(page,/BasketCarousel\.card\(b,esc,money,basketName,index\)/,'card m
 const start=page.indexOf('const homeSubgroupSignatures=');
 const end=page.indexOf('function fragmentElement(',start);
 assert.ok(start>=0&&end>start);
-const groupFactory=new Function('esc','basketCard',page.slice(start,end)+'return homeBasketGroupRecords;');
-const records=groupFactory(v=>String(v).replaceAll('&','&amp;').replaceAll('"','&quot;'),(b,i)=>'<article data-card="'+b.id+'" data-index="'+i+'"></article>');
+const groupFactory=new Function('basketCard',page.slice(start,end)+'return homeBasketGroupRecords;');
+const records=groupFactory((b,i)=>'<article data-card="'+b.id+'" data-index="'+i+'"></article>');
 const grande={id:'large',name:'Grande'};
 const mini={id:'small',name:'Mini'};
 const initial=[{id:'complete',name:'Cestas Completas',subcategories:[grande]}];
