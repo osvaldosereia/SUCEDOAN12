@@ -14,6 +14,8 @@ on:
       - 'scripts/test-basket-storefront-*.mjs'
       - 'scripts/test-storefront-mobile-r6-live-browser.mjs'
       - 'scripts/test-storefront-mobile-r5.mjs'
+      - 'scripts/test-public-basket-mold-recovery-v1.mjs'
+      - 'scripts/test-public-basket-detail-performance-r1.mjs'
       - 'scripts/test-basket-unified-*.mjs'
       - 'scripts/test-home-basket-size-photos-v1.mjs'
       - 'scripts/test-storefront-mobile-r6-live-browser.mjs'
@@ -30,6 +32,8 @@ on:
       - 'scripts/test-basket-carousel-*.mjs'
       - 'tests/public-basket-item-controls.test.mjs'
       - 'scripts/test-basket-storefront-*.mjs'
+      - 'scripts/test-public-basket-mold-recovery-v1.mjs'
+      - 'scripts/test-public-basket-detail-performance-r1.mjs'
       - 'scripts/test-basket-unified-*.mjs'
       - '.github/workflows/basket-carousel-ci.yml'
 permissions:
@@ -79,4 +83,6 @@ jobs:
           node scripts/test-storefront-mobile-r3.mjs
           node scripts/test-storefront-mobile-r4.mjs
           node scripts/test-storefront-mobile-r5.mjs
+          node scripts/test-public-basket-mold-recovery-v1.mjs
+          node scripts/test-public-basket-detail-performance-r1.mjs
           node scripts/test-checkout-whatsapp-return.mjs

@@ -25,7 +25,10 @@ assert.match(open,/paintBasketSheet\(\);[\s\S]{0,120}loadMoldOptions\(0,state\.b
 assert.doesNotMatch(root,/const WHATSAPP\s*=/,'unused WhatsApp alias removed');
 assert.doesNotMatch(root,/const BUSINESS_TIME_ZONE\s*=/,'unused timezone alias removed');
 assert.match(root,/trace_id/,'basket calls carry a non-customer trace ID');
-assert.match(root,/BASKET_OPTION_MAX_IN_FLIGHT=3/,'visible alternative requests have a fixed concurrency limit');
+assert.match(root,/BASKET_OPTION_BATCH_SIZE=24/,'visible basket alternatives are loaded in one bounded request batch');
+assert.match(root,/basketApi\(d,'basket_mold_options_batch'/,'the visible option queue sends one batched stock request');
+assert.match(root,/queueMicrotask\(\(\)=>\{d\.optionFlushScheduled=false;pumpMoldOptionQueue\(d\)\}\)/,'the option queue flushes together after the intersection callback');
+assert.doesNotMatch(root,/BASKET_OPTION_MAX_IN_FLIGHT/,'the per-position request waterfall is removed');
 assert.doesNotMatch(root,/\.basket-(?:carousel|product-strip|product|scroll-track|scroll-thumb)\b/,'unused legacy basket product carousel styles removed');
 assert.doesNotMatch(root,/\.cart-line(?:-top)?\b|\.cart-controls\b/,'unused legacy cart styles removed');
 assert.doesNotMatch(carousel,/basket-product-strip|basket-scroll-track|basket-scroll-thumb/,'unused legacy home product-strip behavior removed');
