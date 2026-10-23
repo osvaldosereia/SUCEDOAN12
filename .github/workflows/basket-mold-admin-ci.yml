@@ -15,6 +15,8 @@ on:
       - 'vitrine/admin/basket-admin-*.js'
       - 'supabase/functions/admin-basket-configuration-v1/**'
       - 'supabase/functions/storefront-v2/index.ts'
+      - 'supabase/functions/storefront-v2/basket-lightweight.js'
+      - 'scripts/test-storefront-basket-lightweight.mjs'
       - 'supabase/migrations/20261023120000_basket_admin_three_tabs.sql'
       - 'supabase/migrations/20261023160000_basket_quantity_save_merge_duplicates.sql'
       - 'supabase/migrations/20261023180000_basket_admin_save_inactive_carousel_options.sql'
@@ -44,6 +46,8 @@ on:
       - 'vitrine/admin/basket-admin-*.js'
       - 'supabase/functions/admin-basket-configuration-v1/**'
       - 'supabase/functions/storefront-v2/index.ts'
+      - 'supabase/functions/storefront-v2/basket-lightweight.js'
+      - 'scripts/test-storefront-basket-lightweight.mjs'
       - 'supabase/migrations/20261023120000_basket_admin_three_tabs.sql'
       - 'supabase/migrations/20261023160000_basket_quantity_save_merge_duplicates.sql'
       - 'supabase/migrations/20261023180000_basket_admin_save_inactive_carousel_options.sql'
@@ -69,6 +73,7 @@ jobs:
           node-version: '24'
       - run: node scripts/test-basket-mold-admin-v1.mjs
       - run: node scripts/test-basket-admin-three-tabs.mjs
+      - run: node scripts/test-storefront-basket-lightweight.mjs
       - run: node scripts/test-basket-admin-carousel-product-status.mjs
       - run: node scripts/test-basket-admin-inactive-carousel-options.mjs
       - run: node scripts/test-basket-mold-conditional-hidden-v1.mjs
