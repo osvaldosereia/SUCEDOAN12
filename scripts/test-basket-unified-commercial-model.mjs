@@ -47,6 +47,8 @@ assert.match(guided,/Criar lote \/ reservar/,'technical guided lot creation rema
 
 for(const source of [publicRoot]){
   assert.match(source,/basket_categories/,'public site must consume basket categories separately');
+  assert.match(source,/home_size_cards/,'public home must request lightweight cards for the five sizes');
+  assert.match(source,/home_shell:true/,'home size cards must mark the shell that hides price and item count');
   assert.match(source,/basketCategory/,'public site must track the active Cesta\/Kit category');
   assert.match(source,/category_slug/,'basket cards must be filtered by their Cesta\/Kit category');
   assert.match(source,/Cestas e Kits/,'public heading must use the unified name');
