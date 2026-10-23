@@ -37,7 +37,7 @@ const basketRouteEnd=api.indexOf('if(req.method==="GET"&&action==="basket_mold_o
 assert.ok(basketRouteStart>=0&&basketRouteEnd>basketRouteStart,'basket detail route exists');
 const basketRoute=api.slice(basketRouteStart,basketRouteEnd);
 assert.ok(basketRoute.includes('raw.match(/^([0-9a-f-]{36})@([1-6])$/i)'),'edge function accepts the cached UUID@composition key');
-assert.match(basketRoute,/moldDetail\(id,Number\(mm\[2\]\),null,u\.searchParams\.get\("lightweight"\)!=="1"\)/,'direct composition requests still use fresh basket validation');
+assert.ok(basketRoute.includes('const lightweight=u.searchParams.get("lightweight")==="1";const b=await moldDetail(id,Number(mm[2]),null,!lightweight,lightweight);'),'lightweight direct details allow an unavailable preview while retaining live stock validation');
 
 const batchStart=sql.search(/create or replace function public\.basket_mold_public_compositions_batch_v1/i);
 assert.ok(batchStart>=0,'batch composition SQL function exists');
