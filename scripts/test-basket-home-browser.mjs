@@ -90,7 +90,7 @@ try{
  assert.ok(await app.locator('#basketSections .basket-size-card-photo img').first().getAttribute('src'),'first basket photo must start loading immediately');
  assert.equal(await app.locator('#basketSections .basket-size-card-photo img').count(),2,'the lightweight response should render the available basket sizes');
  assert.deepEqual(await app.locator('#basketSections .basket-subgroup-title').allTextContents(),['Escolha o tamanho da cesta'],'home uses one size-picker subgroup');
- assert.deepEqual(await app.locator('#basketSections .basket-card-title').allTextContents(),['Grande','Média'],'home displays the size labels returned by the lightweight payload');
+ assert.deepEqual(await app.locator('#basketSections .basket-card-title').allTextContents(),['Média','Grande'],'home preserves the configured size order in the lightweight payload');
  assert.equal(await app.locator('#basketSections .basket-card-item-total').count(),0,'home size cards hide item counts');
  assert.equal(await app.locator('#basketSections .basket-price-amount').count(),0,'home size cards hide prices until opened');
  assert.equal(await app.locator('#homeRemainingBaskets').count(),0,'size cards do not wait for a second full-catalog request');
