@@ -17,7 +17,7 @@ assert.ok(mobileStart>=0,'mobile CSS should isolate the decorative banner');
 const mobileRules=root.slice(mobileStart,root.indexOf('@media(min-width:760px){',mobileStart));
 assert.match(mobileRules,/\.home-hero\{[^}]*background-image:none/,'4G/mobile should never fetch decorative hero image');
 assert.match(root,/\.home-hero\{[^}]*home-grocery\.webp/,'desktop should retain existing hero photo');
-assert.match(root,/basket-carousel\.js\?v=20261021-price-hierarchy-v1/,'changed image JS must bust browser caches');
+assert.match(root,/basket-carousel\.js\?v=20261022-home-shell-v1/,'changed image JS must bust browser caches');
 assert.match(root,/rel="preconnect" href="https:\/\/ssbesxgaijknwsjbsbcz\.supabase\.co"/,'early API handshake must be retained');
 
 const shell=root.slice(root.indexOf('function renderInitialShell(){'),root.indexOf('function basketCategoryControls('));
@@ -53,7 +53,7 @@ assert.equal((first.match(/<img\b/g)||[]).length,1,'one photo per basket card');
 assert.match(root,/window\.DAStorefrontPerf=\{snapshot:/,'browser should make local load measurements accessible');
 assert.match(root,/type:'largest-contentful-paint',buffered:true/,'observe real browser LCP');
 assert.match(root,/type:'paint',buffered:true/,'observe FCP');
-assert.match(root,/da-home-first-cestas/,'measure first basket insertion');
-assert.match(root,/da-home-full-catalog/,'measure final catalog insertion');
+assert.match(root,/performance\.mark\('da-home-size-cards'\)/,'measure the first lightweight basket-size response');
+assert.match(root,/firstCestasMs:performance\.getEntriesByName\('da-home-size-cards'\)/,'expose first size-card timing in the snapshot');
 
 console.log('Storefront mobile image and first-paint R4 contract passed');
