@@ -70,23 +70,3 @@
   async function refresh(){if(!host())return;const config=MODULES[state.tab]||COMPATIBILITY_MODULES[state.tab]||MODULES.types;const module=window[config.global];const workspace=host().querySelector('[data-basket-config-workspace]');if(module&&workspace){await module.open(workspace);return}await activate()}
   window.DonaAntoniaBasketAdmin={state,render,refresh,setTab};
 })();
-(() => {
-  'use strict';
-  if(document.querySelector('script[data-orders-visual-v1]'))return;
-  const script=document.createElement('script');script.src='/vitrine/admin/orders-visual-v1.js?v=20261005-1';script.async=false;script.setAttribute('data-orders-visual-v1','');document.head.appendChild(script);
-})();
-(() => {
-  'use strict';
-  if(document.querySelector('script[data-store-ops-panel-v1]'))return;
-  const script=document.createElement('script');script.src='/vitrine/admin/store-baskets-ops-overview.js?v=20261006-1';script.async=false;script.setAttribute('data-store-ops-panel-v1','');document.head.appendChild(script);
-})();
-(() => {
-  'use strict';
-  if(document.querySelector('script[data-product-basket-cutover-v1]'))return;
-  const script=document.createElement('script');script.src='/vitrine/admin/product-basket-link-cutover.js?v=20261006-1';script.async=false;script.setAttribute('data-product-basket-cutover-v1','');document.head.appendChild(script);
-})();
-(() => {
-  'use strict';
-  if(document.querySelector('script[data-baskets-operational-polish-v1]'))return;
-  const script=document.createElement('script');script.src='/vitrine/admin/baskets-operational-polish.js?v=20261006-1';script.async=false;script.setAttribute('data-baskets-operational-polish-v1','');document.head.appendChild(script);
-})();
