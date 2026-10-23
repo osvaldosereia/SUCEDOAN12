@@ -158,6 +158,7 @@
     if(state.tab==='balance'&&tab!=='balance')stopBalanceCamera();
     if(tab!=='orders')document.body.classList.remove('orders-tab-active');
     state.tab=tab;
+    try{sessionStorage.setItem('da_admin_current_tab_v1',tab)}catch{}
     document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
     syncNavGroups();
     closeNavMenus();
@@ -7732,6 +7733,15 @@
 
   window.DonaAntoniaAdminBridge={
     api,
+    openProductEditor:async productId=>{
+      const id=String(productId||'');
+      if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)){
+        toast('Produto inválido');
+        return;
+      }
+      setTab('products');
+      await openProductEditor({id});
+    },
     token:adminStepUp,
     operator:requireOperator,
     toast,
@@ -7798,7 +7808,15 @@
       history.replaceState({},'',location.pathname+location.hash);
       return;
     }
-    if(!uuid.test(sharedSeparationId)){setTab('today');return}
+    if(!uuid.test(sharedSeparationId)){
+      let remembered='today';
+      try{
+        const saved=sessionStorage.getItem('da_admin_current_tab_v1');
+        if(saved&&Array.from(document.querySelectorAll('#adminNav [data-tab]')).some(item=>item.dataset.tab===saved))remembered=saved;
+      }catch{}
+      setTab(remembered);
+      return;
+    }
     await setTab('orders');
     await openOrderSeparationSheet(sharedSeparationId);
     history.replaceState({},'',location.pathname+location.hash);
