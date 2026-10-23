@@ -12,6 +12,7 @@ let createdArgs,registerAttempts=0;
 const incomplete={id:'existing-customer',display_name:'Cliente Existente',registration_complete:false,address:null,marketing_opt_in:false};
 const sandbox={
   txt:(v,n)=>String(v??'').trim().slice(0,n),
+  MINIMUM_ORDER_CENTS:7500,
   phone:()=>'+5565999823600',
   sha:async()=> 'rate-key',
   ip:()=> 'test-ip',
