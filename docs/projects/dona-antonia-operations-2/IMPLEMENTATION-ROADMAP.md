@@ -1,5 +1,15 @@
 # Dona Antônia Operations 2.0 — IMPLEMENTATION ROADMAP
 
+## Checkpoint R23 — observação Admin1 e smoke somente leitura — 2026-10-23 09:00:54 UTC
+
+- Base: `main` `1fa2dc3a52d5cce4914b1c772ed5338729862890`; PRs #1325/#1326 e os dois workflows dedicados de push da main passaram. Nenhuma PR Admin1 aberta identificada.
+- Logs allowlisted, 08:05:08–09:00:54 UTC, sub-janelas contíguas: zero chamadas por `function_id`/versão/método/status às funções Admin1 nos dois projetos, incluindo o smoke na última sub-janela. Sem payload, headers, IPs, URL/query completa ou dados de cliente.
+- Canônico `ssbesxgaijknwsjbsbcz` ACTIVE_HEALTHY; leitor v5 segue 410. Projeto separado `xaoeldjuxzsdsblimzxo` ACTIVE_HEALTHY; proxy v3 segue 410. São as duas únicas funções `admin1-*` nos projetos consultados. A função de telemetria permanece v377.
+- Sem migration, deploy de função, configuração, policy, grant ou dado alterado. R13 continua bloqueada pela renovação de `SUPABASE_ACCESS_TOKEN` pelo proprietário.
+- Check do runtime passou (9 fragmentos/638.778 caracteres); smoke read-only em `/` e `/vitrine/admin/` passou, com cinco cestas, quatro ofertas após carga assíncrona e carrinho vazio. Nenhum pedido ou efeito de negócio. Sem publicação necessária, pois o PR é documental.
+- Arquivos: HANDOFF e roadmap nesta branch baseada em `1fa2dc3a52d5cce4914b1c772ed5338729862890`. Rollback: reverter somente o merge documental.
+- Próxima tarefa: fechar a janela do proxy v3 após 2026-10-24 02:14:07.824 UTC e a do leitor v5 após 03:20:07.529 UTC; atribuir callers e manter 410. Publicar R13 somente após renovação do token pelo owner e preflight aprovado.
+
 ## Checkpoint R22 — janela incremental Admin1 — 2026-10-23 08:05:08 UTC
 - Finalização verificada: conteúdo em #1325, commits `54804fffbd5fdffbe575dd857f53194dea48e883` e `7e5a13e3f2b3a35bd6dcf8cbc7ed7e4e11dbced5`; checks PR `verify`/run `39922307804` e `contract`/run `39922307745` success. Squash merge em `e5746f2e35fced371e7059bd10f35b41d7dbbb93` (`main` revalidada nesse SHA). Os dois workflows de push da main — `Basket lot helper grant CI` #39922384228 e `Admin service outcome telemetry CI` #39922384081 — success. Como só documentação mudou, nenhum deploy Pages/runtime/Supabase era necessário; smoke read-only de `/` e `/vitrine/admin/` passou. Rollback: reverter o merge documental; próximo gate: janelas de 24h e renovação do token owner, detalhadas no HANDOFF.
 
