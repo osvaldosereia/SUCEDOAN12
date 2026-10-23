@@ -50,4 +50,6 @@ assert.equal(/SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET_KEY/.test(gateway), fals
 assert.ok(storefront.includes('sort_order:Number(o.sort_order||0)'));
 assert.ok(storefront.includes('stock_quantity:available'));
 assert.ok(storefront.includes('next_offset:'));
+const quantitiesUi = read('../vitrine/admin/basket-admin-quantities.js');
+assert.ok(quantitiesUi.indexOf("const quantities=[...root.querySelectorAll('[data-qty-basket]')]") < quantitiesUi.indexOf('state.busy=true;render();'), 'read edited quantities before rerendering the form');
 console.log('basket admin three tabs: PASS');
