@@ -54,7 +54,7 @@ const homeSizeSubcategories=homeSizeNames.map((name,index)=>({id:'sub-'+index,na
  assert.equal(await app.getByRole('heading',{name:'Kits Promocionais',exact:true}).count(),0,'initial size-card payload must not render unrelated basket groups');
  assert.equal(await app.locator('.basket-size-card-photo img').count(),5,'the homepage renders the five lightweight basket size cards');
  for(const size of homeSizeNames)assert.equal(await app.getByRole('button',{name:'Ver produtos da cesta '+size,exact:true}).count(),1,'show the action for '+size);
- await app.locator('[data-basket]').click();await app.locator('#addBasket').waitFor();
+ await app.getByRole('button',{name:'Ver produtos da cesta Mini',exact:true}).click();await app.locator('#addBasket').waitFor();
  assert.ok((await app.locator('#sheetBody').innerText()).includes('Produto 1'));assert.deepEqual(errors,[]);
  assert.ok(html.includes('BasketCarousel.mount('),'canonical root mounts the basket carousel');
  assert.ok(html.includes('da_storefront_home_carousel_v1'),'canonical root loads the public basket data');
