@@ -35,9 +35,10 @@ assert.match(categorySql,/check \(category_id is not null\)/i,'category constrai
 assert.match(backend,/"basket_commercial_create"/,'compatibility admin action must remain registered');
 assert.match(backend,/create_basket_commercial_model_v1/,'compatibility backend must retain legacy creator');
 assert.match(adminUi,/DonaAntoniaBasketAdmin\?\.render/,'admin runtime must delegate the Cestas/Kits page');
-assert.match(section,/Receitas de kits \(legado\)/,'advanced maintenance must expose legacy internal recipes');
-assert.match(section,/Cestas do Site/,'primary page must expose external basket workspace');
-assert.match(section,/data-basket-advanced/,'legacy internal recipes must remain behind advanced maintenance');
+const configTabs=[...section.matchAll(/data-basket-config-tab="([^"]+)"/g)].map(match=>match[1]);
+assert.deepEqual(configTabs,['types','quantities','carousel'],'Cestas must expose only the three requested configuration tabs');
+assert.doesNotMatch(section,/data-basket-advanced|data-basket-config-tab="(?:kits|store)"/,'legacy editors are not exposed as tabs in the new session');
+assert.match(section,/COMPATIBILITY_MODULES/,'legacy operational routes stay internal to the compatibility adapter');
 assert.doesNotMatch(section,/basket_commercial_create|openGuided|DonaAntoniaBasketGuided/,'normal section must not use legacy commercial/guided creation');
 assert.match(storeUi,/Nova cesta/,'external basket workspace must expose one simple create action');
 assert.match(storeUi,/admin-store-baskets-v1/,'external basket workspace must use isolated recipe API');

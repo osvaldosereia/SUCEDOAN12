@@ -1,114 +1,92 @@
-(()=>{
+(() => {
   'use strict';
-
   const MODULES={
-    taxonomy:{label:'Categorias da vitrine',description:'Crie categorias e subdivisões, controle a ordem e escolha quais seções ficam ativas.',src:'/vitrine/admin/basket-category-admin.js?v=20261006-1',global:'DonaAntoniaBasketTaxonomy'},
-    molds:{label:'Cestas',description:'Gerencie as marcas compartilhadas e as quantidades de cada cesta.',src:'/vitrine/admin/basket-mold-admin.js?v=20261019-shared-brands-v3',global:'DonaAntoniaBasketMolds'},
-    extras:{label:'Extras das cestas',description:'Configure os produtos opcionais que os clientes podem acrescentar às cestas.',src:'/vitrine/admin/basket-mold-extras-admin.js?v=20261020-shared-themes-v1',global:'DonaAntoniaBasketExtras'},
-    kits:{label:'Receitas de kits (legado)',description:'Manutenção das receitas reutilizáveis ligadas a fluxos e lotes antigos.',src:'/vitrine/admin/kit-builder.js?v=basket-products-v1',global:'DonaAntoniaKitBuilder'},
-    store:{label:'Operação de lotes antigos',description:'Consulta e manutenção de receitas, reservas e montagens do fluxo antigo.',src:'/vitrine/admin/store-baskets-builder.js?v=component-edit-v1',global:'DonaAntoniaStoreBaskets'}
+    types:{label:'Tipos de cestas',src:'/vitrine/admin/basket-admin-types.js?v=20261023-1',global:'DonaAntoniaBasketAdminTypes'},
+    quantities:{label:'Tipos e quantidades',src:'/vitrine/admin/basket-admin-quantities.js?v=20261023-1',global:'DonaAntoniaBasketAdminQuantities'},
+    carousel:{label:'Produtos do carrossel',src:'/vitrine/admin/basket-admin-carousel.js?v=20261023-1',global:'DonaAntoniaBasketAdminCarousel'}
   };
-  const state={tab:'molds',generation:0,loaders:new Map()};
-
-  function host(){return document.querySelector('#content')}
-  function toast(message){const b=window.DonaAntoniaAdminBridge||{};if(typeof b.toast==='function')b.toast(message);else console.warn(message)}
-
+  const COMPATIBILITY_MODULES={
+    kits:{label:'Receitas de kits (legado)',src:'/vitrine/admin/kit-builder.js?v=basket-products-v1',global:'DonaAntoniaKitBuilder'},
+    store:{label:'Operação de lotes antigos',src:'/vitrine/admin/store-baskets-builder.js?v=component-edit-v1',global:'DonaAntoniaStoreBaskets'}
+  };
+  const DEPENDENCIES=[
+    {src:'/vitrine/admin/basket-admin-domain.js?v=20261023-1',global:'DonaAntoniaBasketAdminDomain'},
+    {src:'/vitrine/admin/basket-admin-api.js?v=20261023-1',global:'DonaAntoniaBasketAdminApi'}
+  ];
+  const state={tab:'types',generation:0,loaders:new Map()};
+  const host=()=>document.querySelector('#content');
+  const toast=message=>{const bridge=window.DonaAntoniaAdminBridge||{};if(typeof bridge.toast==='function')bridge.toast(message);else console.warn(message)};
   function ensureStyle(){
-    if(document.getElementById('basketSimpleTabsStyles'))return;
-    const style=document.createElement('style');
-    style.id='basketSimpleTabsStyles';
-    style.textContent=`
-      .basket-simple-shell{display:grid;gap:12px}.basket-simple-head{display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap}.basket-simple-head h1{margin:0;font-size:24px;letter-spacing:-.03em}.basket-simple-head p{margin:3px 0 0;color:#66716a}.basket-simple-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}.basket-simple-tab{min-height:44px;border:1px solid #dfe5e1;background:#fff;color:#18221c;border-radius:999px;padding:0 16px;font-weight:900;white-space:nowrap}.basket-simple-tab[aria-selected="true"]{background:#176b43;border-color:#176b43;color:#fff}.basket-simple-help{border:1px solid #dfe5e1;background:#fff;border-radius:12px;padding:10px 12px;color:#66716a;font-size:12px}.basket-simple-workspace{min-height:240px}.basket-simple-loading{padding:32px 18px;text-align:center;color:#66716a}.basket-simple-error{border:1px solid #f0c3c0;background:#fff7f6;border-radius:12px;padding:16px;color:#922a31}.basket-simple-error button{margin-top:10px;border:1px solid #dfe5e1;background:#fff;border-radius:9px;min-height:38px;padding:0 11px;font-weight:800}.basket-organization,.basket-advanced{border:1px solid #e3e8e5;border-radius:12px;background:#fafcfb}.basket-organization summary,.basket-advanced summary{cursor:pointer;padding:10px 12px;font-size:12px;font-weight:900;color:#59665f}.basket-organization .basket-simple-tabs,.basket-advanced .basket-simple-tabs{padding:0 10px 10px}.basket-organization .basket-simple-tab,.basket-advanced .basket-simple-tab{min-height:38px;font-size:11px}
-      @media(max-width:760px){.basket-simple-head{align-items:start}.basket-simple-tabs{width:100%}.basket-simple-tab{flex:1}.basket-simple-help{font-size:11px}.basket-organization .basket-simple-tabs,.basket-advanced .basket-simple-tabs{display:grid;grid-template-columns:1fr}}
-    `;
+    if(document.getElementById('basketAdminThreeTabsStyle'))return;
+    const style=document.createElement('style');style.id='basketAdminThreeTabsStyle';
+    style.textContent='.basket-config-shell{display:grid;gap:14px;color:#17221b}.basket-config-head{display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap}.basket-config-head h1{margin:0;font-size:24px;letter-spacing:-.03em}.basket-config-head p{margin:4px 0 0;color:#66716a}.basket-config-tabs{display:flex;gap:8px;overflow-x:auto;padding:0 0 3px}.basket-config-tab{min-height:44px;border:1px solid #dfe5e1;background:#fff;color:#18221c;border-radius:999px;padding:0 16px;font-weight:900;white-space:nowrap;cursor:pointer}.basket-config-tab[aria-selected="true"]{background:#176b43;border-color:#176b43;color:#fff}.basket-config-workspace{min-height:240px}.basket-config-loading,.basket-config-error{padding:30px 18px;text-align:center;color:#66716a;background:#fff;border:1px solid #e3e8e5;border-radius:12px}.basket-config-error{color:#922a31;background:#fff7f6;border-color:#f0c3c0}.basket-config-error button{margin-top:10px;min-height:38px;border:1px solid #dfe5e1;background:#fff;border-radius:9px;padding:0 12px;font-weight:800}';
     document.head.appendChild(style);
   }
-
   function renderShell(){
     const root=host();if(!root)return null;ensureStyle();
-    root.innerHTML='<section class="basket-simple-shell"><div class="basket-simple-head"><div><h1>Cestas do Site</h1><p>Gerencie as cestas e os produtos extras oferecidos aos clientes.</p></div></div><div class="basket-simple-tabs" role="tablist" aria-label="Cestas do Site"><button type="button" class="basket-simple-tab" role="tab" data-basket-simple-tab="molds">Cestas</button><button type="button" class="basket-simple-tab" role="tab" data-basket-simple-tab="extras">Extras das cestas</button></div><details class="basket-organization" data-basket-organization><summary>Organização da vitrine</summary><div class="basket-simple-tabs" role="tablist" aria-label="Organização da vitrine"><button type="button" class="basket-simple-tab" role="tab" data-basket-simple-tab="taxonomy">Categorias da vitrine</button></div></details><details class="basket-advanced" data-basket-advanced><summary>Manutenção avançada</summary><div class="basket-simple-tabs" role="tablist" aria-label="Manutenção avançada"><button type="button" class="basket-simple-tab" role="tab" data-basket-simple-tab="kits">Receitas de kits (legado)</button><button type="button" class="basket-simple-tab" role="tab" data-basket-simple-tab="store">Operação de lotes antigos</button></div></details><div class="basket-simple-help" data-basket-simple-help></div><div class="basket-simple-workspace" data-basket-simple-workspace></div></section>';
-    root.querySelectorAll('[data-basket-simple-tab]').forEach(btn=>btn.addEventListener('click',()=>setTab(String(btn.dataset.basketSimpleTab||'molds'))));
+    root.innerHTML='<section class="basket-config-shell"><div class="basket-config-head"><div><h1>Cestas</h1><p>Defina os tipos, as quantidades e os produtos dos carrosséis.</p></div></div><div class="basket-config-tabs" role="tablist" aria-label="Configuração de cestas"><button type="button" class="basket-config-tab" role="tab" data-basket-config-tab="types">Tipos de cestas</button><button type="button" class="basket-config-tab" role="tab" data-basket-config-tab="quantities">Tipos e quantidades</button><button type="button" class="basket-config-tab" role="tab" data-basket-config-tab="carousel">Produtos do carrossel</button></div><div class="basket-config-workspace" data-basket-config-workspace></div></section>';
+    root.querySelectorAll('[data-basket-config-tab]').forEach(button=>button.addEventListener('click',()=>void setTab(button.dataset.basketConfigTab)));
+    root.querySelectorAll('[role=tab]').forEach((button,index)=>button.addEventListener('keydown',event=>{
+      if(!['ArrowRight','ArrowLeft','Home','End'].includes(event.key))return;
+      event.preventDefault();const tabs=[...root.querySelectorAll('[role=tab]')];let next=index;
+      if(event.key==='ArrowRight')next=(index+1)%tabs.length;if(event.key==='ArrowLeft')next=(index+tabs.length-1)%tabs.length;
+      if(event.key==='Home')next=0;if(event.key==='End')next=tabs.length-1;tabs[next].focus();void setTab(tabs[next].dataset.basketConfigTab);
+    }));
     return root;
   }
-
   function paintTabState(){
     const root=host();if(!root)return;
-    root.querySelectorAll('[data-basket-simple-tab]').forEach(btn=>{
-      const active=String(btn.dataset.basketSimpleTab)===state.tab;
-      btn.setAttribute('aria-selected',active?'true':'false');
-      btn.tabIndex=active?0:-1;
+    root.querySelectorAll('[data-basket-config-tab]').forEach(button=>{
+      const active=button.dataset.basketConfigTab===state.tab;button.setAttribute('aria-selected',active?'true':'false');button.tabIndex=active?0:-1;
     });
-    const organization=root.querySelector('[data-basket-organization]');if(organization)organization.open=state.tab==='taxonomy';
-    const advanced=root.querySelector('[data-basket-advanced]');if(advanced)advanced.open=state.tab==='kits'||state.tab==='store';
-    const cfg=MODULES[state.tab];
-    const help=root.querySelector('[data-basket-simple-help]');
-    if(help)help.textContent=cfg?.description||'';
   }
-
-  function loadModule(cfg){
-    const ready=window[cfg.global];
-    if(ready&&typeof ready.open==='function')return Promise.resolve(ready);
-    if(state.loaders.has(cfg.global))return state.loaders.get(cfg.global);
-    const promise=new Promise((resolve,reject)=>{
-      const existing=document.querySelector('script[data-basket-simple-loader="'+cfg.global+'"]');
-      const finish=()=>{const mod=window[cfg.global];if(mod&&typeof mod.open==='function')resolve(mod);else reject(new Error('basket_module_unavailable:'+cfg.global))};
-      if(existing){existing.addEventListener('load',finish,{once:true});existing.addEventListener('error',()=>reject(new Error('basket_module_load_failed:'+cfg.global)),{once:true});return}
-      const script=document.createElement('script');script.src=cfg.src;script.async=true;script.dataset.basketSimpleLoader=cfg.global;script.addEventListener('load',finish,{once:true});script.addEventListener('error',()=>reject(new Error('basket_module_load_failed:'+cfg.global)),{once:true});document.head.appendChild(script);
+  function loadScript(src,global){
+    if(window[global])return Promise.resolve(window[global]);
+    const existing=document.querySelector('script[data-basket-config-loader="'+global+'"]');
+    if(existing&&existing.dataset.loaded==='true')return window[global]?Promise.resolve(window[global]):Promise.reject(new Error('basket_admin_module_unavailable'));
+    return new Promise((resolve,reject)=>{
+      const script=existing||document.createElement('script');
+      const finish=()=>{script.dataset.loaded='true';const module=window[global];module?resolve(module):reject(new Error('basket_admin_module_unavailable'))};
+      script.addEventListener('load',finish,{once:true});script.addEventListener('error',()=>reject(new Error('basket_admin_module_load_failed')),{once:true});
+      if(!existing){script.src=src;script.async=true;script.dataset.basketConfigLoader=global;document.head.appendChild(script)}
     });
-    state.loaders.set(cfg.global,promise);promise.catch(()=>state.loaders.delete(cfg.global));return promise;
   }
-
+  function loadModule(config){
+    if(window[config.global])return Promise.resolve(window[config.global]);
+    if(state.loaders.has(config.global))return state.loaders.get(config.global);
+    const promise=DEPENDENCIES.reduce((chain,dep)=>chain.then(()=>loadScript(dep.src,dep.global)),Promise.resolve())
+      .then(()=>loadScript(config.src,config.global));
+    state.loaders.set(config.global,promise);promise.catch(()=>state.loaders.delete(config.global));return promise;
+  }
   async function activate(){
-    const root=host();if(!root)return;const cfg=MODULES[state.tab]||MODULES.molds;paintTabState();
-    const workspace=root.querySelector('[data-basket-simple-workspace]');if(!workspace)return;const generation=++state.generation;
-    workspace.innerHTML='<div class="basket-simple-loading">Carregando '+cfg.label+'…</div>';
-    try{const mod=await loadModule(cfg);if(generation!==state.generation)return;await mod.open(workspace)}catch(error){if(generation!==state.generation)return;workspace.innerHTML='<div class="basket-simple-error"><strong>Não consegui carregar '+cfg.label+'.</strong><br><small>Atualize a página ou tente novamente.</small><br><button type="button" data-basket-simple-retry>Tentar novamente</button></div>';workspace.querySelector('[data-basket-simple-retry]')?.addEventListener('click',activate);toast('Não consegui carregar '+cfg.label+'.')}
+    const root=host();if(!root)return;const config=MODULES[state.tab]||COMPATIBILITY_MODULES[state.tab]||MODULES.types;paintTabState();
+    const workspace=root.querySelector('[data-basket-config-workspace]');if(!workspace)return;
+    const generation=++state.generation;workspace.innerHTML='<div class="basket-config-loading">Carregando '+config.label+'…</div>';
+    try{const module=await loadModule(config);if(generation!==state.generation)return;await module.open(workspace)}
+    catch(error){if(generation!==state.generation)return;workspace.innerHTML='<div class="basket-config-error"><strong>Não consegui carregar '+config.label+'.</strong><br><small>Atualize a página ou tente novamente.</small><br><button type="button" data-basket-config-retry>Tentar novamente</button></div>';workspace.querySelector('[data-basket-config-retry]')?.addEventListener('click',()=>void activate());toast('Não consegui carregar '+config.label+'.')}
   }
-
-  async function setTab(tab){state.tab=Object.prototype.hasOwnProperty.call(MODULES,tab)?tab:'molds';await activate()}
+  async function setTab(tab){state.tab=Object.hasOwn(MODULES,tab)||Object.hasOwn(COMPATIBILITY_MODULES,tab)?tab:'types';await activate()}
   async function render(){if(!host())return;renderShell();await activate()}
-  async function refresh(){if(!host())return;const cfg=MODULES[state.tab]||MODULES.molds,mod=window[cfg.global],workspace=host().querySelector('[data-basket-simple-workspace]');if(mod&&typeof mod.refresh==='function'){await mod.refresh();return}if(mod&&typeof mod.open==='function'&&workspace){await mod.open(workspace);return}await activate()}
-
+  async function refresh(){if(!host())return;const config=MODULES[state.tab]||COMPATIBILITY_MODULES[state.tab]||MODULES.types;const module=window[config.global];const workspace=host().querySelector('[data-basket-config-workspace]');if(module&&workspace){await module.open(workspace);return}await activate()}
   window.DonaAntoniaBasketAdmin={state,render,refresh,setTab};
 })();
-
-(()=>{
+(() => {
   'use strict';
   if(document.querySelector('script[data-orders-visual-v1]'))return;
-  const script=document.createElement('script');
-  script.src='/vitrine/admin/orders-visual-v1.js?v=20261005-1';
-  script.async=false;
-  script.setAttribute('data-orders-visual-v1','');
-  document.head.appendChild(script);
+  const script=document.createElement('script');script.src='/vitrine/admin/orders-visual-v1.js?v=20261005-1';script.async=false;script.setAttribute('data-orders-visual-v1','');document.head.appendChild(script);
 })();
-
-(()=>{
+(() => {
   'use strict';
   if(document.querySelector('script[data-store-ops-panel-v1]'))return;
-  const script=document.createElement('script');
-  script.src='/vitrine/admin/store-baskets-ops-overview.js?v=20261006-1';
-  script.async=false;
-  script.setAttribute('data-store-ops-panel-v1','');
-  document.head.appendChild(script);
+  const script=document.createElement('script');script.src='/vitrine/admin/store-baskets-ops-overview.js?v=20261006-1';script.async=false;script.setAttribute('data-store-ops-panel-v1','');document.head.appendChild(script);
 })();
-
-(()=>{
+(() => {
   'use strict';
   if(document.querySelector('script[data-product-basket-cutover-v1]'))return;
-  const script=document.createElement('script');
-  script.src='/vitrine/admin/product-basket-link-cutover.js?v=20261006-1';
-  script.async=false;
-  script.setAttribute('data-product-basket-cutover-v1','');
-  document.head.appendChild(script);
+  const script=document.createElement('script');script.src='/vitrine/admin/product-basket-link-cutover.js?v=20261006-1';script.async=false;script.setAttribute('data-product-basket-cutover-v1','');document.head.appendChild(script);
 })();
-
-(()=>{
+(() => {
   'use strict';
   if(document.querySelector('script[data-baskets-operational-polish-v1]'))return;
-  const script=document.createElement('script');
-  script.src='/vitrine/admin/baskets-operational-polish.js?v=20261006-1';
-  script.async=false;
-  script.setAttribute('data-baskets-operational-polish-v1','');
-  document.head.appendChild(script);
+  const script=document.createElement('script');script.src='/vitrine/admin/baskets-operational-polish.js?v=20261006-1';script.async=false;script.setAttribute('data-baskets-operational-polish-v1','');document.head.appendChild(script);
 })();
-

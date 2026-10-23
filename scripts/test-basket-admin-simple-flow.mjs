@@ -17,17 +17,11 @@ const delegate=adminUi.slice(start,end);
 assert.match(delegate,/DonaAntoniaBasketAdmin\?\.render/,'index must delegate baskets to one section controller');
 assert.doesNotMatch(delegate,/basket_commercial_admin|basketCommercialCard|kitLotRow/,'index must not host a second baskets implementation');
 
-assert.match(section,/Cestas do Site/,'primary page must use the simplified Cestas do Site heading');
-assert.match(section,/molds:\{label:'Cestas'/,'daily basket tab must open the molds workspace');
-assert.match(section,/tab\s*:\s*['"]molds['"]/,'molds must remain the default workspace');
-assert.match(section,/Manutenção avançada/,'legacy tooling must be explicitly secondary');
-assert.match(section,/data-basket-advanced/,'legacy tooling must be inside an advanced disclosure');
-assert.match(section,/Receitas de kits \(legado\)/,'internal kit maintenance must remain available as an advanced tool');
-assert.match(section,/Operação de lotes antigos/,'previous basket operation may remain available as an advanced tool');
-assert.match(section,/DonaAntoniaBasketMolds/,'section must delegate normal work to the mold editor');
-assert.match(section,/DonaAntoniaKitBuilder/,'section must preserve internal-kit maintenance compatibility');
-assert.match(section,/DonaAntoniaStoreBaskets/,'section must preserve previous basket operation compatibility');
-assert.doesNotMatch(section,/primeiro crie os kits internos/i,'normal operation must no longer teach the internal kit workflow');
+const configTabs=[...section.matchAll(/data-basket-config-tab="([^"]+)"/g)].map(match=>match[1]);
+assert.deepEqual(configTabs,['types','quantities','carousel'],'Cestas must expose the three requested configuration tabs');
+assert.doesNotMatch(section,/DonaAntoniaBasketMolds|data-basket-advanced|data-basket-config-tab="(?:kits|store)"/,'legacy editors must not become visible tabs');
+assert.match(section,/COMPATIBILITY_MODULES/,'operational legacy editor routes remain available outside the three-tab UI');
+
 assert.doesNotMatch(section,/basket_commercial_admin|basket_commercial_create|category_slug|public_available|availability_reason/,'simple controller must not own basket business data');
 for(const label of ['Novo lote','Duplicar','Pausar venda','Retomar venda','Imprimir','Excluir modelo'])assert.doesNotMatch(section,new RegExp(label),label+' must stay out of normal operation');
 assert.doesNotMatch(section,/openBasketKitAdmin|startBasketKitLotDraft|paintBasketKitAdmin|kitLotRow|DonaAntoniaBasketGuided/,'simple section must not route into legacy/guided editors');

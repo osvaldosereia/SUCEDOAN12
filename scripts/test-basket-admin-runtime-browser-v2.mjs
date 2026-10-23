@@ -12,31 +12,40 @@ try{
   await page.addScriptTag({content:`
     window.calls=[];window.toasts=[];
     window.DonaAntoniaAdminBridge={toast:m=>window.toasts.push(m)};
-    window.DonaAntoniaBasketMolds={open:async host=>{window.calls.push('molds');host.innerHTML='<div data-runtime-molds>MOLDS</div>'},refresh:async()=>window.calls.push('molds-refresh')};
-    window.DonaAntoniaKitBuilder={open:async host=>{window.calls.push('kits');host.innerHTML='<div data-runtime-kits>KITS</div>'},refresh:async()=>window.calls.push('kits-refresh')};
-    window.DonaAntoniaStoreBaskets={open:async host=>{window.calls.push('store');host.innerHTML='<div data-runtime-store>STORE</div>'},refresh:async()=>window.calls.push('store-refresh')};
+    const original=HTMLHeadElement.prototype.appendChild;
+    const modules={
+      'basket-admin-domain.js':'DonaAntoniaBasketAdminDomain',
+      'basket-admin-api.js':'DonaAntoniaBasketAdminApi',
+      'basket-admin-types.js':'DonaAntoniaBasketAdminTypes',
+      'basket-admin-quantities.js':'DonaAntoniaBasketAdminQuantities',
+      'basket-admin-carousel.js':'DonaAntoniaBasketAdminCarousel'
+    };
+    HTMLHeadElement.prototype.appendChild=function(node){
+      const key=Object.keys(modules).find(name=>String(node.src||'').includes(name));
+      if(!key)return original.call(this,node);
+      const globalName=modules[key];
+      window[globalName]=key.endsWith('-domain.js')||key.endsWith('-api.js')?{}:{
+        open:async host=>{window.calls.push(globalName);host.innerHTML='<div data-admin-module="'+globalName+'">'+globalName+'</div>'}
+      };
+      setTimeout(()=>node.dispatchEvent(new Event('load')),0);
+      return node;
+    };
   `});
   await page.addScriptTag({content:section});
   await page.evaluate(()=>window.DonaAntoniaBasketAdmin.render());
-  await page.waitForSelector('[data-runtime-molds]');
-  assert.equal(await page.locator('[data-basket-simple-tab]').count(),5,'runtime must expose baskets, basket extras, taxonomy and two advanced tools');
-  assert.equal(await page.locator('[data-basket-simple-tab="molds"]').getAttribute('aria-selected'),'true');
-  assert.equal(await page.locator('[data-basket-advanced]').count(),1,'legacy tools must stay grouped under advanced disclosure');
+  await page.waitForSelector('[data-admin-module="DonaAntoniaBasketAdminTypes"]');
+  assert.deepEqual(await page.locator('[data-basket-config-tab]').evaluateAll(nodes=>nodes.map(node=>node.dataset.basketConfigTab)),['types','quantities','carousel']);
 
   await page.evaluate(()=>window.DonaAntoniaBasketAdmin.refresh());
-  await page.waitForFunction(()=>window.calls.includes('molds-refresh'));
-
-  await page.evaluate(()=>window.DonaAntoniaBasketAdmin.setTab('store'));
-  await page.waitForSelector('[data-runtime-store]');
-  assert.equal(await page.locator('[data-basket-simple-tab="store"]').getAttribute('aria-selected'),'true');
-  assert.equal(await page.locator('[data-basket-advanced]').getAttribute('open'),'');
-
-  await page.evaluate(()=>window.DonaAntoniaBasketAdmin.refresh());
-  await page.waitForFunction(()=>window.calls.includes('store-refresh'));
-  assert.deepEqual(await page.evaluate(()=>window.calls),['molds','molds-refresh','store','store-refresh']);
-
-  const text=await page.locator('body').innerText();
-  for(const retired of ['Novo lote','Editar lote','Duplicar','Pausar venda','Imprimir','Excluir modelo'])assert.equal(text.includes(retired),false,retired+' must not return to normal runtime');
+  await page.waitForFunction(()=>window.calls.length===2);
+  await page.keyboard.press('Home');
+  await page.locator('[data-basket-config-tab="types"]').focus();
+  await page.keyboard.press('ArrowRight');
+  await page.waitForFunction(()=>window.calls.at(-1)==='DonaAntoniaBasketAdminQuantities');
+  assert.equal(await page.locator('[data-basket-config-tab="quantities"]').getAttribute('aria-selected'),'true');
+  await page.keyboard.press('End');
+  await page.waitForFunction(()=>window.calls.at(-1)==='DonaAntoniaBasketAdminCarousel');
+  assert.equal(await page.locator('[data-basket-config-tab="carousel"]').getAttribute('aria-selected'),'true');
   assert.equal(await page.evaluate(()=>typeof window.DonaAntoniaBasketAdmin.setTab),'function');
-  console.log('basket admin mold-first runtime browser: PASS');
-} finally {await browser.close()}
+  console.log('basket three-tab keyboard and refresh: PASS');
+}finally{await browser.close()}
