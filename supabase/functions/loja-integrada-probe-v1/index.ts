@@ -91,7 +91,7 @@ Deno.serve(async (req: Request) => {
   if (lockError || !locked) return send(409, { ok: false, error: "already_processed" });
 
   let outcome: Record<string, unknown>;
-  const token = Deno.env.get("LI_PERSONAL_TOKEN")?.trim().replace(/^Basic\\s+/i, "") || "";
+  const token = Deno.env.get("LI_PERSONAL_TOKEN")?.trim().replace(/^Basic\s+/i, "") || "";
   const expectedHost = "dona-antonia-1.lojaintegrada.com.br";
 
   if (!token) {
