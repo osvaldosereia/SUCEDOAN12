@@ -1,5 +1,23 @@
 # Dona Antônia Operations 2.0 — HANDOFF
 
+## Checkpoint R22 — observação Admin1 e smoke read-only — 2026-10-23 08:05:08 UTC
+
+- Base consultada imediatamente antes da branch: `main` `50399ef8ade9f6a7db8ad6373077eb0a2a203cc1`. PR #1269, #1323 e #1324 estão merged; documentos do roadmap original estão na main. Os 42 workflows do SHA mais recente da main retornaram sucesso (42/42); não havia PR Admin1 aberta.
+- Projeto canônico `ssbesxgaijknwsjbsbcz` permanece ACTIVE_HEALTHY em sa-east-1, PostgreSQL 17.6.1.166. Ledger: 1.247 migrations, uma entrada `allow_validated_hidden_basket_components` em `20261020230115`; nenhuma migration aplicada nesta rodada. Funções encontradas com prefixo `admin1` nos dois projetos consultados: somente as duas aposentadas abaixo.
+- `admin1-products-read-v1` no canônico continua ACTIVE v5, `verify_jwt=false`, SHA `6a2c730ddbab268c0f95c4b08a9a3f443bbfa8bf8745584ed21dd2cbd8f7aa51`; leitura da fonte confirma resposta 410 `legacy_endpoint_retired`. `admin-service-intelligence-v1` continua ACTIVE v377, SHA `543b00c23a468f361ce00c63a4ee81a537daed1a7e6f14cce33082e0676f5bb3`.
+- Projeto separado `xaoeldjuxzsdsblimzxo` está ACTIVE_HEALTHY em sa-east-1, PostgreSQL 17.11.0.003. `admin1-legacy-catalog-read-v1` continua ACTIVE v3, `verify_jwt=false`, SHA `5f9d03ed30d6b5d125de6693b82a7e86c154148cfd2baee292ffa1a3731d4ae6`; fonte confirma resposta 410 `legacy_endpoint_retired`.
+- Logs agregados e allowlisted de Edge Functions entre 07:02:40–08:04:22 e 08:04:22–08:05:08 UTC retornaram zero linhas para as duas rotas, inclusive durante o smoke. Não foram lidos payloads, headers, IPs ou dados de clientes. Ambas as janelas completas de 24h continuam abertas; os endpoints ficam em 410 até o prazo e atribuição de qualquer caller.
+- Smoke read-only de produção: `/` mostrou as cinco cestas e, após carga assíncrona, quatro ofertas; carrinho vazio (`0 itens · R$ 0,00`). `/vitrine/admin/` carregou a Central e a navegação. Rotas preservadas. Nenhum pedido/checkout, mensagem, NF-e, chamada de estoque/Bling, pagamento ou efeito financeiro.
+- `python3 scripts/build-vitrine-admin-runtime.py --check` passou: 9 fragmentos, 638.778 caracteres. Executado sem escrita no checkout local `agent/admin-runtime-contract-tests`, HEAD `fdad74b683d461b8581074f2c139332123cf5728`; alterações preexistentes fora do runtime foram preservadas. Não havia arquivo de runtime alterado.
+- Mudança desta rodada: apenas este checkpoint documental e a atualização correspondente do roadmap, no branch `agent/admin1-observation-r22-0805-20261023` a partir de `50399ef8ade9f6a7db8ad6373077eb0a2a203cc1`. Nenhuma Edge Function, migration, configuração, RLS, grant ou dado mudou nos projetos Supabase. Os commits e a PR serão identificados no histórico do branch/PR.
+- CI: 42/42 workflows do SHA-base da main concluídos com sucesso; os checks obrigatórios da PR desta rodada devem passar antes da integração. Nenhuma publicação Pages/Supabase/runtime foi necessária para mudança documental; o smoke confirma o estado observado no site/Admin ativos.
+- Rollback: reverter somente os commits documentais deste checkpoint; sem rollback de runtime ou Supabase.
+
+### Próxima tarefa exata
+
+Em/apos 2026-10-24 02:14:07.824 UTC, fechar 24h de `admin1-legacy-catalog-read-v1`, excluir o GET 410 de smoke previamente identificado em 02:15:44.718 UTC e atribuir quaisquer demais chamadas. Em/apos 03:20:07.529 UTC, fechar 24h de `admin1-products-read-v1` e atribuir qualquer caller. Manter ambos em 410 até concluir a análise. A publicação da telemetria R13 depende da renovação, pelo proprietário, do secret `SUPABASE_ACCESS_TOKEN`; quando renovado, fazer preflight, publicar pelo fluxo normal e verificar versão/hash antes de analisar os 502. Não usar credenciais alternativas.
+
+
 ## Checkpoint R21 — janela Admin1 e smoke read-only — 2026-10-23 07:02:40 UTC
 
 - Commits de conteúdo deste checkpoint: HANDOFF `d3065c98c6254fb7ee9695a65ab333231658befe`; roadmap `ea1dfc4646058ebd9dae66043c54e4e678b77246`.
