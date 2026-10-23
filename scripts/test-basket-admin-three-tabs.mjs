@@ -53,8 +53,10 @@ for (const globalScript of [
   assert.ok(featureBridges.includes(globalScript), `feature bridge entry point must own ${globalScript}`);
 }
 assert.ok(adminIndex.includes('admin-feature-bridges.js'), 'admin entry point must load cross-feature bridges separately');
-assert.ok(storefront.includes('async function basketBySize(sizeKey:string)'));
-assert.ok(storefront.includes('const detail=await moldDetail(match[1],Number(match[2]),null,false)'));
+assert.ok(storefront.includes('async function basketBySize(sizeKey:string,lightweight=false)'));
+assert.ok(storefront.includes('const detail=await moldDetail(match[1],Number(match[2]),null,!lightweight)'));
+assert.ok(storefront.includes('const lightweight=u.searchParams.get("lightweight")==="1"'));
+assert.ok(storefront.includes('basketBySize(u.searchParams.get("size")||"",lightweight)'));
 assert.ok(storefront.includes('action==="basket_by_size"'));
 assert.ok(publicSite.includes("const action=isHomeShell?'basket_by_size':'basket'"));
 assert.ok(publicSite.includes("if(!data?.basket||!Array.isArray(data.items))"));
