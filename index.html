@@ -504,11 +504,10 @@
     const WHATSAPP=WHATSAPP_CHANNELS[DEFAULT_WHATSAPP_ORIGIN];
     const MARKETING_CONTEXT_KEY='da_vitrine_marketing_context_v1';
     const CAMPAIGN_BRANDS={
-      'nivea':{signal:'NIVEA',label:'NIVEA'},
-      'elseve':{signal:'ELSEVE',label:'Elseve'}
+      'nivea':{label:'NIVEA'},
+      'elseve':{label:'Elseve'}
     };
     const MARKETING_CATEGORIES=new Set(['bebe','cabelos','beleza','higiene','limpeza','lavanderia','pet','casa','doces-lanches']);
-    const MARKETING_CTA_PRIORITY=['BEBE','CABELOS','BELEZA','LIMPEZA','LAVANDERIA','PET'];
     const MINIMUM_ORDER_CENTS = 7500;
     const BUSINESS_TIME_ZONE = 'America/Cuiaba';
     const STORAGE_KEY = 'da_simple_storefront_cart_v2';
@@ -606,26 +605,6 @@
       state.marketingContext=ctx;state.whatsappOrigin=WHATSAPP_CHANNELS[ctx.origin]?ctx.origin:DEFAULT_WHATSAPP_ORIGIN;return ctx;
     }
     function resolveWhatsappDestination(){return WHATSAPP_CHANNELS[state.whatsappOrigin]||WHATSAPP_CHANNELS[DEFAULT_WHATSAPP_ORIGIN]}
-    function marketingInterestForProduct(product){
-      const sub=marketingSlug(product?.subcategory||''),leaf=marketingSlug(product?.subsubcategory||'');
-      if(sub==='bebe'||leaf.includes('fralda')||leaf.includes('bebe'))return 'BEBE';
-      if(sub==='cabelos'||['shampoo','condicionador','creme-de-pentear','tratamentos-capilares','coloracao-capilar','oleos-e-seruns-capilares','acessorios-de-cabelo','escovas-e-pentes','kits-de-shampoo-e-condicionador'].includes(leaf))return 'CABELOS';
-      if(sub==='beleza-e-cuidados'||['unhas','labios','cuidados-corporais','cuidados-com-o-rosto','protecao-da-pele','acessorios-de-beleza'].includes(leaf))return 'BELEZA';
-      if(sub==='higiene-pessoal')return 'HIGIENE';
-      if(sub==='limpeza')return 'LIMPEZA';
-      if(sub==='lavanderia')return 'LAVANDERIA';
-      if(sub==='pets'||['caes','gatos','petiscos-para-pets','higiene-pet'].includes(leaf))return 'PET';
-      if(sub==='casa-e-utilidades')return 'CASA';
-      if(['biscoitos','chocolates-e-doces','balas-e-chicletes','salgadinhos-e-petiscos','bebidas','cereais-e-barras'].includes(leaf))return 'DOCES_LANCHES';
-      return '';
-    }
-    function buildMarketingSignals(){
-      const interests=new Set(),brands=new Set(),standalone=state.cart.filter(item=>item.type==='product'&&Number(item.qty||0)>0);
-      if(state.cart.some(item=>item.type==='basket'&&Number(item.qty||0)>0))interests.add('CESTAS');
-      for(const item of standalone){const p=state.productsById.get(item.id)||item,interest=marketingInterestForProduct(p);if(interest)interests.add(interest);const bk=marketingSlug(p.brand||'');if(CAMPAIGN_BRANDS[bk])brands.add(CAMPAIGN_BRANDS[bk].signal)}
-      const optIn=state.customerLookup.customer?.marketing_opt_in===true||$('#checkoutMarketing')?.checked===true,ordered=MARKETING_CTA_PRIORITY.find(x=>interests.has(x)),cta=optIn?(ordered||(interests.has('CESTAS')?'OFERTAS':'NENHUM')):'NENHUM';
-      return {interests:[...interests],brands:[...brands],optIn,cta,campaign:marketingSlug(state.marketingContext?.campaign||'')};
-    }
     function applyMarketingEntryContext(){
       if(state.marketingEntryApplied)return;const ctx=state.marketingContext||captureMarketingEntryContext();state.marketingEntryApplied=true;
       if(ctx.brand&&CAMPAIGN_BRANDS[ctx.brand]){renderSearch(CAMPAIGN_BRANDS[ctx.brand].label);return}
