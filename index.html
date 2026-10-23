@@ -820,18 +820,20 @@
       content.innerHTML=homeIntro(categories)+'<div id="basketSections">'+section('Escolha suas Cestas e Kits','Escolha uma opção para conferir.','<p class="home-loading-status" role="status" aria-live="polite">Preparando suas cestas…</p><div class="grid" aria-busy="true"><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div></div>')+'</div>'+section('Ofertas em destaque','Preços promocionais para aproveitar.','<div id="homeOffersMount">'+offersSkeleton()+'</div>','homeOffers')+homeCategorySection(categories);
       bindHomeIntro();content.querySelectorAll('[data-ean-catalog]').forEach(btn=>btn.onclick=renderEanProducts);
     }
+    const BASKET_SIZE_DISPLAY_ORDER=Object.freeze(['economica','mini','pequena','media','grande']);
+    function normalizeBasketSizeName(value){return String(value||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR')}
     function homeBasketSubcategories(group){
       const subcategories=Array.isArray(group?.subcategories)?group.subcategories:[];
       if(String(group?.slug||'')!=='cestas-completas')return subcategories;
       const byName=new Map();
-      for(const sub of subcategories){const key=String(sub?.name||'').trim().toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(BASKET_SIZE_DISPLAY_ORDER.includes(key)&&!byName.has(key))byName.set(key,sub)}
+      for(const sub of subcategories){const key=normalizeBasketSizeName(sub?.name);if(BASKET_SIZE_DISPLAY_ORDER.includes(key)&&!byName.has(key))byName.set(key,sub)}
       return BASKET_SIZE_DISPLAY_ORDER.map(name=>byName.get(name)).filter(Boolean);
     }
     function homeBasketSizeCards(baskets,group){
       return homeBasketSubcategories(group).flatMap(sub=>{
         const candidates=baskets.filter(b=>String(b.category_id||'')===String(group.id)&&String(b.subcategory_id||'')===String(sub.id));
         candidates.sort((a,b)=>Number(b.mold_mode===true)-Number(a.mold_mode===true)||Number(a.display_price_cents||0)-Number(b.display_price_cents||0));
-        const sizeKey=String(sub.name||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLocaleLowerCase('pt-BR');
+        const sizeKey=normalizeBasketSizeName(sub.name);
         return candidates[0]?[{...candidates[0],name:sub.name,model_name:sub.name,size_card:true,size_key:sizeKey,home_shell:true}]:[];
       });
     }
