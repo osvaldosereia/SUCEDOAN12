@@ -63,6 +63,7 @@ jobs:
           node --disable-warning=ExperimentalWarning scripts/test-admin-stock-readiness-pagination.mjs
           node scripts/test-site-only-order-registration.mjs
           node scripts/test-checkout-whatsapp-return.mjs
+          node scripts/test-checkout-mold-preflight-context.mjs
           node scripts/test-checkout-stock-adjustment-contract.mjs
           node scripts/test-checkout-whatsapp-outbox.mjs
           node scripts/test-checkout-order-meta-cutover-v1.mjs
