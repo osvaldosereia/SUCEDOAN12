@@ -16,7 +16,7 @@ assert.doesNotMatch(ux,/Digite seu WhatsApp e toque em Continuar\./,'checkout mu
 assert.match(ux,/lookup\.hidden=true|lookup\.style\.display='none'/,'legacy lookup button must not be a visible required step');
 
 // CPF/CNPJ segue obrigatorio para cliente novo.
-assert.match(ux,/!known&&!digits\(draft\.document,14\)/,'new customers must still provide CPF/CNPJ');
+assert.match(ux,/checkoutDocumentRequired\(\)&&!digits\(draft\.document,14\)/,'new and existing customers without a saved document must provide CPF/CNPJ');
 assert.match(ux,/Digite seu CPF ou CNPJ\./,'new customer must get a direct CPF/CNPJ validation message');
 
 // Produtos precisam ficar sempre visiveis para o cliente conferir antes de confirmar.
