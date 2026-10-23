@@ -50,10 +50,17 @@ for(const [size,path] of Object.entries(photos)){
   assert.ok(markup.includes('src="'+path+'"'),size+' live catalog image_url should be rendered');
 }
 
+const homeShellCard=context.window.BasketCarousel.card(
+  {id:'home-shell-mini',name:'Mini',size_card:true,size_key:'mini',home_shell:true,total_item_count:12,display_price_cents:9876,stock_quantity:773},
+  esc,value=>'R$ '+value,name=>name,0
+);
+assert.ok(homeShellCard.includes('Ver produtos'),'home size card must keep its product action');
+assert.doesNotMatch(homeShellCard,/basket-card-item-total|basket-price-amount|class="price"|9876|773|12 itens/,'home size cards must hide item composition, price and stock');
+
 const deferred=htmlFor('media',2);
 assert.ok(deferred.includes('data-basket-src="'+photos.media+'"'),'non-priority photos should load lazily');
 assert.ok(deferred.includes('loading="lazy"'),'non-priority photos should use native lazy loading');
 assert.ok(html.includes('.basket-size-card-photo'),'home card photo sizing styles are present');
-assert.match(html,/basket-carousel\.js\?v=20261021-price-hierarchy-v1/,'the carousel script URL is cache busted');
+assert.match(html,/basket-carousel\.js\?v=20261022-home-shell-v1/,'home shell cards must load the module version that hides price and item count');
 assert.ok(Object.values(photos).reduce((sum,path)=>sum+fs.statSync(path.slice(1)).size,0)<350_000,'all five above-the-fold size photos stay under 350 KB total');
 console.log('Home basket size photos: PASS');
