@@ -34,8 +34,8 @@ assert.match(sheetHelpers,/state\.basketDraft\?\.quoteTimer/);
 const legacy=source('function scheduleBasketQuote(','function addBasketDraft(');
 const timerQueue=[],quoteRequests=[],d={basket:{id:'b1',lot_id:'lot1'},items:[{product_id:'p',quantity:1}],total_cents:1000,quoteRevision:0};
 const legacyState={basketDraft:d};
-const legacyFns=new Function('state','api','setTimeout','clearTimeout','paintBasketSheet','$','money','toast',legacy+'return {scheduleBasketQuote,quoteBasket};')(
-  legacyState,(action)=>{assert.equal(action,'basket_quote');const x=deferred();quoteRequests.push(x);return x.promise},
+const legacyFns=new Function('state','basketApi','setTimeout','clearTimeout','paintBasketSheet','$','money','toast',legacy+'return {scheduleBasketQuote,quoteBasket};')(
+  legacyState,(d,action)=>{assert.equal(action,'basket_quote');const x=deferred();quoteRequests.push(x);return x.promise},
   fn=>{timerQueue.push(fn);return timerQueue.length},()=>{},()=>{},()=>null,x=>String(x),m=>toasts.push(m)
 );
 legacyFns.scheduleBasketQuote(d,160);
@@ -178,8 +178,8 @@ const altState={basketDraft:{
   optionPending:false
 }};
 const originalBasketDraft=altState.basketDraft;
-const moldFns=new Function('state','api','stockNumber','paintMoldBasketSheet','closeMoldOptionMenus','moldDraftTotalCents',String.fromCharCode(36),'moldOptionsLoaded','toast',optionSource+'return {changeMoldOption};')(
-  altState,()=>{moldCalls++;return altWait.promise},x=>Number(x),stub,stub,()=>800,()=>null,x=>Array.isArray(x.alternatives)&&x.alternatives.length>0,m=>toasts.push(m)
+const moldFns=new Function('state','basketApi','stockNumber','paintMoldBasketSheet','closeMoldOptionMenus','moldDraftTotalCents',String.fromCharCode(36),'moldOptionsLoaded','toast',optionSource+'return {changeMoldOption};')(
+  altState,(d,action)=>{assert.equal(action,'basket_mold_quote');moldCalls++;return altWait.promise},x=>Number(x),stub,stub,()=>800,()=>null,x=>Array.isArray(x.alternatives)&&x.alternatives.length>0,m=>toasts.push(m)
 );
 const firstChange=moldFns.changeMoldOption(0,'other');
 await moldFns.changeMoldOption(0,'original');
