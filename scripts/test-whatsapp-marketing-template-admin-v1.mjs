@@ -3,7 +3,7 @@ import fs from 'node:fs';
 
 const modulePath='vitrine/admin/marketing/template-center.js';
 const cssPath='vitrine/admin/marketing/template-center.css';
-const loaderPath='vitrine/admin/basket-lot-image.js';
+const loaderPath='vitrine/admin/marketing/marketing-bootstrap.js';
 
 assert.equal(fs.existsSync(modulePath),true,'módulo isolado de Templates Meta deve existir');
 assert.equal(fs.existsSync(cssPath),true,'CSS isolado de Templates Meta deve existir');
