@@ -13,13 +13,8 @@ required_site_markers = [
     "function captureMarketingEntryContext()",
     "function resolveWhatsappDestination()",
     "function buildMarketingSignals()",
-    "function buildMarketingSignalLines(marketingSignals)",
     "function applyMarketingEntryContext()",
-    "INTERESSES_MKT:",
-    "MARCAS_MKT:",
-    "OFERTAS_WHATSAPP:",
-    "CTA_POS_PEDIDO:",
-    "CAMPANHA_ORIGEM:",
+    "marketing_context:state.marketingContext||null",
     "checkoutMarketingPreferenceHtml",
 ]
 for marker in required_site_markers:
@@ -29,7 +24,7 @@ assert "window.location.replace('/'+window.location.search+window.location.hash)
 
 assert "item.type==='product'" in site
 assert "item.components" in site
-signal_block = site[site.index('function buildMarketingSignals()'):site.index('function buildMarketingSignalLines(marketingSignals)')]
+signal_block = site[site.index('function buildMarketingSignals()'):site.index('function applyMarketingEntryContext()')]
 assert "item.components" not in signal_block, 'basket components must not feed marketing signals'
 assert "resolveWhatsappDestination()" in site[site.index('async function sendWhatsApp()'):], 'checkout must return to origin channel'
 
@@ -40,14 +35,12 @@ for unsupported in ["'seda'", "'monange'", "'lola-cosmetics'", "'skala'", "'dove
     assert unsupported not in brand_block, f'unsupported active PapoAI brand in site contract: {unsupported}'
 
 # Marketing signals remain available, but are no longer assembled inside the successful checkout path.
-line_block = site[site.index('function buildMarketingSignalLines(marketingSignals)'):site.index('function applyMarketingEntryContext()')]
-assert "for(const interest of marketingSignals.interests)lines.push('INTERESSES_MKT: '+interest)" in line_block
-assert "for(const brand of marketingSignals.brands)lines.push('MARCAS_MKT: '+brand)" in line_block
-assert "marketingSignals.interests.join(' | ')" not in line_block
-assert "marketingSignals.brands.join(' | ')" not in line_block
+for legacy_marker in ["INTERESSES_MKT:", "MARCAS_MKT:", "OFERTAS_WHATSAPP:", "CTA_POS_PEDIDO:", "CAMPANHA_ORIGEM:"]:
+    assert legacy_marker not in site, f'legacy PapoAI text marker must not be injected into the storefront: {legacy_marker}'
 send_block = site[site.index('async function sendWhatsApp()'):site.index("$('#globalSearchForm')")]
 assert "buildMarketingSignalLines(" not in send_block, 'checkout success path must not assemble marketing text'
 assert "buildMarketingSignals()" not in send_block, 'checkout success path must not perform unused marketing signal work'
+assert "marketing_context:state.marketingContext||null" in send_block, 'checkout must preserve the captured campaign context for the existing backend contract'
 
 # Only subjects with prepared PapoAI quick responses may become automatic post-order CTA.
 assert "const MARKETING_CTA_PRIORITY=['BEBE','CABELOS','BELEZA','LIMPEZA','LAVANDERIA','PET'];" in site
