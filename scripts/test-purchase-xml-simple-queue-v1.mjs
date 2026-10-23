@@ -21,7 +21,7 @@ assert.match(purchases,/host\.innerHTML='<div class="loading"/);
 assert.match(purchases,/purchaseApi\('summary',filter\)/,"initial loading continues to use the lightweight summary route");
 assert.match(layout,/<details id="purchaseAdvanced" class="panel purchase-extra"/,"secondary tools stay collapsed");
 assert.match(runtime,/Incluir em futuras entradas XML/);
-assert.match(html,/admin-runtime\.js\?v=purchase-xml-automation-v1-20261022/);
+assert.match(html,/admin-runtime\.js\?v=orders-four-stage-v1-20261023/);
 assert.match(inventory,/Importar XML e atualizar catálogo/);
 assert.doesNotMatch(inventory,/sem cadastrar produtos|sem alterar produtos/);
 assert.match(layout,/A automação pode criar produtos inativos e atualizar fornecedor\/custo/);
