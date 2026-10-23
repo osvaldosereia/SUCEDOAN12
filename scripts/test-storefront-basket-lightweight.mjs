@@ -50,7 +50,10 @@ const [publicPage, edge] = await Promise.all([
 const prefetchStart = publicPage.indexOf('function prefetchBasketPreviews(){');
 const prefetchEnd = publicPage.indexOf('function scheduleBasketPreviewPrefetch()', prefetchStart);
 assert.ok(prefetchStart >= 0 && prefetchEnd > prefetchStart);
-assert.match(publicPage.slice(prefetchStart, prefetchEnd), /api\('basket_by_size'/, 'idle prefetch warms basket previews directly');
+const prefetch=publicPage.slice(prefetchStart,prefetchEnd);
+assert.match(prefetch,/const action=resolveHomeSize\?'basket_by_size':'basket'/,'idle prefetch resolves cold cards by size and warmed cards by canonical ID');
+assert.match(prefetch,/api\(action,params\)/,'idle prefetch uses the selected single-request detail route');
+assert.match(prefetch,/trace_id:traceId/,'idle prefetch requests carry trace IDs');
 assert.match(publicPage, /Sem estoque para esta quantidade/, 'unavailable products are visible in the basket editor');
 assert.match(publicPage, /Number\(b\.stock_quantity\|\|0\)<1/, 'basket cannot be added with no sellable capacity');
 assert.match(edge, /allowUnavailablePreview/);
