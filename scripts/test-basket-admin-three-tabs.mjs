@@ -30,3 +30,24 @@ assert.throws(
   'the same product cannot be added twice to one carousel'
 );
 console.log('basket admin domain: PASS');
+
+import { readFileSync } from 'node:fs';
+const read = path => readFileSync(new URL(path, import.meta.url), 'utf8');
+const section = read('../vitrine/admin/basket-admin-section.js');
+const migration = read('../supabase/migrations/20261023120000_basket_admin_three_tabs.sql');
+const gateway = read('../supabase/functions/admin-basket-configuration-v1/index.ts');
+const storefront = read('../supabase/functions/storefront-v2/index.ts');
+const tabNames = [...section.matchAll(/data-basket-config-tab="([^"]+)"/g)].map(match => match[1]);
+assert.deepEqual(tabNames, ['types', 'quantities', 'carousel']);
+assert.ok(migration.includes("('Doação',0,null::text)"));
+assert.ok(migration.includes("('Família',6,null::text)"));
+assert.ok(migration.includes('enable row level security'));
+assert.ok(migration.includes("a.role<>'viewer'"));
+assert.equal(/drop table/i.test(migration), false, 'migration must preserve current basket data');
+assert.ok(migration.includes("if v_category='cestas-completas' then return new; end if;"));
+assert.ok(gateway.includes('Authorization:req.headers.get("Authorization")'));
+assert.equal(/SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET_KEY/.test(gateway), false);
+assert.ok(storefront.includes('sort_order:Number(o.sort_order||0)'));
+assert.ok(storefront.includes('stock_quantity:available'));
+assert.ok(storefront.includes('next_offset:'));
+console.log('basket admin three tabs: PASS');
