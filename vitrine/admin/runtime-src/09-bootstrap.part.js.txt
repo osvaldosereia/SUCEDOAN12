@@ -938,7 +938,7 @@
     const directOrderId=params.get('pedido')||'';
     if(directOrderId){
       if(!uuid.test(directOrderId)){setTab('today');toast('Link de pedido inválido');return}
-      state.orderStatusTab='received';
+      state.orderStatusTab='new';
       await setTab('orders');
       await openOrder(directOrderId);
       history.replaceState({},'',location.pathname+location.hash);

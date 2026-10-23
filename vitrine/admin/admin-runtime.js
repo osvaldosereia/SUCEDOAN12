@@ -16,7 +16,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderStatusTab:'manual',manualQueueIds:new Set(),manualQueueLoaded:false,manualQueueError:false,orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productSort:'',baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',sourceSystem:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},productFacetsCache:{},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',balanceSubtab:'scanner',balanceGondola:'',balanceValidity:'',balanceLotId:'',balanceNeedsPhoto:false,balanceReadiness:null,balanceCameraStream:null,balanceCameraDetector:null,balanceCameraRunning:false,balanceLastCameraEan:'',balanceLastCameraAt:0,balanceManualSearchTimer:null,inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',purchaseAdvancedOpen:false,purchaseAdvancedLoaded:false,purchaseAdvancedLoading:false,purchaseAdvancedError:'',purchaseBlingCompareOpen:false,purchaseBlingCompareLoaded:false,purchaseBlingCompareLoading:false,purchaseBlingCompareError:'',purchaseBlingCompareKey:'',opsSummary:null,opsAttention:null,opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],deliveryCatalog:{regions:[],drivers:[],vehicles:[]},deliveryPlan:{region_id:'',driver_id:'',vehicle_id:''},driverVehicle:'all'};
+  const state={tab:'today',orderFilter:'all',orderStatusTab:'new',orderCounts:{},orderOffset:0,orderHasMore:false,orderRequestSequence:0,orderSearchTimer:null,orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productSort:'',baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',sourceSystem:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},productFacetsCache:{},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',balanceSubtab:'scanner',balanceGondola:'',balanceValidity:'',balanceLotId:'',balanceNeedsPhoto:false,balanceReadiness:null,balanceCameraStream:null,balanceCameraDetector:null,balanceCameraRunning:false,balanceLastCameraEan:'',balanceLastCameraAt:0,balanceManualSearchTimer:null,inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',purchaseAdvancedOpen:false,purchaseAdvancedLoaded:false,purchaseAdvancedLoading:false,purchaseAdvancedError:'',purchaseBlingCompareOpen:false,purchaseBlingCompareLoaded:false,purchaseBlingCompareLoading:false,purchaseBlingCompareError:'',purchaseBlingCompareKey:'',opsSummary:null,opsAttention:null,opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],deliveryCatalog:{regions:[],drivers:[],vehicles:[]},deliveryPlan:{region_id:'',driver_id:'',vehicle_id:''},driverVehicle:'all'};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -6452,47 +6452,32 @@
     const separationLabel=m.separated?'VER SEPARAÇÃO':assigned?'CONTINUAR SEPARAÇÃO':'INICIAR SEPARAÇÃO';
     const primaryAction=m.confirmed&&!m.delivered&&!m.cancelled?'<button class="order-v3-action main '+(m.separated?'secondary-action':'primary')+'" type="button" data-v3-separation="'+esc(o.id)+'">'+separationLabel+'</button>':'';
     const supportTags=orderCardOperationalTags(o,m);
-    const manualSelected=state.manualQueueIds.has(String(o.id));
-    const manualEligible=orderStatusTabKey(o)==='confirmed'&&o.status==='confirmed';
-    const manualQueueButton=(manualEligible||(manualSelected&&state.orderStatusTab==='manual'&&!m.separated))?'<button class="order-v3-action secondary-action" type="button" data-manual-queue-'+(manualSelected?'remove':'add')+'="'+esc(o.id)+'">'+(manualSelected?'RETIRAR DE SEPARAR AGORA':'SEPARAR AGORA')+'</button>':'';
-    return '<article class="order-v3-card'+cardClass+'"><div class="order-v3-topline"><span class="order-v3-stage '+esc(stage)+'">'+esc(stageLabel)+'</span><strong class="order-v3-money">'+money(o.total_cents||0)+'</strong></div><div class="order-v3-identity"><strong>#'+esc(orderDisplayCode(o))+' · '+esc(o.customer_name||'Sem cliente')+'</strong><small><span class="order-v3-phone">Tel. '+esc(orderCardPhone(o))+'</span><span>'+esc(dateTime(o.created_at))+'</span></small></div>'+(!m.confirmed&&!m.cancelled?'<div class="order-v3-do-not-build">NÃO MONTAR ESSE PEDIDO</div>':'')+progress+(supportTags?'<div class="order-v3-tags">'+supportTags+'</div>':'')+(controls?'<div class="order-v3-controls">'+controls+'</div>':'')+'<div class="order-v3-actions">'+primaryAction+manualQueueButton+'<button class="order-v3-action secondary-action" type="button" data-order-chat="'+esc(o.id)+'">💬 VER CONVERSA</button><button class="order-v3-action '+(primaryAction?'secondary-action':'primary')+'" type="button" data-open-order="'+esc(o.id)+'">ABRIR PEDIDO</button></div></article>';
+    return '<article class="order-v3-card'+cardClass+'"><div class="order-v3-topline"><span class="order-v3-stage '+esc(stage)+'">'+esc(stageLabel)+'</span><strong class="order-v3-money">'+money(o.total_cents||0)+'</strong></div><div class="order-v3-identity"><strong>#'+esc(orderDisplayCode(o))+' · '+esc(o.customer_name||'Sem cliente')+'</strong><small><span class="order-v3-phone">Tel. '+esc(orderCardPhone(o))+'</span><span>'+esc(dateTime(o.created_at))+'</span></small></div>'+(!m.confirmed&&!m.cancelled?'<div class="order-v3-do-not-build">NÃO MONTAR ESSE PEDIDO</div>':'')+progress+(supportTags?'<div class="order-v3-tags">'+supportTags+'</div>':'')+(controls?'<div class="order-v3-controls">'+controls+'</div>':'')+'<div class="order-v3-actions">'+primaryAction+'<button class="order-v3-action secondary-action" type="button" data-order-chat="'+esc(o.id)+'">💬 VER CONVERSA</button><button class="order-v3-action '+(primaryAction?'secondary-action':'primary')+'" type="button" data-open-order="'+esc(o.id)+'">ABRIR PEDIDO</button></div></article>';
   }
   const ORDER_STATUS_TABS=[
-    {key:'manual',label:'SEPARAR AGORA'},
-    {key:'received',label:'Recebidos'},
-    {key:'confirmed',label:'Confirmados'},
-    {key:'separating',label:'Em separação'},
-    {key:'separated',label:'Separados'},
-    {key:'delivery',label:'Em entrega'},
-    {key:'delivered',label:'Entregues'},
-    {key:'cancelled',label:'Cancelados'}
+    {key:'new',label:'Novo'},
+    {key:'separate',label:'Separar agora'},
+    {key:'ready',label:'Pronto para entrega'},
+    {key:'delivered',label:'Entregue'}
   ];
   function orderStatusTabKey(o){
-    const m=orderV3Milestones(o),sep=orderSeparationSummary(o),assigned=Boolean(sep?.assignment?.separator_key);
-    if(m.cancelled)return 'cancelled';
-    if(m.delivered)return 'delivered';
-    if(o?.status==='out_for_delivery')return 'delivery';
-    if(m.separated)return 'separated';
-    if(assigned&&m.confirmed)return 'separating';
-    if(m.confirmed)return 'confirmed';
-    return 'received';
+    const status=String(o?.status||'');
+    if(status==='cancelled')return 'cancelled';
+    if(status==='delivered')return 'delivered';
+    if(['ready','out_for_delivery'].includes(status))return 'ready';
+    if(['confirmed','processing'].includes(status))return 'separate';
+    return 'new';
   }
-  function orderStatusTabMatch(o,key=state.orderStatusTab||'manual'){
-    if(key==='manual'){
-      const m=orderV3Milestones(o);
-      return state.manualQueueIds.has(String(o.id))&&m.confirmed&&!m.separated&&!m.delivered&&!m.cancelled&&o.status!=='out_for_delivery';
-    }
-    return key==='all'||orderStatusTabKey(o)===key;
+  function orderStatusTabMatch(o,key=state.orderStatusTab||'new',searching=Boolean(String(state.orderQuery||'').trim())){
+    return searching||(['new','separate','ready','delivered'].includes(key)&&orderStatusTabKey(o)===key);
   }
   function orderStatusTabCounts(){
     const counts=Object.fromEntries(ORDER_STATUS_TABS.map(x=>[x.key,0]));
-    counts.all=state.orders.length;
     state.orders.forEach(o=>{const key=orderStatusTabKey(o);if(Object.prototype.hasOwnProperty.call(counts,key))counts[key]++});
-    counts.manual=state.orders.filter(o=>orderStatusTabMatch(o,'manual')).length;
     return counts;
   }
   function orderStatusTabsHtml(extraClass=''){
-    const counts=orderStatusTabCounts(),active=state.orderStatusTab||'all';
+    const counts={...orderStatusTabCounts(),...(state.orderCounts||{})},active=state.orderStatusTab||'new';
     return '<div class="orders-status-tabs '+extraClass+'" role="tablist" aria-label="Filtrar pedidos por status">'+ORDER_STATUS_TABS.map(x=>'<button type="button" class="orders-status-tab'+(active===x.key?' active':'')+'" data-order-status-tab="'+x.key+'" role="tab" aria-selected="'+(active===x.key?'true':'false')+'">'+esc(x.label)+' <span class="count">'+Number(counts[x.key]||0)+'</span></button>').join('')+'</div>';
   }
   async function manualQueueRpc(action,orderId=null){
@@ -6503,30 +6488,24 @@
     });
     const data=await res.json().catch(()=>({}));
     if(!res.ok||!Array.isArray(data.order_ids))throw new Error(data.message||data.error||'manual_queue_unavailable');
-    state.manualQueueIds=new Set(data.order_ids.map(String));
-    state.manualQueueLoaded=true;state.manualQueueError=false;state.manualQueueLastSync=Date.now();
     return data;
   }
-  async function loadManualPickQueue(){
-    try{return await manualQueueRpc('list')}
-    catch(error){state.manualQueueError=true;state.manualQueueLoaded=false;throw error}
-  }
-  async function setManualPickQueue(orderId,enable,button){
-    if(button){button.disabled=true;button.textContent=enable?'ADICIONANDO…':'RETIRANDO…'}
+  function bindOrderStatusTabs(){document.querySelectorAll('[data-order-status-tab]').forEach(b=>b.onclick=()=>{const next=b.dataset.orderStatusTab||'new';if(next===state.orderStatusTab)return;state.orderStatusTab=next;loadOrders(true)})}
+  async function renderOrders(){const content=$('#content');document.body.classList.add('orders-tab-active');content.innerHTML='<div class="page-head"><div><h1>Pedidos</h1><p>Acompanhe os pedidos do início à entrega.</p></div></div><div id="orderStatusTabsTop">'+orderStatusTabsHtml('orders-status-desktop')+'</div><div class="toolbar"><input id="orderSearch" type="search" placeholder="Buscar pedido, cliente, telefone ou endereço…" value="'+esc(state.orderQuery||'')+'"></div><div id="orderRows" class="orders-v3-list"><div class="loading">Carregando pedidos…</div></div><div id="orderStatusTabsMobile">'+orderStatusTabsHtml('orders-status-mobile')+'</div>';bindOrderStatusTabs();$('#orderSearch').oninput=e=>{state.orderQuery=e.target.value;clearTimeout(state.orderSearchTimer);state.orderSearchTimer=setTimeout(()=>loadOrders(true),280)};await loadOrders(true)}
+  async function loadOrders(reset=true){
+    const tab=state.orderStatusTab||'new',search=String(state.orderQuery||'').trim(),offset=reset?0:Number(state.orderOffset||0);
+    const requestId=reset?++state.orderRequestSequence:state.orderRequestSequence;
+    if(reset){state.orders=[];state.orderOffset=0;state.orderHasMore=false;const host=$('#orderRows');if(host)host.innerHTML='<div class="loading">Carregando pedidos…</div>'}
     try{
-      await manualQueueRpc(enable?'add':'remove',orderId);
-      toast(enable?'Pedido incluído em SEPARAR AGORA':'Pedido retirado de SEPARAR AGORA');
-    }catch(error){toast('Não foi possível atualizar a fila manual: '+errorMessage(error.message))}
-    finally{paintOrderRows()}
-  }
-  function bindOrderStatusTabs(){document.querySelectorAll('[data-order-status-tab]').forEach(b=>b.onclick=async()=>{state.orderStatusTab=b.dataset.orderStatusTab||'manual';paintOrderRows();if(state.orderStatusTab==='manual'){try{await loadManualPickQueue()}catch{}paintOrderRows()}})}
-  async function renderOrders(){const content=$('#content');document.body.classList.add('orders-tab-active');content.innerHTML='<div class="page-head"><div><h1>Pedidos</h1><p>Escolha manualmente quais pedidos confirmados devem aparecer em SEPARAR AGORA.</p></div></div><div id="orderStatusTabsTop">'+orderStatusTabsHtml('orders-status-desktop')+'</div><div class="toolbar"><input id="orderSearch" type="search" placeholder="Buscar pedido, cliente, telefone ou endereço…" value="'+esc(state.orderQuery||'')+'"></div><div id="orderRows" class="orders-v3-list"><div class="loading">Carregando pedidos…</div></div><div id="orderStatusTabsMobile">'+orderStatusTabsHtml('orders-status-mobile')+'</div>';bindOrderStatusTabs();$('#orderSearch').oninput=e=>{state.orderQuery=e.target.value;paintOrderRows()};await loadOrders()}
-  async function loadOrders(){
-    try{
-      const data=await api('orders');state.orders=Array.isArray(data.orders)?data.orders:[];try{await loadManualPickQueue()}catch{}paintOrderRows();
-      const fiscalRows=state.orders.filter(o=>o.status==='ready').sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0)).slice(0,8);
-      if(fiscalRows.length){await loadFiscalForOrders(fiscalRows);paintOrderRows()}
-    }catch(e){const host=$('#orderRows');if(host)host.innerHTML='<div class="empty">Não consegui carregar os pedidos.</div>'}
+      const data=await api('orders',{tab,offset,limit:5,...(search?{q:search}:{})});
+      if(requestId!==state.orderRequestSequence||tab!==(state.orderStatusTab||'new')||search!==String(state.orderQuery||'').trim())return;
+      const page=Array.isArray(data.orders)?data.orders:[];
+      state.orders=reset?page:[...state.orders,...page];
+      state.orderOffset=offset+page.length;state.orderHasMore=data.has_more===true;state.orderCounts=data.counts||state.orderCounts||{};
+      paintOrderRows();
+      const fiscalRows=state.orders.filter(o=>o.status==='ready'&&!state.fiscalByOrder[o.id]).sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0)).slice(0,5);
+      if(fiscalRows.length){await loadFiscalForOrders(fiscalRows);if(requestId===state.orderRequestSequence)paintOrderRows()}
+    }catch(e){if(requestId===state.orderRequestSequence){const host=$('#orderRows');if(host)host.innerHTML='<div class="empty">Não consegui carregar os pedidos. <button class="text-btn" id="retryOrders" type="button">Tentar novamente</button></div>';$('#retryOrders')?.addEventListener('click',()=>loadOrders(true))}}
   }
   async function refreshOrderSeparationBoard(){
     if(state.tab!=='orders'||document.hidden||!state.orders.length)return;
@@ -6539,11 +6518,7 @@
         if(nextStatus!==o.status||JSON.stringify(nextSummary)!==JSON.stringify(o.separation_summary||null))changed=true;
         return {...o,status:nextStatus,separation_summary:nextSummary};
       });
-      if(state.orderStatusTab==='manual'&&Date.now()-Number(state.manualQueueLastSync||0)>=15000){
-        const previous=[...state.manualQueueIds].sort().join(',');
-        try{await loadManualPickQueue();if(previous!==[...state.manualQueueIds].sort().join(','))changed=true}catch{}
-      }
-      if(changed)paintOrderRows();
+      if(changed)await loadOrders(true);
     }catch{}
   }
   if(!window.__orderSeparationBoardTimer)window.__orderSeparationBoardTimer=setInterval(refreshOrderSeparationBoard,5000);
@@ -6590,7 +6565,25 @@
   $('#orderChatClose').onclick=closeOrderChatSheet;
   $('#orderChatOverlay').onclick=closeOrderChatSheet;
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('#orderChatSheet').hidden){event.preventDefault();closeOrderChatSheet()}});
-  function paintOrderRows(){const host=$('#orderRows');if(!host)return;const rows=state.orders.filter(o=>orderV3SearchMatch(o,state.orderQuery)&&orderStatusTabMatch(o)).sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0));host.innerHTML=rows.length?rows.map(orderRow).join(''):'<div class="empty">'+(state.orderStatusTab==='manual'?(state.manualQueueError?'Fila manual indisponível. Tente selecionar esta aba novamente.':'Nenhum pedido na fila. Em CONFIRMADOS, clique em SEPARAR AGORA no pedido desejado.'):'Nenhum pedido encontrado neste status.')+'</div>';const top=$('#orderStatusTabsTop'),mobile=$('#orderStatusTabsMobile');if(top)top.innerHTML=orderStatusTabsHtml('orders-status-desktop');if(mobile)mobile.innerHTML=orderStatusTabsHtml('orders-status-mobile');bindOrderStatusTabs();host.querySelectorAll('[data-open-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.openOrder));host.querySelectorAll('[data-order-chat]').forEach(b=>b.onclick=()=>openOrderChatSheet(b.dataset.orderChat,b));host.querySelectorAll('[data-manual-queue-add],[data-manual-queue-remove]').forEach(b=>b.onclick=()=>setManualPickQueue(b.dataset.manualQueueAdd||b.dataset.manualQueueRemove,Boolean(b.dataset.manualQueueAdd),b));host.querySelectorAll('[data-copy-separation]').forEach(b=>b.onclick=()=>copyOrderSeparationLink(b.dataset.copySeparation,b));host.querySelectorAll('[data-v3-confirm]').forEach(b=>b.onclick=()=>quickConfirmOrder(b.dataset.v3Confirm,b));host.querySelectorAll('[data-v3-separate],[data-v3-separation]').forEach(b=>b.onclick=()=>openOrderSeparationSheet(b.dataset.v3Separate||b.dataset.v3Separation));host.querySelectorAll('[data-v3-dispatch]').forEach(b=>b.onclick=()=>startOrderDispatchV4(b.dataset.v3Dispatch,b));host.querySelectorAll('[data-v3-deliver]').forEach(b=>b.onclick=()=>openOrderDeliveryConfirm(b.dataset.v3Deliver));host.querySelectorAll('[data-v3-delivery-fail]').forEach(b=>b.onclick=()=>returnOrderToExpedition(b.dataset.v3DeliveryFail,false))}
+  function paintOrderRows(){
+    const host=$('#orderRows');if(!host)return;
+    const searching=Boolean(String(state.orderQuery||'').trim());
+    const rows=state.orders.filter(o=>orderV3SearchMatch(o,state.orderQuery)&&orderStatusTabMatch(o,state.orderStatusTab,searching)).sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0));
+    host.innerHTML=(rows.length?rows.map(orderRow).join(''):'<div class="empty">'+(searching?'Nenhum pedido encontrado na busca.':'Nenhum pedido nesta etapa.')+'</div>')+(state.orderHasMore?'<div class="more"><button class="secondary" id="loadMoreOrders" type="button">Carregar mais pedidos</button></div>':'');
+    const more=$('#loadMoreOrders');if(more)more.onclick=async()=>{more.disabled=true;more.textContent='Carregando…';await loadOrders(false)};
+    const top=$('#orderStatusTabsTop'),mobile=$('#orderStatusTabsMobile');
+    if(top)top.innerHTML=orderStatusTabsHtml('orders-status-desktop');
+    if(mobile)mobile.innerHTML=orderStatusTabsHtml('orders-status-mobile');
+    bindOrderStatusTabs();
+    host.querySelectorAll('[data-open-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.openOrder));
+    host.querySelectorAll('[data-order-chat]').forEach(b=>b.onclick=()=>openOrderChatSheet(b.dataset.orderChat,b));
+    host.querySelectorAll('[data-copy-separation]').forEach(b=>b.onclick=()=>copyOrderSeparationLink(b.dataset.copySeparation,b));
+    host.querySelectorAll('[data-v3-confirm]').forEach(b=>b.onclick=()=>quickConfirmOrder(b.dataset.v3Confirm,b));
+    host.querySelectorAll('[data-v3-separate],[data-v3-separation]').forEach(b=>b.onclick=()=>openOrderSeparationSheet(b.dataset.v3Separate||b.dataset.v3Separation));
+    host.querySelectorAll('[data-v3-dispatch]').forEach(b=>b.onclick=()=>startOrderDispatchV4(b.dataset.v3Dispatch,b));
+    host.querySelectorAll('[data-v3-deliver]').forEach(b=>b.onclick=()=>openOrderDeliveryConfirm(b.dataset.v3Deliver));
+    host.querySelectorAll('[data-v3-delivery-fail]').forEach(b=>b.onclick=()=>returnOrderToExpedition(b.dataset.v3DeliveryFail,false));
+  }
   async function startOrderDispatchV4(id,btn){
     const current=state.orders.find(o=>String(o.id)===String(id));
     if(!current||current.status!=='ready'){toast('Este pedido não está pronto para saída');return}
@@ -7799,7 +7792,7 @@
     const directOrderId=params.get('pedido')||'';
     if(directOrderId){
       if(!uuid.test(directOrderId)){setTab('today');toast('Link de pedido inválido');return}
-      state.orderStatusTab='received';
+      state.orderStatusTab='new';
       await setTab('orders');
       await openOrder(directOrderId);
       history.replaceState({},'',location.pathname+location.hash);
