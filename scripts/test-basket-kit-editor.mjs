@@ -26,7 +26,9 @@ assert.match(adminUi,/DonaAntoniaBasketAdmin\?\.render/,'renderBaskets must dele
 assert.doesNotMatch(adminUi,/DonaAntoniaGuidedBridge/,'retired basket-specific bridge must not return');
 
 assert.deepEqual([...section.matchAll(/data-basket-config-tab="([^"]+)"/g)].map(match=>match[1]),['types','quantities','carousel'],'Cestas exposes exactly three requested tabs');
-assert.doesNotMatch(section,/Receitas de kits|Cestas do Site|data-basket-advanced|DonaAntoniaKitBuilder|DonaAntoniaStoreBaskets/,'legacy editors are removed from the replaced session');
+assert.doesNotMatch(section,/data-basket-advanced|data-basket-config-tab="(?:kits|store)"/,'legacy editors are not visible as tabs in the replaced session');
+assert.match(section,/kits:\{label:'Receitas de kits \(legado\)'/,'legacy kit editor remains callable for compatibility');
+assert.match(section,/store:\{label:'Operação de lotes antigos'/,'legacy lot editor remains callable for compatibility');
 for(const retired of ['data-basket-edit','data-basket-new-lot','data-basket-edit-lot','data-basket-print','data-basket-archive','DonaAntoniaBasketGuided']){
   assert.doesNotMatch(section,new RegExp(retired),`normal operation must stay free of ${retired}`);
 }
