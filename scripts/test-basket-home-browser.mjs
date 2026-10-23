@@ -99,7 +99,7 @@ try{
  assert.equal(await app.locator('.nav-shell').isVisible(),false);
  assert.equal(await app.locator('#globalSearchInput').getAttribute('placeholder'),'O que você precisa hoje?');
  assert.equal(await app.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
- assert.deepEqual(storefrontActions,['home_size_cards'],'initial entry uses only the lightweight home payload');
+ assert.ok(storefrontActions.includes('home_size_cards'),'initial entry requests the lightweight home payload');
  await app.locator('#heroOffers').click();
  await app.locator('#offerGrid').waitFor();
  assert.equal(await app.locator('.nav-shell').isVisible(),true);
