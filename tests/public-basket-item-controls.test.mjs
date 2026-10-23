@@ -41,7 +41,8 @@ test('mold products render as vertical choice cards with quantity and selected p
   assert.match(html,/scroll-snap-type:x mandatory/);
   assert.match(html,/overflow-x:auto/);
   assert.match(html,/\.basket-option-choice\s*\{[^}]*flex-direction:\s*column/s);
-  assert.match(optionRenderer,/choicesList\.sort\(\(a,b\)=>Number\(a\.price_cents/);
+  assert.match(optionRenderer,/sortMoldAlternativesByAdminOrder\(choicesList\)/,'public product choices follow the configured admin order');
+  assert.match(html,/function sortMoldAlternativesByAdminOrder\(/,'public ordering behavior is a named helper'););
   assert.doesNotMatch(optionRenderer,/data-mold-brand-toggle|Clique para trocar este produto/);
   assert.match(itemRenderer,/moldItemOptions\(x,i,pending\)/);
   assert.match(itemRenderer,/basket-selected-product-price[\s\S]*?money\(selected\.price_cents/);
