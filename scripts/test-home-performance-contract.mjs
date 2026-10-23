@@ -45,7 +45,7 @@ const initialPreviewCount=page.match(/BASKET_INITIAL_RENDER_COUNT=(\d+)/);
 assert.equal(Number(initialPreviewCount?.[1]),6,'opening preview should match the server-provided first batch');
 assert.match(page,/const items=\(cached\?\.carousel_items\|\|\[\]\)\.slice\(0,BASKET_INITIAL_RENDER_COUNT\)/,'opening preview should use only its bounded first batch');
 const openBasket=page.slice(page.indexOf('async function openBasket('),page.indexOf('function basketGroupTitle',page.indexOf('async function openBasket(')));
-assert.ok(openBasket.indexOf('basketOpeningPreview(id)')<openBasket.indexOf('api(action,params'),'show cached preview before fetching full basket details');
+assert.ok(openBasket.indexOf('basketOpeningPreview(id)')<openBasket.indexOf('loadHomeBasketDetail(currentBasket,traceId,controller.signal)'),'show cached preview before waiting for the canonical basket detail request');
 assert.match(home,/basketCarouselItems\(baskets\)/,'legacy basket cards should keep their lead photo');
 assert.match(home,/home\(priorityOnly=false\)/,'home builder should support a separately scoped priority response');
 assert.match(home,/priorityOnly[\s\S]*cestas-completas[\s\S]*grande/i,'priority response should include only Cestas Completas > Grande');
