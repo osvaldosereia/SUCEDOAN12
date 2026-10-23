@@ -10,11 +10,10 @@ new vm.Script([...page.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)[1],{fil
 const start=page.slice(page.indexOf('async function start(){'),page.indexOf('\n    start();'));
 assert.ok(start.indexOf('renderInitialShell()')<start.indexOf('resolveEntryWhatsappPhone()'),'initial shell must render before identity lookup');
 assert.match(start,/void resolveEntryWhatsappPhone\(\)\.then/,'identity lookup cannot block public catalog');
-assert.match(start,/const priority=hadCached\?Promise\.resolve\(false\):api\('home_priority'\)/,'priority catalog must load independently');
-assert.match(start,/const full=api\('home'\)/,'full catalog must start without awaiting priority');
-assert.doesNotMatch(start,/await api\('home_priority'\)[\s\S]*await api\('home'\)/,'do not serialize expensive catalog queries');
-assert.match(start,/writeCache\(HOME_CACHE_KEY,state\.home\)/,'cache only complete catalog responses');
-assert.match(start,/fullFinished/,'late partial catalogs must not overwrite completed responses');
+assert.match(start,/await api\('home_size_cards'\)/,'homepage must request the lightweight basket cards payload');
+assert.doesNotMatch(start,/api\('home_priority'\)|api\('home'\)/,'homepage must not load the full basket catalog on initial entry');
+assert.match(start,/home_size_cards/,'accept only the dedicated lightweight response');
+assert.match(start,/writeCache\(HOME_CACHE_KEY,state\.home\)/,'cache the accepted lightweight home payload');
 assert.match(start,/performance\.mark/,'home load performance markers must exist');
 assert.match(page,/home-loading-status[^\n]*Preparando suas cestas/,'mobile loading status must be understandable');
 const storefrontApi=page.slice(page.indexOf('async function api('),page.indexOf('async function productExtra('));
@@ -22,9 +21,17 @@ assert.match(storefrontApi,/retryableRead/,'safe catalog reads must retry transi
 assert.match(storefrontApi,/invalid_catalog_response/,'invalid successful responses must not erase catalog data');
 assert.match(storefrontApi,/status>=400&&status<500/,'client errors must not be retried');
 assert.match(storefrontApi,/retryableRead&&!options[.]signal[?]2:1/,'catalog retries must be restricted to safe reads');
+const helperStart=page.indexOf('const BASKET_SIZE_DISPLAY_ORDER=');
+const helperEnd=page.indexOf('function homeBasketSizeCards(',helperStart);
+assert.ok(helperStart>=0&&helperEnd>helperStart,'home basket size helpers must be present');
+const helperContext={};
+vm.runInNewContext(page.slice(helperStart,helperEnd)+'\nglobalThis.homeBasketSubcategories=homeBasketSubcategories;globalThis.normalizeBasketSizeName=normalizeBasketSizeName;',helperContext);
+const sizeGroup={slug:'cestas-completas',subcategories:['Grande','Econômica','Média','Mini','Pequena'].map((name,id)=>({id:String(id),name}))};
+assert.deepEqual(Array.from(helperContext.homeBasketSubcategories(sizeGroup),sub=>sub.name),['Econômica','Mini','Pequena','Média','Grande'],'home basket sizes must render in the configured order');
+assert.equal(helperContext.normalizeBasketSizeName('Média'),'media','accented size labels must normalize to the carousel key');
 const renderHome=page.slice(page.indexOf('function renderHome(){'),page.indexOf('function paintOffersPage('));
-assert.match(renderHome,/homePartial[\s\S]*Grande/i,'priority response should show the Grande group');
-assert.match(renderHome,/aria-busy="true"[\s\S]*homeRemainingBaskets/,'partial response should show remaining group placeholders');
+assert.match(renderHome,/homeSizeCards/,'home rendering must use the size-card payload');
+assert.doesNotMatch(renderHome,/homePartial/,'obsolete partial-catalog branching must not affect the home view');
 
 const service=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
 const home=service.slice(service.indexOf('async function home('),service.indexOf('async function sellableMap('));
