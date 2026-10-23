@@ -530,7 +530,6 @@
     const sheetTitle = $('#sheetTitle');
     const state = {
       home: {baskets:[],categories:STATIC_CATEGORIES,basket_categories:[]},
-      homePartial: false,
       offers: [],
       offersLoaded: false,
       offersPromise: null,
@@ -820,18 +819,20 @@
       content.innerHTML=homeIntro(categories)+'<div id="basketSections">'+section('Escolha suas Cestas e Kits','Escolha uma opção para conferir.','<p class="home-loading-status" role="status" aria-live="polite">Preparando suas cestas…</p><div class="grid" aria-busy="true"><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div></div>')+'</div>'+section('Ofertas em destaque','Preços promocionais para aproveitar.','<div id="homeOffersMount">'+offersSkeleton()+'</div>','homeOffers')+homeCategorySection(categories);
       bindHomeIntro();content.querySelectorAll('[data-ean-catalog]').forEach(btn=>btn.onclick=renderEanProducts);
     }
+    const BASKET_SIZE_DISPLAY_ORDER=Object.freeze(['economica','mini','pequena','media','grande']);
+    function normalizeBasketSizeName(value){return String(value||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR')}
     function homeBasketSubcategories(group){
       const subcategories=Array.isArray(group?.subcategories)?group.subcategories:[];
       if(String(group?.slug||'')!=='cestas-completas')return subcategories;
       const byName=new Map();
-      for(const sub of subcategories){const key=String(sub?.name||'').trim().toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(BASKET_SIZE_DISPLAY_ORDER.includes(key)&&!byName.has(key))byName.set(key,sub)}
+      for(const sub of subcategories){const key=normalizeBasketSizeName(sub?.name);if(BASKET_SIZE_DISPLAY_ORDER.includes(key)&&!byName.has(key))byName.set(key,sub)}
       return BASKET_SIZE_DISPLAY_ORDER.map(name=>byName.get(name)).filter(Boolean);
     }
     function homeBasketSizeCards(baskets,group){
       return homeBasketSubcategories(group).flatMap(sub=>{
         const candidates=baskets.filter(b=>String(b.category_id||'')===String(group.id)&&String(b.subcategory_id||'')===String(sub.id));
         candidates.sort((a,b)=>Number(b.mold_mode===true)-Number(a.mold_mode===true)||Number(a.display_price_cents||0)-Number(b.display_price_cents||0));
-        const sizeKey=String(sub.name||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLocaleLowerCase('pt-BR');
+        const sizeKey=normalizeBasketSizeName(sub.name);
         return candidates[0]?[{...candidates[0],name:sub.name,model_name:sub.name,size_card:true,size_key:sizeKey,home_shell:true}]:[];
       });
     }
@@ -914,10 +915,9 @@
       let basketGroups=Array.isArray(state.home?.basket_categories)?state.home.basket_categories:[];
       if(state.homeSizeCards)basketGroups=basketGroups.filter(group=>group.slug==='cestas-completas');
       const records=homeBasketGroupRecords(baskets,basketGroups);
-      const remainingBasketMarkup='';
       if(!canPatch){
         renderNav();$('#globalSearchInput').value='';
-        content.innerHTML=homeIntro(categories)+'<div id="basketSections"></div>'+remainingBasketMarkup+section('Ofertas em destaque','Preços promocionais para aproveitar.','<div id="homeOffersMount">'+offersSkeleton()+'</div>','homeOffers')+homeCategorySection(categories);
+        content.innerHTML=homeIntro(categories)+'<div id="basketSections"></div>'+section('Ofertas em destaque','Preços promocionais para aproveitar.','<div id="homeOffersMount">'+offersSkeleton()+'</div>','homeOffers')+homeCategorySection(categories);
         content.querySelectorAll('[data-category]').forEach(btn=>btn.onclick=()=>renderCategory(btn.dataset.category,btn.textContent.replace('›','').trim()));
         content.querySelectorAll('[data-ean-catalog]').forEach(btn=>btn.onclick=renderEanProducts);
         bindHomeIntro();
@@ -926,9 +926,6 @@
       else if(state.offersLoaded&&content.querySelector('#homeOffersMount')&&!content.querySelector('#homeOffersMount').children.length){paintHomeOffers()}
       const host=content.querySelector('#basketSections');
       syncHomeBasketGroups(host,records);
-      const existingRemaining=content.querySelector('#homeRemainingBaskets');
-      if(state.homePartial&&!existingRemaining)host.insertAdjacentHTML('afterend',remainingBasketMarkup);
-      if(!state.homePartial&&existingRemaining)existingRemaining.remove();
       // The category buttons stay mounted while basket data refreshes.
     }
     function paintOffersPage(){const grid=$('#offerGrid');if(!grid)return;grid.innerHTML=state.offers.length?state.offers.map((p,i)=>productCard(p,true,i)).join(''):'<div class="empty">Nenhuma oferta ativa agora.</div>';attachProductControls(grid,state.offers)}
@@ -1337,7 +1334,7 @@
         received=true;
         const prev=JSON.stringify([state.home?.baskets,state.home?.basket_categories,state.home?.categories]);
         state.home={...state.home,...data,categories:data.categories?.length?data.categories:STATIC_CATEGORIES};
-        state.homeSizeCards=true;state.homePartial=false;
+        state.homeSizeCards=true;
         writeCache(HOME_CACHE_KEY,state.home);
         const next=JSON.stringify([state.home.baskets,state.home.basket_categories,state.home.categories]);
         if(state.view==='home'&&(prev!==next||!hadCached))renderHome();
