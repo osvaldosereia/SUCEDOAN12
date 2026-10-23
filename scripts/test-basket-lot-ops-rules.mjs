@@ -11,11 +11,9 @@ const migration=fs.readFileSync('supabase/sql/20261004_basket_lot_linked_hygiene
 const optionalHygiene=fs.readFileSync('supabase/sql/20261004_optional_hygiene_per_food_lot_v1.sql','utf8');
 const draftLinkMigrationPath='supabase/sql/20261004_basket_link_draft_selection_v1.sql';
 
-// O controlador normal prioriza moldes; receitas antigas ficam na manutenção avançada.
-assert.doesNotMatch(section,/kitLotRow|paintBasketKitAdmin|basket_lot_sale_toggle|data-basket-edit-lot/,'controlador simples não deve possuir operação de lote');
-for(const label of ['Pausar venda','Retomar venda','Editar lote','Imprimir'])assert.doesNotMatch(section,new RegExp(label),`operação normal não deve expor ${label}`);
-assert.match(section,/Receitas de kits \(legado\)/,'receitas antigas devem permanecer disponíveis na manutenção avançada');
-assert.match(section,/Cestas do Site/,'operação normal deve separar cestas externas');
+const tabs=[...section.matchAll(/data-basket-config-tab="([^"]+)"/g)].map(match=>match[1]);
+assert.deepEqual(tabs,['types','quantities','carousel'],'sessão Cestas deve usar as três abas de configuração');
+assert.doesNotMatch(section,/Receitas de kits|Cestas do Site|data-basket-advanced|kitLotRow|paintBasketKitAdmin|basket_lot_sale_toggle|data-basket-edit-lot/,'a nova sessão não deve manter a navegação antiga de manutenção');
 
 assert.ok(guided.includes('id="bgLotPublicName"'),'compatibilidade de lote deve manter nome público próprio');
 assert.ok(guided.includes('id="bgLotSalePrice"'),'compatibilidade de lote deve manter preço próprio');
