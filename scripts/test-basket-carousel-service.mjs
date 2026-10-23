@@ -10,13 +10,15 @@ const moldOptions=source.slice(source.indexOf('function compareMoldPositionOptio
 const vitrine=fs.readFileSync('vitrine/index.html','utf8');
 const vm=await import('node:vm');
 const publicOptions=source.slice(source.indexOf('function compareMoldPositionOptionOrder('),source.indexOf('async function moldQuote('));
-assert.match(publicOptions,/alternatives\\.sort\\(compareMoldPositionOptionOrder\\)/,'public alternatives preserve the configured admin order');
-assert.match(publicOptions,/shown\\.sort\\(compareMoldPositionOptionOrder\\)/,'the selected-product fallback preserves the configured admin order');
-assert.doesNotMatch(publicOptions,/shown\\.sort\\(\\(a:any,b:any\\)=>Number\\(a\\.price_cents/,'public fallback must not replace admin order with price order');
+assert.ok(publicOptions.includes('alternatives.sort(compareMoldPositionOptionOrder)'),'public alternatives preserve the configured admin order');
+assert.ok(publicOptions.includes('shown.sort(compareMoldPositionOptionOrder)'),'the selected-product fallback preserves the configured admin order');
+assert.ok(!publicOptions.includes('shown.sort((a:any,b:any)=>Number(a.price_cents'),'public fallback must not replace admin order with price order');
 assert.ok(root.includes('Escolha uma opção · ordem definida no admin'),'public carousel explains that admin order is preserved');
-const adminSortSource=root.match(/function sortMoldAlternativesByAdminOrder\\(options\\)\\{[\\s\\S]*?\\n    \\}/)?.[0];
-assert.ok(adminSortSource,'public renderer has a named admin-order sorter');
-const sortMoldAlternativesByAdminOrder=vm.runInNewContext('('+adminSortSource.replace('function sortMoldAlternativesByAdminOrder','function')+')');
+const sortStart=root.indexOf('function sortMoldAlternativesByAdminOrder(options){');
+const sortEnd=root.indexOf('\n    }',sortStart)+6;
+assert.ok(sortStart>=0&&sortEnd>sortStart,'public renderer has a named admin-order sorter');
+const sortSource=root.slice(sortStart,sortEnd);
+const sortMoldAlternativesByAdminOrder=vm.runInNewContext('('+sortSource.replace('function sortMoldAlternativesByAdminOrder','function')+')');
 const orderedOptions=sortMoldAlternativesByAdminOrder([{product_id:'third',sort_order:2,price_cents:100},{product_id:'first',sort_order:0,price_cents:1000},{product_id:'second',sort_order:1,price_cents:1}]);
 assert.deepEqual(orderedOptions.map(x=>x.product_id),['first','second','third'],'public carousel order follows the admin configuration even when prices differ');
 
