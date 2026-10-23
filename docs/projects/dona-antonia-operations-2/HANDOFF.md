@@ -1,3 +1,5 @@
+# Dona Antônia Operations 2.0 — HANDOFF
+
 ## Checkpoint R24 — janela incremental Admin1 e smoke somente leitura — 2026-10-23 09:06:00 UTC
 
 - Base revalidada: `main` `3223dc4c5b1e17a8ec2b9981803f7ad67a5f9ecb`; PR #1327/R23 está merged. Há 42 workflows associados ao merge, 41 success e nenhum failure; `Basket product carousel` (run #39928928242) ainda estava in progress. A busca de branches/PRs não localizou trabalho Admin1 novo aberto para integrar.
@@ -8,11 +10,12 @@
 - Esta rodada altera apenas HANDOFF e roadmap na branch `agent/admin1-observation-r24-0906-20261023`, criada da main 3223dc4c5b1e17a8ec2b9981803f7ad67a5f9ecb. Nenhuma migration, função, configuração, policy, grant ou dado foi alterado em Supabase; nenhum deploy de runtime, Pages ou Supabase foi executado. Sem necessidade de rollback de aplicação; rollback documental é reverter o merge da PR correspondente.
 - R13 segue sem publicação: a última tentativa autorizada falhou no secret inválido `SUPABASE_ACCESS_TOKEN` (run #39848977831); permanece necessária a renovação pelo proprietário. Sem credencial alternativa ou nova tentativa de deploy.
 
+- Fechamento PR #1328: checks obrigatórios `Admin service outcome telemetry CI` (#39929491169) e `Basket lot helper grant CI` (#39929491064) passaram. Squash merge concluído; `main` agora está em `d515ce403edbe62f8416477e69da446deef5f95c`. O último snapshot de CI da main-base registrou 41/42 success e o run #39928928242 ainda em andamento, sem falhas; o merge R24 é apenas documental.
+
 ### Próxima tarefa exata
 
 Após 2026-10-24 02:14:07.824 UTC, fechar a janela de 24h de `admin1-legacy-catalog-read-v1`, excluindo somente o GET 410 de smoke identificado às 02:15:44.718 UTC e atribuindo qualquer outro caller. Após 03:20:07.529 UTC, fechar a janela de `admin1-products-read-v1` e atribuir qualquer caller. Manter ambos em 410 até a análise. Em paralelo, publicar R13 pelo fluxo normal somente quando o proprietário renovar `SUPABASE_ACCESS_TOKEN`; confirmar versão/hash antes de avaliar outcomes/502.
 
-# Dona Antônia Operations 2.0 — HANDOFF
 
 ## Checkpoint R23 — observação Admin1 e smoke somente leitura — 2026-10-23 09:00:54 UTC
 
