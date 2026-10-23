@@ -11,7 +11,7 @@ const inline=[...page.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)?.[1];
 assert.ok(inline,'public inline script must be present');
 new vm.Script(inline,{filename:'index.html'});
 new vm.Script(carousel,{filename:'basket-carousel.js'});
-assert.match(page,/basket-carousel\.js\?v=20261021-price-hierarchy-v1/,'asset URL must invalidate previous cached script');
+assert.match(page,/basket-carousel\.js\?v=20261022-home-shell-v1/,'asset URL must invalidate previous cached script');
 const region=page.slice(page.indexOf('const homeSubgroupSignatures='),page.indexOf('function paintOffersPage()'));
 assert.match(region,/const homeSubgroupSignatures=new WeakMap/);
 assert.match(region,/homeSubgroupSignatures\.get\(subgroup\)!==sub\.signature/,'unchanged subgroups must be reused');
