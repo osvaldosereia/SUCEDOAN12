@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
-import { moldFirstAvailableOption, moldProductIdsForRead } from "./basket-lightweight.js";
+import { moldFirstAvailableOption, moldFirstConfiguredOption, moldProductIdsForRead } from "./basket-lightweight.js";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const KEY=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
@@ -250,7 +250,7 @@ async function moldDetailComposition(basketId:string){
   }
   return request;
 }
-async function moldDetail(basketId:string,compositionNumber:number,selections:any[]|null=null,includeAlternatives=true){
+async function moldDetail(basketId:string,compositionNumber:number,selections:any[]|null=null,includeAlternatives=true,allowUnavailablePreview=false){
   // Independent reads run in parallel, avoiding an extra database round trip.
   const [gate,mq,bq,pq]=await Promise.all([
     db.rpc("basket_mold_cutover_ready_v1",{p_basket_id:basketId}),
@@ -273,7 +273,7 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
     if(!includeAlternatives){
       const linkedOptions=options.filter((o:any)=>String(o.position_id)===pid),candidateIds=linkedOptions.map((o:any)=>String(o.product_id));
       const requestedId=requested.get(pid)?.product_id,selectedId=requestedId||defaultSelected.get(pid)||"";
-      if(!selectedId||!candidateIds.includes(selectedId)){
+      if((!selectedId||!candidateIds.includes(selectedId))&&!allowUnavailablePreview){
         if(selections)throw new Error("basket_mold_option_invalid");
         return null;
       }
@@ -281,11 +281,11 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
         const p=productsMap.get(productId),stock=stockMap.get(productId)||0;
         return p&&stock>=qty?{product_id:p.id,name:p.name,sku:p.sku,gtin:p.gtin,image_url:p.image_url||"",packaging:p.packaging||"",stock_quantity:stock,price_cents:moldEffectivePriceCents(p)}:null;
       };
-      let selected=selectedId?buildSelected(products,available,selectedId):null;
+      let selected=selectedId&&candidateIds.includes(selectedId)?buildSelected(products,available,selectedId):null;
       // Fill positions omitted from the generated composition using only their own options.
       // For an unavailable saved default, re-read every option only for that position.
       if(!selected&&!selections){
-        if(selectedId){
+        if(selectedId&&candidateIds.includes(selectedId)){
           const [fallbackProducts,fallbackStock]=await Promise.all([moldProductsMap(candidateIds),moldAvailableStockMap(candidateIds)]);
           const fallbacks=candidateIds.map((id:string)=>buildSelected(fallbackProducts,fallbackStock,id)).filter(Boolean) as any[];
           fallbacks.sort((a:any,b:any)=>Number(a.price_cents||0)-Number(b.price_cents||0)||String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));
@@ -293,6 +293,15 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
         }else{
           const fallback=moldFirstAvailableOption(linkedOptions,products,available,qty);
           if(fallback)selected=buildSelected(products,available,String(fallback.id));
+        }
+        // A preview remains useful when every configured option is temporarily unavailable.
+        // The zero basket capacity blocks adding it until the customer adjusts the affected rows.
+        if(!selected&&allowUnavailablePreview){
+          const configured=selectedId&&candidateIds.includes(selectedId)?products.get(selectedId):moldFirstConfiguredOption(linkedOptions,products);
+          if(configured){
+            const id=String(configured.id),stock=available.get(id)||0;
+            selected={product_id:id,name:configured.name,sku:configured.sku,gtin:configured.gtin,image_url:configured.image_url||"",packaging:configured.packaging||"",stock_quantity:stock,price_cents:moldEffectivePriceCents(configured)};
+          }
         }
       }
       if(!selected){if(selections)throw new Error("basket_mold_option_invalid");return null}
@@ -311,7 +320,7 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
       publicAlts.sort((a:any,b:any)=>Number(a.sort_order||0)-Number(b.sort_order||0)||String(a.product_id||"").localeCompare(String(b.product_id||"")));
     }
     if(!selected){if(selections)throw new Error("basket_mold_option_invalid");return null}productTotal+=Math.round(Number(selected.price_cents)*qty);if(qty>0)capacity=Math.min(capacity,Math.floor(Number(selected.stock_quantity||0)/qty));items.push({position_id:pid,label:pos.label,product_id:selected.product_id,name:selected.name,sku:selected.sku,gtin:selected.gtin,image_url:selected.image_url,packaging:selected.packaging,stock_quantity:selected.stock_quantity,base_quantity:qty,quantity:qty,price_cents:selected.price_cents,alternative_count:alts.length,alternatives_loaded:includeAlternatives,alternatives:includeAlternatives?publicAlts:[]})}
-  if(capacity<1)return null;const conditionalHidden=mold.conditional_hidden_enabled===true&&mold.conditional_hidden_product_id&&items.some((i:any)=>String(i.product_id)===String(mold.conditional_hidden_product_id)&&Number(i.quantity??i.base_quantity??0)>0)?cents(mold.conditional_hidden_adjustment||0):0;return {basket:{id:basket.id,name:String(basket.name).replace(/\s+Completa$/i,""),image_url:basket.image_url||"",mold_mode:true,mold_id:mold.id,composition_number:compositionNumber,public_composition_count:Number(mold.public_composition_count||1),hidden_adjustment_cents:cents(mold.hidden_adjustment||0),conditional_hidden_enabled:mold.conditional_hidden_enabled===true,conditional_hidden_product_id:mold.conditional_hidden_product_id||null,conditional_hidden_adjustment_cents:cents(mold.conditional_hidden_adjustment||0),conditional_hidden_applied_cents:conditionalHidden,display_price_cents:Math.max(0,productTotal+cents(mold.hidden_adjustment||0)+conditionalHidden),stock_quantity:capacity},items,extras};
+  if(capacity<1&&!allowUnavailablePreview)return null;const conditionalHidden=mold.conditional_hidden_enabled===true&&mold.conditional_hidden_product_id&&items.some((i:any)=>String(i.product_id)===String(mold.conditional_hidden_product_id)&&Number(i.quantity??i.base_quantity??0)>0)?cents(mold.conditional_hidden_adjustment||0):0;return {basket:{id:basket.id,name:String(basket.name).replace(/\s+Completa$/i,""),image_url:basket.image_url||"",mold_mode:true,mold_id:mold.id,composition_number:compositionNumber,public_composition_count:Number(mold.public_composition_count||1),hidden_adjustment_cents:cents(mold.hidden_adjustment||0),conditional_hidden_enabled:mold.conditional_hidden_enabled===true,conditional_hidden_product_id:mold.conditional_hidden_product_id||null,conditional_hidden_adjustment_cents:cents(mold.conditional_hidden_adjustment||0),conditional_hidden_applied_cents:conditionalHidden,display_price_cents:Math.max(0,productTotal+cents(mold.hidden_adjustment||0)+conditionalHidden),stock_quantity:capacity},items,extras};
 }
 // Read the available brands of one basket position only when requested by the customer.
 function compareMoldPositionOptionOrder(a:any,b:any){return Number(a.sort_order||0)-Number(b.sort_order||0)||String(a.product_id||'').localeCompare(String(b.product_id||''))}
@@ -824,7 +833,7 @@ async function basketBySize(sizeKey:string,lightweight=false){
   const card=(shell.baskets||[]).find((item:any)=>String(item.size_key||"")===key);
   const match=String(card?.card_key||"").match(/^([0-9a-f-]{36})@([1-6])$/i);
   if(!match)return {error:"basket_mold_unavailable",status:404};
-  const detail=await moldDetail(match[1],Number(match[2]),null,!lightweight);
+  const detail=await moldDetail(match[1],Number(match[2]),null,!lightweight,lightweight);
   return detail?{ok:true,...detail}:{error:"basket_mold_unavailable",status:404};
 }
 
