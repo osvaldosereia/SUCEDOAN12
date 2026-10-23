@@ -5,13 +5,21 @@ import vm from 'node:vm';
 const page = fs.readFileSync('index.html', 'utf8');
 const api = fs.readFileSync('supabase/functions/storefront-v2/index.ts', 'utf8');
 
+const selectedProductSource = page.match(/function moldSelectedProduct\(item\)\{[\s\S]*?\n    \}/)?.[0];
+const itemStockSource = page.match(/function moldItemStock\(item\)\{[\s\S]*?\n    \}/)?.[0];
 const availabilitySource = page.match(/function moldDraftAvailableBasketCount\(d\)\{[\s\S]*?\n    \}/)?.[0];
-assert.ok(availabilitySource, 'public basket draft recalculates stock after an item change');
+assert.ok(selectedProductSource && itemStockSource && availabilitySource, 'public basket draft reconciles the selected SKU stock after alternatives load');
 const compileAvailability = remainingStock => vm.runInNewContext(
-  `(${availabilitySource.replace('function moldDraftAvailableBasketCount', 'function')})`,
+  `(()=>{ ${selectedProductSource}; ${itemStockSource}; ${availabilitySource}; return moldDraftAvailableBasketCount; })()`,
   { remainingStock },
 );
 const availableBaskets = compileAvailability((_id, _index, fallback) => fallback);
+assert.equal(availableBaskets({ items: [
+  { product_id: 'selected', quantity: 1, stock_quantity: 0, alternatives: [{ product_id: 'selected', stock_quantity: 24 }] },
+] }), 24, 'fresh stock for the selected SKU unlocks a draft even when the initial basket snapshot was stale');
+assert.equal(availableBaskets({ items: [
+  { product_id: 'selected', quantity: 1, stock_quantity: 80, alternatives: [{ product_id: 'selected', stock_quantity: 0 }] },
+] }), 0, 'fresh selected SKU stock still blocks a truly unavailable item');
 assert.equal(availableBaskets({ items: [
   { product_id: 'out', quantity: 2, stock_quantity: 0 },
   { product_id: 'in', quantity: 2, stock_quantity: 80 },
@@ -33,6 +41,9 @@ assert.match(page, /quantity:Number\(x\.quantity\|\|0\)/, 'draft quantities, inc
 assert.match(page, /basket_mold_options_batch/, 'visible option rows load through the batched endpoint');
 assert.match(page, /syncMoldDraftAvailability\(d\)/, 'editing or removing items refreshes basket availability');
 
+const moldCheckout = page.slice(page.indexOf('function checkoutMoldBlock(item,itemIndex){'), page.indexOf('function checkoutBasketBlock(item,itemIndex){'));
+assert.ok(moldCheckout.length > 0, 'mold basket has a dedicated checkout summary');
+assert.doesNotMatch(moldCheckout, /c\.label/, 'checkout does not show stale internal position labels as if they were selected products');
 const checkout = page.slice(page.indexOf('async function validateMoldCartBeforeCheckout(){'), page.indexOf('\n    }', page.indexOf('async function validateMoldCartBeforeCheckout(){')) + 6);
 assert.match(checkout, /quantity:Number\(component\.quantity\|\|0\)/, 'checkout quote validates the customer-edited quantities');
 assert.match(checkout, /lightweight:true/, 'checkout validation reads only the selected products');
