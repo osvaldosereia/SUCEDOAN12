@@ -3,6 +3,18 @@
 > Aprovado para implantação segura em 2026-09-25. Executar por homologação, shadow/canary e rollback; não fazer big-bang.
 > Atualizado em 2026-10-23 após validação do estado real no GitHub, site em uso e Supabase.
 
+### Conclusão R15 — Admin1: aposentar proxy sem consumidores — 2026-10-23 02:18 UTC
+
+- Base de código revalidada: `main` em `5b08618085415eef5fe7119ed183436ec4669fdc`; PR #1269 já está integrada. O Admin continua em `/vitrine/admin/`.
+- PR #1308 foi integrada em `5b08618` e aposentou apenas `admin1-legacy-catalog-read-v1` no projeto separado `xaoeldjuxzsdsblimzxo`. O proxy agora retorna 410 sem consultar o upstream; OPTIONS preserva 204/CORS. O endpoint canônico `admin1-products-read-v1` v4 em `ssbesxgaijknwsjbsbcz` foi preservado por tráfego histórico sem caller atribuído.
+- CI dedicado da PR #1308 (#39888361655) e do commit de merge (#39888434036) passaram; Pages #39888433617 passou; 46/46 checks de `main` verdes. Smoke read-only confirmou homepage `/`, Admin `/vitrine/admin/` e resposta 410 da função aposentada. Evidência detalhada, arquivos/commits e rollback em HANDOFF.
+- Deploy aplicado somente ao projeto `xaoeldjuxzsdsblimzxo`, versão 3/hash `5f9d03ed30d6b5d125de6693b82a7e86c154148cfd2baee292ffa1a3731d4ae6`. Nenhuma migration, dado, grant, policy, configuração ou função do projeto canônico foi alterada; advisors não se aplicam.
+- Reversão: revert do squash #1308 e reimplante da versão anterior do proxy no projeto xao, conforme revisão `f50aeb7`; sem rollback de banco.
+
+### Próxima tarefa exata
+
+Após 2026-10-23 20:00:29 UTC, agregar uma janela completa de 24h dos logs de `admin1-products-read-v1` v4 no projeto canônico e atribuir chamadas por ação/contexto sem payload/PII; manter a função até resolver consumidores históricos. Após 2026-10-24 02:14:07 UTC, medir 24h completos do proxy legado v3 e verificar se houve chamadas além do GET de smoke; manter 410 enquanto a origem de qualquer chamada não estiver esclarecida. A publicação da telemetria R13 segue bloqueada pela renovação de `SUPABASE_ACCESS_TOKEN` (#39848977831), sem substituição por outra credencial.
+
 ### Conclusão R14 — 2026-10-23 01:30 UTC
 
 - Main de código: `727c44cd1bc86ae9395235f3979ab03caa2c0483`. PR #1301 (squash `daa0f9e`) alinhou `firstCestasMs` ao marco `da-home-size-cards` e os contratos/browser aos cinco tamanhos sem preço/contagem inicial. Oito checks da PR passaram e 48/48 workflows pós-merge passaram; Pages #39883669088 publicou o SHA `daa0f9e`.
