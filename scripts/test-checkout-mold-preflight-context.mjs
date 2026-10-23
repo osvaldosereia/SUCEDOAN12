@@ -8,7 +8,7 @@ const end = site.indexOf('\n    async function sendWhatsApp()', start);
 assert.notEqual(end, -1, 'checkout preflight function must have a clear boundary');
 const preflight = site.slice(start, end);
 
-assert.doesNotMatch(preflight, /basketApi\\(d,/, 'checkout preflight must not use the basket editor variable d outside its scope');
-assert.match(preflight, /api\\(['"]basket_mold_quote['"]/, 'checkout preflight must send the basket quote request directly');
+assert.ok(!preflight.includes('basketApi(d,'), 'checkout preflight must not use the basket editor variable d outside its scope');
+assert.ok(preflight.includes("api('basket_mold_quote'"), 'checkout preflight must send the basket quote request directly');
 
 console.log('checkout basket preflight uses an in-scope API request: ok');
