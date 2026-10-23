@@ -23,11 +23,11 @@ assert.match(region,/if\(!canPatch\)\{[\s\S]*observeOffers\(\)/,'existing loaded
 assert.match(region,/function syncHomeBasketGroups\(host,records\)/);
 assert.match(page,/BasketCarousel\.card\(b,esc,money,basketName,index\)/,'card must receive global image index');
 
-const start=page.indexOf('const homeSubgroupSignatures=');
-const end=page.indexOf('function fragmentElement(',start);
+const start=page.indexOf('const BASKET_SIZE_DISPLAY_ORDER=');
+const end=page.indexOf('function renderHome()',start);
 assert.ok(start>=0&&end>start);
-const groupFactory=new Function('basketCard',page.slice(start,end)+'return homeBasketGroupRecords;');
-const records=groupFactory((b,i)=>'<article data-card="'+b.id+'" data-index="'+i+'"></article>');
+const groupFactory=new Function('esc','basketCard',page.slice(start,end)+'return homeBasketGroupRecords;');
+const records=groupFactory(v=>String(v).replaceAll('&','&amp;').replaceAll('"','&quot;'),(b,i)=>'<article data-card="'+b.id+'" data-index="'+i+'"></article>');
 const grande={id:'large',name:'Grande'};
 const mini={id:'small',name:'Mini'};
 const initial=[{id:'complete',name:'Cestas Completas',subcategories:[grande]}];
@@ -99,10 +99,11 @@ const fakeDocument={createElement(type){
   return element;
 }};
 const carouselSpy={mountCalls:0,mount(){this.mountCalls++}};
-const domFunctions=page.slice(page.indexOf('const homeSubgroupSignatures='),page.indexOf('function renderHome(){'));
-const runtime=new Function('document','section','basketCard','BasketCarousel','openBasket',domFunctions+'return {homeBasketGroupRecords,syncHomeBasketGroups};')(
+const domFunctions=page.slice(start,end);
+const runtime=new Function('document','section','esc','basketCard','BasketCarousel','openBasket','homeSubgroupSignatures',domFunctions+'return {homeBasketGroupRecords,syncHomeBasketGroups};')(
   fakeDocument,(name,subtitle,content)=>'<section class="section"><h2>'+name+'</h2>'+content+'</section>',
-  (basket,index)=>'<article data-index="'+index+'">'+basket.name+'</article>',carouselSpy,()=>{}
+  v=>String(v).replaceAll('&','&amp;').replaceAll('"','&quot;'),
+  (basket,index)=>'<article data-index="'+index+'">'+basket.name+'</article>',carouselSpy,()=>{},new WeakMap()
 );
 const host=new TestElement('host');
 runtime.syncHomeBasketGroups(host,runtime.homeBasketGroupRecords([largeBasket],initial));
