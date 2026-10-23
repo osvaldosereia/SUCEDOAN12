@@ -21,9 +21,16 @@ assert.match(src,/async function moldQuote\(/,'checkout quote remains dynamic');
 assert.match(src,/async function submit\(/,'order submission remains dynamic');
 assert.match(src,/offer_priority:p\.metadata\?\.offer_source/,'expiry offers must remain enabled');
 
-const fns=src.slice(src.indexOf('function isValidPublicHome('),src.indexOf('function keepHomeInMemory('))
-  .replace(/:any\b|:boolean\b/g,'')
-  .replace(/\s+as any\b/g,'');
+const validHomeStart=src.indexOf('function isValidPublicHome(');
+const sizeCardsStart=src.indexOf('async function homeSizeCards(',validHomeStart);
+const priorityStart=src.indexOf('function priorityFromPublicHome(',sizeCardsStart);
+const keepHomeStart=src.indexOf('function keepHomeInMemory(',priorityStart);
+assert.ok(validHomeStart>=0&&sizeCardsStart>validHomeStart,'isolate home validation from the TypeScript endpoint');
+assert.ok(priorityStart>sizeCardsStart&&keepHomeStart>priorityStart,'isolate the pure priority selector from cache and database code');
+const fns=[
+  src.slice(validHomeStart,sizeCardsStart),
+  src.slice(priorityStart,keepHomeStart)
+].join('\n').replace(/:any\b|:boolean\b/g,'');
 assert.ok(fns.includes('function priorityFromPublicHome'),'extract the same production priority selector');
 const pure=vm.runInNewContext(fns+';({isValidPublicHome,priorityFromPublicHome})');
 const full={
