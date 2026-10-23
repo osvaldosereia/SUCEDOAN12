@@ -11,7 +11,7 @@ assert.match(capture,/function liveCheckoutPhone\(/,'order follow-up must read t
 assert.match(capture,/function validateCheckoutBasics\(/,'checkout must keep operational validation');
 assert.doesNotMatch(capture,/body\.checkout_registration|checkoutDocumentRequired|registrationDraftComplete/,'registration must not be injected into order submission');
 assert.match(storefront,/Finalize sem preencher o cadastro/,'checkout must explain registration can be completed later');
-assert.match(storefront,/confirmamos tudo pelo WhatsApp depois do pedido/i,'checkout must explain the manual follow-up channel');
+assert.match(storefront,/confirma tudo pelo WhatsApp depois do pedido/i,'checkout must explain the manual follow-up channel');
 assert.doesNotMatch(storefront,/id=\\"?checkout(Document|Street|Number|Neighborhood|City|Name)\\?"?/,'checkout must not show registration fields as an order prerequisite');
 assert.match(cadastro,/customer_register/,'the separate registration page must remain available');
 assert.match(cadastro,/Nome completo/,'customers may still complete their registration separately');
