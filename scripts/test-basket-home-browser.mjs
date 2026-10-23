@@ -42,6 +42,14 @@ try{
    const u=new URL(route.request().url());
    if(u.pathname.includes('/functions/v1/storefront-v2')){
      const action=u.searchParams.get('action');storefrontActions.push(action);
+     if(action==='home_size_cards'){
+       const sizeCards=homeNames.map((name,index)=>{
+         const id=index===1?offered.id:'00000000-0000-4000-8000-'+String(index+1).padStart(12,'0');
+         const sizeKey=name==='Média'?'media':name.toLocaleLowerCase('pt-BR');
+         return {id,card_key:id+'@1',name,model_name:name,size_key:sizeKey,size_card:true,home_shell:true,mold_mode:true,category_id:'cat',category_name:'Cestas Completas',category_slug:'cestas-completas',subcategory_id:'sub-'+sizeKey,subcategory_name:name};
+       });
+       return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,home_size_cards:true,baskets:sizeCards,categories:[],basket_categories:[{id:'cat',slug:'cestas-completas',name:'Cestas Completas',subcategories:sizeCards.map(card=>({id:card.subcategory_id,category_id:'cat',name:card.name}))}]})});
+     }
      if(action==='basket_by_size'){
        const sizeKey=u.searchParams.get('size_key');
        assert.ok(u.searchParams.get('trace_id'),'cold size resolution carries a trace ID');
@@ -82,11 +90,12 @@ try{
  assert.equal(await app.locator('.nav-shell').isVisible(),false);
  assert.equal(await app.locator('#globalSearchInput').getAttribute('placeholder'),'O que você precisa hoje?');
  assert.equal(await app.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
- assert.equal(storefrontActions.includes('home_size_cards'),false,'cold homepage must render cards without waiting for basket API data');
+ assert.equal(storefrontActions.includes('home_size_cards'),true,'cold homepage resolves lightweight basket IDs after rendering the shell');
  await app.getByRole('button',{name:'Ver produtos da cesta Mini',exact:true}).click();
- assert.ok(basketDetailRequests.some(call=>call.sizeKey==='mini'||call.basketId===offered.id+'@1'),'the clicked size resolves through one stock-sensitive detail request');
- assert.equal(storefrontActions.includes('home_size_cards'),false,'basket opening does not wait for a separate browser size-ID request');
  await app.locator('#addBasket').waitFor();
+ assert.ok(basketDetailRequests.some(call=>call.basketId===offered.id+'@1'),'the clicked size opens through the direct canonical detail route');
+ assert.equal(storefrontActions.filter(action=>action==='home_size_cards').length,1,'basket opening reuses the single lightweight size-ID request');
+ assert.equal(basketDetailRequests.some(call=>call.action==='basket_by_size'),false,'the normal home flow skips the redundant size resolver');
  assert.ok((await app.locator('#sheetBody').innerText()).includes('Produto 1'),'clicking a static size card loads its basket products');
  await app.locator('#closeSheet').click();
  assert.equal(await app.locator('#homeOffersMount').count(),1);

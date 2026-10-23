@@ -32,13 +32,16 @@ try{
  const offered={...basket,total_item_count:basket.carousel_items.length,id:'11111111-1111-4111-8111-111111111111',lot_id:'22222222-2222-4222-8222-222222222222',stock_quantity:10,category_id:'cat',subcategory_id:'sub',category_slug:'cestas-completas',category_name:'Cestas Completas'};
  const homeSizeNames=['Econômica','Mini','Pequena','Média','Grande'];
  const homeSizeKeys=['economica','mini','pequena','media','grande'];
- const homeSizeBaskets=homeSizeNames.map((name,index)=>({...offered,id:'basket-'+index,name,size_key:homeSizeKeys[index],subcategory_id:'sub-'+index}));
+ const homeSizeBaskets=homeSizeNames.map((name,index)=>{const id=index===1?offered.id:'00000000-0000-4000-8000-'+String(index+1).padStart(12,'0');return {...offered,id,card_key:id+'@1',name,size_key:homeSizeKeys[index],subcategory_id:'sub-'+index,home_shell:true,mold_mode:true}});
  const homeSizeSubcategories=homeSizeNames.map((name,index)=>({id:'sub-'+index,name}));
  const storefrontActions=[];
+ let releaseHomeSizeCards;
+ const homeSizeCardsGate=new Promise(resolve=>{releaseHomeSizeCards=resolve});
  await app.route('**/*',async route=>{
    const u=new URL(route.request().url());
    if(u.pathname.includes('/functions/v1/storefront-v2')){
      const action=u.searchParams.get('action');storefrontActions.push(action);
+     if(action==='home_size_cards')await homeSizeCardsGate;
      const response=action==='basket_by_size'?{ok:true,basket:offered,items:offered.carousel_items.map(x=>({...x,base_quantity:x.quantity,stock_quantity:100}))}:action==='home_size_cards'?{ok:true,priority:false,home_size_cards:true,baskets:homeSizeBaskets,basket_categories:[{id:'cat',slug:'cestas-completas',name:'Cestas Completas',subcategories:homeSizeSubcategories},{id:'food',slug:'cestas-so-alimentos',name:'Cestas Só Alimentos',subcategories:[]},{id:'kits',slug:'kits-promocionais',name:'Kits Promocionais',subcategories:[]}],categories:[]}:action==='home'||action==='home_priority'?{ok:true,priority:action==='home_priority',baskets:[offered],basket_categories:[{id:'cat',slug:'cestas-completas',name:'Cestas Completas',subcategories:[{id:'sub',name:'Grande'}]},{id:'food',slug:'cestas-so-alimentos',name:'Cestas Só Alimentos',subcategories:[]},{id:'kits',slug:'kits-promocionais',name:'Kits Promocionais',subcategories:[]}],categories:[]}:action==='basket'?{ok:true,basket:offered,items:offered.carousel_items.map(x=>({...x,base_quantity:x.quantity,stock_quantity:100}))}:{ok:true,offers:[]};
      return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify(response)});
    }
@@ -47,7 +50,7 @@ try{
    if(u.pathname.endsWith('.js'))return route.fulfill({contentType:'application/javascript',body:''});
    return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="100" height="130"/>'});
  });
- await app.goto('https://app.test/');await app.locator('.basket-size-card-photo img').first().waitFor({timeout:10000}).catch(async error=>{throw new Error('home image did not render: '+JSON.stringify({errors,body:await app.locator('body').innerText(),cause:error.message}))});assert.equal(storefrontActions.includes('home_size_cards'),false,'cold homepage renders before requesting basket data');
+ await app.goto('https://app.test/');await app.locator('.basket-size-card-photo img').first().waitFor({timeout:10000}).catch(async error=>{throw new Error('home image did not render: '+JSON.stringify({errors,body:await app.locator('body').innerText(),cause:error.message}))});assert.equal(storefrontActions.includes('home_size_cards'),true,'cold shell starts one lightweight size-key resolution after the initial render');assert.equal(storefrontActions.some(action=>['basket','basket_by_size'].includes(action)),false,'basket detail and stock checks do not block the initial shell');
  
  assert.equal(await app.getByRole('heading',{name:'Cestas Completas',exact:true}).count(),1,'lightweight home shows the complete-basket size group');
  assert.equal(await app.getByRole('heading',{name:'Cestas Só Alimentos',exact:true}).count(),0,'lightweight home response contains only the complete-basket size group');
@@ -57,7 +60,8 @@ try{
  assert.equal(await app.locator('.basket-size-card-photo img').count(),5,'the homepage renders all five lightweight basket size cards');
  assert.deepEqual(await app.locator('.basket-card-title').allTextContents(),homeSizeNames,'the homepage preserves the five configured basket sizes in order');
  for(const size of homeSizeNames)assert.equal(await app.getByRole('button',{name:'Ver produtos da cesta '+size,exact:true}).count(),1,'every size has a product action: '+size);
- await app.getByRole('button',{name:'Ver produtos da cesta Mini',exact:true}).click();assert.ok(storefrontActions.includes('basket_by_size'),'opening a size card resolves its detail in one request');assert.equal(storefrontActions.includes('home_size_cards'),false,'opening a size card skips the separate ID lookup');await app.locator('#addBasket').waitFor();
+ releaseHomeSizeCards();
+ await app.getByRole('button',{name:'Ver produtos da cesta Mini',exact:true}).click();await app.locator('#addBasket').waitFor();assert.ok(storefrontActions.includes('basket'),'opening a size card loads the canonical direct detail route');assert.equal(storefrontActions.includes('basket_by_size'),false,'normal opening skips the redundant size lookup');assert.equal(storefrontActions.filter(action=>action==='home_size_cards').length,1,'opening reuses the one lightweight size-key resolution');
  assert.ok((await app.locator('#sheetBody').innerText()).includes('Produto 1'));assert.deepEqual(errors,[]);
  assert.match(html,/firstCestasMs:performance\.getEntriesByName\('da-home-size-cards'\)/,'home cards use the current performance marker');
  assert.ok(html.includes('BasketCarousel.mount('),'canonical root mounts the basket carousel');
