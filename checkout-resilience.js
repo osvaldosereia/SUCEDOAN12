@@ -27,7 +27,7 @@
     const ddd=digits(field('checkoutDdd'),2);let mobile=digits(field('checkoutPhone'),9);if(mobile.length===8)mobile='9'+mobile;
     const valid=ddd.length===2&&mobile.length===9&&mobile.startsWith('9');return {ddd,mobile,valid,full:valid?'+55'+ddd+mobile:''};
   }
-  function injectCheckoutStyles()  function injectCheckoutStyles(){
+  function injectCheckoutStyles(){
     if(byId('daCheckoutRequiredStyles')||!document.head)return;
     const style=document.createElement('style');
     style.id='daCheckoutRequiredStyles';
@@ -108,7 +108,7 @@
     const minimumNotice=[...body.querySelectorAll('.rule-notice')].find(x=>/Pedido mínimo/i.test(String(x.textContent||'')));if(minimumNotice&&!minimumNotice.classList.contains('warn'))minimumNotice.remove();
     const waHeading=checkoutHeading(body,/WhatsApp/i),dateHeading=checkoutHeading(body,/Data de entrega/i),paymentHeading=checkoutHeading(body,/Como você vai pagar/i),waBox=body.querySelector('.wa-lookup');
     if(waHeading&&waBox){const sec=makeSection('WhatsApp (obrigatório)','', 'whatsapp');waHeading.parentNode.insertBefore(sec,waHeading);waHeading.remove();sec.appendChild(waBox);setupUnifiedWhatsapp(waBox)}
-    if(dateHeading){    if(dateHeading){const sec=makeSection('Data de entrega (obrigatória)','', 'date');dateHeading.parentNode.insertBefore(sec,dateHeading);dateHeading.remove();const select=byId('checkoutDeliveryDate'),label=select?.closest('label'),note=label?.nextElementSibling;if(label){sec.appendChild(label);appendRequired(label)}setupDateChoices(sec,select,label);if(note?.classList?.contains('note'))note.remove()}
+    if(dateHeading){const sec=makeSection('Data de entrega (obrigatória)','', 'date');dateHeading.parentNode.insertBefore(sec,dateHeading);dateHeading.remove();const select=byId('checkoutDeliveryDate'),label=select?.closest('label'),note=label?.nextElementSibling;if(label){sec.appendChild(label);appendRequired(label)}setupDateChoices(sec,select,label);if(note?.classList?.contains('note'))note.remove()}
     if(paymentHeading){const sec=makeSection('Pagamento na entrega (obrigatório)','', 'payment');paymentHeading.parentNode.insertBefore(sec,paymentHeading);paymentHeading.remove();const payments=body.querySelector('.payments'),note=payments?.nextElementSibling;if(payments)sec.appendChild(payments);if(note?.classList?.contains('note'))note.remove()}
     setupCheckoutFooter();body.querySelectorAll('input,select').forEach(el=>{const clear=()=>clearFieldError(el);el.addEventListener('input',clear);el.addEventListener('change',clear)});
   }
@@ -131,7 +131,7 @@
     if(!document.querySelector?.('input[name="payment"]:checked'))issues.push(issue('payment','Escolha como vai pagar na entrega.','payment'));
     return {ok:issues.length===0,issues};
   }
-  function markIssue(  function markIssue(item){
+  function markIssue(item){
     if(item.id==='payment'){const sec=document.querySelector?.('[data-da-section="payment"]');sec?.classList.add('da-section-invalid');return sec}
     if(item.id==='checkoutDeliveryDate'){const sec=document.querySelector?.('[data-da-section="date"]');sec?.classList.add('da-section-invalid');return sec?.querySelector?.('.da-date-options')||sec}
     const el=byId(item.target);if(!el)return null;
