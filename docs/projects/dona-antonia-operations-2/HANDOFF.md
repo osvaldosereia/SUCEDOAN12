@@ -1,3 +1,17 @@
+## Checkpoint R24 — janela incremental Admin1 e smoke somente leitura — 2026-10-23 09:06:00 UTC
+
+- Base revalidada: `main` `3223dc4c5b1e17a8ec2b9981803f7ad67a5f9ecb`; PR #1327/R23 está merged. Há 42 workflows associados ao merge, 41 success e nenhum failure; `Basket product carousel` (run #39928928242) ainda estava in progress. A busca de branches/PRs não localizou trabalho Admin1 novo aberto para integrar.
+- No intervalo contíguo 09:00:54–09:06:00 UTC, consultas agregadas em allowlist por `function_id`, versão, método HTTP e status retornaram zero linhas para `admin1-products-read-v1` no canônico e `admin1-legacy-catalog-read-v1` no projeto separado. Não foram consultados payloads, headers, IP, URL/query, nem dados de clientes.
+- Supabase: `ssbesxgaijknwsjbsbcz` e `xaoeldjuxzsdsblimzxo` permanecem ACTIVE_HEALTHY. A função canônica `admin1-products-read-v1` segue ACTIVE v5 (SHA `6a2c730ddbab268c0f95c4b08a9a3f443bbfa8bf8745584ed21dd2cbd8f7aa51`); o proxy separado `admin1-legacy-catalog-read-v1` segue ACTIVE v3 (SHA `5f9d03ed30d6b5d125de6693b82a7e86c154148cfd2baee292ffa1a3731d4ae6`). Ambas continuam respondendo 410 e foram preservadas. `admin-service-intelligence-v1` permanece v377, SHA `543b00c23a468f361ce00c63a4ee81a537daed1a7e6f14cce33082e0676f5bb3`.
+- Check local `python3 scripts/build-vitrine-admin-runtime.py --check`: passou — 9 fragmentos, 638.778 caracteres. Checkout com alterações anteriores preservadas: branch `agent/admin-runtime-contract-tests`, HEAD `fdad74b683d461b8581074f2c139332123cf5728`.
+- Smoke read-only atual em `https://donaantonia.com.br/` e `https://donaantonia.com.br/vitrine/admin/`: cinco cartões de cesta, quatro ofertas, carrinho vazio (`0 itens · R$ 0,00`); Central e navegação do Admin carregaram. Rotas preservadas. Nenhum pedido, mensagem, chamada de estoque/Bling, emissão fiscal, pagamento ou outro efeito de negócio.
+- Esta rodada altera apenas HANDOFF e roadmap na branch `agent/admin1-observation-r24-0906-20261023`, criada da main 3223dc4c5b1e17a8ec2b9981803f7ad67a5f9ecb. Nenhuma migration, função, configuração, policy, grant ou dado foi alterado em Supabase; nenhum deploy de runtime, Pages ou Supabase foi executado. Sem necessidade de rollback de aplicação; rollback documental é reverter o merge da PR correspondente.
+- R13 segue sem publicação: a última tentativa autorizada falhou no secret inválido `SUPABASE_ACCESS_TOKEN` (run #39848977831); permanece necessária a renovação pelo proprietário. Sem credencial alternativa ou nova tentativa de deploy.
+
+### Próxima tarefa exata
+
+Após 2026-10-24 02:14:07.824 UTC, fechar a janela de 24h de `admin1-legacy-catalog-read-v1`, excluindo somente o GET 410 de smoke identificado às 02:15:44.718 UTC e atribuindo qualquer outro caller. Após 03:20:07.529 UTC, fechar a janela de `admin1-products-read-v1` e atribuir qualquer caller. Manter ambos em 410 até a análise. Em paralelo, publicar R13 pelo fluxo normal somente quando o proprietário renovar `SUPABASE_ACCESS_TOKEN`; confirmar versão/hash antes de avaliar outcomes/502.
+
 # Dona Antônia Operations 2.0 — HANDOFF
 
 ## Checkpoint R23 — observação Admin1 e smoke somente leitura — 2026-10-23 09:00:54 UTC
