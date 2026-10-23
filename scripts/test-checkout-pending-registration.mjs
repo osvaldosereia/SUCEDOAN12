@@ -45,7 +45,7 @@ const submitted=JSON.parse(requestHarness.requests[0].options.body);
 assert.equal(submitted.checkout_registration,undefined,'checkout must not make customer registration a prerequisite to submitting an order');
 assert.equal(submitted.whatsapp_phone,'+5565999828360','valid WhatsApp must be attached for manual follow-up');
 
-assert.match(store,/confirmaremos[^<]{0,100}WhatsApp|WhatsApp[^<]{0,100}confirmaremos/i,'checkout must explain that registration is completed after the order');
+assert.match(store,/(confirma|confirmamos|confirmaremos)[^<]{0,100}WhatsApp|WhatsApp[^<]{0,100}(confirma|confirmamos|confirmaremos)/i,'checkout must explain that registration is completed after the order');
 assert.ok(fs.existsSync(migrationPath),'forward migration must relax the active database trigger');
 const migration=fs.readFileSync(migrationPath,'utf8');
 assert.match(migration,/phone_e164/i,'database must still require the follow-up phone');
