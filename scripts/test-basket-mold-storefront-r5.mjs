@@ -107,7 +107,7 @@ assert.match(api,/alternatives_loaded:false,alternatives:\[\]/,'lightweight resp
 assert.match(api,/action==="basket_mold_options"/,'separate lazy options route');
 assert.match(root,/lightweight:1/,'initial basket request uses small payload');
 assert.match(root,/lightweight:true/,'quote request uses small payload');
-assert.match(root,/await api\('basket_mold_options'/,'alternative products are fetched on demand');
+assert.match(root,/await (?:api|basketApi)\('basket_mold_options'/,'alternative products are fetched on demand');
 assert.doesNotMatch(api,/randomized=alts\.slice/,'API must not randomize price ordering');
 
 console.log('basket mold storefront R5: PASS');
