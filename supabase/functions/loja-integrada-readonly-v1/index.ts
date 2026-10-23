@@ -1,7 +1,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-// Ponte inicial isolada da Loja Integrada. SOMENTE LEITURA.
-// Restrita ao service_role do Supabase (nunca utilizar no navegador).
+/**
+ * Dona Antônia: Loja Integrada API v1, server-to-server, SOMENTE LEITURA.
+ * Proibido expor service_role e personal token no frontend, logs ou respostas.
+ * Apenas endpoints fixos; não há proxy genérico, webhook nem escrita.
+ */
 const BASE = "https://api.awsli.com.br";
 const headers = {
   "Content-Type": "application/json; charset=utf-8",
@@ -13,66 +16,89 @@ function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers });
 }
 
-function clampInt(value: string | null, fallback: number, max: number): number {
-  if (!value) return fallback;
-  const num = Number(value);
-  return Number.isSafeInteger(num) && num >= 0 ? Math.min(num, max) : fallback;
+function boundedInteger(raw: string | null, fallback: number, min: number, max: number): number {
+  if (!raw) return fallback;
+  const parsed = Number(raw);
+  return Number.isSafeInteger(parsed) && parsed >= min && parsed <= max ? parsed : fallback;
+}
+
+function safeProductId(raw: string | null): string | null {
+  return raw && /^[1-9][0-9]{0,14}$/.test(raw) ? raw : null;
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method !== "GET") return json({ error: "method_not_allowed" }, 405);
+  if (req.method !== "GET") return json({ ok: false, error: "method_not_allowed" }, 405);
 
-  // Supabase Gateway also verifies the Authorization JWT (verify_jwt=true).
-  // Explicit secret comparison additionally denies ordinary user/anon JWTs.
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!serviceKey || req.headers.get("authorization") !== `Bearer ${serviceKey}`) {
-    return json({ error: "forbidden" }, 403);
+  // Gateway JWT obrigatório (deploy verify_jwt=true). O check abaixo evita
+  // permitir JWT comum de cliente: somente chamada servidor→servidor.
+  const serverKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const supplied = req.headers.get("authorization");
+  if (!serverKey || supplied !== `Bearer ${serverKey}`) {
+    return json({ ok: false, error: "forbidden" }, 403);
   }
 
-  const secret = Deno.env.get("LI_PERSONAL_TOKEN")?.trim();
-  if (!secret) return json({ ok: false, error: "li_token_not_configured" }, 503);
+  const personalToken = Deno.env.get("LI_PERSONAL_TOKEN")?.trim();
+  if (!personalToken) return json({ ok: false, error: "li_token_not_configured" }, 503);
 
-  const path = new URL(req.url);
-  const action = path.searchParams.get("action") ?? "status";
-  const endpoints: Record<string, string> = {
-    status: "/v1/produto",
-    products: "/v1/produto",
-    categories: "/v1/categoria",
-  };
-  const route = endpoints[action];
-  if (!route) return json({ error: "unsupported_action" }, 400);
+  const url = new URL(req.url);
+  const action = url.searchParams.get("action") ?? "status";
+  const productId = safeProductId(url.searchParams.get("id"));
+  let endpoint: string;
 
-  const limit = action === "status" ? 1 : Math.max(1, clampInt(path.searchParams.get("limit"), 10, 30));
-  const offset = clampInt(path.searchParams.get("offset"), 0, 1000000);
-  const upstream = new URL(route, BASE);
-  upstream.searchParams.set("limit", String(limit));
-  upstream.searchParams.set("offset", String(offset));
+  switch (action) {
+    case "status":
+    case "products": endpoint = "/v1/produto"; break;
+    case "categories": endpoint = "/v1/categoria"; break;
+    case "product": endpoint = productId ? `/v1/produto/${productId}` : ""; break;
+    case "stock": endpoint = productId ? `/v1/produto_estoque/${productId}` : ""; break;
+    case "price": endpoint = productId ? `/v1/produto_preco/${productId}` : ""; break;
+    default: return json({ ok: false, error: "unsupported_action" }, 400);
+  }
+  if (!endpoint) return json({ ok: false, error: "invalid_product_id" }, 400);
+
+  const upstream = new URL(endpoint, BASE);
+  if (["status", "products", "categories"].includes(action)) {
+    upstream.searchParams.set("limit", String(action === "status" ? 1 : boundedInteger(url.searchParams.get("limit"), 10, 1, 30)));
+    upstream.searchParams.set("offset", String(action === "status" ? 0 : boundedInteger(url.searchParams.get("offset"), 0, 0, 1000000)));
+  }
+  if (action === "products" && url.searchParams.has("sku")) {
+    const sku = url.searchParams.get("sku")?.trim() ?? "";
+    if (!sku || sku.length > 80 || !/^[a-zA-Z0-9_.-]+$/.test(sku)) {
+      return json({ ok: false, error: "invalid_sku" }, 400);
+    }
+    upstream.searchParams.set("sku", sku);
+  }
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10000);
   try {
-    const tokenValue = secret.startsWith("Basic ") ? secret.substring(6).trim() : secret;
-    const res = await fetch(upstream, {
+    const authValue = personalToken.replace(/^Basic\s+/i, "");
+    const response = await fetch(upstream, {
       method: "GET",
-      headers: {
-        "Authorization": `Basic ${tokenValue}`,
-        "Accept": "application/json",
-      },
+      headers: { "Authorization": `Basic ${authValue}`, "Accept": "application/json" },
       signal: controller.signal,
       redirect: "error",
     });
-    if (!res.ok) {
-      // Do not leak upstream response body; it may contain operational data.
-      return json({ ok: false, error: "li_api_error", upstream_status: res.status }, 502);
+    if (!response.ok) {
+      // Não registrar corpo upstream; nunca vazar chaves/cadastros.
+      return json({ ok: false, error: "loja_integrada_api_error", upstream_status: response.status }, 502);
     }
-    const payload: unknown = await res.json();
+    const data: unknown = await response.json();
     if (action === "status") {
-      const data = payload as { meta?: { total_count?: number } };
-      return json({ ok: true, service: "loja_integrada", mode: "read_only", product_count: data?.meta?.total_count ?? null });
+      const result = data as { meta?: { total_count?: number } };
+      return json({
+        ok: true,
+        service: "loja_integrada",
+        mode: "read_only",
+        products: typeof result?.meta?.total_count === "number" ? result.meta.total_count : null,
+      });
     }
-    return json({ ok: true, mode: "read_only", data: payload });
+    return json({ ok: true, mode: "read_only", data });
   } catch (error) {
-    return json({ ok: false, error: error instanceof DOMException && error.name === "AbortError" ? "li_timeout" : "li_request_failed" }, 502);
+    return json({
+      ok: false,
+      error: error instanceof DOMException && error.name === "AbortError" ? "timeout" : "upstream_unavailable",
+    }, 502);
   } finally {
     clearTimeout(timeout);
   }
