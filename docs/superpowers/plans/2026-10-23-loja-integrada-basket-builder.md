@@ -20,6 +20,7 @@
 - Manter a loja nova em manutenção e a página do montador inativa durante configuração/testes; não alterar a loja antiga, domínio ou DNS.
 - Não criar checkout, pedidos, emissão fiscal, estoque sincronizado paralelo, banco paralelo ou extensão paga.
 - Não enviar pedido, executar pagamento ou emitir NF-e de teste; não alterar nem reutilizar os trechos de código existentes da loja.
+- Trabalhar apenas na branch agent/li-basket-builder-design-20261023; não modificar a PR #1357.
 
 ## Review Focus
 
