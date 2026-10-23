@@ -1,3 +1,5 @@
+# Dona Antônia Operations 2.0 — IMPLEMENTATION ROADMAP
+
 ## Checkpoint R25 — limpeza do storefront público — 2026-10-23 10:16 UTC
 
 - Base pré-código `e904b468e666f217bd662ec91ced95c9dfad3f3b`; PR #1330 merged por squash em `9453acd081cec936e2b30ff377bacd87da1c0e5e`. Commits: `afee2482322e72be787d9c9192ed5a1f25f0a6e7`, `2d09902eb3a83335cf02cf5763944356c2fc1777`. PR: https://github.com/osvaldosereia/SUCEDOAN12/pull/1330.
