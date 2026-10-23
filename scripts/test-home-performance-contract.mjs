@@ -29,6 +29,7 @@ vm.runInNewContext(page.slice(helperStart,helperEnd)+'\nglobalThis.homeBasketSub
 const sizeGroup={slug:'cestas-completas',subcategories:['Grande','Econômica','Média','Mini','Pequena'].map((name,id)=>({id:String(id),name}))};
 assert.deepEqual(Array.from(helperContext.homeBasketSubcategories(sizeGroup),sub=>sub.name),['Econômica','Mini','Pequena','Média','Grande'],'home basket sizes must render in the configured order');
 assert.equal(helperContext.normalizeBasketSizeName('Média'),'media','accented size labels must normalize to the carousel key');
+assert.match(page,/const homeSubgroupSignatures\\s*=\\s*new WeakMap\\(\\)/,'incremental homepage updates must initialize subgroup signatures before first render');
 const renderHome=page.slice(page.indexOf('function renderHome(){'),page.indexOf('function paintOffersPage('));
 assert.match(renderHome,/homeSizeCards/,'home rendering must use the size-card payload');
 assert.doesNotMatch(renderHome,/homePartial/,'obsolete partial-catalog branching must not affect the home view');
