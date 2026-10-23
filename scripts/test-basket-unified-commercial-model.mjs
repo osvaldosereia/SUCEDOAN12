@@ -37,7 +37,8 @@ assert.match(backend,/create_basket_commercial_model_v1/,'compatibility backend 
 assert.match(adminUi,/DonaAntoniaBasketAdmin\?\.render/,'admin runtime must delegate the Cestas/Kits page');
 const configTabs=[...section.matchAll(/data-basket-config-tab="([^"]+)"/g)].map(match=>match[1]);
 assert.deepEqual(configTabs,['types','quantities','carousel'],'Cestas must expose only the three requested configuration tabs');
-assert.doesNotMatch(section,/Receitas de kits \\(legado\\)|Cestas do Site|data-basket-advanced/,'replaced basket maintenance must not remain in the new session');
+assert.doesNotMatch(section,/data-basket-advanced|data-basket-config-tab="(?:kits|store)"/,'legacy editors are not exposed as tabs in the new session');
+assert.match(section,/COMPATIBILITY_MODULES/,'legacy operational routes stay internal to the compatibility adapter');
 assert.doesNotMatch(section,/basket_commercial_create|openGuided|DonaAntoniaBasketGuided/,'normal section must not use legacy commercial/guided creation');
 assert.match(storeUi,/Nova cesta/,'external basket workspace must expose one simple create action');
 assert.match(storeUi,/admin-store-baskets-v1/,'external basket workspace must use isolated recipe API');
