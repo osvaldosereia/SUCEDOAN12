@@ -25,8 +25,7 @@ assert.ok(adminRuntime.includes('if(orderCustomerDataPending(o))'),'Próxima aç
 
 for(const [name,html] of [['index.html',root]]){
   assert.ok(html.includes('function basketCard('),`${name}: deve continuar renderizando cartões de cesta`);
-  assert.ok(html.includes('function basketPublicAvailabilityLabel('),`${name}: deve ter regra explícita de disponibilidade pública`);
-  assert.ok(html.includes("function basketPublicAvailabilityLabel(){return ''}"),`${name}: não deve mostrar quantidade numérica de cesta ao cliente`);
+  assert.ok(!html.includes('basketPublicAvailabilityLabel'),`${name}: não deve usar o rótulo legado de disponibilidade pública`);
   assert.ok(html.includes('order_public_url'),`${name}: checkout deve usar o link público curto retornado pelo backend`);
   assert.ok(html.includes('order_public_code'),`${name}: checkout deve exibir o código público curto do pedido`);
 }

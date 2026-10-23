@@ -11,37 +11,39 @@ const inline=[...page.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)?.[1];
 assert.ok(inline,'public inline script must be present');
 new vm.Script(inline,{filename:'index.html'});
 new vm.Script(carousel,{filename:'basket-carousel.js'});
-assert.match(page,/basket-carousel\.js\?v=20261021-price-hierarchy-v1/,'asset URL must invalidate previous cached script');
+assert.match(page,/basket-carousel\.js\?v=20261022-home-shell-v1/,'asset URL must invalidate previous cached script');
 const region=page.slice(page.indexOf('const homeSubgroupSignatures='),page.indexOf('function paintOffersPage()'));
 assert.match(region,/const homeSubgroupSignatures=new WeakMap/);
 assert.match(region,/homeSubgroupSignatures\.get\(subgroup\)!==sub\.signature/,'unchanged subgroups must be reused');
 assert.match(region,/if\(host\.children\[index\]!==sectionNode\)/,'category ordering must be preserved');
 assert.match(region,/if\(changed\)[\s\S]*BasketCarousel\.mount\(host\)/,'only altered sections remount observers');
 assert.match(region,/if\(!canPatch\)\{[\s\S]*content\.innerHTML=homeIntro/,'full page replacement must occur only on fresh navigation');
-assert.match(region,/if\(!state\.homePartial&&existingRemaining\)existingRemaining\.remove\(\)/,'progressive loading placeholder must disappear');
+assert.match(region,/if\(state\.homeSizeCards\)basketGroups=basketGroups\.filter\(group=>group\.slug==='cestas-completas'\)/,'the lightweight home payload renders only complete-basket sizes');
 assert.match(region,/if\(!canPatch\)\{[\s\S]*observeOffers\(\)/,'existing loaded offers must not be reloaded on catalog updates');
 assert.match(region,/function syncHomeBasketGroups\(host,records\)/);
 assert.match(page,/BasketCarousel\.card\(b,esc,money,basketName,index\)/,'card must receive global image index');
 
-const start=page.indexOf('const homeSubgroupSignatures=');
-const end=page.indexOf('function fragmentElement(',start);
+const start=page.indexOf('const BASKET_SIZE_DISPLAY_ORDER=');
+const end=page.indexOf('function renderHome()',start);
 assert.ok(start>=0&&end>start);
 const groupFactory=new Function('esc','basketCard',page.slice(start,end)+'return homeBasketGroupRecords;');
 const records=groupFactory(v=>String(v).replaceAll('&','&amp;').replaceAll('"','&quot;'),(b,i)=>'<article data-card="'+b.id+'" data-index="'+i+'"></article>');
 const grande={id:'large',name:'Grande'};
 const mini={id:'small',name:'Mini'};
-const initial=[{id:'complete',name:'Cestas Completas',subcategories:[grande]}];
-const complete=[{id:'complete',name:'Cestas Completas',subcategories:[grande,mini]}];
+const initial=[{id:'complete',slug:'cestas-completas',name:'Cestas Completas',subcategories:[grande]}];
+const complete=[{id:'complete',slug:'cestas-completas',name:'Cestas Completas',subcategories:[grande,mini]}];
 const largeBasket={id:'big',category_id:'complete',subcategory_id:'large',display_price_cents:9500,carousel_items:[{name:'Arroz'}]};
 const smallBasket={...largeBasket,id:'small',subcategory_id:'small'};
 const initialRecords=records([largeBasket],initial);
 const completeRecords=records([largeBasket,smallBasket],complete);
-assert.equal(initialRecords[0].subgroups[0].signature,completeRecords[0].subgroups[0].signature,'first Grande card must be retained through the priority/full transition');
+assert.equal(initialRecords[0].subgroups.length,1,'complete-basket sizes share one size-picker subgroup');
+assert.equal(completeRecords[0].subgroups.length,1,'the lightweight home response still renders one size-picker subgroup');
+assert.notEqual(initialRecords[0].subgroups[0].signature,completeRecords[0].subgroups[0].signature,'new size cards update the size picker');
 assert.match(initialRecords[0].subgroups[0].markup(),/data-index="0"/);
-assert.match(completeRecords[0].subgroups[1].markup(),/data-index="1"/);
+assert.match(completeRecords[0].subgroups[0].markup(),/data-index="0"/);
+assert.match(completeRecords[0].subgroups[0].markup(),/data-index="1"/);
 const changed=records([{...largeBasket,display_price_cents:9900},smallBasket],complete);
-assert.notEqual(changed[0].subgroups[0].signature,completeRecords[0].subgroups[0].signature,'changed prices must refresh their own subgroup');
-assert.equal(changed[0].subgroups[1].signature,completeRecords[0].subgroups[1].signature,'unrelated subgroup must remain intact');
+assert.notEqual(changed[0].subgroups[0].signature,completeRecords[0].subgroups[0].signature,'changed prices refresh the size-card subgroup');
 
 const mockWindow={};
 const testStorage={getItem:()=>null,removeItem(){},setItem(){}};
@@ -97,24 +99,25 @@ const fakeDocument={createElement(type){
   return element;
 }};
 const carouselSpy={mountCalls:0,mount(){this.mountCalls++}};
-const domFunctions=page.slice(page.indexOf('const homeSubgroupSignatures='),page.indexOf('function renderHome(){'));
-const runtime=new Function('document','section','esc','basketCard','BasketCarousel','openBasket',domFunctions+'return {homeBasketGroupRecords,syncHomeBasketGroups};')(
+const domFunctions=page.slice(start,end);
+const runtime=new Function('document','section','esc','basketCard','BasketCarousel','openBasket','homeSubgroupSignatures',domFunctions+'return {homeBasketGroupRecords,syncHomeBasketGroups};')(
   fakeDocument,(name,subtitle,content)=>'<section class="section"><h2>'+name+'</h2>'+content+'</section>',
-  esc,(basket,index)=>'<article data-index="'+index+'">'+basket.name+'</article>',carouselSpy,()=>{}
+  v=>String(v).replaceAll('&','&amp;').replaceAll('"','&quot;'),
+  (basket,index)=>'<article data-index="'+index+'">'+basket.name+'</article>',carouselSpy,()=>{},new WeakMap()
 );
 const host=new TestElement('host');
 runtime.syncHomeBasketGroups(host,runtime.homeBasketGroupRecords([largeBasket],initial));
-const savedSection=host.children[0],savedGrande=savedSection.children[1];
+const savedSection=host.children[0],savedSizePicker=savedSection.children[1];
 assert.equal(carouselSpy.mountCalls,1,'initial mount required');
 runtime.syncHomeBasketGroups(host,runtime.homeBasketGroupRecords([largeBasket,smallBasket],complete));
-const savedMini=savedSection.children[2],mountsAfterFull=carouselSpy.mountCalls;
-assert.equal(host.children[0],savedSection,'the category section must stay mounted');
-assert.equal(savedSection.children[1],savedGrande,'priority Grande card DOM must survive full response');
-assert.equal(savedSection.children.length,3,'second subgroup must be appended after the priority card');
+const updatedSizePicker=savedSection.children[1],mountsAfterCards=carouselSpy.mountCalls;
+assert.equal(host.children[0],savedSection,'the category section must stay mounted while size cards update');
+assert.notEqual(updatedSizePicker,savedSizePicker,'the picker refreshes when the lightweight response adds a size');
+assert.equal(savedSection.children.length,2,'complete-basket cards stay in one size-picker subgroup');
 runtime.syncHomeBasketGroups(host,runtime.homeBasketGroupRecords([largeBasket,smallBasket],complete));
-assert.equal(carouselSpy.mountCalls,mountsAfterFull,'unchanged catalog must not reinitialize image observers');
+assert.equal(carouselSpy.mountCalls,mountsAfterCards,'unchanged cards must not reinitialize image observers');
 runtime.syncHomeBasketGroups(host,runtime.homeBasketGroupRecords([{...largeBasket,display_price_cents:9900},smallBasket],complete));
-assert.notEqual(savedSection.children[1],savedGrande,'changed Grande card must refresh');
-assert.equal(savedSection.children[2],savedMini,'unmodified Mini card must not be discarded');
+assert.notEqual(savedSection.children[1],updatedSizePicker,'a changed canonical card refreshes its picker');
+assert.equal(carouselSpy.mountCalls,mountsAfterCards+1,'changed size cards remount their image observers once');
 
 console.log('Mobile storefront R3 incremental-render contract passed');
