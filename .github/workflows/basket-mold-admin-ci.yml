@@ -2,6 +2,10 @@ name: Basket mold admin
 on:
   pull_request:
     paths:
+      - 'index.html'
+      - 'vitrine/admin/runtime-src/01-core-navigation.part.js.txt'
+      - 'vitrine/admin/runtime-src/03-operations.part.js.txt'
+      - 'vitrine/admin/runtime-src/09-bootstrap.part.js.txt'
       - 'vitrine/admin/admin-runtime.js'
       - 'vitrine/admin/index.html'
       - 'supabase/migrations/20261023190000_basket_admin_selected_product_active_status.sql'
@@ -27,6 +31,10 @@ on:
   push:
     branches: [main]
     paths:
+      - 'index.html'
+      - 'vitrine/admin/runtime-src/01-core-navigation.part.js.txt'
+      - 'vitrine/admin/runtime-src/03-operations.part.js.txt'
+      - 'vitrine/admin/runtime-src/09-bootstrap.part.js.txt'
       - 'vitrine/admin/admin-runtime.js'
       - 'vitrine/admin/index.html'
       - 'supabase/migrations/20261023190000_basket_admin_selected_product_active_status.sql'
