@@ -53,7 +53,7 @@ assert.ok(lazyPhoto.includes('data-basket-src="'+sizePhotos.media+'"'),'non-prio
 assert.match(lazyPhoto,/loading="lazy"/,'non-priority basket photos keep native lazy loading');
 assert.ok(photoBytes<350_000,'all five basket photos stay under 350 KB total');
 assert.match(root,/basket-size-card-photo/,'home page styles the basket size photos');
-assert.ok(root.includes('basket-carousel.js?v=20261021-price-hierarchy-v1'),'home page refreshes the carousel asset cache');
+assert.ok(root.includes('basket-carousel.js?v=20261022-home-shell-v1'),'home page refreshes the carousel asset cache');
 assert.match(vitrine,/<meta http-equiv="refresh" content="0;url=\/">/,'legacy /vitrine/ must redirect to the public root');
 assert.match(vitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'legacy redirect must preserve query and hash');
 assert.doesNotMatch(vitrine,/BasketCarousel\.mount|da_storefront_home_carousel_v1|checkoutWhatsappUnified/,'legacy route must not duplicate the public storefront');
