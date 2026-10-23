@@ -39,7 +39,7 @@ const config = {
   }]
 };
 const window = {
-  DonaAntoniaBasketAdminApi: { list: async () => config, saveProductInline: async data => { inlineSaves.push(data); return { stock: data.stock, active: data.active }; } },
+  DonaAntoniaBasketAdminApi: { list: async () => config, saveProductInline: async data => { inlineSaves.push(data); return { stock: data.stock, active: data.active }; }, toast: () => {} },
   DonaAntoniaAdminBridge: { openProductEditor: async id => opened.push(id) }
 };
 let style;
