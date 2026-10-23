@@ -5,10 +5,12 @@ import vm from 'node:vm';
 const page = fs.readFileSync('index.html', 'utf8');
 const api = fs.readFileSync('supabase/functions/storefront-v2/index.ts', 'utf8');
 
-const availabilitySource = page.match(/function moldItemStock\(item\)\{[\s\S]*?\n    \}\n    function moldDraftAvailableBasketCount\(d\)\{[\s\S]*?\n    \}/)?.[0];
-assert.ok(availabilitySource, 'public basket draft reconciles the selected SKU stock after alternatives load');
+const selectedProductSource = page.match(/function moldSelectedProduct\(item\)\{[\s\S]*?\n    \}/)?.[0];
+const itemStockSource = page.match(/function moldItemStock\(item\)\{[\s\S]*?\n    \}/)?.[0];
+const availabilitySource = page.match(/function moldDraftAvailableBasketCount\(d\)\{[\s\S]*?\n    \}/)?.[0];
+assert.ok(selectedProductSource && itemStockSource && availabilitySource, 'public basket draft reconciles the selected SKU stock after alternatives load');
 const compileAvailability = remainingStock => vm.runInNewContext(
-  `(()=>{ ${availabilitySource}; return moldDraftAvailableBasketCount; })()`,
+  `(()=>{ ${selectedProductSource}; ${itemStockSource}; ${availabilitySource}; return moldDraftAvailableBasketCount; })()`,
   { remainingStock },
 );
 const availableBaskets = compileAvailability((_id, _index, fallback) => fallback);
