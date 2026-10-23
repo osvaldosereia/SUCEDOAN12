@@ -3,6 +3,12 @@
 > Aprovado para implantação segura em 2026-09-25. Executar por homologação, shadow/canary e rollback; não fazer big-bang.
 > Atualizado em 2026-10-23 após validação do estado real no GitHub, site em uso e Supabase.
 
+### Acompanhamento R14 — 2026-10-23 01:18 UTC
+
+- Main atual: `d228fdb521479794d96fe68805564fe229e3b1c3`. PR #1301 segue aberta na head `f911b9d93bcbc6aa934546235095d223a3eebf8f`; seis workflows passaram e os dois finais (#39882594973 e #39882595018) seguem em instalação de Chromium, antes dos testes. A reprodução V8 de R3 passou após limitar o harness aos helpers da homepage e marcar `cestas-completas` no fixture.
+- Não houve publicação nem alteração Supabase. O projeto canônico permanece ACTIVE_HEALTHY, e as versões/hash relevantes, rotas preservadas, smoke e rollback estão registrados no acompanhamento R14 do HANDOFF.
+- Próximo gate: concluir os dois workflows da head atual; corrigir e repetir se houver falha; após ambos verdes, revalidar mergeabilidade, integrar #1301 normalmente, confirmar Pages e smoke de `/` e `/vitrine/admin/`. Depois encerrar duplicatas apenas quando seus deltas estiverem cobertos.
+
 ### Checkpoint de execução — 2026-10-23 (R14: cards leves da homepage e contrato de CI)
 
 - Main revalidada: `5d24cd70d4c609dcdd4ea8aeb94b0c867ccaff10`; PR #1300 integrada. PR #1301 aberta/mergeable na base `483d30e6ee811a5a9eb290f6cc0367abd9db1a4d`, branch `agent/fix-public-basket-card-contracts-20261023`, head `31184b23385c536e7a86e4f8902de60079a83ed3`.
