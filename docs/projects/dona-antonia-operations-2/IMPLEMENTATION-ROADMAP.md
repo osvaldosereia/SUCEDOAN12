@@ -1,5 +1,17 @@
 # Dona Antônia Operations 2.0 — IMPLEMENTATION ROADMAP
 
+## Checkpoint R21 — observação incremental Admin1 — 2026-10-23 07:02:40 UTC
+
+- Commits de conteúdo deste checkpoint: HANDOFF `d3065c98c6254fb7ee9695a65ab333231658befe`; roadmap `ea1dfc4646058ebd9dae66043c54e4e678b77246`.
+
+- Branch `agent/admin1-observation-r21-0702-20261023`, baseada no SHA mais recente de `main` consultado antes da edição: `f9cd3e93ce8e1faa7269748473dedec2bd2f723c`. PR #1269, #1321 e #1322 estão merged; os 42 workflows associados à main passaram e não havia PR Admin1 aberta.
+- Duas consultas somente leitura e agregadas de logs (06:07:39–07:02:00 e 07:02:00–07:02:40 UTC) retornaram zero linhas para `admin1-products-read-v1` em `ssbesxgaijknwsjbsbcz` e `admin1-legacy-catalog-read-v1` em `xaoeldjuxzsdsblimzxo`, inclusive no período do smoke. As duas funções seguem ACTIVE e respondem 410; manter esse estado até completar as janelas de 24h e atribuir eventuais callers.
+- Revalidado projeto canônico ACTIVE_HEALTHY, 1.247 migrations (uma linha alvo `20261020230115`), funções v5 e v377; projeto Admin1 separado ACTIVE_HEALTHY, função proxy v3. Nenhuma migration, função, configuração, RLS/grant ou dado alterado. A publicação R13 segue bloqueada por `SUPABASE_ACCESS_TOKEN` inválido; nenhuma credencial alternativa foi usada.
+- Smoke read-only de `/` confirmou cinco cestas, quatro ofertas carregadas e carrinho vazio; `/vitrine/admin/` abriu a Central. Check do runtime passou (9 fragmentos, 638.778 caracteres) no checkout local já documentado no HANDOFF. Sem deploy de Pages ou Supabase; sem efeitos de pedido, cliente, fiscal, Bling, estoque ou financeiro.
+- Arquivos alterados nesta rodada: HANDOFF e este roadmap. CI principal: 42/42 sucesso; checks da PR R21 precisam passar antes de integração. Rollback: reverter somente os commits documentais desta PR.
+- Próxima tarefa concreta: após 2026-10-24 02:14:07.824 UTC, concluir 24h do proxy legado e atribuir chamadas; após 03:20:07.529 UTC, concluir 24h do leitor canônico e atribuir chamadas. Preservar 410 até os resultados. Após renovação do token pelo proprietário, publicar R13 via fluxo normal e verificar versão/hash/outcomes.
+
+
 ## Checkpoint R20 — drift R13 confirmado e verificação pós-R19 — 2026-10-23 06:07:39 UTC
 
 - Base revalidada: `main` `fc50bead81bc87baaafbbf4c5a9e96324a7e676c`, squash da PR #1321. A PR #1321 está merged; os dois checks da PR passaram (`Admin service outcome telemetry CI` run #39909293923 e `Basket lot helper grant CI` run #39909293874). No push de main, 42/42 workflows terminaram com sucesso às 06:07 UTC.
