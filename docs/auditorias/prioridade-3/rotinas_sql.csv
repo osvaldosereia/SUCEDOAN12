@@ -1,0 +1,571 @@
+schema,funcao,argumentos,chars_definicao,security_definer,ativa_como_trigger,tabelas_trigger,ref_cart_items_inexistente,familia_versionada,classificacao
+private,da_offer_cycle_v1,,3286,false,false,,false,da_offer_cycle,USO_NAO_DETERMINADO_NAO_EXCLUIR
+private,import_bling_customers_v1,"p_rows jsonb, p_import_tag text",7257,false,false,,false,import_bling_customers,USO_NAO_DETERMINADO_NAO_EXCLUIR
+private,order_addon_close_sessions_for_order_v1,"p_order_id uuid, p_reason text",450,true,false,,false,order_addon_close_sessions_for_order,USO_NAO_DETERMINADO_NAO_EXCLUIR
+private,order_addon_orders_close_trigger_v1,,836,true,true,orders,false,order_addon_orders_close_trigger,PRESERVAR_TRIGGER_ATIVO
+private,order_addon_separation_close_trigger_v1,,297,true,true,"order_separation_completions_v1, order_separation_items_v1",false,order_addon_separation_close_trigger,PRESERVAR_TRIGGER_ATIVO
+private,set_updated_at,,203,false,true,"basket_templates, carts, conversations, customers, orders, products, whatsapp_accounts",false,,PRESERVAR_TRIGGER_ATIVO
+private,whatsapp_ana_admin_immutable_v1,,225,false,true,"whatsapp_ana_admin_events_v1, whatsapp_ana_admin_test_runs_v1, whatsapp_ana_admin_versions_v1",false,whatsapp_ana_admin_immutable,PRESERVAR_TRIGGER_ATIVO
+public,activate_basket_kit_lot_draft_v1,"p_lot_id uuid, p_operator text",2746,false,false,,false,activate_basket_kit_lot_draft,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,activate_basket_kit_lot_draft_v2,"p_lot_id uuid, p_operator text",1009,false,false,,false,activate_basket_kit_lot_draft,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,activate_purchase_xml_inventory_lots_v1,"p_document_id uuid, p_user_id uuid",955,true,false,,false,activate_purchase_xml_inventory_lots,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,admin_basket_mold_editor_v1,p_basket_id uuid,798,true,false,,false,admin_basket_mold_editor,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,admin_basket_mold_list_v1,,1661,true,false,,false,admin_basket_mold_list,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,admin_basket_mold_products_v1,"p_query text, p_limit integer",1723,true,false,,false,admin_basket_mold_products,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,admin_save_basket_mold_v1,"p_basket_id uuid, p_name text, p_hidden_adjustment numeric, p_public_composition_count integer, p_positions jsonb, p_category_id uuid, p_operator text",1239,true,false,,false,admin_save_basket_mold,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,admin_save_basket_mold_v1,"p_basket_id uuid, p_name text, p_hidden_adjustment numeric, p_public_composition_count integer, p_positions jsonb, p_operator text",1320,true,false,,false,admin_save_basket_mold,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,admin_save_basket_mold_v1,"p_basket_id uuid, p_name text, p_hidden_adjustment numeric, p_public_composition_count integer, p_positions jsonb, p_category_id uuid, p_operator text, p_subcategory_id uuid",1651,true,false,,false,admin_save_basket_mold,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,admin_save_basket_mold_v2,"p_basket_id uuid, p_name text, p_hidden_adjustment numeric, p_public_composition_count integer, p_positions jsonb, p_category_id uuid, p_operator text, p_subcategory_id uuid",1727,true,false,,false,admin_save_basket_mold,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,admin_save_basket_mold_v3,"p_basket_id uuid, p_name text, p_hidden_adjustment numeric, p_public_composition_count integer, p_positions jsonb, p_category_id uuid, p_subcategory_id uuid, p_conditional_hidden_enabled boolean, p_conditional_hidden_product_id uuid, p_conditional_hidden_adjustment numeric, p_operator text",3266,true,false,,false,admin_save_basket_mold,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,apply_basket_cart_selection_v2,"p_cart_id uuid, p_basket_id uuid, p_selection jsonb",2472,true,false,,true,apply_basket_cart_selection,CANDIDATA_A_LEGADO_QUEBRADO
+public,apply_basket_kit_lot_commercial_v1,"p_lot_id uuid, p_public_name text, p_sale_price numeric",3537,true,false,,false,apply_basket_kit_lot_commercial,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,apply_basket_kit_lot_commercial_v2,"p_lot_id uuid, p_public_name text, p_sale_price numeric, p_linked_hygiene_lot_id uuid",3466,true,false,,false,apply_basket_kit_lot_commercial,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,apply_basket_kit_lot_commercial_v3,"p_lot_id uuid, p_public_name text, p_sale_price numeric, p_business_type text, p_linked_lot_id uuid",6122,true,false,,false,apply_basket_kit_lot_commercial,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,apply_bling_stock_mirror_event_v2,"p_product_id uuid, p_bling_product_id bigint, p_physical_total numeric, p_virtual_total numeric, p_deposit_balances jsonb, p_observed_at timestamp with time zone, p_source_event_id text, p_source_resource text, p_replace_deposits boolean",3012,true,false,,false,apply_bling_stock_mirror_event,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,apply_product_fiscal_strict_validation_v1,,3137,false,false,,false,apply_product_fiscal_strict_validation,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,apply_purchase_stock_receipt_v1,"p_document_id uuid, p_user_id uuid",4270,true,false,,false,apply_purchase_stock_receipt,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,archive_assembly_kit_v1,"p_kit_id uuid, p_operator text",1195,true,false,,false,archive_assembly_kit,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,archive_basket_kit_template_admin_v1,"p_kit_template_id uuid, p_operator text",1057,false,false,,false,archive_basket_kit_template_admin,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,archive_basket_template_admin_v1,"p_basket_id uuid, p_operator text",1493,true,false,,false,archive_basket_template_admin,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,basket_auto_norm_text_v1,p_value text,307,false,false,,false,basket_auto_norm_text,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,basket_commercial_model_editor_v1,p_basket_id uuid,2290,true,false,,false,basket_commercial_model_editor,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,basket_group_matches_lot_v1,"p_components jsonb, p_group text, p_lot_id uuid",1090,false,false,,false,basket_group_matches_lot,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,basket_group_preserves_original_lot_v1,"p_components jsonb, p_group text, p_lot_id uuid",1030,false,false,,false,basket_group_preserves_original_lot,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,basket_kit_lot_delete_v1,"p_lot_id uuid, p_operator text",1066,true,false,,false,basket_kit_lot_delete,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,basket_lot_admin_allowed_v1,,281,true,false,,false,basket_lot_admin_allowed,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,basket_lot_commercial_price_v1,"p_basket_id uuid, p_food_lot_id uuid",530,false,false,,false,basket_lot_commercial_price,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,basket_lot_substitution_catalog_admin_v1,,1187,true,false,,false,basket_lot_substitution_catalog_admin,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,basket_lot_substitution_family_save_admin_v1,"p_family_key text, p_label text, p_enabled boolean, p_product_ids uuid[], p_operator text",2801,true,false,,false,basket_lot_substitution_family_save_admin,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,basket_mold_cutover_ready_v1,p_basket_id uuid,599,false,false,,false,basket_mold_cutover_ready,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,basket_mold_editor_v1,p_basket_id uuid,2325,false,false,,false,basket_mold_editor,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,basket_mold_public_compositions_batch_v1,p_basket_ids uuid[],4445,true,false,,false,basket_mold_public_compositions_batch,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,basket_mold_public_compositions_v1,p_basket_id uuid,254,true,false,,false,basket_mold_public_compositions,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,basket_mold_public_compositions_v2,p_basket_id uuid,497,true,false,,false,basket_mold_public_compositions,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,basket_package_compatible_v1,"p_original_packaging text, p_original_name text, p_candidate_packaging text, p_candidate_name text",1267,false,false,,false,basket_package_compatible,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,basket_recipe_kits_v1,p_basket_id uuid,1948,true,false,,false,basket_recipe_kits,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,basket_substitution_family_for_product_v2,p_product_id uuid,287,false,false,,false,basket_substitution_family_for_product,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,basket_substitution_family_v1,"p_name text, p_subcategory text",1325,false,false,,false,basket_substitution_family,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,bind_bling_contact_id,"p_customer_id uuid, p_bling_contact_id bigint",819,true,false,,false,,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,bind_bling_product_id,"p_product_id uuid, p_bling_product_id bigint",460,true,false,,false,,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,bind_bling_product_id_v1,"p_product_id uuid, p_bling_product_id bigint, p_source text, p_external_key text",1309,true,false,,false,bind_bling_product_id,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,bling_hub_customer_creation_guard_v1,,2186,true,true,bling_hub_jobs_v2,false,bling_hub_customer_creation_guard,PRESERVAR_TRIGGER_ATIVO
+public,bling_hub_readiness_v2,,2179,true,false,,false,bling_hub_readiness,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,build_bling_order_draft,p_order_id uuid,1043,true,false,,false,,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,calculate_basket_hidden_adjustment_v1,p_basket_id uuid,526,true,false,,false,calculate_basket_hidden_adjustment,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,cancel_basket_reserved_lot_v1,"p_lot_id uuid, p_operator text, p_reason text",2182,true,false,,false,cancel_basket_reserved_lot,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,cancel_store_basket_reservation_v1,"p_lot_id uuid, p_operator text, p_reason text",2029,true,false,,false,cancel_store_basket_reservation,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,canonical_whatsapp_e164_br_v2,p_phone text,894,false,false,,false,canonical_whatsapp_e164_br,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,capture_inventory_unknown_ean_v1,"p_ean text, p_operator_label text, p_source text, p_observed_quantity numeric, p_observed_gondola_number integer",2375,false,false,,false,capture_inventory_unknown_ean,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,capture_whatsapp_location_evidence_v1,,2426,true,true,whatsapp_messages_v1,false,capture_whatsapp_location_evidence,PRESERVAR_TRIGGER_ATIVO
+public,check_order_dispatch_fiscal_gate_v1,p_order_id uuid,2849,true,false,,false,check_order_dispatch_fiscal_gate,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,claim_bling_hub_jobs_v2,"p_worker text, p_domains text[], p_limit integer, p_lease_seconds integer",2648,true,false,,false,claim_bling_hub_jobs,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,claim_bling_hub_oauth_lock_v2,"p_owner uuid, p_ttl_seconds integer",692,true,false,,false,claim_bling_hub_oauth_lock,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,claim_bling_order_stock_action_v2,"p_source_order_id uuid, p_bling_order_id bigint, p_deposit_id bigint, p_action text, p_snapshot jsonb",3202,true,false,,false,claim_bling_order_stock_action,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,claim_bling_webhook_inbox_v2,"p_worker text, p_limit integer, p_lease_seconds integer",1822,true,false,,false,claim_bling_webhook_inbox,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,confirm_cart_order,"p_cart_id uuid, p_delivery_address jsonb",2557,true,false,,true,,CANDIDATA_A_LEGADO_QUEBRADO
+public,confirm_cart_order_v2,"p_cart_id uuid, p_delivery_address jsonb, p_idempotency_key text",4548,true,false,,true,confirm_cart_order,CANDIDATA_A_LEGADO_QUEBRADO
+public,confirm_order_payment_v1,"p_order_id uuid, p_payment_method text, p_payment_source text, p_settled_amount numeric, p_confirmed_at timestamp with time zone",1625,true,false,,false,confirm_order_payment,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,consume_public_rate_limit,"p_rate_key text, p_bucket text, p_limit integer, p_window_seconds integer",1054,true,false,,false,,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,consume_vitrine_order_stock_v1,p_order_id uuid,3145,false,false,,false,consume_vitrine_order_stock,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,cosmos_gtin_valid,p_gtin text,550,false,false,,false,,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,cosmos_research_reserve_next,,2847,true,false,,false,,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,create_basket_commercial_lot_reserved_v1,"p_basket_id uuid, p_quantity integer, p_items jsonb, p_public_name text, p_sale_price numeric, p_operator text, p_notes text, p_short_code text, p_linked_lot_id uuid",6956,true,false,,false,create_basket_commercial_lot_reserved,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,create_basket_commercial_model_v1,"p_name text, p_category_id uuid, p_base_price numeric, p_operator text",2112,true,false,,false,create_basket_commercial_model,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,create_basket_kit_lot_v1,"p_kit_template_id uuid, p_quantity integer, p_items jsonb, p_operator text, p_notes text, p_short_code text, p_duplicated_from_lot_id uuid",5978,false,false,,false,create_basket_kit_lot,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,create_basket_kit_lot_v2,"p_kit_template_id uuid, p_quantity integer, p_items jsonb, p_operator text, p_notes text, p_short_code text, p_duplicated_from_lot_id uuid, p_public_name text, p_sale_price numeric",1006,false,false,,false,create_basket_kit_lot,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,create_basket_kit_lot_v3,"p_kit_template_id uuid, p_quantity integer, p_items jsonb, p_operator text, p_notes text, p_short_code text, p_duplicated_from_lot_id uuid, p_public_name text, p_sale_price numeric, p_linked_hygiene_lot_id uuid",1215,false,false,,false,create_basket_kit_lot,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,create_basket_kit_lot_v4,"p_kit_template_id uuid, p_quantity integer, p_items jsonb, p_operator text, p_notes text, p_short_code text, p_duplicated_from_lot_id uuid, p_public_name text, p_sale_price numeric, p_business_type text, p_linked_lot_id uuid",1293,false,false,,false,create_basket_kit_lot,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,create_basket_stock_lot_v1,"p_basket_id uuid, p_quantity integer, p_items jsonb, p_operator text, p_notes text, p_source text, p_allow_stock_gap boolean",4926,false,false,,false,create_basket_stock_lot,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,create_canonical_cart_order_v2,"p_source text, p_phone text, p_payment_method text, p_items jsonb, p_customer_snapshot jsonb, p_delivery jsonb",1430,false,false,,false,create_canonical_cart_order,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,create_canonical_cart_order_v2_base,"p_source text, p_phone text, p_payment_method text, p_items jsonb, p_customer_snapshot jsonb, p_delivery jsonb",1492,false,false,,false,,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,create_storefront_order_v2,"p_phone text, p_items jsonb, p_basket jsonb",8515,false,false,,false,create_storefront_order,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,create_vitrine_cart_order_v1,"p_phone text, p_payment_method text, p_items jsonb, p_customer_snapshot jsonb, p_delivery jsonb",18381,false,false,,false,create_vitrine_cart_order,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,create_vitrine_cart_order_v3,"p_phone text, p_payment_method text, p_items jsonb, p_customer_snapshot jsonb, p_delivery jsonb",1274,false,false,,false,create_vitrine_cart_order,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,create_vitrine_cart_order_v3_base,"p_phone text, p_payment_method text, p_items jsonb, p_customer_snapshot jsonb, p_delivery jsonb",39873,false,false,,false,,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,customer_ids_by_phone_variants_v1,p_phone text,642,true,false,,false,customer_ids_by_phone_variants,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,customer_person_first_name_v1,"p_name text, p_cpf_cnpj text",966,false,false,,false,customer_person_first_name,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,customer_phone_primary_guard,,528,true,true,customer_phones,false,,PRESERVAR_TRIGGER_ATIVO
+public,customers_link_unclaimed_orders_v2,,260,true,true,customers,false,customers_link_unclaimed_orders,PRESERVAR_TRIGGER_ATIVO
+public,da6_worker_dispatch_tick_v1,,1373,true,false,,false,da6_worker_dispatch_tick,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,da6_worker_key_v1,,497,true,false,,false,da6_worker_key,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,delete_basket_kit_lot_draft_v1,p_lot_id uuid,423,false,false,,false,delete_basket_kit_lot_draft,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,dispatch_bling_hub_cycle_v2,,1314,true,false,,false,dispatch_bling_hub_cycle,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,dispatch_fiscal_bling_nfe_backfill_v1,p_steps integer,1019,true,false,,false,dispatch_fiscal_bling_nfe_backfill,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,dispatch_fiscal_nfe_autorecovery_v1,,948,true,false,,false,dispatch_fiscal_nfe_autorecovery,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,dispatch_purchase_xml_daily_v1,,871,true,false,,false,dispatch_purchase_xml_daily,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,edit_store_basket_component_v1,"p_basket_id uuid, p_kit_id uuid, p_product_id uuid, p_action text, p_new_product_id uuid, p_quantity numeric, p_operator text",6787,true,false,,false,edit_store_basket_component,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,enable_split_baskets_for_ready_kits_v1,,966,false,false,,false,enable_split_baskets_for_ready_kits,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,enforce_order_dispatch_fiscal_gate_trigger_v1,,721,true,true,orders,false,enforce_order_dispatch_fiscal_gate_trigger,PRESERVAR_TRIGGER_ATIVO
+public,enforce_storefront_checkout_basics_v1,,1975,false,true,orders,false,enforce_storefront_checkout_basics,PRESERVAR_TRIGGER_ATIVO
+public,enforce_zero_stock_inactive,,460,false,true,products,false,,PRESERVAR_TRIGGER_ATIVO
+public,enqueue_bling_hub_job_v2,"p_domain text, p_operation text, p_source_system text, p_source_id text, p_idempotency_key text, p_payload jsonb, p_payload_version integer",2869,true,false,,false,enqueue_bling_hub_job,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ensure_storefront_customer_v2,"p_phone text, p_name text, p_source_key text",3537,true,false,,false,ensure_storefront_customer,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,finish_bling_hub_job_v2,"p_job_id uuid, p_status text, p_result jsonb, p_error_code text, p_error_message text, p_http_status integer, p_retry_seconds integer, p_provider_id text",2061,true,false,,false,finish_bling_hub_job,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,finish_bling_order_stock_action_v2,"p_source_order_id uuid, p_action text, p_success boolean, p_snapshot jsonb, p_error text, p_metadata jsonb",1859,true,false,,false,finish_bling_order_stock_action,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,finish_bling_webhook_inbox_v2,"p_event_id text, p_status text, p_result jsonb, p_error text, p_retry_seconds integer, p_self_generated boolean",2328,true,false,,false,finish_bling_webhook_inbox,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,fiscal_normalize_text_v1,p_text text,365,false,false,,false,fiscal_normalize_text,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,fiscal_rule_description_matches_v1,"p_description text, p_qualifiers jsonb",1461,false,false,,false,fiscal_rule_description_matches,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,fiscal_valid_gtin_v1,p_gtin text,689,false,false,,false,fiscal_valid_gtin,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,format_phone_br_v1,p_phone text,565,false,false,,false,format_phone_br,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_bling_api_credentials_v1,,596,true,false,,false,get_bling_api_credentials,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_bling_hub_key_v2,,297,true,false,,false,get_bling_hub_key,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_bling_stock_mirror_status_v2,,500,true,false,,false,get_bling_stock_mirror_status,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_cart_aware_recommendations,"p_conversation_id uuid, p_limit integer, p_kind text",3682,true,false,,true,,CANDIDATA_A_LEGADO_QUEBRADO
+public,get_conversation_worker_provider_secret_v1,,802,true,false,,false,get_conversation_worker_provider_secret,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_ops2_fiscal_dispatch_health_v1,,1014,true,false,,false,get_ops2_fiscal_dispatch_health,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_ops2_order_shadow_readiness_v1,,3419,true,false,,false,get_ops2_order_shadow_readiness,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_ops2_papoai_bridge_health_v1,,3445,true,false,,false,get_ops2_papoai_bridge_health,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_ops2_purchase_xml_health_v1,,2388,true,false,,false,get_ops2_purchase_xml_health,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_ops2_sellable_stock_status_v1,,1210,true,false,,false,get_ops2_sellable_stock_status,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_ops2_sellable_stock_v1,p_product_id uuid,976,true,false,,false,get_ops2_sellable_stock,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_ops2_stock_cutover_preflight_v1,,3758,true,false,,false,get_ops2_stock_cutover_preflight,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_ops_control_tower_summary_v1,,3958,true,false,,false,get_ops_control_tower_summary,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_ops_delivery_returns_summary_v1,p_limit integer,1171,true,false,,false,get_ops_delivery_returns_summary,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_ops_delivery_runs_today_v1,,1335,true,false,,false,get_ops_delivery_runs_today,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_ops_delivery_runs_today_v2,,2879,true,false,,false,get_ops_delivery_runs_today,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_ops_inventory_incidents_v1,p_limit integer,1584,true,false,,false,get_ops_inventory_incidents,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_ops_print_queue_v1,p_limit integer,1113,true,false,,false,get_ops_print_queue,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_ops_stock_recount_queue_v1,,1488,true,false,,false,get_ops_stock_recount_queue,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_papoai_webhook_capture_status_v2,,1686,true,false,,false,get_papoai_webhook_capture_status,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_papoai_webhook_health_v3,,3355,true,false,,false,get_papoai_webhook_health,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_product_fiscal_bling_diff_summary_v1,,856,false,false,,false,get_product_fiscal_bling_diff_summary,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_product_fiscal_bling_sync_summary_v1,,788,false,false,,false,get_product_fiscal_bling_sync_summary,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_product_fiscal_catalog_scan_summary_v1,,1534,false,false,,false,get_product_fiscal_catalog_scan_summary,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_purchase_history_integrity_v1,,261,true,false,,false,get_purchase_history_integrity,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_purchase_xml_receipt_preflight_v1,p_document_id uuid,3524,true,false,,false,get_purchase_xml_receipt_preflight,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_simples_period_gate_v1,p_period_id uuid,1710,false,false,,false,get_simples_period_gate,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_whatsapp_checkout_contact_v1,p_conversation_id uuid,2549,true,false,,false,get_whatsapp_checkout_contact,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_whatsapp_sellable_product_v1,p_product_id uuid,776,true,false,,false,get_whatsapp_sellable_product,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,get_whatsapp_simple_baskets_v1,,514,true,false,,false,get_whatsapp_simple_baskets,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,guard_simples_locked_snapshot_v1,,663,false,true,simples_periods,false,guard_simples_locked_snapshot,PRESERVAR_TRIGGER_ATIVO
+public,guard_web_existing_customer_binding_v1,,859,true,true,catalog_sessions,false,guard_web_existing_customer_binding,PRESERVAR_TRIGGER_ATIVO
+public,install_bling_api_credentials_v1,"p_client_id text, p_client_secret text, p_refresh_token text",1956,true,false,,false,install_bling_api_credentials,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,inventory_label_claim_next,,1383,true,false,,false,,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,inventory_label_fail_photo,"p_photo_id uuid, p_claim_token uuid, p_error_code text, p_error_detail text",1193,true,false,,false,,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,inventory_label_finish_photo,"p_photo_id uuid, p_claim_token uuid, p_product_id uuid, p_label_serial text, p_readings jsonb, p_errors jsonb",3343,true,false,,false,,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,is_customer_purchase_valid_v1,"p_status text, p_cancelled_at timestamp with time zone, p_returned_at timestamp with time zone",602,false,false,,false,is_customer_purchase_valid,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,link_unclaimed_orders_to_customer_v2,p_customer_id uuid,715,false,false,,false,link_unclaimed_orders_to_customer,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,lookup_customer_by_phone,p_phone text,513,true,false,,false,,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,manual_pick_queue_action_v1,"p_action text, p_order_id uuid",1769,true,false,,false,manual_pick_queue_action,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,manual_pick_queue_feed_v1,,2634,true,false,,false,manual_pick_queue_feed,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,mark_basket_reserved_lot_mounted_v1,"p_lot_id uuid, p_operator text",2721,true,false,,false,mark_basket_reserved_lot_mounted,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,mark_order_dispatch_fiscal_authorized_v1,"p_order_id uuid, p_source text, p_bling_invoice_id bigint, p_bling_invoice_number text, p_sefaz_status text, p_authorized_at timestamp with time zone",1938,true,false,,false,mark_order_dispatch_fiscal_authorized,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_accept_meta_dispatch_v1,"p_dispatch_id uuid, p_provider_message_id text, p_accepted_at timestamp with time zone",5635,true,false,,false,marketing_accept_meta_dispatch,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_attribute_order_trigger_v1,,693,true,true,orders,false,marketing_attribute_order_trigger,PRESERVAR_TRIGGER_ATIVO
+public,marketing_attribute_order_v1,"p_order_id uuid, p_token text",5028,true,false,,false,marketing_attribute_order,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_audience_candidates_v2,p_filters jsonb,10119,true,false,,false,marketing_audience_candidates,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_campaign_append_only_guard_v1,,262,true,true,"marketing_campaign_events_v1, marketing_campaign_snapshot_recipients_v1, marketing_campaign_snapshots_v1",false,marketing_campaign_append_only_guard,PRESERVAR_TRIGGER_ATIVO
+public,marketing_campaign_detail_v1,p_campaign_id uuid,1678,true,false,,false,marketing_campaign_detail,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_campaign_dispatch_identity_guard_v1,,618,false,true,marketing_campaign_dispatches_v1,false,marketing_campaign_dispatch_identity_guard,PRESERVAR_TRIGGER_ATIVO
+public,marketing_campaign_execution_gate_v1,p_whatsapp_account_id uuid,1104,true,false,,false,marketing_campaign_execution_gate,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_campaign_execution_status_v1,p_campaign_id uuid,2572,true,false,,false,marketing_campaign_execution_status,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_campaign_template_snapshot_v1,"p_whatsapp_account_id uuid, p_template_id uuid",1262,true,false,,false,marketing_campaign_template_snapshot,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_campaign_worker_internal_key_v1,,264,true,false,,false,marketing_campaign_worker_internal_key,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_cancel_campaign_execution_v1,"p_campaign_id uuid, p_reason text",2361,true,false,,false,marketing_cancel_campaign_execution,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_capture_direct_customer_consent_change_v1,,1036,true,true,customers,false,marketing_capture_direct_customer_consent_change,PRESERVAR_TRIGGER_ATIVO
+public,marketing_capture_optout_v1,,1904,true,true,papoai_webhook_inbox_v2,false,marketing_capture_optout,PRESERVAR_TRIGGER_ATIVO
+public,marketing_capture_weekly_consent_message_v1,,2904,true,true,whatsapp_messages_v1,false,marketing_capture_weekly_consent_message,PRESERVAR_TRIGGER_ATIVO
+public,marketing_claim_dispatch_batch_v1,"p_whatsapp_account_id uuid, p_limit integer",2038,true,false,,false,marketing_claim_dispatch_batch,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_consent_events_append_only_guard_v1,,253,true,true,marketing_consent_events_v1,false,marketing_consent_events_append_only_guard,PRESERVAR_TRIGGER_ATIVO
+public,marketing_create_campaign_snapshot_v1,"p_campaign_id uuid, p_expected_revision integer, p_idempotency_key text",5068,true,false,,false,marketing_create_campaign_snapshot,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_create_campaign_v1,"p_name text, p_whatsapp_account_id uuid, p_template_id uuid, p_filters jsonb, p_variable_values jsonb, p_deep_link jsonb, p_idempotency_key text",3121,true,false,,false,marketing_create_campaign,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_finish_dispatch_v1,"p_dispatch_id uuid, p_status text, p_provider_message_id text, p_last_error text, p_retry_after_seconds integer",4934,true,false,,false,marketing_finish_dispatch,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_issue_tracking_links_v1,p_dispatch_id uuid,3100,true,false,,false,marketing_issue_tracking_links,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_materialize_dispatches_v1,p_campaign_id uuid,1927,true,false,,false,marketing_materialize_dispatches,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_pause_campaign_v1,"p_campaign_id uuid, p_reason text",915,true,false,,false,marketing_pause_campaign,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_preview_audience_v1,"p_filters jsonb, p_limit integer, p_offset integer",5192,true,false,,false,marketing_preview_audience,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_record_consent_v1,"p_customer_id uuid, p_decision text, p_source text, p_source_ref text, p_source_event_key text, p_consent_text_version text, p_consent_text_snapshot text, p_occurred_at timestamp with time zone, p_recorded_by text, p_metadata jsonb",4141,true,false,,false,marketing_record_consent,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_repurchase_customer_trigger_v1,,417,true,true,customers,false,marketing_repurchase_customer_trigger,PRESERVAR_TRIGGER_ATIVO
+public,marketing_repurchase_mark_sent_v1,"p_customer_id uuid, p_order_id uuid, p_sent_at timestamp with time zone",1118,true,false,,false,marketing_repurchase_mark_sent,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_repurchase_order_trigger_v1,,979,true,true,orders,false,marketing_repurchase_order_trigger,PRESERVAR_TRIGGER_ATIVO
+public,marketing_repurchase_recalc_v1,p_customer_id uuid,3905,true,false,,false,marketing_repurchase_recalc,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_resolve_tracking_token_v1,p_token text,1809,true,false,,false,marketing_resolve_tracking_token,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_resume_campaign_v1,"p_campaign_id uuid, p_scheduled_for timestamp with time zone",1909,true,false,,false,marketing_resume_campaign,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_revalidate_dispatch_v1,p_dispatch_id uuid,6474,true,false,,false,marketing_revalidate_dispatch,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_schedule_campaign_v1,"p_campaign_id uuid, p_expected_revision integer, p_scheduled_for timestamp with time zone",2223,true,false,,false,marketing_schedule_campaign,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_strategy_append_event_v1,"p_strategy_id uuid, p_event_type text, p_actor_user_id uuid, p_metadata jsonb",1121,false,false,,false,marketing_strategy_append_event,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_strategy_approve_send_v1,"p_strategy_id uuid, p_expected_revision integer, p_actor_user_id uuid",3798,true,false,,false,marketing_strategy_approve_send,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_strategy_detail_v1,p_strategy_id uuid,927,false,false,,false,marketing_strategy_detail,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_strategy_events_immutable_v1,,250,false,true,marketing_strategy_events_v1,false,marketing_strategy_events_immutable,PRESERVAR_TRIGGER_ATIVO
+public,marketing_strategy_funnel_v1,p_strategy_id uuid,8771,true,false,,false,marketing_strategy_funnel,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_strategy_learnings_v1,,4165,true,false,,false,marketing_strategy_learnings,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_strategy_materialize_campaign_v1,"p_strategy_id uuid, p_expected_revision integer, p_actor_user_id uuid",6872,true,false,,false,marketing_strategy_materialize_campaign,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_strategy_offer_performance_v1,,3875,true,false,,false,marketing_strategy_offer_performance,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_strategy_revalidate_commercial_v1,p_strategy_id uuid,3544,true,false,,false,marketing_strategy_revalidate_commercial,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_strategy_schedule_send_v1,"p_strategy_id uuid, p_expected_revision integer, p_scheduled_for timestamp with time zone, p_actor_user_id uuid",3374,true,false,,false,marketing_strategy_schedule_send,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_strategy_transition_v1,"p_strategy_id uuid, p_expected_revision integer, p_to_status text, p_actor_user_id uuid, p_reason text",3428,false,false,,false,marketing_strategy_transition,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_template_lifecycle_approve_delete_v1,"p_template_id uuid, p_actor_user_id uuid",3556,true,false,,false,marketing_template_lifecycle_approve_delete,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_template_lifecycle_list_v1,p_whatsapp_account_id uuid,1891,true,false,,false,marketing_template_lifecycle_list,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_template_lifecycle_mark_deleted_v1,"p_template_id uuid, p_actor_user_id uuid, p_provider_payload jsonb",2000,true,false,,false,marketing_template_lifecycle_mark_deleted,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_template_lifecycle_refresh_v1,,3909,true,false,,false,marketing_template_lifecycle_refresh,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_template_lifecycle_set_protected_v1,"p_template_id uuid, p_protected boolean, p_actor_user_id uuid",2272,true,false,,false,marketing_template_lifecycle_set_protected,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_track_checkout_v1,p_token text,1519,true,false,,false,marketing_track_checkout,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_transition_campaign_v1,"p_campaign_id uuid, p_expected_revision integer, p_to_status text, p_reason text",3171,true,false,,false,marketing_transition_campaign,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,marketing_update_campaign_draft_v1,"p_campaign_id uuid, p_expected_revision integer, p_patch jsonb",4910,true,false,,false,marketing_update_campaign_draft,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,merge_bling_hub_runtime_metadata_v2,p_patch jsonb,521,true,false,,false,merge_bling_hub_runtime_metadata,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,mount_store_basket_reservation_v1,"p_lot_id uuid, p_operator text",2816,true,false,,false,mount_store_basket_reservation,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,next_basket_kit_short_code_v1,p_kit_template_id uuid,775,false,false,,false,next_basket_kit_short_code,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,normalize_local_delivery_city_v1,p_city text,351,false,false,,false,normalize_local_delivery_city,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,normalize_phone_digits,p_phone text,224,false,false,,false,,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,normalize_storefront_phone_v2,p_phone text,351,false,false,,false,normalize_storefront_phone,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_accept_order_whatsapp_meta_v1,"p_outbox_id uuid, p_provider_message_id text, p_accepted_at timestamp with time zone",9523,true,false,,false,ops2_accept_order_whatsapp_meta,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_activate_bling_stock_authority_v1,,1058,true,false,,false,ops2_activate_bling_stock_authority,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_ana_customer_profile_context_v1,p_conversation_id uuid,4936,true,false,,false,ops2_admin_ana_customer_profile_context,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_ana_customer_profile_extract_access_v1,,260,true,false,,false,ops2_admin_ana_customer_profile_extract_access,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_ana_customer_profile_metrics_v1,,1728,true,false,,false,ops2_admin_ana_customer_profile_metrics,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_ana_customer_profile_review_v1,"p_suggestion_id uuid, p_outcome text",2868,true,false,,false,ops2_admin_ana_customer_profile_review,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_ana_customer_profile_suggestions_v1,p_conversation_id uuid,1453,true,false,,false,ops2_admin_ana_customer_profile_suggestions,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_ana_preview_finish_v1,"p_job_id uuid, p_status text, p_decision text, p_suggestion_text text, p_confidence numeric, p_reason text, p_model text, p_provider_response_id text, p_last_error text, p_missing_context jsonb",4178,true,false,,false,ops2_admin_ana_preview_finish,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_ana_preview_metrics_v1,,1725,true,false,,false,ops2_admin_ana_preview_metrics,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_ana_preview_observe_v1,"p_job_id uuid, p_latency_ms integer, p_cached boolean",1617,true,false,,false,ops2_admin_ana_preview_observe,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_ana_preview_review_v1,"p_job_id uuid, p_outcome text, p_note text",2156,true,false,,false,ops2_admin_ana_preview_review,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_ana_preview_start_v1,p_conversation_id uuid,4945,true,false,,false,ops2_admin_ana_preview_start,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_accept_meta_media_outbound_v1,"p_outbox_id uuid, p_provider_message_id text, p_provider_media_id text, p_accepted_at timestamp with time zone",10304,true,false,,false,ops2_admin_attendance_accept_meta_media_outbound,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_accept_meta_outbound_v1,"p_outbox_id uuid, p_provider_message_id text, p_accepted_at timestamp with time zone",9405,true,false,,false,ops2_admin_attendance_accept_meta_outbound,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_accept_meta_template_outbound_v1,"p_outbox_id uuid, p_provider_message_id text, p_accepted_at timestamp with time zone",9457,true,false,,false,ops2_admin_attendance_accept_meta_template_outbound,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_claim_media_outbox_v1,p_outbox_id uuid,5978,true,false,,false,ops2_admin_attendance_claim_media_outbox,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_claim_outbox_v1,p_outbox_id uuid,3850,true,false,,false,ops2_admin_attendance_claim_outbox,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_claim_outbox_v2,p_outbox_id uuid,3413,true,false,,false,ops2_admin_attendance_claim_outbox,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_claim_outbox_v3,p_outbox_id uuid,4655,true,false,,false,ops2_admin_attendance_claim_outbox,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_claim_template_outbox_v1,p_outbox_id uuid,4648,true,false,,false,ops2_admin_attendance_claim_template_outbox,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_context_v1,p_conversation_id uuid,4419,true,false,,false,ops2_admin_attendance_context,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_conversation_v1,"p_conversation_id uuid, p_before timestamp with time zone, p_limit integer",3835,true,false,,false,ops2_admin_attendance_conversation,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_customer_access_v1,p_write boolean,872,true,false,,false,ops2_admin_attendance_customer_access,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_customer_create_browser_v1,"p_conversation_id uuid, p_customer jsonb",2344,true,false,,false,ops2_admin_attendance_customer_create_browser,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_customer_editor_browser_v1,p_conversation_id uuid,2677,true,false,,false,ops2_admin_attendance_customer_editor_browser,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_customer_link_browser_v1,"p_conversation_id uuid, p_customer_id uuid",721,true,false,,false,ops2_admin_attendance_customer_link_browser,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_customer_reconcile_browser_v1,p_conversation_id uuid,588,true,false,,false,ops2_admin_attendance_customer_reconcile_browser,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_customer_save_browser_v1,"p_conversation_id uuid, p_customer jsonb",1739,true,false,,false,ops2_admin_attendance_customer_save_browser,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_customer_search_browser_v1,"p_query text, p_limit integer",802,true,false,,false,ops2_admin_attendance_customer_search_browser,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_customer_search_v1,"p_query text, p_limit integer",2145,true,false,,false,ops2_admin_attendance_customer_search,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_enqueue_media_v1,"p_conversation_id uuid, p_media_type text, p_mime_type text, p_filename text, p_size_bytes bigint, p_sha256 text, p_caption text, p_idempotency_key text",7208,true,false,,false,ops2_admin_attendance_enqueue_media,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_enqueue_template_v1,"p_conversation_id uuid, p_template_id uuid, p_parameters jsonb, p_idempotency_key text",7799,true,false,,false,ops2_admin_attendance_enqueue_template,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_enqueue_text_v1,"p_conversation_id uuid, p_text text, p_idempotency_key text",4930,true,false,,false,ops2_admin_attendance_enqueue_text,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_enqueue_text_v2,"p_conversation_id uuid, p_text text, p_idempotency_key text",3818,true,false,,false,ops2_admin_attendance_enqueue_text,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_enqueue_text_v3,"p_conversation_id uuid, p_text text, p_idempotency_key text",4964,true,false,,false,ops2_admin_attendance_enqueue_text,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_follow_up_v1,"p_conversation_id uuid, p_follow_up_at timestamp with time zone",990,true,false,,false,ops2_admin_attendance_follow_up,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_library_audit_v1,"p_admin_user_id uuid, p_item_id uuid, p_conversation_id uuid, p_whatsapp_account_id uuid, p_action text, p_result text, p_error_code text, p_outbox_id uuid, p_message_id uuid, p_provider_message_id text, p_metadata jsonb",1471,true,false,,false,ops2_admin_attendance_library_audit,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_library_deactivate_v1,"p_item_id uuid, p_admin_user_id uuid",1028,true,false,,false,ops2_admin_attendance_library_deactivate,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_library_finalize_v1,"p_item_id uuid, p_stored_size_bytes bigint, p_width integer, p_height integer, p_duration_seconds numeric, p_admin_user_id uuid",3643,true,false,,false,ops2_admin_attendance_library_finalize,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_library_reserve_v1,"p_title text, p_media_kind text, p_mime_type text, p_original_filename text, p_original_size_bytes bigint, p_category text, p_tags text[], p_admin_user_id uuid",4591,true,false,,false,ops2_admin_attendance_library_reserve,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_library_update_v1,"p_item_id uuid, p_title text, p_category text, p_tags text[], p_sort_order integer, p_admin_user_id uuid",1495,true,false,,false,ops2_admin_attendance_library_update,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_link_customer_v1,"p_conversation_id uuid, p_customer_id uuid",1805,true,false,,false,ops2_admin_attendance_link_customer,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_mark_read_v1,"p_conversation_id uuid, p_message_id uuid",1458,true,false,,false,ops2_admin_attendance_mark_read,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_marketing_optout_v1,p_conversation_id uuid,1364,true,false,,false,ops2_admin_attendance_marketing_optout,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_media_canary_guard_v1,,3358,true,true,whatsapp_outbox_v1,false,ops2_admin_attendance_media_canary_guard,PRESERVAR_TRIGGER_ATIVO
+public,ops2_admin_attendance_queue_v1,"p_whatsapp_account_id uuid, p_limit integer, p_search text, p_filter text",5253,true,false,,false,ops2_admin_attendance_queue,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_queue_v2,"p_whatsapp_account_id uuid, p_limit integer, p_search text",4581,true,false,,false,ops2_admin_attendance_queue,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_queue_v3,"p_whatsapp_account_id uuid, p_limit integer, p_search text, p_label_id uuid",408,true,false,,false,ops2_admin_attendance_queue,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_queue_v4,"p_whatsapp_account_id uuid, p_limit integer, p_search text, p_label_id uuid",11408,true,false,,false,ops2_admin_attendance_queue,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_reconcile_customer_v1,p_conversation_id uuid,4005,true,false,,false,ops2_admin_attendance_reconcile_customer,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_requeue_failed_media_v1,p_outbox_id uuid,1516,true,false,,false,ops2_admin_attendance_requeue_failed_media,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_resume_ai_v1,p_conversation_id uuid,1570,true,false,,false,ops2_admin_attendance_resume_ai,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_set_labels_v1,"p_conversation_id uuid, p_label_ids uuid[]",3426,true,false,,false,ops2_admin_attendance_set_labels,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_takeover_v1,p_conversation_id uuid,1905,true,false,,false,ops2_admin_attendance_takeover,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_weekly_consent_mark_failed_v1,p_request_id uuid,553,true,false,,false,ops2_admin_attendance_weekly_consent_mark_failed,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_weekly_consent_mark_sent_browser_v1,"p_request_id uuid, p_outbox_id uuid",1677,true,false,,false,ops2_admin_attendance_weekly_consent_mark_sent_browser,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_weekly_consent_mark_sent_v1,"p_request_id uuid, p_outbox_id uuid, p_provider_message_id text",739,true,false,,false,ops2_admin_attendance_weekly_consent_mark_sent,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_weekly_consent_prepare_browser_v1,p_conversation_id uuid,477,true,false,,false,ops2_admin_attendance_weekly_consent_prepare_browser,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_weekly_consent_prepare_v1,p_conversation_id uuid,3624,true,false,,false,ops2_admin_attendance_weekly_consent_prepare,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_weekly_consent_state_browser_v1,p_conversation_id uuid,474,true,false,,false,ops2_admin_attendance_weekly_consent_state_browser,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_attendance_weekly_consent_state_v1,p_conversation_id uuid,2451,true,false,,false,ops2_admin_attendance_weekly_consent_state,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_customer_delete_v1,p_customer_id uuid,1100,true,false,,false,ops2_admin_customer_delete,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_admin_customer_save_v2,p_payload jsonb,7618,true,false,,false,ops2_admin_customer_save,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_accept_live_outbound_v1,"p_outbox_id uuid, p_provider_message_id text, p_accepted_at timestamp with time zone",3557,true,false,,false,ops2_ana_accept_live_outbound,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_active_config_v1,,433,true,false,,false,ops2_ana_active_config,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_admin_load_v1,,1918,true,false,,false,ops2_ana_admin_load,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_admin_publish_v1,"p_test_run_id uuid, p_note text, p_actor_id uuid",2212,true,false,,false,ops2_ana_admin_publish,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_admin_record_test_run_v1,"p_draft_revision bigint, p_scenario_keys text[], p_passed_count integer, p_failed_count integer, p_safe_reasons jsonb, p_latency_ms integer, p_actor_id uuid",2789,true,false,,false,ops2_ana_admin_record_test_run,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_admin_rollback_v1,"p_version_id bigint, p_note text, p_actor_id uuid",1139,true,false,,false,ops2_ana_admin_rollback,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_admin_save_draft_v1,"p_configuration jsonb, p_expected_revision bigint, p_note text, p_actor_id uuid",1670,true,false,,false,ops2_ana_admin_save_draft,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_admin_set_channel_v1,"p_whatsapp_account_id uuid, p_enabled boolean, p_actor_id uuid",1429,true,false,,false,ops2_ana_admin_set_channel,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_apply_trigger_label_v1,"p_conversation_id uuid, p_label_id uuid, p_trigger_key text",1402,true,false,,false,ops2_ana_apply_trigger_label,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_begin_live_send_v1,"p_job_id uuid, p_text text",3481,true,false,,false,ops2_ana_begin_live_send,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_claim_dry_run_job_v1,p_job_id uuid,766,true,false,,false,ops2_ana_claim_dry_run_job,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_claim_dry_run_v1,p_limit integer,733,true,false,,false,ops2_ana_claim_dry_run,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_claim_live_v1,p_limit integer,747,true,false,,false,ops2_ana_claim_live,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_customer_confirmation_apply_signal_v1,"p_request_id uuid, p_message_id uuid, p_decision text",3424,true,false,,false,ops2_ana_customer_confirmation_apply_signal,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_customer_confirmation_bind_outbound_v1,"p_request_id uuid, p_message_id uuid",2084,true,false,,false,ops2_ana_customer_confirmation_bind_outbound,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_customer_confirmation_create_v1,"p_conversation_id uuid, p_suggestion_ids uuid[]",4785,true,false,,false,ops2_ana_customer_confirmation_create,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_customer_confirmation_pending_v1,p_conversation_id uuid,1418,true,false,,false,ops2_ana_customer_confirmation_pending,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_customer_profile_persist_v1,"p_conversation_id uuid, p_customer_id uuid, p_conversation_phone_e164 text, p_snapshot_key text, p_model text, p_provider_response_id text, p_metadata jsonb, p_created_by_admin_user_id uuid, p_candidates jsonb",5384,true,false,,false,ops2_ana_customer_profile_persist,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_enqueue_dry_run_v1,p_inbound_message_id uuid,2284,true,false,,false,ops2_ana_enqueue_dry_run,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_enqueue_live_job_v1,p_inbound_message_id uuid,2471,true,false,,false,ops2_ana_enqueue_live_job,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_fail_live_send_v1,"p_outbox_id uuid, p_reason text",681,true,false,,false,ops2_ana_fail_live_send,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_finish_dry_run_v1,"p_job_id uuid, p_status text, p_decision text, p_suggestion_text text, p_confidence numeric, p_reason text, p_model text, p_provider_response_id text, p_last_error text, p_metadata jsonb",2387,true,false,,false,ops2_ana_finish_dry_run,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_finish_live_job_v1,"p_job_id uuid, p_status text, p_decision text, p_text text, p_confidence numeric, p_reason text, p_model text, p_provider_response_id text, p_error text, p_metadata jsonb",1792,true,false,,false,ops2_ana_finish_live_job,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_ana_remove_trigger_label_v1,"p_conversation_id uuid, p_label_id uuid, p_trigger_key text",2002,false,false,,false,ops2_ana_remove_trigger_label,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_apply_order_separation_stock_v2,p_order_id uuid,4479,true,false,,false,ops2_apply_order_separation_stock,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_apply_papoai_customer_flow_v1,"p_event_key text, p_phone text, p_name text, p_conversation_ref text",416,true,false,,false,ops2_apply_papoai_customer_flow,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_apply_papoai_customer_flow_v2,"p_event_key text, p_phone text, p_name text, p_document text, p_address text, p_district text, p_city text, p_state text, p_conversation_ref text, p_capture_id uuid, p_flow_token text",16288,true,false,,false,ops2_apply_papoai_customer_flow,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_apply_virtual_stock_webhook_shadow_v1,,5945,true,true,bling_webhook_inbox_v2,false,ops2_apply_virtual_stock_webhook_shadow,PRESERVAR_TRIGGER_ATIVO
+public,ops2_arm_catalog_stock_canary_band_v1,"p_canary uuid, p_band integer, p_confirmation text",1581,true,false,,false,ops2_arm_catalog_stock_canary_band,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_arm_catalog_stock_canary_delta2_v1,"p_canary uuid, p_confirmation text",1325,false,false,,false,ops2_arm_catalog_stock_canary_delta2,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_arm_catalog_stock_canary_highrisk_v1,"p_canary uuid, p_band integer, p_confirmation text",1545,true,false,,false,ops2_arm_catalog_stock_canary_highrisk,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_arm_catalog_stock_canary_v1,"p_canary uuid, p_confirmation text",1293,false,false,,false,ops2_arm_catalog_stock_canary,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_attendance_ai_gate_v1,p_conversation_id uuid,813,true,false,,false,ops2_attendance_ai_gate,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_attendance_delivery_date_v1,p_value text,411,true,false,,false,ops2_attendance_delivery_date,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_attendance_media_live_readiness_v1,p_whatsapp_account_id uuid,4612,true,false,,false,ops2_attendance_media_live_readiness,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_attendance_orders_refresh_delivery_labels_trigger_v1,,949,true,true,orders,false,ops2_attendance_orders_refresh_delivery_labels_trigger,PRESERVAR_TRIGGER_ATIVO
+public,ops2_attendance_outbox_human_ai_guard_v1,,1629,true,true,whatsapp_outbox_v1,false,ops2_attendance_outbox_human_ai_guard,PRESERVAR_TRIGGER_ATIVO
+public,ops2_attendance_product_interest_item_trigger_v1,,597,true,true,order_items,false,ops2_attendance_product_interest_item_trigger,PRESERVAR_TRIGGER_ATIVO
+public,ops2_attendance_product_interest_order_trigger_v1,,568,true,true,orders,false,ops2_attendance_product_interest_order_trigger,PRESERVAR_TRIGGER_ATIVO
+public,ops2_attendance_refresh_delivery_day_labels_v1,p_conversation_id uuid,3104,true,false,,false,ops2_attendance_refresh_delivery_day_labels,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_attendance_refresh_product_interest_labels_v1,p_order_id uuid,3959,true,false,,false,ops2_attendance_refresh_product_interest_labels,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_auto_process_papoai_flow_v2,,620,true,false,papoai_webhook_inbox_v2,false,ops2_auto_process_papoai_flow,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_bling_stock_worker_health_summary_v1,,459,false,false,,false,ops2_bling_stock_worker_health_summary,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_build_catalog_sync_plan_v1,p_run uuid,1532,false,false,,false,ops2_build_catalog_sync_plan,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_capture_catalog_baseline_v1,p_notes text,1053,false,false,,false,ops2_capture_catalog_baseline,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_check_stock_cutover_canary_v1,p_run_id uuid,1550,true,false,,false,ops2_check_stock_cutover_canary,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_claim_checkout_order_whatsapp_v1,p_order_id uuid,1924,true,false,,false,ops2_claim_checkout_order_whatsapp,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_claim_order_whatsapp_outbox_v1,p_order_id uuid,1414,true,false,,false,ops2_claim_order_whatsapp_outbox,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_claim_papoai_order_signal_v1,,1483,true,false,,false,ops2_claim_papoai_order_signal,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_claim_whatsapp_outbox_v1,p_channel_origin text,2079,true,false,,false,ops2_claim_whatsapp_outbox,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_consume_order_registration_link_v1,"p_token text, p_customer_id uuid, p_phone text",4177,true,false,,false,ops2_consume_order_registration_link,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_customer_address_number_fill_v1,,295,false,true,customer_addresses,false,ops2_customer_address_number_fill,PRESERVAR_TRIGGER_ATIVO
+public,ops2_customer_address_registration_journey_trigger_v1,,622,true,true,customer_addresses,false,ops2_customer_address_registration_journey_trigger,PRESERVAR_TRIGGER_ATIVO
+public,ops2_customer_identity_summary_v1,,230,true,false,,false,ops2_customer_identity_summary,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_customer_identity_summary_v2,,4669,true,false,,false,ops2_customer_identity_summary,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_customer_registration_journey_trigger_v1,,286,true,true,customers,false,ops2_customer_registration_journey_trigger,PRESERVAR_TRIGGER_ATIVO
+public,ops2_customer_registration_state_v1,p_customer_id uuid,3329,true,false,,false,ops2_customer_registration_state,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_customer_registration_summary_v1,p_days integer,2815,true,false,,false,ops2_customer_registration_summary,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_enqueue_admin_order_whatsapp_v1,p_order_id uuid,7786,true,false,,false,ops2_enqueue_admin_order_whatsapp,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_enqueue_order_whatsapp_v1,"p_order_id uuid, p_message_kind text",856,false,false,,false,ops2_enqueue_order_whatsapp,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_enqueue_order_whatsapp_v1_base,"p_order_id uuid, p_message_kind text",6393,true,false,,false,,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_enqueue_papoai_order_signals_v1,"p_order_id uuid, p_channel_origin text, p_phone_e164 text, p_signal_keys text[]",1809,true,false,,false,ops2_enqueue_papoai_order_signals,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_enqueue_storefront_order_whatsapp_v1,,508,true,true,orders,false,ops2_enqueue_storefront_order_whatsapp,PRESERVAR_TRIGGER_ATIVO
+public,ops2_enrich_storefront_order_result_v1,p_result jsonb,1974,true,false,,false,ops2_enrich_storefront_order_result,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_extract_address_number_v1,p_street text,755,false,false,,false,ops2_extract_address_number,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_fefo_preview_v1,"p_product_id uuid, p_quantity numeric",1500,true,false,,false,ops2_fefo_preview,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_finish_papoai_order_signal_v1,"p_outbox_id uuid, p_status text, p_external_ref text, p_last_error text, p_retry_after_seconds integer",1389,true,false,,false,ops2_finish_papoai_order_signal,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_finish_whatsapp_outbox_v1,"p_outbox_id uuid, p_status text, p_external_message_id text, p_last_error text, p_retry_after_seconds integer",2455,true,false,,false,ops2_finish_whatsapp_outbox,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_fiscal_dispatch_preflight_v1,p_order_id uuid,5438,true,false,,false,ops2_fiscal_dispatch_preflight,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_format_order_public_code_v1,p_value bigint,343,false,false,,false,ops2_format_order_public_code,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_get_order_separation_v2,p_order_id uuid,6005,true,false,,false,ops2_get_order_separation,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_guard_dispatch_fiscal_job_v1,,946,true,true,dispatch_fiscal_jobs,false,ops2_guard_dispatch_fiscal_job,PRESERVAR_TRIGGER_ATIVO
+public,ops2_guard_fiscal_runtime_arm_v1,,795,true,true,fiscal_runtime_config,false,ops2_guard_fiscal_runtime_arm,PRESERVAR_TRIGGER_ATIVO
+public,ops2_init_order_separation_v2,p_order_id uuid,5590,true,false,,false,ops2_init_order_separation,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_integrated_readiness_summary_v1,,841,false,false,,false,ops2_integrated_readiness_summary,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_issue_order_registration_link_v1,p_order_id uuid,1756,true,false,,false,ops2_issue_order_registration_link,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_issue_papoai_catalog_link_v1,"p_phone text, p_conversation_id uuid, p_source_event_key text",954,true,false,,false,ops2_issue_papoai_catalog_link,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_issue_registration_catalog_return_v1,"p_customer_id uuid, p_registration_job_id uuid",3830,true,false,,false,ops2_issue_registration_catalog_return,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_issue_storefront_catalog_link_v1,"p_phone text, p_conversation_id uuid, p_source_event_key text, p_source text, p_ttl_minutes integer",3955,true,false,,false,ops2_issue_storefront_catalog_link,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_link_papoai_capture_order_v1,p_capture_id uuid,5795,true,false,,false,ops2_link_papoai_capture_order,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_link_storefront_order_from_identity_v1,p_order_id uuid,3545,true,false,,false,ops2_link_storefront_order_from_identity,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_mark_order_separation_completion_v2,"p_order_id uuid, p_phase text, p_metadata jsonb",1391,true,false,,false,ops2_mark_order_separation_completion,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_materialize_catalog_bindings_v1,p_run uuid,1495,false,false,,false,ops2_materialize_catalog_bindings,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_maybe_enqueue_customer_bling_v1,"p_customer_id uuid, p_reason text",2180,true,false,,false,ops2_maybe_enqueue_customer_bling,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_meta_dispatch_readiness_v1,p_intent_id uuid,2395,true,false,,false,ops2_meta_dispatch_readiness,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_operational_ux_state_v1,,1711,false,false,,false,ops2_operational_ux_state,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_order_delivery_number_fill_v1,,722,false,true,orders,false,ops2_order_delivery_number_fill,PRESERVAR_TRIGGER_ATIVO
+public,ops2_order_item_public_snapshot_trigger_v1,,426,true,true,order_items,false,ops2_order_item_public_snapshot_trigger,PRESERVAR_TRIGGER_ATIVO
+public,ops2_order_public_link_v1,p_order_id uuid,817,true,false,,false,ops2_order_public_link,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_order_registration_journey_trigger_v1,,279,true,true,orders,false,ops2_order_registration_journey_trigger,PRESERVAR_TRIGGER_ATIVO
+public,ops2_orders_ensure_site_customer_v1,,1541,true,true,orders,false,ops2_orders_ensure_site_customer,PRESERVAR_TRIGGER_ATIVO
+public,ops2_papoai_attendance_provider_store_v1,"p_channel text, p_url text",1351,true,false,,false,ops2_papoai_attendance_provider_store,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_papoai_attendance_provider_url_v1,p_channel text,842,true,false,,false,ops2_papoai_attendance_provider_url,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_papoai_capture_order_link_trigger_v1,,487,true,true,papoai_webhook_inbox_v2,false,ops2_papoai_capture_order_link_trigger,PRESERVAR_TRIGGER_ATIVO
+public,ops2_papoai_dispatch_guard_v1,p_intent_id uuid,5740,true,false,,false,ops2_papoai_dispatch_guard,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_papoai_flow_text_field_v1,"p_text text, p_key text",397,false,false,,false,ops2_papoai_flow_text_field,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_papoai_operational_summary_v1,,1386,false,false,,false,ops2_papoai_operational_summary,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_papoai_order_provider_store_v1,"p_channel text, p_url text",1329,true,false,,false,ops2_papoai_order_provider_store,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_papoai_order_provider_url_v1,p_channel text,704,true,false,,false,ops2_papoai_order_provider_url,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_papoai_outbound_summary_v1,,1208,true,false,,false,ops2_papoai_outbound_summary,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_papoai_route_context_v1,p_order_id uuid,3517,true,false,,false,ops2_papoai_route_context,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_papoai_signal_allowed_v1,p_signal text,526,false,false,,false,ops2_papoai_signal_allowed,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_papoai_signal_provider_store_v1,"p_channel text, p_signal text, p_url text",1379,true,false,,false,ops2_papoai_signal_provider_store,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_papoai_signal_provider_url_v1,"p_channel text, p_signal text",750,true,false,,false,ops2_papoai_signal_provider_url,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_plan_registration_flow_intent_v1,p_order_id uuid,4302,true,false,,false,ops2_plan_registration_flow_intent,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_pre_human_catalog_readiness_summary_v1,,851,false,false,,false,ops2_pre_human_catalog_readiness_summary,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_prepare_catalog_stock_canary_band_v1,"p_run uuid, p_abs_delta integer, p_limit integer",2340,true,false,,false,ops2_prepare_catalog_stock_canary_band,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_prepare_catalog_stock_canary_highrisk_v1,"p_run uuid, p_abs_delta integer",2201,true,false,,false,ops2_prepare_catalog_stock_canary_highrisk,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_prepare_catalog_stock_canary_v1,"p_run uuid, p_limit integer",2099,true,false,,false,ops2_prepare_catalog_stock_canary,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_prepare_order_separation_completion_v2,"p_order_id uuid, p_expected_order_updated_at timestamp with time zone",6444,true,false,,false,ops2_prepare_order_separation_completion,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_prepare_stock_cutover_canary_v1,,474,true,false,,false,ops2_prepare_stock_cutover_canary,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_process_papoai_flow_capture_v2,p_capture_id uuid,4370,true,false,,false,ops2_process_papoai_flow_capture,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_purchase_xml_receipt_gate_v1,p_document_id uuid,1041,false,false,,false,ops2_purchase_xml_receipt_gate,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_reconcile_lot_expiry_status_v1,,1109,true,false,,false,ops2_reconcile_lot_expiry_status,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_reconcile_order_whatsapp_sent_v1,,1553,false,true,whatsapp_messages_v1,false,ops2_reconcile_order_whatsapp_sent,PRESERVAR_TRIGGER_ATIVO
+public,ops2_reconcile_papoai_inbound_v1,"p_since timestamp with time zone, p_limit integer",8690,true,false,,false,ops2_reconcile_papoai_inbound,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_reconcile_unlinked_site_orders_v2,p_days integer,2805,true,false,,false,ops2_reconcile_unlinked_site_orders,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_refresh_customer_registration_journeys_v1,"p_customer_id uuid, p_emit_event boolean",1200,true,false,,false,ops2_refresh_customer_registration_journeys,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_refresh_order_public_snapshot_v1,p_order_id uuid,6315,true,false,,false,ops2_refresh_order_public_snapshot,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_refresh_order_registration_journey_v1,"p_order_id uuid, p_emit_event boolean",5796,true,false,,false,ops2_refresh_order_registration_journey,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_refresh_storefront_order_whatsapp_v1,,805,true,true,orders,false,ops2_refresh_storefront_order_whatsapp,PRESERVAR_TRIGGER_ATIVO
+public,ops2_registration_journey_outbound_intent_trigger_v1,,285,true,false,ops2_customer_registration_journeys_v1,false,ops2_registration_journey_outbound_intent_trigger,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_render_whatsapp_template_body_v1,"p_whatsapp_account_id uuid, p_template_name text, p_components jsonb, p_variable_values jsonb",1991,true,false,,false,ops2_render_whatsapp_template_body,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_require_separator_completion_v4,,392,true,true,order_separation_completions_v1,false,ops2_require_separator_completion,PRESERVAR_TRIGGER_ATIVO
+public,ops2_resolve_order_registration_link_v1,p_token text,1174,true,false,,false,ops2_resolve_order_registration_link,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_rollback_bling_stock_authority_v1,p_reason text,835,true,false,,false,ops2_rollback_bling_stock_authority,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_set_lot_tracking_complete_v1,"p_product_id uuid, p_complete boolean, p_operator text",2200,true,false,,false,ops2_set_lot_tracking_complete,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_set_order_separation_item_v2,"p_order_id uuid, p_order_item_id uuid, p_state text, p_expected_order_updated_at timestamp with time zone, p_separator_key text",2907,true,false,,false,ops2_set_order_separation_item,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_set_order_separator_v2,"p_order_id uuid, p_separator_key text",2646,true,false,,false,ops2_set_order_separator,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_upsert_product_lot_v1,"p_product_id uuid, p_lot_code text, p_expiration_date date, p_quantity_on_hand numeric, p_source text, p_source_ref text, p_received_at timestamp with time zone, p_metadata jsonb",2184,true,false,,false,ops2_upsert_product_lot,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_upsert_storefront_registration_v1,"p_phone text, p_name text, p_document text, p_street text, p_number text, p_neighborhood text, p_city text, p_complement text, p_reference text, p_postal_code text, p_marketing_opt_in boolean, p_source_key text",7820,true,false,,false,ops2_upsert_storefront_registration,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_valid_cpf_cnpj_v1,p_document text,1347,false,false,,false,ops2_valid_cpf_cnpj,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_verify_catalog_stock_canary_v1,p_canary uuid,1028,false,false,,false,ops2_verify_catalog_stock_canary,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_verify_catalog_stock_canary_v2,p_canary uuid,2972,true,false,,false,ops2_verify_catalog_stock_canary,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_whatsapp_canonical_template_body_v1,"p_message_id uuid, p_whatsapp_account_id uuid, p_metadata jsonb",2326,true,false,,false,ops2_whatsapp_canonical_template_body,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops2_whatsapp_capture_template_text_v1,,569,true,true,whatsapp_messages_v1,false,ops2_whatsapp_capture_template_text,PRESERVAR_TRIGGER_ATIVO
+public,ops3_add_items_to_existing_order_v1,"p_token_hash text, p_request_key text, p_items jsonb",12055,true,false,,false,ops3_add_items_to_existing_order,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops3_complete_delivery_v1,"p_order_id uuid, p_method text, p_amount_cents bigint, p_operator_label text, p_idempotency_key text",4957,true,false,,false,ops3_complete_delivery,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops3_confirm_customer_order_v1,"p_token_hash text, p_expected_total numeric, p_expected_updated_at timestamp with time zone",3985,true,false,,false,ops3_confirm_customer_order,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops3_create_order_addon_session_v1,"p_order_id uuid, p_token_hash text, p_source text, p_metadata jsonb",3420,true,false,,false,ops3_create_order_addon_session,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops3_enqueue_confirmed_storefront_v1,,864,true,true,orders,false,ops3_enqueue_confirmed_storefront,PRESERVAR_TRIGGER_ATIVO
+public,ops3_get_customer_order_action_v1,p_token_hash text,1351,true,false,,false,ops3_get_customer_order_action,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops3_get_order_addon_session_v1,p_token_hash text,2791,true,false,,false,ops3_get_order_addon_session,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops3_issue_customer_order_action_v1,"p_order_id uuid, p_token_hash text",1108,true,false,,false,ops3_issue_customer_order_action,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops3_order_addon_eligibility_v1,p_order_id uuid,2603,true,false,,false,ops3_order_addon_eligibility,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops3_reopen_order_v1,"p_order_id uuid, p_operator_label text",1545,true,false,,false,ops3_reopen_order,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops4_apply_postorder_quickreply_v1,"p_order_id uuid, p_account_id uuid, p_phone_e164 text, p_action text, p_nonce_hash text, p_provider_message_id text",2318,true,false,,false,ops4_apply_postorder_quickreply,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops4_claim_due_postorder_followups_v1,p_limit integer,1242,true,false,,false,ops4_claim_due_postorder_followups,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops4_claim_meta_postorder_command_v1,p_token_hash text,555,true,false,,false,ops4_claim_meta_postorder_command,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops4_claim_postorder_dispatch_command_v1,p_token_hash text,463,true,false,,false,ops4_claim_postorder_dispatch_command,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops4_complete_postorder_confirm_send_v1,"p_order_id uuid, p_status text, p_nonce_hash text, p_expected_total numeric, p_expected_updated_at timestamp with time zone, p_provider_message_id text, p_error text",1388,true,false,,false,ops4_complete_postorder_confirm_send,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops4_dispatch_due_postorder_confirmation_v1,,1544,true,false,,false,ops4_dispatch_due_postorder_confirmation,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops4_dispatch_meta_postorder_v1,,1001,true,false,,false,ops4_dispatch_meta_postorder,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops4_meta_postorder_approval_tick_v1,,1127,true,false,,false,ops4_meta_postorder_approval_tick,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops4_offer_send_result_v1,"p_order_id uuid, p_status text, p_provider_message_id text",552,true,false,,false,ops4_offer_send_result,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops4_register_postorder_followup_v1,"p_order_id uuid, p_whatsapp_account_id uuid, p_phone_e164 text, p_channel text",1706,true,false,,false,ops4_register_postorder_followup,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops4_start_dispatch_v1,"p_order_id uuid, p_operator_label text, p_idempotency_key text",3182,true,false,,false,ops4_start_dispatch,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_apply_stock_recount_result_v1,"p_product_id uuid, p_count_id uuid, p_counted_quantity numeric, p_operator_label text",3044,true,false,,false,ops_apply_stock_recount_result,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_cancel_print_jobs_for_entity_v1,"p_entity_type text, p_entity_id text, p_reason text",618,true,false,,false,ops_cancel_print_jobs_for_entity,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_claim_print_jobs_v1,"p_worker text, p_limit integer",752,true,false,,false,ops_claim_print_jobs,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_classify_stock_reconciliation_v1,"p_attention_id uuid, p_cause_code text, p_cause_note text, p_evidence_ref text, p_operator_label text",1794,true,false,,false,ops_classify_stock_reconciliation,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_confirm_delivery_return_v1,"p_case_id uuid, p_disposition text, p_operator_label text",4357,true,false,,false,ops_confirm_delivery_return,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_enforce_delivery_payment_before_delivered_v1,,1214,false,true,orders,false,ops_enforce_delivery_payment_before_delivered,PRESERVAR_TRIGGER_ATIVO
+public,ops_enforce_fiscal_before_dispatch_v1,,1109,false,false,,false,ops_enforce_fiscal_before_dispatch,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_enforce_order_check_before_ready_v1,,937,false,true,orders,false,ops_enforce_order_check_before_ready,PRESERVAR_TRIGGER_ATIVO
+public,ops_enqueue_print_job_v1,"p_job_type text, p_entity_type text, p_entity_id text, p_version_key text, p_printer_profile text, p_copies integer, p_payload jsonb, p_source_system text, p_idempotency_key text",1285,true,false,,false,ops_enqueue_print_job,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_finish_order_check_v1,"p_order_id uuid, p_operator_label text",1312,true,false,,false,ops_finish_order_check,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_finish_print_job_v1,"p_job_id uuid, p_status text, p_error text",688,true,false,,false,ops_finish_print_job,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_get_order_check_v1,p_order_id uuid,982,true,false,,false,ops_get_order_check,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_mark_delivery_stop_failed_v1,"p_order_id uuid, p_reason text",961,true,false,,false,ops_mark_delivery_stop_failed,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_open_attention_v1,"p_type text, p_summary text, p_entity_type text, p_entity_id text, p_correlation_id text, p_priority text, p_owner_role text, p_recommended_action text, p_evidence jsonb, p_source_system text, p_idempotency_key text, p_due_at timestamp with time zone",1844,true,false,,false,ops_open_attention,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_payment_bling_shadow_status_v1,,1026,true,false,,false,ops_payment_bling_shadow_status,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_plan_delivery_run_v1,"p_vehicle_key text, p_order_ids uuid[], p_operator_label text",3697,true,false,,false,ops_plan_delivery_run,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_prepare_delivery_payment_bling_shadow_v1,p_settlement_id uuid,2977,true,false,,false,ops_prepare_delivery_payment_bling_shadow,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_present_print_job_v1,"p_entity_type text, p_entity_id text, p_job_type text",709,true,false,,false,ops_present_print_job,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_record_delivery_payment_v1,"p_order_id uuid, p_parts jsonb, p_operator_label text, p_idempotency_key text",5642,true,false,,false,ops_record_delivery_payment,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_record_event_v1,"p_domain text, p_event_type text, p_summary text, p_actor_type text, p_entity_type text, p_entity_id text, p_correlation_id text, p_actor_id text, p_actor_label text, p_source_system text, p_severity text, p_payload jsonb, p_external_ref text, p_idempotency_key text, p_occurred_at timestamp with time zone",1615,true,false,,false,ops_record_event,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_record_inventory_count_v1,"p_product_id uuid, p_counted_quantity numeric, p_operator_label text",3247,true,false,,false,ops_record_inventory_count,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_record_inventory_incident_v1,"p_product_id uuid, p_incident_type text, p_quantity numeric, p_operator_label text, p_note text, p_source_order_id uuid",4478,true,false,,false,ops_record_inventory_incident,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_register_failed_delivery_v1,"p_order_id uuid, p_reason_code text, p_note text, p_operator_label text",3466,true,false,,false,ops_register_failed_delivery,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_request_approval_v1,"p_action_type text, p_summary text, p_risk text, p_entity_type text, p_entity_id text, p_correlation_id text, p_requested_by_type text, p_requested_by_id text, p_requested_by_label text, p_proposed_action jsonb, p_evidence jsonb, p_idempotency_key text, p_expires_at timestamp with time zone",1635,true,false,,false,ops_request_approval,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_resolve_attention_v1,"p_attention_id uuid, p_resolution text, p_resolution_ref text",518,true,false,,false,ops_resolve_attention,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_resolve_delivery_return_review_v1,"p_case_id uuid, p_action text, p_operator_label text",6591,true,false,,false,ops_resolve_delivery_return_review,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_scan_order_check_v1,"p_session_id uuid, p_gtin text, p_quantity numeric",1449,true,false,,false,ops_scan_order_check,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_start_order_check_v1,"p_order_id uuid, p_operator_label text",1275,true,false,,false,ops_start_order_check,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_sync_delivery_payment_fiscal_trigger_v1,,555,true,true,order_payment_settlements,false,ops_sync_delivery_payment_fiscal_trigger,PRESERVAR_TRIGGER_ATIVO
+public,ops_sync_delivery_payment_fiscal_v1,p_settlement_id uuid,3356,true,false,,false,ops_sync_delivery_payment_fiscal,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,ops_sync_delivery_stop_from_order_trigger_v1,,394,false,true,orders,false,ops_sync_delivery_stop_from_order_trigger,PRESERVAR_TRIGGER_ATIVO
+public,ops_sync_delivery_stop_v1,"p_order_id uuid, p_order_status text",1584,true,false,,false,ops_sync_delivery_stop,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,papoai_cancel_draft_v2,"p_draft_id uuid, p_revision integer",1046,true,false,,false,papoai_cancel_draft,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,papoai_confirm_draft_v2,"p_draft_id uuid, p_revision integer, p_summary_hash text, p_confirmed_message_id text",3080,true,false,,false,papoai_confirm_draft,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,papoai_ensure_conversation_v2,p_capture_id uuid,6111,true,false,,false,papoai_ensure_conversation,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,papoai_mark_draft_summary_v2,"p_draft_id uuid, p_revision integer, p_summary_hash text, p_sent_message_id text, p_quoted_total_cents bigint",1629,true,false,,false,papoai_mark_draft_summary,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,papoai_normalize_capture_v2,p_capture_id uuid,4603,true,false,,false,papoai_normalize_capture,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,papoai_normalize_pending_v2,p_limit integer,893,true,false,,false,papoai_normalize_pending,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,papoai_prepare_basket_draft_v1,"p_conversation_ref text, p_phone text, p_message text, p_customer_id uuid, p_source_event_key text",4379,true,false,,false,papoai_prepare_basket_draft,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,papoai_prepare_product_draft_v1,"p_conversation_ref text, p_phone text, p_message text, p_customer_id uuid, p_source_event_key text",5399,true,false,,false,papoai_prepare_product_draft,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,papoai_resolve_basket_intent_v1,p_message text,3404,true,false,,false,papoai_resolve_basket_intent,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,papoai_resolve_product_intent_v1,"p_query text, p_limit integer",3413,true,false,,false,papoai_resolve_product_intent,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,papoai_upsert_order_draft_v2,"p_conversation_ref text, p_phone text, p_cart jsonb, p_payment_method text, p_customer_snapshot jsonb, p_delivery jsonb, p_customer_id uuid, p_source_event_key text",3684,true,false,,false,papoai_upsert_order_draft,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,phone_variants_br,p_phone text,1053,false,false,,false,,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,prepare_bling_invoice_issue_job_v1,"p_order_id uuid, p_idempotency_key text",2009,true,false,,false,prepare_bling_invoice_issue_job,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,prepare_purchase_stock_receipt_plan_v1,p_document_id uuid,4046,true,false,,false,prepare_purchase_stock_receipt_plan,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,preview_basket_commercial_lot_v1,"p_basket_id uuid, p_quantity integer, p_items jsonb",5187,true,false,,false,preview_basket_commercial_lot,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,preview_bling_invoice_eligibility_v1,p_order_id uuid,1328,true,false,,false,preview_bling_invoice_eligibility,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,preview_store_basket_recipe_v1,"p_basket_id uuid, p_quantity integer",2922,true,false,,false,preview_store_basket_recipe,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,purchase_xml_activate_inventory_lots_trigger_v1,,745,true,true,"purchase_stock_receipt_plans_v1, purchase_stock_receipts",false,purchase_xml_activate_inventory_lots_trigger,PRESERVAR_TRIGGER_ATIVO
+public,purchase_xml_catalog_identity_immutable_v1,,240,false,true,purchase_xml_catalog_identity_actions_v1,false,purchase_xml_catalog_identity_immutable,PRESERVAR_TRIGGER_ATIVO
+public,purchase_xml_lot_evidence_expiration_v1,,512,true,true,purchase_xml_item_lot_evidence,false,purchase_xml_lot_evidence_expiration,PRESERVAR_TRIGGER_ATIVO
+public,purchase_xml_resolve_catalog_identity_v1,"p_item_id uuid, p_product_id uuid, p_create_new boolean, p_proposed_name text, p_gtin_source text, p_gtin_role text, p_conversion_factor integer, p_actor_id uuid, p_confirmation text",9400,false,false,,false,purchase_xml_resolve_catalog_identity,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,purchase_xml_resolve_catalog_identity_v2,"p_item_id uuid, p_product_id uuid, p_create_new boolean, p_proposed_name text, p_gtin_source text, p_gtin_role text, p_conversion_factor integer, p_actor_id uuid, p_confirmation text, p_purchase_pack_units_for_review integer",10167,false,false,,false,purchase_xml_resolve_catalog_identity,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,purchase_xml_sync_inventory_lot_v1,,3999,true,true,purchase_xml_items,false,purchase_xml_sync_inventory_lot,PRESERVAR_TRIGGER_ATIVO
+public,recalculate_cart,p_cart_id uuid,2047,true,false,,true,,CANDIDATA_A_LEGADO_QUEBRADO
+public,reconcile_product_fiscal_strict_validation_v1,,1830,false,false,,false,reconcile_product_fiscal_strict_validation,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,reconcile_vitrine_order_customer_v1,"p_customer_id uuid, p_order_suffix text, p_phone text, p_address jsonb",5378,true,false,,false,reconcile_vitrine_order_customer,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,refresh_basket_hidden_adjustment_v1,p_basket_id uuid,598,true,false,,false,refresh_basket_hidden_adjustment,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,refresh_customer_purchase_profile,p_customer_id uuid,1513,true,false,,false,,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,refresh_order_fiscal_readiness_v1,p_order_id uuid,4177,true,false,,false,refresh_order_fiscal_readiness,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,refresh_product_fiscal_candidates_r0_3,,1736,false,false,,false,,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,refresh_product_fiscal_complex_bundle_guard_v1,,3082,false,false,,false,refresh_product_fiscal_complex_bundle_guard,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,refresh_product_fiscal_evidence_quality_v1,,11701,false,false,,false,refresh_product_fiscal_evidence_quality,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,refresh_product_fiscal_observed_conflicts_v1,,5178,false,false,,false,refresh_product_fiscal_observed_conflicts,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,refresh_product_fiscal_origin_consensus_v1,,1303,false,false,,false,refresh_product_fiscal_origin_consensus,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,refresh_product_fiscal_review_state_v1,,1227,false,false,,false,refresh_product_fiscal_review_state,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,refresh_product_fiscal_rule_integrity_v1,,1939,false,false,,false,refresh_product_fiscal_rule_integrity,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,release_bling_hub_oauth_lock_v2,p_owner uuid,356,true,false,,false,release_bling_hub_oauth_lock,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,release_legacy_basket_lot_units_v1,"p_lot_id uuid, p_quantity integer, p_operator text, p_note text",1805,false,false,,false,release_legacy_basket_lot_units,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,release_vitrine_order_stock_v1,p_order_id uuid,1598,false,false,,false,release_vitrine_order_stock,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,rename_storefront_v3_category,"p_old text, p_new text",1058,false,false,,false,,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,reopen_basket_kit_lot_for_edit_v1,"p_lot_id uuid, p_operator text",3226,true,false,,false,reopen_basket_kit_lot_for_edit,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,reserve_bling_hub_rate_slot_v2,p_min_interval_ms integer,944,true,false,,false,reserve_bling_hub_rate_slot,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,reserve_store_basket_recipe_v1,"p_basket_id uuid, p_quantity integer, p_operator text, p_notes text",6972,true,false,,false,reserve_store_basket_recipe,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,reserve_vitrine_order_stock_v1,p_order_id uuid,4773,false,false,,false,reserve_vitrine_order_stock,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,resolve_customer_by_phone_v1,p_phone text,1066,true,false,,false,resolve_customer_by_phone,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,run_fiscal_ai_worker_tick_v1,,1650,false,false,,false,run_fiscal_ai_worker_tick,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,run_marketing_campaign_worker_tick_v1,,1809,true,false,,false,run_marketing_campaign_worker_tick,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,sales_quote_bling_claim_v1,p_quote_id uuid,1222,true,false,,false,sales_quote_bling_claim,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,save_assembly_kit_v1,"p_kit_id uuid, p_name text, p_type text, p_notes text, p_source_kit_id uuid, p_items jsonb, p_operator text",4024,true,false,,false,save_assembly_kit,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,save_basket_commercial_model_composition_v1,"p_basket_id uuid, p_positions jsonb, p_operator text",7081,true,false,,false,save_basket_commercial_model_composition,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,save_basket_commercial_model_v2,"p_basket_id uuid, p_name text, p_category_id uuid, p_base_price numeric, p_image_url text, p_positions jsonb, p_operator text",2268,true,false,,false,save_basket_commercial_model,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,save_basket_kit_lot_draft_v1,"p_lot_id uuid, p_kit_template_id uuid, p_quantity integer, p_items jsonb, p_operator text, p_notes text, p_short_code text, p_duplicated_from_lot_id uuid",6403,false,false,,false,save_basket_kit_lot_draft,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,save_basket_kit_lot_draft_v2,"p_lot_id uuid, p_kit_template_id uuid, p_quantity integer, p_items jsonb, p_operator text, p_notes text, p_short_code text, p_duplicated_from_lot_id uuid, p_public_name text, p_sale_price numeric",1038,false,false,,false,save_basket_kit_lot_draft,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,save_basket_kit_lot_draft_v3,"p_lot_id uuid, p_kit_template_id uuid, p_quantity integer, p_items jsonb, p_operator text, p_notes text, p_short_code text, p_duplicated_from_lot_id uuid, p_public_name text, p_sale_price numeric, p_linked_hygiene_lot_id uuid",1247,false,false,,false,save_basket_kit_lot_draft,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,save_basket_kit_lot_draft_v4,"p_lot_id uuid, p_kit_template_id uuid, p_quantity integer, p_items jsonb, p_operator text, p_notes text, p_short_code text, p_duplicated_from_lot_id uuid, p_public_name text, p_sale_price numeric, p_business_type text, p_linked_lot_id uuid",1052,false,false,,false,save_basket_kit_lot_draft,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,save_basket_kit_template_admin_v1,"p_kit_template_id uuid, p_name text, p_code_prefix text, p_items jsonb, p_operator text",4244,false,false,,false,save_basket_kit_template_admin,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,save_basket_mold_v1,"p_basket_id uuid, p_hidden_adjustment numeric, p_public_composition_count integer, p_positions jsonb, p_operator text",4861,false,false,,false,save_basket_mold,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,save_basket_recipe_kits_v1,"p_basket_id uuid, p_kits jsonb, p_operator text",2538,true,false,,false,save_basket_recipe_kits,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,save_store_basket_recipe_v1,"p_basket_id uuid, p_name text, p_sale_price numeric, p_image_url text, p_kits jsonb, p_operator text",5601,true,false,,false,save_store_basket_recipe,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,search_whatsapp_sellable_products_v1,"p_query text, p_limit integer",2407,true,false,,false,search_whatsapp_sellable_products,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,set_basket_lot_sale_enabled_v1,"p_lot_id uuid, p_enabled boolean, p_operator text",1427,false,false,,false,set_basket_lot_sale_enabled,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,set_basket_lots_sale_enabled_bulk_v1,"p_scope text, p_enabled boolean, p_operator text",1648,false,false,,false,set_basket_lots_sale_enabled_bulk,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,set_basket_sales_mode_v1,"p_mode text, p_operator text",1827,false,false,,false,set_basket_sales_mode,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,set_bling_api_refresh_token_v1,p_refresh_token text,943,true,false,,false,set_bling_api_refresh_token,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,set_bling_hub_order_rollout_v2,"p_state text, p_details jsonb, p_disable_orders boolean",1015,true,false,,false,set_bling_hub_order_rollout,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,set_cart_addon_quantity,"p_cart_id uuid, p_product_id uuid, p_quantity numeric",1630,true,false,,true,,CANDIDATA_A_LEGADO_QUEBRADO
+public,set_updated_at,,185,false,true,"basket_template_items, customer_addresses, order_items",false,,PRESERVAR_TRIGGER_ATIVO
+public,si5_research_reserve_next,,2092,true,false,,false,,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,smart_delivery_apply_optimization_v1,"p_run_id uuid, p_result jsonb",2788,true,false,,false,smart_delivery_apply_optimization,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,smart_delivery_assign_run_v1,"p_run_id uuid, p_region_id uuid, p_driver_id uuid, p_vehicle_id uuid, p_operator_label text, p_actor_user_id uuid",3043,true,false,,false,smart_delivery_assign_run,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,smart_delivery_catalog_v1,,1246,true,false,,false,smart_delivery_catalog,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,smart_delivery_confirm_loading_v1,"p_run_id uuid, p_stop_id uuid, p_actor_user_id uuid",3193,true,false,,false,smart_delivery_confirm_loading,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,smart_delivery_confirm_location_v1,"p_order_id uuid, p_customer_address_id uuid, p_location_evidence_id uuid, p_region_id uuid, p_confirmation_source text, p_actor_user_id uuid",4879,true,false,,false,smart_delivery_confirm_location,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,smart_delivery_driver_save_v1,"p_id uuid, p_name text, p_phone_e164 text, p_home_region_id uuid, p_is_active boolean, p_metadata jsonb, p_actor_user_id uuid",1817,true,false,,false,smart_delivery_driver_save,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,smart_delivery_guard_route_resequence_v1,,1127,false,true,ops_delivery_stops,false,smart_delivery_guard_route_resequence,PRESERVAR_TRIGGER_ATIVO
+public,smart_delivery_move_stop_v1,"p_stop_id uuid, p_target_run_id uuid, p_actor_user_id uuid",3160,true,false,,false,smart_delivery_move_stop,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,smart_delivery_plan_run_v1,"p_vehicle_key text, p_order_ids uuid[], p_operator_label text, p_region_id uuid, p_driver_id uuid, p_vehicle_id uuid, p_actor_user_id uuid",2674,true,false,,false,smart_delivery_plan_run,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,smart_delivery_prepare_optimization_v1,p_run_id uuid,1834,true,false,,false,smart_delivery_prepare_optimization,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,smart_delivery_region_save_v1,"p_id uuid, p_code text, p_name text, p_city text, p_state text, p_priority integer, p_is_active boolean, p_notes text, p_polygon_geojson jsonb, p_actor_user_id uuid",1988,true,false,,false,smart_delivery_region_save,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,smart_delivery_vehicle_save_v1,"p_id uuid, p_label text, p_plate text, p_vehicle_type text, p_capacity_units integer, p_is_active boolean, p_metadata jsonb, p_actor_user_id uuid",1754,true,false,,false,smart_delivery_vehicle_save,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,start_basket_cart,"p_conversation_id uuid, p_basket_id uuid",2444,true,false,,true,,CANDIDATA_A_LEGADO_QUEBRADO
+public,store_basket_build_detail_v1,p_lot_id uuid,1102,true,false,,false,store_basket_build_detail,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,store_basket_builds_v1,p_basket_id uuid,1360,true,false,,false,store_basket_builds,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,store_basket_ops_overview_v1,,3709,true,false,,false,store_basket_ops_overview,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,store_basket_recipe_catalog_v1,,2842,true,false,,false,store_basket_recipe_catalog,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,store_basket_recipe_editor_v1,p_basket_id uuid,3073,true,false,,false,store_basket_recipe_editor,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,sync_basket_allocations_from_order_status_v1,,996,false,true,orders,false,sync_basket_allocations_from_order_status,PRESERVAR_TRIGGER_ATIVO
+public,sync_vitrine_order_fiscal_delivery_v1,p_order_id uuid,1390,true,false,,false,sync_vitrine_order_fiscal_delivery,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,sync_vitrine_order_stock_reservation_v1,,1662,true,true,orders,false,sync_vitrine_order_stock_reservation,PRESERVAR_TRIGGER_ATIVO
+public,trg_refresh_basket_hidden_adjustment_on_price_v1,,290,true,true,basket_templates,false,trg_refresh_basket_hidden_adjustment_on_price,PRESERVAR_TRIGGER_ATIVO
+public,trg_refresh_basket_hidden_adjustment_v1,,361,true,true,basket_template_items,false,trg_refresh_basket_hidden_adjustment,PRESERVAR_TRIGGER_ATIVO
+public,trg_snapshot_cart_hidden_adjustment_v1,,406,true,true,carts,false,trg_snapshot_cart_hidden_adjustment,PRESERVAR_TRIGGER_ATIVO
+public,trg_snapshot_order_hidden_adjustment_v1,,399,true,true,orders,false,trg_snapshot_order_hidden_adjustment,PRESERVAR_TRIGGER_ATIVO
+public,update_basket_lot_automation_settings_v1,"p_enabled boolean, p_lot_quantity integer, p_price_variation_pct numeric, p_enabled_families text[], p_operator text",1136,false,false,,false,update_basket_lot_automation_settings,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,update_basket_reserved_lot_v1,"p_lot_id uuid, p_quantity integer, p_items jsonb, p_public_name text, p_sale_price numeric, p_operator text, p_notes text, p_linked_lot_id uuid",9154,true,false,,false,update_basket_reserved_lot,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,validate_basket_flow_selection_v1,"p_basket_id uuid, p_selection jsonb",5186,true,false,,false,validate_basket_flow_selection,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,verify_admin_pin_access_v1,"p_pin text, p_fingerprint text",682,true,false,,false,verify_admin_pin_access,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,verify_purchase_stock_receipt_plan_v1,"p_document_id uuid, p_user_id uuid",4481,true,false,,false,verify_purchase_stock_receipt_plan,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,vitrine_stock_allocate_fifo_v1,p_reservation_id uuid,4270,true,false,,false,vitrine_stock_allocate_fifo,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,vitrine_stock_consume_fifo_v1,p_reservation_id uuid,1851,true,false,,false,vitrine_stock_consume_fifo,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,vitrine_stock_release_fifo_v1,p_reservation_id uuid,1767,true,false,,false,vitrine_stock_release_fifo,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,vitrine_stock_reservation_lot_delete_v1,,324,true,true,vitrine_stock_reservations,false,vitrine_stock_reservation_lot_delete,PRESERVAR_TRIGGER_ATIVO
+public,vitrine_stock_reservation_lot_sync_v1,,874,true,true,vitrine_stock_reservations,false,vitrine_stock_reservation_lot_sync,PRESERVAR_TRIGGER_ATIVO
+public,whatsapp_address_line_v1,p_address jsonb,903,false,false,,false,whatsapp_address_line,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,whatsapp_apply_template_event_v1,"p_waba_id text, p_meta_template_id text, p_template_name text, p_language text, p_event_type text, p_status text, p_quality_rating text, p_reason text, p_provider_event_key text, p_payload jsonb, p_occurred_at timestamp with time zone",3573,true,false,,false,whatsapp_apply_template_event,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,whatsapp_enqueue_outbound_v1,"p_idempotency_key text, p_whatsapp_account_id uuid, p_conversation_id uuid, p_customer_id uuid, p_to_phone_e164 text, p_purpose text, p_message_type text, p_payload jsonb, p_sender_kind text, p_template_id uuid",3131,true,false,,false,whatsapp_enqueue_outbound,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,whatsapp_ingest_event_v1,"p_whatsapp_account_id uuid, p_provider text, p_provider_event_id text, p_event_type text, p_provider_message_id text, p_phone_e164 text, p_received_at timestamp with time zone, p_payload_hash text, p_payload jsonb, p_message jsonb",8815,true,false,,false,whatsapp_ingest_event,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,whatsapp_record_status_v1,"p_whatsapp_account_id uuid, p_provider text, p_provider_message_id text, p_status text, p_occurred_at timestamp with time zone, p_received_at timestamp with time zone, p_error_code text, p_error_title text, p_error_detail text, p_payload jsonb",2628,true,false,,false,whatsapp_record_status,USO_NAO_DETERMINADO_NAO_EXCLUIR
+public,whatsapp_resolve_conversation_v1,"p_whatsapp_account_id uuid, p_phone_e164 text, p_customer_id uuid, p_source text",2679,true,false,,false,whatsapp_resolve_conversation,USO_NAO_DETERMINADO_NAO_EXCLUIR
