@@ -1035,10 +1035,10 @@
       openSheet(basketName(cachedBasket?.name||'Cesta básica'),basketOpeningPreview(id),basketOpeningActionPreview(id));
       const requestId=state.sheetSeq;
       try{
-        const isHomeShell=cachedBasket?.home_shell===true&&Boolean(cachedBasket?.size_key);
-        const action=isHomeShell?'basket_by_size':'basket';
-        const params=isHomeShell?{size_key:cachedBasket.size_key,lightweight:1,trace_id:traceId}:{basket_id:id,lightweight:1,trace_id:traceId};
-        const data=await api(action,params,{signal:controller.signal});
+        // The home card already carries the canonical template@composition key.
+        // Pass it directly and skip re-reading category, size and template metadata.
+        const basketId=cachedBasket?.home_shell===true?String(cachedBasket.card_key||id):id;
+        const data=await api('basket',{basket_id:basketId,lightweight:1,trace_id:traceId},{signal:controller.signal});
         if(requestId!==state.sheetSeq||!overlay.classList.contains('open'))return;
         if(!data?.basket||!Array.isArray(data.items))throw new Error('invalid_basket_response');
         rememberBasketPreview(cachedBasket,data.basket,data.items);
