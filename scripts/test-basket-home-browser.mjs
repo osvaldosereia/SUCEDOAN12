@@ -92,10 +92,10 @@ try{
  assert.equal(await app.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  assert.equal(storefrontActions.includes('home_size_cards'),true,'cold homepage resolves lightweight basket IDs after rendering the shell');
  await app.getByRole('button',{name:'Ver produtos da cesta Mini',exact:true}).click();
+ await app.locator('#addBasket').waitFor();
  assert.ok(basketDetailRequests.some(call=>call.basketId===offered.id+'@1'),'the clicked size opens through the direct canonical detail route');
  assert.equal(storefrontActions.filter(action=>action==='home_size_cards').length,1,'basket opening reuses the single lightweight size-ID request');
  assert.equal(basketDetailRequests.some(call=>call.action==='basket_by_size'),false,'the normal home flow skips the redundant size resolver');
- await app.locator('#addBasket').waitFor();
  assert.ok((await app.locator('#sheetBody').innerText()).includes('Produto 1'),'clicking a static size card loads its basket products');
  await app.locator('#closeSheet').click();
  assert.equal(await app.locator('#homeOffersMount').count(),1);
