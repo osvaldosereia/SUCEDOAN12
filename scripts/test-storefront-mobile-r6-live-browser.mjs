@@ -27,6 +27,7 @@ try{
       const response=await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000});
       assert.equal(response?.status(),200,'homepage must serve HTTP 200');
       await page.locator('#basketSections .basket-card').first().waitFor({state:'visible',timeout:35000});
+      await page.waitForFunction(()=>{const img=document.querySelector('#basketSections .basket-size-card-photo img');return Boolean(img?.complete&&img.naturalWidth>0)},{timeout:15000});
       await page.waitForTimeout(1100);
       const data=await page.evaluate(()=>{
         const c=window.DAStorefrontPerf?.snapshot?.()||{};
@@ -34,17 +35,18 @@ try{
         return {
           cardCount:document.querySelectorAll('#basketSections .basket-card').length,
           fcpMs:c.fcpMs??null,lcpMs:c.lcpMs??null,
-          firstCestasMs:c.firstCestasMs??null,
+          homeSizeCardsMs:performance.getEntriesByName('da-home-size-cards').at(-1)?.startTime??null,
           cachedCestasMs:c.cachedCestasMs??null,
-          fullCatalogMs:c.fullCatalogMs??null,
           domContentLoadedMs:Math.round(nav?.domContentLoadedEventEnd??0),
           horizontalOverflow:document.documentElement.scrollWidth>innerWidth,
-          firstCardImageLoaded:Boolean(document.querySelector('#basketSections .basket-card-photo img')?.naturalWidth),
+          firstCardImageLoaded:Boolean(document.querySelector('#basketSections .basket-size-card-photo img')?.naturalWidth),
           mobileViewport:innerWidth
         };
       });
       assert.ok(data.cardCount>0,'customer must see at least one basket');
       assert.equal(data.horizontalOverflow,false,'layout must not have horizontal page overflow');
+      assert.ok(data.homeSizeCardsMs!==null,'lightweight basket card response should be measured');
+      assert.equal(data.firstCardImageLoaded,true,'the first basket photo should load on mobile');
       assert.equal(jsErrors.length,0,'no JavaScript runtime exceptions on first mobile view');
       results.push({viewport,elapsedMs:Date.now()-started,homeStatuses,...data,jsErrors});
     }catch(e){
