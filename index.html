@@ -719,8 +719,23 @@
     }if(item?.split_mode){let max=30;const foodChanged=basketGroupChanged(item,'food');if(foodChanged)max=Math.min(max,splitBasketGroupLooseCapacity(item,itemIndex,'food'));else max=Math.min(max,Math.max(0,Math.floor(Number(item.food_lot_quantity||item.basket_stock_quantity||0)-cartLotUsed(item.food_lot_id,itemIndex,'food'))));if(item.uses_hygiene_kit){const hygieneChanged=basketGroupChanged(item,'hygiene');if(hygieneChanged)max=Math.min(max,splitBasketGroupLooseCapacity(item,itemIndex,'hygiene'));else max=Math.min(max,Math.max(0,Math.floor(Number(item.hygiene_lot_quantity||item.basket_stock_quantity||0)-cartLotUsed(item.hygiene_lot_id,itemIndex,'hygiene'))))}return Math.max(0,max)}if(item?.lot_id)return Math.max(0,Math.min(30,Math.floor(Number(item.basket_stock_quantity||0)-cartLotUsed(item.lot_id,itemIndex,''))));const comps=(item.components||[]).filter(c=>Number(c.quantity||0)>0);if(!comps.length)return 0;let max=30;for(const comp of comps){const base=Number(comp.base_quantity||0),extra=Math.max(0,Number(comp.quantity||0)-base),remaining=remainingStock(comp.product_id,itemIndex,comp.stock_quantity);if(extra>0&&remaining!==null)max=Math.min(max,Math.floor((remaining+1e-9)/extra))}return Math.max(0,max)}
     function toast(msg){const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800)}
     function paintCart(){const count=itemCount();$('#cartBadge').textContent=String(count);$('#cartSummary').textContent=count+(count===1?' item':' itens')+' · '+money(cartTotal());$('#cartbar').classList.toggle('show',count>0)}
+    let basketOpenController=null;
+    function abortBasketDraftRequests(d){
+      if(!d)return;
+      d.progressObserver?.disconnect();d.optionObserver?.disconnect();
+      if(d.progressFallback){sheetBody.removeEventListener('scroll',d.progressFallback);d.progressFallback=null}
+      d.requests?.forEach(controller=>controller.abort());d.requests?.clear();
+      if(Array.isArray(d.optionQueue))d.optionQueue.length=0;
+    }
+    function basketApi(d,action,params={},options={}){
+      const controller=new AbortController();d.requests=d.requests||new Set();d.requests.add(controller);
+      return api(action,{...params,trace_id:d.traceId},{...options,signal:controller.signal}).finally(()=>d.requests.delete(controller));
+    }
+    function markBasketPerformance(stage,traceId){
+      try{performance.mark('da-basket-'+stage,{detail:{trace_id:traceId||''}})}catch{}
+    }
     function openSheet(title,bodyHtml,actionHtml=''){state.sheetSeq++;state.lastFocus=document.activeElement;sheetTitle.textContent=title;sheetBody.innerHTML=bodyHtml;sheetAction.innerHTML=actionHtml;overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';requestAnimationFrame(()=>$('#closeSheet')?.focus())}
-    function closeSheet(){state.sheetSeq++;if(state.basketDraft?.quoteTimer)clearTimeout(state.basketDraft.quoteTimer);overlay.classList.remove('open');overlay.setAttribute('aria-hidden','true');document.body.style.overflow='';state.basketDraft=null;if(state.lastFocus?.focus)state.lastFocus.focus()}
+    function closeSheet(){state.sheetSeq++;if(basketOpenController){basketOpenController.abort();basketOpenController=null}if(state.basketDraft?.quoteTimer)clearTimeout(state.basketDraft.quoteTimer);abortBasketDraftRequests(state.basketDraft);overlay.classList.remove('open');overlay.setAttribute('aria-hidden','true');document.body.style.overflow='';state.basketDraft=null;if(state.lastFocus?.focus)state.lastFocus.focus()}
     $('#closeSheet').onclick=closeSheet;overlay.addEventListener('click',e=>{if(e.target===overlay)closeSheet()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&overlay.classList.contains('open'))closeSheet()});$('#cartTop').onclick=renderCart;$('#openCart').onclick=renderCart;
 
     async function api(action,params={},options={}){
@@ -728,15 +743,18 @@
       url.searchParams.set('action',action);
       if(action==='home')url.searchParams.set('layout','basket-carousel-v1');
       Object.entries(params).forEach(([k,v])=>{if(v!==''&&v!=null)url.searchParams.set(k,String(v))});
-      const stockSensitive=['offers','products','product','basket','basket_mold_options','basket_extra_products','basket_quote','basket_mold_quote','submit_order'].includes(action);
-      const retryableRead=(!options.method||options.method==='GET')&&['home','home_size_cards','products','subcategories'].includes(action);
-      const attempts=retryableRead&&!options.signal?2:1;
+      const stockSensitive=['offers','products','product','basket','basket_by_size','basket_mold_options','basket_extra_products','basket_quote','basket_mold_quote','submit_order'].includes(action);
+      const retryableRead=(!options.method||options.method==='GET')&&['home','home_size_cards','products','subcategories','basket','basket_by_size','basket_mold_options','basket_extra_products'].includes(action);
+      const attempts=retryableRead?2:1;
       for(let attempt=0;attempt<attempts;attempt++){
-        const controller=options.signal?null:new AbortController();
+        const controller=new AbortController();let timedOut=false;
         const timeoutMs=action==='home_priority'||action==='home_size_cards'?6000:retryableRead?9000:12000;
-        const timer=controller?setTimeout(()=>controller.abort(),timeoutMs):null;
+        const abortFromCaller=()=>controller.abort(options.signal?.reason);
+        if(options.signal?.aborted)controller.abort(options.signal.reason);
+        else options.signal?.addEventListener('abort',abortFromCaller,{once:true});
+        const timer=setTimeout(()=>{timedOut=true;controller.abort()},timeoutMs);
         try{
-          const response=await fetch(url,{cache:stockSensitive?'no-store':'default',...options,signal:options.signal||controller?.signal});
+          const response=await fetch(url,{cache:stockSensitive?'no-store':'default',...options,signal:controller.signal});
           const data=await response.json().catch(()=>({ok:false}));
           if(!response.ok||data.ok===false){
             const error=new Error(data.error||'Não foi possível carregar.');
@@ -752,10 +770,17 @@
           }
           return data;
         }catch(error){
-          const status=Number(error?.status||0);
-          if(attempt+1>=attempts||(status>=400&&status<500&&status!==408&&status!==429))throw error;
-          await new Promise(resolve=>setTimeout(resolve,450));
-        }finally{if(timer)clearTimeout(timer)}
+          const status=Number(error?.status||0),callerAborted=options.signal?.aborted;
+          if(callerAborted||attempt+1>=attempts||(status>=400&&status<500&&status!==408&&status!==429))throw error;
+          // Retry transient network/server failures once; timeouts still surface promptly.
+          if(timedOut||error?.name==='AbortError')throw error;
+          await new Promise((resolve,reject)=>{
+            let timer;
+            const onAbort=()=>{clearTimeout(timer);options.signal?.removeEventListener('abort',onAbort);reject(new DOMException('Aborted','AbortError'))};
+            timer=setTimeout(()=>{options.signal?.removeEventListener('abort',onAbort);resolve()},250*(attempt+1));
+            options.signal?.addEventListener('abort',onAbort,{once:true});
+          });
+        }finally{clearTimeout(timer);options.signal?.removeEventListener('abort',abortFromCaller)}
       }
       throw new Error('catalog_request_failed');
     }
@@ -846,29 +871,6 @@
         const sizeKey=normalizeBasketSizeName(sub.name);
         return candidates[0]?[{...candidates[0],name:sub.name,model_name:sub.name,size_card:true,size_key:sizeKey,home_shell:true}]:[];
       });
-    }
-    let homeSizeCardsPromise=null;
-    async function loadHomeSizeCardForOpen(id){
-      const shell=(state.home?.baskets||[]).find(b=>String(b.card_key||b.id)===String(id)&&b.home_shell===true);
-      if(!shell)return id;
-      if(!homeSizeCardsPromise){
-        homeSizeCardsPromise=(async()=>{
-          const data=await api('home_size_cards');
-          if(data?.ok!==true||data?.priority!==false||data?.home_size_cards!==true||!Array.isArray(data?.baskets)||!Array.isArray(data?.basket_categories)||!data.baskets.length)throw new Error('invalid_home_size_cards_response');
-          state.home={...state.home,...data,categories:data.categories?.length?data.categories:STATIC_CATEGORIES};
-          state.homeSizeCards=true;
-          writeCache(HOME_CACHE_KEY,state.home);
-          if(state.view==='home')renderHome();
-          try{performance.mark('da-home-size-cards')}catch{}
-          return data;
-        })().finally(()=>{homeSizeCardsPromise=null});
-      }
-      await homeSizeCardsPromise;
-      const group=state.home.basket_categories.find(item=>String(item?.slug||'')==='cestas-completas');
-      const resolved=group?homeBasketSizeCards(state.home.baskets,group).find(b=>b.size_key===shell.size_key):null;
-      const basketId=String(resolved?.card_key||resolved?.id||'');
-      if(!basketId)throw new Error('home_size_card_not_found');
-      return basketId;
     }
     function homeBasketGroupRecords(baskets,basketGroups){
       let imageIndex=0;
@@ -1026,28 +1028,34 @@
       return '<div class="basket-action-bar"><div class="basket-action-price"><small>Valor da cesta</small><strong id="basketActionTotal">'+(Number.isFinite(estimate)&&estimate>=0?money(estimate):'Calculando…')+'</strong></div><button type="button" class="primary basket-add-btn" disabled aria-disabled="true">Adicionar cesta</button></div>';
     }
     async function openBasket(id){
+      if(basketOpenController){basketOpenController.abort();basketOpenController=null}
       if(state.basketDraft?.quoteTimer)clearTimeout(state.basketDraft.quoteTimer);
-      state.basketDraft=null;
+      abortBasketDraftRequests(state.basketDraft);state.basketDraft=null;
       const cachedBasket=(state.home?.baskets||[]).find(b=>String(b.card_key||b.id)===String(id));
+      const traceId=globalThis.crypto?.randomUUID?.()||('b-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10));
+      const controller=new AbortController();basketOpenController=controller;
+      try{performance.clearMarks('da-basket-open-start');performance.clearMarks('da-basket-detail-ready');performance.clearMeasures('da-basket-open-to-detail')}catch{}
+      markBasketPerformance('open-start',traceId);
       openSheet(basketName(cachedBasket?.name||'Cesta básica'),basketOpeningPreview(id),basketOpeningActionPreview(id));
       const requestId=state.sheetSeq;
-      let basketId=id;
       try{
-        basketId=await loadHomeSizeCardForOpen(id);
-        if(requestId!==state.sheetSeq||!overlay.classList.contains('open'))return;
-        const data=await api('basket',{basket_id:basketId,lightweight:1});
+        const isHomeShell=cachedBasket?.home_shell===true&&Boolean(cachedBasket?.size_key);
+        const action=isHomeShell?'basket_by_size':'basket';
+        const params=isHomeShell?{size_key:cachedBasket.size_key,lightweight:1,trace_id:traceId}:{basket_id:id,lightweight:1,trace_id:traceId};
+        const data=await api(action,params,{signal:controller.signal});
         if(requestId!==state.sheetSeq||!overlay.classList.contains('open'))return;
         if(!data?.basket||!Array.isArray(data.items))throw new Error('invalid_basket_response');
-        state.basketDraft={basket:data.basket,items:data.items.map(x=>({...x,base_quantity:Number(x.base_quantity??x.quantity??0),quantity:Number(x.quantity??0)})),renderedItemCount:BASKET_INITIAL_RENDER_COUNT,extras:(data.extras||[]).map(x=>({...x,products:x.products||[]})),addedExtras:[],openExtraThemes:[],loadingExtraThemes:[],total_cents:Number(data.basket.display_price_cents||0),quoteTimer:null,quoteRevision:0,quotePending:false,quoteError:false,optionPending:false};
-        paintBasketSheet();
+        state.basketDraft={basket:data.basket,items:data.items.map(x=>({...x,base_quantity:Number(x.base_quantity??x.quantity??0),quantity:Number(x.quantity??0)})),renderedItemCount:BASKET_INITIAL_RENDER_COUNT,extras:(data.extras||[]).map(x=>({...x,products:x.products||[]})),addedExtras:[],openExtraThemes:[],loadingExtraThemes:[],total_cents:Number(data.basket.display_price_cents||0),quoteTimer:null,quoteRevision:0,quotePending:false,quoteError:false,optionPending:false,traceId,requests:new Set(),optionQueue:[],optionLoadsActive:0};
+        paintBasketSheet();markBasketPerformance('detail-ready',traceId);
+        try{performance.measure('da-basket-open-to-detail','da-basket-open-start','da-basket-detail-ready')}catch{}
       }catch(e){
-        if(requestId!==state.sheetSeq||!overlay.classList.contains('open'))return;
-        sheetBody.innerHTML='<div class="empty">Não consegui abrir esta cesta agora. Verifique a conexão e tente novamente.</div>';
+        if(e?.name==='AbortError'||requestId!==state.sheetSeq||!overlay.classList.contains('open'))return;
+        sheetBody.innerHTML='<div class="empty" role="alert">Não consegui abrir esta cesta agora. Verifique a conexão e tente novamente.</div>';
         sheetAction.innerHTML='<button class="primary" type="button" id="retryBasket">Tentar novamente</button>';
-        $('#retryBasket').onclick=()=>openBasket(basketId);
-      }
+        $('#retryBasket').onclick=()=>openBasket(id);
+      }finally{if(basketOpenController===controller)basketOpenController=null}
     }
-    function basketGroupTitle(group,basket){const slug=String(basket?.category_slug||'');if(group==='food')return slug.startsWith('kits-')?'Itens do kit':'Alimentos';return group==='hygiene'?'Limpeza e higiene':'Itens da cesta'}
+        function basketGroupTitle(group,basket){const slug=String(basket?.category_slug||'');if(group==='food')return slug.startsWith('kits-')?'Itens do kit':'Alimentos';return group==='hygiene'?'Limpeza e higiene':'Itens da cesta'}
     // R5_MOLD_CART_V1
     function moldOptionShortName(name,max=48){const s=String(name||'Produto').replace(/\s+/g,' ').trim();return s.length>max?s.slice(0,max-1).trimEnd()+'…':s}
     // Product ID is the source of truth; position labels are internal mold descriptors,
@@ -1067,7 +1075,7 @@
         const isSelected=String(a.product_id)===String(item.product_id),disabled=pending?' disabled aria-disabled="true"':'';
         return '<button type="button" class="basket-option-choice '+(isSelected?'is-selected':'')+'" '+(hasChoices?'data-mold-option-choice="'+index+'" data-product-id="'+esc(a.product_id)+'" role="option" aria-selected="'+(isSelected?'true':'false')+'"':'aria-pressed="true"')+disabled+' aria-label="'+esc(a.name||'Produto')+', '+money(a.price_cents)+'"><img loading="lazy" decoding="async" src="'+esc(safeImage(a.image_url))+'" alt=""><strong class="basket-option-choice-name">'+esc(moldOptionShortName(a.name,36))+'</strong><b class="basket-option-choice-price">'+money(a.price_cents)+'</b>'+(isSelected?'<span class="basket-option-selected-mark" aria-hidden="true">✓</span>':'')+'</button>';
       }).join('');
-      const status=loading?(item.option_loading?'<div class="basket-brand-loading" role="status">Carregando opções…</div>':item.alternatives_error?'<div class="basket-option-retry" role="status">Não foi possível carregar as opções.<button type="button" data-mold-option-retry="'+index+'">Tentar novamente</button></div>':'<div class="basket-brand-loading" role="status">As opções serão carregadas ao aparecer na tela.</div>'):'';
+      const status=loading?((item.option_loading||item.option_queued)?'<div class="basket-brand-loading" role="status">Carregando opções…</div>':item.alternatives_error?'<div class="basket-option-retry" role="status">Não foi possível carregar as opções.<button type="button" data-mold-option-retry="'+index+'">Tentar novamente</button></div>':'<div class="basket-brand-loading" role="status">As opções serão carregadas ao aparecer na tela.</div>'):'';
       const heading=hasChoices?'<div class="basket-option-toolbar"><span class="basket-option-label">Escolha uma opção · menor preço primeiro</span></div>':'';
       const track=hasChoices?'<div class="basket-option-carousel-track" data-mold-option-track="'+index+'" role="listbox" aria-label="Opções de '+esc(item.subtitle||selected.name||item.name)+' em ordem de preço">'+choices+'</div>':'<div class="basket-option-single" aria-label="Produto selecionado">'+choices+'</div>';
       return '<div class="basket-item-option" data-mold-option-wrap="'+index+'">'+heading+track+status+'</div>';
@@ -1089,7 +1097,7 @@
       const opened=new Set(d.openExtraThemes||[]),id=String(theme.id);if(opened.has(id)){opened.delete(id);d.openExtraThemes=[...opened];d.basket?.mold_mode?paintMoldBasketSheet():paintBasketSheet();return}
       if(theme.products_loaded!==true){
         d.loadingExtraThemes=d.loadingExtraThemes||[];if(d.loadingExtraThemes.includes(id))return;d.loadingExtraThemes.push(id);d.basket?.mold_mode?paintMoldBasketSheet():paintBasketSheet();
-        try{const data=await api('basket_extra_products',{basket_id:d.basket.id,theme_id:id});if(state.basketDraft!==d)return;const loaded=(data.extras||[]).find(x=>String(x.id)===id);theme.products=loaded?.products||[];theme.product_count=theme.products.length;theme.products_loaded=true}
+        try{const data=await basketApi(d,'basket_extra_products',{basket_id:d.basket.id,theme_id:id});if(state.basketDraft!==d)return;const loaded=(data.extras||[]).find(x=>String(x.id)===id);theme.products=loaded?.products||[];theme.product_count=theme.products.length;theme.products_loaded=true;markBasketPerformance('extras-ready',d.traceId)}
         catch{if(state.basketDraft===d){d.loadingExtraThemes=d.loadingExtraThemes.filter(x=>x!==id);d.basket?.mold_mode?paintMoldBasketSheet():paintBasketSheet();toast('Não consegui carregar estes produtos agora. Tente novamente.')}return}
         d.loadingExtraThemes=d.loadingExtraThemes.filter(x=>x!==id)
       }
@@ -1115,16 +1123,32 @@
     function removeMoldItem(index){const d=state.basketDraft,item=d?.items?.[index];if(!d||!item||d.optionPending||Number(item.quantity||0)<=0)return;item.quantity=0;d.total_cents=moldDraftTotalCents(d);paintMoldBasketSheet()}
     function restoreMoldItem(index){const d=state.basketDraft,item=d?.items?.[index];if(!d||!item||d.optionPending||Number(item.quantity||0)>0)return;const max=moldItemMax(item),base=Math.max(1,Number(item.base_quantity||1));if(max<1){toast('Sem estoque disponível para recolocar este produto.');return}item.quantity=Math.min(base,max);d.total_cents=moldDraftTotalCents(d);paintMoldBasketSheet()}
     function paintMoldBasketSheet(){const d=state.basketDraft;if(!d)return;const previousScroll=sheetBody.scrollTop||0;const extraCarouselScroll=new Map([...sheetBody.querySelectorAll('[data-extra-carousel]')].map(track=>[track.dataset.extraCarousel,track.scrollLeft]));const carouselScroll=new Map([...sheetBody.querySelectorAll('[data-mold-option-track]')].map(track=>[track.dataset.moldOptionTrack,track.scrollLeft]));const b=d.basket;d.total_cents=moldDraftTotalCents(d);sheetTitle.textContent=basketName(b.name);const visibleItems=d.items.slice(0,d.renderedItemCount);sheetBody.innerHTML='<div class="basket-hero basket-hero-compact"><div><h3>'+esc(basketName(b.name))+'</h3><small>Você pode retirar produtos ou ajustar as quantidades antes de adicionar a cesta.</small></div></div><div class="basket-edit-list">'+visibleItems.map((x,i)=>moldItemRow(x,i,d.optionPending)).join('')+(d.renderedItemCount<d.items.length?'<div id="basket-progressive-sentinel" class="basket-progressive-sentinel" role="status">Role para carregar mais produtos…</div>':'')+'</div>'+basketExtraSection(d);sheetAction.innerHTML='<div class="basket-action-bar">'+basketActionPriceMarkup(d)+'<button class="primary basket-add-btn" type="button" id="addBasket" '+(d.optionPending||!(d.items||[]).some(x=>Number(x.quantity||0)>0)?'disabled':'')+'>'+(d.optionPending?'Calculando…':'Adicionar cesta')+'</button></div>';sheetBody.querySelectorAll('[data-mold-option-track]').forEach(track=>{track.scrollLeft=carouselScroll.get(track.dataset.moldOptionTrack)||0});bindMoldOptionChoices();observeMoldOptionRows(d);sheetBody.querySelectorAll('[data-extra-carousel]').forEach(track=>{track.scrollLeft=extraCarouselScroll.get(track.dataset.extraCarousel)||0});if(d.optionPending)sheetBody.querySelectorAll('[data-mold-option-choice],[data-mold-option-retry],[data-mold-dec],[data-mold-inc],[data-mold-remove],[data-mold-restore],[data-extra-theme-toggle],[data-extra-product-add]').forEach(btn=>btn.disabled=true);sheetBody.querySelectorAll('[data-mold-dec]').forEach(btn=>btn.onclick=()=>changeMoldQty(Number(btn.dataset.moldDec),-1));sheetBody.querySelectorAll('[data-mold-inc]').forEach(btn=>btn.onclick=()=>changeMoldQty(Number(btn.dataset.moldInc),1));sheetBody.querySelectorAll('[data-mold-remove]').forEach(btn=>btn.onclick=()=>removeMoldItem(Number(btn.dataset.moldRemove)));sheetBody.querySelectorAll('[data-mold-restore]').forEach(btn=>btn.onclick=()=>restoreMoldItem(Number(btn.dataset.moldRestore)));attachProductDetailHandlers(sheetBody);sheetBody.querySelectorAll('[data-extra-carousel]').forEach(track=>{track.scrollLeft=extraCarouselScroll.get(track.dataset.extraCarousel)||0});bindMoldExtraThemes();$('#addBasket').onclick=addBasketDraft;sheetBody.scrollTop=previousScroll;observeBasketProgress(d,paintMoldBasketSheet)}
-    async function loadMoldOptions(index,d=state.basketDraft){
-      const item=d?.items?.[index];if(!d||state.basketDraft!==d||!item||moldOptionsLoaded(item)||item.option_loading)return;
+    const BASKET_OPTION_MAX_IN_FLIGHT=3;
+    function loadMoldOptions(index,d=state.basketDraft){
+      const item=d?.items?.[index];if(!d||state.basketDraft!==d||!item||moldOptionsLoaded(item)||item.option_loading||item.option_queued)return;
+      d.optionQueue=d.optionQueue||[];item.option_queued=true;item.alternatives_error=false;d.optionQueue.push(index);
+      pumpMoldOptionQueue(d);
+    }
+    function pumpMoldOptionQueue(d){
+      if(state.basketDraft!==d)return;
+      while((d.optionLoadsActive||0)<BASKET_OPTION_MAX_IN_FLIGHT&&d.optionQueue?.length){
+        const index=d.optionQueue.shift(),item=d.items?.[index];
+        if(!item)continue;item.option_queued=false;if(moldOptionsLoaded(item)||item.option_loading)continue;
+        d.optionLoadsActive=(d.optionLoadsActive||0)+1;
+        fetchMoldOptions(index,d).finally(()=>{d.optionLoadsActive=Math.max(0,(d.optionLoadsActive||1)-1);pumpMoldOptionQueue(d)});
+      }
+    }
+    async function fetchMoldOptions(index,d){
+      const item=d?.items?.[index];if(!d||state.basketDraft!==d||!item||moldOptionsLoaded(item))return;
       item.option_loading=true;item.alternatives_error=false;paintMoldBasketSheet();
       try{
-        const result=await api('basket_mold_options',{basket_id:d.basket.id,composition_number:d.basket.composition_number,position_id:item.position_id,selected_product_id:item.product_id});
+        const result=await basketApi(d,'basket_mold_options',{basket_id:d.basket.id,composition_number:d.basket.composition_number,position_id:item.position_id,selected_product_id:item.product_id});
         if(state.basketDraft!==d)return;
         const current=d.items[index];if(!current||String(current.position_id)!==String(item.position_id))return;
         if(!Array.isArray(result.alternatives)||!result.alternatives.length)throw new Error('invalid_product_options');
         current.alternatives=result.alternatives;current.alternative_count=Number(result.alternative_count||result.alternatives.length);current.alternatives_loaded=true;current.alternatives_error=false;
-      }catch(error){if(state.basketDraft===d){const current=d.items[index];if(current)current.alternatives_error=true}}
+        markBasketPerformance('options-ready',d.traceId);
+      }catch(error){if(state.basketDraft===d&&error?.name!=='AbortError'){const current=d.items[index];if(current)current.alternatives_error=true}}
       finally{if(state.basketDraft===d){const current=d.items[index];if(current)current.option_loading=false;paintMoldBasketSheet()}}
     }
     function observeMoldOptionRows(d){
@@ -1157,7 +1181,7 @@
       const requestedQty=new Map((d.items||[]).map(x=>[String(x.position_id),Math.max(0,Number(x.quantity||0))]));
       const total=$('#basketActionTotal');if(total)total.textContent='Calculando…';
       try{
-        const data=await api('basket_mold_quote',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({basket_id:d.basket.id,composition_number:d.basket.composition_number,items:d.items.map(x=>({position_id:x.position_id,product_id:x.product_id})),lightweight:true})});
+        const data=await basketApi(d,'basket_mold_quote',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({basket_id:d.basket.id,composition_number:d.basket.composition_number,items:d.items.map(x=>({position_id:x.position_id,product_id:x.product_id})),lightweight:true})});
         if(state.basketDraft!==d)return false;
         if(!data?.basket||!Array.isArray(data.items)||data.items.length!==d.items.length)throw new Error('invalid_mold_quote');
         d.basket={...d.basket,...data.basket};
@@ -1170,7 +1194,7 @@
           const max=Math.max(0,Math.floor(Number(x.stock_quantity||0)));
           return {...x,alternatives,alternatives_loaded:alternativesLoaded,base_quantity:Number(x.base_quantity??x.quantity??0),quantity:Math.max(0,Math.min(max,wanted))}
         });
-        d.total_cents=moldDraftTotalCents(d);
+        d.total_cents=moldDraftTotalCents(d);markBasketPerformance('quote-ready',d.traceId);
         return true;
       }catch(e){
         if(state.basketDraft===d)toast(e?.message==='basket_mold_option_invalid'?'Essa variação não está disponível nesta cesta.':'Não foi possível atualizar esta variação. Tente novamente.');
@@ -1198,7 +1222,7 @@
       const total=$('#basketActionTotal');if(total)total.textContent='Calculando…';
       try{
         const payload=d.basket.split_mode?{basket_id:d.basket.id,food_lot_id:d.basket.food_lot_id,hygiene_lot_id:d.basket.hygiene_lot_id,food_lot_code:d.basket.food_lot_code,hygiene_lot_code:d.basket.hygiene_lot_code,items:d.items.map(x=>({product_id:x.product_id,quantity:x.quantity,component_group:x.component_group}))}:{basket_id:d.basket.id,lot_id:d.basket.lot_id,items:d.items.map(x=>({product_id:x.product_id,quantity:x.quantity}))};
-        const data=await api('basket_quote',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        const data=await basketApi(d,'basket_quote',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
         if(state.basketDraft!==d||d.quoteRevision!==revision)return false;
         if(!Number.isFinite(Number(data.total_cents))||Number(data.total_cents)<0)throw new Error('invalid_basket_quote');
         d.total_cents=Number(data.total_cents);
@@ -1254,7 +1278,7 @@
       quote.pending=true;quote.error=false;updateCheckoutSubmitState();
       try{
         const payload=item.split_mode?{basket_id:item.id,food_lot_id:item.food_lot_id,hygiene_lot_id:item.hygiene_lot_id,food_lot_code:item.food_lot_code,hygiene_lot_code:item.hygiene_lot_code,items:(item.components||[]).map(c=>({product_id:c.product_id,quantity:Number(c.quantity||0),component_group:c.component_group}))}:{basket_id:item.id,lot_id:item.lot_id,items:(item.components||[]).map(c=>({product_id:c.product_id,quantity:Number(c.quantity||0)}))};
-        const data=await api('basket_quote',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        const data=await basketApi(d,'basket_quote',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
         // Another adjustment or removal may have occurred before this HTTP response.
         if(!state.cart.includes(item)||checkoutQuoteStatus(item).revision!==revision)return false;
         if(!Number.isFinite(Number(data.total_cents))||Number(data.total_cents)<0)throw new Error('invalid_basket_quote');
@@ -1289,7 +1313,7 @@
       const unavailable=[];
       for(const item of basketItems){
         try{
-          await api('basket_mold_quote',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({basket_id:item.id,composition_number:Number(item.composition_number||1),items:(item.components||[]).map(component=>({position_id:component.position_id,product_id:component.product_id}))})});
+          await basketApi(d,'basket_mold_quote',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({basket_id:item.id,composition_number:Number(item.composition_number||1),items:(item.components||[]).map(component=>({position_id:component.position_id,product_id:component.product_id}))})});
         }catch(error){
           if(!invalidCodes.has(error?.message))throw error;
           unavailable.push(item);
