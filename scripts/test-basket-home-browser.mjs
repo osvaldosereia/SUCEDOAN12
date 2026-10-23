@@ -38,10 +38,12 @@ try{
  let quoteCount=0;
  let releaseCategoryProducts;
  const categoryProductsGate=new Promise(resolve=>{releaseCategoryProducts=resolve});
- const offered={...basket,total_item_count:basket.carousel_items.length,id:'11111111-1111-4111-8111-111111111111',lot_id:'22222222-2222-4222-8222-222222222222',stock_quantity:10,category_id:'cat',subcategory_id:'sub',category_slug:'cestas-completas',category_name:'Cestas Completas'};
- const later={...offered,id:'33333333-3333-4333-8333-333333333333',lot_id:'44444444-4444-4444-8444-444444444444',subcategory_id:'sub2',name:'Cesta depois'};
+ const offered={...basket,total_item_count:basket.carousel_items.length,id:'11111111-1111-4111-8111-111111111111',lot_id:'22222222-2222-4222-8222-222222222222',stock_quantity:10,category_id:'cat',subcategory_id:'sub-mini',category_slug:'cestas-completas',category_name:'Cestas Completas',name:'Mini'};
+ const homeNames=['Econômica','Mini','Pequena','Média','Grande'];
+ const homeKeys=['economica','mini','pequena','media','grande'];
+ const homeCards=homeNames.map((name,index)=>({...offered,id:'size-'+index,name,size_key:homeKeys[index],subcategory_id:'sub-'+index}));
  const basketCategories=[
-   {id:'cat',slug:'cestas-completas',name:'Cestas Completas',subcategories:[{id:'sub',name:'Grande'},{id:'sub2',name:'Média'}]},
+   {id:'cat',slug:'cestas-completas',name:'Cestas Completas',subcategories:homeNames.map((name,index)=>({id:'sub-'+index,name}))},
    {id:'food',slug:'cestas-so-alimentos',name:'Cestas Só Alimentos',subcategories:[]},
    {id:'kits',slug:'kits-promocionais',name:'Kits Promocionais',subcategories:[]}
  ];
@@ -51,7 +53,7 @@ try{
      const action=u.searchParams.get('action');storefrontActions.push(action);
      if(action==='home_size_cards'){
        await sizeCardsGate;
-       return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,priority:false,home_size_cards:true,baskets:[offered,later],basket_categories:basketCategories,categories:[]})});
+       return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,priority:false,home_size_cards:true,baskets:homeCards,basket_categories:basketCategories,categories:[]})});
      }
      if(action==='products'){
        await categoryProductsGate;
@@ -88,9 +90,9 @@ try{
  assert.equal(await app.evaluate(()=>document.querySelector('.home-hero')===window.__homeShellHero),true,'lightweight cards must not recreate initial hero');
  assert.equal(await app.evaluate(()=>document.querySelector('#heroOffers')===window.__homeShellOffers),true,'lightweight cards must preserve the hero offers action');
  assert.ok(await app.locator('#basketSections .basket-size-card-photo img').first().getAttribute('src'),'first basket photo must start loading immediately');
- assert.equal(await app.locator('#basketSections .basket-size-card-photo img').count(),2,'the lightweight response should render the available basket sizes');
+ assert.equal(await app.locator('#basketSections .basket-size-card-photo img').count(),5,'the lightweight response renders all five basket sizes');
  assert.deepEqual(await app.locator('#basketSections .basket-subgroup-title').allTextContents(),['Escolha o tamanho da cesta'],'home uses one size-picker subgroup');
- assert.deepEqual(await app.locator('#basketSections .basket-card-title').allTextContents(),['Média','Grande'],'home preserves the configured size order in the lightweight payload');
+ assert.deepEqual(await app.locator('#basketSections .basket-card-title').allTextContents(),homeNames,'home preserves the five configured size cards in order');
  assert.equal(await app.locator('#basketSections .basket-card-item-total').count(),0,'home size cards hide item counts');
  assert.equal(await app.locator('#basketSections .basket-price-amount').count(),0,'home size cards hide prices until opened');
  assert.equal(await app.locator('#homeRemainingBaskets').count(),0,'size cards do not wait for a second full-catalog request');
