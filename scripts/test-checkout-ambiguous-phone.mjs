@@ -5,7 +5,7 @@ import {stripTypeScriptTypes} from 'node:module';
 
 const source=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
 const start=source.indexOf('async function submit(req:Request,p:any)');
-const end=source.indexOf('\nfunction basketBySize',start);
+const end=source.indexOf('\nasync function basketBySize',start);
 assert.ok(start>=0&&end>start,'submit_order implementation must be extractable');
 const code=source.slice(start,end);
 let captured=null,registerAttempts=0;
