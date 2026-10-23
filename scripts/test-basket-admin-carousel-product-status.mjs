@@ -74,9 +74,9 @@ assert.match(bootstrap, /location\.hash\.replace/);
 assert.match(runtime, /openProductEditor:async productId/);
 
 assert.match(storefront, /async function basketBySize\(sizeKey:string,lightweight=false\)/);
-assert.match(storefront, /moldDetail\(match\[1\],Number\(match\[2\]\),null,!lightweight\)/);
+assert.match(storefront, /moldDetail\(match\[1\],Number\(match\[2\]\),null,!lightweight,lightweight\)/);
 assert.match(storefront, /u\.searchParams\.get\("lightweight"\)==="1"/);
-assert.match(publicPage, /async function prefetchBasketPreviews\(\)/);
+assert.match(publicPage, /function prefetchBasketPreviews\(\)/);
 assert.match(publicPage, /requestIdleCallback/);
 assert.match(publicPage, /rememberBasketPreview\(cachedBasket,data\.basket,data\.items\)/);
 assert.match(migration, /'is_active',p\.is_active/);
