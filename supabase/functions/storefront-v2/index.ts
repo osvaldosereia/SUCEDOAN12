@@ -849,13 +849,21 @@ async function submit(req:Request,p:any){
   const stock=await reconcileOrderItemsForStock(requestedItems),items=stock.items;
   if(!items.length)return {error:"all_items_unavailable",status:409,stock_adjustment:true,adjusted_items:stock.adjusted_items};
   const deliveryDate=txt(p?.delivery_date,10),del=deliveryDate?selectedDelivery(deliveryDate):null;
-  const ik=await sha(ip(req)||"unknown"),ipLimit=await db.rpc("consume_public_rate_limit",{p_rate_key:"vitrine-direct:ip:"+ik,p_bucket:"create_order",p_limit:12,p_window_seconds:600});
-  if(ipLimit.error)return {error:"rate_limit_unavailable",status:503};
-  if(ipLimit.data!==true)return {error:"rate_limited",status:429};
+  async function allowOrderAttempt(rateKey:string,limit:number,scope:string){
+    try{
+      const gate=await db.rpc("consume_public_rate_limit",{p_rate_key:rateKey,p_bucket:"create_order",p_limit:limit,p_window_seconds:60});
+      if(gate.error){console.error("checkout_rate_limit_unavailable",{scope,code:txt(gate.error.message,100)});return true}
+      return gate.data===true;
+    }catch(error){
+      console.error("checkout_rate_limit_failed",{scope,code:txt((error as any)?.message,100)});
+      return true;
+    }
+  }
+  const ik=await sha(ip(req)||"unknown");
+  if(!(await allowOrderAttempt("vitrine-direct:v2:ip:"+ik,30,"ip")))return {error:"rate_limited",status:429,retry_after_seconds:60};
   if(ph){
-    const pk=await sha(ph),phoneLimit=await db.rpc("consume_public_rate_limit",{p_rate_key:"vitrine-direct:phone:"+pk,p_bucket:"create_order",p_limit:5,p_window_seconds:600});
-    if(phoneLimit.error)return {error:"rate_limit_unavailable",status:503};
-    if(phoneLimit.data!==true)return {error:"rate_limited",status:429};
+    const pk=await sha(ph);
+    if(!(await allowOrderAttempt("vitrine-direct:v2:phone:"+pk,10,"phone")))return {error:"rate_limited",status:429,retry_after_seconds:60};
   }
   // Customer lookup enriches the order when available; registration is completed later via WhatsApp.
   let customer:any=null;
@@ -866,7 +874,7 @@ async function submit(req:Request,p:any){
   const marketingCampaign=txt(p?.marketing_context?.campaign,80);
   const customerSnapshot={...(customer?{found:true,id:customer.id,display_name:customer.display_name||null,address:customer.address||null,marketing_opt_in:customer.marketing_opt_in===true,identity_status:"existing_optional"}:{}),...(whatsappOrigin?{whatsapp_origin:whatsappOrigin}:{}),...(marketingCampaign?{marketing_campaign:marketingCampaign}:{}),...(stock.stock_adjustment?{stock_adjusted_retry:true,stock_adjustments:stock.adjusted_items}:{})};
   const created=await db.rpc("create_vitrine_cart_order_v3",{p_phone:ph||null,p_payment_method:pay||null,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del||{}});
-  if(created.error){const e=txt(created.error.message,160).split("\n")[0];return {error:e||"order_failed",status:["insufficient_stock","product_unavailable","basket_unavailable","basket_product_unavailable","basket_lot_unavailable","basket_lot_insufficient","basket_component_not_in_lot","basket_kit_lot_unavailable","basket_kit_lot_insufficient","basket_component_not_in_selected_kit","basket_mold_unavailable","basket_mold_not_configured","basket_mold_component_invalid","basket_mold_option_invalid","basket_mold_composition_invalid"].includes(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS,stock_adjustment:stock.stock_adjustment,adjusted_items:stock.adjusted_items}}
+  if(created.error){const e=txt(created.error.message,160).split("\n")[0];console.error("storefront_order_rejected",{error_code:e||"order_failed"});return {error:e||"order_failed",status:["insufficient_stock","product_unavailable","basket_unavailable","basket_product_unavailable","basket_lot_unavailable","basket_lot_insufficient","basket_component_not_in_lot","basket_kit_lot_unavailable","basket_kit_lot_insufficient","basket_component_not_in_selected_kit","basket_mold_unavailable","basket_mold_not_configured","basket_mold_component_invalid","basket_mold_option_invalid","basket_mold_composition_invalid"].includes(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS,stock_adjustment:stock.stock_adjustment,adjusted_items:stock.adjusted_items}}
   const orderId=created.data?.order_id;let papoaiLink:any=null;let publicOrderLink:any=null;
   if(orderId&&ph){try{const linked=await db.rpc("ops2_link_storefront_order_from_identity_v1",{p_order_id:orderId});if(!linked.error)papoaiLink=linked.data||null}catch(e){console.error("papoai_identity_order_link",txt((e as any)?.message,180))}}
   if(orderId){try{const publicLink=await db.rpc("ops2_order_public_link_v1",{p_order_id:orderId});if(!publicLink.error)publicOrderLink=publicLink.data||null}catch(e){console.error("order_public_link",txt((e as any)?.message,180))}}
@@ -922,7 +930,7 @@ Deno.serve(async(req:Request)=>{
     if(req.method==="POST"&&action==="customer_register"){const r=await registerCustomer(req,body);return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,r,200,{"Cache-Control":"no-store"})}
     if(req.method==="POST"&&action==="basket_quote"){const r=await quote(body);return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,r,200,{"Cache-Control":"no-store"})}
     if(req.method==="POST"&&action==="basket_mold_quote"){const r=await moldQuote(body);return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,r,200,{"Cache-Control":"no-store"})}
-    if(req.method==="POST"&&action==="submit_order"){const r=await submit(req,body);return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,{ok:true,...r},200,{"Cache-Control":"no-store"})}
+    if(req.method==="POST"&&action==="submit_order"){const r=await submit(req,body);const headers={"Cache-Control":"no-store",...(r.retry_after_seconds?{"Retry-After":String(r.retry_after_seconds)}:{})};return r.error?json(req,{ok:false,...r},r.status||400,headers):json(req,{ok:true,...r},200,headers)}
     if(req.method==="POST"&&action==="issue_identity_link")return json(req,{ok:false,error:"retired"},410)
     if(req.method==="POST"&&action==="reconcile_customer")return json(req,{ok:false,error:"retired"},410)
 

@@ -53,6 +53,7 @@ jobs:
       - name: Checkout regression contracts
         run: |
           node scripts/test-registration-catalog-return.mjs
+          node scripts/test-checkout-order-rate-limit.mjs
           node scripts/test-checkout-simple-ux.mjs
           node scripts/test-checkout-customer-capture-v1.mjs
           node --disable-warning=ExperimentalWarning scripts/test-checkout-existing-registration.mjs
