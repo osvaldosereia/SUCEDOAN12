@@ -1,16 +1,17 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import {flowExchange} from './engine.mjs';
 import {decryptMetaPayload,encryptMetaResponse,verifyAppSignature,signState,verifyState} from './crypto.mjs';
+import {FLOW_CANARY_RECIPIENT_E164,FLOW_CANARY_SENDER_E164} from '../_shared/whatsapp-flow-session-v1.mjs';
 
 // DRAFT ONLY: not deployed. Production Meta canary and commercial webhook untouched.
 // This handler requires encrypted Meta payloads, app signature, signed internal canary
 // flow_token and strict 1018->8360 audience verification before exposing storefront data.
 const STORE='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2';
 const PRIVATE_PEM=(Deno.env.get('DA_FLOW_1018_RSA_PKCS8')||'').trim();
-const META_SECRET=(Deno.env.get('DA_FLOW_1018_META_APP_SECRET')||'').trim();
+const META_SECRET=(Deno.env.get('META_WHATSAPP_APP_SECRET')||'').trim();
 const SESSION_SECRET=(Deno.env.get('DA_FLOW_1018_SESSION_SECRET')||'').trim();
-const DEMO_AUDIENCE='+5565999828360';
-const SENDER='+5565984491018';
+const DEMO_AUDIENCE=FLOW_CANARY_RECIPIENT_E164;
+const SENDER=FLOW_CANARY_SENDER_E164;
 function deny(status,error){return new Response(JSON.stringify({ok:false,error}),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store'}})}
 async function catalogRequest(action,params={},method='GET'){
  const url=new URL(STORE);url.searchParams.set('action',action);

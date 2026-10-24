@@ -69,6 +69,16 @@ body.order-embedded .order-chat-candidate{display:block;width:100%;max-width:450
 #openReceivedOrderBtn:hover{background:#fce3a7}
 @media(max-width:680px){#openReceivedOrderBtn{min-height:40px;padding:8px 10px;max-width:100%;overflow:hidden;text-overflow:ellipsis}}
 
+/* Resposta de cesta enviada pelo WhatsApp Flow, sempre tratada como solicitação pendente */
+.flow-reply-card{min-width:min(300px,70vw);max-width:430px;border:1px solid #cfe0d4;border-radius:10px;background:#f6fbf7;padding:10px 11px;color:#263b2e;white-space:normal}
+.flow-reply-card>strong{display:block;font-size:12px;color:#176b43}
+.flow-reply-summary,.flow-reply-items,.flow-reply-total,.flow-reply-note{margin:6px 0 0;font-size:11px;line-height:1.4;overflow-wrap:anywhere}
+.flow-reply-total{padding-top:6px;border-top:1px solid #dfebe2}
+.flow-reply-total strong{font-size:12px}
+.flow-reply-label{display:block;margin-top:7px;font-size:9px;font-weight:850;color:#647169;text-transform:uppercase;letter-spacing:.04em}
+.flow-reply-items{white-space:pre-wrap}
+.flow-reply-note{padding-top:7px;border-top:1px solid #dfebe2;color:#755009;font-size:10px;font-weight:650}
+
 /* Confirmação manual imediata no contexto do pedido */
 .context-actions .confirm-order-quick{background:#146943;border-color:#146943;color:#fff;cursor:pointer;min-height:32px;font-size:10px}
 .context-actions .confirm-order-quick:hover:not(:disabled){background:#0e5234}

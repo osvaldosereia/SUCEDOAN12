@@ -1,6 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.58.0";
 import {buildTemplateCacheRows,listTemplatesViaMeta,createTemplateViaMeta,editTemplateViaMeta,deleteTemplateViaMeta,MetaTemplatesError} from "../_shared/whatsapp-meta-templates-v1.mjs";
+import {listFlowsViaMeta,getFlowViaMeta,createFlowViaMeta,uploadFlowJsonViaMeta,configureFlowEndpointViaMeta,getBusinessPublicKeyStatusViaMeta,derivePublicKeyPem,registerBusinessPublicKeyViaMeta,publishFlowViaMeta,deleteFlowViaMeta,sendDraftFlowCanaryViaMeta,assertFlowPublishable,validateFlowJson,MetaFlowsError} from "../_shared/whatsapp-meta-flows-v1.mjs";
+import {signState,FLOW_CANARY_SENDER_E164,FLOW_CANARY_RECIPIENT_E164} from "../_shared/whatsapp-flow-session-v1.mjs";
 import {sendTemplateViaMeta,MetaTransportError} from "../_shared/whatsapp-meta-transport-v1.mjs";
 import {buildPostorderTemplate} from "../_shared/customer-postorder-template-v3.mjs";
 import {buildPostorderOffersTemplate,buildPostorderConfirmTemplate} from "../_shared/customer-postorder-followup-templates-v1.mjs";
@@ -9,6 +11,10 @@ const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_KEY=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
 const META_WHATSAPP_ACCESS_TOKEN=(Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||"").trim();
 const META_WHATSAPP_GRAPH_VERSION=(Deno.env.get("META_WHATSAPP_GRAPH_VERSION")||"").trim();
+const DA_FLOW_1018_RSA_PKCS8=(Deno.env.get("DA_FLOW_1018_RSA_PKCS8")||"").trim();
+const META_WHATSAPP_APP_SECRET=(Deno.env.get("META_WHATSAPP_APP_SECRET")||"").trim();
+const DA_FLOW_1018_SESSION_SECRET=(Deno.env.get("DA_FLOW_1018_SESSION_SECRET")||"").trim();
+const FLOW_FUNCTION_PATH="/functions/v1/whatsapp-1018-basket-flow-v1";
 const db=createClient(SUPABASE_URL,SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
 
@@ -98,6 +104,170 @@ function mutationFieldsBlocked(body:any,action:string){
   if(action!=="create"&&body?.account_id!==undefined)return true;
   if(action==="create"&&body?.template_id!==undefined)return true;
   return false;
+}
+
+
+function flowEndpointUri(){
+  if(!SUPABASE_URL)return "";
+  return SUPABASE_URL.replace(/\/+$/,"")+FLOW_FUNCTION_PATH;
+}
+async function fixedFlowAccount(){
+  const q=await db.from("whatsapp_accounts").select("id,slug,display_name,phone_e164,waba_id,phone_number_id,is_active")
+    .eq("slug","dona-antonia-1018").eq("is_active",true).maybeSingle();
+  if(q.error)throw new MetaFlowsError("meta_flow_account_lookup_failed",{httpStatus:500});
+  return q.data||null;
+}
+function flowReadiness(account,role){
+  const checks={
+    meta_token:Boolean(META_WHATSAPP_ACCESS_TOKEN),
+    graph_version:/^v\d+\.\d+$/.test(META_WHATSAPP_GRAPH_VERSION),
+    account:Boolean(account&&account.slug==="dona-antonia-1018"&&String(account.phone_e164||"").replace(/\D/g,"").endsWith("1018")&&/^\d{5,30}$/.test(String(account.waba_id||""))&&/^\d{5,30}$/.test(String(account.phone_number_id||""))),
+    endpoint:Boolean(flowEndpointUri()),
+    private_key:Boolean(DA_FLOW_1018_RSA_PKCS8),
+    public_key_registered:false,
+    public_key_matches_private:false,
+    meta_app_secret:Boolean(META_WHATSAPP_APP_SECRET),
+    session_secret:Boolean(DA_FLOW_1018_SESSION_SECRET)
+  };
+  return {ok:Object.values(checks).every(Boolean),channel:"1018",flow_endpoint_url:flowEndpointUri(),can_manage:role==="owner",checks};
+}
+function flowArgs(account){
+  return {accessToken:META_WHATSAPP_ACCESS_TOKEN,graphVersion:META_WHATSAPP_GRAPH_VERSION,wabaId:account.waba_id,phoneNumberId:account.phone_number_id};
+}
+async function flowReadinessWithMeta(account,role){
+  const state=flowReadiness(account,role);
+  if(state.checks.meta_token&&state.checks.graph_version&&state.checks.account){
+    try{
+      const expectedPublicKeyPem=DA_FLOW_1018_RSA_PKCS8?await derivePublicKeyPem(DA_FLOW_1018_RSA_PKCS8):null;
+      const key=await getBusinessPublicKeyStatusViaMeta({...flowArgs(account),expectedPublicKeyPem});
+      state.checks.public_key_registered=key.configured;
+      state.checks.public_key_matches_private=key.matches_expected===true;
+    }catch(error){
+      state.meta_key_check_error=error instanceof MetaFlowsError?error.code:"meta_flow_public_key_check_failed";
+    }
+  }else state.meta_key_check_error="meta_flow_meta_connection_not_configured";
+  state.ok=Object.values(state.checks).every(Boolean);
+  return state;
+}
+function requireFlowConnection(account){
+  if(!account||account.slug!=="dona-antonia-1018"||!String(account.phone_e164||"").replace(/\D/g,"").endsWith("1018")||!/^\d{5,30}$/.test(String(account.waba_id||""))||!/^\d{5,30}$/.test(String(account.phone_number_id||"")))throw new MetaFlowsError("meta_flow_account_not_configured",{httpStatus:503});
+  if(!META_WHATSAPP_ACCESS_TOKEN||!/^v\d+\.\d+$/.test(META_WHATSAPP_GRAPH_VERSION))throw new MetaFlowsError("meta_flow_meta_connection_not_configured",{httpStatus:503});
+}
+async function assertFlowOwned(account,flowId){
+  const listed=await listFlowsViaMeta({...flowArgs(account)});
+  if(!listed.items.some(item=>item.id===flowId)){
+    if(listed.truncated)throw new MetaFlowsError("meta_flow_catalog_truncated",{httpStatus:409});
+    throw new MetaFlowsError("meta_flow_not_found",{httpStatus:404});
+  }
+  return getFlowViaMeta({accessToken:META_WHATSAPP_ACCESS_TOKEN,graphVersion:META_WHATSAPP_GRAPH_VERSION,flowId});
+}
+function onlyKeys(value,allowed){
+  if(!value||typeof value!=="object"||Array.isArray(value))return false;
+  return Object.keys(value).every(key=>allowed.includes(key));
+}
+function onlyFlowQuery(url,allowed){
+  return [...url.searchParams.keys()].filter(key=>key!=="action").every(key=>allowed.includes(key));
+}
+function flowErrorResponse(req,error){
+  if(error instanceof MetaFlowsError){
+    const status=Number(error.httpStatus)||502;
+    const result={ok:false,error:error.code};
+    if(Number.isInteger(error.providerCode))result.provider_code=error.providerCode;
+    if(error.details!==null&&error.details!==undefined)result.details=error.details;
+    if(error.partialFlowId)result.flow_id=error.partialFlowId;
+    return json(req,result,status);
+  }
+  console.error("admin-whatsapp-templates-v1","flow_action_failed");
+  return json(req,{ok:false,error:"meta_flow_manager_error"},500);
+}
+async function handleFlowRead(req,url,auth){
+  const action=String(url.searchParams.get("action")||"");
+  if(action==="flow_readiness"){
+    if(!onlyFlowQuery(url,[]))return json(req,{ok:false,error:"flow_query_fields_not_allowed"},400);
+    const account=await fixedFlowAccount();
+    return json(req,{ok:true,...await flowReadinessWithMeta(account,auth.role)});
+  }
+  if(action==="flow_list"){
+    if(!onlyFlowQuery(url,[]))return json(req,{ok:false,error:"flow_query_fields_not_allowed"},400);
+    const account=await fixedFlowAccount();requireFlowConnection(account);
+    const result=await listFlowsViaMeta({...flowArgs(account)});
+    return json(req,{ok:true,...flowReadiness(account,auth.role),items:result.items,truncated:result.truncated});
+  }
+  if(action==="flow_detail"||action==="flow_validate"){
+    if(!onlyFlowQuery(url,["flow_id"]))return json(req,{ok:false,error:"flow_query_fields_not_allowed"},400);
+    const flowId=String(url.searchParams.get("flow_id")||"").trim();
+    if(!/^\d{5,30}$/.test(flowId))return json(req,{ok:false,error:"invalid_flow_id"},400);
+    const account=await fixedFlowAccount();requireFlowConnection(account);
+    const details=await assertFlowOwned(account,flowId);
+    return json(req,{ok:true,...flowReadiness(account,auth.role),flow:details,validation_available:Array.isArray(details.validation_errors)});
+  }
+  return json(req,{ok:false,error:"action_not_allowed"},404);
+}
+async function handleFlowMutation(req,action,body,auth){
+  if(auth.role!=="owner")return json(req,{ok:false,error:"forbidden"},403);
+  const account=await fixedFlowAccount();requireFlowConnection(account);
+  const args=flowArgs(account);
+  if(action==="flow_create"){
+    if(!onlyKeys(body,["name","categories"]))return json(req,{ok:false,error:"flow_fields_not_allowed"},400);
+    const created=await createFlowViaMeta({...args,name:body.name,categories:body.categories});
+    return json(req,{ok:true,flow:created},200);
+  }
+  if(action==="flow_register_key"){
+    if(!onlyKeys(body,[]))return json(req,{ok:false,error:"flow_fields_not_allowed"},400);
+    if(!DA_FLOW_1018_RSA_PKCS8)throw new MetaFlowsError("meta_flow_private_key_missing",{httpStatus:409});
+    await registerBusinessPublicKeyViaMeta({...args,privateKeyPem:DA_FLOW_1018_RSA_PKCS8});
+    const expectedPublicKeyPem=await derivePublicKeyPem(DA_FLOW_1018_RSA_PKCS8);
+    const status=await getBusinessPublicKeyStatusViaMeta({...args,expectedPublicKeyPem});
+    const registered=status.configured&&status.matches_expected===true;
+    return json(req,{ok:registered,registered,signature_status:status.signature_status},registered?200:502);
+  }
+  if(!onlyKeys(body,["flow_id"])&&action!=="flow_upload_json")return json(req,{ok:false,error:"flow_fields_not_allowed"},400);
+  if(action==="flow_upload_json"&&!onlyKeys(body,["flow_id","flow_json"]))return json(req,{ok:false,error:"flow_fields_not_allowed"},400);
+  const flowId=String(body?.flow_id||"").trim();
+  if(!/^\d{5,30}$/.test(flowId))return json(req,{ok:false,error:"invalid_flow_id"},400);
+  const current=await assertFlowOwned(account,flowId);
+  if(current.status!=="DRAFT")throw new MetaFlowsError("meta_flow_not_draft",{httpStatus:409});
+  if(action==="flow_send_canary"){
+    const readiness=await flowReadinessWithMeta(account,auth.role);
+    assertFlowPublishable(current,{
+      endpointUri:flowEndpointUri(),
+      publicKeyConfigured:readiness.checks.public_key_registered,
+      publicKeyMatchesPrivateKey:readiness.checks.public_key_matches_private,
+      privateKeyConfigured:readiness.checks.private_key,
+      metaAppSecretConfigured:readiness.checks.meta_app_secret,
+      sessionSecretConfigured:readiness.checks.session_secret
+    });
+    const flowToken=await signState({type:"da-flow-1018-canary",sender:FLOW_CANARY_SENDER_E164,to:FLOW_CANARY_RECIPIENT_E164,nonce:crypto.randomUUID()},DA_FLOW_1018_SESSION_SECRET);
+    const sent=await sendDraftFlowCanaryViaMeta({...args,flowId,flowToken});
+    return json(req,{ok:sent.sent,flow_id:flowId,recipient_last_four:"8360",provider_message_id:sent.providerMessageId},sent.sent?200:502);
+  }
+  if(action==="flow_upload_json"){
+    const validated=validateFlowJson(body.flow_json);
+    const uploaded=await uploadFlowJsonViaMeta({...args,flowId,json:validated.json});
+    return json(req,{ok:uploaded.uploaded,error:uploaded.uploaded?undefined:"meta_flow_upload_failed",flow_id:flowId,validation_errors:uploaded.validation_errors,validation_available:Array.isArray(uploaded.validation_errors),data_api_version:uploaded.data_api_version},uploaded.uploaded?200:502);
+  }
+  if(action==="flow_configure_endpoint"){
+    const endpoint=flowEndpointUri();
+    if(!endpoint)throw new MetaFlowsError("meta_flow_endpoint_not_configured",{httpStatus:409});
+    const configured=await configureFlowEndpointViaMeta({...args,flowId,endpointUri:endpoint});
+    return json(req,{ok:configured.success,flow_id:flowId,endpoint_uri:configured.endpoint_uri},configured.success?200:502);
+  }
+  if(action==="flow_publish"){
+    const readiness=flowReadiness(account,auth.role);
+    const published=await publishFlowViaMeta({
+      ...args,flowId,endpointUri:flowEndpointUri(),privateKeyPem:DA_FLOW_1018_RSA_PKCS8,
+      privateKeyConfigured:readiness.checks.private_key,
+      metaAppSecretConfigured:readiness.checks.meta_app_secret,
+      sessionSecretConfigured:readiness.checks.session_secret
+    });
+    return json(req,{ok:published.published,flow:published},published.published?200:502);
+  }
+  if(action==="flow_delete"){
+    if(current.status!=="DRAFT")throw new MetaFlowsError("meta_flow_delete_draft_only",{httpStatus:409});
+    const deleted=await deleteFlowViaMeta({...args,flowId});
+    return json(req,{ok:deleted.deleted,flow_id:flowId,deleted:deleted.deleted},deleted.deleted?200:502);
+  }
+  return json(req,{ok:false,error:"action_not_allowed"},404);
 }
 
 async function markFailed(claim:any,errorCode:string){
@@ -214,6 +384,11 @@ Deno.serve(async(req:Request)=>{
     if(req.method==="POST"){
       const body=await req.json().catch(()=>({}));
 
+      if(action.startsWith("flow_")){
+        try{return await handleFlowMutation(req,action,body,auth)}
+        catch(error){return flowErrorResponse(req,error)}
+      }
+
       if(action==="send"||action==="send_template"){
         if(body?.to_phone_e164!==undefined||body?.whatsapp_account_id!==undefined||body?.account_id!==undefined||body?.customer_id!==undefined||body?.phone_number_id!==undefined||body?.waba_id!==undefined){
           return json(req,{ok:false,error:"destination_fields_not_allowed"},400);
@@ -279,6 +454,11 @@ Deno.serve(async(req:Request)=>{
       }
     }
 
+    if(action.startsWith("flow_")){
+      try{return await handleFlowRead(req,url,auth)}
+      catch(error){return flowErrorResponse(req,error)}
+    }
+
     if(action!=="list"&&action!=="sync")return json(req,{ok:false,error:"action_not_allowed"},404);
     // GET list/sync resolves the official channel server-side; it does not depend on
     // the Attendance queue or a separate client-side accounts lookup.
@@ -312,3 +492,4 @@ Deno.serve(async(req:Request)=>{
     return json(req,{ok:false,error:"templates_backend_error"},500);
   }
 });
+

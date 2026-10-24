@@ -52,8 +52,9 @@ assert.ok(js.includes("openOverviewView(root,'repurchase')"),'Reposição mensal
 assert.ok(js.includes("openOverviewView(root,'campaigns')"),'Campanhas deve abrir a área de campanhas');
 assert.ok(js.includes('data-marketing-overview-stats'),'o painel deve carregar os indicadores operacionais');
 
-assert.ok(js.includes("['overview','post_sale','repurchase','templates','campaigns']"),'navegação principal deve incluir Templates Meta');
+assert.ok(js.includes("['overview','post_sale','repurchase','templates','flows','campaigns']"),'navegação principal deve incluir Templates Meta');
 assert.ok(js.includes('data-marketing-more-menu'),'funções administrativas secundárias devem ficar em Mais');
+assert.ok(js.includes("flows:'Flows Meta'"),'Flows Meta deve ter aba própria no menu principal');
 assert.ok(js.includes("templates:'Templates Meta'"),'Templates Meta deve ter aba própria no menu principal');
 assert.ok(js.includes('data-marketing-view="audiences"'),'públicos devem continuar acessíveis em Mais');
 console.log('marketing professional UI contract: ok');
