@@ -23,7 +23,7 @@ test('admin: extras e produtos são editáveis somente no modo demonstrativo', a
   await row.locator('input[type="checkbox"]').check();
   await expect(row.locator('input[type="checkbox"]')).toBeChecked();
 
-  await page.getByRole('button',{name:'Composição das cestas'}).click();
+  await page.getByRole('button',{name:'Cestas básicas'}).click();
   await expect(page.getByRole('heading',{name:'Cestas básicas'})).toBeVisible();
   await expect(page.getByRole('heading',{name:/Composição: Mini/})).toBeVisible();
   // Valor por cesta permanece privado no admin, separado dos preços da vitrine.
@@ -88,7 +88,7 @@ test('busca global de seções e de produtos',async({page})=>{
   const dialog=page.getByRole('dialog',{name:'Buscar no administrador'});
   await expect(dialog).toBeVisible();
   await dialog.getByRole('textbox',{name:'Buscar no administrador'}).fill('cestas');
-  await dialog.getByRole('button',{name:'Composição das cestas'}).click();
+  await dialog.getByRole('button',{name:'Cestas básicas'}).click();
   await expect(page.getByRole('heading',{name:'Cestas básicas'})).toBeVisible();
   await page.getByRole('button',{name:'Buscar no administrador'}).click();
   await dialog.getByRole('textbox',{name:'Buscar no administrador'}).fill('Arroz Caibi');
@@ -108,8 +108,8 @@ test('menu mobile abre como gaveta e preserva o espaço de trabalho',async({page
   await page.goto('/admin/');
   await expect(page.getByRole('button',{name:'Abrir menu'})).toBeVisible();
   await page.getByRole('button',{name:'Abrir menu'}).click();
-  await expect(page.getByRole('button',{name:'Composição das cestas'})).toBeVisible();
-  await page.getByRole('button',{name:'Composição das cestas'}).click();
+  await expect(page.getByRole('button',{name:'Cestas básicas'})).toBeVisible();
+  await page.getByRole('button',{name:'Cestas básicas'}).click();
   await expect(page.getByRole('heading',{name:'Cestas básicas'})).toBeVisible();
   await expect(page.getByRole('button',{name:'Abrir menu'})).toHaveAttribute('aria-expanded','false');
   await expect(page.locator('.da-side')).toHaveCSS('visibility','hidden');
