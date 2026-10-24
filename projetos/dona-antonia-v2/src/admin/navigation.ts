@@ -91,7 +91,7 @@ export const ADMIN_SECTIONS = [
     description: 'Cadastros e histórico de compras.',
     group: 'management',
     icon: 'users',
-    available: false,
+    available: true,
   },
   {
     id: 'relatorios',
@@ -100,7 +100,7 @@ export const ADMIN_SECTIONS = [
     description: 'Indicadores operacionais e de venda.',
     group: 'management',
     icon: 'chart',
-    available: false,
+    available: true,
   },
   {
     id: 'marketing',

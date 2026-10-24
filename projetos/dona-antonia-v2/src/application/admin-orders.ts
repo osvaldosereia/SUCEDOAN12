@@ -63,4 +63,10 @@ export interface AdminOrdersRepository {
   list(query: AdminOrderQuery): Promise<AdminOrderPage>;
   get(id: string): Promise<AdminOrderDetail>;
   applyCommand(input: AdminOrderCommandInput): Promise<AdminOrderDetail>;
+  recordDeliveryOutcome(input: {
+    readonly orderId: string;
+    readonly requestId: string;
+    readonly status: 'CONCLUIDA' | 'PROBLEMA';
+    readonly note: string;
+  }): Promise<AdminOrderDetail>;
 }

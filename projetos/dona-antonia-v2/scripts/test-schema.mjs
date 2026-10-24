@@ -22,6 +22,7 @@ const expectedTables = [
   'whatsapp_utility_templates',
   'customer_addresses',
   'customers',
+  'delivery_events',
   'fiscal_documents',
   'fiscal_document_events',
   'fiscal_document_items',
@@ -42,7 +43,7 @@ const expectedTables = [
   'orders',
 ].sort();
 
-assert.equal(migrations.length, 19, 'the schema must be a complete, ordered migration chain');
+assert.equal(migrations.length, 20, 'the schema must be a complete, ordered migration chain');
 assert.ok(migrations.every((file) => /^\d{14}_[a-z0-9_]+\.sql$/.test(file)));
 
 const db = new PGlite();
@@ -121,6 +122,13 @@ try {
       ,has_function_privilege('authenticated', 'public.admin_get_order(uuid)', 'EXECUTE') as staff_order_detail
       ,has_function_privilege('anon', 'public.admin_apply_order_command(uuid,text,jsonb,integer)', 'EXECUTE') as anon_order_command
       ,has_function_privilege('authenticated', 'public.admin_apply_order_command(uuid,text,jsonb,integer)', 'EXECUTE') as staff_order_command
+      ,has_function_privilege('anon', 'public.admin_list_customers(text,integer,integer)', 'EXECUTE') as anon_customer_list
+      ,has_function_privilege('authenticated', 'public.admin_list_customers(text,integer,integer)', 'EXECUTE') as staff_customer_list
+      ,has_function_privilege('authenticated', 'public.admin_get_customer(uuid)', 'EXECUTE') as staff_customer_get
+      ,has_function_privilege('anon', 'public.admin_get_operational_report(date,date)', 'EXECUTE') as anon_report
+      ,has_function_privilege('authenticated', 'public.admin_get_operational_report(date,date)', 'EXECUTE') as staff_report
+      ,has_function_privilege('anon', 'public.admin_record_delivery_outcome(uuid,uuid,text,text)', 'EXECUTE') as anon_delivery_record
+      ,has_function_privilege('authenticated', 'public.admin_record_delivery_outcome(uuid,uuid,text,text)', 'EXECUTE') as staff_delivery_record
     from pg_class c
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'da_next' and c.relkind = 'r'
@@ -140,6 +148,13 @@ try {
   assert.equal(access.rows[0].staff_order_detail, true);
   assert.equal(access.rows[0].anon_order_command, false);
   assert.equal(access.rows[0].staff_order_command, true);
+  assert.equal(access.rows[0].anon_customer_list, false);
+  assert.equal(access.rows[0].staff_customer_list, true);
+  assert.equal(access.rows[0].staff_customer_get, true);
+  assert.equal(access.rows[0].anon_report, false);
+  assert.equal(access.rows[0].staff_report, true);
+  assert.equal(access.rows[0].anon_delivery_record, false);
+  assert.equal(access.rows[0].staff_delivery_record, true);
   assert.equal(access.rows[0].anon_role_lookup, false);
   assert.equal(access.rows[0].staff_role_lookup, true);
   assert.equal(access.rows[0].anon_product_list, false);
@@ -944,6 +959,61 @@ try {
     JSON.stringify(orderRead.detail.rows[0].result).includes('private_adjustment'),
     false,
   );
+
+  const customer = await db.query(
+    `insert into da_next.customers (display_name, phone_digits)
+     values ('Cliente Histórico', '65911112222') returning id`,
+  );
+  const customerId = customer.rows[0].id;
+  await db.query(
+    `insert into da_next.customer_addresses (
+       customer_id, recipient_name, postal_code, street, street_number,
+       neighborhood, city, state_code, is_default
+     ) values ($1, 'Cliente Histórico', '78000000', 'Rua Persistente', '22',
+       'Centro', 'Cuiabá', 'MT', true)`,
+    [customerId],
+  );
+  await db.query('update da_next.orders set customer_id = $1 where id = $2', [customerId, orderId]);
+  const customerRead = await asAuthenticated(actorIds.support, async () => {
+    const page = await db.query(`select public.admin_list_customers('6591111', 20, 0) as result`);
+    const detail = await db.query('select public.admin_get_customer($1) as result', [customerId]);
+    const report = await db.query(
+      `select public.admin_get_operational_report('2026-10-01', '2026-10-31') as result`,
+    );
+    return { page, detail, report };
+  });
+  assert.equal(customerRead.page.rows[0].result.total, 1);
+  assert.equal(customerRead.page.rows[0].result.items[0].display_name, 'Cliente Histórico');
+  assert.equal(customerRead.detail.rows[0].result.addresses[0].isDefault, true);
+  assert.equal(customerRead.detail.rows[0].result.orders[0].number, 'DA-2026-000001');
+  assert.equal(customerRead.report.rows[0].result.ordersTotal, 2);
+  assert.ok(customerRead.report.rows[0].result.byStatus.ENTREGUE >= 1);
+
+  const deliveryOutcome = await asAuthenticated(actorIds.separation, async () => {
+    const first = await db.query(
+      `select public.admin_record_delivery_outcome($1, $2, 'CONCLUIDA', 'Recebido pelo cliente') as result`,
+      [orderId, '00000000-0000-4000-8000-000000000301'],
+    );
+    const replayed = await db.query(
+      `select public.admin_record_delivery_outcome($1, $2, 'CONCLUIDA', 'Recebido pelo cliente') as result`,
+      [orderId, '00000000-0000-4000-8000-000000000301'],
+    );
+    return { first, replayed };
+  });
+  assert.equal(deliveryOutcome.first.rows[0].result.delivery_status, 'CONCLUIDA');
+  assert.equal(deliveryOutcome.first.rows[0].result.replayed, false);
+  assert.equal(deliveryOutcome.replayed.rows[0].result.replayed, true);
+  const deliveryEvents = await db.query(
+    'select count(*)::int as count from da_next.delivery_events where order_id = $1',
+    [orderId],
+  );
+  assert.equal(deliveryEvents.rows[0].count, 1);
+  await asAuthenticated(actorIds.unassigned, async () => {
+    await expectSqlFailure(
+      `select public.admin_get_customer('${customerId}')`,
+      'unassigned users must not read customer data',
+    );
+  });
 
   const adminAccess = await asAuthenticated(actorIds.admin, async () => {
     const privatePricing = await db.query(
