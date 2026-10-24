@@ -241,6 +241,12 @@ Confirmado por leitura da branch:
 - Trocar fallback fake em staging por API pública segura e projeção server-side; cache e invalidação corretos; lazy de fotos/marcas/extras.
 - Aceite: primeiro quadro rápido, fallback de erro honesto, estado loading não congela, não expõe custos, fotos reais otimizadas 1:1.
 
+**Execução da implementação (24/10/2026):** branch isolada `agent/dona-antonia-r07-public-catalog-performance`, derivada do head documental R06 `870088d73b64b90f7fa449b280ba65e27abb7186`; PR #1371 draft, código `5b2a0c3622d019b18b086ece52c0eb91f5958b93`. O cliente agora usa cache em memória com janela fresca/stale, deduplicação de requests e invalidação explícita; não injeta dados demo quando as variáveis publishable da V2 existem; apresenta loading, catálogo vazio, erro honesto, retry e aviso de dados stale. Componentes de status/resumo/cabeçalho foram separados para manter a arquitetura modular. O RPC público server-side de R06 continua como única fonte remota, sem custo ou campo privado no navegador; fotos mantêm dimensões 1:1 e lazy loading.
+
+**Testes locais:** `npm test` (90/90), `npm run check`, lint, `npm run format:check`, `npm run architecture:check` (103 arquivos), `npm run build` e `npm run test:db` (11 migrações/26 tabelas, RLS/RBAC, privacidade e rollback) passaram. Playwright local foi tentado, mas não iniciou porque o executável Chromium está ausente.
+
+**Limite e estado documental:** o seed remoto permanece inativo/estoque zero; a rodada melhora o caminho público e seus estados de erro, mas não ativa produtos nem homologa venda. Não houve nova migration nem alteração no Supabase V2. CI remoto e checkpoint documental ainda serão registrados antes de marcar a rodada como concluída.
+
 ### R08 — Cotação, validação e checkout real em staging
 
 - Endereço Cuiabá/VG, pedido mínimo R$75, cutoff 12h, domingos/feriados, opções de pagamento na entrega; validação de CPF/documentos apenas se realmente necessária fiscalmente.
