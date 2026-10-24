@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "projectId": "hjudhofluihkxykwekir",
+  "gates": {
+    "stagingUrl": {
+      "status": "pending",
+      "url": null,
+      "httpStatus": null,
+      "verifiedProjectId": null,
+      "verifiedAt": null,
+      "evidenceRefs": []
+    },
+    "testSeed": {
+      "status": "verified",
+      "projectId": "hjudhofluihkxykwekir",
+      "skus": ["R16-TEST-ARROZ", "R16-TEST-FEIJAO", "R16-TEST-OLEO"],
+      "stockUnitsBySku": {
+        "R16-TEST-ARROZ": 30,
+        "R16-TEST-FEIJAO": 30,
+        "R16-TEST-OLEO": 30
+      },
+      "verifiedAt": "2026-10-24",
+      "evidenceRefs": ["docs/R16_PREP_CHECKLIST.md"]
+    },
+    "operators": {
+      "status": "pending",
+      "operatorRefs": [],
+      "verifiedAt": null,
+      "evidenceRefs": []
+    },
+    "backupRestore": {
+      "status": "pending",
+      "backupSha256": null,
+      "restoredSchemaSha256": null,
+      "restoreTargetProjectId": null,
+      "costUsd": null,
+      "verifiedAt": null,
+      "evidenceRefs": []
+    }
+  },
+  "productionAuthorization": {
+    "status": "out-of-scope",
+    "verifiedAt": null,
+    "evidenceRefs": []
+  }
+}

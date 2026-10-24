@@ -1217,11 +1217,19 @@ try {
     `
     insert into da_next.order_basket_snapshots (
       order_id, line_number, basket_size_id, basket_code_snapshot, basket_name_snapshot,
-      quantity, public_unit_price_cents, private_adjustment_cents, line_total_cents
-    ) values ($1, 1, 'r16-test', 'R16_TEST', 'Cesta de teste R16', 1, 8500, 0, 8500)
+      quantity, public_unit_price_cents, line_total_cents
+    ) values ($1, 1, 'r16-test', 'R16_TEST', 'Cesta de teste R16', 1, 8500, 8500)
     returning id
   `,
     [r16OrderId],
+  );
+  await db.query(
+    `
+    insert into da_next.order_basket_private_pricing (
+      order_basket_snapshot_id, private_adjustment_cents
+    ) values ($1, 0)
+  `,
+    [r16Snapshot.rows[0].id],
   );
   await db.query(
     `

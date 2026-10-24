@@ -132,6 +132,9 @@ describe('R16 rollout readiness', () => {
         readyManifest({ operatorRefs: ['op_r16_operator_01', 'op_r16_operator_02'] }),
       ).status,
     ).toBe('ready-to-start-isolated-staging');
+    const duplicateOperators = readyManifest();
+    duplicateOperators.gates.operators.operatorRefs = ['op_r16_operator_01', 'op_r16_operator_01'];
+    expect(evaluateR16Readiness(duplicateOperators).status).toBe('blocked');
     expect(
       evaluateR16Readiness(
         readyManifest({
@@ -175,13 +178,22 @@ describe('R16 rollout readiness', () => {
     ).toBe('blocked');
   });
 
-  it('requires a zero-cost restore to a separate target with matching evidence hashes', () => {
+  it('requires a zero-cost restore to a separate target with SHA-256 evidence', () => {
     expect(
       evaluateR16Readiness(readyManifest({ backupRestoreTargetProjectId: projectId })).status,
     ).toBe('blocked');
     expect(evaluateR16Readiness(readyManifest({ backupRestoreCostUsd: 0.01 })).status).toBe(
       'blocked',
     );
+  });
+
+  it('rejects manifests with an unsupported schema version', () => {
+    const invalidVersion = {
+      ...readyManifest(),
+      schemaVersion: 2,
+    } as unknown as R16ReadinessManifest;
+
+    expect(evaluateR16Readiness(invalidVersion).status).toBe('blocked');
   });
 
   it('keeps production authorization separate from isolated staging readiness', () => {

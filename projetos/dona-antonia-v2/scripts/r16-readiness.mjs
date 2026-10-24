@@ -1,36 +1,26 @@
-const bool = (value) => value === 'true' || value === '1';
-const operatorCount = Number(process.env.DA_V2_OPERATOR_COUNT ?? 0);
-const checks = [
-  {
-    id: 'staging-url',
-    passed: Boolean(process.env.DA_V2_STAGING_URL),
-    detail: 'URL isolada de staging V2 acessível.',
-  },
-  {
-    id: 'test-seed',
-    passed: bool(process.env.DA_V2_TEST_SEED),
-    detail: 'Seed fictício vendável somente na V2.',
-  },
-  {
-    id: 'operators',
-    passed: operatorCount >= 2 && operatorCount <= 3,
-    detail: 'Dois ou três operadores isolados.',
-  },
-  {
-    id: 'backup-restore',
-    passed: bool(process.env.DA_V2_BACKUP_RESTORE),
-    detail: 'Backup/restore controlado ensaiado.',
-  },
-  {
-    id: 'production-authorization',
-    passed: bool(process.env.DA_V2_PRODUCTION_AUTHORIZATION),
-    detail: 'Autorização explícita de piloto produtivo.',
-  },
+import { access, readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { evaluateR16Readiness } from '../src/application/rollout-readiness.ts';
+
+const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const docsRoot = path.join(projectRoot, 'docs');
+const manifestPath = path.join(docsRoot, 'R16_EVIDENCE_MANIFEST.json');
+const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+const evidenceRefs = [
+  ...Object.values(manifest.gates).flatMap((gate) => gate.evidenceRefs ?? []),
+  ...(manifest.productionAuthorization.evidenceRefs ?? []),
 ];
-const result = {
-  round: 'R16',
-  status: checks.every(({ passed }) => passed) ? 'ready' : 'blocked',
-  checks,
-  note: 'Bloqueado é resultado esperado até homologação; este script não publica nem altera dados.',
-};
+
+for (const reference of evidenceRefs) {
+  if (!reference.startsWith('docs/')) continue;
+  const relativePath = reference.split('#', 1)[0];
+  const absolutePath = path.resolve(projectRoot, relativePath);
+  if (!absolutePath.startsWith(docsRoot + path.sep)) {
+    throw new Error('Evidence path must stay under docs/: ' + reference);
+  }
+  await access(absolutePath);
+}
+
+const result = evaluateR16Readiness(manifest);
 console.log(JSON.stringify(result, null, 2));
