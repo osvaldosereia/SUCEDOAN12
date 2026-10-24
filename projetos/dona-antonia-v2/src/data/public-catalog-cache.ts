@@ -44,8 +44,7 @@ export function createPublicCatalogCache<T>(options: PublicCatalogCacheOptions =
   const revalidate = (fetcher: (signal?: AbortSignal) => Promise<T>, signal?: AbortSignal) => {
     if (!pending) {
       const network = fetchNetwork(fetcher, signal);
-      let wrapped: Promise<CatalogCacheResult<T>>;
-      wrapped = network.finally(() => {
+      const wrapped = network.finally(() => {
         if (pending === wrapped) pending = undefined;
       });
       pending = wrapped;
