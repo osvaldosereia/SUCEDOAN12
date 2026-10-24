@@ -8,9 +8,9 @@ let flowItems=[];
 let activeFlowId='';
 let canManage=false;
 let busy=false;
-function bounded(promise,ms=17000){
+async function bounded(promise,ms=17000){
   let timer;
-  try{return Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('timeout_marketing_flow_api')),ms)})])}
+  try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('timeout_marketing_flow_api')),ms)})])}
   finally{clearTimeout(timer)}
 }
 
