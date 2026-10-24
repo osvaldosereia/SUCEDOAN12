@@ -230,3 +230,9 @@
 **Rollback do seed:** `docs/R16_TEST_SEED_ROLLBACK.sql` é manual e não foi executado remotamente. Remove o seed determinístico quando não há referências; se houver pedido, reserva, movimento adicional ou vínculo externo, arquiva os registros e mantém o histórico. O rollback local não equivale a restore de snapshot remoto.
 
 **Isolamento:** nenhum recurso pago, branch Supabase, usuário, credencial, publicação, deploy, restore ou integração operacional foi criado/acionado. Produção, site/admin em uso, `main`, Supabases legados, atendimento, Meta/Bling operacionais, DNS e workflows de produção ficaram intocados. Só avançar após evidência real dos gates e homologação no staging; R16 permanece incompleta.
+
+## Complemento R16 — verificação dos bloqueios após autorização (24/10/2026)
+
+A autorização recebida não altera o status: a R16 continua **bloqueada e não concluída**. Foi confirmado que a prévia Sites existente é custom/owner-only; o workflow de publicação disponível envia `/site1` e `/admin1` para o domínio público e faz push para `main`, além de compilar sem Supabase. Ele não é um destino seguro de staging isolado. A abertura pública também permitiria acesso à interface administrativa por qualquer pessoa com o link, então a audiência não foi ampliada.
+
+O cadastro restrito de operadores depende de 2–3 identidades reais e endereços de e-mail ainda não informados. A documentação do Supabase prevê backups diários em planos pagos, mas a lista/conteúdo do snapshot não foi acessada e não há restauração segura para alvo descartável no conector disponível; restore na origem é destrutivo e novo projeto/branch pode gerar custo. Nenhuma conta, convite, publicação, branch, cópia ou restore foi criado. Detalhes e referências constam em `docs/R16_PREP_CHECKLIST.md`.

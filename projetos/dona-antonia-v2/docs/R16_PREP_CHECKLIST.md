@@ -47,3 +47,15 @@ O teste PostgreSQL descartável via PGlite percorre os dois caminhos: exclusão 
 4. Registrar evidências reais no manifesto e no checklist. Não marcar a R16 concluída antes da execução dos fluxos de homologação e do aceite documentado.
 
 As estimativas previamente verificadas para branch Supabase e PITR permanecem como razão para não criar recursos nesta rodada: branch a US$ 0,01344/hora; PITR de 7 dias a US$ 0,137/hora, aproximadamente US$ 100/mês, com compute Small. Referências: https://supabase.com/docs/guides/platform/manage-your-usage/branching e https://supabase.com/docs/guides/platform/backups.
+
+## Verificação das alternativas após autorização — 24/10/2026
+
+A autorização para executar não remove os pré-requisitos de segurança e de evidência:
+
+- **Prévia existente:** “Dona Antônia V2 · Admin Preview” está publicada no URL já registrado no dossiê, mas a audiência está em modo custom e inclui somente o proprietário. O Sites oferece modo público, que permite acesso a qualquer pessoa com o link; não foi escolhido para uma interface administrativa. O acesso restrito a operadores pode ser concedido por lista de e-mails quando as identidades forem informadas.
+- **Workflow GitHub existente:** `.github/workflows/dona-antonia-v2-preview-publish.yml` só roda por dispatch manual com `authorize_preview=true`; o build é explicitamente sem Supabase, WhatsApp e Bling; a publicação altera `/site1` e `/admin1` e executa push para `main`. Esse workflow não é uma URL isolada para homologação R16 e não foi executado.
+- **Identidades:** ainda faltam 2–3 operadores humanos com e-mails definidos. Não criamos contas, senhas ou convites para pessoas presumidas.
+- **Backups:** a documentação Supabase informa backup diário automático para projetos Pro/Team/Enterprise (retenção de 7 dias no plano Pro). Isso não demonstra um restore isolado. O conector Supabase disponível não lista nem baixa snapshots; a ação de restore disponível atua no projeto informado. A alternativa oficial “Restore to a new project” requer projeto adicional e mostra custos antes da criação; não foi iniciada. Referências: [Database Backups](https://supabase.com/docs/guides/platform/backups) e [Restore to a new project](https://supabase.com/docs/guides/platform/clone-project).
+
+**Ações não executadas:** nenhuma mudança de audiência do Site; nenhum convite; nenhum push para `main`; nenhum deploy de staging; nenhum branch/projeto adicional Supabase; nenhum restore ou custo. R16 permanece bloqueada. O próximo passo operacional para abrir o staging de forma restrita é receber os e-mails reais dos operadores; o restore segue bloqueado até existir método zero-custo em alvo descartável.
+
