@@ -24,6 +24,14 @@ test('admin: extras e produtos são editáveis somente no modo demonstrativo', a
   await page.getByRole('button',{name:'Composição das cestas'}).click();
   await expect(page.getByRole('heading',{name:'Cestas básicas'})).toBeVisible();
   await expect(page.getByRole('heading',{name:/Composição: Mini/})).toBeVisible();
+  // Valor por cesta permanece privado no admin, separado dos preços da vitrine.
+  const fee=page.getByLabel('Valor interno da cesta (R$)');
+  await fee.fill('7.5');
+  await expect(fee).toHaveValue('7.5');
+  await page.getByRole('button',{name:'Econômica'}).click();
+  await expect(fee).toHaveValue('0');
+  await page.getByRole('button',{name:'Mini'}).click();
+  await expect(fee).toHaveValue('7.5');
   await page.screenshot({path:'test-results/admin-desktop.png',fullPage:true});
   expect(errors).toEqual([]);
 });

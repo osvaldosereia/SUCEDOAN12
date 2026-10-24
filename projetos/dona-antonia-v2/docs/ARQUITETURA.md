@@ -66,3 +66,21 @@ Limites e contratos de API serão validados na implementação usando a document
 ## Gate de publicação
 Não mesclar esta branch à main, não alterar DNS nem workflow de deploy.
 Publicar só após: dados reais importados em staging; fluxo de pedido ponta a ponta; estoque transacional; Bling OAuth; fiscal; separação; testes mobile; teste de carga; plano de rollback; aprovação expressa.
+
+## Política para crescer sem degradação do código (V2)
+
+**A partir desta refatoração:**
+- Interface da vitrine: `src/features/{baskets,storefront,checkout}/components`; mídia quadrada reutilizável: `src/ui/media`.
+- Telas admin por seção: `src/admin/features/{products,product-types,baskets,extras}`.
+- Lógica pura e independente: `src/core`, com testes de cenários reais.
+- Preços internos e decisões de cobrança que não podem vazar: `src/server/pricing`; nunca importar em componentes do site.
+- Origem de dados: `src/data/catalog.ts` expõe uma interface `CatalogReader` que pode receber um novo adaptador Supabase mais tarde.
+- Estilos por responsabilidade: `src/styles/{base,flow,admin-mobile,media}.css`.
+- No banco, `db/003_private_basket_price.sql` introduz `private_adjustment_cents` (NÃO aplicado até homologação). O servidor calcula valor público, sem retornar o detalhamento do ajuste.
+- Imagens: componente `SquareImage` usa caixa quadrada, `object-fit:contain`, dimensões explícitas e lazy-loading para imagens não prioritárias.
+- Vite DEV usa dados de demonstração quando o catálogo falta; build de produção falha fechado sem catálogo (sem preços fictícios).
+- Qualquer nova sessão precisa ter seu próprio módulo e testes; refatorar antes de componentes com mais de 320 linhas ou CSS com mais de 11,5 KB.
+- `scripts/check-architecture.mjs` será executado no CI antes da tipagem, dos testes e do navegador.
+- Checkout e Supabase reais exigirão outro ciclo de homologação, principalmente regras de valor interno, estoque e pedidos.
+
+**Atenção:** código separado não significa autenticação pronta. O admin permanece uma prévia sem login nem persistência.

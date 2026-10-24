@@ -26,6 +26,8 @@ jobs:
           node-version: '22'
       - name: Install dependencies without postinstall scripts
         run: npm install --no-audit --no-fund --ignore-scripts
+      - name: Enforce module boundaries and growth limits
+        run: npm run architecture:check
       - name: TypeScript strict check
         run: npm run check
       - name: Domain unit tests
