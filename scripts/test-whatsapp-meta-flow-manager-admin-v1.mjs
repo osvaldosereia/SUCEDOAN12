@@ -59,13 +59,13 @@ assert.doesNotMatch(ui,/0975|interactive\.flow|sendTemplateViaMeta|DA_FLOW_1018_
 
 assert.match(marketing,/PRIMARY_MARKETING_VIEWS=\[[^\]]*'flows'/);
 assert.match(marketing,/view==='flows'/);
-assert.match(marketing,/post-sale-center\.js\?v=whatsapp-flow-active-router-20261024/);
-assert.match(marketing,/campaign-entry\.js\?v=whatsapp-flow-manager-20261024/);
-assert.match(campaignEntry,/marketing-polish\.js\?v=whatsapp-flow-manager-20261024/);
-assert.match(adminIndex,/basket-lot-image\.js\?v=whatsapp-flow-manager-20261024/);
-assert.match(marketingBootstrap,/campaign-entry\.js\?v=whatsapp-flow-manager-20261024/);
+assert.match(marketing,/post-sale-center\.js\?v=whatsapp-flow-readiness-20261024/);
+assert.match(marketing,/campaign-entry\.js\?v=whatsapp-flow-readiness-20261024/);
+assert.match(campaignEntry,/marketing-polish\.js\?v=whatsapp-flow-readiness-20261024/);
+assert.match(adminIndex,/basket-lot-image\.js\?v=whatsapp-flow-readiness-20261024/);
+assert.match(marketingBootstrap,/campaign-entry\.js\?v=whatsapp-flow-readiness-20261024/);
 assert.match(activeMarketing,/\['flows','Flows Meta'\]/);
-assert.match(activeMarketing,/if\(view==='flows'\)return \(await import\('\/vitrine\/admin\/marketing\/flow-center\.js\?v=whatsapp-flow-readiness-ui-20261024'\)\)\.mountFlowView\(root\)/);
+assert.match(activeMarketing,/if\(view==='flows'\)return \(await import\('\/vitrine\/admin\/marketing\/flow-center\.js\?v=whatsapp-flow-readiness-20261024'\)\)\.mountFlowView\(root\)/);
 assert.match(attendance,/parseBasketFlowReply/);
 assert.match(attendance,/Solicitação de cesta pelo Flow/);
 assert.match(attendance,/items\.textContent=data\.items/);
