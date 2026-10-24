@@ -448,8 +448,10 @@ R00 foi documental; R01 consolidou qualidade visual/CI; R02 implementou schema e
 
 ## Registro de execução — R16 (pré-voo do piloto controlado)
 
-- **Branch/PR:** `agent/dona-antonia-r16-pilot-preflight`, PR #1396 draft, base R15 `6f8c195d39de72ec057470e15443f25a6b0ba378`, head `314332a83ad44e2b34798d3e44191e6e927777c9`.
+- **Branch/PR:** `agent/dona-antonia-r16-pilot-preflight`, PR #1396 draft, base R15 `6f8c195d39de72ec057470e15443f25a6b0ba378`, head `a779c13a14e590a11ce933ca62769e4cc59fd156`.
 - **Mudança segura:** contrato/testes de readiness e `npm run r16:readiness`; resultado padrão `blocked` com cinco gates ausentes. Nenhum dado foi ativado, nenhum pedido criado e nenhuma integração foi acionada.
 - **Evidências locais:** 126/126 testes, typecheck, lint, formato, arquitetura (138 arquivos), build e diff limpo passaram.
 - **Pendências humanas:** URL de staging V2, seed fictício vendável, 2–3 operadores isolados, ensaio controlado de backup/restore e autorização explícita para piloto. Sem isso, R16 não pode ser marcada concluída.
 - **Limites:** produção, `main`, sites legados, Supabases legados, atendimento, Bling/Meta operacionais, DNS, deploy e publicação permanecem intocados; nenhum custo novo foi criado.
+
+- **CI observado:** workflow #40134499891 passou no head de código `93d28dc9a805f97a2b50c5e4fb05a87e949e333b` (segurança, lint/formato, arquitetura, migrações, TypeScript, testes, build e 17/17 E2E). O head documental atual é `a779c13a14e590a11ce933ca62769e4cc59fd156`; nenhum gate humano foi liberado.
