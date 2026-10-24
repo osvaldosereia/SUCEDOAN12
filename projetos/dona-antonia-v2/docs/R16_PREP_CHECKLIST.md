@@ -11,7 +11,7 @@ Este checklist é executável somente na V2 isolada. **Bloqueado** é o resultad
 | Seed vendável fictício   | Aprovado  | Três SKUs `R16-TEST-*`, estoque 30 cada, três perfis privados, cesta `r16-test` e três movimentos `IMPORTACAO`, todos no V2 isolado. |
 | Operadores de teste      | Bloqueado | Definir 2–3 usuários isolados, sem usuários da operação atual.                                                                 |
 | Backup/restore           | Bloqueado | Ensaiar em cópia descartável ou registrar aprovação de um procedimento controlado; não executar restore destrutivo por padrão. |
-| Autorização produtiva    | Bloqueado | Não existe autorização para piloto produtivo, troca de domínio ou integração operacional.                                      |
+| Autorização produtiva    | Bloqueado | A autorização recebida cobre a V2 isolada; piloto produtivo, troca de domínio e integrações operacionais permanecem fora do escopo desta execução. |
 
 ## Execução quando os gates existirem
 
