@@ -1,3 +1,4 @@
+import {latestCanaryReply,CANARY_CONVERSATION} from './reply-parser.mjs?v=20261024-4';
 import {collectBasketVariants,buildMetaCatalogCsv,buildSizeListMessage,buildCombinationsListMessage,buildMetaProductListPreview,validatePreviewPayload} from './catalog-tools.mjs?v=20261024-2';
 import {attendanceJsonApi,attendanceAuthorizedFetch} from '../atendimento/attendance-auth.js?v=auth-refresh-v2';
 
@@ -190,6 +191,45 @@ async function fetchCanary(){
     $('canaryStatus').classList.add('invalid');
   }finally{$('canaryRefreshBtn').disabled=false;refreshCanaryControls();}
 }
+
+async function readCustomerReply(){
+  const button=$('readReplyBtn');
+  button.disabled=true;$('replyStatus').classList.remove('invalid');
+  $('replyStatus').textContent='Lendo as últimas escolhas recebidas pelo canal 1018…';
+  try{
+    const data=await attendanceJsonApi('conversation',{conversation_id:CANARY_CONVERSATION,limit:35});
+    const reply=latestCanaryReply(data);
+    if(!reply){
+      $('replyStatus').textContent='Nenhuma seleção interativa de cesta foi encontrada nesta conversa de teste.';
+      return;
+    }
+    const age=Date.now()-Date.parse(reply.receivedAt||'');
+    if(!Number.isFinite(age)||age<0||age>7*86400000){
+      $('replyStatus').textContent='Existe uma seleção antiga, mas ela não será usada para continuar este teste.';
+      return;
+    }
+    const model=state.models.find(x=>x.size_key===reply.size);
+    if(!model)throw new Error('O tamanho escolhido ainda não está disponível no catálogo atual.');
+    const label=SIZE_LABELS[reply.size]||reply.size;
+    state.metaSelectedSize=reply.size;
+    if(reply.kind==='size'){
+      $('metaPayloadKind').value='combinations';
+      renderMeta();refreshCanaryControls();
+      $('replyStatus').textContent='Recebido: Cesta '+label+'. As três combinações e seus preços estão prontos abaixo. Clique em “Enviar 3 combinações ao 8360” para enviar o próximo menu interativo.';
+    }else{
+      $('metaPayloadKind').value='combinations';
+      const key=choiceKey(model,reply.number);
+      const detail=state.variants.get(key);
+      if(!validVariant(detail?.data))throw new Error('A combinação selecionada está indisponível no estoque atual.');
+      choose(key);
+      $('replyStatus').textContent='Recebido: Cesta '+label+', combinação '+reply.number+'. A composição e os preços foram abertos para conferência e personalização. Nenhuma mensagem foi enviada automaticamente.';
+    }
+  }catch(error){
+    $('replyStatus').classList.add('invalid');
+    $('replyStatus').textContent='Falha ao ler escolha: '+String(error?.message||error);
+  }finally{button.disabled=false;}
+}
+
 async function sendCanary(){
   if(state.canaryBusy||!state.canary?.can_send)return;
   let payload;
@@ -374,6 +414,7 @@ $('detail').addEventListener('click',event=>{
 $('extraSearch').addEventListener('input',event=>{clearTimeout(state.searchTimer);state.searchTimer=setTimeout(()=>void searchExtras(event.target.value),320);});
 $('extraResults').addEventListener('click',event=>{const b=event.target.closest('[data-add-extra]');if(b)adjustExtra(b.dataset.addExtra,1);});
 $('extraSelected').addEventListener('click',event=>{const b=event.target.closest('button');if(!b)return;if(b.hasAttribute('data-extra-minus'))adjustExtra(b.dataset.extraMinus,-1);if(b.hasAttribute('data-extra-plus'))adjustExtra(b.dataset.extraPlus,1);});
+$('readReplyBtn').addEventListener('click',()=>void readCustomerReply());
 $('canaryRefreshBtn').addEventListener('click',()=>void fetchCanary());
 $('canarySendBtn').addEventListener('click',()=>void sendCanary());
 void load().then(()=>fetchCanary());
