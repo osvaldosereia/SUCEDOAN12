@@ -3,7 +3,7 @@ import {webcrypto} from 'node:crypto';
 import {
   MetaFlowsError,validateFlowJson,flowValidationErrors,assertFlowPublishable,
   listFlowsViaMeta,createFlowViaMeta,uploadFlowJsonViaMeta,configureFlowEndpointViaMeta,
-  derivePublicKeyPem,registerBusinessPublicKeyViaMeta,publishFlowViaMeta,deleteFlowViaMeta
+  derivePublicKeyPem,getBusinessPublicKeyStatusViaMeta,registerBusinessPublicKeyViaMeta,publishFlowViaMeta,deleteFlowViaMeta
 } from '../supabase/functions/_shared/whatsapp-meta-flows-v1.mjs';
 globalThis.crypto??=webcrypto;
 
@@ -52,6 +52,10 @@ const privatePem='-----BEGIN PRIVATE KEY-----\n'+btoa(String.fromCharCode(...new
 const publicPem=await derivePublicKeyPem(privatePem);
 assert.match(publicPem,/BEGIN PUBLIC KEY/);
 assert.doesNotMatch(publicPem,/BEGIN PRIVATE KEY/);
+const matchingKey=await getBusinessPublicKeyStatusViaMeta({accessToken:'server-token',graphVersion:'v99.0',phoneNumberId:'55555',expectedPublicKeyPem:publicPem,fetchImpl:makeFetch({business_public_key:publicPem})});
+assert.equal(matchingKey.matches_expected,true);
+const mismatchingKey=await getBusinessPublicKeyStatusViaMeta({accessToken:'server-token',graphVersion:'v99.0',phoneNumberId:'55555',expectedPublicKeyPem:publicPem,fetchImpl:makeFetch({business_public_key:publicPem.replace('BEGIN PUBLIC KEY','BEGIN DIFFERENT KEY')})});
+assert.equal(mismatchingKey.matches_expected,false);
 let publicBody;
 const registration=await registerBusinessPublicKeyViaMeta({accessToken:'server-token',graphVersion:'v99.0',phoneNumberId:'55555',privateKeyPem:privatePem,fetchImpl:makeFetch({success:true},200,(url,init)=>{publicBody=JSON.parse(init.body)})});
 assert.equal(registration.success,true);
@@ -65,8 +69,9 @@ const publishFetch=async(url,init)=>{
   if(target.includes('/publish'))return new Response(JSON.stringify({success:true}),{status:200});
   return new Response(JSON.stringify({id:'98765',name:'Cesta',status:'DRAFT',endpoint_uri:'https://flow.test',validation_errors:[]}),{status:200});
 };
-const published=await publishFlowViaMeta({accessToken:'server-token',graphVersion:'v99.0',flowId:'98765',endpointUri:'https://flow.test',phoneNumberId:'55555',privateKeyConfigured:true,metaAppSecretConfigured:true,sessionSecretConfigured:true,fetchImpl:publishFetch});
+const published=await publishFlowViaMeta({accessToken:'server-token',graphVersion:'v99.0',flowId:'98765',endpointUri:'https://flow.test',phoneNumberId:'55555',privateKeyConfigured:true,privateKeyPem:privatePem,metaAppSecretConfigured:true,sessionSecretConfigured:true,fetchImpl:publishFetch});
 assert.equal(published.published,true);
 assert.ok(publishCalls>=3);
+await assert.rejects(publishFlowViaMeta({accessToken:'server-token',graphVersion:'v99.0',flowId:'98765',endpointUri:'https://flow.test',phoneNumberId:'55555',privateKeyConfigured:true,privateKeyPem:privatePem,metaAppSecretConfigured:true,sessionSecretConfigured:true,fetchImpl:async(url,init)=>String(url).includes('whatsapp_business_encryption')?new Response(JSON.stringify({business_public_key:'different-key'}),{status:200}):new Response(JSON.stringify({id:'98765',name:'Cesta',status:'DRAFT',endpoint_uri:'https://flow.test',validation_errors:[]}),{status:200})}),e=>e.code==='meta_flow_public_key_mismatch');
 assert.equal(await deleteFlowViaMeta({accessToken:'server-token',graphVersion:'v99.0',flowId:'98765',fetchImpl:makeFetch({success:true})}).then(x=>x.deleted),true);
 console.log('PASS Meta Flow Graph API, fixed endpoint, encrypted key registration, validation and publish gates');
