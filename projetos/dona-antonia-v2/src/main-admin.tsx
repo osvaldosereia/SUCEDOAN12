@@ -30,6 +30,11 @@ const BasketCompositionPanel = React.lazy(() =>
 const OrdersPanel = React.lazy(() =>
   import('./admin/features/orders/OrdersPanel').then((m) => ({ default: m.OrdersPanel })),
 );
+const PersistentOrdersPanel = React.lazy(() =>
+  import('./admin/features/orders/PersistentOrdersPanel').then((m) => ({
+    default: m.PersistentOrdersPanel,
+  })),
+);
 const ExtraAdmin = React.lazy(() =>
   import('./admin/features/extras/ExtraAdmin').then((m) => ({ default: m.ExtraAdmin })),
 );
@@ -43,12 +48,16 @@ import type { AdminProductsRepository } from './application/admin-products';
 import { createSupabaseAdminProductsRepository } from './platform/supabase/admin-products';
 import { createSupabaseAdminBasketConfigurationRepository } from './platform/supabase/admin-basket-configuration';
 import { useBasketConfigurationAdmin } from './admin/features/baskets/useBasketConfigurationAdmin';
+import type { AdminOrdersRepository } from './application/admin-orders';
+import { createSupabaseAdminOrdersRepository } from './platform/supabase/admin-orders';
 
 function Admin({
   staffSession,
   onSignOut,
   productRepository,
   basketConfigurationRepository,
+  ordersRepository,
+  demoMode,
 }: {
   staffSession: StaffSession | null;
   onSignOut: () => Promise<void>;
@@ -56,6 +65,8 @@ function Admin({
   basketConfigurationRepository: ReturnType<
     typeof createSupabaseAdminBasketConfigurationRepository
   > | null;
+  ordersRepository: AdminOrdersRepository | null;
+  demoMode: boolean;
 }) {
   const [tab, setTab] = useAdminSectionRoute();
   const allowedSections = staffSession
@@ -153,7 +164,12 @@ function Admin({
             onNavigate={navigateAllowed}
           />
         )}
-        {activeTab === 'pedidos' && <OrdersPanel orders={orders} onUpdate={updateOrder} />}
+        {activeTab === 'pedidos' && ordersRepository && !demoMode && (
+          <PersistentOrdersPanel repository={ordersRepository} />
+        )}
+        {activeTab === 'pedidos' && (!ordersRepository || demoMode) && (
+          <OrdersPanel orders={orders} onUpdate={updateOrder} />
+        )}
         {activeTab === 'produtos' && productRepository && (
           <PersistentProductsPanel
             repository={productRepository}
@@ -230,6 +246,10 @@ const adminProductsRepository = supabaseClient
 const adminBasketConfigurationRepository = supabaseClient
   ? createSupabaseAdminBasketConfigurationRepository(supabaseClient)
   : null;
+const adminOrdersRepository = supabaseClient
+  ? createSupabaseAdminOrdersRepository(supabaseClient)
+  : null;
+const demoMode = import.meta.env.DEV && import.meta.env.VITE_DA_DEMO_MODE === 'true';
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -243,6 +263,8 @@ createRoot(document.getElementById('root')!).render(
           onSignOut={signOut}
           productRepository={adminProductsRepository}
           basketConfigurationRepository={adminBasketConfigurationRepository}
+          ordersRepository={adminOrdersRepository}
+          demoMode={demoMode}
         />
       )}
     </AdminAuthGate>

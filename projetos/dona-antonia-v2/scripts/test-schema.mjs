@@ -37,7 +37,7 @@ const expectedTables = [
   'orders',
 ].sort();
 
-assert.equal(migrations.length, 12, 'the schema must be a complete, ordered migration chain');
+assert.equal(migrations.length, 13, 'the schema must be a complete, ordered migration chain');
 assert.ok(migrations.every((file) => /^\d{14}_[a-z0-9_]+\.sql$/.test(file)));
 
 const db = new PGlite();
@@ -100,6 +100,10 @@ try {
       ,has_function_privilege('anon', 'public.quote_storefront_order(jsonb)', 'EXECUTE') as anon_checkout_quote
       ,has_function_privilege('anon', 'public.create_storefront_order(jsonb)', 'EXECUTE') as anon_checkout_create
       ,has_function_privilege('authenticated', 'public.quote_storefront_order(jsonb)', 'EXECUTE') as staff_checkout_quote
+      ,has_function_privilege('anon', 'public.admin_list_orders(text,text,integer,integer)', 'EXECUTE') as anon_order_list
+      ,has_function_privilege('authenticated', 'public.admin_list_orders(text,text,integer,integer)', 'EXECUTE') as staff_order_list
+      ,has_function_privilege('anon', 'public.admin_get_order(uuid)', 'EXECUTE') as anon_order_detail
+      ,has_function_privilege('authenticated', 'public.admin_get_order(uuid)', 'EXECUTE') as staff_order_detail
     from pg_class c
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'da_next' and c.relkind = 'r'
@@ -113,6 +117,10 @@ try {
   assert.equal(access.rows[0].anon_checkout_quote, true);
   assert.equal(access.rows[0].anon_checkout_create, true);
   assert.equal(access.rows[0].staff_checkout_quote, true);
+  assert.equal(access.rows[0].anon_order_list, false);
+  assert.equal(access.rows[0].staff_order_list, true);
+  assert.equal(access.rows[0].anon_order_detail, false);
+  assert.equal(access.rows[0].staff_order_detail, true);
   assert.equal(access.rows[0].anon_role_lookup, false);
   assert.equal(access.rows[0].staff_role_lookup, true);
   assert.equal(access.rows[0].anon_product_list, false);
@@ -603,6 +611,21 @@ try {
   assert.equal(supportAccess.visibleOrders.rows.length, 2);
   assert.equal(supportAccess.hiddenProducts.rows.length, 0);
   assert.equal(supportAccess.hiddenPrivateProfiles.rows.length, 0);
+
+  const orderRead = await asAuthenticated(actorIds.support, async () => {
+    const page = await db.query(
+      `select public.admin_list_orders('NOVO', 'DA-2026-000001', 20, 0) as result`,
+    );
+    const detail = await db.query('select public.admin_get_order($1) as result', [orderId]);
+    return { page, detail };
+  });
+  assert.equal(orderRead.page.rows[0].result.total, 1);
+  assert.equal(orderRead.page.rows[0].result.items[0].order_number, 'DA-2026-000001');
+  assert.equal(orderRead.detail.rows[0].result.items[0].unit_price_cents, null);
+  assert.equal(
+    JSON.stringify(orderRead.detail.rows[0].result).includes('private_adjustment'),
+    false,
+  );
 
   const adminAccess = await asAuthenticated(actorIds.admin, async () => {
     const privatePricing = await db.query(

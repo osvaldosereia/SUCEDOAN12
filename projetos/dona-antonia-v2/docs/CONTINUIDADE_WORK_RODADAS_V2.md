@@ -5,7 +5,9 @@ Total output lines: 325
 
 **Versão do dossiê:** 2026-10-23  
 **Finalidade:** transferir todas as decisões operacionais, regras de UX, estado da engenharia, riscos, pendências e plano de entrega para um novo Projeto/conversa do ChatGPT em modo Work.  
-**Status atualizado (24/10/2026): R00–R08 concluídas em staging isolado.** PRs da V2 permanecem draft e sem merge/publicação. Projeto Supabase V2 isolado `hjudhofluihkxykwekir`, 12 migrations aplicadas, 802 produtos e 802 perfis privados; todos permanecem inativos/estoque zero e há 0 pedidos antes da homologação. O login foi concluído pelo usuário na prévia privada owner-only, e `juniorsereia@gmail.com` tem papel ADMIN. O CSV foi explicitamente autorizado como seed, mas não tem procedência comprovada de export do Bling. R08 está na branch `agent/dona-antonia-r08-quote-checkout`, PR #1374 draft, derivada do head R07 `ecc198ef76b92d76f22f614738f467f2ddb88cf4`; a migration `20261024083000_r08_public_checkout.sql` foi aplicada somente no V2 isolado. Testes locais da R08: 97/97 unitários, 12 migrations/27 tabelas no PostgreSQL isolado, arquitetura, lint, formato, TypeScript e build aprovados. CI #40094688858 passou todos os gates, instalou Chromium e passou o smoke browser mobile/desktop. Custo estimado aprovado: US$ 10/mês no compute padrão.
+**Status atualizado (24/10/2026): R00–R09 concluídas em staging isolado.** PRs da V2 permanecem draft e sem merge/publicação. Projeto Supabase V2 isolado `hjudhofluihkxykwekir`, 13 migrations aplicadas, 802 produtos, 802 perfis privados e 0 pedidos; todos os produtos/perfis seguem inativos/estoque zero. O login foi concluído pelo usuário na prévia privada owner-only, e `juniorsereia@gmail.com` tem papel ADMIN. O CSV foi explicitamente autorizado como seed, mas não tem procedência comprovada de export do Bling. R09 está na branch `agent/dona-antonia-r09-orders-four-tabs`, PR #1375 draft, derivada do head R08 `6bbf6f49ccc40b4cd67d38ffa10e9ee46773737c`; a migration `20261024100000_r09_admin_orders_read.sql` foi aplicada somente no V2 isolado. Testes locais da R09: 100/100 unitários, 13 migrations/27 tabelas no PostgreSQL isolado, arquitetura, lint, formato, TypeScript e build aprovados. CI #40096134747 passou todos os gates e 17/17 E2E mobile/desktop. Custo estimado aprovado: US$ 10/mês no compute padrão.
+**R09 encerramento:** CI #40096134747 aprovado em 24/10/2026, com todos os gates e 17/17 E2E mobile/desktop. A implementação está concluída; o aceite visual de um pedido real segue reservado à homologação com seed vendável, pois o staging continua com 0 pedidos.
+
 **Repositório:** https://github.com/osvaldosereia/SUCEDOAN12  
 **Branch de desenvolvimento principal da V2:** agent/dona-antonia-nova-plataforma  
 **Pasta:** projetos/dona-antonia-v2/  
@@ -267,6 +269,12 @@ Confirmado por leitura da branch:
 
 - Lista paginada Novo/Em separação/Pronto/Entregue, busca e detalhes, número único/imutável, etiquetas básicas, status e clientes.
 - Aceite: pedido confirmado em staging aparece em NOVO sem refresh manual indevido; status correto e pesquisa rápida; nenhuma quinta aba criada.
+
+**Execução em 24/10/2026:** a branch `agent/dona-antonia-r09-orders-four-tabs` adicionou a projeção operacional autenticada `admin_list_orders` (status obrigatório, busca por número/nome/telefone, limite/offset) e `admin_get_order` (cliente, endereço, pagamento, fiscal, snapshots e itens). O painel persistente consulta o servidor ao trocar aba ou pesquisa, exibe somente NOVO/EM_SEPARACAO/PRONTO/ENTREGUE e carrega o detalhe sob demanda. O servidor retorna o total confirmado; preço unitário e ajuste privado de componentes de cesta ficam fora da projeção. Migration aplicada apenas em `hjudhofluihkxykwekir`; remoto confirma ACL anon=false/authenticated=true, 13 migrations, 802 produtos, 802 perfis e 0 pedidos.
+
+**Verificações locais:** `npm run test:db` (13 migrations/27 tabelas, RLS/RBAC, busca, detalhe e privacidade), `npm test` (100/100), `npm run check`, lint, `format:check`, `npm run architecture:check` (112 arquivos) e `npm run build` passaram. Playwright local não iniciou por ausência do Chromium; CI #40096134747 passou todos os gates e 17/17 E2E mobile/desktop com Chromium. Não houve pedido real no staging, portanto o aceite visual de pedido recém-confirmado permanece pendente da homologação com seed vendável.
+
+**PR/isolamento:** PR #1375 draft, sem merge. O Advisor pós-migration registra o aviso esperado de `SECURITY DEFINER` nas duas RPCs autenticadas da R09, além dos avisos anteriores de policies/FKs; não há acesso anônimo às funções. `main`, sites/admin legados, Supabases legados, atendimento, Bling/Meta, DNS, workflows de produção, deploy e publicação permaneceram intocados.
 
 ### R10 — Separação robusta e concorrência
 

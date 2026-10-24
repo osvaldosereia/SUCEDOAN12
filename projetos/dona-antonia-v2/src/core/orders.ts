@@ -27,6 +27,8 @@ export interface OperationalOrder {
   state: OrderState;
   assignedTo: string | null;
   items: readonly OrderItem[];
+  /** Persisted orders expose only their server-computed aggregate total. */
+  totalCents?: number;
   version: number;
 }
 export const ORDER_LABELS: Readonly<Record<OrderState, string>> = {
@@ -36,6 +38,7 @@ export const ORDER_LABELS: Readonly<Record<OrderState, string>> = {
   ENTREGUE: 'Entregue',
 };
 export function orderTotal(order: OperationalOrder): number {
+  if (order.totalCents !== undefined) return order.totalCents;
   return order.items.reduce((sum, item) => sum + item.fulfilledQuantity * item.unitPriceCents, 0);
 }
 const next: Partial<Record<OrderState, OrderState>> = {
