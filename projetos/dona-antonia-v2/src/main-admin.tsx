@@ -5,14 +5,18 @@ import { validateBasketTemplate } from './core/basket';
 import { CATEGORIES } from './core/model';
 import type { BasketId, BasketTemplate, Product, ProductType } from './core/model';
 import { DEMO_PRODUCTS, DEMO_TEMPLATES, DEMO_TYPES } from './data/demo';
+import { DEMO_EXTRA_GROUPS, DEMO_EXTRA_PRODUCTS, DEMO_EXTRA_TYPES } from './data/demo-extra';
+import type { ExtraGroup } from './core/extras';
+import { ExtraAdmin } from './ExtraAdmin';
 import './styles.css';
 
-type Tab = 'produtos' | 'tipos' | 'cestas';
+type Tab = 'produtos' | 'tipos' | 'cestas' | 'extras';
 function Admin() {
   const [tab,setTab] = useState<Tab>('tipos');
-  const [products,setProducts] = useState<Product[]>(DEMO_PRODUCTS.map((product)=>({...product})));
-  const [types,setTypes] = useState<ProductType[]>(DEMO_TYPES.map((type)=>({...type, productSkus:[...type.productSkus]})));
+  const [products,setProducts] = useState<Product[]>([...DEMO_PRODUCTS,...DEMO_EXTRA_PRODUCTS].map((product)=>({...product})));
+  const [types,setTypes] = useState<ProductType[]>([...DEMO_TYPES,...DEMO_EXTRA_TYPES].map((type)=>({...type, productSkus:[...type.productSkus]})));
   const [templates,setTemplates] = useState<BasketTemplate[]>(DEMO_TEMPLATES.map((basket)=>({...basket,lines:[...basket.lines]})));
+  const [extraGroups,setExtraGroups] = useState<ExtraGroup[]>(DEMO_EXTRA_GROUPS.map((group)=>({...group})));
   const [selectedTypeId,setSelectedTypeId] = useState('arroz');
   const [selectedBasketId,setSelectedBasketId] = useState<BasketId>('mini');
   const [newTypeName,setNewTypeName] = useState('');
@@ -62,12 +66,13 @@ function Admin() {
         <button className={tab==='produtos'?'active':''} onClick={()=>setTab('produtos')}>Produtos</button>
         <button className={tab==='tipos'?'active':''} onClick={()=>setTab('tipos')}>Tipos de produto</button>
         <button className={tab==='cestas'?'active':''} onClick={()=>setTab('cestas')}>Composição das cestas</button>
+        <button className={tab==='extras'?'active':''} onClick={()=>setTab('extras')}>Produtos extras</button>
       </nav>
       <p className="sidebar-note">Dados demonstrativos. Este painel não possui autenticação nem persistência; não publicar.</p>
     </aside>
     <main className="admin-main">
       <header className="admin-header"><div><p className="eyebrow">NOVO SISTEMA · HOMOLOGAÇÃO</p>
-        <h1>{tab==='produtos'?'Cadastro de produtos':tab==='tipos'?'Tipos de produto':'Cestas básicas'}</h1>
+        <h1>{tab==='produtos'?'Cadastro de produtos':tab==='tipos'?'Tipos de produto':tab==='extras'?'Produtos extras':'Cestas básicas'}</h1>
         <p>Cadastro simples, independente e compatível com os SKUs do Bling.</p></div>
         <span className="pill">Não publicado</span>
       </header>
@@ -119,6 +124,9 @@ function Admin() {
           <div className="notice">{validateBasketTemplate(selectedBasket,types).length===0?'Estrutura válida para prévia.':'Revise a configuração: há tipos inválidos ou duplicados.'}</div>
         </section>
       </div>}
+      {tab==='extras'&&<ExtraAdmin
+        products={products} types={types} groups={extraGroups}
+        onChangeGroups={setExtraGroups} onChangeTypes={setTypes}/>}
     </main>
   </div>;
 }
