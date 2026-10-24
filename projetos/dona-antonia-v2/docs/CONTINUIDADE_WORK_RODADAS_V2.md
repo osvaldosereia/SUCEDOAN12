@@ -1,4 +1,4 @@
-Warning: truncated output (original token count: 8927)
+Warning: truncated output (original token count: 9069)
 Total output lines: 308
 
 # DONA ANTÔNIA V2 — DOSSIÊ DE CONTINUIDADE E PLANO POR RODADAS (WORK)
@@ -108,11 +108,7 @@ Bling:
 - Controle de rate-limit, 429, backoff, refresh token, timeouts, logs e reconciliação sem duplicar documento.
 
 ## 7. CADASTRO BLING E FONTE DE DADOS
-Base anterior: arquivo de 802 produtos independentes (59 colunas oficiais Bling); conferir se o arquivo está disponível no novo Projeto/Library ou no repo antes de importar. O importador CSV é script em scripts/import-bling.mjs; dados atuais do banco existente **não são idênti…1927 tokens truncated…gn system e disciplina de qualidade (CONCLUÍDA EM 24/10/2026)
-- Consolidar tokens de fonte, cores, campos, botões, tabela, carrinho, modal, feedback e status; eliminar conflitos CSS por módulo, sem redesenhar aleatoriamente.
-- Implementar ESLint + Prettier e regras de acessibilidade apropriadas, sem introduzir dependências pesadas e sem alterar o legado.
-- Testar admin e vitrine mobile 320/390/1280px, navegação, carrosséis, layout; fotografar regressões.
-- Aceite atingido: nenhum overflow nas larguras 320/390/1280 em storefront e admin; Axe sem violações WCAG 2.1 AA; TS/lint/build e CI aprovados. 17 testes E2E e 39 testes unitários passaram. Dependências com alertas foram atualizadas, lockfile criado, e preview exige dispatch manual com `authorize_preview=true`. Detalhes e limites em `docs/STATUS_RODADAS_V2.md`.
+Base anterior: arquivo de 802 produtos independentes (59 colunas oficiais Bling); conferir se o arquivo está disponível no novo Projeto/Library ou no repo antes de importar. O importador CSV é script em scripts/import-bling.mjs; dados atuais do banco existente **não são idênti…2069 tokens truncated…s WCAG 2.1 AA; TS/lint/build e CI aprovados. 17 testes E2E e 39 testes unitários passaram. Dependências com alertas foram atualizadas, lockfile criado, e preview exige dispatch manual com `authorize_preview=true`. Detalhes e limites em `docs/STATUS_RODADAS_V2.md`.
 
 ### R02 — Banco V2 limpo: modelagem, migrações e contratos
 - Revisar e reconciliar db/001–004 e projetar esquema transacional de pedidos/itens/snapshots/idempotência/reserva/atendimento/outbox/auditoria/fiscal; tabelas e políticas RLS específicas.
@@ -239,7 +235,7 @@ R00 foi documental; R01 consolidou qualidade visual/CI; R02 implementou schema e
 - Escopo: quatro migrações em `supabase/migrations/`; 21 tabelas em schema privado, RLS fechado; contratos e tipos TS; ERD/ADR; teste repetível em PostgreSQL WASM descartável. Os drafts SQL de `db/001–004` foram retirados.
 - Verificações locais: lint, format, arquitetura, teste DB (4 migrações/21 tabelas), TS, 39 testes, build e audit sem vulnerabilidades passaram.
 - Resultado: nenhuma conexão a Supabase existente, migration remota, Auth/checkout/worker real, publicação ou mudança em produção. PGlite não substitui homologação Supabase.
-- PR #1366 aberto, sem merge. CI #40061111459 aprovado no SHA `08ece30274c4b36e1c325fcf0e3d3fbabb41c49a`; navegador e todos os demais gates passaram.
+- PR #1366 aberto, sem merge. SHA final da branch: `0ea8f43188ea55db56c176d1c34368a2b4303c10`; CI final #40061318922 aprovado nesse head, navegador e demais gates passaram. CI #40061111459 correspondeu ao SHA de implementação anterior.
 - Próxima: concluir conexão Auth somente após provisionar ambiente isolado, avaliar custo e confirmar que nenhum projeto legado será usado.
 
 
@@ -248,5 +244,5 @@ R00 foi documental; R01 consolidou qualidade visual/CI; R02 implementou schema e
 - Feito no código: migration RLS/RBAC; papéis fechados; grants de menor privilégio e policies `USING`/`WITH CHECK`; split dos valores internos; contratos de autorização/autenticação; matriz e ADR.
 - Segurança verificada em PGlite: anônimo/sem papel sem dados; PRODUCTS lê/edita catálogo mas não saldo/pedido/preço privado; SEPARATION lê pedidos e não altera catálogo; SUPPORT lê atendimento/pedido, sem acesso a catálogo/fiscal; ADMIN acessa dados privados; autoelevação por `user_metadata` negada; revogação retira acesso.
 - Limite: sem projeto Supabase V2, não há login, sessão/JWT ou Auth remoto. Essa infraestrutura pode ter custo; nenhum projeto será criado nem projeto existente tocado sem aprovação específica.
-- CI/PR: registrar quando a validação local terminar e o PR R03 for criado.
-- Situação da operação: legado e `main` intocados; nenhuma publicação ou integração real.
+- CI/PR: PR #1367 aberto contra R02, sem merge: https://github.com/osvaldosereia/SUCEDOAN12/pull/1367. Head inicial `b9b7657b7f7c5d0a5a4995b797914367da0ce97c`; CI ainda não apareceu no GitHub no registro desta atualização. Gates locais: format, lint, format:check, architecture:check, test:db (5/24), check, test (42), build, npm audit (0 vulnerabilidades) e diff --check aprovados.
+- Situação da operação: legado e `main` intocados; nenhuma publicação ou integração real. Próximo: aguardar CI/revisão do PR; concluir login Auth em projeto V2 isolado somente após aprovação para provisionamento. Não iniciar R04 antes de fechar o gate R03.

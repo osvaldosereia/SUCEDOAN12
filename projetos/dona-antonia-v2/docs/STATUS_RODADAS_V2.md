@@ -7,7 +7,7 @@
 |---|---|---|---|
 | R00 | Auditoria integral e baseline | **Concluída — auditoria documental e baseline** | docs/AUDITORIA_COMPLETA_V2.md; SHA base 1a846beba768192c366937c1462bcfd6baeccee9; CI 40057635884 aprovado |
 | R01 | Design system e disciplina de qualidade | **Concluída** | PR #1365; SHA R01 7a02a0da66dbcec6cfd7772da75f748ecb5bd29c; CI 40059800868 e 40059798099 aprovados |
-| R02 | Modelagem/migrações para banco isolado | **Concluída; PR aberto, sem merge** | PR #1366; SHA 0ea8f43188ea55db56c176d1c34368a2b4303c10; CI 40061111459 aprovado |
+| R02 | Modelagem/migrações para banco isolado | **Concluída; PR aberto, sem merge** | PR #1366; SHA 0ea8f43188ea55db56c176d1c34368a2b4303c10; CI 40061318922 aprovado |
 | R03 | Login, RBAC e RLS V2 | Policies/RBAC local concluídos; login remoto pendente | Migração 5; `npm run test:db`; `docs/MATRIZ_ACESSO_V2.md`; Auth exige projeto V2 isolado |
 | R04 | Importação/reconciliação dos 802 produtos | Planejada | — |
 | R05 | Cadastro e estoque persistente | Planejada | — |
@@ -88,7 +88,12 @@
 **SHA inicial:** 0ea8f43188ea55db56c176d1c34368a2b4303c10 (head R02)
 **Estado:** fundação de autorização concluída na V2 isolada; login/Supabase Auth remoto bloqueado até provisionar projeto V2 sem custo não autorizado.
 **Escopo:** papéis ADMIN/PRODUCTS/SEPARATION/SUPPORT, permissões fechadas, função `has_permission`, RLS nas tabelas, grants por tabela/coluna, split de preços privados, contratos TS de sessão e matriz de acesso. Nenhum usuário real ou segredo foi criado.
-**Testes:** `npm run test:db` verifica 5 migrações, 24 tabelas, RLS, roles com e sem acesso, edição comercial autorizada, tentativas negadas, revogação imediata, metadado editável não confiável e isolamento de valores privados. Lint/format/architecture/typecheck/unit/build/audit e CI serão registrados após PR.
+**Testes locais:** `npm run test:db` verifica 5 migrações, 24 tabelas, RLS, roles com e sem acesso, edição comercial autorizada, tentativas negadas, revogação imediata, metadado editável não confiável e isolamento de valores privados. `format`, `lint`, `format:check`, `architecture:check`, `check`, `test` (42), `build`, `npm audit --audit-level=moderate` (0 vulnerabilidades) e `git diff --check` passaram. CI GitHub pendente de execução.
 **Bloqueio explícito:** não existe ambiente Supabase V2. Login, emissão/refresh JWT, recuperação de senha e sessão no browser não foram conectados nem homologados. Não criar ou acessar projetos existentes; provisionamento de projeto novo requer avaliar custo/limites.
 **Produção legada:** intocada; sem acesso a banco legado, mudança em `main`, publicação ou integração operacional.
 **Próximo passo:** provisionar, com autorização de custo, um Supabase V2 isolado; então completar adapter/login e validar policies no próprio Supabase.
+
+**PR:** #1367 — https://github.com/osvaldosereia/SUCEDOAN12/pull/1367; branch `agent/dona-antonia-r03-auth`, head `b9b7657b7f7c5d0a5a4995b797914367da0ce97c`, base R02; aberto, sem merge.
+**Bloqueios:** integração Auth remota e login real dependem de projeto Supabase V2 isolado; provisionamento não autorizado nesta rodada por possível custo/limite.
+**Produção legada:** intocada; sem alteração em `main`, Supabase existente, atendimento ou integrações.
+**Próxima etapa:** aguardar CI/revisão; fechar o login/Auth R03 após aprovação para provisionar ambiente isolado. R04 não começa antes do gate R03.
