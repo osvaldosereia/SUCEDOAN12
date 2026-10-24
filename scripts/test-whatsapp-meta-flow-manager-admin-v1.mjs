@@ -9,6 +9,7 @@ const ui=read('vitrine/admin/marketing/flow-center.js');
 const marketing=read('vitrine/admin/marketing/marketing-polish.js');
 const attendance=read('vitrine/admin/atendimento/attendance-app.js');
 const endpoint=read('supabase/functions/whatsapp-1018-basket-flow-v1/index.ts');
+const activeMarketing=read('vitrine/admin/marketing/post-sale-center.js');
 
 assert.match(api,/eq\("slug","dona-antonia-1018"\)/);
 assert.match(api,/if\(auth\.role!=="owner"\)/);
@@ -52,6 +53,8 @@ assert.doesNotMatch(ui,/0975|interactive\.flow|sendTemplateViaMeta|DA_FLOW_1018_
 
 assert.match(marketing,/PRIMARY_MARKETING_VIEWS=\[[^\]]*'flows'/);
 assert.match(marketing,/view==='flows'/);
+assert.match(activeMarketing,/\['flows','Flows Meta'\]/);
+assert.match(activeMarketing,/if\(view==='flows'\)return \(await import\('\/vitrine\/admin\/marketing\/flow-center\.js\?v=whatsapp-flow-center-20261024'\)\)\.mountFlowView\(root\)/);
 assert.match(attendance,/parseBasketFlowReply/);
 assert.match(attendance,/Solicitação de cesta pelo Flow/);
 assert.match(attendance,/items\.textContent=data\.items/);
