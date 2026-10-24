@@ -54,7 +54,8 @@ test('Marketing coordinator invalidates cached view code after navigation change
 });
 
 test('Marketing campaign-entry cache key is current in every secondary navigation module',()=>{
-  for(const source of [postSale,repurchase,strategy])assert.match(source,/campaign-entry\.js\?v=marketing-campaign-entry-v8/);\n  assert.match(polish,/campaign-entry\.js\?v=whatsapp-flow-manager-20261024/);
+  for(const source of [postSale,repurchase,strategy])assert.match(source,/campaign-entry\.js\?v=marketing-campaign-entry-v8/);
+  assert.match(polish,/campaign-entry\.js\?v=whatsapp-flow-manager-20261024/);
   assert.doesNotMatch([postSale,repurchase,strategy,polish].join('\n'),/campaign-entry\.js\?v=marketing-campaign-entry-v4/);
 });
 
