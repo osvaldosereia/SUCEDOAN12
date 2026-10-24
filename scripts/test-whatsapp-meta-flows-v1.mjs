@@ -20,6 +20,8 @@ assert.throws(()=>validateFlowJson('{'),e=>e.code==='meta_flow_json_invalid');
 assert.throws(()=>validateFlowJson({...dynamicFlow,screens:[]}),e=>e.code==='meta_flow_json_invalid');
 assert.deepEqual(flowValidationErrors({validation_errors:[]}),[]);
 assert.equal(flowValidationErrors({}),null);
+assert.equal(flowValidationErrors({validation_errors:null}),null);
+assert.equal(flowValidationErrors({validation_errors:[{line:null,column:null}]})[0].line,null);
 assert.throws(()=>assertFlowPublishable({status:'DRAFT',endpoint_uri:'https://x.test',validation_errors:[{error_message:'broken'}]},{endpointUri:'https://x.test',publicKeyConfigured:true,privateKeyConfigured:true,metaAppSecretConfigured:true,sessionSecretConfigured:true}),e=>e.code==='meta_flow_validation_failed');
 assert.throws(()=>assertFlowPublishable({status:'DRAFT',endpoint_uri:null,validation_errors:[]},{endpointUri:'https://x.test',publicKeyConfigured:true,privateKeyConfigured:true,metaAppSecretConfigured:true,sessionSecretConfigured:true}),e=>e.code==='meta_flow_endpoint_not_configured');
 
