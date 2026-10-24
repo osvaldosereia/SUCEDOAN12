@@ -35,7 +35,7 @@ export const ADMIN_SECTIONS = [
     description: 'Conversas conectadas a clientes e pedidos.',
     group: 'operation',
     icon: 'users',
-    available: false,
+    available: true,
   },
 
   {

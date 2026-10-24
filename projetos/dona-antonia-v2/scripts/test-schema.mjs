@@ -37,7 +37,7 @@ const expectedTables = [
   'orders',
 ].sort();
 
-assert.equal(migrations.length, 14, 'the schema must be a complete, ordered migration chain');
+assert.equal(migrations.length, 15, 'the schema must be a complete, ordered migration chain');
 assert.ok(migrations.every((file) => /^\d{14}_[a-z0-9_]+\.sql$/.test(file)));
 
 const db = new PGlite();
@@ -92,6 +92,10 @@ try {
       has_function_privilege('anon', 'public.admin_get_product_private_profile(uuid)', 'EXECUTE') as anon_private_profile,
       has_function_privilege('authenticated', 'public.admin_get_product_private_profile(uuid)', 'EXECUTE') as staff_private_profile,
       has_function_privilege('authenticated', 'public.admin_save_product_private_profile(uuid,bigint,jsonb,uuid)', 'EXECUTE') as staff_private_profile_save
+      ,has_function_privilege('anon', 'public.admin_list_conversations(text,text,text,integer,integer)', 'EXECUTE') as anon_conversation_list
+      ,has_function_privilege('authenticated', 'public.admin_list_conversations(text,text,text,integer,integer)', 'EXECUTE') as staff_conversation_list
+      ,has_function_privilege('authenticated', 'public.admin_get_conversation(uuid)', 'EXECUTE') as staff_conversation_get
+      ,has_function_privilege('authenticated', 'public.admin_queue_conversation_message(uuid,text,text,text,jsonb)', 'EXECUTE') as staff_conversation_queue
       ,has_function_privilege('anon', 'public.admin_get_basket_configuration()', 'EXECUTE') as anon_basket_read
       ,has_function_privilege('authenticated', 'public.admin_get_basket_configuration()', 'EXECUTE') as staff_basket_read
       ,has_function_privilege('anon', 'public.get_storefront_catalog()', 'EXECUTE') as anon_public_catalog
@@ -134,6 +138,10 @@ try {
   assert.equal(access.rows[0].anon_private_profile, false);
   assert.equal(access.rows[0].staff_private_profile, true);
   assert.equal(access.rows[0].staff_private_profile_save, true);
+  assert.equal(access.rows[0].anon_conversation_list, false);
+  assert.equal(access.rows[0].staff_conversation_list, true);
+  assert.equal(access.rows[0].staff_conversation_get, true);
+  assert.equal(access.rows[0].staff_conversation_queue, true);
   assert.equal(access.rows[0].anon_basket_read, false);
   assert.equal(access.rows[0].staff_basket_read, true);
   assert.equal(access.rows[0].anon_public_catalog, true);
@@ -696,6 +704,45 @@ try {
   assert.equal(supportAccess.visibleOrders.rows.length, 2);
   assert.equal(supportAccess.hiddenProducts.rows.length, 0);
   assert.equal(supportAccess.hiddenPrivateProfiles.rows.length, 0);
+
+  const conversationId = (
+    await db.query(
+      `select id from da_next.conversations where external_contact_id = 'support-test-contact'`,
+    )
+  ).rows[0].id;
+  const inboxRead = await asAuthenticated(actorIds.support, async () => {
+    const page = await db.query(
+      `select public.admin_list_conversations('0975', 'ABERTA', 'support-test', 20, 0) as result`,
+    );
+    const detail = await db.query('select public.admin_get_conversation($1) as result', [
+      conversationId,
+    ]);
+    const queued = await db.query(
+      `select public.admin_queue_conversation_message($1, '0975', 'r11-message-1', 'Teste V2', '[{"type":"audio","mimeType":"audio/ogg"}]'::jsonb) as result`,
+      [conversationId],
+    );
+    const replayed = await db.query(
+      `select public.admin_queue_conversation_message($1, '0975', 'r11-message-1', 'Teste V2', '[{"type":"audio","mimeType":"audio/ogg"}]'::jsonb) as result`,
+      [conversationId],
+    );
+    const messages = await db.query(
+      `select count(*)::int as count from da_next.conversation_messages`,
+    );
+    return { page, detail, queued, replayed, messages };
+  });
+  const inboxOutbox = await asAuthenticated(actorIds.admin, () =>
+    db.query(
+      `select count(*)::int as count from da_next.integration_outbox where aggregate_type = 'CONVERSATION' and aggregate_id = $1`,
+      [conversationId],
+    ),
+  );
+  assert.equal(inboxRead.page.rows[0].result.total, 1);
+  assert.equal(inboxRead.page.rows[0].result.items[0].provider_account, '0975');
+  assert.equal(inboxRead.detail.rows[0].result.messages.length, 0);
+  assert.equal(inboxRead.queued.rows[0].result.delivery_status, 'NA_FILA');
+  assert.equal(inboxRead.queued.rows[0].result.replayed, false);
+  assert.equal(inboxRead.replayed.rows[0].result.replayed, true);
+  assert.equal(inboxOutbox.rows[0].count, 1);
 
   const orderRead = await asAuthenticated(actorIds.support, async () => {
     const page = await db.query(
