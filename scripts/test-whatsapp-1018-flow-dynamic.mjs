@@ -48,7 +48,8 @@ for(let page=1;page<=6;page++){
  stage=res;
 }
 assert.throws(()=>parseQty('-1'));assert.throws(()=>parseQty('11'));assert.equal(parseQty('0'),0);
-await assert.rejects(()=>verifyState((await signState({ok:true},secret)).replace(/.$/,'X'),secret));
+const validSigned=await signState({ok:true},secret);
+await assert.rejects(()=>verifyState(validSigned.replace(/.$/,'X'),secret));
 await assert.rejects(()=>flowExchange({action:'data_exchange',screen:'TAMANHO',data:{etapa:'tamanho',tamanho:'invalido'}},deps));
 const keypair=await crypto.subtle.generateKey({name:'RSA-OAEP',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['encrypt','decrypt']);
 const privateDer=await crypto.subtle.exportKey('pkcs8',keypair.privateKey);
