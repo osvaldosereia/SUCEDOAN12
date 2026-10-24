@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#f6f8f6">
+  <title>Laboratório WhatsApp 1018 · Dona Antônia</title>
+  <link rel="stylesheet" href="./lab.css?v=20261024-1">
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand"><span class="brand-mark">DA</span><span><strong>Dona Antônia</strong><small>Laboratório de atendimento</small></span></div>
+      <nav aria-label="Voltar ao Admin"><a href="/vitrine/admin/">← Vitrine Admin</a><a href="/vitrine/admin/atendimento/">Atendimento</a></nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <div class="headline">
+      <div><span class="eyebrow">TESTE ISOLADO · META CLOUD API</span><h1>Atendimento de cestas no WhatsApp</h1><p>Simule a conversa comercial com cinco tamanhos e três combinações por cesta, sem alterar pedidos ou catálogo oficial.</p></div>
+      <div class="channel"><span class="dot"></span>Canal emissor <strong>1018</strong><small>Envio restrito ao teste interno 0975</small></div>
+    </div>
+    <div id="status" class="status" role="status" aria-live="polite">Validando acesso administrativo…</div>
+    <div class="workspace">
+      <section class="workspace-main" aria-label="Catálogo e personalização">
+        <div class="section-head"><div><h2>1. Preços das cestas</h2><p>Valores reais calculados pela vitrine. Cada opção tem sua própria composição.</p></div><button id="refreshBtn" class="btn subtle" disabled>Atualizar preços</button></div>
+        <div id="priceGrid" class="price-grid" aria-live="polite"><p class="placeholder">Carregando catálogo…</p></div>
+        <div class="section-head secondary-head"><div><h2>2. Produtos da cesta</h2><p>Selecione um preço acima para visualizar, trocar ou remover produtos.</p></div></div>
+        <div id="detail" class="detail"><div class="empty">Selecione uma das 15 combinações para começar.</div></div>
+        <section class="extras" aria-label="Produtos extras">
+          <div class="section-head"><div><h2>3. Produtos extras</h2><p>Busca no catálogo público, sem modificar o pedido real.</p></div></div>
+          <label class="search-label" for="extraSearch">Buscar produto por nome</label>
+          <input id="extraSearch" type="search" placeholder="Ex.: sabonete, café, óleo" autocomplete="off" disabled>
+          <div id="extraResults" class="extra-results"><p class="placeholder">Escolha uma cesta antes de adicionar extras.</p></div>
+          <div id="extraSelected"></div>
+        </section>
+      </section>
+      <aside class="simulator" aria-label="Simulação do WhatsApp">
+        <div class="phone">
+          <div class="phone-top"><div class="avatar">DA</div><div><strong>Dona Antônia</strong><small>Prévia de conversa · 1018</small></div><span class="phone-icon">⋮</span></div>
+          <div class="chat-area"><div class="incoming">Bom dia! Quanto custam as cestas básicas?</div><div id="preview" class="outgoing">Os preços serão exibidos após carregar os dados reais.</div></div>
+          <div class="phone-foot">Esta prévia não envia mensagens automaticamente.</div>
+        </div>
+        <div class="sim-actions">
+          <label for="messageMode">Conteúdo da mensagem de teste</label>
+          <select id="messageMode"><option value="prices">Tabela com 15 preços</option><option value="basket">Cesta escolhida e alterações</option></select>
+          <button id="copyBtn" class="btn subtle" disabled>Copiar mensagem</button>
+          <button id="sendBtn" class="btn primary" disabled>Envio 1018 → 0975 bloqueado</button>
+          <p class="fineprint">O envio real fica desabilitado enquanto a ANA estiver ativa nos números internos, para evitar respostas automáticas em ciclo. A prévia e a cópia funcionam normalmente. Este piloto não cria pedidos, não altera o catálogo Meta e não envia Flows.</p>
+          <p id="sendStatus" class="send-status" role="status" aria-live="polite"></p>
+        </div>
+      </aside>
+    </div>
+  </main>
+  <script type="module" src="./lab.js?v=20261024-1"></script>
+</body>
+</html>
