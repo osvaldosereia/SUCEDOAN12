@@ -6,7 +6,7 @@ Este checklist vale somente para a V2 isolada. **A R16 continua bloqueada** até
 
 | Gate | Estado | Evidência ou bloqueio |
 | --- | --- | --- |
-| Código e CI | Aprovado | PR #1396 aberto e draft; branch `agent/dona-antonia-r16-pilot-preflight`, base `agent/dona-antonia-r15-audit-homologacao`. Código `93d28dc`; head documental consultado `eef2948`. Runs #40135465216 (push) e #40135468604 (pull request) passaram, incluindo smoke browser mobile/desktop. O #40134499891 pertence ao SHA anterior `93d28dc`. |
+| Código e CI | Aprovado | PR #1396 aberto e draft; branch `agent/dona-antonia-r16-pilot-preflight`, base `agent/dona-antonia-r15-audit-homologacao`. Código `93d28dc`; commit documental verificado `c121764`. Runs #40136482775 (push) e #40136484959 (pull request) passaram todos os gates, incluindo smoke browser mobile/desktop. O #40134499891 é um run anterior no SHA de código `93d28dc`. |
 | URL de staging acessível | Bloqueado | A prévia existente é owner-only e não permite ensaio compartilhado com operadores. Criar uma URL por publicação/deploy está fora do escopo autorizado nesta rodada. |
 | Seed vendável fictício | Aprovado | Três SKUs `R16-TEST-*`, estoque 30 cada, três perfis privados, três tipos, cesta `r16-test` e três movimentos. Seed delimitado à V2; rollback seletivo em `docs/R16_TEST_SEED_ROLLBACK.sql`. Não foi recriado nem alterado nesta retomada. |
 | Operadores isolados | Bloqueado | Faltam 2–3 identidades reais confirmadas para teste. Nenhuma conta ou credencial foi criada sem identidade definida. |
@@ -15,9 +15,13 @@ Este checklist vale somente para a V2 isolada. **A R16 continua bloqueada** até
 
 ### Resultado atual
 
+O script `scripts/r16-readiness.mjs` foi executado localmente sem mutação com `DA_V2_TEST_SEED=true`, operador em 0 e demais gates de staging/backup/autorização ausentes. Retornou `blocked`: seed aprovado; staging, operadores, backup/restore e autorização produtiva pendentes. Os workflows #40136482775 e #40136484959 do commit documental `c121764` passaram.
+
 Há **três gates operacionais** sem evidência: URL de staging, identidades de operadores e backup/restore controlado. A autorização produtiva é um gate separado e permanece fora do escopo. Portanto, não marcar a R16 como concluída.
 
 O PR permanece draft. O projeto Supabase V2 foi consultado somente em leitura: `ACTIVE_HEALTHY`, PostgreSQL 17.11 e nenhum branch existente. O baseline informado após o seed é 805 produtos e 805 perfis privados; não foi feita nova escrita ou recarga.
+
+A conferência também removeu duas linhas de aviso de ferramenta truncada do início do dossiê canônico. Não houve alteração de código nem do Supabase nesta atualização documental.
 
 ## O que falta para avançar
 

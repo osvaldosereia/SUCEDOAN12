@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 10260)
-Total output lines: 325
-
 # DONA ANTÔNIA V2 — DOSSIÊ DE CONTINUIDADE E PLANO POR RODADAS (WORK)
 
 **Versão do dossiê:** 2026-10-23  
@@ -468,4 +465,12 @@ R00 foi documental; R01 consolidou qualidade visual/CI; R02 implementou schema e
 - **Operadores:** faltam identidades confirmadas para 2–3 operadores isolados. Nenhuma conta real ou credencial foi criada.
 - **Backup/restore:** o conector estimou `US$ 0,01344 por hora` para um branch Supabase na organização atual; a documentação oficial informa cobrança adicional de compute, disco, egress e storage por branch. O PITR de 7 dias aparece a `US$ 0,137/hora (~US$ 100/mês)` e requer compute Small. Não foi criado branch, PITR, cópia remota nem restore. O conector disponível não expôs inventário/download de backup. Os testes locais de rollback do schema não equivalem a restore de snapshot remoto. Referências atuais: [uso de branches](https://supabase.com/docs/guides/platform/manage-your-usage/branching) e [backups](https://supabase.com/docs/guides/platform/backups).
 - **Escopo:** permanecem três bloqueios operacionais — URL de staging, operadores e backup/restore controlado. Autorização para piloto produtivo é deliberadamente fora do escopo e não foi solicitada. A R16 permanece pré-voo, não concluída; o readiness completo deve continuar `blocked`.
-- **Higiene do PR:** removido nesta atualização um dossiê duplicado criado fora de `projetos/dona-antonia-v2/`; o arquivo continha saída de ferramenta truncada e não era fonte documental.
+- **Higiene documental:** removidas as linhas de aviso de truncamento no início do dossiê canônico e o dossiê duplicado com saída truncada que estava fora de `projetos/dona-antonia-v2/`.
+
+
+## Pós-commit R16 — evidência do head documental c121764 (24/10/2026)
+
+- CI #40136482775 (push) e #40136484959 (pull request) passaram no commit documental `c121764ec64bcd113abaadb7fdfa89dbfed4f0ba`; os dois jobs `quality` concluíram com sucesso em auditoria de dependências, lint/formato, arquitetura, replay PostgreSQL, TypeScript, testes, build sem deploy e smoke browser mobile/desktop.
+- O script `scripts/r16-readiness.mjs` foi executado sem mutação com `DA_V2_TEST_SEED=true`, operador em 0 e URL/backup/autorização produtiva ausentes. Resultado: `blocked`; seed passou e falharam staging, operadores, backup/restore e autorização produtiva. O status confirma os três bloqueios operacionais e mantém o gate produtivo separado.
+- Os 126 testes locais continuam sendo a evidência registrada para o SHA de código `93d28dc`; não houve alteração de código neste checkpoint documental.
+- Nesta revisão foi removido o prefixo de saída de ferramenta truncada do dossiê canônico. A branch base R15 não foi alterada.

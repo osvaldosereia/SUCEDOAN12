@@ -21,7 +21,7 @@
 | R13    | NF-e Bling pós-separação                  | **Concluída em staging isolado; PR draft sem merge/publicação** | PR #1382; head `f1af5906`; CI #40102849252 aprovado (17/17 E2E); V2 19 migrations/32 tabelas; 802 produtos/perfis preservados; 0 pedidos/documentos |
 | R14    | Clientes/entrega/relatórios essenciais    | **Concluída em staging isolado; PR draft sem merge/publicação** | PR #1384; head `c97cb236`; CI #40115614242 aprovado (16/16 E2E após correção da expectativa); V2 20 migrations/33 tabelas; 802 produtos/perfis preservados |
 | R15    | Auditoria final/performance/homologação   | **Concluída em V2 isolada; bloqueios de homologação documentados** | PR #1394; head `5344a6c3`; código `8aa59fe0`; CI #40132993673 + checkpoint final #40133495710 aprovado (18/18 E2E), testes locais 124/124, auditoria sintética 802 produtos/3 operadores, npm audit sem vulnerabilidades; Lighthouse/backup remoto pendentes |
-| R16    | Piloto/migração autorizada                | **Pré-voo documentado; piloto bloqueado** | PR #1396 draft; código `93d28dc`; head documental verificado `eef2948`; CI nesse head: #40135465216 (push) e #40135468604 (PR), ambos verdes; seed fictício aprovado; três gates operacionais bloqueados; produção fora do escopo |
+| R16    | Piloto/migração autorizada                | **Pré-voo documentado; piloto bloqueado** | PR #1396 draft; código `93d28dc`; docs commit `c121764`; CI #40136482775 (push) e #40136484959 (PR) verdes; seed fictício aprovado; três gates operacionais bloqueados; produção fora do escopo |
 
 ## Histórico anterior às rodadas
 
@@ -232,3 +232,11 @@
 - O custo consultado para criar um branch é US$ 0,01344/hora, além de outros itens de uso descritos pela documentação oficial. PITR de 7 dias aparece a US$ 0,137/hora (~US$ 100/mês), com requisito de compute Small. Nenhum branch/PITR/cópia/restore foi criado. O rollback local de migrações não demonstra recuperação de snapshot remoto. Referências: [branching](https://supabase.com/docs/guides/platform/manage-your-usage/branching) e [backups](https://supabase.com/docs/guides/platform/backups).
 - A autorização de piloto produtivo está deliberadamente fora do escopo desta execução. O código de readiness inclui esse gate e, portanto, o resultado completo continua `blocked` até autorização futura. R16 não concluída.
 - Removido do PR o arquivo duplicado fora de `projetos/dona-antonia-v2/` que continha saída truncada de ferramenta; os artefatos da rodada permanecem na pasta exclusiva.
+
+
+### Evidência pós-commit documental c121764 — 24/10/2026
+
+- Os workflows #40136482775 (push) e #40136484959 (pull request) passaram no head documental `c121764ec64bcd113abaadb7fdfa89dbfed4f0ba`. Ambos completaram todos os gates de qualidade, replay de migrações PostgreSQL, TypeScript, testes, build sem deploy e smoke browser mobile/desktop.
+- Execução isolada do script `scripts/r16-readiness.mjs` com seed confirmado: status `blocked`; `test-seed` passou; `staging-url`, `operators`, `backup-restore` e `production-authorization` falharam como esperado. Nenhuma tabela ou recurso foi alterado pelo script.
+- O checkpoint c121764 foi somente documental. O teste local 126/126 permanece associado ao SHA de código `93d28dc`; não se repetiram testes já verificados e não houve mudança de código.
+- Durante a conferência, removeu-se do dossiê canônico o prefixo de saída truncada já existente na base R15. A base R15 permanece inalterada.
