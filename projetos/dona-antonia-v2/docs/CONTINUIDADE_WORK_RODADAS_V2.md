@@ -5,7 +5,7 @@ Total output lines: 325
 
 **Versão do dossiê:** 2026-10-23  
 **Finalidade:** transferir todas as decisões operacionais, regras de UX, estado da engenharia, riscos, pendências e plano de entrega para um novo Projeto/conversa do ChatGPT em modo Work.  
-**Status atualizado (24/10/2026): R00–R04 concluídas. R04 está na branch `agent/dona-antonia-r04-bling-import`, PR #1368 draft e sem merge. Projeto Supabase V2 isolado `hjudhofluihkxykwekir`, 7 migrações aplicadas, 802 produtos e 802 perfis privados importados; todos permanecem inativos/estoque zero. O login e o formulário de recuperação foram validados na prévia privada owner-only, e a conta `juniorsereia@gmail.com` tem papel ADMIN. O Auth V2 tinha URL padrão `http://localhost:3000`, corrigida para `/admin/` da prévia; callback de recuperação autorizado. O usuário ainda precisa solicitar o e-mail e definir a própria senha. CSV foi explicitamente autorizado como seed, mas não tem procedência comprovada de export do Bling. Próxima rodada R05 (CRUD e estoque persistentes). Custo estimado aprovado: US$ 10/mês no compute padrão.
+**Status atualizado (24/10/2026): R00–R04 concluídas; R05 implementada localmente e migrations aplicadas somente à V2, com CI/E2E do novo head pendentes.** R04 permanece na branch `agent/dona-antonia-r04-bling-import`, PR #1368 draft e sem merge. Projeto Supabase V2 isolado `hjudhofluihkxykwekir`, 9 migrations aplicadas, 802 produtos e 802 perfis privados; todos permanecem inativos/estoque zero. O login foi concluído pelo usuário na prévia privada owner-only, e `juniorsereia@gmail.com` tem papel ADMIN. O CSV foi explicitamente autorizado como seed, mas não tem procedência comprovada de export do Bling. R05 está na branch `agent/dona-antonia-r05-products-stock`, baseada no head R04 `4e3ccfba7b06dc02a5ae3287d502351cb24aa4bf`. Custo estimado aprovado: US$ 10/mês no compute padrão.
 **Repositório:** https://github.com/osvaldosereia/SUCEDOAN12  
 **Branch de desenvolvimento principal da V2:** agent/dona-antonia-nova-plataforma  
 **Pasta:** projetos/dona-antonia-v2/  
@@ -192,6 +192,8 @@ Confirmado por leitura da branch:
 - Ficha Geral, Preços/Estoque, Fiscal/Fornecedor, Fotos, Histórico, com permissões por campo; tipos e categorias não se misturam.
 - Aceite: CRUD persiste após recarregar; 800+ SKUs não travam; concorrência rejeita revisão obsoleta; produto zerado não aparece na loja.
 
+**Execução atual (24/10/2026):** implementados adapter/RPC para busca e paginação server-side, cadastro/edição, estoque com motivo e ledger, revisão otimista, histórico, e ficha fiscal/fornecedor ADMIN-only com custo exato sem exposição na projeção do catálogo. Migrations `20261024060000_r05_admin_products.sql` e `20261024061000_r05_private_product_profile.sql` aplicadas somente na V2 isolada; remoto confirmou 802 produtos + 802 perfis sem alteração de linhas, 9 migrations e ACL sem execução anônima. Typecheck, lint, format, architecture (89 arquivos), 80 unitários, teste PostgreSQL isolado (9 migrations/24 tabelas) e build passaram. CI do branch e E2E remoto ainda pendentes. Upload de imagem e ações em lote permanecem fora desta implementação; vitrine dinâmica pertence à R07.
+
 ### R06 — Tipos, cestas e extras persistentes
 - CRUD tamanho/tipos/vínculos/ordem/quantidades/extras; carregar fotos quadradas; valor interno por tamanho privado; testar de ponta a ponta.
 - Aceite: mudanças admin aparecem na prévia pública, preço agregado correto sem expor composição privada; alteração de marca preserva quantidade; edições simultâneas seguras.
@@ -269,9 +271,9 @@ Arquivos relevantes para ler no Work:
 ## 14. COMO INICIAR A NOVA CONVERSA WORK
 1. Criar/abrir um **Projeto** no ChatGPT chamado "Dona Antônia V2".
 2. Anexar este dossiê aos arquivos do projeto se desejar; o arquivo está no GitHub acima.
-3. Abrir **uma conversa no modo Work** dentro do projeto, com acesso à integração GitHub; Supabase ficará somente read-only nos projetos existentes até configurar o ambiente separado.
+3. Abrir **uma conversa no modo Work** dentro do projeto, com acesso às integrações GitHub e Supabase. Usar somente o projeto isolado V2 `hjudhofluihkxykwekir`; projetos operacionais continuam fora do escopo.
 4. Colar o comando fornecido em docs/COMANDO_NOVA_CONVERSA_WORK.md.
-5. Verificar PR #1367 e workflow. Projeto Supabase V2 isolado já criado e migrado; custo estimado aprovado em US$ 10/mês. Para login real, cadastrar o e-mail do primeiro operador ADMIN e validar a sessão. Nunca retomar os anexos antigos que mandam iniciar R00. SEM alteração de produção.
+5. Verificar PRs #1367 e #1368 e workflows. Projeto Supabase V2 isolado já criado e migrado; custo estimado aprovado em US$ 10/mês. O usuário já concluiu o login e definiu sua senha; nunca solicitar nem registrar a senha. Não retomar anexos antigos que mandam iniciar R00. SEM alteração de produção.
 
 
 ## 15. REGISTRO DA RODADA R00 — 23/10/2026
@@ -319,3 +321,14 @@ R00 foi documental; R01 consolidou qualidade visual/CI; R02 implementou schema e
 - Carga final: 802 produtos e 802 perfis, 802 custos exatos e 802 originais de 59 campos, 776 GTINs; todos inativos e estoque zero. Dados validados por query de contagem. Migração adicional: `20261024052349_catalog_cost_precision_four_decimals.sql`.
 - A rota privada `/admin/` oferece login e recuperação; `/admin/?recovery=1` permite definir e confirmar nova senha (mínimo 8 caracteres). O Site URL e a allowlist do Auth V2 apontam para a prévia privada. O usuário confirmou que concluiu o login; `last_sign_in_at` no Auth é 2026-10-24 05:49:40 UTC, com papel ADMIN. O agente não acessou a senha.
 - Próxima: R05 CRUD e estoque persistentes. Origem CSV não comprovada e saldo físico continuam decisões abertas; não ativar catálogo ou sincronizar Bling sem confirmação.
+
+
+## Registro de execução — R05 (24/10/2026)
+- Branch isolada: `agent/dona-antonia-r05-products-stock`, criada sobre o SHA R04 `4e3ccfba7b06dc02a5ae3287d502351cb24aa4bf`; PR/commit aguardam publicação da branch e CI.
+- Código: repositório Supabase de produtos; RPC paginada/filtros; salvar produto com revisão otimista; atualização de estoque exige motivo, request UUID, ledger e auditoria; histórico de estoque; UI responsiva em módulos pequenos; ficha fiscal/fornecedor com custo textual de quatro casas, diálogo restrito ao perfil ADMIN e RPCs com checagem server-side `private.read/manage`.
+- Banco local: 9 migrations, 24 tabelas e verificações RBAC/RLS, privacidade e rollback passaram em PGlite.
+- Projeto remoto alvo confirmado `hjudhofluihkxykwekir` (Dona Antônia V2, ACTIVE_HEALTHY). Foram aplicadas apenas as duas migrations R05. Verificação remota: as RPCs privadas têm `search_path=pg_catalog`; `anon_can_execute=false`, `authenticated_can_execute=true` com checagens internas de usuário e permissão. Contagens preservadas: 802 produtos e 802 perfis privados.
+- Testes locais finais: `npm run check`, `npm run lint`, `npm run format:check`, `npm run architecture:check` (89 arquivos), `npm test` (80/80), `npm run test:db` (9 migrations/24 tabelas) e `npm run build` passaram. Playwright local requer Chromium ausente; executar gate no CI.
+- Supabase Advisors: alerta de função SECURITY DEFINER acessível ao role authenticated (esperado pelo wrapper API, mas exige auditoria de guardas), 4 políticas com initplan, 11 FKs sem índice de cobertura, 38 múltiplas policies, 25 índices sem uso e Auth limitado a 10 conexões. Nenhum hardening transversal foi incluído na rodada.
+- Estado: implementação/migration pronta; **R05 não será marcada concluída até a branch/PR e o CI E2E do head atual passarem**. Sem merge, publicação, alteração em produto, atendimento ou sistema legado.
+- Próxima ação: commitar a branch isolada, abrir/atualizar PR draft contra R04 e verificar CI; depois corrigir qualquer falha e atualizar este registro com SHA/URL/resultados.

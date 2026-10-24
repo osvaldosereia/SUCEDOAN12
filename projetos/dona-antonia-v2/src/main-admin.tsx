@@ -15,6 +15,11 @@ const HomeDashboard = React.lazy(() =>
 const ProductsPanel = React.lazy(() =>
   import('./admin/features/products/ProductsPanel').then((m) => ({ default: m.ProductsPanel })),
 );
+const PersistentProductsPanel = React.lazy(() =>
+  import('./admin/features/products/PersistentProductsPanel').then((m) => ({
+    default: m.PersistentProductsPanel,
+  })),
+);
 const ProductTypesPanel = React.lazy(() =>
   import('./admin/features/product-types/ProductTypesPanel').then((m) => ({
     default: m.ProductTypesPanel,
@@ -37,13 +42,17 @@ import type { StaffSession } from './application/authentication-contracts';
 import { canManagePrivatePricing, getAllowedAdminSections } from './admin/access';
 import { createSupabaseBrowserClient, readSupabaseBrowserConfig } from './platform/supabase/client';
 import { createStaffAuthentication } from './platform/supabase/staff-authentication';
+import type { AdminProductsRepository } from './application/admin-products';
+import { createSupabaseAdminProductsRepository } from './platform/supabase/admin-products';
 
 function Admin({
   staffSession,
   onSignOut,
+  productRepository,
 }: {
   staffSession: StaffSession | null;
   onSignOut: () => Promise<void>;
+  productRepository: AdminProductsRepository | null;
 }) {
   const [tab, setTab] = useAdminSectionRoute();
   const allowedSections = staffSession
@@ -169,6 +178,7 @@ function Admin({
       onProductSearch={setFilter}
       allowedSections={allowedSections}
       staffSession={staffSession}
+      dataStatus={activeTab === 'produtos' && productRepository ? 'Catálogo V2' : undefined}
       onSignOut={onSignOut}
     >
       {notice && (
@@ -193,7 +203,13 @@ function Admin({
           />
         )}
         {activeTab === 'pedidos' && <OrdersPanel orders={orders} onUpdate={updateOrder} />}
-        {activeTab === 'produtos' && (
+        {activeTab === 'produtos' && productRepository && (
+          <PersistentProductsPanel
+            repository={productRepository}
+            canManagePrivate={staffSession ? canManagePrivatePricing(staffSession.role) : false}
+          />
+        )}
+        {activeTab === 'produtos' && !productRepository && (
           <ProductsPanel
             products={products}
             filteredProducts={filteredProducts}
@@ -250,19 +266,29 @@ function Admin({
     </AdminShell>
   );
 }
+const supabaseConfig = readSupabaseBrowserConfig(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+);
+const supabaseClient = supabaseConfig ? createSupabaseBrowserClient(supabaseConfig) : null;
+const authentication = supabaseClient ? createStaffAuthentication(supabaseClient) : null;
+const adminProductsRepository = supabaseClient
+  ? createSupabaseAdminProductsRepository(supabaseClient)
+  : null;
+
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <AdminAuthGate
-      provider={(() => {
-        const config = readSupabaseBrowserConfig(
-          import.meta.env.VITE_SUPABASE_URL,
-          import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        );
-        return config ? createStaffAuthentication(createSupabaseBrowserClient(config)) : null;
-      })()}
+      provider={authentication}
       demoMode={import.meta.env.DEV && import.meta.env.VITE_DA_DEMO_MODE === 'true'}
     >
-      {(staffSession, signOut) => <Admin staffSession={staffSession} onSignOut={signOut} />}
+      {(staffSession, signOut) => (
+        <Admin
+          staffSession={staffSession}
+          onSignOut={signOut}
+          productRepository={adminProductsRepository}
+        />
+      )}
     </AdminAuthGate>
   </React.StrictMode>,
 );

@@ -8,9 +8,9 @@
 | R00 | Auditoria integral e baseline | **Concluída — auditoria documental e baseline** | docs/AUDITORIA_COMPLETA_V2.md; SHA base 1a846beba768192c366937c1462bcfd6baeccee9; CI 40057635884 aprovado |
 | R01 | Design system e disciplina de qualidade | **Concluída** | PR #1365; SHA R01 7a02a0da66dbcec6cfd7772da75f748ecb5bd29c; CI 40059800868 e 40059798099 aprovados |
 | R02 | Modelagem/migrações para banco isolado | **Concluída; PR aberto, sem merge** | PR #1366; SHA 0ea8f43188ea55db56c176d1c34368a2b4303c10; CI 40061318922 aprovado |
-| R03 | Login, RBAC e RLS V2 | **Concluída e ensaiada em prévia privada** | PR #1367; 7 migrações/24 tabelas; login UI validado; conta `juniorsereia@gmail.com` ADMIN |
+| R03 | Login, RBAC e RLS V2 | **Concluída e ensaiada em prévia privada** | PR #1367; base RBAC 24 tabelas; conta `juniorsereia@gmail.com` ADMIN |
 | R04 | Importação/reconciliação dos 802 produtos | **Concluída no staging V2; fonte autorizada como seed, não comprovada como export oficial** | 802 produtos + 802 perfis privados; 0 ativos/estoque; custo exato em 4 casas; tela de login validada; PR #1368 draft |
-| R05 | Cadastro e estoque persistente | Planejada | — |
+| R05 | Cadastro e estoque persistente | **Implementação e migrations aplicadas na V2; CI/E2E do branch pendentes** | Branch `agent/dona-antonia-r05-products-stock`, base R04 `4e3ccfba`; V2 `hjudhofluihkxykwekir`, 9 migrations/24 tabelas; 802 produtos sem alteração |
 | R06 | Cestas, tipos e extras persistentes | Planejada | — |
 | R07 | Catálogo público dinâmico/performance | Planejada | — |
 | R08 | Cotação e checkout transacional | Planejada | — |
@@ -27,7 +27,7 @@
 - Há protótipo avançado de UI V2 e regras de negócio implementadas e testadas.
 - CI R01 mais recente: https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/40059667625; sucesso em lint, auditoria, arquitetura, TS, 39 testes unitários, build e 17 casos E2E.
 - /site1 e /admin1 são prÉvias demonstrativas publicadas em rodada anterior; não estão automaticamente sincronizadas com a branch atual.
-- Supabase V2 ainda não criado/aplicado; não há checkout real, auth V2 ou atendimento conectado.
+- Supabase V2 isolado está ativo e provisionado. Auth V2 e catálogo de produtos estão conectados; checkout persistente, pedidos, atendimento e integrações operacionais continuam pendentes.
 - Os bancos legados e site raiz NÃO devem sofrer alterações.
 
 ## Modelo de atualização por rodada
@@ -108,3 +108,15 @@
 **Limites:** catálogo ainda não alimenta CRUD real do admin nem vitrine; origem do arquivo e saldo físico continuam sem comprovação. Nenhum produto foi ativado; sem integração Bling.
 **Produção:** `main`, site público/admin legados, Supabase existente, atendimento e integrações operacionais intocados. A prévia é outro Site privado, owner-only; não houve publicação pública.
 **Próxima rodada recomendada:** R05 — adapter e CRUD persistente de produtos/estoque na V2, mantendo o estado inicial não vendável; revisar achados de performance Advisor antes de ampliar as consultas.
+
+## R05 — cadastro e estoque persistente
+**Data:** 2026-10-24 (UTC)
+**Branch:** `agent/dona-antonia-r05-products-stock`, derivada do head R04 `4e3ccfba7b06dc02a5ae3287d502351cb24aa4bf`; commit/PR e CI ainda pendentes.
+**Estado:** implementação local concluída; gates remotos pendentes.
+**Escopo implementado:** RPCs com paginação/busca/filtros no servidor; edição/cadastro de SKU, nome, marca, categoria, GTIN, preço, estoque, ativo, foto HTTPS e validade; revisão otimista; ajuste de estoque com motivo, idempotência e ledger; histórico; ficha fiscal/fornecedor em diálogo exclusivo para ADMIN e RPC separado com custo exato textual. Projeção do catálogo não inclui custo nem origem bruta de importação.
+**Migrations:** `20261024060000_r05_admin_products.sql` e `20261024061000_r05_private_product_profile.sql`; aplicadas somente ao projeto V2 `hjudhofluihkxykwekir`. Projeto ACTIVE_HEALTHY. A listagem remota permaneceu em 802 produtos e 802 perfis privados; nenhuma linha do catálogo foi editada. Remote ACL verificado: `anon` não executa as RPCs privadas, `authenticated` executa sob guardas de identidade/permissão, `search_path=pg_catalog`.
+**Testes locais:** typecheck, lint, format, architecture (89 arquivos), 80 testes unitários, teste DB isolado (9 migrations/24 tabelas/RLS/RBAC/privacidade/rollback) e build aprovados. Playwright local foi executado, mas os 17 casos não iniciaram por falta do executável Chromium. CI do novo commit ainda deve fornecer o gate E2E.
+**Advisories:** o Advisor aponta avisos `authenticated_security_definer_function_executable` para RPCs protegidas por checagem explícita de usuário/permissão e `search_path=pg_catalog`, além de alertas gerais já presentes no schema RBAC/policies, FKs e configuração Auth. Não foram alterados achados fora da rodada; revisar hardening antes da homologação final. Link: https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable
+**Pendências:** push/PR draft, CI incluindo Playwright e validação dos resultados; completar cobertura visual/autorização E2E. Upload de imagem por storage e ações em lote não foram implementados. A vitrine permanece em rodada posterior e o seed segue inativo/estoque zero.
+**Isolamento:** sem mudanças na `main`, produção, sites legados, Supabases existentes, atendimento ou integrações; nenhuma publicação/deploy.
+**Próxima rodada após aprovação dos gates:** R06 — persistir tipos, cestas e extras.

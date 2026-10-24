@@ -34,7 +34,7 @@ const expectedTables = [
   'orders',
 ].sort();
 
-assert.equal(migrations.length, 7, 'the schema must be a complete, ordered migration chain');
+assert.equal(migrations.length, 9, 'the schema must be a complete, ordered migration chain');
 assert.ok(migrations.every((file) => /^\d{14}_[a-z0-9_]+\.sql$/.test(file)));
 
 const db = new PGlite();
@@ -81,7 +81,14 @@ try {
       (select count(*) from pg_policies where schemaname = 'da_next') as policies,
       has_table_privilege('anon', 'da_next.products', 'SELECT') as anon_products,
       has_function_privilege('anon', 'public.get_my_staff_role()', 'EXECUTE') as anon_role_lookup,
-      has_function_privilege('authenticated', 'public.get_my_staff_role()', 'EXECUTE') as staff_role_lookup
+      has_function_privilege('authenticated', 'public.get_my_staff_role()', 'EXECUTE') as staff_role_lookup,
+      has_function_privilege('anon', 'public.admin_list_products(text,text,text,integer,integer)', 'EXECUTE') as anon_product_list,
+      has_function_privilege('authenticated', 'public.admin_list_products(text,text,text,integer,integer)', 'EXECUTE') as staff_product_list,
+      has_function_privilege('authenticated', 'public.admin_save_product(uuid,bigint,jsonb,uuid,text)', 'EXECUTE') as staff_product_save,
+      has_function_privilege('authenticated', 'public.admin_list_product_stock_movements(uuid,integer)', 'EXECUTE') as staff_stock_history,
+      has_function_privilege('anon', 'public.admin_get_product_private_profile(uuid)', 'EXECUTE') as anon_private_profile,
+      has_function_privilege('authenticated', 'public.admin_get_product_private_profile(uuid)', 'EXECUTE') as staff_private_profile,
+      has_function_privilege('authenticated', 'public.admin_save_product_private_profile(uuid,bigint,jsonb,uuid)', 'EXECUTE') as staff_private_profile_save
     from pg_class c
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'da_next' and c.relkind = 'r'
@@ -94,6 +101,13 @@ try {
   assert.equal(access.rows[0].anon_products, false);
   assert.equal(access.rows[0].anon_role_lookup, false);
   assert.equal(access.rows[0].staff_role_lookup, true);
+  assert.equal(access.rows[0].anon_product_list, false);
+  assert.equal(access.rows[0].staff_product_list, true);
+  assert.equal(access.rows[0].staff_product_save, true);
+  assert.equal(access.rows[0].staff_stock_history, true);
+  assert.equal(access.rows[0].anon_private_profile, false);
+  assert.equal(access.rows[0].staff_private_profile, true);
+  assert.equal(access.rows[0].staff_private_profile_save, true);
 
   const basketSeed = await db.query('select id from da_next.basket_sizes order by sort_order');
   assert.deepEqual(
@@ -118,6 +132,96 @@ try {
   );
   assert.equal(exactCost.rows[0].purchase_cost_cents, 812);
   assert.equal(exactCost.rows[0].purchase_cost_exact, '8.1234');
+
+  const staffId = '00000000-0000-4000-8000-000000000001';
+  await db.query('insert into auth.users (id) values ($1)', [staffId]);
+  await db.query(
+    `insert into da_next.staff_role_assignments (user_id, role)
+     values ($1, 'ADMIN'::da_next.staff_role)`,
+    [staffId],
+  );
+  await db.query("select set_config('request.jwt.claim.sub', $1, false)", [staffId]);
+  const listed = await db.query(
+    `select public.admin_list_products('ARROZ-5KG', null, 'todos', 30, 0) as result`,
+  );
+  assert.equal(listed.rows[0].result.total, 1);
+  assert.equal(listed.rows[0].result.items[0].sku, 'ARROZ-5KG');
+  assert.equal(JSON.stringify(listed.rows[0].result).includes('purchase_cost'), false);
+
+  const stockRequestId = '00000000-0000-4000-8000-000000000101';
+  const savedStock = await db.query(
+    `select public.admin_save_product($1, 1, '{"stock_units":15}'::jsonb, $2, 'Contagem física') as result`,
+    [productId, stockRequestId],
+  );
+  assert.equal(savedStock.rows[0].result.stock_units, 15);
+  assert.equal(savedStock.rows[0].result.revision, 2);
+  const stockMovement = await db.query(
+    'select delta_units, reason, actor_id, note from da_next.product_stock_movements where idempotency_key = $1',
+    [stockRequestId],
+  );
+  assert.equal(stockMovement.rows[0].delta_units, -5);
+  assert.equal(stockMovement.rows[0].reason, 'AJUSTE_MANUAL');
+  assert.equal(stockMovement.rows[0].actor_id, staffId);
+  assert.equal(stockMovement.rows[0].note, 'Contagem física');
+
+  const retryStock = await db.query(
+    `select public.admin_save_product($1, 1, '{"stock_units":15}'::jsonb, $2, 'Contagem física') as result`,
+    [productId, stockRequestId],
+  );
+  assert.equal(retryStock.rows[0].result.stock_units, 15);
+  const movementCount = await db.query(
+    'select count(*)::integer as count from da_next.product_stock_movements where idempotency_key = $1',
+    [stockRequestId],
+  );
+  assert.equal(movementCount.rows[0].count, 1);
+
+  await expectSqlFailure(
+    `select public.admin_save_product('${productId}', 1, '{"active":true}'::jsonb, '00000000-0000-4000-8000-000000000102', null)`,
+    'stale product revisions must be rejected',
+  );
+  await expectSqlFailure(
+    `select public.admin_save_product('${productId}', 2, '{"stock_units":-1}'::jsonb, '00000000-0000-4000-8000-000000000103', 'Contagem')`,
+    'negative stock must be rejected through the authenticated product RPC',
+  );
+
+  const history = await db.query(
+    'select public.admin_list_product_stock_movements($1, 50) as result',
+    [productId],
+  );
+  assert.equal(history.rows[0].result.length, 1);
+  assert.equal(history.rows[0].result[0].delta_units, -5);
+
+  const privateProfile = await db.query(
+    'select public.admin_get_product_private_profile($1) as result',
+    [productId],
+  );
+  assert.equal(privateProfile.rows[0].result.purchase_cost_exact, '8.1234');
+  assert.equal(privateProfile.rows[0].result.supplier_name, null);
+  const savedProfile = await db.query(
+    `select public.admin_save_product_private_profile($1, 1, '{"supplier_name":"Distribuidor Teste","purchase_cost_exact":"8.1234"}'::jsonb, '00000000-0000-4000-8000-000000000111') as result`,
+    [productId],
+  );
+  assert.equal(savedProfile.rows[0].result.revision, 2);
+  assert.equal(savedProfile.rows[0].result.supplier_name, 'Distribuidor Teste');
+
+  const productStaffId = '00000000-0000-4000-8000-000000000002';
+  await db.query('insert into auth.users (id) values ($1)', [productStaffId]);
+  await db.query(
+    `insert into da_next.staff_role_assignments (user_id, role)
+     values ($1, 'PRODUCTS'::da_next.staff_role)`,
+    [productStaffId],
+  );
+  await db.query("select set_config('request.jwt.claim.sub', $1, false)", [productStaffId]);
+  await expectSqlFailure(
+    `select public.admin_get_product_private_profile('${productId}')`,
+    'product operators must not read private cost or supplier profile',
+  );
+  await db.query("select set_config('request.jwt.claim.sub', $1, false)", [staffId]);
+  await db.query("select set_config('request.jwt.claim.sub', '', false)");
+  await expectSqlFailure(
+    `select public.admin_list_products(null, null, 'todos', 30, 0)`,
+    'anonymous users must not call the admin catalog RPC',
+  );
   await expectSqlFailure(
     `update da_next.bling_product_profiles set purchase_cost_exact = -0.0001 where sku = 'ARROZ-5KG'`,
     'negative exact purchase cost must be rejected',

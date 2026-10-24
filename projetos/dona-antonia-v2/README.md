@@ -15,7 +15,7 @@ O domínio donaantonia.com.br permanece no código anterior até autorização e
 - Cliente escolhe SKU elegível por tipo, altera quantidade (inclusive 0) e total é calculado em centavos a partir de preços de SKUs.
 - Para abertura de cesta, escolha inicial do SKU habilitado mais barato com estoque suficiente. Falta de opção não força venda.
 - O Bling é a origem dos códigos, dados fiscais e cadastro; dados operacionais de cestas pertencem ao app. Sincronização futura será assíncrona e idempotente.
-- SQL em schema isolado da_next, SEM execução automática. RLS nega acesso até políticas específicas e backend seguro existirem.
+- SQL fica no schema isolado `da_next`, não exposto pela Data API. Migrations já aplicadas somente no projeto Supabase V2 isolado; tabelas permanecem com RLS e as operações administrativas passam por RPCs com autorização server-side.
 - Nunca expor tokens do Bling ou chaves secretas do Supabase no navegador. Integrações e fechamento do pedido exigem backend autenticado e transação de estoque.
 
 ## Executar localmente
@@ -25,7 +25,7 @@ O domínio donaantonia.com.br permanece no código anterior até autorização e
 4. Loja de demonstração: http://localhost:5173/
 5. Admin de demonstração: http://localhost:5173/admin/
 
-Enquanto o banco novo não estiver conectado, telas são exclusivamente demonstração em memória, não salvam pedidos nem atualizam o Bling.
+Com `VITE_SUPABASE_URL` e a chave publishable configuradas, o admin usa Supabase Auth V2 e o catálogo de produtos persiste no projeto isolado. Sem essas variáveis, o admin abre em modo de demonstração em memória. As áreas ainda não entregues e a vitrine continuam demonstrativas; ainda não há checkout/pedidos persistentes nem sincronização com Bling.
 
 ## Importar a planilha Bling
 O CSV de 802 produtos usado como seed da V2 foi gerado nesta conversa e não tem procedência comprovada como exportação do Bling. Por autorização explícita do usuário, seus 802 produtos foram carregados apenas no Supabase V2 isolado. Eles permanecem inativos e com estoque zero; o saldo de origem em branco foi preservado como desconhecido. Isso não equivale a um export oficial nem confirma estoque atual. Antes de ativar/sincronizar, obtenha um export oficial com data e conta de origem.
@@ -42,8 +42,7 @@ O importador valida o cabeçalho Bling de 59 colunas, SKU único, GTIN e dígito
 A tela de login está disponível em [Admin V2 (prévia privada)](https://dona-antonia-v2-admin-preview.juniorsereia.chatgpt.site/admin/). Use `juniorsereia@gmail.com`. O usuário concluiu a recuperação e confirmou o login; o Auth V2 registrou acesso recente e papel ADMIN. A URL de retorno do Auth V2 foi corrigida para esta prévia privada owner-only. O agente não acessou a senha.
 
 ## Entregas pendentes antes de produção
-Autenticação/admin com RBAC, APIs seguras, banco dedicado, validações de estoque no servidor, sincronização OAuth Bling, persistência de cestas/pedidos, separação, expedição, recuperação de checkout, observabilidade e testes ponta a ponta.
-A existência de protótipo no GitHub não implica que estas funcionalidades estejam concluídas.
+Validar o CI/E2E da R05; concluir tipos, cestas e extras persistentes; conectar a vitrine à projeção pública; implementar cotação, checkout, pedidos, separação, atendimento, integrações e observabilidade; executar homologação e planejar rollback. Nenhuma alteração desta branch foi publicada no site público ou no Admin legado.
 
 ## Segurança
 Não publicar alterações em domínio/site legado, não vincular domínio de produção, não alterar `main`/bancos existentes e não executar SQL em projeto operacional. A prévia privada da V2 usa outro Site e outro projeto Supabase.
