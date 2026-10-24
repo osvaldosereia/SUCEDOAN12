@@ -18,7 +18,7 @@ for (const viewport of sizes) {
     await expect(page.locator('.size-card')).toHaveCount(5);
     await expect(page.getByRole('navigation',{name:'Progresso do pedido'})).toBeVisible();
     await expect(page.locator('.sticky-summary')).toBeVisible();
-    await page.screenshot({path:'test-results/vitrine-inicial-'+viewport.name+'.png',fullPage:true);
+    await page.screenshot({path:'test-results/vitrine-inicial-'+viewport.name+'.png',fullPage:true});
 
 
     // Tamanho, troca de marca e seletor abaixo dos cards
