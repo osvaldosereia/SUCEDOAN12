@@ -304,9 +304,9 @@ R00 foi documental; R01 consolidou qualidade visual/CI; R02 implementou schema e
 - Projeto novo `hjudhofluihkxykwekir`, região São Paulo, status saudável. Compute padrão confirmado: estimativa de US$ 10/mês, cobrada por hora. Seis migrações aplicadas ao projeto novo.
 - Verificação remota: 24 tabelas/24 RLS, 64 policies; `anon` sem `USAGE` no schema privado nem execução da RPC; `authenticated` pode consultar o próprio papel. Convite aceito e e-mail confirmado; uma atribuição ADMIN ativa registrada; `last_sign_in_at` preenchido. RPC testada com subject da conta e resposta `ADMIN`; nenhuma sessão ativa no instante da verificação.
 - Gates: 50 testes unitários; PGlite seis migrações/24 tabelas com RBAC/RLS positivo e negativo, role lookup, revogação, privacidade e rollback; lint, format, arquitetura, TS, build, audit (0 vulnerabilidades) passaram. Playwright local não iniciou: Chromium ausente; CI #40063869241 passou os 17 E2E.
-- Limite: login com senha não foi submetido. O Auth tinha Site URL de desenvolvimento `http://localhost:3000`, corrigida para a prévia privada. Fluxo de recuperação implementado; nenhuma senha foi definida pelo agente.
+- Limite: o login foi concluído pelo usuário na prévia privada após corrigir o Site URL Auth de `http://localhost:3000`; `last_sign_in_at` registrou 2026-10-24 05:49:40 UTC e o papel ADMIN está ativo. A senha foi definida pelo usuário via recuperação e não foi acessada pelo agente.
 - Operação: legado, `main`, bancos existentes, atendimento e integrações intocados; nenhuma publicação.
-- Próximo: usuário solicita o link de recuperação e define sua senha; login com senha deve ser validado depois. Recuperação e Auth URL estão configurados para a prévia privada.
+- Próximo: R04 seed foi carregado de modo inativo; o usuário concluiu a recuperação e o login. R05 — CRUD persistente de produtos/estoque. Recuperação e Auth URL apontam para a prévia privada.
 
 
 ## Registro de execução — R04 (24/10/2026)
@@ -317,5 +317,5 @@ R00 foi documental; R01 consolidou qualidade visual/CI; R02 implementou schema e
 - Estado da rodada: **concluída em staging V2** por autorização expressa do usuário para usar a cópia gerada; sem ativação de massa.
 - Segurança/isolamento: `main`, produção, Supabases legados, atendimento e integrações operacionais intocados; sem deploy/publicação.
 - Carga final: 802 produtos e 802 perfis, 802 custos exatos e 802 originais de 59 campos, 776 GTINs; todos inativos e estoque zero. Dados validados por query de contagem. Migração adicional: `20261024052349_catalog_cost_precision_four_decimals.sql`.
-- A rota privada `/admin/` abre login; “Esqueci ou ainda não criei minha senha” envia link para o e-mail cadastrado. Com o link, a página `/admin/?recovery=1` permite definir e confirmar nova senha (mínimo 8 caracteres). O Auth e a allowlist do projeto V2 permitem apenas o callback da prévia privada. O agente não envia e-mail nem define/acessa a senha: o usuário deve concluir essas etapas.
+- A rota privada `/admin/` oferece login e recuperação; `/admin/?recovery=1` permite definir e confirmar nova senha (mínimo 8 caracteres). O Site URL e a allowlist do Auth V2 apontam para a prévia privada. O usuário confirmou que concluiu o login; `last_sign_in_at` no Auth é 2026-10-24 05:49:40 UTC, com papel ADMIN. O agente não acessou a senha.
 - Próxima: R05 CRUD e estoque persistentes. Origem CSV não comprovada e saldo físico continuam decisões abertas; não ativar catálogo ou sincronizar Bling sem confirmação.
