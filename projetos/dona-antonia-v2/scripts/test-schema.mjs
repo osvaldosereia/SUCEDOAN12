@@ -1075,6 +1075,164 @@ try {
   );
   await db.exec('RESET ROLE');
 
+  const r16RollbackSql = await readFile(
+    path.join(root, 'docs', 'R16_TEST_SEED_ROLLBACK.sql'),
+    'utf8',
+  );
+
+  async function createR16SeedFixture() {
+    const testProducts = await db.query(`
+      insert into da_next.products (sku, name, category, price_cents, stock_units, active)
+      values
+        ('R16-TEST-ARROZ', 'Arroz teste R16', 'MERCEARIA BÁSICA', 8500, 30, true),
+        ('R16-TEST-FEIJAO', 'Feijão teste R16', 'MERCEARIA BÁSICA', 1000, 30, false),
+        ('R16-TEST-OLEO', 'Óleo teste R16', 'MERCEARIA BÁSICA', 1000, 30, false)
+      returning id, sku
+    `);
+    const testTypes = [
+      ['00000000-0000-4000-8000-000000000271', 'Arroz R16'],
+      ['00000000-0000-4000-8000-000000000272', 'Feijão R16'],
+      ['00000000-0000-4000-8000-000000000273', 'Óleo R16'],
+    ];
+    await db.query(
+      `insert into da_next.product_types (id, name, sort_order, active)
+       values ($1, $2, 1, true), ($3, $4, 2, true), ($5, $6, 3, true)`,
+      testTypes.flat(),
+    );
+    await db.query(
+      `insert into da_next.product_type_products (product_type_id, product_id)
+       values
+         ($1, (select id from da_next.products where sku = 'R16-TEST-ARROZ')),
+         ($2, (select id from da_next.products where sku = 'R16-TEST-FEIJAO')),
+         ($3, (select id from da_next.products where sku = 'R16-TEST-OLEO'))`,
+      testTypes.map(([id]) => id),
+    );
+    await db.query(
+      `insert into da_next.basket_sizes (id, code, name, active, sort_order)
+       values ('r16-test', 'R16_TEST', 'Cesta de teste R16', true, 99)`,
+    );
+    await db.query(
+      `insert into da_next.basket_size_types
+         (basket_size_id, product_type_id, default_quantity, sort_order)
+       values
+         ('r16-test', $1, 1, 1),
+         ('r16-test', $2, 1, 2),
+         ('r16-test', $3, 1, 3)`,
+      testTypes.map(([id]) => id),
+    );
+    await db.query(
+      `insert into da_next.basket_size_private_pricing (basket_size_id, private_adjustment_cents)
+       values ('r16-test', 0)`,
+    );
+    await db.query(
+      `insert into da_next.basket_extra_types (product_type_id, sort_order, active)
+       values ($1, 1, true)`,
+      [testTypes[0][0]],
+    );
+    await db.query(
+      `insert into da_next.bling_product_profiles (sku)
+       values ('R16-TEST-ARROZ'), ('R16-TEST-FEIJAO'), ('R16-TEST-OLEO')`,
+    );
+    await db.query(
+      `insert into da_next.product_stock_movements
+         (product_id, delta_units, reason, idempotency_key)
+       select id, 30, 'IMPORTACAO',
+         case sku
+           when 'R16-TEST-ARROZ' then 'r16-seed-arroz-v1'
+           when 'R16-TEST-FEIJAO' then 'r16-seed-feijao-v1'
+           else 'r16-seed-oleo-v1'
+         end
+       from da_next.products
+       where sku in ('R16-TEST-ARROZ', 'R16-TEST-FEIJAO', 'R16-TEST-OLEO')`,
+    );
+    return testProducts.rows;
+  }
+
+  await createR16SeedFixture();
+  await db.exec(r16RollbackSql);
+  const deletedR16Seed = await db.query(`
+    select
+      (select count(*)::int from da_next.products
+       where sku in ('R16-TEST-ARROZ', 'R16-TEST-FEIJAO', 'R16-TEST-OLEO')) as products,
+      (select count(*)::int from da_next.product_types
+       where id in (
+         '00000000-0000-4000-8000-000000000271',
+         '00000000-0000-4000-8000-000000000272',
+         '00000000-0000-4000-8000-000000000273')) as types,
+      (select count(*)::int from da_next.basket_sizes where id = 'r16-test') as baskets,
+      (select count(*)::int from da_next.product_stock_movements
+       where idempotency_key in ('r16-seed-arroz-v1', 'r16-seed-feijao-v1', 'r16-seed-oleo-v1')) as movements
+  `);
+  assert.deepEqual(
+    deletedR16Seed.rows[0],
+    { products: 0, types: 0, baskets: 0, movements: 0 },
+    'rollback must remove the unused synthetic seed and its dependent extra-type link',
+  );
+
+  const r16Products = await createR16SeedFixture();
+  const r16ProductId = r16Products.find((product) => product.sku === 'R16-TEST-ARROZ').id;
+  const r16Order = await db.query(`
+    insert into da_next.orders (
+      order_number, customer_name_snapshot, customer_phone_snapshot, address_snapshot,
+      payment_method, subtotal_cents, total_cents, request_idempotency_key, request_fingerprint
+    ) values (
+      'DA-2026-R16-ORDER', 'Operador teste R16', '65977776666',
+      '{"city":"Cuiabá","state":"MT"}', 'PIX', 8500, 8500,
+      'r16-rollback-order-001', 'r16-rollback-fingerprint'
+    ) returning id
+  `);
+  const r16OrderId = r16Order.rows[0].id;
+  const r16Snapshot = await db.query(`
+    insert into da_next.order_basket_snapshots (
+      order_id, line_number, basket_size_id, basket_code_snapshot, basket_name_snapshot,
+      quantity, public_unit_price_cents, private_adjustment_cents, line_total_cents
+    ) values ($1, 1, 'r16-test', 'R16_TEST', 'Cesta de teste R16', 1, 8500, 0, 8500)
+    returning id
+  `, [r16OrderId]);
+  await db.query(`
+    insert into da_next.order_basket_snapshot_types (
+      order_basket_snapshot_id, product_type_id, type_name_snapshot, selected_quantity
+    ) values ($1, '00000000-0000-4000-8000-000000000271', 'Arroz R16', 1)
+  `, [r16Snapshot.rows[0].id]);
+  await db.query(`
+    insert into da_next.order_items (
+      order_id, order_basket_snapshot_id, line_number, item_kind, product_id,
+      product_type_id, sku_snapshot, product_name_snapshot, product_type_name_snapshot, quantity
+    ) values (
+      $1, $2, 1, 'BASKET_COMPONENT', $3, '00000000-0000-4000-8000-000000000271',
+      'R16-TEST-ARROZ', 'Arroz teste R16', 'Arroz R16', 1
+    )
+  `, [r16OrderId, r16Snapshot.rows[0].id, r16ProductId]);
+  await db.query(`
+    insert into da_next.inventory_reservations (order_id, product_id, quantity, expires_at)
+    values ($1, $2, 1, now() + interval '10 minutes')
+  `, [r16OrderId, r16ProductId]);
+
+  await db.exec(r16RollbackSql);
+  const archivedR16Seed = await db.query(`
+    select
+      (select count(*)::int from da_next.products
+       where sku in ('R16-TEST-ARROZ', 'R16-TEST-FEIJAO', 'R16-TEST-OLEO')
+         and not active) as inactive_products,
+      (select count(*)::int from da_next.product_types
+       where id in (
+         '00000000-0000-4000-8000-000000000271',
+         '00000000-0000-4000-8000-000000000272',
+         '00000000-0000-4000-8000-000000000273')
+         and not active) as inactive_types,
+      (select count(*)::int from da_next.basket_sizes
+       where id = 'r16-test' and not active) as inactive_basket,
+      (select count(*)::int from da_next.product_stock_movements
+       where idempotency_key in ('r16-seed-arroz-v1', 'r16-seed-feijao-v1', 'r16-seed-oleo-v1')) as preserved_movements,
+      (select count(*)::int from da_next.order_items where order_id = $1) as preserved_order_items
+  `, [r16OrderId]);
+  assert.deepEqual(
+    archivedR16Seed.rows[0],
+    { inactive_products: 3, inactive_types: 3, inactive_basket: 1, preserved_movements: 3, preserved_order_items: 1 },
+    'rollback must archive the seed and retain its product, basket, movement and order history after checkout',
+  );
+  await db.exec(r16RollbackSql);
+
   console.log(
     `PostgreSQL isolado: ${migrations.length} migrações, ${expectedTables.length} tabelas, RLS/RBAC positivo e negativo, privacidade e rollback verificados.`,
   );
