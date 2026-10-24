@@ -1,8 +1,8 @@
 // Server-side Meta Flows API client. Never pass its access token to browser code.
-const FLOW_ID_RE=/^\\d{5,30}$/;
-const WABA_ID_RE=/^\\d{5,30}$/;
-const PHONE_ID_RE=/^\\d{5,30}$/;
-const VERSION_RE=/^v\\d+\\.\\d+$/;
+const FLOW_ID_RE=/^\d{5,30}$/;
+const WABA_ID_RE=/^\d{5,30}$/;
+const PHONE_ID_RE=/^\d{5,30}$/;
+const VERSION_RE=/^v\d+\.\d+$/;
 const MAX_JSON_BYTES=300000;
 const SAFE_CATEGORIES=new Set(['SIGN_UP','LEAD_GENERATION','CONTACT_US','CUSTOMER_SUPPORT','SURVEY','OTHER']);
 
@@ -18,7 +18,7 @@ export class MetaFlowsError extends Error{
   }
 }
 const fail=(code,opts)=>new MetaFlowsError(code,opts);
-const clean=(value,max=300)=>String(value??'').replace(/[\\u0000-\\u001f\\u007f]/g,' ').replace(/\\s+/g,' ').trim().slice(0,max);
+const clean=(value,max=300)=>String(value??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
 const object=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
 const id=(value,regex)=>{const text=String(value??'').trim();return regex.test(text)?text:null};
 const byteLength=value=>new TextEncoder().encode(String(value??'')).byteLength;
@@ -42,7 +42,7 @@ export function validateFlowJson(input){
   if(typeof source!=='string'||!source||byteLength(source)>MAX_JSON_BYTES)throw fail('meta_flow_json_too_large');
   let data;
   try{data=JSON.parse(source)}catch{throw fail('meta_flow_json_invalid')}
-  if(!data||typeof data!=='object'||Array.isArray(data)||typeof data.version!=='string'||!/^\\d+\\.\\d+$/.test(data.version)||!Array.isArray(data.screens)||!data.screens.length||data.screens.length>20||!data.routing_model||typeof data.routing_model!=='object'||Array.isArray(data.routing_model))throw fail('meta_flow_json_invalid');
+  if(!data||typeof data!=='object'||Array.isArray(data)||typeof data.version!=='string'||!/^\d+\.\d+$/.test(data.version)||!Array.isArray(data.screens)||!data.screens.length||data.screens.length>20||!data.routing_model||typeof data.routing_model!=='object'||Array.isArray(data.routing_model))throw fail('meta_flow_json_invalid');
   const screenIds=new Set();
   for(const screen of data.screens){
     const screenId=String(screen?.id||'');
@@ -54,7 +54,7 @@ export function validateFlowJson(input){
 function safeValidationErrors(value){
   let list=value;
   if(list&&typeof list==='object'&&!Array.isArray(list))list=list.data??list.errors??[];
-  if(!Array.isArray(list))return list==null?[]:[{message:clean(list,500)}];
+  if(!Array.isArray(list))return list==null?null:[{message:clean(list,500)}];
   return list.slice(0,80).map(row=>{
     const item=object(row);
     return {
@@ -62,8 +62,8 @@ function safeValidationErrors(value){
       error_type:clean(item.error_type??item.type,80)||null,
       message:clean(item.error_message??item.message??item.description,500)||'Meta reported a Flow validation issue',
       screen:clean(item.screen,80)||null,
-      line:Number.isInteger(Number(item.line))?Number(item.line):null,
-      column:Number.isInteger(Number(item.column))?Number(item.column):null
+      line:item.line===null||item.line===undefined||item.line===''?null:Number.isInteger(Number(item.line))?Number(item.line):null,
+      column:item.column===null||item.column===undefined||item.column===''?null:Number.isInteger(Number(item.column))?Number(item.column):null
     };
   });
 }
@@ -85,7 +85,7 @@ function safeFlow(value){
   };
 }
 async function graphRequest({cfg,path,method='GET',params={},body=null,form=null}={}){
-  const resource=String(path??'').replace(/^\\/+|\\/+$/g,'');
+  const resource=String(path??'').replace(/^\/+|\/+$/g,'');
   if(!resource||resource.split('/').some(part=>part==='..'))throw fail('meta_flow_path_invalid');
   const url=new URL('https://graph.facebook.com/'+cfg.version+'/'+resource);
   for(const [key,value] of Object.entries(params||{})){
@@ -152,11 +152,11 @@ export async function configureFlowEndpointViaMeta({accessToken,flowId,graphVers
   let endpoint;
   try{endpoint=new URL(String(endpointUri??''))}catch{throw fail('meta_flow_endpoint_invalid')}
   if(endpoint.protocol!=='https:'||endpoint.username||endpoint.password||endpoint.search||endpoint.hash||endpoint.pathname.includes('..'))throw fail('meta_flow_endpoint_invalid');
-  const payload=await graphRequest({cfg,path:flow,method:'POST',body:{endpoint_uri:endpoint.toString().replace(/\\/$/,'')}});
+  const payload=await graphRequest({cfg,path:flow,method:'POST',body:{endpoint_uri:endpoint.toString().replace(/\/$/,'')}});
   return {id:flow,endpoint_uri:clean(payload.endpoint_uri??endpoint.toString(),500),success:payload.success!==false};
 }
 function pemBody(pem){
-  const body=String(pem??'').replace(/\\\\n/g,'\n').replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\\s+/g,'');
+  const body=String(pem??'').replace(/\\n/g,'\n').replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\s+/g,'');
   if(body.length<100||body.length>20000)throw fail('meta_flow_private_key_invalid');
   try{return Uint8Array.from(atob(body),char=>char.charCodeAt(0))}catch{throw fail('meta_flow_private_key_invalid')}
 }
