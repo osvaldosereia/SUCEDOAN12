@@ -1,7 +1,8 @@
 import {collectBasketVariants,buildMetaCatalogCsv,buildSizeListMessage,buildCombinationsListMessage,buildMetaProductListPreview,validatePreviewPayload} from './catalog-tools.mjs?v=20261024-2';
-import {attendanceJsonApi} from '../atendimento/attendance-auth.js?v=auth-refresh-v2';
+import {attendanceJsonApi,attendanceAuthorizedFetch} from '../atendimento/attendance-auth.js?v=auth-refresh-v2';
 
 const STORE='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2';
+const CANARY_URL='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-1018-canary-v1';
 const SIZE_ORDER=['economica','mini','pequena','media','grande'];
 const SIZE_LABELS={economica:'Econômica',mini:'Mini',pequena:'Pequena',media:'Média',grande:'Grande'};
 const LIVE_TEST_ENABLED=false; // OFF: the two company numbers currently have ANA enabled.
@@ -9,7 +10,7 @@ const TEST_CONVERSATION_ID='ff5c1e73-f3ed-4b88-8eba-b6e3a9883941';
 const TEST_RECIPIENT='+5565998150975';
 const ORIGIN_CHANNEL='+5565984491018';
 const $=id=>document.getElementById(id);
-const state={account1018:null,models:[],variants:new Map(),loading:true,selection:null,items:[],officialPrice:null,quoteReady:false,quoteSequence:0,quoteTimer:null,alternatives:new Map(),openPosition:null,extras:new Map(),searchResults:[],searchTimer:null,busy:false,lastUpdate:null,metaSelectedSize:null};
+const state={account1018:null,models:[],variants:new Map(),loading:true,selection:null,items:[],officialPrice:null,quoteReady:false,quoteSequence:0,quoteTimer:null,alternatives:new Map(),openPosition:null,extras:new Map(),searchResults:[],searchTimer:null,busy:false,lastUpdate:null,metaSelectedSize:null,canary:null,canaryBusy:false};
 
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
 function money(cents){return Number.isFinite(Number(cents))?new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(cents)/100):'—';}
@@ -141,7 +142,77 @@ async function copyMetaPayload(){
   catch{sendStatus('Não foi possível copiar. Abra a estrutura JSON abaixo.','error');}
 }
 
-function updateAll(){renderPrices();renderDetail();renderExtras();updatePreview();renderMeta();}
+
+const CANARY_ERROR_LABELS={
+  service_window_closed:'A janela de 24 horas está fechada. Envie uma mensagem do número final 8360 para o 1018 e clique em Verificar novamente.',
+  human_mode_required:'A conversa de homologação precisa permanecer em atendimento humano.',
+  meta_transport_unavailable:'Transporte Meta ou configuração do emissor indisponível.',
+  test_conversation_not_found:'A conversa de teste 1018 → 8360 ainda não existe.',
+  meta_channel_not_ready:'O canal 1018 não está homologado para envio Meta.',
+  already_sent_or_attempted_today:'O limite de um envio desse tipo por dia foi atingido.',
+  admin_auth_required:'Abra o Vitrine Admin e autentique-se.',
+  canary_audit_unavailable:'Serviço de auditoria indisponível; envio não realizado.',
+  admin_write_required:'É necessário acesso administrativo de escrita para esse teste.'
+};
+function canaryError(code){return CANARY_ERROR_LABELS[code]||String(code||'Condição não atendida');}
+function canaryKind(){return $('metaPayloadKind').value==='combinations'?'combinations':'sizes';}
+function canaryPayload(){
+  const snap=snapshotForMeta();
+  if(!snap.ready)throw new Error('As 15 composições devem estar disponíveis antes do envio.');
+  if($('metaPayloadKind').value==='products')throw new Error('Envio de produtos exige catálogo da Meta vinculado. Selecione uma lista interativa.');
+  const payload=metaPayload(snap);
+  if(!validatePreviewPayload(payload)||payload?.interactive?.type!=='list')throw new Error('Prévia interativa inválida.');
+  return payload;
+}
+function refreshCanaryControls(){
+  const kind=canaryKind();
+  const used=(state.canary?.sent_today||[]).some(x=>x.kind===kind);
+  const ready=state.canary?.can_send===true&&snapshotForMeta().ready&&!state.canaryBusy&&!state.loading&&!used&&$('metaPayloadKind').value!=='products';
+  $('canarySendBtn').disabled=!ready;
+  $('canarySendBtn').textContent=state.canaryBusy?'Verificando envio…':kind==='combinations'?'Enviar 3 combinações ao 8360':'Enviar 5 tamanhos ao 8360';
+}
+async function fetchCanary(){
+  state.canary=null;
+  $('canaryStatus').textContent='Consultando o canal 1018 e a janela de atendimento…';
+  $('canaryRefreshBtn').disabled=true;
+  refreshCanaryControls();
+  try{
+    const response=await attendanceAuthorizedFetch(CANARY_URL,{method:'GET',cache:'no-store'});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok||!data.ok)throw new Error(data.error||'canary_preflight_unavailable');
+    state.canary=data;
+    const used=(data.sent_today||[]).map(x=>x.kind==='sizes'?'Tamanhos':'Combinações');
+    const ready=data.can_send===true;
+    $('canaryStatus').textContent=ready?'Canal 1018 e conversa humana com 8360 verificados. Janela válida até '+new Date(data.window_until).toLocaleString('pt-BR')+(used.length?' · Usados hoje: '+used.join(', '):''):canaryError(data.reason||'canary_not_ready');
+    $('canaryStatus').classList.toggle('invalid',!ready);
+  }catch(error){
+    $('canaryStatus').textContent='Verificação indisponível: '+canaryError(error.message);
+    $('canaryStatus').classList.add('invalid');
+  }finally{$('canaryRefreshBtn').disabled=false;refreshCanaryControls();}
+}
+async function sendCanary(){
+  if(state.canaryBusy||!state.canary?.can_send)return;
+  let payload;
+  try{payload=canaryPayload();}catch(error){sendStatus(String(error.message),'error');return;}
+  const kind=canaryKind();
+  if((state.canary.sent_today||[]).some(x=>x.kind===kind))return;
+  if(!confirm('Confirmar envio REAL pela Meta? Origem 1018. Destino interno final 8360. Tipo: '+(kind==='sizes'?'5 tamanhos':'3 combinações')+'. Não haverá reenvio automático.'))return;
+  state.canaryBusy=true;refreshCanaryControls();
+  sendStatus('Enviando uma mensagem interativa somente ao número final 8360…');
+  try{
+    const response=await attendanceAuthorizedFetch(CANARY_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({request_id:crypto.randomUUID(),kind,size_key:state.metaSelectedSize||state.models.find(m=>m.id===state.selection?.modelId)?.size_key||'economica',payload})
+    });
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok||data.ok!==true)throw new Error(canaryError(data.error||'canary_send_unconfirmed'));
+    sendStatus('A Meta aceitou a lista interativa. Confira a chegada no WhatsApp final 8360 e a resposta ao 1018.','success');
+  }catch(error){sendStatus('O envio NÃO foi confirmado: '+String(error.message||error)+'. Não será reenviado automaticamente.','error');}
+  finally{state.canaryBusy=false;await fetchCanary();}
+}
+
+function updateAll(){renderPrices();renderDetail();renderExtras();updatePreview();renderMeta();refreshCanaryControls();}
 async function load(){
   if(state.busy)return;
   state.loading=true;state.variants.clear();state.selection=null;state.items=[];state.officialPrice=null;state.quoteReady=false;state.extras.clear();state.searchResults=[];
@@ -275,11 +346,11 @@ async function sendTest(){
 
 $('exportCatalogBtn').addEventListener('click',downloadMetaCatalog);
 $('copyMetaPayloadBtn').addEventListener('click',()=>void copyMetaPayload());
-$('metaPayloadKind').addEventListener('change',renderMeta);
+$('metaPayloadKind').addEventListener('change',()=>{renderMeta();refreshCanaryControls();});
 $('metaInteractivePreview').addEventListener('click',event=>{
   const btn=event.target.closest('button');if(!btn)return;
-  if(btn.id==='metaPreviewBack'){state.metaSelectedSize=null;renderMeta();return;}
-  if(btn.hasAttribute('data-meta-size')){state.metaSelectedSize=btn.dataset.metaSize;renderMeta();return;}
+  if(btn.id==='metaPreviewBack'){state.metaSelectedSize=null;renderMeta();refreshCanaryControls();return;}
+  if(btn.hasAttribute('data-meta-size')){state.metaSelectedSize=btn.dataset.metaSize;renderMeta();refreshCanaryControls();return;}
   if(btn.hasAttribute('data-meta-combo')){
     const size=btn.dataset.metaCombo,n=Number(btn.dataset.metaComboN);
     const model=state.models.find(m=>m.size_key===size);
@@ -303,4 +374,6 @@ $('detail').addEventListener('click',event=>{
 $('extraSearch').addEventListener('input',event=>{clearTimeout(state.searchTimer);state.searchTimer=setTimeout(()=>void searchExtras(event.target.value),320);});
 $('extraResults').addEventListener('click',event=>{const b=event.target.closest('[data-add-extra]');if(b)adjustExtra(b.dataset.addExtra,1);});
 $('extraSelected').addEventListener('click',event=>{const b=event.target.closest('button');if(!b)return;if(b.hasAttribute('data-extra-minus'))adjustExtra(b.dataset.extraMinus,-1);if(b.hasAttribute('data-extra-plus'))adjustExtra(b.dataset.extraPlus,1);});
-void load();
+$('canaryRefreshBtn').addEventListener('click',()=>void fetchCanary());
+$('canarySendBtn').addEventListener('click',()=>void sendCanary());
+void load().then(()=>fetchCanary());
