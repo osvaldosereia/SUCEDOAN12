@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.58.0";
+import {buildBasketContentsText} from "./basket-message.mjs";
 const BASE=Deno.env.get("SUPABASE_URL")||"";
 const KEY=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
 const TOKEN=(Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||"").trim();
@@ -70,12 +71,60 @@ function safeInteractive(body){
   action:{button:kind==="sizes"?"Escolher cesta":"Ver combinações",sections:[{title:kind==="sizes"?"Tamanhos de cestas":"Opções de marcas",rows:validated}]}
  }};
 }
+
+async function readStorefront(action,params){
+  const url=new URL(BASE.replace(/\/+$/,"")+"/functions/v1/storefront-v2");
+  url.searchParams.set("action",action);
+  for(const [k,v] of Object.entries(params||{}))url.searchParams.set(k,String(v));
+  let response,body;
+  try{
+    response=await fetch(url.toString(),{
+      method:"GET",headers:{apikey:KEY,Authorization:"Bearer "+KEY},
+      cache:"no-store",signal:AbortSignal.timeout(12000)
+    });
+    body=await response.json();
+  }catch{throw Error("basket_price_lookup_unavailable");}
+  if(!response.ok||body?.ok!==true)throw Error("basket_price_lookup_unavailable");
+  return body;
+}
+async function safeComposition(body,pre){
+  // Never trust prices, quantities or product names supplied by the browser.
+  const expected=String(body?.expected_choice_id||"");
+  if(!/^da:whatsapp:basket:(economica|mini|pequena|media|grande):[1-3]$/.test(expected))throw Error("invalid_canary_basket_selection");
+  const m=await db.from("whatsapp_messages_v1")
+    .select("provider,direction,message_type,received_at,metadata,conversation_id")
+    .eq("conversation_id",pre.conversationId)
+    .eq("whatsapp_account_id",pre.accountId)
+    .eq("direction","inbound").eq("message_type","interactive")
+    .order("received_at",{ascending:false}).limit(1).maybeSingle();
+  if(m.error)throw Error("basket_reply_lookup_unavailable");
+  const reply=m.data;
+  const replyId=reply?.metadata?.interactive?.type==="list_reply"?reply.metadata.interactive.list_reply?.id:null;
+  const at=Date.parse(reply?.received_at||"");
+  if(reply?.provider!=="meta"||reply?.direction!=="inbound"||replyId!==expected||!Number.isFinite(at)||at>Date.now()+60000||Date.now()-at>=86400000)throw Error("basket_reply_not_verified");
+  const audit=await db.from(TABLE).select("request_id").eq("sender_account_id",pre.accountId)
+    .eq("conversation_id",pre.conversationId).eq("kind","combinations")
+    .eq("status","sent").lte("created_at",reply.received_at)
+    .order("created_at",{ascending:false}).limit(1).maybeSingle();
+  if(audit.error||!audit.data)throw Error("basket_combination_menu_unverified");
+  const parsed=/^da:whatsapp:basket:(economica|mini|pequena|media|grande):([1-3])$/.exec(expected);
+  const size=parsed[1],number=Number(parsed[2]);
+  const shell=await readStorefront("home_size_cards",{});
+  const card=(shell.baskets||[]).find(x=>x.size_key===size&&uuid(x.id));
+  if(!card)throw Error("basket_catalog_unavailable");
+  const detail=await readStorefront("basket",{basket_id:card.id+"@"+number,lightweight:1});
+  const basket=detail.basket;
+  if(!basket||Number(basket.composition_number)!==number||basket.id!==card.id)throw Error("basket_composition_mismatch");
+  const text=buildBasketContentsText({label:LABELS[SIZES.indexOf(size)],number,basket,items:detail.items});
+  return {kind:"composition",text,choice_id:expected};
+}
+
 async function sha256(value){
  const bytes=new TextEncoder().encode(JSON.stringify(value)),hash=await crypto.subtle.digest("SHA-256",bytes);
  return [...new Uint8Array(hash)].map(n=>n.toString(16).padStart(2,"0")).join("");
 }
 async function claimAndSend(payload,requestId,pre){
- const outgoing={messaging_product:"whatsapp",recipient_type:"individual",to:DIGITS,type:"interactive",interactive:payload.interactive};
+ const outgoing=payload.kind==="composition"?{messaging_product:"whatsapp",recipient_type:"individual",to:DIGITS,type:"text",text:{preview_url:false,body:payload.text}}:{messaging_product:"whatsapp",recipient_type:"individual",to:DIGITS,type:"interactive",interactive:payload.interactive};
  const claim=await db.from(TABLE).insert({
   request_id:requestId,sender_account_id:pre.accountId,conversation_id:pre.conversationId,
   recipient_e164:RECIPIENT,kind:payload.kind,payload_hash:await sha256(outgoing),status:"claimed"
@@ -115,14 +164,14 @@ Deno.serve(async req=>{
   const pre=await preflight();
   if(req.method==="GET"){
     const q=await db.from(TABLE).select("kind,status,created_at").eq("sender_account_id",pre.accountId||"00000000-0000-4000-8000-000000000000").eq("recipient_e164",RECIPIENT).eq("date_utc",new Date().toISOString().slice(0,10)).limit(5);
-    return json(req,{ok:true,can_send:pre.ok&&a.role!=="viewer"&&!q.error,reason:pre.reason,window_until:pre.windowUntil,recipient_suffix:"8360",outbound:"1018",sent_today:q.data||[],catalog_linked:false,transport:"meta"});
+    return json(req,{ok:true,can_send:pre.ok&&a.role!=="viewer"&&!q.error,reason:pre.reason,window_until:pre.windowUntil,recipient_suffix:"8360",outbound:"1018",sent_today:q.data||[],catalog_linked:false,transport:"meta",capabilities:["sizes","combinations","composition"],composition_version:"v1"});
   }
   if(a.role==="viewer")return json(req,{ok:false,error:"admin_write_required"},403);
   if(!pre.ok)return json(req,{ok:false,error:pre.reason},409);
   const raw=await req.text();if(raw.length>6500)return json(req,{ok:false,error:"payload_too_large"},413);
   const body=JSON.parse(raw||"{}"),requestId=uuid(body.request_id);
   if(!requestId)return json(req,{ok:false,error:"invalid_idempotency_key"},400);
-  const payload=safeInteractive(body);
+  const payload=body.kind==="composition"?await safeComposition(body,pre):safeInteractive(body);
   const result=await claimAndSend(payload,requestId,pre);
   return json(req,result,result.ok?200:result.http||409);
  }catch(error){
