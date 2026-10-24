@@ -13,7 +13,7 @@ assert.match(polish,/overview:\s*'Visão geral'/,'shell deve nomear Visão geral
 assert.match(polish,/data-marketing-view="strategy">Estratégia/,'Estratégia deve continuar acessível em Mais');
 assert.match(polish,/templates:'Templates Meta'/,'Templates Meta deve permanecer na navegação principal');
 assert.match(polish,/flows:'Flows Meta'/,'Flows Meta deve aparecer na navegação principal');
-assert.match(polish,/view==='flows'[\\s\\S]{0,400}flow-center\\.js/,'Flows deve carregar o gerenciador dedicado');
+assert.match(polish,/view==='flows'[\s\S]{0,400}flow-center\.js/,'Flows deve carregar o gerenciador dedicado');
 assert.match(polish,/campaigns:\s*'Campanhas'/,'shell deve nomear Campanhas');
 assert.match(polish,/data-marketing-view="audiences">Públicos/,'Públicos deve continuar acessível em Mais');
 assert.doesNotMatch(polish,/consents:\s*'Consentimentos'/,'Consentimentos não deve permanecer no mapa das abas principais');
