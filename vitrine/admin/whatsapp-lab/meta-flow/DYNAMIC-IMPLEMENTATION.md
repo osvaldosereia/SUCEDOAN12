@@ -31,6 +31,13 @@
 7. Homologar `nfm_reply` no webhook oficial e criar apenas uma **solicitação para atendimento** no Admin depois de todos os controles. O botão de resumo atual diz “Concluir teste”, **não cria pedido**.
 8. Criar o envio `interactive.flow` exclusivamente do 1018 ao 8360; só expandir para clientes após homologação manual.
 
+
+## Revisão do contrato de navegação — 24/10/2026
+- O Flow original tinha 13 arestas de roteamento e excedia o limite de 10 ramos da Meta; a revisão reduziu para **8** (TAMANHO → COMBINACAO → ITENS_UM … ITENS_SEIS → RESUMO), mantendo 9 telas.
+- IDs de telas de edição agora usam apenas letras e sublinhados para evitar incompatibilidade de esquema: `ITENS_UM` até `ITENS_SEIS`. O motor `engine.mjs` e os testes passam a usar os mesmos identificadores.
+- CI foi reforçado para falhar quando houver mais de 10 arestas, IDs fora do padrão, rota divergente ou telas não cobertas.
+- **Ainda é preciso validar o JSON oficialmente pela Meta**, sobretudo componentes dinâmicos e referências de dados. Essa revisão não concede homologação, não implanta endpoint e não cria/publica Flow.
+
 ## Limitações assumidas para este piloto
 - Os mockups gerados com design personalizado **não representam a aparência exata** dos controles nativos do WhatsApp Flow. O arquivo utiliza controles oficiais de `RadioButtonsGroup` e `Dropdown`.
 - A tela inicial não mostra os 15 preços de uma vez: os 3 valores reais são buscados após selecionar o tamanho, para evitar 15 cotações simultâneas no primeiro carregamento.
