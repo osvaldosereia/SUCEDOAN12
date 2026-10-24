@@ -65,7 +65,7 @@ assert.match(campaignEntry,/marketing-polish\.js\?v=whatsapp-flow-manager-202610
 assert.match(adminIndex,/basket-lot-image\.js\?v=whatsapp-flow-manager-20261024/);
 assert.match(marketingBootstrap,/campaign-entry\.js\?v=whatsapp-flow-manager-20261024/);
 assert.match(activeMarketing,/\['flows','Flows Meta'\]/);
-assert.match(activeMarketing,/if\(view==='flows'\)return \(await import\('\/vitrine\/admin\/marketing\/flow-center\.js\?v=whatsapp-flow-center-20261024'\)\)\.mountFlowView\(root\)/);
+assert.match(activeMarketing,/if\(view==='flows'\)return \(await import\('\/vitrine\/admin\/marketing\/flow-center\.js\?v=whatsapp-flow-readiness-ui-20261024'\)\)\.mountFlowView\(root\)/);
 assert.match(attendance,/parseBasketFlowReply/);
 assert.match(attendance,/Solicitação de cesta pelo Flow/);
 assert.match(attendance,/items\.textContent=data\.items/);
