@@ -30,7 +30,9 @@ describe('cestas personalizáveis', () => {
   });
   it('bloqueia estoque insuficiente e produto inativo', () => {
     expect(() => setSelectionProduct(initialSelections(basket, types, products), 'arroz', 'C', types, products)).toThrow();
-    expect(() => summarizeBasket(basket, setSelectionQuantity(initialSelections(basket, types, products), 'arroz', 11), types, products)).toThrow();
+    const impossible = summarizeBasket(basket, setSelectionQuantity(initialSelections(basket, types, products), 'arroz', 11), types, products);
+    expect(impossible.unavailableTypeIds).toContain('arroz');
+    expect(impossible.totalCents).toBe(0);
   });
   it('rejeita linhas duplicadas e quantidade negativa no admin', () => {
     const invalid = { ...basket, lines: [...basket.lines, {typeId:'arroz', defaultQuantity:-1, order:2}] };
