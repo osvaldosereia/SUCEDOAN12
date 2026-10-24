@@ -1,0 +1,70 @@
+name: Publicar apenas previews Dona Antonia V2
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'projetos/dona-antonia-v2/**'
+      - '.github/workflows/dona-antonia-v2-preview-publish.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: da-v2-preview-publish
+  cancel-in-progress: false
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    env:
+      VITE_APP_MODE: preview
+      VITE_PREVIEW_BASE: /site1/
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: true
+          fetch-depth: 2
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Dependencias da V2
+        working-directory: projetos/dona-antonia-v2
+        run: npm install --no-audit --no-fund --ignore-scripts
+      - name: Verificacao de arquitetura, TypeScript e dominio
+        working-directory: projetos/dona-antonia-v2
+        run: |
+          npm run architecture:check
+          npm run check
+          npm test
+      - name: Build de homologacao - sem Supabase, WhatsApp ou Bling
+        working-directory: projetos/dona-antonia-v2
+        run: npm run build
+      - name: Verificar entradas e caminhos dos assets
+        run: |
+          set -euo pipefail
+          test -f projetos/dona-antonia-v2/dist/index.html
+          test -f projetos/dona-antonia-v2/dist/admin/index.html
+          test -d projetos/dona-antonia-v2/dist/assets
+          grep -q '/site1/assets/' projetos/dona-antonia-v2/dist/admin/index.html
+          grep -q '/site1/assets/' projetos/dona-antonia-v2/dist/index.html
+      - name: Publicar SOMENTE /site1 e /admin1
+        run: |
+          set -euo pipefail
+          SRC=projetos/dona-antonia-v2/dist
+          mkdir -p site1/assets admin1
+          cp "$SRC/index.html" site1/index.html
+          cp "$SRC/admin/index.html" admin1/index.html
+          rsync -a --delete "$SRC/assets/" site1/assets/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A -- site1 admin1
+          if git diff --cached --quiet; then
+            echo "Nenhum preview alterado"
+          else
+            git commit -m "deploy(preview): atualiza SOMENTE site1 e admin1"
+            git push origin HEAD:main
+          fi
+      - name: Conferir rotas publicadas
+        run: |
+          echo "Site https://donaantonia.com.br/site1/"
+          echo "Admin https://donaantonia.com.br/admin1/"
+          echo "Sem modificacao de index.html, vitrine/, cadastro/ ou supabase/"
