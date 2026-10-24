@@ -129,7 +129,7 @@ function flowReadiness(account,role){
     meta_app_secret:Boolean(META_WHATSAPP_APP_SECRET),
     session_secret:Boolean(DA_FLOW_1018_SESSION_SECRET)
   };
-  return {ok:Object.values(checks).every(Boolean),channel:"1018",flow_endpoint_url:flowEndpointUri(),can_manage:role==="owner",checks};
+  return {ready:Object.values(checks).every(Boolean),channel:"1018",flow_endpoint_url:flowEndpointUri(),can_manage:role==="owner",checks};
 }
 function flowArgs(account){
   return {accessToken:META_WHATSAPP_ACCESS_TOKEN,graphVersion:META_WHATSAPP_GRAPH_VERSION,wabaId:account.waba_id,phoneNumberId:account.phone_number_id};
@@ -146,7 +146,7 @@ async function flowReadinessWithMeta(account,role){
       state.meta_key_check_error=error instanceof MetaFlowsError?error.code:"meta_flow_public_key_check_failed";
     }
   }else state.meta_key_check_error="meta_flow_meta_connection_not_configured";
-  state.ok=Object.values(state.checks).every(Boolean);
+  state.ready=Object.values(state.checks).every(Boolean);
   return state;
 }
 function requireFlowConnection(account){
