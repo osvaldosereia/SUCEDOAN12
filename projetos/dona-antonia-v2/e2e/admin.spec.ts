@@ -5,6 +5,8 @@ test('admin: extras e produtos são editáveis somente no modo demonstrativo', a
   const errors: string[]=[];
   page.on('pageerror',err=>errors.push(err.message));
   await page.goto('/admin/');
+  await expect(page.getByRole('heading',{name:'Visão geral'})).toBeVisible();
+  await page.getByRole('button',{name:'Tipos de produto'}).click();
   await expect(page.getByRole('heading',{name:'Tipos de produto'})).toBeVisible();
   await page.getByRole('button',{name:'Produtos extras'}).click();
   await expect(page.getByRole('heading',{name:'Grupos exibidos na etapa de extras'})).toBeVisible();
@@ -39,6 +41,8 @@ test('admin: extras e produtos são editáveis somente no modo demonstrativo', a
 test('admin mobile: abas navegáveis sem estouro horizontal',async({page})=>{
   await page.setViewportSize({width:390,height:844});
   await page.goto('/admin/');
+  await page.getByRole('button',{name:'Abrir menu'}).click();
+  await expect(page.getByRole('button',{name:'Produtos extras'})).toBeVisible();
   await page.getByRole('button',{name:'Produtos extras'}).click();
   await expect(page.getByRole('heading',{name:'Grupos exibidos na etapa de extras'})).toBeVisible();
   // Apenas overflow local de tabelas, sem quebrar a largura do documento.
@@ -51,4 +55,59 @@ test('admin mobile: abas navegáveis sem estouro horizontal',async({page})=>{
   }));
   expect(info.scrollWidth,'Overflow suspects: '+JSON.stringify(info.offenders)).toBeLessThanOrEqual(info.innerWidth+2);
   await page.screenshot({path:'test-results/admin-mobile.png',fullPage:true});
+});
+
+
+test('navegação agrupada, atalhos e histórico preservam a seção',async({page})=>{
+  await page.setViewportSize({width:1280,height:800});
+  await page.goto('/admin/');
+  await expect(page.getByRole('heading',{name:'Visão geral'})).toBeVisible();
+  await expect(page.getByRole('navigation',{name:'Seções do administrador'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Pedidos'})).toBeDisabled();
+  await expect(page.getByRole('button',{name:'Clientes'})).toBeDisabled();
+  await page.getByRole('button',{name:/Configurar cestas/}).click();
+  await expect(page.getByRole('heading',{name:'Cestas básicas'})).toBeVisible();
+  await expect(page).toHaveURL(/secao=cestas/);
+  await page.goBack();
+  await expect(page.getByRole('heading',{name:'Visão geral'})).toBeVisible();
+  await page.getByRole('button',{name:'Recolher menu'}).click();
+  await expect(page.getByRole('button',{name:'Expandir menu'})).toBeVisible();
+  await page.getByRole('button',{name:'Expandir menu'}).click();
+  await expect(page.getByRole('button',{name:'Recolher menu'})).toBeVisible();
+  await page.screenshot({path:'test-results/admin-inicio-desktop.png',fullPage:true});
+});
+
+test('busca global de seções e de produtos',async({page})=>{
+  await page.setViewportSize({width:1280,height:800});
+  await page.goto('/admin/');
+  await page.keyboard.press('Control+k');
+  const dialog=page.getByRole('dialog',{name:'Buscar no administrador'});
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('textbox',{name:'Buscar no administrador'}).fill('cestas');
+  await dialog.getByRole('button',{name:'Composição das cestas'}).click();
+  await expect(page.getByRole('heading',{name:'Cestas básicas'})).toBeVisible();
+  await page.getByRole('button',{name:'Buscar no administrador'}).click();
+  await dialog.getByRole('textbox',{name:'Buscar no administrador'}).fill('Arroz Caibi');
+  await dialog.getByRole('button',{name:/Arroz Caibi/}).click();
+  await expect(page.getByRole('heading',{name:'Produtos',exact:true})).toBeVisible();
+  await expect(page.getByRole('textbox',{name:'Buscar produtos'})).toHaveValue(/Arroz Caibi/);
+  await expect(page.getByText('1 produto(s) encontrado(s)')).toBeVisible();
+  await page.getByRole('button',{name:'Sem estoque'}).click();
+  await expect(page.getByText('Nenhum produto encontrado.')).toBeVisible();
+  await page.keyboard.press('Control+k');
+  await page.keyboard.press('Escape');
+  await expect(dialog).not.toBeVisible();
+});
+
+test('menu mobile abre como gaveta e preserva o espaço de trabalho',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/admin/');
+  await expect(page.getByRole('button',{name:'Abrir menu'})).toBeVisible();
+  await page.getByRole('button',{name:'Abrir menu'}).click();
+  await expect(page.getByRole('button',{name:'Composição das cestas'})).toBeVisible();
+  await page.getByRole('button',{name:'Composição das cestas'}).click();
+  await expect(page.getByRole('heading',{name:'Cestas básicas'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Abrir menu'})).toHaveAttribute('aria-expanded','false');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2)).toBeTruthy();
+  await page.screenshot({path:'test-results/admin-cestas-mobile.png',fullPage:true});
 });

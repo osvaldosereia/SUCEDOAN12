@@ -4,7 +4,7 @@ import type { BasketId, BasketTemplate, Product, ProductType } from './core/mode
 import { DEMO_PRODUCTS, DEMO_TEMPLATES, DEMO_TYPES } from './data/demo';
 import { DEMO_EXTRA_GROUPS, DEMO_EXTRA_PRODUCTS, DEMO_EXTRA_TYPES } from './data/demo-extra';
 import type { ExtraGroup } from './core/extras';
-import type { AvailableAdminSection } from './admin/navigation';
+import {useAdminSectionRoute} from './admin/routing/useAdminSectionRoute';
 import { AdminShell } from './admin/shell/AdminShell';
 /** Cada sessão tem bundle próprio: não baixar módulos que o operador não abriu. */
 const HomeDashboard=React.lazy(()=>import('./admin/features/home/HomeDashboard').then(m=>({default:m.HomeDashboard})));
@@ -15,7 +15,7 @@ const ExtraAdmin=React.lazy(()=>import('./admin/features/extras/ExtraAdmin').the
 import './admin.css';
 
 function Admin() {
-  const [tab,setTab] = useState<AvailableAdminSection>('inicio');
+  const [tab,setTab] = useAdminSectionRoute();
   const [products,setProducts] = useState<Product[]>([...DEMO_PRODUCTS,...DEMO_EXTRA_PRODUCTS].map((product)=>({...product})));
   const [types,setTypes] = useState<ProductType[]>([...DEMO_TYPES,...DEMO_EXTRA_TYPES].map((type)=>({...type, productSkus:[...type.productSkus]})));
   const [templates,setTemplates] = useState<BasketTemplate[]>(DEMO_TEMPLATES.map((basket)=>({...basket,lines:[...basket.lines]})));
