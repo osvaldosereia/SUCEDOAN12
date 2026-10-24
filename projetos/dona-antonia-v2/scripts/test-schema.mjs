@@ -17,6 +17,9 @@ const expectedTables = [
   'bling_product_profiles',
   'conversation_messages',
   'conversations',
+  'whatsapp_utility_messages',
+  'whatsapp_utility_settings',
+  'whatsapp_utility_templates',
   'customer_addresses',
   'customers',
   'fiscal_documents',
@@ -37,7 +40,7 @@ const expectedTables = [
   'orders',
 ].sort();
 
-assert.equal(migrations.length, 15, 'the schema must be a complete, ordered migration chain');
+assert.equal(migrations.length, 18, 'the schema must be a complete, ordered migration chain');
 assert.ok(migrations.every((file) => /^\d{14}_[a-z0-9_]+\.sql$/.test(file)));
 
 const db = new PGlite();
@@ -96,6 +99,9 @@ try {
       ,has_function_privilege('authenticated', 'public.admin_list_conversations(text,text,text,integer,integer)', 'EXECUTE') as staff_conversation_list
       ,has_function_privilege('authenticated', 'public.admin_get_conversation(uuid)', 'EXECUTE') as staff_conversation_get
       ,has_function_privilege('authenticated', 'public.admin_queue_conversation_message(uuid,text,text,text,jsonb)', 'EXECUTE') as staff_conversation_queue
+      ,has_function_privilege('anon', 'public.admin_list_whatsapp_utility_messages(text,text,text,integer,integer)', 'EXECUTE') as anon_utility_list
+      ,has_function_privilege('authenticated', 'public.admin_list_whatsapp_utility_messages(text,text,text,integer,integer)', 'EXECUTE') as staff_utility_list
+      ,has_function_privilege('authenticated', 'public.admin_record_whatsapp_utility_result(uuid,text,text,text)', 'EXECUTE') as staff_utility_result
       ,has_function_privilege('anon', 'public.admin_get_basket_configuration()', 'EXECUTE') as anon_basket_read
       ,has_function_privilege('authenticated', 'public.admin_get_basket_configuration()', 'EXECUTE') as staff_basket_read
       ,has_function_privilege('anon', 'public.get_storefront_catalog()', 'EXECUTE') as anon_public_catalog
@@ -142,6 +148,9 @@ try {
   assert.equal(access.rows[0].staff_conversation_list, true);
   assert.equal(access.rows[0].staff_conversation_get, true);
   assert.equal(access.rows[0].staff_conversation_queue, true);
+  assert.equal(access.rows[0].anon_utility_list, false);
+  assert.equal(access.rows[0].staff_utility_list, true);
+  assert.equal(access.rows[0].staff_utility_result, true);
   assert.equal(access.rows[0].anon_basket_read, false);
   assert.equal(access.rows[0].staff_basket_read, true);
   assert.equal(access.rows[0].anon_public_catalog, true);
@@ -704,6 +713,70 @@ try {
   assert.equal(supportAccess.visibleOrders.rows.length, 2);
   assert.equal(supportAccess.hiddenProducts.rows.length, 0);
   assert.equal(supportAccess.hiddenPrivateProfiles.rows.length, 0);
+
+  await db.query(
+    `update da_next.whatsapp_utility_settings
+     set enabled = true, daily_budget = 10
+     where provider_account = '0975'`,
+  );
+  await db.query(
+    `update da_next.whatsapp_utility_templates
+     set approval_status = 'APROVADO', active = true
+     where provider_account = '0975' and event_type = 'OrderReady'`,
+  );
+  await db.query(
+    `insert into da_next.order_events (order_id, version, event_type, actor_id, event_data)
+     values ($1, 6, 'OrderReady', $2, '{"source":"r12-db-test"}'::jsonb)`,
+    [orderId, actorIds.separation],
+  );
+  const utilityRead = await asAuthenticated(actorIds.support, () =>
+    db.query(
+      `select public.admin_list_whatsapp_utility_messages('0975', 'NA_FILA', 'DA-2026-000001', 20, 0) as result`,
+    ),
+  );
+  const utilityMessageId = utilityRead.rows[0].result.items[0].id;
+  assert.equal(utilityRead.rows[0].result.total, 1);
+  assert.equal(utilityRead.rows[0].result.items[0].event_type, 'OrderReady');
+  const utilityFailures = await asAuthenticated(actorIds.support, async () => {
+    const first = await db.query(
+      `select public.admin_record_whatsapp_utility_result($1, 'FALHA', null, 'TEMPORARIO') as result`,
+      [utilityMessageId],
+    );
+    const second = await db.query(
+      `select public.admin_record_whatsapp_utility_result($1, 'FALHA', null, 'TEMPORARIO') as result`,
+      [utilityMessageId],
+    );
+    const final = await db.query(
+      `select public.admin_record_whatsapp_utility_result($1, 'FALHA', null, 'LIMITE_TENTATIVAS') as result`,
+      [utilityMessageId],
+    );
+    return { first, second, final };
+  });
+  assert.equal(utilityFailures.first.rows[0].result.delivery_status, 'NA_FILA');
+  assert.equal(utilityFailures.first.rows[0].result.attempts, 1);
+  assert.equal(utilityFailures.second.rows[0].result.attempts, 2);
+  assert.equal(utilityFailures.final.rows[0].result.delivery_status, 'FALHA_FINAL');
+  assert.equal(utilityFailures.final.rows[0].result.attempts, 3);
+  const utilityOutbox = await asAuthenticated(actorIds.admin, () =>
+    db.query(
+      `select count(*)::int as count
+       from da_next.integration_outbox
+       where aggregate_type = 'ORDER' and aggregate_id = $1 and event_type = 'WhatsAppUtilityQueued'`,
+      [orderId],
+    ),
+  );
+  assert.equal(utilityOutbox.rows[0].count, 1, 'utility enqueue must be idempotent');
+  await db.query(
+    `insert into da_next.order_events (order_id, version, event_type, actor_id, event_data)
+     values ($1, 7, 'OrderDelivered', $2, '{"source":"r12-budget-test"}'::jsonb)`,
+    [orderId, actorIds.separation],
+  );
+  const utilityBudget = await db.query(
+    `select count(*)::int as count from da_next.whatsapp_utility_messages
+     where order_id = $1 and provider_account = '0975'`,
+    [orderId],
+  );
+  assert.equal(utilityBudget.rows[0].count, 1, 'daily budget must prevent a second enqueue');
 
   const conversationId = (
     await db.query(
