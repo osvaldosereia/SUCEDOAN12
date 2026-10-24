@@ -54,6 +54,16 @@ export function createStaffAuthentication(client: SupabaseClient): Authenticatio
       }
     },
 
+    async requestPasswordReset(email: string, redirectTo: string) {
+      const { error } = await client.auth.resetPasswordForEmail(email.trim(), { redirectTo });
+      if (error) throw error;
+    },
+
+    async updatePassword(password: string) {
+      const { error } = await client.auth.updateUser({ password });
+      if (error) throw error;
+    },
+
     async getSession() {
       const { data, error } = await client.auth.getSession();
       if (error) throw new Error('Não foi possível recuperar a sessão.');
@@ -71,14 +81,18 @@ export function createStaffAuthentication(client: SupabaseClient): Authenticatio
     },
 
     onSessionChanged(listener) {
-      const { data } = client.auth.onAuthStateChange((_event, session) => {
+      const { data } = client.auth.onAuthStateChange((event, session) => {
         // Supabase advises deferring network work out of the auth callback lock.
         setTimeout(() => {
+          if (event === 'PASSWORD_RECOVERY') {
+            listener(null, event);
+            return;
+          }
           void toStaffSession(session)
-            .then(listener)
+            .then((nextSession) => listener(nextSession, event))
             .catch(async () => {
               await client.auth.signOut();
-              listener(null);
+              listener(null, event);
             });
         }, 0);
       });

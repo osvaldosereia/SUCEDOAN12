@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { AuthMessage, LoginForm, PasswordRecoveryForm } from './AuthForms';
 import {
   StaffAccessDeniedError,
   type AuthenticationPort,
@@ -15,6 +16,11 @@ export function AdminAuthGate({ provider, demoMode, children }: Props) {
   const [session, setSession] = useState<StaffSession | null>(null);
   const [loading, setLoading] = useState(!demoMode);
   const [notice, setNotice] = useState('');
+  const [passwordRecovery, setPasswordRecovery] = useState(
+    () =>
+      typeof window !== 'undefined' &&
+      new URLSearchParams(window.location.search).get('recovery') === '1',
+  );
 
   useEffect(() => {
     if (demoMode || !provider) {
@@ -23,9 +29,20 @@ export function AdminAuthGate({ provider, demoMode, children }: Props) {
     }
     let active = true;
     let authEvents = 0;
-    const unsubscribe = provider.onSessionChanged((next) => {
+    const unsubscribe = provider.onSessionChanged((next, event) => {
       authEvents += 1;
       if (active) {
+        if (event === 'PASSWORD_RECOVERY') {
+          setPasswordRecovery(true);
+          setSession(null);
+          setNotice('');
+          setLoading(false);
+          return;
+        }
+        if (event === 'SIGNED_OUT') {
+          setPasswordRecovery(false);
+          setSession(null);
+        }
         setSession(next);
         if (next) setNotice('');
         setLoading(false);
@@ -66,6 +83,29 @@ export function AdminAuthGate({ provider, demoMode, children }: Props) {
     );
   }
   if (loading) return <AuthMessage title="Validando acesso" message="Aguarde um instante…" />;
+  if (passwordRecovery) {
+    return (
+      <PasswordRecoveryForm
+        notice={notice}
+        onSubmit={async (password) => {
+          setLoading(true);
+          setNotice('');
+          try {
+            await provider.updatePassword(password);
+            await provider.signOut();
+            window.history.replaceState({}, document.title, window.location.pathname);
+            setPasswordRecovery(false);
+            setSession(null);
+            setNotice('Senha criada. Entre com seu e-mail e a nova senha.');
+          } catch {
+            setNotice('Não foi possível salvar a senha. Solicite um novo link de recuperação.');
+          } finally {
+            setLoading(false);
+          }
+        }}
+      />
+    );
+  }
   if (session) return <>{children(session, () => provider.signOut())}</>;
 
   return (
@@ -89,90 +129,15 @@ export function AdminAuthGate({ provider, demoMode, children }: Props) {
           setLoading(false);
         }
       }}
+      onRequestPasswordReset={async (email) => {
+        setNotice('');
+        try {
+          await provider.requestPasswordReset(email, `${window.location.origin}/admin/?recovery=1`);
+          setNotice('Se este e-mail estiver cadastrado, enviaremos um link para criar sua senha.');
+        } catch {
+          setNotice('Não foi possível solicitar o link agora. Tente novamente mais tarde.');
+        }
+      }}
     />
-  );
-}
-
-function AuthMessage({ title, message }: { title: string; message: string }) {
-  return (
-    <main className="da-auth-page">
-      <section className="da-auth-card" aria-live="polite">
-        <BrandMark />
-        <h1>{title}</h1>
-        <p>{message}</p>
-      </section>
-    </main>
-  );
-}
-
-function LoginForm({
-  notice,
-  onSubmit,
-}: {
-  notice: string;
-  onSubmit: (email: string, password: string) => Promise<void>;
-}) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSubmitting(true);
-    try {
-      await onSubmit(email, password);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  return (
-    <main className="da-auth-page">
-      <section className="da-auth-card">
-        <BrandMark />
-        <p className="da-auth-eyebrow">ÁREA DA EQUIPE</p>
-        <h1>Entrar no administrador</h1>
-        <p className="da-auth-subtitle">Use seu acesso autorizado da Dona Antônia.</p>
-        <form onSubmit={submit}>
-          <label htmlFor="da-auth-email">E-mail</label>
-          <input
-            autoComplete="username"
-            id="da-auth-email"
-            name="email"
-            type="email"
-            required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-          <label htmlFor="da-auth-password">Senha</label>
-          <input
-            autoComplete="current-password"
-            id="da-auth-password"
-            name="password"
-            type="password"
-            required
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-          {notice && (
-            <p className="da-auth-notice" role="alert">
-              {notice}
-            </p>
-          )}
-          <button className="da-auth-submit" type="submit" disabled={submitting}>
-            {submitting ? 'Validando acesso…' : 'Entrar'}
-          </button>
-        </form>
-        <small className="da-auth-footnote">Acesso restrito a pessoas autorizadas.</small>
-      </section>
-    </main>
-  );
-}
-
-function BrandMark() {
-  return (
-    <div className="da-auth-mark" aria-label="Dona Antônia">
-      DA
-    </div>
   );
 }

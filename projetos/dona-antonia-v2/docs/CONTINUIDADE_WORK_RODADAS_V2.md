@@ -1,8 +1,11 @@
+Warning: truncated output (original token count: 10260)
+Total output lines: 325
+
 # DONA ANTÔNIA V2 — DOSSIÊ DE CONTINUIDADE E PLANO POR RODADAS (WORK)
 
 **Versão do dossiê:** 2026-10-23  
 **Finalidade:** transferir todas as decisões operacionais, regras de UX, estado da engenharia, riscos, pendências e plano de entrega para um novo Projeto/conversa do ChatGPT em modo Work.  
-**Status atualizado (24/10/2026): R00–R04 concluídas. R04 está na branch `agent/dona-antonia-r04-bling-import`, PR #1368 draft e sem merge. Projeto Supabase V2 isolado `hjudhofluihkxykwekir`, 7 migrações aplicadas, 802 produtos e 802 perfis privados importados; todos permanecem inativos/estoque zero. O login form foi validado na prévia privada owner-only, e a conta `juniorsereia@gmail.com` tem papel ADMIN. CSV foi explicitamente autorizado como seed, mas não tem procedência comprovada de export do Bling. Próxima rodada R05 (CRUD e estoque persistentes). Custo estimado aprovado: US$ 10/mês no compute padrão.
+**Status atualizado (24/10/2026): R00–R04 concluídas. R04 está na branch `agent/dona-antonia-r04-bling-import`, PR #1368 draft e sem merge. Projeto Supabase V2 isolado `hjudhofluihkxykwekir`, 7 migrações aplicadas, 802 produtos e 802 perfis privados importados; todos permanecem inativos/estoque zero. O login e o formulário de recuperação foram validados na prévia privada owner-only, e a conta `juniorsereia@gmail.com` tem papel ADMIN. O Auth V2 tinha URL padrão `http://localhost:3000`, corrigida para `/admin/` da prévia; callback de recuperação autorizado. O usuário ainda precisa solicitar o e-mail e definir a própria senha. CSV foi explicitamente autorizado como seed, mas não tem procedência comprovada de export do Bling. Próxima rodada R05 (CRUD e estoque persistentes). Custo estimado aprovado: US$ 10/mês no compute padrão.
 **Repositório:** https://github.com/osvaldosereia/SUCEDOAN12  
 **Branch de desenvolvimento principal da V2:** agent/dona-antonia-nova-plataforma  
 **Pasta:** projetos/dona-antonia-v2/  
@@ -129,7 +132,7 @@ Confirmado por leitura da branch:
 - scripts/check-architecture.mjs impõe alguns limites; CI executa TS, testes, build e E2E.
 - Rota /site1 e /admin1 já receberam publicação **de demonstração** via PR #1363; atualizações da branch após esse PR não são automaticamente equivalentes à versão online.
 - Última execução aprovada que consta no histórico: workflow 40056490923. Confirmar commit SHA e workflow mais recente no início da nova conversa.
-**NÃO CONCLUÍDO:** autenticação não foi submetida com senha durante QA; CRUD persistente/adapter de dados, checkout/pedidos, inbox Meta, envio automático/NF-e, Lighthouse de staging e plano de migração operacional. O login form e a rota foram verificados sem credenciais. O Supabase Auth client e as policies estão conectados apenas ao projeto V2 isolado; nada operacional.
+**NÃO CONCLUÍDO:** autenticação não foi submetida com senha durante QA; o usuário deve solicitar o link de recuperação e criar sua própria senha. CRUD persistente/adapter de dados, checkout/pedidos, inbox Meta, envio automático/NF-e, Lighthouse de staging e plano de migração operacional continuam pendentes. O Supabase Auth client e as policies estão conectados apenas ao projeto V2 isolado; nada operacional.
 
 ## 9. ACHADOS DA R00 QUE BLOQUEIAM AS RODADAS SEGUINTES
 1. Resolvido documentalmente nesta R00: docs/ARQUITETURA.md agora registra o preço agregado da cesta com ajuste interno calculado apenas no servidor.
@@ -145,14 +148,7 @@ Confirmado por leitura da branch:
 11. Confirmado: /admin1 é demonstração sem autenticação. Não conectar segredos ou dados reais até existir RBAC/autorização no servidor.
 
 ## 10. ENGENHARIA PADRÃO PARA TODAS AS RODADAS
-- Preferir **monólito modular** em vez de microserviços: UI por domínio + core puro + application commands/queries + adapters de dados, serviços de notificações/fiscal isolados.
-- Não fazer componentes gigantes ou CSS global crescente; reaproveitar design system para campos, status, listas e cartões.
-- Backend **autoridade** de preços, ajustes privados, estoque, impostos, frete/prazo, transições de pedidos e idempotência.
-- Testes: TypeScript estrito, arquitetura/lint/format, unitários do domínio, integração DB em staging, E2E mobile e desktop, validação visual, rede lenta, falhas e acessibilidade.
-- Persistência transacional com optimistic locking/versionamento; outbox e consumidores idempotentes, sem workers caros sempre ligados.
-- Tipar payloads em fronteiras com validação runtime. Logs e auditoria minimizando dados pessoais; índices apropriados às consultas. RLS, RBAC, segredos, backups e limite de recursos.
-- CI apenas nos arquivos da V2; PRs pequenos; controlar custo e impedir automações que publiquem raiz por engano.
-- Evidências concretas: commit, PR, diff, testes, prints quando úteis e o que continua pendente. Não prometer PageSpeed 100 sem medir.
+- Preferir **monólito modular** em vez de microserviços: UI por…260 tokens truncated…f, testes, prints quando úteis e o que continua pendente. Não prometer PageSpeed 100 sem medir.
 - Não continuar R(n+1) com falha crítica não resolvida da R(n). Se scope exceder rodada, dividir em novas rodadas menores com entregável e teste mensurável.
 
 ## 11. ESTRATÉGIA WORK: RODADAS PEQUENAS, FECHADAS E EXECUTÁVEIS
@@ -308,9 +304,9 @@ R00 foi documental; R01 consolidou qualidade visual/CI; R02 implementou schema e
 - Projeto novo `hjudhofluihkxykwekir`, região São Paulo, status saudável. Compute padrão confirmado: estimativa de US$ 10/mês, cobrada por hora. Seis migrações aplicadas ao projeto novo.
 - Verificação remota: 24 tabelas/24 RLS, 64 policies; `anon` sem `USAGE` no schema privado nem execução da RPC; `authenticated` pode consultar o próprio papel. Convite aceito e e-mail confirmado; uma atribuição ADMIN ativa registrada; `last_sign_in_at` preenchido. RPC testada com subject da conta e resposta `ADMIN`; nenhuma sessão ativa no instante da verificação.
 - Gates: 50 testes unitários; PGlite seis migrações/24 tabelas com RBAC/RLS positivo e negativo, role lookup, revogação, privacidade e rollback; lint, format, arquitetura, TS, build, audit (0 vulnerabilidades) passaram. Playwright local não iniciou: Chromium ausente; CI #40063869241 passou os 17 E2E.
-- Limite: Auth registrou acesso real, mas login pela tela do admin V2 ainda não foi testado. O dev server local não pôde ser aberto pelo navegador remoto; nenhuma prévia foi publicada. Nenhuma senha foi definida pelo agente.
+- Limite: login com senha não foi submetido. O Auth tinha Site URL de desenvolvimento `http://localhost:3000`, corrigida para a prévia privada. Fluxo de recuperação implementado; nenhuma senha foi definida pelo agente.
 - Operação: legado, `main`, bancos existentes, atendimento e integrações intocados; nenhuma publicação.
-- Próximo: concluir o ensaio de login pela UI e obter arquivo oficial do Bling com origem comprovável; então repetir o dry-run e executar a carga idempotente somente no Supabase V2.
+- Próximo: usuário solicita o link de recuperação e define sua senha; login com senha deve ser validado depois. Recuperação e Auth URL estão configurados para a prévia privada.
 
 
 ## Registro de execução — R04 (24/10/2026)
@@ -321,5 +317,5 @@ R00 foi documental; R01 consolidou qualidade visual/CI; R02 implementou schema e
 - Estado da rodada: **concluída em staging V2** por autorização expressa do usuário para usar a cópia gerada; sem ativação de massa.
 - Segurança/isolamento: `main`, produção, Supabases legados, atendimento e integrações operacionais intocados; sem deploy/publicação.
 - Carga final: 802 produtos e 802 perfis, 802 custos exatos e 802 originais de 59 campos, 776 GTINs; todos inativos e estoque zero. Dados validados por query de contagem. Migração adicional: `20261024052349_catalog_cost_precision_four_decimals.sql`.
-- A rota privada do admin `/admin/` abre a tela de login. E-mail ADMIN `juniorsereia@gmail.com`; usar senha definida no fluxo de convite Supabase. Não acessar ou solicitar senha.
+- A rota privada `/admin/` abre login; “Esqueci ou ainda não criei minha senha” envia link para o e-mail cadastrado. Com o link, a página `/admin/?recovery=1` permite definir e confirmar nova senha (mínimo 8 caracteres). O Auth e a allowlist do projeto V2 permitem apenas o callback da prévia privada. O agente não envia e-mail nem define/acessa a senha: o usuário deve concluir essas etapas.
 - Próxima: R05 CRUD e estoque persistentes. Origem CSV não comprovada e saldo físico continuam decisões abertas; não ativar catálogo ou sincronizar Bling sem confirmação.
