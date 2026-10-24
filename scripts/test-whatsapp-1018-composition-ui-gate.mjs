@@ -11,7 +11,7 @@ assert.match(ui,/Array\.isArray\(state\.canary\?\.capabilities\)&&state\.canary\
 assert.match(ui,/!state\.canary\?\.capabilities\?\.includes\('composition'\)/,'server capability checked again on click');
 assert.match(ui,/state\.verifiedChoiceId=reply\.id/,'selection originates in verified Meta reply');
 assert.match(ui,/expected_choice_id:choice/);
-assert.match(ui,/!state\.originalCompositionChanged/);
+assert.match(ui,/\|\|state\.originalCompositionChanged/);
 assert.match(ui,/state\.originalCompositionChanged=true/g);
 assert.match(ui,/state\.quoteReady/);
 assert.match(ui,/alreadySent/);
