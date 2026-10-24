@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'vitrine/admin/whatsapp-lab/**'
+      - 'scripts/test-whatsapp-meta-catalog-export.mjs'
       - 'vitrine/admin/index.html'
       - 'vitrine/admin/atendimento/index.html'
       - 'scripts/test-whatsapp-1018-lab.mjs'
@@ -18,3 +19,4 @@ jobs:
         with:
           node-version: '22'
       - run: node scripts/test-whatsapp-1018-lab.mjs
+      - run: node scripts/test-whatsapp-meta-catalog-export.mjs

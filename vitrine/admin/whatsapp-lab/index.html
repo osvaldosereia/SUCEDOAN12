@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <meta name="theme-color" content="#f6f8f6">
   <title>Laboratório WhatsApp 1018 · Dona Antônia</title>
-  <link rel="stylesheet" href="./lab.css?v=20261024-1">
+  <link rel="stylesheet" href="./lab.css?v=20261024-2">
 </head>
 <body>
   <header class="top">
@@ -34,6 +34,29 @@
           <div id="extraResults" class="extra-results"><p class="placeholder">Escolha uma cesta antes de adicionar extras.</p></div>
           <div id="extraSelected"></div>
         </section>
+        <section class="extras meta-tools" aria-label="Prévia oficial Meta e exportação">
+          <div class="section-head"><div><h2>4. Preparar catálogo oficial da Meta</h2><p>Exportação das 15 combinações e simulação das mensagens interativas da Cloud API.</p></div></div>
+          <p class="meta-important">Estas ferramentas não publicam produtos e não enviam mensagens. O catálogo precisa ser importado e vinculado ao WhatsApp Business no Gerenciador de Comércio da Meta.</p>
+          <div id="metaReadiness" class="meta-readiness" role="status" aria-live="polite">Aguardando carregar as composições.</div>
+          <div class="meta-toolbar">
+            <button class="btn primary" id="exportCatalogBtn" type="button" disabled>Baixar catálogo Meta (CSV)</button>
+            <button class="btn subtle" id="copyMetaPayloadBtn" type="button" disabled>Copiar exemplo da API</button>
+            <a class="meta-link" target="_blank" rel="noopener noreferrer" href="https://business.facebook.com/commerce/catalogs/">Gerenciador de Comércio ↗</a>
+          </div>
+          <p class="fineprint">O arquivo CSV inclui títulos, imagens, composição, preço atual, disponibilidade e IDs estáveis das 15 versões. O link no feed aponta provisoriamente para a página inicial da loja; antes de divulgar, vincule os produtos Meta ao processo correto de personalização. Os preços devem ser sincronizados novamente após alterações.</p>
+          <div class="section-head"><div><h3>Como o cliente escolheria pelo WhatsApp</h3><p>Uma mensagem interativa de cinco tamanhos, seguida de três combinações.</p></div></div>
+          <div id="metaInteractivePreview" class="meta-preview" aria-live="polite"></div>
+          <details class="meta-debug">
+            <summary>Visualizar estrutura JSON para Meta Cloud API</summary>
+            <label for="metaPayloadKind">Formato da prévia</label>
+            <select id="metaPayloadKind">
+              <option value="sizes">Mensagem interativa: 5 tamanhos</option>
+              <option value="combinations">Mensagem interativa: 3 combinações</option>
+              <option value="products">Lista de 15 produtos: exige catálogo Meta vinculado</option>
+            </select>
+            <pre id="metaPayloadJson">Selecione e carregue as cestas para visualizar.</pre>
+          </details>
+        </section>
       </section>
       <aside class="simulator" aria-label="Simulação do WhatsApp">
         <div class="phone">
@@ -52,6 +75,6 @@
       </aside>
     </div>
   </main>
-  <script type="module" src="./lab.js?v=20261024-1"></script>
+  <script type="module" src="./lab.js?v=20261024-2"></script>
 </body>
 </html>

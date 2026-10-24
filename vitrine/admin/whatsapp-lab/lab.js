@@ -1,3 +1,4 @@
+import {collectBasketVariants,buildMetaCatalogCsv,buildSizeListMessage,buildCombinationsListMessage,buildMetaProductListPreview,validatePreviewPayload} from './catalog-tools.mjs?v=20261024-2';
 import {attendanceJsonApi} from '../atendimento/attendance-auth.js?v=auth-refresh-v2';
 
 const STORE='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2';
@@ -8,7 +9,7 @@ const TEST_CONVERSATION_ID='ff5c1e73-f3ed-4b88-8eba-b6e3a9883941';
 const TEST_RECIPIENT='+5565998150975';
 const ORIGIN_CHANNEL='+5565984491018';
 const $=id=>document.getElementById(id);
-const state={account1018:null,models:[],variants:new Map(),loading:true,selection:null,items:[],officialPrice:null,quoteReady:false,quoteSequence:0,quoteTimer:null,alternatives:new Map(),openPosition:null,extras:new Map(),searchResults:[],searchTimer:null,busy:false,lastUpdate:null};
+const state={account1018:null,models:[],variants:new Map(),loading:true,selection:null,items:[],officialPrice:null,quoteReady:false,quoteSequence:0,quoteTimer:null,alternatives:new Map(),openPosition:null,extras:new Map(),searchResults:[],searchTimer:null,busy:false,lastUpdate:null,metaSelectedSize:null};
 
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
 function money(cents){return Number.isFinite(Number(cents))?new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(cents)/100):'—';}
@@ -80,7 +81,67 @@ function updatePreview(){
   $('copyBtn').disabled=!ready;
   $('sendBtn').disabled=!LIVE_TEST_ENABLED||!ready||state.busy||text.length>3900;
 }
-function updateAll(){renderPrices();renderDetail();renderExtras();updatePreview();}
+
+function snapshotForMeta(){return collectBasketVariants(state.models,state.variants);}
+function metaPayload(snapshot){
+  const kind=$('metaPayloadKind').value;
+  if(kind==='products')return buildMetaProductListPreview(snapshot,'ID_DO_CATALOGO_META');
+  if(kind==='combinations'){
+    const size=state.metaSelectedSize||state.models.find(m=>m.id===state.selection?.modelId)?.size_key||'economica';
+    return buildCombinationsListMessage(snapshot,size);
+  }
+  return buildSizeListMessage(snapshot);
+}
+function renderMeta(){
+  const snap=snapshotForMeta(),ready=snap.ready&&!state.loading;
+  const warnings=[...snap.issues];
+  $('exportCatalogBtn').disabled=!ready;
+  const total=snap.rows.length;
+  const bad=total!==15||warnings.length>0;
+  const reasons=bad?(warnings.slice(0,4).join(' | ')+(warnings.length>4?' (+ '+(warnings.length-4)+' observações)':'')):'';
+  $('metaReadiness').classList.toggle('invalid',bad&&!state.loading);
+  $('metaReadiness').textContent=state.loading?'Carregando composições e preços…':
+    total+' de 15 versões disponíveis para exportação. '+(bad?reasons:'CSV pronto para importação manual na Meta.');
+  let payload=null;
+  try{payload=metaPayload(snap);if(!validatePreviewPayload(payload))throw new Error('meta_interactive_structure_invalid');}
+  catch(error){$('metaPayloadJson').textContent='Não é possível montar o exemplo: '+String(error.message||error);}
+  if(payload){$('metaPayloadJson').textContent=JSON.stringify(payload,null,2);}
+  $('copyMetaPayloadBtn').disabled=!payload;
+  const size=state.metaSelectedSize;
+  const rows=size?snap.rows.filter(r=>r.size===size):SIZE_ORDER.map(k=>({size:k,name:SIZE_LABELS[k]}));
+  const items=rows.map(row=>{
+    if(!size){
+      const choices=snap.rows.filter(x=>x.size===row.size);
+      const cents=choices.map(x=>x.priceCents);
+      const priceText=choices.length===3?'de '+money(Math.min(...cents)):'Ver opções';
+      return '<button type="button" class="meta-choice-item" data-meta-size="'+escapeHtml(row.size)+'"><span><strong>Cesta '+escapeHtml(row.name)+'</strong><small>3 combinações de marcas</small></span><b>'+escapeHtml(priceText)+'</b></button>';
+    }
+    return '<button type="button" class="meta-choice-item" data-meta-combo="'+escapeHtml(row.size)+'" data-meta-combo-n="'+row.number+'"><span><strong>Combinação '+row.number+'</strong><small>'+(row.stock>0?'Marcas e produtos disponíveis':'Confirmar disponibilidade')+'</small></span><b>'+money(row.priceCents)+'</b></button>';
+  }).join('');
+  $('metaInteractivePreview').innerHTML='<div class="meta-sample-head"><strong>'+(size?'Cesta '+escapeHtml(SIZE_LABELS[size]):'Escolha o tamanho da cesta')+'</strong><span class="meta-sample-step">'+(size?'Etapa 2 de 2':'Etapa 1 de 2')+'</span></div><div class="meta-choice-grid">'+(items||'<p class="placeholder">Não há combinações completas disponíveis.</p>')+'</div>'+(size?'<button type="button" class="meta-preview-back" id="metaPreviewBack">← Voltar aos tamanhos</button>':'');
+}
+function downloadMetaCatalog(){
+  const snapshot=snapshotForMeta();
+  if(!snapshot.ready){sendStatus('Não é possível exportar 15 versões sem preço, composição e imagem válidos.','error');return;}
+  try{
+    const csv=buildMetaCatalogCsv(snapshot);
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+    const url=URL.createObjectURL(blob),link=document.createElement('a');
+    link.href=url;link.download='dona-antonia-meta-cestas-15-'+new Date().toISOString().slice(0,10)+'.csv';
+    link.style.display='none';document.body.appendChild(link);link.click();link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    sendStatus('CSV com 15 versões gerado. A importação na Meta é manual; nenhuma publicação foi feita.','success');
+  }catch(error){sendStatus('Erro ao gerar arquivo de catálogo: '+String(error.message||error),'error');}
+}
+async function copyMetaPayload(){
+  let payload;
+  try{payload=metaPayload(snapshotForMeta());if(!validatePreviewPayload(payload))throw new Error('invalid_preview_payload');}
+  catch(error){sendStatus('Prévia inválida: '+String(error.message||error),'error');return;}
+  try{await navigator.clipboard.writeText(JSON.stringify(payload,null,2));sendStatus('Exemplo de payload da Meta copiado. NÃO foi enviado.','success');}
+  catch{sendStatus('Não foi possível copiar. Abra a estrutura JSON abaixo.','error');}
+}
+
+function updateAll(){renderPrices();renderDetail();renderExtras();updatePreview();renderMeta();}
 async function load(){
   if(state.busy)return;
   state.loading=true;state.variants.clear();state.selection=null;state.items=[];state.officialPrice=null;state.quoteReady=false;state.extras.clear();state.searchResults=[];
@@ -96,7 +157,7 @@ async function load(){
     state.models=SIZE_ORDER.map(key=>found.get(key)).filter(Boolean);
     if(state.models.length!==5)throw new Error('A vitrine não retornou os cinco tamanhos de cesta.');
     const jobs=[];for(const m of state.models)for(let n=1;n<=3;n++){jobs.push({model:m,n});state.variants.set(choiceKey(m,n),{pending:true});}
-    renderPrices();
+    renderPrices();renderMeta();
     let cursor=0,finished=0;
     await Promise.all(Array.from({length:3},async()=>{
       while(cursor<jobs.length){
@@ -106,7 +167,7 @@ async function load(){
           state.variants.set(key,{data:detail});
         }catch(error){state.variants.set(key,{error:String(error.message||error)});}
         finished++;status('Consultando preços e estoque reais: '+finished+' de '+jobs.length+' combinações.');
-        renderPrices();updatePreview();
+        renderPrices();updatePreview();renderMeta();
       }
     }));
     state.lastUpdate=new Date();state.loading=false;
@@ -114,7 +175,7 @@ async function load(){
     status(count+'/15 combinações calculadas · atualizado às '+state.lastUpdate.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+(count<15?' · algumas combinações indisponíveis':''),count===0);
     $('refreshBtn').disabled=false;$('extraSearch').disabled=false;updateAll();
   }catch(error){
-    state.loading=false;status('Não foi possível iniciar o laboratório: '+String(error.message||error)+'. Abra o Vitrine Admin, autentique-se e tente novamente.',true);
+    state.loading=false;renderMeta();status('Não foi possível iniciar o laboratório: '+String(error.message||error)+'. Abra o Vitrine Admin, autentique-se e tente novamente.',true);
     $('refreshBtn').disabled=false;updatePreview();
   }
 }
@@ -211,6 +272,21 @@ async function sendTest(){
   }catch(error){sendStatus('Teste NÃO confirmado: '+String(error.message||error)+'. Não haverá reenvio automático.','error');}
   finally{state.busy=false;updatePreview();}
 }
+
+$('exportCatalogBtn').addEventListener('click',downloadMetaCatalog);
+$('copyMetaPayloadBtn').addEventListener('click',()=>void copyMetaPayload());
+$('metaPayloadKind').addEventListener('change',renderMeta);
+$('metaInteractivePreview').addEventListener('click',event=>{
+  const btn=event.target.closest('button');if(!btn)return;
+  if(btn.id==='metaPreviewBack'){state.metaSelectedSize=null;renderMeta();return;}
+  if(btn.hasAttribute('data-meta-size')){state.metaSelectedSize=btn.dataset.metaSize;renderMeta();return;}
+  if(btn.hasAttribute('data-meta-combo')){
+    const size=btn.dataset.metaCombo,n=Number(btn.dataset.metaComboN);
+    const model=state.models.find(m=>m.size_key===size);
+    if(model&&Number.isInteger(n))choose(model.id+'@'+n);
+  }
+});
+
 $('refreshBtn').addEventListener('click',()=>load());
 $('messageMode').addEventListener('change',updatePreview);
 $('copyBtn').addEventListener('click',()=>void copyMessage());
