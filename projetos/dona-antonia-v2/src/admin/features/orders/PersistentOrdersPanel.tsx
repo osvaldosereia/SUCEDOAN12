@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type {
+  AdminOrderCommandInput,
   AdminOrderDetail,
   AdminOrderSummary,
   AdminOrdersRepository,
@@ -34,12 +35,13 @@ export function PersistentOrdersPanel({ repository }: Props) {
   const [selected, setSelected] = useState<AdminOrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [refreshToken, setRefreshToken] = useState(0);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
     setMessage('');
-    setSelected(null);
     void Promise.all([
       repository.list({ status, search: query, page: 1, pageSize: 20 }),
       ...ORDER_STATES.map((tab) =>
@@ -67,7 +69,7 @@ export function PersistentOrdersPanel({ repository }: Props) {
     return () => {
       active = false;
     };
-  }, [repository, status, query]);
+  }, [repository, status, query, refreshToken]);
 
   const select = async (order: AdminOrderSummary) => {
     setSelected(null);
@@ -76,6 +78,31 @@ export function PersistentOrdersPanel({ repository }: Props) {
       setSelected(await repository.get(order.id));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Não foi possível carregar o pedido.');
+    }
+  };
+
+  const apply = async (command: AdminOrderCommandInput['command']) => {
+    if (!selected || saving) return;
+    setSaving(true);
+    setMessage('');
+    try {
+      const commandId =
+        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : 'order-command-' + Date.now();
+      const updated = await repository.applyCommand({
+        orderId: selected.id,
+        commandId,
+        expectedVersion: selected.version,
+        command,
+      });
+      setSelected(updated);
+      setStatus(updated.state);
+      setRefreshToken((value) => value + 1);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Não foi possível aplicar a operação.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -111,7 +138,10 @@ export function PersistentOrdersPanel({ repository }: Props) {
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Número, cliente ou WhatsApp"
         />
-        <span>{loading ? 'Carregando…' : `${items.length} pedido(s)`}</span>
+        <span>{loading ? 'Carregando…' : items.length + ' pedido(s)'}</span>
+        <button type="button" className="da-order-action" onClick={() => window.print()}>
+          Imprimir
+        </button>
       </div>
       {message && (
         <p className="error" role="alert">
@@ -183,13 +213,36 @@ export function PersistentOrdersPanel({ repository }: Props) {
                       {itemLabel(item)} · {item.sku}
                     </small>
                   </span>
-                  <small>
-                    {item.separation === 'FALTOU'
-                      ? 'Faltou'
-                      : item.separation === 'SEPARADO'
-                        ? 'Separado'
-                        : 'A conferir'}
-                  </small>
+                  {selected.state === 'EM_SEPARACAO' && item.separation === 'PENDENTE' ? (
+                    <div className="da-picking-actions" aria-label={'Conferir ' + item.name}>
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={() =>
+                          void apply({ type: 'MARK', itemId: item.id, result: 'SEPARADO' })
+                        }
+                      >
+                        Separado
+                      </button>
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={() =>
+                          void apply({ type: 'MARK', itemId: item.id, result: 'FALTOU' })
+                        }
+                      >
+                        Faltou
+                      </button>
+                    </div>
+                  ) : (
+                    <small>
+                      {item.separation === 'FALTOU'
+                        ? 'Faltou'
+                        : item.separation === 'SEPARADO'
+                          ? 'Separado'
+                          : 'A conferir'}
+                    </small>
+                  )}
                 </div>
               ))}
             </div>
@@ -197,8 +250,45 @@ export function PersistentOrdersPanel({ repository }: Props) {
               <span>Total confirmado</span>
               <strong>{formatBRL(selected.totalCents)}</strong>
             </div>
+            <div className="da-order-command-bar">
+              {selected.state === 'NOVO' && (
+                <button
+                  type="button"
+                  className="da-order-action"
+                  disabled={saving}
+                  onClick={() => void apply({ type: 'START' })}
+                >
+                  Iniciar separação
+                </button>
+              )}
+              {selected.state === 'EM_SEPARACAO' && (
+                <button
+                  type="button"
+                  className="da-order-action"
+                  disabled={
+                    saving ||
+                    selected.items.some((item) => item.separation === 'PENDENTE') ||
+                    selected.items.every((item) => item.fulfilledQuantity === 0)
+                  }
+                  onClick={() => void apply({ type: 'FINISH' })}
+                >
+                  Pronto para entrega
+                </button>
+              )}
+              {selected.state === 'PRONTO' && (
+                <button
+                  type="button"
+                  className="da-order-action"
+                  disabled={saving}
+                  onClick={() => void apply({ type: 'DELIVER' })}
+                >
+                  Marcar entregue
+                </button>
+              )}
+            </div>
             <p className="da-order-note">
-              Os quatro estados operacionais permanecem separados de pagamento, entrega e fiscal.
+              Versão {selected.version}. Os quatro estados operacionais permanecem separados de
+              pagamento, entrega e fiscal; falha fiscal não bloqueia o estado Pronto.
             </p>
           </article>
         ) : (

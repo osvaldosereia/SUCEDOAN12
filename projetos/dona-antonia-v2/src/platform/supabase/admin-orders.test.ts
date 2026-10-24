@@ -14,6 +14,7 @@ const summary = {
   delivery_status: 'AGUARDANDO',
   fiscal_status: 'PENDENTE',
   status: 'NOVO',
+  version: 1,
   item_count: 3,
 };
 
@@ -65,5 +66,29 @@ describe('adapter Supabase de pedidos', () => {
     await expect(repo.list({ status: 'NOVO', search: '', page: 1, pageSize: 20 })).rejects.toThrow(
       /permissão/i,
     );
+  });
+
+  it('aplica comando com versão esperada e mapeia o pedido atualizado', async () => {
+    const { rpc, repo } = repository({
+      ...summary,
+      status: 'EM_SEPARACAO',
+      version: 2,
+      address: { city: 'Cuiabá', stateCode: 'MT' },
+      assigned_to: 'operator-1',
+      items: [],
+    });
+    const result = await repo.applyCommand({
+      orderId: summary.id,
+      commandId: 'command-1',
+      expectedVersion: 1,
+      command: { type: 'START' },
+    });
+    expect(rpc).toHaveBeenCalledWith('admin_apply_order_command', {
+      p_order_id: summary.id,
+      p_command_id: 'command-1',
+      p_expected_version: 1,
+      p_command: { type: 'START' },
+    });
+    expect(result).toMatchObject({ state: 'EM_SEPARACAO', version: 2 });
   });
 });
