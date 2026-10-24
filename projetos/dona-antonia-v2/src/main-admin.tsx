@@ -12,7 +12,7 @@ const ProductsPanel=React.lazy(()=>import('./admin/features/products/ProductsPan
 const ProductTypesPanel=React.lazy(()=>import('./admin/features/product-types/ProductTypesPanel').then(m=>({default:m.ProductTypesPanel})));
 const BasketCompositionPanel=React.lazy(()=>import('./admin/features/baskets/BasketCompositionPanel').then(m=>({default:m.BasketCompositionPanel})));
 const ExtraAdmin=React.lazy(()=>import('./admin/features/extras/ExtraAdmin').then(m=>({default:m.ExtraAdmin})));
-import './styles.css';
+import './admin.css';
 
 function Admin() {
   const [tab,setTab] = useState<AvailableAdminSection>('inicio');
