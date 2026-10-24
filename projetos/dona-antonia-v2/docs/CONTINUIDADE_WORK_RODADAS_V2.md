@@ -175,7 +175,8 @@ Confirmado por leitura da branch:
 - Validar migrações numa base DESCARTÁVEL isolada / CI local, jamais nos dois Supabases legados.
 - Entregar diagrama de entidades, contratos TS e testes de migração/constraints.
 - Resultado R02 (24/10/2026): quatro migrações, 21 tabelas, ERD, contratos TS e teste de constraints/idempotência/rollback concluídos; detalhe em `docs/STATUS_RODADAS_V2.md`. PGlite não é Supabase e nada remoto foi aplicado.
-- R03: RBAC/RLS, Auth client, tela de login e filtro de áreas por papel implementados; migrações aplicadas no projeto V2; falta atribuir o primeiro ADMIN e testar login real.
+- R03: RBAC/RLS, Auth client, tela de login e filtro de áreas por papel implementados; migrações aplicadas no projeto V2; falta atribuir o primeiro ADMIN e testar login real. Playwright não iniciou por ausência de Chromium; instalação local recebeu ZIP inválido/zero bytes; sem CI para o head mais recente.
+- Supabase Advisors (24/10/2026): WARN intencional para RPC SECURITY DEFINER `public.get_my_staff_role()` (retorna somente papel do chamador autenticado); 4 policies com chamada `auth.*` sem initplan, 11 FKs sem índice de cobertura e 38 sobreposições permissivas entre `admin_all` e policies de função devem ser revisadas antes de popular dados. 27 índices não usados são esperados no banco vazio; não remover sem métricas representativas. INFO de Auth com limite de 10 conexões.
 
 ### R03 — Autenticação admin e permissões
 - Backend V2 isolado com autenticação, contas de teste, RBAC por função (admin/produtos/separação/atendimento) e trilha de auditoria; RLS como proteção adicional.
@@ -183,6 +184,7 @@ Confirmado por leitura da branch:
 - Aceite: anônimo não lê custo/valor interno/nem grava; operador sem permissão não edita cadastro ou fiscal; testes negativos comprovam.
 
 ### R04 — Importação controlada e reconciliação do catálogo Bling
+- Iniciar após bootstrap ADMIN/login real, E2E executável e revisão dos achados de Advisor registrados neste dossiê.
 - Recuperar CSV oficial e validar colunas, 802 SKUs, EAN, NCM, CEST, unidade UN, fornecedor, custo/markup e IDs. Nunca presumir que CSV é saldo físico atual.
 - Criar importação idempotente com simulação/dry-run, relatório de conflitos, deduplicação SKU/EAN e revisão humana de dados fiscais anômalos.
 - Popular SOMENTE staging V2. Não ativar produtos sem regra de estoque confiável.
