@@ -163,3 +163,8 @@ shared/ui                 -> design system com tokens sem regras de negócio
 - Fotos quadradas do catálogo e de cestas seguem 1:1; valor interno da cesta é privado e integrado no backend futuro, não como item separado ao cliente.
 - 40% sobre custo na importação inicial de produtos é *markup* de preço, não margem bruta de 40%; custos nunca aparecem no site.
 - A homologação de emissão fiscal depende de tributação correta e credenciamento/certificado no Bling.
+
+
+## Baseline executada — R00 (23/10/2026)
+A auditoria integral da pasta V2 foi concluída no baseline da SHA 1a846beba768192c366937c1462bcfd6baeccee9. A documentação de acompanhamento está em docs/AUDITORIA_COMPLETA_V2.md e docs/STATUS_RODADAS_V2.md. TypeScript, arquitetura, 35 testes unitários e build passaram; Playwright de 9 casos passou no CI da mesma SHA. A análise de dependências encontrou quatro vulnerabilidades na árvore dev/importação (duas críticas e duas moderadas), sem alertas nas dependências runtime. As migrações seguem não testadas em PostgreSQL e não foram aplicadas. Não há backend/auth/checkout persistente.
+**Sequência mantida:** R01 corrige dependências, lockfile, lint/format e consistência visual; R02 reconcilia e testa o schema exclusivamente numa base descartável antes de qualquer homologação remota. Nenhum banco ou serviço de produção foi acessado. A auditoria não autoriza publicação; o workflow em main publica automaticamente apenas /site1 e /admin1 e deverá estar sujeito ao gate específico antes de qualquer merge.
