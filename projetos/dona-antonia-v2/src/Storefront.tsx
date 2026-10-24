@@ -1,9 +1,12 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { initialSelections, setSelectionProduct, setSelectionQuantity, summarizeBasket } from './core/basket';
 import { initialExtraSelections, selectExtraProduct, summarizeExtras, summarizeOrder } from './core/extras';
 import { formatBRL } from './core/money';
-import type { BasketId, BasketLineSummary, BasketSelection, Product } from './core/model';
+import { ProductTypeRow } from './features/storefront/components/ProductTypeRow';
+import { BasketSizePicker } from './features/baskets/components/BasketSizePicker';
+import { CheckoutStep } from './features/checkout/components/CheckoutStep';
+import type { BasketId, BasketSelection, Product } from './core/model';
 import { DEMO_PRODUCTS, DEMO_TEMPLATES, DEMO_TYPES } from './data/demo';
 import { DEMO_EXTRA_GROUPS, DEMO_EXTRA_PRODUCTS, DEMO_EXTRA_TYPES } from './data/demo-extra';
 import { loadPublicCatalog } from './data/catalog';
@@ -11,57 +14,6 @@ import './styles.css';
 
 type Stage = 'basket' | 'extras' | 'checkout';
 const types = [...DEMO_TYPES, ...DEMO_EXTRA_TYPES];
-
-function Row({
-  line, mode, onProduct, onQuantity
-}: {
-  line: BasketLineSummary;
-  mode: 'basket'|'extras';
-  onProduct: (typeId: string, sku: string) => void;
-  onQuantity: (typeId: string, quantity: number) => void;
-}) {
-  const scroll = useRef<HTMLDivElement>(null);
-  const chosen = line.quantity > 0 ? line.selected?.sku : undefined;
-  const quantity = line.quantity;
-  return <section className="basket-group choice-group" aria-label={'Escolher '+line.typeName}>
-    <div className="group-head">
-      <div><h3>{line.typeName}</h3><small>{line.options.length} opções · Arraste para ver outras marcas</small></div>
-      <strong>{formatBRL(line.totalCents)}</strong>
-    </div>
-    <div className="carousel-shell">
-      <div className="carousel-arrows">
-        <button type="button" aria-label={'Ver produtos anteriores de '+line.typeName}
-          onClick={()=>scroll.current?.scrollBy({left:-240,behavior:'smooth'})}>‹</button>
-        <button type="button" aria-label={'Ver próximos produtos de '+line.typeName}
-          onClick={()=>scroll.current?.scrollBy({left:240,behavior:'smooth'})}>›</button>
-      </div>
-      <div ref={scroll} className="options-scroller compact-carousel" role="group" aria-label={'Variações de '+line.typeName}>
-        {line.options.map((product) => <button key={product.sku} type="button"
-          className={'product-choice compact-choice '+(chosen===product.sku?'chosen':'')}
-          aria-pressed={chosen===product.sku} onClick={()=>onProduct(line.typeId,product.sku)}>
-          <span className="photo-placeholder" aria-hidden="true">▦</span>
-          <span className="choice-name">{product.name}</span>
-          <span className="choice-price">{formatBRL(product.priceCents)}</span>
-          <span className="choice-tag">{chosen===product.sku?'✓ Escolhido':'Escolher'}</span>
-        </button>)}
-        {line.options.length===0 && <div className="empty-options" role="status">Nenhuma opção disponível para esta quantidade. Escolha outra quantidade ou consulte o atendimento.</div>}
-      </div>
-    </div>
-    <div className="group-controls product-quantity-row">
-      <div className="quantity-info"><b>{mode==='extras'?'Adicionar ao pedido':'Quantidade na cesta'}</b>
-        <small>{line.selected && quantity>0?line.selected.name:quantity===0?'Não incluído':'Escolha uma marca'}</small>
-      </div>
-      <div className="stepper" role="group" aria-label={'Quantidade de '+line.typeName}>
-        <button type="button" aria-label={'Diminuir '+line.typeName} disabled={quantity===0}
-          onClick={()=>onQuantity(line.typeId,Math.max(0,quantity-1))}>−</button>
-        <output aria-live="polite">{quantity}</output>
-        <button type="button" aria-label={'Aumentar '+line.typeName}
-          disabled={!line.options.length || quantity>=999} onClick={()=>onQuantity(line.typeId,quantity+1)}>+</button>
-      </div>
-      {quantity>0 && <button type="button" className="text-button" onClick={()=>onQuantity(line.typeId,0)}>Remover</button>}
-    </div>
-  </section>;
-}
 
 const titles: Record<Stage,string> = {
   basket:'Monte sua cesta',
@@ -193,57 +145,22 @@ function Storefront() {
       {message||computed.error?<div role="alert" className="error">{message||computed.error}</div>:null}
 
       {stage==='basket'&&<>
-        <section aria-label="Selecione o tamanho da cesta" className="size-picker">
-          {DEMO_TEMPLATES.map((item)=>{
-            const price=baseTotal(item.id);
-            return <button key={item.id} type="button" className={'size-card '+(basketId===item.id?'selected':'')}
-              aria-pressed={basketId===item.id} onClick={()=>changeSize(item.id)}>
-              <span className="size-icon" aria-hidden="true">▣</span><strong>{item.name}</strong>
-              <small>A partir de</small><b>{price===null?'Indisponível':formatBRL(price)}</b>
-            </button>;
-          })}
-        </section>
+        <BasketSizePicker selectedId={basketId} baseTotal={baseTotal} onChange={changeSize}/>
         <div className="section-title"><div><p className="eyebrow">PERSONALIZAÇÃO</p><h2>Cesta {template.name}</h2></div>
           <p>{computed.basket?.itemCount??0} un.</p></div>
         <div className="basket-lines">{computed.basket?.lines.map((line)=>
-          <Row key={line.typeId} mode="basket" line={line} onProduct={(id,sku)=>choose('basket',id,sku)}
+          <ProductTypeRow key={line.typeId} mode="basket" line={line} onProduct={(id,sku)=>choose('basket',id,sku)}
             onQuantity={(id,qty)=>setQuantity('basket',id,qty)}/>)}</div>
       </>}
       {stage==='extras'&&<>
         <div className="extras-intro"><div><strong>Deixe sua cesta ainda mais completa</strong><p>Escolha o que quiser. Se não precisar de extras, avance direto para o checkout.</p></div>
           <span>Opcionais</span></div>
         <div className="basket-lines">{computed.extras?.lines.map((line)=>
-          <Row key={line.typeId} mode="extras" line={line} onProduct={(id,sku)=>choose('extras',id,sku)}
+          <ProductTypeRow key={line.typeId} mode="extras" line={line} onProduct={(id,sku)=>choose('extras',id,sku)}
             onQuantity={(id,qty)=>setQuantity('extras',id,qty)}/>)}</div>
         {!computed.extras?.lines.length&&<div className="notice muted">Nenhum tipo extra foi configurado nesta prévia.</div>}
       </>}
-      {stage==='checkout'&&<div className="checkout-layout">
-        <section className="panel checkout-panel">
-          <h2>Seus produtos</h2><p>Confira os itens e retorne à etapa anterior se desejar mudar marca ou quantidade.</p>
-          {(computed.order?.lines??[]).map((line)=><div className="checkout-line" key={line.sku}>
-            <div><b>{line.name}</b><small>{line.quantity} un. × {formatBRL(line.priceCents)}</small></div>
-            <strong>{formatBRL(line.totalCents)}</strong></div>)}
-          <div className="order-total"><strong>Total dos produtos</strong><strong>{formatBRL(total)}</strong></div>
-          <div className="checkout-edit-actions">
-            <button type="button" className="back-link" onClick={()=>jump('basket')}>Editar cesta</button>
-            <button type="button" className="back-link" onClick={()=>jump('extras')}>Editar extras</button>
-          </div>
-        </section>
-        <section className="panel checkout-panel">
-          <h2>Dados para entrega</h2>
-          <p>Esta é somente uma demonstração visual. Os dados não são enviados nem armazenados.</p>
-          <form className="checkout-form" onSubmit={(event)=>event.preventDefault()}>
-            <label>Nome completo<input type="text" autoComplete="name" placeholder="Seu nome" /></label>
-            <label>WhatsApp<input type="tel" autoComplete="tel" inputMode="tel" placeholder="(65) 99999-9999" /></label>
-            <label>Endereço de entrega<input type="text" autoComplete="street-address" placeholder="Rua, número e bairro" /></label>
-            <label>Forma de pagamento<select defaultValue=""><option value="" disabled>Selecione na entrega</option>
-              <option>PIX na entrega</option><option>Dinheiro</option><option>Cartão de crédito</option>
-              <option>Vale-alimentação/refeição</option></select></label>
-            <div className="notice muted">A confirmação do pedido será habilitada somente após autenticação do admin, banco seguro e integração de pedidos.</div>
-            <button type="button" className="primary-button" disabled>Confirmação indisponível nesta prévia</button>
-          </form>
-        </section>
-      </div>}
+      {stage==='checkout'&&<CheckoutStep order={computed.order} totalCents={total} goTo={jump}/>}
       {stage!=='checkout'&&<p className="below-note">Valores ilustrativos. No sistema final, preços e estoque serão revalidados antes da confirmação.</p>}
     </main>
     {stage!=='checkout'&&<footer className="sticky-summary" aria-label="Resumo fixo do pedido">
