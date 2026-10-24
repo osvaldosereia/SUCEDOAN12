@@ -23,6 +23,8 @@ const expectedTables = [
   'customer_addresses',
   'customers',
   'fiscal_documents',
+  'fiscal_document_events',
+  'fiscal_document_items',
   'integration_outbox',
   'inventory_reservations',
   'order_basket_snapshots',
@@ -40,7 +42,7 @@ const expectedTables = [
   'orders',
 ].sort();
 
-assert.equal(migrations.length, 18, 'the schema must be a complete, ordered migration chain');
+assert.equal(migrations.length, 19, 'the schema must be a complete, ordered migration chain');
 assert.ok(migrations.every((file) => /^\d{14}_[a-z0-9_]+\.sql$/.test(file)));
 
 const db = new PGlite();
@@ -102,6 +104,9 @@ try {
       ,has_function_privilege('anon', 'public.admin_list_whatsapp_utility_messages(text,text,text,integer,integer)', 'EXECUTE') as anon_utility_list
       ,has_function_privilege('authenticated', 'public.admin_list_whatsapp_utility_messages(text,text,text,integer,integer)', 'EXECUTE') as staff_utility_list
       ,has_function_privilege('authenticated', 'public.admin_record_whatsapp_utility_result(uuid,text,text,text)', 'EXECUTE') as staff_utility_result
+      ,has_function_privilege('anon', 'public.admin_request_fiscal_document(uuid,uuid,jsonb)', 'EXECUTE') as anon_fiscal_request
+      ,has_function_privilege('authenticated', 'public.admin_request_fiscal_document(uuid,uuid,jsonb)', 'EXECUTE') as staff_fiscal_request
+      ,has_function_privilege('authenticated', 'public.admin_record_fiscal_result(uuid,text,text,text,text,text,text,text,jsonb)', 'EXECUTE') as staff_fiscal_result
       ,has_function_privilege('anon', 'public.admin_get_basket_configuration()', 'EXECUTE') as anon_basket_read
       ,has_function_privilege('authenticated', 'public.admin_get_basket_configuration()', 'EXECUTE') as staff_basket_read
       ,has_function_privilege('anon', 'public.get_storefront_catalog()', 'EXECUTE') as anon_public_catalog
@@ -151,6 +156,9 @@ try {
   assert.equal(access.rows[0].anon_utility_list, false);
   assert.equal(access.rows[0].staff_utility_list, true);
   assert.equal(access.rows[0].staff_utility_result, true);
+  assert.equal(access.rows[0].anon_fiscal_request, false);
+  assert.equal(access.rows[0].staff_fiscal_request, true);
+  assert.equal(access.rows[0].staff_fiscal_result, true);
   assert.equal(access.rows[0].anon_basket_read, false);
   assert.equal(access.rows[0].staff_basket_read, true);
   assert.equal(access.rows[0].anon_public_catalog, true);
@@ -639,6 +647,11 @@ try {
     ),
   );
   assert.equal(delivered.rows[0].result.status, 'ENTREGUE');
+  await db.query(
+    `update da_next.bling_product_profiles
+     set ncm = '10063021', cest = null, origin_code = '0'
+     where sku = 'ARROZ-5KG'`,
+  );
   const commandAudit = await db.query(
     `select
        (select count(*)::int from da_next.order_events where order_id = $1) as events,
@@ -656,6 +669,106 @@ try {
     db.query('select public.get_my_staff_role() as role'),
   );
   assert.equal(missingRoleLookup.rows[0].role, null);
+
+  await db.query(
+    `delete from da_next.fiscal_documents where order_id = $1 and idempotency_key = 'invoice-order-1'`,
+    [orderId],
+  );
+  const fiscalContext = {
+    destination_uf: 'MT',
+    cfop: '5102',
+    tax_situation_code: '102',
+    tax_regime: 'SIMPLES_NACIONAL',
+  };
+  const fiscalRequest = await asAuthenticated(actorIds.admin, () =>
+    db.query(`select public.admin_request_fiscal_document($1, $2, $3::jsonb) as result`, [
+      orderId,
+      '00000000-0000-4000-8000-000000000201',
+      JSON.stringify(fiscalContext),
+    ]),
+  );
+  assert.equal(fiscalRequest.rows[0].result.status, 'PENDENTE');
+  assert.equal(fiscalRequest.rows[0].result.item_count, 2);
+  assert.equal(fiscalRequest.rows[0].result.replayed, false);
+  const fiscalDocumentId = fiscalRequest.rows[0].result.id;
+  const fiscalReplay = await asAuthenticated(actorIds.admin, () =>
+    db.query(`select public.admin_request_fiscal_document($1, $2, $3::jsonb) as result`, [
+      orderId,
+      '00000000-0000-4000-8000-000000000201',
+      JSON.stringify(fiscalContext),
+    ]),
+  );
+  assert.equal(fiscalReplay.rows[0].result.id, fiscalDocumentId);
+  assert.equal(fiscalReplay.rows[0].result.replayed, true);
+  const fiscalOutbox = await asAuthenticated(actorIds.admin, () =>
+    db.query(
+      `select count(*)::int as count
+       from da_next.integration_outbox
+       where aggregate_type = 'FISCAL_DOCUMENT' and aggregate_id = $1`,
+      [fiscalDocumentId],
+    ),
+  );
+  assert.equal(fiscalOutbox.rows[0].count, 1);
+  const fiscalError = await asAuthenticated(actorIds.admin, () =>
+    db.query(
+      `select public.admin_record_fiscal_result(
+        $1, 'ERRO', null, null, null, null, 'HTTP_429', 'Limite simulado', '{"httpStatus":429}'::jsonb
+      ) as result`,
+      [fiscalDocumentId],
+    ),
+  );
+  assert.equal(fiscalError.rows[0].result.status, 'ERRO');
+  assert.equal(fiscalError.rows[0].result.attempts, 1);
+  const fiscalOrderState = await db.query(
+    `select status, fiscal_status from da_next.orders where id = $1`,
+    [orderId],
+  );
+  assert.equal(fiscalOrderState.rows[0].status, 'ENTREGUE');
+  assert.equal(fiscalOrderState.rows[0].fiscal_status, 'ERRO');
+  const fiscalRetry = await asAuthenticated(actorIds.admin, () =>
+    db.query(`select public.admin_request_fiscal_document($1, $2, $3::jsonb) as result`, [
+      orderId,
+      '00000000-0000-4000-8000-000000000202',
+      JSON.stringify(fiscalContext),
+    ]),
+  );
+  assert.equal(fiscalRetry.rows[0].result.id, fiscalDocumentId);
+  assert.equal(fiscalRetry.rows[0].result.status, 'PENDENTE');
+  const fiscalIssued = await asAuthenticated(actorIds.admin, () =>
+    db.query(
+      `select public.admin_record_fiscal_result(
+        $1, 'EMITIDA', 'BLING-NFE-1', '123', '1',
+        '35261012345678000199550010000001231234567890', null, null, '{"status":"autorizada"}'::jsonb
+      ) as result`,
+      [fiscalDocumentId],
+    ),
+  );
+  assert.equal(fiscalIssued.rows[0].result.status, 'EMITIDA');
+  assert.equal(fiscalIssued.rows[0].result.replayed, false);
+  const fiscalIssuedReplay = await asAuthenticated(actorIds.admin, () =>
+    db.query(
+      `select public.admin_record_fiscal_result(
+        $1, 'EMITIDA', 'BLING-NFE-1', '123', '1',
+        '35261012345678000199550010000001231234567890', null, null, '{}'::jsonb
+      ) as result`,
+      [fiscalDocumentId],
+    ),
+  );
+  assert.equal(fiscalIssuedReplay.rows[0].result.replayed, true);
+  const fiscalCounts = await db.query(
+    `select
+       (select count(*)::int from da_next.fiscal_documents where order_id = $1) as documents,
+       (select count(*)::int from da_next.integration_outbox where aggregate_type = 'FISCAL_DOCUMENT' and aggregate_id = $2) as outbox,
+       (select count(*)::int from da_next.fiscal_document_events where fiscal_document_id = $2) as events`,
+    [orderId, fiscalDocumentId],
+  );
+  assert.equal(
+    fiscalCounts.rows[0].documents,
+    1,
+    'retries must not create duplicate fiscal documents',
+  );
+  assert.equal(fiscalCounts.rows[0].outbox, 2, 'retry must create only one new outbox attempt');
+  assert.equal(fiscalCounts.rows[0].events, 3);
 
   const catalogAccess = await asAuthenticated(actorIds.products, async () => {
     await db.query(
