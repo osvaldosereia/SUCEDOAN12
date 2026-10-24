@@ -5,7 +5,7 @@ Total output lines: 325
 
 **Versão do dossiê:** 2026-10-23  
 **Finalidade:** transferir todas as decisões operacionais, regras de UX, estado da engenharia, riscos, pendências e plano de entrega para um novo Projeto/conversa do ChatGPT em modo Work.  
-**Status atualizado (24/10/2026): R00–R12 concluídas em staging isolado.** PRs da V2 permanecem draft e sem merge/publicação. Projeto Supabase V2 isolado `hjudhofluihkxykwekir`, 18 migrations aplicadas, 802 produtos, 802 perfis privados, 0 pedidos, 0 mensagens utilitárias e 0 itens de outbox Utility; todos os produtos/perfis seguem inativos/estoque zero e as duas contas Utility permanecem desabilitadas. R12 está na branch `agent/dona-antonia-r12-meta-utility`, PR #1381 draft, head de implementação `e55582f531c57169a2e708a668fe09d5a5c0e869` e checkpoint documental final `5889395ff91fe26ffe0fd28101a0335f378c4a39`, derivada do head R11 `6f2e00826b1b31ba12d34f65edbd53d93ba8148c`; as migrations R12 foram aplicadas somente no V2 isolado. Testes locais da R12: 111/111 unitários, 18 migrations/30 tabelas no PostgreSQL isolado, arquitetura (122 arquivos), lint, formato, TypeScript, build e diff aprovados; CI #40101770367 passou todos os gates e confirmou o smoke browser no ambiente CI; checkpoint documental passou no CI #40101920895. Custo estimado aprovado: US$ 10/mês no compute padrão.
+**Status atualizado (24/10/2026): R00–R13 concluídas em staging isolado.** PRs da V2 permanecem draft e sem merge/publicação. Projeto Supabase V2 isolado `hjudhofluihkxykwekir`, 19 migrations aplicadas, 802 produtos, 802 perfis privados, 0 pedidos, 0 documentos fiscais, 0 mensagens utilitárias e 0 itens de outbox Utility; todos os produtos/perfis seguem inativos/estoque zero e as duas contas Utility permanecem desabilitadas. R13 está na branch `agent/dona-antonia-r13-bling-fiscal`, PR #1382 draft, head de implementação `f1af5906a91c1107216f250c3b3ca7c2925ade8c`, derivada do head R12 `5b41a0793f23296e533e0812c6df1789f2fc821a`; migration fiscal aplicada somente no V2 isolado. CI #40102849252 passou todos os gates e confirmou os 17 testes browser; checkpoint documental será validado no CI desta atualização.
 **R10 encerramento técnico:** lock/claim por operador, versão, retry idempotente, conferência de faltas, ajuste de total, outbox/eventos/auditoria e transições PRONTO/ENTREGUE estão implementados. O aceite visual de pedido real segue reservado à homologação com seed vendável, pois o staging continua com 0 pedidos.
 
 **Repositório:** https://github.com/osvaldosereia/SUCEDOAN12  
@@ -313,12 +313,19 @@ Confirmado por leitura da branch:
 
 **Limites:** não há worker, credencial Meta, chamada HTTP, callback externo ou envio real; nenhuma conta foi habilitada e nenhum número de teste foi acionado. Templates oficiais e políticas Meta só poderão ser validados numa etapa autorizada com número de teste, sem alterar o atendimento legado. Não houve custo novo, merge, deploy ou publicação.
 
-**Próxima:** R13 — emissão fiscal via Bling pós-separação, ainda somente na V2 isolada e sem conexão operacional.
+**Execução concluída nesta rodada:** R13 — emissão fiscal via Bling pós-separação, somente na V2 isolada e sem conexão operacional.
 
-### R13 — Emissão fiscal via Bling
+### R13 — Emissão fiscal via Bling (orquestração isolada)
 
-- OAuth renovável, dados tributários validados pelo contador, vinculação SKU/ID e criação NF-e após separação; reconciliar resultados e erros.
-- Aceite: erro fiscal visível sem travar separação, retries sem documento duplicado, NCM/CFOP/CST testados em ambiente seguro.
+**Execução concluída (24/10/2026):** a branch `agent/dona-antonia-r13-bling-fiscal` e o PR draft #1382 adicionam o núcleo fiscal privado da V2, sem habilitar OAuth, tokens, HTTP, worker ou integração Bling real. A solicitação autenticada só aceita pedidos PRONTO/ENTREGUE; valida UF destino, CFOP, CST/CSOSN e regime; captura NCM/CEST/origem e itens em snapshot privado; cria outbox idempotente por tentativa; e reconcilia EMITIDA/ERRO com chave de acesso validada e retry limitado a três tentativas. Erros fiscais ficam visíveis e não mudam o status operacional do pedido.
+
+**Banco isolado:** `20261024160000_r13_bling_fiscal.sql` aplicada exclusivamente em `hjudhofluihkxykwekir`. O remoto confirmou 19 migrations, 32 tabelas, 802 produtos, 802 perfis privados, 0 pedidos, 0 documentos fiscais e 0 itens/eventos fiscais. Os RPCs novos têm `anon=false`, `authenticated=true`, guardas `admin.all`, `search_path=pg_catalog`; as tabelas novas têm RLS e policy única de administração.
+
+**Verificações:** `npm test` (115/115), `npm run test:db` (19 migrations/32 tabelas), `npm run check`, lint, `format:check`, arquitetura (126 arquivos), build e diff passaram. Playwright local continua sem Chromium; CI #40102849252 instalou Chromium e passou os 17 testes browser. Advisors mantêm alertas históricos já documentados e os avisos esperados das duas funções SECURITY DEFINER autenticadas novas.
+
+**Limites:** não houve credencial, transporte externo, número fiscal real, custo novo, merge, deploy ou publicação; produção legada, atendimento, Meta/Bling operacionais, DNS e workflows de produção permaneceram intocados.
+
+**Próxima:** R14 — clientes, conferência de entrega e relatórios essenciais.
 
 ### R14 — Clientes, conferência de entrega e gestão necessária
 
