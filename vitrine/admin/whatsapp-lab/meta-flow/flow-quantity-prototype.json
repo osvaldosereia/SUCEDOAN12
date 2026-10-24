@@ -1,0 +1,639 @@
+{
+  "version": "7.3",
+  "routing_model": {
+    "TAMANHO": [
+      "COMBINACAO"
+    ],
+    "COMBINACAO": [
+      "PRODUTOS"
+    ],
+    "PRODUTOS": []
+  },
+  "screens": [
+    {
+      "id": "TAMANHO",
+      "title": "Escolha a cesta",
+      "data": {},
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Qual tamanho de cesta?"
+          },
+          {
+            "type": "TextBody",
+            "text": "Escolha um tamanho. Na etapa seguinte, você poderá escolher uma combinação de marcas."
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "name": "tamanho",
+            "label": "Tamanho da cesta",
+            "required": true,
+            "data-source": [
+              {
+                "id": "mini",
+                "title": "Mini"
+              },
+              {
+                "id": "economica",
+                "title": "Econômica"
+              },
+              {
+                "id": "pequena",
+                "title": "Pequena"
+              },
+              {
+                "id": "media",
+                "title": "Média"
+              },
+              {
+                "id": "grande",
+                "title": "Grande"
+              }
+            ]
+          },
+          {
+            "type": "Footer",
+            "label": "Continuar",
+            "on-click-action": {
+              "name": "navigate",
+              "next": {
+                "type": "screen",
+                "name": "COMBINACAO"
+              },
+              "payload": {
+                "tamanho": "${form.tamanho}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "COMBINACAO",
+      "title": "Escolha a combinação",
+      "data": {
+        "tamanho": {
+          "type": "string",
+          "__example__": "mini"
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Escolha uma combinação"
+          },
+          {
+            "type": "TextBody",
+            "text": "Temos três opções de marcas. O preço será confirmado com o estoque atual."
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "name": "combinacao",
+            "label": "Combinação de marcas",
+            "required": true,
+            "data-source": [
+              {
+                "id": "1",
+                "title": "Combinação 1"
+              },
+              {
+                "id": "2",
+                "title": "Combinação 2"
+              },
+              {
+                "id": "3",
+                "title": "Combinação 3"
+              }
+            ]
+          },
+          {
+            "type": "Footer",
+            "label": "Ver produtos",
+            "on-click-action": {
+              "name": "navigate",
+              "next": {
+                "type": "screen",
+                "name": "PRODUTOS"
+              },
+              "payload": {
+                "tamanho": "${data.tamanho}",
+                "combinacao": "${form.combinacao}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "PRODUTOS",
+      "title": "Ajustar quantidades",
+      "terminal": true,
+      "data": {
+        "tamanho": {
+          "type": "string",
+          "__example__": "mini"
+        },
+        "combinacao": {
+          "type": "string",
+          "__example__": "1"
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Confira e ajuste as quantidades"
+          },
+          {
+            "type": "TextBody",
+            "text": "Use 0 para retirar o item. Confira as marcas e o valor final com o atendimento."
+          },
+          {
+            "type": "TextCaption",
+            "text": "Protótipo: produtos ilustrativos. Na versão dinâmica, cada item e preço virá do Supabase."
+          },
+          {
+            "type": "TextSubheading",
+            "text": "Arroz 5 kg"
+          },
+          {
+            "type": "Dropdown",
+            "name": "q1",
+            "label": "Quantidade",
+            "required": true,
+            "init-value": "2",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ]
+          },
+          {
+            "type": "TextSubheading",
+            "text": "Feijão 1 kg"
+          },
+          {
+            "type": "Dropdown",
+            "name": "q2",
+            "label": "Quantidade",
+            "required": true,
+            "init-value": "1",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ]
+          },
+          {
+            "type": "TextSubheading",
+            "text": "Açúcar 2 kg"
+          },
+          {
+            "type": "Dropdown",
+            "name": "q3",
+            "label": "Quantidade",
+            "required": true,
+            "init-value": "1",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ]
+          },
+          {
+            "type": "TextSubheading",
+            "text": "Óleo 900 ml"
+          },
+          {
+            "type": "Dropdown",
+            "name": "q4",
+            "label": "Quantidade",
+            "required": true,
+            "init-value": "1",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ]
+          },
+          {
+            "type": "TextSubheading",
+            "text": "Macarrão 500 g"
+          },
+          {
+            "type": "Dropdown",
+            "name": "q5",
+            "label": "Quantidade",
+            "required": true,
+            "init-value": "1",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ]
+          },
+          {
+            "type": "TextSubheading",
+            "text": "Café 500 g"
+          },
+          {
+            "type": "Dropdown",
+            "name": "q6",
+            "label": "Quantidade",
+            "required": true,
+            "init-value": "1",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ]
+          },
+          {
+            "type": "TextSubheading",
+            "text": "Sal 1 kg"
+          },
+          {
+            "type": "Dropdown",
+            "name": "q7",
+            "label": "Quantidade",
+            "required": true,
+            "init-value": "1",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ]
+          },
+          {
+            "type": "TextSubheading",
+            "text": "Molho 300 g"
+          },
+          {
+            "type": "Dropdown",
+            "name": "q8",
+            "label": "Quantidade",
+            "required": true,
+            "init-value": "1",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ]
+          },
+          {
+            "type": "Footer",
+            "label": "Enviar escolhas",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {
+                "tamanho": "${data.tamanho}",
+                "combinacao": "${data.combinacao}",
+                "q1": "${form.q1}",
+                "q2": "${form.q2}",
+                "q3": "${form.q3}",
+                "q4": "${form.q4}",
+                "q5": "${form.q5}",
+                "q6": "${form.q6}",
+                "q7": "${form.q7}",
+                "q8": "${form.q8}"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
