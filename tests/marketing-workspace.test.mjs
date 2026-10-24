@@ -54,7 +54,7 @@ test('Marketing coordinator invalidates cached view code after navigation change
 });
 
 test('Marketing campaign-entry cache key is current in every secondary navigation module',()=>{
-  for(const source of [postSale,repurchase,strategy,polish])assert.match(source,/campaign-entry\.js\?v=marketing-campaign-entry-v8/);
+  for(const source of [postSale,repurchase,strategy])assert.match(source,/campaign-entry\.js\?v=marketing-campaign-entry-v8/);\n  assert.match(polish,/campaign-entry\.js\?v=whatsapp-flow-manager-20261024/);
   assert.doesNotMatch([postSale,repurchase,strategy,polish].join('\n'),/campaign-entry\.js\?v=marketing-campaign-entry-v4/);
 });
 
@@ -108,9 +108,9 @@ test('monthly replenishment uses cadence states, offers recalculation, and never
 
 test('Marketing refreshes the template view and all parent module cache keys',()=>{
   assert.match(basketLotImage,/template-center\.js\?v=marketing-template-center-v2/);
-  assert.match(basketLotImage,/campaign-entry\.js\?v=marketing-campaign-entry-v8/);
+  assert.match(basketLotImage,/campaign-entry\.js\?v=whatsapp-flow-manager-20261024/);
   assert.match(campaignEntry,/marketing-polish\.js\?v=marketing-polish-v6/);
-  assert.match(polish,/post-sale-center\.js\?v=marketing-post-sale-v3/);
+  assert.match(polish,/post-sale-center\.js\?v=whatsapp-flow-active-router-20261024/);
   assert.match(polish,/repurchase-center\.js\?v=marketing-repurchase-v3/);
   assert.match(adminIndex,/basket-lot-image\.js\?v=marketing-workspace-v5/);
 });
@@ -123,10 +123,10 @@ test('Marketing Strategy module parses as an ES module',()=>{
 
 test('Marketing Strategy syntax fix invalidates every cached module in its import chain',()=>{
   assert.match(adminIndex,/basket-lot-image\.js\?v=marketing-workspace-v5/);
-  assert.match(basketLotImage,/campaign-entry\.js\?v=marketing-campaign-entry-v8/);
+  assert.match(basketLotImage,/campaign-entry\.js\?v=whatsapp-flow-manager-20261024/);
   assert.match(campaignEntry,/marketing-polish\.js\?v=marketing-polish-v6/);
   assert.match(polish,/strategy-center\.js\?v=marketing-strategy-v3/);
-  assert.match(polish,/post-sale-center\.js\?v=marketing-post-sale-v3/);
+  assert.match(polish,/post-sale-center\.js\?v=whatsapp-flow-active-router-20261024/);
   assert.match(polish,/repurchase-center\.js\?v=marketing-repurchase-v3/);
   assert.match(postSale,/strategy-center\.js\?v=marketing-strategy-v3/);
   assert.match(repurchase,/strategy-center\.js\?v=marketing-strategy-v3/);
