@@ -39,7 +39,10 @@ test('admin: extras e produtos são editáveis somente no modo demonstrativo', a
   const fee = page.getByLabel('Valor interno da cesta (R$)');
   await fee.fill('7.5');
   await expect(fee).toHaveValue('7.5');
-  await page.getByRole('button', { name: 'Econômica' }).click();
+  await page
+    .locator('.type-list')
+    .getByRole('button', { name: /^Econômica/ })
+    .click();
   await expect(fee).toHaveValue('0');
   await page
     .locator('.type-list')
