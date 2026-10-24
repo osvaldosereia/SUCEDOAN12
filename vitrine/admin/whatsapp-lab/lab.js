@@ -11,7 +11,7 @@ const TEST_CONVERSATION_ID='ff5c1e73-f3ed-4b88-8eba-b6e3a9883941';
 const TEST_RECIPIENT='+5565998150975';
 const ORIGIN_CHANNEL='+5565984491018';
 const $=id=>document.getElementById(id);
-const state={account1018:null,models:[],variants:new Map(),loading:true,selection:null,items:[],officialPrice:null,quoteReady:false,quoteSequence:0,quoteTimer:null,alternatives:new Map(),openPosition:null,extras:new Map(),searchResults:[],searchTimer:null,busy:false,lastUpdate:null,metaSelectedSize:null,canary:null,canaryBusy:false};
+const state={account1018:null,models:[],variants:new Map(),loading:true,selection:null,items:[],officialPrice:null,quoteReady:false,quoteSequence:0,quoteTimer:null,alternatives:new Map(),openPosition:null,extras:new Map(),searchResults:[],searchTimer:null,busy:false,lastUpdate:null,metaSelectedSize:null,canary:null,canaryBusy:false,verifiedChoiceId:null,composeDirty:false};
 
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
 function money(cents){return Number.isFinite(Number(cents))?new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(cents)/100):'—';}
@@ -171,6 +171,11 @@ function refreshCanaryControls(){
   const ready=state.canary?.can_send===true&&snapshotForMeta().ready&&!state.canaryBusy&&!state.loading&&!used&&$('metaPayloadKind').value!=='products';
   $('canarySendBtn').disabled=!ready;
   $('canarySendBtn').textContent=state.canaryBusy?'Verificando envio…':kind==='combinations'?'Enviar 3 combinações ao 8360':'Enviar 5 tamanhos ao 8360';
+  const compositionUsed=(state.canary?.sent_today||[]).some(x=>x.kind==='composition');
+  const selectedSize=state.models.find(m=>m.id===state.selection?.modelId)?.size_key;
+  const match=state.selection&&selectedSize&&state.verifiedChoiceId==='da:whatsapp:basket:'+selectedSize+':'+state.selection.number;
+  $('sendCompositionBtn').disabled=state.canary?.can_send!==true||!match||!state.quoteReady||state.composeDirty||state.canaryBusy||state.loading||compositionUsed;
+  $('sendCompositionBtn').textContent=compositionUsed?'Composição já enviada hoje':'Enviar produtos da cesta ao 8360';
 }
 async function fetchCanary(){
   state.canary=null;
@@ -194,6 +199,7 @@ async function fetchCanary(){
 
 async function readCustomerReply(){
   const button=$('readReplyBtn');
+  state.verifiedChoiceId=null;refreshCanaryControls();
   button.disabled=true;$('replyStatus').classList.remove('invalid');
   $('replyStatus').textContent='Lendo as últimas escolhas recebidas pelo canal 1018…';
   try{
@@ -222,12 +228,36 @@ async function readCustomerReply(){
       const detail=state.variants.get(key);
       if(!validVariant(detail?.data))throw new Error('A combinação selecionada está indisponível no estoque atual.');
       choose(key);
+      state.verifiedChoiceId=reply.id;
+      refreshCanaryControls();
       $('replyStatus').textContent='Recebido: Cesta '+label+', combinação '+reply.number+'. A composição e os preços foram abertos para conferência e personalização. Nenhuma mensagem foi enviada automaticamente.';
     }
   }catch(error){
     $('replyStatus').classList.add('invalid');
     $('replyStatus').textContent='Falha ao ler escolha: '+String(error?.message||error);
-  }finally{button.disabled=false;}
+  }finally{button.disabled=false;refreshCanaryControls();}
+}
+
+
+async function sendBasketComposition(){
+  if(state.canaryBusy||state.canary?.can_send!==true||!state.selection||!state.verifiedChoiceId||state.composeDirty||!state.quoteReady)return;
+  const size=state.models.find(m=>m.id===state.selection.modelId)?.size_key;
+  const choice='da:whatsapp:basket:'+size+':'+state.selection.number;
+  if(!size||choice!==state.verifiedChoiceId)return;
+  if((state.canary.sent_today||[]).some(x=>x.kind==='composition'))return;
+  if(!confirm('Enviar a composição ORIGINAL da Cesta '+state.selection.label+', combinação '+state.selection.number+', somente do número 1018 ao 8360? O servidor calculará o preço e os produtos novamente.'))return;
+  state.canaryBusy=true;refreshCanaryControls();
+  sendStatus('Conferindo a escolha registrada e o preço atual antes de enviar os produtos ao 8360…');
+  try{
+    const response=await attendanceAuthorizedFetch(CANARY_URL,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({request_id:crypto.randomUUID(),kind:'composition',expected_choice_id:choice})
+    });
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok||data?.ok!==true)throw new Error(canaryError(data?.error||'canary_composition_unconfirmed'));
+    sendStatus('A Meta aceitou a mensagem com todos os produtos da cesta. Confira a entrega no WhatsApp final 8360.','success');
+  }catch(error){sendStatus('Envio não confirmado: '+String(error?.message||error)+'. Não haverá reenvio automático.','error');}
+  finally{state.canaryBusy=false;await fetchCanary();}
 }
 
 async function sendCanary(){
@@ -255,7 +285,7 @@ async function sendCanary(){
 function updateAll(){renderPrices();renderDetail();renderExtras();updatePreview();renderMeta();refreshCanaryControls();}
 async function load(){
   if(state.busy)return;
-  state.loading=true;state.variants.clear();state.selection=null;state.items=[];state.officialPrice=null;state.quoteReady=false;state.extras.clear();state.searchResults=[];
+  state.loading=true;state.variants.clear();state.selection=null;state.verifiedChoiceId=null;state.composeDirty=false;state.items=[];state.officialPrice=null;state.quoteReady=false;state.extras.clear();state.searchResults=[];
   $('refreshBtn').disabled=true;$('extraSearch').disabled=true;$('extraSearch').value='';sendStatus('');
   try{
     status('Validando sessão do Vitrine Admin…');
@@ -295,6 +325,7 @@ function choose(key){
   const model=state.models.find(m=>key.startsWith(m.id+'@'));if(!model)return;
   const number=Number(key.split('@')[1]);
   state.selection={key,modelId:model.id,label:SIZE_LABELS[model.size_key]||model.name,number};
+  state.verifiedChoiceId=null;state.composeDirty=false;
   state.items=variant.data.items.map(x=>({...x,quantity:Number(x.quantity||0)}));
   state.officialPrice=Number(variant.data.basket.display_price_cents);
   state.quoteReady=true;state.quoteSequence++;
@@ -319,7 +350,9 @@ function scheduleQuote(){
 }
 function adjustItem(index,increment){
   const item=state.items[index];if(!item)return;
-  item.quantity=Math.max(0,Math.min(1000,item.quantity+increment));
+  const next=Math.max(0,Math.min(1000,item.quantity+increment));
+  if(next===item.quantity)return;
+  item.quantity=next;state.composeDirty=true;
   scheduleQuote();
 }
 async function swapOptions(index){
@@ -337,6 +370,7 @@ function selectAlternative(positionId,productId){
   const row=state.items.find(i=>i.position_id===positionId),option=(state.alternatives.get(positionId)||[]).find(o=>o.product_id===productId);
   if(!row||!option)return;
   Object.assign(row,{product_id:option.product_id,name:option.name,image_url:option.image_url,stock_quantity:option.stock_quantity,price_cents:option.price_cents});
+  state.composeDirty=true;
   state.openPosition=null;scheduleQuote();
 }
 async function searchExtras(text){
@@ -356,7 +390,8 @@ function adjustExtra(id,delta){
   if(quantity<=0)state.extras.delete(id);
   else if(quantity<=Number(product.stock_quantity||0))state.extras.set(id,{product,quantity});
   else{sendStatus('Quantidade maior que o estoque disponível.','error');return;}
-  renderExtras();renderDetail();updatePreview();
+  state.composeDirty=true;
+  renderExtras();renderDetail();updatePreview();refreshCanaryControls();
 }
 async function copyMessage(){
   const text=currentMessage();if(!text)return;
@@ -417,4 +452,5 @@ $('extraSelected').addEventListener('click',event=>{const b=event.target.closest
 $('readReplyBtn').addEventListener('click',()=>void readCustomerReply());
 $('canaryRefreshBtn').addEventListener('click',()=>void fetchCanary());
 $('canarySendBtn').addEventListener('click',()=>void sendCanary());
+$('sendCompositionBtn').addEventListener('click',()=>void sendBasketComposition());
 void load().then(()=>fetchCanary());
