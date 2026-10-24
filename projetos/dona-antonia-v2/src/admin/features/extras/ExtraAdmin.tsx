@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import {formatBRL} from './core/money';
-import type {Product,ProductType} from './core/model';
-import type {ExtraGroup} from './core/extras';
+import {formatBRL} from '../../../core/money';
+import type {Product,ProductType} from '../../../core/model';
+import type {ExtraGroup} from '../../../core/extras';
 
 interface Props {
   products: readonly Product[];

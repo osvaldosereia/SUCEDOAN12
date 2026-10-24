@@ -9,9 +9,10 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "check": "tsc --noEmit",
-    "test": "vitest run src/core",
+    "test": "vitest run src/core src/server",
     "import:bling": "node scripts/import-bling.mjs",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "architecture:check": "node scripts/check-architecture.mjs"
   },
   "dependencies": {
     "react": "^19.0.0",

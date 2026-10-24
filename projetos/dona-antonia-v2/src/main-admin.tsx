@@ -1,13 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { formatBRL } from './core/money';
-import { validateBasketTemplate } from './core/basket';
-import { CATEGORIES } from './core/model';
 import type { BasketId, BasketTemplate, Product, ProductType } from './core/model';
 import { DEMO_PRODUCTS, DEMO_TEMPLATES, DEMO_TYPES } from './data/demo';
 import { DEMO_EXTRA_GROUPS, DEMO_EXTRA_PRODUCTS, DEMO_EXTRA_TYPES } from './data/demo-extra';
 import type { ExtraGroup } from './core/extras';
-import { ExtraAdmin } from './ExtraAdmin';
+import { ExtraAdmin } from './admin/features/extras/ExtraAdmin';
+import { ProductsPanel } from './admin/features/products/ProductsPanel';
+import { ProductTypesPanel } from './admin/features/product-types/ProductTypesPanel';
+import { BasketCompositionPanel } from './admin/features/baskets/BasketCompositionPanel';
 import './styles.css';
 
 type Tab = 'produtos' | 'tipos' | 'cestas' | 'extras';
@@ -17,6 +17,9 @@ function Admin() {
   const [types,setTypes] = useState<ProductType[]>([...DEMO_TYPES,...DEMO_EXTRA_TYPES].map((type)=>({...type, productSkus:[...type.productSkus]})));
   const [templates,setTemplates] = useState<BasketTemplate[]>(DEMO_TEMPLATES.map((basket)=>({...basket,lines:[...basket.lines]})));
   const [extraGroups,setExtraGroups] = useState<ExtraGroup[]>(DEMO_EXTRA_GROUPS.map((group)=>({...group})));
+  const [privateBasketAdjustments,setPrivateBasketAdjustments] = useState<Record<BasketId,number>>({
+    economica:0,mini:0,pequena:0,media:0,grande:0
+  });
   const [selectedTypeId,setSelectedTypeId] = useState('arroz');
   const [selectedBasketId,setSelectedBasketId] = useState<BasketId>('mini');
   const [newTypeName,setNewTypeName] = useState('');
@@ -77,53 +80,19 @@ function Admin() {
         <span className="pill">Não publicado</span>
       </header>
       <div className="notice muted" role="status">{notice}</div>
-      {tab==='produtos' && <section className="panel">
-        <div className="panel-heading"><div><h2>Produtos cadastrados</h2><p>Cada sabor e apresentação possui SKU próprio; filtro por nome, EAN ou código.</p></div>
-          <span className="pill">{products.length} itens de exemplo</span></div>
-        <input className="input" aria-label="Buscar produtos" value={filter} onChange={(e)=>setFilter(e.target.value)} placeholder="Buscar produto, código ou EAN..." />
-        <div className="scroll-table"><table><thead><tr><th>Produto</th><th>SKU / EAN</th><th>Categoria</th><th>Preço</th><th>Estoque simulado</th><th>Ativo no exemplo</th></tr></thead><tbody>
-          {filteredProducts.map((item)=><tr key={item.sku}>
-            <td><b>{item.name}</b><small>{item.brand}</small></td>
-            <td><code>{item.sku}</code><small>{item.gtin||'Sem GTIN'}</small></td>
-            <td>{item.category}</td><td>{formatBRL(item.priceCents)}</td>
-            <td><input className="small-input" type="number" min="0" aria-label={'Estoque '+item.name} value={item.stock} onChange={(e)=>changeProduct(item.sku,{stock:Math.max(0,Math.trunc(Number(e.target.value)||0))})}/></td>
-            <td><input type="checkbox" aria-label={'Ativar '+item.name} checked={item.active} onChange={(e)=>changeProduct(item.sku,{active:e.target.checked})}/></td>
-          </tr>)}
-        </tbody></table></div>
-        <p className="below-note">Categorias reconhecidas: {CATEGORIES.join(' · ')}</p>
-      </section>}
-      {tab==='tipos' && <div className="admin-grid">
-        <section className="panel"><h2>Tipos cadastrados</h2><p>Arroz, feijão e outros grupos de escolha para as cestas.</p>
-          <div className="type-list">{types.map((type)=><button key={type.id} className={'type-row '+(type.id===selectedTypeId?'active':'')}
-          onClick={()=>setSelectedTypeId(type.id)}><b>{type.name}</b><small>{type.productSkus.length} produtos</small></button>)}</div>
-          <div className="form-row"><input className="input" placeholder="Novo tipo, ex.: Farinha" aria-label="Nome do novo tipo" value={newTypeName}
-            onChange={(e)=>setNewTypeName(e.target.value)} onKeyDown={(e)=>{if(e.key==='Enter')addType();}}/>
-            <button className="secondary-button" onClick={addType}>Adicionar</button></div>
-        </section>
-        <section className="panel"><h2>Produtos permitidos: {selectedType?.name}</h2><p>Marque os SKUs reais que o cliente poderá escolher neste tipo. Produtos inativos não serão vendidos.</p>
-          <input className="input" placeholder="Filtrar por nome ou EAN" aria-label="Buscar produtos para o tipo" value={filter} onChange={(e)=>setFilter(e.target.value)}/>
-          <div className="option-checks">{filteredProducts.map((product)=><label className="check-row" key={product.sku}>
-            <input type="checkbox" checked={selectedType?.productSkus.includes(product.sku)??false} onChange={()=>toggleOption(product.sku)}/>
-            <span><b>{product.name}</b><small>{product.sku} · {formatBRL(product.priceCents)}</small></span>
-          </label>)}</div>
-        </section>
-      </div>}
-      {tab==='cestas' && <div className="admin-grid">
-        <section className="panel"><h2>Tamanhos de cesta</h2><p>Os cinco tamanhos existem separadamente. Cada um possui suas próprias quantidades por tipo.</p>
-          <div className="type-list">{templates.map((basket)=><button key={basket.id} className={'type-row '+(basket.id===selectedBasketId?'active':'')}
-            onClick={()=>setSelectedBasketId(basket.id)}><b>{basket.name}</b><small>{basket.lines.length} tipos incluídos</small></button>)}</div>
-        </section>
-        <section className="panel"><h2>Composição: {selectedBasket.name}</h2><p>Informe a quantidade inicial de cada tipo. Zero significa que o tipo não faz parte deste tamanho.</p>
-          {types.map((type)=>{
-            const value=selectedBasket.lines.find((line)=>line.typeId===type.id)?.defaultQuantity??0;
-            return <div className="quantity-row" key={type.id}><div><b>{type.name}</b><small>{type.productSkus.length} opções de marcas</small></div>
-              <input className="small-input" type="number" min="0" max="999" aria-label={'Quantidade de '+type.name}
-                value={value} onChange={(e)=>setQuantity(type.id,Number(e.target.value)||0)}/>
-            </div>;
-          })}
-          <div className="notice">{validateBasketTemplate(selectedBasket,types).length===0?'Estrutura válida para prévia.':'Revise a configuração: há tipos inválidos ou duplicados.'}</div>
-        </section>
-      </div>}
+      {tab==='produtos' && <ProductsPanel
+        products={products} filteredProducts={filteredProducts} filter={filter}
+        setFilter={setFilter} changeProduct={changeProduct}/>}
+      {tab==='tipos' && <ProductTypesPanel
+        types={types} selectedTypeId={selectedTypeId} setSelectedTypeId={setSelectedTypeId}
+        newTypeName={newTypeName} setNewTypeName={setNewTypeName} addType={addType}
+        selectedType={selectedType} filteredProducts={filteredProducts}
+        filter={filter} setFilter={setFilter} toggleOption={toggleOption}/>}
+      {tab==='cestas' && <BasketCompositionPanel
+        templates={templates} selectedBasketId={selectedBasketId} setSelectedBasketId={setSelectedBasketId}
+        selectedBasket={selectedBasket} types={types} setQuantity={setQuantity}
+        privateFeeCents={privateBasketAdjustments[selectedBasketId]}
+        onPrivateFeeChange={(feeCents)=>setPrivateBasketAdjustments(current=>({...current,[selectedBasketId]:feeCents}))}/>}
       {tab==='extras'&&<ExtraAdmin
         products={products} types={types} groups={extraGroups}
         onChangeGroups={setExtraGroups} onChangeTypes={setTypes}/>}

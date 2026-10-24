@@ -23,3 +23,10 @@
 .basket-square-placeholder{display:grid;place-items:center;width:min(82px,85%);aspect-ratio:1/1;background:#f5eced;color:#af7486;border-radius:12px;font-size:30px;margin-bottom:5px}
 .product-square-photo{width:100%;height:auto!important;aspect-ratio:1/1;object-fit:contain}
 .compact-choice .product-square-photo{height:auto;aspect-ratio:1/1}
+
+/* Valor de composição interno só no admin */
+.admin-private-fee{margin:15px 0;padding:14px;border:1px solid #e9d6d7;background:#fff7f8;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.admin-private-fee label{display:grid;gap:4px;min-width:0;font-size:13px}
+.admin-private-fee small{font-size:12px;color:var(--muted);font-weight:400}
+.admin-private-fee input{flex:0 0 115px;min-width:95px}
+@media(max-width:550px){.admin-private-fee{flex-wrap:wrap}.admin-private-fee input{width:100%;flex:1 1 100%}}
