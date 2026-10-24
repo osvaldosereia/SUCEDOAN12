@@ -51,6 +51,11 @@ export function AdminShell({section,onNavigate,products,onProductSearch,children
           onClick={()=>setCollapsed(v=>!v)}><AdminIcon name="chevrons" size={17}/></button>
         <button type="button" className="da-close-drawer" aria-label="Fechar menu" onClick={()=>setMobileMenu(false)}><AdminIcon name="close"/></button>
       </div>
+      <div className="da-side-search">
+        <button type="button" className="da-global-search" onClick={()=>setSearchOpen(true)} aria-label="Buscar no administrador">
+          <AdminIcon name="search" size={17}/><span>Buscar</span><kbd>Ctrl K</kbd>
+        </button>
+      </div>
       <div className="da-side-scroll">
         <nav aria-label="Seções do administrador">
           {ADMIN_GROUPS.map(group=><section key={group.id} className="da-nav-group" aria-label={group.label}>
@@ -79,8 +84,8 @@ export function AdminShell({section,onNavigate,products,onProductSearch,children
           <span className="da-breadcrumb">{current.group==='catalog'?'Catálogo e vitrine':current.group==='operation'?'Operação':current.group==='management'?'Gestão':'Sistema'} <AdminIcon name="chevron" size={14}/> <b>{current.label}</b></span>
         </div>
         <div className="da-toolbar-end">
-          <button type="button" className="da-global-search" onClick={()=>setSearchOpen(true)} aria-label="Buscar no administrador">
-            <AdminIcon name="search" size={17}/><span>Buscar produtos ou seções</span><kbd>Ctrl K</kbd>
+          <button type="button" className="da-mobile-search" onClick={()=>setSearchOpen(true)} aria-label="Buscar no administrador">
+            <AdminIcon name="search" size={18}/>
           </button>
           <span className="da-preview-chip">Prévia</span>
         </div>
@@ -89,7 +94,7 @@ export function AdminShell({section,onNavigate,products,onProductSearch,children
         <div className="da-page-head">
           <div><p className="da-page-kicker">DONA ANTÔNIA / {current.label.toUpperCase()}</p>
             <h1>{current.title}</h1><p>{current.description}</p></div>
-          <span className="da-local-badge">Alterações não salvas</span>
+          <span className="da-local-badge">Dados demonstrativos</span>
         </div>
         {children}
       </main>

@@ -10,34 +10,63 @@ interface Props {
   extras:readonly ExtraGroup[];
   onNavigate:(id:AvailableAdminSection)=>void;
 }
+
+const SETUP_TASKS=[
+  {title:'Revisar cadastro de produtos',detail:'SKUs, preços, estoque e visibilidade.',id:'produtos'},
+  {title:'Configurar tipos de produto',detail:'Arroz, feijão, óleo e produtos equivalentes.',id:'tipos'},
+  {title:'Definir as composições das cestas',detail:'Quantidades e valor interno de cada tamanho.',id:'cestas'},
+  {title:'Organizar produtos extras',detail:'Itens opcionais de todas as cestas.',id:'extras'}
+] as const;
+
 export function HomeDashboard({products,types,baskets,extras,onNavigate}:Props){
-  const checks=[
-    {title:'Conferir produtos',detail:'Revise SKUs, estoque e preços antes de disponibilizar para venda.',id:'produtos' as const},
-    {title:'Definir tipos de produto',detail:'Cadastre arroz, feijão, óleo e as marcas permitidas.',id:'tipos' as const},
-    {title:'Montar as cinco cestas',detail:'Configure os tipos, as quantidades e o valor interno.',id:'cestas' as const},
-    {title:'Organizar produtos extras',detail:'Escolha os grupos exibidos após a personalização.',id:'extras' as const}
+  const metrics=[
+    {label:'Produtos cadastrados',value:products.length,detail:'Exemplos em memória'},
+    {label:'Tipos de produto',value:types.length,detail:'Grupos de substituição'},
+    {label:'Tamanhos de cesta',value:baskets.length,detail:'Modelos configuráveis'},
+    {label:'Grupos extras',value:extras.filter(group=>group.active).length,detail:'Opcionais ativos'}
   ];
   return <div className="da-dashboard">
-    <div className="da-welcome">
-      <div><span className="da-welcome-eyebrow">PAINEL DE CONTROLE</span><h2>Sua loja, mais fácil de administrar.</h2>
-      <p>Configure a vitrine com poucos passos. Esta prévia usa apenas dados demonstrativos.</p>
-      <button type="button" className="da-primary-action" onClick={()=>onNavigate('cestas')}>Configurar cestas <AdminIcon name="arrow" size={17}/></button></div>
-      <span className="da-welcome-shape" aria-hidden="true"><AdminIcon name="basket" size={72}/></span>
-    </div>
-    <div className="da-dashboard-stats">
-      <div><span>Produtos de exemplo</span><strong>{products.length}</strong><small>Cadastro independente por SKU</small></div>
-      <div><span>Tipos de produto</span><strong>{types.length}</strong><small>Opções de substituição</small></div>
-      <div><span>Tamanhos de cesta</span><strong>{baskets.length}</strong><small>Composição individual</small></div>
-      <div><span>Grupos de extras</span><strong>{extras.filter(item=>item.active).length}</strong><small>Opcionais para todas as cestas</small></div>
-    </div>
-    <section className="da-dashboard-tasks panel"><div className="da-list-heading"><h2>Configurar a vitrine</h2><span>Atalhos de trabalho</span></div>
-      <p>Siga uma ordem simples para cadastrar e organizar os itens da loja.</p>
-      <div className="da-task-list">
-        {checks.map((item,index)=><button type="button" key={item.id} onClick={()=>onNavigate(item.id)}>
-          <span className="da-task-number">{index+1}</span><span className="da-task-text"><b>{item.title}</b><small>{item.detail}</small></span><AdminIcon name="chevron" size={19}/>
-        </button>)}
+    <section className="da-setup-overview">
+      <div>
+        <p className="da-overline">CONFIGURAÇÃO DA VITRINE</p>
+        <h2>Organize os produtos e as cestas.</h2>
+        <p>Centralize as tarefas da loja em um painel simples. Nesta prévia, as alterações não são salvas no banco.</p>
       </div>
+      <button type="button" className="da-primary-action" onClick={()=>onNavigate('cestas')}>
+        Configurar cestas <AdminIcon name="arrow" size={16}/>
+      </button>
     </section>
-    <div className="da-dashboard-footer">Os dados apresentados são de demonstração. Pedidos, clientes e integrações serão habilitados em futuras etapas.</div>
+
+    <section className="da-dashboard-stats" aria-label="Resumo da configuração demonstrativa">
+      {metrics.map(metric=><div key={metric.label} className="da-metric">
+        <span>{metric.label}</span><strong>{metric.value}</strong><small>{metric.detail}</small>
+      </div>)}
+    </section>
+
+    <div className="da-dashboard-work">
+      <section className="da-dashboard-tasks panel">
+        <div className="da-list-heading"><h2>Configurar catálogo e cestas</h2><span>4 etapas</span></div>
+        <p>As tarefas abaixo já podem ser testadas com dados demonstrativos.</p>
+        <div className="da-task-list">
+          {SETUP_TASKS.map((item,index)=><button type="button" key={item.id} onClick={()=>onNavigate(item.id)}>
+            <span className="da-task-number">{index+1}</span>
+            <span className="da-task-text"><b>{item.title}</b><small>{item.detail}</small></span>
+            <AdminIcon name="chevron" size={17}/>
+          </button>)}
+        </div>
+      </section>
+
+      <section className="da-operational-panel panel">
+        <div className="da-list-heading"><h2>Próximos módulos</h2><span>Planejamento</span></div>
+        <p>As novas ferramentas aparecerão aqui quando estiverem implementadas e testadas.</p>
+        <div className="da-operational-list">
+          <div><AdminIcon name="orders"/><span><b>Pedidos</b><small>Novo · Em separação · Pronto · Entregue</small></span><em>Planejado</em></div>
+          <div><AdminIcon name="users"/><span><b>Atendimento</b><small>Conversas de WhatsApp e pedidos vinculados</small></span><em>Planejado</em></div>
+          <div><AdminIcon name="megaphone"/><span><b>Avisos de andamento</b><small>Templates utilitários pela Meta</small></span><em>Planejado</em></div>
+          <div><AdminIcon name="plug"/><span><b>Notas fiscais</b><small>Emissão após separação pelo Bling</small></span><em>Planejado</em></div>
+        </div>
+      </section>
+    </div>
+    <p className="da-dashboard-footer">Ambiente exclusivo de demonstração. Nenhum pedido é enviado, nenhuma nota é emitida e nenhum cliente é contatado.</p>
   </div>;
 }
