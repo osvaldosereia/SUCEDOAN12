@@ -137,7 +137,14 @@ async function handleJsonUpload(event){
     if(Array.isArray(data.validation_errors)&&data.validation_errors.length)setStatus('JSON enviado. A Meta encontrou '+data.validation_errors.length+' erro(s); consulte o relatório abaixo.','error');
     else if(data.validation_available)setStatus('JSON enviado; a Meta não reportou erros de validação.','success');
     else setStatus('JSON enviado, mas a Meta ainda não forneceu relatório de validação.','neutral');
-  }catch(error){setStatus('Não foi possível enviar o JSON: '+String(error.message||error),'error')}
+  }catch(error){
+    const report=error.payload?.validation_errors;
+    if(Array.isArray(report)){
+      const current=flowItems.find(flow=>flow.id===activeFlowId)||{};
+      renderFlowDetail({...current,id:activeFlowId,validation_errors:report});
+      setStatus(report.length?'A Meta rejeitou o JSON e retornou '+report.length+' erro(s). Consulte o relatório.':'O upload falhou sem erros detalhados da Meta.','error');
+    }else setStatus('Não foi possível enviar o JSON: '+String(error.message||error),'error');
+  }
   finally{setBusy(false);event.target.value=''}
 }
 async function publishActiveFlow(){
