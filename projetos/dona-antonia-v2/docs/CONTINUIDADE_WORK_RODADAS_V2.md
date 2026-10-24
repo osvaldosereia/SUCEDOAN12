@@ -175,7 +175,7 @@ Confirmado por leitura da branch:
 - Validar migrações numa base DESCARTÁVEL isolada / CI local, jamais nos dois Supabases legados.
 - Entregar diagrama de entidades, contratos TS e testes de migração/constraints.
 - Resultado R02 (24/10/2026): quatro migrações, 21 tabelas, ERD, contratos TS e teste de constraints/idempotência/rollback concluídos; detalhe em `docs/STATUS_RODADAS_V2.md`. PGlite não é Supabase e nada remoto foi aplicado.
-- R03: RBAC/RLS, Auth client, tela de login e filtro de áreas por papel implementados; migrações aplicadas no projeto V2; convite e papel ADMIN iniciais criados, aguardando confirmação/credencial do titular e teste de login real. Playwright não iniciou por ausência de Chromium; instalação local recebeu ZIP inválido/zero bytes; sem CI para o head mais recente.
+- R03: RBAC/RLS, Auth client, tela de login e filtro de áreas por papel implementados; migrações aplicadas no projeto V2; convite e papel ADMIN iniciais criados, aguardando confirmação/credencial do titular e teste de login real. Playwright local não iniciou por ausência de Chromium; CI #40063869241 passou lint, segurança de dependências, arquitetura, DB, TS, unitários, build e 17 E2E.
 - Supabase Advisors (24/10/2026): WARN intencional para RPC SECURITY DEFINER `public.get_my_staff_role()` (retorna somente papel do chamador autenticado); 4 policies com chamada `auth.*` sem initplan, 11 FKs sem índice de cobertura e 38 sobreposições permissivas entre `admin_all` e policies de função devem ser revisadas antes de popular dados. 27 índices não usados são esperados no banco vazio; não remover sem métricas representativas. INFO de Auth com limite de 10 conexões.
 
 ### R03 — Autenticação admin e permissões
@@ -306,7 +306,7 @@ R00 foi documental; R01 consolidou qualidade visual/CI; R02 implementou schema e
 - Código: seis migrações; papéis ADMIN/PRODUCTS/SEPARATION/SUPPORT; grants mínimos; policies `USING`/`WITH CHECK`; preço privado em tabelas separadas; `public.get_my_staff_role()` só retorna o papel ativo do chamador; cliente Auth, tela de login e navegação filtrada por papel.
 - Projeto novo `hjudhofluihkxykwekir`, região São Paulo, status saudável. Compute padrão confirmado: estimativa de US$ 10/mês, cobrada por hora. Seis migrações aplicadas ao projeto novo.
 - Verificação remota: 24 tabelas/24 RLS, 64 policies; `anon` sem `USAGE` no schema privado nem execução da RPC; `authenticated` pode consultar o próprio papel. Convite do primeiro usuário enviado; uma atribuição ADMIN ativa registrada e verificada; e-mail ainda não confirmado.
-- Gates locais: 50 testes unitários; PGlite seis migrações/24 tabelas com RBAC/RLS positivo e negativo, role lookup, revogação, privacidade e rollback; lint, format, arquitetura, TS, build, audit (0 vulnerabilidades) passaram. E2E local não iniciou: Chromium ausente. CI GitHub ainda sem run observado.
+- Gates: 50 testes unitários; PGlite seis migrações/24 tabelas com RBAC/RLS positivo e negativo, role lookup, revogação, privacidade e rollback; lint, format, arquitetura, TS, build, audit (0 vulnerabilidades) passaram. Playwright local não iniciou: Chromium ausente; CI #40063869241 passou os 17 E2E.
 - Limite: convite e papel ADMIN existem; o titular precisa confirmar o e-mail e definir sua própria credencial para testar o login real. Nenhuma senha foi definida pelo agente.
 - Operação: legado, `main`, bancos existentes, atendimento e integrações intocados; nenhuma publicação.
 - Próximo: após confirmação/credencial do titular, testar login real e concluir CI/revisão do PR antes da R04.
