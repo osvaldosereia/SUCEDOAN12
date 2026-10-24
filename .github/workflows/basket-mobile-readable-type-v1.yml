@@ -1,0 +1,24 @@
+name: Basket mobile readable typography
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "vitrine/index.html"
+      - "scripts/test-basket-mobile-readable-type-v1.mjs"
+      - ".github/workflows/basket-mobile-readable-type-v1.yml"
+  pull_request:
+    paths:
+      - "index.html"
+      - "vitrine/index.html"
+      - "scripts/test-basket-mobile-readable-type-v1.mjs"
+      - ".github/workflows/basket-mobile-readable-type-v1.yml"
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/test-basket-mobile-readable-type-v1.mjs

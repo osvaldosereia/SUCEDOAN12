@@ -1,0 +1,34 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+
+const migration=fs.readFileSync('supabase/migrations/20261012184500_attendance_received_order_priority_v1.sql','utf8');
+const app=fs.readFileSync('vitrine/admin/atendimento/attendance-app.js','utf8');
+const page=fs.readFileSync('vitrine/admin/atendimento/index.html','utf8');
+const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
+const adminRuntime=fs.readFileSync('vitrine/admin/admin-runtime.js','utf8');
+const css=fs.readFileSync('vitrine/admin/atendimento/attendance.css','utf8');
+
+assert.match(migration,/o\.status='storefront_received'/,'use the exact status of Recebidos');
+assert.match(migration,/o\.confirmed_at is null/,'exclude already confirmed orders');
+assert.match(migration,/o\.cancelled_at is null/,'exclude cancelled orders');
+assert.match(migration,/o\.created_at >= now\(\)-interval '3 days'/,'only last 72 hours');
+assert.match(migration,/o\.conversation_id=c\.id/,'prefer direct conversation linkage');
+assert.match(migration,/o\.whatsapp_account_id=c\.whatsapp_account_id/,'respect WhatsApp account');
+assert.match(migration,/not exists \(/i,'ambiguous fallback must be prevented');
+assert.match(migration,/order by \(q\.received_order_id is not null\) desc/,'pin received orders before queue limit');
+assert.match(migration,/'received_order_id',q\.received_order_id/,'return canonical order id');
+assert.match(migration,/'received_order_count'/,'return pending order count');
+assert.match(app,/received-order-priority/,'highlight queue cards');
+assert.match(app,/Number\(Boolean\(receivedOrder\(b\)\)\)/,'prioritize client queue');
+assert.match(app,/function syncReceivedOrderButton\(/,'button state must follow selection');
+assert.match(app,/window\.open\('\/vitrine\/admin\/\?pedido='/,'deep link to existing Admin');
+assert.match(page,/id="openReceivedOrderBtn" hidden/,'no order button for ordinary conversations');
+assert.match(css,/\.queue-card\.received-order-priority/,'distinct color highlight');
+assert.match(adminRuntime,/params\.get\('pedido'\)/,'Admin supports direct order view');
+assert.match(adminRuntime,/await openOrder\(directOrderId\)/,'Admin opens the actual order');
+assert.match(adminRuntime,/state\.orderStatusTab='new'/,'Admin opens direct order links within a valid four-stage tab');
+const scripts=[...admin.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]).filter(Boolean);
+scripts.forEach((text,i)=>new vm.Script(text,{filename:'admin-inline-'+i+'.js'}));
+new vm.Script(app.replace(/^import[^\n]*\n/gm,''),{filename:'attendance-app.js'});
+console.log('PASS Atendimento ↔ Recebidos · 72h · confirmação exclusivamente manual');

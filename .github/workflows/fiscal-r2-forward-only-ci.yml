@@ -1,0 +1,27 @@
+name: Fiscal R2 New Orders Only
+on:
+  pull_request:
+    paths:
+      - "supabase/functions/admin-service-intelligence-v1/index.ts"
+      - "supabase/functions/admin-service-intelligence-v1/_shared/fiscal-r2-nfe-inspector.mjs"
+      - "supabase/migrations/20261009201000_fiscal_autorecovery_only_new_orders.sql"
+      - "scripts/test-fiscal-r2-new-orders-cutover.mjs"
+  push:
+    branches: ["main"]
+    paths:
+      - "supabase/functions/admin-service-intelligence-v1/index.ts"
+      - "supabase/functions/admin-service-intelligence-v1/_shared/fiscal-r2-nfe-inspector.mjs"
+      - "scripts/test-fiscal-r2-new-orders-cutover.mjs"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/test-fiscal-r2-new-orders-cutover.mjs
+      - run: node scripts/test-fiscal-r2-nfe-draft-inspector.mjs
+      - run: node scripts/test-fiscal-recovery-r1-auth-backoff.mjs
+      - run: node scripts/test-fiscal-nfe-autorecovery-v1.mjs

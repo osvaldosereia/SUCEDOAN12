@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
+import {readAdminUiSource} from './helpers/admin-ui-source.mjs';
 
-const admin = fs.readFileSync('vitrine/admin/index.html','utf8');
+const admin = readAdminUiSource();
 const edge = fs.readFileSync('supabase/functions/admin-service-intelligence-v1/index.ts','utf8');
 const sql = fs.readFileSync('supabase/sql/20261003_customer_identity_admin_phone_fix.sql','utf8');
 const emailFix = fs.readFileSync('supabase/sql/20261003_customer_admin_email_generated_fix.sql','utf8');
@@ -9,6 +10,8 @@ const emailFix = fs.readFileSync('supabase/sql/20261003_customer_admin_email_gen
 assert.match(admin, /data-delete-customer=/, 'lista de clientes precisa oferecer exclusão');
 assert.match(admin, /async function deleteCustomer\(/, 'admin precisa de handler de exclusão');
 assert.match(admin, /vitrine_customer_delete/, 'admin precisa chamar ação autenticada de exclusão');
+assert.match(admin, /customerApi\('vitrine_customer_delete',\{id,customer_id:id\}\)/, 'admin precisa enviar customer_id para compatibilidade com a Edge publicada');
+assert.match(admin, /Não foi possível excluir o cadastro\./, 'falha de exclusão precisa ter mensagem específica');
 assert.match(admin, /Os pedidos históricos serão mantidos/, 'confirmação deve explicar preservação do histórico');
 
 assert.match(edge, /ops2_admin_customer_save_v2/, 'salvamento deve usar RPC transacional');

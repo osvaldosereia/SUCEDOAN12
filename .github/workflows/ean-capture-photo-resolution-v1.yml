@@ -1,0 +1,26 @@
+name: EAN photo and resolution
+on:
+  push:
+    branches: [main]
+    paths:
+      - "vitrine/admin/leitura-ean/index.html"
+      - "supabase/functions/admin-ean-capture-v1/index.ts"
+      - "supabase/migrations/20261019190000_ean_capture_resolution_v1.sql"
+      - "scripts/test-ean-capture-photo-resolution-v1.mjs"
+      - ".github/workflows/ean-capture-photo-resolution-v1.yml"
+  pull_request:
+    paths:
+      - "vitrine/admin/leitura-ean/index.html"
+      - "supabase/functions/admin-ean-capture-v1/index.ts"
+      - "supabase/migrations/20261019190000_ean_capture_resolution_v1.sql"
+      - "scripts/test-ean-capture-photo-resolution-v1.mjs"
+      - ".github/workflows/ean-capture-photo-resolution-v1.yml"
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/test-ean-capture-photo-resolution-v1.mjs

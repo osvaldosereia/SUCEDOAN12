@@ -1,0 +1,23 @@
+name: Basket mold batch load
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/20261007122749_basket_mold_public_compositions_batch_v1.sql'
+      - 'supabase/functions/storefront-v2/index.ts'
+      - 'scripts/test-basket-mold-batch-load-v1.mjs'
+      - '.github/workflows/basket-mold-batch-load-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/20261007122749_basket_mold_public_compositions_batch_v1.sql'
+      - 'supabase/functions/storefront-v2/index.ts'
+      - 'scripts/test-basket-mold-batch-load-v1.mjs'
+      - '.github/workflows/basket-mold-batch-load-ci.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node scripts/test-basket-mold-batch-load-v1.mjs

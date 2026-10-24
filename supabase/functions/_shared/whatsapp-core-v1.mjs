@@ -57,7 +57,7 @@ function epochIso(value,fallback=null){
 
 function canonicalType(value){
   const t=clean(value,40).toLowerCase();
-  if(['text','audio','image','document','location','interactive','template','reaction'].includes(t))return t;
+  if(['text','audio','image','document','location','interactive','button','template','reaction'].includes(t))return t;
   if(t==='text/plain')return 'text';
   if(t==='voice'||t==='ptt'||t.startsWith('audio/'))return 'audio';
   if(t.startsWith('image/'))return 'image';
@@ -180,14 +180,24 @@ export function canonicalMessagesFromMeta(payload,accountResolver=()=>null){
   const out=[];
   for(const entry of arr(payload?.entry)){
     for(const change of arr(entry?.changes)){
+      const field=clean(change?.field,80);
       const value=obj(change?.value),metadata=obj(value.metadata);
       const phoneNumberId=clean(metadata.phone_number_id,180)||null;
       const resolved=phoneNumberId?accountResolver(phoneNumberId,value,entry):null;
       const accountId=typeof resolved==='string'?resolved:clean(resolved?.id,80)||null;
+
       for(const message of arr(value.messages)){
         const type=canonicalType(message?.type);const phone=normalizePhone(message?.from);const providerMessageId=clean(message?.id,240)||null;
         const receivedAt=epochIso(message?.timestamp,new Date().toISOString());const media=metaMedia(message,type);const associable=Boolean(accountId&&phone&&providerMessageId);
-        out.push({kind:'message',provider:'meta',associable,reason:associable?null:(!accountId?'account_unresolved':(!phone?'phone_unresolved':'message_id_missing')),whatsapp_account_id:accountId,phone_number_id:phoneNumberId,waba_id:clean(entry?.id,180)||null,provider_event_id:providerMessageId?`message:${providerMessageId}`:null,provider_message_id:providerMessageId,phone_e164:phone,event_type:'message.received',received_at:receivedAt,message:{direction:'inbound',message_type:type,provider_conversation_id:null,text_body:metaText(message,type),status_current:'received',sender_kind:'customer',sender_ref:null,received_at:receivedAt,metadata:{source:'meta',raw_type:clean(message?.type,60)||null,contact_name:clean(value.contacts?.[0]?.profile?.name,180)||null,context_message_id:clean(message?.context?.id,240)||null,interactive:message?.interactive?redactWebhookPayload(message.interactive):null,media}}});
+        out.push({kind:'message',provider:'meta',associable,reason:associable?null:(!accountId?'account_unresolved':(!phone?'phone_unresolved':'message_id_missing')),whatsapp_account_id:accountId,phone_number_id:phoneNumberId,waba_id:clean(entry?.id,180)||null,provider_event_id:providerMessageId?`message:${providerMessageId}`:null,provider_message_id:providerMessageId,phone_e164:phone,event_type:'message.received',received_at:receivedAt,message:{direction:'inbound',message_type:type,provider_conversation_id:null,text_body:metaText(message,type),status_current:'received',sender_kind:'customer',sender_ref:null,received_at:receivedAt,metadata:{source:'meta',source_event:'messages',raw_type:clean(message?.type,60)||null,contact_name:clean(value.contacts?.[0]?.profile?.name,180)||null,context_message_id:clean(message?.context?.id,240)||null,interactive:message?.interactive?redactWebhookPayload(message.interactive):null,location:type==='location'&&message?.location?{latitude:Number(message.location.latitude),longitude:Number(message.location.longitude),name:clean(message.location.name,240)||null,address:clean(message.location.address,600)||null,url:clean(message.location.url,800)||null}:null,media}}});
+      }
+
+      if(field==='smb_message_echoes'){
+        for(const message of arr(value.message_echoes)){
+          const type=canonicalType(message?.type);const phone=normalizePhone(message?.to);const providerMessageId=clean(message?.id,240)||null;
+          const sentAt=epochIso(message?.timestamp,new Date().toISOString());const media=metaMedia(message,type);const associable=Boolean(accountId&&phone&&providerMessageId);
+          out.push({kind:'message',provider:'meta',associable,reason:associable?null:(!accountId?'account_unresolved':(!phone?'phone_unresolved':'message_id_missing')),whatsapp_account_id:accountId,phone_number_id:phoneNumberId,waba_id:clean(entry?.id,180)||null,provider_event_id:providerMessageId?`echo:${providerMessageId}`:null,provider_message_id:providerMessageId,phone_e164:phone,event_type:'message.sent',received_at:sentAt,message:{direction:'outbound',message_type:type,provider_conversation_id:null,text_body:metaText(message,type),status_current:'sent',sender_kind:'human',sender_ref:'whatsapp_business_app',sent_at:sentAt,metadata:{source:'meta',source_event:'smb_message_echoes',business_app_echo:true,raw_type:clean(message?.type,60)||null,context_message_id:clean(message?.context?.id,240)||null,interactive:message?.interactive?redactWebhookPayload(message.interactive):null,media}}});
+        }
       }
     }
   }

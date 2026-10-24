@@ -6,6 +6,7 @@ on:
       - '.github/workflows/one-shot-admin-separation-atomic.yml'
       - 'scripts/test-admin-separation-atomic.py'
       - 'vitrine/admin/index.html'
+      - 'vitrine/admin/admin-runtime.js'
       - 'supabase/sql/20260930_order_separation_atomic_v1.sql'
 jobs:
   verify:
@@ -16,6 +17,7 @@ jobs:
           fetch-depth: 1
           sparse-checkout: |
             vitrine/admin/index.html
+            vitrine/admin/admin-runtime.js
             scripts/test-admin-separation-atomic.py
             supabase/sql/20260930_order_separation_atomic_v1.sql
           sparse-checkout-cone-mode: false
@@ -31,5 +33,6 @@ jobs:
           Path('/tmp/admin.js').write_text('\n'.join(blocks),encoding='utf-8')
           PY
           node --check /tmp/admin.js
+          node --check vitrine/admin/admin-runtime.js
       - name: Verify working tree
         run: git diff --check

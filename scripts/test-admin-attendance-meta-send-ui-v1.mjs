@@ -41,7 +41,7 @@ assert.doesNotMatch(ui, /sessionStorage\.getItem|Authorization:\s*`Bearer/, 'mó
 assert.match(ui, /currentCapability\.provider|send_capability/);
 assert.match(ui, /meta_send_uncertain/);
 assert.match(ui, /Meta|meta/i);
-assert.match(ui, /PapoAI/);
+assert.doesNotMatch(ui, /PapoAI|papoai|openPapoAiBtn/i, 'interface não deve orientar o uso do PapoAI');
 assert.match(ui, /finally[\s\S]{0,120}sending=false/, 'loading deve sempre destravar');
 
-console.log('OK · gateway usa outbox v3/provider switch; UI usa auth Admin compartilhado e permanece sem segredo/Graph Meta.');
+console.log('OK · gateway usa outbox v3/provider switch; UI usa auth Admin compartilhado, permanece sem segredo/Graph Meta e não exibe instruções do PapoAI.');

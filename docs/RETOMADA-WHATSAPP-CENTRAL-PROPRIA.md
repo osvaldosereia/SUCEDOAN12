@@ -1,26 +1,34 @@
 # RETOMADA — Central WhatsApp Própria via Meta Cloud API
 
-**Checkpoint canônico:** 2026-10-03/04 (Cuiabá)  
-**Main confirmada:** `d4f6816e7c4727a2605d6115f1e87722075480e8`  
+**Checkpoint canônico:** 2026-10-04 (Cuiabá)  
+**Main deste handoff:** `483657139e5a5f1845de1ed33fb24e479cac0497`  
 **Supabase canônico:** `ssbesxgaijknwsjbsbcz`  
 **Issue mestre:** #630  
 **Task mídia:** #649
 
-> Este arquivo é o ponto de retomada obrigatório. Antes de programar, ler os comentários mais recentes de #630/#649 e auditar PRs/branches abertos, principalmente trabalho paralelo de Atendimento.
+> Este arquivo é o ponto de retomada obrigatório. Antes de programar: ler os comentários mais recentes de #630/#649, conferir a `main` corrente e auditar runtime/PRs posteriores. Trabalho paralelo no Admin é frequente; nunca assumir que este SHA continua sendo o HEAD.
 
 ## Estado executivo
 
 - Tasks 0–8: concluídas/homologadas conforme #630.
 - Task 9A — inbound mídia Meta: concluída/homologada.
-- Task 9B — outbound mídia Meta: imagem/PDF comprovados; gravador de áudio e envio direto implementados; correção de MIME M4A concluída; falta somente o canário real de áudio pelo Admin com evidência WAMID/status/dedupe/fila limpa.
-- Task 10 — Humano × IA: implementada e fail-closed.
-- Task 11 — ANA própria: preview/dry-run implementado; recovery de claim stale aplicado; `ana_enabled=false`.
-- Marketing/campanhas: `campaigns_enabled=false`.
-- PapoAI: permanece sombra/fallback; não remover antes dos gates finais.
+- **Task 9B — outbound áudio Meta: concluída/homologada bilateralmente.**
+- Task 10 — Humano × IA: concluída no escopo do plano.
+- **Task 11 — ANA própria: preview autenticado concluído/homologado.**
+- **Task 12 — retirada gradual do PapoAI: EM ANDAMENTO.**
+- `ana_enabled=false` nos dois canais.
+- `campaigns_enabled=false` nos dois canais.
+- `meta_media_live_enabled=false` nos dois canais.
+- PapoAI **ainda não foi removido**: permanece inbound/shadow/fallback até fechar dependências residuais e testar rollback de cutover por canal.
 
-## Runtime canônico conhecido
+## Canais e runtime atual
 
-Nos canais `dona-antonia-0975` e `dona-antonia-1018`:
+```text
+dona-antonia-0975 = +5565998150975
+dona-antonia-1018 = +5565984491018
+```
+
+Nos dois canais:
 
 ```text
 inbound_provider = papoai
@@ -30,171 +38,221 @@ send_enabled = true
 human_send_enabled = true
 ana_enabled = false
 campaigns_enabled = false
+meta_media_live_enabled = false
+meta_media_canary_enabled = true
 ```
 
-Canários permanecem restritos a 0975↔1018. Não ampliar para clientes reais durante homologação.
+Imagem é um gate independente:
+- 0975: `meta_image_live_enabled=true`;
+- 1018: `meta_image_live_enabled=false`;
+- isso não muda o fato de `meta_media_live_enabled=false` nos dois canais.
 
-## Merges relevantes mais recentes
+## Task 9B — áudio Meta bilateral concluído
 
-### PR #686 — observabilidade de mídia
-
-Merge `405f1c0f11371ddb17c97fcd5229af9b99b8bbb7`.
-
-- WAMID/provider_message_id correlacionado com refresh canônico;
-- estados Aceito/Enviado/Entregue/Lido/Falhou;
-- sem polling concorrente.
-
-### PR #688 — recovery de claim órfão ANA
-
-Merge `800f7e270bb355f9bccffea6d456f57ca4f59501`.
-
-Migration aplicada: `whatsapp_ana_preview_stale_claim_recovery_v3`.
-
-- lease de 2 minutos para preview `claimed`;
-- somente `admin_preview` + `dry_run=true` + `dry_run_not_sendable=true` pode ser recuperado;
-- cleanup auditável de claim antigo;
-- nenhum caminho de envio WhatsApp criado.
-
-### PR #690 — gravador de áudio no Atendimento
-
-Merge `628cfd0f66c63bc4f38f7dac5d246fab38a75190`.
-
-Entregue:
-- botão `🎙 Gravar áudio`;
-- acesso ao microfone somente após clique;
-- vínculo da gravação à conversa selecionada;
-- cronômetro, Parar, Cancelar e preview;
-- liberação de `MediaStream` e Object URL;
-- formatos MP4/AAC ou OGG/Opus conforme `MediaRecorder.isTypeSupported()`;
-- áudio gravado vira `File` e entra no mesmo pipeline `send_media`;
-- sem Graph API no browser;
-- canário, janela de 24h, idempotência e WAMID preservados.
-
-### PR #693 — envio direto no painel do gravador
-
-Merge `833e4a6fcdb972524bd51ba8fc42d98a8c14ec29`.
-
-Motivo: o áudio já ficava em memória, mas a UI fazia parecer que era necessário baixar e anexar novamente.
-
-Entregue:
-- botão **Enviar áudio** dentro do painel do gravador;
-- após Parar/ouvir, o áudio é enviado pelo mesmo `send_media`;
-- download/anexo manual não é requisito;
-- os dois CIs ficaram verdes antes do merge.
-
-### PR #694 — aliases MIME de M4A
-
-Merge `d4d6c5cc83b7341ba3e72bb19f341f95cd8a4312`.
-
-Falha real reproduzida pelo usuário ao anexar:
+### 0975 → 1018
 
 ```text
-Áudio: 5c503739-9027-48b4-afb4-4f96442432b7.m4a
-Tipo não permitido. Use imagem, áudio ou PDF.
+canonical_message_id = e8e8d994-b9c2-4666-9012-3520d5bc715c
+provider_message_id = wamid.HBgMNTU2NTg0NDkxMDE4FQIAERgUQ0U4NTgxOTA3M0Y3Q0FCMzFCNEIA
+mime_type = audio/ogg
+status = delivered
+attempt_count = 1
+last_error = NULL
 ```
 
-Root cause: arquivos `.m4a` podem voltar do navegador/OS como `audio/x-m4a`, `audio/m4a`, MIME vazio ou `application/octet-stream`, enquanto o whitelist aceitava somente `audio/mp4`.
+### 1018 → 0975
 
-Correção:
-- frontend reconhece esses aliases somente quando o nome termina em `.m4a`;
-- backend possui `canonicalOutboundMetaMime()` para normalizar alias M4A → `audio/mp4`;
-- MIME explícito incompatível, como `application/pdf`, não é sobrescrito pela extensão;
-- alias M4A em arquivo que não termina `.m4a` continua bloqueado;
-- conteúdo continua submetido à validação binária real `ftyp`, portanto renomear arquivo falso para `.m4a` não libera o envio.
+```text
+canonical_message_id = c82d2e29-1049-469b-992d-359e5c47daa2
+provider_message_id = wamid.HBgMNTU2NTk4MTUwOTc1FQIAERgUQ0U4ODU3NThDRjk2QjdDMEU3MzEA
+mime_type = audio/ogg
+status = delivered
+attempt_count = 1
+last_error = NULL
+```
 
-TDD: RED real em `Meta media content signature contract`, depois GREEN completo.
+Sem duplicação e sem fila problemática. O readiness global do 1018 pode continuar `ready=false` porque falta evidência de imagem; isso não invalida a homologação bilateral de áudio.
 
-### PR #695 — MIME canônico antes do FormData
+## Task 11 — ANA própria concluída no preview autenticado
 
-Merge `d4f6816e7c4727a2605d6115f1e87722075480e8`.
+A ANA usada no Admin é **nossa**, não a IA do PapoAI.
 
-Motivo: mesmo o frontend reconhecendo o `.m4a`, o `FormData` ainda poderia enviar o MIME original do SO ao runtime produtivo já publicado.
+Arquitetura:
+- Admin autenticado chama `admin-whatsapp-ana-preview-v1`;
+- contexto e observabilidade ficam no Supabase canônico;
+- chamada de modelo ocorre pela integração OpenAI própria;
+- preview é dry-run e não envia nada ao cliente.
 
-Correção:
-- `fileForUpload(file)` preserva exatamente os bytes;
-- se `.m4a` vier por alias, cria um novo `File([file], file.name, {type:'audio/mp4'})` somente para o upload;
-- `FormData` recebe `uploadFile`, não o MIME alias original;
-- demais arquivos não são reenvelopados;
-- validação server-side de conteúdo continua ativa.
+Correção de credencial:
+- PR #749 mergeado;
+- RED CI #430;
+- GREEN CI #431 com 53 etapas verdes;
+- Edge `admin-whatsapp-ana-preview-v1` publicada como v7, `verify_jwt=true`.
 
-TDD:
-1. RED real em `Audio recorder contract`;
-2. implementação criada;
-3. teste foi refinado para validar comportamento, não uma forma textual específica;
-4. head final `a930f84ca3b03b4db99627997d286f33e1cc6980` passou:
-   - `WhatsApp Meta Central CI` = success;
-   - `attendance-papoai-send-ci` = success;
-5. merge somente após ambos verdes.
+Homologação real autenticada:
 
-## Observação de deploy backend
+```text
+status = completed
+decision = suggest
+confidence = 0.83
+model = gpt-6-luna
+latency_ms = 4400
+attempt_count = 1
+last_error = NULL
+provider_response_id = presente
+outbox automático criado = 0
+```
 
-O repositório já contém canonicalização server-side do M4A em `whatsapp-meta-media-v1.mjs` e `admin-attendance-media-send-v1.mjs`. Na última inspeção, a Edge Function produtiva `admin-whatsapp-ops-v1` ainda estava na versão 25 e usava autenticação Admin customizada com `verify_jwt=false` na camada da plataforma.
+Gates após homologação:
 
-O PR #695 resolve o teste atual sem depender desse deploy porque o navegador envia o `File` já canonicalizado como `audio/mp4`. Em futura publicação da Edge Function, preservar `verify_jwt=false` na plataforma porque a própria função valida o Bearer Admin; não alterar isso inadvertidamente.
+```text
+ana_enabled = false
+campaigns_enabled = false
+```
 
-## Task 9B — gate exato AGORA
+Não promover ANA automática sem novo gate explícito.
 
-Já comprovado:
-- imagem outbound Meta;
-- PDF/documento outbound Meta;
-- upload Meta oficial server-side;
-- WAMID persistido;
-- status canônicos;
-- dedupe/idempotência e retry seguro;
-- gravador no Admin;
-- envio direto pelo botão `Enviar áudio`;
-- seleção/anexo de `.m4a` com MIME alternativo corrigida.
+## Task 12 — auditoria de independência do PapoAI
 
-**Ainda falta a prova real do áudio:**
+### Inbound próprio Meta
 
-1. usuário faz `Ctrl+F5` no Atendimento;
-2. seleciona conversa controlada 0975↔1018;
-3. preferencialmente usa `🎙 Gravar áudio` → `Parar` → `Enviar áudio`;
-4. como alternativa, pode anexar novamente o mesmo `.m4a` que antes foi rejeitado;
-5. depois consultar Supabase e comprovar:
-   - `direction='outbound'`;
-   - `message_type='audio'`;
-   - `provider='meta'`;
-   - `provider_message_id LIKE 'wamid.%'`;
-   - progressão de status;
-   - nenhuma duplicação;
-   - outbox sem `queued/claimed/failed` residual.
+Auditoria das últimas 24h antes deste handoff:
+- 8 inbound canônicos apareceram com `provider=papoai`;
+- 5/8 tinham o mesmo evento Meta capturado e normalizado, com `cross_provider_duplicate=true` e o mesmo `canonical_message_id`;
+- 3/8 restantes pertenciam à mesma conversa legada isolada do 1018, contato `+551141302366`, sem cliente vinculado, com placeholder genérico do PapoAI;
+- resultado objetivo: **0 inbound PapoAI sem cobertura Meta em conversa de cliente vinculada ou fora desse legado isolado**.
 
-**Não declarar Task 9B concluída antes dessa evidência.**
+Mesmo com essa evidência, `inbound_provider` continua `papoai` nos dois canais. Não fazer o cutover de inbound sem fechar as dependências restantes e o rollback por canal.
 
-## Task 11 — ANA após fechar 9B
+## PR #751 — confirmação automática de pedido removida do PapoAI
 
-Depois do canário de áudio:
-- executar preview ANA autenticado pós-#688 até `completed`;
-- revisar decisão/confiança/contexto ausente/modelo/latência;
-- ampliar canários de qualidade sem outbound automático;
-- manter `ana_enabled=false` até homologação explícita.
+PR #751 foi mergeado na `main`.
 
-## Trabalho paralelo
+```text
+merge commit = 483657139e5a5f1845de1ed33fb24e479cac0497
+```
 
-PR draft #687 — Biblioteca Rápida do Atendimento — existe em paralelo e toca backend/mídia. Antes de qualquer alteração futura no Atendimento, auditar/rebasear contra a `main` corrente para não sobrescrever trabalho paralelo.
+O que mudou:
+- `admin-orders-v1` deixou de usar `PAPOAI_ORDER_TEMPLATE_WEBHOOK_*`;
+- deixou de usar `PAPOAI_ORDER_WEBHOOK_TOKEN`;
+- deixou de resolver provider de pedido pelo PapoAI;
+- deixou de disparar sinais PapoAI no caminho da confirmação;
+- passou a usar o transporte compartilhado `sendTemplateViaMeta`;
+- usa os templates utilitários homologados `pedidorecebidosite0975` e `pedidorecebidosite1018`;
+- preserva outbox/idempotência e auditoria detalhada do pedido;
+- os parâmetros enviados ao template são número do pedido, total formatado, resumo da entrega e pagamento;
+- WAMID aceito é persistido no histórico canônico e reconciliado com status Meta;
+- falha Meta incerta continua fail-closed, sem retry cego.
 
-## Próxima ação exata para retomada
+TDD/CI:
 
-1. ler #630 e #649 mais recentes;
-2. confirmar `main` e PRs ativos;
-3. perguntar/verificar se o usuário já fez o teste pós-#695;
-4. se enviou, consultar imediatamente `whatsapp_messages_v1` e `whatsapp_outbox_v1`;
-5. comprovar WAMID/status/dedupe/fila limpa;
-6. se tudo passar, fechar Task 9B em #649/#630;
-7. então continuar Task 11 ANA;
-8. depois marketing/agendamentos/templates/automação;
-9. retirada do PapoAI somente no final, reversível e com checkpoints.
+```text
+RED = Checkout Hotfix CI #182
+primeiro GREEN intermediário expôs teste legado preso ao PapoAI = #184
+GREEN final do PR = Checkout Hotfix CI #187
+pós-merge = Checkout Hotfix CI #188 success
+pós-merge = WhatsApp Meta Central CI #434 success
+```
+
+Nenhum workflow com falha foi encontrado no commit de merge auditado.
+
+### RPC de aceite Meta de pedido
+
+`ops2_accept_order_whatsapp_meta_v1` foi aplicada no Supabase canônico.
+
+Garantias:
+- `security definer`;
+- `anon` sem EXECUTE;
+- `authenticated` sem EXECUTE;
+- `service_role` com EXECUTE;
+- resolve/cria conversa canônica se necessário;
+- grava outbound `template`/`meta` em `whatsapp_messages_v1`;
+- grava WAMID na outbox do pedido;
+- registra `accepted` via pipeline canônico;
+- reaplica status Meta pendentes;
+- aceite é atômico: falha no registro de `accepted` aborta/rollbacka a operação.
+
+Smoke transacional:
+- aceite PASS;
+- idempotência PASS;
+- rollback explícito PASS;
+- 0 mensagens de teste persistidas;
+- 0 outboxes de teste persistidas.
+
+### Edge de pedidos em produção
+
+`admin-orders-v1`:
+
+```text
+versão atual = v35
+status = ACTIVE
+verify_jwt = false
+wrapper aponta para = 483657139e5a5f1845de1ed33fb24e479cac0497
+```
+
+`verify_jwt=false` é preservado porque essa função usa autenticação interna própria por chave server-side. Não alterar sem revisar o contrato.
+
+Rollback exato conhecido:
+
+```text
+versão anterior = v34
+commit importado = 5a048e09852c72bcc723fe4f62a83d9adbb8a09e
+```
+
+Se o primeiro tráfego real do v35 apresentar erro de transporte/aceite/duplicação, restaurar o wrapper de `admin-orders-v1` para esse commit antes de qualquer outra tentativa.
+
+### Runtime de confirmação de pedidos
+
+```text
+ops2_whatsapp_order_runtime_v1.mode = live
+canary_order_id = null
+```
+
+Não mudar esse runtime para `off`/`canary` sem avaliar impacto, porque isso pode suprimir confirmação de pedido real.
+
+Pós-deploy imediato:
+- nenhum novo tráfego de confirmação tinha ocorrido ainda;
+- nenhum teste foi forçado para cliente real;
+- outbox problemática possuía somente 1 `failed` histórico de 03/10;
+- 0 `pending`/`sending`/`retry` novos;
+- nenhum WAMID duplicado de `order_confirmation` encontrado.
+
+## Próximas dependências PapoAI a auditar
+
+A Task 12 **não está concluída**. Próxima frente:
+
+1. localizar todas as dependências operacionais restantes do PapoAI na Central;
+2. separar dependências históricas/read-only das dependências de produção;
+3. priorizar ações ainda expostas no Admin, especialmente emissão de link de catálogo e qualquer fallback operacional;
+4. não remover suporte de leitura a mensagens históricas `provider=papoai` antes de decidir retenção/migração;
+5. revisar `admin-whatsapp-ops-v1` e RPCs `ops2_*papoai*` ainda alcançáveis pela UI/runtime;
+6. preservar caminho de rollback por canal enquanto `inbound_provider=papoai`;
+7. somente após zerar dependências operacionais e testar rollback, preparar promoção de `inbound_provider` para `meta` por canal, um canal de cada vez.
 
 ## Invariantes de segurança
 
 - branch/PR isolado; nunca programar diretamente em `main`;
-- TDD RED→GREEN;
-- CI verde antes do merge;
+- TDD RED→GREEN para mudança funcional;
+- CI verde e revisão antes de merge;
 - WAMID é identidade externa canônica;
 - timeout/estado incerto nunca recebe retry cego;
-- canários 0975↔1018 permanecem restritos;
-- ANA e campanhas permanecem desligadas até gate explícito;
-- não tocar checkout, pedidos, estoque ou Bling fora do escopo;
+- não enviar teste a cliente real só para homologar infraestrutura;
+- canários 0975↔1018 permanecem restritos quando aplicáveis;
+- `meta_media_live_enabled=false` até promoção explícita;
+- ANA e campanhas permanecem desligadas;
+- preview ANA não pode virar outbound automático por acidente;
+- não desligar PapoAI totalmente enquanto `inbound_provider=papoai` ou houver dependência operacional residual;
+- preservar leitura do histórico canônico durante a retirada do legado;
 - somente APIs oficiais Meta/OpenAI;
 - checkpoint obrigatório em #630 e, para mídia, #649.
+
+## Próxima ação exata para retomada
+
+1. ler o comentário mais recente de #630;
+2. conferir a `main` atual e PRs posteriores a `483657...`;
+3. auditar o Supabase antes de mudar runtime;
+4. confirmar `admin-orders-v1` v35 e verificar se já houve primeiro `order_confirmation` real após o deploy;
+5. se houver, validar WAMID, `sent/delivered/read`, tentativa, dedupe e fila; rollback v34 se houver anomalia;
+6. continuar a Task 12 removendo dependências operacionais PapoAI restantes, começando pelo catálogo/fallback da Central;
+7. manter `inbound_provider=papoai`, ANA OFF, campanhas OFF e mídia global OFF até os gates correspondentes;
+8. salvar novo checkpoint em #630 ao final da próxima rodada.

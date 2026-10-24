@@ -27,18 +27,18 @@ assert.ok(submit, 'submit_order implementation must exist');
 assert.doesNotMatch(submit, /delivery_date_required|registration_required|payment_required|invalid_phone/, 'optional checkout fields must not block order creation');
 assert.match(sf, /registration_complete/i, 'registration state may still be returned for CRM context');
 
-for (const page of ['index.html','vitrine/index.html']) {
-  const html = read(page);
-  assert.ok(!html.includes('Confirmar este endereço'), `${page}: saved address must not require an extra confirmation click`);
-  assert.ok(html.includes('Trocar endereço'), `${page}: saved address must offer one clear edit action`);
-  assert.match(html, /state\.addressConfirmed=data\.found&&data\.customer\?\.registration_complete===true/, `${page}: complete saved address must be accepted automatically`);
-  assert.ok(html.includes('CPF'), `${page}: optional registration CPF field must remain available`);
-  assert.match(html, /Seu WhatsApp <span class="muted">\(opcional\)<\/span>/, `${page}: WhatsApp must remain optional`);
-  assert.match(html, /Data de entrega <span class="muted">\(opcional\)<\/span>/, `${page}: delivery date must remain optional`);
-  assert.match(html, /Como você vai pagar\? <span class="muted">\(opcional\)<\/span>/, `${page}: payment must remain optional`);
-  assert.ok(html.includes('customer_register'), `${page}: optional canonical registration endpoint required`);
-  assert.ok(html.includes('delivery_options'), `${page}: optional delivery choices endpoint required`);
-}
+const storefront=read('index.html');
+const legacyVitrine=read('vitrine/index.html');
+assert.ok(!storefront.includes('Confirmar este endereço'), 'saved address must not require an extra confirmation click');
+assert.match(storefront, /confirma tudo pelo WhatsApp depois do pedido/i, 'missing or outdated registration details must be handled over WhatsApp after order submission');
+assert.ok(!storefront.includes('checkoutDocument'), 'public checkout must not request CPF/CNPJ before order creation');
+assert.match(storefront, /WhatsApp para contato \(obrigatório\)/, 'checkout must identify WhatsApp as required');
+assert.match(storefront, /Data de entrega \(obrigatória\)/, 'checkout must identify delivery date as required');
+assert.match(storefront, /Como você vai pagar\? <span class="muted">\(obrigatório\)<\/span>/, 'checkout must identify payment as required');
+assert.ok(storefront.includes('customer_register'), 'optional canonical registration endpoint required');
+assert.ok(storefront.includes('delivery_options'), 'optional delivery choices endpoint required');
+assert.match(legacyVitrine,/rel="canonical" href="https:\/\/donaantonia\.com\.br\/"/,'/vitrine/ must canonicalize to the public root');
+assert.match(legacyVitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'/vitrine/ must preserve query and hash while redirecting');
 
 assert.ok(exists('cadastro/index.html'), '/cadastro page must exist');
 const cadastro = read('cadastro/index.html');

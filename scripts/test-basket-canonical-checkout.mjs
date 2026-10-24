@@ -1,0 +1,17 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const p='supabase/sql/20261004_basket_canonical_checkout_v1.sql';
+assert.ok(fs.existsSync(p),'canonical checkout SQL must exist');
+const s=fs.readFileSync(p,'utf8');
+assert.match(s,/create_vitrine_cart_order_v3_base/i,'split/canonical cart engine must be patched');
+assert.match(s,/basket_lot_public_availability_v1/i,'checkout must revalidate canonical lot availability');
+assert.match(s,/for update/i,'lot rows must be locked before final availability decision');
+const replacement=s.slice(s.indexOf('v_new:=$new$'),s.indexOf('$new$;',s.indexOf('v_new:=$new$'))+6);
+assert.match(replacement,/select public_available into v_existing_stock/i,'requested lot stock must come from canonical public availability');
+assert.match(replacement,/v_lot_requested>coalesce\(v_existing_stock,0\)/i,'cumulative requested quantity must be checked after canonical read');
+assert.match(replacement,/availability_reason='available'/i,'non-public lot must be rejected transactionally');
+assert.doesNotMatch(replacement,/v_group='hygiene' or sale_enabled=true/i,'linked group must no longer bypass canonical pause/stock rules');
+assert.match(s,/coalesce\(fl\.linked_lot_id,fl\.linked_hygiene_lot_id\)/i,'generic connected lot remains supported');
+assert.match(replacement,/v_lot_demand/i,'cumulative demand in the same cart must remain protected');
+assert.match(replacement,/basket_kit_lot_insufficient/i,'stale stock must return an explicit basket stock error');
+console.log('basket canonical checkout contract: PASS');

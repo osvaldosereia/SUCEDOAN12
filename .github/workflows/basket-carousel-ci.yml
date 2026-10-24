@@ -6,7 +6,19 @@ on:
       - 'vitrine/index.html'
       - 'vitrine/basket-carousel.js'
       - 'supabase/functions/storefront-v2/index.ts'
+      - 'supabase/sql/2026100*_basket_*.sql'
+      - 'supabase/migrations/2026100*_basket_*.sql'
       - 'scripts/test-basket-carousel-*.mjs'
+      - 'tests/public-basket-item-controls.test.mjs'
+      - 'scripts/test-basket-extra-carousel-scroll.mjs'
+      - 'scripts/test-basket-storefront-*.mjs'
+      - 'scripts/test-storefront-mobile-r6-live-browser.mjs'
+      - 'scripts/test-storefront-mobile-r5.mjs'
+      - 'scripts/test-public-basket-mold-recovery-v1.mjs'
+      - 'scripts/test-public-basket-detail-performance-r1.mjs'
+      - 'scripts/test-basket-unified-*.mjs'
+      - 'scripts/test-home-basket-size-photos-v1.mjs'
+      - 'scripts/test-storefront-mobile-r6-live-browser.mjs'
       - '.github/workflows/basket-carousel-ci.yml'
   push:
     branches: [main]
@@ -15,7 +27,14 @@ on:
       - 'vitrine/index.html'
       - 'vitrine/basket-carousel.js'
       - 'supabase/functions/storefront-v2/index.ts'
+      - 'supabase/sql/2026100*_basket_*.sql'
+      - 'supabase/migrations/2026100*_basket_*.sql'
       - 'scripts/test-basket-carousel-*.mjs'
+      - 'tests/public-basket-item-controls.test.mjs'
+      - 'scripts/test-basket-storefront-*.mjs'
+      - 'scripts/test-public-basket-mold-recovery-v1.mjs'
+      - 'scripts/test-public-basket-detail-performance-r1.mjs'
+      - 'scripts/test-basket-unified-*.mjs'
       - '.github/workflows/basket-carousel-ci.yml'
 permissions:
   contents: read
@@ -29,7 +48,41 @@ jobs:
           node-version: '24'
       - run: npm install --prefix "$RUNNER_TEMP/carousel-tests" --no-save --package-lock=false playwright@1.62.1
       - run: node "$RUNNER_TEMP/carousel-tests/node_modules/playwright/cli.js" install --with-deps chromium
+      - run: node --test tests/public-basket-item-controls.test.mjs
+      - run: node scripts/test-basket-mold-storefront-r5.mjs
+      - run: node scripts/test-basket-mold-composition-cache-v1.mjs
+      - run: node scripts/test-basket-carousel-service.mjs
+      - run: node scripts/test-home-basket-size-photos-v1.mjs
       - run: node --disable-warning=ExperimentalWarning scripts/test-basket-carousel-service.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-storefront-canonical.mjs
+      - name: Verify extra product carousels scroll independently on canonical public home
+        run: node scripts/test-basket-extra-carousel-scroll.mjs
+        env:
+          PLAYWRIGHT_PATH: ${{ runner.temp }}/carousel-tests/node_modules/playwright
+          STOREFRONT_PATH: index.html
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-unified-commercial-model.mjs
+      - run: node --disable-warning=ExperimentalWarning scripts/test-basket-unified-order-engine.mjs
       - run: node scripts/test-basket-carousel-browser.mjs
         env:
           PLAYWRIGHT_PATH: ${{ runner.temp }}/carousel-tests/node_modules/playwright
+
+      - run: node scripts/test-basket-home-browser.mjs
+        env:
+          PLAYWRIGHT_PATH: ${{ runner.temp }}/carousel-tests/node_modules/playwright
+      - name: Live mobile Chrome smoke at 320px and 390px (4G-like)
+        continue-on-error: true
+        run: node scripts/test-storefront-mobile-r6-live-browser.mjs
+        env:
+          PLAYWRIGHT_PATH: ${{ runner.temp }}/carousel-tests/node_modules/playwright
+
+      - name: Validate mobile storefront R1-R5 contracts
+        run: |
+          node scripts/test-home-performance-contract.mjs
+          node scripts/test-storefront-mobile-r1.mjs
+          node scripts/test-storefront-mobile-r2.mjs
+          node scripts/test-storefront-mobile-r3.mjs
+          node scripts/test-storefront-mobile-r4.mjs
+          node scripts/test-storefront-mobile-r5.mjs
+          node scripts/test-public-basket-mold-recovery-v1.mjs
+          node scripts/test-public-basket-detail-performance-r1.mjs
+          node scripts/test-checkout-whatsapp-return.mjs

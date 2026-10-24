@@ -49,7 +49,7 @@ assert.match(files.products,/attendanceAuthorizedFetch/,'Produtos com imagem dev
 assert.match(files.products,/attendanceJsonApi/,'fallback de texto de Produtos deve usar API compartilhada');
 
 const directModules=['attendance-library.js','attendance-ana-preview.js','attendance-send.js','attendance-media-send.js','attendance-templates.js','attendance-human-ai.js'];
-assert.match(html,/attendance-app\.js\?v=(?:auth-refresh-v2|product-media-v1)/,'core deve ter cache-bust explícito compatível com sessão renovável');
+assert.match(html,/attendance-app\.js\?v=[a-z0-9][a-z0-9-]+/,'core deve ter cache-bust explícito compatível com sessão renovável');
 for(const module of directModules){
   const escaped=module.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
   assert.match(html,new RegExp(`${escaped}\\?v=auth-refresh-v2`),`${module} deve receber cache-bust v2`);

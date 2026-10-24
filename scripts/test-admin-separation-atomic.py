@@ -1,6 +1,6 @@
 from pathlib import Path
 
-admin = Path('vitrine/admin/index.html').read_text(encoding='utf-8')
+admin = Path('vitrine/admin/index.html').read_text(encoding='utf-8') + '\n' + Path('vitrine/admin/admin-runtime.js').read_text(encoding='utf-8')
 migration = Path('supabase/sql/20260930_order_separation_atomic_v1.sql')
 
 checks = {

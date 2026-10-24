@@ -1,29 +1,104 @@
 import fs from 'node:fs';
-import vm from 'node:vm';
 import assert from 'node:assert/strict';
-import {stripTypeScriptTypes} from 'node:module';
-const product=(id,name)=>({id,name,image_url:'https://images.test/'+id+'.webp',packaging:'1 kg'});
-const tables={basket_sales_runtime_v1:[{id:1,sales_mode:'legacy'}],basket_templates:[{id:'basket',name:'Cesta',is_active:true,base_price:100},{id:'inactive',name:'Oculta',is_active:false}],basket_current_lot_v1:[{basket_id:'basket',lot_id:'sale-lot',quantity_available:3,sale_price_override:90,public_name:'Cesta Lote Legacy'},{basket_id:'inactive',lot_id:'hidden-lot',quantity_available:5}],basket_lot_images:[],basket_split_availability_v1:[{basket_id:'basket',food_lot_id:'food-lot',food_public_name:'Cesta Lote Outubro',food_sale_price_override:123.45,hygiene_lot_id:'hygiene-lot',uses_hygiene_kit:true,split_available:2}],basket_stock_lot_items:[{lot_id:'sale-lot',product_id:'rice',quantity_per_basket:3,position_order:1,product:product('rice','Arroz')},{lot_id:'draft-lot',product_id:'wrong',quantity_per_basket:9,product:product('wrong','Modelo diferente')},{lot_id:'food-lot',product_id:'rice',quantity_per_basket:2,position_order:1,product:product('rice','Arroz')},{lot_id:'hygiene-lot',product_id:'soap',quantity_per_basket:2,position_order:2,product:[product('soap','Sabonete')]},{lot_id:'hygiene-lot',product_id:'rice',quantity_per_basket:1,position_order:3,product:product('rice','Arroz')},{lot_id:'hidden-lot',product_id:'hidden',quantity_per_basket:1,product:product('hidden','Oculto')}]};
-const queries=[];
-class Query{constructor(t){this.t=t;this.filters=[]}select(){return this}eq(k,v){this.filters.push(x=>x[k]===v);return this}in(k,v){this.filters.push(x=>v.includes(x[k]));this.ids=v;return this}order(){return this}maybeSingle(){this.one=true;return this}then(resolve){const rows=tables[this.t].filter(x=>this.filters.every(f=>f(x)));queries.push({table:this.t,ids:this.ids});return Promise.resolve({data:this.one?rows[0]:rows,error:null}).then(resolve)}}
-const ctx={db:{from:t=>new Query(t)},cents:v=>Math.round(Number(v||0)*100),CATEGORIES:[],Map,Set};vm.createContext(ctx);
 const source=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
-const unit=source.slice(source.indexOf('async function splitGlobalReady()'),source.indexOf('async function sellableMap('));
-vm.runInContext(stripTypeScriptTypes(unit,{mode:'strip'}),ctx);
-const legacy=JSON.parse(JSON.stringify(await vm.runInContext('home()',ctx)));
-assert.equal(legacy.baskets.length,1);assert.equal(legacy.baskets[0].display_price_cents,9000);
-assert.equal(legacy.baskets[0].name,'Cesta Lote Legacy','legacy usa o nome comercial do lote ativo');
-assert.deepEqual(legacy.baskets[0].carousel_items.map(x=>[x.product_id,x.quantity]),[['rice',3]],'usar composição real do lote à venda');
-assert.equal(queries.filter(x=>x.table==='basket_stock_lot_items').length,1,'uma consulta para todas as cestas');
-assert.deepEqual(Array.from(queries.find(x=>x.table==='basket_stock_lot_items').ids),['sale-lot']);
-tables.basket_sales_runtime_v1[0].sales_mode='split';queries.length=0;
-const split=JSON.parse(JSON.stringify(await vm.runInContext('home()',ctx)));
-assert.equal(split.baskets[0].name,'Cesta Lote Outubro','split usa o nome do lote de alimentos ativo');
-assert.equal(split.baskets[0].display_price_cents,12345,'split usa o preço comercial do lote de alimentos ativo');
-assert.deepEqual(split.baskets[0].carousel_items.map(x=>[x.product_id,x.quantity]),[['rice',3],['soap',2]],'combinar os lotes selecionados e somar produto repetido');
-assert.equal(queries.filter(x=>x.table==='basket_stock_lot_items').length,1);
-assert.ok(!JSON.stringify(split).includes('Modelo diferente'));assert.ok(!JSON.stringify(split).includes('Oculto'));
-const quoteBlock=source.slice(source.indexOf('async function quote(payload:any)'),source.indexOf('async function resolveCode('));
-assert.match(quoteBlock,/food_sale_price_override/, 'prévia do checkout split deve ler o preço comercial do lote');
-assert.doesNotMatch(quoteBlock,/let total=Number\(b\.base_price\|\|0\)/,'prévia do checkout split não pode voltar ao preço da cesta-modelo');
-console.log('Basket carousel service: lot commercial name/price, selected sale lots, quantities, split aggregation, batch query and quote base passed');
+const home=source.slice(source.indexOf('async function home('),source.indexOf('async function sellableMap('));
+const detail=source.slice(source.indexOf('async function basket(id:string){'),source.indexOf('function groupChanged('));
+const quote=source.slice(source.indexOf('async function quote(payload:any){'),source.indexOf('async function resolveCode('));
+const carousel=fs.readFileSync('vitrine/basket-carousel.js','utf8');
+const root=fs.readFileSync('index.html','utf8');
+const moldOptions=source.slice(source.indexOf('function compareMoldPositionOptionOrder('),source.indexOf('async function moldQuote('));
+const vitrine=fs.readFileSync('vitrine/index.html','utf8');
+const vm=await import('node:vm');
+const publicOptions=source.slice(source.indexOf('function compareMoldPositionOptionOrder('),source.indexOf('async function moldQuote('));
+assert.ok(publicOptions.includes('alternatives.sort(compareMoldPositionOptionOrder)'),'public alternatives preserve the configured admin order');
+assert.ok(publicOptions.includes('shown.sort(compareMoldPositionOptionOrder)'),'the selected-product fallback preserves the configured admin order');
+assert.ok(!publicOptions.includes('shown.sort((a:any,b:any)=>Number(a.price_cents'),'public fallback must not replace admin order with price order');
+assert.ok(root.includes('Escolha uma opção · ordem definida no admin'),'public carousel explains that admin order is preserved');
+const sortStart=root.indexOf('function sortMoldAlternativesByAdminOrder(options){');
+const sortEnd=root.indexOf('\n    }',sortStart)+6;
+assert.ok(sortStart>=0&&sortEnd>sortStart,'public renderer has a named admin-order sorter');
+const sortSource=root.slice(sortStart,sortEnd);
+const sortMoldAlternativesByAdminOrder=vm.runInNewContext('('+sortSource.replace('function sortMoldAlternativesByAdminOrder','function')+')');
+const orderedOptions=sortMoldAlternativesByAdminOrder([{product_id:'third',sort_order:2,price_cents:100},{product_id:'first',sort_order:0,price_cents:1000},{product_id:'second',sort_order:1,price_cents:1}]);
+assert.deepEqual(orderedOptions.map(x=>x.product_id),['first','second','third'],'public carousel order follows the admin configuration even when prices differ');
+
+const totalHelper=source.match(/function basketTotalItems\(items:any\[\]\)\{[\s\S]*?\n\}/)?.[0];
+assert.ok(totalHelper,'basket total item helper exists');
+const sum=vm.runInNewContext('('+totalHelper.replace('items:any[]','items')+')');
+assert.equal(sum([{quantity:4},{quantity:4},{quantity:4}]),12,'sum all item quantities, not product types');
+assert.equal(sum([{quantity:4},{quantity:0},{quantity:-2},{quantity:'bad'}]),4,'ignore invalid/nonpositive quantities');
+assert.match(source,/total_item_count:basketTotalItems\(\[\.\.\.items\.values\(\)\]\)/,'legacy baskets expose total quantity');
+assert.match(source,/total_item_count:basketTotalItems\(carousel\)/,'mold baskets expose total selected composition quantity');
+for(const [name,html] of [['root',root]]){
+  assert.match(html,/size_card:true,size_key:sizeKey/,'size picker marks its compact cards');
+  assert.match(html,/basket-size-grande/,'Grande pastel background is defined');
+  assert.match(html,/basket-size-economica/,'Economica pastel background is defined');
+}
+const cardStart=carousel.indexOf('window.BasketCarousel={');
+const cardEnd=carousel.indexOf('\n};',cardStart)+3;
+assert.ok(cardStart>=0&&cardEnd>cardStart,'carousel card renderer exists');
+const context={window:{}};
+vm.runInNewContext(carousel.slice(cardStart,cardEnd),context);
+const rendered=context.window.BasketCarousel.card({id:'basket',name:'Grande',size_card:true,size_key:'grande',total_item_count:12,display_price_cents:1234},String,String,x=>x);
+assert.match(rendered,/12 itens/);
+assert.doesNotMatch(rendered,/no total/);
+assert.match(rendered,/Ver produtos/);
+assert.match(rendered,/basket-size-grande/);
+assert.match(rendered,/<span class="basket-price-prefix">A partir de:<\/span><strong class="basket-price-amount">/,'starting-price label appears on a separate, smaller line before the amount');
+assert.doesNotMatch(rendered,/Personalizar/);
+const sizePhotos={
+  grande:'/img/CESTA-GRANDE-ALVINO.webp',
+  media:'/img/CESTA-MEDIA-BONINI.webp',
+  pequena:'/img/CESTA-PEQUENA-BONINI.webp',
+  mini:'/img/CESTA-MINI-BONINI.webp',
+  economica:'/img/cesta-basica-cuiaba-varzea-grande-economica.avif'
+};
+let photoBytes=0;
+for(const [size,path] of Object.entries(sizePhotos)){
+  const card=context.window.BasketCarousel.card({id:'basket-'+size,name:size,size_card:true,size_key:size,total_item_count:12,display_price_cents:1234},String,String,x=>x,0);
+  assert.match(card,new RegExp('src="'+path.replaceAll('/','\\/').replaceAll('.','\\.')+'"'),size+' card shows the matching photo');
+  assert.match(card,new RegExp('alt="Cesta '+size+'"'),size+' photo has descriptive alt text');
+  const bytes=fs.statSync(path.slice(1)).size;photoBytes+=bytes;
+  assert.ok(bytes<100_000,size+' photo stays below 100 KB');
+}
+const lazyPhoto=context.window.BasketCarousel.card({id:'basket-media',name:'Média',size_card:true,size_key:'media',display_price_cents:1234},String,String,x=>x,2);
+assert.ok(lazyPhoto.includes('data-basket-src="'+sizePhotos.media+'"'),'non-priority basket photos use deferred loading');
+assert.match(lazyPhoto,/loading="lazy"/,'non-priority basket photos keep native lazy loading');
+assert.ok(photoBytes<350_000,'all five basket photos stay under 350 KB total');
+assert.match(root,/basket-size-card-photo/,'home page styles the basket size photos');
+assert.ok(root.includes('basket-carousel.js?v=20261023-basket-priority-clean-v1'),'home page refreshes the carousel asset cache');
+assert.match(vitrine,/<meta http-equiv="refresh" content="0;url=\/">/,'legacy /vitrine/ must redirect to the public root');
+assert.match(vitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'legacy redirect must preserve query and hash');
+assert.doesNotMatch(vitrine,/BasketCarousel\.mount|da_storefront_home_carousel_v1|checkoutWhatsappUnified/,'legacy route must not duplicate the public storefront');
+for(const [name,html] of [['home',root]]){
+  assert.match(html,/\.basket-price-prefix\\?\{[^}]*font-size:clamp\(11px/,'starting-price label uses a smaller font on '+name);
+  assert.match(html,/\.basket-price-amount\\?\{[^}]*font-size:clamp\(16px/,'amount remains prominent and responsive on '+name);
+}
+assert.match(home,/basket_commercial_catalog_v1/);assert.match(home,/public_name/);assert.match(home,/sale_price/);assert.match(home,/public_available/);
+assert.match(detail,/basket_commercial_catalog_v1/);assert.match(detail,/splitLotItems/);assert.match(detail,/basket_stock_lot_items/);
+assert.match(quote,/basket_commercial_catalog_v1/);assert.match(quote,/let total=Number\(c\.sale_price\|\|0\)/);
+assert.doesNotMatch(home,/basket_split_availability_v1|basket_current_lot_v1/);
+// The public basket detail stays small: optional extras are fetched only after opening a theme.
+const moldDetail=source.slice(source.indexOf('async function moldDetail('),source.indexOf('async function moldQuote('));
+assert.doesNotMatch(detail,/publicBasketExtras\(/,'opening a legacy basket must not fetch optional product records');
+assert.doesNotMatch(moldDetail,/publicBasketExtras\(/,'opening a mold basket must not fetch optional product records');
+const carouselHome=source.slice(source.indexOf('async function basketCarouselItems('),source.indexOf('function basketCategoryFields('));
+assert.match(carouselHome,/carousel_items:\[\.\.\.items\.values\(\)\]\.slice\(0,6\)/,'legacy basket cards preload six items for instant opening preview');
+const moldHome=source.slice(source.indexOf('function moldHomeCards('),source.indexOf('async function moldDetail('));
+assert.match(moldHome,/carousel_items:carousel\.slice\(0,6\)/,'mold basket cards preload six items for instant opening preview');
+assert.match(moldHome,/alternative_count:candidates\.length/,'home preview knows which basket items have a brand selector without extra queries');
+for(const page of [root]){
+  assert.match(page,/basketOpeningActionPreview\(id\)/,'opening and final cards have the same fixed footer');
+  assert.match(page,/return moldItemRow\(\{\.\.\.item,base_quantity:qty,quantity:qty,alternatives:\[\],alternatives_loaded:false,alternative_count:Number\(item\.alternative_count\|\|0\)\},i,true\)/,'opening draws real products through the final row renderer');
+  assert.match(page,/if\(cached\?\.mold_mode===true\)/,'mold preloaded cards follow the final editor layout');
+  assert.match(page,/function moldItemRow\(x,i,pending=false\)/,'row supports safe disabled pending state');
+  assert.doesNotMatch(page,/Preparando os outros produtos…/,'no alternate tiny provisional product-card UI');
+}
+assert.match(root,/basketOpeningPreview\(id\)/,'opening uses the cached home composition while detail loads');
+assert.match(source,/async function basketExtraProducts\(/,'extra products have a dedicated on-demand loader');
+assert.match(source,/action===["']basket_extra_products["']/,'the public API exposes the on-demand extras action');
+assert.match(root,/basket_extra_products/,'opening an extra theme requests its products');
+assert.match(root,/BASKET_INITIAL_RENDER_COUNT/,'basket editor renders a small initial batch');
+assert.match(root,/basket-progressive-sentinel/,'basket editor has a scroll sentinel for subsequent batches');
+assert.match(carousel,/A partir de:/,'basket cards label the displayed amount as a starting price');
+console.log('Basket carousel service: canonical lot name/price, composition and stock source passed');

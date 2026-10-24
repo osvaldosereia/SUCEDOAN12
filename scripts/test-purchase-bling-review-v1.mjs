@@ -1,0 +1,36 @@
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+
+const original=readFileSync("supabase/functions/admin-service-intelligence-v1/purchase-xml-v1/index.ts","utf8");
+const twin=readFileSync("supabase/functions/purchase-xml-v1/index.ts","utf8");
+const admin=readFileSync("vitrine/admin/index.html","utf8");
+const runtime=readFileSync("vitrine/admin/admin-runtime.js","utf8");
+const migration=readFileSync("supabase/migrations/20261012190000_purchase_bling_received_review_v1.sql","utf8");
+assert.equal(original,twin,"Two purchase XML backends must be identical");
+const a=original.indexOf("async function blingReceivedReviewStatus(");
+const b=original.indexOf("export async function handlePurchaseXmlRequest(",a);
+assert.ok(a>0&&b>a,"Bling received reminder status must exist");
+const fn=original.slice(a,b);
+assert.match(fn,/const today=cuiabaDate\(\)/,"Cuiabá business date");
+assert.match(fn,/purchase_bling_received_review_v1/);
+assert.match(fn,/ignoreDuplicates:true/,"Do not overwrite first operator");
+assert.match(fn,/verified_pending_count:null/,"No invented pending invoice counter");
+assert.doesNotMatch(fn,/await oauth\(|await bg\(|sefaz|manifestar|confirmar.*operacao/i,"Reminder never performs fiscal or Bling action");
+const actions=original.slice(original.indexOf('if(action==="bling_received_review_status")'),original.indexOf('if(action==="manual_import")'));
+assert.match(actions,/if\(a\.internal\|\|!a\.user_id\|\|a\.role==="viewer"\)/,"No viewer or system impersonation");
+assert.match(actions,/confirmBlingReceivedReview\(a\.user_id\)/,"Verified admin user is recorded");
+
+assert.match(migration,/review_date date primary key/);
+assert.match(migration,/reviewed_at timestamptz not null default now\(\)/);
+assert.match(migration,/enable row level security/);
+assert.match(migration,/revoke all on public\.purchase_bling_received_review_v1 from public, anon, authenticated/);
+const ui=runtime.slice(runtime.indexOf("  async function renderPurchases(){"),runtime.indexOf("  function purchaseMaybeMoney("));
+assert.doesNotThrow(()=>new Function(ui),"UI must parse as JS");
+assert.match(ui,/id="purchaseBlingReceivedReview"/);
+assert.match(ui,/purchaseApi\('bling_received_review_status'/);
+assert.match(ui,/purchaseApi\('bling_received_review_confirm'/);
+assert.match(ui,/Já conferi hoje/);
+assert.match(ui,/Isso não significa ausência de notas fiscais pendentes/);
+assert.match(ui,/Não há contagem automática de notas pendentes/);
+assert.doesNotMatch(ui,/pendenciasConfirmadas|nfe_recebidas_count|status.*aguardando_manifestacao/);
+console.log("PASS Compras XML: lembrete diário, status compartilhado, acesso e nenhum manifesto fiscal");

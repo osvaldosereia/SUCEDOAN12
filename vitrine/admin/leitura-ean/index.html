@@ -1,0 +1,1000 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b6348">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Leitura EAN · Dona Antônia</title>
+<style>
+:root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#17242c;background:#f3f6f5;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0;padding-bottom:env(safe-area-inset-bottom)}
+header{position:sticky;top:0;background:#0b6348;color:white;z-index:10;padding:12px max(14px,env(safe-area-inset-left));box-shadow:0 2px 8px #0002}
+header>div{max-width:960px;margin:auto;display:flex;gap:12px;align-items:center;justify-content:space-between}
+header strong{font-size:17px}header small{display:block;font-size:11px;opacity:.85}a.back{color:#fff;text-decoration:none;border:1px solid #ffffff80;border-radius:9px;padding:8px 10px;font-size:13px}
+main{max-width:960px;margin:0 auto;padding:12px;display:grid;gap:12px}
+.card{background:white;border-radius:13px;padding:15px;box-shadow:0 1px 5px #092c1917;border:1px solid #dce6df}
+h1,h2,p{margin:0}h1{font-size:20px}h2{font-size:17px}p.note{color:#52665d;font-size:12px;line-height:1.45;margin-top:5px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}
+button{cursor:pointer;min-height:42px;border:0;border-radius:9px;background:#e4eee8;color:#114c36;padding:8px 13px;font-size:14px;font-weight:700}
+button.primary{background:#08704c;color:#fff}button.blue{background:#165e9e;color:#fff}
+button:disabled{opacity:.5;cursor:not-allowed}
+label{display:block;font-size:13px;font-weight:700;color:#405348}
+input{font:inherit;min-height:46px;width:100%;padding:10px 12px;border:1px solid #b6c7be;border-radius:9px;background:#fff;color:#182c22}
+input:focus{outline:2px solid #25886a;outline-offset:1px}
+input[type=number]{font-size:20px;font-weight:700}
+input[type=date]{font-size:16px}
+.scan-box{overflow:hidden;border-radius:11px;background:#0f2021;position:relative}
+video{display:block;width:100%;height:230px;object-fit:cover}
+.scan-box::after{content:"";position:absolute;inset:31% 9%;border:2px solid #61f0ae;border-radius:12px;box-shadow:0 0 0 500px #0003;pointer-events:none}
+.scan-box[hidden], [hidden]{display:none!important}
+#entryEditor{border:2px solid #08704c;border-radius:12px;padding:12px;margin-top:12px;background:#f6fff9}
+#entryEditor strong{font-size:21px;font-variant-numeric:tabular-nums;letter-spacing:.5px}
+.fieldgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:10px}
+.fieldgrid label input{margin-top:5px}
+button.full{width:100%;margin-top:12px;font-size:16px;min-height:50px}
+#manual{display:flex;gap:7px;margin-top:10px}#manual input{flex:1;min-width:0;font-variant-numeric:tabular-nums}
+.counts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:12px 0}
+.count{border:1px solid #dbe9df;background:#f6faf8;padding:9px 5px;border-radius:9px;text-align:center}
+.count b{display:block;font-size:21px}.count small{font-size:11px;color:#587066}
+.filters{display:flex;gap:6px;overflow-x:auto;padding:3px 0 8px}
+.filters button{white-space:nowrap;font-size:12px;min-height:37px;padding:8px 10px;background:#e5ece8}
+.filters button.active{background:#08704c;color:white}
+.entry{padding:12px 0;border-top:1px solid #e3ebe6;display:flex;justify-content:space-between;gap:8px}
+.entry:first-child{border-top:0}.entry-code{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.entry-meta{font-size:12px;color:#5d7066;margin-top:5px}.entry-product-name{font-size:13px;font-weight:750;color:#125638;margin-top:4px;overflow-wrap:anywhere}
+.entry-product-photo{display:block;width:132px;height:132px;margin-top:8px;padding:4px;border:1px solid #dce8e1;border-radius:10px;background:#fff;cursor:zoom-in}
+.entry-product-photo img{display:block;width:100%;height:100%;object-fit:contain}
+.entry-left{min-width:0}.entry-right{text-align:right;flex-shrink:0}
+.tag{display:inline-block;font-size:12px;font-weight:800;border-radius:7px;padding:5px 7px}
+.found{background:#def7e5;color:#136139}.not_found{background:#fff0e0;color:#a34b0e}.pending{background:#e9eef3;color:#465c67}
+.edit-btn{font-size:12px;min-height:32px;padding:5px 9px;margin-top:7px}
+#message{font-size:13px;color:#34534a;min-height:18px;margin-top:8px}
+#message.error{color:#a32b22}
+.empty{padding:20px 0;text-align:center;color:#64756c;font-size:13px}
+#more{width:100%;margin-top:9px}
+@media(max-width:420px){.fieldgrid{grid-template-columns:1fr}.card{padding:12px}video{height:205px}header strong{font-size:15px}button{font-size:13px}}
+
+/* Mobile: impedir largura intrínseca de controles, cards e grid de estourar o viewport. */
+html,body{width:100%;max-width:100%;margin:0;overflow-x:clip}
+header,header>div,main,.card{width:100%;max-width:100%;min-width:0}
+header>div{min-width:0}
+header>div>div{min-width:0;flex:1 1 auto}
+header strong,header small{overflow-wrap:anywhere}
+header a.back{flex:0 0 auto}
+main{grid-template-columns:minmax(0,1fr);box-sizing:border-box}
+.card{overflow:hidden}
+.row,.row>*{min-width:0;max-width:100%}
+.fieldgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.fieldgrid>label,.fieldgrid input{min-width:0;max-width:100%}
+#manual,#manual input{min-width:0;max-width:100%}
+#manual>button{flex:0 0 auto}
+#entryEditor{max-width:100%;min-width:0}
+#currentEan,.entry-code{overflow-wrap:anywhere;word-break:break-word}
+.scan-box{max-width:100%;width:100%;min-width:0}
+.scan-box video{max-width:100%;min-width:0}
+.counts{grid-template-columns:repeat(3,minmax(0,1fr));min-width:0}
+.count{min-width:0;overflow-wrap:anywhere}
+.filters{min-width:0;max-width:100%;width:100%;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.entry{min-width:0;max-width:100%}
+.entry-left{flex:1 1 0;min-width:0}
+.entry-right{flex:0 1 auto;max-width:49%;min-width:0}
+.tag{max-width:100%;overflow-wrap:anywhere}
+#torch{margin-top:8px;background:#f4ce64;color:#44350e}
+@media(max-width:420px){
+  .fieldgrid{grid-template-columns:minmax(0,1fr)}
+  .entry-code{font-size:15px}
+  .entry-right{max-width:44%}
+  .counts{gap:4px}
+  .count{padding:8px 3px}
+  .count small{font-size:10px}
+}
+
+/* Scanner especializado: nenhuma sobreposição sobre as barras, nem corte por largura. */
+.scan-box::after{display:none!important}
+.scan-box{height:150px;min-height:0;position:relative;overflow:hidden}
+.scan-box video{display:block;width:100%;height:100%;max-height:none;object-fit:cover;background:#111}
+.scan-box .scan-frame{position:absolute;inset:26% 6%;border:2px solid rgba(255,255,255,.9);border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.18);pointer-events:none}
+.scan-box:has(#cameraViewport:not([hidden])){height:auto;min-height:150px}
+.scan-box:has(#cameraViewport:not([hidden])) .scan-frame,.scan-box:has(#cameraViewport:not([hidden])) video{display:none}
+@media(max-width:640px){.scan-box{height:136px;min-height:0}}
+
+#cameraViewport{width:100%;max-width:100%;min-width:0;overflow:hidden;text-align:center}
+#cameraViewport video{max-width:100%!important;width:100%!important;max-height:350px!important;object-fit:contain!important}
+#cameraViewport img,#cameraViewport canvas,#cameraViewport>div{max-width:100%!important}
+#cameraTools{margin:8px 0}
+.camera-choice{flex:1 1 180px;min-width:0}
+.camera-choice select{display:block;width:100%;max-width:100%;margin-top:4px;border:1px solid #b6c7be;border-radius:8px;min-height:42px;padding:6px;background:#fff;color:#20322b}
+.photo-choice{display:inline-flex;align-items:center;border-radius:9px;min-height:38px;margin-top:8px;padding:8px 12px;background:#e4eee8;color:#114c36;cursor:pointer;font-size:13px}
+.photo-choice input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+
+/* Leitura intensiva no mobile: sem rolagem horizontal nem campos desnecessários. */
+main{gap:7px;padding:8px}
+.card{padding:9px!important;border-radius:10px}
+h1{font-size:16px}h2{font-size:15px}
+header{padding-top:7px;padding-bottom:7px}
+header small{display:none!important}
+.card>.row:first-child button{min-height:36px;padding:5px 9px}
+.note{margin-top:3px!important;font-size:11px!important}
+#alternativeInput{margin-top:5px;font-size:12px;color:#0b6348}
+#alternativeInput summary{padding:6px 2px;cursor:pointer;font-weight:700}
+#manual{margin-top:5px}
+#entryEditor{padding:8px;margin-top:6px;border-width:1px}
+#entryEditor strong{font-size:18px}
+#eanValue{min-height:40px;padding:5px 8px;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.5px}
+#entryEditor .row button{min-height:30px;padding:3px 8px}
+.quantity-row{display:grid;grid-template-columns:36px minmax(0,1fr) 36px 36px 36px;gap:5px;align-items:end;margin-top:6px}
+.quantity-row label{min-width:0;font-size:11px}
+.quantity-row input{margin-top:2px;min-width:0;min-height:41px;padding:5px;text-align:center;font-size:20px}
+.quantity-row button{width:36px;min-height:41px;padding:0;font-size:18px}
+.quantity-row #qtyFive,.quantity-row #qtyTen{font-size:13px}
+.validity-toggle{min-height:30px;background:transparent;color:#125941;padding:3px 0;font-size:12px}
+#expiryField input{margin-top:4px;min-height:41px}
+#entryEditor button.full{min-height:46px;margin-top:5px;font-size:16px}
+#message{min-height:16px;font-size:11px;margin-top:4px}
+.counts{margin:5px 0;gap:4px}.count{padding:5px 2px}.count b{font-size:17px}.count small{font-size:10px}
+.filters{padding:2px 0 5px}.filters button{min-height:31px;padding:6px 7px;font-size:11px}
+.entry{padding:6px 0}.entry-code{font-size:14px}.entry-meta{margin-top:1px;font-size:11px}
+.tag{font-size:10px;padding:3px 5px}.edit-btn{min-height:27px;padding:3px 7px}
+.photo-prompt{margin-top:7px;background:#fff7ee;border:1px solid #e8a362;border-radius:9px;padding:9px}
+.photo-prompt strong{display:block;color:#91430c;font-size:14px}
+.photo-prompt small{display:block;font-size:12px;color:#654327}
+.photo-prompt p{font-size:12px;line-height:1.3;margin:4px 0}
+.photo-prompt button{flex:1 1 auto;min-height:39px;padding:5px 9px;font-size:12px}
+.scan-box.photo-mode{height:280px!important;max-height:45dvh}
+.scan-box.photo-mode .scan-frame{display:none}
+.scan-box.photo-mode video{object-fit:contain}
+@media(max-width:340px){.quantity-row{grid-template-columns:30px minmax(0,1fr) 30px 30px 30px;gap:3px}.quantity-row button{width:30px}}
+/* Ações da lista de EANs não encontrados */
+.resolution-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:7px}
+.resolution-actions button,.resolution-actions a{min-height:34px;padding:5px 7px;font-size:11px;text-align:center}
+.resolution-actions a{display:flex;align-items:center;justify-content:center;border-radius:8px;background:#e8f0ec;color:#114c36;text-decoration:none;font-weight:700}
+.resolution-panel{margin-top:7px;padding:9px;border:1px solid #b9d5c7;border-radius:9px;background:#f6fbf8;text-align:left}
+.resolution-panel[hidden]{display:none}.resolution-panel input{min-height:39px;margin:4px 0;font-size:14px}
+.resolution-panel .row{gap:5px}.resolution-panel button{min-height:36px;padding:6px 9px;font-size:12px}
+.resolution-result{border-top:1px solid #dce8e1;padding:7px 0;font-size:12px}.resolution-result:first-child{border-top:0}
+.resolution-result button{width:100%;text-align:left;background:#e5f1ea}.resolution-help{font-size:11px;color:#52665d;line-height:1.4;margin:4px 0}
+.cosmos-review{grid-column:1/-1;margin-top:8px;padding:10px;border:1px solid #b9d5c7;border-radius:9px;background:#f6fbf8;font-size:12px;line-height:1.45}
+.cosmos-review-main{display:flex;gap:9px;align-items:flex-start;margin-top:6px}.cosmos-review-main img,.cosmos-form-image{width:82px;height:82px;object-fit:contain;background:white;border:1px solid #dce8e1;border-radius:7px}
+.cosmos-image-choice{display:flex;gap:9px;align-items:center;margin:8px 0}.cosmos-image-choice label{display:flex;gap:7px;align-items:center}.cosmos-image-choice input{width:auto;min-height:18px}
+@media(max-width:480px){.resolution-actions{grid-template-columns:1fr 1fr}.entry-right{max-width:50%}}
+
+/* Cartões claros e arejados em telas grandes e pequenas. */
+#entries{display:grid;gap:9px}
+.entry{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:12px;padding:14px;border:1px solid #dce8e1;border-radius:12px;background:#fff;box-shadow:0 1px 3px #092c190d}
+.entry:first-child{border-top:1px solid #dce8e1}
+.entry-left{grid-column:1;min-width:0;flex:none}
+.entry-code{font-size:18px;line-height:1.25;letter-spacing:.02em;word-break:normal;overflow-wrap:anywhere}
+.entry-meta{font-size:13px;line-height:1.4;margin-top:6px}
+.entry-product-name{font-size:15px;line-height:1.35}
+.entry-right{grid-column:2;max-width:none;min-width:0;display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;text-align:right}
+.entry-right>div{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.edit-btn{min-height:40px;padding:8px 12px;margin-top:0;font-size:13px}
+.delete-btn{background:#fde8e7;color:#9d241e}
+.resolution-actions,.resolution-panel{grid-column:1/-1;width:100%;min-width:0}
+.resolution-actions{grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;margin-top:0}
+.resolution-actions button,.resolution-actions a{min-height:44px;padding:9px 10px;font-size:13px;line-height:1.25}
+.resolution-panel{margin-top:0;padding:14px}
+.resolution-panel .row{gap:8px}
+.resolution-result{padding:9px 0}
+.resolution-result button{display:grid;grid-template-columns:76px minmax(0,1fr);align-items:center;gap:12px;min-height:88px;padding:9px 12px;border:1px solid #d8e7dd;border-radius:10px;background:#f4faf6;font-size:14px;line-height:1.4}
+.resolution-result img{display:block;width:76px;height:76px;object-fit:contain;border-radius:8px;background:#fff}
+.resolution-result .product-placeholder{width:76px;height:76px;display:grid;place-items:center;border-radius:8px;background:#e8f0ec;color:#61746a;font-size:11px;text-align:center}
+.photo-viewer{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:16px;background:rgba(9,23,17,.66);backdrop-filter:blur(2px)}
+.photo-viewer[hidden]{display:none}
+.photo-viewer-content{position:relative;display:grid;place-items:center;gap:10px;width:min(92vw,460px);max-height:82dvh;min-height:150px;padding:18px;border:1px solid #dce6df;border-radius:14px;background:#fff;color:#34534a;text-align:center;box-shadow:0 16px 48px #0004}
+.photo-viewer img{display:block;width:auto;max-width:100%;max-height:min(62dvh,440px);object-fit:contain;border-radius:9px;background:#f4f7f5}
+.photo-viewer-close{position:fixed;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));width:42px;height:42px;border-radius:50%;background:#fff;color:#17242c;font-size:27px;line-height:1}
+#photoViewerAdd{min-height:40px;padding:8px 14px;background:#08704c;color:white}
+#photoViewerStatus{font-size:13px;line-height:1.4}
+@media(max-width:560px){
+ .entry{grid-template-columns:minmax(0,1fr);gap:10px;padding:13px}
+ .entry-left,.entry-right{grid-column:1}
+ .entry-right{justify-content:flex-start;text-align:left}
+ .entry-right>div{justify-content:flex-start}
+ .entry-code{font-size:17px;white-space:normal}
+ .resolution-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .resolution-actions button,.resolution-actions a{min-height:46px;font-size:12px}
+ .resolution-result button{grid-template-columns:68px minmax(0,1fr);min-height:82px;padding:8px;gap:10px}
+ .resolution-result img,.resolution-result .product-placeholder{width:68px;height:68px}
+}
+@media(max-width:360px){
+ .resolution-actions{grid-template-columns:1fr}
+ .entry-right{gap:6px}
+ .photo-viewer{padding:12px}
+}
+</style>
+</head>
+<body>
+<header><div><div><strong>Dona Antônia · Leitura EAN</strong><small>Registro rápido de produtos · Mobile</small></div><a class="back" href="/vitrine/admin/">← Admin</a></div></header>
+<main>
+<section class="card">
+  <div class="row between"><h1>Leitura rápida</h1><button class="primary" id="cameraButton" type="button">📷 Abrir câmera</button></div>
+  <p class="note">Leia → quantidade → salvar. O próximo EAN já fica pronto.</p>
+  <div class="scan-box" id="cameraBox" hidden>
+    <video id="camera" playsinline muted autoplay aria-label="Câmera do leitor EAN"></video>
+    <div class="scan-frame" aria-hidden="true"></div>
+    <div id="cameraViewport" hidden aria-label="Leitor de fotos de códigos EAN"></div>
+  </div>
+  <div class="row" id="cameraTools" hidden><label class="camera-choice" id="cameraLabel" hidden>Câmera
+      <select id="cameraSelect" aria-label="Selecionar câmera traseira"></select>
+    </label><button id="torch" type="button" hidden>🔦 Ligar lanterna</button></div>
+  <p class="note" id="cameraHelp" hidden>Aponte a câmera para as barras e mantenha o código inteiro e nítido. A leitura é automática.</p>
+  <details id="alternativeInput"><summary>Digitar EAN / fotografar código</summary>
+    <div id="manual"><input id="eanInput" type="text" inputmode="numeric" autocomplete="off" enterkeyhint="done" placeholder="EAN / leitor" aria-label="EAN"/><button id="useEan" type="button">Usar</button></div>
+    <label class="photo-choice" for="barcodePhoto">📸 Ler foto do código <input id="barcodePhoto" type="file" accept="image/*" capture="environment" aria-label="Fotografar código EAN"></label>
+  </details>
+  <form id="entryEditor" hidden>
+    <div class="row between"><div><small id="editingLabel">EAN lido</small><div><input id="eanValue" type="text" inputmode="numeric" autocomplete="off" maxlength="14" aria-label="EAN da leitura" required></div></div><button type="button" id="cancelEdit">Cancelar</button></div>
+    <div class="quantity-row">
+      <button type="button" id="qtyMinus">−</button>
+      <label>Quantidade <input id="quantity" type="number" inputmode="decimal" min=".001" max="999999" step=".001" value="1" required></label>
+      <button type="button" id="qtyPlus">+</button>
+      <button type="button" id="qtyFive">5</button>
+      <button type="button" id="qtyTen">10</button>
+    </div>
+    <button type="button" id="toggleValidity" class="validity-toggle">+ Validade (opcional)</button>
+    <label id="expiryField" hidden>Validade <input id="expiry" type="date"></label>
+    <button class="primary full" id="save" type="submit">✓ Salvar e próximo</button>
+  </form>
+  <section id="missingPhoto" class="photo-prompt" hidden>
+    <strong>⚠ EAN não encontrado</strong><small id="missingEan"></small>
+    <p>Fotografe a embalagem para armazenar o produto não cadastrado.</p>
+    <div class="row"><button id="takePhoto" class="primary" type="button">📷 Fotografar e salvar</button><button id="nativePhoto" type="button">Câmera do celular</button><button id="skipPhoto" type="button">Depois</button></div>
+    <input id="productPhotoInput" type="file" accept="image/*" capture="environment" hidden>
+  </section>
+  <div id="message" role="status" aria-live="polite">Conectando ao Supabase…</div>
+</section>
+<section class="card">
+  <div class="row between"><h2>Leituras salvas</h2><button class="blue" id="sync" type="button">↻ Sincronizar EANs</button></div>
+  <p class="note">Cada EAN é verificado ao salvar. O botão abaixo confere toda a lista novamente.</p>
+  <div class="counts">
+    <div class="count"><b id="countAll">–</b><small>Registros</small></div>
+    <div class="count"><b id="countFound">–</b><small>✓ Encontrados</small></div>
+    <div class="count"><b id="countUnknown">–</b><small>Não encontrados</small></div>
+  </div>
+  <div class="filters" aria-label="Filtrar leituras">
+    <button class="active" data-filter="all" type="button">Todos</button>
+    <button data-filter="pending" type="button">Pendentes</button>
+    <button data-filter="found" type="button">✓ Encontrados</button>
+    <button data-filter="not_found" type="button">⚠ Não encontrados</button>
+  </div>
+  <div id="entries"><div class="empty">Carregando registros…</div></div>
+  <button id="more" hidden type="button">Ver mais</button>
+</section>
+<section class="card" aria-labelledby="productReviewTitle">
+ <div class="row between">
+  <div><h2 id="productReviewTitle">Revisão de produtos existentes <span id="productReviewCount" class="tag pending">0</span></h2>
+   <p class="note">Sugestões da consulta automática ao OSCBR. Confira os dados e atualize o cadastro manualmente em Produtos; nada é alterado automaticamente.</p>
+  </div>
+  <button id="productReviewRefresh" type="button">Atualizar fila</button>
+ </div>
+ <div id="productReviewList"><div class="empty">Carregando revisões…</div></div>
+</section>
+</main>
+<div id="photoViewer" class="photo-viewer" hidden role="dialog" aria-modal="true" aria-label="Foto salva do produto">
+  <button id="photoViewerClose" class="photo-viewer-close" type="button" aria-label="Fechar foto">×</button>
+  <div class="photo-viewer-content"><img id="photoViewerImage" alt="Foto salva do produto" hidden><p id="photoViewerStatus" role="status">Carregando foto…</p><button id="photoViewerAdd" type="button" hidden>📷 Escolher ou tirar foto</button></div>
+</div>
+<script src="/vitrine/admin/leitura-ean/html5-qrcode.min.js?v=20261019b" defer></script>
+<script defer>
+(()=>{
+"use strict";
+const BASE="https://ssbesxgaijknwsjbsbcz.supabase.co";
+const KEY="sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8";
+const API=BASE+"/functions/v1/admin-ean-capture-v1";
+const $=(id)=>document.getElementById(id);
+let tokenPromise=null,cameraStream=null,cameraDetector=null,cameraRunning=false,cameraTimer=null,cameraChoice="",lastCameraEan="",lastCameraAt=0,scanMode="",scanner=null,torchOn=false;
+let paused=false,busy=false,editingId="",pendingId="",currentEan="",filter="all",offset=0,hasMore=false,rows=[],count=0,missingRecordId="",pendingPhotoFile=null,resolveRereadId="",photoUploadMode=false;
+const uuid=()=>crypto.randomUUID();
+const msg=(s,error=false)=>{$("message").textContent=s;$("message").classList.toggle("error",error)};
+const normalizeEan=(v)=>String(v||"").replace(/\D/g,"");
+const dateBR=(v)=>v?String(v).slice(8,10)+"/"+String(v).slice(5,7)+"/"+String(v).slice(0,4):"Sem validade";
+const qtyBR=(n)=>Number(n).toLocaleString("pt-BR",{maximumFractionDigits:3});
+const fmt=(v)=>v?new Date(v).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"";
+const esc=(s)=>String(s??"").replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function validToken(t){
+ try{const data=JSON.parse(atob(String(t).split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));return Number(data.exp)>Date.now()/1000+60}catch{return false}
+}
+async function savedPhotoUrl(id){
+ const token=await auth(),url=new URL(API);url.searchParams.set("action","photo_url");url.searchParams.set("id",id);
+ const response=await fetch(url,{cache:"no-store",headers:{Authorization:"Bearer "+token,apikey:KEY}});
+ const body=await response.json().catch(()=>({}));
+ if(!response.ok||body.ok!==true||!body.url)throw Error(body.error||"foto_nao_encontrada");
+ return body.url;
+}
+function showProductPhoto(url,name){
+ const viewer=$("photoViewer"),image=$("photoViewerImage"),status=$("photoViewerStatus");
+ photoUploadMode=false;$("photoViewerAdd").hidden=true;image.hidden=true;status.hidden=false;status.textContent="Carregando foto…";viewer.hidden=false;
+ image.onload=()=>{status.hidden=true;image.hidden=false};image.onerror=()=>{image.hidden=true;status.hidden=false;status.textContent="Não foi possível abrir a foto do produto."};
+ image.alt=name||"Produto encontrado";image.src=url||"";
+}
+async function showSavedPhoto(id){
+ const viewer=$("photoViewer"),image=$("photoViewerImage"),status=$("photoViewerStatus");
+ photoUploadMode=false;$("photoViewerAdd").hidden=true;image.hidden=true;status.hidden=false;status.textContent="Carregando foto…";viewer.hidden=false;
+ try{const url=await savedPhotoUrl(id);image.onload=()=>{status.hidden=true;image.hidden=false};image.onerror=()=>{status.hidden=false;status.textContent="Não foi possível abrir a foto salva."};image.alt="Foto salva do produto";image.src=url}
+ catch(e){status.textContent="Não foi possível abrir a foto. "+String(e?.message||e)}
+}
+function openPhotoUploadViewer(row){
+ photoUploadMode=true;missingRecordId=row.id;paused=true;pendingPhotoFile=null;
+ $("photoViewerImage").hidden=true;$("photoViewerImage").removeAttribute("src");
+ $("photoViewerStatus").hidden=false;$("photoViewerStatus").textContent="EAN "+row.ean+" · escolha uma foto para anexar.";
+ $("photoViewerAdd").hidden=false;$("photoViewer").hidden=false;
+}
+function closePhotoViewer(){
+ $("photoViewer").hidden=true;const image=$("photoViewerImage");image.onload=null;image.onerror=null;image.removeAttribute("src");image.hidden=true;
+ $("photoViewerStatus").hidden=false;$("photoViewerAdd").hidden=true;
+ if(photoUploadMode){photoUploadMode=false;missingRecordId="";pendingPhotoFile=null;paused=false}
+}
+async function auth(){
+ const stored=sessionStorage.getItem("da_finance_access_token_v1")||"";
+ if(validToken(stored))return stored;
+ if(tokenPromise)return tokenPromise;
+ tokenPromise=(async()=>{
+  const response=await fetch(BASE+"/functions/v1/admin-pin-auth-v1",{method:"POST",headers:{"Content-Type":"application/json",apikey:KEY},body:JSON.stringify({pin:"000000"}),cache:"no-store"});
+  const body=await response.json().catch(()=>({}));
+  if(!response.ok||body.ok!==true||!body.token_hash)throw Error("Não foi possível autenticar no Admin.");
+  const verification=await fetch(BASE+"/auth/v1/verify",{method:"POST",headers:{"Content-Type":"application/json",apikey:KEY},
+   body:JSON.stringify({token_hash:body.token_hash,type:body.verification_type||"email"}),cache:"no-store"});
+  const data=await verification.json().catch(()=>({}));
+  if(!verification.ok||!data.access_token)throw Error("Falha na sessão administrativa.");
+  sessionStorage.setItem("da_finance_access_token_v1",data.access_token);
+  return data.access_token;
+ })();
+ try{return await tokenPromise}finally{tokenPromise=null}
+}
+async function call(action,payload=null,retry=true){
+ const token=await auth();
+ const url=new URL(API);url.searchParams.set("action",action);
+ let options={cache:"no-store",headers:{Authorization:"Bearer "+token,apikey:KEY}};
+ if(payload){
+  options.method="POST";
+  if(payload instanceof FormData)options.body=payload;
+  else{options.headers["Content-Type"]="application/json";options.body=JSON.stringify(payload)}
+ }
+ if(action==="list"){url.searchParams.set("filter",filter);url.searchParams.set("offset",String(offset));url.searchParams.set("limit","5")}
+ const res=await fetch(url,options);
+ if(res.status===401&&retry){sessionStorage.removeItem("da_finance_access_token_v1");return call(action,payload,false)}
+ const data=await res.json().catch(()=>({}));
+ if(!res.ok||data.ok!==true)throw Error(data.error||"Falha de comunicação com o servidor.");
+ return data;
+}
+function setBusy(v){busy=v;for(const id of ["save","sync","more","useEan","cameraButton","takePhoto","nativePhoto","skipPhoto"]){const node=$(id);if(node)node.disabled=v}document.querySelectorAll("[data-cosmos-research]").forEach(node=>node.disabled=v)}
+function codeDetected(raw){
+ const code=normalizeEan(raw);
+ if(resolveRereadId&&!paused&&!busy&&!missingRecordId&&code.length>=8&&code.length<=14){const id=resolveRereadId;resolveRereadId="";resolveRow("repair_ean",id,{ean:code});return}
+ if(paused||busy||missingRecordId||code.length<8||code.length>14)return;
+ paused=true;
+ currentEan=code;editingId="";pendingId=uuid();
+ $("eanValue").value=code;
+ $("editingLabel").textContent="EAN lido";
+ $("quantity").value="1";$("expiry").value="";$("expiryField").hidden=true;$("toggleValidity").textContent="+ Validade (opcional)";
+ $("entryEditor").hidden=false;$("eanInput").value="";
+ msg("EAN lido. Informe a quantidade e salve.");
+ if(navigator.vibrate)navigator.vibrate(70);
+ playBalanceScanBeep();
+ $("quantity").focus({preventScroll:true});$("quantity").select();
+}
+function cancel(){
+ editingId="";currentEan="";pendingId="";paused=false;$("entryEditor").hidden=true;
+ if(!cameraRunning){$("alternativeInput").open=true;$("eanInput").focus()}
+}
+$("qtyMinus").onclick=()=>{$("quantity").value=String(Math.max(1,Number($("quantity").value||1)-1))};
+$("qtyPlus").onclick=()=>{$("quantity").value=String(Math.max(1,Number($("quantity").value||1)+1))};
+$("qtyFive").onclick=()=>{$("quantity").value="5"};
+$("qtyTen").onclick=()=>{$("quantity").value="10"};
+$("toggleValidity").onclick=()=>{
+ $("expiryField").hidden=!$("expiryField").hidden;
+ $("toggleValidity").textContent=$("expiryField").hidden?"+ Validade (opcional)":"− Ocultar validade";
+ if(!$("expiryField").hidden)$("expiry").focus({preventScroll:true});
+};
+function addManual(){
+ const code=normalizeEan($("eanInput").value);
+ if(!/^\d{8,14}$/.test(code)){msg("Informe um EAN numérico entre 8 e 14 dígitos.",true);return}
+ if($("entryEditor").hidden===false){msg("Salve ou cancele a leitura atual antes de continuar.",true);return}
+ codeDetected(code);
+}
+$("useEan").onclick=addManual;
+$("eanInput").addEventListener("keydown",(event)=>{if(event.key==="Enter"){event.preventDefault();addManual()}});
+$("cancelEdit").onclick=cancel;
+function setCounts(s){
+ if(!s)return;
+ $("countAll").textContent=s.total??0;
+ $("countFound").textContent=s.found??0;
+ $("countUnknown").textContent=s.not_found??0;
+}
+function updateRowLocal(row,summary){
+ if(!row)return;
+ setCounts(summary);
+ const index=rows.findIndex(x=>x.id===row.id),visible=filter==="all"||row.sync_status===filter;
+ if(index>=0){row={...rows[index],...row,product_name:row.product_name||rows[index].product_name};rows.splice(index,1);if(!visible)offset=Math.max(0,offset-1)}
+ if(visible){rows.unshift(row);if(index<0)offset++;rows=rows.slice(0,60)}
+ if(summary){
+  const totals={all:summary.total,found:summary.found,not_found:summary.not_found,pending:summary.pending};
+  count=Number(totals[filter]??count);
+ }
+ hasMore=offset<count;paint();$("more").hidden=!hasMore;
+}
+function photoReset(){
+ missingRecordId="";pendingPhotoFile=null;paused=false;
+ $("missingPhoto").hidden=true;$("cameraBox").classList.remove("photo-mode");
+ msg("Pronto para o próximo EAN.");
+}
+async function promptMissingPhoto(row){
+ if(!row||!row.id)return;
+ missingRecordId=row.id;paused=true;pendingPhotoFile=null;
+ $("missingEan").textContent="EAN "+row.ean;
+ $("missingPhoto").hidden=false;
+ $("takePhoto").textContent=cameraRunning?"📷 Fotografar e salvar":"📷 Abrir câmera para foto";
+ $("cameraBox").classList.toggle("photo-mode",cameraRunning);
+ if(!cameraRunning){
+  try{await startCamera(cameraChoice)}catch{}
+  $("cameraBox").classList.toggle("photo-mode",cameraRunning);
+  $("takePhoto").textContent=cameraRunning?"📷 Fotografar e salvar":"📷 Câmera do celular";
+ }
+ $("missingPhoto").scrollIntoView({behavior:"smooth",block:"nearest"});
+ msg("EAN salvo, mas não cadastrado. Fotografe a embalagem.");
+}
+async function compressProductPhoto(file){
+ const limit=100*1024;
+ let source=null,release=()=>{};
+ try{if(typeof createImageBitmap==="function"){source=await createImageBitmap(file);release=()=>source?.close?.()}}catch{}
+ if(!source){
+  const objectUrl=URL.createObjectURL(file),image=new Image();
+  try{await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=()=>reject(Error("imagem_invalida"));image.src=objectUrl});source=image}
+  catch(error){URL.revokeObjectURL(objectUrl);throw error}
+  release=()=>URL.revokeObjectURL(objectUrl);
+ }
+ try{
+  const attempts=[[1600,.82],[1440,.80],[1280,.78],[1120,.76],[1024,.74],[960,.72],[896,.70],[832,.68],[768,.66],[704,.64],[640,.62],[576,.60],[512,.58],[448,.56],[384,.54],[320,.52]];
+  let best=null;
+  for(const [maxEdge,quality] of attempts){
+   const scale=Math.min(1,maxEdge/Math.max(source.width,source.height));
+   const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(source.width*scale));canvas.height=Math.max(1,Math.round(source.height*scale));
+   const context=canvas.getContext("2d",{alpha:false});if(!context)throw Error("canvas_indisponivel");
+   context.drawImage(source,0,0,canvas.width,canvas.height);
+   let blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/webp",quality));
+   if(!blob||blob.type!=="image/webp")blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",quality));
+   canvas.width=1;canvas.height=1;
+   if(blob&&(!best||blob.size<best.size))best=blob;
+   if(blob&&blob.size<=limit){
+    const isWebp=blob.type==="image/webp";
+    return new File([blob],isWebp?"produto.webp":"produto.jpg",{type:isWebp?"image/webp":"image/jpeg",lastModified:Date.now()});
+   }
+  }
+  if(best&&best.size<=limit){
+   const isWebp=best.type==="image/webp";
+   return new File([best],isWebp?"produto.webp":"produto.jpg",{type:isWebp?"image/webp":"image/jpeg",lastModified:Date.now()});
+  }
+  throw Error("foto_nao_cabe_em_100kb");
+ }finally{release()}
+}
+async function uploadPhoto(file){
+ if(!missingRecordId||!file||busy)return;
+ const recordId=missingRecordId;setBusy(true);msg("Compactando a foto para até 100 KB…");
+ try{
+  pendingPhotoFile=await compressProductPhoto(file);
+  const form=new FormData();form.append("id",recordId);form.append("file",pendingPhotoFile,pendingPhotoFile.name);
+  const result=await call("photo",form);
+  updateRowLocal(result.row,null);photoReset();
+  msg("✓ Foto compactada para até 100 KB e vinculada ao EAN.");
+  if(!$("photoViewer").hidden)await showSavedPhoto(recordId);
+ }catch(e){
+  $("takePhoto").textContent="↻ Reenviar foto";$("photoViewerStatus").textContent="Não foi possível compactar ou salvar. "+e.message;
+  msg("A foto não foi salva: "+e.message+". Tente novamente.",true);
+ }finally{setBusy(false)}
+}
+
+$("takePhoto").onclick=async()=>{
+ if(pendingPhotoFile){await uploadPhoto(pendingPhotoFile);return}
+ const video=scanner?$("cameraViewport").querySelector("video"):$("camera");
+ if(!cameraRunning||!video||video.readyState<2){$("productPhotoInput").click();return}
+ const w=video.videoWidth||1280,height=video.videoHeight||720;
+ const scale=Math.min(1,1600/Math.max(w,height));
+ const canvas=document.createElement("canvas");
+ canvas.width=Math.max(1,Math.round(w*scale));canvas.height=Math.max(1,Math.round(height*scale));
+ canvas.getContext("2d").drawImage(video,0,0,canvas.width,canvas.height);
+ const file=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",0.82));
+ if(!file){msg("Não foi possível capturar a imagem. Use a câmera do celular.",true);return}
+ await uploadPhoto(file);
+};
+$("nativePhoto").onclick=()=>$("productPhotoInput").click();
+$("productPhotoInput").addEventListener("change",async e=>{
+ const file=e.currentTarget.files?.[0];e.currentTarget.value="";
+ if(file)await uploadPhoto(file);
+});
+$("skipPhoto").onclick=()=>{
+ if(busy)return;
+ photoReset();
+ msg("Leitura salva sem foto. O EAN não encontrado continua na lista.");
+};
+$("entryEditor").addEventListener("submit",async(event)=>{
+ event.preventDefault();if(busy||missingRecordId)return;
+ const ean=normalizeEan($("eanValue").value);
+ if(!/^\d{8,14}$/.test(ean)){msg("Informe um EAN numérico entre 8 e 14 dígitos.",true);return}
+ $("eanValue").value=ean;currentEan=ean;
+ const n=Number($("quantity").value);
+ if(!Number.isFinite(n)||n<=0||n>999999||Math.round(n*1000)!==n*1000){
+  msg("Quantidade inválida. Use até três casas decimais.",true);return;
+ }
+ if(!editingId&&!pendingId)pendingId=uuid();
+ const editing=Boolean(editingId);
+ const payload=editing?{id:editingId,ean,quantity:n,expires_on:$("expiry").value||null}:
+  {client_entry_id:pendingId,ean,quantity:n,expires_on:$("expiry").value||null};
+ setBusy(true);msg("Salvando e verificando o EAN…");
+ let saved=null;
+ try{
+  const result=await call(editing?"edit":"add",payload);
+  saved=result.row;
+  const resolved=await call("sync_one",{id:saved.id});
+  updateRowLocal(resolved.row,resolved.summary);
+  cancel();
+  if(resolved.row.sync_status==="not_found"&&!resolved.row.photo_path){
+   setBusy(false);await promptMissingPhoto(resolved.row);
+  }else{
+   msg(resolved.row.sync_status==="found"?"✓ Encontrado e salvo. Próximo EAN.":"✓ Salvo. Próximo EAN.");
+  }
+ }catch(e){
+  if(saved){
+   updateRowLocal(saved,null);cancel();
+   msg("EAN salvo, mas sincronização pendente: "+e.message+". Use Sincronizar.",true);
+  }else msg("Não foi salvo: "+e.message+". Tente novamente.",true);
+ }finally{setBusy(false)}
+});
+async function load(append=false){
+ if(!append){offset=0;rows=[]}
+ const data=await call("list");
+ rows=append?rows.concat(data.rows||[]):data.rows||[];
+ offset=data.next_offset||rows.length;count=data.count||0;hasMore=Boolean(data.has_more);
+ const s=data.summary||{};
+ setCounts(s);
+ paint();$("more").hidden=!hasMore;
+}
+function cosmosReviewHtml(research){
+ if(!research)return "";
+ if(research.status==="not_found")return '<div class="cosmos-review"><b>OSCBR:</b> Nenhum produto localizado. Esta consulta foi encerrada para evitar gasto repetido da franquia.</div>';
+ if(research.status!=="review"){
+  if(research.status==="error"&&research.http_status===429)return '<div class="cosmos-review"><b>OSCBR:</b> Limite de consultas atingido (HTTP 429). Aguarde a liberação da franquia antes de tentar novamente.</div>';
+  if(research.status==="error"&&(research.http_status===401||research.http_status===403))return '<div class="cosmos-review"><b>OSCBR:</b> A credencial foi recusada. Confira o usuário e a senha configurados no Supabase.</div>';
+  return '<div class="cosmos-review"><b>OSCBR:</b> Pesquisa com status '+esc(research.status||"indisponível")+'. Tente novamente mais tarde.</div>';
+ }
+ const p=research.proposal||{};
+ const fields=[
+  p.brand?'<div><b>Marca:</b> '+esc(p.brand)+'</div>':"",
+  p.ncm_candidate?'<div><b>NCM:</b> '+esc(p.ncm_candidate)+'</div>':"",
+  p.cest_candidate?'<div><b>CEST:</b> '+esc(p.cest_candidate)+'</div>':"",
+  p.gpc_description?'<div><b>Categoria OSCBR:</b> '+esc(p.gpc_description)+'</div>':""
+ ].join("");
+ const image=p.thumbnail_source?'<img loading="lazy" src="'+esc(p.thumbnail_source)+'" alt="Miniatura da OSCBR" onerror="this.hidden=true">':"";
+ return '<div class="cosmos-review"><b>Sugestão da OSCBR · confira antes de cadastrar</b>'+
+  '<div class="cosmos-review-main">'+image+'<div><div><b>Descrição:</b> '+esc(p.description||"Sem descrição")+'</div>'+fields+
+  '<div class="resolution-help">NCM e CEST são sugestões da fonte e devem ser conferidos antes de usar. O resultado fica salvo e não será consultado novamente para este EAN.</div></div></div></div>';
+}
+function paint(){
+ const list=$("entries");
+ if(!rows.length){list.innerHTML='<div class="empty">'+(filter==="all"?"Nenhuma leitura salva ainda.":"Nenhuma leitura neste filtro.")+'</div>';return}
+ list.innerHTML=rows.map(r=>{
+  const status=r.sync_status==="found"?'<span class="tag found">✓ Encontrado</span>'
+   :r.sync_status==="not_found"?'<span class="tag not_found">⚠ Não encontrado</span>'
+   :'<span class="tag pending">A sincronizar</span>';
+  return '<article class="entry"><div class="entry-left"><div class="entry-code">'+esc(r.ean)+'</div>'+
+    (r.sync_status==="found"&&r.product_name?'<div class="entry-product-name">'+esc(r.product_name)+'</div>':'')+
+    (r.sync_status==="found"&&r.product_image_url?'<button type="button" class="entry-product-photo" data-product-photo data-photo-url="'+esc(r.product_image_url)+'" data-product-name="'+esc(r.product_name||"Produto encontrado")+'" aria-label="Ampliar foto de '+esc(r.product_name||"produto encontrado")+'"><img loading="lazy" src="'+esc(r.product_image_url)+'" alt="'+esc(r.product_name||"Produto encontrado")+'"></button>':'')+
+   '<div class="entry-meta">Quantidade: <b>'+qtyBR(r.quantity)+'</b> · '+dateBR(r.expires_on)+'</div>'+
+   '<div class="entry-meta">'+fmt(r.created_at)+'</div></div>'+
+   '<div class="entry-right">'+status+(r.photo_path?'<div class="entry-meta">📷 Foto salva</div>':'')+
+   '<div><button type="button" class="edit-btn" data-edit="'+esc(r.id)+'">Editar</button>'+
+   '<button type="button" class="edit-btn delete-btn" data-delete="'+esc(r.id)+'">Excluir</button>'+
+   (r.sync_status==="not_found"&&!r.photo_path?'<button type="button" class="edit-btn" data-photo="'+esc(r.id)+'">📷 Adicionar foto</button>':'')+
+   (r.photo_path?'<button type="button" class="edit-btn" data-view-photo="'+esc(r.id)+'">Ver foto</button>':'')+
+   '</div></div>'+
+   (r.sync_status==="not_found"?
+    '<div class="resolution-actions">'+
+    '<button type="button" data-resolve-open="reread" data-id="'+esc(r.id)+'">↻ Corrigir / reler EAN</button>'+
+    '<a target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?tbm=isch&q='+encodeURIComponent(r.ean)+'">🖼 Buscar imagem</a>'+
+    '<a target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q='+encodeURIComponent("NCM produto EAN "+r.ean)+'">🔎 Buscar NCM</a>'+
+    ((!r.cosmos_research||!['review','not_found'].includes(r.cosmos_research.status))?'<button type="button" data-cosmos-research="'+esc(r.id)+'">🌐 Consultar OSCBR (manual)</button>':'')+
+    '<button type="button" data-resolve-open="search" data-id="'+esc(r.id)+'">🔗 Vincular produto</button>'+
+    '<button type="button" data-resolve-open="create" data-id="'+esc(r.id)+'">＋ Cadastrar inativo</button>'+
+    '</div>'+cosmosReviewHtml(r.cosmos_research)+'<div class="resolution-panel" data-resolution-panel="'+esc(r.id)+'" hidden></div>'
+    :'')+
+   '</article>';
+ }).join("");
+}
+
+function openResolutionPanel(row,mode){
+ const panel=$("entries").querySelector('[data-resolution-panel="'+row.id+'"]');if(!panel)return;
+ panel.hidden=false;resolveRereadId=mode==="reread"?row.id:"";
+ if(mode==="reread"){
+  panel.innerHTML='<form data-resolution-form="reread" data-id="'+esc(row.id)+'"><b>Corrigir o EAN lido</b><p class="resolution-help">Leia novamente com a câmera ou o leitor. Também pode digitar o código correto. A lista será sincronizada de novo.</p><input name="ean" inputmode="numeric" autocomplete="off" value="'+esc(row.ean)+'" aria-label="EAN corrigido" required><div class="row"><button class="primary" type="submit">Salvar EAN e conferir</button><button type="button" data-resolve-close>Cancelar</button></div></form>';
+  const input=panel.querySelector('input');input?.focus();input?.select();return;
+ }
+ if(mode==="search"){
+  panel.innerHTML='<form data-resolution-form="search" data-id="'+esc(row.id)+'"><b>Localizar no cadastro</b><p class="resolution-help">Busque por nome, marca, SKU ou EAN. Ao vincular, o EAN atual será salvo como alternativo e a quantidade lida será somada ao estoque.</p><input name="query" autocomplete="off" placeholder="Nome, marca, SKU ou EAN" required><label>NCM (opcional, 8 dígitos)<input name="ncm" inputmode="numeric" maxlength="10" placeholder="Ex.: 12345678"></label><div class="row"><button class="primary" type="submit">Buscar produtos</button><button type="button" data-resolve-close>Fechar</button></div><div data-search-results></div></form>';
+  panel.querySelector('input[name="query"]')?.focus();return;
+ }
+ if(mode==="create"){
+  const p=row.cosmos_research?.status==="review"?row.cosmos_research.proposal||{}:{};
+  const name=String(p.description||"").trim(),ncm=String(p.ncm_candidate||"");
+  const cest=String(p.cest_candidate||""),brand=String(p.brand||""),category=String(p.gpc_description||"");
+  const description=String(p.description||"");
+  const image=p.thumbnail_source?'<img class="cosmos-form-image" src="'+esc(p.thumbnail_source)+'" alt="Miniatura sugerida pela OSCBR">':"";
+  panel.innerHTML='<form data-resolution-form="create" data-id="'+esc(row.id)+'"><b>Cadastrar produto inativo</b>'+
+   '<p class="resolution-help">O produto ficará inativo e com estoque zero. Confira os dados fiscais e comerciais antes de cadastrar.</p>'+
+   '<label>Nome do produto<input name="name" maxlength="180" required value="'+esc(name)+'" placeholder="Ex.: Arroz 5 kg"></label>'+
+   '<label>NCM (8 dígitos)<input name="ncm" inputmode="numeric" maxlength="8" value="'+esc(ncm)+'" placeholder="Ex.: 10063021"></label>'+
+   '<label>CEST (7 dígitos, se aplicável)<input name="cest" inputmode="numeric" maxlength="7" value="'+esc(cest)+'" placeholder="Opcional"></label>'+
+   '<label>Marca<input name="brand" maxlength="100" value="'+esc(brand)+'"></label>'+
+   '<label>Categoria<input name="category" maxlength="160" value="'+esc(category)+'"></label>'+
+   '<label>Descrição<input name="description" maxlength="1000" value="'+esc(description)+'"></label>'+
+   (image?'<div class="cosmos-image-choice">'+image+'<label><input type="checkbox" name="use_image" value="yes"> Usar a miniatura da OSCBR como imagem do produto</label></div>':'')+
+   '<div class="row"><button class="primary" type="submit">Cadastrar inativo</button><button type="button" data-resolve-close>Cancelar</button></div></form>';
+  panel.querySelector('input[name="name"]')?.focus();
+ }
+}
+async function runCosmosResearch(id){
+ if(busy)return;
+ const row=rows.find(x=>x.id===id);if(!row)return;
+ setBusy(true);msg("Consultando a OSCBR pelo EAN…");
+ try{
+  const data=await call("cosmos_research",{id});
+  const updated={...row,cosmos_research:data.research};
+  updateRowLocal(updated,null);
+  if(data.research?.status==="review"){
+   openResolutionPanel(updated,"create");
+   msg("Dados encontrados na OSCBR. Confira a sugestão e cadastre apenas se estiver correta.");
+  }else msg("A OSCBR não localizou produto para este EAN.");
+ }catch(e){
+  if(["leitura_nao_esta_na_fila","leitura_nao_encontrada"].includes(e.message)){
+   try{await load()}catch{}
+   msg("Esta leitura mudou em outra sessão. A fila foi atualizada; consulte o status atual.");
+  }else if(["limite_ou_frequencia_oscb","limite_diario_oscb_atingido"].includes(e.message)){
+   msg("A OSCBR limitou as consultas. Aguarde a liberação da franquia antes de tentar novamente.",true);
+  }else msg("Não foi possível pesquisar na OSCBR: "+e.message,true);
+ }
+ finally{setBusy(false)}
+}
+function syncFilterButtons(){document.querySelectorAll("[data-filter]").forEach(button=>button.classList.toggle("active",button.dataset.filter===filter))}
+async function resolveRow(action,id,payload){
+ if(busy)return;setBusy(true);
+ try{
+  const data=await call(action,{id,...payload});
+  const moved=action==="link_product"||action==="create_inactive";
+  if(moved){
+   filter="found";syncFilterButtons();
+   updateRowLocal(data.row,data.summary);
+  }else updateRowLocal(data.row,data.summary);
+  const text=action==="repair_ean"?(data.row.sync_status==="found"?"EAN corrigido e encontrado no cadastro.":"EAN corrigido; continua não encontrado.")
+   :action==="link_product"?"Produto vinculado. Estoque definido pela quantidade da lista Ler EAN ("+qtyBR(data.row.quantity)+"). Agora está em Produtos encontrados."
+   :"Produto cadastrado como inativo. Estoque definido pela quantidade da lista Ler EAN ("+qtyBR(data.row.quantity)+"). Agora está em Produtos encontrados.";
+  msg("✓ "+text);
+ }catch(e){msg("Não foi possível concluir: "+e.message,true)}finally{setBusy(false)}
+}
+$("entries").addEventListener("click",async(event)=>{
+ const cosmos=event.target.closest("[data-cosmos-research]");
+ if(cosmos){await runCosmosResearch(cosmos.dataset.cosmosResearch);return}
+ const open=event.target.closest("[data-resolve-open]");
+ if(open){if(busy)return;const row=rows.find(x=>x.id===open.dataset.id);if(row)openResolutionPanel(row,open.dataset.resolveOpen);return}
+ const close=event.target.closest("[data-resolve-close]");
+ if(close){resolveRereadId="";const panel=close.closest("[data-resolution-panel]");if(panel){panel.hidden=true;panel.innerHTML=""}return}
+ const choose=event.target.closest("[data-link-product]");
+ if(choose){
+  if(busy)return;const panel=choose.closest("[data-resolution-panel]"),id=choose.dataset.id,row=rows.find(x=>x.id===id);
+  if(!row||!panel)return;const ncm=panel.querySelector('input[name="ncm"]')?.value||"";
+  resolveRow("link_product",id,{product_id:choose.dataset.linkProduct,ncm});return;
+ }
+ const productPhoto=event.target.closest("[data-product-photo]");
+ if(productPhoto){showProductPhoto(productPhoto.dataset.photoUrl,productPhoto.dataset.productName);return}
+ const view=event.target.closest("[data-view-photo]");
+ if(view){showSavedPhoto(view.dataset.viewPhoto);return}
+ const photo=event.target.closest("[data-photo]");
+ if(photo){
+  if(busy||missingRecordId)return;
+  const row=rows.find(x=>x.id===photo.dataset.photo);
+  if(row)openPhotoUploadViewer(row);return;
+ }
+ const remove=event.target.closest("[data-delete]");
+ if(remove){
+  if(busy||missingRecordId)return;const row=rows.find(x=>x.id===remove.dataset.delete);if(!row)return;
+  if(!window.confirm("Excluir a leitura do EAN "+row.ean+"?"))return;
+  setBusy(true);msg("Excluindo leitura…");
+  try{await call("delete",{id:row.id});await load();msg("Leitura excluída.");}
+  catch(e){msg("Não foi possível excluir: "+e.message,true)}finally{setBusy(false)}
+  return;
+ }
+ const btn=event.target.closest("[data-edit]");if(!btn||busy||missingRecordId)return;
+ const r=rows.find(x=>x.id===btn.dataset.edit);if(!r)return;
+ paused=true;editingId=r.id;pendingId="";currentEan=r.ean;
+ $("editingLabel").textContent="Editar leitura salva";$("eanValue").value=r.ean;
+ $("quantity").value=r.quantity;$("expiry").value=r.expires_on||"";$("expiryField").hidden=!r.expires_on;$("toggleValidity").textContent=r.expires_on?"− Ocultar validade":"+ Validade (opcional)";
+ $("entryEditor").hidden=false;$("quantity").focus({preventScroll:true});$("quantity").select();
+});
+$("photoViewerAdd").addEventListener("click",()=>$("productPhotoInput").click());
+ $("photoViewerClose").addEventListener("click",closePhotoViewer);
+ $("photoViewer").addEventListener("click",(event)=>{if(event.target===$("photoViewer"))closePhotoViewer()});
+ document.addEventListener("keydown",(event)=>{if(event.key==="Escape"&&!$("photoViewer").hidden)closePhotoViewer()});
+ document.querySelectorAll("[data-filter]").forEach(btn=>btn.addEventListener("click",async()=>{
+ if(busy||missingRecordId)return;filter=btn.dataset.filter;
+ document.querySelectorAll("[data-filter]").forEach(x=>x.classList.toggle("active",x===btn));
+ try{setBusy(true);await load();msg("Lista filtrada.")}catch(e){msg(e.message,true)}finally{setBusy(false)}
+}));
+$("more").onclick=async()=>{if(busy)return;try{setBusy(true);await load(true)}catch(e){msg(e.message,true)}finally{setBusy(false)}};
+
+$("entries").addEventListener("submit",async(event)=>{
+ const form=event.target.closest("form[data-resolution-form]");if(!form)return;
+ event.preventDefault();if(busy)return;
+ const id=form.dataset.id,kind=form.dataset.resolutionForm,fd=new FormData(form);
+ if(kind==="reread"){
+  const ean=normalizeEan(fd.get("ean"));if(ean.length<8||ean.length>14){msg("Informe um EAN válido com 8 a 14 números.",true);return}
+  resolveRereadId="";await resolveRow("repair_ean",id,{ean});return;
+ }
+ if(kind==="search"){
+  const query=String(fd.get("query")||"").trim();if(query.length<2){msg("Digite pelo menos 2 caracteres para buscar.",true);return}
+  const results=form.querySelector("[data-search-results]");
+  setBusy(true);msg("Buscando produtos no cadastro…");
+  try{
+   const data=await call("search_products",{query});
+   if(!data.rows?.length){results.innerHTML='<div class="resolution-result">Nenhum produto encontrado. Confira o nome ou use “Cadastrar inativo”.</div>';return}
+   results.innerHTML=data.rows.map(p=>'<div class="resolution-result"><button type="button" data-link-product="'+esc(p.id)+'" data-id="'+esc(id)+'">'+(p.image_url?'<img loading="lazy" decoding="async" src="'+esc(p.image_url)+'" alt="Foto de '+esc(p.name)+'" onerror="this.hidden=true">':'<span class="product-placeholder" aria-label="Produto sem foto">Sem foto</span>')+'<span><b>'+esc(p.name)+'</b><br>'+esc(p.sku||"Sem SKU")+' · EAN '+esc(p.gtin||"—")+' · estoque '+esc(qtyBR(p.stock||0))+(p.is_active?'':' · INATIVO')+'</span></button></div>').join("");
+   msg(data.rows.length+" produto(s) encontrado(s). Selecione o correto para vincular.");
+  }catch(e){results.innerHTML='<div class="resolution-result">Falha na busca: '+esc(e.message)+'</div>';msg("Falha ao buscar produtos.",true)}
+  finally{setBusy(false)}
+  return;
+ }
+ if(kind==="create"){
+  const name=String(fd.get("name")||"").trim(),ncm=normalizeEan(fd.get("ncm")),cest=normalizeEan(fd.get("cest"));
+  if(!name){msg("Informe o nome do produto.",true);return}
+  if(ncm&&ncm.length!==8){msg("O NCM deve ter 8 números.",true);return}
+  if(cest&&cest.length!==7){msg("O CEST deve ter 7 números.",true);return}
+  const research=rows.find(x=>x.id===id)?.cosmos_research,p=research?.proposal||{};
+  const attributes={
+   brand:String(fd.get("brand")||"").trim(),category:String(fd.get("category")||"").trim(),
+   description:String(fd.get("description")||"").trim(),cest:cest||null,gpc:p.gpc_code||"",
+   net_weight_raw:p.net_weight_raw,gross_weight_raw:p.gross_weight_raw,
+   researched_at:research?.researched_at||null,
+   image_url:fd.get("use_image")==="yes"?p.thumbnail_source:null
+  };
+  await resolveRow("create_inactive",id,{name,ncm:ncm||null,attributes});
+ }
+});
+$("sync").onclick=async()=>{
+ if(busy||missingRecordId)return;setBusy(true);msg("Sincronizando os EANs com o cadastro…");
+ try{const s=await call("sync",{});await load();msg("✓ Sincronizado: "+s.summary.found+" encontrado(s), "+s.summary.not_found+" não encontrado(s).")}
+ catch(e){msg("Não foi possível sincronizar: "+e.message,true)}finally{setBusy(false)}
+};
+function acceptDetection(result){
+ if(paused||busy)return;
+ const now=Date.now();if(now-lastDetection<850)return;lastDetection=now;
+ codeDetected(result);
+}
+const supportedFormats=()=>{
+ const fmt=window.Html5QrcodeSupportedFormats;
+ if(!fmt)throw Error("Leitor não carregado. Atualize a página.");
+ return [fmt.EAN_13,fmt.EAN_8,fmt.UPC_A,fmt.UPC_E,fmt.CODE_128,fmt.ITF];
+};
+const scannerOptions=()=>({
+ formatsToSupport:supportedFormats(),
+ verbose:false,
+ useBarCodeDetectorIfSupported:false
+});
+// Adaptado diretamente do leitor operacional do Balanço (admin-runtime.js).
+// Mantém getUserMedia(environment), BarcodeDetector e ciclo de 120 ms.
+// Única diferença: envia o EAN para o formulário local, sem consultar produtos.
+function stopCamera(){
+ cameraRunning=false;scanMode="";
+ if(cameraTimer!==null){clearTimeout(cameraTimer);cameraTimer=null}
+ if(cameraStream){
+  for(const track of cameraStream.getTracks?.()||[])try{track.stop()}catch{}
+  cameraStream=null;
+ }
+ if(scanner){try{if(scanner.isScanning)scanner.stop().catch(()=>{});scanner.clear()}catch{}scanner=null}
+ const viewport=$("cameraViewport");if(viewport)viewport.replaceChildren();
+ cameraDetector=null;
+ const v=$("camera");if(v)try{v.pause();v.srcObject=null}catch{}
+ $("cameraBox").hidden=true;
+ $("cameraHelp").hidden=true;
+ $("cameraTools").hidden=true;
+ $("torch").hidden=true;
+ $("torch").textContent="🔦 Ligar lanterna";
+ $("cameraButton").textContent="📷 Abrir câmera";
+}
+let balanceScanAudioCtx=null;
+function balanceScanAudioContext(){
+ const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return null;
+ if(!balanceScanAudioCtx)balanceScanAudioCtx=new Ctx();return balanceScanAudioCtx;
+}
+async function unlockBalanceScanAudio(){try{const ctx=balanceScanAudioContext();if(ctx?.state==="suspended")await ctx.resume()}catch{}}
+function playBalanceScanBeep(){
+ try{
+  const ctx=balanceScanAudioContext();if(!ctx)return;
+  const fire=()=>{const now=ctx.currentTime,osc=ctx.createOscillator(),gain=ctx.createGain();
+   osc.type="square";osc.frequency.setValueAtTime(1500,now);
+   gain.gain.setValueAtTime(1,now);gain.gain.setValueAtTime(1,now+.10);
+   gain.gain.exponentialRampToValueAtTime(.0001,now+.18);
+   osc.connect(gain);gain.connect(ctx.destination);osc.start(now);osc.stop(now+.19)};
+  if(ctx.state==="suspended")ctx.resume().then(fire).catch(()=>{});else fire();
+ }catch{}
+}
+async function startHtml5Camera(deviceId=""){
+ if(!window.Html5Qrcode)throw Error("O leitor de câmera não carregou. Atualize a página e tente novamente.");
+ const viewport=$("cameraViewport");$("cameraBox").hidden=false;viewport.hidden=false;viewport.replaceChildren();
+ scanner=new Html5Qrcode("cameraViewport",scannerOptions(),false);
+ const camera=deviceId||{facingMode:"environment"};
+ await scanner.start(camera,{fps:12,qrbox:(w,h)=>({width:Math.max(220,Math.floor(w*.9)),height:Math.max(100,Math.floor(h*.48))})},decoded=>{
+  const raw=String(decoded||"").replace(/\D+/g,"");if(raw.length<8||raw.length>14)return;
+  const now=Date.now();if(raw!==lastCameraEan||now-lastCameraAt>2500){lastCameraEan=raw;lastCameraAt=now;codeDetected(raw)}
+ },()=>{});
+ cameraRunning=true;$("cameraButton").textContent="■ Fechar câmera";$("cameraHelp").hidden=false;scanMode="active";msg("Câmera ativa · aponte o código de barras para o quadro.");
+}
+async function startCamera(deviceId=""){
+ unlockBalanceScanAudio();
+ const status=$("message"),video=$("camera");if(!video)return;
+ if(!navigator.mediaDevices?.getUserMedia){msg("Este navegador não liberou câmera. Use o EAN manual abaixo.",true);return}
+ stopCamera();
+ if(!("BarcodeDetector" in window)){
+  try{await startHtml5Camera(deviceId)}catch(e){stopCamera();msg("Não consegui abrir a câmera: "+String(e?.message||e)+". Verifique a permissão de câmera ou use EAN manual.",true)}
+  return;
+ }
+ try{
+  $("cameraBox").hidden=false;
+  $("cameraViewport").hidden=true;
+  const constraints=deviceId
+   ?{video:{deviceId:{exact:deviceId},width:{ideal:960},height:{ideal:540}},audio:false}
+   :{video:{facingMode:{ideal:"environment"},width:{ideal:960},height:{ideal:540}},audio:false};
+  // Mesma chamada/qualidade da câmera do Balanço.
+  const stream=await navigator.mediaDevices.getUserMedia(constraints);
+  cameraStream=stream;video.srcObject=stream;await video.play();cameraRunning=true;
+  cameraDetector=new BarcodeDetector({formats:["ean_13","ean_8","upc_a","upc_e","code_128"]});
+  $("cameraButton").textContent="■ Fechar câmera";
+  $("cameraHelp").hidden=false;scanMode="active";
+  if(status)msg("Câmera ativa · aponte o código de barras para o quadro.");
+  balanceCameraTick();
+  setupCameraControls(stream);
+ }catch(e){
+  stopCamera();
+  msg("Não consegui abrir a câmera: "+String(e?.message||e)+". Use EAN manual.",true);
+ }
+}
+async function balanceCameraTick(){
+ if(!cameraRunning)return;
+ const detector=cameraDetector,video=$("camera");
+ if(detector&&video&&video.readyState>=2&&!paused&&!busy){
+  try{
+   const codes=await detector.detect(video);
+   const raw=String(codes?.[0]?.rawValue||"").replace(/\D+/g,"");
+   if(raw.length>=8&&raw.length<=14){
+    const now=Date.now();
+    if(raw!==lastCameraEan||now-lastCameraAt>2500){
+     lastCameraEan=raw;lastCameraAt=now;
+     codeDetected(raw);
+    }
+   }
+  }catch{}
+ }
+ if(cameraRunning)cameraTimer=setTimeout(balanceCameraTick,120);
+}
+async function setupCameraControls(stream){
+ try{
+  const track=stream.getVideoTracks?.()[0];
+  if(!track)return;
+  const cap=track.getCapabilities?.()||{};
+  if(Array.isArray(cap.focusMode)&&cap.focusMode.includes("continuous")){
+   try{await track.applyConstraints({advanced:[{focusMode:"continuous"}]})}catch{}
+  }
+  $("torch").hidden=cap.torch!==true;
+  $("torch").onclick=async()=>{
+   torchOn=!torchOn;
+   try{await track.applyConstraints({advanced:[{torch:torchOn}]});
+    $("torch").textContent=torchOn?"🔦 Desligar lanterna":"🔦 Ligar lanterna";
+   }catch{torchOn=false;msg("Lanterna não disponível.",true)}
+  };
+  const cams=await navigator.mediaDevices.enumerateDevices();
+  const videos=cams.filter(x=>x.kind==="videoinput");
+  const select=$("cameraSelect");select.replaceChildren();
+  videos.forEach((cam,i)=>{const option=document.createElement("option");option.value=cam.deviceId;
+   option.textContent=cam.label||("Câmera "+(i+1));select.appendChild(option)});
+  const current=track.getSettings?.().deviceId||"";
+  if(videos.some(x=>x.deviceId===current))select.value=current;
+  $("cameraLabel").hidden=videos.length<2;
+  $("cameraTools").hidden=videos.length<2&&$("torch").hidden;
+  select.onchange=async()=>{
+   if(busy)return;
+   const next=select.value;cameraChoice=next;setBusy(true);
+   try{stopCamera();await startCamera(next)}finally{setBusy(false)}
+  };
+ }catch(e){console.debug("EAN camera controls",e)}
+}
+$("cameraButton").onclick=async()=>{
+ if(busy)return;
+ if(cameraRunning){stopCamera();msg("Câmera desligada.");return}
+ try{
+  setBusy(true);msg("Abrindo câmera do Balanço…");
+  await startCamera(cameraChoice);
+ }finally{setBusy(false)}
+};
+$("barcodePhoto").addEventListener("change",async(event)=>{
+ const file=event.target.files?.[0];event.target.value="";
+ if(!file||busy)return;
+ if(!$("entryEditor").hidden){msg("Salve ou cancele o EAN atual antes de ler uma foto.",true);return}
+ setBusy(true);
+ try{
+  if(cameraRunning)stopCamera();
+  if(!window.Html5Qrcode)throw Error("Biblioteca do leitor indisponível");
+  msg("Identificando barras na foto…");
+  $("cameraBox").hidden=false;
+  $("cameraViewport").hidden=false;
+  const instance=new Html5Qrcode("cameraViewport",scannerOptions(),false);
+  let decoded="";
+  try{decoded=await instance.scanFile(file,false)}
+  finally{try{instance.clear()}catch{}}
+  $("cameraViewport").replaceChildren();
+  $("cameraViewport").hidden=true;
+  $("cameraBox").hidden=true;
+  const ean=normalizeEan(decoded);
+  if(ean.length<8||ean.length>14)throw Error("Não foi encontrado EAN válido nesta foto.");
+  // Ignorar busy apenas nesta confirmação local; salvar continua independente.
+  setBusy(false);codeDetected(ean);
+ }catch(e){
+  $("cameraViewport").replaceChildren();$("cameraViewport").hidden=true;$("cameraBox").hidden=true;
+  msg("Não consegui ler a foto: "+String(e.message||e)+". Aproxime e refaça.",true);
+ }finally{setBusy(false)}
+});
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&cameraRunning)stopCamera()});
+window.addEventListener("pagehide",stopCamera);
+async function loadProductReviews(){
+ const list=$("productReviewList"),badge=$("productReviewCount");
+ if(!list||!badge)return;
+ list.innerHTML='<div class="empty">Carregando revisões…</div>';
+ try{
+  const data=await call("product_research");
+  const items=data.items||[];
+  badge.textContent=String(data.count??items.length);
+  if(!items.length){list.innerHTML='<div class="empty">Nenhuma revisão de produto existente aguardando.</div>';return}
+  list.innerHTML=items.map(item=>{
+   const p=item.product||{},s=item.proposal||{};
+   const status=item.status==="not_found"?"EAN não localizado no fornecedor":item.status==="error"?"Consulta esgotou as tentativas":"Sugestões disponíveis";
+   const googleUrl="https://www.google.com/search?tbm=isch&q="+encodeURIComponent([s.description||p.name,s.brand||p.brand,item.gtin].filter(Boolean).join(" "));
+   const fields=[
+    ["Nome",s.description],["Marca",s.brand],["Categoria",s.category],
+    ["NCM sugerido",s.ncm_candidate],["CEST sugerido",s.cest_candidate],
+    ["Unidade",s.unit_description||s.unit],["Embalagem",s.packaging],["Fabricante",s.manufacturer],
+    ["Peso líquido",s.net_weight_raw],["Peso bruto",s.gross_weight_raw]
+   ].filter(x=>x[1]!==null&&x[1]!==undefined&&String(x[1])!=="");
+   const facts=fields.length?fields.map(x=>'<div><b>'+esc(x[0])+':</b> '+esc(x[1])+'</div>').join(""):'<div>O fornecedor não retornou dados para sugerir.</div>';
+   return '<article class="entry product-review" data-product-review="'+esc(item.product_id)+'">'+
+    '<div class="entry-left"><div class="entry-code">'+esc(p.name||"Produto sem nome")+'</div>'+
+    '<div class="entry-meta">EAN '+esc(item.gtin||p.gtin||"—")+' · Cadastro atual: NCM '+esc(p.ncm||"não informado")+
+    (p.brand?' · '+esc(p.brand):'')+' · consulta '+esc(fmt(item.researched_at||item.updated_at))+'</div>'+
+    '<div class="entry-meta"><span class="tag '+(item.status==="review"?"found":item.status==="not_found"?"not_found":"pending")+'">'+esc(status)+'</span></div>'+
+    '<div class="entry-meta" style="margin-top:9px">'+facts+'</div>'+
+    (item.last_error?'<div class="entry-meta">Detalhe: '+esc(item.last_error)+'</div>':'')+
+    '<div class="row" style="margin-top:10px"><a href="'+esc(googleUrl)+'" target="_blank" rel="noopener noreferrer">Buscar imagens no Google</a>'+
+    '<button type="button" data-review-done="'+esc(item.product_id)+'">Marcar revisão concluída</button></div></div>'+
+    (p.image_url?'<div class="entry-right"><img loading="lazy" decoding="async" src="'+esc(p.image_url)+'" alt="" style="width:64px;height:64px;object-fit:contain"></div>':'')+
+    '</article>';
+  }).join("");
+ }catch(e){
+  badge.textContent="!";
+  list.innerHTML='<div class="empty">Não foi possível carregar a fila: '+esc(e.message||e)+'</div>';
+ }
+}
+$("productReviewRefresh").addEventListener("click",async()=>{
+ const button=$("productReviewRefresh");button.disabled=true;
+ try{await loadProductReviews();msg("Fila de revisão atualizada.")}finally{button.disabled=false}
+});
+$("productReviewList").addEventListener("click",async(event)=>{
+ const button=event.target.closest("[data-review-done]");if(!button)return;
+ if(busy)return;
+ const id=button.dataset.reviewDone;button.disabled=true;
+ try{await call("product_review_mark",{product_id:id});await loadProductReviews();msg("Revisão marcada como concluída.")}
+ catch(e){button.disabled=false;msg("Não foi possível marcar a revisão: "+e.message,true)}
+});
+
+(async()=>{
+ try{await load();await loadProductReviews();msg("Pronto para começar a leitura.");}
+ catch(e){$("entries").innerHTML='<div class="empty">Não foi possível carregar as leituras.</div>';msg("Falha ao conectar: "+e.message,true)}
+})();
+})();
+</script>
+</body>
+</html>

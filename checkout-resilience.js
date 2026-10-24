@@ -27,53 +27,6 @@
     const ddd=digits(field('checkoutDdd'),2);let mobile=digits(field('checkoutPhone'),9);if(mobile.length===8)mobile='9'+mobile;
     const valid=ddd.length===2&&mobile.length===9&&mobile.startsWith('9');return {ddd,mobile,valid,full:valid?'+55'+ddd+mobile:''};
   }
-  function checkoutRegistrationDraft(){
-    return {
-      name:field('checkoutName'),
-      document:field('checkoutDocument'),
-      street:field('checkoutStreet'),
-      number:field('checkoutNumber'),
-      neighborhood:field('checkoutNeighborhood'),
-      city:field('checkoutCity'),
-      postal_code:field('checkoutPostal'),
-      complement:field('checkoutComplement'),
-      reference:field('checkoutReference'),
-      marketing_opt_in:byId('checkoutMarketing')?.checked===true
-    };
-  }
-  function registrationDraftComplete(draft){
-    // CPF/CNPJ pode vir vazio somente ao editar um cliente que já existe: o backend
-    // reaproveita o documento privado sem expô-lo no checkout público.
-    return Boolean(draft?.name&&draft?.street&&draft?.number&&draft?.neighborhood&&draft?.city);
-  }
-  function existingRegistrationComplete(){
-    const result=byId('customerLookupResult');
-    return Boolean(result?.classList?.contains('found')&&!byId('checkoutName'));
-  }
-  function validCpf(value){
-    const d=digits(value,11);if(d.length!==11||/^(\d)\1{10}$/.test(d))return false;
-    let sum=0;for(let i=0;i<9;i++)sum+=Number(d[i])*(10-i);let check=(sum*10)%11;if(check===10)check=0;if(check!==Number(d[9]))return false;
-    sum=0;for(let i=0;i<10;i++)sum+=Number(d[i])*(11-i);check=(sum*10)%11;if(check===10)check=0;return check===Number(d[10]);
-  }
-  function validCnpj(value){
-    const d=digits(value,14);if(d.length!==14||/^(\d)\1{13}$/.test(d))return false;
-    const calc=(base,weights)=>{let sum=0;for(let i=0;i<weights.length;i++)sum+=Number(base[i])*weights[i];const r=sum%11;return r<2?0:11-r};
-    const c1=calc(d,[5,4,3,2,9,8,7,6,5,4,3,2]);if(c1!==Number(d[12]))return false;
-    const c2=calc(d,[6,5,4,3,2,9,8,7,6,5,4,3,2]);return c2===Number(d[13]);
-  }
-  function validDocument(value){const d=digits(value,14);return d.length===11?validCpf(d):d.length===14?validCnpj(d):false}
-
-  async function persistRegistrationBeforeOrder(requestUrl,phone,draft){
-    if(!phone.valid||!registrationDraftComplete(draft))return {ok:false,error:'registration_incomplete'};
-    try{
-      const url=new URL(requestUrl);
-      url.searchParams.set('action','customer_register');
-      const response=await originalFetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source:'checkout',phone:phone.full,...draft}),cache:'no-store'});
-      const data=await response.json().catch(()=>({ok:false,error:'registration_unavailable'}));
-      return response.ok&&data?.ok!==false?{ok:true,...data}:{ok:false,error:data?.error||'registration_unavailable'};
-    }catch{return {ok:false,error:'registration_unavailable'}}
-  }
-
   function injectCheckoutStyles(){
     if(byId('daCheckoutRequiredStyles')||!document.head)return;
     const style=document.createElement('style');
@@ -154,14 +107,9 @@
     const body=byId('sheetBody');if(!body||!byId('sendWhats')||body.querySelector('[data-da-checkout-organized="1"]'))return;injectCheckoutStyles();const marker=document.createElement('span');marker.dataset.daCheckoutOrganized='1';marker.hidden=true;body.prepend(marker);
     const minimumNotice=[...body.querySelectorAll('.rule-notice')].find(x=>/Pedido mínimo/i.test(String(x.textContent||'')));if(minimumNotice&&!minimumNotice.classList.contains('warn'))minimumNotice.remove();
     const waHeading=checkoutHeading(body,/WhatsApp/i),dateHeading=checkoutHeading(body,/Data de entrega/i),paymentHeading=checkoutHeading(body,/Como você vai pagar/i),waBox=body.querySelector('.wa-lookup');
-    if(waHeading&&waBox){const sec=makeSection('WhatsApp','', 'whatsapp');waHeading.parentNode.insertBefore(sec,waHeading);waHeading.remove();sec.appendChild(waBox);setupUnifiedWhatsapp(waBox)}
-    const formName=byId('checkoutName');
-    if(formName){const grid=formName.closest('div[style*="display:grid"]')||formName.parentElement?.parentElement,personal=makeSection('Seus dados','', 'personal'),personalGrid=document.createElement('div');personalGrid.className='da-checkout-grid';personal.appendChild(personalGrid);const delivery=makeSection('Endereço','', 'delivery'),deliveryGrid=document.createElement('div');deliveryGrid.className='da-checkout-grid';delivery.appendChild(deliveryGrid),anchor=dateHeading||grid;if(anchor?.parentNode){anchor.parentNode.insertBefore(personal,anchor);anchor.parentNode.insertBefore(delivery,anchor)}
-      const nameLabel=byId('checkoutName')?.closest('label'),docLabel=byId('checkoutDocument')?.closest('label');if(nameLabel){nameLabel.classList.add('span-all');personalGrid.appendChild(nameLabel);appendRequired(nameLabel)}if(docLabel){personalGrid.appendChild(docLabel);if(!byId('customerLookupResult')?.classList?.contains('found'))appendRequired(docLabel)}const marketing=byId('checkoutMarketing')?.closest('label');if(marketing){marketing.classList.add('span-all');personalGrid.appendChild(marketing)}
-      for(const id of ['checkoutStreet','checkoutNumber','checkoutNeighborhood','checkoutCity','checkoutPostal','checkoutComplement','checkoutReference']){const label=byId(id)?.closest('label');if(!label)continue;if(['checkoutStreet','checkoutComplement','checkoutReference'].includes(id))label.classList.add('span-all');deliveryGrid.appendChild(label);if(['checkoutStreet','checkoutNumber','checkoutNeighborhood','checkoutCity'].includes(id))appendRequired(label)}const save=byId('saveCheckoutRegistration');if(save)delivery.appendChild(save);if(grid&&grid.children.length===0)grid.remove();const oldNotice=[...body.querySelectorAll('.rule-notice')].find(x=>/Cadastro opcional|Cadastro do cliente|pedido pode ser finalizado/i.test(String(x.textContent||'')));if(oldNotice)oldNotice.remove();
-    }else if(existingRegistrationComplete()){const delivery=makeSection('Endereço','', 'delivery'),addressNotice=byId('editAddress')?.closest('.rule-notice'),anchor=dateHeading||addressNotice;if(anchor?.parentNode)anchor.parentNode.insertBefore(delivery,anchor);if(addressNotice){addressNotice.classList.add('da-address-confirm');delivery.appendChild(addressNotice)}const edit=byId('editAddress');if(edit)edit.textContent='Trocar endereço'}
-    if(dateHeading){const sec=makeSection('Data de entrega','', 'date');dateHeading.parentNode.insertBefore(sec,dateHeading);dateHeading.remove();const select=byId('checkoutDeliveryDate'),label=select?.closest('label'),note=label?.nextElementSibling;if(label){sec.appendChild(label);appendRequired(label)}setupDateChoices(sec,select,label);if(note?.classList?.contains('note'))note.remove()}
-    if(paymentHeading){const sec=makeSection('Pagamento na entrega','', 'payment');paymentHeading.parentNode.insertBefore(sec,paymentHeading);paymentHeading.remove();const payments=body.querySelector('.payments'),note=payments?.nextElementSibling;if(payments)sec.appendChild(payments);if(note?.classList?.contains('note'))note.remove()}
+    if(waHeading&&waBox){const sec=makeSection('WhatsApp (obrigatório)','', 'whatsapp');waHeading.parentNode.insertBefore(sec,waHeading);waHeading.remove();sec.appendChild(waBox);setupUnifiedWhatsapp(waBox)}
+    if(dateHeading){const sec=makeSection('Data de entrega (obrigatória)','', 'date');dateHeading.parentNode.insertBefore(sec,dateHeading);dateHeading.remove();const select=byId('checkoutDeliveryDate'),label=select?.closest('label'),note=label?.nextElementSibling;if(label){sec.appendChild(label);appendRequired(label)}setupDateChoices(sec,select,label);if(note?.classList?.contains('note'))note.remove()}
+    if(paymentHeading){const sec=makeSection('Pagamento na entrega (obrigatório)','', 'payment');paymentHeading.parentNode.insertBefore(sec,paymentHeading);paymentHeading.remove();const payments=body.querySelector('.payments'),note=payments?.nextElementSibling;if(payments)sec.appendChild(payments);if(note?.classList?.contains('note'))note.remove()}
     setupCheckoutFooter();body.querySelectorAll('input,select').forEach(el=>{const clear=()=>clearFieldError(el);el.addEventListener('input',clear);el.addEventListener('change',clear)});
   }
   function clearCheckoutValidation(){
@@ -179,19 +127,6 @@
   function validateCheckoutBasics(){
     const issues=[];const ph=liveCheckoutPhone();
     if(!ph.valid)issues.push(issue('checkoutWhatsappUnified','Digite seu WhatsApp com DDD. Ex.: (65) 99815-0975.','checkoutWhatsappUnified'));
-    const completeExisting=existingRegistrationComplete();
-    const draft=checkoutRegistrationDraft();
-    if(ph.valid&&!completeExisting&&!byId('checkoutName')){scheduleAutomaticLookup();issues.push(issue('checkoutWhatsappUnified','Estamos conferindo seu cadastro. Aguarde um instante.','checkoutWhatsappUnified'))}
-    if(byId('checkoutName')){
-      if(!draft.name)issues.push(issue('checkoutName','Digite seu nome completo.'));
-      const known=byId('customerLookupResult')?.classList?.contains('found');
-      if(!known&&!digits(draft.document,14))issues.push(issue('checkoutDocument','Digite seu CPF ou CNPJ.'));
-      else if(digits(draft.document,14)&&!validDocument(draft.document))issues.push(issue('checkoutDocument','Confira o CPF/CNPJ. Parece que algum número está errado.'));
-      if(!draft.street)issues.push(issue('checkoutStreet','Digite o nome da rua.'));
-      if(!draft.number)issues.push(issue('checkoutNumber','Digite o número da casa. Se não tiver número, digite SN.'));
-      if(!draft.neighborhood)issues.push(issue('checkoutNeighborhood','Digite seu bairro.'));
-      if(!['Cuiabá','Várzea Grande'].includes(draft.city))issues.push(issue('checkoutCity','Escolha Cuiabá ou Várzea Grande.'));
-    }
     if(!field('checkoutDeliveryDate'))issues.push(issue('checkoutDeliveryDate','Escolha a data da entrega.'));
     if(!document.querySelector?.('input[name="payment"]:checked'))issues.push(issue('payment','Escolha como vai pagar na entrega.','payment'));
     return {ok:issues.length===0,issues};
@@ -252,10 +187,10 @@
     if(code==='invalid_document')return 'Confira o CPF/CNPJ. Parece que algum número está errado.';
     if(code==='unsupported_city')return 'Atendemos somente Cuiabá e Várzea Grande.';
     if(code==='all_items_unavailable')return items.length?items.map(adjustmentLine).join(' '):'Os itens deste pedido ficaram sem estoque neste momento. Escolha outros produtos ou fale conosco no WhatsApp.';
-    if(code==='rate_limited')return 'Recebemos várias tentativas seguidas. Seu carrinho continua salvo. Aguarde alguns segundos e toque novamente em Finalizar pedido.';
+    if(code==='rate_limited')return 'Seu carrinho continua salvo. Houve muitas tentativas em pouco tempo; aguarde até 1 minuto e tente novamente. Se continuar sem concluir, fale com a equipe pelo WhatsApp do site.';
     if(code==='minimum_order')return 'O total atual ficou abaixo do pedido mínimo antes da confirmação. Seu carrinho continua salvo.';
     if(code==='rate_limit_unavailable'||code==='service_unavailable')return 'O sistema de pedidos está temporariamente indisponível. Seu carrinho continua salvo para você tentar novamente.';
-    if(['insufficient_stock','product_unavailable','basket_unavailable','basket_lot_unavailable','basket_lot_insufficient','basket_component_not_in_lot','basket_kit_lot_unavailable','basket_kit_lot_insufficient','basket_component_not_in_selected_kit'].includes(code))return items.length?items.map(adjustmentLine).join(' '):'A disponibilidade mudou enquanto o pedido era enviado. Toque novamente em Finalizar pedido; vamos ajustar automaticamente os itens disponíveis.';
+    if(['insufficient_stock','product_unavailable','basket_unavailable','basket_product_unavailable','basket_lot_unavailable','basket_lot_insufficient','basket_component_not_in_lot','basket_kit_lot_unavailable','basket_kit_lot_insufficient','basket_component_not_in_selected_kit','basket_mold_unavailable'].includes(code))return items.length?items.map(adjustmentLine).join(' '):'O estoque mudou novamente durante a confirmação. Seu pedido não foi concluído e o carrinho continua salvo; confira os itens e tente mais uma vez em instantes.';
     return `O pedido não foi enviado por causa de ${code||'uma falha de comunicação'}. Seu carrinho continua salvo.`;
   }
 
@@ -271,13 +206,9 @@
       try{
         const body=typeof options?.body==='string'?JSON.parse(options.body):null;
         if(body&&typeof body==='object'){
-          const phone=liveCheckoutPhone(),draft=checkoutRegistrationDraft();
+          const phone=liveCheckoutPhone();
           if(phone.valid)body.whatsapp_phone=phone.full;
-          if(!existingRegistrationComplete()){
-            const saved=await persistRegistrationBeforeOrder(requestUrl,phone,draft);
-            if(saved?.ok!==true){pendingSubmitError={error:saved?.error||'registration_incomplete'};showRegistrationServerError(pendingSubmitError.error);throw new Error(pendingSubmitError.error)}
-          }
-          options={...options,body:JSON.stringify(body)};args=[input,options];
+options={...options,body:JSON.stringify(body)};args=[input,options];
         }
       }catch(error){if(pendingSubmitError)throw error}
     }
@@ -318,5 +249,14 @@
   observer.observe(document.documentElement,{subtree:true,childList:true,characterData:true});
   originalSetTimeout(()=>{organizeCheckoutSections();refreshCheckoutPresentation()},0);
 
-  window.__DA_CHECKOUT_RESILIENCE__={CUTOFF_HOUR,applyStockAdjustment,confirmStockAdjustment,formatUnifiedPhone,liveCheckoutPhone,checkoutRegistrationDraft,registrationDraftComplete,existingRegistrationComplete,validateCheckoutBasics,showCheckoutValidation};
+  window.__DA_CHECKOUT_RESILIENCE__={CUTOFF_HOUR,applyStockAdjustment,confirmStockAdjustment,formatUnifiedPhone,liveCheckoutPhone,validateCheckoutBasics,showCheckoutValidation};
 })();
+
+// Public storefront recovery for constrained in-app browsers (Instagram/Facebook webviews).
+if (!window.__DA_INSTAGRAM_RESILIENCE_LOADED__) {
+  window.__DA_INSTAGRAM_RESILIENCE_LOADED__ = true;
+  const s=document.createElement('script');
+  s.src='/vitrine/instagram-resilience.js?v=20261005-1';
+  s.defer=true;
+  document.head.appendChild(s);
+}

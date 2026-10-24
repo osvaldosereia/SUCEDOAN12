@@ -1,0 +1,71 @@
+/* Responsividade principal para quem compra pelo celular com internet limitada. */
+@media(max-width:850px){
+ .store-header-assurance{display:none}
+ .site-page .size-picker{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .site-page .sticky-summary{padding-left:18px;padding-right:18px}
+}
+@media(max-width:550px){
+ .site-page .container{padding-left:14px;padding-right:14px}
+ .store-shipping-strip>.container{font-size:10px;gap:6px}
+ .site-page .topbar-inner{min-height:61px}
+ .site-page .brand{font-size:17px;gap:9px}
+ .site-page .brand-mark{height:37px;width:37px;border-radius:9px}
+ .site-page .brand small{font-size:10px}
+ .site-demo-banner{margin-top:11px;padding:7px 9px;gap:6px;font-size:10px}
+ .site-page .checkout-progress{margin:14px auto 17px;gap:5px}
+ .site-page .progress-step{padding:8px 2px;font-size:10.5px;gap:4px;min-height:40px}
+ .site-page .progress-step .progress-number{width:22px;height:22px;font-size:10px}
+ .site-page .wizard-heading{margin-bottom:17px}
+ .site-page .wizard-heading h1{font-size:25px}
+ .site-page .wizard-heading p:not(.eyebrow){font-size:12px;line-height:1.55}
+ .site-page .back-link{font-size:11px;min-height:38px;padding:7px 9px}
+ .basket-size-heading{align-items:start}
+ .basket-size-heading h2{font-size:17px}
+ .basket-size-heading p{font-size:11px}
+ .basket-size-counter{display:none}
+ .site-page .size-picker{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .site-page .size-card{padding:10px;border-radius:10px}
+ .site-page .size-card.selected{padding:9px}
+ .site-page .size-card .catalog-square-image{width:min(100%,128px);max-width:128px}
+ .site-page .basket-image-wrap{padding:1px 1px 7px}
+ .basket-card-title{font-size:14px}
+ .basket-card-count{font-size:10px;margin-bottom:6px}
+ .basket-card-price strong{font-size:18px}
+ .site-page .basket-card-price small{font-size:10.5px}
+ .basket-card-selected{min-height:32px;font-size:10px}
+ .site-page .section-title{margin:21px 0 12px}
+ .site-page .section-title h2{font-size:19px}
+ .site-page .basket-lines{gap:10px}
+ .site-page .basket-group.choice-group{padding:12px;border-radius:10px}
+ .site-page .group-head h3{font-size:17px}
+ .site-page .group-head small{font-size:10.5px;max-width:255px}
+ .site-page .group-head>strong{font-size:15px}
+ .site-page .carousel-arrows button{width:34px;height:31px}
+ .site-page .compact-carousel{gap:8px;padding:10px 2px 13px}
+ .site-page .compact-choice{flex-basis:132px;max-width:132px;padding:8px;min-height:0;gap:5px}
+ .site-page .compact-choice.chosen{padding:7px}
+ .site-page .compact-choice .choice-name{font-size:11.5px;min-height:45px}
+ .site-page .compact-choice .choice-price{font-size:14px}
+ .site-page .quantity-info{flex:1 1 120px}
+ .site-page .group-controls.product-quantity-row{flex-wrap:wrap;gap:7px}
+ .site-page .stepper button{min-width:44px;width:44px;height:44px;min-height:44px}
+ .site-page .stepper output{width:36px;min-width:36px}
+ .site-page .text-button{margin-left:auto}
+ .site-page .extras-intro{padding:13px}
+ .site-page .extras-intro strong{font-size:14px}
+ .site-page .extras-intro p{font-size:11.5px}
+ .site-page .sticky-summary{min-height:76px;gap:8px;padding:10px 14px max(10px,env(safe-area-inset-bottom))}
+ .site-page .sticky-summary small{font-size:10px}
+ .site-page .sticky-summary strong{font-size:20px}
+ .site-page .primary-button{font-size:13px;min-width:156px;min-height:46px;padding:11px 13px}
+ .site-page .checkout-form input,.site-page .checkout-form select{font-size:16px}
+ .site-page .wizard-layout{padding-bottom:120px}
+}
+@media(max-width:345px){
+ .site-page .primary-button{min-width:139px;padding:10px}
+ .site-page .sticky-summary strong{font-size:19px}
+ .site-page .group-head>strong{font-size:14px}
+}
+@media(prefers-reduced-motion:reduce){
+ .site-page *, .site-page *::before, .site-page *::after{scroll-behavior:auto;transition:none!important;animation:none!important}
+}

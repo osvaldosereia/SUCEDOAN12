@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {inspectBlingNfeR2} from '../supabase/functions/admin-service-intelligence-v1/_shared/fiscal-r2-nfe-inspector.mjs';
+const order={bling_order_id:123,total:815.18,contact_id:222,external_key:'ABC123'};
+const note={data:{id:444,numeroLoja:'ABC123',pedidoVenda:{id:123},contato:{id:222},total:815.18,situacao:1,itens:[{produto:{id:55},tributacao:{ncm:''}},{produto:{id:56},tributacao:{ncm:'09042000'}}]}};
+const a=inspectBlingNfeR2(note,order);
+assert.equal(a.identity.verified,true);
+assert.equal(a.editing.eligible,true);
+assert.equal(a.invalid_ncm_format_count,1);
+assert.equal(a.items[0].ncm_state,'missing');
+assert.equal(a.external_write,false);
+assert.equal(inspectBlingNfeR2(note,{...order,bling_order_id:999}).identity.verified,false);
+assert.equal(inspectBlingNfeR2(note,{...order,total:11}).identity.verified,false);
+assert.equal(inspectBlingNfeR2(note,{}).editing.eligible,false);
+assert.equal(inspectBlingNfeR2({data:{...note.data,situacao:5}},order).editing.eligible,false);
+assert.equal(inspectBlingNfeR2({data:{...note.data,situacao:3}},order).editing.eligible,false);
+assert.equal(inspectBlingNfeR2({data:{...note.data,lancamentosEstoque:[{id:1}]}},order).editing.eligible,false);
+console.log('PASS: NF-e draft inspection enforces identity, editable state, and read-only output.');

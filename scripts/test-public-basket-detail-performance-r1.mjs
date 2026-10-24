@@ -1,0 +1,55 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+
+const root=fs.readFileSync('index.html','utf8');
+const api=fs.readFileSync('supabase/functions/storefront-v2/index.ts','utf8');
+const sql=fs.readFileSync('supabase/migrations/20261023195656_public_basket_composition_set_based_stock.sql','utf8');
+const carousel=fs.readFileSync('vitrine/basket-carousel.js','utf8');
+
+const openStart=root.indexOf('async function openBasket(');
+const openEnd=root.indexOf('function basketGroupTitle',openStart);
+assert.ok(openStart>=0&&openEnd>openStart,'basket open function exists');
+const open=root.slice(openStart,openEnd);
+assert.match(open,/await resolveHomeSizeCards\(\)/,'first visit awaits the lightweight size-ID request already started by the home shell');
+assert.match(open,/loadHomeBasketDetail\(currentBasket,traceId,controller\.signal\)/,'opening uses the resolved card key and coalesces with its preview request');
+assert.match(root,/async function resolveHomeSizeCards\(\)/,'the page resolves all five canonical basket keys in one lightweight request');
+assert.match(root,/api\('home_size_cards'\)/,'the public shell resolves identifiers without loading stock or full details');
+assert.match(root,/BASKET_PREVIEW_PREFETCH_CONCURRENCY=1/,'background basket detail requests have bounded concurrency');
+assert.match(root,/homeBasketDetailRequests=new Map\(\)/,'a click reuses an already-running basket detail read');
+assert.match(root,/resolved_card_key:resolvedCardKey/,'a resolved composition key is retained for later opens');
+assert.match(root,/trace_id:traceId/,'basket and preview requests carry non-customer trace IDs');
+assert.doesNotMatch(open,/loadHomeSizeCardForOpen/,'first-open no longer resolves card IDs in a separate browser request');
+assert.match(open,/markBasketPerformance\('open-start'/,'basket opening has a client performance mark');
+assert.match(open,/markBasketPerformance\('detail-ready'/,'first usable basket render has a client performance mark');
+assert.match(open,/paintBasketSheet\(\);[\s\S]{0,120}loadMoldOptions\(0,state\.basketDraft\)/,'the first basket carousel is prioritized immediately after the basket renders');
+assert.doesNotMatch(root,/const WHATSAPP\s*=/,'unused WhatsApp alias removed');
+assert.doesNotMatch(root,/const BUSINESS_TIME_ZONE\s*=/,'unused timezone alias removed');
+assert.match(root,/trace_id/,'basket calls carry a non-customer trace ID');
+assert.match(root,/BASKET_OPTION_BATCH_SIZE=24/,'visible basket alternatives are loaded in one bounded request batch');
+assert.match(root,/basketApi\(d,'basket_mold_options_batch'/,'the visible option queue sends one batched stock request');
+assert.match(root,/queueMicrotask\(\(\)=>\{d\.optionFlushScheduled=false;pumpMoldOptionQueue\(d\)\}\)/,'the option queue flushes together after the intersection callback');
+assert.doesNotMatch(root,/BASKET_OPTION_MAX_IN_FLIGHT/,'the per-position request waterfall is removed');
+assert.doesNotMatch(root,/\.basket-(?:carousel|product-strip|product|scroll-track|scroll-thumb)\b/,'unused legacy basket product carousel styles removed');
+assert.doesNotMatch(root,/\.cart-line(?:-top)?\b|\.cart-controls\b/,'unused legacy cart styles removed');
+assert.doesNotMatch(carousel,/basket-product-strip|basket-scroll-track|basket-scroll-thumb/,'unused legacy home product-strip behavior removed');
+assert.match(root,/basket-carousel\.js\?v=20261023-basket-priority-clean-v1/,'the cleaned carousel asset receives a fresh cache key');
+assert.match(root,/abortBasketDraftRequests\(/,'closing or replacing a basket aborts in-flight basket requests');
+assert.match(api,/async function basketBySize\(/,'edge function keeps its direct size resolver for non-home callers');
+const basketRouteStart=api.indexOf('if(req.method==="GET"&&action==="basket"){');
+const basketRouteEnd=api.indexOf('if(req.method==="GET"&&action==="basket_mold_options")',basketRouteStart);
+assert.ok(basketRouteStart>=0&&basketRouteEnd>basketRouteStart,'basket detail route exists');
+const basketRoute=api.slice(basketRouteStart,basketRouteEnd);
+assert.ok(basketRoute.includes('raw.match(/^([0-9a-f-]{36})@([1-6])$/i)'),'edge function accepts the cached UUID@composition key');
+assert.ok(basketRoute.includes('const lightweight=u.searchParams.get("lightweight")==="1";const b=await moldDetail(id,Number(mm[2]),null,!lightweight,lightweight);'),'lightweight direct details allow an unavailable preview while retaining live stock validation');
+
+const batchStart=sql.search(/create or replace function public\.basket_mold_public_compositions_batch_v1/i);
+assert.ok(batchStart>=0,'batch composition SQL function exists');
+const batch=sql.slice(batchStart);
+assert.match(batch,/stock_candidates as\s*\([\s\S]*?\),\s*fresh_stock as materialized\s*\(/i,'fresh sellable stock is materialized once for distinct option products');
+assert.match(batch,/join fresh_stock fs on fs\.product_id = p\.id/i,'composition rows reuse one computed stock value per product');
+assert.match(batch,/join public\.storefront_ean_sellable_stock_v1 s on s\.product_id = sc\.product_id/i,'candidate stock is read from the storefront stock view in one set-based join');
+assert.doesNotMatch(batch,/basket_component_fresh_sellable_stock_v1\(/,'basket composition avoids a per-candidate scalar stock function');
+assert.match(batch,/s\.stock_authority\s*=\s*'bling'[\s\S]*?s\.bling_stock_ready/i,'set-based stock keeps the Bling inventory-authority rules');
+assert.match(batch,/s\.ean_sellable_stock is not null[\s\S]*?s\.is_active/i,'set-based stock keeps EAN overrides and active-product fallback rules');
+
+console.log('public basket detail performance contract: PASS');
