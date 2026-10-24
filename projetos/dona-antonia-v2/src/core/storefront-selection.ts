@@ -5,7 +5,14 @@ import {
   summarizeBasket,
 } from './basket';
 import { selectExtraProduct, summarizeExtras, type ExtraGroup } from './extras';
-import type { BasketId, BasketSelection, BasketTemplate, Product, ProductType } from './model';
+import type {
+  BasketId,
+  BasketSelection,
+  BasketSummary,
+  BasketTemplate,
+  Product,
+  ProductType,
+} from './model';
 
 export type StorefrontSelectionMode = 'basket' | 'extras';
 
@@ -92,4 +99,18 @@ export function basketStartingTotal(
   } catch {
     return null;
   }
+}
+
+/** Applies the server aggregate baseline while keeping private pricing opaque. */
+export function publicAggregateBasketSummary(
+  template: BasketTemplate,
+  summary: BasketSummary,
+): BasketSummary {
+  if (template.startingTotalCents === undefined) return summary;
+  const defaults = new Map(template.lines.map((line) => [line.typeId, line.defaultQuantity]));
+  const totalCents = summary.lines.reduce((total, line) => {
+    const cheapest = line.options[0]?.priceCents ?? 0;
+    return total + line.totalCents - cheapest * (defaults.get(line.typeId) ?? 0);
+  }, template.startingTotalCents);
+  return { ...summary, totalCents };
 }

@@ -4,6 +4,7 @@ import type { ExtraGroup } from './extras';
 import {
   basketStartingTotal,
   chooseStorefrontProduct,
+  publicAggregateBasketSummary,
   updateStorefrontQuantity,
 } from './storefront-selection';
 
@@ -113,5 +114,27 @@ describe('seleção da vitrine', () => {
   it('calcula o preço inicial e informa indisponibilidade sem inventar valor', () => {
     expect(basketStartingTotal('mini', templates, types, products)).toBe(1000);
     expect(basketStartingTotal('mini', templates, types, products.slice(0, 0))).toBeNull();
+  });
+
+  it('preserva o agregado privado ao trocar marca sem expor o ajuste', () => {
+    const summary = {
+      templateId: 'mini' as const,
+      lines: [
+        {
+          typeId: 'rice',
+          typeName: 'Arroz',
+          options: products,
+          selected: products[1]!,
+          quantity: 2,
+          totalCents: 1200,
+        },
+      ],
+      totalCents: 1200,
+      itemCount: 2,
+      unavailableTypeIds: [],
+    };
+    const result = publicAggregateBasketSummary({ ...basket, startingTotalCents: 1500 }, summary);
+    expect(result.totalCents).toBe(1700);
+    expect(JSON.stringify(result)).not.toContain('private');
   });
 });

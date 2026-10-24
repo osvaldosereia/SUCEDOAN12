@@ -7,6 +7,7 @@ import { buildCheckoutView } from './core/checkout';
 import {
   basketStartingTotal,
   chooseStorefrontProduct,
+  publicAggregateBasketSummary,
   updateStorefrontQuantity,
 } from './core/storefront-selection';
 import { ProductTypeRow } from './features/storefront/components/ProductTypeRow';
@@ -75,7 +76,10 @@ function Storefront() {
   };
   const computed = useMemo(() => {
     try {
-      const basket = summarizeBasket(template, basketChoices, types, catalog);
+      const basket = publicAggregateBasketSummary(
+        template,
+        summarizeBasket(template, basketChoices, types, catalog),
+      );
       const extras = summarizeExtras(extraGroups, extraChoices, types, catalog);
       return { basket, extras, order: summarizeOrder(basket.lines, extras.lines), error: '' };
     } catch (error) {
@@ -276,11 +280,7 @@ function Storefront() {
           <div>
             <small>{stage === 'basket' ? 'Total da cesta' : 'Cesta + extras'}</small>
             <strong>
-              {formatBRL(
-                stage === 'basket'
-                  ? (template.startingTotalCents ?? computed.basket?.totalCents ?? 0)
-                  : total,
-              )}
+              {formatBRL(stage === 'basket' ? (computed.basket?.totalCents ?? 0) : total)}
             </strong>
           </div>
           <button
