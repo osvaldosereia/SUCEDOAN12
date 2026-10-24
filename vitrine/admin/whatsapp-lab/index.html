@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <meta name="theme-color" content="#f6f8f6">
   <title>Laboratório WhatsApp 1018 · Dona Antônia</title>
-  <link rel="stylesheet" href="./lab.css?v=20261024-7">
+  <link rel="stylesheet" href="./lab.css?v=20261024-8">
 </head>
 <body>
   <header class="top">
@@ -55,6 +55,11 @@
               <button id="sendCompositionBtn" type="button" class="btn primary" disabled>Composição: serviço pendente</button>
               <p id="replyStatus" class="meta-readiness" role="status" aria-live="polite">Nenhuma escolha consultada nesta sessão.</p>
             </div>
+            <section class="flow-request-review" aria-label="Solicitação concluída pelo WhatsApp Flow">
+              <div><strong>Solicitação concluída pelo Flow</strong><p>Somente leitura da conversa interna 1018 → 8360. A revisão não registra pedidos.</p></div>
+              <button id="readFlowRequestBtn" type="button" class="btn subtle">Ler solicitação do Flow</button>
+              <div id="flowRequestStatus" class="meta-readiness" role="status" aria-live="polite">Nenhuma solicitação consultada nesta sessão.</div>
+            </section>
             <section class="composition-preview" aria-label="Prévia da composição escolhida">
               <div class="section-head"><div><h3>3. Produtos da cesta escolhida</h3><p>Composição e preço para conferência antes de enviar ao cliente.</p></div></div>
               <pre id="compositionPreview" aria-live="polite">Escolha uma combinação acima ou clique em “Ler escolha do cliente”.</pre>
@@ -96,6 +101,6 @@
       </aside>
     </div>
   </main>
-  <script type="module" src="./lab.js?v=20261024-7"></script>
+  <script type="module" src="./lab.js?v=20261024-8"></script>
 </body>
 </html>

@@ -35,5 +35,14 @@ assert.doesNotMatch(js,/\b(submit_order|create_order|send_media|graph\.facebook\
 assert.doesNotMatch(js,/\bsetInterval\b/,'No background polling');
 assert.doesNotMatch(js,/fetch\(['"]https?:\/\/[^'"]*graph\.facebook/);
 assert.match(html,/envio real fica desabilitado/);
+assert.match(html,/id="readFlowRequestBtn"/);
+assert.match(html,/id="flowRequestStatus"/);
+assert.match(js,/latestBasketFlowRequest\(detail\)/,'Flow review must read the internal conversation');
+assert.match(js,/content\.textContent=value/,'Flow response must be rendered as text');
+assert.match(js,/A conclusão do Flow não cria pedido/,'Flow completion must require manual review');
+const flowReadStart=js.indexOf('async function readBasketFlowRequest(){');
+const flowReadEnd=js.indexOf('\nasync function sendBasketComposition(){',flowReadStart);
+assert.ok(flowReadStart>=0&&flowReadEnd>flowReadStart,'Read-only Flow request action must be present');
+assert.doesNotMatch(js.slice(flowReadStart,flowReadEnd),/send_text|send_media|submit_order|create_order/,'Flow request lookup must not send or create orders');
 assert.match(html,/não cria pedidos/);
 console.log('PASS WhatsApp 1018 lab syntax, routing, live read-only pricing and guarded test transport');

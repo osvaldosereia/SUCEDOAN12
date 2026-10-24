@@ -16,7 +16,8 @@
 - `supabase/functions/whatsapp-1018-basket-flow-v1/index.ts` — envelope e chamadas de consulta
 - `supabase/functions/whatsapp-1018-basket-flow-v1/engine.mjs` — máquina de estados e cotação
 - `supabase/functions/whatsapp-1018-basket-flow-v1/crypto.mjs` — criptografia e HMAC
-- `scripts/test-whatsapp-1018-flow-dynamic.mjs` — rotas para 14–30 itens, alterações, assinatura e criptografia
+- `scripts/test-whatsapp-1018-flow-dynamic.mjs` — rotas 14–30, assinatura, criptografia, webhook e leitura da solicitação no Lab
+- `vitrine/admin/whatsapp-lab/reply-parser.mjs` — valida e interpreta a resposta `nfm_reply` somente na conversa interna 1018 → 8360
 
 Os `__example__` do JSON são placeholders neutros para a prévia do Flow Builder. Preços, nomes de produtos e marcas usados em execução vêm do endpoint e do catálogo Supabase; o arquivo não fixa valores comerciais.
 
@@ -30,7 +31,7 @@ Os `__example__` do JSON são placeholders neutros para a prévia do Flow Builde
 4. Implantar a função **somente por mecanismo permitido**, já que uma tentativa anterior de implantar outra função no Supabase foi bloqueada por segurança. Não usar alternativa para contornar esse bloqueio.
 5. Preparar a emissão de `flow_token` assinado por backend autenticado e restrito ao número de teste final 8360. Sem esse emissor de sessão, o endpoint recusa todas as sessões, como previsto.
 6. Criar draft via Graph API Meta `POST /{WABA_ID}/flows` (permissão `whatsapp_business_management`), subir `flow-dynamic-v1.json`, registrar endpoint HTTPS, consultar os erros da Meta e validar retorno de `ping` e das telas.
-7. Homologar `nfm_reply` no webhook oficial e criar apenas uma **solicitação para atendimento** no Admin depois de todos os controles. O botão de resumo atual diz “Concluir teste”, **não cria pedido**.
+7. O webhook Meta existente persiste `nfm_reply`. O Flow envia ao retorno apenas o resumo comercial, sem o estado assinado da sessão; o Laboratório WhatsApp mostra a solicitação da conversa interna 1018 → 8360 para conferência humana. Não cria pedido. Ainda é necessário homologar o retorno num aparelho real.
 8. Criar o envio `interactive.flow` exclusivamente do 1018 ao 8360; só expandir para clientes após homologação manual.
 
 
@@ -49,7 +50,7 @@ Os `__example__` do JSON são placeholders neutros para a prévia do Flow Builde
 - A sessão expira, estoque e preço podem variar entre telas; por isso há cotação ao final e um pedido real ainda requer revalidação e confirmação.
 
 ## Regra de publicação
-Não fazer deploy nem publicar o Flow enquanto faltarem assinatura Meta, endpoint, chave pública, proteção de sessão, integração de `nfm_reply` e testes em aparelho real. Não confundir testes de CI com aprovação da Meta.
+Não fazer deploy nem publicar o Flow enquanto faltarem validação oficial Meta, endpoint e chaves configurados com segurança, proteção de sessão e teste real de ponta a ponta no 1018 → 8360. A solicitação no Lab exige conferência manual de produtos, preço e estoque; concluir o Flow não cria pedido. Testes de CI não equivalem à aprovação da Meta.
 
 ## Fontes técnicas
 - Meta oficial: https://developers.facebook.com/docs/whatsapp/flows

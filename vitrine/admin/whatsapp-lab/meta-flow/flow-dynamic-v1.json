@@ -3936,8 +3936,10 @@
             "on-click-action": {
               "name": "complete",
               "payload": {
-                "estado": "${data.estado}",
-                "resultado": "solicitacao_para_atendimento"
+                "resultado": "solicitacao_para_atendimento",
+                "resumo": "${data.resumo}",
+                "valor": "${data.valor}",
+                "itens": "${data.itens}"
               }
             }
           }
