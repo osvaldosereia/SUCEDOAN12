@@ -274,7 +274,7 @@ Confirmado por leitura da branch:
 
 **Verificações locais:** `npm run test:db` (13 migrations/27 tabelas, RLS/RBAC, busca, detalhe e privacidade), `npm test` (100/100), `npm run check`, lint, `format:check`, `npm run architecture:check` (112 arquivos) e `npm run build` passaram. Playwright local não iniciou por ausência do Chromium; CI #40096134747 passou todos os gates e 17/17 E2E mobile/desktop com Chromium. Não houve pedido real no staging, portanto o aceite visual de pedido recém-confirmado permanece pendente da homologação com seed vendável.
 
-**PR/isolamento:** PR #1375 draft, sem merge. `main`, sites/admin legados, Supabases legados, atendimento, Bling/Meta, DNS, workflows de produção, deploy e publicação permaneceram intocados.
+**PR/isolamento:** PR #1375 draft, sem merge. O Advisor pós-migration registra o aviso esperado de `SECURITY DEFINER` nas duas RPCs autenticadas da R09, além dos avisos anteriores de policies/FKs; não há acesso anônimo às funções. `main`, sites/admin legados, Supabases legados, atendimento, Bling/Meta, DNS, workflows de produção, deploy e publicação permaneceram intocados.
 
 ### R10 — Separação robusta e concorrência
 
