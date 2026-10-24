@@ -116,12 +116,27 @@ async function graphRequest({cfg,path,method='GET',params={},body=null,form=null
   return payload;
 }
 function graphConfig(input){return config(input)}
-export async function listFlowsViaMeta({accessToken,wabaId,graphVersion,fetchImpl,timeoutMs=15000}={}){
+export async function listFlowsViaMeta({accessToken,wabaId,graphVersion,fetchImpl,timeoutMs=15000,maxPages=20}={}){
   const cfg=graphConfig({accessToken,graphVersion,fetchImpl,timeoutMs});
   const waba=id(wabaId,WABA_ID_RE);if(!waba)throw fail('meta_flow_waba_invalid');
-  const payload=await graphRequest({cfg,path:waba+'/flows',params:{fields:'id,name,status,categories,validation_errors,health_status,endpoint_uri,updated_at',limit:100}});
-  const rows=Array.isArray(payload.data)?payload.data:[];
-  return {items:rows.map(safeFlow).filter(row=>row.id),truncated:Boolean(payload.paging?.next)};
+  const pageLimit=Number(maxPages);
+  if(!Number.isInteger(pageLimit)||pageLimit<1||pageLimit>100)throw fail('meta_flow_page_limit_invalid');
+  const rows=[],seenIds=new Set(),seenCursors=new Set();
+  let cursor=null,pages=0,truncated=false;
+  while(pages<pageLimit){
+    const payload=await graphRequest({cfg,path:waba+'/flows',params:{fields:'id,name,status,categories,validation_errors,health_status,endpoint_uri,updated_at',limit:100,after:cursor}});
+    pages++;
+    for(const row of Array.isArray(payload.data)?payload.data:[]){
+      const flow=safeFlow(row);
+      if(flow.id&&!seenIds.has(flow.id)){seenIds.add(flow.id);rows.push(flow)}
+    }
+    if(!payload.paging?.next)break;
+    const nextCursor=String(payload.paging?.cursors?.after??'').trim();
+    if(!/^[\x21-\x7e]{1,4096}$/.test(nextCursor)||seenCursors.has(nextCursor)||pages>=pageLimit){truncated=true;break}
+    seenCursors.add(nextCursor);
+    cursor=nextCursor;
+  }
+  return {items:rows,truncated,page_count:pages};
 }
 export async function getFlowViaMeta({accessToken,flowId,graphVersion,fetchImpl,timeoutMs=15000}={}){
   const cfg=graphConfig({accessToken,graphVersion,fetchImpl,timeoutMs});
@@ -231,3 +246,4 @@ export async function deleteFlowViaMeta({accessToken,flowId,graphVersion,fetchIm
   const payload=await graphRequest({cfg,path:flow,method:'DELETE'});
   return {id:flow,deleted:payload.success===true||payload.success==='true'};
 }
+

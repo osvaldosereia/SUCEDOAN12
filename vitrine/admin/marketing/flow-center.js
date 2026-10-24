@@ -82,7 +82,7 @@ function renderFlowDetail(flow){
   const target=rootNode?.querySelector('[data-flow-detail]');
   if(!target)return;
   if(!flow){target.innerHTML='<p class="flow-empty">Selecione um Flow para ver o estado, os erros da Meta e as ações disponíveis.</p>';renderFlowList();return}
-  target.innerHTML='<div class="flow-detail-head"><div><h3>'+esc(flow.name||'Flow')+'</h3><p>ID <code>'+esc(flow.id)+'</code> · Estado <strong>'+esc(flow.status||'UNKNOWN')+'</strong></p></div><span>'+esc(flow.health_status||'Saúde não informada')+'</span></div><p><strong>Endpoint:</strong> <code>'+esc(flow.endpoint_uri||'Não configurado')+'</code></p><h4>Relatório de validação da Meta</h4>'+formatValidation(flow.validation_errors)+'<div class="flow-actions"><label class="flow-upload">Enviar JSON e validar na Meta<input type="file" data-flow-json accept=\"application/json,.json\" '+(canManage&&isDraft?'':'disabled')+'></label><button type="button" data-flow-action="configure">Configurar endpoint</button><button type="button" data-flow-action="validate">Atualizar validação</button><button type="button" data-flow-action="publish" class="primary">Publicar Flow</button><button type="button" data-flow-action="delete" class="danger">Excluir rascunho</button></div><p class="flow-publish-note">A publicação é irreversível na Meta. O Vitrine Admin só libera essa ação quando o Flow está em rascunho, o relatório oficial está limpo, o endpoint corresponde à URL fixa e a chave e os segredos do endpoint estão prontos.</p>';
+  target.innerHTML='<div class="flow-detail-head"><div><h3>'+esc(flow.name||'Flow')+'</h3><p>ID <code>'+esc(flow.id)+'</code> · Estado <strong>'+esc(flow.status||'UNKNOWN')+'</strong></p></div><span>'+esc(flow.health_status||'Saúde não informada')+'</span></div><p><strong>Endpoint:</strong> <code>'+esc(flow.endpoint_uri||'Não configurado')+'</code></p><h4>Relatório de validação da Meta</h4>'+formatValidation(flow.validation_errors)+'<div class="flow-actions"><label class="flow-upload">Enviar JSON e validar na Meta<input type="file" data-flow-json accept=\"application/json,.json\" '+(canManage&&isDraft?'':'disabled')+'></label><button type="button" data-flow-action="configure">Configurar endpoint</button><button type="button" data-flow-action="validate">Recarregar relatório da Meta</button><button type="button" data-flow-action="publish" class="primary">Publicar Flow</button><button type="button" data-flow-action="delete" class="danger">Excluir rascunho</button></div><p class="flow-publish-note">A publicação é irreversível na Meta. O Vitrine Admin só libera essa ação quando o Flow está em rascunho, o relatório oficial está limpo, o endpoint corresponde à URL fixa e a chave e os segredos do endpoint estão prontos.</p>';
   renderFlowList();
   target.querySelector('[data-flow-json]')?.addEventListener('change',handleJsonUpload);
   target.querySelector('[data-flow-action="configure"]')?.addEventListener('click',()=>runAction('flow_configure_endpoint',{flow_id:activeFlowId},'Endpoint fixo configurado na Meta.'));
@@ -105,7 +105,7 @@ async function refreshAll(){
     const data=await apiGet('flow_list');flowItems=Array.isArray(data.items)?data.items:[];canManage=data.can_manage===true;renderFlowList();
     const selected=flowItems.find(flow=>flow.id===activeFlowId)||flowItems[0];
     if(selected)await loadFlowDetail(selected.id);else renderFlowDetail(null);
-    setStatus(data.truncated?'Meta retornou somente a primeira página de Flows. A lista está incompleta.':'Conexão com a Meta carregada para a conta 1018.','success');
+    setStatus(data.truncated?'A lista excede o limite de páginas consultadas e está incompleta.':'Conexão com a Meta carregada para a conta 1018.','success');
   }catch(error){setStatus('Não foi possível carregar Flows da Meta: '+String(error.message||error),'error')}
   finally{setBusy(false)}
 }
@@ -137,14 +137,7 @@ async function handleJsonUpload(event){
     if(Array.isArray(data.validation_errors)&&data.validation_errors.length)setStatus('JSON enviado. A Meta encontrou '+data.validation_errors.length+' erro(s); consulte o relatório abaixo.','error');
     else if(data.validation_available)setStatus('JSON enviado; a Meta não reportou erros de validação.','success');
     else setStatus('JSON enviado, mas a Meta ainda não forneceu relatório de validação.','neutral');
-  }catch(error){
-    const report=error.payload?.validation_errors;
-    if(Array.isArray(report)){
-      const current=flowItems.find(flow=>flow.id===activeFlowId)||{};
-      renderFlowDetail({...current,id:activeFlowId,validation_errors:report});
-      setStatus(report.length?'A Meta rejeitou o JSON e retornou '+report.length+' erro(s). Consulte o relatório.':'O upload falhou sem erros detalhados da Meta.','error');
-    }else setStatus('Não foi possível enviar o JSON: '+String(error.message||error),'error');
-  }
+  }catch(error){setStatus('Não foi possível enviar o JSON: '+String(error.message||error),'error')}
   finally{setBusy(false);event.target.value=''}
 }
 async function publishActiveFlow(){
@@ -190,3 +183,4 @@ export async function mountFlowView(root=document.querySelector('#content')){
   root.querySelector('[data-flow-action="register-key"]')?.addEventListener('click',registerKey);
   await refreshAll();
 }
+

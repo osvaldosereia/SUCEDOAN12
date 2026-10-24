@@ -154,8 +154,10 @@ function requireFlowConnection(account){
 }
 async function assertFlowOwned(account,flowId){
   const listed=await listFlowsViaMeta({...flowArgs(account)});
-  if(listed.truncated)throw new MetaFlowsError("meta_flow_catalog_truncated",{httpStatus:409});
-  if(!listed.items.some(item=>item.id===flowId))throw new MetaFlowsError("meta_flow_not_found",{httpStatus:404});
+  if(!listed.items.some(item=>item.id===flowId)){
+    if(listed.truncated)throw new MetaFlowsError("meta_flow_catalog_truncated",{httpStatus:409});
+    throw new MetaFlowsError("meta_flow_not_found",{httpStatus:404});
+  }
   return getFlowViaMeta({accessToken:META_WHATSAPP_ACCESS_TOKEN,graphVersion:META_WHATSAPP_GRAPH_VERSION,flowId});
 }
 function onlyKeys(value,allowed){
@@ -475,3 +477,4 @@ Deno.serve(async(req:Request)=>{
     return json(req,{ok:false,error:"templates_backend_error"},500);
   }
 });
+

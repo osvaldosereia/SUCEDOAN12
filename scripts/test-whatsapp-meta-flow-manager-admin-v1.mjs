@@ -18,6 +18,7 @@ assert.match(api,/flow_publish/);
 assert.match(api,/public_key_matches_private/);
 assert.match(api,/flow_delete/);
 assert.match(api,/DA_FLOW_1018_RSA_PKCS8/);
+assert.match(api,/if\(!listed\.items\.some\(item=>item\.id===flowId\)\)\{\s*if\(listed\.truncated\)/);
 assert.doesNotMatch(api,/url\.searchParams\.set\(["']access_token/);
 
 assert.match(helper,/Authorization:'Bearer '\+cfg\.token/);
@@ -25,6 +26,7 @@ assert.match(helper,/assertFlowPublishable/);
 assert.match(helper,/meta_flow_public_key_mismatch/);
 assert.match(helper,/validation_errors/);
 assert.match(helper,/whatsapp_business_encryption/);
+assert.match(helper,/paging\?\.cursors\?\.after/);
 assert.doesNotMatch(helper,/searchParams\.set\(["']access_token/);
 
 assert.match(ui,/attendanceAuthorizedFetch/);
@@ -34,6 +36,7 @@ assert.match(ui,/flow_configure_endpoint/);
 assert.match(ui,/flow_register_key/);
 assert.match(ui,/flow_publish/);
 assert.match(ui,/public_key_matches_private/);
+assert.match(ui,/Recarregar relatório da Meta/);
 assert.match(ui,/window\.confirm/);
 assert.match(ui,/whatsapp-lab/);
 assert.doesNotMatch(ui,/0975|interactive\.flow|sendTemplateViaMeta|DA_FLOW_1018_RSA_PKCS8|META_WHATSAPP_ACCESS_TOKEN/);
@@ -41,3 +44,4 @@ assert.doesNotMatch(ui,/0975|interactive\.flow|sendTemplateViaMeta|DA_FLOW_1018_
 assert.match(marketing,/PRIMARY_MARKETING_VIEWS=\[[^\]]*'flows'/);
 assert.match(marketing,/view==='flows'/);
 console.log('PASS Admin Flow manager is pinned to 1018, owner-gated, session-authenticated and publication-gated');
+

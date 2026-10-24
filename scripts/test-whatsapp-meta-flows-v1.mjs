@@ -33,6 +33,20 @@ assert.match(seen.url,/123456\/flows/);
 assert.equal(new URL(seen.url).searchParams.get('access_token'),null);
 assert.equal(seen.init.headers.Authorization,'Bearer server-token');
 
+let pageCalls=0;
+const paginated=await listFlowsViaMeta({accessToken:'server-token',graphVersion:'v99.0',wabaId:'123456',fetchImpl:async url=>{
+  pageCalls++;
+  const after=new URL(String(url)).searchParams.get('after');
+  if(!after)return new Response(JSON.stringify({data:[{id:'98765',name:'Cesta A',status:'DRAFT'}],paging:{next:'https://graph.facebook.com/v99.0/123456/flows?after=cursor-2',cursors:{after:'cursor-2'}}}),{status:200,headers:{'Content-Type':'application/json'}});
+  return new Response(JSON.stringify({data:[{id:'98766',name:'Cesta B',status:'DRAFT'}]}),{status:200,headers:{'Content-Type':'application/json'}});
+}});
+assert.equal(pageCalls,2);
+assert.deepEqual(paginated.items.map(flow=>flow.id),['98765','98766']);
+assert.equal(paginated.truncated,false);
+const capped=await listFlowsViaMeta({accessToken:'server-token',graphVersion:'v99.0',wabaId:'123456',maxPages:1,fetchImpl:makeFetch({data:[{id:'98765',name:'Cesta A',status:'DRAFT'}],paging:{next:'https://graph.facebook.com/v99.0/123456/flows?after=cursor-2',cursors:{after:'cursor-2'}}})});
+assert.equal(capped.truncated,true);
+assert.equal(capped.page_count,1);
+
 const created=await createFlowViaMeta({accessToken:'server-token',graphVersion:'v99.0',wabaId:'123456',name:'Cesta dinâmica',fetchImpl:makeFetch({id:'98765',status:'DRAFT'})});
 assert.equal(created.id,'98765');
 await assert.rejects(createFlowViaMeta({accessToken:'x',graphVersion:'v99.0',wabaId:'123456',name:'x',fetchImpl:makeFetch({id:'98765'})}),e=>e.code==='meta_flow_name_invalid');
@@ -76,3 +90,4 @@ assert.ok(publishCalls>=3);
 await assert.rejects(publishFlowViaMeta({accessToken:'server-token',graphVersion:'v99.0',flowId:'98765',endpointUri:'https://flow.test',phoneNumberId:'55555',privateKeyConfigured:true,privateKeyPem:privatePem,metaAppSecretConfigured:true,sessionSecretConfigured:true,fetchImpl:async(url,init)=>String(url).includes('whatsapp_business_encryption')?new Response(JSON.stringify({business_public_key:'different-key'}),{status:200}):new Response(JSON.stringify({id:'98765',name:'Cesta',status:'DRAFT',endpoint_uri:'https://flow.test',validation_errors:[]}),{status:200})}),e=>e.code==='meta_flow_public_key_mismatch');
 assert.equal(await deleteFlowViaMeta({accessToken:'server-token',graphVersion:'v99.0',flowId:'98765',fetchImpl:makeFetch({success:true})}).then(x=>x.deleted),true);
 console.log('PASS Meta Flow Graph API, fixed endpoint, encrypted key registration, validation and publish gates');
+
