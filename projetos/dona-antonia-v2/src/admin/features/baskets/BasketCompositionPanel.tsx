@@ -10,6 +10,7 @@ interface Props {
   setQuantity: (typeId: string, quantity: number) => void;
   privateFeeCents: number;
   onPrivateFeeChange: (cents: number) => void;
+  canManagePrivatePricing: boolean;
 }
 export function BasketCompositionPanel({
   templates,
@@ -20,6 +21,7 @@ export function BasketCompositionPanel({
   setQuantity,
   privateFeeCents,
   onPrivateFeeChange,
+  canManagePrivatePricing,
 }: Props) {
   return (
     <div className="admin-grid">
@@ -48,29 +50,31 @@ export function BasketCompositionPanel({
           Informe a quantidade inicial de cada tipo. Zero significa que o tipo não faz parte deste
           tamanho.
         </p>
-        <div className="admin-private-fee">
-          <label htmlFor="basket-private-fee">
-            <strong>Valor interno da cesta (R$)</strong>
-            <small>
-              Configuração privada. Nunca exibir como linha ou campo separado na vitrine pública.
-            </small>
-          </label>
-          <input
-            id="basket-private-fee"
-            className="small-input"
-            type="number"
-            min="0"
-            max="999999"
-            step="0.01"
-            value={privateFeeCents / 100}
-            onChange={(event) => {
-              const value = Number(event.target.value);
-              if (Number.isFinite(value) && value >= 0 && value <= 999999) {
-                onPrivateFeeChange(Math.round(value * 100));
-              }
-            }}
-          />
-        </div>
+        {canManagePrivatePricing && (
+          <div className="admin-private-fee">
+            <label htmlFor="basket-private-fee">
+              <strong>Valor interno da cesta (R$)</strong>
+              <small>
+                Configuração privada. Nunca exibir como linha ou campo separado na vitrine pública.
+              </small>
+            </label>
+            <input
+              id="basket-private-fee"
+              className="small-input"
+              type="number"
+              min="0"
+              max="999999"
+              step="0.01"
+              value={privateFeeCents / 100}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                if (Number.isFinite(value) && value >= 0 && value <= 999999) {
+                  onPrivateFeeChange(Math.round(value * 100));
+                }
+              }}
+            />
+          </div>
+        )}
         {types.map((type) => {
           const value =
             selectedBasket.lines.find((line) => line.typeId === type.id)?.defaultQuantity ?? 0;

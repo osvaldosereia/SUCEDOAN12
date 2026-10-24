@@ -1,10 +1,10 @@
 # Persistência isolada — Dona Antônia V2
 
-## Estado da R02
+## Estado da R03
 
-A cadeia canônica está em `supabase/migrations/`, gerada com Supabase CLI e validada, em sequência, num PostgreSQL WASM descartável (`@electric-sql/pglite`). R02 criou quatro migrações e 21 tabelas; R03 adiciona a quinta migração e três tabelas de autorização/preço privado. A cadeia **não foi aplicada a qualquer Supabase remoto**. PGlite comprova sintaxe e comportamento PostgreSQL coberto pelos testes, mas não substitui homologação em uma instância Supabase.
+A cadeia canônica está em `supabase/migrations/`, gerada com Supabase CLI e validada no PostgreSQL WASM descartável (`@electric-sql/pglite`). R02 criou quatro migrações/21 tabelas; R03 acrescenta duas migrações (preços privados, papéis e leitura segura do próprio papel), totalizando seis migrações e 24 tabelas. A cadeia foi aplicada ao projeto novo e isolado `hjudhofluihkxykwekir` (`https://hjudhofluihkxykwekir.supabase.co`, região São Paulo). Nenhum banco Supabase existente foi acessado ou alterado. O projeto Pro tem estimativa confirmada de US$ 10/mês de compute para o tamanho padrão, cobrada por hora.
 
-O schema `da_next` permanece fora dos schemas expostos pelo Data API. Todas as 24 tabelas têm RLS habilitado. `anon` e `public` não recebem acesso; `authenticated` recebe `USAGE`, grants mínimos e policies por papel. A função auxiliar consulta atribuição no banco; não confia em `user_metadata`. `service_role` é somente backend e nunca pode ser exposta no browser. A matriz está em `docs/MATRIZ_ACESSO_V2.md`.
+O schema `da_next` permanece fora dos schemas expostos pelo Data API. Todas as 24 tabelas têm RLS habilitado e 64 policies. `anon` não possui `USAGE` em `da_next`; `authenticated` recebe grants mínimos e policies por papel. `public.get_my_staff_role()` é a única função pública de consulta de papel: sem argumentos, retorna apenas o papel ativo de `auth.uid()`, e só `authenticated` pode executá-la. O helper e a função não confiam em `user_metadata`. `service_role` é somente backend e nunca pode ir ao browser. A matriz está em `docs/MATRIZ_ACESSO_V2.md`.
 
 ## Conteúdo do modelo
 
@@ -22,10 +22,10 @@ Um adaptador servidor deverá, dentro de uma única transação: validar idempot
 
 ## Migrações, validação e reversão
 
-`npm run test:db` inicia um PostgreSQL em memória sem rede, cria roles e Auth fixtures temporários, aplica as cinco migrações e verifica relações, constraints, grants, RLS/RBAC positivo e negativo, privacidade e rollback de transação. `db/001_schema.sql` a `db/004_bling_product_profiles.sql` eram propostas não aplicadas e foram removidas para evitar dois históricos concorrentes; `db/README.md` explica o fluxo.
+`npm run test:db` inicia um PostgreSQL em memória sem rede, cria roles e Auth fixtures temporários, aplica as seis migrações e verifica relações, constraints, grants, RLS/RBAC positivo e negativo, privacidade, RPC do papel e rollback de transação. `db/001_schema.sql` a `db/004_bling_product_profiles.sql` eram propostas não aplicadas e foram removidas para evitar dois históricos concorrentes; `db/README.md` explica o fluxo.
 
-As migrações aplicadas devem ser tratadas como forward-only. Corrigir schema com nova migração aditiva/compensatória, não editar histórico já aplicado. Em desenvolvimento local, somente um banco descartável pode ser recriado por `supabase db reset`. Para homologação remota, falta provisionar um projeto V2 isolado, ensaiar backup/restore, configurar Supabase Auth e rever Data API/grants antes de qualquer aplicação. Nenhum destino remoto foi configurado nesta rodada.
+As migrações aplicadas devem ser tratadas como forward-only. Corrigir schema com nova migração aditiva/compensatória, não editar histórico já aplicado. Em desenvolvimento local, somente um banco descartável pode ser recriado por `supabase db reset`. O projeto V2 está ativo; as migrações foram aplicadas e verificadas. Ainda falta ensaiar backup/restore, cadastrar o primeiro usuário ADMIN, validar login com conta real e testar recuperação de senha. Não habilitar novos schemas expostos nem configurar integrações operacionais nesta rodada.
 
 ## Limites e pendências
 
-Não há projeto Supabase V2 criado, migration remota, cliente/adapter conectado, login real, CRUD persistente, checkout, consumidor da outbox nem integração ativa. R03 entrega modelo de ator, RBAC e policies testados localmente; a conexão com Supabase Auth depende do projeto isolado. O schema não valida sozinho mínimo/área/cutoff de pedido nem cálculo tributário. Campos fiscais e tratamento do ajuste interno exigem revisão contábil antes de faturar.
+Há um projeto Supabase V2 isolado com seis migrações aplicadas e cliente de login Supabase Auth conectado ao admin. A atribuição de funcionários está vazia; sem um e-mail de operador cadastrado não é possível testar login real nem liberar ADMIN. CRUD persistente, checkout, consumidor da outbox e integrações operacionais continuam ausentes. RLS/RBAC foram testados localmente e a configuração remota foi verificada por SQL. O schema não valida sozinho mínimo/área/cutoff de pedido nem cálculo tributário. Campos fiscais e tratamento do ajuste interno exigem revisão contábil antes de faturar.

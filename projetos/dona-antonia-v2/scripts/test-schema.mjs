@@ -34,7 +34,7 @@ const expectedTables = [
   'orders',
 ].sort();
 
-assert.equal(migrations.length, 5, 'the schema must be a complete, ordered migration chain');
+assert.equal(migrations.length, 6, 'the schema must be a complete, ordered migration chain');
 assert.ok(migrations.every((file) => /^\d{14}_[a-z0-9_]+\.sql$/.test(file)));
 
 const db = new PGlite();
@@ -79,7 +79,9 @@ try {
       has_schema_privilege('service_role', 'da_next', 'USAGE') as service_schema,
       count(*) filter (where c.relrowsecurity) as tables_with_rls,
       (select count(*) from pg_policies where schemaname = 'da_next') as policies,
-      has_table_privilege('anon', 'da_next.products', 'SELECT') as anon_products
+      has_table_privilege('anon', 'da_next.products', 'SELECT') as anon_products,
+      has_function_privilege('anon', 'public.get_my_staff_role()', 'EXECUTE') as anon_role_lookup,
+      has_function_privilege('authenticated', 'public.get_my_staff_role()', 'EXECUTE') as staff_role_lookup
     from pg_class c
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'da_next' and c.relkind = 'r'
@@ -90,6 +92,8 @@ try {
   assert.equal(Number(access.rows[0].tables_with_rls), expectedTables.length);
   assert.ok(Number(access.rows[0].policies) > expectedTables.length);
   assert.equal(access.rows[0].anon_products, false);
+  assert.equal(access.rows[0].anon_role_lookup, false);
+  assert.equal(access.rows[0].staff_role_lookup, true);
 
   const basketSeed = await db.query('select id from da_next.basket_sizes order by sort_order');
   assert.deepEqual(
@@ -278,6 +282,15 @@ try {
     }
   }
 
+  const roleLookup = await asAuthenticated(actorIds.products, () =>
+    db.query('select public.get_my_staff_role() as role'),
+  );
+  assert.equal(roleLookup.rows[0].role, 'PRODUCTS');
+  const missingRoleLookup = await asAuthenticated(actorIds.unassigned, () =>
+    db.query('select public.get_my_staff_role() as role'),
+  );
+  assert.equal(missingRoleLookup.rows[0].role, null);
+
   const catalogAccess = await asAuthenticated(actorIds.products, async () => {
     await db.query(
       'select set_config(\'request.jwt.claims\', \'{"user_metadata":{"role":"ADMIN"}}\', false)',
@@ -383,6 +396,10 @@ try {
     db.query('select id from da_next.conversations'),
   );
   assert.equal(revokedAccess.rows.length, 0, 'revoked roles must lose access immediately');
+  const revokedRoleLookup = await asAuthenticated(actorIds.unassigned, () =>
+    db.query('select public.get_my_staff_role() as role'),
+  );
+  assert.equal(revokedRoleLookup.rows[0].role, null, 'role lookup must reflect revocation');
 
   await db.exec('SET ROLE anon');
   await expectSqlFailure(

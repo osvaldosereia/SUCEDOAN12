@@ -3,8 +3,8 @@
 ## Status real
 
 **Revisão R00 (23/10/2026):** este documento foi alinhado à regra de ajuste interno privado e à responsabilidade operacional do app. Consulte docs/AUDITORIA_COMPLETA_V2.md para o baseline auditado na SHA 1a846beba768192c366937c1462bcfd6baeccee9.
-Fases 1–3 implementadas parcialmente na V2 isolada: estrutura e design system, regras de cesta, cadeia de schema com RLS/RBAC local e testes descartáveis.
-Login remoto, adapter Supabase, sincronismo e checkout transacional ainda NÃO estão conectados; dependem de homologação em projeto V2 isolado.
+Fases 1–3 implementadas parcialmente na V2 isolada: estrutura e design system, regras de cesta, schema com RLS/RBAC e cliente de Supabase Auth no admin. O projeto remoto V2 foi criado e as seis migrações foram aplicadas.
+Nenhum funcionário ADMIN foi atribuído ainda; o login ponta a ponta aguarda o cadastro inicial. Adapter de dados, sincronismo e checkout transacional seguem pendentes.
 Nenhuma modificação em produção, domínio, Edge Function atual ou banco legado.
 
 ## Fonte de verdade
@@ -38,7 +38,7 @@ Nenhuma modificação em produção, domínio, Edge Function atual ou banco lega
 - src/main-site.tsx: experiência móvel do cliente, carrinho e composição. Nunca acessa tokens privados.
 - src/main-admin.tsx: interface operacional e configuração; deve passar por Auth/RBAC antes de qualquer deploy.
 - scripts/import-bling.mjs: valida layout CSV do Bling e converte para formato de trabalho. Nunca altera Bling.
-- supabase/migrations: migrações versionadas aplicadas apenas em banco PostgreSQL descartável local; não aplicadas a projeto remoto.
+- supabase/migrations: migrações versionadas validadas no PGlite e aplicadas somente no projeto V2 isolado; nenhum banco existente foi alterado.
 
 ## APIs da próxima etapa
 Não colocar segredo de OAuth Bling no navegador. API v3 com OAuth 2.0 e URL atual api.bling.com.br/Api/v3.
@@ -79,14 +79,14 @@ Publicar só após: dados reais importados em staging; fluxo de pedido ponta a p
 - Preços internos e decisões de cobrança que não podem vazar: `src/server/pricing`; nunca importar em componentes do site.
 - Origem de dados: `src/data/catalog.ts` expõe uma interface `CatalogReader` que pode receber um novo adaptador Supabase mais tarde.
 - Estilos por responsabilidade: `src/styles/{base,flow,admin-mobile,media}.css`.
-- No banco, migrações versionadas isolam preços privados em tabelas próprias; políticas e grants R03 foram validados em PostgreSQL descartável. Nenhuma migração foi aplicada remotamente.
+- No banco, migrações versionadas isolam preços privados em tabelas próprias; políticas/grants passaram no PGlite e foram aplicados no Supabase V2 isolado. Nenhum legado foi alterado.
 - Imagens: componente `SquareImage` usa caixa quadrada, `object-fit:contain`, dimensões explícitas e lazy-loading para imagens não prioritárias.
 - Vite DEV usa dados de demonstração quando o catálogo falta; build de produção falha fechado sem catálogo (sem preços fictícios).
 - Qualquer nova sessão precisa ter seu próprio módulo e testes; refatorar antes de componentes com mais de 320 linhas ou CSS com mais de 11,5 KB.
 - `scripts/check-architecture.mjs` será executado no CI antes da tipagem, dos testes e do navegador.
 - Checkout e Supabase reais exigirão outro ciclo de homologação, principalmente regras de valor interno, estoque e pedidos.
 
-**Atenção:** o modelo RBAC/RLS está implementado e testado localmente, mas isso não conecta Supabase Auth. O admin permanece uma prévia sem login remoto nem persistência operacional.
+**Atenção:** o login e o client Auth estão conectados ao projeto V2, mas ainda não existe usuário ADMIN da aplicação. O painel continua com dados demonstrativos e sem persistência operacional; não publicar nesta etapa.
 
 
 ## Fonte de estoque e preço — decisão pendente antes de integrar

@@ -246,6 +246,31 @@
   padding: 6px 9px;
   font-size: 11px;
 }
+.da-staff-account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: #565953;
+  font-size: 12px;
+}
+.da-staff-account > span {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.da-staff-account button {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--ui-line);
+  border-radius: 7px;
+  background: #fff;
+  color: #282a27;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
 .da-content {
   width: 100%;
   max-width: 1380px;

@@ -16,7 +16,14 @@ export interface SignInWithPasswordInput {
   readonly password: string;
 }
 
-/** Provider port for a future isolated Supabase Auth adapter; no credentials are stored here. */
+export class StaffAccessDeniedError extends Error {
+  constructor() {
+    super('Esta conta ainda não possui um papel ativo no administrador da Dona Antônia.');
+    this.name = 'StaffAccessDeniedError';
+  }
+}
+
+/** Port that keeps the administrator UI independent from the Auth provider implementation. */
 export interface AuthenticationPort {
   signInWithPassword(input: SignInWithPasswordInput): Promise<StaffSession>;
   getSession(): Promise<StaffSession | null>;
@@ -24,7 +31,7 @@ export interface AuthenticationPort {
   onSessionChanged(listener: (session: StaffSession | null) => void): () => void;
 }
 
-/** The adapter must resolve the role from trusted server/database state, never user_metadata. */
+/** Role lookup must use trusted database state, never user_metadata. */
 export interface StaffRoleLookup {
   getCurrentRole(identity: AuthenticatedIdentity): Promise<StaffRole | null>;
 }

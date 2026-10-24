@@ -4,6 +4,7 @@ import type { AdminIconName } from './AdminIcon';
 import { AdminIcon } from './AdminIcon';
 import type { AvailableAdminSection } from '../navigation';
 import type { Product } from '../../core/model';
+import type { StaffSession } from '../../application/authentication-contracts';
 
 interface Props {
   section: AvailableAdminSection;
@@ -11,13 +12,25 @@ interface Props {
   products: readonly Product[];
   onProductSearch: (value: string) => void;
   children: React.ReactNode;
+  allowedSections: readonly AvailableAdminSection[];
+  staffSession: StaffSession | null;
+  onSignOut?: () => void;
 }
 const normalize = (s: string) =>
   s
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
-export function AdminShell({ section, onNavigate, products, onProductSearch, children }: Props) {
+export function AdminShell({
+  section,
+  onNavigate,
+  products,
+  onProductSearch,
+  children,
+  allowedSections,
+  staffSession,
+  onSignOut,
+}: Props) {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -53,8 +66,12 @@ export function AdminShell({ section, onNavigate, products, onProductSearch, chi
     if (searchOpen) searchInput.current?.focus();
   }, [searchOpen]);
   const q = normalize(query.trim());
+  const allowedSet = new Set(allowedSections);
   const foundSections = ADMIN_SECTIONS.filter(
-    (item) => item.available && (!q || normalize(item.label).includes(q)),
+    (item) =>
+      item.available &&
+      allowedSet.has(item.id as AvailableAdminSection) &&
+      (!q || normalize(item.label).includes(q)),
   );
   const foundProducts =
     q.length >= 2
@@ -116,7 +133,11 @@ export function AdminShell({ section, onNavigate, products, onProductSearch, chi
             {ADMIN_GROUPS.map((group) => (
               <section key={group.id} className="da-nav-group" aria-label={group.label}>
                 <p className="da-nav-group-title">{group.label}</p>
-                {ADMIN_SECTIONS.filter((item) => item.group === group.id).map((item) => (
+                {ADMIN_SECTIONS.filter(
+                  (item) =>
+                    item.group === group.id &&
+                    (!item.available || allowedSet.has(item.id as AvailableAdminSection)),
+                ).map((item) => (
                   <button
                     key={item.id}
                     type="button"
@@ -189,7 +210,16 @@ export function AdminShell({ section, onNavigate, products, onProductSearch, chi
             >
               <AdminIcon name="search" size={18} />
             </button>
-            <span className="da-preview-chip">Prévia</span>
+            {staffSession ? (
+              <div className="da-staff-account">
+                <span title={staffSession.identity.email}>{staffSession.identity.email}</span>
+                <button type="button" onClick={onSignOut}>
+                  Sair
+                </button>
+              </div>
+            ) : (
+              <span className="da-preview-chip">Prévia</span>
+            )}
           </div>
         </header>
         <main className="da-content" id="main-content">

@@ -58,7 +58,7 @@ Fontes oficiais:
 
 ## 5. Roadmap sequencial, com entregáveis e gates
 
-### Fase 0 — Fundamentação visual e engenharia [EM ANDAMENTO — R01/R02 concluídas; fundação R03 local, Auth remoto pendente]
+### Fase 0 — Fundamentação visual e engenharia [EM ANDAMENTO — R01/R02 concluídas; R03 implementada, primeiro usuário ADMIN pendente]
 **Objetivo:** parecer sistema comercial consistente em TODAS as telas, não só na página inicial.
 **Entregáveis:** tokens de cor/tipo/espaçamento, AdminShell profissional, menus, listagens, formulários, layouts desktop/mobile, padrões de carga/erro/empty-state, biblioteca leve de UI interna, contrato de dados para módulos; documentação, ESLint/Prettier e lint de acessibilidade.
 **Gate:** TS, build, teste unitário, Playwright mobile + desktop, screenshots e comparação visual. Não tocar em produção.
@@ -177,6 +177,6 @@ PR R02 #1366 está aberto, sem merge. A sequência agora é R03 — autenticaç�
 
 
 ## Atualização de execução — R03 (24/10/2026)
-Foi implementada a fundação local de RBAC/RLS: ADMIN, PRODUCTS, SEPARATION e SUPPORT; helper de permissão baseado em `auth.uid()` e atribuição no banco; grants mínimos, policies com `USING`/`WITH CHECK`; valores internos em tabelas separadas; contratos TS e matriz documentada. Cinco migrações/24 tabelas passaram nos testes PostgreSQL descartáveis, incluindo permissões negativas, revogação e isolamento privado.
+Foi implementada RBAC/RLS: papéis ADMIN, PRODUCTS, SEPARATION e SUPPORT; helper por `auth.uid()`; grants mínimos; policies `USING`/`WITH CHECK`; valores privados separados; client Auth com login por e-mail/senha, consulta do papel no banco e navegação filtrada por papel. Seis migrações/24 tabelas passaram em PGlite, incluindo autorização positiva/negativa, revogação, RPC própria e isolamento privado.
 
-A UI de login e o adapter Supabase Auth não foram conectados porque ainda não há projeto V2 isolado. A autenticação exige URL/chave pública e configuração no projeto novo; `service_role` não será enviada ao browser. Criar recurso remoto pode gerar custo/consumir limites e fica pendente de autorização específica. Não houve consulta nem alteração dos projetos legados. Resultado e limites: `docs/STATUS_RODADAS_V2.md`, `docs/MATRIZ_ACESSO_V2.md` e `docs/ADR-003-AUTENTICACAO-RBAC.md`.
+O projeto V2 isolado `hjudhofluihkxykwekir` foi criado na região São Paulo e recebeu as seis migrações. Custo de compute confirmado: US$ 10/mês estimados, billed hourly. Verificação remota: 24/24 tabelas com RLS, 64 policies, sem `USAGE` para `anon`, RPC de papel exclusiva de `authenticated`; zero funcionários cadastrados. O client usa somente publishable key; `service_role` não é incluída no browser. A atribuição do primeiro ADMIN e o login real aguardam cadastro do e-mail do operador. Nenhum projeto legado foi consultado ou alterado. Resultado e limites: `docs/STATUS_RODADAS_V2.md`, `docs/MATRIZ_ACESSO_V2.md` e `docs/ADR-003-AUTENTICACAO-RBAC.md`.
