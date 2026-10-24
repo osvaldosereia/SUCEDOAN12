@@ -11,6 +11,10 @@ const STOCK_CONFLICT_CODES=new Set<string>([
   "basket_lot_unavailable","basket_lot_insufficient","basket_component_not_in_lot",
   "basket_kit_lot_unavailable","basket_kit_lot_insufficient","basket_component_not_in_selected_kit"
 ]);
+const ORDER_CONFLICT_CODES=new Set<string>([
+  ...STOCK_CONFLICT_CODES,"basket_mold_unavailable","basket_mold_not_configured",
+  "basket_mold_component_invalid","basket_mold_option_invalid","basket_mold_composition_invalid"
+]);
 const CUTOFF_HOUR=11;
 const TZ="America/Cuiaba";
 const CATEGORIES=[
@@ -930,7 +934,7 @@ async function submit(req:Request,p:any){
   if(created.error){
     const e=txt(created.error.message,160).split("\n")[0];
     console.error("storefront_order_rejected",{error_code:e||"order_failed",stock_retry_attempted:stockRetryAttempted});
-    return {error:e||"order_failed",status:STOCK_CONFLICT_CODES.has(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS,stock_adjustment:stockAdjustment,adjusted_items:adjustedItems}
+    return {error:e||"order_failed",status:ORDER_CONFLICT_CODES.has(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS,stock_adjustment:stockAdjustment,adjusted_items:adjustedItems}
   }
   const orderId=created.data?.order_id;let papoaiLink:any=null;let publicOrderLink:any=null;
   if(orderId&&ph){try{const linked=await db.rpc("ops2_link_storefront_order_from_identity_v1",{p_order_id:orderId});if(!linked.error)papoaiLink=linked.data||null}catch(e){console.error("papoai_identity_order_link",txt((e as any)?.message,180))}}
