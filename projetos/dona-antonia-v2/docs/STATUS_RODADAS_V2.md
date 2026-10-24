@@ -8,8 +8,8 @@
 | R00 | Auditoria integral e baseline | **Concluída — auditoria documental e baseline** | docs/AUDITORIA_COMPLETA_V2.md; SHA base 1a846beba768192c366937c1462bcfd6baeccee9; CI 40057635884 aprovado |
 | R01 | Design system e disciplina de qualidade | **Concluída** | PR #1365; SHA R01 7a02a0da66dbcec6cfd7772da75f748ecb5bd29c; CI 40059800868 e 40059798099 aprovados |
 | R02 | Modelagem/migrações para banco isolado | **Concluída; PR aberto, sem merge** | PR #1366; SHA 0ea8f43188ea55db56c176d1c34368a2b4303c10; CI 40061318922 aprovado |
-| R03 | Login, RBAC e RLS V2 | Implementada; ambiente V2 aplicado; bootstrap ADMIN pendente | PR #1367; 6 migrações/24 tabelas; 50 testes; projeto isolado `hjudhofluihkxykwekir`; ~US$10/mês |
-| R04 | Importação/reconciliação dos 802 produtos | Planejada | — |
+| R03 | Login, RBAC e RLS V2 | Implementada; ambiente V2 aplicado; login pela UI ainda não ensaiado | PR #1367; 6 migrações/24 tabelas; 50 testes; projeto isolado `hjudhofluihkxykwekir`; ~US$10/mês |
+| R04 | Importação/reconciliação dos 802 produtos | **Implementação local concluída; carga staging bloqueada por procedência, precisão do custo e login UI** | `docs/AUDITORIA_CAMPOS_BLING_802.md`; dry-run: 802 SKUs únicos, 802 revisões de precisão do custo, 0 vendáveis; 64 testes passam |
 | R05 | Cadastro e estoque persistente | Planejada | — |
 | R06 | Cestas, tipos e extras persistentes | Planejada | — |
 | R07 | Catálogo público dinâmico/performance | Planejada | — |
@@ -95,3 +95,15 @@
 **Produção legada:** intocada; nenhuma alteração em `main`, sites públicos, Supabase existente, atendimento ou integração operacional. Nada publicado.
 **PR:** #1367 — https://github.com/osvaldosereia/SUCEDOAN12/pull/1367; aberto, sem merge, base R02.
 **Próximo passo:** validar o fluxo de login pela tela do admin V2 em ambiente isolado e revisar os achados de Advisor antes de carregar dados. O gate de identidade/bootstrap está atendido. Em seguida, R04 — importação controlada e reconciliação do catálogo Bling.
+
+
+## R04 — Importação controlada e reconciliação do catálogo Bling
+**Data:** 2026-10-24 (UTC)
+**Branch:** `agent/dona-antonia-r04-bling-import`, base no head R03 `4ecb9a0f7897611bde18470d57ba4c30febce80b`.
+**Estado:** código de validação/dry-run concluído; carga no staging não executada porque a cópia localizada não tem procedência comprovada como export oficial e o login pelo admin V2 ainda não foi ensaiado.
+**Escopo implementado:** importador agora tem dry-run sem escrita por padrão; parser aceita CSV delimitado por vírgula, ponto e vírgula ou tab; valida cabeçalho de 59 campos, SKU único, categoria fechada, unidade UN, valores monetários, GTIN/check digit unitário e de embalagem, itens por caixa e formato de NCM/CEST; sinaliza conflitos de GTIN/fiscal e custo com precisão maior que centavos; preserva estoque vazio como desconhecido; separa projeção comercial dos dados fiscais/custo/fornecedor; saída privada requer `--write-to` e recebe modo 0600, com bloqueio de gravação sob `public/`.
+**Fonte auditada:** cópia na Library com metadado `model_generated: true`, também indicada no README como gerada na conversa. SHA-256 `80d5733eeee4135c04c461b79c44e2afb42c1916c49eafca76f20e9fcbe1d4e1`. Cabeçalho estruturalmente compatível com 59 colunas; 802 linhas e SKUs únicos; 776 EANs preenchidos e válidos; nenhum EAN duplicado; 802 inativos e saldo em branco; custo com quatro casas decimais em todas as linhas contra schema atual em centavos; 0 vendáveis. Nenhuma linha foi gravada em arquivo derivado, Supabase ou Bling.
+**Testes:** `npm test` inclui os casos do importador; 64 testes passam. Dry-run completo: 802 linhas, 802 revisões de precisão do custo, sem SKU/GTIN duplicados ou anomalias de formato NCM/CEST e zero produtos vendáveis. E2E local não iniciou porque o binário Chromium não está instalado; aguardando execução da CI no branch.
+**Produção:** branch `main`, sites, Supabase legado, atendimento e integrações operacionais intocados; nenhuma alteração remota no Supabase V2 e nada publicado.
+**Bloqueios:** obter export Bling de origem comprovável; modelar/decidir como preservar custo com quatro casas decimais; executar login pela UI do admin V2; então repetir dry-run antes da carga idempotente ao staging. Saldo físico e autoridade operacional continuam sem resolução; importação não ativará produtos.
+**Próxima ação:** encerrar os gates pendentes de R03/R04; em seguida, carregar catálogo validado somente no Supabase V2 isolado. R05 segue bloqueada até a R04 ter aceite completo.

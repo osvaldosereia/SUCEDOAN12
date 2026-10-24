@@ -309,4 +309,14 @@ R00 foi documental; R01 consolidou qualidade visual/CI; R02 implementou schema e
 - Gates: 50 testes unitários; PGlite seis migrações/24 tabelas com RBAC/RLS positivo e negativo, role lookup, revogação, privacidade e rollback; lint, format, arquitetura, TS, build, audit (0 vulnerabilidades) passaram. Playwright local não iniciou: Chromium ausente; CI #40063869241 passou os 17 E2E.
 - Limite: Auth registrou acesso real, mas login pela tela do admin V2 ainda não foi testado. O dev server local não pôde ser aberto pelo navegador remoto; nenhuma prévia foi publicada. Nenhuma senha foi definida pelo agente.
 - Operação: legado, `main`, bancos existentes, atendimento e integrações intocados; nenhuma publicação.
-- Próximo: validar o login pelo admin V2 em ambiente isolado, revisar os achados de Advisor e concluir revisão do PR; depois, iniciar R04.
+- Próximo: concluir o ensaio de login pela UI e obter arquivo oficial do Bling com origem comprovável; então repetir o dry-run e executar a carga idempotente somente no Supabase V2.
+
+
+## Registro de execução — R04 (24/10/2026)
+- Branch local isolada: `agent/dona-antonia-r04-bling-import`; base R03 `4ecb9a0f7897611bde18470d57ba4c30febce80b`.
+- Importador atualizado para dry-run padrão; agora valida o cabeçalho Bling de 59 colunas, SKU único, GTIN/check digit unitário e de embalagem, categoria, unidade, preço/custo, NCM/CEST, itens por caixa e conflitos de EAN; distingue saldo vazio/desconhecido de zero; separa JSON público e privado; grava apenas mediante `--write-to`, nunca sob `public/`, e protege o JSON privado com permissão 0600.
+- Fonte disponível na Library tem sinalização `model_generated: true` e README prévio diz que foi gerada nesta conversa. Hash `80d5733eeee4135c04c461b79c44e2afb42c1916c49eafca76f20e9fcbe1d4e1`. Estrutura: 59 colunas, 802 linhas, 802 SKUs únicos, 776 GTIN válidos, 0 GTIN repetidos, 802 registros inativos e estoque desconhecido; 802 custos com 4 casas decimais vs schema de centavos; 0 vendáveis. A estrutura passou dry-run, mas não serve de base oficial para staging.
+- Testes locais do pacote: `npm test` com 64 testes; importação completa em `--dry-run` sem escrita no banco ou em arquivos. Relatório indica 802 revisões de precisão do custo; nenhuma gravação remota foi feita.
+- Estado da rodada: **parcial**. Bloqueiam aceite o CSV oficial rastreável e o teste de login pela UI, conforme os gates R03/R04. Não carregar base gerada nem fazer ativação em massa.
+- Segurança/isolamento: `main`, produção, Supabases legados, atendimento e integrações operacionais intocados; sem deploy/publicação.
+- Próximo: receber export oficial do Bling, decidir como preservar custo de quatro casas decimais, ensaiar login no admin V2, revisar advisor já documentado, repetir dry-run e executar importação upsert idempotente no staging V2. Só depois iniciar R05.

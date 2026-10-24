@@ -28,15 +28,15 @@ O domínio donaantonia.com.br permanece no código anterior até autorização e
 Enquanto o banco novo não estiver conectado, telas são exclusivamente demonstração em memória, não salvam pedidos nem atualizam o Bling.
 
 ## Importar a planilha Bling
-Arquivo de origem: DONA_ANTONIA_BLING_802_PRODUTOS_INDEPENDENTES_7_CATEGORIAS.csv, gerado nesta conversa.
-Copie o CSV para uma pasta local, sem adicioná-lo ao site público. Execute:
-npm run import:bling -- /caminho/arquivo.csv
+O CSV de 802 produtos que está no histórico foi gerado nesta conversa e não tem procedência comprovada como exportação do Bling. Ele serve somente para validar o formato e o importador; **não carregue seus produtos no Supabase V2**. Obtenha um export oficial, com data/hora e confirmação da conta de origem, antes de importar o catálogo.
 
-A importação valida as 59 colunas, SKUs, categorias, valores e GTINs e gera:
-- public/catalog.generated.json: somente dados não sigilosos de vitrine, sem custos e sem informações fiscais.
-- data/catalog.admin.json: prévia interna com custo/NCM/CEST (arquivo ignorado pelo Git).
+Por padrão, o comando abaixo é somente simulação e não grava arquivos nem chama o banco:
 
-Produtos com Situação = Inativo ou estoque zerado NÃO ficam vendáveis. O importador nunca ativa cadastros automaticamente.
+```sh
+npm run import:bling -- --dry-run /caminho/arquivo.csv
+```
+
+O importador valida o cabeçalho Bling de 59 colunas, SKU único, GTIN e dígito verificador, categoria, unidade, preço, custo, NCM/CEST e registra conflitos de GTIN duplicado e custo com precisão maior que centavos. O dry-run identifica as linhas e motivos de rejeição, mais faixas de linhas com conflitos; saldo vazio permanece desconhecido e produtos não vendáveis não são ativados. Para gerar arquivos locais de revisão, use `--write-to /diretorio/privado` em uma pasta fora de `public/`. A projeção pública não contém custo, fornecedor nem campos fiscais; o JSON administrativo contém campos privados e é criado com permissão restrita. Essa saída ainda não grava no Supabase.
 
 ## Entregas pendentes antes de produção
 Autenticação/admin com RBAC, APIs seguras, banco dedicado, validações de estoque no servidor, sincronização OAuth Bling, persistência de cestas/pedidos, separação, expedição, recuperação de checkout, observabilidade e testes ponta a ponta.
