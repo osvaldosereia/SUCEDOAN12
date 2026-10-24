@@ -65,17 +65,18 @@ function renderFlowList(){
 }
 function renderFlowDetail(flow){
   activeFlowId=String(flow?.id||'');
+  const isDraft=String(flow?.status||'').toUpperCase()==='DRAFT';
   const target=rootNode?.querySelector('[data-flow-detail]');
   if(!target)return;
   if(!flow){target.innerHTML='<p class="flow-empty">Selecione um Flow para ver o estado, os erros da Meta e as ações disponíveis.</p>';renderFlowList();return}
-  target.innerHTML='<div class="flow-detail-head"><div><h3>'+esc(flow.name||'Flow')+'</h3><p>ID <code>'+esc(flow.id)+'</code> · Estado <strong>'+esc(flow.status||'UNKNOWN')+'</strong></p></div><span>'+esc(flow.health_status||'Saúde não informada')+'</span></div><p><strong>Endpoint:</strong> <code>'+esc(flow.endpoint_uri||'Não configurado')+'</code></p><h4>Relatório de validação da Meta</h4>'+formatValidation(flow.validation_errors)+'<div class="flow-actions"><label class="flow-upload">Enviar JSON e validar na Meta<input type="file" data-flow-json accept=\"application/json,.json\" '+(canManage?'':'disabled')+'></label><button type="button" data-flow-action="configure">Configurar endpoint</button><button type="button" data-flow-action="validate">Atualizar validação</button><button type="button" data-flow-action="publish" class="primary">Publicar Flow</button><button type="button" data-flow-action="delete" class="danger">Excluir rascunho</button></div><p class="flow-publish-note">A publicação é irreversível na Meta. O Vitrine Admin só libera essa ação quando o Flow está em rascunho, o relatório oficial está limpo, o endpoint corresponde à URL fixa e a chave e os segredos do endpoint estão prontos.</p>';
+  target.innerHTML='<div class="flow-detail-head"><div><h3>'+esc(flow.name||'Flow')+'</h3><p>ID <code>'+esc(flow.id)+'</code> · Estado <strong>'+esc(flow.status||'UNKNOWN')+'</strong></p></div><span>'+esc(flow.health_status||'Saúde não informada')+'</span></div><p><strong>Endpoint:</strong> <code>'+esc(flow.endpoint_uri||'Não configurado')+'</code></p><h4>Relatório de validação da Meta</h4>'+formatValidation(flow.validation_errors)+'<div class="flow-actions"><label class="flow-upload">Enviar JSON e validar na Meta<input type="file" data-flow-json accept=\"application/json,.json\" '+(canManage&&isDraft?'':'disabled')+'></label><button type="button" data-flow-action="configure">Configurar endpoint</button><button type="button" data-flow-action="validate">Atualizar validação</button><button type="button" data-flow-action="publish" class="primary">Publicar Flow</button><button type="button" data-flow-action="delete" class="danger">Excluir rascunho</button></div><p class="flow-publish-note">A publicação é irreversível na Meta. O Vitrine Admin só libera essa ação quando o Flow está em rascunho, o relatório oficial está limpo, o endpoint corresponde à URL fixa e a chave e os segredos do endpoint estão prontos.</p>';
   renderFlowList();
   target.querySelector('[data-flow-json]')?.addEventListener('change',handleJsonUpload);
   target.querySelector('[data-flow-action="configure"]')?.addEventListener('click',()=>runAction('flow_configure_endpoint',{flow_id:activeFlowId},'Endpoint fixo configurado na Meta.'));
   target.querySelector('[data-flow-action="validate"]')?.addEventListener('click',()=>runAction('flow_validate',null,'Relatório da Meta atualizado.'));
   target.querySelector('[data-flow-action="publish"]')?.addEventListener('click',()=>publishActiveFlow());
   target.querySelector('[data-flow-action="delete"]')?.addEventListener('click',()=>deleteActiveFlow());
-  target.querySelectorAll('[data-flow-action]').forEach(button=>{if(!canManage)button.disabled=true});
+  target.querySelectorAll('[data-flow-action]').forEach(button=>{const action=button.dataset.flowAction;button.disabled=action==='validate'?false:(!canManage||!isDraft)});
 }
 async function loadFlowDetail(id){
   if(!id)return;
