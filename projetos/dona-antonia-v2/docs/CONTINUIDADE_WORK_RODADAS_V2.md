@@ -245,7 +245,7 @@ Confirmado por leitura da branch:
 
 **Testes locais:** `npm test` (90/90), `npm run check`, lint, `npm run format:check`, `npm run architecture:check` (103 arquivos), `npm run build` e `npm run test:db` (11 migrações/26 tabelas, RLS/RBAC, privacidade e rollback) passaram. Playwright local foi tentado, mas não iniciou porque o executável Chromium está ausente.
 
-**CI e aceite:** a primeira execução (#40091664923) encontrou somente o gate `prefer-const` no cache; o commit corretivo foi verificado na execução final #40091732365, que passou auditoria, lint/formato, arquitetura, migrações PostgreSQL descartáveis, TypeScript, 90 testes unitários, build e 17/17 E2E (`17 passed (18.5s)`). O seed remoto permanece inativo/estoque zero; a rodada melhora o caminho público e seus estados de erro, mas não ativa produtos nem homologa venda. Não houve nova migration nem alteração no Supabase V2.
+**CI e aceite:** a primeira execução (#40091664923) encontrou somente o gate `prefer-const` no cache; o commit corretivo foi verificado na execução final #40091732365, que passou auditoria, lint/formato, arquitetura, migrações PostgreSQL descartáveis, TypeScript, 90 testes unitários, build e 17/17 E2E (`17 passed (18.5s)`). O checkpoint documental `bda5799189caaad3c603a91dfad458f6c4d4a7c7` passou no CI #40091870677, também com 17/17 E2E (`17 passed (20.0s)`). O seed remoto permanece inativo/estoque zero; a rodada melhora o caminho público e seus estados de erro, mas não ativa produtos nem homologa venda. Não houve nova migration nem alteração no Supabase V2.
 
 ### R08 — Cotação, validação e checkout real em staging
 
