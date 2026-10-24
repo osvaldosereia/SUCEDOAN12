@@ -4,6 +4,7 @@ const STORE='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2
 const SIZE_ORDER=['economica','mini','pequena','media','grande'];
 const SIZE_LABELS={economica:'Econômica',mini:'Mini',pequena:'Pequena',media:'Média',grande:'Grande'};
 const LIVE_TEST_ENABLED=false; // OFF: the two company numbers currently have ANA enabled.
+const TEST_CONVERSATION_ID='ff5c1e73-f3ed-4b88-8eba-b6e3a9883941';
 const TEST_RECIPIENT='+5565998150975';
 const ORIGIN_CHANNEL='+5565984491018';
 const $=id=>document.getElementById(id);
