@@ -190,7 +190,7 @@
     if(code==='rate_limited')return 'Seu carrinho continua salvo. Houve muitas tentativas em pouco tempo; aguarde até 1 minuto e tente novamente. Se continuar sem concluir, fale com a equipe pelo WhatsApp do site.';
     if(code==='minimum_order')return 'O total atual ficou abaixo do pedido mínimo antes da confirmação. Seu carrinho continua salvo.';
     if(code==='rate_limit_unavailable'||code==='service_unavailable')return 'O sistema de pedidos está temporariamente indisponível. Seu carrinho continua salvo para você tentar novamente.';
-    if(['insufficient_stock','product_unavailable','basket_unavailable','basket_lot_unavailable','basket_lot_insufficient','basket_component_not_in_lot','basket_kit_lot_unavailable','basket_kit_lot_insufficient','basket_component_not_in_selected_kit'].includes(code))return items.length?items.map(adjustmentLine).join(' '):'A disponibilidade mudou enquanto o pedido era enviado. Toque novamente em Finalizar pedido; vamos ajustar automaticamente os itens disponíveis.';
+    if(['insufficient_stock','product_unavailable','basket_unavailable','basket_product_unavailable','basket_lot_unavailable','basket_lot_insufficient','basket_component_not_in_lot','basket_kit_lot_unavailable','basket_kit_lot_insufficient','basket_component_not_in_selected_kit','basket_mold_unavailable'].includes(code))return items.length?items.map(adjustmentLine).join(' '):'O estoque mudou novamente durante a confirmação. Seu pedido não foi concluído e o carrinho continua salvo; confira os itens e tente mais uma vez em instantes.';
     return `O pedido não foi enviado por causa de ${code||'uma falha de comunicação'}. Seu carrinho continua salvo.`;
   }
 
