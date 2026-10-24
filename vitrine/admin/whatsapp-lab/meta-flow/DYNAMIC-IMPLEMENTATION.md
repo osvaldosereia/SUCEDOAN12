@@ -11,6 +11,16 @@
 - Endpoint separado `whatsapp-1018-basket-flow-v1`: Meta Data Exchange criptografado (RSA-OAEP + AES-GCM), validação `X-Hub-Signature-256`, sessão assinada e com validade, acesso restrito ao teste 1018 → 8360.
 - Sem escrita em banco, sem checkout, sem criação de pedido, sem alteração de ANA, webhook comercial ou listas antigas.
 
+## Gestão pelo Vitrine Admin
+
+A branch de continuação adiciona a área **Marketing → Flows Meta** ao Admin, reaproveitando a sessão de atendimento já autenticada e o token Meta armazenado no servidor em `admin-whatsapp-templates-v1`. A área fica fixada à conta `dona-antonia-1018`; não oferece seletor de número, não usa o 0975 e não tem ação de envio.
+
+Pela própria tela, um perfil proprietário pode criar rascunhos, enviar o JSON e consultar a validação oficial, configurar o endpoint fixo, registrar na Meta a chave pública derivada no servidor, publicar depois das verificações e excluir somente rascunhos. A publicação exige confirmação explícita e o backend bloqueia a ação se o Flow não estiver em DRAFT, se não houver relatório oficial sem erros, se o endpoint não corresponder à URL configurada, se a chave não estiver registrada ou se faltarem segredos do endpoint. O token e a chave privada nunca são enviados ao navegador.
+
+A implementação usa a permissão `whatsapp_business_management` da conexão Meta existente. Se a Meta negar uma operação por escopo, a tela apresenta o código sanitizado; não cria uma segunda conexão nem troca de integração. Os segredos de execução continuam sendo configurados no ambiente seguro do Supabase, fora da tela web.
+
+**Disponibilidade:** este código está em uma branch de trabalho. A tela passa a operar depois do merge e da implantação autorizada do código atualizado de `admin-whatsapp-templates-v1`. O endpoint dinâmico ainda precisa de implantação autorizada no Supabase. Não foi feita operação ao vivo na Meta nesta etapa.
+
 ## Arquivos
 - `vitrine/admin/whatsapp-lab/meta-flow/flow-dynamic-v1.json` — Flow JSON 7.3 / Data API 3.0
 - `supabase/functions/whatsapp-1018-basket-flow-v1/index.ts` — envelope e chamadas de consulta
@@ -22,15 +32,15 @@
 Os `__example__` do JSON são placeholders neutros para a prévia do Flow Builder. Preços, nomes de produtos e marcas usados em execução vêm do endpoint e do catálogo Supabase; o arquivo não fixa valores comerciais.
 
 ## Requisitos **antes** de enviar à Meta
-1. Validar o JSON no **Flow Builder/Graph API**: a validação local não substitui as regras oficiais de componentes, referências dinâmicas e rotas. Somente depois corrigir quaisquer alertas retornados pela Meta.
-2. Gerar chave privada RSA de 2048 bits em formato **PKCS#8 sem criptografia do arquivo** e cadastrar a chave pública no número da Meta, através de procedimento seguro. A chave privada **nunca** deve ser commitada.
+1. Depois do merge e da implantação autorizada do endpoint autenticado do Admin, abrir **Marketing → Flows Meta** e validar o JSON enviado pelo próprio gerenciador. A validação local não substitui as regras oficiais de componentes, referências dinâmicas e rotas; corrigir todos os erros retornados pela Meta antes de publicar.
+2. Gerar chave privada RSA de 2048 bits em formato **PKCS#8 sem criptografia do arquivo** e configurá-la com os segredos abaixo no ambiente seguro do Supabase. O gerenciador deriva e registra a chave pública na Meta pela conexão existente; a chave privada **nunca** deve ser commitada nem exibida no navegador.
 3. Configurar os seguintes segredos somente no ambiente de execução seguro da Edge Function:
    - `DA_FLOW_1018_RSA_PKCS8` — chave PEM privada do endpoint;
    - `DA_FLOW_1018_META_APP_SECRET` — segredo do aplicativo associado ao canal 1018 para verificar assinatura de chamadas;
    - `DA_FLOW_1018_SESSION_SECRET` — chave aleatória com no mínimo 32 caracteres para assinar tokens e estados;
-4. Implantar a função **somente por mecanismo permitido**, já que uma tentativa anterior de implantar outra função no Supabase foi bloqueada por segurança. Não usar alternativa para contornar esse bloqueio.
+4. Implantar `whatsapp-1018-basket-flow-v1` e a versão atualizada de `admin-whatsapp-templates-v1` **somente por mecanismo permitido**, já que uma tentativa anterior de implantação foi bloqueada por segurança. Não usar alternativa para contornar esse bloqueio.
 5. Preparar a emissão de `flow_token` assinado por backend autenticado e restrito ao número de teste final 8360. Sem esse emissor de sessão, o endpoint recusa todas as sessões, como previsto.
-6. Criar draft via Graph API Meta `POST /{WABA_ID}/flows` (permissão `whatsapp_business_management`), subir `flow-dynamic-v1.json`, registrar endpoint HTTPS, consultar os erros da Meta e validar retorno de `ping` e das telas.
+6. Criar o rascunho, enviar `flow-dynamic-v1.json`, registrar o endpoint HTTPS e consultar os erros da Meta pela área **Flows Meta** do Vitrine Admin, usando a conexão já configurada. A conexão precisa ter a permissão `whatsapp_business_management`.
 7. O webhook Meta existente persiste `nfm_reply`. O Flow envia ao retorno apenas o resumo comercial, sem o estado assinado da sessão; o Laboratório WhatsApp mostra a solicitação da conversa interna 1018 → 8360 para conferência humana. Não cria pedido. Ainda é necessário homologar o retorno num aparelho real.
 8. Criar o envio `interactive.flow` exclusivamente do 1018 ao 8360; só expandir para clientes após homologação manual.
 
