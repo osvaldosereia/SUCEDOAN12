@@ -21,7 +21,7 @@
 | R13    | NF-e Bling pós-separação                  | **Concluída em staging isolado; PR draft sem merge/publicação** | PR #1382; head `f1af5906`; CI #40102849252 aprovado (17/17 E2E); V2 19 migrations/32 tabelas; 802 produtos/perfis preservados; 0 pedidos/documentos |
 | R14    | Clientes/entrega/relatórios essenciais    | **Concluída em staging isolado; PR draft sem merge/publicação** | PR #1384; head `c97cb236`; CI #40115614242 aprovado (16/16 E2E após correção da expectativa); V2 20 migrations/33 tabelas; 802 produtos/perfis preservados |
 | R15    | Auditoria final/performance/homologação   | **Concluída em V2 isolada; bloqueios de homologação documentados** | PR #1394; head `5344a6c3`; código `8aa59fe0`; CI #40132993673 + checkpoint final #40133495710 aprovado (18/18 E2E), testes locais 124/124, auditoria sintética 802 produtos/3 operadores, npm audit sem vulnerabilidades; Lighthouse/backup remoto pendentes |
-| R16    | Piloto/migração autorizada                | **Pré-voo documentado; piloto bloqueado**                                                  | PR #1396 draft; branch `agent/dona-antonia-r16-pilot-preflight`; CI do head `314332a8` em verificação; cinco gates humanos/staging ainda bloqueados; sem merge/deploy/publicação |
+| R16    | Piloto/migração autorizada                | **Pré-voo documentado; piloto bloqueado**                                                  | PR #1396 draft; branch `agent/dona-antonia-r16-pilot-preflight`; CI #40134499891 aprovado; cinco gates humanos/staging ainda bloqueados; sem merge/deploy/publicação |
 
 ## Histórico anterior às rodadas
 
