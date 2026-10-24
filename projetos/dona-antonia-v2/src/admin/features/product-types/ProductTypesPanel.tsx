@@ -13,6 +13,9 @@ interface Props {
   filter: string;
   setFilter: (value: string) => void;
   toggleOption: (sku: string) => void;
+  onReorder: (typeId: string, delta: number) => void;
+  onToggleActive: (typeId: string) => void;
+  onRename: (typeId: string, name: string) => void;
 }
 export function ProductTypesPanel({
   types,
@@ -26,6 +29,9 @@ export function ProductTypesPanel({
   filter,
   setFilter,
   toggleOption,
+  onReorder,
+  onToggleActive,
+  onRename,
 }: Props) {
   return (
     <div className="admin-grid">
@@ -34,14 +40,36 @@ export function ProductTypesPanel({
         <p>Arroz, feijão e outros grupos de escolha para as cestas.</p>
         <div className="type-list">
           {types.map((type) => (
-            <button
-              key={type.id}
+            <div
               className={'type-row ' + (type.id === selectedTypeId ? 'active' : '')}
-              onClick={() => setSelectedTypeId(type.id)}
+              key={type.id}
             >
-              <b>{type.name}</b>
-              <small>{type.productSkus.length} produtos</small>
-            </button>
+              <button type="button" onClick={() => setSelectedTypeId(type.id)}>
+                <b>{type.name}</b>
+                <small>
+                  {type.productSkus.length} produtos · {type.active === false ? 'inativo' : 'ativo'}
+                </small>
+              </button>
+              <span>
+                <button
+                  type="button"
+                  aria-label={'Mover ' + type.name + ' para cima'}
+                  onClick={() => onReorder(type.id, -1)}
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  aria-label={'Mover ' + type.name + ' para baixo'}
+                  onClick={() => onReorder(type.id, 1)}
+                >
+                  ↓
+                </button>
+                <button type="button" onClick={() => onToggleActive(type.id)}>
+                  {type.active === false ? 'Ativar' : 'Retirar'}
+                </button>
+              </span>
+            </div>
           ))}
         </div>
         <div className="form-row">
@@ -62,6 +90,17 @@ export function ProductTypesPanel({
       </section>
       <section className="panel">
         <h2>Produtos permitidos: {selectedType?.name}</h2>
+        {selectedType && (
+          <label className="form-field">
+            <span>Nome do tipo</span>
+            <input
+              className="input"
+              defaultValue={selectedType.name}
+              key={selectedType.id + selectedType.name}
+              onBlur={(event) => onRename(selectedType.id, event.target.value)}
+            />
+          </label>
+        )}
         <p>
           Marque os SKUs reais que o cliente poderá escolher neste tipo. Produtos inativos não serão
           vendidos.

@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 10260)
-Total output lines: 325
-
 # DONA ANTÔNIA V2 — DOSSIÊ DE CONTINUIDADE E PLANO POR RODADAS (WORK)
 
 **Versão do dossiê:** 2026-10-23  
@@ -197,6 +194,15 @@ Confirmado por leitura da branch:
 ### R06 — Tipos, cestas e extras persistentes
 - CRUD tamanho/tipos/vínculos/ordem/quantidades/extras; carregar fotos quadradas; valor interno por tamanho privado; testar de ponta a ponta.
 - Aceite: mudanças admin aparecem na prévia pública, preço agregado correto sem expor composição privada; alteração de marca preserva quantidade; edições simultâneas seguras.
+
+
+**Execução iniciada (24/10/2026):** branch isolada `agent/dona-antonia-r06-baskets-types-extras`, derivada do head R05 `397635d0085bac6042b4b408df185d6992755c51`. Foram criados domínio e adapter Supabase para persistência, UI administrativa para criar/renomear/ordenar/desativar tamanhos e tipos, gerenciar vínculos e quantidades, extras, foto HTTPS e ajuste de preço privado; a migration `20261024070000_r06_basket_configuration.sql` adiciona a persistência de extras/foto e RPCs administrativas protegidas por permissão.
+
+**Banco isolado:** migration aplicada somente em `hjudhofluihkxykwekir`; remoto confirmou 10 migrações, 25 tabelas, 802 produtos, 802 perfis privados, cinco tamanhos e cinco ajustes privados preservados. `anon` não executa as RPCs; `authenticated` tem execução condicionada à checagem interna de permissão. Sem gravação de linhas de produto, perfil ou preço na verificação.
+
+**Verificações locais:** TypeScript, lint, Prettier, arquitetura (94 arquivos), 84 testes unitários, suíte PostgreSQL isolada (10 migrações/25 tabelas, RLS/RBAC/privacidade/rollback) e build aprovados. Playwright local não pôde iniciar sem Chromium.
+
+**Aceite ainda aberto:** a vitrine/prévia pública continua usando composição demonstrativa; ainda falta conectar a projeção pública segura e confirmar preço agregado sem expor a composição/valor privado. Também falta validar concorrência de gravações com controle no servidor e rodar E2E no CI após publicar o branch. Portanto R06 permanece em execução, não concluída; não iniciar R07.
 
 ### R07 — Catálogo público dinâmico e performance de abertura
 - Trocar fallback fake em staging por API pública segura e projeção server-side; cache e invalidação corretos; lazy de fotos/marcas/extras.

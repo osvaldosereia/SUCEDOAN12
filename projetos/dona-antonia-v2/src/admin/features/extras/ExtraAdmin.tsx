@@ -44,7 +44,7 @@ export function ExtraAdmin({ products, types, groups, onChangeGroups, onChangeTy
     onChangeGroups([...groups, group]);
     setSelectedId(id);
     setNewName('');
-    setFeedback('Grupo criado somente na prévia.');
+    setFeedback('Grupo de extras criado e salvo.');
   };
   const linkGroup = () => {
     if (!linkId || groups.some((g) => g.typeId === linkId)) return;

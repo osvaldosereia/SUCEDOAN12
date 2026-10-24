@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { validateBasketTemplate } from '../../../core/basket';
 import type { BasketId, BasketTemplate, ProductType } from '../../../core/model';
 
@@ -11,6 +12,9 @@ interface Props {
   privateFeeCents: number;
   onPrivateFeeChange: (cents: number) => void;
   canManagePrivatePricing: boolean;
+  onCreateBasket: (name: string) => void;
+  onUpdateBasket: (id: BasketId, patch: Partial<BasketTemplate>) => void;
+  onMoveBasket: (id: BasketId, delta: number) => void;
 }
 export function BasketCompositionPanel({
   templates,
@@ -22,7 +26,17 @@ export function BasketCompositionPanel({
   privateFeeCents,
   onPrivateFeeChange,
   canManagePrivatePricing,
+  onCreateBasket,
+  onUpdateBasket,
+  onMoveBasket,
 }: Props) {
+  const [newBasketName, setNewBasketName] = useState('');
+  const [basketName, setBasketName] = useState(selectedBasket.name);
+  const [basketImageUrl, setBasketImageUrl] = useState(selectedBasket.imageUrl ?? '');
+  useEffect(() => {
+    setBasketName(selectedBasket.name);
+    setBasketImageUrl(selectedBasket.imageUrl ?? '');
+  }, [selectedBasket.id, selectedBasket.name, selectedBasket.imageUrl]);
   return (
     <div className="admin-grid">
       <section className="panel">
@@ -33,15 +47,59 @@ export function BasketCompositionPanel({
         </p>
         <div className="type-list">
           {templates.map((basket) => (
-            <button
+            <div
               key={basket.id}
               className={'type-row ' + (basket.id === selectedBasketId ? 'active' : '')}
-              onClick={() => setSelectedBasketId(basket.id)}
             >
-              <b>{basket.name}</b>
-              <small>{basket.lines.length} tipos incluídos</small>
-            </button>
+              <button type="button" onClick={() => setSelectedBasketId(basket.id)}>
+                <b>{basket.name}</b>
+                <small>
+                  {basket.lines.length} tipos · {basket.active ? 'ativa' : 'inativa'}
+                </small>
+              </button>
+              <span>
+                <button
+                  type="button"
+                  aria-label={'Mover ' + basket.name + ' para cima'}
+                  onClick={() => onMoveBasket(basket.id, -1)}
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  aria-label={'Mover ' + basket.name + ' para baixo'}
+                  onClick={() => onMoveBasket(basket.id, 1)}
+                >
+                  ↓
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onUpdateBasket(basket.id, { active: !basket.active })}
+                >
+                  {basket.active ? 'Retirar' : 'Ativar'}
+                </button>
+              </span>
+            </div>
           ))}
+        </div>
+        <div className="form-row">
+          <input
+            className="input"
+            aria-label="Nome do novo tamanho"
+            placeholder="Novo tamanho de cesta"
+            value={newBasketName}
+            onChange={(event) => setNewBasketName(event.target.value)}
+          />
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={() => {
+              onCreateBasket(newBasketName);
+              setNewBasketName('');
+            }}
+          >
+            Adicionar tamanho
+          </button>
         </div>
       </section>
       <section className="panel">
@@ -50,6 +108,28 @@ export function BasketCompositionPanel({
           Informe a quantidade inicial de cada tipo. Zero significa que o tipo não faz parte deste
           tamanho.
         </p>
+        <label className="form-field">
+          <span>Nome do tamanho</span>
+          <input
+            className="input"
+            value={basketName}
+            onChange={(event) => setBasketName(event.target.value)}
+            onBlur={() => onUpdateBasket(selectedBasket.id, { name: basketName })}
+          />
+        </label>
+        <label className="form-field">
+          <span>Foto quadrada (URL HTTPS)</span>
+          <input
+            className="input"
+            type="url"
+            value={basketImageUrl}
+            placeholder="https://…"
+            onChange={(event) => setBasketImageUrl(event.target.value)}
+            onBlur={() =>
+              onUpdateBasket(selectedBasket.id, { imageUrl: basketImageUrl || undefined })
+            }
+          />
+        </label>
         {canManagePrivatePricing && (
           <div className="admin-private-fee">
             <label htmlFor="basket-private-fee">
