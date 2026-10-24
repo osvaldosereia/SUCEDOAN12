@@ -42,9 +42,9 @@ assert.doesNotMatch(helper,/searchParams\.set\(["']access_token/);
 
 assert.match(ui,/attendanceAuthorizedFetch/);
 assert.match(ui,/functions\/v1\/admin-whatsapp-templates-v1/);
-const apiGet=ui.match(/async function apiGet[\\s\\S]*?(?=async function apiPost)/)?.[0]||'';
-assert.match(apiGet,/if\\(!response\\.ok\\)/);
-assert.doesNotMatch(apiGet,/data\\?\\.ok===false/);
+const apiGet=ui.match(/async function apiGet[\s\S]*?(?=async function apiPost)/)?.[0]||'';
+assert.match(apiGet,/if\(!response\.ok\)/);
+assert.doesNotMatch(apiGet,/data\?\.ok===false/);
 assert.match(ui,/flow_upload_json/);
 assert.match(ui,/flow_configure_endpoint/);
 assert.match(ui,/flow_register_key/);
