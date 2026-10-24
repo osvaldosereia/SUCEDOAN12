@@ -44,10 +44,7 @@ test('admin: extras e produtos são editáveis somente no modo demonstrativo', a
     .getByRole('button', { name: /^Econômica/ })
     .click();
   await expect(fee).toHaveValue('0');
-  await page
-    .locator('.type-list')
-    .getByRole('button', { name: /^Mini\b/ })
-    .click();
+  await page.locator('.type-list').getByRole('button', { name: /^Mini/ }).click();
   await expect(fee).toHaveValue('7.5');
   await page.screenshot({ path: 'test-results/admin-desktop.png', fullPage: true });
   expect(errors).toEqual([]);
