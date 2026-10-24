@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Product } from '../../core/model';
 import { DEMO_PRODUCTS, DEMO_TEMPLATES, DEMO_TYPES } from '../../data/demo';
 import { DEMO_EXTRA_GROUPS, DEMO_EXTRA_PRODUCTS, DEMO_EXTRA_TYPES } from '../../data/demo-extra';
-import { loadPublicCatalog } from '../../data/catalog';
+import { invalidatePublicCatalogCache, loadPublicCatalog } from '../../data/catalog';
 import {
   readSupabaseBrowserConfig,
   createSupabaseBrowserClient,
@@ -23,35 +23,63 @@ const reader = config
   : undefined;
 
 export function usePublicCatalog() {
+  const demoMode = !reader && (import.meta.env.DEV || import.meta.env.VITE_APP_MODE === 'preview');
   const [catalog, setCatalog] = useState<readonly Product[]>(
-    import.meta.env.DEV || import.meta.env.VITE_APP_MODE === 'preview'
-      ? PUBLIC_INITIAL_PRODUCTS
-      : [],
+    demoMode ? PUBLIC_INITIAL_PRODUCTS : [],
   );
-  const [types, setTypes] = useState(PUBLIC_INITIAL_TYPES);
-  const [templates, setTemplates] = useState(PUBLIC_INITIAL_TEMPLATES);
-  const [extraGroups, setExtraGroups] = useState(PUBLIC_INITIAL_EXTRAS);
-  const [isDemo, setIsDemo] = useState(
-    import.meta.env.DEV || import.meta.env.VITE_APP_MODE === 'preview',
-  );
+  const [types, setTypes] = useState(demoMode ? PUBLIC_INITIAL_TYPES : []);
+  const [templates, setTemplates] = useState(demoMode ? PUBLIC_INITIAL_TEMPLATES : []);
+  const [extraGroups, setExtraGroups] = useState(demoMode ? PUBLIC_INITIAL_EXTRAS : []);
+  const [isDemo, setIsDemo] = useState(demoMode);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(Boolean(reader));
+  const [stale, setStale] = useState(false);
+  const loadedRef = useRef(false);
 
-  useEffect(() => {
+  const refresh = useCallback((invalidate = true) => {
+    if (!reader) return undefined;
+    if (invalidate) {
+      invalidatePublicCatalogCache(reader);
+      loadedRef.current = false;
+    }
     const controller = new AbortController();
+    if (!loadedRef.current) setLoading(true);
+    setError('');
     loadPublicCatalog(controller.signal, reader)
       .then((result) => {
         setCatalog(result.isDemo ? [...result.products, ...DEMO_EXTRA_PRODUCTS] : result.products);
-        if (result.types) setTypes(result.isDemo ? PUBLIC_INITIAL_TYPES : [...result.types]);
-        if (result.baskets?.length)
-          setTemplates(result.isDemo ? PUBLIC_INITIAL_TEMPLATES : [...result.baskets]);
-        if (result.extras)
-          setExtraGroups(result.isDemo ? PUBLIC_INITIAL_EXTRAS : [...result.extras]);
+        setTypes(result.types ? (result.isDemo ? PUBLIC_INITIAL_TYPES : [...result.types]) : []);
+        setTemplates(
+          result.baskets ? (result.isDemo ? PUBLIC_INITIAL_TEMPLATES : [...result.baskets]) : [],
+        );
+        setExtraGroups(
+          result.extras ? (result.isDemo ? PUBLIC_INITIAL_EXTRAS : [...result.extras]) : [],
+        );
         setIsDemo(result.isDemo);
         setError(result.error ?? '');
+        setStale(result.stale ?? false);
+        loadedRef.current = true;
+        setLoading(false);
       })
-      .catch(() => undefined);
+      .catch((reason: unknown) => {
+        if (reason instanceof DOMException && reason.name === 'AbortError') return;
+        setLoading(false);
+        setError('Catálogo temporariamente indisponível. Nenhuma compra pode ser confirmada.');
+      });
     return () => controller.abort();
   }, []);
 
-  return { catalog, types, templates, extraGroups, isDemo, error };
+  useEffect(() => {
+    const cleanup = refresh(false);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') refresh(false);
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      cleanup?.();
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [refresh]);
+
+  return { catalog, types, templates, extraGroups, isDemo, error, loading, stale, refresh };
 }
