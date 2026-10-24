@@ -232,7 +232,7 @@ Confirmado por leitura da branch:
 
 **Verificações locais:** TypeScript, lint, Prettier, arquitetura (97 arquivos), 86 testes unitários, suíte PostgreSQL isolada (11 migrações/26 tabelas, RLS/RBAC/CAS/projeção pública/privacidade/rollback) e build aprovados. Playwright local não pôde iniciar sem Chromium.
 
-**PR/CI:** PR #1370 draft, branch `agent/dona-antonia-r06-baskets-types-extras`, head `3cae6bf75051bf222a9f811e343f2195736b1065`, base R05 `397635d0085bac6042b4b408df185d6992755c51`. CI #40090210598 passou todos os gates e 17/17 E2E (`17 passed (21.1s)`).
+**PR/CI:** PR #1370 draft, branch `agent/dona-antonia-r06-baskets-types-extras`, implementação `3cae6bf75051bf222a9f811e343f2195736b1065`, checkpoint documental `a9bdc42be7ed433331fdb34708cde7aab56042d9`, base R05 `397635d0085bac6042b4b408df185d6992755c51`. CI de implementação #40090210598 e CI documental #40090438039 passaram todos os gates e 17/17 E2E (`17 passed (19.8s)` no checkpoint documental).
 
 **Aceite:** projeção pública e integração da vitrine implementadas; total agregado inclui o ajuste privado apenas no servidor e o mapper rejeita campos privados; CAS rejeita revisões obsoletas; alteração de marca continua preservando a quantidade no domínio. O seed remoto permanece inativo/estoque zero, portanto não houve ativação comercial nem homologação de venda.
 
