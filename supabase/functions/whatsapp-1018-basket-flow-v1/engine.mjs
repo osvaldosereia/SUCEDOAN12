@@ -2,9 +2,9 @@
 // Dependencies are passed in for integration tests and a restricted encrypted Meta endpoint.
 export const SIZE_KEYS=['mini','economica','pequena','media','grande'];
 export const SIZE_LABELS={mini:'Mini',economica:'Econômica',pequena:'Pequena',media:'Média',grande:'Grande'};
-export const PAGE_SIZE=5;
+export const PAGE_SIZE=8;
 export const MAX_ITEMS=30;
-export const ITEM_SCREENS=['ITENS_UM','ITENS_DOIS','ITENS_TRES','ITENS_QUATRO','ITENS_CINCO','ITENS_SEIS'];
+export const ITEM_SCREENS=['ITENS_UM','ITENS_DOIS','ITENS_TRES','ITENS_QUATRO'];
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const text=(v,max=120)=>String(v??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
 const money=c=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(c/100);
