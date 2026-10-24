@@ -9,8 +9,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         loja: resolve(import.meta.dirname, 'index.html'),
-        admin: resolve(import.meta.dirname, 'admin/index.html')
-      }
-    }
-  }
+        admin: resolve(import.meta.dirname, 'admin/index.html'),
+      },
+    },
+  },
 });

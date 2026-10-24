@@ -1,0 +1,22 @@
+:root {
+  --da-font-sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  --da-focus-ring: #416a9a;
+  --da-control-radius: 8px;
+  --da-control-height: 44px;
+  --da-space-1: 4px;
+  --da-space-2: 8px;
+  --da-space-3: 12px;
+  --da-space-4: 16px;
+  --da-space-6: 24px;
+}
+
+.da-admin-shell,
+.site-page {
+  font-family: var(--da-font-sans);
+}
+
+.da-admin-shell :is(button, input, select, textarea):focus-visible,
+.site-page :is(button, input, select, textarea):focus-visible {
+  outline: 3px solid var(--da-focus-ring);
+  outline-offset: 2px;
+}

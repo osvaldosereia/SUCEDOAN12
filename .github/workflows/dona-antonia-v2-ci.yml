@@ -2,7 +2,13 @@ name: Dona Antonia V2 - Validacao isolada
 on:
   push:
     branches:
-      - agent/dona-antonia-nova-plataforma
+      - agent/dona-antonia-*
+    paths:
+      - 'projetos/dona-antonia-v2/**'
+      - '.github/workflows/dona-antonia-v2-ci.yml'
+  pull_request:
+    branches:
+      - agent/dona-antonia-*
     paths:
       - 'projetos/dona-antonia-v2/**'
       - '.github/workflows/dona-antonia-v2-ci.yml'
@@ -10,7 +16,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: dona-antonia-v2-quality
+  group: dona-antonia-v2-quality-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   quality:
@@ -25,7 +31,13 @@ jobs:
         with:
           node-version: '22'
       - name: Install dependencies without postinstall scripts
-        run: npm install --no-audit --no-fund --ignore-scripts
+        run: npm ci --no-audit --no-fund --ignore-scripts
+      - name: Dependency security audit
+        run: npm audit --audit-level=moderate
+      - name: Lint and formatting
+        run: |
+          npm run lint
+          npm run format:check
       - name: Enforce module boundaries and growth limits
         run: npm run architecture:check
       - name: TypeScript strict check

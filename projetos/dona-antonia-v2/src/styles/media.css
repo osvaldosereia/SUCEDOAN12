@@ -1,7 +1,34 @@
 /* Imagens da vitrine e das cestas são SEMPRE quadradas e nunca distorcidas.
    O placeholder ocupa o mesmo espaço da foto para evitar CLS. */
-.catalog-square-image{display:grid;place-items:center;width:100%;height:auto;aspect-ratio:1 / 1;overflow:hidden;border-radius:10px;background:#f6f2f0}
-.catalog-square-image img{display:block;width:100%;height:100%;object-fit:contain}
-.square-photo-placeholder{display:grid;place-items:center;width:100%;height:100%;font-size:30px;color:#b4a9ae}
-.basket-square-image{width:min(72px,85%);margin:0 auto 7px;border-radius:12px}
-.product-square-image{border-radius:10px}
+.catalog-square-image {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #f6f2f0;
+}
+.catalog-square-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.square-photo-placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 30px;
+  color: #b4a9ae;
+}
+.basket-square-image {
+  width: min(72px, 85%);
+  margin: 0 auto 7px;
+  border-radius: 12px;
+}
+.product-square-image {
+  border-radius: 10px;
+}

@@ -1,6 +1,11 @@
 import type {
-  BasketLineSummary, BasketSelection, BasketSummary, BasketLineTemplate,
-  BasketTemplate, Product, ProductType
+  BasketLineSummary,
+  BasketSelection,
+  BasketSummary,
+  BasketLineTemplate,
+  BasketTemplate,
+  Product,
+  ProductType,
 } from './model';
 
 const integerQuantity = (value: number): boolean =>
@@ -10,14 +15,15 @@ const integerQuantity = (value: number): boolean =>
 export function eligibleOptions(
   type: ProductType,
   products: readonly Product[],
-  requiredQuantity = 1
+  requiredQuantity = 1,
 ): Product[] {
   return products
-    .filter((product) =>
-      type.productSkus.includes(product.sku) &&
-      product.active &&
-      product.priceCents > 0 &&
-      product.stock >= Math.max(1, requiredQuantity)
+    .filter(
+      (product) =>
+        type.productSkus.includes(product.sku) &&
+        product.active &&
+        product.priceCents > 0 &&
+        product.stock >= Math.max(1, requiredQuantity),
     )
     .sort((a, b) => a.priceCents - b.priceCents || a.name.localeCompare(b.name, 'pt-BR'));
 }
@@ -26,7 +32,7 @@ export function eligibleOptions(
 export function initialTypeSelections(
   lines: readonly BasketLineTemplate[],
   types: readonly ProductType[],
-  products: readonly Product[]
+  products: readonly Product[],
 ): BasketSelection[] {
   return lines.map((line) => {
     const type = types.find((item) => item.id === line.typeId);
@@ -36,7 +42,7 @@ export function initialTypeSelections(
     return {
       typeId: line.typeId,
       sku: choices[0]?.sku ?? null,
-      quantity: line.defaultQuantity
+      quantity: line.defaultQuantity,
     };
   });
 }
@@ -44,7 +50,7 @@ export function initialTypeSelections(
 export function initialSelections(
   template: BasketTemplate,
   types: readonly ProductType[],
-  products: readonly Product[]
+  products: readonly Product[],
 ): BasketSelection[] {
   return initialTypeSelections(template.lines, types, products);
 }
@@ -52,11 +58,12 @@ export function initialSelections(
 export function setSelectionQuantity(
   selections: readonly BasketSelection[],
   typeId: string,
-  quantity: number
+  quantity: number,
 ): BasketSelection[] {
   if (!integerQuantity(quantity)) throw new Error('Quantidade inválida');
-  if (!selections.some((item) => item.typeId === typeId)) throw new Error('Tipo não faz parte da seleção');
-  return selections.map((item) => item.typeId === typeId ? { ...item, quantity } : item);
+  if (!selections.some((item) => item.typeId === typeId))
+    throw new Error('Tipo não faz parte da seleção');
+  return selections.map((item) => (item.typeId === typeId ? { ...item, quantity } : item));
 }
 
 export function setSelectionProduct(
@@ -64,7 +71,7 @@ export function setSelectionProduct(
   typeId: string,
   sku: string,
   types: readonly ProductType[],
-  products: readonly Product[]
+  products: readonly Product[],
 ): BasketSelection[] {
   const current = selections.find((item) => item.typeId === typeId);
   const type = types.find((item) => item.id === typeId);
@@ -72,7 +79,7 @@ export function setSelectionProduct(
   if (!eligibleOptions(type, products, current.quantity).some((item) => item.sku === sku)) {
     throw new Error('Produto indisponível para este tipo ou quantidade');
   }
-  return selections.map((item) => item.typeId === typeId ? { ...item, sku } : item);
+  return selections.map((item) => (item.typeId === typeId ? { ...item, sku } : item));
 }
 
 export interface TypeSelectionSummary {
@@ -87,7 +94,7 @@ export function summarizeTypeSelections(
   definitions: readonly BasketLineTemplate[],
   selections: readonly BasketSelection[],
   types: readonly ProductType[],
-  products: readonly Product[]
+  products: readonly Product[],
 ): TypeSelectionSummary {
   const seen = new Set<string>();
   const lines: BasketLineSummary[] = [...definitions]
@@ -98,21 +105,27 @@ export function summarizeTypeSelections(
       const type = types.find((item) => item.id === line.typeId);
       if (!type) throw new Error('Tipo não cadastrado: ' + line.typeId);
       const selection = selections.find((item) => item.typeId === type.id);
-      if (!selection || !integerQuantity(selection.quantity)) throw new Error('Seleção inválida para ' + type.name);
+      if (!selection || !integerQuantity(selection.quantity))
+        throw new Error('Seleção inválida para ' + type.name);
       const options = eligibleOptions(type, products, selection.quantity);
       const chosen = options.find((item) => item.sku === selection.sku) ?? null;
       const selected = selection.quantity === 0 ? null : chosen;
       return {
-        typeId: type.id, typeName: type.name, options, selected,
+        typeId: type.id,
+        typeName: type.name,
+        options,
+        selected,
         quantity: selection.quantity,
-        totalCents: selected ? selected.priceCents * selection.quantity : 0
+        totalCents: selected ? selected.priceCents * selection.quantity : 0,
       };
     });
   return {
     lines,
     totalCents: lines.reduce((sum, line) => sum + line.totalCents, 0),
     itemCount: lines.reduce((sum, line) => sum + line.quantity, 0),
-    unavailableTypeIds: lines.filter((line) => line.quantity > 0 && !line.selected).map((line) => line.typeId)
+    unavailableTypeIds: lines
+      .filter((line) => line.quantity > 0 && !line.selected)
+      .map((line) => line.typeId),
   };
 }
 
@@ -120,19 +133,23 @@ export function summarizeBasket(
   template: BasketTemplate,
   selections: readonly BasketSelection[],
   types: readonly ProductType[],
-  products: readonly Product[]
+  products: readonly Product[],
 ): BasketSummary {
   return {
     templateId: template.id,
-    ...summarizeTypeSelections(template.lines, selections, types, products)
+    ...summarizeTypeSelections(template.lines, selections, types, products),
   };
 }
 
-export function validateBasketTemplate(template: BasketTemplate, types: readonly ProductType[]): string[] {
+export function validateBasketTemplate(
+  template: BasketTemplate,
+  types: readonly ProductType[],
+): string[] {
   const errors: string[] = [];
   const seen = new Set<string>();
   for (const line of template.lines) {
-    if (!types.some((type) => type.id === line.typeId)) errors.push('Tipo inexistente: ' + line.typeId);
+    if (!types.some((type) => type.id === line.typeId))
+      errors.push('Tipo inexistente: ' + line.typeId);
     if (seen.has(line.typeId)) errors.push('Tipo duplicado: ' + line.typeId);
     if (!integerQuantity(line.defaultQuantity)) errors.push('Quantidade inválida: ' + line.typeId);
     seen.add(line.typeId);

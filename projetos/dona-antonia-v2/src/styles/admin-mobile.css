@@ -1,27 +1,107 @@
 /* Admin V2 mobile: evita min-content do grid expandir o documento.
    A navegação mantém rolagem própria; não escondemos overflow global. */
-@media (max-width:850px) {
-  .admin-page{display:block;width:100%;min-width:0;max-width:100%}
-  .admin-sidebar{width:100%;max-width:100%;min-width:0}
-  .admin-sidebar nav{width:100%;max-width:100%;min-width:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain}
-  .admin-sidebar nav button{flex:0 0 auto}
-  .admin-main{width:100%;min-width:0;max-width:100%}
-  .admin-grid,.extra-admin{min-width:0;max-width:100%}
-  .admin-grid>.panel{min-width:0;max-width:100%}
+@media (max-width: 850px) {
+  .admin-page {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .admin-sidebar {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+  .admin-sidebar nav {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+  }
+  .admin-sidebar nav button {
+    flex: 0 0 auto;
+  }
+  .admin-main {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .admin-grid,
+  .extra-admin {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .admin-grid > .panel {
+    min-width: 0;
+    max-width: 100%;
+  }
 }
-@media (max-width:550px) {
-  .admin-header{flex-wrap:wrap;gap:10px;align-items:flex-start}
-  .admin-header>div{flex:1 1 220px;min-width:0}
-  .admin-header .pill{flex:0 0 auto}
-  .extra-admin-group,.extra-admin .panel{min-width:0;max-width:100%}
-  .extra-group-name{min-width:0;flex-wrap:wrap}
-  .extra-group-name b,.extra-admin .check-row b{overflow-wrap:anywhere}
-  .extra-admin .check-row span{min-width:0}
+@media (max-width: 550px) {
+  .admin-header {
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .admin-header > div {
+    flex: 1 1 220px;
+    min-width: 0;
+  }
+  .admin-header .pill {
+    flex: 0 0 auto;
+  }
+  .extra-admin-group,
+  .extra-admin .panel {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .extra-group-name {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+  .extra-group-name b,
+  .extra-admin .check-row b {
+    overflow-wrap: anywhere;
+  }
+  .extra-admin .check-row span {
+    min-width: 0;
+  }
 }
 
 /* Valor de composição interno só no admin */
-.admin-private-fee{margin:15px 0;padding:14px;border:1px solid #e9d6d7;background:#fff7f8;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-.admin-private-fee label{display:grid;gap:4px;min-width:0;font-size:13px}
-.admin-private-fee small{font-size:12px;color:var(--muted);font-weight:400}
-.admin-private-fee input{flex:0 0 115px;min-width:95px}
-@media(max-width:550px){.admin-private-fee{flex-wrap:wrap}.admin-private-fee input{width:100%;flex:1 1 100%}}
+.admin-private-fee {
+  margin: 15px 0;
+  padding: 14px;
+  border: 1px solid #e9d6d7;
+  background: #fff7f8;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.admin-private-fee label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  font-size: 13px;
+}
+.admin-private-fee small {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.admin-private-fee input {
+  flex: 0 0 115px;
+  min-width: 95px;
+}
+@media (max-width: 550px) {
+  .admin-private-fee {
+    flex-wrap: wrap;
+  }
+  .admin-private-fee input {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+}
