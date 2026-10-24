@@ -8,6 +8,7 @@ const helper=read('supabase/functions/_shared/whatsapp-meta-flows-v1.mjs');
 const ui=read('vitrine/admin/marketing/flow-center.js');
 const marketing=read('vitrine/admin/marketing/marketing-polish.js');
 const attendance=read('vitrine/admin/atendimento/attendance-app.js');
+const endpoint=read('supabase/functions/whatsapp-1018-basket-flow-v1/index.ts');
 
 assert.match(api,/eq\("slug","dona-antonia-1018"\)/);
 assert.match(api,/if\(auth\.role!=="owner"\)/);
@@ -21,6 +22,8 @@ assert.match(api,/flow_send_canary/);
 assert.match(api,/public_key_matches_private/);
 assert.match(api,/flow_delete/);
 assert.match(api,/DA_FLOW_1018_RSA_PKCS8/);
+assert.match(api,/Deno\.env\.get\("META_WHATSAPP_APP_SECRET"\)/);
+assert.doesNotMatch(api,/DA_FLOW_1018_META_APP_SECRET/);
 assert.match(api,/if\(!listed\.items\.some\(item=>item\.id===flowId\)\)\{\s*if\(listed\.truncated\)/);
 assert.doesNotMatch(api,/url\.searchParams\.set\(["']access_token/);
 
@@ -53,6 +56,8 @@ assert.match(attendance,/parseBasketFlowReply/);
 assert.match(attendance,/Solicitação de cesta pelo Flow/);
 assert.match(attendance,/items\.textContent=data\.items/);
 assert.match(attendance,/O Flow não cria pedido/);
+assert.match(endpoint,/Deno\.env\.get\('META_WHATSAPP_APP_SECRET'\)/);
+assert.doesNotMatch(endpoint,/DA_FLOW_1018_META_APP_SECRET/);
 const flowReply={direction:'inbound',message_type:'interactive',metadata:{source:'meta',interactive:{nfm_reply:{response_json:JSON.stringify({resultado:'solicitacao_para_atendimento',resumo:'Cesta Média · opção 2',valor:'R$ 185,00',itens:'2 × Arroz 5 kg; 1 × Feijão 1 kg'})}}}};
 assert.deepEqual(parseBasketFlowReply(flowReply),{summary:'Cesta Média · opção 2',total:'R$ 185,00',items:'2 × Arroz 5 kg; 1 × Feijão 1 kg'});
 assert.equal(parseBasketFlowReply({...flowReply,direction:'outbound'}),null);

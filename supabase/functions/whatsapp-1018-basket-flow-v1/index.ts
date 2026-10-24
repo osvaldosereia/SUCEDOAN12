@@ -8,7 +8,7 @@ import {FLOW_CANARY_RECIPIENT_E164,FLOW_CANARY_SENDER_E164} from '../_shared/wha
 // flow_token and strict 1018->8360 audience verification before exposing storefront data.
 const STORE='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2';
 const PRIVATE_PEM=(Deno.env.get('DA_FLOW_1018_RSA_PKCS8')||'').trim();
-const META_SECRET=(Deno.env.get('DA_FLOW_1018_META_APP_SECRET')||'').trim();
+const META_SECRET=(Deno.env.get('META_WHATSAPP_APP_SECRET')||'').trim();
 const SESSION_SECRET=(Deno.env.get('DA_FLOW_1018_SESSION_SECRET')||'').trim();
 const DEMO_AUDIENCE=FLOW_CANARY_RECIPIENT_E164;
 const SENDER=FLOW_CANARY_SENDER_E164;

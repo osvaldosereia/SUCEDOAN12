@@ -33,10 +33,9 @@ Os `__example__` do JSON são placeholders neutros para a prévia do Flow Builde
 
 ## Requisitos **antes** de enviar à Meta
 1. Depois do merge e da implantação autorizada do endpoint autenticado do Admin, abrir **Marketing → Flows Meta** e validar o JSON enviado pelo próprio gerenciador. A validação local não substitui as regras oficiais de componentes, referências dinâmicas e rotas; corrigir todos os erros retornados pela Meta antes de publicar.
-2. Gerar chave privada RSA de 2048 bits em formato **PKCS#8 sem criptografia do arquivo** e configurá-la com os segredos abaixo no ambiente seguro do Supabase. O gerenciador deriva e registra a chave pública na Meta pela conexão existente; a chave privada **nunca** deve ser commitada nem exibida no navegador.
+2. Gerar chave privada RSA de 2048 bits em formato **PKCS#8 sem criptografia do arquivo** e configurá-la com os segredos abaixo no ambiente seguro do Supabase. O gerenciador deriva e registra a chave pública na Meta pela conexão existente; a chave privada **nunca** deve ser commitada nem exibida no navegador. A verificação de assinatura reutiliza `META_WHATSAPP_APP_SECRET`, já usado pelo webhook oficial, sem criar uma segunda cópia do segredo da Meta.
 3. Configurar os seguintes segredos somente no ambiente de execução seguro da Edge Function:
    - `DA_FLOW_1018_RSA_PKCS8` — chave PEM privada do endpoint;
-   - `DA_FLOW_1018_META_APP_SECRET` — segredo do aplicativo associado ao canal 1018 para verificar assinatura de chamadas;
    - `DA_FLOW_1018_SESSION_SECRET` — chave aleatória com no mínimo 32 caracteres para assinar tokens e estados;
 4. Implantar `whatsapp-1018-basket-flow-v1` e a versão atualizada de `admin-whatsapp-templates-v1` **somente por mecanismo permitido**, já que uma tentativa anterior de implantação foi bloqueada por segurança. Não usar alternativa para contornar esse bloqueio.
 5. O backend autenticado do Admin emite `flow_token` assinado para o teste interno, com remetente 1018 e destino 8360 fixos. O endpoint valida a sessão; qualquer outro destino é recusado. Essa emissão e a nova ação do Admin ainda dependem da implantação autorizada do código atualizado.

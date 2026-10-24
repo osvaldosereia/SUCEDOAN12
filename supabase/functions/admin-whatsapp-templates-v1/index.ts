@@ -12,7 +12,7 @@ const SERVICE_KEY=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS
 const META_WHATSAPP_ACCESS_TOKEN=(Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||"").trim();
 const META_WHATSAPP_GRAPH_VERSION=(Deno.env.get("META_WHATSAPP_GRAPH_VERSION")||"").trim();
 const DA_FLOW_1018_RSA_PKCS8=(Deno.env.get("DA_FLOW_1018_RSA_PKCS8")||"").trim();
-const DA_FLOW_1018_META_APP_SECRET=(Deno.env.get("DA_FLOW_1018_META_APP_SECRET")||"").trim();
+const META_WHATSAPP_APP_SECRET=(Deno.env.get("META_WHATSAPP_APP_SECRET")||"").trim();
 const DA_FLOW_1018_SESSION_SECRET=(Deno.env.get("DA_FLOW_1018_SESSION_SECRET")||"").trim();
 const FLOW_FUNCTION_PATH="/functions/v1/whatsapp-1018-basket-flow-v1";
 const db=createClient(SUPABASE_URL,SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
@@ -126,7 +126,7 @@ function flowReadiness(account,role){
     private_key:Boolean(DA_FLOW_1018_RSA_PKCS8),
     public_key_registered:false,
     public_key_matches_private:false,
-    meta_app_secret:Boolean(DA_FLOW_1018_META_APP_SECRET),
+    meta_app_secret:Boolean(META_WHATSAPP_APP_SECRET),
     session_secret:Boolean(DA_FLOW_1018_SESSION_SECRET)
   };
   return {ok:Object.values(checks).every(Boolean),channel:"1018",flow_endpoint_url:flowEndpointUri(),can_manage:role==="owner",checks};
