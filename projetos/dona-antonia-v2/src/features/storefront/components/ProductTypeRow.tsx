@@ -1,6 +1,7 @@
 import {useRef} from 'react';
 import type {BasketLineSummary} from '../../../core/model';
 import {formatBRL} from '../../../core/money';
+import {SquareImage} from '../../../ui/media/SquareImage';
 
 export function ProductTypeRow({
   line, mode, onProduct, onQuantity
@@ -29,7 +30,7 @@ export function ProductTypeRow({
         {line.options.map((product) => <button key={product.sku} type="button"
           className={'product-choice compact-choice '+(chosen===product.sku?'chosen':'')}
           aria-pressed={chosen===product.sku} onClick={()=>onProduct(line.typeId,product.sku)}>
-          <span className="photo-placeholder product-square-photo" aria-hidden="true">▦</span>
+          <SquareImage src={product.imageUrl} alt={product.name} kind="product"/>
           <span className="choice-name">{product.name}</span>
           <span className="choice-price">{formatBRL(product.priceCents)}</span>
           <span className="choice-tag">{chosen===product.sku?'✓ Escolhido':'Escolher'}</span>

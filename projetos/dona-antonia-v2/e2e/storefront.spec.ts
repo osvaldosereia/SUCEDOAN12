@@ -19,6 +19,12 @@ for (const viewport of sizes) {
     await page.getByRole('button', {name:/Econômica/}).click();
     const arroz = page.getByRole('region', {name:'Escolher Arroz'});
     await expect(arroz.getByRole('heading',{name:'Arroz'})).toBeVisible();
+    const imageBounds=await arroz.locator('.catalog-square-image').first().boundingBox();
+    expect(imageBounds).not.toBeNull();
+    expect(Math.abs((imageBounds?.width??0)-(imageBounds?.height??0))).toBeLessThanOrEqual(1);
+    const basketImage=page.locator('.size-card .catalog-square-image').first();
+    const basketBounds=await basketImage.boundingBox();
+    expect(Math.abs((basketBounds?.width??0)-(basketBounds?.height??0))).toBeLessThanOrEqual(1);
     const currentQty = await arroz.locator('output').innerText();
     const before = await page.locator('.sticky-summary strong').innerText();
     await arroz.getByRole('button',{name:/Arroz Caibi/}).click();

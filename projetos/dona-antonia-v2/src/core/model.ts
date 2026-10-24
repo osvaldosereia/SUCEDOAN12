@@ -36,6 +36,7 @@ export interface BasketLineTemplate {
 export interface BasketTemplate {
   readonly id: BasketId;
   readonly name: string;
+  readonly imageUrl?: string;
   readonly lines: readonly BasketLineTemplate[];
   readonly active: boolean;
 }

@@ -24,6 +24,7 @@ const titles: Record<Stage,string> = {
 function Storefront() {
   const [catalog,setCatalog] = useState<readonly Product[]>([...DEMO_PRODUCTS,...DEMO_EXTRA_PRODUCTS]);
   const [isDemo,setIsDemo] = useState(true);
+  const [catalogError,setCatalogError] = useState('');
   const [stage,setStage] = useState<Stage>('basket');
   const [basketId,setBasketId] = useState<BasketId>('mini');
   const template = DEMO_TEMPLATES.find((value)=>value.id===basketId)!;
@@ -39,6 +40,7 @@ function Storefront() {
       const next=result.isDemo?[...result.products,...DEMO_EXTRA_PRODUCTS]:result.products;
       setCatalog(next);
       setIsDemo(result.isDemo);
+      setCatalogError(result.error??'');
       setBasketChoices(initialSelections(template,types,next));
       setExtraChoices(initialExtraSelections(DEMO_EXTRA_GROUPS,types,next));
     }).catch(()=>{});
@@ -125,6 +127,7 @@ function Storefront() {
     </div></header>
     <main className="container site-main wizard-layout">
       <div className="notice" role="status">PROTÓTIPO — Nenhuma compra será enviada. Os preços do exemplo não são ofertas reais.</div>
+      {catalogError && <div className="error" role="alert">{catalogError}</div>}
       {isDemo && <div className="notice muted">Dados de demonstração. A conexão com os produtos reais e o Supabase será feita em uma etapa posterior.</div>}
       <nav className="checkout-progress" aria-label="Progresso do pedido">
         {(['basket','extras','checkout'] as const).map((item,index)=><div key={item}
