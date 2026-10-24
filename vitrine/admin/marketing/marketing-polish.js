@@ -159,7 +159,7 @@ async function openOverviewView(root,view,{create=false}={}){
       return module?.mountStrategyView?.(root);
     }
     if(view==='campaigns'){
-      const entry=window.DAMarketingCampaignEntry||await import('/vitrine/admin/marketing/campaign-entry.js?v=marketing-campaign-entry-v8');
+      const entry=window.DAMarketingCampaignEntry||await import('/vitrine/admin/marketing/campaign-entry.js?v=whatsapp-flow-manager-20261024');
       return entry?.openCampaigns?.();
     }
     if(view==='templates'){

@@ -7,6 +7,7 @@ const api=read('supabase/functions/admin-whatsapp-templates-v1/index.ts');
 const helper=read('supabase/functions/_shared/whatsapp-meta-flows-v1.mjs');
 const ui=read('vitrine/admin/marketing/flow-center.js');
 const marketing=read('vitrine/admin/marketing/marketing-polish.js');
+const campaignEntry=read('vitrine/admin/marketing/campaign-entry.js');
 const attendance=read('vitrine/admin/atendimento/attendance-app.js');
 const endpoint=read('supabase/functions/whatsapp-1018-basket-flow-v1/index.ts');
 const activeMarketing=read('vitrine/admin/marketing/post-sale-center.js');
@@ -54,6 +55,8 @@ assert.doesNotMatch(ui,/0975|interactive\.flow|sendTemplateViaMeta|DA_FLOW_1018_
 assert.match(marketing,/PRIMARY_MARKETING_VIEWS=\[[^\]]*'flows'/);
 assert.match(marketing,/view==='flows'/);
 assert.match(marketing,/post-sale-center\.js\?v=whatsapp-flow-active-router-20261024/);
+assert.match(marketing,/campaign-entry\.js\?v=whatsapp-flow-manager-20261024/);
+assert.match(campaignEntry,/marketing-polish\.js\?v=whatsapp-flow-manager-20261024/);
 assert.match(activeMarketing,/\['flows','Flows Meta'\]/);
 assert.match(activeMarketing,/if\(view==='flows'\)return \(await import\('\/vitrine\/admin\/marketing\/flow-center\.js\?v=whatsapp-flow-center-20261024'\)\)\.mountFlowView\(root\)/);
 assert.match(attendance,/parseBasketFlowReply/);
