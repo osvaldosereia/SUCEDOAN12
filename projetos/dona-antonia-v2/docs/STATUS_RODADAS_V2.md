@@ -213,11 +213,11 @@
 ## R16 — pré-voo do piloto controlado
 
 **Data:** 2026-10-24 (UTC)  
-**Branch/base:** `agent/dona-antonia-r16-pilot-preflight`, derivada do head R15 `6f8c195d39de72ec057470e15443f25a6b0ba378`; PR #1396 draft contra `agent/dona-antonia-r15-audit-homologacao`, sem merge/publicação. Head atual `314332a83ad44e2b34798d3e44191e6e927777c9`.  
+**Branch/base:** `agent/dona-antonia-r16-pilot-preflight`, derivada do head R15 `6f8c195d39de72ec057470e15443f25a6b0ba378`; PR #1396 draft contra `agent/dona-antonia-r15-audit-homologacao`, sem merge/publicação. Head documental atual `bf5c37201708e517a1683c430945c93e46d779d4`; head de código verificado `93d28dc9a805f97a2b50c5e4fb05a87e949e333b`.  
 **Estado:** pré-voo técnico documentado; piloto bloqueado.  
 **Escopo:** contrato puro `evaluateR16Readiness`, testes para ausência de gates e regra de 2–3 operadores, comando `npm run r16:readiness` e checklist de execução. O comando não muta banco, site, contas, domínio ou integração.  
 **Gates:** URL V2 de staging acessível; seed fictício vendável; 2–3 operadores isolados; backup/restore controlado; autorização explícita do piloto. Todos retornam bloqueados no ambiente atual.  
 **Verificações locais:** `npm test` 126/126; `npm run check`, lint, `format:check`, arquitetura (138 arquivos), build e `git diff --check` passaram. Playwright não foi repetido porque a suíte R15 já passou no CI; o preflight não abre navegador nem cria dados.  
-**CI:** o workflow do head `314332a8` estava aguardando execução no momento deste registro; atualizar somente com resultado observado.  
+**CI:** workflow #40134499891 passou no head de código `93d28dc9a805f97a2b50c5e4fb05a87e949e333b`, com todos os gates e 17/17 E2E aprovados.  
 **Isolamento:** nenhum Supabase remoto foi alterado; os 802 produtos/perfis permanecem como estavam; sem custo novo, merge, deploy, publicação, produção, `main`, legado, atendimento, DNS ou Meta/Bling operacionais.  
 **Próxima ação condicionada:** somente após os cinco gates documentados e autorização específica; não iniciar piloto produtivo automaticamente.
