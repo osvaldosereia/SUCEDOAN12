@@ -9,10 +9,13 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: dona-antonia-v2-quality
+  cancel-in-progress: true
 jobs:
   quality:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: projetos/dona-antonia-v2
@@ -29,3 +32,14 @@ jobs:
         run: npm test
       - name: Production build smoke test (build only; no deployment)
         run: npm run build
+      - name: Install Chromium (test environment only)
+        run: npx playwright install --with-deps chromium
+      - name: Browser smoke test - mobile and desktop
+        run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: dona-antonia-v2-browser-screenshots
+          path: projetos/dona-antonia-v2/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
