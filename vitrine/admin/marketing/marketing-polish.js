@@ -1,6 +1,6 @@
 const ROOT_SELECTOR='#content';
-const PRIMARY_MARKETING_VIEWS=['overview','post_sale','repurchase','templates','campaigns'];
-const PRIMARY_MARKETING_LABELS={overview:'Visão geral',post_sale:'Pós-venda',repurchase:'Reposição mensal',templates:'Templates Meta',campaigns:'Campanhas'};
+const PRIMARY_MARKETING_VIEWS=['overview','post_sale','repurchase','templates','flows','campaigns'];
+const PRIMARY_MARKETING_LABELS={overview:'Visão geral',post_sale:'Pós-venda',repurchase:'Reposição mensal',templates:'Templates Meta',flows:'Flows Meta',campaigns:'Campanhas'};
 const OVERVIEW_CARDS=[
   {key:'post_sale',label:'Pós-venda',description:'Revise pedidos entregues e acompanhe retornos.'},
   {key:'repurchase',label:'Reposição mensal',description:'Prepare ações para clientes que compram cesta todo mês.'},
@@ -21,7 +21,7 @@ function marketingRoot(){
   const root=document.querySelector(ROOT_SELECTOR);
   if(!root)return null;
   const title=text(root.querySelector('.page-head h1'));
-  const hasMarketingUi=Boolean(root.querySelector('[data-marketing-subnav],.marketing-strategy-center,.marketing-template-center,.marketing-audience-center,.marketing-campaign-center,.marketing-grid'));
+  const hasMarketingUi=Boolean(root.querySelector('[data-marketing-subnav],.marketing-strategy-center,.marketing-template-center,.marketing-flow-center,.marketing-audience-center,.marketing-campaign-center,.marketing-grid'));
   return title==='Marketing'||hasMarketingUi?root:null;
 }
 
@@ -167,6 +167,10 @@ async function openOverviewView(root,view,{create=false}={}){
       await module?.mountTemplateView?.(root);
       if(create)queueMicrotask(()=>root.querySelector('[data-template-create]')?.click());
       return;
+    }
+    if(view==='flows'){
+      const module=window.DAMarketingFlowCenter||await import('/vitrine/admin/marketing/flow-center.js?v=whatsapp-flow-center-20261024');
+      return module?.mountFlowView?.(root);
     }
     if(view==='audiences'){
       const module=window.DAMarketingAudienceCenter||await import('/vitrine/admin/marketing/audience-center.js?v=marketing-audience-v1');
