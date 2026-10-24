@@ -24,7 +24,7 @@ Um adaptador servidor deverá, dentro de uma única transação: validar idempot
 
 `npm run test:db` inicia um PostgreSQL em memória sem rede, cria roles e Auth fixtures temporários, aplica as seis migrações e verifica relações, constraints, grants, RLS/RBAC positivo e negativo, privacidade, RPC do papel e rollback de transação. `db/001_schema.sql` a `db/004_bling_product_profiles.sql` eram propostas não aplicadas e foram removidas para evitar dois históricos concorrentes; `db/README.md` explica o fluxo.
 
-As migrações aplicadas devem ser tratadas como forward-only. Corrigir schema com nova migração aditiva/compensatória, não editar histórico já aplicado. Em desenvolvimento local, somente um banco descartável pode ser recriado por `supabase db reset`. O projeto V2 está ativo; as migrações foram aplicadas e verificadas. O convite e a atribuição do primeiro ADMIN estão registrados; ainda falta o titular confirmar o e-mail/definir credencial, ensaiar backup/restore, validar login com conta real e testar recuperação de senha. Não habilitar novos schemas expostos nem configurar integrações operacionais nesta rodada.
+As migrações aplicadas devem ser tratadas como forward-only. Corrigir schema com nova migração aditiva/compensatória, não editar histórico já aplicado. Em desenvolvimento local, somente um banco descartável pode ser recriado por `supabase db reset`. O projeto V2 está ativo; as migrações foram aplicadas e verificadas. O convite do primeiro ADMIN foi aceito, o e-mail confirmado e a atribuição está ativa; falta validar login pela UI, ensaiar backup/restore e testar recuperação de senha. Não habilitar novos schemas expostos nem configurar integrações operacionais nesta rodada.
 
 ## Limites e pendências
 
