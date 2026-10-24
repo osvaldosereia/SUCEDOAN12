@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <meta name="theme-color" content="#f6f8f6">
   <title>Laboratório WhatsApp 1018 · Dona Antônia</title>
-  <link rel="stylesheet" href="./lab.css?v=20261024-4">
+  <link rel="stylesheet" href="./lab.css?v=20261024-6">
 </head>
 <body>
   <header class="top">
@@ -54,6 +54,12 @@
               <button id="readReplyBtn" type="button" class="btn subtle">Ler escolha do cliente</button>
               <p id="replyStatus" class="meta-readiness" role="status" aria-live="polite">Nenhuma escolha consultada nesta sessão.</p>
             </div>
+            <section class="composition-preview" aria-label="Prévia da composição escolhida">
+              <div class="section-head"><div><h3>3. Produtos da cesta escolhida</h3><p>Composição e preço para conferência antes de enviar ao cliente.</p></div></div>
+              <pre id="compositionPreview" aria-live="polite">Escolha uma combinação acima ou clique em “Ler escolha do cliente”.</pre>
+              <button id="copyCompositionBtn" type="button" class="btn subtle" disabled>Copiar composição completa</button>
+              <p class="fineprint">Este recurso apenas prepara e copia o texto. Não envia mensagens, não cria pedidos nem modifica o estoque.</p>
+            </section>
             <div class="meta-toolbar">
               <button id="canaryRefreshBtn" type="button" class="btn subtle">Verificar novamente</button>
               <button id="canarySendBtn" type="button" class="btn primary" disabled>Enviar lista ao 8360</button>
@@ -89,6 +95,6 @@
       </aside>
     </div>
   </main>
-  <script type="module" src="./lab.js?v=20261024-4"></script>
+  <script type="module" src="./lab.js?v=20261024-6"></script>
 </body>
 </html>

@@ -82,6 +82,26 @@ function updatePreview(){
   const ready=Boolean(state.account1018)&&!state.loading&&($('messageMode').value!=='basket'||Boolean(state.selection&&state.quoteReady));
   $('copyBtn').disabled=!ready;
   $('sendBtn').disabled=!LIVE_TEST_ENABLED||!ready||state.busy||text.length>3900;
+  renderCompositionPreview();
+}
+
+function renderCompositionPreview(){
+  const ready=Boolean(state.selection)&&state.quoteReady&&Number.isSafeInteger(Number(state.officialPrice))&&Number(state.officialPrice)>=0;
+  const body=ready?buildBasketMessage():'Selecione uma das 15 combinações ou use “Ler escolha do cliente” para abrir a cesta escolhida. Aguarde o valor ser calculado.';
+  const withinLimit=body.length<=3900;
+  $('compositionPreview').textContent=withinLimit?body:'A composição excede o limite seguro para uma única mensagem. Revise os itens na tela do Admin.';
+  $('copyCompositionBtn').disabled=!ready||!withinLimit;
+}
+async function copyBasketComposition(){
+  if($('copyCompositionBtn').disabled||!state.selection||!state.quoteReady)return;
+  const text=buildBasketMessage();
+  if(text.length>3900)return;
+  try{
+    await navigator.clipboard.writeText(text);
+    sendStatus('Composição copiada para conferência. Nenhuma mensagem foi enviada.','success');
+  }catch{
+    sendStatus('Não foi possível copiar. Confira a prévia exibida acima.','error');
+  }
 }
 
 function snapshotForMeta(){return collectBasketVariants(state.models,state.variants);}
@@ -401,6 +421,7 @@ $('metaInteractivePreview').addEventListener('click',event=>{
 $('refreshBtn').addEventListener('click',()=>load());
 $('messageMode').addEventListener('change',updatePreview);
 $('copyBtn').addEventListener('click',()=>void copyMessage());
+$('copyCompositionBtn').addEventListener('click',()=>void copyBasketComposition());
 $('sendBtn').addEventListener('click',()=>void sendTest());
 $('priceGrid').addEventListener('click',event=>{const button=event.target.closest('[data-choice]');if(button&&!button.disabled)choose(button.dataset.choice);});
 $('detail').addEventListener('click',event=>{
