@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.58.0";
 import {buildTemplateCacheRows,listTemplatesViaMeta,createTemplateViaMeta,editTemplateViaMeta,deleteTemplateViaMeta,MetaTemplatesError} from "../_shared/whatsapp-meta-templates-v1.mjs";
-import {listFlowsViaMeta,getFlowViaMeta,createFlowViaMeta,uploadFlowJsonViaMeta,configureFlowEndpointViaMeta,getBusinessPublicKeyStatusViaMeta,registerBusinessPublicKeyViaMeta,publishFlowViaMeta,deleteFlowViaMeta,validateFlowJson,MetaFlowsError} from "../_shared/whatsapp-meta-flows-v1.mjs";
+import {listFlowsViaMeta,getFlowViaMeta,createFlowViaMeta,uploadFlowJsonViaMeta,configureFlowEndpointViaMeta,getBusinessPublicKeyStatusViaMeta,derivePublicKeyPem,registerBusinessPublicKeyViaMeta,publishFlowViaMeta,deleteFlowViaMeta,validateFlowJson,MetaFlowsError} from "../_shared/whatsapp-meta-flows-v1.mjs";
 import {sendTemplateViaMeta,MetaTransportError} from "../_shared/whatsapp-meta-transport-v1.mjs";
 import {buildPostorderTemplate} from "../_shared/customer-postorder-template-v3.mjs";
 import {buildPostorderOffersTemplate,buildPostorderConfirmTemplate} from "../_shared/customer-postorder-followup-templates-v1.mjs";
@@ -123,6 +123,8 @@ function flowReadiness(account,role){
     account:Boolean(account&&account.slug==="dona-antonia-1018"&&/^\d{5,30}$/.test(String(account.waba_id||""))&&/^\d{5,30}$/.test(String(account.phone_number_id||""))),
     endpoint:Boolean(flowEndpointUri()),
     private_key:Boolean(DA_FLOW_1018_RSA_PKCS8),
+    public_key_registered:false,
+    public_key_matches_private:false,
     meta_app_secret:Boolean(DA_FLOW_1018_META_APP_SECRET),
     session_secret:Boolean(DA_FLOW_1018_SESSION_SECRET)
   };
@@ -130,6 +132,21 @@ function flowReadiness(account,role){
 }
 function flowArgs(account){
   return {accessToken:META_WHATSAPP_ACCESS_TOKEN,graphVersion:META_WHATSAPP_GRAPH_VERSION,wabaId:account.waba_id,phoneNumberId:account.phone_number_id};
+}
+async function flowReadinessWithMeta(account,role){
+  const state=flowReadiness(account,role);
+  if(state.checks.meta_token&&state.checks.graph_version&&state.checks.account){
+    try{
+      const expectedPublicKeyPem=DA_FLOW_1018_RSA_PKCS8?await derivePublicKeyPem(DA_FLOW_1018_RSA_PKCS8):null;
+      const key=await getBusinessPublicKeyStatusViaMeta({...flowArgs(account),expectedPublicKeyPem});
+      state.checks.public_key_registered=key.configured;
+      state.checks.public_key_matches_private=key.matches_expected===true;
+    }catch(error){
+      state.meta_key_check_error=error instanceof MetaFlowsError?error.code:"meta_flow_public_key_check_failed";
+    }
+  }else state.meta_key_check_error="meta_flow_meta_connection_not_configured";
+  state.ok=Object.values(state.checks).every(Boolean);
+  return state;
 }
 function requireFlowConnection(account){
   if(!account||account.slug!=="dona-antonia-1018"||!/^\d{5,30}$/.test(String(account.waba_id||""))||!/^\d{5,30}$/.test(String(account.phone_number_id||"")))throw new MetaFlowsError("meta_flow_account_not_configured",{httpStatus:503});
@@ -165,7 +182,7 @@ async function handleFlowRead(req,url,auth){
   if(action==="flow_readiness"){
     if(!onlyFlowQuery(url,[]))return json(req,{ok:false,error:"flow_query_fields_not_allowed"},400);
     const account=await fixedFlowAccount();
-    return json(req,{ok:true,...flowReadiness(account,auth.role)});
+    return json(req,{ok:true,...await flowReadinessWithMeta(account,auth.role)});
   }
   if(action==="flow_list"){
     if(!onlyFlowQuery(url,[]))return json(req,{ok:false,error:"flow_query_fields_not_allowed"},400);
@@ -219,7 +236,7 @@ async function handleFlowMutation(req,action,body,auth){
   if(action==="flow_publish"){
     const readiness=flowReadiness(account,auth.role);
     const published=await publishFlowViaMeta({
-      ...args,flowId,endpointUri:flowEndpointUri(),
+      ...args,flowId,endpointUri:flowEndpointUri(),privateKeyPem:DA_FLOW_1018_RSA_PKCS8,
       privateKeyConfigured:readiness.checks.private_key,
       metaAppSecretConfigured:readiness.checks.meta_app_secret,
       sessionSecretConfigured:readiness.checks.session_secret
