@@ -58,7 +58,7 @@ Fontes oficiais:
 
 ## 5. Roadmap sequencial, com entregáveis e gates
 
-### Fase 0 — Fundamentação visual e engenharia [EM ANDAMENTO — R01/R02 concluídas; R03 pendente]
+### Fase 0 — Fundamentação visual e engenharia [EM ANDAMENTO — R01/R02 concluídas; fundação R03 local, Auth remoto pendente]
 **Objetivo:** parecer sistema comercial consistente em TODAS as telas, não só na página inicial.
 **Entregáveis:** tokens de cor/tipo/espaçamento, AdminShell profissional, menus, listagens, formulários, layouts desktop/mobile, padrões de carga/erro/empty-state, biblioteca leve de UI interna, contrato de dados para módulos; documentação, ESLint/Prettier e lint de acessibilidade.
 **Gate:** TS, build, teste unitário, Playwright mobile + desktop, screenshots e comparação visual. Não tocar em produção.
@@ -174,3 +174,9 @@ A auditoria integral da pasta V2 foi concluída no baseline da SHA 1a846beba7681
 A R02 concluiu a fundação de persistência no escopo local: quatro migrações Supabase CLI, schema privado `da_next` com 21 tabelas e RLS deny-by-default, contratos TS, ERD e ADR. Replay, constraints representativas, idempotência e rollback passaram em PGlite descartável via `npm run test:db`, também integrado ao CI da V2. Não houve criação/configuração de projeto, acesso ou aplicação remota. CI #40061111459 passou no SHA de implementação `08ece30274c4b36e1c325fcf0e3d3fbabb41c49a`, incluindo E2E de navegador. PGlite não verifica Auth, policies reais ou Data API do Supabase.
 
 PR R02 #1366 está aberto, sem merge. A sequência agora é R03 — autenticação, modelo de ator, RBAC e policies RLS, com testes negativos. A R02 não implementa adapter, endpoint, checkout nem consumidor da outbox. Detalhes e limites: `docs/PERSISTENCIA_ISOLADA_V2.md`, `docs/DIAGRAMA_ERD_V2.md`, `docs/ADR-002-PERSISTENCIA.md` e `docs/STATUS_RODADAS_V2.md`.
+
+
+## Atualização de execução — R03 (24/10/2026)
+Foi implementada a fundação local de RBAC/RLS: ADMIN, PRODUCTS, SEPARATION e SUPPORT; helper de permissão baseado em `auth.uid()` e atribuição no banco; grants mínimos, policies com `USING`/`WITH CHECK`; valores internos em tabelas separadas; contratos TS e matriz documentada. Cinco migrações/24 tabelas passaram nos testes PostgreSQL descartáveis, incluindo permissões negativas, revogação e isolamento privado.
+
+A UI de login e o adapter Supabase Auth não foram conectados porque ainda não há projeto V2 isolado. A autenticação exige URL/chave pública e configuração no projeto novo; `service_role` não será enviada ao browser. Criar recurso remoto pode gerar custo/consumir limites e fica pendente de autorização específica. Não houve consulta nem alteração dos projetos legados. Resultado e limites: `docs/STATUS_RODADAS_V2.md`, `docs/MATRIZ_ACESSO_V2.md` e `docs/ADR-003-AUTENTICACAO-RBAC.md`.

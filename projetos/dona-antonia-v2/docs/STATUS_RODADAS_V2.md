@@ -7,8 +7,8 @@
 |---|---|---|---|
 | R00 | Auditoria integral e baseline | **Concluída — auditoria documental e baseline** | docs/AUDITORIA_COMPLETA_V2.md; SHA base 1a846beba768192c366937c1462bcfd6baeccee9; CI 40057635884 aprovado |
 | R01 | Design system e disciplina de qualidade | **Concluída** | PR #1365; SHA R01 7a02a0da66dbcec6cfd7772da75f748ecb5bd29c; CI 40059800868 e 40059798099 aprovados |
-| R02 | Modelagem/migrações para banco isolado | **Concluída; PR aberto, sem merge** | PR #1366; SHA 08ece30274c4b36e1c325fcf0e3d3fbabb41c49a; CI 40061111459 aprovado |
-| R03 | Login, RBAC e RLS V2 | Planejada | — |
+| R02 | Modelagem/migrações para banco isolado | **Concluída; PR aberto, sem merge** | PR #1366; SHA 0ea8f43188ea55db56c176d1c34368a2b4303c10; CI 40061111459 aprovado |
+| R03 | Login, RBAC e RLS V2 | Policies/RBAC local concluídos; login remoto pendente | Migração 5; `npm run test:db`; `docs/MATRIZ_ACESSO_V2.md`; Auth exige projeto V2 isolado |
 | R04 | Importação/reconciliação dos 802 produtos | Planejada | — |
 | R05 | Cadastro e estoque persistente | Planejada | — |
 | R06 | Cestas, tipos e extras persistentes | Planejada | — |
@@ -73,7 +73,7 @@
 ## R02 — schema isolado e contratos
 **Data:** 2026-10-24 (UTC)
 **SHA inicial:** 7a02a0da66dbcec6cfd7772da75f748ecb5bd29c (head remoto de R01)
-**SHA de implementação validado:** 08ece30274c4b36e1c325fcf0e3d3fbabb41c49a.
+**SHA de implementação validado:** 0ea8f43188ea55db56c176d1c34368a2b4303c10 (head final da branch R02).
 **Estado:** Concluída; PR #1366 aberto, sem merge.
 **Escopo:** cadeia de quatro migrações versionadas; schema privado `da_next`, 21 tabelas com RLS fechado e sem policies; constraints para catálogo, pedidos, snapshots, reservas, idempotência, fiscal, auditoria e outbox; tipos TS e contratos de persistência; ERD, ADR e instruções de banco. Propostas duplicadas `db/001–004` removidas.
 **Testes locais:** lint, format:check, architecture:check, `npm run test:db` (4 migrações/21 tabelas), TypeScript, 39 testes unitários, build e `npm audit --audit-level=moderate` (0 vulnerabilidades) passaram.
@@ -81,3 +81,14 @@
 **Limites:** PGlite confirma comportamento coberto em PostgreSQL isolado, não substitui Supabase real; nenhum projeto remoto consultado ou alterado. Sem adapter, Auth/RBAC, policies, checkout nem worker.
 **Produção legada:** intocada; branch `main`, sites, bancos, atendimento e integrações operacionais intocados.
 **Próxima rodada:** R03 — modelo de ator, login/RBAC e policies RLS, com testes de autorização e sem conectar aos Supabase legados.
+
+
+## R03 — RBAC e policies RLS
+**Data:** 2026-10-24 (UTC)
+**SHA inicial:** 0ea8f43188ea55db56c176d1c34368a2b4303c10 (head R02)
+**Estado:** fundação de autorização concluída na V2 isolada; login/Supabase Auth remoto bloqueado até provisionar projeto V2 sem custo não autorizado.
+**Escopo:** papéis ADMIN/PRODUCTS/SEPARATION/SUPPORT, permissões fechadas, função `has_permission`, RLS nas tabelas, grants por tabela/coluna, split de preços privados, contratos TS de sessão e matriz de acesso. Nenhum usuário real ou segredo foi criado.
+**Testes:** `npm run test:db` verifica 5 migrações, 24 tabelas, RLS, roles com e sem acesso, edição comercial autorizada, tentativas negadas, revogação imediata, metadado editável não confiável e isolamento de valores privados. Lint/format/architecture/typecheck/unit/build/audit e CI serão registrados após PR.
+**Bloqueio explícito:** não existe ambiente Supabase V2. Login, emissão/refresh JWT, recuperação de senha e sessão no browser não foram conectados nem homologados. Não criar ou acessar projetos existentes; provisionamento de projeto novo requer avaliar custo/limites.
+**Produção legada:** intocada; sem acesso a banco legado, mudança em `main`, publicação ou integração operacional.
+**Próximo passo:** provisionar, com autorização de custo, um Supabase V2 isolado; então completar adapter/login e validar policies no próprio Supabase.

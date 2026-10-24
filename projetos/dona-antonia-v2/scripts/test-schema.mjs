@@ -9,6 +9,7 @@ const migrationDir = path.join(root, 'supabase', 'migrations');
 const migrations = (await readdir(migrationDir)).filter((file) => file.endsWith('.sql')).sort();
 const expectedTables = [
   'audit_log',
+  'basket_size_private_pricing',
   'basket_size_types',
   'basket_sizes',
   'bling_product_profiles',
@@ -20,6 +21,7 @@ const expectedTables = [
   'integration_outbox',
   'inventory_reservations',
   'order_basket_snapshots',
+  'order_basket_private_pricing',
   'order_basket_snapshot_types',
   'order_commands',
   'order_events',
@@ -28,10 +30,11 @@ const expectedTables = [
   'product_type_products',
   'product_types',
   'products',
+  'staff_role_assignments',
   'orders',
 ].sort();
 
-assert.equal(migrations.length, 4, 'the schema must be a complete, ordered migration chain');
+assert.equal(migrations.length, 5, 'the schema must be a complete, ordered migration chain');
 assert.ok(migrations.every((file) => /^\d{14}_[a-z0-9_]+\.sql$/.test(file)));
 
 const db = new PGlite();
@@ -47,6 +50,13 @@ try {
     CREATE ROLE anon NOLOGIN;
     CREATE ROLE authenticated NOLOGIN;
     CREATE ROLE service_role NOLOGIN BYPASSRLS;
+    CREATE SCHEMA auth;
+    CREATE TABLE auth.users (id uuid primary key);
+    CREATE FUNCTION auth.uid() RETURNS uuid
+      LANGUAGE sql STABLE
+      AS $$ SELECT nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+    GRANT USAGE ON SCHEMA auth TO PUBLIC;
+    GRANT EXECUTE ON FUNCTION auth.uid() TO PUBLIC;
   `);
 
   for (const migration of migrations) {
@@ -68,16 +78,18 @@ try {
       has_schema_privilege('authenticated', 'da_next', 'USAGE') as authenticated_schema,
       has_schema_privilege('service_role', 'da_next', 'USAGE') as service_schema,
       count(*) filter (where c.relrowsecurity) as tables_with_rls,
-      (select count(*) from pg_policies where schemaname = 'da_next') as policies
+      (select count(*) from pg_policies where schemaname = 'da_next') as policies,
+      has_table_privilege('anon', 'da_next.products', 'SELECT') as anon_products
     from pg_class c
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'da_next' and c.relkind = 'r'
   `);
   assert.equal(access.rows[0].anon_schema, false);
-  assert.equal(access.rows[0].authenticated_schema, false);
+  assert.equal(access.rows[0].authenticated_schema, true);
   assert.equal(access.rows[0].service_schema, true);
   assert.equal(Number(access.rows[0].tables_with_rls), expectedTables.length);
-  assert.equal(Number(access.rows[0].policies), 0, 'R02 stays deny-by-default until R03 RBAC');
+  assert.ok(Number(access.rows[0].policies) > expectedTables.length);
+  assert.equal(access.rows[0].anon_products, false);
 
   const basketSeed = await db.query('select id from da_next.basket_sizes order by sort_order');
   assert.deepEqual(
@@ -99,8 +111,13 @@ try {
     `insert into da_next.products (sku, name, category, stock_units) values ('INVALIDO', 'Produto inválido', 'OUTRA', -1)`,
     'invalid category and negative stock must be rejected',
   );
+  await db.query(
+    `update da_next.basket_size_private_pricing
+     set private_adjustment_cents = 500 where basket_size_id = 'mini'`,
+  );
   await expectSqlFailure(
-    `update da_next.basket_sizes set private_adjustment_cents = -1 where id = 'mini'`,
+    `update da_next.basket_size_private_pricing
+     set private_adjustment_cents = -1 where basket_size_id = 'mini'`,
     'negative private adjustment must be rejected',
   );
 
@@ -126,9 +143,15 @@ try {
   const basket = await db.query(
     `insert into da_next.order_basket_snapshots (
        order_id, line_number, basket_size_id, basket_code_snapshot, basket_name_snapshot,
-       quantity, public_unit_price_cents, private_adjustment_cents, line_total_cents
-     ) values ($1, 1, 'mini', 'MINI', 'Mini', 1, 5000, 500, 5000) returning id`,
+       quantity, public_unit_price_cents, line_total_cents
+     ) values ($1, 1, 'mini', 'MINI', 'Mini', 1, 5000, 5000) returning id`,
     [orderId],
+  );
+  await db.query(
+    `insert into da_next.order_basket_private_pricing
+       (order_basket_snapshot_id, private_adjustment_cents)
+     values ($1, 500)`,
+    [basket.rows[0].id],
   );
   await db.query(
     `insert into da_next.order_basket_snapshot_types (
@@ -222,8 +245,154 @@ try {
   );
   assert.equal(rolledBack.rows[0].count, 0, 'the isolated database must roll back a transaction');
 
+  const actorIds = {
+    admin: '10000000-0000-4000-8000-000000000001',
+    products: '10000000-0000-4000-8000-000000000002',
+    separation: '10000000-0000-4000-8000-000000000003',
+    support: '10000000-0000-4000-8000-000000000004',
+    unassigned: '10000000-0000-4000-8000-000000000005',
+  };
+  await db.query(
+    'insert into auth.users (id) values ($1), ($2), ($3), ($4), ($5)',
+    Object.values(actorIds),
+  );
+  await db.query(
+    `insert into da_next.staff_role_assignments (user_id, role)
+     values ($1, 'ADMIN'), ($2, 'PRODUCTS'), ($3, 'SEPARATION'), ($4, 'SUPPORT')`,
+    [actorIds.admin, actorIds.products, actorIds.separation, actorIds.support],
+  );
+  await db.query(
+    `insert into da_next.conversations (
+       provider_account, external_contact_id, customer_phone_snapshot
+     ) values ('0975', 'support-test-contact', '65999999999')`,
+  );
+
+  async function asAuthenticated(userId, run) {
+    await db.exec('SET ROLE authenticated');
+    await db.query("select set_config('request.jwt.claim.sub', $1, false)", [userId]);
+    try {
+      return await run();
+    } finally {
+      await db.query("select set_config('request.jwt.claim.sub', '', false)");
+      await db.exec('RESET ROLE');
+    }
+  }
+
+  const catalogAccess = await asAuthenticated(actorIds.products, async () => {
+    await db.query(
+      'select set_config(\'request.jwt.claims\', \'{"user_metadata":{"role":"ADMIN"}}\', false)',
+    );
+    const visibleProducts = await db.query('select id from da_next.products');
+    const hiddenOrders = await db.query('select id from da_next.orders');
+    const hiddenPrivatePrices = await db.query(
+      'select basket_size_id from da_next.basket_size_private_pricing',
+    );
+    const changed = await db.query(
+      'update da_next.products set price_cents = 2690 where id = $1 returning price_cents',
+      [productId],
+    );
+    await expectSqlFailure(
+      `update da_next.products set stock_units = 999 where id = '${productId}'`,
+      'catalog operators must not change stock outside the stock ledger service',
+    );
+    await expectSqlFailure(
+      'select private_adjustment_cents from da_next.basket_sizes',
+      'private pricing must not be a column on the catalog table',
+    );
+    return { visibleProducts, hiddenOrders, hiddenPrivatePrices, changed };
+  });
+  assert.equal(catalogAccess.visibleProducts.rows.length, 1);
+  assert.equal(catalogAccess.hiddenOrders.rows.length, 0);
+  assert.equal(catalogAccess.hiddenPrivatePrices.rows.length, 0);
+  assert.equal(catalogAccess.changed.rows[0].price_cents, 2690);
+
+  const separationAccess = await asAuthenticated(actorIds.separation, async () => {
+    const visibleOrders = await db.query('select id from da_next.orders');
+    const hiddenCatalog = await db.query('select id from da_next.products');
+    const hiddenPricing = await db.query(
+      'select order_basket_snapshot_id from da_next.order_basket_private_pricing',
+    );
+    const attemptedProductUpdate = await db.query(
+      'update da_next.products set price_cents = 1 where id = $1 returning id',
+      [productId],
+    );
+    return { visibleOrders, hiddenCatalog, hiddenPricing, attemptedProductUpdate };
+  });
+  assert.equal(separationAccess.visibleOrders.rows.length, 1);
+  assert.equal(separationAccess.hiddenCatalog.rows.length, 0);
+  assert.equal(separationAccess.hiddenPricing.rows.length, 0);
+  assert.equal(separationAccess.attemptedProductUpdate.rows.length, 0);
+
+  const supportAccess = await asAuthenticated(actorIds.support, async () => {
+    const visibleConversations = await db.query('select id from da_next.conversations');
+    const visibleOrders = await db.query('select id from da_next.orders');
+    const hiddenProducts = await db.query('select id from da_next.products');
+    const hiddenPrivateProfiles = await db.query('select sku from da_next.bling_product_profiles');
+    return { visibleConversations, visibleOrders, hiddenProducts, hiddenPrivateProfiles };
+  });
+  assert.equal(supportAccess.visibleConversations.rows.length, 1);
+  assert.equal(supportAccess.visibleOrders.rows.length, 1);
+  assert.equal(supportAccess.hiddenProducts.rows.length, 0);
+  assert.equal(supportAccess.hiddenPrivateProfiles.rows.length, 0);
+
+  const adminAccess = await asAuthenticated(actorIds.admin, async () => {
+    const privatePricing = await db.query(
+      'select private_adjustment_cents from da_next.basket_size_private_pricing where basket_size_id = $1',
+      ['mini'],
+    );
+    const orderPricing = await db.query(
+      'select private_adjustment_cents from da_next.order_basket_private_pricing where order_basket_snapshot_id = $1',
+      [basket.rows[0].id],
+    );
+    const visibleCatalog = await db.query('select id from da_next.products');
+    return { privatePricing, orderPricing, visibleCatalog };
+  });
+  assert.equal(adminAccess.privatePricing.rows[0].private_adjustment_cents, 500);
+  assert.equal(adminAccess.orderPricing.rows[0].private_adjustment_cents, 500);
+  assert.equal(adminAccess.visibleCatalog.rows.length, 1);
+
+  const noRoleAccess = await asAuthenticated(actorIds.unassigned, async () => {
+    const products = await db.query('select id from da_next.products');
+    const orders = await db.query('select id from da_next.orders');
+    return { products, orders };
+  });
+  assert.equal(noRoleAccess.products.rows.length, 0);
+  assert.equal(noRoleAccess.orders.rows.length, 0);
+
+  await asAuthenticated(actorIds.products, async () => {
+    await expectSqlFailure(
+      `insert into da_next.staff_role_assignments (user_id, role, created_by)
+       values ('${actorIds.unassigned}', 'ADMIN', '${actorIds.products}')`,
+      'catalog operators must not grant staff roles',
+    );
+  });
+  await asAuthenticated(actorIds.admin, async () => {
+    await db.query(
+      `insert into da_next.staff_role_assignments (user_id, role, created_by)
+       values ($1, 'SUPPORT', $2)`,
+      [actorIds.unassigned, actorIds.admin],
+    );
+    await db.query(
+      `update da_next.staff_role_assignments
+       set revoked_at = now(), revoked_by = $1
+       where user_id = $2 and revoked_at is null`,
+      [actorIds.admin, actorIds.unassigned],
+    );
+  });
+  const revokedAccess = await asAuthenticated(actorIds.unassigned, async () =>
+    db.query('select id from da_next.conversations'),
+  );
+  assert.equal(revokedAccess.rows.length, 0, 'revoked roles must lose access immediately');
+
+  await db.exec('SET ROLE anon');
+  await expectSqlFailure(
+    'select id from da_next.products',
+    'anonymous users must not access the private schema',
+  );
+  await db.exec('RESET ROLE');
+
   console.log(
-    `PostgreSQL isolado: ${migrations.length} migrações aplicadas, ${expectedTables.length} tabelas com RLS fechado, constraints, idempotência e rollback verificados.`,
+    `PostgreSQL isolado: ${migrations.length} migrações, ${expectedTables.length} tabelas, RLS/RBAC positivo e negativo, privacidade e rollback verificados.`,
   );
 } finally {
   await db.close();
