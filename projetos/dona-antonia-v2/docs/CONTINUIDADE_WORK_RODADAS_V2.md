@@ -1,4 +1,4 @@
-Warning: truncated output (original token count: 9069)
+Warning: truncated output (original token count: 9126)
 Total output lines: 308
 
 # DONA ANTÔNIA V2 — DOSSIÊ DE CONTINUIDADE E PLANO POR RODADAS (WORK)
@@ -94,42 +94,7 @@ As 4 abas são a experiência do operador, não o único estado interno. CANCELA
 ## 6. WHATSAPP / META / BLING — ORDEM E GARANTIAS
 WhatsApp:
 - Atendimento HUMANO dentro do admin, com dois números oficiais conhecidos como finais **0975** e **1018**. O serviço anterior permanece funcionando durante construção/testes e só deve ser substituído com consentimento de corte.
-- Reaproveitar contratos, webhooks e fluxo útil do Vitrine/Admin após auditoria de código e dados. Não reaproveitar PapoAI.
-- Inbox: caixa compartilhada; pesquisar cliente/telefone; vincular pedido; receber/enviar mensagens e áudio; estado de conversa separado de status do pedido; permissões de operadores, mídia protegida e auditoria.
-- Template oficial de confirmação do pedido, atualmente no legado: pedidorecebidosite0975 e pedidorecebidosite1018 (pt_BR); variáveis número pedido, total, entrega e pagamento. Validar templates vigentes na Meta na etapa de conexão.
-- Notificações transacionais futuras dos estados do pedido através de mensagens Utility compatíveis e aprovadas pela Meta, respeitando políticas vigentes, janela de 24h e requisitos de consentimento. Não transformar marketing em utilitário. Evitar duplicatas.
-- Arquitetura: eventos de domínio -> transactional outbox -> fila/worker **sob demanda ou econômico** -> Meta API -> webhooks de status -> logs + retries limitados. Nenhum envio real em mock/staging sem destinatário de teste autorizado.
-
-Bling:
-- **Uso fiscal** após separação (não tratar Bling como novo admin operacional).
-- OAuth2/token somente no backend; vincular IDs do Bling aos SKUs; sincronizar NCM/CEST/origem/unidade/fornecedor; emissão de NF-e após ajuste de faltas; eventual envio do pedido de venda ao Bling se obrigatório na API.
-- Falha de NF-e não bloqueia PRONTO, mas fica clara como NOTA PENDENTE/BLOQUEADA, com erro e reenvio idempotente.
-- CFOP/CST/CSOSN/tributação dependem de operação, regime e UF; validar com fiscal antes de emitir, não deduzir automaticamente só do CSV.
-- Controle de rate-limit, 429, backoff, refresh token, timeouts, logs e reconciliação sem duplicar documento.
-
-## 7. CADASTRO BLING E FONTE DE DADOS
-Base anterior: arquivo de 802 produtos independentes (59 colunas oficiais Bling); conferir se o arquivo está disponível no novo Projeto/Library ou no repo antes de importar. O importador CSV é script em scripts/import-bling.mjs; dados atuais do banco existente **não são idênti…2069 tokens truncated…s WCAG 2.1 AA; TS/lint/build e CI aprovados. 17 testes E2E e 39 testes unitários passaram. Dependências com alertas foram atualizadas, lockfile criado, e preview exige dispatch manual com `authorize_preview=true`. Detalhes e limites em `docs/STATUS_RODADAS_V2.md`.
-
-### R02 — Banco V2 limpo: modelagem, migrações e contratos
-- Revisar e reconciliar db/001–004 e projetar esquema transacional de pedidos/itens/snapshots/idempotência/reserva/atendimento/outbox/auditoria/fiscal; tabelas e políticas RLS específicas.
-- Validar migrações numa base DESCARTÁVEL isolada / CI local, jamais nos dois Supabases legados.
-- Entregar diagrama de entidades, contratos TS e testes de migração/constraints.
-- Resultado R02 (24/10/2026): quatro migrações, 21 tabelas, ERD, contratos TS e teste de constraints/idempotência/rollback concluídos; detalhe em `docs/STATUS_RODADAS_V2.md`. PGlite não é Supabase e nada remoto foi aplicado.
-- R03: policies/RBAC local e testes negativos implementados; falta adapter/login real após aprovação do projeto isolado.
-
-### R03 — Autenticação admin e permissões
-- Backend V2 isolado com autenticação, contas de teste, RBAC por função (admin/produtos/separação/atendimento) e trilha de auditoria; RLS como proteção adicional.
-- Bloquear toda escrita pública e separar leitura de vitrine; CSRF/CORS/validação de sessão conforme hospedagem.
-- Aceite: anônimo não lê custo/valor interno/nem grava; operador sem permissão não edita cadastro ou fiscal; testes negativos comprovam.
-
-### R04 — Importação controlada e reconciliação do catálogo Bling
-- Recuperar CSV oficial e validar colunas, 802 SKUs, EAN, NCM, CEST, unidade UN, fornecedor, custo/markup e IDs. Nunca presumir que CSV é saldo físico atual.
-- Criar importação idempotente com simulação/dry-run, relatório de conflitos, deduplicação SKU/EAN e revisão humana de dados fiscais anômalos.
-- Popular SOMENTE staging V2. Não ativar produtos sem regra de estoque confiável.
-- Aceite: contagens batem; nenhum SKU duplicado; relatório explica cada rejeição.
-
-### R05 — Cadastro de produtos/estoque real no admin
-- Lista com filtro/busca/paginação server-side, foto 1:1, SKU/EAN/preço/estoque/ativo, edição rápida e ações em lote seguras.
+- Reaproveitar contratos, webhooks e fluxo útil do Vitrine/Admin após auditoria de código e da…3126 tokens truncated…estoque/ativo, edição rápida e ações em lote seguras.
 - Ficha Geral, Preços/Estoque, Fiscal/Fornecedor, Fotos, Histórico, com permissões por campo; tipos e categorias não se misturam.
 - Aceite: CRUD persiste após recarregar; 800+ SKUs não travam; concorrência rejeita revisão obsoleta; produto zerado não aparece na loja.
 
@@ -244,5 +209,5 @@ R00 foi documental; R01 consolidou qualidade visual/CI; R02 implementou schema e
 - Feito no código: migration RLS/RBAC; papéis fechados; grants de menor privilégio e policies `USING`/`WITH CHECK`; split dos valores internos; contratos de autorização/autenticação; matriz e ADR.
 - Segurança verificada em PGlite: anônimo/sem papel sem dados; PRODUCTS lê/edita catálogo mas não saldo/pedido/preço privado; SEPARATION lê pedidos e não altera catálogo; SUPPORT lê atendimento/pedido, sem acesso a catálogo/fiscal; ADMIN acessa dados privados; autoelevação por `user_metadata` negada; revogação retira acesso.
 - Limite: sem projeto Supabase V2, não há login, sessão/JWT ou Auth remoto. Essa infraestrutura pode ter custo; nenhum projeto será criado nem projeto existente tocado sem aprovação específica.
-- CI/PR: PR #1367 aberto contra R02, sem merge: https://github.com/osvaldosereia/SUCEDOAN12/pull/1367. Head inicial `b9b7657b7f7c5d0a5a4995b797914367da0ce97c`; CI ainda não apareceu no GitHub no registro desta atualização. Gates locais: format, lint, format:check, architecture:check, test:db (5/24), check, test (42), build, npm audit (0 vulnerabilidades) e diff --check aprovados.
+- CI/PR: PR #1367 aberto contra R02, sem merge: https://github.com/osvaldosereia/SUCEDOAN12/pull/1367. Head inicial `b9b7657b7f7c5d0a5a4995b797914367da0ce97c`; CI ainda não apareceu no GitHub no registro desta atualização. Gates locais aprovados: format, lint, format:check, architecture:check, test:db (5 migrações/24 tabelas), check, test (42), build, npm audit (0 vulnerabilidades) e diff --check. `npm run e2e` tentou 17 casos, mas todos foram bloqueados antes da execução porque Chromium não está instalado neste ambiente. O workflow GitHub inclui instalação do Chromium; ainda sem run observado.
 - Situação da operação: legado e `main` intocados; nenhuma publicação ou integração real. Próximo: aguardar CI/revisão do PR; concluir login Auth em projeto V2 isolado somente após aprovação para provisionamento. Não iniciar R04 antes de fechar o gate R03.
