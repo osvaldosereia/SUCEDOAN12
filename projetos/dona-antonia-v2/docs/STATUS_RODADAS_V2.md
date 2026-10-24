@@ -178,7 +178,7 @@
 ## R12 — mensagens utilitárias Meta por evento
 
 **Data:** 2026-10-24 (UTC)
-**Branch/base:** `agent/dona-antonia-r12-meta-utility`, derivada exatamente do head R11 `6f2e00826b1b31ba12d34f65edbd53d93ba8148c`; PR #1381 draft contra `agent/dona-antonia-r11-whatsapp-inbox`, sem merge/publicação. Head remoto `e55582f531c57169a2e708a668fe09d5a5c0e869`.
+**Branch/base:** `agent/dona-antonia-r12-meta-utility`, derivada exatamente do head R11 `6f2e00826b1b31ba12d34f65edbd53d93ba8148c`; PR #1381 draft contra `agent/dona-antonia-r11-whatsapp-inbox`, sem merge/publicação. Head de implementação `e55582f531c57169a2e708a668fe09d5a5c0e869`; checkpoint documental `5889395ff91fe26ffe0fd28101a0335f378c4a39`.
 **Estado:** concluída em staging V2 isolado; CI remoto aprovado.
 **Escopo implementado:** registro de templates Utility por conta, triggers de eventos de pedido para outbox transacional, chave idempotente com revisão/recipiente/conta, RPC autenticada de listagem, estados de entrega/leitura/erro, retry limitado a três tentativas, orçamento diário por conta e hardening das policies RLS novas. As contas iniciam desabilitadas, templates iniciam pendentes/inativos e não existe worker Meta.
 **Supabase V2:** migrations R12 `20261024150000_r12_meta_utility`, `20261024150500_r12_meta_utility_policy_hardening` e `20261024151000_r12_meta_utility_budget` aplicadas somente em `hjudhofluihkxykwekir`; remoto confirmou 18 migrations, três tabelas Utility, oito templates pendentes/inativos, zero mensagens e zero itens de outbox Utility. ACL: anon não executa a listagem; authenticated executa os RPCs sob guardas de permissão. 802 produtos e 802 perfis privados não sofreram alteração.
