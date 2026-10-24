@@ -92,7 +92,7 @@ test('navegação agrupada, atalhos e histórico preservam a seção', async ({ 
   await expect(page.getByRole('heading', { name: 'Visão geral' })).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'Seções do administrador' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Pedidos' })).toBeEnabled();
-  await expect(page.getByRole('button', { name: 'Clientes' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Clientes' })).toBeEnabled();
   await page.getByRole('button', { name: /Configurar cestas/ }).click();
   await expect(page.getByRole('heading', { name: 'Cestas básicas' })).toBeVisible();
   await expect(page).toHaveURL(/secao=cestas/);
