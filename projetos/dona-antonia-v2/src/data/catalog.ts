@@ -7,7 +7,7 @@ export interface CatalogSource {
 }
 export async function loadPublicCatalog(signal?: AbortSignal): Promise<CatalogSource> {
   try {
-    const url = new URL('catalog.generated.json', window.location.origin + import.meta.env.BASE_URL);
+    const url = new URL(import.meta.env.BASE_URL + 'catalog.generated.json', window.location.href);
     const response = await fetch(url, { signal, cache: 'no-store' });
     if (!response.ok) return { products: DEMO_PRODUCTS, isDemo: true };
     const data: unknown = await response.json();
