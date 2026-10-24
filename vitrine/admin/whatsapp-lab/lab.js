@@ -3,7 +3,7 @@ import {attendanceJsonApi} from '../atendimento/attendance-auth.js?v=auth-refres
 const STORE='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2';
 const SIZE_ORDER=['economica','mini','pequena','media','grande'];
 const SIZE_LABELS={economica:'Econômica',mini:'Mini',pequena:'Pequena',media:'Média',grande:'Grande'};
-const TEST_CONVERSATION_ID='ff5c1e73-f3ed-4b88-8eba-b6e3a9883941';
+const LIVE_TEST_ENABLED=false; // OFF: the two company numbers currently have ANA enabled.
 const TEST_RECIPIENT='+5565998150975';
 const ORIGIN_CHANNEL='+5565984491018';
 const $=id=>document.getElementById(id);
@@ -77,7 +77,7 @@ function updatePreview(){
   $('preview').textContent=text;
   const ready=Boolean(state.account1018)&&!state.loading&&($('messageMode').value!=='basket'||Boolean(state.selection&&state.quoteReady));
   $('copyBtn').disabled=!ready;
-  $('sendBtn').disabled=!ready||state.busy||text.length>3900;
+  $('sendBtn').disabled=!LIVE_TEST_ENABLED||!ready||state.busy||text.length>3900;
 }
 function updateAll(){renderPrices();renderDetail();renderExtras();updatePreview();}
 async function load(){
@@ -191,6 +191,7 @@ async function copyMessage(){
   catch{sendStatus('O navegador não autorizou copiar a mensagem.','error');}
 }
 async function sendTest(){
+  if(!LIVE_TEST_ENABLED){sendStatus('Envio desabilitado: isole primeiro a automação dos dois números de teste.','error');return;}
   if(state.busy||state.loading||!state.account1018)return;
   const msg=currentMessage();
   if(!msg||msg.length>3900){sendStatus('Mensagem vazia ou longa demais.','error');return;}
