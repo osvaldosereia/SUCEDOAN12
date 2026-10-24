@@ -66,3 +66,6 @@ Não publicar, não vincular domínio, não adicionar workflows de deployment e 
 - CI: `.github/workflows/dona-antonia-v2-ci.yml`, limitada à branch agent/dona-antonia-nova-plataforma e aos arquivos V2, sem deploy.
 - Execução aprovada: https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/40049541464 (10 testes unitários e 4 testes de navegação).
 - Capturas são anexadas ao job por sete dias. Não representam um site público no ar.
+
+## Referência de usabilidade do novo admin
+A arquitetura visual e a estratégia de seções seguem o estudo em `docs/REFERENCIA_ADMIN_UX.md`: Nuvemshop/Nimbus (estrutura), Shopify (busca e listagens) e Loja Integrada (ação simples). As seções de pedidos, clientes, marketing, relatórios e integrações permanecem desabilitadas até implementação real.

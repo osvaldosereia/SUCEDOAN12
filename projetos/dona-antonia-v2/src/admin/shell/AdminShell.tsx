@@ -62,7 +62,7 @@ export function AdminShell({section,onNavigate,products,onProductSearch,children
               disabled={!item.available}
               onClick={()=>{if(item.available)route(item.id as AvailableAdminSection);}}>
               <AdminIcon name={item.icon as AdminIconName}/><span className="da-nav-label">{item.label}</span>
-              {!item.available&&<span className="da-planned-label">Em breve</span>}
+              {!item.available&&<span className="da-planned-label" aria-hidden="true">Em breve</span>}
             </button>)}
           </section>)}
         </nav>
