@@ -98,7 +98,7 @@ function renderMeta(){
   $('exportCatalogBtn').disabled=!ready;
   const total=snap.rows.length;
   const bad=total!==15||warnings.length>0;
-  const reasons=bad?warnings.slice(0,4).join(' | ')+(warnings.length>4?' (+ '+(warnings.length-4)+' observações)'):'';
+  const reasons=bad?(warnings.slice(0,4).join(' | ')+(warnings.length>4?' (+ '+(warnings.length-4)+' observações)':'')):'';
   $('metaReadiness').classList.toggle('invalid',bad&&!state.loading);
   $('metaReadiness').textContent=state.loading?'Carregando composições e preços…':
     total+' de 15 versões disponíveis para exportação. '+(bad?reasons:'CSV pronto para importação manual na Meta.');
