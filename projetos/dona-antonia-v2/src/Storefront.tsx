@@ -27,8 +27,8 @@ const titles: Record<Stage,string> = {
 };
 
 function Storefront() {
-  const [catalog,setCatalog] = useState<readonly Product[]>(import.meta.env.DEV?[...DEMO_PRODUCTS,...DEMO_EXTRA_PRODUCTS]:[]);
-  const [isDemo,setIsDemo] = useState(import.meta.env.DEV);
+  const [catalog,setCatalog] = useState<readonly Product[]>((import.meta.env.DEV||import.meta.env.VITE_APP_MODE==='preview')?[...DEMO_PRODUCTS,...DEMO_EXTRA_PRODUCTS]:[]);
+  const [isDemo,setIsDemo] = useState(import.meta.env.DEV||import.meta.env.VITE_APP_MODE==='preview');
   const [catalogError,setCatalogError] = useState('');
   const [stage,setStage] = useState<Stage>('basket');
   const [basketId,setBasketId] = useState<BasketId>('mini');

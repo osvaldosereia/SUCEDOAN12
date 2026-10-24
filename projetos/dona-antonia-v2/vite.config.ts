@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 
 export default defineConfig({
   plugins: [react()],
-  base: './',
+  base: process.env.VITE_PREVIEW_BASE || './',
   build: {
     rollupOptions: {
       input: {

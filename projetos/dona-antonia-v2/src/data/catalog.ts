@@ -41,6 +41,10 @@ const httpCatalog:CatalogReader={
  * Produção nunca expõe produtos ou preços de amostra se a API falhar.
  */
 export async function loadPublicCatalog(signal?: AbortSignal,reader:CatalogReader=httpCatalog):Promise<CatalogSource>{
+  // Exclusivo para rotas públicas de homologação; checkout sempre desabilitado.
+  if(import.meta.env.VITE_APP_MODE==='preview'){
+    return {products:DEMO_PRODUCTS,isDemo:true};
+  }
   try{
     return {products:await reader.listPublicProducts(signal),isDemo:false};
   }catch(error){
