@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { BasketTemplate, Product, ProductType } from './model';
 import {initialSelections, setSelectionQuantity, summarizeBasket} from './basket';
-import {initialExtraSelections,selectExtraProduct,summarizeExtras,summarizeOrder,extrasAsTemplate} from './extras';
+import {initialExtraSelections,selectExtraProduct,summarizeExtras,summarizeOrder,extrasAsLines} from './extras';
 
 const products: Product[] = [
   {sku:'C',name:'Café',gtin:null,category:'MERCEARIA BÁSICA',brand:'Teste',priceCents:800,stock:10,active:true},
@@ -20,7 +20,7 @@ describe('etapa de extras',()=>{
     expect(select[0]?.quantity).toBe(0);
     expect(summarizeExtras(extras,select,types,products).totalCents).toBe(0);
   });
-  it('selecionar card de extra inclui uma unidade e trocar preserva quantidade',()=>{
+  it('selecionar card adiciona uma unidade e trocar preserva a quantidade',()=>{
     const initial=initialExtraSelections(extras,types,products);
     const first=selectExtraProduct(initial,'sabonete','X',types,products);
     expect(first[0]?.quantity).toBe(1);
@@ -29,7 +29,7 @@ describe('etapa de extras',()=>{
     expect(switched[0]?.quantity).toBe(3);
     expect(summarizeExtras(extras,switched,types,products).totalCents).toBe(900);
   });
-  it('cesta e extras compartilham carrinho e total sem tocar nos templates',()=>{
+  it('somar cesta e extras preserva quantidade de origem',()=>{
     const selected=initialSelections(basket,types,products);
     const extra=selectExtraProduct(initialExtraSelections(extras,types,products),'sabonete','X',types,products);
     const order=summarizeOrder(
@@ -39,9 +39,9 @@ describe('etapa de extras',()=>{
     expect(order.totalCents).toBe(1850);
     expect(order.itemCount).toBe(3);
     expect(basket.lines[0]?.defaultQuantity).toBe(2);
-    expect(extrasAsTemplate(extras).lines[0]?.defaultQuantity).toBe(0);
+    expect(extrasAsLines(extras)[0]?.defaultQuantity).toBe(0);
   });
-  it('não duplica mesmo SKU selecionado na cesta e nos extras',()=>{
+  it('não duplica mesmo SKU escolhido nas duas etapas',()=>{
     const both=[{typeId:'cafe',order:1,active:true}];
     const extra=selectExtraProduct(initialExtraSelections(both,types,products),'cafe','C',types,products);
     const order=summarizeOrder(
@@ -51,5 +51,12 @@ describe('etapa de extras',()=>{
     expect(order.lines).toHaveLength(1);
     expect(order.lines[0]?.quantity).toBe(3);
     expect(order.totalCents).toBe(2400);
+  });
+  it('produto que ficou sem estoque é marcado indisponível, mas mantém outras opções',()=>{
+    const selected=initialSelections(basket,types,products);
+    const out=products.map((p)=>p.sku==='C'?{...p,stock:0}:p);
+    const result=summarizeBasket(basket,selected,types,out);
+    expect(result.unavailableTypeIds).toEqual(['cafe']);
+    expect(result.totalCents).toBe(0);
   });
 });

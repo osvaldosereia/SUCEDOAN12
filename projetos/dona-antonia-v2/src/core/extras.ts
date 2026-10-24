@@ -1,5 +1,5 @@
-import type { BasketSelection, BasketTemplate, BasketLineSummary, Product, ProductType } from './model';
-import { initialSelections, summarizeBasket, setSelectionProduct, setSelectionQuantity } from './basket';
+import type { BasketSelection, BasketLineTemplate, BasketLineSummary, Product, ProductType } from './model';
+import { initialTypeSelections, summarizeTypeSelections, setSelectionProduct, setSelectionQuantity } from './basket';
 
 export interface ExtraGroup {
   readonly typeId: string;
@@ -7,30 +7,27 @@ export interface ExtraGroup {
   readonly active: boolean;
 }
 
-/** Extras são comuns a todas as cestas, começam em zero e nunca alteram a composição da cesta. */
-export function extrasAsTemplate(groups: readonly ExtraGroup[]): BasketTemplate {
-  return {
-    id: 'mini', name: 'Extras', active: true,
-    lines: groups.filter((group) => group.active)
-      .map((group) => ({typeId: group.typeId, order: group.order, defaultQuantity: 0}))
-      .sort((a, b) => a.order - b.order)
-  };
+/** Extras são comuns às cinco cestas e começam em 0; sem template ou tamanho fictício. */
+export function extrasAsLines(groups: readonly ExtraGroup[]): BasketLineTemplate[] {
+  return groups.filter((group) => group.active)
+    .map((group) => ({typeId: group.typeId, order: group.order, defaultQuantity: 0}))
+    .sort((a, b) => a.order - b.order);
 }
 
 export function initialExtraSelections(
   groups: readonly ExtraGroup[], types: readonly ProductType[], products: readonly Product[]
 ): BasketSelection[] {
-  return initialSelections(extrasAsTemplate(groups), types, products);
+  return initialTypeSelections(extrasAsLines(groups), types, products);
 }
 
 export function summarizeExtras(
   groups: readonly ExtraGroup[], selections: readonly BasketSelection[],
   types: readonly ProductType[], products: readonly Product[]
 ) {
-  return summarizeBasket(extrasAsTemplate(groups), selections, types, products);
+  return summarizeTypeSelections(extrasAsLines(groups), selections, types, products);
 }
 
-/** Ao tocar num card de extra ainda não adicionado, seleciona SKU e inclui 1 UN. */
+/** Ao tocar num extra com quantidade 0, adiciona uma unidade; ao trocar marca mantém a quantidade. */
 export function selectExtraProduct(
   selections: readonly BasketSelection[], typeId: string, sku: string,
   types: readonly ProductType[], products: readonly Product[]
@@ -47,7 +44,8 @@ export interface CartLine {
   readonly priceCents: number;
   readonly totalCents: number;
 }
-/** Soma itens iguais selecionados na cesta e nos extras, preservando os valores por SKU. */
+
+/** Soma o mesmo SKU selecionado em cesta e extras, sem duplicar linhas na revisão do pedido. */
 export function summarizeOrder(
   basketLines: readonly BasketLineSummary[],
   extraLines: readonly BasketLineSummary[]
