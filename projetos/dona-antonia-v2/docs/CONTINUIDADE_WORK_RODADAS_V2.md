@@ -2,13 +2,13 @@
 
 **Versão do dossiê:** 2026-10-23  
 **Finalidade:** transferir todas as decisões operacionais, regras de UX, estado da engenharia, riscos, pendências e plano de entrega para um novo Projeto/conversa do ChatGPT em modo Work.  
-**Status:** R00, R01 e R02 concluídas em branches isoladas. PRs sem merge; R02 está no PR da branch `agent/dona-antonia-r02-schema`, direcionado a R01. Próxima rodada: R03 — autenticação, RBAC e policies RLS. Plano por rodadas em execução.
+**Status:** R00, R01 e R02 concluídas em branches isoladas. PRs sem merge; R02 está no PR #1366 da branch `agent/dona-antonia-r02-schema`, direcionado a R01. Próxima rodada: R03 — autenticação, RBAC e policies RLS. Plano por rodadas em execução.
 **Repositório:** https://github.com/osvaldosereia/SUCEDOAN12  
 **Branch de desenvolvimento principal da V2:** agent/dona-antonia-nova-plataforma  
 **Pasta:** projetos/dona-antonia-v2/  
 **Versão estática de testes (antiga em relação à branch):** https://donaantonia.com.br/site1/ e https://donaantonia.com.br/admin1/  
 **Produção atual — NÃO ALTERAR:** https://donaantonia.com.br/ e administração legada Vitrine/Admin  
-**Última CI observada antes da R02:** R01 SHA `7a02a0da66dbcec6cfd7772da75f748ecb5bd29c`; execuções 40059800868 e 40059798099 aprovadas. R02 CI será registrado após abertura do PR.
+**Última CI observada antes da R02:** R01 SHA `7a02a0da66dbcec6cfd7772da75f748ecb5bd29c`; execuções 40059800868 e 40059798099 aprovadas. CI R02 #40061111459 aprovado no SHA 08ece30274c4b36e1c325fcf0e3d3fbabb41c49a: auditoria de dependências, lint, formato, arquitetura, replay PostgreSQL, TypeScript, 39 testes, build e navegador passaram.
 
 ## 0. REGRA MÁXIMA: PROTEGER A OPERAÇÃO ATUAL
 1. NÃO alterar NADA da loja pública em produção, admin legado/Vitrine, pedidos reais, atendimento em uso, cron, Edge Functions, integrações ou bancos Supabase existentes sem autorização explícita, específica e posterior.
@@ -295,5 +295,5 @@ R00 foi documental; R01 consolidou qualidade visual/CI; R02 implementou schema e
 - Escopo: quatro migrações em `supabase/migrations/`; 21 tabelas em schema privado, RLS fechado; contratos e tipos TS; ERD/ADR; teste repetível em PostgreSQL WASM descartável. Os drafts SQL de `db/001–004` foram retirados.
 - Verificações locais: lint, format, arquitetura, teste DB (4 migrações/21 tabelas), TS, 39 testes, build e audit sem vulnerabilidades passaram.
 - Resultado: nenhuma conexão a Supabase existente, migration remota, Auth/checkout/worker real, publicação ou mudança em produção. PGlite não substitui homologação Supabase.
-- Commit/CI R02: registrar após publicação no GitHub.
+- PR #1366 aberto, sem merge. CI #40061111459 aprovado no SHA `08ece30274c4b36e1c325fcf0e3d3fbabb41c49a`; navegador e todos os demais gates passaram.
 - Próxima: R03 — modelo de ator, RBAC e policies, com testes negativos de acesso.
