@@ -1,4 +1,4 @@
-import {latestCanaryReply,CANARY_CONVERSATION} from './reply-parser.mjs?v=20261024-4';
+import {latestCanaryReply,latestBasketFlowRequest,CANARY_CONVERSATION} from './reply-parser.mjs?v=20261024-5';
 import {collectBasketVariants,buildMetaCatalogCsv,buildSizeListMessage,buildCombinationsListMessage,buildMetaProductListPreview,validatePreviewPayload} from './catalog-tools.mjs?v=20261024-2';
 import {attendanceJsonApi,attendanceAuthorizedFetch} from '../atendimento/attendance-auth.js?v=auth-refresh-v2';
 
@@ -258,6 +258,61 @@ async function readCustomerReply(){
   }finally{button.disabled=false;refreshCanaryControls();}
 }
 
+function renderFlowRequest(request){
+  const host=$('flowRequestStatus');
+  host.replaceChildren();
+  host.classList.remove('invalid');
+  if(!request){
+    host.textContent='Nenhuma solicitação do Flow foi encontrada na conversa interna 1018 → 8360.';
+    return;
+  }
+  const card=document.createElement('article');
+  card.className='flow-request-card';
+  const title=document.createElement('strong');
+  title.textContent='Solicitação de cesta recebida';
+  card.append(title);
+  const status=document.createElement('span');
+  status.className='flow-request-status';
+  status.textContent='Aguardando conferência humana';
+  card.append(status);
+  const addField=(label,value)=>{
+    if(!value)return;
+    const field=document.createElement('div');
+    field.className='flow-request-field';
+    const name=document.createElement('span');
+    name.className='flow-request-label';
+    name.textContent=label;
+    const content=document.createElement('span');
+    content.className='flow-request-value';
+    content.textContent=value;
+    field.append(name,content);
+    card.append(field);
+  };
+  addField('Cesta',request.summary);
+  addField('Total informado pelo Flow',request.total);
+  addField('Itens informados',request.items);
+  const note=document.createElement('p');
+  note.className='flow-request-note';
+  note.textContent='Confira produtos, preço e estoque com o cliente antes de registrar. A conclusão do Flow não cria pedido.';
+  card.append(note);
+  const at=Date.parse(request.receivedAt||'');
+  if(Number.isFinite(at))addField('Recebida em',new Date(at).toLocaleString('pt-BR'));
+  host.append(card);
+}
+async function readBasketFlowRequest(){
+  const button=$('readFlowRequestBtn');
+  button.disabled=true;
+  $('flowRequestStatus').classList.remove('invalid');
+  $('flowRequestStatus').textContent='Lendo somente a conversa interna 1018 → 8360…';
+  try{
+    const detail=await attendanceJsonApi('conversation',{conversation_id:CANARY_CONVERSATION,limit:35});
+    renderFlowRequest(latestBasketFlowRequest(detail));
+  }catch(error){
+    $('flowRequestStatus').classList.add('invalid');
+    $('flowRequestStatus').textContent='Não foi possível ler a solicitação: '+String(error?.message||error);
+  }finally{button.disabled=false;}
+}
+
 async function sendBasketComposition(){
   if(!state.canary?.capabilities?.includes('composition')||state.canaryBusy||state.canary.can_send!==true||!state.selection||!state.verifiedChoiceId||state.originalCompositionChanged||!state.quoteReady)return;
   const size=state.models.find(m=>m.id===state.selection.modelId)?.size_key;
@@ -464,6 +519,7 @@ $('extraSearch').addEventListener('input',event=>{clearTimeout(state.searchTimer
 $('extraResults').addEventListener('click',event=>{const b=event.target.closest('[data-add-extra]');if(b)adjustExtra(b.dataset.addExtra,1);});
 $('extraSelected').addEventListener('click',event=>{const b=event.target.closest('button');if(!b)return;if(b.hasAttribute('data-extra-minus'))adjustExtra(b.dataset.extraMinus,-1);if(b.hasAttribute('data-extra-plus'))adjustExtra(b.dataset.extraPlus,1);});
 $('readReplyBtn').addEventListener('click',()=>void readCustomerReply());
+$('readFlowRequestBtn').addEventListener('click',()=>void readBasketFlowRequest());
 $('canaryRefreshBtn').addEventListener('click',()=>void fetchCanary());
 $('canarySendBtn').addEventListener('click',()=>void sendCanary());
 $('sendCompositionBtn').addEventListener('click',()=>void sendBasketComposition());
