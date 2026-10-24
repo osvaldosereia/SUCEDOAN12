@@ -29,8 +29,6 @@ describe('Precificação segura no backend',()=>{
    expect(result.extraItems[0]!.priceCents).toBeGreaterThan(0);
  });
  it('reserva mentalmente o mesmo SKU usado em cesta e extras antes de permitir confirmar',()=>{
-   const only={...products,}; // does not alter trusted catalog
-   expect(only.length).toBe(products.length);
    const limited=products.map(product=>product.sku===initial.basketSelections[0]?.sku?
      {...product,stock:1}:product);
    const dupType={id:'extra-repeated',name:'Arroz extra',productSkus:[initial.basketSelections[0]!.sku!],order:120};
