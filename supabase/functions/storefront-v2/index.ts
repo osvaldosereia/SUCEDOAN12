@@ -6,6 +6,15 @@ const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const KEY=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
 const db=createClient(SUPABASE_URL,KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 const MINIMUM_ORDER_CENTS=7500;
+const STOCK_CONFLICT_CODES=new Set<string>([
+  "insufficient_stock","product_unavailable","basket_unavailable","basket_product_unavailable",
+  "basket_lot_unavailable","basket_lot_insufficient","basket_component_not_in_lot",
+  "basket_kit_lot_unavailable","basket_kit_lot_insufficient","basket_component_not_in_selected_kit"
+]);
+const ORDER_CONFLICT_CODES=new Set<string>([
+  ...STOCK_CONFLICT_CODES,"basket_mold_unavailable","basket_mold_not_configured",
+  "basket_mold_component_invalid","basket_mold_option_invalid","basket_mold_composition_invalid"
+]);
 const CUTOFF_HOUR=11;
 const TZ="America/Cuiaba";
 const CATEGORIES=[
@@ -847,8 +856,11 @@ async function submit(req:Request,p:any){
   const pay=txt(p?.payment_method,80),rawPhone=txt(p?.whatsapp_phone,40),ph=phone(rawPhone),requestedItems=Array.isArray(p?.items)?p.items.slice(0,80):[],whatsappOriginRaw=txt(p?.whatsapp_origin,4),whatsappOrigin=['0975','1018'].includes(whatsappOriginRaw)?whatsappOriginRaw:'';
   if(!ph)return {error:"invalid_whatsapp_phone",status:400};
   if(!requestedItems.length)return {error:"empty_cart",status:400};
-  const stock=await reconcileOrderItemsForStock(requestedItems),items=stock.items;
-  if(!items.length)return {error:"all_items_unavailable",status:409,stock_adjustment:true,adjusted_items:stock.adjusted_items};
+  const stock=await reconcileOrderItemsForStock(requestedItems);
+  let items=stock.items;
+  let stockAdjustment=stock.stock_adjustment;
+  const adjustedItems=[...stock.adjusted_items];
+  if(!items.length)return {error:"all_items_unavailable",status:409,stock_adjustment:true,adjusted_items:adjustedItems,minimum_order_cents:MINIMUM_ORDER_CENTS};
   const deliveryDate=txt(p?.delivery_date,10),del=deliveryDate?selectedDelivery(deliveryDate):null;
   async function allowOrderAttempt(rateKey:string,limit:number,scope:string){
     try{
@@ -887,23 +899,50 @@ async function submit(req:Request,p:any){
   const missingAddress=["street","number","district","city","state"].filter(key=>!String((recipientAddress as any)[key]||"").trim());
   if(missingAddress.length)return {error:"delivery_details_required",missing_fields:missingAddress,status:400};
   const marketingCampaign=txt(p?.marketing_context?.campaign,80);
-  const customerSnapshot={
+  let stockRetryAttempted=false;
+  const customerSnapshot=()=>({
     ...(customer?{found:true,id:customer.id,marketing_opt_in:customer.marketing_opt_in===true,identity_status:"existing_optional"}:{found:false,identity_status:"unregistered"}),
     display_name:recipientName,
     address:recipientAddress,
     ...(whatsappOrigin?{whatsapp_origin:whatsappOrigin}:{}),
     ...(marketingCampaign?{marketing_campaign:marketingCampaign}:{}),
-    ...(stock.stock_adjustment?{stock_adjusted_retry:true,stock_adjustments:stock.adjusted_items}:{})
-  };
-  const created=await db.rpc("create_vitrine_cart_order_v3",{p_phone:ph||null,p_payment_method:pay||null,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del||{}});
-  if(created.error){const e=txt(created.error.message,160).split("\n")[0];console.error("storefront_order_rejected",{error_code:e||"order_failed"});return {error:e||"order_failed",status:["insufficient_stock","product_unavailable","basket_unavailable","basket_product_unavailable","basket_lot_unavailable","basket_lot_insufficient","basket_component_not_in_lot","basket_kit_lot_unavailable","basket_kit_lot_insufficient","basket_component_not_in_selected_kit","basket_mold_unavailable","basket_mold_not_configured","basket_mold_component_invalid","basket_mold_option_invalid","basket_mold_composition_invalid"].includes(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS,stock_adjustment:stock.stock_adjustment,adjusted_items:stock.adjusted_items}}
+    ...(stockAdjustment?{stock_adjusted_retry:true,stock_adjustments:adjustedItems}:{}),
+    ...(stockRetryAttempted?{stock_retry_attempted:true}:{})
+  });
+  const createOrderAttempt=()=>db.rpc("create_vitrine_cart_order_v3",{p_phone:ph||null,p_payment_method:pay||null,p_items:items,p_customer_snapshot:customerSnapshot(),p_delivery:del||{}});
+  let created=await createOrderAttempt();
+  if(created.error){
+    const firstError=txt(created.error.message,160).split("\n")[0];
+    if(STOCK_CONFLICT_CODES.has(firstError)){
+      stockRetryAttempted=true;
+      console.warn("storefront_stock_conflict_retry",{error_code:firstError,item_count:items.length});
+      const refreshed=await reconcileOrderItemsForStock(items);
+      items=refreshed.items;
+      for(const adjustment of refreshed.adjusted_items){
+        const existingIndex=adjustedItems.findIndex((item:any)=>item.kind===adjustment.kind&&item.id===adjustment.id);
+        if(existingIndex<0)adjustedItems.push(adjustment);
+        else{
+          const previous=adjustedItems[existingIndex];
+          adjustedItems[existingIndex]={...adjustment,requested:Math.max(Number(previous.requested||0),Number(adjustment.requested||0))};
+        }
+      }
+      stockAdjustment=adjustedItems.length>0;
+      if(!items.length)return {error:"all_items_unavailable",status:409,stock_adjustment:true,adjusted_items:adjustedItems,minimum_order_cents:MINIMUM_ORDER_CENTS};
+      created=await createOrderAttempt();
+    }
+  }
+  if(created.error){
+    const e=txt(created.error.message,160).split("\n")[0];
+    console.error("storefront_order_rejected",{error_code:e||"order_failed",stock_retry_attempted:stockRetryAttempted});
+    return {error:e||"order_failed",status:ORDER_CONFLICT_CODES.has(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS,stock_adjustment:stockAdjustment,adjusted_items:adjustedItems}
+  }
   const orderId=created.data?.order_id;let papoaiLink:any=null;let publicOrderLink:any=null;
   if(orderId&&ph){try{const linked=await db.rpc("ops2_link_storefront_order_from_identity_v1",{p_order_id:orderId});if(!linked.error)papoaiLink=linked.data||null}catch(e){console.error("papoai_identity_order_link",txt((e as any)?.message,180))}}
   if(orderId){try{const publicLink=await db.rpc("ops2_order_public_link_v1",{p_order_id:orderId});if(!publicLink.error)publicOrderLink=publicLink.data||null}catch(e){console.error("order_public_link",txt((e as any)?.message,180))}}
   if(orderId&&ph)kickWhatsappOrderOutbound(orderId);
   const customerStatus=customer?.registration_complete===true?"registered":"pending_registration";
-  await recordOpsEvent("order.received","Pedido recebido pelo site e aguardando confirmação.",orderId,{source:"vitrine",customer_status:customerStatus,payment_method:pay||null,delivery_date:deliveryDate||null,stock_reserved:created.data?.stock_reserved===true,reservation_timing:created.data?.reservation_timing||null,reservation_status:created.data?.reservation_status||null,papoai_conversation_linked:Boolean(papoaiLink?.linked),stock_adjustment:stock.stock_adjustment,adjusted_items:stock.adjusted_items},"order-received:"+orderId);
-  return {...created.data,order_public_url:publicOrderLink?.public_url||null,order_public_code:publicOrderLink?.public_code||null,phone_attached:Boolean(ph),customer_status:customerStatus,registration_complete:customer?.registration_complete===true,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,customer:customer||null,history_synced:Boolean(customer),papoai_conversation_linked:Boolean(papoaiLink?.linked),stock_adjustment:stock.stock_adjustment,adjusted_items:stock.adjusted_items};
+  await recordOpsEvent("order.received","Pedido recebido pelo site e aguardando confirmação.",orderId,{source:"vitrine",customer_status:customerStatus,payment_method:pay||null,delivery_date:deliveryDate||null,stock_reserved:created.data?.stock_reserved===true,reservation_timing:created.data?.reservation_timing||null,reservation_status:created.data?.reservation_status||null,papoai_conversation_linked:Boolean(papoaiLink?.linked),stock_adjustment:stockAdjustment,adjusted_items:adjustedItems},"order-received:"+orderId);
+  return {...created.data,order_public_url:publicOrderLink?.public_url||null,order_public_code:publicOrderLink?.public_code||null,phone_attached:Boolean(ph),customer_status:customerStatus,registration_complete:customer?.registration_complete===true,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,customer:customer||null,history_synced:Boolean(customer),papoai_conversation_linked:Boolean(papoaiLink?.linked),stock_adjustment:stockAdjustment,adjusted_items:adjustedItems};
 }
 
 async function basketBySize(sizeKey:string,lightweight=false){
