@@ -2,13 +2,13 @@
 
 **Versão do dossiê:** 2026-10-23  
 **Finalidade:** transferir todas as decisões operacionais, regras de UX, estado da engenharia, riscos, pendências e plano de entrega para um novo Projeto/conversa do ChatGPT em modo Work.  
-**Status:** PLANO DE EXECUÇÃO — NÃO SIGNIFICA QUE TODAS AS RODADAS FORAM EXECUTADAS OU QUE FOI FEITA AUDITORIA INTEGRAL DE CADA ARQUIVO. A rodada R00 fará a auditoria integral baseada no código mais recente.  
+**Status:** R00 e R01 concluídas. R01 está no PR #1365, aberto e sem merge. Próxima rodada: R02 — schema e contratos em isolamento descartável. Plano por rodadas em execução.
 **Repositório:** https://github.com/osvaldosereia/SUCEDOAN12  
 **Branch de desenvolvimento principal da V2:** agent/dona-antonia-nova-plataforma  
 **Pasta:** projetos/dona-antonia-v2/  
 **Versão estática de testes (antiga em relação à branch):** https://donaantonia.com.br/site1/ e https://donaantonia.com.br/admin1/  
 **Produção atual — NÃO ALTERAR:** https://donaantonia.com.br/ e administração legada Vitrine/Admin  
-**Última CI observada nesta conversa:** https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/40056490923 — todos os gates passaram naquela versão da branch; conferir resultados atuais antes de qualquer nova afirmação.
+**Última CI observada:** R01 aprovada no SHA eac44b022636de298664966b6b1bfe646e9bf163: https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/40059667625. Auditoria, lint, arquitetura, TS, testes unitários, build e E2E passaram; problemas de contraste encontrados no primeiro CI foram corrigidos.
 
 ## 0. REGRA MÁXIMA: PROTEGER A OPERAÇÃO ATUAL
 1. NÃO alterar NADA da loja pública em produção, admin legado/Vitrine, pedidos reais, atendimento em uso, cron, Edge Functions, integrações ou bancos Supabase existentes sem autorização explícita, específica e posterior.
@@ -164,11 +164,11 @@ Confirmado por leitura da branch:
 - Entrega: docs/AUDITORIA_COMPLETA_V2.md e atualização controlada do plano. NÃO implantar backend e NÃO mexer em produção.
 - Aceite: escopo inteiro mapeado sem conjecturas; problemas reproduzidos com referência a arquivos/testes; gate futuro definido.
 
-### R01 — Design system e disciplina de qualidade
+### R01 — Design system e disciplina de qualidade (CONCLUÍDA EM 24/10/2026)
 - Consolidar tokens de fonte, cores, campos, botões, tabela, carrinho, modal, feedback e status; eliminar conflitos CSS por módulo, sem redesenhar aleatoriamente.
 - Implementar ESLint + Prettier e regras de acessibilidade apropriadas, sem introduzir dependências pesadas e sem alterar o legado.
 - Testar admin e vitrine mobile 320/390/1280px, navegação, carrosséis, layout; fotografar regressões.
-- Aceite: nenhum overflow de documento, sem erro TS/lint/CI, layout coerente.
+- Aceite atingido: nenhum overflow nas larguras 320/390/1280 em storefront e admin; Axe sem violações WCAG 2.1 AA; TS/lint/build e CI aprovados. 17 testes E2E e 39 testes unitários passaram. Dependências com alertas foram atualizadas, lockfile criado, e preview exige dispatch manual com `authorize_preview=true`. Detalhes e limites em `docs/STATUS_RODADAS_V2.md`.
 
 ### R02 — Banco V2 limpo: modelagem, migrações e contratos
 - Revisar e reconciliar db/001–004 e projetar esquema transacional de pedidos/itens/snapshots/idempotência/reserva/atendimento/outbox/auditoria/fiscal; tabelas e políticas RLS específicas.
@@ -278,4 +278,12 @@ Arquivos relevantes para ler no Work:
 
 Auditoria técnica registrada em docs/AUDITORIA_COMPLETA_V2.md. Baseline da branch agent/dona-antonia-nova-plataforma na SHA 1a846beba768192c366937c1462bcfd6baeccee9; CI 40057635884 aprovado na mesma SHA. Foram inspecionados 90 arquivos da V2, incluindo app, docs, SQL, scripts, testes e workflow. Checks locais architecture, TypeScript, 35 unitários e build passaram. Playwright local não iniciou sem Chromium; a suíte de 9 casos passou no CI. npm audit completo: 2 vulnerabilidades críticas e 2 moderadas em ferramentas dev/importação; as dependências runtime não tiveram vulnerabilidades reportadas. SQL permanece não executado e não verificado por replay.
 
-Nenhuma alteração de código, execução SQL, acesso aos Supabases existentes ou publicação foi realizada. Documentação antiga de estoque e ajuste de cesta foi alinhada à regra aprovada. R01 é a próxima rodada; deve tratar dependências/lockfile e disciplina visual/qualidade. A revisão de gates de publicação é obrigatória antes de qualquer merge na main.
+Nenhuma alteração de código, execução SQL, acesso aos Supabases existentes ou publicação foi realizada. Documentação antiga de estoque e ajuste de cesta foi alinhada à regra aprovada. R01 foi a rodada seguinte e está concluída; R02 é a próxima, com schema e contratos validados apenas em isolamento. A revisão de gates de publicação permanece obrigatória antes de qualquer merge na main.
+
+
+## Registro de execução — R01 (24/10/2026)
+- Branch: `agent/dona-antonia-r01-qualidade`; PR #1365 aberto contra `agent/dona-antonia-r00-auditoria`, sem merge.
+- Código validado: SHA `eac44b022636de298664966b6b1bfe646e9bf163`; CI #40059667625 aprovado.
+- Resultado: 0 vulnerabilidades em npm audit, 39 testes unitários e 17 E2E aprovados; Axe sem violações reportadas.
+- Produção, main, previews publicadas, bancos Supabase e integrações não foram modificados ou acionados.
+- Próxima: R02, revisar e reconciliar DDLs e contratos antes de aplicar qualquer migração; usar apenas ambiente descartável isolado.
