@@ -1,0 +1,20 @@
+name: WhatsApp 1018 Basket Lab CI
+on:
+  pull_request:
+    paths:
+      - 'vitrine/admin/whatsapp-lab/**'
+      - 'vitrine/admin/index.html'
+      - 'vitrine/admin/atendimento/index.html'
+      - 'scripts/test-whatsapp-1018-lab.mjs'
+      - '.github/workflows/whatsapp-1018-lab-ci.yml'
+  workflow_dispatch:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/test-whatsapp-1018-lab.mjs
