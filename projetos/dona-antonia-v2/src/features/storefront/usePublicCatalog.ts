@@ -8,6 +8,7 @@ import {
   createSupabaseBrowserClient,
 } from '../../platform/supabase/client';
 import { createSupabasePublicCatalogReader } from '../../platform/supabase/public-catalog';
+import { createSupabasePublicCheckoutClient } from '../../platform/supabase/public-checkout';
 
 export const PUBLIC_INITIAL_TYPES = [...DEMO_TYPES, ...DEMO_EXTRA_TYPES];
 export const PUBLIC_INITIAL_PRODUCTS = [...DEMO_PRODUCTS, ...DEMO_EXTRA_PRODUCTS];
@@ -20,6 +21,9 @@ const config = readSupabaseBrowserConfig(
 );
 const reader = config
   ? createSupabasePublicCatalogReader(createSupabaseBrowserClient(config))
+  : undefined;
+export const publicCheckoutClient = config
+  ? createSupabasePublicCheckoutClient(createSupabaseBrowserClient(config))
   : undefined;
 
 export function usePublicCatalog() {
