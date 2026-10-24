@@ -23,5 +23,5 @@ assert.doesNotMatch(ui,/const LIVE_TEST_ENABLED=true/);
 assert.match(ui,/function renderCompositionPreview/,'read-only preview retained');
 assert.match(ui,/function copyBasketComposition/);
 const currentBackend=read('supabase/functions/admin-whatsapp-1018-canary-v1/index.ts');
-assert.doesNotMatch(currentBackend,/safeComposition/,'back-end is intentionally not modified by this UI-only PR');
+if(currentBackend.includes('safeComposition'))assert.match(currentBackend,/capabilities:\["sizes","combinations","composition"\]/,'backend must advertise composition capability before button activation');
 console.log('PASS gated 1018 composition UI; fails closed until server advertises composition capability');
