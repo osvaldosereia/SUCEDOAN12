@@ -53,7 +53,11 @@ export function validateFlowJson(input){
 }
 function safeValidationErrors(value){
   let list=value;
-  if(list&&typeof list==='object'&&!Array.isArray(list))list=list.data??list.errors??[];
+  if(list&&typeof list==='object'&&!Array.isArray(list)){
+    if(Array.isArray(list.data))list=list.data;
+    else if(Array.isArray(list.errors))list=list.errors;
+    else return [{message:'Meta returned an unsupported Flow validation report'}];
+  }
   if(!Array.isArray(list))return list==null?null:[{message:clean(list,500)}];
   return list.slice(0,80).map(row=>{
     const item=object(row);
