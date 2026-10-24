@@ -127,7 +127,7 @@ function Storefront() {
   return <div className="site-page">
     <StorefrontHeader/>
     <main className="container site-main wizard-layout">
-      <div className="site-demo-banner" role="status"><strong>PROTÓTIPO</strong><span>Preços ilustrativos. Nenhuma compra será enviada nesta prévia.</span></div>
+      {isDemo && <div className="site-demo-banner" role="status"><strong>PROTÓTIPO</strong><span>Preços ilustrativos. Nenhuma compra será enviada nesta prévia.</span></div>}
       {catalogError && <div className="error" role="alert">{catalogError}</div>}
 
       <StorefrontProgress stage={stage}/>

@@ -69,3 +69,6 @@ Não publicar, não vincular domínio, não adicionar workflows de deployment e 
 
 ## Referência de usabilidade do novo admin
 A arquitetura visual e a estratégia de seções seguem o estudo em `docs/REFERENCIA_ADMIN_UX.md`: Nuvemshop/Nimbus (estrutura), Shopify (busca e listagens) e Loja Integrada (ação simples). As seções de pedidos, clientes, marketing, relatórios e integrações permanecem desabilitadas até implementação real.
+
+## Design da vitrine pública
+O padrão público combina fluxo de supermercado do iFood, visual de temas Shopify e achados de usabilidade do Baymard. Documentação: `docs/REFERENCIA_SITE_PUBLICO_UX.md`. Design, dados e cálculo seguem em módulos independentes; esta vitrine ainda é demonstrativa.
