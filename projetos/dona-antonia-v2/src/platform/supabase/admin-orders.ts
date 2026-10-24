@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   AdminOrderDetail,
+  AdminOrderCommandInput,
   AdminOrderItem,
   AdminOrderPage,
   AdminOrderQuery,
@@ -40,6 +41,8 @@ function errorMessage(error: { code?: string; message?: string } | null, action:
   if (!error) return;
   if (error.code === '42501')
     throw new Error('Seu perfil não tem permissão para consultar pedidos.');
+  if (error.code === '40001')
+    throw new Error('Pedido atualizado por outro operador. Atualize a tela.');
   throw new Error(`Não foi possível ${action}. Tente novamente.`);
 }
 function summaryFrom(value: unknown): AdminOrderSummary {
@@ -57,6 +60,7 @@ function summaryFrom(value: unknown): AdminOrderSummary {
     fiscalStatus: text(row.fiscal_status, 'fiscal_status'),
     state: state(row.status),
     itemCount: integer(row.item_count, 'item_count'),
+    version: integer(row.version, 'version'),
   };
 }
 function itemFrom(value: unknown): AdminOrderItem {
@@ -84,6 +88,16 @@ function itemFrom(value: unknown): AdminOrderItem {
 }
 
 export function createSupabaseAdminOrdersRepository(client: SupabaseClient): AdminOrdersRepository {
+  const detailFrom = (value: unknown): AdminOrderDetail => {
+    const row = object(value, 'carregar detalhes do pedido');
+    if (!Array.isArray(row.items)) throw new Error('Itens do pedido inválidos.');
+    return {
+      ...summaryFrom(row),
+      address: object(row.address, 'carregar endereço do pedido'),
+      assignedTo: nullableText(row.assigned_to, 'assigned_to'),
+      items: row.items.map(itemFrom),
+    };
+  };
   return {
     async list(query: AdminOrderQuery): Promise<AdminOrderPage> {
       const page = Math.max(1, Math.trunc(query.page));
@@ -107,14 +121,17 @@ export function createSupabaseAdminOrdersRepository(client: SupabaseClient): Adm
     async get(id: string): Promise<AdminOrderDetail> {
       const { data, error } = await client.rpc('admin_get_order', { p_order_id: id });
       errorMessage(error, 'carregar os detalhes do pedido');
-      const row = object(data, 'carregar detalhes do pedido');
-      if (!Array.isArray(row.items)) throw new Error('Itens do pedido inválidos.');
-      return {
-        ...summaryFrom(row),
-        address: object(row.address, 'carregar endereço do pedido'),
-        assignedTo: nullableText(row.assigned_to, 'assigned_to'),
-        items: row.items.map(itemFrom),
-      };
+      return detailFrom(data);
+    },
+    async applyCommand(input: AdminOrderCommandInput): Promise<AdminOrderDetail> {
+      const { data, error } = await client.rpc('admin_apply_order_command', {
+        p_order_id: input.orderId,
+        p_command_id: input.commandId,
+        p_expected_version: input.expectedVersion,
+        p_command: input.command,
+      });
+      errorMessage(error, 'aplicar a operação no pedido');
+      return detailFrom(data);
     },
   };
 }

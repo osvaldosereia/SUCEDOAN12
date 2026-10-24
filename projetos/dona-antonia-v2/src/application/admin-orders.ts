@@ -1,4 +1,5 @@
 import type { OrderState } from '../core/orders';
+import type { OrderCommand } from './order-commands';
 
 export interface AdminOrderSummary {
   readonly id: string;
@@ -13,6 +14,7 @@ export interface AdminOrderSummary {
   readonly fiscalStatus: string;
   readonly state: OrderState;
   readonly itemCount: number;
+  readonly version: number;
 }
 
 export interface AdminOrderItem {
@@ -50,7 +52,15 @@ export interface AdminOrderPage {
   readonly pageSize: number;
 }
 
+export interface AdminOrderCommandInput {
+  readonly orderId: string;
+  readonly commandId: string;
+  readonly expectedVersion: number;
+  readonly command: OrderCommand;
+}
+
 export interface AdminOrdersRepository {
   list(query: AdminOrderQuery): Promise<AdminOrderPage>;
   get(id: string): Promise<AdminOrderDetail>;
+  applyCommand(input: AdminOrderCommandInput): Promise<AdminOrderDetail>;
 }

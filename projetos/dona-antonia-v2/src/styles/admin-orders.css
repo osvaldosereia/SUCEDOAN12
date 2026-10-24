@@ -63,6 +63,11 @@
 .da-order-toolbar > span {
   margin-left: auto;
 }
+.da-order-toolbar .da-order-action {
+  padding: 8px 11px;
+  min-height: 36px;
+  font-size: 11px;
+}
 .da-order-layout {
   display: grid;
   grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.35fr);
@@ -230,6 +235,12 @@
 }
 .da-order-summary strong {
   font-size: 18px;
+}
+.da-order-command-bar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 .da-order-action {
   background: #34363c;

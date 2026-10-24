@@ -37,7 +37,7 @@ const expectedTables = [
   'orders',
 ].sort();
 
-assert.equal(migrations.length, 13, 'the schema must be a complete, ordered migration chain');
+assert.equal(migrations.length, 14, 'the schema must be a complete, ordered migration chain');
 assert.ok(migrations.every((file) => /^\d{14}_[a-z0-9_]+\.sql$/.test(file)));
 
 const db = new PGlite();
@@ -104,6 +104,8 @@ try {
       ,has_function_privilege('authenticated', 'public.admin_list_orders(text,text,integer,integer)', 'EXECUTE') as staff_order_list
       ,has_function_privilege('anon', 'public.admin_get_order(uuid)', 'EXECUTE') as anon_order_detail
       ,has_function_privilege('authenticated', 'public.admin_get_order(uuid)', 'EXECUTE') as staff_order_detail
+      ,has_function_privilege('anon', 'public.admin_apply_order_command(uuid,text,jsonb,integer)', 'EXECUTE') as anon_order_command
+      ,has_function_privilege('authenticated', 'public.admin_apply_order_command(uuid,text,jsonb,integer)', 'EXECUTE') as staff_order_command
     from pg_class c
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'da_next' and c.relkind = 'r'
@@ -121,6 +123,8 @@ try {
   assert.equal(access.rows[0].staff_order_list, true);
   assert.equal(access.rows[0].anon_order_detail, false);
   assert.equal(access.rows[0].staff_order_detail, true);
+  assert.equal(access.rows[0].anon_order_command, false);
+  assert.equal(access.rows[0].staff_order_command, true);
   assert.equal(access.rows[0].anon_role_lookup, false);
   assert.equal(access.rows[0].staff_role_lookup, true);
   assert.equal(access.rows[0].anon_product_list, false);
@@ -546,6 +550,87 @@ try {
     }
   }
 
+  const startResult = await asAuthenticated(actorIds.separation, () =>
+    db.query(
+      `select public.admin_apply_order_command($1, 'r10-start', '{"type":"START"}'::jsonb, 1) as result`,
+      [orderId],
+    ),
+  );
+  assert.equal(startResult.rows[0].result.status, 'EM_SEPARACAO');
+  assert.equal(startResult.rows[0].result.version, 2);
+  assert.equal(startResult.rows[0].result.assigned_to, actorIds.separation);
+
+  await asAuthenticated(actorIds.admin, async () => {
+    await expectSqlFailure(
+      `select public.admin_apply_order_command('${orderId}', 'r10-wrong-claim', '{"type":"MARK","itemId":"${basket.rows[0].id}","result":"FALTOU"}'::jsonb, 2)`,
+      'another operator must not edit a claimed order',
+    );
+  });
+
+  const basketItem = await db.query(
+    `select id from da_next.order_items where order_id = $1 and item_kind = 'BASKET_COMPONENT'`,
+    [orderId],
+  );
+
+  const basketMissing = await asAuthenticated(actorIds.separation, () =>
+    db.query(
+      `select public.admin_apply_order_command($1, 'r10-basket-missing', $2::jsonb, 2) as result`,
+      [orderId, JSON.stringify({ type: 'MARK', itemId: basketItem.rows[0].id, result: 'FALTOU' })],
+    ),
+  );
+  assert.equal(basketMissing.rows[0].result.version, 3);
+  assert.ok(basketMissing.rows[0].result.total_cents >= 0);
+  const failedItemMark = await asAuthenticated(actorIds.separation, () =>
+    db.query(
+      `select public.admin_apply_order_command($1, 'r10-basket-missing', $2::jsonb, 2) as result`,
+      [orderId, JSON.stringify({ type: 'MARK', itemId: basketItem.rows[0].id, result: 'FALTOU' })],
+    ),
+  );
+  assert.equal(
+    failedItemMark.rows[0].result.version,
+    3,
+    'retry must return the same command result',
+  );
+
+  const extra = await db.query(
+    `select id from da_next.order_items where order_id = $1 and item_kind = 'EXTRA'`,
+    [orderId],
+  );
+  const extraSeparated = await asAuthenticated(actorIds.separation, () =>
+    db.query(
+      `select public.admin_apply_order_command($1, 'r10-extra-separated', $2::jsonb, 3) as result`,
+      [orderId, JSON.stringify({ type: 'MARK', itemId: extra.rows[0].id, result: 'SEPARADO' })],
+    ),
+  );
+  assert.equal(extraSeparated.rows[0].result.version, 4);
+  assert.equal(extraSeparated.rows[0].result.total_cents, 200);
+
+  const ready = await asAuthenticated(actorIds.separation, () =>
+    db.query(
+      `select public.admin_apply_order_command($1, 'r10-finish', '{"type":"FINISH"}'::jsonb, 4) as result`,
+      [orderId],
+    ),
+  );
+  assert.equal(ready.rows[0].result.status, 'PRONTO');
+  assert.equal(ready.rows[0].result.fiscal_status, 'PENDENTE');
+  assert.ok(ready.rows[0].result.total_cents >= 0);
+
+  const delivered = await asAuthenticated(actorIds.separation, () =>
+    db.query(
+      `select public.admin_apply_order_command($1, 'r10-deliver', '{"type":"DELIVER"}'::jsonb, 5) as result`,
+      [orderId],
+    ),
+  );
+  assert.equal(delivered.rows[0].result.status, 'ENTREGUE');
+  const commandAudit = await db.query(
+    `select
+       (select count(*)::int from da_next.order_events where order_id = $1) as events,
+       (select count(*)::int from da_next.audit_log where entity_id = $1::text and entity_type = 'ORDER' and action like 'ORDER_COMMAND_%') as audit`,
+    [orderId],
+  );
+  assert.equal(commandAudit.rows[0].events, 5);
+  assert.equal(commandAudit.rows[0].audit, 5);
+
   const roleLookup = await asAuthenticated(actorIds.products, () =>
     db.query('select public.get_my_staff_role() as role'),
   );
@@ -614,7 +699,7 @@ try {
 
   const orderRead = await asAuthenticated(actorIds.support, async () => {
     const page = await db.query(
-      `select public.admin_list_orders('NOVO', 'DA-2026-000001', 20, 0) as result`,
+      `select public.admin_list_orders('ENTREGUE', 'DA-2026-000001', 20, 0) as result`,
     );
     const detail = await db.query('select public.admin_get_order($1) as result', [orderId]);
     return { page, detail };
