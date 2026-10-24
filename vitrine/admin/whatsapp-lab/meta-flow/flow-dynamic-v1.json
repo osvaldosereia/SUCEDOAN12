@@ -1,0 +1,3831 @@
+{
+  "version": "7.3",
+  "data_api_version": "3.0",
+  "routing_model": {
+    "TAMANHO": [
+      "COMBINACAO"
+    ],
+    "COMBINACAO": [
+      "ITENS_1"
+    ],
+    "ITENS_1": [
+      "ITENS_2",
+      "RESUMO"
+    ],
+    "ITENS_2": [
+      "ITENS_3",
+      "RESUMO"
+    ],
+    "ITENS_3": [
+      "ITENS_4",
+      "RESUMO"
+    ],
+    "ITENS_4": [
+      "ITENS_5",
+      "RESUMO"
+    ],
+    "ITENS_5": [
+      "ITENS_6",
+      "RESUMO"
+    ],
+    "ITENS_6": [
+      "RESUMO"
+    ],
+    "RESUMO": []
+  },
+  "screens": [
+    {
+      "id": "TAMANHO",
+      "title": "Escolha a cesta",
+      "data": {
+        "tamanhos": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "mini",
+              "title": "Mini"
+            },
+            {
+              "id": "economica",
+              "title": "Econômica"
+            },
+            {
+              "id": "pequena",
+              "title": "Pequena"
+            },
+            {
+              "id": "media",
+              "title": "Média"
+            },
+            {
+              "id": "grande",
+              "title": "Grande"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Qual tamanho de cesta?"
+          },
+          {
+            "type": "TextBody",
+            "text": "Escolha um tamanho para conhecer as três combinações de marcas e seus valores."
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "name": "tamanho",
+            "label": "Tamanho da cesta",
+            "required": true,
+            "data-source": "${data.tamanhos}"
+          },
+          {
+            "type": "Footer",
+            "label": "Ver combinações",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "etapa": "tamanho",
+                "tamanho": "${form.tamanho}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "COMBINACAO",
+      "title": "Combinações de marcas",
+      "data": {
+        "tamanho": {
+          "type": "string",
+          "__example__": "mini"
+        },
+        "opcoes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "1",
+              "title": "Combinação 1",
+              "description": "R$ 172,70"
+            },
+            {
+              "id": "2",
+              "title": "Combinação 2",
+              "description": "Valor atualizado"
+            },
+            {
+              "id": "3",
+              "title": "Combinação 3",
+              "description": "Valor atualizado"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Escolha a combinação"
+          },
+          {
+            "type": "TextBody",
+            "text": "Preços e marcas atualizados conforme disponibilidade. Você poderá personalizar os produtos."
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "name": "combinacao",
+            "label": "Combinações",
+            "required": true,
+            "data-source": "${data.opcoes}"
+          },
+          {
+            "type": "Footer",
+            "label": "Ver produtos",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "etapa": "combinacao",
+                "tamanho": "${data.tamanho}",
+                "combinacao": "${form.combinacao}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "ITENS_1",
+      "title": "Produtos 1",
+      "data": {
+        "estado": {
+          "type": "string",
+          "__example__": "test-preview-only"
+        },
+        "aviso": {
+          "type": "string",
+          "__example__": ""
+        },
+        "pagina": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "nome0": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis0": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "marca0": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant0": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas0": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome1": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis1": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca1": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant1": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas1": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome2": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis2": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca2": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant2": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas2": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome3": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis3": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca3": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant3": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas3": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome4": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis4": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca4": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant4": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas4": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Confira e personalize"
+          },
+          {
+            "type": "TextBody",
+            "text": "Troque a marca e escolha a quantidade de cada item. Zero retira o produto da cesta."
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.aviso}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome0}",
+            "visible": "${data.vis0}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca0",
+            "label": "Marca / produto",
+            "required": "${data.vis0}",
+            "visible": "${data.vis0}",
+            "data-source": "${data.marcas0}",
+            "init-value": "${data.marca0}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant0",
+            "label": "Quantidade",
+            "required": "${data.vis0}",
+            "visible": "${data.vis0}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant0}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome1}",
+            "visible": "${data.vis1}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca1",
+            "label": "Marca / produto",
+            "required": "${data.vis1}",
+            "visible": "${data.vis1}",
+            "data-source": "${data.marcas1}",
+            "init-value": "${data.marca1}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant1",
+            "label": "Quantidade",
+            "required": "${data.vis1}",
+            "visible": "${data.vis1}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant1}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome2}",
+            "visible": "${data.vis2}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca2",
+            "label": "Marca / produto",
+            "required": "${data.vis2}",
+            "visible": "${data.vis2}",
+            "data-source": "${data.marcas2}",
+            "init-value": "${data.marca2}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant2",
+            "label": "Quantidade",
+            "required": "${data.vis2}",
+            "visible": "${data.vis2}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant2}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome3}",
+            "visible": "${data.vis3}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca3",
+            "label": "Marca / produto",
+            "required": "${data.vis3}",
+            "visible": "${data.vis3}",
+            "data-source": "${data.marcas3}",
+            "init-value": "${data.marca3}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant3",
+            "label": "Quantidade",
+            "required": "${data.vis3}",
+            "visible": "${data.vis3}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant3}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome4}",
+            "visible": "${data.vis4}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca4",
+            "label": "Marca / produto",
+            "required": "${data.vis4}",
+            "visible": "${data.vis4}",
+            "data-source": "${data.marcas4}",
+            "init-value": "${data.marca4}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant4",
+            "label": "Quantidade",
+            "required": "${data.vis4}",
+            "visible": "${data.vis4}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant4}"
+          },
+          {
+            "type": "Footer",
+            "label": "Continuar",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "etapa": "itens",
+                "estado": "${data.estado}",
+                "pagina": "${data.pagina}",
+                "marca0": "${form.marca0}",
+                "quant0": "${form.quant0}",
+                "marca1": "${form.marca1}",
+                "quant1": "${form.quant1}",
+                "marca2": "${form.marca2}",
+                "quant2": "${form.quant2}",
+                "marca3": "${form.marca3}",
+                "quant3": "${form.quant3}",
+                "marca4": "${form.marca4}",
+                "quant4": "${form.quant4}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "ITENS_2",
+      "title": "Produtos 2",
+      "data": {
+        "estado": {
+          "type": "string",
+          "__example__": "test-preview-only"
+        },
+        "aviso": {
+          "type": "string",
+          "__example__": ""
+        },
+        "pagina": {
+          "type": "string",
+          "__example__": "2"
+        },
+        "nome0": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis0": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "marca0": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant0": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas0": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome1": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis1": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca1": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant1": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas1": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome2": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis2": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca2": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant2": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas2": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome3": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis3": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca3": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant3": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas3": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome4": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis4": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca4": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant4": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas4": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Confira e personalize"
+          },
+          {
+            "type": "TextBody",
+            "text": "Troque a marca e escolha a quantidade de cada item. Zero retira o produto da cesta."
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.aviso}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome0}",
+            "visible": "${data.vis0}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca0",
+            "label": "Marca / produto",
+            "required": "${data.vis0}",
+            "visible": "${data.vis0}",
+            "data-source": "${data.marcas0}",
+            "init-value": "${data.marca0}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant0",
+            "label": "Quantidade",
+            "required": "${data.vis0}",
+            "visible": "${data.vis0}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant0}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome1}",
+            "visible": "${data.vis1}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca1",
+            "label": "Marca / produto",
+            "required": "${data.vis1}",
+            "visible": "${data.vis1}",
+            "data-source": "${data.marcas1}",
+            "init-value": "${data.marca1}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant1",
+            "label": "Quantidade",
+            "required": "${data.vis1}",
+            "visible": "${data.vis1}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant1}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome2}",
+            "visible": "${data.vis2}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca2",
+            "label": "Marca / produto",
+            "required": "${data.vis2}",
+            "visible": "${data.vis2}",
+            "data-source": "${data.marcas2}",
+            "init-value": "${data.marca2}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant2",
+            "label": "Quantidade",
+            "required": "${data.vis2}",
+            "visible": "${data.vis2}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant2}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome3}",
+            "visible": "${data.vis3}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca3",
+            "label": "Marca / produto",
+            "required": "${data.vis3}",
+            "visible": "${data.vis3}",
+            "data-source": "${data.marcas3}",
+            "init-value": "${data.marca3}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant3",
+            "label": "Quantidade",
+            "required": "${data.vis3}",
+            "visible": "${data.vis3}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant3}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome4}",
+            "visible": "${data.vis4}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca4",
+            "label": "Marca / produto",
+            "required": "${data.vis4}",
+            "visible": "${data.vis4}",
+            "data-source": "${data.marcas4}",
+            "init-value": "${data.marca4}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant4",
+            "label": "Quantidade",
+            "required": "${data.vis4}",
+            "visible": "${data.vis4}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant4}"
+          },
+          {
+            "type": "Footer",
+            "label": "Continuar",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "etapa": "itens",
+                "estado": "${data.estado}",
+                "pagina": "${data.pagina}",
+                "marca0": "${form.marca0}",
+                "quant0": "${form.quant0}",
+                "marca1": "${form.marca1}",
+                "quant1": "${form.quant1}",
+                "marca2": "${form.marca2}",
+                "quant2": "${form.quant2}",
+                "marca3": "${form.marca3}",
+                "quant3": "${form.quant3}",
+                "marca4": "${form.marca4}",
+                "quant4": "${form.quant4}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "ITENS_3",
+      "title": "Produtos 3",
+      "data": {
+        "estado": {
+          "type": "string",
+          "__example__": "test-preview-only"
+        },
+        "aviso": {
+          "type": "string",
+          "__example__": ""
+        },
+        "pagina": {
+          "type": "string",
+          "__example__": "3"
+        },
+        "nome0": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis0": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "marca0": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant0": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas0": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome1": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis1": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca1": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant1": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas1": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome2": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis2": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca2": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant2": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas2": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome3": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis3": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca3": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant3": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas3": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome4": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis4": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca4": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant4": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas4": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Confira e personalize"
+          },
+          {
+            "type": "TextBody",
+            "text": "Troque a marca e escolha a quantidade de cada item. Zero retira o produto da cesta."
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.aviso}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome0}",
+            "visible": "${data.vis0}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca0",
+            "label": "Marca / produto",
+            "required": "${data.vis0}",
+            "visible": "${data.vis0}",
+            "data-source": "${data.marcas0}",
+            "init-value": "${data.marca0}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant0",
+            "label": "Quantidade",
+            "required": "${data.vis0}",
+            "visible": "${data.vis0}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant0}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome1}",
+            "visible": "${data.vis1}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca1",
+            "label": "Marca / produto",
+            "required": "${data.vis1}",
+            "visible": "${data.vis1}",
+            "data-source": "${data.marcas1}",
+            "init-value": "${data.marca1}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant1",
+            "label": "Quantidade",
+            "required": "${data.vis1}",
+            "visible": "${data.vis1}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant1}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome2}",
+            "visible": "${data.vis2}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca2",
+            "label": "Marca / produto",
+            "required": "${data.vis2}",
+            "visible": "${data.vis2}",
+            "data-source": "${data.marcas2}",
+            "init-value": "${data.marca2}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant2",
+            "label": "Quantidade",
+            "required": "${data.vis2}",
+            "visible": "${data.vis2}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant2}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome3}",
+            "visible": "${data.vis3}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca3",
+            "label": "Marca / produto",
+            "required": "${data.vis3}",
+            "visible": "${data.vis3}",
+            "data-source": "${data.marcas3}",
+            "init-value": "${data.marca3}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant3",
+            "label": "Quantidade",
+            "required": "${data.vis3}",
+            "visible": "${data.vis3}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant3}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome4}",
+            "visible": "${data.vis4}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca4",
+            "label": "Marca / produto",
+            "required": "${data.vis4}",
+            "visible": "${data.vis4}",
+            "data-source": "${data.marcas4}",
+            "init-value": "${data.marca4}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant4",
+            "label": "Quantidade",
+            "required": "${data.vis4}",
+            "visible": "${data.vis4}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant4}"
+          },
+          {
+            "type": "Footer",
+            "label": "Continuar",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "etapa": "itens",
+                "estado": "${data.estado}",
+                "pagina": "${data.pagina}",
+                "marca0": "${form.marca0}",
+                "quant0": "${form.quant0}",
+                "marca1": "${form.marca1}",
+                "quant1": "${form.quant1}",
+                "marca2": "${form.marca2}",
+                "quant2": "${form.quant2}",
+                "marca3": "${form.marca3}",
+                "quant3": "${form.quant3}",
+                "marca4": "${form.marca4}",
+                "quant4": "${form.quant4}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "ITENS_4",
+      "title": "Produtos 4",
+      "data": {
+        "estado": {
+          "type": "string",
+          "__example__": "test-preview-only"
+        },
+        "aviso": {
+          "type": "string",
+          "__example__": ""
+        },
+        "pagina": {
+          "type": "string",
+          "__example__": "4"
+        },
+        "nome0": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis0": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "marca0": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant0": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas0": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome1": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis1": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca1": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant1": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas1": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome2": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis2": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca2": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant2": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas2": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome3": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis3": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca3": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant3": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas3": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome4": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis4": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca4": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant4": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas4": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Confira e personalize"
+          },
+          {
+            "type": "TextBody",
+            "text": "Troque a marca e escolha a quantidade de cada item. Zero retira o produto da cesta."
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.aviso}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome0}",
+            "visible": "${data.vis0}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca0",
+            "label": "Marca / produto",
+            "required": "${data.vis0}",
+            "visible": "${data.vis0}",
+            "data-source": "${data.marcas0}",
+            "init-value": "${data.marca0}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant0",
+            "label": "Quantidade",
+            "required": "${data.vis0}",
+            "visible": "${data.vis0}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant0}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome1}",
+            "visible": "${data.vis1}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca1",
+            "label": "Marca / produto",
+            "required": "${data.vis1}",
+            "visible": "${data.vis1}",
+            "data-source": "${data.marcas1}",
+            "init-value": "${data.marca1}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant1",
+            "label": "Quantidade",
+            "required": "${data.vis1}",
+            "visible": "${data.vis1}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant1}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome2}",
+            "visible": "${data.vis2}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca2",
+            "label": "Marca / produto",
+            "required": "${data.vis2}",
+            "visible": "${data.vis2}",
+            "data-source": "${data.marcas2}",
+            "init-value": "${data.marca2}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant2",
+            "label": "Quantidade",
+            "required": "${data.vis2}",
+            "visible": "${data.vis2}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant2}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome3}",
+            "visible": "${data.vis3}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca3",
+            "label": "Marca / produto",
+            "required": "${data.vis3}",
+            "visible": "${data.vis3}",
+            "data-source": "${data.marcas3}",
+            "init-value": "${data.marca3}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant3",
+            "label": "Quantidade",
+            "required": "${data.vis3}",
+            "visible": "${data.vis3}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant3}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome4}",
+            "visible": "${data.vis4}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca4",
+            "label": "Marca / produto",
+            "required": "${data.vis4}",
+            "visible": "${data.vis4}",
+            "data-source": "${data.marcas4}",
+            "init-value": "${data.marca4}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant4",
+            "label": "Quantidade",
+            "required": "${data.vis4}",
+            "visible": "${data.vis4}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant4}"
+          },
+          {
+            "type": "Footer",
+            "label": "Continuar",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "etapa": "itens",
+                "estado": "${data.estado}",
+                "pagina": "${data.pagina}",
+                "marca0": "${form.marca0}",
+                "quant0": "${form.quant0}",
+                "marca1": "${form.marca1}",
+                "quant1": "${form.quant1}",
+                "marca2": "${form.marca2}",
+                "quant2": "${form.quant2}",
+                "marca3": "${form.marca3}",
+                "quant3": "${form.quant3}",
+                "marca4": "${form.marca4}",
+                "quant4": "${form.quant4}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "ITENS_5",
+      "title": "Produtos 5",
+      "data": {
+        "estado": {
+          "type": "string",
+          "__example__": "test-preview-only"
+        },
+        "aviso": {
+          "type": "string",
+          "__example__": ""
+        },
+        "pagina": {
+          "type": "string",
+          "__example__": "5"
+        },
+        "nome0": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis0": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "marca0": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant0": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas0": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome1": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis1": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca1": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant1": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas1": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome2": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis2": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca2": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant2": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas2": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome3": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis3": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca3": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant3": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas3": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome4": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis4": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca4": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant4": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas4": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Confira e personalize"
+          },
+          {
+            "type": "TextBody",
+            "text": "Troque a marca e escolha a quantidade de cada item. Zero retira o produto da cesta."
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.aviso}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome0}",
+            "visible": "${data.vis0}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca0",
+            "label": "Marca / produto",
+            "required": "${data.vis0}",
+            "visible": "${data.vis0}",
+            "data-source": "${data.marcas0}",
+            "init-value": "${data.marca0}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant0",
+            "label": "Quantidade",
+            "required": "${data.vis0}",
+            "visible": "${data.vis0}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant0}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome1}",
+            "visible": "${data.vis1}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca1",
+            "label": "Marca / produto",
+            "required": "${data.vis1}",
+            "visible": "${data.vis1}",
+            "data-source": "${data.marcas1}",
+            "init-value": "${data.marca1}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant1",
+            "label": "Quantidade",
+            "required": "${data.vis1}",
+            "visible": "${data.vis1}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant1}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome2}",
+            "visible": "${data.vis2}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca2",
+            "label": "Marca / produto",
+            "required": "${data.vis2}",
+            "visible": "${data.vis2}",
+            "data-source": "${data.marcas2}",
+            "init-value": "${data.marca2}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant2",
+            "label": "Quantidade",
+            "required": "${data.vis2}",
+            "visible": "${data.vis2}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant2}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome3}",
+            "visible": "${data.vis3}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca3",
+            "label": "Marca / produto",
+            "required": "${data.vis3}",
+            "visible": "${data.vis3}",
+            "data-source": "${data.marcas3}",
+            "init-value": "${data.marca3}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant3",
+            "label": "Quantidade",
+            "required": "${data.vis3}",
+            "visible": "${data.vis3}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant3}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome4}",
+            "visible": "${data.vis4}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca4",
+            "label": "Marca / produto",
+            "required": "${data.vis4}",
+            "visible": "${data.vis4}",
+            "data-source": "${data.marcas4}",
+            "init-value": "${data.marca4}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant4",
+            "label": "Quantidade",
+            "required": "${data.vis4}",
+            "visible": "${data.vis4}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant4}"
+          },
+          {
+            "type": "Footer",
+            "label": "Continuar",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "etapa": "itens",
+                "estado": "${data.estado}",
+                "pagina": "${data.pagina}",
+                "marca0": "${form.marca0}",
+                "quant0": "${form.quant0}",
+                "marca1": "${form.marca1}",
+                "quant1": "${form.quant1}",
+                "marca2": "${form.marca2}",
+                "quant2": "${form.quant2}",
+                "marca3": "${form.marca3}",
+                "quant3": "${form.quant3}",
+                "marca4": "${form.marca4}",
+                "quant4": "${form.quant4}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "ITENS_6",
+      "title": "Produtos 6",
+      "data": {
+        "estado": {
+          "type": "string",
+          "__example__": "test-preview-only"
+        },
+        "aviso": {
+          "type": "string",
+          "__example__": ""
+        },
+        "pagina": {
+          "type": "string",
+          "__example__": "6"
+        },
+        "nome0": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis0": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "marca0": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant0": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas0": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome1": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis1": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca1": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant1": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas1": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome2": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis2": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca2": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant2": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas2": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome3": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis3": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca3": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant3": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas3": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        },
+        "nome4": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "vis4": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "marca4": {
+          "type": "string",
+          "__example__": "00000000-0000-4000-8000-000000000001"
+        },
+        "quant4": {
+          "type": "string",
+          "__example__": "1"
+        },
+        "marcas4": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "title": "Marca 1"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "title": "Marca 2"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Confira e personalize"
+          },
+          {
+            "type": "TextBody",
+            "text": "Troque a marca e escolha a quantidade de cada item. Zero retira o produto da cesta."
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.aviso}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome0}",
+            "visible": "${data.vis0}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca0",
+            "label": "Marca / produto",
+            "required": "${data.vis0}",
+            "visible": "${data.vis0}",
+            "data-source": "${data.marcas0}",
+            "init-value": "${data.marca0}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant0",
+            "label": "Quantidade",
+            "required": "${data.vis0}",
+            "visible": "${data.vis0}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant0}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome1}",
+            "visible": "${data.vis1}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca1",
+            "label": "Marca / produto",
+            "required": "${data.vis1}",
+            "visible": "${data.vis1}",
+            "data-source": "${data.marcas1}",
+            "init-value": "${data.marca1}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant1",
+            "label": "Quantidade",
+            "required": "${data.vis1}",
+            "visible": "${data.vis1}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant1}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome2}",
+            "visible": "${data.vis2}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca2",
+            "label": "Marca / produto",
+            "required": "${data.vis2}",
+            "visible": "${data.vis2}",
+            "data-source": "${data.marcas2}",
+            "init-value": "${data.marca2}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant2",
+            "label": "Quantidade",
+            "required": "${data.vis2}",
+            "visible": "${data.vis2}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant2}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome3}",
+            "visible": "${data.vis3}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca3",
+            "label": "Marca / produto",
+            "required": "${data.vis3}",
+            "visible": "${data.vis3}",
+            "data-source": "${data.marcas3}",
+            "init-value": "${data.marca3}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant3",
+            "label": "Quantidade",
+            "required": "${data.vis3}",
+            "visible": "${data.vis3}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant3}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.nome4}",
+            "visible": "${data.vis4}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "marca4",
+            "label": "Marca / produto",
+            "required": "${data.vis4}",
+            "visible": "${data.vis4}",
+            "data-source": "${data.marcas4}",
+            "init-value": "${data.marca4}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "quant4",
+            "label": "Quantidade",
+            "required": "${data.vis4}",
+            "visible": "${data.vis4}",
+            "data-source": [
+              {
+                "id": "0",
+                "title": "0"
+              },
+              {
+                "id": "1",
+                "title": "1"
+              },
+              {
+                "id": "2",
+                "title": "2"
+              },
+              {
+                "id": "3",
+                "title": "3"
+              },
+              {
+                "id": "4",
+                "title": "4"
+              },
+              {
+                "id": "5",
+                "title": "5"
+              },
+              {
+                "id": "6",
+                "title": "6"
+              },
+              {
+                "id": "7",
+                "title": "7"
+              },
+              {
+                "id": "8",
+                "title": "8"
+              },
+              {
+                "id": "9",
+                "title": "9"
+              },
+              {
+                "id": "10",
+                "title": "10"
+              }
+            ],
+            "init-value": "${data.quant4}"
+          },
+          {
+            "type": "Footer",
+            "label": "Continuar",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "etapa": "itens",
+                "estado": "${data.estado}",
+                "pagina": "${data.pagina}",
+                "marca0": "${form.marca0}",
+                "quant0": "${form.quant0}",
+                "marca1": "${form.marca1}",
+                "quant1": "${form.quant1}",
+                "marca2": "${form.marca2}",
+                "quant2": "${form.quant2}",
+                "marca3": "${form.marca3}",
+                "quant3": "${form.quant3}",
+                "marca4": "${form.marca4}",
+                "quant4": "${form.quant4}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "RESUMO",
+      "title": "Resumo da cesta",
+      "terminal": true,
+      "data": {
+        "resumo": {
+          "type": "string",
+          "__example__": "Cesta Mini • Combinação 1"
+        },
+        "valor": {
+          "type": "string",
+          "__example__": "R$ 172,70"
+        },
+        "itens": {
+          "type": "string",
+          "__example__": "Composição da cesta"
+        },
+        "estado": {
+          "type": "string",
+          "__example__": "test-preview-only"
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Revise a sua cesta"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.resumo}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.itens}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "Total: ${data.valor}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "Teste interno: concluir não cria pedido. A equipe confirmará preços e disponibilidade."
+          },
+          {
+            "type": "Footer",
+            "label": "Concluir teste",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {
+                "estado": "${data.estado}",
+                "resultado": "solicitacao_para_atendimento"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
