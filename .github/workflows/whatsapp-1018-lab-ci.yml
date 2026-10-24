@@ -7,6 +7,7 @@ on:
       - 'scripts/test-whatsapp-1018-interactive-canary.mjs'
       - 'scripts/test-whatsapp-1018-reply-continuation.mjs'
       - 'scripts/test-whatsapp-1018-composition-preview.mjs'
+      - 'scripts/test-whatsapp-1018-composition-ui-gate.mjs'
       - 'supabase/functions/admin-whatsapp-1018-canary-v1/**'
       - 'supabase/migrations/*whatsapp_1018_interactive_canary*'
       - 'vitrine/admin/index.html'
@@ -28,3 +29,4 @@ jobs:
       - run: node scripts/test-whatsapp-1018-interactive-canary.mjs
       - run: node scripts/test-whatsapp-1018-reply-continuation.mjs
       - run: node scripts/test-whatsapp-1018-composition-preview.mjs
+      - run: node scripts/test-whatsapp-1018-composition-ui-gate.mjs
