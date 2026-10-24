@@ -221,4 +221,4 @@
 **CI:** workflow #40134499891 passou no head de código `93d28dc9a805f97a2b50c5e4fb05a87e949e333b`, com todos os gates e 17/17 E2E aprovados.  
 **Isolamento:** o Supabase V2 recebeu somente três produtos fictícios determinísticos, três perfis privados, uma cesta de homologação e três movimentos de estoque; total atual 805 produtos e 805 perfis. Sem dados reais, custo novo, merge, deploy, publicação, produção, `main`, legado, atendimento, DNS ou Meta/Bling operacionais.  
 **Evidência do seed:** SKUs `R16-TEST-ARROZ`, `R16-TEST-FEIJAO`, `R16-TEST-OLEO`; cesta `r16-test`; rollback em `docs/R16_TEST_SEED_ROLLBACK.sql`.  
-**Próxima ação condicionada:** somente após os quatro gates restantes documentados e autorização específica; não iniciar piloto produtivo automaticamente.
+**Próxima ação condicionada:** somente após os três gates operacionais restantes documentados; não iniciar piloto produtivo automaticamente.
