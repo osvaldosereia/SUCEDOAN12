@@ -20,8 +20,13 @@ export function OrdersPanel({orders,onUpdate}:Props){
  ).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)),[orders,status,query]);
  const selected=orders.find(order=>order.id===selectedId);
  const update=(order:OperationalOrder,apply:(value:OperationalOrder)=>OperationalOrder)=>{
-   try{onUpdate(order.id,apply);setMessage('');}
-   catch(error){setMessage(error instanceof Error?error.message:'Não foi possível alterar o pedido.');}
+   try{
+     const updated=apply(order);
+     onUpdate(order.id,()=>updated);
+     setStatus(updated.state);
+     setSelectedId(updated.id);
+     setMessage('');
+   }catch(error){setMessage(error instanceof Error?error.message:'Não foi possível alterar o pedido.');}
  };
  const changeTab=(next:OrderState)=>{setStatus(next);setSelectedId(null);setMessage('');setVisible(5);};
  return <section className="da-orders" aria-label="Gestão de pedidos demonstrativos">
