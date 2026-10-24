@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { initialSelections, setSelectionProduct, setSelectionQuantity, summarizeBasket } from './core/basket';
 import { initialExtraSelections, selectExtraProduct, summarizeExtras, summarizeOrder } from './core/extras';
 import { formatBRL } from './core/money';
+import {buildCheckoutView} from './core/checkout';
 import { ProductTypeRow } from './features/storefront/components/ProductTypeRow';
 import { BasketSizePicker } from './features/baskets/components/BasketSizePicker';
 import { StorefrontHeader } from './features/storefront/components/StorefrontHeader';
@@ -81,8 +82,8 @@ function Storefront() {
           .sort((a,b)=>a.priceCents-b.priceCents)[0];
         if(first) updated=setSelectionProduct(updated,id,first.sku,types,catalog);
       }
-      if(mode==='basket') summarizeBasket(template,updated,types,catalog);
-      else summarizeExtras(DEMO_EXTRA_GROUPS,updated,types,catalog);
+      const validation=mode==='basket'?summarizeBasket(template,updated,types,catalog):summarizeExtras(DEMO_EXTRA_GROUPS,updated,types,catalog);
+      if(validation.unavailableTypeIds.length>0)throw new Error('Quantidade acima do estoque disponível.');
       if(mode==='basket')setBasketChoices(updated);
       else setExtraChoices(updated);
       setMessage('');
@@ -157,7 +158,11 @@ function Storefront() {
             onQuantity={(id,qty)=>setQuantity('extras',id,qty)}/>)}</div>
         {!computed.extras?.lines.length&&<div className="notice muted">Nenhum tipo extra foi configurado nesta prévia.</div>}
       </>}
-      {stage==='checkout'&&<React.Suspense fallback={<div className="notice muted" role="status">Carregando checkout...</div>}><CheckoutStep order={computed.order} totalCents={total} goTo={jump}/></React.Suspense>}
+      {stage==='checkout'&&computed.basket&&computed.extras&&
+        <React.Suspense fallback={<div className="notice muted" role="status">Carregando checkout...</div>}>
+          <CheckoutStep view={buildCheckoutView(computed.basket,computed.extras.lines)}
+            basketName={template.name} onQuantity={setQuantity} goTo={jump}/>
+        </React.Suspense>}
       {stage!=='checkout'&&<p className="below-note">Valores ilustrativos. No sistema final, preços e estoque serão revalidados antes da confirmação.</p>}
     </main>
     {stage!=='checkout'&&<footer className="sticky-summary" aria-label="Resumo fixo do pedido">
