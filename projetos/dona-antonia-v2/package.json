@@ -15,7 +15,8 @@
     "architecture:check": "node scripts/check-architecture.mjs",
     "lint": "eslint . --ext .js,.mjs,.ts,.tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"e2e/**/*.ts\" \"scripts/**/*.mjs\" \"*.{json,html,ts,js}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"e2e/**/*.ts\" \"scripts/**/*.mjs\" \"*.{json,html,ts,js}\""
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"e2e/**/*.ts\" \"scripts/**/*.mjs\" \"*.{json,html,ts,js}\"",
+    "test:db": "node scripts/test-schema.mjs"
   },
   "dependencies": {
     "react": "^19.0.0",
@@ -23,6 +24,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",
+    "@electric-sql/pglite": "0.5.11",
     "@eslint/js": "10.0.1",
     "@playwright/test": "1.64.0",
     "@types/node": "^22.0.0",

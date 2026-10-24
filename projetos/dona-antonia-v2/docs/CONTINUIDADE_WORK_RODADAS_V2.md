@@ -2,13 +2,13 @@
 
 **Versão do dossiê:** 2026-10-23  
 **Finalidade:** transferir todas as decisões operacionais, regras de UX, estado da engenharia, riscos, pendências e plano de entrega para um novo Projeto/conversa do ChatGPT em modo Work.  
-**Status:** R00 e R01 concluídas. R01 está no PR #1365, aberto e sem merge. Próxima rodada: R02 — schema e contratos em isolamento descartável. Plano por rodadas em execução.
+**Status:** R00, R01 e R02 concluídas em branches isoladas. PRs sem merge; R02 está no PR #1366 da branch `agent/dona-antonia-r02-schema`, direcionado a R01. Próxima rodada: R03 — autenticação, RBAC e policies RLS. Plano por rodadas em execução.
 **Repositório:** https://github.com/osvaldosereia/SUCEDOAN12  
 **Branch de desenvolvimento principal da V2:** agent/dona-antonia-nova-plataforma  
 **Pasta:** projetos/dona-antonia-v2/  
 **Versão estática de testes (antiga em relação à branch):** https://donaantonia.com.br/site1/ e https://donaantonia.com.br/admin1/  
 **Produção atual — NÃO ALTERAR:** https://donaantonia.com.br/ e administração legada Vitrine/Admin  
-**Última CI observada:** R01 aprovada no SHA eac44b022636de298664966b6b1bfe646e9bf163: https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/40059667625. Auditoria, lint, arquitetura, TS, testes unitários, build e E2E passaram; problemas de contraste encontrados no primeiro CI foram corrigidos.
+**Última CI observada antes da R02:** R01 SHA `7a02a0da66dbcec6cfd7772da75f748ecb5bd29c`; execuções 40059800868 e 40059798099 aprovadas. CI R02 #40061111459 aprovado no SHA 08ece30274c4b36e1c325fcf0e3d3fbabb41c49a: auditoria de dependências, lint, formato, arquitetura, replay PostgreSQL, TypeScript, 39 testes, build e navegador passaram.
 
 ## 0. REGRA MÁXIMA: PROTEGER A OPERAÇÃO ATUAL
 1. NÃO alterar NADA da loja pública em produção, admin legado/Vitrine, pedidos reais, atendimento em uso, cron, Edge Functions, integrações ou bancos Supabase existentes sem autorização explícita, específica e posterior.
@@ -122,7 +122,7 @@ Confirmado por leitura da branch:
 - src/main-admin.tsx ainda referencia demonstração e inclui módulo de 4 abas de pedidos em mock.
 - src/core/ contém regras de cestas, extras, checkout e pedidos; src/application/catalog.ts e order-commands.ts têm contratos de repositório, revisão/versão e comandos; src/server/pricing/quote.ts calcula valor interno sem devolvê-lo na resposta.
 - src/admin/navigation.ts centraliza os módulos; produtos/tipos/cestas/extras/pedidos possuem componentes e estilo próprios.
-- db/001 a 004 são SQL planejado, NÃO aplicados em um novo banco.
+- A cadeia canônica R02 fica em `supabase/migrations/`; validada em PGlite descartável, sem aplicação em Supabase remoto. Os antigos `db/001–004` foram removidos por serem drafts duplicados.
 - src/data/catalog.ts faz fallback para demonstração em desenvolvimento/prévia; não há catálogo nem checkout real em staging.
 - src/server/bling/model.ts define perfil fiscal privado, não integração OAuth.
 - scripts/check-architecture.mjs impõe alguns limites; CI executa TS, testes, build e E2E.
@@ -135,7 +135,7 @@ Confirmado por leitura da branch:
 2. Resolvido parcialmente: documentação agora atribui gestão operacional ao app V2 e marca estoque físico/reconciliação e precedência do preço como decisões pendentes antes da conexão. O CSV histórico não é saldo atual.
 3. CSV/planilha antigo não é estado atual do Supabase nem do Bling. Não importar/ativar 802 sem validação.
 4. V2 pode ter protótipos de backend em JS/TS mas nenhum endpoint persistente. **Código presente não implica funcionalidade final.**
-5. Confirmado como pendência: db/001–004 não foram aplicados/testados; testar sequência, constraints, relações, grants/policies e rollback numa base descartável antes de qualquer banco remoto.
+5. R02 validou replay e constraints das quatro migrações em PostgreSQL descartável. Pendente para R03/homologação: policies/RBAC real, backup/restore de instância Supabase V2 e validação dos privilégios em Supabase.
 6. Verificar se bundle inclui importação acidental de módulo de servidor e se projeções públicas nunca expõem valor interno, custo ou fiscal.
 7. Estado de fotos: placeholders quadrados não significam imagens reais prontas. Definir pipeline de fotos otimizado e adequado.
 8. Confirmado: 35 testes unitários e 9 E2E demonstrativos passam no CI da SHA auditada, mas faltam testes de banco, segurança/RBAC, concorrência real, acessibilidade e falha de rede.
@@ -174,7 +174,8 @@ Confirmado por leitura da branch:
 - Revisar e reconciliar db/001–004 e projetar esquema transacional de pedidos/itens/snapshots/idempotência/reserva/atendimento/outbox/auditoria/fiscal; tabelas e políticas RLS específicas.
 - Validar migrações numa base DESCARTÁVEL isolada / CI local, jamais nos dois Supabases legados.
 - Entregar diagrama de entidades, contratos TS e testes de migração/constraints.
-- Aceite: schema reproduzível, rollback/backup descrito, nenhum segredo no frontend. Criar Supabase de homologação somente após conferir limites e custo do plano com usuário.
+- Resultado R02 (24/10/2026): quatro migrações, 21 tabelas, ERD, contratos TS e teste de constraints/idempotência/rollback concluídos; detalhe em `docs/STATUS_RODADAS_V2.md`. PGlite não é Supabase e nada remoto foi aplicado.
+- Próxima R03: implementar RBAC/policies e testes negativos antes de configurar ambiente remoto.
 
 ### R03 — Autenticação admin e permissões
 - Backend V2 isolado com autenticação, contas de teste, RBAC por função (admin/produtos/separação/atendimento) e trilha de auditoria; RLS como proteção adicional.
@@ -261,7 +262,7 @@ Arquivos relevantes para ler no Work:
 - docs/REFERENCIA_ADMIN_UX.md (há revisão visual Shopify posterior)
 - docs/REFERENCIA_SITE_PUBLICO_UX.md
 - docs/AUDITORIA_CAMPOS_BLING_802.md
-- db/001_schema.sql, db/002_extras.sql, db/003_private_basket_price.sql, db/004_bling_product_profiles.sql
+- supabase/migrations/ (cadeia canônica); `db/README.md` descreve a remoção dos drafts
 - src/Storefront.tsx, src/main-admin.tsx, src/core/, src/application/, src/server/, src/admin/
 - .github/workflows/dona-antonia-v2-ci.yml
 - PR de teste #1363; CI 40056490923 como referência histórica
@@ -271,14 +272,14 @@ Arquivos relevantes para ler no Work:
 2. Anexar este dossiê aos arquivos do projeto se desejar; o arquivo está no GitHub acima.
 3. Abrir **uma conversa no modo Work** dentro do projeto, com acesso à integração GitHub; Supabase ficará somente read-only nos projetos existentes até configurar o ambiente separado.
 4. Colar o comando fornecido em docs/COMANDO_NOVA_CONVERSA_WORK.md.
-5. Começar pela **R00**, SEM PRÉ-APROVAR alteração de produção. Não pular direto para Bling, Meta ou migração.
+5. Continuar pela próxima rodada indicada no GitHub: **R03 — autenticação, RBAC e policies RLS**. R00–R02 estão concluídas; não reaplicar seus passos. SEM PRÉ-APROVAR alteração de produção. Não pular direto para Bling, Meta ou homologação remota.
 
 
 ## 15. REGISTRO DA RODADA R00 — 23/10/2026
 
 Auditoria técnica registrada em docs/AUDITORIA_COMPLETA_V2.md. Baseline da branch agent/dona-antonia-nova-plataforma na SHA 1a846beba768192c366937c1462bcfd6baeccee9; CI 40057635884 aprovado na mesma SHA. Foram inspecionados 90 arquivos da V2, incluindo app, docs, SQL, scripts, testes e workflow. Checks locais architecture, TypeScript, 35 unitários e build passaram. Playwright local não iniciou sem Chromium; a suíte de 9 casos passou no CI. npm audit completo: 2 vulnerabilidades críticas e 2 moderadas em ferramentas dev/importação; as dependências runtime não tiveram vulnerabilidades reportadas. SQL permanece não executado e não verificado por replay.
 
-Nenhuma alteração de código, execução SQL, acesso aos Supabases existentes ou publicação foi realizada. Documentação antiga de estoque e ajuste de cesta foi alinhada à regra aprovada. R01 foi a rodada seguinte e está concluída; R02 é a próxima, com schema e contratos validados apenas em isolamento. A revisão de gates de publicação permanece obrigatória antes de qualquer merge na main.
+R00 foi documental; R01 consolidou qualidade visual/CI; R02 implementou schema e contratos validados em PostgreSQL WASM descartável. Nenhum Supabase foi consultado ou alterado e nada foi publicado. A revisão de gates de publicação permanece obrigatória antes de qualquer merge na main.
 
 
 ## Registro de execução — R01 (24/10/2026)
@@ -286,4 +287,13 @@ Nenhuma alteração de código, execução SQL, acesso aos Supabases existentes 
 - Código validado: SHA `eac44b022636de298664966b6b1bfe646e9bf163`; CI #40059667625 aprovado.
 - Resultado: 0 vulnerabilidades em npm audit, 39 testes unitários e 17 E2E aprovados; Axe sem violações reportadas.
 - Produção, main, previews publicadas, bancos Supabase e integrações não foram modificados ou acionados.
-- Próxima: R02, revisar e reconciliar DDLs e contratos antes de aplicar qualquer migração; usar apenas ambiente descartável isolado.
+- Próxima após R01: R02, concluída no registro abaixo.
+
+
+## Registro de execução — R02 (24/10/2026)
+- Branch: `agent/dona-antonia-r02-schema`, criada a partir do head R01 `7a02a0da66dbcec6cfd7772da75f748ecb5bd29c`; PR dirigido a `agent/dona-antonia-r01-qualidade`, sem merge.
+- Escopo: quatro migrações em `supabase/migrations/`; 21 tabelas em schema privado, RLS fechado; contratos e tipos TS; ERD/ADR; teste repetível em PostgreSQL WASM descartável. Os drafts SQL de `db/001–004` foram retirados.
+- Verificações locais: lint, format, arquitetura, teste DB (4 migrações/21 tabelas), TS, 39 testes, build e audit sem vulnerabilidades passaram.
+- Resultado: nenhuma conexão a Supabase existente, migration remota, Auth/checkout/worker real, publicação ou mudança em produção. PGlite não substitui homologação Supabase.
+- PR #1366 aberto, sem merge. CI #40061111459 aprovado no SHA `08ece30274c4b36e1c325fcf0e3d3fbabb41c49a`; navegador e todos os demais gates passaram.
+- Próxima: R03 — modelo de ator, RBAC e policies, com testes negativos de acesso.

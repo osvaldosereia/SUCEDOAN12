@@ -1,0 +1,10 @@
+# ADR-002 — schema privado e migrações isoladas
+
+- **Estado:** aceito para R02; policies/RBAC dependem de R03.
+- **Contexto:** os arquivos SQL anteriores não tinham histórico canônico nem teste de replay. O domínio precisa preservar snapshots de pedido, proteger atributos privados e evitar divergência de estoque/idempotência.
+- **Decisão:** usar uma sequência única em `supabase/migrations/`, criada com Supabase CLI. Modelar em schema `da_next`, fora dos schemas expostos pelo Data API. Habilitar RLS em todas as 21 tabelas e manter acesso fechado para `anon`/`authenticated` até R03 definir RBAC e policies. Validar replay e constraints em PGlite descartável, integrado ao CI.
+- **Privacidade:** custo, fornecedor, importação original e ajuste interno da cesta permanecem em tabelas/campos privados; apenas o backend poderá calcular projeção pública. A chave `service_role` nunca vai ao cliente. Mensagens/outbox são somente persistência planejada; nenhum worker é habilitado.
+- **Consequências:** migrations e tipos TS tornam-se rastreáveis; constraints detectam dados inválidos; o PostgreSQL embutido facilita teste sem rede nem credenciais. PGlite não cobre extensões, Auth, grants/policies Supabase ou Data API em execução real. R03 e a homologação isolada deverão testar esses aspectos.
+- **Alternativas descartadas:** manter SQL duplicado em `db/` (risco de drift); conectar agora a projeto existente (proibido por escopo); expor tabela diretamente via Data API antes do desenho RBAC (risco de vazamento); implementar adapter sem banco V2 homologado (confunde contrato com integração real).
+- **Reversão:** migrações aplicadas são forward-only; produzir migração compensatória. `supabase db reset` é apenas para banco local descartável. Nenhuma mudança foi aplicada remotamente.
+- **Evidência:** `npm run test:db` aplica quatro migrações e verifica as 21 tabelas, constraints representativas, RLS/privilégios fechados, idempotência e rollback; CI executa o mesmo comando. `docs/DIAGRAMA_ERD_V2.md` documenta relações.

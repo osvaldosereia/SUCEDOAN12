@@ -40,6 +40,8 @@ jobs:
           npm run format:check
       - name: Enforce module boundaries and growth limits
         run: npm run architecture:check
+      - name: Validate migrations in disposable PostgreSQL
+        run: npm run test:db
       - name: TypeScript strict check
         run: npm run check
       - name: Domain unit tests
