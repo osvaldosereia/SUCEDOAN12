@@ -61,8 +61,14 @@ create table if not exists da_next.orders (
   customer_phone text not null,
   address_snapshot jsonb not null,
   status text not null default 'NOVO' check (status in (
-    'NOVO','SEPARAR AGORA','PRONTO PRA ENTREGA','ENTREGUE','CANCELADO'
+    'NOVO','EM_SEPARACAO','PRONTO','ENTREGUE'
   )),
+  assigned_to text,
+  version integer not null default 1 check (version > 0),
+  payment_state text not null default 'PENDENTE' check (payment_state in ('PENDENTE','RECEBIDO')),
+  fiscal_state text not null default 'PENDENTE' check (fiscal_state in ('PENDENTE','EMITIDA','ERRO')),
+  cancelled_at timestamptz,
+  cancelled_reason text,
   subtotal_cents integer not null check (subtotal_cents >= 0),
   delivery_cents integer not null default 0 check (delivery_cents >= 0),
   total_cents integer not null check (total_cents >= 0),
@@ -77,6 +83,8 @@ create table if not exists da_next.order_lines (
   name_snapshot text not null,
   unit_price_cents integer not null check (unit_price_cents >= 0),
   quantity integer not null check (quantity > 0),
+  fulfilled_quantity integer not null default 0 check (fulfilled_quantity >= 0),
+  separation_state text not null default 'PENDENTE' check (separation_state in ('PENDENTE','SEPARADO','FALTOU')),
   total_cents integer not null check (total_cents >= 0)
 );
 create table if not exists da_next.integration_outbox (
