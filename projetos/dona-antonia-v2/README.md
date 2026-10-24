@@ -44,3 +44,16 @@ A existência de protótipo no GitHub não implica que estas funcionalidades est
 
 ## Segurança
 Não publicar, não vincular domínio, não adicionar workflows de deployment e não executar SQL no projeto atual até aprovação de homologação.
+
+
+## Fluxo de tela implementado (prévia)
+- Etapa 1: escolher entre 5 cestas, personalizar cada tipo em carrossel de cards verticais compactos; quantidade permanece na linha inferior ao trocar marca.
+- Barra fixa exibe valor e Próximo.
+- Etapa 2: grupos de extras opcionais e comuns a todas as cestas; início em zero; tocar variação adiciona uma unidade e trocar marca preserva quantidade.
+- Barra fixa soma cesta + extras e oferece Finalizar pedido.
+- Etapa 3: checkout visual, resumo dos SKUs, formulário demonstrativo e botões para voltar sem perder escolhas. Nenhum envio de pedidos habilitado.
+- Admin: aba Produtos extras permite criar grupos, vincular tipos existentes, escolher SKUs, ativar e reordenar, sem gravar no banco.
+- Contratos e testes da lógica da segunda etapa: src/core/extras.ts e extras.test.ts.
+- Leia docs/UX_TRES_ETAPAS.md. Somente teste local; ainda falta teste de navegação em navegador e integração segura.
+
+**Importante:** tanto as cinco cestas quanto os grupos extras ainda são configurações de demonstração em memória. Os arquivos SQL não foram aplicados.
