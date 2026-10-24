@@ -58,7 +58,7 @@ Fontes oficiais:
 
 ## 5. Roadmap sequencial, com entregáveis e gates
 
-### Fase 0 — Fundamentação visual e engenharia [EM ANDAMENTO]
+### Fase 0 — Fundamentação visual e engenharia [EM ANDAMENTO — R01/R02 concluídas; R03 pendente]
 **Objetivo:** parecer sistema comercial consistente em TODAS as telas, não só na página inicial.
 **Entregáveis:** tokens de cor/tipo/espaçamento, AdminShell profissional, menus, listagens, formulários, layouts desktop/mobile, padrões de carga/erro/empty-state, biblioteca leve de UI interna, contrato de dados para módulos; documentação, ESLint/Prettier e lint de acessibilidade.
 **Gate:** TS, build, teste unitário, Playwright mobile + desktop, screenshots e comparação visual. Não tocar em produção.
@@ -168,3 +168,9 @@ shared/ui                 -> design system com tokens sem regras de negócio
 ## Baseline executada — R00 (23/10/2026)
 A auditoria integral da pasta V2 foi concluída no baseline da SHA 1a846beba768192c366937c1462bcfd6baeccee9. A documentação de acompanhamento está em docs/AUDITORIA_COMPLETA_V2.md e docs/STATUS_RODADAS_V2.md. TypeScript, arquitetura, 35 testes unitários e build passaram; Playwright de 9 casos passou no CI da mesma SHA. A análise de dependências encontrou quatro vulnerabilidades na árvore dev/importação (duas críticas e duas moderadas), sem alertas nas dependências runtime. As migrações seguem não testadas em PostgreSQL e não foram aplicadas. Não há backend/auth/checkout persistente.
 **Sequência mantida:** R01 corrige dependências, lockfile, lint/format e consistência visual; R02 reconcilia e testa o schema exclusivamente numa base descartável antes de qualquer homologação remota. Nenhum banco ou serviço de produção foi acessado. A auditoria não autoriza publicação; o workflow em main publica automaticamente apenas /site1 e /admin1 e deverá estar sujeito ao gate específico antes de qualquer merge.
+
+
+## Atualização de execução — R02 (24/10/2026)
+A R02 concluiu a fundação de persistência no escopo local: quatro migrações Supabase CLI, schema privado `da_next` com 21 tabelas e RLS deny-by-default, contratos TS, ERD e ADR. Replay, constraints representativas, idempotência e rollback passaram em PGlite descartável via `npm run test:db`, também integrado ao CI da V2. Não houve criação/configuração de projeto, acesso ou aplicação remota. PGlite não verifica Auth, policies reais ou Data API do Supabase.
+
+A sequência agora é R03 — autenticação, modelo de ator, RBAC e policies RLS, com testes negativos. A R02 não implementa adapter, endpoint, checkout nem consumidor da outbox. Detalhes e limites: `docs/PERSISTENCIA_ISOLADA_V2.md`, `docs/DIAGRAMA_ERD_V2.md`, `docs/ADR-002-PERSISTENCIA.md` e `docs/STATUS_RODADAS_V2.md`.

@@ -7,7 +7,7 @@
 |---|---|---|---|
 | R00 | Auditoria integral e baseline | **Concluída — auditoria documental e baseline** | docs/AUDITORIA_COMPLETA_V2.md; SHA base 1a846beba768192c366937c1462bcfd6baeccee9; CI 40057635884 aprovado |
 | R01 | Design system e disciplina de qualidade | **Concluída** | PR #1365; CI 40059667625 aprovado no SHA eac44b022636de298664966b6b1bfe646e9bf163 |
-| R02 | Modelagem/migrações para banco isolado | Planejada | — |
+| R02 | Modelagem/migrações para banco isolado | **Concluída; PR aberto, sem merge** | `docs/DIAGRAMA_ERD_V2.md`; `npm run test:db`; CI pendente/após PR |
 | R03 | Login, RBAC e RLS V2 | Planejada | — |
 | R04 | Importação/reconciliação dos 802 produtos | Planejada | — |
 | R05 | Cadastro e estoque persistente | Planejada | — |
@@ -68,3 +68,16 @@
 **Bloqueios/riscos:** Playwright usa Chromium de CI porque a instalação local do browser não estava disponível; nenhuma integração real de backend foi exercitada nesta rodada.
 **Produção legada:** intocada; sem merge, deploy, migração, envio de mensagem ou acesso/escrita em Supabase.
 **Próxima rodada recomendada:** R02 — reconciliação do schema, diagrama de entidades, contratos TS e validação de migrações apenas em banco descartável isolado.
+
+
+## R02 — schema isolado e contratos
+**Data:** 2026-10-24 (UTC)
+**SHA inicial:** 7a02a0da66dbcec6cfd7772da75f748ecb5bd29c (head remoto de R01)
+**SHA final:** será registrado após criação do commit remoto R02.
+**Estado:** implementação e validação local concluídas; PR/CI em andamento.
+**Escopo:** cadeia de quatro migrações versionadas; schema privado `da_next`, 21 tabelas com RLS fechado e sem policies; constraints para catálogo, pedidos, snapshots, reservas, idempotência, fiscal, auditoria e outbox; tipos TS e contratos de persistência; ERD, ADR e instruções de banco. Propostas duplicadas `db/001–004` removidas.
+**Testes locais:** lint, format:check, architecture:check, `npm run test:db` (4 migrações/21 tabelas), TypeScript, 39 testes unitários, build e `npm audit --audit-level=moderate` (0 vulnerabilidades) passaram.
+**PR/CI:** será registrado com SHA e evidência do workflow após publicação na branch `agent/dona-antonia-r02-schema`; sem merge.
+**Limites:** PGlite confirma comportamento coberto em PostgreSQL isolado, não substitui Supabase real; nenhum projeto remoto consultado ou alterado. Sem adapter, Auth/RBAC, policies, checkout nem worker.
+**Produção legada:** intocada; branch `main`, sites, bancos, atendimento e integrações operacionais intocados.
+**Próxima rodada:** R03 — modelo de ator, login/RBAC e policies RLS, com testes de autorização e sem conectar aos Supabase legados.
