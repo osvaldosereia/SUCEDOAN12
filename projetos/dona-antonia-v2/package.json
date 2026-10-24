@@ -14,6 +14,7 @@
     "e2e": "playwright test",
     "architecture:check": "node scripts/check-architecture.mjs",
     "r15:audit": "node scripts/r15-audit.mjs",
+    "r16:readiness": "node scripts/r16-readiness.mjs",
     "lint": "eslint . --ext .js,.mjs,.ts,.tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"e2e/**/*.ts\" \"scripts/**/*.mjs\" \"*.{json,html,ts,js}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"e2e/**/*.ts\" \"scripts/**/*.mjs\" \"*.{json,html,ts,js}\"",
