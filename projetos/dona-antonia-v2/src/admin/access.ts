@@ -11,6 +11,7 @@ const SECTION_PERMISSION: Partial<Record<AdminSectionId, Permission>> = {
   cestas: 'catalog.read',
   extras: 'catalog.read',
   clientes: 'customers.read',
+  relatorios: 'orders.read',
 };
 
 /** Navigation is a usability gate; PostgreSQL RLS remains the data boundary. */

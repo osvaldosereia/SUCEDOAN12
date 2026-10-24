@@ -133,5 +133,15 @@ export function createSupabaseAdminOrdersRepository(client: SupabaseClient): Adm
       errorMessage(error, 'aplicar a operação no pedido');
       return detailFrom(data);
     },
+    async recordDeliveryOutcome(input) {
+      const { data, error } = await client.rpc('admin_record_delivery_outcome', {
+        p_order_id: input.orderId,
+        p_request_id: input.requestId,
+        p_status: input.status,
+        p_note: input.note.trim() || null,
+      });
+      errorMessage(error, 'registrar o resultado da entrega');
+      return detailFrom(data);
+    },
   };
 }

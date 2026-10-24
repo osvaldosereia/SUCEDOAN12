@@ -7,24 +7,10 @@ import type {
 } from '../../../application/admin-orders';
 import { ORDER_LABELS, ORDER_STATES, type OrderState } from '../../../core/orders';
 import { formatBRL } from '../../../core/money';
+import { PersistentOrderDetail } from './PersistentOrderDetail';
 
 interface Props {
   repository: AdminOrdersRepository;
-}
-
-function addressLabel(address: Readonly<Record<string, unknown>>): string {
-  const street = typeof address.street === 'string' ? address.street : '';
-  const number = typeof address.streetNumber === 'string' ? address.streetNumber : '';
-  const neighborhood = typeof address.neighborhood === 'string' ? address.neighborhood : '';
-  const city = typeof address.city === 'string' ? address.city : '';
-  return (
-    [street && `${street}, ${number}`, neighborhood, city].filter(Boolean).join(' · ') ||
-    'Endereço do pedido'
-  );
-}
-
-function itemLabel(item: AdminOrderDetail['items'][number]): string {
-  return `${item.quantity} un. · ${item.productTypeName}`;
 }
 
 export function PersistentOrdersPanel({ repository }: Props) {
@@ -36,6 +22,7 @@ export function PersistentOrdersPanel({ repository }: Props) {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deliveryNote, setDeliveryNote] = useState('');
   const [refreshToken, setRefreshToken] = useState(0);
 
   useEffect(() => {
@@ -73,11 +60,37 @@ export function PersistentOrdersPanel({ repository }: Props) {
 
   const select = async (order: AdminOrderSummary) => {
     setSelected(null);
+    setDeliveryNote('');
     setMessage('');
     try {
       setSelected(await repository.get(order.id));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Não foi possível carregar o pedido.');
+    }
+  };
+
+  const recordDelivery = async (status: 'CONCLUIDA' | 'PROBLEMA') => {
+    if (!selected || saving) return;
+    setSaving(true);
+    setMessage('');
+    try {
+      const requestId =
+        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : 'delivery-' + Date.now();
+      const updated = await repository.recordDeliveryOutcome({
+        orderId: selected.id,
+        requestId,
+        status,
+        note: deliveryNote,
+      });
+      setSelected(updated);
+      setDeliveryNote('');
+      setRefreshToken((value) => value + 1);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Não foi possível registrar a entrega.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -172,125 +185,14 @@ export function PersistentOrdersPanel({ repository }: Props) {
           )}
         </div>
         {selected ? (
-          <article className="da-order-detail" aria-label={'Detalhes do pedido ' + selected.number}>
-            <div className="da-order-detail-head">
-              <div>
-                <small>PEDIDO CONFIRMADO</small>
-                <h2>{selected.number}</h2>
-                <p>
-                  {selected.customerName} · {selected.customerPhone}
-                </p>
-              </div>
-              <span className="da-order-status">{ORDER_LABELS[selected.state]}</span>
-            </div>
-            <div className="da-order-detail-info">
-              <div>
-                <small>Entrega</small>
-                <b>{addressLabel(selected.address)}</b>
-              </div>
-              <div>
-                <small>Pagamento</small>
-                <b>
-                  {selected.paymentStatus} · {selected.paymentMethod}
-                </b>
-              </div>
-              <div>
-                <small>Fiscal</small>
-                <b>{selected.fiscalStatus}</b>
-              </div>
-              <div>
-                <small>Separador</small>
-                <b>{selected.assignedTo ?? 'Não iniciado'}</b>
-              </div>
-            </div>
-            <h3>Produtos do pedido</h3>
-            <div className="da-order-items">
-              {selected.items.map((item) => (
-                <div className="da-order-item" key={item.id}>
-                  <span>
-                    <b>{item.name}</b>
-                    <small>
-                      {itemLabel(item)} · {item.sku}
-                    </small>
-                  </span>
-                  {selected.state === 'EM_SEPARACAO' && item.separation === 'PENDENTE' ? (
-                    <div className="da-picking-actions" aria-label={'Conferir ' + item.name}>
-                      <button
-                        type="button"
-                        disabled={saving}
-                        onClick={() =>
-                          void apply({ type: 'MARK', itemId: item.id, result: 'SEPARADO' })
-                        }
-                      >
-                        Separado
-                      </button>
-                      <button
-                        type="button"
-                        disabled={saving}
-                        onClick={() =>
-                          void apply({ type: 'MARK', itemId: item.id, result: 'FALTOU' })
-                        }
-                      >
-                        Faltou
-                      </button>
-                    </div>
-                  ) : (
-                    <small>
-                      {item.separation === 'FALTOU'
-                        ? 'Faltou'
-                        : item.separation === 'SEPARADO'
-                          ? 'Separado'
-                          : 'A conferir'}
-                    </small>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="da-order-summary">
-              <span>Total confirmado</span>
-              <strong>{formatBRL(selected.totalCents)}</strong>
-            </div>
-            <div className="da-order-command-bar">
-              {selected.state === 'NOVO' && (
-                <button
-                  type="button"
-                  className="da-order-action"
-                  disabled={saving}
-                  onClick={() => void apply({ type: 'START' })}
-                >
-                  Iniciar separação
-                </button>
-              )}
-              {selected.state === 'EM_SEPARACAO' && (
-                <button
-                  type="button"
-                  className="da-order-action"
-                  disabled={
-                    saving ||
-                    selected.items.some((item) => item.separation === 'PENDENTE') ||
-                    selected.items.every((item) => item.fulfilledQuantity === 0)
-                  }
-                  onClick={() => void apply({ type: 'FINISH' })}
-                >
-                  Pronto para entrega
-                </button>
-              )}
-              {selected.state === 'PRONTO' && (
-                <button
-                  type="button"
-                  className="da-order-action"
-                  disabled={saving}
-                  onClick={() => void apply({ type: 'DELIVER' })}
-                >
-                  Marcar entregue
-                </button>
-              )}
-            </div>
-            <p className="da-order-note">
-              Versão {selected.version}. Os quatro estados operacionais permanecem separados de
-              pagamento, entrega e fiscal; falha fiscal não bloqueia o estado Pronto.
-            </p>
-          </article>
+          <PersistentOrderDetail
+            selected={selected}
+            saving={saving}
+            deliveryNote={deliveryNote}
+            onDeliveryNoteChange={setDeliveryNote}
+            onCommand={(command) => void apply(command)}
+            onDelivery={(outcome) => void recordDelivery(outcome)}
+          />
         ) : (
           <div className="da-order-placeholder">
             <b>Selecione um pedido</b>

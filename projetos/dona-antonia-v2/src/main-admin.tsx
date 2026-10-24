@@ -5,7 +5,6 @@ import type { OperationalOrder } from './core/orders';
 import { DEMO_ORDERS } from './data/demo-orders';
 import { useAdminSectionRoute } from './admin/routing/useAdminSectionRoute';
 import { AdminShell } from './admin/shell/AdminShell';
-/** Cada sessão tem bundle próprio: não baixar módulos que o operador não abriu. */
 const HomeDashboard = React.lazy(() =>
   import('./admin/features/home/HomeDashboard').then((m) => ({ default: m.HomeDashboard })),
 );
@@ -43,6 +42,16 @@ const PersistentInboxPanel = React.lazy(() =>
     default: m.PersistentInboxPanel,
   })),
 );
+const CustomersPanel = React.lazy(() =>
+  import('./admin/features/customers/CustomersPanel').then((m) => ({
+    default: m.CustomersPanel,
+  })),
+);
+const ReportsPanel = React.lazy(() =>
+  import('./admin/features/reports/ReportsPanel').then((m) => ({
+    default: m.ReportsPanel,
+  })),
+);
 import './admin.css';
 import { AdminAuthGate } from './admin/auth/AdminAuthGate';
 import type { StaffSession } from './application/authentication-contracts';
@@ -56,6 +65,8 @@ import { useBasketConfigurationAdmin } from './admin/features/baskets/useBasketC
 import type { AdminOrdersRepository } from './application/admin-orders';
 import { createSupabaseAdminOrdersRepository } from './platform/supabase/admin-orders';
 import { createSupabaseAdminInboxRepository } from './platform/supabase/admin-inbox';
+import type { CustomerRepository } from './application/customers';
+import { createSupabaseCustomerRepository } from './platform/supabase/customers';
 
 function Admin({
   staffSession,
@@ -64,6 +75,7 @@ function Admin({
   basketConfigurationRepository,
   ordersRepository,
   inboxRepository,
+  customerRepository,
   demoMode,
 }: {
   staffSession: StaffSession | null;
@@ -74,6 +86,7 @@ function Admin({
   > | null;
   ordersRepository: AdminOrdersRepository | null;
   inboxRepository: ReturnType<typeof createSupabaseAdminInboxRepository> | null;
+  customerRepository: CustomerRepository | null;
   demoMode: boolean;
 }) {
   const [tab, setTab] = useAdminSectionRoute();
@@ -186,6 +199,20 @@ function Admin({
             O Inbox V2 exige a conexão isolada do Supabase e não envia mensagens externas.
           </div>
         )}
+        {activeTab === 'clientes' && customerRepository && !demoMode && (
+          <CustomersPanel repository={customerRepository} />
+        )}
+        {activeTab === 'clientes' && (!customerRepository || demoMode) && (
+          <div className="notice muted">
+            O cadastro de clientes V2 exige a conexão isolada do Supabase.
+          </div>
+        )}
+        {activeTab === 'relatorios' && customerRepository && !demoMode && (
+          <ReportsPanel repository={customerRepository} />
+        )}
+        {activeTab === 'relatorios' && (!customerRepository || demoMode) && (
+          <div className="notice muted">Os relatórios V2 exigem a conexão isolada do Supabase.</div>
+        )}
         {activeTab === 'produtos' && productRepository && (
           <PersistentProductsPanel
             repository={productRepository}
@@ -265,9 +292,8 @@ const adminBasketConfigurationRepository = supabaseClient
 const adminOrdersRepository = supabaseClient
   ? createSupabaseAdminOrdersRepository(supabaseClient)
   : null;
-const adminInboxRepository = supabaseClient
-  ? createSupabaseAdminInboxRepository(supabaseClient)
-  : null;
+const inboxRepo = supabaseClient ? createSupabaseAdminInboxRepository(supabaseClient) : null;
+const customersRepo = supabaseClient ? createSupabaseCustomerRepository(supabaseClient) : null;
 const demoMode = import.meta.env.DEV && import.meta.env.VITE_DA_DEMO_MODE === 'true';
 
 createRoot(document.getElementById('root')!).render(
@@ -283,7 +309,8 @@ createRoot(document.getElementById('root')!).render(
           productRepository={adminProductsRepository}
           basketConfigurationRepository={adminBasketConfigurationRepository}
           ordersRepository={adminOrdersRepository}
-          inboxRepository={adminInboxRepository}
+          inboxRepository={inboxRepo}
+          customerRepository={customersRepo}
           demoMode={demoMode}
         />
       )}
