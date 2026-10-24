@@ -845,6 +845,7 @@ async function reconcileOrderItemsForStock(rawItems:any[]){
 
 async function submit(req:Request,p:any){
   const pay=txt(p?.payment_method,80),rawPhone=txt(p?.whatsapp_phone,40),ph=phone(rawPhone),requestedItems=Array.isArray(p?.items)?p.items.slice(0,80):[],whatsappOriginRaw=txt(p?.whatsapp_origin,4),whatsappOrigin=['0975','1018'].includes(whatsappOriginRaw)?whatsappOriginRaw:'';
+  if(!ph)return {error:"invalid_whatsapp_phone",status:400};
   if(!requestedItems.length)return {error:"empty_cart",status:400};
   const stock=await reconcileOrderItemsForStock(requestedItems),items=stock.items;
   if(!items.length)return {error:"all_items_unavailable",status:409,stock_adjustment:true,adjusted_items:stock.adjusted_items};
@@ -865,14 +866,35 @@ async function submit(req:Request,p:any){
     const pk=await sha(ph);
     if(!(await allowOrderAttempt("vitrine-direct:v2:phone:"+pk,10,"phone")))return {error:"rate_limited",status:429,retry_after_seconds:60};
   }
-  // Customer lookup enriches the order when available; registration is completed later via WhatsApp.
+  // A registered customer may reuse complete delivery data. Otherwise, require name and address before creating the order.
   let customer:any=null;
-  if(ph){
-    try{const found=await lookupCustomer(ph);if(found?.found&&found?.customer)customer=found.customer}
-    catch(e){console.error("optional_customer_lookup",txt((e as any)?.message,180))}
-  }
+  try{const found=await lookupCustomer(ph);if(found?.found&&found?.customer)customer=found.customer}
+  catch(e){console.error("optional_customer_lookup",txt((e as any)?.message,180))}
+  const submitted=p?.customer_details&&typeof p.customer_details==="object"?p.customer_details:{};
+  const submittedAddress=submitted.address&&typeof submitted.address==="object"?submitted.address:{};
+  const registeredAddress=customer?.address&&typeof customer.address==="object"?customer.address:{};
+  const recipientName=txt(submitted.name,180)||txt(customer?.display_name,180);
+  const recipientAddress={
+    street:txt(submittedAddress.street,180)||txt(registeredAddress.street,180),
+    number:txt(submittedAddress.number,40)||txt(registeredAddress.number,40),
+    district:txt(submittedAddress.district??submittedAddress.neighborhood,140)||txt(registeredAddress.district??registeredAddress.neighborhood,140),
+    city:txt(submittedAddress.city,120)||txt(registeredAddress.city,120),
+    state:(txt(submittedAddress.state,2)||txt(registeredAddress.state,2)).toUpperCase(),
+    postal_code:txt(submittedAddress.postal_code,20)||txt(registeredAddress.postal_code,20),
+    complement:txt(submittedAddress.complement,140)||txt(registeredAddress.complement,140)
+  };
+  if(!recipientName)return {error:"customer_name_required",status:400};
+  const missingAddress=["street","number","district","city","state"].filter(key=>!String((recipientAddress as any)[key]||"").trim());
+  if(missingAddress.length)return {error:"delivery_details_required",missing_fields:missingAddress,status:400};
   const marketingCampaign=txt(p?.marketing_context?.campaign,80);
-  const customerSnapshot={...(customer?{found:true,id:customer.id,display_name:customer.display_name||null,address:customer.address||null,marketing_opt_in:customer.marketing_opt_in===true,identity_status:"existing_optional"}:{}),...(whatsappOrigin?{whatsapp_origin:whatsappOrigin}:{}),...(marketingCampaign?{marketing_campaign:marketingCampaign}:{}),...(stock.stock_adjustment?{stock_adjusted_retry:true,stock_adjustments:stock.adjusted_items}:{})};
+  const customerSnapshot={
+    ...(customer?{found:true,id:customer.id,marketing_opt_in:customer.marketing_opt_in===true,identity_status:"existing_optional"}:{found:false,identity_status:"unregistered"}),
+    display_name:recipientName,
+    address:recipientAddress,
+    ...(whatsappOrigin?{whatsapp_origin:whatsappOrigin}:{}),
+    ...(marketingCampaign?{marketing_campaign:marketingCampaign}:{}),
+    ...(stock.stock_adjustment?{stock_adjusted_retry:true,stock_adjustments:stock.adjusted_items}:{})
+  };
   const created=await db.rpc("create_vitrine_cart_order_v3",{p_phone:ph||null,p_payment_method:pay||null,p_items:items,p_customer_snapshot:customerSnapshot,p_delivery:del||{}});
   if(created.error){const e=txt(created.error.message,160).split("\n")[0];console.error("storefront_order_rejected",{error_code:e||"order_failed"});return {error:e||"order_failed",status:["insufficient_stock","product_unavailable","basket_unavailable","basket_product_unavailable","basket_lot_unavailable","basket_lot_insufficient","basket_component_not_in_lot","basket_kit_lot_unavailable","basket_kit_lot_insufficient","basket_component_not_in_selected_kit","basket_mold_unavailable","basket_mold_not_configured","basket_mold_component_invalid","basket_mold_option_invalid","basket_mold_composition_invalid"].includes(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS,stock_adjustment:stock.stock_adjustment,adjusted_items:stock.adjusted_items}}
   const orderId=created.data?.order_id;let papoaiLink:any=null;let publicOrderLink:any=null;
