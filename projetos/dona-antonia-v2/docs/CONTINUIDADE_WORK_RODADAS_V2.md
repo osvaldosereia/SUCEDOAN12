@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 9140)
-Total output lines: 310
-
 # DONA ANTÔNIA V2 — DOSSIÊ DE CONTINUIDADE E PLANO POR RODADAS (WORK)
 
 **Versão do dossiê:** 2026-10-23  
@@ -138,7 +135,10 @@ Confirmado por leitura da branch:
 2. Resolvido parcialmente: documentação agora atribui gestão operacional ao app V2 e marca estoque físico/reconciliação e precedência do preço como decisões pendentes antes da conexão. O CSV histórico não é saldo atual.
 3. CSV/planilha antigo não é estado atual do Supabase nem do Bling. Não importar/ativar 802 sem validação.
 4. V2 pode ter protótipos de backend em JS/TS mas nenhum endpoint persistente. **Código presente não implica funcionalidade final.**
-5. R03 valida seis migrações em PGlite e as aplicou ao projeto V2 isolado. Login UI/Auth,…140 tokens truncated…ência real, acessibilidade e falha de rede.
+5. R03 valida seis migrações em PGlite e as aplicou ao projeto V2 isolado. Login UI/Auth, RPC de papel e policies remotas foram conectados/verificados; pendem bootstrap do primeiro ADMIN, sessão real e ensaio de backup/restore.
+6. Verificar se bundle inclui importação acidental de módulo de servidor e se projeções públicas nunca expõem valor interno, custo ou fiscal.
+7. Estado de fotos: placeholders quadrados não significam imagens reais prontas. Definir pipeline de fotos otimizado e adequado.
+8. Confirmado: 35 testes unitários e 9 E2E demonstrativos passam no CI da SHA auditada, mas faltam testes de banco, segurança/RBAC, concorrência real, acessibilidade e falha de rede.
 9. Revisar se build estático via GitHub Pages comporta backend pretendido; frontend pode continuar estático, mas checkout/webhooks/fiscal exigem camada transacional protegida.
 10. Mapear regras atuais do atendimento Vitrine/Admin **somente em leitura**, com foco nas APIs dos números oficiais.
 11. Confirmado: /admin1 é demonstração sem autenticação. Não conectar segredos ou dados reais até existir RBAC/autorização no servidor.
