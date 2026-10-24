@@ -1125,6 +1125,14 @@
     function sortMoldAlternativesByAdminOrder(options){
       return options.sort((a,b)=>Number(a.sort_order??Number.MAX_SAFE_INTEGER)-Number(b.sort_order??Number.MAX_SAFE_INTEGER)||String(a.product_id||'').localeCompare(String(b.product_id||'')));
     }
+    function moldOptionAvailableForItem(item,option){
+      if(typeof state==='undefined')return true;
+      const productId=String(option?.product_id||''),stockValue=option?.stock_quantity??item?.stock_quantity,stock=stockValue==null||stockValue===''?null:Number(stockValue);
+      if(!productId||stock===null||!Number.isFinite(stock))return false;
+      const available=moldRemainingForItem(state.basketDraft,item,productId,stock);
+      const needed=Math.max(1,Number(item?.quantity||item?.base_quantity||1));
+      return available!==null&&available>=needed;
+    }
     function moldItemOptions(item,index,pending=false){
       const count=Number(item.alternative_count??(item.alternatives||[]).length),selected=moldSelectedProduct(item),hasChoices=count>1;
       const optionsLoaded=moldOptionsLoaded(item),choicesList=(hasChoices&&optionsLoaded?(item.alternatives||[]).slice():[selected]).filter(a=>moldOptionAvailableForItem(item,a));
@@ -1181,14 +1189,6 @@
     function moldRemainingForItem(d,item,productId,fallback){
       const available=moldFreshRemainingStock(productId,fallback);
       return available===null?null:Math.max(0,available-moldDraftProductDemand(d,productId,item));
-    }
-    function moldOptionAvailableForItem(item,option){
-      const productId=String(option?.product_id||''),stockValue=option?.stock_quantity??item?.stock_quantity,stock=stockValue==null||stockValue===''?null:Number(stockValue);
-      if(!productId||stock===null||!Number.isFinite(stock))return false;
-      const draft=typeof state!=='undefined'?state.basketDraft:null;
-      const available=moldRemainingForItem(draft,item,productId,stock);
-      const needed=Math.max(1,Number(item?.quantity||item?.base_quantity||1));
-      return available!==null&&available>=needed;
     }
     function moldRemoveUnavailableItems(d){
       const demandByProduct=new Map();
