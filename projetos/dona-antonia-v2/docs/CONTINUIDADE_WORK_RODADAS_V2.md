@@ -2,7 +2,7 @@
 
 **Versão do dossiê:** 2026-10-23  
 **Finalidade:** transferir todas as decisões operacionais, regras de UX, estado da engenharia, riscos, pendências e plano de entrega para um novo Projeto/conversa do ChatGPT em modo Work.  
-**Status:** R00, R01 e R02 concluídas em branches isoladas. PRs sem merge; R02 está no PR #1366 da branch `agent/dona-antonia-r02-schema`, direcionado a R01. Próxima rodada: R03 — autenticação, RBAC e policies RLS. Plano por rodadas em execução.
+**Status:** R00–R02 concluídas. R03 está implementada na branch isolada `agent/dona-antonia-r03-auth` e em revisão no PR #1367 (base R02, sem merge). O projeto Supabase V2 isolado está ativo; seis migrações aplicadas; Auth client/tela conectados. Convite ADMIN aceito, e-mail confirmado, acesso Auth registrado e papel `ADMIN` ativo. Falta validar o login pela tela do admin V2 em ambiente isolado. Custo estimado aprovado: US$ 10/mês no compute padrão.
 **Repositório:** https://github.com/osvaldosereia/SUCEDOAN12  
 **Branch de desenvolvimento principal da V2:** agent/dona-antonia-nova-plataforma  
 **Pasta:** projetos/dona-antonia-v2/  
@@ -122,20 +122,20 @@ Confirmado por leitura da branch:
 - src/main-admin.tsx ainda referencia demonstração e inclui módulo de 4 abas de pedidos em mock.
 - src/core/ contém regras de cestas, extras, checkout e pedidos; src/application/catalog.ts e order-commands.ts têm contratos de repositório, revisão/versão e comandos; src/server/pricing/quote.ts calcula valor interno sem devolvê-lo na resposta.
 - src/admin/navigation.ts centraliza os módulos; produtos/tipos/cestas/extras/pedidos possuem componentes e estilo próprios.
-- A cadeia canônica R02 fica em `supabase/migrations/`; validada em PGlite descartável, sem aplicação em Supabase remoto. Os antigos `db/001–004` foram removidos por serem drafts duplicados.
+- A cadeia canônica tem seis migrações e 24 tabelas; validada em PGlite e aplicada somente no novo projeto Supabase V2 `hjudhofluihkxykwekir`. Os antigos `db/001–004` eram drafts substituídos.
 - src/data/catalog.ts faz fallback para demonstração em desenvolvimento/prévia; não há catálogo nem checkout real em staging.
 - src/server/bling/model.ts define perfil fiscal privado, não integração OAuth.
 - scripts/check-architecture.mjs impõe alguns limites; CI executa TS, testes, build e E2E.
 - Rota /site1 e /admin1 já receberam publicação **de demonstração** via PR #1363; atualizações da branch após esse PR não são automaticamente equivalentes à versão online.
 - Última execução aprovada que consta no histórico: workflow 40056490923. Confirmar commit SHA e workflow mais recente no início da nova conversa.
-**NÃO CONCLUÍDO:** auth/RBAC real, banco isolado, CRUD persistente, importação de dados reais, checkout confirmável, pedidos persistentes, inbox Meta real, envio automático e NF-e, Lighthouse staging, plano de migração efetivo.
+**NÃO CONCLUÍDO:** validação ponta a ponta do login dentro do admin V2; CRUD persistente/adapter de dados, importação real, checkout/pedidos, inbox Meta, envio automático/NF-e, Lighthouse de staging e plano de migração operacional. O Supabase Auth client e as policies estão conectados apenas ao projeto V2 isolado; nada operacional.
 
 ## 9. ACHADOS DA R00 QUE BLOQUEIAM AS RODADAS SEGUINTES
 1. Resolvido documentalmente nesta R00: docs/ARQUITETURA.md agora registra o preço agregado da cesta com ajuste interno calculado apenas no servidor.
 2. Resolvido parcialmente: documentação agora atribui gestão operacional ao app V2 e marca estoque físico/reconciliação e precedência do preço como decisões pendentes antes da conexão. O CSV histórico não é saldo atual.
 3. CSV/planilha antigo não é estado atual do Supabase nem do Bling. Não importar/ativar 802 sem validação.
 4. V2 pode ter protótipos de backend em JS/TS mas nenhum endpoint persistente. **Código presente não implica funcionalidade final.**
-5. R02 validou replay e constraints das quatro migrações em PostgreSQL descartável. Pendente para R03/homologação: policies/RBAC real, backup/restore de instância Supabase V2 e validação dos privilégios em Supabase.
+5. R03 valida seis migrações em PGlite e as aplicou ao projeto V2 isolado. Login UI/Auth, RPC de papel e policies remotas foram conectados/verificados; convite foi aceito, e-mail confirmado e atribuição ADMIN está ativa. Auth registrou acesso e a RPC devolveu ADMIN para o subject da conta; falta login através da UI e ensaio de backup/restore.
 6. Verificar se bundle inclui importação acidental de módulo de servidor e se projeções públicas nunca expõem valor interno, custo ou fiscal.
 7. Estado de fotos: placeholders quadrados não significam imagens reais prontas. Definir pipeline de fotos otimizado e adequado.
 8. Confirmado: 35 testes unitários e 9 E2E demonstrativos passam no CI da SHA auditada, mas faltam testes de banco, segurança/RBAC, concorrência real, acessibilidade e falha de rede.
@@ -175,7 +175,8 @@ Confirmado por leitura da branch:
 - Validar migrações numa base DESCARTÁVEL isolada / CI local, jamais nos dois Supabases legados.
 - Entregar diagrama de entidades, contratos TS e testes de migração/constraints.
 - Resultado R02 (24/10/2026): quatro migrações, 21 tabelas, ERD, contratos TS e teste de constraints/idempotência/rollback concluídos; detalhe em `docs/STATUS_RODADAS_V2.md`. PGlite não é Supabase e nada remoto foi aplicado.
-- Próxima R03: implementar RBAC/policies e testes negativos antes de configurar ambiente remoto.
+- R03: RBAC/RLS, Auth client, tela de login e filtro de áreas por papel implementados; migrações aplicadas no projeto V2; convite ADMIN aceito, e-mail confirmado, acesso Auth registrado e papel ativo. O login pela UI ainda não foi validado. Playwright local não iniciou por ausência de Chromium; CI #40063994871 passou lint, segurança de dependências, arquitetura, DB, TS, unitários, build e 17 E2E.
+- Supabase Advisors (24/10/2026): WARN intencional para RPC SECURITY DEFINER `public.get_my_staff_role()` (retorna somente papel do chamador autenticado); 4 policies com chamada `auth.*` sem initplan, 11 FKs sem índice de cobertura e 38 sobreposições permissivas entre `admin_all` e policies de função devem ser revisadas antes de popular dados. 27 índices não usados são esperados no banco vazio; não remover sem métricas representativas. INFO de Auth com limite de 10 conexões.
 
 ### R03 — Autenticação admin e permissões
 - Backend V2 isolado com autenticação, contas de teste, RBAC por função (admin/produtos/separação/atendimento) e trilha de auditoria; RLS como proteção adicional.
@@ -183,6 +184,7 @@ Confirmado por leitura da branch:
 - Aceite: anônimo não lê custo/valor interno/nem grava; operador sem permissão não edita cadastro ou fiscal; testes negativos comprovam.
 
 ### R04 — Importação controlada e reconciliação do catálogo Bling
+- Iniciar após bootstrap ADMIN/login real, E2E executável e revisão dos achados de Advisor registrados neste dossiê.
 - Recuperar CSV oficial e validar colunas, 802 SKUs, EAN, NCM, CEST, unidade UN, fornecedor, custo/markup e IDs. Nunca presumir que CSV é saldo físico atual.
 - Criar importação idempotente com simulação/dry-run, relatório de conflitos, deduplicação SKU/EAN e revisão humana de dados fiscais anômalos.
 - Popular SOMENTE staging V2. Não ativar produtos sem regra de estoque confiável.
@@ -272,7 +274,7 @@ Arquivos relevantes para ler no Work:
 2. Anexar este dossiê aos arquivos do projeto se desejar; o arquivo está no GitHub acima.
 3. Abrir **uma conversa no modo Work** dentro do projeto, com acesso à integração GitHub; Supabase ficará somente read-only nos projetos existentes até configurar o ambiente separado.
 4. Colar o comando fornecido em docs/COMANDO_NOVA_CONVERSA_WORK.md.
-5. Continuar pela próxima rodada indicada no GitHub: **R03 — autenticação, RBAC e policies RLS**. R00–R02 estão concluídas; não reaplicar seus passos. SEM PRÉ-APROVAR alteração de produção. Não pular direto para Bling, Meta ou homologação remota.
+5. Verificar PR #1367 e workflow. Projeto Supabase V2 isolado já criado e migrado; custo estimado aprovado em US$ 10/mês. Para login real, cadastrar o e-mail do primeiro operador ADMIN e validar a sessão. Nunca retomar os anexos antigos que mandam iniciar R00. SEM alteração de produção.
 
 
 ## 15. REGISTRO DA RODADA R00 — 23/10/2026
@@ -295,5 +297,16 @@ R00 foi documental; R01 consolidou qualidade visual/CI; R02 implementou schema e
 - Escopo: quatro migrações em `supabase/migrations/`; 21 tabelas em schema privado, RLS fechado; contratos e tipos TS; ERD/ADR; teste repetível em PostgreSQL WASM descartável. Os drafts SQL de `db/001–004` foram retirados.
 - Verificações locais: lint, format, arquitetura, teste DB (4 migrações/21 tabelas), TS, 39 testes, build e audit sem vulnerabilidades passaram.
 - Resultado: nenhuma conexão a Supabase existente, migration remota, Auth/checkout/worker real, publicação ou mudança em produção. PGlite não substitui homologação Supabase.
-- PR #1366 aberto, sem merge. CI #40061111459 aprovado no SHA `08ece30274c4b36e1c325fcf0e3d3fbabb41c49a`; navegador e todos os demais gates passaram.
-- Próxima: R03 — modelo de ator, RBAC e policies, com testes negativos de acesso.
+- PR #1366 aberto, sem merge. SHA final da branch: `0ea8f43188ea55db56c176d1c34368a2b4303c10`; CI final #40061318922 aprovado nesse head, navegador e demais gates passaram. CI #40061111459 correspondeu ao SHA de implementação anterior.
+- Próxima: concluir conexão Auth somente após provisionar ambiente isolado, avaliar custo e confirmar que nenhum projeto legado será usado.
+
+
+## Registro de execução — R03 (24/10/2026)
+- Branch isolada: `agent/dona-antonia-r03-auth`, base R02 `0ea8f43188ea55db56c176d1c34368a2b4303c10`; PR #1367 aberto contra R02, sem merge.
+- Código: seis migrações; papéis ADMIN/PRODUCTS/SEPARATION/SUPPORT; grants mínimos; policies `USING`/`WITH CHECK`; preço privado em tabelas separadas; `public.get_my_staff_role()` só retorna o papel ativo do chamador; cliente Auth, tela de login e navegação filtrada por papel.
+- Projeto novo `hjudhofluihkxykwekir`, região São Paulo, status saudável. Compute padrão confirmado: estimativa de US$ 10/mês, cobrada por hora. Seis migrações aplicadas ao projeto novo.
+- Verificação remota: 24 tabelas/24 RLS, 64 policies; `anon` sem `USAGE` no schema privado nem execução da RPC; `authenticated` pode consultar o próprio papel. Convite aceito e e-mail confirmado; uma atribuição ADMIN ativa registrada; `last_sign_in_at` preenchido. RPC testada com subject da conta e resposta `ADMIN`; nenhuma sessão ativa no instante da verificação.
+- Gates: 50 testes unitários; PGlite seis migrações/24 tabelas com RBAC/RLS positivo e negativo, role lookup, revogação, privacidade e rollback; lint, format, arquitetura, TS, build, audit (0 vulnerabilidades) passaram. Playwright local não iniciou: Chromium ausente; CI #40063869241 passou os 17 E2E.
+- Limite: Auth registrou acesso real, mas login pela tela do admin V2 ainda não foi testado. O dev server local não pôde ser aberto pelo navegador remoto; nenhuma prévia foi publicada. Nenhuma senha foi definida pelo agente.
+- Operação: legado, `main`, bancos existentes, atendimento e integrações intocados; nenhuma publicação.
+- Próximo: validar o login pelo admin V2 em ambiente isolado, revisar os achados de Advisor e concluir revisão do PR; depois, iniciar R04.

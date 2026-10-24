@@ -32,9 +32,28 @@ const ExtraAdmin = React.lazy(() =>
   import('./admin/features/extras/ExtraAdmin').then((m) => ({ default: m.ExtraAdmin })),
 );
 import './admin.css';
+import { AdminAuthGate } from './admin/auth/AdminAuthGate';
+import type { StaffSession } from './application/authentication-contracts';
+import { canManagePrivatePricing, getAllowedAdminSections } from './admin/access';
+import { createSupabaseBrowserClient, readSupabaseBrowserConfig } from './platform/supabase/client';
+import { createStaffAuthentication } from './platform/supabase/staff-authentication';
 
-function Admin() {
+function Admin({
+  staffSession,
+  onSignOut,
+}: {
+  staffSession: StaffSession | null;
+  onSignOut: () => Promise<void>;
+}) {
   const [tab, setTab] = useAdminSectionRoute();
+  const allowedSections = staffSession
+    ? getAllowedAdminSections(staffSession.role)
+    : getAllowedAdminSections('ADMIN');
+  const allowedSectionSet = new Set(allowedSections);
+  const activeTab = allowedSectionSet.has(tab) ? tab : (allowedSections[0] ?? 'inicio');
+  const navigateAllowed = (section: (typeof allowedSections)[number]) => {
+    if (allowedSectionSet.has(section)) setTab(section);
+  };
   const [orders, setOrders] = useState<OperationalOrder[]>(
     DEMO_ORDERS.map((order) => ({
       ...order,
@@ -143,7 +162,15 @@ function Admin() {
     );
   };
   return (
-    <AdminShell section={tab} onNavigate={setTab} products={products} onProductSearch={setFilter}>
+    <AdminShell
+      section={activeTab}
+      onNavigate={navigateAllowed}
+      products={products}
+      onProductSearch={setFilter}
+      allowedSections={allowedSections}
+      staffSession={staffSession}
+      onSignOut={onSignOut}
+    >
       {notice && (
         <div className="notice muted" role="status">
           {notice}
@@ -156,17 +183,17 @@ function Admin() {
           </div>
         }
       >
-        {tab === 'inicio' && (
+        {activeTab === 'inicio' && (
           <HomeDashboard
             products={products}
             types={types}
             baskets={templates}
             extras={extraGroups}
-            onNavigate={setTab}
+            onNavigate={navigateAllowed}
           />
         )}
-        {tab === 'pedidos' && <OrdersPanel orders={orders} onUpdate={updateOrder} />}
-        {tab === 'produtos' && (
+        {activeTab === 'pedidos' && <OrdersPanel orders={orders} onUpdate={updateOrder} />}
+        {activeTab === 'produtos' && (
           <ProductsPanel
             products={products}
             filteredProducts={filteredProducts}
@@ -175,7 +202,7 @@ function Admin() {
             changeProduct={changeProduct}
           />
         )}
-        {tab === 'tipos' && (
+        {activeTab === 'tipos' && (
           <ProductTypesPanel
             types={types}
             selectedTypeId={selectedTypeId}
@@ -190,7 +217,7 @@ function Admin() {
             toggleOption={toggleOption}
           />
         )}
-        {tab === 'cestas' && (
+        {activeTab === 'cestas' && (
           <BasketCompositionPanel
             templates={templates}
             selectedBasketId={selectedBasketId}
@@ -199,6 +226,9 @@ function Admin() {
             types={types}
             setQuantity={setQuantity}
             privateFeeCents={privateBasketAdjustments[selectedBasketId]}
+            canManagePrivatePricing={
+              staffSession ? canManagePrivatePricing(staffSession.role) : true
+            }
             onPrivateFeeChange={(feeCents) =>
               setPrivateBasketAdjustments((current) => ({
                 ...current,
@@ -207,7 +237,7 @@ function Admin() {
             }
           />
         )}
-        {tab === 'extras' && (
+        {activeTab === 'extras' && (
           <ExtraAdmin
             products={products}
             types={types}
@@ -222,6 +252,17 @@ function Admin() {
 }
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <Admin />
+    <AdminAuthGate
+      provider={(() => {
+        const config = readSupabaseBrowserConfig(
+          import.meta.env.VITE_SUPABASE_URL,
+          import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        );
+        return config ? createStaffAuthentication(createSupabaseBrowserClient(config)) : null;
+      })()}
+      demoMode={import.meta.env.DEV && import.meta.env.VITE_DA_DEMO_MODE === 'true'}
+    >
+      {(staffSession, signOut) => <Admin staffSession={staffSession} onSignOut={signOut} />}
+    </AdminAuthGate>
   </React.StrictMode>,
 );

@@ -1,6 +1,6 @@
 /**
  * SQL row contracts for the private da_next schema.
- * These types describe planned persistence; no Supabase adapter is connected in R02.
+ * These types describe the private persistence contract; no remote Supabase adapter is connected.
  */
 export type IsoTimestamp = string;
 export type JsonObject = Readonly<Record<string, unknown>>;
@@ -10,6 +10,7 @@ export type OrderStatus = 'NOVO' | 'EM_SEPARACAO' | 'PRONTO' | 'ENTREGUE';
 export type OrderItemKind = 'BASKET_COMPONENT' | 'EXTRA';
 export type SeparationStatus = 'PENDENTE' | 'SEPARADO' | 'FALTOU';
 export type ReservationStatus = 'RESERVADA' | 'CONSUMIDA' | 'LIBERADA' | 'EXPIRADA';
+export type StaffRole = 'ADMIN' | 'PRODUCTS' | 'SEPARATION' | 'SUPPORT';
 
 export interface ProductRow {
   id: string;
@@ -51,7 +52,6 @@ export interface BasketSizeRow {
   name: string;
   active: boolean;
   sort_order: number;
-  private_adjustment_cents: number;
   revision: number;
   created_at: IsoTimestamp;
   updated_at: IsoTimestamp;
@@ -63,6 +63,13 @@ export interface BasketSizeTypeRow {
   default_quantity: number;
   sort_order: number;
   created_at: IsoTimestamp;
+}
+
+export interface BasketSizePrivatePricingRow {
+  basket_size_id: string;
+  private_adjustment_cents: number;
+  created_at: IsoTimestamp;
+  updated_at: IsoTimestamp;
 }
 
 export interface CustomerRow {
@@ -127,9 +134,24 @@ export interface OrderBasketSnapshotRow {
   basket_name_snapshot: string;
   quantity: number;
   public_unit_price_cents: number;
-  private_adjustment_cents: number;
   line_total_cents: number;
   created_at: IsoTimestamp;
+}
+
+export interface OrderBasketPrivatePricingRow {
+  order_basket_snapshot_id: string;
+  private_adjustment_cents: number;
+  created_at: IsoTimestamp;
+}
+
+export interface StaffRoleAssignmentRow {
+  id: string;
+  user_id: string;
+  role: StaffRole;
+  created_by: string | null;
+  created_at: IsoTimestamp;
+  revoked_by: string | null;
+  revoked_at: IsoTimestamp | null;
 }
 
 export interface OrderBasketSnapshotTypeRow {
@@ -304,10 +326,12 @@ export interface DaNextRows {
   product_type_products: ProductTypeProductRow;
   basket_sizes: BasketSizeRow;
   basket_size_types: BasketSizeTypeRow;
+  basket_size_private_pricing: BasketSizePrivatePricingRow;
   customers: CustomerRow;
   customer_addresses: CustomerAddressRow;
   orders: OrderRow;
   order_basket_snapshots: OrderBasketSnapshotRow;
+  order_basket_private_pricing: OrderBasketPrivatePricingRow;
   order_basket_snapshot_types: OrderBasketSnapshotTypeRow;
   order_items: OrderItemRow;
   inventory_reservations: InventoryReservationRow;
@@ -320,6 +344,7 @@ export interface DaNextRows {
   conversations: ConversationRow;
   conversation_messages: ConversationMessageRow;
   fiscal_documents: FiscalDocumentRow;
+  staff_role_assignments: StaffRoleAssignmentRow;
 }
 
 export type DaNextTableName = keyof DaNextRows;

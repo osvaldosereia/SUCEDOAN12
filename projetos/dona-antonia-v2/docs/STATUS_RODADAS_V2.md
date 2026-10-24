@@ -7,8 +7,8 @@
 |---|---|---|---|
 | R00 | Auditoria integral e baseline | **Concluída — auditoria documental e baseline** | docs/AUDITORIA_COMPLETA_V2.md; SHA base 1a846beba768192c366937c1462bcfd6baeccee9; CI 40057635884 aprovado |
 | R01 | Design system e disciplina de qualidade | **Concluída** | PR #1365; SHA R01 7a02a0da66dbcec6cfd7772da75f748ecb5bd29c; CI 40059800868 e 40059798099 aprovados |
-| R02 | Modelagem/migrações para banco isolado | **Concluída; PR aberto, sem merge** | PR #1366; SHA 08ece30274c4b36e1c325fcf0e3d3fbabb41c49a; CI 40061111459 aprovado |
-| R03 | Login, RBAC e RLS V2 | Planejada | — |
+| R02 | Modelagem/migrações para banco isolado | **Concluída; PR aberto, sem merge** | PR #1366; SHA 0ea8f43188ea55db56c176d1c34368a2b4303c10; CI 40061318922 aprovado |
+| R03 | Login, RBAC e RLS V2 | Implementada; ambiente V2 aplicado; bootstrap ADMIN pendente | PR #1367; 6 migrações/24 tabelas; 50 testes; projeto isolado `hjudhofluihkxykwekir`; ~US$10/mês |
 | R04 | Importação/reconciliação dos 802 produtos | Planejada | — |
 | R05 | Cadastro e estoque persistente | Planejada | — |
 | R06 | Cestas, tipos e extras persistentes | Planejada | — |
@@ -73,7 +73,7 @@
 ## R02 — schema isolado e contratos
 **Data:** 2026-10-24 (UTC)
 **SHA inicial:** 7a02a0da66dbcec6cfd7772da75f748ecb5bd29c (head remoto de R01)
-**SHA de implementação validado:** 08ece30274c4b36e1c325fcf0e3d3fbabb41c49a.
+**SHA de implementação validado:** 0ea8f43188ea55db56c176d1c34368a2b4303c10 (head final da branch R02).
 **Estado:** Concluída; PR #1366 aberto, sem merge.
 **Escopo:** cadeia de quatro migrações versionadas; schema privado `da_next`, 21 tabelas com RLS fechado e sem policies; constraints para catálogo, pedidos, snapshots, reservas, idempotência, fiscal, auditoria e outbox; tipos TS e contratos de persistência; ERD, ADR e instruções de banco. Propostas duplicadas `db/001–004` removidas.
 **Testes locais:** lint, format:check, architecture:check, `npm run test:db` (4 migrações/21 tabelas), TypeScript, 39 testes unitários, build e `npm audit --audit-level=moderate` (0 vulnerabilidades) passaram.
@@ -81,3 +81,17 @@
 **Limites:** PGlite confirma comportamento coberto em PostgreSQL isolado, não substitui Supabase real; nenhum projeto remoto consultado ou alterado. Sem adapter, Auth/RBAC, policies, checkout nem worker.
 **Produção legada:** intocada; branch `main`, sites, bancos, atendimento e integrações operacionais intocados.
 **Próxima rodada:** R03 — modelo de ator, login/RBAC e policies RLS, com testes de autorização e sem conectar aos Supabase legados.
+
+
+## R03 — Login, RBAC e policies RLS
+**Data:** 2026-10-24 (UTC)
+**SHA inicial:** 0ea8f43188ea55db56c176d1c34368a2b4303c10 (head R02)
+**Estado:** implementação e bootstrap ADMIN da R03 concluídos no projeto isolado; o Auth confirmou a conta e registrou um acesso. O fluxo de login dentro do admin V2 ainda não foi exercitado ponta a ponta.
+**Escopo:** papéis ADMIN/PRODUCTS/SEPARATION/SUPPORT; helper RLS; grants mínimos por tabela/coluna; separação dos preços privados; RPC `public.get_my_staff_role()` sem argumentos; client Supabase Auth, tela de login, sessão validada via `getUser`, navegação por papel e ocultação do campo de preço privado para PRODUCTS.
+**Supabase V2:** projeto `Dona Antônia V2`, ref `hjudhofluihkxykwekir`, São Paulo, status ACTIVE_HEALTHY. Seis migrações aplicadas. Verificação SQL: 24 tabelas/24 RLS, 64 policies; `anon` sem `USAGE` no schema privado e sem execução da RPC; `authenticated` pode obter apenas o próprio papel. Convite aceito, e-mail confirmado e `last_sign_in_at` registrado; uma única atribuição ADMIN está ativa. A RPC de papel retornou `ADMIN` ao testar o subject da conta; nenhuma sessão estava ativa no instante da checagem. Custo estimado/confirmado: US$ 10 por mês para compute padrão, faturado por hora.
+**Testes locais/CI:** PGlite (6 migrações/24 tabelas/RLS/RBAC positivo e negativo/RPC/revogação/privacidade/rollback); 50 testes unitários; lint, format, arquitetura (79 arquivos), TypeScript, build e `npm audit` (0 vulnerabilidades) aprovados. Playwright local não executou porque Chromium está ausente e o download foi ZIP inválido/zero bytes; CI GitHub #40063869241 passou todos os gates, incluindo os 17 testes E2E.
+**Supabase Advisors (24/10/2026):** nenhum alerta de acesso anônimo ao schema privado. Um WARN de SECURITY DEFINER aponta `public.get_my_staff_role()`, intencional e limitada ao papel do próprio usuário autenticado. Performance lista 4 policies com chamada `auth.*` sem initplan, 11 FKs sem índice de cobertura e 38 sobreposições permissivas entre `admin_all` e policies de função; registrar como hardening antes de popular dados. Os 27 índices sem uso são esperados no banco recém-criado e vazio; não removê-los sem carga/consultas representativas. Configuração Auth de no máximo 10 conexões também aparece como INFO.
+**Limites:** conta confirmada e acesso Auth registrado, mas o login pela tela do admin V2 e recuperação de senha ainda não foram testados. O dev server local não é alcançável pelo navegador remoto; não foi publicada uma prévia. UI ainda exibe dados demonstrativos; CRUD persistente, checkout e integrações ficam para rodadas posteriores.
+**Produção legada:** intocada; nenhuma alteração em `main`, sites públicos, Supabase existente, atendimento ou integração operacional. Nada publicado.
+**PR:** #1367 — https://github.com/osvaldosereia/SUCEDOAN12/pull/1367; aberto, sem merge, base R02.
+**Próximo passo:** validar o fluxo de login pela tela do admin V2 em ambiente isolado e revisar os achados de Advisor antes de carregar dados. O gate de identidade/bootstrap está atendido. Em seguida, R04 — importação controlada e reconciliação do catálogo Bling.

@@ -1,0 +1,112 @@
+.da-auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #f5f5f3;
+  color: #20211f;
+  font-family: var(--da-font-sans);
+}
+
+.da-auth-card {
+  width: min(100%, 420px);
+  padding: 36px;
+  border: 1px solid #e4e4e0;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 18px 48px rgb(23 24 22 / 8%);
+}
+
+.da-auth-mark {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 28px;
+  border-radius: 14px;
+  background: #191a18;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.da-auth-eyebrow {
+  margin: 0 0 8px;
+  color: #696b66;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+}
+
+.da-auth-card h1 {
+  margin: 0;
+  font-size: clamp(24px, 5vw, 30px);
+  letter-spacing: -0.04em;
+}
+
+.da-auth-subtitle,
+.da-auth-card > p:not(.da-auth-eyebrow) {
+  margin: 10px 0 24px;
+  color: #666862;
+  line-height: 1.55;
+}
+
+.da-auth-card form {
+  display: grid;
+  gap: 10px;
+}
+
+.da-auth-card label {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.da-auth-card input {
+  min-height: 46px;
+  width: 100%;
+  padding: 0 13px;
+  border: 1px solid #d5d7d1;
+  border-radius: 8px;
+  background: #fff;
+  color: #20211f;
+  font: inherit;
+}
+
+.da-auth-submit {
+  min-height: 48px;
+  margin-top: 12px;
+  border: 0;
+  border-radius: 8px;
+  background: #191a18;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.da-auth-submit:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.da-auth-notice {
+  margin: 4px 0 0;
+  color: #a62920;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.da-auth-footnote {
+  display: block;
+  margin-top: 22px;
+  color: #747670;
+  font-size: 12px;
+}
+
+@media (max-width: 480px) {
+  .da-auth-card {
+    padding: 28px 22px;
+  }
+}
