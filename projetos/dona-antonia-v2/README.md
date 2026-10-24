@@ -54,6 +54,15 @@ Não publicar, não vincular domínio, não adicionar workflows de deployment e 
 - Etapa 3: checkout visual, resumo dos SKUs, formulário demonstrativo e botões para voltar sem perder escolhas. Nenhum envio de pedidos habilitado.
 - Admin: aba Produtos extras permite criar grupos, vincular tipos existentes, escolher SKUs, ativar e reordenar, sem gravar no banco.
 - Contratos e testes da lógica da segunda etapa: src/core/extras.ts e extras.test.ts.
-- Leia docs/UX_TRES_ETAPAS.md. Somente teste local; ainda falta teste de navegação em navegador e integração segura.
+- Leia docs/UX_TRES_ETAPAS.md. Protótipo testado com Chromium em viewport mobile (390 px) e desktop (1280 px). Integração segura, dados reais e testes com serviços de produção continuam pendentes.
 
 **Importante:** tanto as cinco cestas quanto os grupos extras ainda são configurações de demonstração em memória. Os arquivos SQL não foram aplicados.
+
+## Qualidade e homologação da interface
+- `npm run check`: tipagem estrita TypeScript.
+- `npm test`: somente testes unitários do núcleo (`src/core`).
+- `npm run build`: build estático isolado.
+- `npm run e2e`: Chromium / Playwright, para site e admin em desktop e mobile. Esta suíte sobe Vite localmente; **não publica** o site.
+- CI: `.github/workflows/dona-antonia-v2-ci.yml`, limitada à branch agent/dona-antonia-nova-plataforma e aos arquivos V2, sem deploy.
+- Execução aprovada: https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/40049541464 (10 testes unitários e 4 testes de navegação).
+- Capturas são anexadas ao job por sete dias. Não representam um site público no ar.

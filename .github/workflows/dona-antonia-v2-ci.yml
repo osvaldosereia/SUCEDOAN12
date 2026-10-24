@@ -20,8 +20,8 @@ jobs:
       run:
         working-directory: projetos/dona-antonia-v2
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: '22'
       - name: Install dependencies without postinstall scripts
@@ -36,7 +36,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Browser smoke test - mobile and desktop
         run: npm run e2e
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: ${{ always() }}
         with:
           name: dona-antonia-v2-browser-screenshots

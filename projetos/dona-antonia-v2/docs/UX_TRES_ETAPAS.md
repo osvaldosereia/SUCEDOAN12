@@ -22,3 +22,10 @@
 - Integração Bling e espelho de produtos reais após balanço, Supabase RLS e banco separado.
 - Checkout real com contato, entrega, pagamento na entrega e idempotência.
 - Imagens, responsividade validada em múltiplos aparelhos e testes navegador ponta a ponta.
+
+## Verificação automatizada (24/10/2026)
+- 10 testes unitários: seleção por tipo, marca, quantidade, remoção, indisponibilidade, extras e agregação do mesmo SKU.
+- 4 testes em navegador Chromium: site mobile, site desktop, admin mobile e admin desktop.
+- Conferência de rolagem horizontal de carrossel mobile, barra inferior, navegação entre etapas e retorno preservando escolhas.
+- Bug mobile descoberto e corrigido: overflow horizontal do painel de extras causado pelo tamanho intrínseco dos painéis.
+- Execução aprovada: https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/40049541464 .
