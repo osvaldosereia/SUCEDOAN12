@@ -843,23 +843,22 @@ async function reconcileOrderItemsForStock(rawItems:any[]){
   return {items:adjusted,adjusted_items:adjustedItems,stock_adjustment:adjustedItems.length>0};
 }
 
-async function allowOrderAttempt(rateKey:string,limit:number,scope:string){
-  try{
-    const gate=await db.rpc("consume_public_rate_limit",{p_rate_key:rateKey,p_bucket:"create_order",p_limit:limit,p_window_seconds:60});
-    if(gate.error){console.error("checkout_rate_limit_unavailable",{scope,code:txt(gate.error.message,100)});return true}
-    return gate.data===true;
-  }catch(error){
-    console.error("checkout_rate_limit_failed",{scope,code:txt((error as any)?.message,100)});
-    return true;
-  }
-}
-
 async function submit(req:Request,p:any){
   const pay=txt(p?.payment_method,80),rawPhone=txt(p?.whatsapp_phone,40),ph=phone(rawPhone),requestedItems=Array.isArray(p?.items)?p.items.slice(0,80):[],whatsappOriginRaw=txt(p?.whatsapp_origin,4),whatsappOrigin=['0975','1018'].includes(whatsappOriginRaw)?whatsappOriginRaw:'';
   if(!requestedItems.length)return {error:"empty_cart",status:400};
   const stock=await reconcileOrderItemsForStock(requestedItems),items=stock.items;
   if(!items.length)return {error:"all_items_unavailable",status:409,stock_adjustment:true,adjusted_items:stock.adjusted_items};
   const deliveryDate=txt(p?.delivery_date,10),del=deliveryDate?selectedDelivery(deliveryDate):null;
+  async function allowOrderAttempt(rateKey:string,limit:number,scope:string){
+    try{
+      const gate=await db.rpc("consume_public_rate_limit",{p_rate_key:rateKey,p_bucket:"create_order",p_limit:limit,p_window_seconds:60});
+      if(gate.error){console.error("checkout_rate_limit_unavailable",{scope,code:txt(gate.error.message,100)});return true}
+      return gate.data===true;
+    }catch(error){
+      console.error("checkout_rate_limit_failed",{scope,code:txt((error as any)?.message,100)});
+      return true;
+    }
+  }
   const ik=await sha(ip(req)||"unknown");
   if(!(await allowOrderAttempt("vitrine-direct:v2:ip:"+ik,30,"ip")))return {error:"rate_limited",status:429,retry_after_seconds:60};
   if(ph){
