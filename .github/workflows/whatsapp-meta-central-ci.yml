@@ -96,6 +96,8 @@ jobs:
       - {name: Meta templates admin sync contract, run: 'node scripts/test-whatsapp-meta-template-admin-v1.mjs'}
       - {name: Meta template mutation contract, run: 'node scripts/test-whatsapp-meta-template-mutations-v1.mjs'}
       - {name: Marketing Meta template admin UI contract, run: 'node scripts/test-whatsapp-marketing-template-admin-v1.mjs'}
+      - {name: Meta Flow manager security contract, run: 'node scripts/test-whatsapp-meta-flow-manager-admin-v1.mjs'}
+      - {name: Meta Flows Graph contract, run: 'node scripts/test-whatsapp-meta-flows-v1.mjs'}
       - {name: Marketing consent ledger contract, run: 'node scripts/test-whatsapp-marketing-consent-ledger-v1.mjs'}
       - {name: Marketing security hardening contract, run: 'node scripts/test-marketing-security-hardening-v1.mjs'}
       - {name: Marketing monthly repurchase cadence contract, run: 'node scripts/test-marketing-repurchase-monthly-cadence-v1.mjs'}
@@ -173,6 +175,7 @@ jobs:
       - {name: Human AI controls JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-human-ai.js'}
       - {name: Attendance templates JavaScript syntax, run: 'node --check vitrine/admin/atendimento/attendance-templates.js'}
       - {name: Marketing template center syntax, run: 'node --check vitrine/admin/marketing/template-center.js'}
+      - {name: Marketing Flow center syntax, run: 'node --check vitrine/admin/marketing/flow-center.js'}
       - {name: Marketing audience center syntax, run: 'node --check vitrine/admin/marketing/audience-center.js'}
       - {name: Marketing campaign center syntax, run: 'node --check vitrine/admin/marketing/campaign-center.js'}
       - {name: Meta secrets guard, run: 'node scripts/test-whatsapp-meta-no-secrets-v1.mjs'}
