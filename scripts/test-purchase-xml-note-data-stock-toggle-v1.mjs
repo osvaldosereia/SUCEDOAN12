@@ -12,7 +12,7 @@ assert.match(ui,/stock_update_requested/);
 assert.match(ui,/Unidades vendidas em cada/);
 assert.match(ui,/update_cost:true,update_sale_price:false,stock_update_requested:stockUpdate/);
 assert.match(ui,/dados fiscais da nota aplicados/);
-assert.ok(page.includes("admin-runtime.js?v=orders-four-stage-v1-20261023"));
+assert.match(page,/admin-runtime\.js\?v=orders-four-stage-v1-[^"']+/,"admin runtime URL remains cache-busted");
 assert.match(runtime,/data-purchase-stock-update/);
 assert.match(runtime,/stock_update_requested:Boolean\(card\.querySelector/);
 assert.match(api,/classification_source:"purchase_xml"/);
