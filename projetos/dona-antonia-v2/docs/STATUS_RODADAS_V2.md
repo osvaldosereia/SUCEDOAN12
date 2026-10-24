@@ -21,7 +21,7 @@
 | R13    | NF-e Bling pós-separação                  | **Concluída em staging isolado; PR draft sem merge/publicação** | PR #1382; head `f1af5906`; CI #40102849252 aprovado (17/17 E2E); V2 19 migrations/32 tabelas; 802 produtos/perfis preservados; 0 pedidos/documentos |
 | R14    | Clientes/entrega/relatórios essenciais    | **Concluída em staging isolado; PR draft sem merge/publicação** | PR #1384; head `c97cb236`; CI #40115614242 aprovado (16/16 E2E após correção da expectativa); V2 20 migrations/33 tabelas; 802 produtos/perfis preservados |
 | R15    | Auditoria final/performance/homologação   | **Concluída em V2 isolada; bloqueios de homologação documentados** | PR #1394; head `5344a6c3`; código `8aa59fe0`; CI #40132993673 + checkpoint final #40133495710 aprovado (18/18 E2E), testes locais 124/124, auditoria sintética 802 produtos/3 operadores, npm audit sem vulnerabilidades; Lighthouse/backup remoto pendentes |
-| R16    | Piloto/migração autorizada                | **Pré-voo documentado; piloto bloqueado**                                                  | PR #1396 draft; branch `agent/dona-antonia-r16-pilot-preflight`; CI #40134499891 aprovado; cinco gates humanos/staging ainda bloqueados; sem merge/deploy/publicação |
+| R16    | Piloto/migração autorizada                | **Pré-voo documentado; piloto bloqueado**                                                  | PR #1396 draft; branch `agent/dona-antonia-r16-pilot-preflight`; CI #40134499891 aprovado; seed V2 fictício verificado; quatro gates operacionais ainda bloqueados; sem merge/deploy/publicação |
 
 ## Histórico anterior às rodadas
 
@@ -216,8 +216,9 @@
 **Branch/base:** `agent/dona-antonia-r16-pilot-preflight`, derivada do head R15 `6f8c195d39de72ec057470e15443f25a6b0ba378`; PR #1396 draft contra `agent/dona-antonia-r15-audit-homologacao`, sem merge/publicação. Head documental: consultar o head remoto do PR #1396; head de código verificado `93d28dc9a805f97a2b50c5e4fb05a87e949e333b`.  
 **Estado:** pré-voo técnico documentado; piloto bloqueado.  
 **Escopo:** contrato puro `evaluateR16Readiness`, testes para ausência de gates e regra de 2–3 operadores, comando `npm run r16:readiness` e checklist de execução. O comando não muta banco, site, contas, domínio ou integração.  
-**Gates:** URL V2 de staging acessível; seed fictício vendável; 2–3 operadores isolados; backup/restore controlado; autorização explícita do piloto. Todos retornam bloqueados no ambiente atual.  
+**Gates:** seed fictício vendável foi preparado e verificado no V2; permanecem bloqueados URL de staging, 2–3 operadores isolados, backup/restore controlado e autorização explícita do piloto.  
 **Verificações locais:** `npm test` 126/126; `npm run check`, lint, `format:check`, arquitetura (138 arquivos), build e `git diff --check` passaram. Playwright não foi repetido porque a suíte R15 já passou no CI; o preflight não abre navegador nem cria dados.  
 **CI:** workflow #40134499891 passou no head de código `93d28dc9a805f97a2b50c5e4fb05a87e949e333b`, com todos os gates e 17/17 E2E aprovados.  
-**Isolamento:** nenhum Supabase remoto foi alterado; os 802 produtos/perfis permanecem como estavam; sem custo novo, merge, deploy, publicação, produção, `main`, legado, atendimento, DNS ou Meta/Bling operacionais.  
-**Próxima ação condicionada:** somente após os cinco gates documentados e autorização específica; não iniciar piloto produtivo automaticamente.
+**Isolamento:** o Supabase V2 recebeu somente três produtos fictícios determinísticos, três perfis privados, uma cesta de homologação e três movimentos de estoque; total atual 805 produtos e 802 perfis. Sem dados reais, custo novo, merge, deploy, publicação, produção, `main`, legado, atendimento, DNS ou Meta/Bling operacionais.  
+**Evidência do seed:** SKUs `R16-TEST-ARROZ`, `R16-TEST-FEIJAO`, `R16-TEST-OLEO`; cesta `r16-test`; rollback em `docs/R16_TEST_SEED_ROLLBACK.sql`.  
+**Próxima ação condicionada:** somente após os quatro gates restantes documentados e autorização específica; não iniciar piloto produtivo automaticamente.
