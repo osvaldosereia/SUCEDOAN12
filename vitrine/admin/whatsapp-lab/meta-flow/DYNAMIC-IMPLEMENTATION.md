@@ -6,7 +6,7 @@
 - Escolha de 5 tamanhos lendo `home_size_cards` do `storefront-v2`.
 - Consulta dos preços **atuais** das 3 combinações do tamanho escolhido via `basket?basket_id=UUID@N&lightweight=1`.
 - Edição por produto, com `Dropdown` de marcas/produtos (`basket_mold_options_batch`) e quantidade 0–10; 0 retira.
-- Até 30 posições em 6 telas de 5 itens, compatível com 14/23/27 posições que existem hoje. A maioria dos clientes verá somente as telas necessárias.
+- Até 30 posições em 4 telas de 8 itens, compatível com 14–27 posições que existem hoje. A máquina de navegação pode ir ao resumo após a 2ª, 3ª ou 4ª tela conforme a quantidade real de posições.
 - Cálculo final via `basket_mold_quote` com as posições e SKUs validados. Mostra total da cesta e apenas nomes e quantidades dos itens da cesta, sem preços individuais.
 - Endpoint separado `whatsapp-1018-basket-flow-v1`: Meta Data Exchange criptografado (RSA-OAEP + AES-GCM), validação `X-Hub-Signature-256`, sessão assinada e com validade, acesso restrito ao teste 1018 → 8360.
 - Sem escrita em banco, sem checkout, sem criação de pedido, sem alteração de ANA, webhook comercial ou listas antigas.
@@ -16,7 +16,9 @@
 - `supabase/functions/whatsapp-1018-basket-flow-v1/index.ts` — envelope e chamadas de consulta
 - `supabase/functions/whatsapp-1018-basket-flow-v1/engine.mjs` — máquina de estados e cotação
 - `supabase/functions/whatsapp-1018-basket-flow-v1/crypto.mjs` — criptografia e HMAC
-- `scripts/test-whatsapp-1018-flow-dynamic.mjs` — 27 itens, alterações, assinatura e criptografia
+- `scripts/test-whatsapp-1018-flow-dynamic.mjs` — rotas para 14–30 itens, alterações, assinatura e criptografia
+
+Os `__example__` do JSON são placeholders neutros para a prévia do Flow Builder. Preços, nomes de produtos e marcas usados em execução vêm do endpoint e do catálogo Supabase; o arquivo não fixa valores comerciais.
 
 ## Requisitos **antes** de enviar à Meta
 1. Validar o JSON no **Flow Builder/Graph API**: a validação local não substitui as regras oficiais de componentes, referências dinâmicas e rotas. Somente depois corrigir quaisquer alertas retornados pela Meta.
@@ -33,9 +35,9 @@
 
 
 ## Revisão do contrato de navegação — 24/10/2026
-- O Flow original tinha 13 arestas de roteamento e excedia o limite de 10 ramos da Meta; a revisão reduziu para **8** (TAMANHO → COMBINACAO → ITENS_UM … ITENS_SEIS → RESUMO), mantendo 9 telas.
-- IDs de telas de edição agora usam apenas letras e sublinhados para evitar incompatibilidade de esquema: `ITENS_UM` até `ITENS_SEIS`. O motor `engine.mjs` e os testes passam a usar os mesmos identificadores.
-- CI foi reforçado para falhar quando houver mais de 10 arestas, IDs fora do padrão, rota divergente ou telas não cobertas.
+- O Flow original tinha 13 arestas de roteamento e excedia o limite de 10 ramos da Meta; a revisão reduziu para **8** (TAMANHO → COMBINACAO → quatro telas de itens, com caminhos declarados para o resumo), mantendo o contrato dinâmico.
+- IDs de telas de edição usam apenas letras e sublinhados: `ITENS_UM` até `ITENS_QUATRO`. Cada tela permite até 8 posições; `ITENS_DOIS` e `ITENS_TRES` também declaram o caminho para `RESUMO`.
+- A verificação inclui os limites de rotas, os caminhos condicionais e cestas entre 14 e 30 posições, inclusive os pontos em que a tela seguinte muda.
 - **Ainda é preciso validar o JSON oficialmente pela Meta**, sobretudo componentes dinâmicos e referências de dados. Essa revisão não concede homologação, não implanta endpoint e não cria/publica Flow.
 
 ## Limitações assumidas para este piloto
