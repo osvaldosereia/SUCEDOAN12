@@ -1,17 +1,28 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {webcrypto} from 'node:crypto';
-import {flowExchange,parseQty,assertBasket,SIZE_KEYS} from '../supabase/functions/whatsapp-1018-basket-flow-v1/engine.mjs';
+import {flowExchange,parseQty,assertBasket,SIZE_KEYS,ITEM_SCREENS} from '../supabase/functions/whatsapp-1018-basket-flow-v1/engine.mjs';
 import {signState,verifyState,hmac,verifyAppSignature,decryptMetaPayload,encryptMetaResponse} from '../supabase/functions/whatsapp-1018-basket-flow-v1/crypto.mjs';
 globalThis.crypto??=webcrypto;
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const flow=JSON.parse(read('vitrine/admin/whatsapp-lab/meta-flow/flow-dynamic-v1.json'));
 assert.equal(flow.version,'7.3');assert.equal(flow.data_api_version,'3.0');
 assert.equal(flow.screens.length,9);
+
+const edges=Object.values(flow.routing_model).reduce((sum,next)=>sum+next.length,0);
+assert.ok(edges<=10,'Meta Flow routing_model cannot exceed ten edges');
+assert.equal(edges,8);
+const ids=flow.screens.map(screen=>screen.id);
+assert.ok(ids.every(id=>/^[A-Z_]+$/.test(id)),'screen IDs must contain only letters and underscores');
+assert.equal(new Set(ids).size,ids.length);
+assert.deepEqual(ids,['TAMANHO','COMBINACAO',...ITEM_SCREENS,'RESUMO']);
+assert.equal(flow.routing_model.RESUMO.length,0);
+assert.ok(ids.slice(0,-1).every(id=>flow.routing_model[id].length===1),'strict forward-only chain');
+
 assert.equal(flow.screens.at(-1).terminal,true);
 for(const s of flow.screens){assert.ok(s.layout.children.length<=50);assert.equal(s.layout.children.filter(x=>x.type==='Footer').length,1);}
 for(let i=1;i<=6;i++){
- const screen=flow.screens.find(x=>x.id==='ITENS_'+i);
+ const screen=flow.screens.find(x=>x.id===ITEM_SCREENS[i-1]);
  assert.ok(screen);assert.equal(screen.layout.children.filter(c=>c.type==='Dropdown').length,10);
  assert.ok(screen.layout.children.filter(c=>c.type==='Dropdown'&&c.label==='Quantidade').length===5);
  assert.equal(screen.layout.children.at(-1)['on-click-action'].name,'data_exchange');
@@ -35,15 +46,15 @@ assert.equal(init.screen,'TAMANHO');assert.equal(init.data.tamanhos.length,5);
 const combos=await flowExchange({action:'data_exchange',screen:'TAMANHO',data:{etapa:'tamanho',tamanho:'mini'}},deps);
 assert.equal(combos.screen,'COMBINACAO');assert.equal(combos.data.opcoes.length,3);assert.match(combos.data.opcoes[0].description,/R\$/);
 const first=await flowExchange({action:'data_exchange',screen:'COMBINACAO',data:{etapa:'combinacao',tamanho:'mini',combinacao:'1'}},deps);
-assert.equal(first.screen,'ITENS_1');assert.equal(first.data.vis0,true);
+assert.equal(first.screen,ITEM_SCREENS[0]);assert.equal(first.data.vis0,true);
 assert.equal(first.data.marca0,items[0].product_id);
 let stage=first;
 for(let page=1;page<=6;page++){
  const d={etapa:'itens',estado:stage.data.estado,pagina:String(page)};
  for(let j=0;j<5;j++){d['marca'+j]=stage.data['marca'+j];d['quant'+j]=stage.data['quant'+j];}
  if(page===1){d.quant0='0';d.marca1=uuid(6001);}
- const res=await flowExchange({action:'data_exchange',screen:'ITENS_'+page,data:d},deps);
- if(page<6)assert.equal(res.screen,'ITENS_'+(page+1));
+ const res=await flowExchange({action:'data_exchange',screen:ITEM_SCREENS[page-1],data:d},deps);
+ if(page<6)assert.equal(res.screen,ITEM_SCREENS[page]);
  else{assert.equal(res.screen,'RESUMO');assert.match(res.data.valor,/R\$/);assert.ok(res.data.itens.includes('Produto'));}
  stage=res;
 }

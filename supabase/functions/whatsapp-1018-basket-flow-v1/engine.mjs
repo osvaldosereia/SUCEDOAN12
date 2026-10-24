@@ -4,6 +4,7 @@ export const SIZE_KEYS=['mini','economica','pequena','media','grande'];
 export const SIZE_LABELS={mini:'Mini',economica:'Econômica',pequena:'Pequena',media:'Média',grande:'Grande'};
 export const PAGE_SIZE=5;
 export const MAX_ITEMS=30;
+export const ITEM_SCREENS=['ITENS_UM','ITENS_DOIS','ITENS_TRES','ITENS_QUATRO','ITENS_CINCO','ITENS_SEIS'];
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const text=(v,max=120)=>String(v??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
 const money=c=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(c/100);
@@ -41,7 +42,7 @@ export function pricesResponse(shell,details){
 const emptySlot=j=>({['nome'+j]:'',['vis'+j]:false,['quant'+j]:'0',['marca'+j]:'00000000-0000-4000-8000-000000000000',['marcas'+j]:[{id:'00000000-0000-4000-8000-000000000000',title:'Sem item'}]});
 export async function pageResponse(state,deps,warning=''){
  const p=Number(state.page)||0,start=p*PAGE_SIZE,portion=state.items.slice(start,start+PAGE_SIZE);
- if(p<0||p>=6||!portion.length)throw Error('invalid_page');
+ if(p<0||p>=ITEM_SCREENS.length||!portion.length)throw Error('invalid_page');
  const selected=portion.map(x=>({position_id:x.position_id,selected_product_id:x.product_id,quantity:x.quantity}));
  const opts=await deps.options(state.basketId,state.number,selected);
  const byPos=new Map((opts?.positions||[]).map(x=>[String(x.position_id),x.alternatives||[]]));
@@ -55,7 +56,7 @@ export async function pageResponse(state,deps,warning=''){
   if(!choices.length)throw Error('basket_brand_unavailable');
   Object.assign(data,{['nome'+j]:text(item.name,80),['vis'+j]:true,['quant'+j]:String(Math.min(10,item.quantity)),['marca'+j]:item.product_id,['marcas'+j]:choices});
  }
- return {screen:'ITENS_'+(p+1),data};
+ return {screen:ITEM_SCREENS[p],data};
 }
 export async function flowExchange(payload,deps){
  const action=String(payload?.action||'');
@@ -82,9 +83,9 @@ export async function flowExchange(payload,deps){
   const state={size,number:n,basketId:model.id,page:0,issuedAt:Date.now(),items:detail.items};
   return await pageResponse(state,deps);
  }
- if(stage==='itens'&&/^ITENS_[1-6]$/.test(payload.screen||'')){
+ if(stage==='itens'&&ITEM_SCREENS.includes(payload.screen)){
   const state=await deps.verifyState(String(form.estado||''));
-  const expected='ITENS_'+(Number(state.page)+1);
+  const expected=ITEM_SCREENS[Number(state.page)];
   if(payload.screen!==expected||String(form.pagina)!==String(Number(state.page)+1))throw Error('flow_page_mismatch');
   const start=state.page*PAGE_SIZE,count=Math.min(PAGE_SIZE,state.items.length-start);
   if(count<1)throw Error('flow_empty_page');
