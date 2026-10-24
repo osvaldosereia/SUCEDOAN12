@@ -53,6 +53,7 @@ assert.doesNotMatch(ui,/0975|interactive\.flow|sendTemplateViaMeta|DA_FLOW_1018_
 
 assert.match(marketing,/PRIMARY_MARKETING_VIEWS=\[[^\]]*'flows'/);
 assert.match(marketing,/view==='flows'/);
+assert.match(marketing,/post-sale-center\.js\?v=whatsapp-flow-active-router-20261024/);
 assert.match(activeMarketing,/\['flows','Flows Meta'\]/);
 assert.match(activeMarketing,/if\(view==='flows'\)return \(await import\('\/vitrine\/admin\/marketing\/flow-center\.js\?v=whatsapp-flow-center-20261024'\)\)\.mountFlowView\(root\)/);
 assert.match(attendance,/parseBasketFlowReply/);
