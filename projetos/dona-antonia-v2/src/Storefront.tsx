@@ -5,6 +5,8 @@ import { initialExtraSelections, selectExtraProduct, summarizeExtras, summarizeO
 import { formatBRL } from './core/money';
 import { ProductTypeRow } from './features/storefront/components/ProductTypeRow';
 import { BasketSizePicker } from './features/baskets/components/BasketSizePicker';
+import { StorefrontHeader } from './features/storefront/components/StorefrontHeader';
+import { StorefrontProgress } from './features/storefront/components/StorefrontProgress';
 
 import type { BasketId, BasketSelection, Product } from './core/model';
 import { DEMO_PRODUCTS, DEMO_TEMPLATES, DEMO_TYPES } from './data/demo';
@@ -24,8 +26,8 @@ const titles: Record<Stage,string> = {
 };
 
 function Storefront() {
-  const [catalog,setCatalog] = useState<readonly Product[]>([...DEMO_PRODUCTS,...DEMO_EXTRA_PRODUCTS]);
-  const [isDemo,setIsDemo] = useState(true);
+  const [catalog,setCatalog] = useState<readonly Product[]>(import.meta.env.DEV?[...DEMO_PRODUCTS,...DEMO_EXTRA_PRODUCTS]:[]);
+  const [isDemo,setIsDemo] = useState(import.meta.env.DEV);
   const [catalogError,setCatalogError] = useState('');
   const [stage,setStage] = useState<Stage>('basket');
   const [basketId,setBasketId] = useState<BasketId>('mini');
@@ -123,22 +125,12 @@ function Storefront() {
   };
 
   return <div className="site-page">
-    <header className="topbar"><div className="container topbar-inner">
-      <span className="brand"><span className="brand-mark">DA</span><span>Dona Antônia<small>Cestas personalizáveis</small></span></span>
-      <span className="header-note">Cuiabá e Várzea Grande</span>
-    </div></header>
+    <StorefrontHeader/>
     <main className="container site-main wizard-layout">
-      <div className="notice" role="status">PROTÓTIPO — Nenhuma compra será enviada. Os preços do exemplo não são ofertas reais.</div>
+      <div className="site-demo-banner" role="status"><strong>PROTÓTIPO</strong><span>Preços ilustrativos. Nenhuma compra será enviada nesta prévia.</span></div>
       {catalogError && <div className="error" role="alert">{catalogError}</div>}
-      {isDemo && <div className="notice muted">Dados de demonstração. A conexão com os produtos reais e o Supabase será feita em uma etapa posterior.</div>}
-      <nav className="checkout-progress" aria-label="Progresso do pedido">
-        {(['basket','extras','checkout'] as const).map((item,index)=><div key={item}
-          className={'progress-step '+(item===stage?'current':'')+' '+(
-          (stage==='extras'&&index<1)||(stage==='checkout'&&index<2)?'completed':'')}>
-          <span className="progress-number">{index+1}</span>
-          <span>{index===0?'Cesta':index===1?'Extras':'Checkout'}</span>
-        </div>)}
-      </nav>
+
+      <StorefrontProgress stage={stage}/>
       <div className="wizard-heading">
         <div><p className="eyebrow">ETAPA {stage==='basket'?1:stage==='extras'?2:3} DE 3</p><h1>{titles[stage]}</h1>
           <p>{stage==='basket'?'Escolha o tamanho, a marca e a quantidade de cada tipo de produto.':stage==='extras'?
@@ -150,15 +142,15 @@ function Storefront() {
       {message||computed.error?<div role="alert" className="error">{message||computed.error}</div>:null}
 
       {stage==='basket'&&<>
-        <BasketSizePicker selectedId={basketId} baseTotal={baseTotal} onChange={changeSize}/>
+        <BasketSizePicker selectedId={basketId} templates={DEMO_TEMPLATES} baseTotal={baseTotal} onChange={changeSize}/>
         <div className="section-title"><div><p className="eyebrow">PERSONALIZAÇÃO</p><h2>Cesta {template.name}</h2></div>
-          <p>{computed.basket?.itemCount??0} un.</p></div>
+          <p>{computed.basket?.itemCount??0} unidades</p></div>
         <div className="basket-lines">{computed.basket?.lines.map((line)=>
           <ProductTypeRow key={line.typeId} mode="basket" line={line} onProduct={(id,sku)=>choose('basket',id,sku)}
             onQuantity={(id,qty)=>setQuantity('basket',id,qty)}/>)}</div>
       </>}
       {stage==='extras'&&<>
-        <div className="extras-intro"><div><strong>Deixe sua cesta ainda mais completa</strong><p>Escolha o que quiser. Se não precisar de extras, avance direto para o checkout.</p></div>
+        <div className="extras-intro"><div><strong>Complete sua compra com produtos extras</strong><p>Esses produtos são opcionais. Escolha as marcas e quantidades que desejar.</p></div>
           <span>Opcionais</span></div>
         <div className="basket-lines">{computed.extras?.lines.map((line)=>
           <ProductTypeRow key={line.typeId} mode="extras" line={line} onProduct={(id,sku)=>choose('extras',id,sku)}

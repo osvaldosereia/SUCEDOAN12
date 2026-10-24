@@ -16,7 +16,7 @@ export function ProductTypeRow({
   const quantity = line.quantity;
   return <section className="basket-group choice-group" aria-label={'Escolher '+line.typeName}>
     <div className="group-head">
-      <div><h3>{line.typeName}</h3><small>{line.options.length} opções · Arraste para ver outras marcas</small></div>
+      <div><h3>{line.typeName}</h3><small>{line.options.length} opções de marca · Deslize para escolher</small></div>
       <strong>{formatBRL(line.totalCents)}</strong>
     </div>
     <div className="carousel-shell">
@@ -33,7 +33,7 @@ export function ProductTypeRow({
           <SquareImage src={product.imageUrl} alt={product.name} kind="product"/>
           <span className="choice-name">{product.name}</span>
           <span className="choice-price">{formatBRL(product.priceCents)}</span>
-          <span className="choice-tag">{chosen===product.sku?'✓ Escolhido':'Escolher'}</span>
+          <span className="choice-tag">{chosen===product.sku?'✓ Selecionado':'Toque para escolher'}</span>
         </button>)}
         {line.options.length===0 && <div className="empty-options" role="status">Nenhuma opção disponível para esta quantidade. Escolha outra quantidade ou consulte o atendimento.</div>}
       </div>
