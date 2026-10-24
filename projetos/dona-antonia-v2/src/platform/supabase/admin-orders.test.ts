@@ -91,4 +91,28 @@ describe('adapter Supabase de pedidos', () => {
     });
     expect(result).toMatchObject({ state: 'EM_SEPARACAO', version: 2 });
   });
+
+  it('registra resultado de entrega com chave idempotente', async () => {
+    const { rpc, repo } = repository({
+      ...summary,
+      status: 'ENTREGUE',
+      delivery_status: 'CONCLUIDA',
+      address: { city: 'Cuiabá', stateCode: 'MT' },
+      assigned_to: 'operator-1',
+      items: [],
+    });
+    const result = await repo.recordDeliveryOutcome({
+      orderId: summary.id,
+      requestId: 'request-delivery-1',
+      status: 'CONCLUIDA',
+      note: 'Recebido pelo cliente',
+    });
+    expect(rpc).toHaveBeenCalledWith('admin_record_delivery_outcome', {
+      p_order_id: summary.id,
+      p_request_id: 'request-delivery-1',
+      p_status: 'CONCLUIDA',
+      p_note: 'Recebido pelo cliente',
+    });
+    expect(result.deliveryStatus).toBe('CONCLUIDA');
+  });
 });

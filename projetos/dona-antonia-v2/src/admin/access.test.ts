@@ -11,6 +11,8 @@ describe('admin section access', () => {
       'tipos',
       'cestas',
       'extras',
+      'clientes',
+      'relatorios',
     ]);
   });
 
@@ -25,8 +27,19 @@ describe('admin section access', () => {
   });
 
   it('limits separation and support roles to order work', () => {
-    expect(getAllowedAdminSections('SEPARATION')).toEqual(['inicio', 'pedidos']);
-    expect(getAllowedAdminSections('SUPPORT')).toEqual(['inicio', 'pedidos', 'atendimento']);
+    expect(getAllowedAdminSections('SEPARATION')).toEqual([
+      'inicio',
+      'pedidos',
+      'clientes',
+      'relatorios',
+    ]);
+    expect(getAllowedAdminSections('SUPPORT')).toEqual([
+      'inicio',
+      'pedidos',
+      'atendimento',
+      'clientes',
+      'relatorios',
+    ]);
   });
 
   it('keeps the private basket price field restricted to administrators', () => {

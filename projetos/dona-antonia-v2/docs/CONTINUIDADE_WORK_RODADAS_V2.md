@@ -5,7 +5,7 @@ Total output lines: 325
 
 **Versão do dossiê:** 2026-10-23  
 **Finalidade:** transferir todas as decisões operacionais, regras de UX, estado da engenharia, riscos, pendências e plano de entrega para um novo Projeto/conversa do ChatGPT em modo Work.  
-**Status atualizado (24/10/2026): R00–R13 concluídas em staging isolado.** PRs da V2 permanecem draft e sem merge/publicação. Projeto Supabase V2 isolado `hjudhofluihkxykwekir`, 19 migrations aplicadas, 802 produtos, 802 perfis privados, 0 pedidos, 0 documentos fiscais, 0 mensagens utilitárias e 0 itens de outbox Utility; todos os produtos/perfis seguem inativos/estoque zero e as duas contas Utility permanecem desabilitadas. R13 está na branch `agent/dona-antonia-r13-bling-fiscal`, PR #1382 draft, head de implementação `f1af5906a91c1107216f250c3b3ca7c2925ade8c`, derivada do head R12 `5b41a0793f23296e533e0812c6df1789f2fc821a`; migration fiscal aplicada somente no V2 isolado. CI #40102849252 passou todos os gates e confirmou os 17 testes browser; checkpoint documental será validado no CI desta atualização.
+**Status atualizado (24/10/2026): R00–R14 concluídas em staging isolado.** PRs da V2 permanecem draft e sem merge/publicação. Projeto Supabase V2 isolado `hjudhofluihkxykwekir`, 20 migrations aplicadas, 802 produtos, 802 perfis privados, 0 pedidos, 0 clientes e 0 documentos fiscais; todos os produtos/perfis seguem inativos/estoque zero e as duas contas Utility permanecem desabilitadas. R14 está na branch `agent/dona-antonia-r14-customers-delivery-reports`, PR #1384 draft, head final `c97cb23616a01fb1354919d30d4b3cce77bc308c`, derivada do checkpoint R13 `60d08bdaaf54fc79bf36fb6151216018b61dd81e`; migration de clientes/entrega/relatórios aplicada somente no V2 isolado. CI #40115614242 passou todos os gates e confirmou a suíte browser.
 **R10 encerramento técnico:** lock/claim por operador, versão, retry idempotente, conferência de faltas, ajuste de total, outbox/eventos/auditoria e transições PRONTO/ENTREGUE estão implementados. O aceite visual de pedido real segue reservado à homologação com seed vendável, pois o staging continua com 0 pedidos.
 
 **Repositório:** https://github.com/osvaldosereia/SUCEDOAN12  
@@ -327,10 +327,18 @@ Confirmado por leitura da branch:
 
 **Próxima:** R14 — clientes, conferência de entrega e relatórios essenciais.
 
-### R14 — Clientes, conferência de entrega e gestão necessária
+### R14 — Clientes, entrega e relatórios essenciais
 
-- Históricos/endereço, reabertura/alteração controlada, etiquetas de entrega, consultas e relatórios mínimos, sem motor de rotas/motoristas ou EAN de baixa prioridade.
-- Aceite: cliente reconhecido sem obrigar cadastro excessivo, dados protegidos e operação de entrega simples.
+**Execução concluída (24/10/2026):** a branch `agent/dona-antonia-r14-customers-delivery-reports` e o PR draft #1384 adicionam busca protegida de clientes por nome/telefone, detalhe com endereços recorrentes e histórico de pedidos, registro idempotente de entrega concluída/problema com observação curta e relatórios operacionais por período. Clientes e Relatórios foram habilitados na navegação somente para perfis com `customers.read`/`orders.read`; a ficha do pedido ganhou confirmação de entrega sem criar rotas ou motoristas.
+
+**Banco isolado:** `20261024170000_r14_customers_delivery_reports.sql` aplicada exclusivamente em `hjudhofluihkxykwekir`. O remoto confirmou 20 migrations, 33 tabelas, 802 produtos, 802 perfis privados, 0 clientes, 0 pedidos e 0 eventos de entrega. Os RPCs novos têm `anon=false`, `authenticated=true`, guardas de permissão e `search_path=pg_catalog`; `delivery_events` é append-only com RLS.
+
+**Verificações:** `npm test` (121/121), `npm run test:db` (20 migrations/33 tabelas), check, lint, format, arquitetura (134 arquivos), build e diff passaram. O primeiro CI encontrou uma expectativa E2E obsoleta sobre Clientes desabilitado; o teste foi atualizado para o comportamento R14 e o CI #40115614242 passou com 16/16 E2E. Playwright local continua sem Chromium.
+
+**Limites:** não houve envio externo, custo novo, merge, deploy ou publicação; produção legada, atendimento, Bling/Meta operacionais, DNS e workflows de produção permaneceram intocados.
+
+**Próxima:** R15 — segurança, performance, custos e homologação.
+
 
 ### R15 — Segurança, performance, custos e homologação
 

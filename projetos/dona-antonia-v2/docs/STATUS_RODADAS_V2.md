@@ -19,7 +19,7 @@
 | R11    | Inbox WhatsApp humano V2                  | **Concluída em staging isolado; PR draft sem merge/publicação**                             | branch `agent/dona-antonia-r11-whatsapp-inbox`; migration V2 15/27; CI #40098948246 aprovado (17/17 E2E); ACL remota aprovada       |
 | R12    | Mensagens Utility Meta por evento         | **Concluída em staging isolado; PR draft sem merge/publicação**                             | PR #1381; head `e55582f5`; CI #40101770367 aprovado (111 testes e 17 E2E); V2 18 migrations/30 tabelas; 0 mensagens/outbox              |
 | R13    | NF-e Bling pós-separação                  | **Concluída em staging isolado; PR draft sem merge/publicação** | PR #1382; head `f1af5906`; CI #40102849252 aprovado (17/17 E2E); V2 19 migrations/32 tabelas; 802 produtos/perfis preservados; 0 pedidos/documentos |
-| R14    | Clientes/entrega/relatórios essenciais    | Planejada                                                                                   | —                                                                                                                                       |
+| R14    | Clientes/entrega/relatórios essenciais    | **Concluída em staging isolado; PR draft sem merge/publicação** | PR #1384; head `c97cb236`; CI #40115614242 aprovado (16/16 E2E após correção da expectativa); V2 20 migrations/33 tabelas; 802 produtos/perfis preservados |
 | R15    | Auditoria final/performance/homologação   | Planejada                                                                                   | —                                                                                                                                       |
 | R16    | Piloto/migração autorizada                | Planejada                                                                                   | —                                                                                                                                       |
 
@@ -185,7 +185,7 @@
 **Testes locais:** `npm test` (111/111), `npm run test:db` (18 migrations/30 tabelas, RLS/RBAC positivo/negativo, trigger, replay, retry e orçamento), `npm run check`, `npm run lint`, `npm run format:check`, `npm run architecture:check` (122 arquivos), `npm run build` e `git diff --check` passaram. Playwright local não executou por ausência do Chromium; CI #40101770367 passou todos os gates e o navegador mobile/desktop.
 **Advisors:** o pós-migration não adicionou novas policies permissivas sobrepostas nas três tabelas R12; permanecem apenas achados históricos de SECURITY DEFINER/policies/FKs/Auth já documentados. As funções R12 mantêm `search_path=pg_catalog`, validação explícita de permissão e ACL sem anon.
 **Limites:** nenhum template foi aprovado/ativado, nenhuma conta/número de teste foi habilitada, nenhum worker ou request Meta foi executado e o atendimento legado não foi tocado. Não houve custo novo, merge, deploy ou publicação.
-**Próxima rodada:** R14 — clientes, entrega e relatórios essenciais.
+**Próxima rodada:** R15 — segurança, performance, custos e homologação.
 
 ## R13 — emissão fiscal via Bling (orquestração isolada)
 
@@ -197,3 +197,14 @@
 **Testes locais:** `npm test` (115/115), `npm run test:db` (19 migrations/32 tabelas, RLS/RBAC, snapshot, retry e idempotência), `npm run check`, `npm run lint`, `npm run format:check`, `npm run architecture:check` (126 arquivos), `npm run build` e `git diff --check` passaram. Playwright local foi tentado e bloqueado pela ausência do Chromium; CI #40102849252 instalou Chromium e confirmou os 17 testes de navegador.  
 **Limites/isolamento:** sem credenciais, integração operacional, custo novo, merge, deploy ou publicação; `main`, sites públicos/admin legados, Supabases legados, atendimento, Bling/Meta operacionais, DNS e workflows de produção permaneceram intocados.  
 **Próxima rodada:** R14 — clientes, entrega e relatórios essenciais.
+
+## R14 — clientes, entrega e relatórios essenciais
+
+**Data:** 2026-10-24 (UTC)  
+**Branch/base:** `agent/dona-antonia-r14-customers-delivery-reports`, derivada exatamente do checkpoint R13 `60d08bdaaf54fc79bf36fb6151216018b61dd81e`; PR #1384 draft contra `agent/dona-antonia-r13-bling-fiscal`, sem merge/publicação. Head final `c97cb23616a01fb1354919d30d4b3cce77bc308c`.  
+**Estado:** Concluída em staging V2 isolado; CI remoto aprovado.  
+**Escopo implementado:** busca protegida de clientes por nome/telefone; detalhes, endereços recorrentes e histórico de pedidos; resultado da entrega `CONCLUIDA`/`PROBLEMA` com observação limitada a 500 caracteres e chave idempotente; relatório operacional por período com pedidos, total confirmado, etapas, entrega e fiscal; painéis responsivos Clientes/Relatórios e confirmação de entrega na ficha do pedido. Nenhum módulo de rotas/motoristas foi criado.  
+**Banco isolado:** migration `20261024170000_r14_customers_delivery_reports.sql` aplicada exclusivamente em `hjudhofluihkxykwekir`. Remoto confirmou 20 migrations, 33 tabelas, 802 produtos, 802 perfis privados, 0 clientes, 0 pedidos e 0 eventos de entrega; RPCs novas com `anon=false` e `authenticated=true`; `delivery_events` com RLS e leitura operacional. Advisors: 3 achados históricos RLS sem policy, 3 SECURITY DEFINER anônimos históricos, 25 funções SECURITY DEFINER autenticadas esperadas e proteção de senha vazada desativada.  
+**Testes locais:** `npm test` (121/121), `npm run test:db` (20 migrations/33 tabelas, RBAC/RLS, privacidade, histórico, relatório e retry de entrega), `npm run check`, `npm run lint`, `npm run format:check`, `npm run architecture:check` (134 arquivos), `npm run build` e `git diff --check` passaram. Playwright local permanece limitado pela ausência do Chromium; CI #40115614242 passou a suíte browser e confirmou o fluxo atualizado de navegação.  
+**Limites/isolamento:** sem envio externo, custo novo, merge, deploy ou publicação; `main`, sites públicos/admin legados, Supabases legados, atendimento, Bling/Meta operacionais, DNS e workflows de produção permaneceram intocados.  
+**Próxima rodada:** R15 — segurança, performance, custos e homologação.
