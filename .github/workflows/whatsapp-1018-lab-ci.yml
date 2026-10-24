@@ -4,6 +4,9 @@ on:
     paths:
       - 'vitrine/admin/whatsapp-lab/**'
       - 'scripts/test-whatsapp-meta-catalog-export.mjs'
+      - 'scripts/test-whatsapp-1018-interactive-canary.mjs'
+      - 'supabase/functions/admin-whatsapp-1018-canary-v1/**'
+      - 'supabase/migrations/*whatsapp_1018_interactive_canary*'
       - 'vitrine/admin/index.html'
       - 'vitrine/admin/atendimento/index.html'
       - 'scripts/test-whatsapp-1018-lab.mjs'
@@ -20,3 +23,4 @@ jobs:
           node-version: '22'
       - run: node scripts/test-whatsapp-1018-lab.mjs
       - run: node scripts/test-whatsapp-meta-catalog-export.mjs
+      - run: node scripts/test-whatsapp-1018-interactive-canary.mjs
