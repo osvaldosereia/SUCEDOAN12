@@ -213,7 +213,7 @@
 ## R16 — pré-voo do piloto controlado
 
 **Data:** 2026-10-24 (UTC)  
-**Branch/base:** `agent/dona-antonia-r16-pilot-preflight`, derivada do head R15 `6f8c195d39de72ec057470e15443f25a6b0ba378`; PR #1396 draft contra `agent/dona-antonia-r15-audit-homologacao`, sem merge/publicação. Head documental atual `bf5c37201708e517a1683c430945c93e46d779d4`; head de código verificado `93d28dc9a805f97a2b50c5e4fb05a87e949e333b`.  
+**Branch/base:** `agent/dona-antonia-r16-pilot-preflight`, derivada do head R15 `6f8c195d39de72ec057470e15443f25a6b0ba378`; PR #1396 draft contra `agent/dona-antonia-r15-audit-homologacao`, sem merge/publicação. Head documental atual `9069a2529f8ea0f80df88045663d502b8e2becc6`; head de código verificado `93d28dc9a805f97a2b50c5e4fb05a87e949e333b`.  
 **Estado:** pré-voo técnico documentado; piloto bloqueado.  
 **Escopo:** contrato puro `evaluateR16Readiness`, testes para ausência de gates e regra de 2–3 operadores, comando `npm run r16:readiness` e checklist de execução. O comando não muta banco, site, contas, domínio ou integração.  
 **Gates:** URL V2 de staging acessível; seed fictício vendável; 2–3 operadores isolados; backup/restore controlado; autorização explícita do piloto. Todos retornam bloqueados no ambiente atual.  
