@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import {webcrypto} from 'node:crypto';
 import {
   MetaFlowsError,validateFlowJson,flowValidationErrors,assertFlowPublishable,
-  listFlowsViaMeta,createFlowViaMeta,uploadFlowJsonViaMeta,configureFlowEndpointViaMeta,
+  listFlowsViaMeta,createFlowViaMeta,uploadFlowJsonViaMeta,configureFlowEndpointViaMeta,sendDraftFlowCanaryViaMeta,
   derivePublicKeyPem,getBusinessPublicKeyStatusViaMeta,registerBusinessPublicKeyViaMeta,publishFlowViaMeta,deleteFlowViaMeta
 } from '../supabase/functions/_shared/whatsapp-meta-flows-v1.mjs';
+import {signState,verifyState} from '../supabase/functions/_shared/whatsapp-flow-session-v1.mjs';
 globalThis.crypto??=webcrypto;
 
 const makeFetch=(payload,status=200,inspect=null)=>async(url,init)=>{
@@ -46,6 +47,21 @@ assert.equal(paginated.truncated,false);
 const capped=await listFlowsViaMeta({accessToken:'server-token',graphVersion:'v99.0',wabaId:'123456',maxPages:1,fetchImpl:makeFetch({data:[{id:'98765',name:'Cesta A',status:'DRAFT'}],paging:{next:'https://graph.facebook.com/v99.0/123456/flows?after=cursor-2',cursors:{after:'cursor-2'}}})});
 assert.equal(capped.truncated,true);
 assert.equal(capped.page_count,1);
+
+const canarySecret='flow-session-secret-for-tests-only-123456';
+const canaryClaims={type:'da-flow-1018-canary',sender:'+5565984491018',to:'+5565999828360',nonce:'test-nonce-8360-only'};
+const canaryToken=await signState(canaryClaims,canarySecret);
+let sentFlowBody;
+const canarySend=await sendDraftFlowCanaryViaMeta({accessToken:'server-token',graphVersion:'v99.0',phoneNumberId:'55555',flowId:'98765',flowToken:canaryToken,fetchImpl:makeFetch({messages:[{id:'wamid.test-flow'}]},200,(url,init)=>{sentFlowBody=JSON.parse(init.body)})});
+assert.equal(canarySend.sent,true);
+assert.equal(canarySend.providerMessageId,'wamid.test-flow');
+assert.match(sentFlowBody.to,/^5565999828360$/);
+assert.equal(sentFlowBody.interactive.action.parameters.mode,'draft');
+assert.equal(sentFlowBody.interactive.action.parameters.flow_message_version,'3');
+assert.equal(sentFlowBody.interactive.action.parameters.flow_id,'98765');
+assert.equal(sentFlowBody.interactive.action.parameters.flow_token,canaryToken);
+assert.deepEqual(await verifyState(sentFlowBody.interactive.action.parameters.flow_token,canarySecret),canaryClaims);
+assert.equal(new URL(seen.url).searchParams.get('access_token'),null);
 
 const created=await createFlowViaMeta({accessToken:'server-token',graphVersion:'v99.0',wabaId:'123456',name:'Cesta dinâmica',fetchImpl:makeFetch({id:'98765',status:'DRAFT'})});
 assert.equal(created.id,'98765');

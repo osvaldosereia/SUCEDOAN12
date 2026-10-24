@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {parseBasketFlowReply} from '../vitrine/admin/atendimento/flow-reply-parser.mjs';
 
 const read=path=>readFileSync(path,'utf8');
 const api=read('supabase/functions/admin-whatsapp-templates-v1/index.ts');
 const helper=read('supabase/functions/_shared/whatsapp-meta-flows-v1.mjs');
 const ui=read('vitrine/admin/marketing/flow-center.js');
 const marketing=read('vitrine/admin/marketing/marketing-polish.js');
+const attendance=read('vitrine/admin/atendimento/attendance-app.js');
 
 assert.match(api,/eq\("slug","dona-antonia-1018"\)/);
 assert.match(api,/if\(auth\.role!=="owner"\)/);
@@ -15,6 +17,7 @@ assert.match(api,/flow_upload_json/);
 assert.match(api,/flow_configure_endpoint/);
 assert.match(api,/flow_register_key/);
 assert.match(api,/flow_publish/);
+assert.match(api,/flow_send_canary/);
 assert.match(api,/public_key_matches_private/);
 assert.match(api,/flow_delete/);
 assert.match(api,/DA_FLOW_1018_RSA_PKCS8/);
@@ -25,6 +28,7 @@ assert.match(helper,/Authorization:'Bearer '\+cfg\.token/);
 assert.match(helper,/assertFlowPublishable/);
 assert.match(helper,/meta_flow_public_key_mismatch/);
 assert.match(helper,/validation_errors/);
+assert.match(helper,/sendDraftFlowCanaryViaMeta/);
 assert.match(helper,/whatsapp_business_encryption/);
 assert.match(helper,/paging\?\.cursors\?\.after/);
 assert.doesNotMatch(helper,/searchParams\.set\(["']access_token/);
@@ -35,6 +39,8 @@ assert.match(ui,/flow_upload_json/);
 assert.match(ui,/flow_configure_endpoint/);
 assert.match(ui,/flow_register_key/);
 assert.match(ui,/flow_publish/);
+assert.match(ui,/flow_send_canary/);
+assert.match(ui,/Teste interno restrito ao 8360/);
 assert.match(ui,/public_key_matches_private/);
 assert.match(ui,/Recarregar relatório da Meta/);
 assert.match(ui,/window\.confirm/);
@@ -43,5 +49,18 @@ assert.doesNotMatch(ui,/0975|interactive\.flow|sendTemplateViaMeta|DA_FLOW_1018_
 
 assert.match(marketing,/PRIMARY_MARKETING_VIEWS=\[[^\]]*'flows'/);
 assert.match(marketing,/view==='flows'/);
+assert.match(attendance,/parseBasketFlowReply/);
+assert.match(attendance,/Solicitação de cesta pelo Flow/);
+assert.match(attendance,/items\.textContent=data\.items/);
+assert.match(attendance,/O Flow não cria pedido/);
+const flowReply={direction:'inbound',message_type:'interactive',metadata:{source:'meta',interactive:{nfm_reply:{response_json:JSON.stringify({resultado:'solicitacao_para_atendimento',resumo:'Cesta Média · opção 2',valor:'R$ 185,00',itens:'2 × Arroz 5 kg; 1 × Feijão 1 kg'})}}}};
+assert.deepEqual(parseBasketFlowReply(flowReply),{summary:'Cesta Média · opção 2',total:'R$ 185,00',items:'2 × Arroz 5 kg; 1 × Feijão 1 kg'});
+assert.equal(parseBasketFlowReply({...flowReply,direction:'outbound'}),null);
+assert.equal(parseBasketFlowReply({...flowReply,metadata:{...flowReply.metadata,source:'papoai'}}),null);
+assert.equal(parseBasketFlowReply({...flowReply,metadata:{...flowReply.metadata,interactive:{nfm_reply:{response_json:'{"resultado":"outro"}'}}}}),null);
+assert.equal(parseBasketFlowReply({...flowReply,metadata:{...flowReply.metadata,interactive:{nfm_reply:{response_json:'x'.repeat(12001)}}}}),null);
+const unsafeReply={...flowReply,metadata:{...flowReply.metadata,interactive:{nfm_reply:{response_json:JSON.stringify({resultado:'solicitacao_para_atendimento',resumo:'<img src=x onerror=alert(1)>\nResumo',valor:'R$ 1,00',itens:'<script>alert(1)</script>'})}}}};
+assert.equal(parseBasketFlowReply(unsafeReply).summary,'<img src=x onerror=alert(1)> Resumo');
+assert.equal(parseBasketFlowReply(unsafeReply).items,'<script>alert(1)</script>');
 console.log('PASS Admin Flow manager is pinned to 1018, owner-gated, session-authenticated and publication-gated');
 

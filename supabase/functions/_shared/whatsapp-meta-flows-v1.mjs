@@ -1,4 +1,5 @@
 // Server-side Meta Flows API client. Never pass its access token to browser code.
+import {FLOW_CANARY_RECIPIENT_E164} from './whatsapp-flow-session-v1.mjs';
 const FLOW_ID_RE=/^\d{5,30}$/;
 const WABA_ID_RE=/^\d{5,30}$/;
 const PHONE_ID_RE=/^\d{5,30}$/;
@@ -137,6 +138,25 @@ export async function listFlowsViaMeta({accessToken,wabaId,graphVersion,fetchImp
     cursor=nextCursor;
   }
   return {items:rows,truncated,page_count:pages};
+}
+export async function sendDraftFlowCanaryViaMeta({accessToken,phoneNumberId,graphVersion,flowId,flowToken,fetchImpl,timeoutMs=20000}={}){
+  const cfg=graphConfig({accessToken,graphVersion,fetchImpl,timeoutMs});
+  const phone=id(phoneNumberId,PHONE_ID_RE),flow=id(flowId,FLOW_ID_RE),token=String(flowToken??'').trim();
+  if(!phone)throw fail('meta_flow_phone_id_invalid');
+  if(!flow)throw fail('meta_flow_id_invalid');
+  if(!token||token.length>20000)throw fail('meta_flow_token_invalid');
+  const body={
+    messaging_product:'whatsapp',recipient_type:'individual',to:FLOW_CANARY_RECIPIENT_E164.replace(/\D/g,''),type:'interactive',
+    interactive:{
+      type:'flow',header:{type:'text',text:'Teste interno'},body:{text:'Homologação do WhatsApp Flow da cesta.'},
+      footer:{text:'Somente teste interno 1018 → 8360.'},
+      action:{name:'flow',parameters:{mode:'draft',flow_message_version:'3',flow_token:token,flow_id:flow,flow_cta:'Iniciar teste',flow_action:'navigate',flow_action_payload:{screen:'TAMANHO'}}}
+    }
+  };
+  const payload=await graphRequest({cfg,path:phone+'/messages',method:'POST',body});
+  const providerMessageId=clean(payload?.messages?.[0]?.id,240);
+  if(!providerMessageId)throw fail('meta_flow_send_response_invalid',{httpStatus:502});
+  return {sent:true,providerMessageId};
 }
 export async function getFlowViaMeta({accessToken,flowId,graphVersion,fetchImpl,timeoutMs=15000}={}){
   const cfg=graphConfig({accessToken,graphVersion,fetchImpl,timeoutMs});

@@ -50,8 +50,8 @@ function setBusy(value){
   const isDraft=String(selected?.status||'').toUpperCase()==='DRAFT';
   rootNode?.querySelectorAll('[data-flow-action]').forEach(button=>{
     const action=button.dataset.flowAction;
-    const ownerAction=['create','register-key','configure','publish','delete'].includes(action);
-    const draftAction=['configure','publish','delete'].includes(action);
+    const ownerAction=['create','register-key','configure','publish','delete','send-canary'].includes(action);
+    const draftAction=['configure','publish','delete','send-canary'].includes(action);
     button.disabled=busy||(ownerAction&&!canManage)||(draftAction&&!isDraft);
   });
   rootNode?.querySelectorAll('[data-flow-json]').forEach(input=>{input.disabled=busy||!canManage||!isDraft});
@@ -82,11 +82,12 @@ function renderFlowDetail(flow){
   const target=rootNode?.querySelector('[data-flow-detail]');
   if(!target)return;
   if(!flow){target.innerHTML='<p class="flow-empty">Selecione um Flow para ver o estado, os erros da Meta e as ações disponíveis.</p>';renderFlowList();return}
-  target.innerHTML='<div class="flow-detail-head"><div><h3>'+esc(flow.name||'Flow')+'</h3><p>ID <code>'+esc(flow.id)+'</code> · Estado <strong>'+esc(flow.status||'UNKNOWN')+'</strong></p></div><span>'+esc(flow.health_status||'Saúde não informada')+'</span></div><p><strong>Endpoint:</strong> <code>'+esc(flow.endpoint_uri||'Não configurado')+'</code></p><h4>Relatório de validação da Meta</h4>'+formatValidation(flow.validation_errors)+'<div class="flow-actions"><label class="flow-upload">Enviar JSON e validar na Meta<input type="file" data-flow-json accept=\"application/json,.json\" '+(canManage&&isDraft?'':'disabled')+'></label><button type="button" data-flow-action="configure">Configurar endpoint</button><button type="button" data-flow-action="validate">Recarregar relatório da Meta</button><button type="button" data-flow-action="publish" class="primary">Publicar Flow</button><button type="button" data-flow-action="delete" class="danger">Excluir rascunho</button></div><p class="flow-publish-note">A publicação é irreversível na Meta. O Vitrine Admin só libera essa ação quando o Flow está em rascunho, o relatório oficial está limpo, o endpoint corresponde à URL fixa e a chave e os segredos do endpoint estão prontos.</p>';
+  target.innerHTML='<div class="flow-detail-head"><div><h3>'+esc(flow.name||'Flow')+'</h3><p>ID <code>'+esc(flow.id)+'</code> · Estado <strong>'+esc(flow.status||'UNKNOWN')+'</strong></p></div><span>'+esc(flow.health_status||'Saúde não informada')+'</span></div><p><strong>Endpoint:</strong> <code>'+esc(flow.endpoint_uri||'Não configurado')+'</code></p><h4>Relatório de validação da Meta</h4>'+formatValidation(flow.validation_errors)+'<div class="flow-actions"><label class="flow-upload">Enviar JSON e validar na Meta<input type="file" data-flow-json accept=\"application/json,.json\" '+(canManage&&isDraft?'':'disabled')+'></label><button type="button" data-flow-action="configure">Configurar endpoint</button><button type="button" data-flow-action="validate">Recarregar relatório da Meta</button><button type="button" data-flow-action="send-canary">Testar rascunho no 8360</button><button type="button" data-flow-action="publish" class="primary">Publicar Flow</button><button type="button" data-flow-action="delete" class="danger">Excluir rascunho</button></div><p class="flow-publish-note">Teste interno restrito ao 8360. O remetente é fixo na conta 1018 e o destino não pode ser alterado. A Meta só recebe o envio depois de validação limpa, endpoint e chaves prontos.</p><p class="flow-publish-note">A publicação é irreversível na Meta. O Vitrine Admin só libera essa ação quando o Flow está em rascunho, o relatório oficial está limpo, o endpoint corresponde à URL fixa e a chave e os segredos do endpoint estão prontos.</p>';
   renderFlowList();
   target.querySelector('[data-flow-json]')?.addEventListener('change',handleJsonUpload);
   target.querySelector('[data-flow-action="configure"]')?.addEventListener('click',()=>runAction('flow_configure_endpoint',{flow_id:activeFlowId},'Endpoint fixo configurado na Meta.'));
   target.querySelector('[data-flow-action="validate"]')?.addEventListener('click',()=>runAction('flow_validate',null,'Relatório da Meta atualizado.'));
+  target.querySelector('[data-flow-action="send-canary"]')?.addEventListener('click',()=>sendCanaryActiveFlow());
   target.querySelector('[data-flow-action="publish"]')?.addEventListener('click',()=>publishActiveFlow());
   target.querySelector('[data-flow-action="delete"]')?.addEventListener('click',()=>deleteActiveFlow());
 }
@@ -144,6 +145,11 @@ async function publishActiveFlow(){
   if(!activeFlowId||busy)return;
   const accepted=window.confirm('Publicar este Flow na Meta? A publicação é irreversível e torna o Flow imutável.');
   if(accepted)await runAction('flow_publish',{flow_id:activeFlowId},'Flow publicado pela Meta.');
+}
+async function sendCanaryActiveFlow(){
+  if(!activeFlowId||busy)return;
+  const accepted=window.confirm('Enviar este rascunho somente ao número interno final 8360, usando a conta comercial 1018? Nenhum outro destino está disponível nesta homologação.');
+  if(accepted)await runAction('flow_send_canary',{flow_id:activeFlowId},'A Meta aceitou o envio de teste do rascunho ao número interno 8360.');
 }
 async function deleteActiveFlow(){
   if(!activeFlowId||busy)return;

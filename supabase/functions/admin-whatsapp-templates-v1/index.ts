@@ -1,7 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.58.0";
 import {buildTemplateCacheRows,listTemplatesViaMeta,createTemplateViaMeta,editTemplateViaMeta,deleteTemplateViaMeta,MetaTemplatesError} from "../_shared/whatsapp-meta-templates-v1.mjs";
-import {listFlowsViaMeta,getFlowViaMeta,createFlowViaMeta,uploadFlowJsonViaMeta,configureFlowEndpointViaMeta,getBusinessPublicKeyStatusViaMeta,derivePublicKeyPem,registerBusinessPublicKeyViaMeta,publishFlowViaMeta,deleteFlowViaMeta,validateFlowJson,MetaFlowsError} from "../_shared/whatsapp-meta-flows-v1.mjs";
+import {listFlowsViaMeta,getFlowViaMeta,createFlowViaMeta,uploadFlowJsonViaMeta,configureFlowEndpointViaMeta,getBusinessPublicKeyStatusViaMeta,derivePublicKeyPem,registerBusinessPublicKeyViaMeta,publishFlowViaMeta,deleteFlowViaMeta,sendDraftFlowCanaryViaMeta,assertFlowPublishable,validateFlowJson,MetaFlowsError} from "../_shared/whatsapp-meta-flows-v1.mjs";
+import {signState,FLOW_CANARY_SENDER_E164,FLOW_CANARY_RECIPIENT_E164} from "../_shared/whatsapp-flow-session-v1.mjs";
 import {sendTemplateViaMeta,MetaTransportError} from "../_shared/whatsapp-meta-transport-v1.mjs";
 import {buildPostorderTemplate} from "../_shared/customer-postorder-template-v3.mjs";
 import {buildPostorderOffersTemplate,buildPostorderConfirmTemplate} from "../_shared/customer-postorder-followup-templates-v1.mjs";
@@ -111,7 +112,7 @@ function flowEndpointUri(){
   return SUPABASE_URL.replace(/\/+$/,"")+FLOW_FUNCTION_PATH;
 }
 async function fixedFlowAccount(){
-  const q=await db.from("whatsapp_accounts").select("id,slug,display_name,waba_id,phone_number_id,is_active")
+  const q=await db.from("whatsapp_accounts").select("id,slug,display_name,phone_e164,waba_id,phone_number_id,is_active")
     .eq("slug","dona-antonia-1018").eq("is_active",true).maybeSingle();
   if(q.error)throw new MetaFlowsError("meta_flow_account_lookup_failed",{httpStatus:500});
   return q.data||null;
@@ -120,7 +121,7 @@ function flowReadiness(account,role){
   const checks={
     meta_token:Boolean(META_WHATSAPP_ACCESS_TOKEN),
     graph_version:/^v\d+\.\d+$/.test(META_WHATSAPP_GRAPH_VERSION),
-    account:Boolean(account&&account.slug==="dona-antonia-1018"&&/^\d{5,30}$/.test(String(account.waba_id||""))&&/^\d{5,30}$/.test(String(account.phone_number_id||""))),
+    account:Boolean(account&&account.slug==="dona-antonia-1018"&&String(account.phone_e164||"").replace(/\D/g,"").endsWith("1018")&&/^\d{5,30}$/.test(String(account.waba_id||""))&&/^\d{5,30}$/.test(String(account.phone_number_id||""))),
     endpoint:Boolean(flowEndpointUri()),
     private_key:Boolean(DA_FLOW_1018_RSA_PKCS8),
     public_key_registered:false,
@@ -149,7 +150,7 @@ async function flowReadinessWithMeta(account,role){
   return state;
 }
 function requireFlowConnection(account){
-  if(!account||account.slug!=="dona-antonia-1018"||!/^\d{5,30}$/.test(String(account.waba_id||""))||!/^\d{5,30}$/.test(String(account.phone_number_id||"")))throw new MetaFlowsError("meta_flow_account_not_configured",{httpStatus:503});
+  if(!account||account.slug!=="dona-antonia-1018"||!String(account.phone_e164||"").replace(/\D/g,"").endsWith("1018")||!/^\d{5,30}$/.test(String(account.waba_id||""))||!/^\d{5,30}$/.test(String(account.phone_number_id||"")))throw new MetaFlowsError("meta_flow_account_not_configured",{httpStatus:503});
   if(!META_WHATSAPP_ACCESS_TOKEN||!/^v\d+\.\d+$/.test(META_WHATSAPP_GRAPH_VERSION))throw new MetaFlowsError("meta_flow_meta_connection_not_configured",{httpStatus:503});
 }
 async function assertFlowOwned(account,flowId){
@@ -226,6 +227,20 @@ async function handleFlowMutation(req,action,body,auth){
   if(!/^\d{5,30}$/.test(flowId))return json(req,{ok:false,error:"invalid_flow_id"},400);
   const current=await assertFlowOwned(account,flowId);
   if(current.status!=="DRAFT")throw new MetaFlowsError("meta_flow_not_draft",{httpStatus:409});
+  if(action==="flow_send_canary"){
+    const readiness=await flowReadinessWithMeta(account,auth.role);
+    assertFlowPublishable(current,{
+      endpointUri:flowEndpointUri(),
+      publicKeyConfigured:readiness.checks.public_key_registered,
+      publicKeyMatchesPrivateKey:readiness.checks.public_key_matches_private,
+      privateKeyConfigured:readiness.checks.private_key,
+      metaAppSecretConfigured:readiness.checks.meta_app_secret,
+      sessionSecretConfigured:readiness.checks.session_secret
+    });
+    const flowToken=await signState({type:"da-flow-1018-canary",sender:FLOW_CANARY_SENDER_E164,to:FLOW_CANARY_RECIPIENT_E164,nonce:crypto.randomUUID()},DA_FLOW_1018_SESSION_SECRET);
+    const sent=await sendDraftFlowCanaryViaMeta({...args,flowId,flowToken});
+    return json(req,{ok:sent.sent,flow_id:flowId,recipient_last_four:"8360",provider_message_id:sent.providerMessageId},sent.sent?200:502);
+  }
   if(action==="flow_upload_json"){
     const validated=validateFlowJson(body.flow_json);
     const uploaded=await uploadFlowJsonViaMeta({...args,flowId,json:validated.json});
