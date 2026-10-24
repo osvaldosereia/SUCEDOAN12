@@ -116,3 +116,29 @@ test('menu mobile abre como gaveta e preserva o espaço de trabalho',async({page
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2)).toBeTruthy();
   await page.screenshot({path:'test-results/admin-cestas-mobile.png',fullPage:true});
 });
+
+
+test('gestão de pedidos: quatro estados, conferência e nota independente', async ({page})=>{
+  await page.setViewportSize({width:1280,height:800});
+  await page.goto('/admin/?secao=pedidos');
+  await expect(page.getByRole('heading',{name:'Pedidos',exact:true})).toBeVisible();
+  const tabs=page.getByRole('tablist',{name:'Etapas dos pedidos'});
+  await expect(tabs.getByRole('tab')).toHaveCount(4);
+  await tabs.getByRole('tab',{name:/^Novo /}).click();
+  await page.getByRole('button',{name:/DEMO-2026-001/}).click();
+  await expect(page.getByRole('article',{name:/Detalhes do pedido/})).toBeVisible();
+  await page.getByRole('button',{name:'Iniciar separação'}).click();
+  await expect(page.getByRole('tab',{name:/Em separação/})).toHaveAttribute('aria-selected','true');
+  await expect(page.getByRole('button',{name:'Concluir separação'})).toBeVisible();
+  await page.getByRole('button',{name:'Concluir separação'}).click();
+  await expect(page.getByRole('alert')).toContainText('Marque cada item');
+  const group=page.getByRole('article',{name:/Detalhes do pedido/});
+  for(const row of await group.locator('.da-order-item').all()){
+    await row.getByRole('button',{name:'Separado'}).click();
+  }
+  await page.getByRole('button',{name:'Concluir separação'}).click();
+  await expect(tabs.getByRole('tab',{name:/Pronto/})).toHaveAttribute('aria-selected','true');
+  await page.getByRole('button',{name:'Marcar entregue'}).click();
+  await expect(tabs.getByRole('tab',{name:/Entregue/})).toHaveAttribute('aria-selected','true');
+  await page.screenshot({path:'test-results/admin-pedidos-desktop.png',fullPage:true});
+});

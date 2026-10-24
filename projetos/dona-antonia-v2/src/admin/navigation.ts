@@ -11,7 +11,7 @@ export const ADMIN_GROUPS = [
 
 export const ADMIN_SECTIONS = [
   {id:'inicio',label:'Início',title:'Visão geral',description:'Acesso rápido às operações e configurações da loja.',group:'operation',icon:'home',available:true},
-  {id:'pedidos',label:'Pedidos',title:'Pedidos',description:'Novo, em separação, pronto e entregue.',group:'operation',icon:'orders',available:false},
+  {id:'pedidos',label:'Pedidos',title:'Pedidos',description:'Novo, em separação, pronto e entregue.',group:'operation',icon:'orders',available:true},
   {id:'atendimento',label:'Atendimento',title:'Atendimento WhatsApp',description:'Conversas conectadas a clientes e pedidos.',group:'operation',icon:'users',available:false},
 
   {id:'produtos',label:'Produtos',title:'Produtos',description:'Busque produtos e revise seu cadastro, preço e disponibilidade.',group:'catalog',icon:'package',available:true},

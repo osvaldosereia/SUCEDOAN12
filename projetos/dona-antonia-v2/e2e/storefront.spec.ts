@@ -84,3 +84,26 @@ for (const viewport of sizes) {
     await page.screenshot({path:'test-results/cesta-'+viewport.name+'.png',fullPage:true});
   });
 }
+
+
+test('checkout: itens da cesta sem preço individual e quantidades editáveis',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/');
+  await page.getByRole('button',{name:/Próximo/}).click();
+  await page.getByRole('region',{name:'Escolher Biscoitos'}).getByRole('button',{name:/Biscoito Rosquinha de Chocolate/}).click();
+  await page.getByRole('button',{name:/Finalizar pedido/}).click();
+  await expect(page.getByRole('heading',{name:'Seus produtos'})).toBeVisible();
+  const basketRows=page.locator('.checkout-basket-line');
+  await expect(basketRows.first()).toBeVisible();
+  await expect(basketRows.first().locator('small')).toHaveText('Produto da cesta');
+  await expect(basketRows.first()).not.toContainText('por unidade');
+  const extraRow=page.locator('.checkout-extra-line').first();
+  await expect(extraRow).toContainText('por unidade');
+  await extraRow.getByRole('button',{name:/Diminuir .* no checkout/}).click();
+  await expect(page.locator('.checkout-extra-line')).toHaveCount(0);
+  const count=await basketRows.count();
+  const firstName=await basketRows.first().locator('b').innerText();
+  await basketRows.first().getByRole('button',{name:'Diminuir '+firstName+' no checkout'}).click();
+  await expect(page.locator('.checkout-basket-line')).toHaveCount(count-1);
+  await page.screenshot({path:'test-results/checkout-editavel-mobile.png',fullPage:true});
+});

@@ -4,6 +4,8 @@ import type { BasketId, BasketTemplate, Product, ProductType } from './core/mode
 import { DEMO_PRODUCTS, DEMO_TEMPLATES, DEMO_TYPES } from './data/demo';
 import { DEMO_EXTRA_GROUPS, DEMO_EXTRA_PRODUCTS, DEMO_EXTRA_TYPES } from './data/demo-extra';
 import type { ExtraGroup } from './core/extras';
+import type {OperationalOrder} from './core/orders';
+import {DEMO_ORDERS} from './data/demo-orders';
 import {useAdminSectionRoute} from './admin/routing/useAdminSectionRoute';
 import { AdminShell } from './admin/shell/AdminShell';
 /** Cada sessão tem bundle próprio: não baixar módulos que o operador não abriu. */
@@ -11,11 +13,18 @@ const HomeDashboard=React.lazy(()=>import('./admin/features/home/HomeDashboard')
 const ProductsPanel=React.lazy(()=>import('./admin/features/products/ProductsPanel').then(m=>({default:m.ProductsPanel})));
 const ProductTypesPanel=React.lazy(()=>import('./admin/features/product-types/ProductTypesPanel').then(m=>({default:m.ProductTypesPanel})));
 const BasketCompositionPanel=React.lazy(()=>import('./admin/features/baskets/BasketCompositionPanel').then(m=>({default:m.BasketCompositionPanel})));
+const OrdersPanel=React.lazy(()=>import('./admin/features/orders/OrdersPanel').then(m=>({default:m.OrdersPanel})));
 const ExtraAdmin=React.lazy(()=>import('./admin/features/extras/ExtraAdmin').then(m=>({default:m.ExtraAdmin})));
 import './admin.css';
 
 function Admin() {
   const [tab,setTab] = useAdminSectionRoute();
+  const [orders,setOrders] = useState<OperationalOrder[]>(DEMO_ORDERS.map(order=>({
+    ...order,items:order.items.map(item=>({...item}))
+  })));
+  const updateOrder=(id:string,change:(order:OperationalOrder)=>OperationalOrder)=>{
+    setOrders(current=>current.map(order=>order.id===id?change(order):order));
+  };
   const [products,setProducts] = useState<Product[]>([...DEMO_PRODUCTS,...DEMO_EXTRA_PRODUCTS].map((product)=>({...product})));
   const [types,setTypes] = useState<ProductType[]>([...DEMO_TYPES,...DEMO_EXTRA_TYPES].map((type)=>({...type, productSkus:[...type.productSkus]})));
   const [templates,setTemplates] = useState<BasketTemplate[]>(DEMO_TEMPLATES.map((basket)=>({...basket,lines:[...basket.lines]})));
@@ -70,6 +79,7 @@ function Admin() {
     {notice&&<div className="notice muted" role="status">{notice}</div>}
     <React.Suspense fallback={<div className="notice muted" role="status">Carregando seção...</div>}>
       {tab==='inicio' && <HomeDashboard products={products} types={types} baskets={templates} extras={extraGroups} onNavigate={setTab}/>}
+      {tab==='pedidos'&&<OrdersPanel orders={orders} onUpdate={updateOrder}/>}
       {tab==='produtos' && <ProductsPanel
         products={products} filteredProducts={filteredProducts} filter={filter}
         setFilter={setFilter} changeProduct={changeProduct}/>}
