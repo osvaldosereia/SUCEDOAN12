@@ -30,7 +30,7 @@ async function apiGet(action,params={}){
   for(const [key,value] of Object.entries(params))if(value!==undefined&&value!==null&&value!=='')url.searchParams.set(key,String(value));
   const response=await bounded(attendanceAuthorizedFetch(url,{method:'GET',headers:{apikey:ADMIN_PUBLIC_KEY},cache:'no-store'}));
   const data=await response.json().catch(()=>({}));
-  if(!response.ok||data?.ok===false){const error=new Error(data?.error||'flow_request_failed');error.payload=data;throw error}
+  if(!response.ok){const error=new Error(data?.error||'flow_request_failed');error.payload=data;throw error}
   return data;
 }
 async function apiPost(action,body={}){

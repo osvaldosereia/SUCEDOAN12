@@ -51,7 +51,7 @@ function loadRecentCampaignModule(){
 
 function loadPostSaleModule(){
   if(window.DAMarketingPostSale?.mountPostSaleView)return Promise.resolve(window.DAMarketingPostSale);
-  if(!postSaleModulePromise)postSaleModulePromise=import('/vitrine/admin/marketing/post-sale-center.js?v=whatsapp-flow-active-router-20261024');
+  if(!postSaleModulePromise)postSaleModulePromise=import('/vitrine/admin/marketing/post-sale-center.js?v=whatsapp-flow-readiness-20261024');
   return postSaleModulePromise;
 }
 
@@ -159,7 +159,7 @@ async function openOverviewView(root,view,{create=false}={}){
       return module?.mountStrategyView?.(root);
     }
     if(view==='campaigns'){
-      const entry=window.DAMarketingCampaignEntry||await import('/vitrine/admin/marketing/campaign-entry.js?v=whatsapp-flow-manager-20261024');
+      const entry=window.DAMarketingCampaignEntry||await import('/vitrine/admin/marketing/campaign-entry.js?v=whatsapp-flow-readiness-20261024');
       return entry?.openCampaigns?.();
     }
     if(view==='templates'){
@@ -169,7 +169,7 @@ async function openOverviewView(root,view,{create=false}={}){
       return;
     }
     if(view==='flows'){
-      const module=window.DAMarketingFlowCenter||await import('/vitrine/admin/marketing/flow-center.js?v=whatsapp-flow-center-20261024');
+      const module=window.DAMarketingFlowCenter||await import('/vitrine/admin/marketing/flow-center.js?v=whatsapp-flow-readiness-20261024');
       return module?.mountFlowView?.(root);
     }
     if(view==='audiences'){
