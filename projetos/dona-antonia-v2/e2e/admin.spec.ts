@@ -45,6 +45,10 @@ test('admin mobile: abas navegáveis sem estouro horizontal',async({page})=>{
   await expect(page.getByRole('button',{name:'Produtos extras'})).toBeVisible();
   await page.getByRole('button',{name:'Produtos extras'}).click();
   await expect(page.getByRole('heading',{name:'Grupos exibidos na etapa de extras'})).toBeVisible();
+  const firstGroup=page.locator('.extra-admin-group').first();
+  await expect(firstGroup).toBeVisible();
+  const groupButton=await firstGroup.locator('.extra-group-name').boundingBox();
+  expect(groupButton?.width??0).toBeGreaterThan(200);
   // Apenas overflow local de tabelas, sem quebrar a largura do documento.
   const info=await page.evaluate(()=>({
     innerWidth:window.innerWidth,
@@ -108,6 +112,7 @@ test('menu mobile abre como gaveta e preserva o espaço de trabalho',async({page
   await page.getByRole('button',{name:'Composição das cestas'}).click();
   await expect(page.getByRole('heading',{name:'Cestas básicas'})).toBeVisible();
   await expect(page.getByRole('button',{name:'Abrir menu'})).toHaveAttribute('aria-expanded','false');
+  await expect(page.locator('.da-side')).toHaveCSS('visibility','hidden');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2)).toBeTruthy();
   await page.screenshot({path:'test-results/admin-cestas-mobile.png',fullPage:true});
 });
