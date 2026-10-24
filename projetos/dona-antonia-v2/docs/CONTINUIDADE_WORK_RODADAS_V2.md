@@ -1,0 +1,274 @@
+# DONA ANTÔNIA V2 — DOSSIÊ DE CONTINUIDADE E PLANO POR RODADAS (WORK)
+
+**Versão do dossiê:** 2026-10-23  
+**Finalidade:** transferir todas as decisões operacionais, regras de UX, estado da engenharia, riscos, pendências e plano de entrega para um novo Projeto/conversa do ChatGPT em modo Work.  
+**Status:** PLANO DE EXECUÇÃO — NÃO SIGNIFICA QUE TODAS AS RODADAS FORAM EXECUTADAS OU QUE FOI FEITA AUDITORIA INTEGRAL DE CADA ARQUIVO. A rodada R00 fará a auditoria integral baseada no código mais recente.  
+**Repositório:** https://github.com/osvaldosereia/SUCEDOAN12  
+**Branch de desenvolvimento principal da V2:** agent/dona-antonia-nova-plataforma  
+**Pasta:** projetos/dona-antonia-v2/  
+**Versão estática de testes (antiga em relação à branch):** https://donaantonia.com.br/site1/ e https://donaantonia.com.br/admin1/  
+**Produção atual — NÃO ALTERAR:** https://donaantonia.com.br/ e administração legada Vitrine/Admin  
+**Última CI observada nesta conversa:** https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/40056490923 — todos os gates passaram naquela versão da branch; conferir resultados atuais antes de qualquer nova afirmação.
+
+## 0. REGRA MÁXIMA: PROTEGER A OPERAÇÃO ATUAL
+1. NÃO alterar NADA da loja pública em produção, admin legado/Vitrine, pedidos reais, atendimento em uso, cron, Edge Functions, integrações ou bancos Supabase existentes sem autorização explícita, específica e posterior.
+2. NÃO modificar a branch main, a raiz do site, nem publicar a V2 em /admin1 ou /site1 durante desenvolvimento comum. As URLs de teste já existem, porém a branch de desenvolvimento pode estar mais avançada do que a versão publicada. O usuário pode autorizar publicação ISOLADA apenas dessas duas pastas em etapa própria, com inspeção de diffs, CI e rollback.
+3. Projetos Supabase ligados à operação atual: Vitrine/Admin qxstkwshuvplmmftrctj e Bling Hub/canônico ssbesxgaijknwsjbsbcz. São referências PROIBIDAS para migração ou escrita da V2. Projetar banco **completamente isolado**, sem alterar, criar gatilhos ou consumir recursos nos dois existentes.
+4. Não utilizar Railway, Make.com legado, PapoAI, workers contínuos desnecessários nem introduzir serviços pagos sem avaliar custo e obter consentimento para despesas.
+5. No GitHub: executar mudanças em branch agent/*; commits atômicos; verificar SHA antes de gravar, PRs e CI; evitar múltiplos agentes editando os mesmos arquivos simultaneamente. Se outro agente atuou, sincronizar e reconciliar antes de continuar.
+6. Não apresentar protótipos, contratos TS, migrações não aplicadas ou testes unitários como integração real; separar implementado, testado, conectado, publicado e homologado.
+7. Não pedir aprovação repetida para alterações já autorizadas na V2 isolada; pedir autorização somente para ações arriscadas: produção, banco legado, mudança de DNS/domínio, custos, credenciais e envio real de mensagens/NF-e.
+
+## 1. OBJETIVO
+Construir uma nova plataforma Dona Antônia com **site público e admin modular profissional**, para vender cestas básicas personalizáveis e produtos extras, gerenciar pedidos, separação/entrega, atendimento humano WhatsApp e notificações transacionais Meta, emitindo NF-e no Bling somente após a separação.
+
+Prioridades operacionais:
+- Simplicidade extrema para operadores e clientes com pouco domínio digital e celulares básicos.
+- Visual e fluxos com padrões comerciais de e-commerce conhecido; performance medida, não proclamada.
+- Crescimento para dezenas de seções sem arquivos gigantes, remendos, duplicação de lógica ou dependências entre telas.
+- Evolução incremental, cada rodada com começo e fim claros, testes e evidências, sem paralisar a operação existente.
+- Baixo custo recorrente, sem jobs que gastem processamento/rede desnecessariamente.
+
+## 2. REGRAS COMERCIAIS E DE NEGÓCIO
+- Atuação: **somente Cuiabá e Várzea Grande (MT)**.
+- Pedido mínimo: **R$ 75** — validar no servidor, com mensagens claras no cliente.
+- Após **12h em Cuiabá**, pedido passa para entrega no dia seguinte conforme dia útil; **domingos e feriados nacionais sem entrega/operação**. Definir regra detalhada de feriados, cutoff, janelas e dias úteis no backend antes de ativar vendas; não improvisar promessa na interface.
+- Pagamento **na entrega**: PIX, dinheiro, crédito, alimentação/refeição. Sem fiado, boleto, prazo de 30 dias ou entrada.
+- Jamais vender SKU inativo, estoque <= 0, preço <= 0 ou vencido. Campos de validade podem ser opcionais, mas quando existentes a restrição é obrigatória.
+- Estoque é transacional no pedido real; o leitor EAN foi usado TEMPORARIAMENTE para conferência física no legado, mas não define uma arquitetura permanente da V2. Antes da conexão decidir e documentar fonte canônica e regras de conciliação com Bling e estoque físico.
+- O Bling deve cuidar sobretudo do FISCAL; a gestão da compra e do processo de separação/expedição deve funcionar no nosso admin.
+- Códigos dos produtos: um SKU por sabor, aroma, apresentação. Marca/sabor NÃO exigem SKU-pai ou variantes do Bling.
+- Sete categorias comerciais FECHADAS da base Bling inicial: MERCEARIA BÁSICA, LIMPEZA, LAVANDERIA, HIGIÊNE (grafia mantida na planilha existente), BELEZA, UTILIDADES, PET. Tipos de cesta (ARROZ, FEIJÃO etc.) são dimensão DIFERENTE das categorias.
+- Clientes conseguem escolher marca de cada tipo, reduzir quantidades até ZERO, trocar marcas sem perder quantidade e acrescentar extras opcionais.
+- Cinco tamanhos iniciais EDITÁVEIS: econômica, mini, pequena, média, grande. Cada tamanho associa tipos, quantidades e ordenação.
+- Cada tamanho pode possuir **VALOR INTERNO OCULTO** configurável no admin. O servidor incorpora isso ao preço público agregado da cesta, mas **nunca expõe o componente como linha ou atributo público**. O tratamento fiscal do valor precisa de validação contábil antes de emissão NF-e.
+- Fotos de produtos e cestas são QUADRADAS, proporção **1:1**, com fundo neutro, sem distorção (object-fit:contain), sem imagens inventadas atribuídas a SKUs reais.
+
+## 3. UX DO SITE PÚBLICO — REFERÊNCIAS E DECISÕES
+Referência de fluxo: iFood Mercado. Referência de visual: Shopify/temas grocery. Complemento de pesquisa: Baymard e práticas Google Core Web Vitals. Não copiar marca/código/ativos proprietários.
+- Mobile-first, 2 colunas de cestas no celular, 5 no desktop. Foto quadrada, tamanho, número de itens, preço inicial com "A partir de" menor que o valor, selecionar cesta.
+- Depois abrir a composição progressivamente: cada TIPO DE PRODUTO é uma linha de carrossel horizontal contendo cards compactos de SKUs (foto quadrada, nome curto, valor, estado selecionado). Carrossel rola por toque e setas; não bloquear rolagem vertical. Renderizar opção principal rapidamente; carregar fotos e opções distantes sob demanda.
+- A **quantidade é por tipo**, com seletor +/− **abaixo** do carrossel, preservada na troca de marca. Zero remove linha do checkout.
+- Barra fixa inferior em mobile com total atualizado e botão Próximo; próxima etapa extras.
+- Extras comuns a todas as cestas: mesmos cards e carrosséis por tipo; quantidade inicial zero. Botão Finalizar pedido.
+- Checkout etapa 3: resumo editável, nome/telefone/endereço/pagamento na entrega. Sem cadastro ou senha obrigatórios; dados faltantes não devem impedir indevidamente pedido — definir mínimo seguro do lado servidor, permitir complementação manual via WhatsApp quando possível.
+- **MUITO IMPORTANTE NO CHECKOUT:** itens que compõem a CESTA têm NOME e QUANTIDADE EDITÁVEL, **SEM preço individual**; mostrar somente valor TOTAL da cesta. EXTRAS mostram preço UNITÁRIO e subtotal individual. Todo item tem +/-; chegar a zero remove da revisão e recalcula.
+- Confirmar compra exige backend real; jamais fingir envio de pedido ou exibir sucesso sem persistir.
+- Otimização: preload da imagem LCP, lazy em imagens fora da área visível, dimensionamento 1:1, AVIF/WebP, bundle por etapa, chamadas cacheadas e sem consultar servidor a cada clique de +/−.
+- PageSpeed mobile 100 é ASPIRAÇÃO, não garantia. Acompanhar LCP <= 2,5 s, INP <= 200 ms, CLS <= 0,1, métricas p75 reais e Lighthouse de homologação.
+
+## 4. UX DO ADMIN — REFERÊNCIA SHOPIFY 2026
+Pesquisar continuamente Shopify (produtos, pedidos, status, filtros), Nuvemshop/Nimbus (formulários e navegação) e Loja Integrada (simplicidade). Padronização comercial própria:
+- Barra lateral escura compacta, superfície principal branca/cinza neutro, Inter/system-ui, campos consistentes, ações por contexto, status discretos.
+- Seções atuais/planejadas:
+  **Operação:** Início; Pedidos [prévia demonstrativa]; Atendimento WhatsApp [futuro].
+  **Catálogo:** Produtos; Estoque [futuro]; Tipos de produto; Cestas básicas; Produtos extras.
+  **Gestão:** Clientes; Relatórios; Marketing [futuros].
+  **Sistema:** Integrações; Configurações [futuras].
+- Busca global Ctrl/Cmd+K, URL por seção, sidebar recolhível e drawer mobile, listas com filtros/paginação e ações de estoque/ativação diretas sem abrir outra página.
+- Evitar esconder operações comuns atrás de telas extras. Operador deve localizar rapidamente um pedido pelo número ou telefone e abrir conversa WhatsApp a partir do pedido; na conversa, abrir o pedido relacionado.
+- Não exibir 59 campos Bling na tabela principal. Ficha de produto com áreas: Geral/imagens; Preço/estoque; Fiscal/fornecedor; auditoria, conforme permissões.
+- Componentes do design system: AppShell, PageHeader, DataTable, FilterBar, Input, CurrencyInput, Button, StatusBadge, Empty/Error/LoadingState, Modal/Confirm, Drawer, Toast, SquareImage, CartQtyStepper.
+- Não exibir botões falsos. Módulos futuros claramente marcados "Em breve", sem comportamentos simulados.
+- Controles de toque generosos no celular; tamanhos pequenos apenas no desktop com mouse/teclado. WCAG AA.
+
+## 5. PEDIDOS E SEPARAÇÃO — REGRAS
+Exatamente **4 abas operacionais**:
+1. NOVO
+2. EM SEPARAÇÃO
+3. PRONTO
+4. ENTREGUE
+
+As 4 abas são a experiência do operador, não o único estado interno. CANCELAMENTO, PROBLEMA DE NF-e, FALHA DE WHATSAPP, PAGAMENTO e ENTREGA têm flags/estados separados; não criar abas extras.
+- Pedido recebe número ÚNICO e IMUTÁVEL; documentar gerador/ordenação e política da numeração semanal usada no sistema anterior antes da implantação.
+- Cartão do pedido: número, primeiro nome/cliente, telefone clicável, total, pagamento, endereço/entrega, estado, responsável; 5 por vez inicialmente, "Ver mais", evitar travamento.
+- Em separação: interface similar à cesta, marcar SEPARADO ou FALTOU por linha. Falta abate quantidade/valor corretamente e revisa total no backend.
+- Múltiplos separadores: proteger contra dupla edição com versão/controle de posse e expiração; mostrar "em separação por X".
+- Concluir separação SEM depender de sucesso fiscal/Meta. Informar número na embalagem, marcar separado, seguir para PRONTO.
+- Não permitir dois pedidos iguais em dois cliques de checkout; usar chave de idempotência, transação de reserva/estoque, índices e deduplicação.
+- Pedidos precisam snapshots imutáveis do produto/preço/fiscal relevante na compra; referências a SKUs atuais não podem alterar pedidos antigos.
+
+## 6. WHATSAPP / META / BLING — ORDEM E GARANTIAS
+WhatsApp:
+- Atendimento HUMANO dentro do admin, com dois números oficiais conhecidos como finais **0975** e **1018**. O serviço anterior permanece funcionando durante construção/testes e só deve ser substituído com consentimento de corte.
+- Reaproveitar contratos, webhooks e fluxo útil do Vitrine/Admin após auditoria de código e dados. Não reaproveitar PapoAI.
+- Inbox: caixa compartilhada; pesquisar cliente/telefone; vincular pedido; receber/enviar mensagens e áudio; estado de conversa separado de status do pedido; permissões de operadores, mídia protegida e auditoria.
+- Template oficial de confirmação do pedido, atualmente no legado: pedidorecebidosite0975 e pedidorecebidosite1018 (pt_BR); variáveis número pedido, total, entrega e pagamento. Validar templates vigentes na Meta na etapa de conexão.
+- Notificações transacionais futuras dos estados do pedido através de mensagens Utility compatíveis e aprovadas pela Meta, respeitando políticas vigentes, janela de 24h e requisitos de consentimento. Não transformar marketing em utilitário. Evitar duplicatas.
+- Arquitetura: eventos de domínio -> transactional outbox -> fila/worker **sob demanda ou econômico** -> Meta API -> webhooks de status -> logs + retries limitados. Nenhum envio real em mock/staging sem destinatário de teste autorizado.
+
+Bling:
+- **Uso fiscal** após separação (não tratar Bling como novo admin operacional).
+- OAuth2/token somente no backend; vincular IDs do Bling aos SKUs; sincronizar NCM/CEST/origem/unidade/fornecedor; emissão de NF-e após ajuste de faltas; eventual envio do pedido de venda ao Bling se obrigatório na API.
+- Falha de NF-e não bloqueia PRONTO, mas fica clara como NOTA PENDENTE/BLOQUEADA, com erro e reenvio idempotente.
+- CFOP/CST/CSOSN/tributação dependem de operação, regime e UF; validar com fiscal antes de emitir, não deduzir automaticamente só do CSV.
+- Controle de rate-limit, 429, backoff, refresh token, timeouts, logs e reconciliação sem duplicar documento.
+
+## 7. CADASTRO BLING E FONTE DE DADOS
+Base anterior: arquivo de 802 produtos independentes (59 colunas oficiais Bling); conferir se o arquivo está disponível no novo Projeto/Library ou no repo antes de importar. O importador CSV é script em scripts/import-bling.mjs; dados atuais do banco existente **não são idênticos ao CSV antigo**.
+Conforme auditoria registrada em docs/AUDITORIA_CAMPOS_BLING_802.md:
+- 802 SKUs, descrições, UN, preços, custos, NCM, origem, fornecedor, categoria na planilha.
+- 776 GTIN de unidade preenchidos, 668 CEST, 652 marca; apenas 28 com GTIN da embalagem/conversão por caixa.
+- Inicialmente inativos e com saldo em branco na planilha; NÃO ativar em massa sem estoque real e validação.
+- ID Bling e dados fiscais de saída não estavam resolvidos pelo CSV.
+- Modelo de domínio público tem campos comerciais; perfil fiscal/custo é privado no backend, com arquivo de importação original em JSON sob acesso restrito. Nunca enviar custo, fornecedor, ajuste privado ou histórico de importação ao site.
+- Uma fonte explícita para estoque e preços de venda deve ser definida antes da sincronização real; Bling fiscal e admin operacional não podem disputar alterações sem regras de precedência.
+- Categoria oficial x tipo de cesta x extra são três dimensões diferentes; não confundir.
+
+## 8. ESTADO REAL DO CÓDIGO (CHECADO NESTA TRANSFERÊNCIA)
+Base: React 19, TypeScript 5, Vite 7, Vitest, Playwright e GitHub Actions em projetos/dona-antonia-v2. Entradas independentes loja/admin, módulos por funcionalidade e backend futuro desacoplado.
+Confirmado por leitura da branch:
+- src/Storefront.tsx ainda referencia produtos demonstrativos; fluxo de três etapas está programado e teste de navegador já existiu.
+- src/main-admin.tsx ainda referencia demonstração e inclui módulo de 4 abas de pedidos em mock.
+- src/core/ contém regras de cestas, extras, checkout e pedidos; src/application/catalog.ts e order-commands.ts têm contratos de repositório, revisão/versão e comandos; src/server/pricing/quote.ts calcula valor interno sem devolvê-lo na resposta.
+- src/admin/navigation.ts centraliza os módulos; produtos/tipos/cestas/extras/pedidos possuem componentes e estilo próprios.
+- db/001 a 004 são SQL planejado, NÃO aplicados em um novo banco.
+- src/data/catalog.ts faz fallback para demonstração em desenvolvimento/prévia; não há catálogo nem checkout real em staging.
+- src/server/bling/model.ts define perfil fiscal privado, não integração OAuth.
+- scripts/check-architecture.mjs impõe alguns limites; CI executa TS, testes, build e E2E.
+- Rota /site1 e /admin1 já receberam publicação **de demonstração** via PR #1363; atualizações da branch após esse PR não são automaticamente equivalentes à versão online.
+- Última execução aprovada que consta no histórico: workflow 40056490923. Confirmar commit SHA e workflow mais recente no início da nova conversa.
+**NÃO CONCLUÍDO:** auth/RBAC real, banco isolado, CRUD persistente, importação de dados reais, checkout confirmável, pedidos persistentes, inbox Meta real, envio automático e NF-e, Lighthouse staging, plano de migração efetivo.
+
+## 9. PROBLEMAS E CONTRADIÇÕES QUE A RODADA R00 PRECISA RESOLVER
+1. Docs antigos: docs/ARQUITETURA.md ainda diz que cesta NÃO tem diferença oculta, contrariando regra posterior aprovada de valor interno. Atualizar fonte única e marcar documentação antiga como superada, sem alterar regra silenciosamente.
+2. Estoque: docs antigos indicam Bling como canônico; histórico posterior prioriza estoque físico/Leitor EAN temporariamente e Bling somente fiscal. Definir autoridade, sincronização e prevenção de venda duplicada antes da conexão.
+3. CSV/planilha antigo não é estado atual do Supabase nem do Bling. Não importar/ativar 802 sem validação.
+4. V2 pode ter protótipos de backend em JS/TS mas nenhum endpoint persistente. **Código presente não implica funcionalidade final.**
+5. Testar se as migrações db/001–004 realmente aplicam em sequência numa base limpa (IDs, chaves estrangeiras, status, tipos, RLS, schema) antes de qualquer execução real; não presumir.
+6. Verificar se bundle inclui importação acidental de módulo de servidor e se projeções públicas nunca expõem valor interno, custo ou fiscal.
+7. Estado de fotos: placeholders quadrados não significam imagens reais prontas. Definir pipeline de fotos otimizado e adequado.
+8. Base de testes e CI precisam crescer para segurança, concorrência, acessibilidade, falhas de rede e regressão visual.
+9. Revisar se build estático via GitHub Pages comporta backend pretendido; frontend pode continuar estático, mas checkout/webhooks/fiscal exigem camada transacional protegida.
+10. Mapear regras atuais do atendimento Vitrine/Admin **somente em leitura**, com foco nas APIs dos números oficiais.
+11. Segurança /site1 e /admin1: noindex não é autenticação. Não ativar banco/segredos em admin público sem RBAC real.
+
+## 10. ENGENHARIA PADRÃO PARA TODAS AS RODADAS
+- Preferir **monólito modular** em vez de microserviços: UI por domínio + core puro + application commands/queries + adapters de dados, serviços de notificações/fiscal isolados.
+- Não fazer componentes gigantes ou CSS global crescente; reaproveitar design system para campos, status, listas e cartões.
+- Backend **autoridade** de preços, ajustes privados, estoque, impostos, frete/prazo, transições de pedidos e idempotência.
+- Testes: TypeScript estrito, arquitetura/lint/format, unitários do domínio, integração DB em staging, E2E mobile e desktop, validação visual, rede lenta, falhas e acessibilidade.
+- Persistência transacional com optimistic locking/versionamento; outbox e consumidores idempotentes, sem workers caros sempre ligados.
+- Tipar payloads em fronteiras com validação runtime. Logs e auditoria minimizando dados pessoais; índices apropriados às consultas. RLS, RBAC, segredos, backups e limite de recursos.
+- CI apenas nos arquivos da V2; PRs pequenos; controlar custo e impedir automações que publiquem raiz por engano.
+- Evidências concretas: commit, PR, diff, testes, prints quando úteis e o que continua pendente. Não prometer PageSpeed 100 sem medir.
+- Não continuar R(n+1) com falha crítica não resolvida da R(n). Se scope exceder rodada, dividir em novas rodadas menores com entregável e teste mensurável.
+
+## 11. ESTRATÉGIA WORK: RODADAS PEQUENAS, FECHADAS E EXECUTÁVEIS
+**Cada rodada deve caber em UMA execução concentrada do modo Work**, com um conjunto pequeno de mudanças relacionadas, sem depender de aprovação intermediária para ajustes em branch isolada. Se aparecer bloqueio externo, concluir tudo que não depende dele, documentar risco e manter o próximo passo inequívoco. Não cronometrar nem prometer trabalho em segundo plano.
+
+### R00 — Auditoria integral + baseline congelado (PRIMEIRA RODADA A EXECUTAR)
+- Ler arquivos e estrutura reais de toda a V2, plano diretor, SQL, testes, workflows, PR #1363 e HEAD atualizado; inspecionar apenas em modo leitura a configuração de publicação e eventuais fontes legadas indispensáveis.
+- Executar checagens: typecheck, testes unitários, build, Playwright, inspeção de dependências/licenças, endpoints, DOM mobile e CSS, exposição indevida de dados, lint presente/ausente.
+- Gerar inventário por módulo/arquivo, mapa da arquitetura de verdade, matriz Implementado x Simulado x Ausente, riscos P0/P1/P2, inconsistências de SQL e docs, prioridades de refatoração e relação com roadmap.
+- Entrega: docs/AUDITORIA_COMPLETA_V2.md e atualização controlada do plano. NÃO implantar backend e NÃO mexer em produção.
+- Aceite: escopo inteiro mapeado sem conjecturas; problemas reproduzidos com referência a arquivos/testes; gate futuro definido.
+
+### R01 — Design system e disciplina de qualidade
+- Consolidar tokens de fonte, cores, campos, botões, tabela, carrinho, modal, feedback e status; eliminar conflitos CSS por módulo, sem redesenhar aleatoriamente.
+- Implementar ESLint + Prettier e regras de acessibilidade apropriadas, sem introduzir dependências pesadas e sem alterar o legado.
+- Testar admin e vitrine mobile 320/390/1280px, navegação, carrosséis, layout; fotografar regressões.
+- Aceite: nenhum overflow de documento, sem erro TS/lint/CI, layout coerente.
+
+### R02 — Banco V2 limpo: modelagem, migrações e contratos
+- Revisar e reconciliar db/001–004 e projetar esquema transacional de pedidos/itens/snapshots/idempotência/reserva/atendimento/outbox/auditoria/fiscal; tabelas e políticas RLS específicas.
+- Validar migrações numa base DESCARTÁVEL isolada / CI local, jamais nos dois Supabases legados.
+- Entregar diagrama de entidades, contratos TS e testes de migração/constraints.
+- Aceite: schema reproduzível, rollback/backup descrito, nenhum segredo no frontend. Criar Supabase de homologação somente após conferir limites e custo do plano com usuário.
+
+### R03 — Autenticação admin e permissões
+- Backend V2 isolado com autenticação, contas de teste, RBAC por função (admin/produtos/separação/atendimento) e trilha de auditoria; RLS como proteção adicional.
+- Bloquear toda escrita pública e separar leitura de vitrine; CSRF/CORS/validação de sessão conforme hospedagem.
+- Aceite: anônimo não lê custo/valor interno/nem grava; operador sem permissão não edita cadastro ou fiscal; testes negativos comprovam.
+
+### R04 — Importação controlada e reconciliação do catálogo Bling
+- Recuperar CSV oficial e validar colunas, 802 SKUs, EAN, NCM, CEST, unidade UN, fornecedor, custo/markup e IDs. Nunca presumir que CSV é saldo físico atual.
+- Criar importação idempotente com simulação/dry-run, relatório de conflitos, deduplicação SKU/EAN e revisão humana de dados fiscais anômalos.
+- Popular SOMENTE staging V2. Não ativar produtos sem regra de estoque confiável.
+- Aceite: contagens batem; nenhum SKU duplicado; relatório explica cada rejeição.
+
+### R05 — Cadastro de produtos/estoque real no admin
+- Lista com filtro/busca/paginação server-side, foto 1:1, SKU/EAN/preço/estoque/ativo, edição rápida e ações em lote seguras.
+- Ficha Geral, Preços/Estoque, Fiscal/Fornecedor, Fotos, Histórico, com permissões por campo; tipos e categorias não se misturam.
+- Aceite: CRUD persiste após recarregar; 800+ SKUs não travam; concorrência rejeita revisão obsoleta; produto zerado não aparece na loja.
+
+### R06 — Tipos, cestas e extras persistentes
+- CRUD tamanho/tipos/vínculos/ordem/quantidades/extras; carregar fotos quadradas; valor interno por tamanho privado; testar de ponta a ponta.
+- Aceite: mudanças admin aparecem na prévia pública, preço agregado correto sem expor composição privada; alteração de marca preserva quantidade; edições simultâneas seguras.
+
+### R07 — Catálogo público dinâmico e performance de abertura
+- Trocar fallback fake em staging por API pública segura e projeção server-side; cache e invalidação corretos; lazy de fotos/marcas/extras.
+- Aceite: primeiro quadro rápido, fallback de erro honesto, estado loading não congela, não expõe custos, fotos reais otimizadas 1:1.
+
+### R08 — Cotação, validação e checkout real em staging
+- Endereço Cuiabá/VG, pedido mínimo R$75, cutoff 12h, domingos/feriados, opções de pagamento na entrega; validação de CPF/documentos apenas se realmente necessária fiscalmente.
+- Cotação confiável no backend com valor interno por cesta, exclusão de zerados, preço individual só extras; anti-duplo clique, idempotência e confirmação acessível.
+- Aceite: erro de rede não perde carrinho; duplicação de clique gera um pedido; total não pode ser forjado; não vender estoque insuficiente.
+
+### R09 — Pedidos persistentes: quatro abas
+- Lista paginada Novo/Em separação/Pronto/Entregue, busca e detalhes, número único/imutável, etiquetas básicas, status e clientes.
+- Aceite: pedido confirmado em staging aparece em NOVO sem refresh manual indevido; status correto e pesquisa rápida; nenhuma quinta aba criada.
+
+### R10 — Separação robusta e concorrência
+- Claims por operador, quantidades conferidas, faltou/separado, abatimento do total, impressão, pronta para entrega e entregue.
+- Retentativas, edit-lock/version, fila de erros e auditoria.
+- Aceite: 2–3 operadores sem perda de atualização; falha fiscal não impede PRONTO; itens indisponíveis ajustados sem total negativo.
+
+### R11 — Atendimento humano WhatsApp no admin V2 (SEM MIGRAR AINDA O LEGADO)
+- Auditar serviços, tabelas e contratos do Vitrine/Admin em leitura; criar novo módulo Inbox desacoplado.
+- Relacionar cliente/telefone, pedido e conversa, suportar áudio e duas contas oficiais 0975/1018; validação com contas de teste.
+- Aceite: mensagens testadas sem duplicação, privacidade/permissões, nenhum desligamento da operação atual.
+
+### R12 — Mensagens utilitárias automáticas via Meta
+- Preparar templates oficiais por conta, outbox a partir de eventos (recebido, separando, pronto, entregue), deduplicação, entrega/leitura/erro, retry limitado.
+- Aceite: envio somente para número autorizado de teste, sem mensagem duplicada, log e orçamento/limite controlados; políticas Meta verificadas.
+
+### R13 — Emissão fiscal via Bling
+- OAuth renovável, dados tributários validados pelo contador, vinculação SKU/ID e criação NF-e após separação; reconciliar resultados e erros.
+- Aceite: erro fiscal visível sem travar separação, retries sem documento duplicado, NCM/CFOP/CST testados em ambiente seguro.
+
+### R14 — Clientes, conferência de entrega e gestão necessária
+- Históricos/endereço, reabertura/alteração controlada, etiquetas de entrega, consultas e relatórios mínimos, sem motor de rotas/motoristas ou EAN de baixa prioridade.
+- Aceite: cliente reconhecido sem obrigar cadastro excessivo, dados protegidos e operação de entrega simples.
+
+### R15 — Segurança, performance, custos e homologação
+- Lighthouse mobile (distintas redes/rodadas) e Web Vitals, carga 802+ produtos, 2–3 operadores, observabilidade, failover, backup/restore, auditoria RLS, LGPD, design acessível, Playwright completo.
+- Aceite: metas de experiência verificadas e divergências documentadas; zero falhas bloqueantes em checkout, estoque e pedidos; custo estimado e aceite de operação.
+
+### R16 — Piloto controlado e entrada em operação SOMENTE COM AUTORIZAÇÃO
+- Conectar gradualmente /site1 e /admin1 a staging real, executar pedidos autorizados/testes com dados segregados, plano de rollback.
+- Realizar piloto de produção sem substituir raiz, somente se seguro e aprovado; corte de domínio/inbox/fiscal em janelas planejadas.
+- Aceite: checklist operacional assinado, rollback ensaiado, métricas/alertas, autorização EXPLÍCITA para trocar site principal. Nunca publicar automaticamente na raiz.
+
+## 12. PADRÃO DE EXECUÇÃO DE CADA RODADA EM WORK
+1. Ler este documento e docs vigentes; verificar branch/commit, último PR/CI e dependências da rodada.
+2. Criar microplano executável com arquivos e critérios de aceite, sem dispersar para outra rodada.
+3. Operar somente V2 e serviços isolados; inspecionar produção somente read-only se indispensável.
+4. Implementar código/SQL de forma modular e consistente, criar testes na mesma mudança.
+5. Executar typecheck + lint/arquitetura + testes unitários + integração relevante + build + Playwright (quando UX) e corrigir falhas, sem pular gates.
+6. Commit atômico e PR na branch certa, sem merge/publicação no legado. Guardar versões/SHA.
+7. Atualizar este dossiê e docs/STATUS_RODADAS_V2.md com executado, evidências, riscos, pendências e próxima rodada.
+8. Relatar ao usuário em português: o que mudou, o que foi testado, links, se há deploy, riscos, decisões aguardando autorização e próxima ação.
+9. **Não marcar Concluído só porque foi programado ou o build passou**: para integrações reais exigir staging + E2E + observabilidade.
+
+## 13. FONTE DA VERDADE DOCUMENTAL
+Hierarquia para decisões: (1) instruções explícitas mais recentes do usuário; (2) este dossiê revisado; (3) plano diretor; (4) requisitos detalhados e código/testes atuais; (5) documentos antigos apenas como histórico.
+
+Arquivos relevantes para ler no Work:
+- docs/PLANO_DIRETOR_EVOLUCAO_2026.md
+- docs/PERSISTENCIA_ISOLADA_V2.md
+- docs/ARQUITETURA.md (PARCIALMENTE SUPERADO)
+- docs/REFERENCIA_ADMIN_UX.md (há revisão visual Shopify posterior)
+- docs/REFERENCIA_SITE_PUBLICO_UX.md
+- docs/AUDITORIA_CAMPOS_BLING_802.md
+- db/001_schema.sql, db/002_extras.sql, db/003_private_basket_price.sql, db/004_bling_product_profiles.sql
+- src/Storefront.tsx, src/main-admin.tsx, src/core/, src/application/, src/server/, src/admin/
+- .github/workflows/dona-antonia-v2-ci.yml
+- PR de teste #1363; CI 40056490923 como referência histórica
+
+## 14. COMO INICIAR A NOVA CONVERSA WORK
+1. Criar/abrir um **Projeto** no ChatGPT chamado "Dona Antônia V2".
+2. Anexar este dossiê aos arquivos do projeto se desejar; o arquivo está no GitHub acima.
+3. Abrir **uma conversa no modo Work** dentro do projeto, com acesso à integração GitHub; Supabase ficará somente read-only nos projetos existentes até configurar o ambiente separado.
+4. Colar o comando fornecido em docs/COMANDO_NOVA_CONVERSA_WORK.md.
+5. Começar pela **R00**, SEM PRÉ-APROVAR alteração de produção. Não pular direto para Bling, Meta ou migração.
