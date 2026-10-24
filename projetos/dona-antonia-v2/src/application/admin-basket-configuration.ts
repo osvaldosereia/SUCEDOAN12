@@ -25,6 +25,8 @@ export interface AdminExtraGroup {
   readonly active: boolean;
 }
 export interface AdminBasketConfiguration {
+  /** Revisão CAS retornada pelo servidor; nunca é editada pelo formulário. */
+  readonly revision?: number;
   readonly types: readonly AdminProductType[];
   readonly baskets: readonly AdminBasketSize[];
   readonly extras: readonly AdminExtraGroup[];
@@ -92,7 +94,7 @@ export function normalizeBasketConfiguration(
     .sort((a, b) => a.order - b.order);
   if (new Set(extras.map((group) => group.typeId)).size !== extras.length)
     throw new Error('Há um grupo extra duplicado.');
-  return { types, baskets, extras };
+  return { revision: input.revision, types, baskets, extras };
 }
 
 export interface AdminBasketConfigurationRepository {

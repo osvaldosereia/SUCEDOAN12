@@ -18,10 +18,12 @@ describe('mapeamento da configuração persistida de cestas', () => {
         },
       ],
       extras: [{ typeId: id, order: 1, active: true }],
+      revision: 7,
     });
     expect(result.baskets[0]?.lines[0]?.defaultQuantity).toBe(2);
     expect(result.baskets[0]?.privateAdjustmentCents).toBeNull();
     expect(result.extras[0]?.typeId).toBe(id);
+    expect(result.revision).toBe(7);
   });
 
   it('rejects an incomplete RPC response', () => {

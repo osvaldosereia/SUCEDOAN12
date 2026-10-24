@@ -81,6 +81,7 @@ export function basketStartingTotal(
 ): number | null {
   const template = templates.find((item) => item.id === basketId);
   if (!template) return null;
+  if (template.startingTotalCents !== undefined) return template.startingTotalCents;
 
   try {
     const selections = initialSelections(template, types, products);

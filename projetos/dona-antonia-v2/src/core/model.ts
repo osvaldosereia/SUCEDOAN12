@@ -45,6 +45,8 @@ export interface BasketTemplate {
   readonly imageUrl?: string;
   readonly lines: readonly BasketLineTemplate[];
   readonly active: boolean;
+  /** Aggregate returned by the public server projection; never a private adjustment. */
+  readonly startingTotalCents?: number;
 }
 
 export interface BasketSelection {

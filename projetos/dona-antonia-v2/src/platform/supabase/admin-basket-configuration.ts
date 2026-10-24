@@ -16,6 +16,7 @@ export function mapBasketConfiguration(value: unknown): AdminBasketConfiguration
   if (!Array.isArray(root.types) || !Array.isArray(root.baskets) || !Array.isArray(root.extras))
     throw new Error('A configuração recebida do banco está incompleta.');
   return normalizeBasketConfiguration({
+    revision: Number.isSafeInteger(root.revision) ? Number(root.revision) : undefined,
     types: root.types.map((value) => {
       const row = asObject(value);
       if (!Array.isArray(row.productSkus)) throw new Error('Vínculos de produtos inválidos.');
@@ -60,6 +61,7 @@ export function createSupabaseAdminBasketConfigurationRepository(
   client: SupabaseClient,
 ): AdminBasketConfigurationRepository {
   let saveQueue: Promise<void> = Promise.resolve();
+  let revision = 1;
   return {
     async load() {
       const { data, error } = await client.rpc('admin_get_basket_configuration');
@@ -67,23 +69,32 @@ export function createSupabaseAdminBasketConfigurationRepository(
         throw new Error(
           'Não foi possível carregar cestas e tipos. Confira sua permissão e tente novamente.',
         );
-      return mapBasketConfiguration(data);
+      const configuration = mapBasketConfiguration(data);
+      revision = configuration.revision ?? revision;
+      return configuration;
     },
     async save(configuration) {
       const normalized = normalizeBasketConfiguration(configuration);
       const operation = saveQueue
         .catch(() => undefined)
         .then(async () => {
-          const { error } = await client.rpc('admin_save_basket_configuration', {
+          const { data, error } = await client.rpc('admin_save_basket_configuration', {
             p_configuration: normalized,
+            p_expected_revision: revision,
           });
           if (error) {
             if (error.code === '42501')
               throw new Error('Seu perfil não tem permissão para salvar esta configuração.');
+            if (error.code === '40001')
+              throw new Error(
+                'Configuração alterada por outro operador. Recarregue antes de salvar.',
+              );
             throw new Error(
               'Não foi possível salvar cestas e tipos. Revise os dados e tente novamente.',
             );
           }
+          const saved = mapBasketConfiguration(data);
+          revision = saved.revision ?? revision + 1;
         });
       saveQueue = operation;
       await operation;
