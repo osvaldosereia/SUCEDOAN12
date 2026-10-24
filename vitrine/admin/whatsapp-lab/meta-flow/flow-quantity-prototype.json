@@ -158,10 +158,15 @@
             "text": "Protótipo: produtos ilustrativos. Na versão dinâmica, cada item e preço virá do Supabase."
           },
           {
+            "type": "TextSubheading",
+            "text": "Arroz 5 kg"
+          },
+          {
             "type": "Dropdown",
             "name": "q1",
-            "label": "Arroz 5 kg",
+            "label": "Quantidade",
             "required": true,
+            "init-value": "2",
             "data-source": [
               {
                 "id": "0",
@@ -208,12 +213,17 @@
                 "title": "10"
               }
             ]
+          },
+          {
+            "type": "TextSubheading",
+            "text": "Feijão 1 kg"
           },
           {
             "type": "Dropdown",
             "name": "q2",
-            "label": "Feijão carioca 1 kg",
+            "label": "Quantidade",
             "required": true,
+            "init-value": "1",
             "data-source": [
               {
                 "id": "0",
@@ -260,12 +270,17 @@
                 "title": "10"
               }
             ]
+          },
+          {
+            "type": "TextSubheading",
+            "text": "Açúcar 2 kg"
           },
           {
             "type": "Dropdown",
             "name": "q3",
-            "label": "Açúcar 2 kg",
+            "label": "Quantidade",
             "required": true,
+            "init-value": "1",
             "data-source": [
               {
                 "id": "0",
@@ -312,12 +327,17 @@
                 "title": "10"
               }
             ]
+          },
+          {
+            "type": "TextSubheading",
+            "text": "Óleo 900 ml"
           },
           {
             "type": "Dropdown",
             "name": "q4",
-            "label": "Óleo de soja 900 ml",
+            "label": "Quantidade",
             "required": true,
+            "init-value": "1",
             "data-source": [
               {
                 "id": "0",
@@ -364,12 +384,17 @@
                 "title": "10"
               }
             ]
+          },
+          {
+            "type": "TextSubheading",
+            "text": "Macarrão 500 g"
           },
           {
             "type": "Dropdown",
             "name": "q5",
-            "label": "Macarrão 500 g",
+            "label": "Quantidade",
             "required": true,
+            "init-value": "1",
             "data-source": [
               {
                 "id": "0",
@@ -416,12 +441,17 @@
                 "title": "10"
               }
             ]
+          },
+          {
+            "type": "TextSubheading",
+            "text": "Café 500 g"
           },
           {
             "type": "Dropdown",
             "name": "q6",
-            "label": "Café 500 g",
+            "label": "Quantidade",
             "required": true,
+            "init-value": "1",
             "data-source": [
               {
                 "id": "0",
@@ -468,12 +498,17 @@
                 "title": "10"
               }
             ]
+          },
+          {
+            "type": "TextSubheading",
+            "text": "Sal 1 kg"
           },
           {
             "type": "Dropdown",
             "name": "q7",
-            "label": "Sal 1 kg",
+            "label": "Quantidade",
             "required": true,
+            "init-value": "1",
             "data-source": [
               {
                 "id": "0",
@@ -520,12 +555,17 @@
                 "title": "10"
               }
             ]
+          },
+          {
+            "type": "TextSubheading",
+            "text": "Molho 300 g"
           },
           {
             "type": "Dropdown",
             "name": "q8",
-            "label": "Molho de tomate 300 g",
+            "label": "Quantidade",
             "required": true,
+            "init-value": "1",
             "data-source": [
               {
                 "id": "0",
@@ -572,25 +612,6 @@
                 "title": "10"
               }
             ]
-          },
-          {
-            "type": "Footer",
-            "label": "Enviar escolhas",
-            "on-click-action": {
-              "name": "complete",
-              "payload": {
-                "tamanho": "${data.tamanho}",
-                "combinacao": "${data.combinacao}",
-                "q1": "${form.q1}",
-                "q2": "${form.q2}",
-                "q3": "${form.q3}",
-                "q4": "${form.q4}",
-                "q5": "${form.q5}",
-                "q6": "${form.q6}",
-                "q7": "${form.q7}",
-                "q8": "${form.q8}"
-              }
-            }
           }
         ]
       }
