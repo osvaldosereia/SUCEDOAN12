@@ -79,9 +79,7 @@ export function summarizeBasket(
       if (!selection || !integerQuantity(selection.quantity)) throw new Error('Seleção inválida para ' + type.name);
       const options = eligibleOptions(type, products, selection.quantity);
       const selected = products.find((item) => item.sku === selection.sku) ?? null;
-      if (selection.quantity > 0 && (
-        !selected || !options.some((item) => item.sku === selected.sku)
-      )) {
+      if (selection.quantity > 0 && selected && !options.some((item) => item.sku === selected.sku)) {
         throw new Error('Produto indisponível: ' + type.name);
       }
       return {
@@ -98,7 +96,7 @@ export function summarizeBasket(
     lines,
     totalCents: lines.reduce((sum, line) => sum + line.totalCents, 0),
     itemCount: lines.reduce((sum, line) => sum + line.quantity, 0),
-    unavailableTypeIds: lines.filter((line) => line.quantity > 0 && !line.options.length).map((line) => line.typeId)
+    unavailableTypeIds: lines.filter((line) => line.quantity > 0 && (!line.selected || !line.options.length)).map((line) => line.typeId)
   };
 }
 
