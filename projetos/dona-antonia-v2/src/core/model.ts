@@ -10,7 +10,7 @@ export const CATEGORIES = [
 export type Category = (typeof CATEGORIES)[number];
 
 export const BASKET_IDS = ['economica', 'mini', 'pequena', 'media', 'grande'] as const;
-export type BasketId = (typeof BASKET_IDS)[number];
+export type BasketId = string;
 
 export interface Product {
   readonly sku: string;
@@ -30,6 +30,7 @@ export interface ProductType {
   readonly name: string;
   readonly productSkus: readonly string[];
   readonly order: number;
+  readonly active?: boolean;
 }
 
 export interface BasketLineTemplate {
@@ -44,6 +45,8 @@ export interface BasketTemplate {
   readonly imageUrl?: string;
   readonly lines: readonly BasketLineTemplate[];
   readonly active: boolean;
+  /** Aggregate returned by the public server projection; never a private adjustment. */
+  readonly startingTotalCents?: number;
 }
 
 export interface BasketSelection {

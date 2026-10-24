@@ -7,6 +7,7 @@ import { buildCheckoutView } from './core/checkout';
 import {
   basketStartingTotal,
   chooseStorefrontProduct,
+  publicAggregateBasketSummary,
   updateStorefrontQuantity,
 } from './core/storefront-selection';
 import { ProductTypeRow } from './features/storefront/components/ProductTypeRow';
@@ -14,10 +15,14 @@ import { BasketSizePicker } from './features/baskets/components/BasketSizePicker
 import { StorefrontHeader } from './features/storefront/components/StorefrontHeader';
 import { StorefrontProgress } from './features/storefront/components/StorefrontProgress';
 
-import type { BasketId, BasketSelection, Product } from './core/model';
-import { DEMO_PRODUCTS, DEMO_TEMPLATES, DEMO_TYPES } from './data/demo';
-import { DEMO_EXTRA_GROUPS, DEMO_EXTRA_PRODUCTS, DEMO_EXTRA_TYPES } from './data/demo-extra';
-import { loadPublicCatalog } from './data/catalog';
+import type { BasketId, BasketSelection } from './core/model';
+import {
+  PUBLIC_INITIAL_EXTRAS,
+  PUBLIC_INITIAL_PRODUCTS,
+  PUBLIC_INITIAL_TEMPLATES,
+  PUBLIC_INITIAL_TYPES,
+  usePublicCatalog,
+} from './features/storefront/usePublicCatalog';
 import './styles.css';
 
 const CheckoutStep = React.lazy(() =>
@@ -26,7 +31,9 @@ const CheckoutStep = React.lazy(() =>
   })),
 );
 type Stage = 'basket' | 'extras' | 'checkout';
-const types = [...DEMO_TYPES, ...DEMO_EXTRA_TYPES];
+const initialTypes = PUBLIC_INITIAL_TYPES;
+const initialTemplates = PUBLIC_INITIAL_TEMPLATES;
+const initialExtraGroups = PUBLIC_INITIAL_EXTRAS;
 
 const titles: Record<Stage, string> = {
   basket: 'Monte sua cesta',
@@ -35,53 +42,45 @@ const titles: Record<Stage, string> = {
 };
 
 function Storefront() {
-  const [catalog, setCatalog] = useState<readonly Product[]>(
-    import.meta.env.DEV || import.meta.env.VITE_APP_MODE === 'preview'
-      ? [...DEMO_PRODUCTS, ...DEMO_EXTRA_PRODUCTS]
-      : [],
-  );
-  const [isDemo, setIsDemo] = useState(
-    import.meta.env.DEV || import.meta.env.VITE_APP_MODE === 'preview',
-  );
-  const [catalogError, setCatalogError] = useState('');
+  const {
+    catalog,
+    types,
+    templates,
+    extraGroups,
+    isDemo,
+    error: catalogError,
+  } = usePublicCatalog();
   const [stage, setStage] = useState<Stage>('basket');
   const [basketId, setBasketId] = useState<BasketId>('mini');
-  const template = DEMO_TEMPLATES.find((value) => value.id === basketId)!;
+  const template =
+    templates.find((value) => value.id === basketId) ?? templates[0] ?? initialTemplates[0]!;
   const [basketChoices, setBasketChoices] = useState<BasketSelection[]>(() =>
-    initialSelections(template, types, [...DEMO_PRODUCTS, ...DEMO_EXTRA_PRODUCTS]),
+    initialSelections(template, initialTypes, PUBLIC_INITIAL_PRODUCTS),
   );
   const [extraChoices, setExtraChoices] = useState<BasketSelection[]>(() =>
-    initialExtraSelections(DEMO_EXTRA_GROUPS, types, [...DEMO_PRODUCTS, ...DEMO_EXTRA_PRODUCTS]),
+    initialExtraSelections(initialExtraGroups, initialTypes, PUBLIC_INITIAL_PRODUCTS),
   );
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const controller = new AbortController();
-    loadPublicCatalog(controller.signal)
-      .then((result) => {
-        const next = result.isDemo ? [...result.products, ...DEMO_EXTRA_PRODUCTS] : result.products;
-        setCatalog(next);
-        setIsDemo(result.isDemo);
-        setCatalogError(result.error ?? '');
-        setBasketChoices(initialSelections(template, types, next));
-        setExtraChoices(initialExtraSelections(DEMO_EXTRA_GROUPS, types, next));
-      })
-      .catch(() => {});
-    return () => controller.abort();
-    // Catálogo é obtido uma vez; troca de tamanho usa o catálogo carregado sem refetch.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const nextTemplate = templates.find((item) => item.id === basketId) ?? templates[0]!;
+    setBasketChoices(initialSelections(nextTemplate, types, catalog));
+    setExtraChoices(initialExtraSelections(extraGroups, types, catalog));
+  }, [catalog, templates, types, extraGroups, basketId]);
 
   const changeSize = (id: BasketId) => {
-    const nextTemplate = DEMO_TEMPLATES.find((item) => item.id === id)!;
+    const nextTemplate = templates.find((item) => item.id === id)!;
     setBasketId(id);
     setBasketChoices(initialSelections(nextTemplate, types, catalog));
     setMessage('');
   };
   const computed = useMemo(() => {
     try {
-      const basket = summarizeBasket(template, basketChoices, types, catalog);
-      const extras = summarizeExtras(DEMO_EXTRA_GROUPS, extraChoices, types, catalog);
+      const basket = publicAggregateBasketSummary(
+        template,
+        summarizeBasket(template, basketChoices, types, catalog),
+      );
+      const extras = summarizeExtras(extraGroups, extraChoices, types, catalog);
       return { basket, extras, order: summarizeOrder(basket.lines, extras.lines), error: '' };
     } catch (error) {
       return {
@@ -91,7 +90,7 @@ function Storefront() {
         error: error instanceof Error ? error.message : 'Erro ao calcular',
       };
     }
-  }, [template, basketChoices, extraChoices, catalog]);
+  }, [template, basketChoices, extraChoices, catalog, types, extraGroups]);
 
   const setQuantity = (mode: 'basket' | 'extras', id: string, amount: number) => {
     try {
@@ -102,7 +101,7 @@ function Storefront() {
         typeId: id,
         amount,
         basket: template,
-        extras: DEMO_EXTRA_GROUPS,
+        extras: extraGroups,
         types,
         products: catalog,
       });
@@ -122,7 +121,7 @@ function Storefront() {
         typeId,
         sku,
         template,
-        DEMO_EXTRA_GROUPS,
+        extraGroups,
         types,
         catalog,
       );
@@ -204,8 +203,8 @@ function Storefront() {
           <>
             <BasketSizePicker
               selectedId={basketId}
-              templates={DEMO_TEMPLATES}
-              baseTotal={(id) => basketStartingTotal(id, DEMO_TEMPLATES, types, catalog)}
+              templates={templates}
+              baseTotal={(id) => basketStartingTotal(id, templates, types, catalog)}
               onChange={changeSize}
             />
             <div className="section-title">

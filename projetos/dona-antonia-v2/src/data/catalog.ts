@@ -1,15 +1,25 @@
-import type { Product } from '../core/model';
+import type { BasketTemplate, Product, ProductType } from '../core/model';
+import type { ExtraGroup } from '../core/extras';
 import { CATEGORIES } from '../core/model';
 import { DEMO_PRODUCTS } from './demo';
 
 export interface CatalogSource {
   readonly products: readonly Product[];
+  readonly types?: readonly ProductType[];
+  readonly baskets?: readonly BasketTemplate[];
+  readonly extras?: readonly ExtraGroup[];
   readonly isDemo: boolean;
   readonly error?: string;
 }
 /** Futuro adaptador Supabase implementará esta porta, sem alterar o componente React. */
 export interface CatalogReader {
   listPublicProducts(signal?: AbortSignal): Promise<readonly Product[]>;
+  listPublicCatalog?(signal?: AbortSignal): Promise<{
+    readonly products: readonly Product[];
+    readonly types: readonly ProductType[];
+    readonly baskets: readonly BasketTemplate[];
+    readonly extras: readonly ExtraGroup[];
+  }>;
 }
 const isProduct = (raw: unknown): raw is Product => {
   if (!raw || typeof raw !== 'object') return false;
@@ -53,9 +63,13 @@ export async function loadPublicCatalog(
 ): Promise<CatalogSource> {
   // Exclusivo para rotas públicas de homologação; checkout sempre desabilitado.
   if (import.meta.env.VITE_APP_MODE === 'preview') {
-    return { products: DEMO_PRODUCTS, isDemo: true };
+    if (!reader.listPublicCatalog) return { products: DEMO_PRODUCTS, isDemo: true };
   }
   try {
+    if (reader.listPublicCatalog) {
+      const snapshot = await reader.listPublicCatalog(signal);
+      return { ...snapshot, isDemo: false };
+    }
     return { products: await reader.listPublicProducts(signal), isDemo: false };
   } catch (error) {
     if (signal?.aborted) throw error;

@@ -3,27 +3,28 @@
 **Criado:** 2026-10-23  
 **NOTA:** planejado não é concluído. Atualizar no final de CADA rodada.
 
-| Rodada | Título | Estado | Evidência |
-|---|---|---|---|
-| R00 | Auditoria integral e baseline | **Concluída — auditoria documental e baseline** | docs/AUDITORIA_COMPLETA_V2.md; SHA base 1a846beba768192c366937c1462bcfd6baeccee9; CI 40057635884 aprovado |
-| R01 | Design system e disciplina de qualidade | **Concluída** | PR #1365; SHA R01 7a02a0da66dbcec6cfd7772da75f748ecb5bd29c; CI 40059800868 e 40059798099 aprovados |
-| R02 | Modelagem/migrações para banco isolado | **Concluída; PR aberto, sem merge** | PR #1366; SHA 0ea8f43188ea55db56c176d1c34368a2b4303c10; CI 40061318922 aprovado |
-| R03 | Login, RBAC e RLS V2 | **Concluída e ensaiada em prévia privada** | PR #1367; base RBAC 24 tabelas; conta `juniorsereia@gmail.com` ADMIN |
-| R04 | Importação/reconciliação dos 802 produtos | **Concluída no staging V2; fonte autorizada como seed, não comprovada como export oficial** | 802 produtos + 802 perfis privados; 0 ativos/estoque; custo exato em 4 casas; tela de login validada; PR #1368 draft |
-| R05 | Cadastro e estoque persistente | **Concluída; PR draft sem merge/publicação** | PR #1369; código SHA `36c8b478`; CI #40069099198 aprovado (inclui 17 E2E); migrations V2/9 no projeto isolado; 802 produtos preservados |
-| R06 | Cestas, tipos e extras persistentes | Planejada | — |
-| R07 | Catálogo público dinâmico/performance | Planejada | — |
-| R08 | Cotação e checkout transacional | Planejada | — |
-| R09 | Pedidos persistentes, quatro abas | Planejada | — |
-| R10 | Separação e multioperador | Planejada | — |
-| R11 | Inbox WhatsApp humano V2 | Planejada | — |
-| R12 | Mensagens Utility Meta por evento | Planejada | — |
-| R13 | NF-e Bling pós-separação | Planejada | — |
-| R14 | Clientes/entrega/relatórios essenciais | Planejada | — |
-| R15 | Auditoria final/performance/homologação | Planejada | — |
-| R16 | Piloto/migração autorizada | Planejada | — |
+| Rodada | Título                                    | Estado                                                                                      | Evidência                                                                                                                               |
+| ------ | ----------------------------------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| R00    | Auditoria integral e baseline             | **Concluída — auditoria documental e baseline**                                             | docs/AUDITORIA_COMPLETA_V2.md; SHA base 1a846beba768192c366937c1462bcfd6baeccee9; CI 40057635884 aprovado                               |
+| R01    | Design system e disciplina de qualidade   | **Concluída**                                                                               | PR #1365; SHA R01 7a02a0da66dbcec6cfd7772da75f748ecb5bd29c; CI 40059800868 e 40059798099 aprovados                                      |
+| R02    | Modelagem/migrações para banco isolado    | **Concluída; PR aberto, sem merge**                                                         | PR #1366; SHA 0ea8f43188ea55db56c176d1c34368a2b4303c10; CI 40061318922 aprovado                                                         |
+| R03    | Login, RBAC e RLS V2                      | **Concluída e ensaiada em prévia privada**                                                  | PR #1367; base RBAC 24 tabelas; conta `juniorsereia@gmail.com` ADMIN                                                                    |
+| R04    | Importação/reconciliação dos 802 produtos | **Concluída no staging V2; fonte autorizada como seed, não comprovada como export oficial** | 802 produtos + 802 perfis privados; 0 ativos/estoque; custo exato em 4 casas; tela de login validada; PR #1368 draft                    |
+| R05    | Cadastro e estoque persistente            | **Concluída; PR draft sem merge/publicação**                                                | PR #1369; código SHA `36c8b478`; CI #40069099198 aprovado (inclui 17 E2E); migrations V2/9 no projeto isolado; 802 produtos preservados |
+| R06    | Cestas, tipos e extras persistentes       | **Concluída; PR draft sem merge/publicação**                                                 | PR #1370 draft; implementação `2c42f6ec`, docs `d45e6a90`; CI #40090765643 aprovado (17/17 E2E); V2 11 migrations/26 tabelas |
+| R07    | Catálogo público dinâmico/performance     | Próxima rodada                                                                                | —                                                                                                                                       |
+| R08    | Cotação e checkout transacional           | Planejada                                                                                   | —                                                                                                                                       |
+| R09    | Pedidos persistentes, quatro abas         | Planejada                                                                                   | —                                                                                                                                       |
+| R10    | Separação e multioperador                 | Planejada                                                                                   | —                                                                                                                                       |
+| R11    | Inbox WhatsApp humano V2                  | Planejada                                                                                   | —                                                                                                                                       |
+| R12    | Mensagens Utility Meta por evento         | Planejada                                                                                   | —                                                                                                                                       |
+| R13    | NF-e Bling pós-separação                  | Planejada                                                                                   | —                                                                                                                                       |
+| R14    | Clientes/entrega/relatórios essenciais    | Planejada                                                                                   | —                                                                                                                                       |
+| R15    | Auditoria final/performance/homologação   | Planejada                                                                                   | —                                                                                                                                       |
+| R16    | Piloto/migração autorizada                | Planejada                                                                                   | —                                                                                                                                       |
 
 ## Histórico anterior às rodadas
+
 - Há protótipo avançado de UI V2 e regras de negócio implementadas e testadas.
 - CI R01 mais recente: https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/40059667625; sucesso em lint, auditoria, arquitetura, TS, 39 testes unitários, build e 17 casos E2E.
 - /site1 e /admin1 são prÉvias demonstrativas publicadas em rodada anterior; não estão automaticamente sincronizadas com a branch atual.
@@ -31,7 +32,9 @@
 - Os bancos legados e site raiz NÃO devem sofrer alterações.
 
 ## Modelo de atualização por rodada
+
 ### Rxx — [título]
+
 **Data:**  
 **SHA inicial:**  
 **SHA final:**  
@@ -41,10 +44,10 @@
 **PR/commits:**  
 **Bloqueios/riscos:**  
 **Produção legada:** intocada / INCIDENTE (detalhar se houver).  
-**Próxima rodada recomendada:**  
-
+**Próxima rodada recomendada:**
 
 ## R00 — auditoria integral e baseline
+
 **Data:** 2026-10-23 (Cuiabá)  
 **SHA inicial auditado:** 1a846beba768192c366937c1462bcfd6baeccee9  
 **SHA final da rodada:** será o commit do PR de documentação nesta branch.  
@@ -56,8 +59,8 @@
 **Produção legada:** intocada. Supabases existentes não consultados nem alterados.  
 **Próxima rodada recomendada:** R01 — atualizar dependências e lockfile, adicionar lint/format e validações de interface, mantendo gate de publicação explícito.
 
-
 ## R01 — design system e disciplina de qualidade
+
 **Data:** 2026-10-24 (UTC)
 **SHA inicial:** b4738e895dc246f8bc07af95035cd746e32d7975 (baseline R00)
 **SHA final de código:** 7a02a0da66dbcec6cfd7772da75f748ecb5bd29c
@@ -69,8 +72,8 @@
 **Produção legada:** intocada; sem merge, deploy, migração, envio de mensagem ou acesso/escrita em Supabase.
 **Próxima rodada recomendada:** R02 — reconciliação do schema, diagrama de entidades, contratos TS e validação de migrações apenas em banco descartável isolado.
 
-
 ## R02 — schema isolado e contratos
+
 **Data:** 2026-10-24 (UTC)
 **SHA inicial:** 7a02a0da66dbcec6cfd7772da75f748ecb5bd29c (head remoto de R01)
 **SHA de implementação validado:** 0ea8f43188ea55db56c176d1c34368a2b4303c10 (head final da branch R02).
@@ -82,8 +85,8 @@
 **Produção legada:** intocada; branch `main`, sites, bancos, atendimento e integrações operacionais intocados.
 **Próxima rodada:** R03 — modelo de ator, login/RBAC e policies RLS, com testes de autorização e sem conectar aos Supabase legados.
 
-
 ## R03 — Login, RBAC e policies RLS
+
 **Data:** 2026-10-24 (UTC)
 **SHA inicial:** 0ea8f43188ea55db56c176d1c34368a2b4303c10 (head R02)
 **Estado:** implementação concluída; conta Auth confirmada e papel ADMIN ativo. A prévia privada oferece login e recuperação de senha. Nenhuma senha foi criada, alterada ou acessada pelo agente.
@@ -96,8 +99,8 @@
 **PR:** #1367 — https://github.com/osvaldosereia/SUCEDOAN12/pull/1367; aberto, sem merge, base R02.
 **Próximo passo:** concluída validação da tela; revisar Advisor/hardening em rodada própria antes das operações sensíveis. R04 carregou o seed V2 inativo; próxima é R05 — cadastro/estoque persistentes.
 
-
 ## R04 — Importação controlada e reconciliação do catálogo Bling
+
 **Data:** 2026-10-24 (UTC)
 **Branch:** `agent/dona-antonia-r04-bling-import`; PR #1368 draft, base R03, sem merge.
 **Estado:** concluída no staging V2 isolado. O usuário autorizou utilizar a cópia gerada/histórica disponível; origem não comprovada como export do Bling.
@@ -110,6 +113,7 @@
 **Próxima rodada recomendada:** R05 — adapter e CRUD persistente de produtos/estoque na V2, mantendo o estado inicial não vendável; revisar achados de performance Advisor antes de ampliar as consultas.
 
 ## R05 — cadastro e estoque persistente
+
 **Data:** 2026-10-24 (UTC)
 **Branch:** `agent/dona-antonia-r05-products-stock`, derivada do head R04 `4e3ccfba7b06dc02a5ae3287d502351cb24aa4bf`. Código: SHA `36c8b4780840e30c332a47c65d57045b40876d8a`. PR #1369 draft, sem merge. Checkpoint complementar: commit `ccbffc863e484a6c6dd226ee8bc2fba3d8c4127b` em `docs/R05_EVIDENCIAS_ENCERRAMENTO.md`.
 **Estado:** Concluída; CI de código passou. O commit documental complementar também passou pelo CI #40069221500.
@@ -120,3 +124,16 @@
 **Pendências fora de R05:** upload de imagem por Storage, ações em lote e vitrine dinâmica permanecem em rodadas posteriores. Seed segue inativo/estoque zero.
 **Isolamento:** sem mudanças na `main`, produção, sites legados, Supabases existentes, atendimento ou integrações; nenhuma publicação/deploy.
 **Próxima rodada:** R06 — persistir tipos, cestas e extras.
+
+## R06 — tipos, cestas e extras persistentes
+
+**Data:** 2026-10-24 (UTC)
+**Branch/base:** `agent/dona-antonia-r06-baskets-types-extras`, derivada do head R05 `397635d0085bac6042b4b408df185d6992755c51`; PR #1370 draft, head `2c42f6ec6b791d2e346995a8e5711d0223c86159`.
+**Estado:** Concluída; PR permanece draft e sem merge/publicação.
+**Escopo implementado:** adapter administrativo com revisão CAS; CRUD/ordenação de tamanhos e tipos, vínculos, quantidades, extras, foto HTTPS e ajuste privado; projeção pública server-side com apenas campos vendáveis e `startingTotalCents`, sem composição/ajuste privado no JSON; vitrine usa o RPC público quando as variáveis publishable da V2 estão configuradas e conserva fallback demonstrativo controlado.
+**Migrações:** `20261024070000_r06_basket_configuration.sql` e `20261024120000_r06_public_catalog_concurrency.sql`, aplicadas somente em `hjudhofluihkxykwekir`. Remoto confirmou 11 migrações/26 tabelas, 802 produtos e 802 perfis privados sem alteração; `get_storefront_catalog()` respondeu via REST com chave publishable como `anon`, enquanto o RPC administrativo respondeu 401/42501. Revisão singleton inicia em 1 e gravações obsoletas são rejeitadas com `40001` no teste PostgreSQL.
+**Verificações locais:** `npm run check`, `npm run lint`, `npm run format:check`, `npm run architecture:check` (97 arquivos), `npm test` (87/87), `npm run test:db` (11 migrações/26 tabelas, RLS/RBAC, CAS, projeção pública e privacidade) e `npm run build` passaram. Playwright local continua sem Chromium.
+**CI:** workflow #40090765643 passou auditoria, lint/formato, arquitetura, migrações PostgreSQL, TypeScript, 87 testes unitários, build e 17/17 E2E; logs registram `17 passed (15.8s)`.
+**Limite documentado:** o seed remoto permanece inativo/estoque zero; por isso o endpoint público real retorna catálogo vazio até ativação deliberada de produtos. A integração de vitrine e o contrato seguro estão testados, mas não houve homologação comercial nem ativação de estoque nesta rodada.
+**Isolamento:** sem merge, deploy ou publicação; áreas legadas e integrações operacionais intocadas.
+**Próxima rodada:** R07 — catálogo público dinâmico e performance de abertura.

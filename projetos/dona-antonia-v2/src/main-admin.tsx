@@ -1,9 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import type { BasketId, BasketTemplate, Product, ProductType } from './core/model';
-import { DEMO_PRODUCTS, DEMO_TEMPLATES, DEMO_TYPES } from './data/demo';
-import { DEMO_EXTRA_GROUPS, DEMO_EXTRA_PRODUCTS, DEMO_EXTRA_TYPES } from './data/demo-extra';
-import type { ExtraGroup } from './core/extras';
+import type { Product } from './core/model';
 import type { OperationalOrder } from './core/orders';
 import { DEMO_ORDERS } from './data/demo-orders';
 import { useAdminSectionRoute } from './admin/routing/useAdminSectionRoute';
@@ -44,15 +41,21 @@ import { createSupabaseBrowserClient, readSupabaseBrowserConfig } from './platfo
 import { createStaffAuthentication } from './platform/supabase/staff-authentication';
 import type { AdminProductsRepository } from './application/admin-products';
 import { createSupabaseAdminProductsRepository } from './platform/supabase/admin-products';
+import { createSupabaseAdminBasketConfigurationRepository } from './platform/supabase/admin-basket-configuration';
+import { useBasketConfigurationAdmin } from './admin/features/baskets/useBasketConfigurationAdmin';
 
 function Admin({
   staffSession,
   onSignOut,
   productRepository,
+  basketConfigurationRepository,
 }: {
   staffSession: StaffSession | null;
   onSignOut: () => Promise<void>;
   productRepository: AdminProductsRepository | null;
+  basketConfigurationRepository: ReturnType<
+    typeof createSupabaseAdminBasketConfigurationRepository
+  > | null;
 }) {
   const [tab, setTab] = useAdminSectionRoute();
   const allowedSections = staffSession
@@ -72,103 +75,45 @@ function Admin({
   const updateOrder = (id: string, change: (order: OperationalOrder) => OperationalOrder) => {
     setOrders((current) => current.map((order) => (order.id === id ? change(order) : order)));
   };
-  const [products, setProducts] = useState<Product[]>(
-    [...DEMO_PRODUCTS, ...DEMO_EXTRA_PRODUCTS].map((product) => ({ ...product })),
-  );
-  const [types, setTypes] = useState<ProductType[]>(
-    [...DEMO_TYPES, ...DEMO_EXTRA_TYPES].map((type) => ({
-      ...type,
-      productSkus: [...type.productSkus],
-    })),
-  );
-  const [templates, setTemplates] = useState<BasketTemplate[]>(
-    DEMO_TEMPLATES.map((basket) => ({ ...basket, lines: [...basket.lines] })),
-  );
-  const [extraGroups, setExtraGroups] = useState<ExtraGroup[]>(
-    DEMO_EXTRA_GROUPS.map((group) => ({ ...group })),
-  );
-  const [privateBasketAdjustments, setPrivateBasketAdjustments] = useState<
-    Record<BasketId, number>
-  >({
-    economica: 0,
-    mini: 0,
-    pequena: 0,
-    media: 0,
-    grande: 0,
-  });
-  const [selectedTypeId, setSelectedTypeId] = useState('arroz');
-  const [selectedBasketId, setSelectedBasketId] = useState<BasketId>('mini');
-  const [newTypeName, setNewTypeName] = useState('');
-  const [filter, setFilter] = useState('');
-  const [notice, setNotice] = useState('');
-  const selectedType = types.find((type) => type.id === selectedTypeId);
-  const selectedBasket = templates.find((template) => template.id === selectedBasketId)!;
-  const filteredProducts = useMemo(
-    () =>
-      products.filter((product) =>
-        (product.name + ' ' + product.sku + ' ' + (product.gtin || ''))
-          .toLocaleLowerCase('pt-BR')
-          .includes(filter.toLocaleLowerCase('pt-BR')),
-      ),
-    [products, filter],
-  );
+  const {
+    products,
+    setProducts,
+    types,
+    templates,
+    extraGroups,
+    privateBasketAdjustments,
+    selectedTypeId,
+    setSelectedTypeId,
+    selectedBasketId,
+    setSelectedBasketId,
+    newTypeName,
+    setNewTypeName,
+    filter,
+    setFilter,
+    notice,
+    setNotice,
+    selectedType,
+    selectedBasket,
+    filteredProducts,
+    ready: basketConfigurationReady,
+    addType,
+    toggleOption,
+    reorderType,
+    toggleTypeActive,
+    renameType,
+    setQuantity,
+    setPrivateFee,
+    createBasket,
+    updateBasket,
+    moveBasket,
+    changeExtras,
+    changeTypes,
+  } = useBasketConfigurationAdmin(basketConfigurationRepository, productRepository);
   const changeProduct = (sku: string, patch: Partial<Product>) => {
     setProducts((current) =>
       current.map((item) => (item.sku === sku ? { ...item, ...patch } : item)),
     );
     setNotice('Alteração simulada; não foi salva no banco.');
-  };
-  const addType = () => {
-    const name = newTypeName.trim();
-    if (
-      !name ||
-      types.some((item) => item.name.toLocaleLowerCase('pt-BR') === name.toLocaleLowerCase('pt-BR'))
-    ) {
-      setNotice('Informe um nome novo para o tipo.');
-      return;
-    }
-    const id =
-      'tipo-' +
-      (Math.max(0, ...types.map((item) => Number(item.id.replace('tipo-', '')) || 0)) + 1);
-    setTypes((current) => [...current, { id, name, productSkus: [], order: current.length + 1 }]);
-    setSelectedTypeId(id);
-    setNewTypeName('');
-    setNotice('Tipo criado na prévia.');
-  };
-  const toggleOption = (sku: string) => {
-    setTypes((current) =>
-      current.map((type) => {
-        if (type.id !== selectedTypeId) return type;
-        const selected = type.productSkus.includes(sku);
-        return {
-          ...type,
-          productSkus: selected
-            ? type.productSkus.filter((item) => item !== sku)
-            : [...type.productSkus, sku],
-        };
-      }),
-    );
-  };
-  const setQuantity = (typeId: string, quantity: number) => {
-    if (!Number.isSafeInteger(quantity) || quantity < 0 || quantity > 999) return;
-    setTemplates((current) =>
-      current.map((basket) => {
-        if (basket.id !== selectedBasketId) return basket;
-        const isListed = basket.lines.some((line) => line.typeId === typeId);
-        const lines = isListed
-          ? basket.lines.filter((line) => line.typeId !== typeId)
-          : [...basket.lines];
-        if (quantity > 0) {
-          const previous = basket.lines.find((line) => line.typeId === typeId);
-          lines.push({
-            typeId,
-            defaultQuantity: quantity,
-            order: previous?.order ?? types.find((type) => type.id === typeId)?.order ?? 99,
-          });
-        }
-        return { ...basket, lines: lines.sort((a, b) => a.order - b.order) };
-      }),
-    );
   };
   return (
     <AdminShell
@@ -178,7 +123,13 @@ function Admin({
       onProductSearch={setFilter}
       allowedSections={allowedSections}
       staffSession={staffSession}
-      dataStatus={activeTab === 'produtos' && productRepository ? 'Catálogo V2' : undefined}
+      dataStatus={
+        basketConfigurationRepository && ['tipos', 'cestas', 'extras'].includes(activeTab)
+          ? 'Configuração V2'
+          : activeTab === 'produtos' && productRepository
+            ? 'Catálogo V2'
+            : undefined
+      }
       onSignOut={onSignOut}
     >
       {notice && (
@@ -218,7 +169,7 @@ function Admin({
             changeProduct={changeProduct}
           />
         )}
-        {activeTab === 'tipos' && (
+        {activeTab === 'tipos' && basketConfigurationReady && (
           <ProductTypesPanel
             types={types}
             selectedTypeId={selectedTypeId}
@@ -231,9 +182,12 @@ function Admin({
             filter={filter}
             setFilter={setFilter}
             toggleOption={toggleOption}
+            onReorder={reorderType}
+            onToggleActive={toggleTypeActive}
+            onRename={renameType}
           />
         )}
-        {activeTab === 'cestas' && (
+        {activeTab === 'cestas' && basketConfigurationReady && (
           <BasketCompositionPanel
             templates={templates}
             selectedBasketId={selectedBasketId}
@@ -241,25 +195,23 @@ function Admin({
             selectedBasket={selectedBasket}
             types={types}
             setQuantity={setQuantity}
-            privateFeeCents={privateBasketAdjustments[selectedBasketId]}
+            privateFeeCents={privateBasketAdjustments[selectedBasketId] ?? 0}
             canManagePrivatePricing={
               staffSession ? canManagePrivatePricing(staffSession.role) : true
             }
-            onPrivateFeeChange={(feeCents) =>
-              setPrivateBasketAdjustments((current) => ({
-                ...current,
-                [selectedBasketId]: feeCents,
-              }))
-            }
+            onPrivateFeeChange={setPrivateFee}
+            onCreateBasket={createBasket}
+            onUpdateBasket={updateBasket}
+            onMoveBasket={moveBasket}
           />
         )}
-        {activeTab === 'extras' && (
+        {activeTab === 'extras' && basketConfigurationReady && (
           <ExtraAdmin
             products={products}
             types={types}
             groups={extraGroups}
-            onChangeGroups={setExtraGroups}
-            onChangeTypes={setTypes}
+            onChangeGroups={changeExtras}
+            onChangeTypes={changeTypes}
           />
         )}
       </React.Suspense>
@@ -275,6 +227,9 @@ const authentication = supabaseClient ? createStaffAuthentication(supabaseClient
 const adminProductsRepository = supabaseClient
   ? createSupabaseAdminProductsRepository(supabaseClient)
   : null;
+const adminBasketConfigurationRepository = supabaseClient
+  ? createSupabaseAdminBasketConfigurationRepository(supabaseClient)
+  : null;
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -287,6 +242,7 @@ createRoot(document.getElementById('root')!).render(
           staffSession={staffSession}
           onSignOut={signOut}
           productRepository={adminProductsRepository}
+          basketConfigurationRepository={adminBasketConfigurationRepository}
         />
       )}
     </AdminAuthGate>

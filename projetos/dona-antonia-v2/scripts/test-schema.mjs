@@ -9,7 +9,9 @@ const migrationDir = path.join(root, 'supabase', 'migrations');
 const migrations = (await readdir(migrationDir)).filter((file) => file.endsWith('.sql')).sort();
 const expectedTables = [
   'audit_log',
+  'basket_configuration_state',
   'basket_size_private_pricing',
+  'basket_extra_types',
   'basket_size_types',
   'basket_sizes',
   'bling_product_profiles',
@@ -34,7 +36,7 @@ const expectedTables = [
   'orders',
 ].sort();
 
-assert.equal(migrations.length, 9, 'the schema must be a complete, ordered migration chain');
+assert.equal(migrations.length, 11, 'the schema must be a complete, ordered migration chain');
 assert.ok(migrations.every((file) => /^\d{14}_[a-z0-9_]+\.sql$/.test(file)));
 
 const db = new PGlite();
@@ -89,6 +91,11 @@ try {
       has_function_privilege('anon', 'public.admin_get_product_private_profile(uuid)', 'EXECUTE') as anon_private_profile,
       has_function_privilege('authenticated', 'public.admin_get_product_private_profile(uuid)', 'EXECUTE') as staff_private_profile,
       has_function_privilege('authenticated', 'public.admin_save_product_private_profile(uuid,bigint,jsonb,uuid)', 'EXECUTE') as staff_private_profile_save
+      ,has_function_privilege('anon', 'public.admin_get_basket_configuration()', 'EXECUTE') as anon_basket_read
+      ,has_function_privilege('authenticated', 'public.admin_get_basket_configuration()', 'EXECUTE') as staff_basket_read
+      ,has_function_privilege('anon', 'public.get_storefront_catalog()', 'EXECUTE') as anon_public_catalog
+      ,has_function_privilege('anon', 'public.admin_save_basket_configuration(jsonb,bigint)', 'EXECUTE') as anon_basket_save
+      ,has_function_privilege('authenticated', 'public.admin_save_basket_configuration(jsonb,bigint)', 'EXECUTE') as staff_basket_save
     from pg_class c
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'da_next' and c.relkind = 'r'
@@ -108,6 +115,11 @@ try {
   assert.equal(access.rows[0].anon_private_profile, false);
   assert.equal(access.rows[0].staff_private_profile, true);
   assert.equal(access.rows[0].staff_private_profile_save, true);
+  assert.equal(access.rows[0].anon_basket_read, false);
+  assert.equal(access.rows[0].staff_basket_read, true);
+  assert.equal(access.rows[0].anon_public_catalog, true);
+  assert.equal(access.rows[0].anon_basket_save, false);
+  assert.equal(access.rows[0].staff_basket_save, true);
 
   const basketSeed = await db.query('select id from da_next.basket_sizes order by sort_order');
   assert.deepEqual(
@@ -204,12 +216,77 @@ try {
   assert.equal(savedProfile.rows[0].result.revision, 2);
   assert.equal(savedProfile.rows[0].result.supplier_name, 'Distribuidor Teste');
 
+  const configurationTypeId = '11111111-1111-4111-8111-111111111111';
+  const basketConfiguration = {
+    types: [
+      {
+        id: configurationTypeId,
+        name: 'Arroz da cesta',
+        order: 1,
+        active: true,
+        productSkus: ['ARROZ-5KG'],
+      },
+    ],
+    baskets: [
+      {
+        id: 'mini',
+        code: 'MINI',
+        name: 'Mini',
+        order: 1,
+        active: true,
+        privateAdjustmentCents: 250,
+        lines: [{ typeId: configurationTypeId, defaultQuantity: 2, order: 1 }],
+      },
+    ],
+    extras: [{ typeId: configurationTypeId, order: 1, active: true }],
+  };
+  const savedConfiguration = await db.query(
+    'select public.admin_save_basket_configuration($1::jsonb, 1) as result',
+    [JSON.stringify(basketConfiguration)],
+  );
+  assert.equal(
+    savedConfiguration.rows[0].result.types.find((type) => type.id === configurationTypeId).name,
+    'Arroz da cesta',
+  );
+  const savedMini = savedConfiguration.rows[0].result.baskets.find(
+    (basket) => basket.id === 'mini',
+  );
+  assert.equal(savedMini.privateAdjustmentCents, 250);
+  assert.equal(savedMini.lines[0].defaultQuantity, 2);
+  assert.equal(savedConfiguration.rows[0].result.extras[0].active, true);
+  assert.equal(savedConfiguration.rows[0].result.revision, 2);
+  await expectSqlFailure(
+    `select public.admin_save_basket_configuration('${JSON.stringify(basketConfiguration).replaceAll("'", "''")}'::jsonb, 1) as result`,
+    'stale basket configuration revisions must be rejected',
+  );
+  await db.query('update da_next.products set active = true where id = $1', [productId]);
+  await db.exec('SET ROLE anon');
+  const publicCatalog = await db.query('select public.get_storefront_catalog() as result');
+  await db.exec('RESET ROLE');
+  const publicBasket = publicCatalog.rows[0].result.baskets.find((basket) => basket.id === 'mini');
+  assert.equal(publicBasket.startingTotalCents, 5430);
+  assert.equal(JSON.stringify(publicCatalog.rows[0].result).includes('privateAdjustment'), false);
+
   const productStaffId = '00000000-0000-4000-8000-000000000002';
   await db.query('insert into auth.users (id) values ($1)', [productStaffId]);
   await db.query(
     `insert into da_next.staff_role_assignments (user_id, role)
      values ($1, 'PRODUCTS'::da_next.staff_role)`,
     [productStaffId],
+  );
+  await db.query("select set_config('request.jwt.claim.sub', $1, false)", [productStaffId]);
+  const productStaffBasketConfig = await db.query(
+    'select public.admin_get_basket_configuration() as result',
+  );
+  assert.equal(
+    productStaffBasketConfig.rows[0].result.baskets.find((basket) => basket.id === 'mini')
+      .privateAdjustmentCents,
+    null,
+  );
+  await db.query("select set_config('request.jwt.claim.sub', '', false)");
+  await expectSqlFailure(
+    `select public.admin_get_basket_configuration()`,
+    'anonymous users cannot read basket configuration',
   );
   await db.query("select set_config('request.jwt.claim.sub', $1, false)", [productStaffId]);
   await expectSqlFailure(
