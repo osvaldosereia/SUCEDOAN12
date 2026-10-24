@@ -4,9 +4,10 @@ import type { BasketId, BasketTemplate, Product, ProductType } from './core/mode
 import { DEMO_PRODUCTS, DEMO_TEMPLATES, DEMO_TYPES } from './data/demo';
 import { DEMO_EXTRA_GROUPS, DEMO_EXTRA_PRODUCTS, DEMO_EXTRA_TYPES } from './data/demo-extra';
 import type { ExtraGroup } from './core/extras';
-import { ADMIN_SECTIONS } from './admin/navigation';
-import type { AdminSectionId } from './admin/navigation';
+import type { AvailableAdminSection } from './admin/navigation';
+import { AdminShell } from './admin/shell/AdminShell';
 /** Cada sessão tem bundle próprio: não baixar módulos que o operador não abriu. */
+const HomeDashboard=React.lazy(()=>import('./admin/features/home/HomeDashboard').then(m=>({default:m.HomeDashboard})));
 const ProductsPanel=React.lazy(()=>import('./admin/features/products/ProductsPanel').then(m=>({default:m.ProductsPanel})));
 const ProductTypesPanel=React.lazy(()=>import('./admin/features/product-types/ProductTypesPanel').then(m=>({default:m.ProductTypesPanel})));
 const BasketCompositionPanel=React.lazy(()=>import('./admin/features/baskets/BasketCompositionPanel').then(m=>({default:m.BasketCompositionPanel})));
@@ -14,7 +15,7 @@ const ExtraAdmin=React.lazy(()=>import('./admin/features/extras/ExtraAdmin').the
 import './styles.css';
 
 function Admin() {
-  const [tab,setTab] = useState<AdminSectionId>('tipos');
+  const [tab,setTab] = useState<AvailableAdminSection>('inicio');
   const [products,setProducts] = useState<Product[]>([...DEMO_PRODUCTS,...DEMO_EXTRA_PRODUCTS].map((product)=>({...product})));
   const [types,setTypes] = useState<ProductType[]>([...DEMO_TYPES,...DEMO_EXTRA_TYPES].map((type)=>({...type, productSkus:[...type.productSkus]})));
   const [templates,setTemplates] = useState<BasketTemplate[]>(DEMO_TEMPLATES.map((basket)=>({...basket,lines:[...basket.lines]})));
@@ -26,7 +27,7 @@ function Admin() {
   const [selectedBasketId,setSelectedBasketId] = useState<BasketId>('mini');
   const [newTypeName,setNewTypeName] = useState('');
   const [filter,setFilter] = useState('');
-  const [notice,setNotice] = useState('Todas as alterações desta prévia são temporárias e não afetam o Bling.');
+  const [notice,setNotice] = useState('');
   const selectedType = types.find((type)=>type.id===selectedTypeId);
   const selectedBasket = templates.find((template)=>template.id===selectedBasketId)!;
   const filteredProducts = useMemo(()=>products.filter((product)=>
@@ -65,23 +66,10 @@ function Admin() {
       return {...basket,lines:lines.sort((a,b)=>a.order-b.order)};
     }));
   };
-  return <div className="admin-page">
-    <aside className="admin-sidebar"><a className="brand" href="/admin/"><span className="brand-mark">DA</span><span>Dona Antônia<small>Admin V2 · Prévia</small></span></a>
-      <nav aria-label="Módulos do painel">
-        {ADMIN_SECTIONS.map(section=><button key={section.id}
-          type="button" className={tab===section.id?'active':''}
-          onClick={()=>setTab(section.id)}>{section.label}</button>)}
-      </nav>
-      <p className="sidebar-note">Dados demonstrativos. Este painel não possui autenticação nem persistência; não publicar.</p>
-    </aside>
-    <main className="admin-main">
-      <header className="admin-header"><div><p className="eyebrow">NOVO SISTEMA · HOMOLOGAÇÃO</p>
-        <h1>{ADMIN_SECTIONS.find(section=>section.id===tab)?.title}</h1>
-        <p>Cadastro simples, independente e compatível com os SKUs do Bling.</p></div>
-        <span className="pill">Não publicado</span>
-      </header>
-      <div className="notice muted" role="status">{notice}</div>
-      <React.Suspense fallback={<div className="notice muted" role="status">Carregando módulo...</div>}>
+  return <AdminShell section={tab} onNavigate={setTab} products={products} onProductSearch={setFilter}>
+    {notice&&<div className="notice muted" role="status">{notice}</div>}
+    <React.Suspense fallback={<div className="notice muted" role="status">Carregando seção...</div>}>
+      {tab==='inicio' && <HomeDashboard products={products} types={types} baskets={templates} extras={extraGroups} onNavigate={setTab}/>}
       {tab==='produtos' && <ProductsPanel
         products={products} filteredProducts={filteredProducts} filter={filter}
         setFilter={setFilter} changeProduct={changeProduct}/>}
@@ -98,8 +86,8 @@ function Admin() {
       {tab==='extras'&&<ExtraAdmin
         products={products} types={types} groups={extraGroups}
         onChangeGroups={setExtraGroups} onChangeTypes={setTypes}/>}
-      </React.Suspense>
-    </main>
-  </div>;
+
+    </React.Suspense>
+  </AdminShell>;
 }
 createRoot(document.getElementById('root')!).render(<React.StrictMode><Admin/></React.StrictMode>);
