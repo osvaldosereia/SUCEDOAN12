@@ -6526,21 +6526,27 @@
       if(fiscalRows.length){await loadFiscalForOrders(fiscalRows);if(requestId===state.orderRequestSequence)paintOrderRows()}
     }catch(e){if(requestId===state.orderRequestSequence){const host=$('#orderRows');if(host)host.innerHTML='<div class="empty">Não consegui carregar os pedidos. <button class="text-btn" id="retryOrders" type="button">Tentar novamente</button></div>';$('#retryOrders')?.addEventListener('click',()=>loadOrders(true))}}
   }
-  async function refreshOrderSeparationBoard(){
-    if(state.tab!=='orders'||document.hidden||!state.orders.length)return;
+  let orderSeparationBoardRefreshInFlight=false;
+  async function refreshOrderSeparationBoard(force=false){
+    if(state.tab!=='orders'||document.hidden||!state.orders.length||orderSeparationBoardRefreshInFlight)return;
+    if(!force&&document.querySelector('.orders-bottom-sheet-backdrop'))return;
+    orderSeparationBoardRefreshInFlight=true;
     try{
       const data=await api('order_separation_board'),map=new Map((data.board||[]).map(x=>[String(x.order_id),x]));
-      let changed=false;
+      let statusChanged=false,summaryChanged=false;
       state.orders=state.orders.map(o=>{
         const row=map.get(String(o.id));if(!row)return o;
         const nextSummary=row.separation_summary||null,nextStatus=row.status||o.status;
-        if(nextStatus!==o.status||JSON.stringify(nextSummary)!==JSON.stringify(o.separation_summary||null))changed=true;
+        if(nextStatus!==o.status)statusChanged=true;
+        if(JSON.stringify(nextSummary)!==JSON.stringify(o.separation_summary||null))summaryChanged=true;
         return {...o,status:nextStatus,separation_summary:nextSummary};
       });
-      if(changed)await loadOrders(true);
+      if(statusChanged)await loadOrders(true);
+      else if(summaryChanged)paintOrderRows();
     }catch{}
+    finally{orderSeparationBoardRefreshInFlight=false}
   }
-  if(!window.__orderSeparationBoardTimer)window.__orderSeparationBoardTimer=setInterval(refreshOrderSeparationBoard,5000);
+  if(!window.__orderSeparationBoardTimer)window.__orderSeparationBoardTimer=setInterval(refreshOrderSeparationBoard,15000);
   if(!window.__orderSeparationBoardVisibilityBound){window.__orderSeparationBoardVisibilityBound=true;document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.tab==='orders')refreshOrderSeparationBoard()})}
   // O painel preserva a página e reusa integralmente o Atendimento existente.
   let orderChatOpener=null,orderChatClosingTimer=null,orderChatPreviousOverflow='';
@@ -6626,7 +6632,7 @@
       await api('order_separation_assign',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:orderId,separator_key:key})});
       toast('Separação atribuída a '+next.label);
       await loadOrderSeparationSheet(orderId,back);
-      await refreshOrderSeparationBoard();
+      await refreshOrderSeparationBoard(true);
     }catch(e){toast(e.message==='invalid_separator'?'Responsável inválido. Atualize a página e tente novamente.':errorMessage(e.message));await loadOrderSeparationSheet(orderId,back)}
     finally{delete back.dataset.separationBusy}
   }
@@ -6669,7 +6675,7 @@
       const nextVersion=result?.order_updated_at||result?.item?.order_updated_at||'';if(nextVersion)back.dataset.orderUpdatedAt=String(nextVersion);
       if(result?.warning==='bling_approval_pending')toast('✓ '+actionLabel+' salvo · Bling pendente, continue a separação');
       else toast('✓ '+actionLabel+' salvo');
-      await refreshOrderSeparationBoard();
+      await refreshOrderSeparationBoard(true);
       await new Promise(resolve=>setTimeout(resolve,260));
       await loadOrderSeparationSheet(orderId,back);
     }catch(e){
@@ -6718,7 +6724,7 @@
         return;
       }
       await loadOrders();
-      await refreshOrderSeparationBoard();
+      await refreshOrderSeparationBoard(true);
     };
     overlay.querySelector('.orders-packaging-ok').focus();
     if(document.documentElement.classList.contains('montar-picker-only')){
@@ -7672,8 +7678,6 @@
       w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Preparando separação</title></head><body style="font:16px system-ui;padding:30px;text-align:center"><strong>Preparando separação…</strong><p>Validando pedido e estoque antes de imprimir.</p></body></html>');
       w.document.close();
       await persistCurrentOrder();
-      const blingReady=await validateBlingBeforeSeparation(o.id);
-      if(!blingReady){try{w.close()}catch{};return}
       await api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,status:'processing',operator:currentOperator()||'Operação'})});
       printSeparationOnly(detail,w);
       toast('Separação iniciada · estoque e status atualizados juntos');

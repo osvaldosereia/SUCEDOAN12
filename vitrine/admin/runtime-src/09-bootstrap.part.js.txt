@@ -799,8 +799,6 @@
       w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Preparando separação</title></head><body style="font:16px system-ui;padding:30px;text-align:center"><strong>Preparando separação…</strong><p>Validando pedido e estoque antes de imprimir.</p></body></html>');
       w.document.close();
       await persistCurrentOrder();
-      const blingReady=await validateBlingBeforeSeparation(o.id);
-      if(!blingReady){try{w.close()}catch{};return}
       await api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,status:'processing',operator:currentOperator()||'Operação'})});
       printSeparationOnly(detail,w);
       toast('Separação iniciada · estoque e status atualizados juntos');
