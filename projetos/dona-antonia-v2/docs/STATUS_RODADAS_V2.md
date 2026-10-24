@@ -7,7 +7,7 @@
 |---|---|---|---|
 | R00 | Auditoria integral e baseline | **Concluída — auditoria documental e baseline** | docs/AUDITORIA_COMPLETA_V2.md; SHA base 1a846beba768192c366937c1462bcfd6baeccee9; CI 40057635884 aprovado |
 | R01 | Design system e disciplina de qualidade | **Concluída** | PR #1365; SHA R01 7a02a0da66dbcec6cfd7772da75f748ecb5bd29c; CI 40059800868 e 40059798099 aprovados |
-| R02 | Modelagem/migrações para banco isolado | **Concluída; PR aberto, sem merge** | `docs/DIAGRAMA_ERD_V2.md`; `npm run test:db`; CI pendente/após PR |
+| R02 | Modelagem/migrações para banco isolado | **Concluída; PR aberto, sem merge** | PR #1366; SHA 08ece30274c4b36e1c325fcf0e3d3fbabb41c49a; CI 40061111459 aprovado |
 | R03 | Login, RBAC e RLS V2 | Planejada | — |
 | R04 | Importação/reconciliação dos 802 produtos | Planejada | — |
 | R05 | Cadastro e estoque persistente | Planejada | — |
