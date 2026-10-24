@@ -448,7 +448,7 @@ R00 foi documental; R01 consolidou qualidade visual/CI; R02 implementou schema e
 
 ## Registro de execução — R16 (pré-voo do piloto controlado)
 
-- **Branch/PR:** `agent/dona-antonia-r16-pilot-preflight`, PR #1396 draft, base R15 `6f8c195d39de72ec057470e15443f25a6b0ba378`, head documental `bf5c37201708e517a1683c430945c93e46d779d4`.
+- **Branch/PR:** `agent/dona-antonia-r16-pilot-preflight`, PR #1396 draft, base R15 `6f8c195d39de72ec057470e15443f25a6b0ba378`; o head deve ser lido diretamente no PR antes de nova rodada.
 - **Mudança segura:** contrato/testes de readiness e `npm run r16:readiness`; resultado padrão `blocked` com cinco gates ausentes. Nenhum dado foi ativado, nenhum pedido criado e nenhuma integração foi acionada.
 - **Evidências locais:** 126/126 testes, typecheck, lint, formato, arquitetura (138 arquivos), build e diff limpo passaram.
 - **Pendências humanas:** URL de staging V2, seed fictício vendável, 2–3 operadores isolados, ensaio controlado de backup/restore e autorização explícita para piloto. Sem isso, R16 não pode ser marcada concluída.
