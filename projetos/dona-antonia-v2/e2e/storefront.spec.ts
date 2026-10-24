@@ -21,7 +21,7 @@ for (const viewport of sizes) {
     await expect(arroz.getByRole('heading',{name:'Arroz'})).toBeVisible();
     const currentQty = await arroz.locator('output').innerText();
     const before = await page.locator('.sticky-summary strong').innerText();
-    await arroz.getByRole('button',{name:/Arroz Dubom/}).click();
+    await arroz.getByRole('button',{name:/Arroz Caibi/}).click();
     await expect(arroz.locator('output')).toHaveText(currentQty);
     const afterChange = await page.locator('.sticky-summary strong').innerText();
     expect(afterChange).not.toBe(before);

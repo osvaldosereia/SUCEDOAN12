@@ -17,7 +17,7 @@ test('admin: extras e produtos são editáveis somente no modo demonstrativo', a
   await page.getByRole('textbox',{name:'Nome do tipo extra'}).fill('Enlatados');
   await page.getByRole('button',{name:'Criar',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Produtos permitidos — Enlatados'})).toBeVisible();
-  const row=page.getByRole('group',{name:'Produtos do tipo extra'}).getByText('Óleo de Soja Concord 900 ml').locator('..');
+  const row=page.getByRole('group',{name:'Produtos do tipo extra'}).locator('label.check-row').filter({hasText:'Óleo de Soja Concord 900 ml'});
   await row.locator('input[type="checkbox"]').check();
   await expect(row.locator('input[type="checkbox"]')).toBeChecked();
 

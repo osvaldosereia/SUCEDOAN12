@@ -9,7 +9,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "check": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run src/core",
     "import:bling": "node scripts/import-bling.mjs",
     "e2e": "playwright test"
   },
