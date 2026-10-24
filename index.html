@@ -670,7 +670,7 @@
     function basketGroupChanged(item,group){if(!item?.split_mode)return false;const rows=(item.components||[]).filter(c=>c.component_group===group);return rows.some(c=>Number(c.quantity||0)!==Number(c.base_quantity||0))}
     function cartLotUsed(lotId,excludeItemIndex=-1,role=''){if(!lotId)return 0;let used=0;state.cart.forEach((item,index)=>{if(index===excludeItemIndex||item.type!=='basket')return;if(role==='food'&&item.split_mode&&!basketGroupChanged(item,'food')&&item.food_lot_id===lotId)used+=Number(item.qty||0);if(role==='hygiene'&&item.split_mode&&!basketGroupChanged(item,'hygiene')&&item.hygiene_lot_id===lotId)used+=Number(item.qty||0);if(!role&&!item.split_mode&&item.lot_id===lotId)used+=Number(item.qty||0)});return used}
     function cartDemandForProduct(productId,excludeItemIndex=-1){let total=0;state.cart.forEach((item,index)=>{if(index===excludeItemIndex)return;if(item.type==='product'&&item.id===productId)total+=Number(item.qty||0);if(item.type==='basket_mold'){for(const comp of item.components||[])if(comp.product_id===productId)total+=Number(comp.quantity||0)*Number(item.qty||0);return}if(item.type!=='basket')return;for(const comp of item.components||[]){if(comp.product_id!==productId)continue;if(item.split_mode){const changed=basketGroupChanged(item,comp.component_group);if(changed)total+=Number(comp.quantity||0)*Number(item.qty||0)}else{const extra=Math.max(0,Number(comp.quantity||0)-Number(comp.base_quantity||0));total+=extra*Number(item.qty||0)}}});return total}
-    function remainingStock(productId,excludeItemIndex=-1,fallback=null){const stock=knownStock(productId,fallback);return stock===null?null:Math.max(0,stock-cartDemandForProduct(productId,excludeItemIndex))}
+    function remainingStock(productId,excludeItemIndex=-1,fallback=null,preferFallback=false){const stock=preferFallback?stockNumber(fallback):knownStock(productId,fallback);return stock===null?null:Math.max(0,stock-cartDemandForProduct(productId,excludeItemIndex))}
     function splitBasketGroupLooseCapacity(item,itemIndex,group){const rows=(item.components||[]).filter(c=>c.component_group===group&&Number(c.quantity||0)>0);if(!rows.length)return 30;let max=30;for(const comp of rows){const remaining=remainingStock(comp.product_id,itemIndex,comp.stock_quantity);if(remaining!==null)max=Math.min(max,Math.floor((remaining+1e-9)/Number(comp.quantity||1)))}return Math.max(0,max)}
     function maxBasketQty(item,itemIndex){if(item?.type==='basket_mold'){
       const needed=new Map();
@@ -1134,7 +1134,7 @@
         const isSelected=String(a.product_id)===String(item.product_id),disabled=pending?' disabled aria-disabled="true"':'';
         return '<button type="button" class="basket-option-choice '+(isSelected?'is-selected':'')+'" '+(hasChoices?'data-mold-option-choice="'+index+'" data-product-id="'+esc(a.product_id)+'" role="option" aria-selected="'+(isSelected?'true':'false')+'"':'aria-pressed="true"')+disabled+' aria-label="'+esc(a.name||'Produto')+', '+money(a.price_cents)+'"><img loading="lazy" decoding="async" src="'+esc(safeImage(a.image_url))+'" alt=""><strong class="basket-option-choice-name">'+esc(moldOptionShortName(a.name,36))+'</strong><b class="basket-option-choice-price">'+money(a.price_cents)+'</b>'+(isSelected?'<span class="basket-option-selected-mark" aria-hidden="true">✓</span>':'')+'</button>';
       }).join('');
-      const status=(loading?((item.option_loading||item.option_queued)?'<div class="basket-brand-loading" role="status">Carregando opções…</div>':item.alternatives_error?'<div class="basket-option-retry" role="status">Não foi possível carregar as opções.<button type="button" data-mold-option-retry="'+index+'">Tentar novamente</button></div>':'<div class="basket-brand-loading" role="status">As opções serão carregadas ao aparecer na tela.</div>'):'')+(item.auto_removed_for_stock?'<div class="basket-brand-loading" role="status">Item sem saldo retirado da cesta. Escolha uma opção disponível para incluí-lo.</div>':'');
+      const status=(loading?((item.option_loading||item.option_queued)?'<div class="basket-brand-loading" role="status">Carregando opções…</div>':item.alternatives_error?'<div class="basket-option-retry" role="status">Não foi possível carregar as opções.<button type="button" data-mold-option-retry="'+index+'">Tentar novamente</button></div>':'<div class="basket-brand-loading" role="status">As opções serão carregadas ao aparecer na tela.</div>'):'')+(item.auto_removed_for_stock?'<div class="basket-brand-loading" role="status">Sem estoque para esta quantidade; item retirado da cesta. Escolha uma opção disponível para incluí-lo.</div>':'');
       const heading=hasChoices?'<div class="basket-option-toolbar"><span class="basket-option-label">Escolha uma opção · ordem definida no admin</span></div>':'';
       const track=hasChoices?'<div class="basket-option-carousel-track" data-mold-option-track="'+index+'" role="listbox" aria-label="Opções de '+esc(item.subtitle||selected.name||item.name)+' na ordem definida no admin">'+choices+'</div>':'<div class="basket-option-single" aria-label="Produto selecionado">'+choices+'</div>';
       return '<div class="basket-item-option" data-mold-option-wrap="'+index+'">'+heading+track+status+'</div>';
@@ -1176,17 +1176,17 @@
       return(d?.items||[]).reduce((sum,item)=>item!==excludeItem&&String(item.product_id||'')===String(productId||'')?sum+Math.max(0,Number(item.quantity||0)):sum,0);
     }
     function moldFreshRemainingStock(productId,fallback=null,excludeCartItemIndex=-1){
-      const stock=stockNumber(fallback);
-      return stock===null?null:Math.max(0,stock-cartDemandForProduct(String(productId||''),excludeCartItemIndex));
+      return remainingStock(String(productId||''),excludeCartItemIndex,fallback,true);
     }
     function moldRemainingForItem(d,item,productId,fallback){
       const available=moldFreshRemainingStock(productId,fallback);
       return available===null?null:Math.max(0,available-moldDraftProductDemand(d,productId,item));
     }
     function moldOptionAvailableForItem(item,option){
-      const productId=String(option?.product_id||''),stock=stockNumber(option?.stock_quantity);
-      if(!productId||stock===null)return false;
-      const available=moldRemainingForItem(state.basketDraft,item,productId,stock);
+      const productId=String(option?.product_id||''),stockValue=option?.stock_quantity??item?.stock_quantity,stock=stockValue==null||stockValue===''?null:Number(stockValue);
+      if(!productId||stock===null||!Number.isFinite(stock))return false;
+      const draft=typeof state!=='undefined'?state.basketDraft:null;
+      const available=moldRemainingForItem(draft,item,productId,stock);
       const needed=Math.max(1,Number(item?.quantity||item?.base_quantity||1));
       return available!==null&&available>=needed;
     }
@@ -1214,7 +1214,6 @@
     }
     function moldDraftAvailableBasketCount(d){
       if(!d?.items)return 0;
-      moldRemoveUnavailableItems(d);
       const demandByProduct=new Map();
       for(const item of d.items){
         const productId=String(item.product_id||''),quantity=Number(item.quantity||0);
@@ -1230,8 +1229,8 @@
       }
       return Math.max(0,capacity);
     }
-    function syncMoldDraftAvailability(d){if(!d?.basket)return 0;const count=moldDraftAvailableBasketCount(d);d.basket.stock_quantity=count;return count}
-    function moldItemMax(x){const stock=moldItemStock(x),remaining=moldRemainingForItem(state.basketDraft,x,x.product_id,stock);return Math.max(0,Math.floor(remaining==null?stock:remaining))}
+    function syncMoldDraftAvailability(d){if(!d?.basket)return 0;moldRemoveUnavailableItems(d);const count=moldDraftAvailableBasketCount(d);d.basket.stock_quantity=count;return count}
+    function moldItemMax(x){const stock=moldItemStock(x),draft=typeof state!=='undefined'?state.basketDraft:null,remaining=moldRemainingForItem(draft,x,x.product_id,stock);return Math.max(0,Math.floor(remaining==null?stock:remaining))}
     function moldItemRow(x,i,pending=false){
       const selected=moldSelectedProduct(x),max=moldItemMax(x),qty=Math.max(0,Number(x.quantity||0));
       const name=selected.name||x.name||'Produto',subtitle=String(x.subtitle||'').trim();
