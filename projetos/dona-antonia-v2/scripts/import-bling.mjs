@@ -265,6 +265,7 @@ export function parseBlingCsv(input) {
         ...product,
         sourceStock,
         costCents,
+        purchaseCostExact: row['Preço de custo']?.trim() || '0',
         ncm: row['NCM']?.trim() || null,
         cest: row['CEST']?.trim() || null,
         packageGtin,

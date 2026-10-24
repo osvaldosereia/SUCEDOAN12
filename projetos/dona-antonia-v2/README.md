@@ -28,7 +28,7 @@ O domínio donaantonia.com.br permanece no código anterior até autorização e
 Enquanto o banco novo não estiver conectado, telas são exclusivamente demonstração em memória, não salvam pedidos nem atualizam o Bling.
 
 ## Importar a planilha Bling
-O CSV de 802 produtos que está no histórico foi gerado nesta conversa e não tem procedência comprovada como exportação do Bling. Ele serve somente para validar o formato e o importador; **não carregue seus produtos no Supabase V2**. Obtenha um export oficial, com data/hora e confirmação da conta de origem, antes de importar o catálogo.
+O CSV de 802 produtos usado como seed da V2 foi gerado nesta conversa e não tem procedência comprovada como exportação do Bling. Por autorização explícita do usuário, seus 802 produtos foram carregados apenas no Supabase V2 isolado. Eles permanecem inativos e com estoque zero; o saldo de origem em branco foi preservado como desconhecido. Isso não equivale a um export oficial nem confirma estoque atual. Antes de ativar/sincronizar, obtenha um export oficial com data e conta de origem.
 
 Por padrão, o comando abaixo é somente simulação e não grava arquivos nem chama o banco:
 
@@ -36,14 +36,17 @@ Por padrão, o comando abaixo é somente simulação e não grava arquivos nem c
 npm run import:bling -- --dry-run /caminho/arquivo.csv
 ```
 
-O importador valida o cabeçalho Bling de 59 colunas, SKU único, GTIN e dígito verificador, categoria, unidade, preço, custo, NCM/CEST e registra conflitos de GTIN duplicado e custo com precisão maior que centavos. O dry-run identifica as linhas e motivos de rejeição, mais faixas de linhas com conflitos; saldo vazio permanece desconhecido e produtos não vendáveis não são ativados. Para gerar arquivos locais de revisão, use `--write-to /diretorio/privado` em uma pasta fora de `public/`. A projeção pública não contém custo, fornecedor nem campos fiscais; o JSON administrativo contém campos privados e é criado com permissão restrita. Essa saída ainda não grava no Supabase.
+O importador valida o cabeçalho Bling de 59 colunas, SKU único, GTIN e dígito verificador, categoria, unidade, preço, custo, NCM/CEST e registra conflitos de GTIN duplicado e custo com precisão maior que centavos. O dry-run identifica as linhas e motivos de rejeição, mais faixas de linhas com conflitos; saldo vazio permanece desconhecido e produtos não vendáveis não são ativados. Para gerar arquivos locais de revisão, use `--write-to /diretorio/privado` em uma pasta fora de `public/`. A projeção pública não contém custo, fornecedor nem campos fiscais; o JSON administrativo contém campos privados e é criado com permissão restrita. O comando continua sem gravar no Supabase; a carga inicial controlada descrita em `docs/STATUS_RODADAS_V2.md` foi executada por processo separado e isolado.
+
+## Login da prévia privada do admin V2
+A tela de login está disponível em [Admin V2 (prévia privada)](https://dona-antonia-v2-admin-preview.juniorsereia.chatgpt.site/admin/). Use `juniorsereia@gmail.com` e a senha definida ao aceitar o convite do Auth no projeto Supabase V2. A prévia é owner-only. O formulário foi verificado sem inserir credenciais.
 
 ## Entregas pendentes antes de produção
 Autenticação/admin com RBAC, APIs seguras, banco dedicado, validações de estoque no servidor, sincronização OAuth Bling, persistência de cestas/pedidos, separação, expedição, recuperação de checkout, observabilidade e testes ponta a ponta.
 A existência de protótipo no GitHub não implica que estas funcionalidades estejam concluídas.
 
 ## Segurança
-Não publicar, não vincular domínio, não adicionar workflows de deployment e não executar SQL no projeto atual até aprovação de homologação.
+Não publicar alterações em domínio/site legado, não vincular domínio de produção, não alterar `main`/bancos existentes e não executar SQL em projeto operacional. A prévia privada da V2 usa outro Site e outro projeto Supabase.
 
 
 ## Fluxo de tela implementado (prévia)

@@ -34,7 +34,7 @@ const expectedTables = [
   'orders',
 ].sort();
 
-assert.equal(migrations.length, 6, 'the schema must be a complete, ordered migration chain');
+assert.equal(migrations.length, 7, 'the schema must be a complete, ordered migration chain');
 assert.ok(migrations.every((file) => /^\d{14}_[a-z0-9_]+\.sql$/.test(file)));
 
 const db = new PGlite();
@@ -107,6 +107,21 @@ try {
      returning id`,
   );
   const productId = product.rows[0].id;
+  await db.query(
+    `insert into da_next.bling_product_profiles
+       (sku, purchase_cost_cents, purchase_cost_exact, original_import_fields)
+     values ('ARROZ-5KG', 812, 8.1234, '{"Preço de custo":"8,1234"}'::jsonb)`,
+  );
+  const exactCost = await db.query(
+    'select purchase_cost_cents, purchase_cost_exact::text from da_next.bling_product_profiles where sku = $1',
+    ['ARROZ-5KG'],
+  );
+  assert.equal(exactCost.rows[0].purchase_cost_cents, 812);
+  assert.equal(exactCost.rows[0].purchase_cost_exact, '8.1234');
+  await expectSqlFailure(
+    `update da_next.bling_product_profiles set purchase_cost_exact = -0.0001 where sku = 'ARROZ-5KG'`,
+    'negative exact purchase cost must be rejected',
+  );
   await expectSqlFailure(
     `insert into da_next.products (sku, name, category, gtin) values ('DUP-SKU', 'Duplicado GTIN', 'MERCEARIA BÁSICA', '7891234567895')`,
     'duplicate GTIN must be rejected',

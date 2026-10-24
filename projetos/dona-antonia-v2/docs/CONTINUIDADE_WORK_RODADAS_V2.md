@@ -2,11 +2,12 @@
 
 **Versão do dossiê:** 2026-10-23  
 **Finalidade:** transferir todas as decisões operacionais, regras de UX, estado da engenharia, riscos, pendências e plano de entrega para um novo Projeto/conversa do ChatGPT em modo Work.  
-**Status:** R00–R02 concluídas. R03 está implementada na branch isolada `agent/dona-antonia-r03-auth` e em revisão no PR #1367 (base R02, sem merge). O projeto Supabase V2 isolado está ativo; seis migrações aplicadas; Auth client/tela conectados. Convite ADMIN aceito, e-mail confirmado, acesso Auth registrado e papel `ADMIN` ativo. Falta validar o login pela tela do admin V2 em ambiente isolado. Custo estimado aprovado: US$ 10/mês no compute padrão.
+**Status atualizado (24/10/2026): R00–R04 concluídas. R04 está na branch `agent/dona-antonia-r04-bling-import`, PR #1368 draft e sem merge. Projeto Supabase V2 isolado `hjudhofluihkxykwekir`, 7 migrações aplicadas, 802 produtos e 802 perfis privados importados; todos permanecem inativos/estoque zero. O login form foi validado na prévia privada owner-only, e a conta `juniorsereia@gmail.com` tem papel ADMIN. CSV foi explicitamente autorizado como seed, mas não tem procedência comprovada de export do Bling. Próxima rodada R05 (CRUD e estoque persistentes). Custo estimado aprovado: US$ 10/mês no compute padrão.
 **Repositório:** https://github.com/osvaldosereia/SUCEDOAN12  
 **Branch de desenvolvimento principal da V2:** agent/dona-antonia-nova-plataforma  
 **Pasta:** projetos/dona-antonia-v2/  
-**Versão estática de testes (antiga em relação à branch):** https://donaantonia.com.br/site1/ e https://donaantonia.com.br/admin1/  
+**Prévia privada Admin V2 (owner-only):** https://dona-antonia-v2-admin-preview.juniorsereia.chatgpt.site/admin/ (conta Auth: `juniorsereia@gmail.com`; usar a senha criada no convite do Supabase V2).
+**Versões legadas de demonstração:** https://donaantonia.com.br/site1/ e https://donaantonia.com.br/admin1/
 **Produção atual — NÃO ALTERAR:** https://donaantonia.com.br/ e administração legada Vitrine/Admin  
 **Última CI observada antes da R02:** R01 SHA `7a02a0da66dbcec6cfd7772da75f748ecb5bd29c`; execuções 40059800868 e 40059798099 aprovadas. CI R02 #40061111459 aprovado no SHA 08ece30274c4b36e1c325fcf0e3d3fbabb41c49a: auditoria de dependências, lint, formato, arquitetura, replay PostgreSQL, TypeScript, 39 testes, build e navegador passaram.
 
@@ -122,13 +123,13 @@ Confirmado por leitura da branch:
 - src/main-admin.tsx ainda referencia demonstração e inclui módulo de 4 abas de pedidos em mock.
 - src/core/ contém regras de cestas, extras, checkout e pedidos; src/application/catalog.ts e order-commands.ts têm contratos de repositório, revisão/versão e comandos; src/server/pricing/quote.ts calcula valor interno sem devolvê-lo na resposta.
 - src/admin/navigation.ts centraliza os módulos; produtos/tipos/cestas/extras/pedidos possuem componentes e estilo próprios.
-- A cadeia canônica tem seis migrações e 24 tabelas; validada em PGlite e aplicada somente no novo projeto Supabase V2 `hjudhofluihkxykwekir`. Os antigos `db/001–004` eram drafts substituídos.
+- A cadeia canônica tem sete migrações e 24 tabelas; validada em PGlite e aplicada somente no novo projeto Supabase V2 `hjudhofluihkxykwekir`. Os antigos `db/001–004` eram drafts substituídos.
 - src/data/catalog.ts faz fallback para demonstração em desenvolvimento/prévia; não há catálogo nem checkout real em staging.
 - src/server/bling/model.ts define perfil fiscal privado, não integração OAuth.
 - scripts/check-architecture.mjs impõe alguns limites; CI executa TS, testes, build e E2E.
 - Rota /site1 e /admin1 já receberam publicação **de demonstração** via PR #1363; atualizações da branch após esse PR não são automaticamente equivalentes à versão online.
 - Última execução aprovada que consta no histórico: workflow 40056490923. Confirmar commit SHA e workflow mais recente no início da nova conversa.
-**NÃO CONCLUÍDO:** validação ponta a ponta do login dentro do admin V2; CRUD persistente/adapter de dados, importação real, checkout/pedidos, inbox Meta, envio automático/NF-e, Lighthouse de staging e plano de migração operacional. O Supabase Auth client e as policies estão conectados apenas ao projeto V2 isolado; nada operacional.
+**NÃO CONCLUÍDO:** autenticação não foi submetida com senha durante QA; CRUD persistente/adapter de dados, checkout/pedidos, inbox Meta, envio automático/NF-e, Lighthouse de staging e plano de migração operacional. O login form e a rota foram verificados sem credenciais. O Supabase Auth client e as policies estão conectados apenas ao projeto V2 isolado; nada operacional.
 
 ## 9. ACHADOS DA R00 QUE BLOQUEIAM AS RODADAS SEGUINTES
 1. Resolvido documentalmente nesta R00: docs/ARQUITETURA.md agora registra o preço agregado da cesta com ajuste interno calculado apenas no servidor.
@@ -183,12 +184,12 @@ Confirmado por leitura da branch:
 - Bloquear toda escrita pública e separar leitura de vitrine; CSRF/CORS/validação de sessão conforme hospedagem.
 - Aceite: anônimo não lê custo/valor interno/nem grava; operador sem permissão não edita cadastro ou fiscal; testes negativos comprovam.
 
-### R04 — Importação controlada e reconciliação do catálogo Bling
-- Iniciar após bootstrap ADMIN/login real, E2E executável e revisão dos achados de Advisor registrados neste dossiê.
-- Recuperar CSV oficial e validar colunas, 802 SKUs, EAN, NCM, CEST, unidade UN, fornecedor, custo/markup e IDs. Nunca presumir que CSV é saldo físico atual.
-- Criar importação idempotente com simulação/dry-run, relatório de conflitos, deduplicação SKU/EAN e revisão humana de dados fiscais anômalos.
-- Popular SOMENTE staging V2. Não ativar produtos sem regra de estoque confiável.
-- Aceite: contagens batem; nenhum SKU duplicado; relatório explica cada rejeição.
+### R04 — Importação controlada e reconciliação do catálogo Bling (CONCLUÍDA)
+- O usuário autorizou a cópia gerada/histórica disponível como seed; ela não é atestada como export oficial.
+- CSV validado: 802 SKUs únicos, 776 EANs preenchidos, custos com quatro decimais, 59 campos de origem. Custo exato tem campo `numeric(12,4)`.
+- Carga idempotente somente em `hjudhofluihkxykwekir`: 802 produtos + 802 perfis. Original, custo, fornecedor e fiscal permanecem privados.
+- Tudo inativo/estoque 0; estoque de origem em branco preservado no campo original privado. 0 vendáveis.
+- Login form disponível e verificado na prévia owner-only indicada no topo. Nenhuma alteração na produção legada.
 
 ### R05 — Cadastro de produtos/estoque real no admin
 - Lista com filtro/busca/paginação server-side, foto 1:1, SKU/EAN/preço/estoque/ativo, edição rápida e ações em lote seguras.
@@ -317,6 +318,8 @@ R00 foi documental; R01 consolidou qualidade visual/CI; R02 implementou schema e
 - Importador atualizado para dry-run padrão; agora valida o cabeçalho Bling de 59 colunas, SKU único, GTIN/check digit unitário e de embalagem, categoria, unidade, preço/custo, NCM/CEST, itens por caixa e conflitos de EAN; distingue saldo vazio/desconhecido de zero; separa JSON público e privado; grava apenas mediante `--write-to`, nunca sob `public/`, e protege o JSON privado com permissão 0600.
 - Fonte disponível na Library tem sinalização `model_generated: true` e README prévio diz que foi gerada nesta conversa. Hash `80d5733eeee4135c04c461b79c44e2afb42c1916c49eafca76f20e9fcbe1d4e1`. Estrutura: 59 colunas, 802 linhas, 802 SKUs únicos, 776 GTIN válidos, 0 GTIN repetidos, 802 registros inativos e estoque desconhecido; 802 custos com 4 casas decimais vs schema de centavos; 0 vendáveis. A estrutura passou dry-run, mas não serve de base oficial para staging.
 - Testes locais do pacote: `npm test` com 64 testes; importação completa em `--dry-run` sem escrita no banco ou em arquivos. Relatório indica 802 revisões de precisão do custo; nenhuma gravação remota foi feita. CI #40065336877 passou em todos os gates, incluindo navegador mobile/desktop.
-- Estado da rodada: **parcial**. Bloqueiam aceite o CSV oficial rastreável e o teste de login pela UI, conforme os gates R03/R04. Não carregar base gerada nem fazer ativação em massa.
+- Estado da rodada: **concluída em staging V2** por autorização expressa do usuário para usar a cópia gerada; sem ativação de massa.
 - Segurança/isolamento: `main`, produção, Supabases legados, atendimento e integrações operacionais intocados; sem deploy/publicação.
-- Próximo: receber export oficial do Bling, decidir como preservar custo de quatro casas decimais, ensaiar login no admin V2, revisar advisor já documentado, repetir dry-run e executar importação upsert idempotente no staging V2. Só depois iniciar R05.
+- Carga final: 802 produtos e 802 perfis, 802 custos exatos e 802 originais de 59 campos, 776 GTINs; todos inativos e estoque zero. Dados validados por query de contagem. Migração adicional: `20261024052349_catalog_cost_precision_four_decimals.sql`.
+- A rota privada do admin `/admin/` abre a tela de login. E-mail ADMIN `juniorsereia@gmail.com`; usar senha definida no fluxo de convite Supabase. Não acessar ou solicitar senha.
+- Próxima: R05 CRUD e estoque persistentes. Origem CSV não comprovada e saldo físico continuam decisões abertas; não ativar catálogo ou sincronizar Bling sem confirmação.

@@ -39,6 +39,7 @@ describe('importador do CSV Bling', () => {
     expect(valid.publicProducts[0]).not.toHaveProperty('costCents');
     expect(valid.publicProducts[0]).not.toHaveProperty('ncm');
     expect(valid.adminProducts[0].costCents).toBe(800);
+    expect(valid.adminProducts[0].purchaseCostExact).toBe('8,00');
   });
 
   it.each([
