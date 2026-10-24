@@ -23,6 +23,7 @@ import {
   PUBLIC_INITIAL_PRODUCTS,
   PUBLIC_INITIAL_TEMPLATES,
   PUBLIC_INITIAL_TYPES,
+  publicCheckoutClient,
   usePublicCatalog,
 } from './features/storefront/usePublicCatalog';
 import './styles.css';
@@ -261,9 +262,12 @@ function Storefront() {
               >
                 <CheckoutStep
                   view={buildCheckoutView(computed.basket, computed.extras.lines)}
+                  basketId={template.id}
                   basketName={template.name}
+                  demoMode={isDemo}
                   onQuantity={setQuantity}
                   goTo={jump}
+                  submitOrder={publicCheckoutClient?.createOrder}
                 />
               </React.Suspense>
             )}

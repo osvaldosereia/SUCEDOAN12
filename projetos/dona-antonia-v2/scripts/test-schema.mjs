@@ -33,10 +33,11 @@ const expectedTables = [
   'product_types',
   'products',
   'staff_role_assignments',
+  'storefront_holidays',
   'orders',
 ].sort();
 
-assert.equal(migrations.length, 11, 'the schema must be a complete, ordered migration chain');
+assert.equal(migrations.length, 12, 'the schema must be a complete, ordered migration chain');
 assert.ok(migrations.every((file) => /^\d{14}_[a-z0-9_]+\.sql$/.test(file)));
 
 const db = new PGlite();
@@ -96,6 +97,9 @@ try {
       ,has_function_privilege('anon', 'public.get_storefront_catalog()', 'EXECUTE') as anon_public_catalog
       ,has_function_privilege('anon', 'public.admin_save_basket_configuration(jsonb,bigint)', 'EXECUTE') as anon_basket_save
       ,has_function_privilege('authenticated', 'public.admin_save_basket_configuration(jsonb,bigint)', 'EXECUTE') as staff_basket_save
+      ,has_function_privilege('anon', 'public.quote_storefront_order(jsonb)', 'EXECUTE') as anon_checkout_quote
+      ,has_function_privilege('anon', 'public.create_storefront_order(jsonb)', 'EXECUTE') as anon_checkout_create
+      ,has_function_privilege('authenticated', 'public.quote_storefront_order(jsonb)', 'EXECUTE') as staff_checkout_quote
     from pg_class c
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'da_next' and c.relkind = 'r'
@@ -106,6 +110,9 @@ try {
   assert.equal(Number(access.rows[0].tables_with_rls), expectedTables.length);
   assert.ok(Number(access.rows[0].policies) > expectedTables.length);
   assert.equal(access.rows[0].anon_products, false);
+  assert.equal(access.rows[0].anon_checkout_quote, true);
+  assert.equal(access.rows[0].anon_checkout_create, true);
+  assert.equal(access.rows[0].staff_checkout_quote, true);
   assert.equal(access.rows[0].anon_role_lookup, false);
   assert.equal(access.rows[0].staff_role_lookup, true);
   assert.equal(access.rows[0].anon_product_list, false);
@@ -266,6 +273,59 @@ try {
   const publicBasket = publicCatalog.rows[0].result.baskets.find((basket) => basket.id === 'mini');
   assert.equal(publicBasket.startingTotalCents, 5430);
   assert.equal(JSON.stringify(publicCatalog.rows[0].result).includes('privateAdjustment'), false);
+
+  const checkoutPayload = {
+    basketId: 'mini',
+    basketQuantity: 1,
+    basketLines: [{ typeId: configurationTypeId, sku: 'ARROZ-5KG', quantity: 2 }],
+    extraLines: [{ typeId: configurationTypeId, sku: 'ARROZ-5KG', quantity: 1 }],
+    customer: {
+      name: 'Cliente Checkout',
+      phone: '65988887777',
+      address: {
+        recipientName: 'Cliente Checkout',
+        postalCode: '78000000',
+        street: 'Rua Teste',
+        streetNumber: '10',
+        complement: '',
+        neighborhood: 'Centro',
+        city: 'Cuiabá',
+        stateCode: 'MT',
+        referenceNote: '',
+      },
+    },
+    paymentMethod: 'PIX',
+    deliveryDate: '2026-10-26',
+    idempotencyKey: 'checkout-schema-test-1234',
+  };
+  await db.exec('SET ROLE anon');
+  const checkoutQuote = await db.query(
+    'select public.quote_storefront_order($1::jsonb) as result',
+    [JSON.stringify(checkoutPayload)],
+  );
+  assert.ok(checkoutQuote.rows[0].result.totalCents >= 7500);
+  assert.equal(
+    checkoutQuote.rows[0].result.totalCents,
+    checkoutQuote.rows[0].result.basketSubtotalCents +
+      checkoutQuote.rows[0].result.extrasSubtotalCents,
+  );
+  assert.equal(JSON.stringify(checkoutQuote.rows[0].result).includes('private'), false);
+  const checkoutReceipt = await db.query(
+    'select public.create_storefront_order($1::jsonb) as result',
+    [JSON.stringify(checkoutPayload)],
+  );
+  assert.equal(checkoutReceipt.rows[0].result.status, 'NOVO');
+  assert.equal(checkoutReceipt.rows[0].result.replayed, false);
+  const checkoutRetry = await db.query(
+    'select public.create_storefront_order($1::jsonb) as result',
+    [JSON.stringify(checkoutPayload)],
+  );
+  assert.equal(checkoutRetry.rows[0].result.replayed, true);
+  assert.equal(
+    checkoutRetry.rows[0].result.orderNumber,
+    checkoutReceipt.rows[0].result.orderNumber,
+  );
+  await db.exec('RESET ROLE');
 
   const productStaffId = '00000000-0000-4000-8000-000000000002';
   await db.query('insert into auth.users (id) values ($1)', [productStaffId]);
@@ -527,7 +587,7 @@ try {
     );
     return { visibleOrders, hiddenCatalog, hiddenPricing, attemptedProductUpdate };
   });
-  assert.equal(separationAccess.visibleOrders.rows.length, 1);
+  assert.equal(separationAccess.visibleOrders.rows.length, 2);
   assert.equal(separationAccess.hiddenCatalog.rows.length, 0);
   assert.equal(separationAccess.hiddenPricing.rows.length, 0);
   assert.equal(separationAccess.attemptedProductUpdate.rows.length, 0);
@@ -540,7 +600,7 @@ try {
     return { visibleConversations, visibleOrders, hiddenProducts, hiddenPrivateProfiles };
   });
   assert.equal(supportAccess.visibleConversations.rows.length, 1);
-  assert.equal(supportAccess.visibleOrders.rows.length, 1);
+  assert.equal(supportAccess.visibleOrders.rows.length, 2);
   assert.equal(supportAccess.hiddenProducts.rows.length, 0);
   assert.equal(supportAccess.hiddenPrivateProfiles.rows.length, 0);
 

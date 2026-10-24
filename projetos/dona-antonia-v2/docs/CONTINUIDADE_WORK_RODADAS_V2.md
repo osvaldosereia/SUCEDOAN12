@@ -5,7 +5,7 @@ Total output lines: 325
 
 **Versão do dossiê:** 2026-10-23  
 **Finalidade:** transferir todas as decisões operacionais, regras de UX, estado da engenharia, riscos, pendências e plano de entrega para um novo Projeto/conversa do ChatGPT em modo Work.  
-**Status atualizado (24/10/2026): R00–R05 concluídas.** R04 permanece na branch `agent/dona-antonia-r04-bling-import`, PR #1368 draft e sem merge. Projeto Supabase V2 isolado `hjudhofluihkxykwekir`, 9 migrations aplicadas, 802 produtos e 802 perfis privados; todos permanecem inativos/estoque zero. O login foi concluído pelo usuário na prévia privada owner-only, e `juniorsereia@gmail.com` tem papel ADMIN. O CSV foi explicitamente autorizado como seed, mas não tem procedência comprovada de export do Bling. R05 está na branch `agent/dona-antonia-r05-products-stock`, PR #1369 draft sem merge; CI #40069099198 passou no código SHA `36c8b4780840e30c332a47c65d57045b40876d8a`, incluindo 17 E2E. Checkpoint R05: `docs/R05_EVIDENCIAS_ENCERRAMENTO.md`. Custo estimado aprovado: US$ 10/mês no compute padrão.
+**Status atualizado (24/10/2026): R00–R08 concluídas em staging isolado.** PRs da V2 permanecem draft e sem merge/publicação. Projeto Supabase V2 isolado `hjudhofluihkxykwekir`, 12 migrations aplicadas, 802 produtos e 802 perfis privados; todos permanecem inativos/estoque zero e há 0 pedidos antes da homologação. O login foi concluído pelo usuário na prévia privada owner-only, e `juniorsereia@gmail.com` tem papel ADMIN. O CSV foi explicitamente autorizado como seed, mas não tem procedência comprovada de export do Bling. R08 está na branch `agent/dona-antonia-r08-quote-checkout`, PR #1374 draft, derivada do head R07 `ecc198ef76b92d76f22f614738f467f2ddb88cf4`; a migration `20261024083000_r08_public_checkout.sql` foi aplicada somente no V2 isolado. Testes locais da R08: 97/97 unitários, 12 migrations/27 tabelas no PostgreSQL isolado, arquitetura, lint, formato, TypeScript e build aprovados. CI #40094688858 passou todos os gates, instalou Chromium e passou o smoke browser mobile/desktop. Custo estimado aprovado: US$ 10/mês no compute padrão.
 **Repositório:** https://github.com/osvaldosereia/SUCEDOAN12  
 **Branch de desenvolvimento principal da V2:** agent/dona-antonia-nova-plataforma  
 **Pasta:** projetos/dona-antonia-v2/  
@@ -252,6 +252,16 @@ Confirmado por leitura da branch:
 - Endereço Cuiabá/VG, pedido mínimo R$75, cutoff 12h, domingos/feriados, opções de pagamento na entrega; validação de CPF/documentos apenas se realmente necessária fiscalmente.
 - Cotação confiável no backend com valor interno por cesta, exclusão de zerados, preço individual só extras; anti-duplo clique, idempotência e confirmação acessível.
 - Aceite: erro de rede não perde carrinho; duplicação de clique gera um pedido; total não pode ser forjado; não vender estoque insuficiente.
+
+**Execução concluída (24/10/2026):** o checkout V2 agora possui RPC pública de cotação e criação idempotente. O servidor lê catálogo, composição, validade, estoque e ajuste interno; o browser nunca informa total nem recebe custo interno. Endereço aceita somente Cuiabá/Várzea Grande (MT), pedido mínimo é R$75, corte local é 12h, domingos e feriados cadastrados são recusados, pagamentos são somente na entrega e CPF permanece opcional. A criação grava snapshots, reserva estoque por 30 minutos e retorna recibo mínimo (`orderId`, número, total, `NOVO`, `replayed`).
+
+**Frontend:** formulário modular e responsivo, seletor de quantidade em todos os itens, rascunho em `sessionStorage`, retry sem limpar carrinho/dados, estado de confirmação acessível e bloqueio de submissão concorrente. O modo demo continua explicitamente bloqueado; nenhuma compra é simulada.
+
+**Banco isolado:** `20261024083000_r08_public_checkout.sql` aplicada somente em `hjudhofluihkxykwekir`. Verificação remota: 12 migrations, 802 produtos, 802 perfis privados, 0 pedidos, `anon` executa apenas as duas RPCs públicas e não lê a tabela de feriados; nenhuma linha de catálogo foi alterada.
+
+**Verificações:** `npm run test:db`, `npm test` (97/97), `npm run check`, lint, `npm run format:check`, `npm run architecture:check` (108 arquivos), `npm run build` e `git diff --check` passaram. Playwright local não iniciou por ausência do Chromium; CI #40094688858 passou todos os gates e o smoke browser mobile/desktop no ambiente com Chromium.
+
+**Limites:** feriados móveis precisam ser cadastrados na tabela privada antes da homologação comercial; o seed permanece inativo/estoque zero, portanto ainda não existe pedido real. Produção legada, main, sites/admin legados, atendimento, Bling/Meta operacionais e DNS permanecem intocados.
 
 ### R09 — Pedidos persistentes: quatro abas
 
