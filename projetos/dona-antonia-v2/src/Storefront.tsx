@@ -145,13 +145,14 @@ function Storefront() {
     }catch(error){setMessage(error instanceof Error?error.message:'Produto indisponível');}
   };
   const jump=(next:Stage)=>{
-    if(!computed.order||computed.error){
+    const steps:Stage[]=['basket','extras','checkout'];
+    if(steps.indexOf(next)>steps.indexOf(stage)&&(!computed.order||computed.error)){
       setMessage('Revise as escolhas indisponíveis antes de continuar.');
       return;
     }
     setMessage('');
     setStage(next);
-    window.scrollTo({top:0,behavior:'instant'});
+    window.scrollTo({top:0,behavior:'auto'});
   };
   const total = computed.order?.totalCents??0;
   const baseTotal=(id:BasketId)=>{
