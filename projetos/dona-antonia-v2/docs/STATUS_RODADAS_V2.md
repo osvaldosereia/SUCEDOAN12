@@ -21,7 +21,7 @@
 | R13    | NF-e Bling pós-separação                  | **Concluída em staging isolado; PR draft sem merge/publicação** | PR #1382; head `f1af5906`; CI #40102849252 aprovado (17/17 E2E); V2 19 migrations/32 tabelas; 802 produtos/perfis preservados; 0 pedidos/documentos |
 | R14    | Clientes/entrega/relatórios essenciais    | **Concluída em staging isolado; PR draft sem merge/publicação** | PR #1384; head `c97cb236`; CI #40115614242 aprovado (16/16 E2E após correção da expectativa); V2 20 migrations/33 tabelas; 802 produtos/perfis preservados |
 | R15    | Auditoria final/performance/homologação   | **Concluída em V2 isolada; bloqueios de homologação documentados** | PR #1394; head `5344a6c3`; código `8aa59fe0`; CI #40132993673 + checkpoint final #40133495710 aprovado (18/18 E2E), testes locais 124/124, auditoria sintética 802 produtos/3 operadores, npm audit sem vulnerabilidades; Lighthouse/backup remoto pendentes |
-| R16    | Piloto/migração autorizada                | **Pré-voo documentado; piloto bloqueado**                                                  | PR #1396 draft; branch `agent/dona-antonia-r16-pilot-preflight`; CI #40134499891 aprovado; seed V2 fictício verificado; três gates operacionais ainda bloqueados; sem merge/deploy/publicação |
+| R16    | Piloto/migração autorizada                | **Pré-voo documentado; piloto bloqueado** | PR #1396 draft; código `93d28dc`; head documental verificado `eef2948`; CI nesse head: #40135465216 (push) e #40135468604 (PR), ambos verdes; seed fictício aprovado; três gates operacionais bloqueados; produção fora do escopo |
 
 ## Histórico anterior às rodadas
 
@@ -222,3 +222,13 @@
 **Isolamento:** o Supabase V2 recebeu somente três produtos fictícios determinísticos, três perfis privados, uma cesta de homologação e três movimentos de estoque; total atual 805 produtos e 805 perfis. Sem dados reais, custo novo, merge, deploy, publicação, produção, `main`, legado, atendimento, DNS ou Meta/Bling operacionais.  
 **Evidência do seed:** SKUs `R16-TEST-ARROZ`, `R16-TEST-FEIJAO`, `R16-TEST-OLEO`; cesta `r16-test`; rollback em `docs/R16_TEST_SEED_ROLLBACK.sql`.  
 **Próxima ação condicionada:** somente após os três gates operacionais restantes documentados; não iniciar piloto produtivo automaticamente.
+
+## R16 — verificação de continuidade (24/10/2026)
+
+- PR #1396 segue aberto/draft e sem merge; branch `agent/dona-antonia-r16-pilot-preflight`, base R15. Head documental observado antes desta atualização: `eef2948cd1f69056291d9aca15d19743e5c9cfe8`; commit de código da R16: `93d28dc9a805f97a2b50c5e4fb05a87e949e333b`.
+- CI #40134499891 é verde, mas pertence ao SHA de código `93d28dc`. Para o head documental `eef2948`, os runs #40135465216 (push) e #40135468604 (pull request) passaram; ambos têm job `quality` e browser smoke mobile/desktop aprovados. Os 126 testes locais já haviam passado no SHA de código; não foram repetidos porque não há alteração de código nesta atualização.
+- Projeto Supabase V2 consultado em leitura: `ACTIVE_HEALTHY`, PostgreSQL 17.11, sem branches Supabase. Seed fictício permanece conforme baseline de 805 produtos e 805 perfis privados; sem novas gravações, usuários ou pedidos.
+- Três gates operacionais permanecem bloqueados: URL compartilhável de staging (a prévia existente é owner-only; publicação/deploy estão fora do escopo), 2–3 operadores com identidades confirmadas, e ensaio de backup/restore sem custo ou destruição.
+- O custo consultado para criar um branch é US$ 0,01344/hora, além de outros itens de uso descritos pela documentação oficial. PITR de 7 dias aparece a US$ 0,137/hora (~US$ 100/mês), com requisito de compute Small. Nenhum branch/PITR/cópia/restore foi criado. O rollback local de migrações não demonstra recuperação de snapshot remoto. Referências: [branching](https://supabase.com/docs/guides/platform/manage-your-usage/branching) e [backups](https://supabase.com/docs/guides/platform/backups).
+- A autorização de piloto produtivo está deliberadamente fora do escopo desta execução. O código de readiness inclui esse gate e, portanto, o resultado completo continua `blocked` até autorização futura. R16 não concluída.
+- Removido do PR o arquivo duplicado fora de `projetos/dona-antonia-v2/` que continha saída truncada de ferramenta; os artefatos da rodada permanecem na pasta exclusiva.
