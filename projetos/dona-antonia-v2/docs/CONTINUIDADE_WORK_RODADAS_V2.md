@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 10260)
+Total output lines: 325
+
 # DONA ANTÔNIA V2 — DOSSIÊ DE CONTINUIDADE E PLANO POR RODADAS (WORK)
 
 **Versão do dossiê:** 2026-10-23  
@@ -12,6 +15,7 @@
 **Última CI observada antes da R02:** R01 SHA `7a02a0da66dbcec6cfd7772da75f748ecb5bd29c`; execuções 40059800868 e 40059798099 aprovadas. CI R02 #40061111459 aprovado no SHA 08ece30274c4b36e1c325fcf0e3d3fbabb41c49a: auditoria de dependências, lint, formato, arquitetura, replay PostgreSQL, TypeScript, 39 testes, build e navegador passaram.
 
 ## 0. REGRA MÁXIMA: PROTEGER A OPERAÇÃO ATUAL
+
 1. NÃO alterar NADA da loja pública em produção, admin legado/Vitrine, pedidos reais, atendimento em uso, cron, Edge Functions, integrações ou bancos Supabase existentes sem autorização explícita, específica e posterior.
 2. NÃO modificar a branch main, a raiz do site, nem publicar a V2 em /admin1 ou /site1 durante desenvolvimento comum. As URLs de teste já existem, porém a branch de desenvolvimento pode estar mais avançada do que a versão publicada. O usuário pode autorizar publicação ISOLADA apenas dessas duas pastas em etapa própria, com inspeção de diffs, CI e rollback.
 3. Projetos Supabase ligados à operação atual: Vitrine/Admin qxstkwshuvplmmftrctj e Bling Hub/canônico ssbesxgaijknwsjbsbcz. São referências PROIBIDAS para migração ou escrita da V2. Projetar banco **completamente isolado**, sem alterar, criar gatilhos ou consumir recursos nos dois existentes.
@@ -21,9 +25,11 @@
 7. Não pedir aprovação repetida para alterações já autorizadas na V2 isolada; pedir autorização somente para ações arriscadas: produção, banco legado, mudança de DNS/domínio, custos, credenciais e envio real de mensagens/NF-e.
 
 ## 1. OBJETIVO
+
 Construir uma nova plataforma Dona Antônia com **site público e admin modular profissional**, para vender cestas básicas personalizáveis e produtos extras, gerenciar pedidos, separação/entrega, atendimento humano WhatsApp e notificações transacionais Meta, emitindo NF-e no Bling somente após a separação.
 
 Prioridades operacionais:
+
 - Simplicidade extrema para operadores e clientes com pouco domínio digital e celulares básicos.
 - Visual e fluxos com padrões comerciais de e-commerce conhecido; performance medida, não proclamada.
 - Crescimento para dezenas de seções sem arquivos gigantes, remendos, duplicação de lógica ou dependências entre telas.
@@ -31,6 +37,7 @@ Prioridades operacionais:
 - Baixo custo recorrente, sem jobs que gastem processamento/rede desnecessariamente.
 
 ## 2. REGRAS COMERCIAIS E DE NEGÓCIO
+
 - Atuação: **somente Cuiabá e Várzea Grande (MT)**.
 - Pedido mínimo: **R$ 75** — validar no servidor, com mensagens claras no cliente.
 - Após **12h em Cuiabá**, pedido passa para entrega no dia seguinte conforme dia útil; **domingos e feriados nacionais sem entrega/operação**. Definir regra detalhada de feriados, cutoff, janelas e dias úteis no backend antes de ativar vendas; não improvisar promessa na interface.
@@ -46,7 +53,9 @@ Prioridades operacionais:
 - Fotos de produtos e cestas são QUADRADAS, proporção **1:1**, com fundo neutro, sem distorção (object-fit:contain), sem imagens inventadas atribuídas a SKUs reais.
 
 ## 3. UX DO SITE PÚBLICO — REFERÊNCIAS E DECISÕES
+
 Referência de fluxo: iFood Mercado. Referência de visual: Shopify/temas grocery. Complemento de pesquisa: Baymard e práticas Google Core Web Vitals. Não copiar marca/código/ativos proprietários.
+
 - Mobile-first, 2 colunas de cestas no celular, 5 no desktop. Foto quadrada, tamanho, número de itens, preço inicial com "A partir de" menor que o valor, selecionar cesta.
 - Depois abrir a composição progressivamente: cada TIPO DE PRODUTO é uma linha de carrossel horizontal contendo cards compactos de SKUs (foto quadrada, nome curto, valor, estado selecionado). Carrossel rola por toque e setas; não bloquear rolagem vertical. Renderizar opção principal rapidamente; carregar fotos e opções distantes sob demanda.
 - A **quantidade é por tipo**, com seletor +/− **abaixo** do carrossel, preservada na troca de marca. Zero remove linha do checkout.
@@ -59,7 +68,9 @@ Referência de fluxo: iFood Mercado. Referência de visual: Shopify/temas grocer
 - PageSpeed mobile 100 é ASPIRAÇÃO, não garantia. Acompanhar LCP <= 2,5 s, INP <= 200 ms, CLS <= 0,1, métricas p75 reais e Lighthouse de homologação.
 
 ## 4. UX DO ADMIN — REFERÊNCIA SHOPIFY 2026
+
 Pesquisar continuamente Shopify (produtos, pedidos, status, filtros), Nuvemshop/Nimbus (formulários e navegação) e Loja Integrada (simplicidade). Padronização comercial própria:
+
 - Barra lateral escura compacta, superfície principal branca/cinza neutro, Inter/system-ui, campos consistentes, ações por contexto, status discretos.
 - Seções atuais/planejadas:
   **Operação:** Início; Pedidos [prévia demonstrativa]; Atendimento WhatsApp [futuro].
@@ -74,13 +85,16 @@ Pesquisar continuamente Shopify (produtos, pedidos, status, filtros), Nuvemshop/
 - Controles de toque generosos no celular; tamanhos pequenos apenas no desktop com mouse/teclado. WCAG AA.
 
 ## 5. PEDIDOS E SEPARAÇÃO — REGRAS
+
 Exatamente **4 abas operacionais**:
+
 1. NOVO
 2. EM SEPARAÇÃO
 3. PRONTO
 4. ENTREGUE
 
 As 4 abas são a experiência do operador, não o único estado interno. CANCELAMENTO, PROBLEMA DE NF-e, FALHA DE WHATSAPP, PAGAMENTO e ENTREGA têm flags/estados separados; não criar abas extras.
+
 - Pedido recebe número ÚNICO e IMUTÁVEL; documentar gerador/ordenação e política da numeração semanal usada no sistema anterior antes da implantação.
 - Cartão do pedido: número, primeiro nome/cliente, telefone clicável, total, pagamento, endereço/entrega, estado, responsável; 5 por vez inicialmente, "Ver mais", evitar travamento.
 - Em separação: interface similar à cesta, marcar SEPARADO ou FALTOU por linha. Falta abate quantidade/valor corretamente e revisa total no backend.
@@ -90,7 +104,9 @@ As 4 abas são a experiência do operador, não o único estado interno. CANCELA
 - Pedidos precisam snapshots imutáveis do produto/preço/fiscal relevante na compra; referências a SKUs atuais não podem alterar pedidos antigos.
 
 ## 6. WHATSAPP / META / BLING — ORDEM E GARANTIAS
+
 WhatsApp:
+
 - Atendimento HUMANO dentro do admin, com dois números oficiais conhecidos como finais **0975** e **1018**. O serviço anterior permanece funcionando durante construção/testes e só deve ser substituído com consentimento de corte.
 - Reaproveitar contratos, webhooks e fluxo útil do Vitrine/Admin após auditoria de código e dados. Não reaproveitar PapoAI.
 - Inbox: caixa compartilhada; pesquisar cliente/telefone; vincular pedido; receber/enviar mensagens e áudio; estado de conversa separado de status do pedido; permissões de operadores, mídia protegida e auditoria.
@@ -99,6 +115,7 @@ WhatsApp:
 - Arquitetura: eventos de domínio -> transactional outbox -> fila/worker **sob demanda ou econômico** -> Meta API -> webhooks de status -> logs + retries limitados. Nenhum envio real em mock/staging sem destinatário de teste autorizado.
 
 Bling:
+
 - **Uso fiscal** após separação (não tratar Bling como novo admin operacional).
 - OAuth2/token somente no backend; vincular IDs do Bling aos SKUs; sincronizar NCM/CEST/origem/unidade/fornecedor; emissão de NF-e após ajuste de faltas; eventual envio do pedido de venda ao Bling se obrigatório na API.
 - Falha de NF-e não bloqueia PRONTO, mas fica clara como NOTA PENDENTE/BLOQUEADA, com erro e reenvio idempotente.
@@ -106,8 +123,10 @@ Bling:
 - Controle de rate-limit, 429, backoff, refresh token, timeouts, logs e reconciliação sem duplicar documento.
 
 ## 7. CADASTRO BLING E FONTE DE DADOS
+
 Base anterior: arquivo de 802 produtos independentes (59 colunas oficiais Bling); conferir se o arquivo está disponível no novo Projeto/Library ou no repo antes de importar. O importador CSV é script em scripts/import-bling.mjs; dados atuais do banco existente **não são idênticos ao CSV antigo**.
 Conforme auditoria registrada em docs/AUDITORIA_CAMPOS_BLING_802.md:
+
 - 802 SKUs, descrições, UN, preços, custos, NCM, origem, fornecedor, categoria na planilha.
 - 776 GTIN de unidade preenchidos, 668 CEST, 652 marca; apenas 28 com GTIN da embalagem/conversão por caixa.
 - Inicialmente inativos e com saldo em branco na planilha; NÃO ativar em massa sem estoque real e validação.
@@ -117,8 +136,10 @@ Conforme auditoria registrada em docs/AUDITORIA_CAMPOS_BLING_802.md:
 - Categoria oficial x tipo de cesta x extra são três dimensões diferentes; não confundir.
 
 ## 8. ESTADO REAL DO CÓDIGO (CHECADO NESTA TRANSFERÊNCIA)
+
 Base: React 19, TypeScript 5, Vite 7, Vitest, Playwright e GitHub Actions em projetos/dona-antonia-v2. Entradas independentes loja/admin, módulos por funcionalidade e backend futuro desacoplado.
 Confirmado por leitura da branch:
+
 - src/Storefront.tsx ainda referencia produtos demonstrativos; fluxo de três etapas está programado e teste de navegador já existiu.
 - src/main-admin.tsx ainda referencia demonstração e inclui módulo de 4 abas de pedidos em mock.
 - src/core/ contém regras de cestas, extras, checkout e pedidos; src/application/catalog.ts e order-commands.ts têm contratos de repositório, revisão/versão e comandos; src/server/pricing/quote.ts calcula valor interno sem devolvê-lo na resposta.
@@ -129,9 +150,10 @@ Confirmado por leitura da branch:
 - scripts/check-architecture.mjs impõe alguns limites; CI executa TS, testes, build e E2E.
 - Rota /site1 e /admin1 já receberam publicação **de demonstração** via PR #1363; atualizações da branch após esse PR não são automaticamente equivalentes à versão online.
 - Última execução aprovada que consta no histórico: workflow 40056490923. Confirmar commit SHA e workflow mais recente no início da nova conversa.
-**NÃO CONCLUÍDO:** autenticação não foi submetida com senha durante QA; o usuário deve solicitar o link de recuperação e criar sua própria senha. CRUD persistente/adapter de dados, checkout/pedidos, inbox Meta, envio automático/NF-e, Lighthouse de staging e plano de migração operacional continuam pendentes. O Supabase Auth client e as policies estão conectados apenas ao projeto V2 isolado; nada operacional.
+  **NÃO CONCLUÍDO:** autenticação não foi submetida com senha durante QA; o usuário deve solicitar o link de recuperação e criar sua própria senha. CRUD persistente/adapter de dados, checkout/pedidos, inbox Meta, envio automático/NF-e, Lighthouse de staging e plano de migração operacional continuam pendentes. O Supabase Auth client e as policies estão conectados apenas ao projeto V2 isolado; nada operacional.
 
 ## 9. ACHADOS DA R00 QUE BLOQUEIAM AS RODADAS SEGUINTES
+
 1. Resolvido documentalmente nesta R00: docs/ARQUITETURA.md agora registra o preço agregado da cesta com ajuste interno calculado apenas no servidor.
 2. Resolvido parcialmente: documentação agora atribui gestão operacional ao app V2 e marca estoque físico/reconciliação e precedência do preço como decisões pendentes antes da conexão. O CSV histórico não é saldo atual.
 3. CSV/planilha antigo não é estado atual do Supabase nem do Bling. Não importar/ativar 802 sem validação.
@@ -145,13 +167,16 @@ Confirmado por leitura da branch:
 11. Confirmado: /admin1 é demonstração sem autenticação. Não conectar segredos ou dados reais até existir RBAC/autorização no servidor.
 
 ## 10. ENGENHARIA PADRÃO PARA TODAS AS RODADAS
+
 - Preferir **monólito modular** em vez de microserviços: UI por…260 tokens truncated…f, testes, prints quando úteis e o que continua pendente. Não prometer PageSpeed 100 sem medir.
 - Não continuar R(n+1) com falha crítica não resolvida da R(n). Se scope exceder rodada, dividir em novas rodadas menores com entregável e teste mensurável.
 
 ## 11. ESTRATÉGIA WORK: RODADAS PEQUENAS, FECHADAS E EXECUTÁVEIS
+
 **Cada rodada deve caber em UMA execução concentrada do modo Work**, com um conjunto pequeno de mudanças relacionadas, sem depender de aprovação intermediária para ajustes em branch isolada. Se aparecer bloqueio externo, concluir tudo que não depende dele, documentar risco e manter o próximo passo inequívoco. Não cronometrar nem prometer trabalho em segundo plano.
 
 ### R00 — Auditoria integral + baseline congelado (CONCLUÍDA EM 23/10/2026)
+
 - Ler arquivos e estrutura reais de toda a V2, plano diretor, SQL, testes, workflows, PR #1363 e HEAD atualizado; inspecionar apenas em modo leitura a configuração de publicação e eventuais fontes legadas indispensáveis.
 - Executar checagens: typecheck, testes unitários, build, Playwright, inspeção de dependências/licenças, endpoints, DOM mobile e CSS, exposição indevida de dados, lint presente/ausente.
 - Gerar inventário por módulo/arquivo, mapa da arquitetura de verdade, matriz Implementado x Simulado x Ausente, riscos P0/P1/P2, inconsistências de SQL e docs, prioridades de refatoração e relação com roadmap.
@@ -159,12 +184,14 @@ Confirmado por leitura da branch:
 - Aceite: escopo inteiro mapeado sem conjecturas; problemas reproduzidos com referência a arquivos/testes; gate futuro definido.
 
 ### R01 — Design system e disciplina de qualidade (CONCLUÍDA EM 24/10/2026)
+
 - Consolidar tokens de fonte, cores, campos, botões, tabela, carrinho, modal, feedback e status; eliminar conflitos CSS por módulo, sem redesenhar aleatoriamente.
 - Implementar ESLint + Prettier e regras de acessibilidade apropriadas, sem introduzir dependências pesadas e sem alterar o legado.
 - Testar admin e vitrine mobile 320/390/1280px, navegação, carrosséis, layout; fotografar regressões.
 - Aceite atingido: nenhum overflow nas larguras 320/390/1280 em storefront e admin; Axe sem violações WCAG 2.1 AA; TS/lint/build e CI aprovados. 17 testes E2E e 39 testes unitários passaram. Dependências com alertas foram atualizadas, lockfile criado, e preview exige dispatch manual com `authorize_preview=true`. Detalhes e limites em `docs/STATUS_RODADAS_V2.md`.
 
 ### R02 — Banco V2 limpo: modelagem, migrações e contratos
+
 - Revisar e reconciliar db/001–004 e projetar esquema transacional de pedidos/itens/snapshots/idempotência/reserva/atendimento/outbox/auditoria/fiscal; tabelas e políticas RLS específicas.
 - Validar migrações numa base DESCARTÁVEL isolada / CI local, jamais nos dois Supabases legados.
 - Entregar diagrama de entidades, contratos TS e testes de migração/constraints.
@@ -173,11 +200,13 @@ Confirmado por leitura da branch:
 - Supabase Advisors (24/10/2026): WARN intencional para RPC SECURITY DEFINER `public.get_my_staff_role()` (retorna somente papel do chamador autenticado); 4 policies com chamada `auth.*` sem initplan, 11 FKs sem índice de cobertura e 38 sobreposições permissivas entre `admin_all` e policies de função devem ser revisadas antes de popular dados. 27 índices não usados são esperados no banco vazio; não remover sem métricas representativas. INFO de Auth com limite de 10 conexões.
 
 ### R03 — Autenticação admin e permissões
+
 - Backend V2 isolado com autenticação, contas de teste, RBAC por função (admin/produtos/separação/atendimento) e trilha de auditoria; RLS como proteção adicional.
 - Bloquear toda escrita pública e separar leitura de vitrine; CSRF/CORS/validação de sessão conforme hospedagem.
 - Aceite: anônimo não lê custo/valor interno/nem grava; operador sem permissão não edita cadastro ou fiscal; testes negativos comprovam.
 
 ### R04 — Importação controlada e reconciliação do catálogo Bling (CONCLUÍDA)
+
 - O usuário autorizou a cópia gerada/histórica disponível como seed; ela não é atestada como export oficial.
 - CSV validado: 802 SKUs únicos, 776 EANs preenchidos, custos com quatro decimais, 59 campos de origem. Custo exato tem campo `numeric(12,4)`.
 - Carga idempotente somente em `hjudhofluihkxykwekir`: 802 produtos + 802 perfis. Original, custo, fornecedor e fiscal permanecem privados.
@@ -185,6 +214,7 @@ Confirmado por leitura da branch:
 - Login form disponível e verificado na prévia owner-only indicada no topo. Nenhuma alteração na produção legada.
 
 ### R05 — Cadastro de produtos/estoque real no admin
+
 - Lista com filtro/busca/paginação server-side, foto 1:1, SKU/EAN/preço/estoque/ativo, edição rápida e ações em lote seguras.
 - Ficha Geral, Preços/Estoque, Fiscal/Fornecedor, Fotos, Histórico, com permissões por campo; tipos e categorias não se misturam.
 - Aceite: CRUD persiste após recarregar; 800+ SKUs não travam; concorrência rejeita revisão obsoleta; produto zerado não aparece na loja.
@@ -192,63 +222,76 @@ Confirmado por leitura da branch:
 **Execução concluída (24/10/2026):** implementados adapter/RPC para busca e paginação server-side, cadastro/edição, estoque com motivo e ledger, revisão otimista, histórico, e ficha fiscal/fornecedor ADMIN-only com custo exato sem exposição na projeção do catálogo. Migrations `20261024060000_r05_admin_products.sql` e `20261024061000_r05_private_product_profile.sql` aplicadas somente na V2 isolada; remoto confirmou 802 produtos + 802 perfis sem alteração de linhas, 9 migrations e ACL sem execução anônima. Typecheck, lint, format, architecture (89 arquivos), 80 unitários, teste PostgreSQL isolado (9 migrations/24 tabelas) e build passaram. CI #40069099198 passou incluindo browser E2E 17/17. Upload de imagem e ações em lote permanecem fora desta implementação; vitrine dinâmica pertence à R07.
 
 ### R06 — Tipos, cestas e extras persistentes
+
 - CRUD tamanho/tipos/vínculos/ordem/quantidades/extras; carregar fotos quadradas; valor interno por tamanho privado; testar de ponta a ponta.
 - Aceite: mudanças admin aparecem na prévia pública, preço agregado correto sem expor composição privada; alteração de marca preserva quantidade; edições simultâneas seguras.
 
+**Execução concluída (24/10/2026):** branch isolada `agent/dona-antonia-r06-baskets-types-extras`, head `3cae6bf75051bf222a9f811e343f2195736b1065`, derivada do head R05 `397635d0085bac6042b4b408df185d6992755c51`. Foram criados domínio e adapter Supabase para persistência, UI administrativa para criar/renomear/ordenar/desativar tamanhos e tipos, gerenciar vínculos e quantidades, extras, foto HTTPS e ajuste de preço privado; a segunda migration adiciona projeção pública segura e revisão CAS.
 
-**Execução iniciada (24/10/2026):** branch isolada `agent/dona-antonia-r06-baskets-types-extras`, derivada do head R05 `397635d0085bac6042b4b408df185d6992755c51`. Foram criados domínio e adapter Supabase para persistência, UI administrativa para criar/renomear/ordenar/desativar tamanhos e tipos, gerenciar vínculos e quantidades, extras, foto HTTPS e ajuste de preço privado; a migration `20261024070000_r06_basket_configuration.sql` adiciona a persistência de extras/foto e RPCs administrativas protegidas por permissão.
+**Banco isolado:** migrations aplicadas somente em `hjudhofluihkxykwekir`; remoto confirmou 11 migrações, 26 tabelas, 802 produtos, 802 perfis privados, cinco tamanhos e cinco ajustes privados preservados. `get_storefront_catalog()` foi chamado via REST com chave publishable como `anon` e retornou apenas a projeção pública (vazia porque o seed permanece inativo); o RPC administrativo recusou `anon` com 401/42501. Sem gravação de linhas de produto, perfil ou preço na verificação.
 
-**Banco isolado:** migration aplicada somente em `hjudhofluihkxykwekir`; remoto confirmou 10 migrações, 25 tabelas, 802 produtos, 802 perfis privados, cinco tamanhos e cinco ajustes privados preservados. `anon` não executa as RPCs; `authenticated` tem execução condicionada à checagem interna de permissão. Sem gravação de linhas de produto, perfil ou preço na verificação.
+**Verificações locais:** TypeScript, lint, Prettier, arquitetura (97 arquivos), 86 testes unitários, suíte PostgreSQL isolada (11 migrações/26 tabelas, RLS/RBAC/CAS/projeção pública/privacidade/rollback) e build aprovados. Playwright local não pôde iniciar sem Chromium.
 
-**Verificações locais:** TypeScript, lint, Prettier, arquitetura (94 arquivos), 84 testes unitários, suíte PostgreSQL isolada (10 migrações/25 tabelas, RLS/RBAC/privacidade/rollback) e build aprovados. Playwright local não pôde iniciar sem Chromium.
+**PR/CI:** PR #1370 draft, branch `agent/dona-antonia-r06-baskets-types-extras`, head `3cae6bf75051bf222a9f811e343f2195736b1065`, base R05 `397635d0085bac6042b4b408df185d6992755c51`. CI #40090210598 passou todos os gates e 17/17 E2E (`17 passed (21.1s)`).
 
-**PR/CI:** PR #1370 draft, branch `agent/dona-antonia-r06-baskets-types-extras`, head `e3a822385f80b7570e02d55e01faf1bce2ba8031`, base R05 `397635d0085bac6042b4b408df185d6992755c51`. CI #40089034015 passou todos os gates e 17/17 E2E. Workflows anteriores #40088694273 e #40088837224 apontaram seletores ambíguos/incompatíveis no teste Playwright; corrigidos antes da execução aprovada.\n\n**Aceite ainda aberto:** a vitrine/prévia pública continua usando composição demonstrativa; ainda falta conectar a projeção pública segura e confirmar preço agregado sem expor a composição/valor privado. Também falta validar concorrência de gravações com controle no servidor. Portanto R06 permanece em execução, não concluída; não iniciar R07.
+**Aceite:** projeção pública e integração da vitrine implementadas; total agregado inclui o ajuste privado apenas no servidor e o mapper rejeita campos privados; CAS rejeita revisões obsoletas; alteração de marca continua preservando a quantidade no domínio. O seed remoto permanece inativo/estoque zero, portanto não houve ativação comercial nem homologação de venda.
 
 ### R07 — Catálogo público dinâmico e performance de abertura
+
 - Trocar fallback fake em staging por API pública segura e projeção server-side; cache e invalidação corretos; lazy de fotos/marcas/extras.
 - Aceite: primeiro quadro rápido, fallback de erro honesto, estado loading não congela, não expõe custos, fotos reais otimizadas 1:1.
 
 ### R08 — Cotação, validação e checkout real em staging
+
 - Endereço Cuiabá/VG, pedido mínimo R$75, cutoff 12h, domingos/feriados, opções de pagamento na entrega; validação de CPF/documentos apenas se realmente necessária fiscalmente.
 - Cotação confiável no backend com valor interno por cesta, exclusão de zerados, preço individual só extras; anti-duplo clique, idempotência e confirmação acessível.
 - Aceite: erro de rede não perde carrinho; duplicação de clique gera um pedido; total não pode ser forjado; não vender estoque insuficiente.
 
 ### R09 — Pedidos persistentes: quatro abas
+
 - Lista paginada Novo/Em separação/Pronto/Entregue, busca e detalhes, número único/imutável, etiquetas básicas, status e clientes.
 - Aceite: pedido confirmado em staging aparece em NOVO sem refresh manual indevido; status correto e pesquisa rápida; nenhuma quinta aba criada.
 
 ### R10 — Separação robusta e concorrência
+
 - Claims por operador, quantidades conferidas, faltou/separado, abatimento do total, impressão, pronta para entrega e entregue.
 - Retentativas, edit-lock/version, fila de erros e auditoria.
 - Aceite: 2–3 operadores sem perda de atualização; falha fiscal não impede PRONTO; itens indisponíveis ajustados sem total negativo.
 
 ### R11 — Atendimento humano WhatsApp no admin V2 (SEM MIGRAR AINDA O LEGADO)
+
 - Auditar serviços, tabelas e contratos do Vitrine/Admin em leitura; criar novo módulo Inbox desacoplado.
 - Relacionar cliente/telefone, pedido e conversa, suportar áudio e duas contas oficiais 0975/1018; validação com contas de teste.
 - Aceite: mensagens testadas sem duplicação, privacidade/permissões, nenhum desligamento da operação atual.
 
 ### R12 — Mensagens utilitárias automáticas via Meta
+
 - Preparar templates oficiais por conta, outbox a partir de eventos (recebido, separando, pronto, entregue), deduplicação, entrega/leitura/erro, retry limitado.
 - Aceite: envio somente para número autorizado de teste, sem mensagem duplicada, log e orçamento/limite controlados; políticas Meta verificadas.
 
 ### R13 — Emissão fiscal via Bling
+
 - OAuth renovável, dados tributários validados pelo contador, vinculação SKU/ID e criação NF-e após separação; reconciliar resultados e erros.
 - Aceite: erro fiscal visível sem travar separação, retries sem documento duplicado, NCM/CFOP/CST testados em ambiente seguro.
 
 ### R14 — Clientes, conferência de entrega e gestão necessária
+
 - Históricos/endereço, reabertura/alteração controlada, etiquetas de entrega, consultas e relatórios mínimos, sem motor de rotas/motoristas ou EAN de baixa prioridade.
 - Aceite: cliente reconhecido sem obrigar cadastro excessivo, dados protegidos e operação de entrega simples.
 
 ### R15 — Segurança, performance, custos e homologação
+
 - Lighthouse mobile (distintas redes/rodadas) e Web Vitals, carga 802+ produtos, 2–3 operadores, observabilidade, failover, backup/restore, auditoria RLS, LGPD, design acessível, Playwright completo.
 - Aceite: metas de experiência verificadas e divergências documentadas; zero falhas bloqueantes em checkout, estoque e pedidos; custo estimado e aceite de operação.
 
 ### R16 — Piloto controlado e entrada em operação SOMENTE COM AUTORIZAÇÃO
+
 - Conectar gradualmente /site1 e /admin1 a staging real, executar pedidos autorizados/testes com dados segregados, plano de rollback.
 - Realizar piloto de produção sem substituir raiz, somente se seguro e aprovado; corte de domínio/inbox/fiscal em janelas planejadas.
 - Aceite: checklist operacional assinado, rollback ensaiado, métricas/alertas, autorização EXPLÍCITA para trocar site principal. Nunca publicar automaticamente na raiz.
 
 ## 12. PADRÃO DE EXECUÇÃO DE CADA RODADA EM WORK
+
 1. Ler este documento e docs vigentes; verificar branch/commit, último PR/CI e dependências da rodada.
 2. Criar microplano executável com arquivos e critérios de aceite, sem dispersar para outra rodada.
 3. Operar somente V2 e serviços isolados; inspecionar produção somente read-only se indispensável.
@@ -260,9 +303,11 @@ Confirmado por leitura da branch:
 9. **Não marcar Concluído só porque foi programado ou o build passou**: para integrações reais exigir staging + E2E + observabilidade.
 
 ## 13. FONTE DA VERDADE DOCUMENTAL
+
 Hierarquia para decisões: (1) instruções explícitas mais recentes do usuário; (2) este dossiê revisado; (3) plano diretor; (4) requisitos detalhados e código/testes atuais; (5) documentos antigos apenas como histórico.
 
 Arquivos relevantes para ler no Work:
+
 - docs/PLANO_DIRETOR_EVOLUCAO_2026.md
 - docs/PERSISTENCIA_ISOLADA_V2.md
 - docs/ARQUITETURA.md (PARCIALMENTE SUPERADO)
@@ -275,12 +320,12 @@ Arquivos relevantes para ler no Work:
 - PR de teste #1363; CI 40056490923 como referência histórica
 
 ## 14. COMO INICIAR A NOVA CONVERSA WORK
+
 1. Criar/abrir um **Projeto** no ChatGPT chamado "Dona Antônia V2".
 2. Anexar este dossiê aos arquivos do projeto se desejar; o arquivo está no GitHub acima.
 3. Abrir **uma conversa no modo Work** dentro do projeto, com acesso às integrações GitHub e Supabase. Usar somente o projeto isolado V2 `hjudhofluihkxykwekir`; projetos operacionais continuam fora do escopo.
 4. Colar o comando fornecido em docs/COMANDO_NOVA_CONVERSA_WORK.md.
 5. Verificar PRs #1367 e #1368 e workflows. Projeto Supabase V2 isolado já criado e migrado; custo estimado aprovado em US$ 10/mês. O usuário já concluiu o login e definiu sua senha; nunca solicitar nem registrar a senha. Não retomar anexos antigos que mandam iniciar R00. SEM alteração de produção.
-
 
 ## 15. REGISTRO DA RODADA R00 — 23/10/2026
 
@@ -288,16 +333,16 @@ Auditoria técnica registrada em docs/AUDITORIA_COMPLETA_V2.md. Baseline da bran
 
 R00 foi documental; R01 consolidou qualidade visual/CI; R02 implementou schema e contratos validados em PostgreSQL WASM descartável. Nenhum Supabase foi consultado ou alterado e nada foi publicado. A revisão de gates de publicação permanece obrigatória antes de qualquer merge na main.
 
-
 ## Registro de execução — R01 (24/10/2026)
+
 - Branch: `agent/dona-antonia-r01-qualidade`; PR #1365 aberto contra `agent/dona-antonia-r00-auditoria`, sem merge.
 - Código validado: SHA `eac44b022636de298664966b6b1bfe646e9bf163`; CI #40059667625 aprovado.
 - Resultado: 0 vulnerabilidades em npm audit, 39 testes unitários e 17 E2E aprovados; Axe sem violações reportadas.
 - Produção, main, previews publicadas, bancos Supabase e integrações não foram modificados ou acionados.
 - Próxima após R01: R02, concluída no registro abaixo.
 
-
 ## Registro de execução — R02 (24/10/2026)
+
 - Branch: `agent/dona-antonia-r02-schema`, criada a partir do head R01 `7a02a0da66dbcec6cfd7772da75f748ecb5bd29c`; PR dirigido a `agent/dona-antonia-r01-qualidade`, sem merge.
 - Escopo: quatro migrações em `supabase/migrations/`; 21 tabelas em schema privado, RLS fechado; contratos e tipos TS; ERD/ADR; teste repetível em PostgreSQL WASM descartável. Os drafts SQL de `db/001–004` foram retirados.
 - Verificações locais: lint, format, arquitetura, teste DB (4 migrações/21 tabelas), TS, 39 testes, build e audit sem vulnerabilidades passaram.
@@ -305,8 +350,8 @@ R00 foi documental; R01 consolidou qualidade visual/CI; R02 implementou schema e
 - PR #1366 aberto, sem merge. SHA final da branch: `0ea8f43188ea55db56c176d1c34368a2b4303c10`; CI final #40061318922 aprovado nesse head, navegador e demais gates passaram. CI #40061111459 correspondeu ao SHA de implementação anterior.
 - Próxima: concluir conexão Auth somente após provisionar ambiente isolado, avaliar custo e confirmar que nenhum projeto legado será usado.
 
-
 ## Registro de execução — R03 (24/10/2026)
+
 - Branch isolada: `agent/dona-antonia-r03-auth`, base R02 `0ea8f43188ea55db56c176d1c34368a2b4303c10`; PR #1367 aberto contra R02, sem merge.
 - Código: seis migrações; papéis ADMIN/PRODUCTS/SEPARATION/SUPPORT; grants mínimos; policies `USING`/`WITH CHECK`; preço privado em tabelas separadas; `public.get_my_staff_role()` só retorna o papel ativo do chamador; cliente Auth, tela de login e navegação filtrada por papel.
 - Projeto novo `hjudhofluihkxykwekir`, região São Paulo, status saudável. Compute padrão confirmado: estimativa de US$ 10/mês, cobrada por hora. Seis migrações aplicadas ao projeto novo.
@@ -316,8 +361,8 @@ R00 foi documental; R01 consolidou qualidade visual/CI; R02 implementou schema e
 - Operação: legado, `main`, bancos existentes, atendimento e integrações intocados; nenhuma publicação.
 - Próximo: R04 seed foi carregado de modo inativo; o usuário concluiu a recuperação e o login. R05 — CRUD persistente de produtos/estoque. Recuperação e Auth URL apontam para a prévia privada.
 
-
 ## Registro de execução — R04 (24/10/2026)
+
 - Branch local isolada: `agent/dona-antonia-r04-bling-import`; base R03 `4ecb9a0f7897611bde18470d57ba4c30febce80b`.
 - Importador atualizado para dry-run padrão; agora valida o cabeçalho Bling de 59 colunas, SKU único, GTIN/check digit unitário e de embalagem, categoria, unidade, preço/custo, NCM/CEST, itens por caixa e conflitos de EAN; distingue saldo vazio/desconhecido de zero; separa JSON público e privado; grava apenas mediante `--write-to`, nunca sob `public/`, e protege o JSON privado com permissão 0600.
 - Fonte disponível na Library tem sinalização `model_generated: true` e README prévio diz que foi gerada nesta conversa. Hash `80d5733eeee4135c04c461b79c44e2afb42c1916c49eafca76f20e9fcbe1d4e1`. Estrutura: 59 colunas, 802 linhas, 802 SKUs únicos, 776 GTIN válidos, 0 GTIN repetidos, 802 registros inativos e estoque desconhecido; 802 custos com 4 casas decimais vs schema de centavos; 0 vendáveis. A estrutura passou dry-run, mas não serve de base oficial para staging.
@@ -328,8 +373,8 @@ R00 foi documental; R01 consolidou qualidade visual/CI; R02 implementou schema e
 - A rota privada `/admin/` oferece login e recuperação; `/admin/?recovery=1` permite definir e confirmar nova senha (mínimo 8 caracteres). O Site URL e a allowlist do Auth V2 apontam para a prévia privada. O usuário confirmou que concluiu o login; `last_sign_in_at` no Auth é 2026-10-24 05:49:40 UTC, com papel ADMIN. O agente não acessou a senha.
 - Próxima: R05 CRUD e estoque persistentes. Origem CSV não comprovada e saldo físico continuam decisões abertas; não ativar catálogo ou sincronizar Bling sem confirmação.
 
-
 ## Registro de execução — R05 (24/10/2026)
+
 - Branch isolada: `agent/dona-antonia-r05-products-stock`, criada sobre o SHA R04 `4e3ccfba7b06dc02a5ae3287d502351cb24aa4bf`; PR/commit aguardam publicação da branch e CI.
 - Código: repositório Supabase de produtos; RPC paginada/filtros; salvar produto com revisão otimista; atualização de estoque exige motivo, request UUID, ledger e auditoria; histórico de estoque; UI responsiva em módulos pequenos; ficha fiscal/fornecedor com custo textual de quatro casas, diálogo restrito ao perfil ADMIN e RPCs com checagem server-side `private.read/manage`.
 - Banco local: 9 migrations, 24 tabelas e verificações RBAC/RLS, privacidade e rollback passaram em PGlite.
