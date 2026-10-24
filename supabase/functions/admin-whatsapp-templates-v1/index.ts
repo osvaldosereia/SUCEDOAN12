@@ -213,8 +213,10 @@ async function handleFlowMutation(req,action,body,auth){
     if(!onlyKeys(body,[]))return json(req,{ok:false,error:"flow_fields_not_allowed"},400);
     if(!DA_FLOW_1018_RSA_PKCS8)throw new MetaFlowsError("meta_flow_private_key_missing",{httpStatus:409});
     await registerBusinessPublicKeyViaMeta({...args,privateKeyPem:DA_FLOW_1018_RSA_PKCS8});
-    const status=await getBusinessPublicKeyStatusViaMeta({...args});
-    return json(req,{ok:true,registered:status.configured,signature_status:status.signature_status},status.configured?200:502);
+    const expectedPublicKeyPem=await derivePublicKeyPem(DA_FLOW_1018_RSA_PKCS8);
+    const status=await getBusinessPublicKeyStatusViaMeta({...args,expectedPublicKeyPem});
+    const registered=status.configured&&status.matches_expected===true;
+    return json(req,{ok:registered,registered,signature_status:status.signature_status},registered?200:502);
   }
   if(!onlyKeys(body,["flow_id"])&&action!=="flow_upload_json")return json(req,{ok:false,error:"flow_fields_not_allowed"},400);
   if(action==="flow_upload_json"&&!onlyKeys(body,["flow_id","flow_json"]))return json(req,{ok:false,error:"flow_fields_not_allowed"},400);
