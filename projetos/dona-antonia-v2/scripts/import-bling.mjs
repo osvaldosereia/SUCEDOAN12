@@ -63,7 +63,8 @@ for (const [index, row] of records.entries()) {
     packageGtin: row['GTIN/EAN da embalagem']?.trim() || null,
     unitsPerCase: row['Itens p/ caixa']?.trim() || null,
     supplier: row['Fornecedor']?.trim() || null,
-    supplierCode: row['Cód no fornecedor']?.trim() || null
+    supplierCode: row['Cód no fornecedor']?.trim() || null,
+    originalBlingFields: row // todos os 59 campos preservados somente no arquivo interno
   });
 }
 const write = (path, data) => {
