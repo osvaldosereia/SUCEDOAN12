@@ -8,6 +8,11 @@ let flowItems=[];
 let activeFlowId='';
 let canManage=false;
 let busy=false;
+function bounded(promise,ms=17000){
+  let timer;
+  try{return Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('timeout_marketing_flow_api')),ms)})])}
+  finally{clearTimeout(timer)}
+}
 
 function navHtml(active='flows'){
   const button=(key,label)=>'<button type="button" class="'+(key===active?'active':'')+'" data-marketing-view="'+key+'">'+label+'</button>';
@@ -23,14 +28,14 @@ function bindNav(node){
 async function apiGet(action,params={}){
   const url=new URL(FLOW_API);url.searchParams.set('action',action);
   for(const [key,value] of Object.entries(params))if(value!==undefined&&value!==null&&value!=='')url.searchParams.set(key,String(value));
-  const response=await attendanceAuthorizedFetch(url,{method:'GET',headers:{apikey:ADMIN_PUBLIC_KEY},cache:'no-store'});
+  const response=await bounded(attendanceAuthorizedFetch(url,{method:'GET',headers:{apikey:ADMIN_PUBLIC_KEY},cache:'no-store'}));
   const data=await response.json().catch(()=>({}));
   if(!response.ok||data?.ok===false){const error=new Error(data?.error||'flow_request_failed');error.payload=data;throw error}
   return data;
 }
 async function apiPost(action,body={}){
   const url=new URL(FLOW_API);url.searchParams.set('action',action);
-  const response=await attendanceAuthorizedFetch(url,{method:'POST',headers:{apikey:ADMIN_PUBLIC_KEY,'Content-Type':'application/json'},body:JSON.stringify(body),cache:'no-store'});
+  const response=await bounded(attendanceAuthorizedFetch(url,{method:'POST',headers:{apikey:ADMIN_PUBLIC_KEY,'Content-Type':'application/json'},body:JSON.stringify(body),cache:'no-store'}),45000);
   const data=await response.json().catch(()=>({}));
   if(!response.ok||data?.ok===false){const error=new Error(data?.error||'flow_request_failed');error.payload=data;throw error}
   return data;
