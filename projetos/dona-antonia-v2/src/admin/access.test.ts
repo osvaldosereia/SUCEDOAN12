@@ -6,6 +6,7 @@ describe('admin section access', () => {
     expect(getAllowedAdminSections('ADMIN')).toEqual([
       'inicio',
       'pedidos',
+      'atendimento',
       'produtos',
       'tipos',
       'cestas',
@@ -25,7 +26,7 @@ describe('admin section access', () => {
 
   it('limits separation and support roles to order work', () => {
     expect(getAllowedAdminSections('SEPARATION')).toEqual(['inicio', 'pedidos']);
-    expect(getAllowedAdminSections('SUPPORT')).toEqual(['inicio', 'pedidos']);
+    expect(getAllowedAdminSections('SUPPORT')).toEqual(['inicio', 'pedidos', 'atendimento']);
   });
 
   it('keeps the private basket price field restricted to administrators', () => {

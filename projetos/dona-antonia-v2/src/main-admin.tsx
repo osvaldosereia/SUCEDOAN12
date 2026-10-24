@@ -38,6 +38,11 @@ const PersistentOrdersPanel = React.lazy(() =>
 const ExtraAdmin = React.lazy(() =>
   import('./admin/features/extras/ExtraAdmin').then((m) => ({ default: m.ExtraAdmin })),
 );
+const PersistentInboxPanel = React.lazy(() =>
+  import('./admin/features/inbox/PersistentInboxPanel').then((m) => ({
+    default: m.PersistentInboxPanel,
+  })),
+);
 import './admin.css';
 import { AdminAuthGate } from './admin/auth/AdminAuthGate';
 import type { StaffSession } from './application/authentication-contracts';
@@ -50,6 +55,7 @@ import { createSupabaseAdminBasketConfigurationRepository } from './platform/sup
 import { useBasketConfigurationAdmin } from './admin/features/baskets/useBasketConfigurationAdmin';
 import type { AdminOrdersRepository } from './application/admin-orders';
 import { createSupabaseAdminOrdersRepository } from './platform/supabase/admin-orders';
+import { createSupabaseAdminInboxRepository } from './platform/supabase/admin-inbox';
 
 function Admin({
   staffSession,
@@ -57,6 +63,7 @@ function Admin({
   productRepository,
   basketConfigurationRepository,
   ordersRepository,
+  inboxRepository,
   demoMode,
 }: {
   staffSession: StaffSession | null;
@@ -66,6 +73,7 @@ function Admin({
     typeof createSupabaseAdminBasketConfigurationRepository
   > | null;
   ordersRepository: AdminOrdersRepository | null;
+  inboxRepository: ReturnType<typeof createSupabaseAdminInboxRepository> | null;
   demoMode: boolean;
 }) {
   const [tab, setTab] = useAdminSectionRoute();
@@ -170,6 +178,14 @@ function Admin({
         {activeTab === 'pedidos' && (!ordersRepository || demoMode) && (
           <OrdersPanel orders={orders} onUpdate={updateOrder} />
         )}
+        {activeTab === 'atendimento' && inboxRepository && !demoMode && (
+          <PersistentInboxPanel repository={inboxRepository} />
+        )}
+        {activeTab === 'atendimento' && (!inboxRepository || demoMode) && (
+          <div className="notice muted">
+            O Inbox V2 exige a conexão isolada do Supabase e não envia mensagens externas.
+          </div>
+        )}
         {activeTab === 'produtos' && productRepository && (
           <PersistentProductsPanel
             repository={productRepository}
@@ -249,6 +265,9 @@ const adminBasketConfigurationRepository = supabaseClient
 const adminOrdersRepository = supabaseClient
   ? createSupabaseAdminOrdersRepository(supabaseClient)
   : null;
+const adminInboxRepository = supabaseClient
+  ? createSupabaseAdminInboxRepository(supabaseClient)
+  : null;
 const demoMode = import.meta.env.DEV && import.meta.env.VITE_DA_DEMO_MODE === 'true';
 
 createRoot(document.getElementById('root')!).render(
@@ -264,6 +283,7 @@ createRoot(document.getElementById('root')!).render(
           productRepository={adminProductsRepository}
           basketConfigurationRepository={adminBasketConfigurationRepository}
           ordersRepository={adminOrdersRepository}
+          inboxRepository={adminInboxRepository}
           demoMode={demoMode}
         />
       )}

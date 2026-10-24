@@ -294,6 +294,12 @@ Confirmado por leitura da branch:
 - Relacionar cliente/telefone, pedido e conversa, suportar áudio e duas contas oficiais 0975/1018; validação com contas de teste.
 - Aceite: mensagens testadas sem duplicação, privacidade/permissões, nenhum desligamento da operação atual.
 
+**Execução concluída (24/10/2026):** a branch `agent/dona-antonia-r11-whatsapp-inbox` adiciona o módulo Inbox persistente do admin V2, com filtros por conta oficial (`0975`/`1018`), status e telefone/contato, detalhe de conversa, vínculo opcional a pedido e renderização segura de metadados de áudio. A migration `20261024140000_r11_whatsapp_inbox.sql` cria as projeções `admin_list_conversations`/`admin_get_conversation` e a fila `admin_queue_conversation_message`, protegidas por `conversations.read`/`conversations.manage`, chave idempotente e lock da conversa. A fila grava mensagem `SAIDA` `NA_FILA` e outbox, mas não chama Meta/WhatsApp nem envia mensagem real.
+
+**Evidências:** `npm test` (106/106), `npm run test:db` (15 migrations/27 tabelas, RLS/RBAC, privacidade, áudio por metadados e replay idempotente), `npm run check`, lint, `format:check`, `architecture:check` (118 arquivos), build e `git diff --check` passaram. Playwright local continua sem Chromium; o CI deve confirmar os 17 E2E. Supabase V2 remoto registrou a migration como `20261024133621_r11_whatsapp_inbox`, com 802 produtos, 802 perfis privados e 0 pedidos preservados; ACL anon=false/authenticated=true. Advisors mantêm os avisos esperados de `SECURITY DEFINER`, sem novo bloqueio.
+
+**Limites:** não houve migração de conversas legadas, conexão Meta, envio externo, custo novo, merge, deploy ou publicação. A validação de contas reais e transporte permanece para R12, mediante autorização e números de teste.
+
 ### R12 — Mensagens utilitárias automáticas via Meta
 
 - Preparar templates oficiais por conta, outbox a partir de eventos (recebido, separando, pronto, entregue), deduplicação, entrega/leitura/erro, retry limitado.
