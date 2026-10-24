@@ -615,7 +615,14 @@ try {
   const basketMissing = await asAuthenticated(actorIds.separation, () =>
     db.query(
       `select public.admin_apply_order_command($1, 'r10-basket-missing', $2::jsonb, 2) as result`,
-      [orderId, JSON.stringify({ type: 'MARK', itemId: basketItem.rows[0].id, result: 'FALTOU' })],
+      [
+        orderId,
+        JSON.stringify({
+          type: 'MARK',
+          itemId: basketItem.rows[0].id,
+          result: 'FALTOU',
+        }),
+      ],
     ),
   );
   assert.equal(basketMissing.rows[0].result.version, 3);
@@ -623,7 +630,14 @@ try {
   const failedItemMark = await asAuthenticated(actorIds.separation, () =>
     db.query(
       `select public.admin_apply_order_command($1, 'r10-basket-missing', $2::jsonb, 2) as result`,
-      [orderId, JSON.stringify({ type: 'MARK', itemId: basketItem.rows[0].id, result: 'FALTOU' })],
+      [
+        orderId,
+        JSON.stringify({
+          type: 'MARK',
+          itemId: basketItem.rows[0].id,
+          result: 'FALTOU',
+        }),
+      ],
     ),
   );
   assert.equal(
@@ -639,7 +653,14 @@ try {
   const extraSeparated = await asAuthenticated(actorIds.separation, () =>
     db.query(
       `select public.admin_apply_order_command($1, 'r10-extra-separated', $2::jsonb, 3) as result`,
-      [orderId, JSON.stringify({ type: 'MARK', itemId: extra.rows[0].id, result: 'SEPARADO' })],
+      [
+        orderId,
+        JSON.stringify({
+          type: 'MARK',
+          itemId: extra.rows[0].id,
+          result: 'SEPARADO',
+        }),
+      ],
     ),
   );
   assert.equal(extraSeparated.rows[0].result.version, 4);
@@ -823,7 +844,12 @@ try {
       'update da_next.products set price_cents = 1 where id = $1 returning id',
       [productId],
     );
-    return { visibleOrders, hiddenCatalog, hiddenPricing, attemptedProductUpdate };
+    return {
+      visibleOrders,
+      hiddenCatalog,
+      hiddenPricing,
+      attemptedProductUpdate,
+    };
   });
   assert.equal(separationAccess.visibleOrders.rows.length, 2);
   assert.equal(separationAccess.hiddenCatalog.rows.length, 0);
@@ -835,7 +861,12 @@ try {
     const visibleOrders = await db.query('select id from da_next.orders');
     const hiddenProducts = await db.query('select id from da_next.products');
     const hiddenPrivateProfiles = await db.query('select sku from da_next.bling_product_profiles');
-    return { visibleConversations, visibleOrders, hiddenProducts, hiddenPrivateProfiles };
+    return {
+      visibleConversations,
+      visibleOrders,
+      hiddenProducts,
+      hiddenPrivateProfiles,
+    };
   });
   assert.equal(supportAccess.visibleConversations.rows.length, 1);
   assert.equal(supportAccess.visibleOrders.rows.length, 2);
@@ -1182,19 +1213,26 @@ try {
     ) returning id
   `);
   const r16OrderId = r16Order.rows[0].id;
-  const r16Snapshot = await db.query(`
+  const r16Snapshot = await db.query(
+    `
     insert into da_next.order_basket_snapshots (
       order_id, line_number, basket_size_id, basket_code_snapshot, basket_name_snapshot,
       quantity, public_unit_price_cents, private_adjustment_cents, line_total_cents
     ) values ($1, 1, 'r16-test', 'R16_TEST', 'Cesta de teste R16', 1, 8500, 0, 8500)
     returning id
-  `, [r16OrderId]);
-  await db.query(`
+  `,
+    [r16OrderId],
+  );
+  await db.query(
+    `
     insert into da_next.order_basket_snapshot_types (
       order_basket_snapshot_id, product_type_id, type_name_snapshot, selected_quantity
     ) values ($1, '00000000-0000-4000-8000-000000000271', 'Arroz R16', 1)
-  `, [r16Snapshot.rows[0].id]);
-  await db.query(`
+  `,
+    [r16Snapshot.rows[0].id],
+  );
+  await db.query(
+    `
     insert into da_next.order_items (
       order_id, order_basket_snapshot_id, line_number, item_kind, product_id,
       product_type_id, sku_snapshot, product_name_snapshot, product_type_name_snapshot, quantity
@@ -1202,14 +1240,20 @@ try {
       $1, $2, 1, 'BASKET_COMPONENT', $3, '00000000-0000-4000-8000-000000000271',
       'R16-TEST-ARROZ', 'Arroz teste R16', 'Arroz R16', 1
     )
-  `, [r16OrderId, r16Snapshot.rows[0].id, r16ProductId]);
-  await db.query(`
+  `,
+    [r16OrderId, r16Snapshot.rows[0].id, r16ProductId],
+  );
+  await db.query(
+    `
     insert into da_next.inventory_reservations (order_id, product_id, quantity, expires_at)
     values ($1, $2, 1, now() + interval '10 minutes')
-  `, [r16OrderId, r16ProductId]);
+  `,
+    [r16OrderId, r16ProductId],
+  );
 
   await db.exec(r16RollbackSql);
-  const archivedR16Seed = await db.query(`
+  const archivedR16Seed = await db.query(
+    `
     select
       (select count(*)::int from da_next.products
        where sku in ('R16-TEST-ARROZ', 'R16-TEST-FEIJAO', 'R16-TEST-OLEO')
@@ -1225,10 +1269,18 @@ try {
       (select count(*)::int from da_next.product_stock_movements
        where idempotency_key in ('r16-seed-arroz-v1', 'r16-seed-feijao-v1', 'r16-seed-oleo-v1')) as preserved_movements,
       (select count(*)::int from da_next.order_items where order_id = $1) as preserved_order_items
-  `, [r16OrderId]);
+  `,
+    [r16OrderId],
+  );
   assert.deepEqual(
     archivedR16Seed.rows[0],
-    { inactive_products: 3, inactive_types: 3, inactive_basket: 1, preserved_movements: 3, preserved_order_items: 1 },
+    {
+      inactive_products: 3,
+      inactive_types: 3,
+      inactive_basket: 1,
+      preserved_movements: 3,
+      preserved_order_items: 1,
+    },
     'rollback must archive the seed and retain its product, basket, movement and order history after checkout',
   );
   await db.exec(r16RollbackSql);
