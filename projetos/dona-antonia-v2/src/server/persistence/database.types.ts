@@ -215,6 +215,7 @@ export interface BlingProductProfileRow {
   supplier_name: string | null;
   supplier_code: string | null;
   purchase_cost_cents: number;
+  purchase_cost_exact: string;
   original_import_fields: JsonObject;
   synced_at: IsoTimestamp | null;
   sync_error: string | null;

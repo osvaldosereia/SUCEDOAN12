@@ -28,22 +28,25 @@ O domínio donaantonia.com.br permanece no código anterior até autorização e
 Enquanto o banco novo não estiver conectado, telas são exclusivamente demonstração em memória, não salvam pedidos nem atualizam o Bling.
 
 ## Importar a planilha Bling
-Arquivo de origem: DONA_ANTONIA_BLING_802_PRODUTOS_INDEPENDENTES_7_CATEGORIAS.csv, gerado nesta conversa.
-Copie o CSV para uma pasta local, sem adicioná-lo ao site público. Execute:
-npm run import:bling -- /caminho/arquivo.csv
+O CSV de 802 produtos usado como seed da V2 foi gerado nesta conversa e não tem procedência comprovada como exportação do Bling. Por autorização explícita do usuário, seus 802 produtos foram carregados apenas no Supabase V2 isolado. Eles permanecem inativos e com estoque zero; o saldo de origem em branco foi preservado como desconhecido. Isso não equivale a um export oficial nem confirma estoque atual. Antes de ativar/sincronizar, obtenha um export oficial com data e conta de origem.
 
-A importação valida as 59 colunas, SKUs, categorias, valores e GTINs e gera:
-- public/catalog.generated.json: somente dados não sigilosos de vitrine, sem custos e sem informações fiscais.
-- data/catalog.admin.json: prévia interna com custo/NCM/CEST (arquivo ignorado pelo Git).
+Por padrão, o comando abaixo é somente simulação e não grava arquivos nem chama o banco:
 
-Produtos com Situação = Inativo ou estoque zerado NÃO ficam vendáveis. O importador nunca ativa cadastros automaticamente.
+```sh
+npm run import:bling -- --dry-run /caminho/arquivo.csv
+```
+
+O importador valida o cabeçalho Bling de 59 colunas, SKU único, GTIN e dígito verificador, categoria, unidade, preço, custo, NCM/CEST e registra conflitos de GTIN duplicado e custo com precisão maior que centavos. O dry-run identifica as linhas e motivos de rejeição, mais faixas de linhas com conflitos; saldo vazio permanece desconhecido e produtos não vendáveis não são ativados. Para gerar arquivos locais de revisão, use `--write-to /diretorio/privado` em uma pasta fora de `public/`. A projeção pública não contém custo, fornecedor nem campos fiscais; o JSON administrativo contém campos privados e é criado com permissão restrita. O comando continua sem gravar no Supabase; a carga inicial controlada descrita em `docs/STATUS_RODADAS_V2.md` foi executada por processo separado e isolado.
+
+## Login da prévia privada do admin V2
+A tela de login está disponível em [Admin V2 (prévia privada)](https://dona-antonia-v2-admin-preview.juniorsereia.chatgpt.site/admin/). Use `juniorsereia@gmail.com`. O usuário concluiu a recuperação e confirmou o login; o Auth V2 registrou acesso recente e papel ADMIN. A URL de retorno do Auth V2 foi corrigida para esta prévia privada owner-only. O agente não acessou a senha.
 
 ## Entregas pendentes antes de produção
 Autenticação/admin com RBAC, APIs seguras, banco dedicado, validações de estoque no servidor, sincronização OAuth Bling, persistência de cestas/pedidos, separação, expedição, recuperação de checkout, observabilidade e testes ponta a ponta.
 A existência de protótipo no GitHub não implica que estas funcionalidades estejam concluídas.
 
 ## Segurança
-Não publicar, não vincular domínio, não adicionar workflows de deployment e não executar SQL no projeto atual até aprovação de homologação.
+Não publicar alterações em domínio/site legado, não vincular domínio de produção, não alterar `main`/bancos existentes e não executar SQL em projeto operacional. A prévia privada da V2 usa outro Site e outro projeto Supabase.
 
 
 ## Fluxo de tela implementado (prévia)

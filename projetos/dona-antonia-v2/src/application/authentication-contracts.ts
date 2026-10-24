@@ -26,9 +26,11 @@ export class StaffAccessDeniedError extends Error {
 /** Port that keeps the administrator UI independent from the Auth provider implementation. */
 export interface AuthenticationPort {
   signInWithPassword(input: SignInWithPasswordInput): Promise<StaffSession>;
+  requestPasswordReset(email: string, redirectTo: string): Promise<void>;
+  updatePassword(password: string): Promise<void>;
   getSession(): Promise<StaffSession | null>;
   signOut(): Promise<void>;
-  onSessionChanged(listener: (session: StaffSession | null) => void): () => void;
+  onSessionChanged(listener: (session: StaffSession | null, event: string) => void): () => void;
 }
 
 /** Role lookup must use trusted database state, never user_metadata. */

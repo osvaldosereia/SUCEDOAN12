@@ -8,8 +8,8 @@
 | R00 | Auditoria integral e baseline | **Concluída — auditoria documental e baseline** | docs/AUDITORIA_COMPLETA_V2.md; SHA base 1a846beba768192c366937c1462bcfd6baeccee9; CI 40057635884 aprovado |
 | R01 | Design system e disciplina de qualidade | **Concluída** | PR #1365; SHA R01 7a02a0da66dbcec6cfd7772da75f748ecb5bd29c; CI 40059800868 e 40059798099 aprovados |
 | R02 | Modelagem/migrações para banco isolado | **Concluída; PR aberto, sem merge** | PR #1366; SHA 0ea8f43188ea55db56c176d1c34368a2b4303c10; CI 40061318922 aprovado |
-| R03 | Login, RBAC e RLS V2 | Implementada; ambiente V2 aplicado; bootstrap ADMIN pendente | PR #1367; 6 migrações/24 tabelas; 50 testes; projeto isolado `hjudhofluihkxykwekir`; ~US$10/mês |
-| R04 | Importação/reconciliação dos 802 produtos | Planejada | — |
+| R03 | Login, RBAC e RLS V2 | **Concluída e ensaiada em prévia privada** | PR #1367; 7 migrações/24 tabelas; login UI validado; conta `juniorsereia@gmail.com` ADMIN |
+| R04 | Importação/reconciliação dos 802 produtos | **Concluída no staging V2; fonte autorizada como seed, não comprovada como export oficial** | 802 produtos + 802 perfis privados; 0 ativos/estoque; custo exato em 4 casas; tela de login validada; PR #1368 draft |
 | R05 | Cadastro e estoque persistente | Planejada | — |
 | R06 | Cestas, tipos e extras persistentes | Planejada | — |
 | R07 | Catálogo público dinâmico/performance | Planejada | — |
@@ -86,12 +86,25 @@
 ## R03 — Login, RBAC e policies RLS
 **Data:** 2026-10-24 (UTC)
 **SHA inicial:** 0ea8f43188ea55db56c176d1c34368a2b4303c10 (head R02)
-**Estado:** implementação e bootstrap ADMIN da R03 concluídos no projeto isolado; o Auth confirmou a conta e registrou um acesso. O fluxo de login dentro do admin V2 ainda não foi exercitado ponta a ponta.
+**Estado:** implementação concluída; conta Auth confirmada e papel ADMIN ativo. A prévia privada oferece login e recuperação de senha. Nenhuma senha foi criada, alterada ou acessada pelo agente.
 **Escopo:** papéis ADMIN/PRODUCTS/SEPARATION/SUPPORT; helper RLS; grants mínimos por tabela/coluna; separação dos preços privados; RPC `public.get_my_staff_role()` sem argumentos; client Supabase Auth, tela de login, sessão validada via `getUser`, navegação por papel e ocultação do campo de preço privado para PRODUCTS.
 **Supabase V2:** projeto `Dona Antônia V2`, ref `hjudhofluihkxykwekir`, São Paulo, status ACTIVE_HEALTHY. Seis migrações aplicadas. Verificação SQL: 24 tabelas/24 RLS, 64 policies; `anon` sem `USAGE` no schema privado e sem execução da RPC; `authenticated` pode obter apenas o próprio papel. Convite aceito, e-mail confirmado e `last_sign_in_at` registrado; uma única atribuição ADMIN está ativa. A RPC de papel retornou `ADMIN` ao testar o subject da conta; nenhuma sessão estava ativa no instante da checagem. Custo estimado/confirmado: US$ 10 por mês para compute padrão, faturado por hora.
 **Testes locais/CI:** PGlite (6 migrações/24 tabelas/RLS/RBAC positivo e negativo/RPC/revogação/privacidade/rollback); 50 testes unitários; lint, format, arquitetura (79 arquivos), TypeScript, build e `npm audit` (0 vulnerabilidades) aprovados. Playwright local não executou porque Chromium está ausente e o download foi ZIP inválido/zero bytes; CI GitHub #40063869241 passou todos os gates, incluindo os 17 testes E2E.
 **Supabase Advisors (24/10/2026):** nenhum alerta de acesso anônimo ao schema privado. Um WARN de SECURITY DEFINER aponta `public.get_my_staff_role()`, intencional e limitada ao papel do próprio usuário autenticado. Performance lista 4 policies com chamada `auth.*` sem initplan, 11 FKs sem índice de cobertura e 38 sobreposições permissivas entre `admin_all` e policies de função; registrar como hardening antes de popular dados. Os 27 índices sem uso são esperados no banco recém-criado e vazio; não removê-los sem carga/consultas representativas. Configuração Auth de no máximo 10 conexões também aparece como INFO.
-**Limites:** conta confirmada e acesso Auth registrado, mas o login pela tela do admin V2 e recuperação de senha ainda não foram testados. O dev server local não é alcançável pelo navegador remoto; não foi publicada uma prévia. UI ainda exibe dados demonstrativos; CRUD persistente, checkout e integrações ficam para rodadas posteriores.
+**Limites:** a tela de recuperação e o formulário para definir senha foram verificados visualmente, sem enviar solicitação nem inserir credenciais. A URL padrão Auth que apontava para `localhost:3000` foi corrigida para a prévia privada e duas URLs exatas de callback foram permitidas. Após autenticar, áreas do admin ainda incluem dados demonstrativos; CRUD persistente, checkout e integrações ficam para rodadas posteriores.
 **Produção legada:** intocada; nenhuma alteração em `main`, sites públicos, Supabase existente, atendimento ou integração operacional. Nada publicado.
 **PR:** #1367 — https://github.com/osvaldosereia/SUCEDOAN12/pull/1367; aberto, sem merge, base R02.
-**Próximo passo:** validar o fluxo de login pela tela do admin V2 em ambiente isolado e revisar os achados de Advisor antes de carregar dados. O gate de identidade/bootstrap está atendido. Em seguida, R04 — importação controlada e reconciliação do catálogo Bling.
+**Próximo passo:** concluída validação da tela; revisar Advisor/hardening em rodada própria antes das operações sensíveis. R04 carregou o seed V2 inativo; próxima é R05 — cadastro/estoque persistentes.
+
+
+## R04 — Importação controlada e reconciliação do catálogo Bling
+**Data:** 2026-10-24 (UTC)
+**Branch:** `agent/dona-antonia-r04-bling-import`; PR #1368 draft, base R03, sem merge.
+**Estado:** concluída no staging V2 isolado. O usuário autorizou utilizar a cópia gerada/histórica disponível; origem não comprovada como export do Bling.
+**Escopo:** importador dry-run por padrão; CSV de 59 colunas; validações de SKU/EAN/fiscal; migração `purchase_cost_exact numeric(12,4)`; preservação de estoque em branco no JSON original privado.
+**Carga:** 802 `da_next.products` e 802 `da_next.bling_product_profiles`; 776 GTINs preenchidos; 802 custos exatos e 802 originais com 59 campos; 0 ativos, 0 estoque positivo e 0 vendáveis. Custo comercial fica restrito a perfil privado. CSV não foi comitado.
+**Login:** concluído pelo usuário na prévia owner-only `https://dona-antonia-v2-admin-preview.juniorsereia.chatgpt.site/admin/`; `last_sign_in_at` e papel `ADMIN` confirmados no Auth V2. O usuário definiu a própria senha pelo fluxo de recuperação; o agente não acessou a senha.
+**Testes:** `format:check`, TypeScript, 64 testes unitários, `architecture:check` e build aprovados durante o empacotamento. Banco: 7 migrações, 24 tabelas/RLS e verificação de contagens. O login foi concluído pelo usuário e corroborado pelo `last_sign_in_at` Auth em 2026-10-24 05:49:40 UTC; sessão visual da UI concluída pelo usuário.
+**Limites:** catálogo ainda não alimenta CRUD real do admin nem vitrine; origem do arquivo e saldo físico continuam sem comprovação. Nenhum produto foi ativado; sem integração Bling.
+**Produção:** `main`, site público/admin legados, Supabase existente, atendimento e integrações operacionais intocados. A prévia é outro Site privado, owner-only; não houve publicação pública.
+**Próxima rodada recomendada:** R05 — adapter e CRUD persistente de produtos/estoque na V2, mantendo o estado inicial não vendável; revisar achados de performance Advisor antes de ampliar as consultas.
