@@ -4,15 +4,17 @@ import type { BasketId, BasketTemplate, Product, ProductType } from './core/mode
 import { DEMO_PRODUCTS, DEMO_TEMPLATES, DEMO_TYPES } from './data/demo';
 import { DEMO_EXTRA_GROUPS, DEMO_EXTRA_PRODUCTS, DEMO_EXTRA_TYPES } from './data/demo-extra';
 import type { ExtraGroup } from './core/extras';
-import { ExtraAdmin } from './admin/features/extras/ExtraAdmin';
-import { ProductsPanel } from './admin/features/products/ProductsPanel';
-import { ProductTypesPanel } from './admin/features/product-types/ProductTypesPanel';
-import { BasketCompositionPanel } from './admin/features/baskets/BasketCompositionPanel';
+import { ADMIN_SECTIONS } from './admin/navigation';
+import type { AdminSectionId } from './admin/navigation';
+/** Cada sessão tem bundle próprio: não baixar módulos que o operador não abriu. */
+const ProductsPanel=React.lazy(()=>import('./admin/features/products/ProductsPanel').then(m=>({default:m.ProductsPanel})));
+const ProductTypesPanel=React.lazy(()=>import('./admin/features/product-types/ProductTypesPanel').then(m=>({default:m.ProductTypesPanel})));
+const BasketCompositionPanel=React.lazy(()=>import('./admin/features/baskets/BasketCompositionPanel').then(m=>({default:m.BasketCompositionPanel})));
+const ExtraAdmin=React.lazy(()=>import('./admin/features/extras/ExtraAdmin').then(m=>({default:m.ExtraAdmin})));
 import './styles.css';
 
-type Tab = 'produtos' | 'tipos' | 'cestas' | 'extras';
 function Admin() {
-  const [tab,setTab] = useState<Tab>('tipos');
+  const [tab,setTab] = useState<AdminSectionId>('tipos');
   const [products,setProducts] = useState<Product[]>([...DEMO_PRODUCTS,...DEMO_EXTRA_PRODUCTS].map((product)=>({...product})));
   const [types,setTypes] = useState<ProductType[]>([...DEMO_TYPES,...DEMO_EXTRA_TYPES].map((type)=>({...type, productSkus:[...type.productSkus]})));
   const [templates,setTemplates] = useState<BasketTemplate[]>(DEMO_TEMPLATES.map((basket)=>({...basket,lines:[...basket.lines]})));
@@ -66,20 +68,20 @@ function Admin() {
   return <div className="admin-page">
     <aside className="admin-sidebar"><a className="brand" href="/admin/"><span className="brand-mark">DA</span><span>Dona Antônia<small>Admin V2 · Prévia</small></span></a>
       <nav aria-label="Módulos do painel">
-        <button className={tab==='produtos'?'active':''} onClick={()=>setTab('produtos')}>Produtos</button>
-        <button className={tab==='tipos'?'active':''} onClick={()=>setTab('tipos')}>Tipos de produto</button>
-        <button className={tab==='cestas'?'active':''} onClick={()=>setTab('cestas')}>Composição das cestas</button>
-        <button className={tab==='extras'?'active':''} onClick={()=>setTab('extras')}>Produtos extras</button>
+        {ADMIN_SECTIONS.map(section=><button key={section.id}
+          type="button" className={tab===section.id?'active':''}
+          onClick={()=>setTab(section.id)}>{section.label}</button>)}
       </nav>
       <p className="sidebar-note">Dados demonstrativos. Este painel não possui autenticação nem persistência; não publicar.</p>
     </aside>
     <main className="admin-main">
       <header className="admin-header"><div><p className="eyebrow">NOVO SISTEMA · HOMOLOGAÇÃO</p>
-        <h1>{tab==='produtos'?'Cadastro de produtos':tab==='tipos'?'Tipos de produto':tab==='extras'?'Produtos extras':'Cestas básicas'}</h1>
+        <h1>{ADMIN_SECTIONS.find(section=>section.id===tab)?.title}</h1>
         <p>Cadastro simples, independente e compatível com os SKUs do Bling.</p></div>
         <span className="pill">Não publicado</span>
       </header>
       <div className="notice muted" role="status">{notice}</div>
+      <React.Suspense fallback={<div className="notice muted" role="status">Carregando módulo...</div>}>
       {tab==='produtos' && <ProductsPanel
         products={products} filteredProducts={filteredProducts} filter={filter}
         setFilter={setFilter} changeProduct={changeProduct}/>}
@@ -96,6 +98,7 @@ function Admin() {
       {tab==='extras'&&<ExtraAdmin
         products={products} types={types} groups={extraGroups}
         onChangeGroups={setExtraGroups} onChangeTypes={setTypes}/>}
+      </React.Suspense>
     </main>
   </div>;
 }

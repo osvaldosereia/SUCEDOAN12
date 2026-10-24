@@ -5,13 +5,15 @@ import { initialExtraSelections, selectExtraProduct, summarizeExtras, summarizeO
 import { formatBRL } from './core/money';
 import { ProductTypeRow } from './features/storefront/components/ProductTypeRow';
 import { BasketSizePicker } from './features/baskets/components/BasketSizePicker';
-import { CheckoutStep } from './features/checkout/components/CheckoutStep';
+
 import type { BasketId, BasketSelection, Product } from './core/model';
 import { DEMO_PRODUCTS, DEMO_TEMPLATES, DEMO_TYPES } from './data/demo';
 import { DEMO_EXTRA_GROUPS, DEMO_EXTRA_PRODUCTS, DEMO_EXTRA_TYPES } from './data/demo-extra';
 import { loadPublicCatalog } from './data/catalog';
 import './styles.css';
 
+const CheckoutStep=React.lazy(()=>import('./features/checkout/components/CheckoutStep')
+  .then(module=>({default:module.CheckoutStep})));
 type Stage = 'basket' | 'extras' | 'checkout';
 const types = [...DEMO_TYPES, ...DEMO_EXTRA_TYPES];
 
@@ -163,7 +165,7 @@ function Storefront() {
             onQuantity={(id,qty)=>setQuantity('extras',id,qty)}/>)}</div>
         {!computed.extras?.lines.length&&<div className="notice muted">Nenhum tipo extra foi configurado nesta prévia.</div>}
       </>}
-      {stage==='checkout'&&<CheckoutStep order={computed.order} totalCents={total} goTo={jump}/>}
+      {stage==='checkout'&&<React.Suspense fallback={<div className="notice muted" role="status">Carregando checkout...</div>}><CheckoutStep order={computed.order} totalCents={total} goTo={jump}/></React.Suspense>}
       {stage!=='checkout'&&<p className="below-note">Valores ilustrativos. No sistema final, preços e estoque serão revalidados antes da confirmação.</p>}
     </main>
     {stage!=='checkout'&&<footer className="sticky-summary" aria-label="Resumo fixo do pedido">
