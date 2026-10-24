@@ -33,7 +33,14 @@ const money = (raw) => {
 const raw = readFileSync(resolve(CSV), 'utf8').replace(/^\uFEFF/, '');
 const records = parse(raw, { columns: true, bom: true, skip_empty_lines: true, relax_quotes: false });
 const header = parse(raw, { to_line: 1, bom: true })[0];
-if (JSON.stringify(header) !== JSON.stringify(EXPECTED)) throw Error('Cabeçalho diferente do modelo Bling oficial (59 colunas)');
+const withExportIndex = header?.[0] === 'index' && JSON.stringify(header.slice(1)) === JSON.stringify(EXPECTED);
+if (!withExportIndex && JSON.stringify(header) !== JSON.stringify(EXPECTED)) {
+  throw Error('Cabeçalho diferente do modelo Bling oficial (59 colunas). Um índice adicional de exportação é aceito.');
+}
+const normalizedGtin = (raw) => {
+  const value=(raw || '').trim();
+  return /^\d+\.0$/.test(value) ? value.slice(0,-2) : value;
+};
 const seen = new Set();
 const publicProducts = [];
 const adminProducts = [];
@@ -42,7 +49,7 @@ for (const [index, row] of records.entries()) {
   const sku = row['Código']?.trim();
   const name = row['Descrição']?.trim();
   const category = row['Categoria do produto']?.trim();
-  const gtin = row['GTIN/EAN']?.trim() || null;
+  const gtin = normalizedGtin(row['GTIN/EAN']) || null;
   if (!sku || !name || seen.has(sku)) throw Error('SKU ausente/repetido, linha ' + line);
   if (!CATEGORIES.has(category)) throw Error('Categoria inválida, linha ' + line);
   if (row['Unidade']?.trim() !== 'UN') throw Error('Venda não unitária, linha ' + line);
@@ -60,11 +67,11 @@ for (const [index, row] of records.entries()) {
   publicProducts.push(product);
   adminProducts.push({
     ...product, costCents, ncm: row['NCM']?.trim() || null, cest: row['CEST']?.trim() || null,
-    packageGtin: row['GTIN/EAN da embalagem']?.trim() || null,
+    packageGtin: normalizedGtin(row['GTIN/EAN da embalagem']) || null,
     unitsPerCase: row['Itens p/ caixa']?.trim() || null,
     supplier: row['Fornecedor']?.trim() || null,
     supplierCode: row['Cód no fornecedor']?.trim() || null,
-    originalBlingFields: row // todos os 59 campos preservados somente no arquivo interno
+    originalBlingFields: Object.fromEntries(EXPECTED.map((name) => [name, row[name] ?? ''])) // todos os 59 campos privados
   });
 }
 const write = (path, data) => {
