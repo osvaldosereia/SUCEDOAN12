@@ -14,6 +14,7 @@ interface Props {
   children: React.ReactNode;
   allowedSections: readonly AvailableAdminSection[];
   staffSession: StaffSession | null;
+  dataStatus?: string;
   onSignOut?: () => void;
 }
 const normalize = (s: string) =>
@@ -29,6 +30,7 @@ export function AdminShell({
   children,
   allowedSections,
   staffSession,
+  dataStatus = 'Dados demonstrativos',
   onSignOut,
 }: Props) {
   const [mobileMenu, setMobileMenu] = useState(false);
@@ -229,7 +231,7 @@ export function AdminShell({
               <h1>{current.title}</h1>
               <p>{current.description}</p>
             </div>
-            <span className="da-local-badge">Dados demonstrativos</span>
+            <span className="da-local-badge">{dataStatus}</span>
           </div>
           {children}
         </main>
