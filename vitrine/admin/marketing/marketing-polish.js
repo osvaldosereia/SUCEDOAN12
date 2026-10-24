@@ -51,7 +51,7 @@ function loadRecentCampaignModule(){
 
 function loadPostSaleModule(){
   if(window.DAMarketingPostSale?.mountPostSaleView)return Promise.resolve(window.DAMarketingPostSale);
-  if(!postSaleModulePromise)postSaleModulePromise=import('/vitrine/admin/marketing/post-sale-center.js?v=marketing-post-sale-v3');
+  if(!postSaleModulePromise)postSaleModulePromise=import('/vitrine/admin/marketing/post-sale-center.js?v=whatsapp-flow-active-router-20261024');
   return postSaleModulePromise;
 }
 
