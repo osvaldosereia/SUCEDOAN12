@@ -2,6 +2,7 @@ import type { BasketTemplate, Product, ProductType } from '../core/model';
 import type { ExtraGroup } from '../core/extras';
 import { CATEGORIES } from '../core/model';
 import { DEMO_PRODUCTS } from './demo';
+import { createPublicCatalogCache, type CatalogCacheSource } from './public-catalog-cache';
 
 export interface CatalogSource {
   readonly products: readonly Product[];
@@ -10,6 +11,9 @@ export interface CatalogSource {
   readonly extras?: readonly ExtraGroup[];
   readonly isDemo: boolean;
   readonly error?: string;
+  readonly cacheSource?: CatalogCacheSource;
+  readonly stale?: boolean;
+  readonly fetchedAt?: number;
 }
 /** Futuro adaptador Supabase implementará esta porta, sem alterar o componente React. */
 export interface CatalogReader {
@@ -53,6 +57,25 @@ const httpCatalog: CatalogReader = {
     return data;
   },
 };
+
+const readerCaches = new WeakMap<
+  object,
+  ReturnType<typeof createPublicCatalogCache<CatalogSource>>
+>();
+
+function cacheFor(reader: CatalogReader) {
+  let cache = readerCaches.get(reader);
+  if (!cache) {
+    cache = createPublicCatalogCache<CatalogSource>();
+    readerCaches.set(reader, cache);
+  }
+  return cache;
+}
+
+/** Invalida a projeção pública após uma alteração administrativa confirmada. */
+export function invalidatePublicCatalogCache(reader: CatalogReader = httpCatalog) {
+  cacheFor(reader).invalidate();
+}
 /**
  * Fallback demonstrativo SOMENTE em Vite DEV.
  * Produção nunca expõe produtos ou preços de amostra se a API falhar.
@@ -66,11 +89,19 @@ export async function loadPublicCatalog(
     if (!reader.listPublicCatalog) return { products: DEMO_PRODUCTS, isDemo: true };
   }
   try {
-    if (reader.listPublicCatalog) {
-      const snapshot = await reader.listPublicCatalog(signal);
-      return { ...snapshot, isDemo: false };
-    }
-    return { products: await reader.listPublicProducts(signal), isDemo: false };
+    const result = await cacheFor(reader).get(async (requestSignal) => {
+      if (reader.listPublicCatalog) {
+        const snapshot = await reader.listPublicCatalog(requestSignal);
+        return { ...snapshot, isDemo: false };
+      }
+      return { products: await reader.listPublicProducts(requestSignal), isDemo: false };
+    }, signal);
+    return {
+      ...result.value,
+      cacheSource: result.source,
+      stale: result.stale,
+      fetchedAt: result.fetchedAt,
+    };
   } catch (error) {
     if (signal?.aborted) throw error;
     if (import.meta.env.DEV && import.meta.env.VITE_APP_MODE !== 'production') {

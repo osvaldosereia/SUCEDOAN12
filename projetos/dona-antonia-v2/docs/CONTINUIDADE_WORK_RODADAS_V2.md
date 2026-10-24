@@ -241,6 +241,12 @@ Confirmado por leitura da branch:
 - Trocar fallback fake em staging por API pública segura e projeção server-side; cache e invalidação corretos; lazy de fotos/marcas/extras.
 - Aceite: primeiro quadro rápido, fallback de erro honesto, estado loading não congela, não expõe custos, fotos reais otimizadas 1:1.
 
+**Execução da implementação (24/10/2026):** branch isolada `agent/dona-antonia-r07-public-catalog-performance`, derivada do head documental R06 `870088d73b64b90f7fa449b280ba65e27abb7186`; PR #1371 draft, head final `677bb081831b483566a2c8aed624c7e252e811a0`. O cliente agora usa cache em memória com janela fresca/stale, deduplicação de requests e invalidação explícita; não injeta dados demo quando as variáveis publishable da V2 existem; apresenta loading, catálogo vazio, erro honesto, retry e aviso de dados stale. Componentes de status/resumo/cabeçalho foram separados para manter a arquitetura modular. O RPC público server-side de R06 continua como única fonte remota, sem custo ou campo privado no navegador; fotos mantêm dimensões 1:1 e lazy loading.
+
+**Testes locais:** `npm test` (90/90), `npm run check`, lint, `npm run format:check`, `npm run architecture:check` (103 arquivos), `npm run build` e `npm run test:db` (11 migrações/26 tabelas, RLS/RBAC, privacidade e rollback) passaram. Playwright local foi tentado, mas não iniciou porque o executável Chromium está ausente.
+
+**CI e aceite:** a primeira execução (#40091664923) encontrou somente o gate `prefer-const` no cache; o commit corretivo foi verificado na execução final #40091732365, que passou auditoria, lint/formato, arquitetura, migrações PostgreSQL descartáveis, TypeScript, 90 testes unitários, build e 17/17 E2E (`17 passed (18.5s)`). O checkpoint documental final `1ef0b2f4faf63382254ce90c57c5a82f9b413697` passou no CI #40092012827, também com 17/17 E2E (`17 passed (16.5s)`). O seed remoto permanece inativo/estoque zero; a rodada melhora o caminho público e seus estados de erro, mas não ativa produtos nem homologa venda. Não houve nova migration nem alteração no Supabase V2.
+
 ### R08 — Cotação, validação e checkout real em staging
 
 - Endereço Cuiabá/VG, pedido mínimo R$75, cutoff 12h, domingos/feriados, opções de pagamento na entrega; validação de CPF/documentos apenas se realmente necessária fiscalmente.
