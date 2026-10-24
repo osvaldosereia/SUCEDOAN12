@@ -19,7 +19,7 @@ assert.match(api,/flow_delete/);
 assert.match(api,/DA_FLOW_1018_RSA_PKCS8/);
 assert.doesNotMatch(api,/url\.searchParams\.set\(["']access_token/);
 
-assert.match(helper,/headers\.Authorization='Bearer '\+cfg\.token/);
+assert.match(helper,/Authorization:'Bearer '\+cfg\.token/);
 assert.match(helper,/assertFlowPublishable/);
 assert.match(helper,/validation_errors/);
 assert.match(helper,/whatsapp_business_encryption/);
