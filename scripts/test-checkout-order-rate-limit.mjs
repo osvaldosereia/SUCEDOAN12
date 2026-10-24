@@ -10,6 +10,7 @@ const helperStart = api.indexOf('async function allowOrderAttempt');
 const helperEnd = api.indexOf('\nasync function submit(req', helperStart);
 assert.ok(helperStart >= 0 && helperEnd > helperStart, 'checkout rate guard helper must exist');
 const helper = api.slice(helperStart, helperEnd);
+const executableHelper = helper.replaceAll('rateKey:string','rateKey').replaceAll('limit:number','limit').replaceAll('scope:string','scope').replace('(error as any)?.message','error?.message');
 const calls = [];
 let reply = { data: true, error: null };
 let shouldThrow = false;
@@ -18,7 +19,7 @@ const sandbox = {
   txt: value => String(value ?? ''),
   console: { error: (...args) => calls.push(['log', ...args]) }
 };
-vm.runInNewContext(helper + '\nglobalThis.allowOrderAttempt = allowOrderAttempt;', sandbox);
+vm.runInNewContext(executableHelper + '\nglobalThis.allowOrderAttempt = allowOrderAttempt;', sandbox);
 assert.equal(await sandbox.allowOrderAttempt('v2:phone:hash', 10, 'phone'), true);
 assert.equal(calls[0][0], 'consume_public_rate_limit');
 assert.equal(calls[0][1].p_window_seconds, 60);
