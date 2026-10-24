@@ -6,8 +6,9 @@ const [api, resilience] = await Promise.all([
   readFile(new URL('../supabase/functions/storefront-v2/index.ts', import.meta.url), 'utf8'),
   readFile(new URL('../checkout-resilience.js', import.meta.url), 'utf8')
 ]);
-const helperStart = api.indexOf('async function allowOrderAttempt');
-const helperEnd = api.indexOf('\nasync function submit(req', helperStart);
+const submitStart = api.indexOf('async function submit(req');
+const helperStart = api.indexOf('async function allowOrderAttempt', submitStart);
+const helperEnd = api.indexOf('\n  const ik=', helperStart);
 assert.ok(helperStart >= 0 && helperEnd > helperStart, 'checkout rate guard helper must exist');
 const helper = api.slice(helperStart, helperEnd);
 const executableHelper = helper.replaceAll('rateKey:string','rateKey').replaceAll('limit:number','limit').replaceAll('scope:string','scope').replace('(error as any)?.message','error?.message');
