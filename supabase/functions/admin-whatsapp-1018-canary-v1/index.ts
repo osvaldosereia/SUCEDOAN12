@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.58.0";
+import {buildBasketContentsText} from "./basket-message.mjs";
 const BASE=Deno.env.get("SUPABASE_URL")||"";
 const KEY=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
 const TOKEN=(Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||"").trim();
@@ -112,33 +113,9 @@ async function safeComposition(body,pre){
   const card=(shell.baskets||[]).find(x=>x.size_key===size&&uuid(x.id));
   if(!card)throw Error("basket_catalog_unavailable");
   const detail=await readStorefront("basket",{basket_id:card.id+"@"+number,lightweight:1});
-  const basket=detail.basket,items=detail.items;
-  const amount=Number(basket?.display_price_cents),stock=Number(basket?.stock_quantity);
-  if(!Number.isSafeInteger(amount)||amount<=0||!Number.isFinite(stock)||stock<1||!Array.isArray(items)||!items.length||items.length>80)throw Error("basket_composition_unavailable");
-  if(Number(basket.composition_number)!==number||basket.id!==card.id)throw Error("basket_composition_mismatch");
-  const names=[],totalLines=items.length;
-  for(const item of items){
-    const qty=Number(item.quantity),name=clean(item.name,150);
-    if(!Number.isInteger(qty)||qty<0||qty>1000||!name)throw Error("basket_composition_invalid");
-    if(qty>0)names.push(String(qty)+"x "+name);
-  }
-  if(!names.length)throw Error("basket_composition_unavailable");
-  const brl=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(amount/100);
-  const title=LABELS[SIZES.indexOf(size)];
-  const text=[
-    "*Dona Antônia — Cesta "+title+"*",
-    "*Combinação "+number+"*",
-    "*Valor da cesta: "+brl+"*",
-    "",
-    "*Produtos incluídos:*",
-    ...names.map((name,i)=>String(i+1)+". "+name),
-    "",
-    "Você pode pedir trocas de marcas, retirar itens ou mudar quantidades.",
-    "Responda com a alteração desejada. Vamos recalcular o preço antes de confirmar.",
-    "",
-    "_Teste interno 1018. Composição e disponibilidade sujeitas à confirmação._"
-  ].join("\n");
-  if(text.length>4096||totalLines>80)throw Error("basket_composition_too_long");
+  const basket=detail.basket;
+  if(!basket||Number(basket.composition_number)!==number||basket.id!==card.id)throw Error("basket_composition_mismatch");
+  const text=buildBasketContentsText({label:LABELS[SIZES.indexOf(size)],number,basket,items:detail.items});
   return {kind:"composition",text,choice_id:expected};
 }
 
