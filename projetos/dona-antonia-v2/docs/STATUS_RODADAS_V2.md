@@ -5,7 +5,7 @@
 
 | Rodada | Título | Estado | Evidência |
 |---|---|---|---|
-| R00 | Auditoria integral e baseline | **A EXECUTAR** | — |
+| R00 | Auditoria integral e baseline | **Concluída — auditoria documental e baseline** | docs/AUDITORIA_COMPLETA_V2.md; SHA base 1a846beba768192c366937c1462bcfd6baeccee9; CI 40057635884 aprovado |
 | R01 | Design system e disciplina de qualidade | Planejada | — |
 | R02 | Modelagem/migrações para banco isolado | Planejada | — |
 | R03 | Login, RBAC e RLS V2 | Planejada | — |
@@ -42,3 +42,16 @@
 **Bloqueios/riscos:**  
 **Produção legada:** intocada / INCIDENTE (detalhar se houver).  
 **Próxima rodada recomendada:**  
+
+
+## R00 — auditoria integral e baseline
+**Data:** 2026-10-23 (Cuiabá)  
+**SHA inicial auditado:** 1a846beba768192c366937c1462bcfd6baeccee9  
+**SHA final da rodada:** será o commit do PR de documentação nesta branch.  
+**Estado:** Concluída.  
+**Escopo:** inspeção dos 90 arquivos da pasta V2; comparação entre plano/documentos e implementação; revisão estática das quatro DDLs, workflows, dependências, interface, scripts e testes.  
+**Testes:** architecture:check, check, test (35 testes), build e npm audit completos executados localmente; CI de mesma SHA passou todos os gates, inclusive 9 E2E. Browser local não iniciou porque Chromium estava ausente e o download foi inválido. SQL não foi aplicado: não havia PostgreSQL/psql/Docker local. npm audit apontou 4 alertas em dependências dev/importação (2 críticas, 2 moderadas); runtime audit sem alertas.  
+**PR/commit:** documentação da R00 em branch agent/dona-antonia-r00-auditoria, direcionada à branch de trabalho agent/dona-antonia-nova-plataforma; sem merge ou publicação.  
+**Riscos/bloqueios:** backend/auth/persistência inexistentes; schema exige reconciliação antes de migração; autoridade do estoque e preço pendente; dependências críticas; workflow de preview em main publica automaticamente /site1 e /admin1.  
+**Produção legada:** intocada. Supabases existentes não consultados nem alterados.  
+**Próxima rodada recomendada:** R01 — atualizar dependências e lockfile, adicionar lint/format e validações de interface, mantendo gate de publicação explícito.
