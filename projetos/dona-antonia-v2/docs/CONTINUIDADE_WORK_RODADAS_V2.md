@@ -202,7 +202,7 @@ Confirmado por leitura da branch:
 
 **Verificações locais:** TypeScript, lint, Prettier, arquitetura (94 arquivos), 84 testes unitários, suíte PostgreSQL isolada (10 migrações/25 tabelas, RLS/RBAC/privacidade/rollback) e build aprovados. Playwright local não pôde iniciar sem Chromium.
 
-**Aceite ainda aberto:** a vitrine/prévia pública continua usando composição demonstrativa; ainda falta conectar a projeção pública segura e confirmar preço agregado sem expor a composição/valor privado. Também falta validar concorrência de gravações com controle no servidor e rodar E2E no CI após publicar o branch. Portanto R06 permanece em execução, não concluída; não iniciar R07.
+**PR/CI:** PR #1370 draft, branch `agent/dona-antonia-r06-baskets-types-extras`, head `e3a822385f80b7570e02d55e01faf1bce2ba8031`, base R05 `397635d0085bac6042b4b408df185d6992755c51`. CI #40089034015 passou todos os gates e 17/17 E2E. Workflows anteriores #40088694273 e #40088837224 apontaram seletores ambíguos/incompatíveis no teste Playwright; corrigidos antes da execução aprovada.\n\n**Aceite ainda aberto:** a vitrine/prévia pública continua usando composição demonstrativa; ainda falta conectar a projeção pública segura e confirmar preço agregado sem expor a composição/valor privado. Também falta validar concorrência de gravações com controle no servidor. Portanto R06 permanece em execução, não concluída; não iniciar R07.
 
 ### R07 — Catálogo público dinâmico e performance de abertura
 - Trocar fallback fake em staging por API pública segura e projeção server-side; cache e invalidação corretos; lazy de fotos/marcas/extras.

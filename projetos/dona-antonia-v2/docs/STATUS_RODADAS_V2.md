@@ -11,7 +11,7 @@
 | R03 | Login, RBAC e RLS V2 | **Concluída e ensaiada em prévia privada** | PR #1367; base RBAC 24 tabelas; conta `juniorsereia@gmail.com` ADMIN |
 | R04 | Importação/reconciliação dos 802 produtos | **Concluída no staging V2; fonte autorizada como seed, não comprovada como export oficial** | 802 produtos + 802 perfis privados; 0 ativos/estoque; custo exato em 4 casas; tela de login validada; PR #1368 draft |
 | R05 | Cadastro e estoque persistente | **Concluída; PR draft sem merge/publicação** | PR #1369; código SHA `36c8b478`; CI #40069099198 aprovado (inclui 17 E2E); migrations V2/9 no projeto isolado; 802 produtos preservados |
-| R06 | Cestas, tipos e extras persistentes | Em execução; código e migração implementados, validação de prévia pública pendente | Branch `agent/dona-antonia-r06-baskets-types-extras`; migration V2 aplicada; testes locais aprovados; CI pendente |
+| R06 | Cestas, tipos e extras persistentes | Em execução; código e migração implementados, validação de prévia pública pendente | PR #1370 draft; head `e3a82238`; CI #40089034015 aprovado (17/17 E2E); migration V2 aplicada |
 | R07 | Catálogo público dinâmico/performance | Planejada | — |
 | R08 | Cotação e checkout transacional | Planejada | — |
 | R09 | Pedidos persistentes, quatro abas | Planejada | — |
@@ -124,11 +124,11 @@
 
 ## R06 — tipos, cestas e extras persistentes
 **Data:** 2026-10-24 (UTC)
-**Branch/base:** `agent/dona-antonia-r06-baskets-types-extras`, iniciada sobre o head R05 `397635d0085bac6042b4b408df185d6992755c51`; PR draft e CI ainda pendentes.
+**Branch/base:** `agent/dona-antonia-r06-baskets-types-extras`, iniciada sobre o head R05 `397635d0085bac6042b4b408df185d6992755c51`; PR #1370 draft, head verificado `e3a822385f80b7570e02d55e01faf1bce2ba8031`.
 **Estado:** Implementação em revisão; não marcar concluída ainda.
 **Escopo implementado nesta execução:** camada de domínio/adapter para carregar e salvar configuração; CRUD e ordenação administrativa de tipos e tamanhos, vínculos produto-tipo, quantidades por tamanho, extras, foto quadrada via URL HTTPS e ajuste privado de preço; desativação preserva referências históricas. A composição e valores privados passam por RPC autenticada, e o papel PRODUCTS não recebe o ajuste privado.
 **Migração:** `20261024070000_r06_basket_configuration.sql`, aplicada somente ao projeto V2 `hjudhofluihkxykwekir`. Contagem remota passou a 10 migrações/25 tabelas; 802 produtos, 802 perfis privados, 5 tamanhos e 5 preços privados permanecem intactos. RPCs não são executáveis por `anon` e são executáveis por `authenticated` com verificação interna de permissão.
 **Verificações locais:** `npm run check`, `npm run lint`, `npm run format:check`, `npm run architecture:check` (94 arquivos), `npm test` (84/84), `npm run test:db` (10 migrações/25 tabelas, RLS/RBAC e privacidade) e `npm run build` passaram. Playwright local não executou porque Chromium não está instalado.
-**Pendências de aceite:** conectar a prévia pública à projeção segura da configuração e validar preço agregado sem expor composição privada; executar gate E2E no CI; validar atualização concorrente com revisão/controle no servidor. A vitrine ainda usa modelos demonstrativos e esta execução não prova o aceite de prévia pública. Não iniciar R07 até fechar estas pendências.
+**CI:** workflow #40089034015 passou em segurança de dependências, lint/formato, arquitetura, migrações PostgreSQL, TypeScript, 84 testes unitários, build e 17/17 E2E. Os workflows #40088694273 e #40088837224 falharam apenas no seletor Playwright do teste de cesta; o seletor foi corrigido antes da execução aprovada.\n**Pendências de aceite:** conectar a prévia pública à projeção segura da configuração e validar preço agregado sem expor composição privada; validar atualização concorrente com revisão/controle no servidor. A vitrine ainda usa modelos demonstrativos e esta execução não prova o aceite de prévia pública. Não iniciar R07 até fechar estas pendências.
 **Isolamento:** sem merge, deploy ou publicação; áreas legadas e integrações operacionais intocadas.
 **Próximo passo:** concluir as pendências de R06, atualizar este registro com SHA/PR/CI e somente então identificar R07 como próxima.
