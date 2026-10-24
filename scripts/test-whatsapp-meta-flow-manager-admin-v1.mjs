@@ -18,6 +18,10 @@ assert.match(api,/eq\("slug","dona-antonia-1018"\)/);
 assert.match(api,/if\(auth\.role!=="owner"\)/);
 assert.match(api,/const FLOW_FUNCTION_PATH="\/functions\/v1\/whatsapp-1018-basket-flow-v1"/);
 assert.match(api,/flow_readiness/);
+assert.match(api,/return \{ready:Object\.values\(checks\)\.every\(Boolean\),channel:"1018"/);
+assert.match(api,/state\.ready=Object\.values\(state\.checks\)\.every\(Boolean\)/);
+assert.doesNotMatch(api,/state\.ok=Object\.values\(state\.checks\)\.every\(Boolean\)/);
+
 assert.match(api,/flow_upload_json/);
 assert.match(api,/flow_configure_endpoint/);
 assert.match(api,/flow_register_key/);
