@@ -34,6 +34,13 @@ test('admin mobile: abas navegáveis sem estouro horizontal',async({page})=>{
   await page.getByRole('button',{name:'Produtos extras'}).click();
   await expect(page.getByRole('heading',{name:'Grupos exibidos na etapa de extras'})).toBeVisible();
   // Apenas overflow local de tabelas, sem quebrar a largura do documento.
-  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2)).toBeTruthy();
+  const info=await page.evaluate(()=>({
+    innerWidth:window.innerWidth,
+    scrollWidth:document.documentElement.scrollWidth,
+    offenders:[...document.querySelectorAll('*')]
+      .filter(element=>{const rect=element.getBoundingClientRect();return rect.right>window.innerWidth+2 || rect.left < -2;})
+      .slice(0,12).map(element=>({tag:element.tagName,className:element.className,scrollWidth:element.scrollWidth}))
+  }));
+  expect(info.scrollWidth,'Overflow suspects: '+JSON.stringify(info.offenders)).toBeLessThanOrEqual(info.innerWidth+2);
   await page.screenshot({path:'test-results/admin-mobile.png',fullPage:true});
 });
