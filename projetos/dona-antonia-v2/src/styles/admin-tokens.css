@@ -1,13 +1,28 @@
-.da-admin-shell{
-  --ui-ink:#25272a;--ui-muted:#676b73;--ui-subtle:#878991;
-  --ui-bg:#f7f7f8;--ui-white:#fff;--ui-line:#dfe1e5;
-  --ui-rail:#1d1f22;--ui-rail-hover:#2a2c30;--ui-rail-active:#393b40;
-  --ui-action:#2d3035;--ui-focus:#416a9a;
-  --ui-radius:8px;--ui-space:8px;--ui-shadow:0 1px 2px #18191b0a;
-  --rose:var(--ui-action);--rose-dark:#181b1e;--muted:var(--ui-muted);--border:var(--ui-line);
-  font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
-  color:var(--ui-ink);font-size:14px
+.da-admin-shell {
+  --ui-ink: #25272a;
+  --ui-muted: #676b73;
+  --ui-subtle: #62666e;
+  --ui-bg: #f7f7f8;
+  --ui-white: #fff;
+  --ui-line: #dfe1e5;
+  --ui-rail: #1d1f22;
+  --ui-rail-hover: #2a2c30;
+  --ui-rail-active: #393b40;
+  --ui-action: #2d3035;
+  --ui-focus: var(--da-focus-ring);
+  --ui-radius: var(--da-control-radius);
+  --ui-space: var(--da-space-2);
+  --ui-shadow: 0 1px 2px #18191b0a;
+  --rose: var(--ui-action);
+  --rose-dark: #181b1e;
+  --muted: var(--ui-muted);
+  --border: var(--ui-line);
+  color: var(--ui-ink);
+  font-size: 14px;
 }
-.da-admin-shell :is(button,input,select,textarea){font-family:inherit}
-.da-admin-shell :is(button,input,select,textarea):focus-visible{outline:2px solid var(--ui-focus);outline-offset:2px}
-.da-admin-shell input[type="checkbox"]{accent-color:#37393e}
+.da-admin-shell :is(button, input, select, textarea) {
+  font-family: inherit;
+}
+.da-admin-shell input[type='checkbox'] {
+  accent-color: #37393e;
+}

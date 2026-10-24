@@ -1,6 +1,11 @@
 export const CATEGORIES = [
-  'MERCEARIA BÁSICA', 'LIMPEZA', 'LAVANDERIA', 'HIGIÊNE',
-  'BELEZA', 'UTILIDADES', 'PET'
+  'MERCEARIA BÁSICA',
+  'LIMPEZA',
+  'LAVANDERIA',
+  'HIGIÊNE',
+  'BELEZA',
+  'UTILIDADES',
+  'PET',
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
 

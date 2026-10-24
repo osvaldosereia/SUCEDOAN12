@@ -1,11 +1,12 @@
 name: Publicar apenas previews Dona Antonia V2
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'projetos/dona-antonia-v2/**'
-      - '.github/workflows/dona-antonia-v2-preview-publish.yml'
   workflow_dispatch:
+    inputs:
+      authorize_preview:
+        description: 'Autorizo publicar somente as prévias /site1 e /admin1'
+        required: true
+        default: false
+        type: boolean
 permissions:
   contents: write
 concurrency:
@@ -13,6 +14,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   preview:
+    if: inputs.authorize_preview == true
     runs-on: ubuntu-latest
     timeout-minutes: 22
     env:

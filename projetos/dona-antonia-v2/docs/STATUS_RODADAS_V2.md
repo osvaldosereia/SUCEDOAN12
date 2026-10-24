@@ -6,7 +6,7 @@
 | Rodada | Título | Estado | Evidência |
 |---|---|---|---|
 | R00 | Auditoria integral e baseline | **Concluída — auditoria documental e baseline** | docs/AUDITORIA_COMPLETA_V2.md; SHA base 1a846beba768192c366937c1462bcfd6baeccee9; CI 40057635884 aprovado |
-| R01 | Design system e disciplina de qualidade | Planejada | — |
+| R01 | Design system e disciplina de qualidade | **Concluída** | PR #1365; CI 40059667625 aprovado no SHA eac44b022636de298664966b6b1bfe646e9bf163 |
 | R02 | Modelagem/migrações para banco isolado | Planejada | — |
 | R03 | Login, RBAC e RLS V2 | Planejada | — |
 | R04 | Importação/reconciliação dos 802 produtos | Planejada | — |
@@ -25,7 +25,7 @@
 
 ## Histórico anterior às rodadas
 - Há protótipo avançado de UI V2 e regras de negócio implementadas e testadas.
-- CI de referência mais recente citada: https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/40056490923; revalidar SHA e sucesso em R00.
+- CI R01 mais recente: https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/40059667625; sucesso em lint, auditoria, arquitetura, TS, 39 testes unitários, build e 17 casos E2E.
 - /site1 e /admin1 são prÉvias demonstrativas publicadas em rodada anterior; não estão automaticamente sincronizadas com a branch atual.
 - Supabase V2 ainda não criado/aplicado; não há checkout real, auth V2 ou atendimento conectado.
 - Os bancos legados e site raiz NÃO devem sofrer alterações.
@@ -55,3 +55,16 @@
 **Riscos/bloqueios:** backend/auth/persistência inexistentes; schema exige reconciliação antes de migração; autoridade do estoque e preço pendente; dependências críticas; workflow de preview em main publica automaticamente /site1 e /admin1.  
 **Produção legada:** intocada. Supabases existentes não consultados nem alterados.  
 **Próxima rodada recomendada:** R01 — atualizar dependências e lockfile, adicionar lint/format e validações de interface, mantendo gate de publicação explícito.
+
+
+## R01 — design system e disciplina de qualidade
+**Data:** 2026-10-24 (UTC)
+**SHA inicial:** b4738e895dc246f8bc07af95035cd746e32d7975 (baseline R00)
+**SHA final de código:** eac44b022636de298664966b6b1bfe646e9bf163
+**Estado:** Concluída; PR #1365 aberto para revisão, sem merge.
+**Escopo:** lockfile reproduzível e atualização de dependências vulneráveis; Node mínimo declarado; ESLint, Prettier e checks no CI; tokens visuais compartilhados; extração de lógica pura da vitrine; testes responsivos e Axe; proteção de publicação manual com confirmação explícita. O CI revelou baixo contraste em cinco grupos de texto; cores ajustadas e revalidadas.
+**Testes:** local: `npm ci`, `npm audit --audit-level=moderate` (0 vulnerabilidades), lint, format:check, architecture:check, TypeScript, 39 testes, build e `git diff --check` aprovados. CI 40059667625: todos os gates aprovados, incluindo Chromium e 17/17 testes de navegador (seis combinações de viewport, duas verificações Axe e nove testes de fluxo existentes).
+**PR/commits:** https://github.com/osvaldosereia/SUCEDOAN12/pull/1365; branch `agent/dona-antonia-r01-qualidade`.
+**Bloqueios/riscos:** Playwright usa Chromium de CI porque a instalação local do browser não estava disponível; nenhuma integração real de backend foi exercitada nesta rodada.
+**Produção legada:** intocada; sem merge, deploy, migração, envio de mensagem ou acesso/escrita em Supabase.
+**Próxima rodada recomendada:** R02 — reconciliação do schema, diagrama de entidades, contratos TS e validação de migrações apenas em banco descartável isolado.

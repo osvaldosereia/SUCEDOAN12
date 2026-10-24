@@ -12,12 +12,12 @@ export default defineConfig({
     browserName: 'chromium',
     headless: true,
     trace: 'retain-on-failure',
-    screenshot: 'only-on-failure'
+    screenshot: 'only-on-failure',
   },
   webServer: {
     command: 'npm run dev -- --host 127.0.0.1 --port 4173 --strictPort',
     url: 'http://127.0.0.1:4173',
     reuseExistingServer: !process.env.CI,
-    timeout: 45_000
-  }
+    timeout: 45_000,
+  },
 });
