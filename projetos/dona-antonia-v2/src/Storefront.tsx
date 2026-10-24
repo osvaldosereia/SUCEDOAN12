@@ -146,8 +146,10 @@ function Storefront() {
   };
   const jump=(next:Stage)=>{
     const steps:Stage[]=['basket','extras','checkout'];
-    if(steps.indexOf(next)>steps.indexOf(stage)&&(!computed.order||computed.error)){
-      setMessage('Revise as escolhas indisponíveis antes de continuar.');
+    const missingProducts=(computed.basket?.unavailableTypeIds.length??0)>0 ||
+      (computed.extras?.unavailableTypeIds.length??0)>0;
+    if(steps.indexOf(next)>steps.indexOf(stage)&&(!computed.order||computed.error||missingProducts)){
+      setMessage('Há tipos de produto sem uma opção disponível. Ajuste a seleção antes de continuar.');
       return;
     }
     setMessage('');
@@ -247,7 +249,7 @@ function Storefront() {
     {stage!=='checkout'&&<footer className="sticky-summary" aria-label="Resumo fixo do pedido">
       <div><small>{stage==='basket'?'Total da cesta':'Cesta + extras'}</small>
         <strong>{formatBRL(stage==='basket'?computed.basket?.totalCents??0:total)}</strong></div>
-      <button type="button" className="primary-button" disabled={!computed.order || !!computed.error}
+      <button type="button" className="primary-button" disabled={!computed.order || !!computed.error || !!computed.basket?.unavailableTypeIds.length || !!computed.extras?.unavailableTypeIds.length}
         onClick={()=>jump(stage==='basket'?'extras':'checkout')}>
         {stage==='basket'?'Próximo →':'Finalizar pedido →'}
       </button>
