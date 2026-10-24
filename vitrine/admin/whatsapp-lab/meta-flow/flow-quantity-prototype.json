@@ -612,6 +612,25 @@
                 "title": "10"
               }
             ]
+          },
+          {
+            "type": "Footer",
+            "label": "Enviar escolhas",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {
+                "tamanho": "${data.tamanho}",
+                "combinacao": "${data.combinacao}",
+                "q1": "${form.q1}",
+                "q2": "${form.q2}",
+                "q3": "${form.q3}",
+                "q4": "${form.q4}",
+                "q5": "${form.q5}",
+                "q6": "${form.q6}",
+                "q7": "${form.q7}",
+                "q8": "${form.q8}"
+              }
+            }
           }
         ]
       }
