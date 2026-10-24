@@ -41,7 +41,15 @@ function setStatus(message,tone='neutral'){
 }
 function setBusy(value){
   busy=Boolean(value);
-  rootNode?.querySelectorAll('[data-flow-action]').forEach(button=>{button.disabled=busy||(!canManage&&button.dataset.flowAction!=='refresh')});
+  const selected=flowItems.find(flow=>flow.id===activeFlowId);
+  const isDraft=String(selected?.status||'').toUpperCase()==='DRAFT';
+  rootNode?.querySelectorAll('[data-flow-action]').forEach(button=>{
+    const action=button.dataset.flowAction;
+    const ownerAction=['create','register-key','configure','publish','delete'].includes(action);
+    const draftAction=['configure','publish','delete'].includes(action);
+    button.disabled=busy||(ownerAction&&!canManage)||(draftAction&&!isDraft);
+  });
+  rootNode?.querySelectorAll('[data-flow-json]').forEach(input=>{input.disabled=busy||!canManage||!isDraft});
 }
 function formatValidation(errors){
   if(!Array.isArray(errors))return '<p class="flow-validation-unknown">A Meta ainda não forneceu relatório de validação.</p>';
@@ -76,7 +84,6 @@ function renderFlowDetail(flow){
   target.querySelector('[data-flow-action="validate"]')?.addEventListener('click',()=>runAction('flow_validate',null,'Relatório da Meta atualizado.'));
   target.querySelector('[data-flow-action="publish"]')?.addEventListener('click',()=>publishActiveFlow());
   target.querySelector('[data-flow-action="delete"]')?.addEventListener('click',()=>deleteActiveFlow());
-  target.querySelectorAll('[data-flow-action]').forEach(button=>{const action=button.dataset.flowAction;button.disabled=action==='validate'?false:(!canManage||!isDraft)});
 }
 async function loadFlowDetail(id){
   if(!id)return;
@@ -152,8 +159,17 @@ async function registerKey(){
   if(!window.confirm('Registrar na Meta a chave pública derivada da chave privada mantida no servidor?'))return;
   await runAction('flow_register_key',{},'Chave pública registrada na Meta.');
 }
+function ensureStyles(){
+  if(document.querySelector('link[data-da-marketing-template-center]'))return;
+  const link=document.createElement('link');
+  link.rel='stylesheet';
+  link.href='/vitrine/admin/marketing/template-center.css?v=meta-flow-center-v1';
+  link.dataset.daMarketingTemplateCenter='1';
+  document.head.appendChild(link);
+}
 export async function mountFlowView(root=document.querySelector('#content')){
   if(!root)return;
+  ensureStyles();
   rootNode=root;flowItems=[];activeFlowId='';canManage=false;
   root.innerHTML='<div class="marketing-flow-center"><div class="page-head"><div><h1>Marketing</h1><p>Gestão dos WhatsApp Flows pela conexão Meta já configurada no Vitrine Admin.</p></div><span class="marketing-campaign-gate">Campanhas desligadas</span></div><div class="marketing-template-subnav" data-marketing-subnav>'+navHtml('flows')+'</div><section class="marketing-flow-head"><div><h2>Flows Meta · canal 1018</h2><p>Administre rascunhos, JSON, endpoint, chave, validação e publicação na conta comercial 1018.</p></div><div class="flow-toolbar"><button type="button" data-flow-action="refresh">Atualizar</button><button type="button" data-flow-action="register-key">Registrar chave pública</button><button type="button" data-flow-action="create" class="primary">Criar rascunho</button><a href="/vitrine/admin/whatsapp-lab/">Abrir laboratório interno 8360</a></div></section><section class="flow-readiness"><h3>Pré-requisitos</h3><div data-flow-readiness><p>Consultando configuração do servidor…</p></div></section><div class="marketing-flow-status" data-flow-status role="status">Carregando estado da Meta…</div><div class="flow-manager-layout"><section><div class="flow-section-title"><h3>Flows da conta 1018</h3><button type="button" data-flow-action="refresh">Atualizar lista</button></div><div class="flow-list" data-flow-list><p class="flow-empty">Carregando…</p></div></section><section class="flow-detail" data-flow-detail><p class="flow-empty">Selecione um Flow para consultar seu estado.</p></section></div></div>';
   const nav=root.querySelector('[data-marketing-subnav]');bindNav(nav);
