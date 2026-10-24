@@ -22,6 +22,8 @@ assert.match(js,/SIZE_ORDER=\['economica','mini','pequena','media','grande'\]/);
 assert.match(js,/for\(let n=1;n<=3;n\+\+\)/,'Exactly 3 combinations per size');
 assert.match(js,/basket_mold_quote/,'Price changes must use official quote');
 assert.match(js,/basket_mold_options/,'Alternatives must come from official inventory');
+assert.match(js,/LIVE_TEST_ENABLED=false/,'Outbound must remain disabled while ANA is active');
+assert.match(js,/if\(!LIVE_TEST_ENABLED\)/,'Even a manual click must be blocked');
 assert.match(js,/TEST_CONVERSATION_ID=/);
 assert.match(js,/TEST_RECIPIENT='\+5565998150975'/);
 assert.match(js,/ORIGIN_CHANNEL='\+5565984491018'/);
@@ -32,5 +34,6 @@ assert.match(js,/attendanceJsonApi\('send_text'/,'Use canonical outbound gateway
 assert.doesNotMatch(js,/\b(submit_order|create_order|send_media|graph\.facebook\.com|service_role|META_WHATSAPP_ACCESS_TOKEN)\b/,'No production writes or raw Meta credentials');
 assert.doesNotMatch(js,/\bsetInterval\b/,'No background polling');
 assert.doesNotMatch(js,/fetch\(['"]https?:\/\/[^'"]*graph\.facebook/);
-assert.match(html,/Não cria pedido/);
+assert.match(html,/envio real fica desabilitado/);
+assert.match(html,/não cria pedidos/);
 console.log('PASS WhatsApp 1018 lab syntax, routing, live read-only pricing and guarded test transport');
