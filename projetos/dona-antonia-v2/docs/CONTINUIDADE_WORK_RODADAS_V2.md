@@ -454,6 +454,6 @@ R00 foi documental; R01 consolidou qualidade visual/CI; R02 implementou schema e
 - **Pendências humanas:** URL de staging V2, 2–3 operadores isolados e ensaio controlado de backup/restore. A autorização do usuário para a V2 isolada foi registrada; piloto produtivo, troca de domínio e integrações operacionais continuam fora do escopo. Sem esses três gates, R16 não pode ser marcada concluída.
 - **Limites:** produção, `main`, sites legados, Supabases legados, atendimento, Bling/Meta operacionais, DNS, deploy e publicação permanecem intocados; nenhum custo novo foi criado.
 
-- **CI observado:** workflow #40134499891 passou no head de código `93d28dc9a805f97a2b50c5e4fb05a87e949e333b` (segurança, lint/formato, arquitetura, migrações, TypeScript, testes, build e 17/17 E2E). O head documental deve ser lido diretamente no PR #1396 antes de qualquer nova rodada; o CI do head de código já foi observado como verde; nenhum gate humano foi liberado.
+- **CI observado:** workflow #40134499891 passou no head de código `93d28dc9a805f97a2b50c5e4fb05a87e949e333b` (segurança, lint/formato, arquitetura, migrações, TypeScript, testes, build e 17/17 E2E). O head documental deve ser lido diretamente no PR #1396 antes de qualquer nova rodada; o CI do head de código já foi observado como verde; os três gates operacionais restantes continuam bloqueados.
 
 - **Seed verificado no Supabase V2:** três produtos `R16-TEST-*` ativos com estoque 30, três perfis privados, três tipos, cesta `r16-test` ativa e três movimentos `IMPORTACAO`; rollback determinístico registrado no PR.
