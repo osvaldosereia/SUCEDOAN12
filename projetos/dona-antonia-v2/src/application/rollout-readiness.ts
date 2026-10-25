@@ -138,7 +138,7 @@ function hasIsolatedOperators(manifest: R16ReadinessManifest): boolean {
   return (
     hasReviewedEvidence(manifest.gates.operators) &&
     Array.isArray(refs) &&
-    refs.length >= 2 &&
+    refs.length >= 1 &&
     refs.length <= 3 &&
     new Set(refs).size === refs.length &&
     refs.every(
@@ -189,8 +189,8 @@ export function evaluateR16Readiness(manifest: R16ReadinessManifest): R16Readine
       required: true,
       passed: operatorsPassed,
       detail: operatorsPassed
-        ? 'Dois ou três operadores isolados têm referências de evidência registradas.'
-        : 'Definir evidências de dois ou três operadores isolados; não incluir dados pessoais.',
+        ? 'Ao menos um operador isolado tem referência de evidência registrada.'
+        : 'Definir evidência de ao menos um operador isolado; não incluir dados pessoais.',
     },
     {
       id: 'backup-restore',
