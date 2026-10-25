@@ -16,14 +16,18 @@ Deno.serve(async req=>{
  if(!SUPABASE_URL)return deny(503,'flow_endpoint_not_configured');
 
  let body;
- try{body=await req.text()}catch{return deny(400,'invalid_request_body')}
- if(!body||new TextEncoder().encode(body).byteLength>MAX_BODY_BYTES)return deny(413,'payload_too_large');
+ try{
+  const bytes=new Uint8Array(await req.arrayBuffer());
+  if(bytes.length===0)return deny(400,'invalid_request_body');
+  if(bytes.length>MAX_BODY_BYTES)return deny(413,'payload_too_large');
+  body=bytes;
+ }catch{return deny(400,'invalid_request_body')}
 
  const signature=req.headers.get('x-hub-signature-256')||'';
  let upstream;
  try{
   upstream=await fetch(TARGET,{
-   method:'POST',cache:'no-store',redirect:'error',signal:AbortSignal.timeout(9_000),
+   method:'POST',cache:'no-store',redirect:'error',signal:AbortSignal.timeout(9_500),
    headers:{
     'Content-Type':req.headers.get('content-type')||'application/json',
     'x-hub-signature-256':signature
