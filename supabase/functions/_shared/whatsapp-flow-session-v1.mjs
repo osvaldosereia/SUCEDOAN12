@@ -20,6 +20,13 @@ export async function hmac(key,input){
  const k=await crypto.subtle.importKey('raw',enc(key),{name:'HMAC',hash:'SHA-256'},false,['sign']);
  return new Uint8Array(await crypto.subtle.sign('HMAC',k,enc(input)));
 }
+const FLOW_SESSION_CONTEXT='dona-antonia:whatsapp-flow:1018:session:v1';
+export async function deriveFlowSessionKey(appSecret){
+ const root=String(appSecret??'').trim();
+ if(root.length<16)throw Error('signing_not_configured');
+ const derived=await hmac(root,FLOW_SESSION_CONTEXT);
+ return [...derived].map(byte=>byte.toString(16).padStart(2,'0')).join('');
+}
 export async function signState(value,key,ttlMs=45*60*1000){
  if(!key||String(key).length<32)throw Error('signing_not_configured');
  const payload={v:1,exp:Date.now()+ttlMs,data:value};

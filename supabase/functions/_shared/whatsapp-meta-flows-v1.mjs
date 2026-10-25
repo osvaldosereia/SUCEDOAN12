@@ -238,7 +238,7 @@ export async function registerBusinessPublicKeyViaMeta({accessToken,phoneNumberI
   const payload=await graphRequest({cfg,path:phone+'/whatsapp_business_encryption',method:'POST',body:{business_public_key:publicKey}});
   return {success:payload.success===true||payload.success==='true'||!payload.error};
 }
-export function assertFlowPublishable(flow,{endpointUri,publicKeyConfigured=false,publicKeyMatchesPrivateKey=true,privateKeyConfigured=false,metaAppSecretConfigured=false,sessionSecretConfigured=false}={}){
+export function assertFlowPublishable(flow,{endpointUri,publicKeyConfigured=false,publicKeyMatchesPrivateKey=true,privateKeyConfigured=false,metaAppSecretConfigured=false}={}){
   const row=object(flow);
   if(String(row.status||'').toUpperCase()!=='DRAFT')throw fail('meta_flow_not_draft',{httpStatus:409});
   const errors=flowValidationErrors(row);
@@ -247,16 +247,16 @@ export function assertFlowPublishable(flow,{endpointUri,publicKeyConfigured=fals
   if(clean(row.endpoint_uri,500)!==clean(endpointUri,500))throw fail('meta_flow_endpoint_not_configured',{httpStatus:409});
   if(!publicKeyConfigured)throw fail('meta_flow_public_key_not_registered',{httpStatus:409});
   if(!publicKeyMatchesPrivateKey)throw fail('meta_flow_public_key_mismatch',{httpStatus:409});
-  if(!privateKeyConfigured||!metaAppSecretConfigured||!sessionSecretConfigured)throw fail('meta_flow_runtime_secrets_missing',{httpStatus:409});
+  if(!privateKeyConfigured||!metaAppSecretConfigured)throw fail('meta_flow_runtime_secrets_missing',{httpStatus:409});
   return true;
 }
-export async function publishFlowViaMeta({accessToken,flowId,graphVersion,endpointUri,phoneNumberId,privateKeyPem=null,privateKeyConfigured=false,metaAppSecretConfigured=false,sessionSecretConfigured=false,fetchImpl,timeoutMs=20000}={}){
+export async function publishFlowViaMeta({accessToken,flowId,graphVersion,endpointUri,phoneNumberId,privateKeyPem=null,privateKeyConfigured=false,metaAppSecretConfigured=false,fetchImpl,timeoutMs=20000}={}){
   const cfg=graphConfig({accessToken,graphVersion,fetchImpl,timeoutMs});
   const flow=id(flowId,FLOW_ID_RE);if(!flow)throw fail('meta_flow_id_invalid');
   const details=await getFlowViaMeta({accessToken:cfg.token,flowId:flow,graphVersion:cfg.version,fetchImpl:cfg.fetchImpl,timeoutMs:cfg.timeout});
   const expectedPublicKeyPem=privateKeyPem?await derivePublicKeyPem(privateKeyPem):null;
   const key=await getBusinessPublicKeyStatusViaMeta({accessToken:cfg.token,phoneNumberId,graphVersion:cfg.version,expectedPublicKeyPem,fetchImpl:cfg.fetchImpl,timeoutMs:cfg.timeout});
-  assertFlowPublishable(details,{endpointUri,publicKeyConfigured:key.configured,publicKeyMatchesPrivateKey:key.matches_expected===true,privateKeyConfigured,metaAppSecretConfigured,sessionSecretConfigured});
+  assertFlowPublishable(details,{endpointUri,publicKeyConfigured:key.configured,publicKeyMatchesPrivateKey:key.matches_expected===true,privateKeyConfigured,metaAppSecretConfigured});
   const payload=await graphRequest({cfg,path:flow+'/publish',method:'POST',body:{}});
   return {id:flow,published:payload.success===true||payload.success==='true',status:clean(payload.status,40).toUpperCase()||'PUBLISHED'};
 }

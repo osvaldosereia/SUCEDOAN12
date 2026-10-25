@@ -24,8 +24,9 @@ assert.equal(flowValidationErrors({}),null);
 assert.equal(flowValidationErrors({validation_errors:null}),null);
 assert.equal(flowValidationErrors({validation_errors:{unexpected:true}}).length,1);
 assert.equal(flowValidationErrors({validation_errors:[{line:null,column:null}]})[0].line,null);
-assert.throws(()=>assertFlowPublishable({status:'DRAFT',endpoint_uri:'https://x.test',validation_errors:[{error_message:'broken'}]},{endpointUri:'https://x.test',publicKeyConfigured:true,privateKeyConfigured:true,metaAppSecretConfigured:true,sessionSecretConfigured:true}),e=>e.code==='meta_flow_validation_failed');
-assert.throws(()=>assertFlowPublishable({status:'DRAFT',endpoint_uri:null,validation_errors:[]},{endpointUri:'https://x.test',publicKeyConfigured:true,privateKeyConfigured:true,metaAppSecretConfigured:true,sessionSecretConfigured:true}),e=>e.code==='meta_flow_endpoint_not_configured');
+assert.throws(()=>assertFlowPublishable({status:'DRAFT',endpoint_uri:'https://x.test',validation_errors:[{error_message:'broken'}]},{endpointUri:'https://x.test',publicKeyConfigured:true,privateKeyConfigured:true,metaAppSecretConfigured:true}),e=>e.code==='meta_flow_validation_failed');
+assert.throws(()=>assertFlowPublishable({status:'DRAFT',endpoint_uri:null,validation_errors:[]},{endpointUri:'https://x.test',publicKeyConfigured:true,privateKeyConfigured:true,metaAppSecretConfigured:true}),e=>e.code==='meta_flow_endpoint_not_configured');
+assert.throws(()=>assertFlowPublishable({status:'DRAFT',endpoint_uri:'https://x.test',validation_errors:[]},{endpointUri:'https://x.test',publicKeyConfigured:true,privateKeyConfigured:true,metaAppSecretConfigured:false}),e=>e.code==='meta_flow_runtime_secrets_missing');
 
 let seen;
 const listed=await listFlowsViaMeta({accessToken:'server-token',graphVersion:'v99.0',wabaId:'123456',fetchImpl:makeFetch({data:[{id:'98765',name:'Cesta',status:'DRAFT',categories:['OTHER'],validation_errors:[],health_status:{status:'AVAILABLE'}},{id:'98766',name:'Cesta B',status:'DRAFT',health_status:'AVAILABLE'}]},200,(url,init)=>{seen={url,init}})});
@@ -50,7 +51,16 @@ const capped=await listFlowsViaMeta({accessToken:'server-token',graphVersion:'v9
 assert.equal(capped.truncated,true);
 assert.equal(capped.page_count,1);
 
-const canarySecret='flow-session-secret-for-tests-only-123456';
+const deriveFlowSessionKey=(await import('../supabase/functions/_shared/whatsapp-flow-session-v1.mjs')).deriveFlowSessionKey;
+assert.equal(typeof deriveFlowSessionKey,'function','session key should derive from the existing Meta app secret');
+const appSecret='existing-meta-app-secret-for-tests-123456';
+const canarySecret=await deriveFlowSessionKey(appSecret);
+await assert.rejects(()=>deriveFlowSessionKey('short'),/signing_not_configured/);
+assert.equal(canarySecret.length,64);
+assert.equal(await deriveFlowSessionKey(appSecret),canarySecret);
+assert.notEqual(canarySecret,appSecret);
+assert.notEqual(await deriveFlowSessionKey(appSecret+'-other'),canarySecret);
+assert.deepEqual(await verifyState(await signState({purpose:'flow-state-test'},canarySecret),canarySecret),{purpose:'flow-state-test'});
 const canaryClaims={type:'da-flow-1018-canary',sender:'+5565984491018',to:'+5565999828360',nonce:'test-nonce-8360-only'};
 const canaryToken=await signState(canaryClaims,canarySecret);
 let sentFlowBody;
@@ -102,10 +112,10 @@ const publishFetch=async(url,init)=>{
   if(target.includes('/publish'))return new Response(JSON.stringify({success:true}),{status:200});
   return new Response(JSON.stringify({id:'98765',name:'Cesta',status:'DRAFT',endpoint_uri:'https://flow.test',validation_errors:[]}),{status:200});
 };
-const published=await publishFlowViaMeta({accessToken:'server-token',graphVersion:'v99.0',flowId:'98765',endpointUri:'https://flow.test',phoneNumberId:'55555',privateKeyConfigured:true,privateKeyPem:privatePem,metaAppSecretConfigured:true,sessionSecretConfigured:true,fetchImpl:publishFetch});
+const published=await publishFlowViaMeta({accessToken:'server-token',graphVersion:'v99.0',flowId:'98765',endpointUri:'https://flow.test',phoneNumberId:'55555',privateKeyConfigured:true,privateKeyPem:privatePem,metaAppSecretConfigured:true,fetchImpl:publishFetch});
 assert.equal(published.published,true);
 assert.ok(publishCalls>=3);
-await assert.rejects(publishFlowViaMeta({accessToken:'server-token',graphVersion:'v99.0',flowId:'98765',endpointUri:'https://flow.test',phoneNumberId:'55555',privateKeyConfigured:true,privateKeyPem:privatePem,metaAppSecretConfigured:true,sessionSecretConfigured:true,fetchImpl:async(url,init)=>String(url).includes('whatsapp_business_encryption')?new Response(JSON.stringify({business_public_key:'different-key'}),{status:200}):new Response(JSON.stringify({id:'98765',name:'Cesta',status:'DRAFT',endpoint_uri:'https://flow.test',validation_errors:[]}),{status:200})}),e=>e.code==='meta_flow_public_key_mismatch');
+await assert.rejects(publishFlowViaMeta({accessToken:'server-token',graphVersion:'v99.0',flowId:'98765',endpointUri:'https://flow.test',phoneNumberId:'55555',privateKeyConfigured:true,privateKeyPem:privatePem,metaAppSecretConfigured:true,fetchImpl:async(url,init)=>String(url).includes('whatsapp_business_encryption')?new Response(JSON.stringify({business_public_key:'different-key'}),{status:200}):new Response(JSON.stringify({id:'98765',name:'Cesta',status:'DRAFT',endpoint_uri:'https://flow.test',validation_errors:[]}),{status:200})}),e=>e.code==='meta_flow_public_key_mismatch');
 assert.equal(await deleteFlowViaMeta({accessToken:'server-token',graphVersion:'v99.0',flowId:'98765',fetchImpl:makeFetch({success:true})}).then(x=>x.deleted),true);
 console.log('PASS Meta Flow Graph API, fixed endpoint, encrypted key registration, validation and publish gates');
 
