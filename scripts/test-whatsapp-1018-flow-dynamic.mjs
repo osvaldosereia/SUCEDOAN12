@@ -13,6 +13,14 @@ assert.equal(flow.screens.length,7);
 const flowJsonText=JSON.stringify(flow);
 assert.doesNotMatch(flowJsonText,/R\s*\$\s*\d/,'Flow JSON examples must not contain invented commercial prices');
 assert.doesNotMatch(flowJsonText,/Arroz 5 kg|Marca 1|Marca 2/,'Flow JSON examples must not present invented product or brand names');
+const combinationScreen=flow.screens.find(s=>s.id==='COMBINACAO');
+assert.equal(combinationScreen.data.resumoMarcas?.type,'string','brand mix summary is populated dynamically');
+assert.ok(combinationScreen.layout.children.some(x=>x.type==='TextBody'&&x.text==='\u0024{data.resumoMarcas}'),'customer can compare the real brands in all three combinations');
+const totalNode=flow.screens.find(s=>s.id==='RESUMO').layout.children.find(x=>x.text?.includes('\u0024{data.valor}'));
+assert.equal(totalNode?.text,'\u0024{data.valor}','Meta text interpolation must be a standalone dynamic binding');
+const storefrontSource=read('supabase/functions/storefront-v2/index.ts');
+assert.ok(storefrontSource.includes('select("id,name,brand,sku,'),'basket catalog reads real product brand metadata');
+assert.ok(storefrontSource.includes('brand:selected.brand||""'),'basket detail exposes actual brand metadata to Flow');
 
 const edges=Object.values(flow.routing_model).reduce((sum,next)=>sum+next.length,0);
 assert.ok(edges<=10,'Meta Flow routing_model cannot exceed ten edges');
@@ -74,7 +82,7 @@ const itemCount=27,basketId=shell.baskets[0].id,items=Array.from({length:itemCou
 const secret='A'.repeat(64);
 const deps={
  async shell(){return shell},
- async basket(id,n){return {ok:true,basket:{id,composition_number:n,display_price_cents:17270+n*100,stock_quantity:10},items:items.map(x=>({...x}))}},
+ async basket(id,n){return {ok:true,basket:{id,composition_number:n,display_price_cents:17270+n*100,stock_quantity:10},items:items.map(x=>({...x,brand:'Marca '+n}))}},
  async options(_id,_n,positions){return {ok:true,positions:positions.map(row=>({position_id:row.position_id,alternatives:[{product_id:items.find(x=>x.position_id===row.position_id).product_id,name:'Marca A 1 kg',stock_quantity:20},{product_id:uuid(6000+items.findIndex(x=>x.position_id===row.position_id)),name:'Marca B 1 kg',stock_quantity:20}]}))}},
  async quote(id,n,all){assert.equal(all.length,itemCount);assert.equal(id,basketId);assert.equal(n,1);return {ok:true,total_cents:17000+all.reduce((sum,x)=>sum+x.quantity*10,0),basket:{stock_quantity:2},items:all.map((x,i)=>({...x,name:'Produto '+(i+1)+' 1 kg'}))}},
  signState:st=>signState(st,secret),verifyState:s=>verifyState(s,secret)
@@ -83,6 +91,7 @@ const init=await flowExchange({action:'INIT'},deps);
 assert.equal(init.screen,'TAMANHO');assert.equal(init.data.tamanhos.length,5);
 const combos=await flowExchange({action:'data_exchange',screen:'TAMANHO',data:{etapa:'tamanho',tamanho:'mini'}},deps);
 assert.equal(combos.screen,'COMBINACAO');assert.equal(combos.data.opcoes.length,3);assert.match(combos.data.opcoes[0].description,/R\$/);
+assert.deepEqual(combos.data.resumoMarcas.split('\\n'),['Combinação 1: Marca 1','Combinação 2: Marca 2','Combinação 3: Marca 3']);
 const first=await flowExchange({action:'data_exchange',screen:'COMBINACAO',data:{etapa:'combinacao',tamanho:'mini',combinacao:'1'}},deps);
 assert.equal(first.screen,ITEM_SCREENS[0]);assert.equal(first.data.vis0,true);
 assert.equal(first.data.marca0,items[0].product_id);
