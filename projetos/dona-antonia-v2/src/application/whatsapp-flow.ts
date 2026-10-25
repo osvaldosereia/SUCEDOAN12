@@ -122,7 +122,7 @@ export function parseWhatsAppFlowSubmission(
     minLength: 16,
     maxLength: 120,
   });
-  if (!/^[A-Za-z0-9_-]+$/.test(flowToken)) throw new Error('Identificador do Flow inválido.');
+  if (!/^[A-Za-z0-9._-]+$/.test(flowToken)) throw new Error('Identificador do Flow inválido.');
 
   const basketId = requiredText(response, 'basketId', { maxLength: 128 });
   const basketQuantity = quantity(response, 'basketQuantity', MAX_BASKET_QUANTITY);
