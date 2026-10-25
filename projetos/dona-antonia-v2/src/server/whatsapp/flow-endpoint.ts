@@ -11,6 +11,40 @@ export interface WhatsAppFlowEndpointOptions {
   readonly onRequest: (data: Record<string, unknown>) => unknown | Promise<unknown>;
 }
 
+const MAX_REQUEST_BODY_BYTES = 1_000_000;
+
+async function readLimitedBody(request: Request): Promise<Uint8Array | null> {
+  const contentLength = request.headers.get('content-length');
+  if (contentLength !== null && Number(contentLength) > MAX_REQUEST_BODY_BYTES) return null;
+  if (!request.body) return new Uint8Array();
+
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    while (true) {
+      const result = await reader.read();
+      if (result.done) break;
+      size += result.value.byteLength;
+      if (size > MAX_REQUEST_BODY_BYTES) {
+        await reader.cancel();
+        return null;
+      }
+      chunks.push(result.value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return bytes;
+}
+
 function endpointError(status: number): Response {
   return new Response(null, { status });
 }
@@ -32,19 +66,21 @@ export async function handleWhatsAppFlowEndpoint(
   if (request.method !== 'POST') return endpointError(405);
   if (!options.appSecret || !options.privateKeyPem) return endpointError(503);
 
-  let rawBody: string;
+  let rawBytes: Uint8Array | null;
   try {
-    rawBody = await request.text();
+    rawBytes = await readLimitedBody(request);
   } catch {
     return endpointError(400);
   }
+  if (!rawBytes) return endpointError(413);
 
   const signature = request.headers.get('x-hub-signature-256');
-  const signatureValid = await verifyMetaWebhookSignature(rawBody, signature, options.appSecret);
+  const signatureValid = await verifyMetaWebhookSignature(rawBytes, signature, options.appSecret);
   if (!signatureValid) return endpointError(432);
 
   let body: unknown;
   try {
+    const rawBody = new TextDecoder('utf-8', { fatal: true }).decode(rawBytes);
     body = JSON.parse(rawBody) as unknown;
   } catch {
     return endpointError(421);
