@@ -1,167 +1,134 @@
-# Plano de programação — Admin WhatsApp, cestas e pedidos
+# Plano de programação greenfield — Admin WhatsApp, cestas e pedidos
 
 Projeto: WhatsApp Atendimento GitHub — SUCEDOAN12  
 Branch isolada: project/whatsapp-atendimento-github-20261025  
-Diretório futuro do código: projetos/whatsapp-atendimento-github/  
-Data: 25/10/2026  
-Responsável de execução previsto: Work Luna Max  
-Estado: pesquisa e planejamento concluídos; código e carga de imagens ainda não iniciados.
+Diretório do novo código: projetos/whatsapp-atendimento-github/  
+Execução prevista: Work Luna Max  
+Estado: pesquisa concluída; programação ainda não iniciada.
 
-## 1. Objetivo do projeto
+## Decisão principal
 
-Criar um Admin simples para operar o atendimento de pedidos de cestas pelo WhatsApp nos dois números da Dona Antônia. O Admin deve permitir:
+O projeto será construído do zero. O Vitrine Admin e os serviços atuais são **referência de negócio e de dados**, não base de código para o novo sistema.
 
-- manter no GitHub somente os produtos e as cestas usados pelo atendimento de cestas;
-- editar produtos e imagens;
-- montar tamanhos, tipos de produto, quantidades, alternativas de marcas, ordem, remoção e limites;
-- configurar e acompanhar o WhatsApp Flow por número;
-- consultar cliente/endereço no Supabase pelo backend;
-- enviar um resumo do pedido no WhatsApp e criar o pedido somente após a confirmação do cliente;
-- receber pedidos no Admin, separar itens, tratar a emissão da NF-e no Bling e levar o pedido até Concluído.
+Não copiar nem adaptar a UI, funções, tabelas, RPCs, máquina de estados, componentes ou estrutura antiga de pedidos. O novo projeto terá módulos, modelo de dados, endpoints e fluxo de operação próprios, organizados desde o início para cumprir apenas o escopo necessário.
 
-A pesquisa técnica completa para Meta/Flow está em FLOW-RESEARCH.md e BASKET-ORDER-RESEARCH.md. A pesquisa complementar sobre código existente, catálogo, imagens, pedidos e Bling está em ORDER-ADMIN-AND-IMAGE-RESEARCH.md.
+Podemos consultar no Vitrine e nos serviços atuais, somente para pesquisa, quais produtos estão nas cestas, as regras comerciais, os identificadores de integração e a configuração das contas Meta/Bling. O cadastro de clientes existente no Supabase pode ser consultado pelo servidor conforme orientação do usuário. A implementação de cada integração será nova e seguirá as APIs oficiais.
 
-## 2. Decisões e limites de arquitetura
+## Escopo
 
-1. GitHub será a fonte versionada de nomes, marcas, apresentações, preços comerciais, imagens, composição e opções de cesta do novo atendimento.
-2. A configuração ativa consultada contém cinco tamanhos e 61 produtos distintos como opções. A importação deve começar por esse recorte, recalculando os números antes da carga para detectar alterações ocorridas depois da pesquisa.
-3. O repositório SUCEDOAN12 é público. Nenhum token, chave, dado pessoal ou ajuste interno deve entrar em produto.json, cesta.json, Flow JSON, arquivo do cliente ou histórico de commit.
-4. O preço base público pode ficar no catálogo se essa informação já for pública para clientes. O adicional/ajuste interno e qualquer regra que a empresa queira manter privada ficam em configuração acessível somente no servidor. Essa configuração não é um cadastro de produtos.
-5. Supabase não será usado como catálogo de produtos/cestas do novo Admin. Ele pode ser acessado no servidor para cadastro/endereço de cliente, rascunho/estado transacional de pedido e contratos operacionais aprovados.
-6. Estoque não é dado estático de GitHub. A disponibilidade precisa vir do serviço operacional que for aprovado na rodada de compatibilidade, idealmente usando os identificadores de Bling/SKU/GTIN do catálogo.
-7. Não criar senha própria. Escritas no GitHub, edição de pedidos, separação e ações fiscais exigem identidade autenticada. A primeira escolha técnica será reaproveitar sessão/cargos existentes do Admin quando possível ou usar identidade GitHub/SSO. Não deixar endpoint de gravação aberto.
-8. Nenhum código será colocado em main, Vitrine Admin ou site público durante o desenvolvimento. Nenhuma função atual será substituída. Alterações de integração ficam em branch e ambiente de validação; publicação, chamada a cliente e ativação Meta são gates posteriores.
-9. Reaproveitar contratos e comportamento testados, sem copiar diretamente os módulos atuais. O Admin novo terá módulos pequenos, responsabilidades claras e uma interface simplificada.
+O novo Admin terá cinco áreas diretas:
 
-## 3. Arquitetura recomendada
+1. **Produtos:** cadastro simples dos produtos usados nas cestas, com foto, marca, apresentação, preço e identificadores necessários para a emissão no Bling.
+2. **Cestas:** tamanhos, tipos de produto, opções, ordem, quantidade inicial, edição, remoção e regra de preço.
+3. **Flows:** configuração e validação do atendimento para cada um dos dois números da Meta, com teste e publicação deliberada.
+4. **Pedidos:** fila, detalhe, separação dos itens, correção de faltas, etapa fiscal e conclusão.
+5. **Acompanhamento:** estado do pedido e erros que exigem ação, sem painel técnico excessivo.
 
-Manter uma aplicação única e leve, sem microserviços desnecessários, com módulos internos separados por responsabilidade:
+A configuração consultada no Vitrine aponta para cinco tamanhos ativos e 61 produtos distintos como opções. A migração deverá confirmar novamente o recorte antes de trazer arquivos para o GitHub.
 
-- **Admin web:** telas Produtos, Cestas, Flows, Pedidos e uma página curta de configuração dos dois números.
-- **Domínio de catálogo e preço:** funções puras para validar produto, composição, quantidade, preço inicial, variação por marca e remoção. Dinheiro em centavos; regra executada no servidor.
-- **Repositório GitHub:** lê uma revisão identificável do catálogo e grava arquivos por commit usando SHA/controle de concorrência. A credencial de escrita fica no servidor.
-- **Runtime Meta:** valida assinatura, descriptografa e criptografa Data Exchange, valida sessão e canal, resolve Flow ID por número e chama o cálculo do pedido. Tokens e chaves ficam em segredos do servidor.
-- **Cliente:** busca por telefone normalizado no servidor; se houver cadastro/endereço único, apresenta para confirmação; se faltar ou houver ambiguidade, pede o dado/seleção dentro da jornada.
-- **Rascunho e pedido:** guarda a revisão da cesta, itens, pagamento, endereço confirmado, valor e hash do resumo. A confirmação é idempotente.
-- **Operação e Bling:** usa o estado operacional existente quando o contrato aceitar o pedido com snapshot GitHub. Nenhum navegador chama Bling diretamente.
+## Limites de dados e segurança
 
-Não iniciar por um editor visual genérico de Flow. Primeiro construir um configurador guiado por telas e componentes suportados, com prévia, validação, teste e publicação deliberada. O editor JSON avançado pode ficar para uma etapa posterior.
+- GitHub será a fonte versionada de produtos, opções, cestas e imagens do novo atendimento. Não salvar catálogo de produtos em tabelas Supabase.
+- O Supabase existente será consultado somente para localizar cliente/endereço, como autorizado. O novo sistema terá tabelas próprias e mínimas para rascunhos, pedidos, itens, separação e integração fiscal.
+- O pedido guarda snapshots do nome, marca, SKU, GTIN, ID do Bling, quantidade, preço aceito e revisão do catálogo; alterações posteriores no catálogo não alteram pedidos antigos.
+- O estoque não será cadastrado em GitHub. Para a primeira versão, produtos inativos não são oferecidos e a equipe confirma falta durante a separação. Consulta automática de estoque só entra se for necessária para o atendimento e comprovadamente simples.
+- O SUCEDOAN12 é público. Produtos e fotos commitados ficam publicamente legíveis. Ajuste interno da cesta, tokens, chaves e dados pessoais ficam fora do GitHub e do JSON entregue ao cliente.
+- Não haverá senha própria. A gravação do catálogo e as ações operacionais exigem uma identidade autorizada, de preferência GitHub OAuth/SSO com lista de usuários permitidos. Não deixar escrita anônima nem credencial no navegador.
+- Usar poucos serviços: uma aplicação Admin leve e um backend modular com funções próprias para Admin, protocolo Meta e integração Bling. Sem microserviços, Firebase, Make ou serviços auxiliares que não atendam a uma necessidade demonstrada.
 
-## 4. Catálogo e cestas no GitHub
+## Arquitetura nova
 
-Organização sugerida dentro do projeto:
+### Admin
 
-- catalog/products/<id>.json — uma ficha por produto usado nas cestas;
-- catalog/baskets/<id>.json — tamanhos e composição;
-- catalog/images/catalog/ — imagens leves usadas no Admin;
-- catalog/images/flow/ — miniaturas otimizadas para o Flow;
-- catalog/manifest.json — versão do schema e referência da revisão publicada.
+Uma aplicação isolada, dentro do diretório do projeto, com módulos claros:
 
-Campos mínimos do produto:
+- telas e componentes de produtos, cestas, Flows e pedidos;
+- tipos e validações do catálogo;
+- cálculo puro de cesta separado de qualquer tela;
+- cliente de API sem segredos;
+- estado visual simples, com formulários curtos, prévia e erros acionáveis.
 
-- identificador estável, nome, marca e apresentação;
-- SKU, GTIN/EAN e ID do produto no Bling para integração operacional;
-- preço unitário comercial em centavos;
-- caminho da imagem no próprio repositório;
-- estado ativo e dados necessários para localização na separação, se a fonte operacional não os fornecer;
-- sem estoque em cache permanente, senha, token, dado de cliente ou ajuste interno.
+A stack deve ser confirmada no início da programação. A preferência é uma aplicação leve em TypeScript com ferramenta de build pequena, sem adicionar framework grande se o projeto não precisar dele.
 
-Campos mínimos da cesta:
+### Backend
 
-- ID, nome, ordem e preço inicial apresentado;
-- tipos/posições de produto e opções permitidas;
-- produto padrão, quantidade inicial, min/max, editável, removível e ordem;
-- regra de variação do total por marca/quantidade, validada no servidor;
-- referência à configuração privada do ajuste interno, sem gravar o valor sensível no repositório público.
+Código novo, com poucos pontos de entrada:
 
-### Migração das imagens
+- **Admin API:** autentica o operador, valida mudanças e grava arquivos no GitHub por commit. Também gerencia os pedidos.
+- **Meta Flow endpoint/webhook:** verifica a assinatura, processa o protocolo criptografado do Flow, associa conversa ao canal e devolve dados calculados pelo servidor.
+- **Bling client:** OAuth/token server-side, criação/atualização de venda, solicitação de NF-e, consulta de situação e recuperação sem duplicar ações.
 
-A carga inicial deverá:
+Esses módulos podem compartilhar o mesmo backend/deploy, mantendo cada integração testável e separada. Nenhum código atual do Vitrine será importado.
 
-1. identificar de novo os 61 IDs distintos referenciados pelos cinco tamanhos ativos;
-2. baixar cada origem aprovada e registrar falhas, dimensões e hash;
-3. converter/remover metadados e criar miniaturas WebP previamente otimizadas;
-4. manter a imagem do Flow dentro do limite que o runtime do projeto adotar; usar 240×190 e até 27 KB como primeiro alvo, seguindo o helper de referência, e confirmar nitidez em aparelho real;
-5. revisar uma folha de contato antes do commit;
-6. importar apenas arquivos validados e gerar manifesto com ID, caminho, tamanho, dimensões e SHA-256.
+### Dados de pedido
 
-A existência de URL WebP não é aceite visual. A fase só termina quando as imagens reais forem baixadas, abertas e conferidas no WhatsApp.
+Criar um modelo transacional novo, separado das tabelas antigas de pedidos. Começar com o menor conjunto que cubra operação e idempotência, por exemplo:
 
-## 5. Jornada e resumo de pedido
+- cabeçalho do pedido: canal, cliente, endereço, pagamento, revisão do catálogo, total, situação, referência Bling e timestamps;
+- itens: ID GitHub do produto, snapshot de SKU/GTIN/ID Bling, quantidade, preço aceito e estado de separação;
+- eventos/integração: confirmação do cliente, transições, tentativas e resultado da emissão da NF-e.
 
-1. O cliente abre o Flow pelo número/canal correto.
-2. Escolhe tamanho e configura cada tipo de produto: vê foto e opções permitidas, escolhe marca, quantidade e pode retirar quando permitido.
-3. O servidor recalcula o preço a cada etapa com a revisão do catálogo e da regra privada. Não aceitar preço enviado pelo celular.
-4. O backend identifica o remetente pelo vínculo assinado da conversa/Flow; consulta cliente/endereço no Supabase e permite confirmar ou corrigir.
+O modelo final será definido em uma migration própria após o fluxo ser aprovado. Não usar tabelas ou funções antigas como atalho.
+
+## Fluxo do cliente
+
+1. O cliente abre o Flow enviado pelo número correto.
+2. Seleciona o tamanho e, em cada tipo de produto, vê as opções com foto, escolhe marca e quantidade e remove o item se a cesta permitir.
+3. O backend calcula o valor com a revisão GitHub selecionada e com o ajuste interno obtido somente no servidor.
+4. O backend usa o telefone recebido na conversa para buscar o cliente/endereço no Supabase. O cliente confirma ou corrige os dados.
 5. O cliente escolhe a forma de pagamento.
-6. Ao concluir o Flow, o backend revalida composição, disponibilidade e total e cria apenas um rascunho aguardando confirmação.
-7. A conversa recebe o resumo solicitado: produtos e quantidades, sem preço unitário; total final; pagamento; nome; endereço; botões Confirmar, Editar e Cancelar.
-8. Só Confirmar cria o pedido operacional. Clique repetido não duplica. Se preço/disponibilidade mudar, o resumo é atualizado e uma nova confirmação é necessária.
+6. O backend revalida composição, disponibilidade e total e grava um rascunho.
+7. O WhatsApp recebe resumo com produtos e quantidades, sem preços unitários, total, pagamento, nome e endereço, com Confirmar, Editar e Cancelar.
+8. Somente Confirmar transforma o rascunho em pedido recebido. Repetição de evento não duplica pedido.
+9. Se uma falta durante a separação mudar o total, o cliente recebe o valor ajustado e precisa confirmar antes do pedido seguir para emissão fiscal.
 
-## 6. Admin básico de pedidos
+## Gestor de pedidos novo
 
-A lista deve ter poucos estados fáceis de entender:
+Estados visíveis, sem excesso de abas:
 
-| Aba/estado visível | Comportamento |
+| Estado no Admin | Significado |
 |---|---|
-| Recebidos | Pedidos confirmados pelo cliente e ainda sem separação |
-| Em separação | Responsável atribuído; cada linha marcada Separado ou Faltou |
-| Aguardando NF-e | Separação concluída; mostra retorno do Bling |
-| Em entrega | NF-e autorizada e saída registrada |
-| Concluídos | Entrega e pagamento registrados; corresponde ao estado operacional delivered |
-| Problemas | Divergência de estoque, Bling, dados ou autorização fiscal que exige ação |
+| Recebido | Cliente confirmou e o pedido aguarda operação |
+| Em separação | Operador conferindo itens |
+| Aguardando NF-e | Separação concluída e solicitação em andamento |
+| NF-e autorizada | Documento autorizado; pode seguir para entrega |
+| Em entrega | Saída registrada |
+| Concluído | Entrega e pagamento registrados |
+| Atenção | Falta, rejeição, divergência ou integração pendente |
 
-Na tela do pedido, mostrar o código, cliente, telefone, endereço, pagamento, total e linhas de produto com quantidades. As ações devem ser contextuais:
+A separação precisa permitir atribuir responsável, marcar cada linha como separada ou faltante, ajustar quantidades e recalcular o total. O operador vê claramente quando a falta exige novo aceite do cliente. Depois da conferência, o backend envia a venda e solicita a NF-e ao Bling; o Admin apresenta o retorno e oferece uma tentativa segura quando a API permitir. Não enviar a mesma venda ou nota duas vezes em caso de timeout. A saída só pode ocorrer após autorização fiscal. Concluído só ocorre com entrega/pagamento registrados.
 
-- Iniciar/retomar separação, escolher responsável e marcar itens separados/faltantes.
-- Concluir a separação somente depois da conferência completa; o servidor aplica as regras de estoque e registra o total final.
-- Exibir o status fiscal: pendente, em processamento, autorizada, rejeitada ou bloqueada. Oferecer consulta/recuperação e emissão humana quando o serviço fiscal permitir.
-- Bloquear a saída para entrega até a NF-e estar autorizada.
-- Concluir entrega junto com registro da forma/valor realmente recebidos; mapear essa ação ao estado final Concluído e à sincronização de atendimento no Bling.
+## Imagens dos produtos
 
-O novo painel não deve criar uma segunda tabela paralela de pedidos nem escrever status diretamente. Usar ações de servidor idempotentes e os marcos canônicos do Vitrine depois de provar que aceitam o novo snapshot de catálogo.
+A pesquisa encontrou 61 URLs WebP preenchidas, mas o conteúdo ainda não foi validado. A carga futura deverá:
 
-## 7. Risco principal e gate técnico
+1. extrair somente os arquivos referenciados pelos 61 produtos elegíveis;
+2. baixar e validar o arquivo, MIME, assinatura, resolução e tamanho;
+3. comprimir e salvar no diretório de imagens do novo projeto;
+4. gerar uma folha de contato para revisão;
+5. testar leitura no Flow em WhatsApp real antes de fixar a resolução/qualidade.
 
-A maior dificuldade não é desenhar a tela. É o contrato de pedido:
+Como ponto de partida, testar uma miniatura WebP de 240×190 com limite de 27 KB para o Flow. Se perder nitidez, ajustar a saída após inspeção em aparelho. O JSON guarda apenas caminho relativo; nunca Base64.
 
-- create_vitrine_cart_order_v1 consulta public.products para validar preço/estoque e consulta estruturas de cesta no Supabase;
-- o snapshot fiscal existente descarta linhas sem product_id e consulta public.products para SKU/GTIN/nome;
-- o resolvedor fiscal ainda lista origens canônicas conhecidas e não inclui explicitamente whatsapp_flow_github.
-
-Portanto, a primeira rodada técnica deve provar o pedido de cesta criado a partir da revisão GitHub sem fazer Supabase atuar como fonte de catálogo/preço. O pedido persistido deve carregar snapshots de nome, quantidade, preço, SKU/GTIN, ID do Bling e revisão GitHub. O fluxo de separação e o Bling precisam conseguir consumir esses dados.
-
-A solução preferida é um adaptador servidor/RPC para o novo canal que grava snapshot no pedido operacional e fornece os identificadores exigidos pela separação e pela nota fiscal. Não criar um espelho de cadastro completo em Supabase. Se o motor exigir uma referência técnica mínima de produto no Supabase, parar e apresentar exatamente quais campos e por quê antes de aceitar essa concessão.
-
-## 8. Rodadas de programação para Work Luna Max
+## Rodadas de programação
 
 | Rodada | Entrega | Critério de saída |
 |---|---|---|
-| 0 — Isolamento e contrato | Ler HANDOFF e esta pesquisa; verificar branch/pasta; provar identidade do pedido, estoque, autenticação e Bling com fixtures/canário técnico | Nenhuma dependência oculta do catálogo Supabase ou credencial no navegador |
-| 1 — Manifesto e imagens | Extrair opções ativas, deduplicar 61 produtos, auditar IDs/imagens, criar thumbnails compactas no diretório do projeto | Cada produto tem identidade estável e imagem válida, leve e visualmente aprovada |
-| 2 — Banco GitHub e Admin de produtos | Schema versionado, lista, busca, cadastro/edição, imagem e histórico de commits | Gravar produto gera revisão auditável sem token no cliente; conflito de edição é tratado |
-| 3 — Criador de cestas | Tamanhos, grupos, opções, quantidades, remoção, preço inicial e prévia | Cálculo do servidor reproduz exemplos do negócio e não expõe regra privada |
-| 4 — Configurador de Flow | Configurar Draft por canal, gerar JSON, validar, pré-visualizar, enviar canário, publicar manualmente | 0975 e 1018 têm vínculos explícitos; publicação não é automática |
-| 5 — Runtime do checkout | Data Exchange, sessão/canal assinado, imagem, escolha, recálculo e consulta cliente/endereço | Cesta e total são revalidados no servidor; fallback de cadastro/endereço funciona |
-| 6 — Resumo e pedido | Rascunho com revisão/hash, mensagem resumo no chat e confirmação/edição/cancelamento | Apenas a confirmação cria um pedido e eventos repetidos não duplicam |
-| 7 — Gerenciador operacional | Fila, detalhe, separação, faltas, fiscal, expedição e conclusão | Ações respeitam os gates do Bling e atualizam o mesmo pedido operacional |
-| 8 — Homologação | Testes de domínio, integração, imagens, Flow e pedido em canal controlado | Ciclo inteiro comprovado sem atingir clientes reais; evidência registrada antes de liberar |
+| 0 — Contratos mínimos | Confirmar branch/diretório, autenticação, APIs Meta/Bling disponíveis, modelo novo de pedido e credenciais server-side | Arquitetura mínima aprovada; nenhum módulo antigo usado como dependência |
+| 1 — Catálogo e imagens | Manifesto dos produtos/opções, importação dos 61 elegíveis, conversão/validação de fotos | IDs reconciliados; fotos leves e visualmente aprovadas |
+| 2 — Admin de produtos e cestas | CRUD GitHub, edição simples, opções, quantidades, preço e prévia | Um operador autorizado consegue editar e ver o histórico do commit |
+| 3 — Configurador Meta Flow | Editor guiado, Flow JSON gerado, validação, configuração por número, teste controlado | Cada número tem configuração própria e o sistema não publica automaticamente |
+| 4 — Runtime de atendimento | Sessão/canal, seleção de cesta, imagem, marca, quantidade, cotação e busca de cliente | Total calculado no servidor; dados ausentes/ambíguos têm caminho claro |
+| 5 — Confirmação e pedidos | Resumo no chat, botões, rascunho, confirmação idempotente e novo esquema operacional | Só o aceite explícito cria pedido e preserva snapshot |
+| 6 — Separação e Bling | Fila, separação/falta, correção de total, criação da venda, solicitação/consulta NF-e, saída e conclusão | Pedido percorre todos os estados sem duplicar venda ou nota |
+| 7 — Homologação | Verificação de imagens, Flow nos dois números, pedido interno, erros, repetição de eventos e recuperação | Jornada completa comprovada em canal controlado antes de qualquer liberação |
 
-Cada rodada deve terminar com diff pequeno, resumo de arquivos, comandos executados, evidência, pendências e próximo passo. Testes automatizados e manuais pertencem às rodadas de implementação; nenhum teste foi executado nesta pesquisa porque o código não foi alterado.
+Cada rodada deve produzir um diff pequeno e revisável, resumo das mudanças, como conferir o resultado e riscos remanescentes. Não implantar, publicar Flow ou enviar mensagem real durante desenvolvimento local.
 
-## 9. Critérios de aceite do projeto
+## Pronto para iniciar
 
-- O catálogo GitHub inclui somente a união dos produtos realmente referenciados nas cestas autorizadas.
-- As imagens têm caminhos próprios no GitHub, dimensões/bytes registrados e boa leitura em WhatsApp.
-- O adicional interno e segredos não aparecem no branch público, Flow JSON, navegador, logs ou resumo.
-- Fluxo de marca/quantidade/remover e preço total funciona com cálculo server-side.
-- Nome/endereço e pagamento estão no resumo da conversa sem preço unitário.
-- A confirmação produz exatamente um pedido com snapshot rastreável à revisão do GitHub.
-- O pedido pode ser separado, ter faltas recalculadas, sincronizar/emitar NF-e pelo Bling, sair para entrega somente autorizado e terminar em Concluído.
-- Os dois números são configurados e testados separadamente.
-- Site público e Vitrine Admin em operação não foram modificados durante as rodadas isoladas.
+A pesquisa anterior está em ORDER-ADMIN-AND-IMAGE-RESEARCH.md; a pesquisa Meta e de plataformas segue em FLOW-RESEARCH.md e BASKET-ORDER-RESEARCH.md. O primeiro trabalho com Work Luna Max é a Rodada 0 deste plano, não a construção de telas.
 
-## 10. Instrução inicial para Work Luna Max
+### Texto para iniciar no Work Luna Max
 
-Use este plano e os documentos indicados antes de tocar no código. A primeira execução é somente a Rodada 0: confirmar a branch isolada, localizar o diretório do projeto, mapear o contrato de identidade/estoque/pedido/fiscal e apresentar um pequeno desenho da solução. Não começar pelas telas de Flow. Não alterar main, site público, Vitrine Admin, funções implantadas ou dados de produção; não publicar Flow nem enviar mensagens a clientes. Depois do gate de compatibilidade, avançar uma rodada por vez dentro de projetos/whatsapp-atendimento-github/ e atualizar HANDOFF.md e o manifesto de andamento.
-
+Atue como programador sênior especialista em e-commerce e integrações WhatsApp. Leia HANDOFF.md, ORDER-ADMIN-AND-IMAGE-RESEARCH.md e este plano. O projeto é greenfield: não copie código, tabelas, RPCs ou arquitetura do Vitrine Admin; use o Vitrine apenas como referência de regras e dados. Comece pela Rodada 0, trabalhando somente na branch project/whatsapp-atendimento-github-20261025 e no diretório projetos/whatsapp-atendimento-github/. Produtos/cestas ficam no GitHub; clientes são consultados no Supabase; pedidos usam o novo modelo transacional; Meta e Bling recebem conectores novos. Não altere main, site público, Vitrine Admin ou funções existentes. Não publique Flow nem envie mensagens a clientes. Entregue o contrato técnico mínimo da Rodada 0 e então progrida rodada por rodada, mantendo o sistema pequeno, simples e verificável.
