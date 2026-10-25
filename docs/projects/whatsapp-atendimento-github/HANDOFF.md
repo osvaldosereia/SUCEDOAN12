@@ -41,9 +41,11 @@ Como o repositório é público, os dados em arquivos públicos podem ser lidos 
 
 ### WhatsApp Flow dinâmico
 
-A documentação oficial da Meta descreve a troca de dados de Flows como uma chamada criptografada a um endpoint HTTPS que processa a solicitação e devolve resposta criptografada. GitHub Pages entrega arquivos estáticos e não executa esse endpoint. Portanto, dados dinâmicos, validação durante o Flow e preço atualizado exigirão um runtime HTTP fora do Supabase. A escolha desse runtime permanece em aberto e precisa ser analisada antes de implementar a integração final.
+A pesquisa de Flows está registrada em FLOW-RESEARCH.md, com fontes oficiais da Meta e comparação de Blip, Infobip, WATI, Twilio e Gupshup. Ela recomenda wizard guiado, JSON avançado opcional, validação/preview/teste antes de publicação e estados por canal.
 
-Um Flow sem endpoint pode ser mais estático e não deve ser apresentado como se consultasse dados ao vivo, atualizasse preços ou validasse disponibilidade em tempo real. A especificação oficial do endpoint está em https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/implementingyourflowendpoint e a referência oficial de componentes em https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/components.
+A documentação oficial da Meta descreve a troca de dados de Flows como uma chamada criptografada a um endpoint HTTPS que processa a solicitação e devolve resposta criptografada. GitHub Pages entrega arquivos estáticos e não executa esse endpoint. Portanto, dados dinâmicos, validação durante o Flow e preço atualizado exigirão um runtime HTTP fora do Supabase. A escolha desse runtime permanece em aberto.
+
+Flow estático não deve ser descrito como se consultasse dados ao vivo. A Meta documenta o componente Image, mas o vínculo dinâmico e a experiência de múltiplas opções com quantidades independentes precisam ser provados no schema atual e em WhatsApp real. A referência oficial do endpoint está em https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/implementingyourflowendpoint e dos componentes em https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/components.
 
 ## Experiência desejada para o Flow
 
@@ -56,7 +58,7 @@ Preservar as decisões já comunicadas pelo usuário, sempre conferindo o que a 
 5. Atualizar o total enquanto o cliente personaliza a cesta, quando suportado pelo contrato real do Flow.
 6. Encerrar com resumo claro antes da confirmação.
 
-Fotos de produto são desejadas, mas não assumir que a interface de Flow oferece cartões ou controles personalizados. Confirmar a disponibilidade e o formato exatos na referência Meta vigente antes de desenhar o fluxo final.
+A Meta documenta um componente Image; confirmar o formato de imagem, ligação dinâmica e limites vigentes antes de prometer fotos. Não presumir cartões, carrosséis ou controles +/- personalizados. Para múltiplas escolhas com quantidades próprias, validar primeiro a combinação de seleção múltipla, campo numérico, regras de navegação e endpoint.
 
 ## Modelo inicial proposto
 
@@ -77,7 +79,9 @@ Atue como Codex, colaborador técnico e programador sênior especializado em sis
 Concluído:
 - Repositório e branch principal reconhecidos.
 - Branch isolada criada a partir do main verificado.
-- Especificações atuais de Flow consultadas para separar o trabalho novo das iniciativas existentes.
+- Especificações existentes de Flow consultadas para separar o trabalho novo das iniciativas existentes.
+- Pesquisa técnica documentada em FLOW-RESEARCH.md: Meta, código oficial e práticas de Blip, Infobip, WATI, Twilio e Gupshup.
+- Wizard com JSON avançado opcional, prévia/teste, estado por canal e publicação manual registrados como recomendação de produto.
 - Limites de repositório público, persistência GitHub sem token no navegador e endpoint dinâmico fora de GitHub Pages registrados.
 
 Ainda não feito:
@@ -89,19 +93,29 @@ Ainda não feito:
 
 ## Próxima ação
 
-Começar pela rodada 1 do roadmap: descobrir uma forma de exportar, pelo próprio Vitrine Admin, somente a configuração das cestas e os produtos referenciados, sem usar Supabase. Inspecionar o arquivo/exportação antes de normalizar os dados. Se não houver exportação pelo admin, registrar exatamente o bloqueio e solicitar o artefato necessário, sem substituir esse passo por uma consulta Supabase.
+Continuar pela rodada 1 do roadmap: obter exportação estruturada das cestas e produtos referenciados pelo Vitrine Admin sem usar Supabase. A pesquisa de Flows já está documentada; depois da coleta, fechar o design do admin e resolver a forma segura de gravação GitHub e o runtime HTTPS fora do Supabase antes da integração dinâmica. Inspecionar qualquer arquivo antes de normalizar os dados. Se não houver exportação pelo admin, solicitar CSV/JSON apropriado sem substituir esse passo por uma consulta Supabase.
 
 ## Instrução para retomar em uma nova conversa
 
-Abra primeiro este handoff e IMPLEMENTATION-ROADMAP.md em docs/projects/whatsapp-atendimento-github/ na branch project/whatsapp-atendimento-github-20261025 do repositório osvaldosereia/SUCEDOAN12. Continue na próxima ação registrada. Mantenha o projeto separado, não toque em main nem no site/admin em produção, não use Supabase, não crie senha própria e não publique nem envie mensagens pela Meta. Antes de iniciar o código do admin, resolva a coleta de dados de cestas e documente o mecanismo seguro de persistência GitHub.
+Abra primeiro HANDOFF.md, IMPLEMENTATION-ROADMAP.md e FLOW-RESEARCH.md em docs/projects/whatsapp-atendimento-github/ na branch project/whatsapp-atendimento-github-20261025 do repositório osvaldosereia/SUCEDOAN12. Continue na próxima ação registrada. Mantenha o projeto separado, não toque em main nem no site/admin em produção, não use Supabase, não crie senha própria e não publique nem envie mensagens pela Meta. Antes de iniciar o código do admin, resolva a coleta de dados de cestas e documente o mecanismo seguro de persistência GitHub.
 
 ## Referências técnicas oficiais
 
 - GitHub Pages não executa linguagens ou código de servidor: https://docs.github.com/articles/creating-project-pages-manually
 - Autenticação da API REST do GitHub requer token com permissões adequadas: https://docs.github.com/rest/guides/getting-started-with-the-rest-api
 - Meta WhatsApp Flows — endpoint de troca de dados: https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/implementingyourflowendpoint
+- Meta WhatsApp Flows — visão geral: https://developers.facebook.com/documentation/business-messaging/whatsapp/flows
+- Meta WhatsApp Flows — Flow API: https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/flowsapi
 - Meta WhatsApp Flows — referência de componentes: https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/components
+- Meta WhatsApp Flows — changelog: https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/changelogs
+- Exemplos oficiais da Meta e aviso de que o endpoint de amostra é protótipo: https://github.com/WhatsApp/WhatsApp-Flows-Tools
 
+
+## Pesquisa de atendimento por Flow — 25/10/2026
+
+A pesquisa técnica e a comparação de sistemas estão em FLOW-RESEARCH.md. O padrão recomendado combina editor guiado, validação de schema, preview, teste em WhatsApp, versionamento e publicação manual separada por número. A Meta oferece Flow estático e dinâmico; a cesta com preço e total confiáveis exige endpoint HTTPS fora do Supabase, mantendo chave privada/token no servidor. O runtime e o meio seguro de gravação no GitHub ainda não foram escolhidos. Imagens têm componente oficial, mas o vínculo dinâmico e a seleção múltipla com quantidade individual continuam como verificações obrigatórias antes do escopo final do Flow.
+
+Nenhuma chamada à API Meta, publicação, envio de Flow ou criação de endpoint foi feita durante a pesquisa.
 
 ## Verificação da exportação de cestas — 25/10/2026
 
