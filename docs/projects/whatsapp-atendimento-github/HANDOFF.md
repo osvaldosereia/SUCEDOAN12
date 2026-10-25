@@ -47,6 +47,16 @@ A documentação oficial da Meta descreve a troca de dados de Flows como uma cha
 
 A Meta também oferece update_data para atualizar dados da tela após uma interação sem navegar; listas podem exibir imagem de opção com limite atual documentado de 100 KB por imagem. O total ao mudar a seleção/quantidade ainda precisa de protótipo no Flow Builder e teste em WhatsApp real; o total final e o preço permanecem validados no endpoint de servidor. Não presumir atualização a cada tecla em campo numérico. Referências: https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/implementingyourflowendpoint, https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/components e https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/changelogs.
 
+## Alternativa nativa para carrinho e quantidades
+
+Pesquisa oficial da Meta/WhatsApp em 25/10/2026 identificou mensagens de catálogo/produtos da Cloud API e o carrinho do WhatsApp como a melhor hipótese para a seleção de produtos com quantidades por item. Mensagens multiproduto mostram até 30 produtos em seções; o cliente pode adicionar ao carrinho e enviar um pedido. A central de ajuda do WhatsApp descreve o ajuste da quantidade de cada item e a Meta documenta o webhook de pedido com os itens e suas quantidades.
+
+A experiência deve ser comprovada por uma prova de ponta a ponta nos dois números antes de fechar a jornada. O carrinho nativo permite a escolha de quantidade, mas não conhece as regras de uma cesta SUCEDOAN12; o servidor deverá validar produtos, quantidades, composição e preço contra uma revisão do GitHub e pedir ajuste ou atendimento humano quando houver divergência.
+
+GitHub continua como fonte de verdade. Para mostrar produtos e iniciar o carrinho, os itens selecionados também precisam estar no catálogo do Meta Commerce Manager vinculado à WABA usada pela Cloud API. Isso é uma cópia de distribuição para o WhatsApp e não usa Supabase. O Cloud API não mostra um ícone de carrinho persistente no cabeçalho da conversa; a experiência precisa começar por uma mensagem de catálogo/produto adequada.
+
+Plano: depois de obter a exportação completa das cestas, avaliar a jornada nativa de catálogo/carrinho com um telefone controlado e comparar com Flow. Flow passa a ser opcional para dados estruturados complementares ou exceções. Nenhum produto foi sincronizado e nenhuma chamada/publicação Meta foi feita nesta pesquisa. Fontes e comparação detalhada estão em FLOW-RESEARCH.md.
+
 ## Experiência desejada para o Flow
 
 Preservar as decisões já comunicadas pelo usuário, sempre conferindo o que a Meta realmente suporta:
@@ -93,7 +103,7 @@ Ainda não feito:
 
 ## Próxima ação
 
-Continuar pela rodada 1 do roadmap: obter exportação estruturada das cestas e produtos referenciados pelo Vitrine Admin sem usar Supabase. A pesquisa de Flows já está documentada; depois da coleta, fechar o design do admin e resolver a forma segura de gravação GitHub e o runtime HTTPS fora do Supabase antes da integração dinâmica. Inspecionar qualquer arquivo antes de normalizar os dados. Se não houver exportação pelo admin, solicitar CSV/JSON apropriado sem substituir esse passo por uma consulta Supabase.
+Continuar pela rodada 1 do roadmap: obter exportação estruturada das cestas e produtos referenciados pelo Vitrine Admin sem usar Supabase. Depois da coleta, provar a jornada nativa de catálogo/carrinho para quantidades e validar composição por webhook; decidir então se Flow será necessário para etapas complementares. Fechar também a forma segura de gravação GitHub e o runtime HTTPS fora do Supabase antes de qualquer integração dinâmica. Inspecionar qualquer arquivo antes de normalizar os dados. Se não houver exportação pelo admin, solicitar CSV/JSON apropriado sem substituir esse passo por uma consulta Supabase.
 
 ## Instrução para retomar em uma nova conversa
 
