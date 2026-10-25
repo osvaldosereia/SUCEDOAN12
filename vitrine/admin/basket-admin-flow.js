@@ -101,49 +101,67 @@
       const cheapest=available[0];
       const options=await api().loadPositionOptions(basket.linked_template_id,cheapest.composition_number,cheapest.items);
       const optionsByPosition=new Map(options.map(x=>[String(x.position_id),x]));
-      const steps=cheapest.items.map(item=>{
+      const positionRows=cheapest.items.map(item=>{
         const type=findType(item.label||item.name);
         const result=optionsByPosition.get(String(item.position_id));
         const alternatives=(result?.alternatives||[]).filter(x=>Number(x.stock_quantity)>0);
         return {item,type,alternatives,alternative_count:Number(result?.alternative_count||alternatives.length)};
-      }).sort((a,b)=>{
-        const ai=a.type&&a.type.flow_enabled?Number(a.type.flow_sort_order):10000;
-        const bi=b.type&&b.type.flow_enabled?Number(b.type.flow_sort_order):10000;
-        return ai-bi||Number(a.item.sort_order||0)-Number(b.item.sort_order||0);
       });
+      const grouped=new Map();
+      for(const row of positionRows){
+        if(!row.type?.flow_enabled||!row.alternatives.length)continue;
+        const key=String(row.type.id),group=grouped.get(key)||{type:row.type,positions:[]};
+        group.positions.push(row);grouped.set(key,group);
+      }
+      const steps=[...grouped.values()].sort((a,b)=>Number(a.type.flow_sort_order||0)-Number(b.type.flow_sort_order||0)||String(a.type.name).localeCompare(String(b.type.name),'pt-BR'));
       const quantities={};
       for(const step of steps){
-        const availableProducts=step.alternatives;
-        const initial=availableProducts.find(x=>String(x.product_id)===String(step.item.product_id))
-          ||[...availableProducts].sort((a,b)=>Number(a.price_cents)-Number(b.price_cents))[0];
-        for(const option of availableProducts){
-          const key=String(step.item.position_id)+'|'+String(option.product_id);
-          quantities[key]=initial&&String(initial.product_id)===String(option.product_id)
-            ?Math.min(number(step.type?.max_quantity,10),Math.max(0,number(step.item.quantity)))
-            :0;
+        for(const row of step.positions){
+          const availableProducts=row.alternatives;
+          const initial=availableProducts.find(x=>String(x.product_id)===String(row.item.product_id))
+            ||[...availableProducts].sort((a,b)=>Number(a.price_cents)-Number(b.price_cents))[0];
+          for(const option of availableProducts){
+            const key=String(row.item.position_id)+'|'+String(option.product_id);
+            const cap=Math.min(number(step.type.max_quantity,10),number(option.stock_quantity,0));
+            quantities[key]=initial&&String(initial.product_id)===String(option.product_id)
+              ?Math.min(cap,Math.max(0,number(row.item.quantity)))
+              :0;
+          }
         }
       }
-      state.preview={basketId:basket.linked_template_id,compositionNumber:cheapest.composition_number,basket:cheapest.basket,steps,quantities,index:0};
+      state.preview={basketId:basket.linked_template_id,compositionNumber:cheapest.composition_number,basket:cheapest.basket,items:cheapest.items,steps,quantities,index:0};
     }catch(error){state.previewError=error.message||'Não consegui carregar a prévia do Flow.'}
     finally{state.previewLoading=false;render()}
   }
   function updatePreviewQuantity(input){
     const preview=state.preview;if(!preview)return;
-    const step=preview.steps[preview.index];if(!step)return;
-    const id=String(input.dataset.previewQty||''),max=Math.min(number(step.type?.max_quantity,10),number(step.alternatives.find(x=>String(x.product_id)===id)?.stock_quantity,0));
+    const key=String(input.dataset.previewQty||''),parts=key.split('|'),positionId=parts[0],id=parts[1];
+    const step=preview.steps[preview.index],row=step?.positions.find(x=>String(x.item.position_id)===positionId);
+    if(!row||!id)return;
+    const option=row.alternatives.find(x=>String(x.product_id)===id);
+    const max=Math.min(number(step.type?.max_quantity,10),number(option?.stock_quantity,0));
     const qty=Math.max(0,Math.min(max,Math.trunc(number(input.value))));
     if(step.type?.selection_mode==='single'&&qty>0){
-      for(const option of step.alternatives)preview.quantities[String(step.item.position_id)+'|'+String(option.product_id)]=String(option.product_id)===id?qty:0;
-    }else preview.quantities[String(step.item.position_id)+'|'+id]=qty;
+      for(const alternative of row.alternatives)preview.quantities[positionId+'|'+String(alternative.product_id)]=String(alternative.product_id)===id?qty:0;
+    }else preview.quantities[key]=qty;
   }
   function previewTotal(){
     const preview=state.preview;if(!preview)return 0;
     let total=Number(preview.basket.hidden_adjustment_cents||0);
     let conditional=false;
-    for(const step of preview.steps){
-      for(const option of step.alternatives){
-        const qty=number(preview.quantities[String(step.item.position_id)+'|'+String(option.product_id)]);
-        if(qty>0){total+=Number(option.price_cents||0)*qty;if(String(option.product_id)===String(preview.basket.conditional_hidden_product_id))conditional=true}
+    const editable=new Map();
+    for(const step of preview.steps)for(const row of step.positions)editable.set(String(row.item.position_id),row);
+    for(const item of preview.items||[]){
+      const row=editable.get(String(item.position_id));
+      if(row){
+        for(const option of row.alternatives){
+          const qty=number(preview.quantities[String(item.position_id)+'|'+String(option.product_id)]);
+          if(qty>0){total+=Number(option.price_cents||0)*qty;if(String(option.product_id)===String(preview.basket.conditional_hidden_product_id))conditional=true}
+        }
+      }else{
+        const qty=number(item.quantity);
+        total+=Number(item.price_cents||0)*qty;
+        if(qty>0&&String(item.product_id)===String(preview.basket.conditional_hidden_product_id))conditional=true;
       }
     }
     if(preview.basket.conditional_hidden_enabled&&conditional)total+=Number(preview.basket.conditional_hidden_adjustment_cents||0);
@@ -154,18 +172,23 @@
     const preview=state.preview,basket=selectedBasket();
     if(state.previewLoading){host.innerHTML='<div class="da-flow-empty">Consultando preços, estoque e opções atuais…</div>';return}
     if(state.previewError){host.innerHTML='<div class="da-flow-error">'+esc(state.previewError)+'</div>';return}
-    if(!preview){host.innerHTML='<div class="da-flow-empty">'+(basket?'A prévia seleciona automaticamente a combinação disponível mais barata e começa pelo primeiro tipo habilitado.':'Escolha um tamanho na coluna ao lado.')+'</div>';return}
+    if(!preview){host.innerHTML='<div class="da-flow-empty">'+(basket?'A prévia escolhe a combinação disponível mais barata e agrupa as etapas por tipo de produto.':'Escolha um tamanho na coluna ao lado.')+'</div>';return}
+    if(!preview.steps.length){host.innerHTML='<div class="da-flow-empty">Nenhum tipo de produto está habilitado para escolha. Total da cesta: '+money(previewTotal())+'</div>';return}
     const step=preview.steps[preview.index],type=step?.type;
     if(!step){host.innerHTML='<div class="da-flow-empty">Esta combinação não possui etapas de produto.</div>';return}
-    const maxStep=preview.steps.length,options=step.alternatives;
-    const cards=options.map(option=>{
-      const key=String(step.item.position_id)+'|'+String(option.product_id),qty=number(preview.quantities[key]);
-      const max=Math.max(0,Math.min(number(type?.max_quantity,10),number(option.stock_quantity)));
-      return '<article class="da-flow-preview-product"><img src="'+esc(option.image_url||'/img/sem-foto.svg')+'" alt=""><div><strong>'+esc(option.name)+'</strong><small>'+esc([option.brand,option.packaging].filter(Boolean).join(' · '))+'</small><small class="da-flow-price">'+money(option.price_cents)+' cada</small><small>Disponível: '+esc(option.stock_quantity)+'</small></div><label style="grid-column:1/-1;font-size:11px;font-weight:800;color:#536159">Quantidade<input type="number" min="0" max="'+max+'" step="1" data-preview-qty="'+esc(option.product_id)+'" value="'+esc(qty)+'" aria-label="Quantidade de '+esc(option.name)+'"></label></article>';
+    const maxStep=preview.steps.length;
+    const warnings=[];
+    const positionSections=step.positions.map(row=>{
+      const cards=row.alternatives.map(option=>{
+        const key=String(row.item.position_id)+'|'+String(option.product_id),qty=number(preview.quantities[key]);
+        const max=Math.max(0,Math.min(number(type?.max_quantity,10),number(option.stock_quantity)));
+        return '<article class="da-flow-preview-product"><img src="'+esc(option.image_url||'/img/sem-foto.svg')+'" alt=""><div><strong>'+esc(option.name)+'</strong><small>'+esc([option.brand,option.packaging].filter(Boolean).join(' · '))+'</small><small class="da-flow-price">'+money(option.price_cents)+' cada</small><small>Disponível: '+esc(option.stock_quantity)+'</small></div><label style="grid-column:1/-1;font-size:11px;font-weight:800;color:#536159">Quantidade<input type="number" min="0" max="'+max+'" step="1" data-preview-qty="'+esc(key)+'" value="'+esc(qty)+'" aria-label="Quantidade de '+esc(option.name)+'"></label></article>';
+      }).join('');
+      if(row.alternative_count>row.alternatives.length)warnings.push('Há '+row.alternative_count+' opções configuradas em '+(row.item.label||type?.name)+', mas o Flow atual mostra até 10.');
+      return '<div style="border:1px solid #e1e7e3;border-radius:10px;padding:9px;margin-top:9px"><strong>'+esc(row.item.label||type?.name||'Produto')+'</strong><div class="da-flow-muted">Quantidade-base: '+esc(row.item.quantity)+'</div><div class="da-flow-preview-products">'+(cards||'<div class="da-flow-empty">Nenhuma opção disponível em estoque.</div>')+'</div></div>';
     }).join('');
-    const warning=step.alternative_count>options.length?'<div class="da-flow-status warn">Há '+step.alternative_count+' opções configuradas; o simulador mostra '+options.length+'. O Flow precisa paginar ou limitar a lista.</div>':'';
     const currentCombo=money(preview.basket.display_price_cents);
-    host.innerHTML='<div class="da-flow-preview"><div class="da-flow-preview-top"><div><strong>'+esc(type?.name||step.item.label||'Produto')+'</strong><div class="da-flow-muted">Etapa '+(preview.index+1)+' de '+maxStep+' · combinação inicial '+preview.compositionNumber+' ('+currentCombo+')</div></div><div><button type="button" data-flow-step-prev '+(preview.index===0?'disabled':'')+'>Anterior</button> <button type="button" data-flow-step-next '+(preview.index>=maxStep-1?'disabled':'')+'>Próxima etapa</button></div></div><div class="da-flow-preview-step"><div class="da-flow-preview-step-head"><strong>'+esc(step.item.label||type?.name||'Escolha os produtos')+'</strong><span class="da-flow-muted">'+(type?.selection_mode==='multiple'?'Pode selecionar várias opções':'Selecione uma opção')+'</span></div><div class="da-flow-preview-products">'+(cards||'<div class="da-flow-empty">Nenhuma opção disponível em estoque.</div>')+'</div></div>'+warning+'<div class="da-flow-total"><span>Total atualizado na prévia</span><span>'+money(previewTotal())+'</span></div><div class="da-flow-muted">Simulação de atendimento · não cria pedido nem reserva estoque.</div></div>';
+    host.innerHTML='<div class="da-flow-preview"><div class="da-flow-preview-top"><div><strong>'+esc(type?.name||'Escolha os produtos')+'</strong><div class="da-flow-muted">Etapa '+(preview.index+1)+' de '+maxStep+' · combinação mais barata nº '+preview.compositionNumber+' ('+currentCombo+')</div></div><div><button type="button" data-flow-step-prev '+(preview.index===0?'disabled':'')+'>Anterior</button> <button type="button" data-flow-step-next '+(preview.index>=maxStep-1?'disabled':'')+'>Próxima etapa</button></div></div><div class="da-flow-preview-step"><div class="da-flow-preview-step-head"><strong>'+esc(type?.name||'Tipo de produto')+'</strong><span class="da-flow-muted">'+(type?.selection_mode==='multiple'?'Pode escolher várias opções; cada uma tem quantidade própria':'Escolha uma opção por item')+'</span></div>'+positionSections+'</div>'+(warnings.length?'<div class="da-flow-status warn">'+warnings.map(esc).join('<br>')+'</div>':'')+'<div class="da-flow-total"><span>Total atualizado na prévia</span><span data-flow-total-value>'+money(previewTotal())+'</span></div><div class="da-flow-muted">A combinação mais barata foi carregada com preços e estoque atuais. Itens de tipos desabilitados ficam fixos na cesta. Simulação sem criar pedido ou reservar estoque.</div></div>';
   }
   async function open(root){
     state.root=root;root.innerHTML='<div class="da-flow-empty">Carregando configuração do Flow…</div>';
