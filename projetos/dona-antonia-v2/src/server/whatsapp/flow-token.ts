@@ -86,10 +86,7 @@ function equalBytes(left: Uint8Array, right: Uint8Array): boolean {
 }
 
 async function phoneFingerprint(secret: string, phone: string): Promise<Uint8Array> {
-  return (await sign(secret, `phone:${TOKEN_VERSION}:${phone}`)).slice(
-    0,
-    PHONE_FINGERPRINT_BYTES,
-  );
+  return (await sign(secret, `phone:${TOKEN_VERSION}:${phone}`)).slice(0, PHONE_FINGERPRINT_BYTES);
 }
 
 export async function createWhatsAppFlowToken(
