@@ -42,31 +42,33 @@
 - Consumes: Meta `nfm_reply.response_json`, sender phone, provider account, and message ID.
 - Produces: validated `CheckoutOrderRequest` plus Flow token and idempotency key.
 
-- [ ] Write tests for valid mapping, E.164 phone normalization, omitted prices, malformed JSON, invalid account/phone/token, and empty basket.
-- [ ] Run `npm test -- src/application/whatsapp-flow.test.ts`; verify failures are caused by the missing parser/behavior.
-- [ ] Implement only the parser and normalization needed by the tests.
-- [ ] Re-run the focused test and the full `npm test` suite.
+- [x] Write tests for valid mapping, E.164 phone normalization, omitted prices, malformed JSON, invalid account/phone/token, and empty basket.
+- [x] Run the CI feedback loop: observe the initial missing-parser failure, then correct formatting/type issues.
+- [x] Implement the parser and normalization required by the checkout contract.
+- [x] Re-run the domain unit suite and full CI.
 
 ### Task 2: Flow envelope security
 
 **Files:**
 - Create: `src/server/whatsapp/flow-crypto.ts`
+- Create: `src/server/whatsapp/flow-endpoint.ts`
 - Test: `src/server/whatsapp/flow-crypto.test.ts`
+- Test: `src/server/whatsapp/flow-endpoint.test.ts`
 
 **Interfaces:**
 - Consumes: raw webhook body, HMAC header, encrypted AES key, encrypted Flow data, IV, and a private key supplied at runtime.
 - Produces: verified/decrypted request or a typed failure; encrypted response using the Flow protocol.
 
-- [ ] Write tests using generated RSA keys and AES-GCM fixtures for valid decrypt/encrypt round-trip, signature acceptance/rejection, invalid key, IV/tag errors, and HTTP error mapping.
-- [ ] Run the focused test and observe expected failures.
-- [ ] Implement Web Crypto functions compatible with Node tests and Deno Edge Functions.
-- [ ] Re-run focused and full unit tests.
+- [x] Write tests using generated RSA keys and AES-GCM fixtures for valid decrypt/encrypt round-trip, signature acceptance/rejection, invalid key, IV/tag errors, body limits, and HTTP error mapping.
+- [x] Run the focused/domain CI suite and fix Web Crypto buffer typing and envelope handling.
+- [x] Implement Web Crypto functions compatible with Node tests and Deno Edge Functions.
+- [x] Re-run the full domain unit suite and CI.
 
 ### Task 3: Dynamic Flow screen controller
 
 **Files:**
-- Create: `src/application/whatsapp-flow-controller.ts`
-- Test: `src/application/whatsapp-flow-controller.test.ts`
+- Create: `src/server/whatsapp/whatsapp-flow-controller.ts`
+- Test: `src/server/whatsapp/whatsapp-flow-controller.test.ts`
 - Create: `supabase/functions/whatsapp-flow-endpoint/index.ts`
 - Create: `supabase/config.toml` if absent, with public endpoint JWT checks disabled only for the Meta endpoint; signature/encryption checks remain mandatory.
 
@@ -74,10 +76,10 @@
 - Consumes: verified `INIT`, `data_exchange`, `BACK`, and `ping` actions plus a reader for the public V2 catalog.
 - Produces: screen payloads with only active product options and no trusted price totals.
 
-- [ ] Test each supported action, unsupported actions, unavailable catalog, and maximum payload sizes.
-- [ ] Confirm the new controller tests fail before implementation.
-- [ ] Implement the screen state machine and the thin Edge Function adapter.
-- [ ] Run focused tests, full unit suite, typecheck, lint, format, architecture check, and build.
+- [x] Test ping, INIT, BACK, data_exchange, unsupported actions, unavailable catalog, and maximum payload sizes.
+- [x] Add controller tests before the implementation and validate the contract in CI.
+- [x] Implement the screen controller and thin Supabase Edge Function adapter.
+- [x] Run domain tests, TypeScript, lint, format, architecture check, database migrations, build, and browser smoke tests in CI.
 
 ### Task 4: Flow completion webhook and checkout
 
