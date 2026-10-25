@@ -54,6 +54,7 @@ export interface WhatsAppFlowScreenResponse {
 export interface WhatsAppFlowControllerDependencies {
   readonly readCatalog: () => Promise<WhatsAppFlowCatalog>;
   readonly quote: (payload: CheckoutOrderRequest) => Promise<unknown>;
+  readonly verifyFlowToken: (token: string) => Promise<boolean>;
 }
 
 interface ProductOption {
@@ -384,6 +385,10 @@ export function createWhatsAppFlowController(
     const data = optionalRecord(body.data);
 
     if (action === 'ping') return { data: { status: 'active' } };
+
+    const flowToken = typeof body.flow_token === 'string' ? body.flow_token : '';
+    if (!flowToken || !(await dependencies.verifyFlowToken(flowToken)))
+      throw new Error('Token do WhatsApp Flow inválido.');
     if (data.error) return { data: { acknowledged: true } };
     if (!['INIT', 'data_exchange', 'BACK'].includes(action))
       throw new Error('Ação do WhatsApp Flow não suportada.');
@@ -503,7 +508,6 @@ export function createWhatsAppFlowController(
       try {
         const catalog = await loadCatalog();
         const products = activeProducts(catalog);
-        const flowToken = text(body.flow_token, 'flow_token', 120);
         const request = checkoutRequest(catalog, products, data, flowToken);
         const quote = await dependencies.quote(request);
         return makeResponse('REVIEW', publicReviewData(request, flowToken, quote));

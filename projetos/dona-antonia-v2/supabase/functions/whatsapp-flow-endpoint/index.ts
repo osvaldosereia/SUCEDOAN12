@@ -7,6 +7,7 @@ import {
   type WhatsAppFlowCatalog,
 } from '../../../src/server/whatsapp/whatsapp-flow-controller.ts';
 import { handleWhatsAppFlowEndpoint } from '../../../src/server/whatsapp/flow-endpoint.ts';
+import { verifyWhatsAppFlowToken } from '../../../src/server/whatsapp/flow-token.ts';
 
 function record(value: unknown, label: string): Record<string, unknown> {
   if (typeof value !== 'object' || value === null || Array.isArray(value))
@@ -109,6 +110,11 @@ async function callV2Rpc(name: string, payload: Record<string, unknown>): Promis
 const controller = createWhatsAppFlowController({
   readCatalog: async () => mapCatalog(await callV2Rpc('get_storefront_catalog', {})),
   quote: (payload) => callV2Rpc('quote_storefront_order', { p_payload: payload }),
+  verifyFlowToken: async (token) =>
+    (await verifyWhatsAppFlowToken({
+      token,
+      secret: requiredEnvironment('WHATSAPP_FLOW_TOKEN_SECRET'),
+    })) !== null,
 });
 
 Deno.serve((request) =>

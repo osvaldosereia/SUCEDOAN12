@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createWhatsAppFlowController } from './whatsapp-flow-controller';
+import {
+  createWhatsAppFlowController,
+  type WhatsAppFlowControllerDependencies,
+} from './whatsapp-flow-controller';
 
 const catalog = {
   products: [
@@ -54,10 +57,38 @@ const catalog = {
   extras: [{ typeId: 'type-sugar', active: true, order: 1 }],
 };
 
+function createTestController(
+  dependencies: Omit<WhatsAppFlowControllerDependencies, 'verifyFlowToken'>,
+) {
+  return createWhatsAppFlowController({
+    ...dependencies,
+    verifyFlowToken: async (token) => token === 'flow-session-1234567890',
+  });
+}
+
 describe('createWhatsAppFlowController', () => {
+  it('rejects missing or invalid flow tokens before catalog work', async () => {
+    const readCatalog = vi.fn(async () => catalog);
+    const quote = vi.fn();
+    const verifyFlowToken = vi.fn(async (token: string) => token === 'flow-session-1234567890');
+    const controller = createWhatsAppFlowController({ readCatalog, quote, verifyFlowToken });
+
+    await expect(controller({ action: 'ping' })).resolves.toEqual({
+      data: { status: 'active' },
+    });
+    await expect(controller({ action: 'INIT' })).rejects.toThrow();
+    await expect(
+      controller({ action: 'INIT', flow_token: 'modified-flow-session-1234567890' }),
+    ).rejects.toThrow();
+
+    expect(readCatalog).not.toHaveBeenCalled();
+    expect(quote).not.toHaveBeenCalled();
+    expect(verifyFlowToken).toHaveBeenCalledWith('modified-flow-session-1234567890');
+  });
+
   it('answers ping and returns only active basket/product choices on INIT', async () => {
     const quote = vi.fn();
-    const controller = createWhatsAppFlowController({
+    const controller = createTestController({
       readCatalog: async () => catalog,
       quote,
     });
@@ -65,20 +96,23 @@ describe('createWhatsAppFlowController', () => {
     await expect(controller({ action: 'ping' })).resolves.toEqual({
       data: { status: 'active' },
     });
-    await expect(
-      controller({ action: 'INIT', flow_token: 'flow-session-1234567890' }),
-    ).resolves.toEqual({
+    const initialResponse = await controller({
+      action: 'INIT',
+      flow_token: 'flow-session-1234567890',
+    });
+    expect(initialResponse).toEqual({
       screen: 'BASKET',
       data: { baskets: [{ id: 'mini', title: 'Cesta Mini' }] },
     });
     expect(quote).not.toHaveBeenCalled();
-    expect(JSON.stringify(await controller({ action: 'INIT' }))).not.toMatch(
-      /priceCents|stock|unitPrice/i,
+    expect(JSON.stringify(initialResponse)).not.toMatch(/priceCents|stock|unitPrice/i);
+    await expect(controller({ action: 'INIT' })).rejects.toThrow(
+      'Token do WhatsApp Flow inválido.',
     );
   });
 
   it('returns stock-backed product options for a selected basket', async () => {
-    const controller = createWhatsAppFlowController({
+    const controller = createTestController({
       readCatalog: async () => catalog,
       quote: vi.fn(),
     });
@@ -116,7 +150,7 @@ describe('createWhatsAppFlowController', () => {
   });
 
   it('maps basket selections to active SKU lines and supports BACK navigation', async () => {
-    const controller = createWhatsAppFlowController({
+    const controller = createTestController({
       readCatalog: async () => catalog,
       quote: vi.fn(),
     });
@@ -125,6 +159,7 @@ describe('createWhatsAppFlowController', () => {
       controller({
         action: 'data_exchange',
         screen: 'PRODUCTS',
+        flow_token: 'flow-session-1234567890',
         data: {
           basketId: 'mini',
           basketQuantity: 2,
@@ -150,7 +185,7 @@ describe('createWhatsAppFlowController', () => {
       },
     });
 
-    await expect(controller({ action: 'BACK', screen: 'PRODUCTS' })).resolves.toEqual({
+    await expect(controller({ action: 'BACK', screen: 'PRODUCTS', flow_token: 'flow-session-1234567890' })).resolves.toEqual({
       screen: 'BASKET',
       data: { baskets: [{ id: 'mini', title: 'Cesta Mini' }] },
     });
@@ -166,7 +201,7 @@ describe('createWhatsAppFlowController', () => {
         itemCount: 3,
       };
     });
-    const controller = createWhatsAppFlowController({
+    const controller = createTestController({
       readCatalog: async () => catalog,
       quote,
     });
@@ -229,7 +264,7 @@ describe('createWhatsAppFlowController', () => {
   });
 
   it('keeps quote failures generic and inside the customer screen', async () => {
-    const controller = createWhatsAppFlowController({
+    const controller = createTestController({
       readCatalog: async () => catalog,
       quote: async () => {
         throw new Error('private database message');
@@ -249,7 +284,7 @@ describe('createWhatsAppFlowController', () => {
   });
 
   it('rejects an unavailable basket selection and unsupported actions', async () => {
-    const controller = createWhatsAppFlowController({
+    const controller = createTestController({
       readCatalog: async () => catalog,
       quote: vi.fn(),
     });
@@ -258,6 +293,7 @@ describe('createWhatsAppFlowController', () => {
       controller({
         action: 'data_exchange',
         screen: 'BASKET',
+        flow_token: 'flow-session-1234567890',
         data: { basketId: 'unavailable', basketQuantity: 1 },
       }),
     ).resolves.toEqual({
@@ -268,11 +304,11 @@ describe('createWhatsAppFlowController', () => {
       },
     });
 
-    await expect(controller({ action: 'DELETE_EVERYTHING' })).rejects.toThrow();
+    await expect(controller({ action: 'DELETE_EVERYTHING', flow_token: 'flow-session-1234567890' })).rejects.toThrow();
   });
 
   it('acknowledges client error notifications and returns a safe unavailable state', async () => {
-    const controller = createWhatsAppFlowController({
+    const controller = createTestController({
       readCatalog: async () => {
         throw new Error('private upstream detail');
       },
@@ -280,9 +316,9 @@ describe('createWhatsAppFlowController', () => {
     });
 
     await expect(
-      controller({ action: 'data_exchange', data: { error: 'client error' } }),
+      controller({ action: 'data_exchange', flow_token: 'flow-session-1234567890', data: { error: 'client error' } }),
     ).resolves.toEqual({ data: { acknowledged: true } });
-    await expect(controller({ action: 'INIT' })).resolves.toEqual({
+    await expect(controller({ action: 'INIT', flow_token: 'flow-session-1234567890' })).resolves.toEqual({
       screen: 'BASKET',
       data: {
         baskets: [],
@@ -312,12 +348,12 @@ describe('createWhatsAppFlowController', () => {
         },
       ],
     };
-    const controller = createWhatsAppFlowController({
+    const controller = createTestController({
       readCatalog: async () => oversizedCatalog,
       quote: vi.fn(),
     });
 
-    await expect(controller({ action: 'INIT' })).resolves.toEqual({
+    await expect(controller({ action: 'INIT', flow_token: 'flow-session-1234567890' })).resolves.toEqual({
       screen: 'BASKET',
       data: {
         baskets: [],
