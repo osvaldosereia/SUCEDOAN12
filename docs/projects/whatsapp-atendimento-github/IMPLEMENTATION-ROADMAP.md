@@ -44,7 +44,7 @@ Saída: pesquisa técnica e requisitos iniciais revisáveis em docs/projects/wha
 Estado: pesquisa documental concluída em 25/10/2026; prova em número controlado pendente. Detalhes e fontes oficiais em FLOW-RESEARCH.md.
 
 - [x] Comparar Flow com mensagens de catálogo/produtos, carrinho nativo, listas e botões da Meta.
-- [x] Identificar que a mensagem multiproduto permite mostrar até 30 itens em até 10 seções e encaminha pedidos ao webhook.
+- [x] Identificar que a mensagem multiproduto permite mostrar até 30 itens em seções e encaminha pedidos ao webhook; templates multiproduto podem usar até 10 seções.
 - [x] Registrar que o carrinho do WhatsApp permite ajustar a quantidade dos itens; testar essa experiência especificamente pela Cloud API e em cada número.
 - [x] Definir GitHub como fonte de verdade e catálogo Meta como cópia necessária para distribuição de produtos no WhatsApp.
 - [ ] Com exportação das cestas em mãos, validar num número controlado: quantidade por item, pedido no webhook, regra da cesta, preço e comportamento entre mensagens.
