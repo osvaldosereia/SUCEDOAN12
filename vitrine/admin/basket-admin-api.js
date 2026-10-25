@@ -38,7 +38,7 @@
         const response=await fetch(endpoint+'?action=basket_mold_options_batch',{
           method:'POST',cache:'no-store',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({basket_id:basketId,composition_number:compositionNumber,positions:chunk.map(item=>({
-            position_id:item.position_id,selected_product_id:item.product_id||'',quantity:1
+            position_id:item.position_id,selected_product_id:item.product_id||'',quantity:Math.max(1,Math.trunc(Number(item.quantity)||1))
           }))})
         });
         const result=await response.json().catch(()=>({}));

@@ -3,11 +3,18 @@
   const api=()=>window.DonaAntoniaBasketAdminApi;
   const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const money=cents=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(cents||0)/100);
-  const state={root:null,config:null,busy:false,selectedBasketId:'',openTypeId:'',preview:null,previewLoading:false,previewError:''};
+  const state={root:null,config:null,busy:false,selectedBasketId:'',openTypeId:'',preview:null,previewLoading:false,previewError:'',startingPrices:Object.create(null),priceLoading:false,priceRequestId:0};
   const basketTypes=()=>[...(state.config?.basket_types||[])].sort((a,b)=>Number(a.flow_sort_order||0)-Number(b.flow_sort_order||0)||String(a.name).localeCompare(String(b.name),'pt-BR'));
   const productTypes=()=>[...(state.config?.product_types||[])].sort((a,b)=>Number(a.flow_sort_order||0)-Number(b.flow_sort_order||0)||String(a.name).localeCompare(String(b.name),'pt-BR'));
   const selectedBasket=()=>basketTypes().find(x=>String(x.id)===String(state.selectedBasketId))||null;
   const number=(value,fallback=0)=>{const n=Number(value);return Number.isFinite(n)?n:fallback};
+  function startingPriceLabel(basket){
+    if(!basket.linked_template_id||basket.template_active!==true)return 'Preço indisponível neste modelo';
+    const price=state.startingPrices[String(basket.id)];
+    if(price?.cents!=null)return 'A partir de '+money(price.cents)+' · combinação '+price.compositionNumber;
+    if(price?.error)return price.error;
+    return state.priceLoading?'Calculando preço inicial…':'Preço inicial ainda não consultado';
+  }
   function style(){
     if(document.getElementById('daBasketFlowAdminStyle'))return;
     const s=document.createElement('style');s.id='daBasketFlowAdminStyle';
@@ -18,6 +25,7 @@
     const warnings=[];
     for(const basket of basketTypes()){
       if(basket.flow_enabled&&(!basket.linked_template_id||basket.template_active!==true))warnings.push(basket.name+': vincule um modelo comercial ativo antes de habilitar no Flow.');
+      if(basket.flow_enabled&&Number(basket.public_composition_count||0)!==3)warnings.push(basket.name+': o runtime atual espera exatamente três combinações por tamanho.');
     }
     for(const type of productTypes()){
       const activeOptions=(type.options||[]).filter(p=>p.is_active===true);
@@ -34,20 +42,21 @@
     const sizeHtml=sizes.map(b=>{
       const selectedState=String(b.id)===String(state.selectedBasketId);
       const valid=Boolean(b.linked_template_id)&&b.template_active===true;
-      return '<div class="da-flow-size '+(selectedState?'selected':'')+'"><input type="checkbox" data-flow-basket-enabled="'+esc(b.id)+'" '+(b.flow_enabled?'checked':'')+' aria-label="Habilitar '+esc(b.name)+' no Flow" '+(!valid?'disabled':'')+'><div class="da-flow-size-main" data-flow-basket="'+esc(b.id)+'" role="button" tabindex="0"><strong>'+esc(b.name)+'</strong><small>'+(valid?'Modelo comercial ativo · '+Number(b.public_composition_count||0)+' combinação(ões)':(b.linked_template_id?'Modelo inativo no site':'Sem modelo comercial vinculado'))+'</small></div><input class="da-flow-order" type="number" min="0" max="1000" data-flow-basket-order="'+esc(b.id)+'" value="'+esc(b.flow_sort_order)+'" aria-label="Ordem do tamanho '+esc(b.name)+'"></div>';
+      return '<div class="da-flow-size '+(selectedState?'selected':'')+'"><input type="checkbox" data-flow-basket-enabled="'+esc(b.id)+'" '+(b.flow_enabled?'checked':'')+' aria-label="Habilitar '+esc(b.name)+' no Flow" '+(!valid?'disabled':'')+'><div class="da-flow-size-main" data-flow-basket="'+esc(b.id)+'" role="button" tabindex="0"><strong>'+esc(b.name)+'</strong><small>'+(valid?'Modelo comercial ativo · '+Number(b.public_composition_count||0)+' combinação(ões)':(b.linked_template_id?'Modelo inativo no site':'Sem modelo comercial vinculado'))+'</small><small class="da-flow-price" data-flow-size-price="'+esc(b.id)+'">'+esc(startingPriceLabel(b))+'</small></div><input class="da-flow-order" type="number" min="0" max="1000" data-flow-basket-order="'+esc(b.id)+'" value="'+esc(b.flow_sort_order)+'" aria-label="Ordem do tamanho '+esc(b.name)+'"></div>';
     }).join('');
     const typeHtml=types.map((t,index)=>{
       const options=t.options||[],open=String(t.id)===String(state.openTypeId);
       const optionHtml=options.length?options.map(p=>'<article class="da-flow-option"><img src="'+esc(p.image_url||'/img/sem-foto.svg')+'" alt=""><strong>'+esc(p.name||'Produto')+'</strong><small>'+esc([p.brand,p.packaging,p.sku].filter(Boolean).join(' · ')||'Sem marca informada')+'</small><small class="da-flow-price">'+money(p.price_cents)+'</small><small>'+(p.is_active?'Ativo no catálogo':'Inativo no catálogo')+'</small></article>').join(''):'<div class="da-flow-empty">Nenhum produto vinculado a este tipo.</div>';
       return '<article class="da-flow-step"><div class="da-flow-step-head"><input type="checkbox" data-flow-type-enabled="'+esc(t.id)+'" '+(t.flow_enabled?'checked':'')+' aria-label="Incluir '+esc(t.name)+' no Flow"><div class="da-flow-step-name"><strong>'+esc(t.name)+'</strong><small>'+esc(t.category)+' · '+options.length+' opção(ões)</small></div><input class="da-flow-order" type="number" min="0" max="1000" data-flow-type-order="'+esc(t.id)+'" value="'+esc(t.flow_sort_order)+'" aria-label="Ordem da etapa '+esc(t.name)+'"><select data-flow-mode="'+esc(t.id)+'" aria-label="Tipo de seleção em '+esc(t.name)+'"><option value="multiple" '+(t.selection_mode==='multiple'?'selected':'')+'>Várias marcas</option><option value="single" '+(t.selection_mode==='single'?'selected':'')+'>Uma marca</option></select><input class="da-flow-max" type="number" min="1" max="10" data-flow-max="'+esc(t.id)+'" value="'+esc(t.max_quantity)+'" aria-label="Quantidade máxima por opção em '+esc(t.name)+'"><button type="button" data-flow-expand="'+esc(t.id)+'">'+(open?'Fechar':'Fotos')+'</button></div>'+(open?'<div class="da-flow-options">'+optionHtml+'</div>':'')+'</article>';
     }).join('');
-    root.innerHTML='<section class="da-flow-admin"><div class="da-flow-head"><h2>Atendimento por Flow</h2><span style="flex:1"></span><button type="button" data-flow-save class="primary" '+(state.busy?'disabled':'')+'>'+(state.busy?'Salvando…':'Salvar configuração')+'</button></div><div class="da-flow-note"><strong>Configuração do atendimento</strong> · A ordem, as opções e os limites do Flow ficam separados da publicação da vitrine. Preços e fotos vêm do catálogo atual; esta tela não edita preço, estoque nem pedidos. O Flow da Meta continua em rascunho; esta aba prepara a configuração, mas ainda não altera o atendimento ao cliente.</div><div class="da-flow-layout"><aside class="da-flow-panel"><h3>Tamanhos da cesta</h3><div class="da-flow-size-list">'+(sizeHtml||'<div class="da-flow-empty">Nenhum tamanho cadastrado.</div>')+'</div><div class="da-flow-subhead" style="margin-top:16px"><strong>Prévia de atendimento</strong></div><p class="da-flow-muted">Escolha um tamanho para calcular as combinações e simular as etapas.</p><button type="button" data-flow-preview-start '+(!selected||!selected.flow_enabled||state.previewLoading?'disabled':'')+'>Calcular e abrir prévia</button></aside><main class="da-flow-panel"><div class="da-flow-subhead"><h3 style="margin:0">Etapas de produtos</h3><span class="da-flow-muted">'+activeSteps+' tipo(s) habilitado(s) · arroz aparece primeiro</span></div><div class="da-flow-step-list">'+(typeHtml||'<div class="da-flow-empty">Nenhum tipo de produto configurado.</div>')+'</div><div class="da-flow-save" style="margin-top:12px"><button type="button" class="primary" data-flow-save '+(state.busy?'disabled':'')+'>Salvar configuração</button></div></main></div><div class="da-flow-panel"><h3>Simulador do atendimento</h3><div data-flow-preview></div></div>'+(warnings.length?'<div class="da-flow-status warn"><strong>Revisar antes de usar:</strong><br>'+warnings.map(esc).join('<br>')+'</div>':'<div class="da-flow-status">Configuração sem impedimentos básicos. Confirme fotos, preços, estoque e limites no simulador antes de homologar o Flow.</div>')+'</section>';
+    root.innerHTML='<section class="da-flow-admin"><div class="da-flow-head"><h2>Atendimento por Flow</h2><span style="flex:1"></span><button type="button" data-flow-save class="primary" '+(state.busy?'disabled':'')+'>'+(state.busy?'Salvando…':'Salvar configuração')+'</button></div><div class="da-flow-note"><strong>Configuração do atendimento</strong> · A ordem, as opções e os limites ficam separados da publicação da vitrine. Preços e fotos vêm do catálogo atual; esta tela não edita preço, estoque nem pedidos. A configuração salva aqui ainda não é lida pelo runtime do Flow da Meta: use a prévia como simulador administrativo, não como prova do atendimento publicado.</div><div class="da-flow-status warn"><strong>Compatibilidade do runtime atual:</strong> o cliente escolhe tamanho e combinação e depois recebe até quatro telas com até oito posições do molde, na ordem do molde. Cada posição aceita um produto e uma quantidade; o resumo final inclui itens e total, sem foto nem preço individual. A ordenação por tipo e a opção “Várias marcas” desta tela ainda não estão conectadas ao endpoint Meta; várias marcas na mesma posição também não são aceitas pela cotação atual.</div><div class="da-flow-layout"><aside class="da-flow-panel"><h3>Tamanhos da cesta</h3><div class="da-flow-size-list">'+(sizeHtml||'<div class="da-flow-empty">Nenhum tamanho cadastrado.</div>')+'</div><div class="da-flow-subhead" style="margin-top:16px"><strong>Prévia de atendimento</strong></div><p class="da-flow-muted">Os tamanhos mostram o menor preço entre as combinações disponíveis, calculado no catálogo atual.</p><button type="button" data-flow-prices-refresh '+(state.priceLoading?'disabled':'')+'>'+(state.priceLoading?'Atualizando valores…':'Atualizar preços dos tamanhos')+'</button><button type="button" data-flow-preview-start '+(!selected||!selected.flow_enabled||state.previewLoading?'disabled':'')+'>Calcular e abrir prévia</button></aside><main class="da-flow-panel"><div class="da-flow-subhead"><h3 style="margin:0">Etapas de produtos</h3><span class="da-flow-muted">'+activeSteps+' tipo(s) habilitado(s) · arroz aparece primeiro</span></div><div class="da-flow-step-list">'+(typeHtml||'<div class="da-flow-empty">Nenhum tipo de produto configurado.</div>')+'</div><div class="da-flow-save" style="margin-top:12px"><button type="button" class="primary" data-flow-save '+(state.busy?'disabled':'')+'>Salvar configuração</button></div></main></div><div class="da-flow-panel"><h3>Simulador do atendimento</h3><div data-flow-preview></div></div>'+(warnings.length?'<div class="da-flow-status warn"><strong>Revisar antes de usar:</strong><br>'+warnings.map(esc).join('<br>')+'</div>':'<div class="da-flow-status">Configuração sem impedimentos básicos. Confirme fotos, preços, estoque e limites no simulador antes de homologar o Flow.</div>')+'</section>';
     root.onclick=event=>{
-      const t=event.target.closest('[data-flow-basket],[data-flow-expand],[data-flow-save],[data-flow-preview-start],[data-flow-step-prev],[data-flow-step-next]');
+      const t=event.target.closest('[data-flow-basket],[data-flow-expand],[data-flow-save],[data-flow-preview-start],[data-flow-prices-refresh],[data-flow-step-prev],[data-flow-step-next]');
       if(!t)return;
       if(t.dataset.flowBasket){state.selectedBasketId=t.dataset.flowBasket;state.preview=null;state.previewError='';render()}
       else if(t.dataset.flowExpand){state.openTypeId=String(state.openTypeId)===String(t.dataset.flowExpand)?'':t.dataset.flowExpand;render()}
       else if(t.hasAttribute('data-flow-save'))void save()
+      else if(t.hasAttribute('data-flow-prices-refresh'))void loadStartingPrices()
       else if(t.hasAttribute('data-flow-preview-start'))void loadPreview()
       else if(t.hasAttribute('data-flow-step-prev')){if(state.preview)state.preview.index=Math.max(0,state.preview.index-1);renderPreview()}
       else if(t.hasAttribute('data-flow-step-next')){if(state.preview)state.preview.index=Math.min(state.preview.steps.length-1,state.preview.index+1);renderPreview()}
@@ -94,6 +103,30 @@
     const key=normalize(label);
     return productTypes().find(t=>[t.name,...(t.legacy_labels||[])].some(x=>normalize(x)===key||key.startsWith(normalize(x))))||null;
   }
+  async function loadStartingPrices(){
+    if(state.priceLoading)return;
+    const baskets=basketTypes().filter(b=>b.linked_template_id&&b.template_active===true);
+    if(!baskets.length)return;
+    state.priceLoading=true;
+    const requestId=++state.priceRequestId;
+    render();
+    try{
+      for(const basket of baskets){
+        if(requestId!==state.priceRequestId)return;
+        const key=String(basket.id);
+        try{
+          const count=Math.max(1,Math.min(6,Number(basket.public_composition_count||3)));
+          const quotes=await api().loadBasketCompositions(basket.linked_template_id,count);
+          const available=quotes.filter(q=>Number.isSafeInteger(Number(q.basket?.display_price_cents))&&Number(q.basket?.stock_quantity)>0);
+          available.sort((a,b)=>Number(a.basket.display_price_cents)-Number(b.basket.display_price_cents)||a.composition_number-b.composition_number);
+          state.startingPrices[key]=available.length?{cents:Number(available[0].basket.display_price_cents),compositionNumber:available[0].composition_number}:{error:'Nenhuma combinação disponível'};
+        }catch(error){state.startingPrices[key]={error:'Não foi possível consultar o preço'};}
+        state.root?.querySelectorAll('[data-flow-size-price]').forEach(el=>{if(String(el.dataset.flowSizePrice)===key)el.textContent=startingPriceLabel(basket)});
+      }
+    }finally{
+      if(requestId===state.priceRequestId){state.priceLoading=false;render()}
+    }
+  }
   async function loadPreview(){
     const basket=selectedBasket();if(!basket?.linked_template_id||basket.template_active!==true)return;
     state.previewLoading=true;state.previewError='';state.preview=null;render();
@@ -104,17 +137,19 @@
       if(!available.length)throw new Error('Nenhuma combinação está disponível para esta cesta.');
       available.sort((a,b)=>Number(a.basket.display_price_cents)-Number(b.basket.display_price_cents)||a.composition_number-b.composition_number);
       const cheapest=available[0];
+      state.startingPrices[String(basket.id)]={cents:Number(cheapest.basket.display_price_cents),compositionNumber:cheapest.composition_number};
       const options=await api().loadPositionOptions(basket.linked_template_id,cheapest.composition_number,cheapest.items);
       const optionsByPosition=new Map(options.map(x=>[String(x.position_id),x]));
       const positionRows=cheapest.items.map(item=>{
         const type=findType(item.label||item.name);
         const result=optionsByPosition.get(String(item.position_id));
         const alternatives=(result?.alternatives||[]).filter(x=>Number(x.stock_quantity)>0);
-        return {item,type,alternatives,alternative_count:Number(result?.alternative_count||alternatives.length)};
+        const reason=!type?'Sem tipo de produto correspondente no Admin':!type.flow_enabled?'Tipo desabilitado no atendimento':!alternatives.length?'Sem alternativa disponível no estoque':'';
+        return {item,type,alternatives,alternative_count:Number(result?.alternative_count||alternatives.length),reason,editable:!reason};
       });
       const grouped=new Map();
       for(const row of positionRows){
-        if(!row.type?.flow_enabled||!row.alternatives.length)continue;
+        if(!row.editable)continue;
         const key=String(row.type.id),group=grouped.get(key)||{type:row.type,positions:[]};
         group.positions.push(row);grouped.set(key,group);
       }
@@ -134,7 +169,8 @@
           }
         }
       }
-      state.preview={basketId:basket.linked_template_id,compositionNumber:cheapest.composition_number,basket:cheapest.basket,items:cheapest.items,steps,quantities,index:0};
+      const fixedItems=positionRows.filter(row=>!row.editable);
+      state.preview={basketId:basket.linked_template_id,compositionNumber:cheapest.composition_number,basket:cheapest.basket,items:cheapest.items,steps,quantities,index:0,fixedItems};
     }catch(error){state.previewError=error.message||'Não consegui carregar a prévia do Flow.'}
     finally{state.previewLoading=false;render()}
   }
@@ -178,11 +214,14 @@
     if(state.previewLoading){host.innerHTML='<div class="da-flow-empty">Consultando preços, estoque e opções atuais…</div>';return}
     if(state.previewError){host.innerHTML='<div class="da-flow-error">'+esc(state.previewError)+'</div>';return}
     if(!preview){host.innerHTML='<div class="da-flow-empty">'+(basket?'A prévia escolhe a combinação disponível mais barata e agrupa as etapas por tipo de produto.':'Escolha um tamanho na coluna ao lado.')+'</div>';return}
-    if(!preview.steps.length){host.innerHTML='<div class="da-flow-empty">Nenhum tipo de produto está habilitado para escolha. Total da cesta: '+money(previewTotal())+'</div>';return}
+    const fixedItemsHtml=(preview.fixedItems||[]).length?'<div class="da-flow-preview-step"><strong>Posições que ficam fixas</strong><div class="da-flow-preview-products">'+preview.fixedItems.map(row=>{const item=row.item,qty=Math.max(0,number(item.quantity)),unit=number(item.price_cents);return '<article class="da-flow-preview-product"><img src="'+esc(item.image_url||'/img/sem-foto.svg')+'" alt=""><div><strong>'+esc(item.name||item.label||'Produto')+'</strong><small>'+esc(item.label||'Posição da cesta')+'</small><small>'+qty+' × '+money(unit)+' = '+money(qty*unit)+'</small><small class="da-flow-muted">'+esc(row.reason)+'</small></div></article>'}).join('')+'</div></div>':'';
+    if(!preview.steps.length){host.innerHTML='<div class="da-flow-preview">'+fixedItemsHtml+'<div class="da-flow-empty">Nenhum tipo de produto está habilitado para escolha.</div><div class="da-flow-total"><span>Total atualizado na prévia</span><span>'+money(previewTotal())+'</span></div></div>';return}
     const step=preview.steps[preview.index],type=step?.type;
     if(!step){host.innerHTML='<div class="da-flow-empty">Esta combinação não possui etapas de produto.</div>';return}
     const maxStep=preview.steps.length;
     const warnings=[];
+    if((preview.fixedItems||[]).length)warnings.push((preview.fixedItems||[]).length+' posição(ões) ficam fixas porque não têm um tipo Flow habilitado e mapeado.');
+    if(type?.selection_mode==='multiple')warnings.push('A seleção de várias marcas nesta prévia ainda não pode ser enviada à cotação atual, que aceita um produto por posição.');
     const positionSections=step.positions.map(row=>{
       const cards=row.alternatives.map(option=>{
         const key=String(row.item.position_id)+'|'+String(option.product_id),qty=number(preview.quantities[key]);
@@ -193,7 +232,7 @@
       return '<div style="border:1px solid #e1e7e3;border-radius:10px;padding:9px;margin-top:9px"><strong>'+esc(row.item.label||type?.name||'Produto')+'</strong><div class="da-flow-muted">Quantidade-base: '+esc(row.item.quantity)+'</div><div class="da-flow-preview-products">'+(cards||'<div class="da-flow-empty">Nenhuma opção disponível em estoque.</div>')+'</div></div>';
     }).join('');
     const currentCombo=money(preview.basket.display_price_cents);
-    host.innerHTML='<div class="da-flow-preview"><div class="da-flow-preview-top"><div><strong>'+esc(type?.name||'Escolha os produtos')+'</strong><div class="da-flow-muted">Etapa '+(preview.index+1)+' de '+maxStep+' · combinação mais barata nº '+preview.compositionNumber+' ('+currentCombo+')</div></div><div><button type="button" data-flow-step-prev '+(preview.index===0?'disabled':'')+'>Anterior</button> <button type="button" data-flow-step-next '+(preview.index>=maxStep-1?'disabled':'')+'>Próxima etapa</button></div></div><div class="da-flow-preview-step"><div class="da-flow-preview-step-head"><strong>'+esc(type?.name||'Tipo de produto')+'</strong><span class="da-flow-muted">'+(type?.selection_mode==='multiple'?'Pode escolher várias opções; cada uma tem quantidade própria':'Escolha uma opção por item')+'</span></div>'+positionSections+'</div>'+(warnings.length?'<div class="da-flow-status warn">'+warnings.map(esc).join('<br>')+'</div>':'')+'<div class="da-flow-total"><span>Total atualizado na prévia</span><span data-flow-total-value>'+money(previewTotal())+'</span></div><div class="da-flow-muted">A combinação mais barata foi carregada com preços e estoque atuais. Itens de tipos desabilitados ficam fixos na cesta. Simulação sem criar pedido ou reservar estoque.</div></div>';
+    host.innerHTML='<div class="da-flow-preview"><div class="da-flow-preview-top"><div><strong>'+esc(type?.name||'Escolha os produtos')+'</strong><div class="da-flow-muted">Etapa '+(preview.index+1)+' de '+maxStep+' · combinação mais barata nº '+preview.compositionNumber+' ('+currentCombo+')</div></div><div><button type="button" data-flow-step-prev '+(preview.index===0?'disabled':'')+'>Anterior</button> <button type="button" data-flow-step-next '+(preview.index>=maxStep-1?'disabled':'')+'>Próxima etapa</button></div></div><div class="da-flow-preview-step"><div class="da-flow-preview-step-head"><strong>'+esc(type?.name||'Tipo de produto')+'</strong><span class="da-flow-muted">'+(type?.selection_mode==='multiple'?'Pode escolher várias opções; cada uma tem quantidade própria':'Escolha uma opção por item')+'</span></div>'+positionSections+'</div>'+fixedItemsHtml+(warnings.length?'<div class="da-flow-status warn">'+warnings.map(esc).join('<br>')+'</div>':'')+'<div class="da-flow-total"><span>Total atualizado na prévia</span><span data-flow-total-value>'+money(previewTotal())+'</span></div><div class="da-flow-muted">A combinação mais barata foi carregada com preços e estoque atuais. Itens de tipos desabilitados ficam fixos na cesta. Simulação sem criar pedido ou reservar estoque.</div></div>';
   }
   async function open(root){
     state.root=root;root.innerHTML='<div class="da-flow-empty">Carregando configuração do Flow…</div>';
@@ -203,6 +242,7 @@
       const first=basketTypes().find(x=>x.linked_template_id);
       if(!state.selectedBasketId&&first)state.selectedBasketId=first.id;
       render();
+      void loadStartingPrices();
     }catch(error){root.innerHTML='<div class="da-flow-error">Não consegui carregar a configuração do Flow. <button type="button" data-flow-retry>Tentar novamente</button></div>';root.querySelector('[data-flow-retry]')?.addEventListener('click',()=>open(root))}
   }
   window.DonaAntoniaBasketAdminFlow={open};
