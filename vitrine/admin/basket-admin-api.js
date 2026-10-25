@@ -15,7 +15,38 @@
     saveTypes:types=>request('types_save',{types}),
     saveQuantities:quantities=>request('quantities_save',{quantities}),
     saveProductType:product_type=>request('product_type_save',{product_type}),
+    flowList:()=>request('flow_list'),
+    saveFlowSettings:configuration=>request('flow_save',{configuration}),
     searchProducts:q=>request('products',{q,limit:40}),
+    async loadBasketCompositions(basketId,count=3) {
+      const endpoint='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2';
+      const rows=await Promise.all(Array.from({length:count},(_,i)=>i+1).map(async composition=>{
+        const url=new URL(endpoint);url.searchParams.set('action','basket');url.searchParams.set('basket_id',String(basketId)+'@'+composition);url.searchParams.set('lightweight','1');
+        const response=await fetch(url.toString(),{method:'GET',cache:'no-store'});
+        const result=await response.json().catch(()=>({}));
+        if(!response.ok||result.ok!==true)return null;
+        return result.basket?{basket:result.basket,items:result.items||[],composition_number:composition}:null;
+      }));
+      return rows.filter(Boolean);
+    },
+    async loadPositionOptions(basketId,compositionNumber,items) {
+      const endpoint='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2';
+      const rows=Array.isArray(items)?items:[];
+      const out=[];
+      for(let offset=0;offset<rows.length;offset+=24){
+        const chunk=rows.slice(offset,offset+24);
+        const response=await fetch(endpoint+'?action=basket_mold_options_batch',{
+          method:'POST',cache:'no-store',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({basket_id:basketId,composition_number:compositionNumber,positions:chunk.map(item=>({
+            position_id:item.position_id,selected_product_id:item.product_id||'',quantity:1
+          }))})
+        });
+        const result=await response.json().catch(()=>({}));
+        if(!response.ok||result.ok!==true)throw new Error('Não foi possível carregar as opções atuais da cesta.');
+        out.push(...(result.positions||[]));
+      }
+      return out;
+    },
     async saveProductInline({id,stock,active}) {
       const b=bridge();
       if(typeof b.api!=='function'||typeof b.operator!=='function')throw new Error('Sessão administrativa indisponível.');
