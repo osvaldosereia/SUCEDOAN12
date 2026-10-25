@@ -145,13 +145,14 @@ export async function encryptFlowResponse(
 }
 
 export async function verifyMetaWebhookSignature(
-  rawBody: string,
+  rawBody: string | Uint8Array,
   signature: string | null,
   appSecret: string,
 ): Promise<boolean> {
+  const rawBytes =
+    typeof rawBody === 'string' ? new TextEncoder().encode(rawBody) : rawBody;
   if (
-    typeof rawBody !== 'string' ||
-    rawBody.length > MAX_ENVELOPE_FIELD_LENGTH ||
+    rawBytes.byteLength > MAX_ENVELOPE_FIELD_LENGTH ||
     typeof signature !== 'string' ||
     typeof appSecret !== 'string' ||
     !appSecret ||
@@ -176,7 +177,7 @@ export async function verifyMetaWebhookSignature(
       'HMAC',
       hmacKey,
       toArrayBuffer(signatureBytes),
-      toArrayBuffer(new TextEncoder().encode(rawBody)),
+      toArrayBuffer(rawBytes),
     );
   } catch {
     return false;
