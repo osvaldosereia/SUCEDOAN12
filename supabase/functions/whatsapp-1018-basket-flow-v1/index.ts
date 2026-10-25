@@ -1,9 +1,11 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import {flowExchange} from './engine.mjs';
+import {loadProductImage} from './images.mjs';
 import {decryptMetaPayload,encryptMetaResponse,verifyAppSignature,signState,verifyState} from './crypto.mjs';
 import {deriveFlowSessionKey,FLOW_CANARY_RECIPIENT_E164,FLOW_CANARY_SENDER_E164} from '../_shared/whatsapp-flow-session-v1.mjs';
 
-// DRAFT ONLY: not deployed. Production Meta canary and commercial webhook untouched.
+// Draft Flow handler. It is deployed as a guarded canary; production commercial
+// atendimento and webhook remain separate and untouched.
 // This handler requires encrypted Meta payloads, app signature, signed internal canary
 // flow_token and strict 1018->8360 audience verification before exposing storefront data.
 const STORE='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2';
@@ -33,6 +35,7 @@ const catalog={
 };
 const deps={
  ...catalog,
+ image:async url=>loadProductImage(url),
  signState:async state=>signState(state,await deriveFlowSessionKey(META_SECRET)),
  verifyState:async token=>verifyState(token,await deriveFlowSessionKey(META_SECRET))
 };

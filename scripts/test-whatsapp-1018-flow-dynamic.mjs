@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {webcrypto} from 'node:crypto';
 import {flowExchange,parseQty,assertBasket,SIZE_KEYS,ITEM_SCREENS,PAGE_SIZE} from '../supabase/functions/whatsapp-1018-basket-flow-v1/engine.mjs';
+import {loadProductImage,MAX_PRODUCT_IMAGE_BYTES} from '../supabase/functions/whatsapp-1018-basket-flow-v1/images.mjs';
 import {signState,verifyState,hmac,verifyAppSignature,decryptMetaPayload,encryptMetaResponse} from '../supabase/functions/whatsapp-1018-basket-flow-v1/crypto.mjs';
 import {canonicalMessagesFromMeta} from '../supabase/functions/_shared/whatsapp-core-v1.mjs';
 import {parseBasketFlowRequest,latestBasketFlowRequest,CANARY_CONVERSATION} from '../vitrine/admin/whatsapp-lab/reply-parser.mjs';
@@ -9,7 +10,7 @@ globalThis.crypto??=webcrypto;
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const flow=JSON.parse(read('vitrine/admin/whatsapp-lab/meta-flow/flow-dynamic-v1.json'));
 assert.equal(flow.version,'7.3');assert.equal(flow.data_api_version,'3.0');
-assert.equal(flow.screens.length,7);
+assert.equal(flow.screens.length,6,'product editing uses one reusable screen and two catalog pages');
 const flowJsonText=JSON.stringify(flow);
 assert.doesNotMatch(flowJsonText,/R\s*\$\s*\d/,'Flow JSON examples must not contain invented commercial prices');
 assert.doesNotMatch(flowJsonText,/Arroz 5 kg|Marca 1|Marca 2/,'Flow JSON examples must not present invented product or brand names');
@@ -24,32 +25,66 @@ assert.ok(storefrontSource.includes('brand:selected.brand||""'),'basket detail e
 
 const edges=Object.values(flow.routing_model).reduce((sum,next)=>sum+next.length,0);
 assert.ok(edges<=10,'Meta Flow routing_model cannot exceed ten edges');
-assert.equal(edges,8);
+assert.equal(edges,9);
 const ids=flow.screens.map(screen=>screen.id);
 assert.ok(ids.every(id=>/^[A-Z_]+$/.test(id)),'screen IDs must contain only letters and underscores');
 assert.equal(new Set(ids).size,ids.length);
-assert.deepEqual(ids,['TAMANHO','COMBINACAO',...ITEM_SCREENS,'RESUMO']);
+assert.deepEqual(ids,['TAMANHO','COMBINACAO','ITENS_UM','ITENS_DOIS','ITEM_EDIT','RESUMO']);
 assert.equal(flow.routing_model.RESUMO.length,0);
-assert.deepEqual(flow.routing_model.ITENS_UM,['ITENS_DOIS']);
-assert.deepEqual(flow.routing_model.ITENS_DOIS,['ITENS_TRES','RESUMO']);
-assert.deepEqual(flow.routing_model.ITENS_TRES,['ITENS_QUATRO','RESUMO']);
-assert.deepEqual(flow.routing_model.ITENS_QUATRO,['RESUMO']);
+assert.deepEqual(flow.routing_model.ITENS_UM,['ITEM_EDIT','ITENS_DOIS','RESUMO']);
+assert.deepEqual(flow.routing_model.ITENS_DOIS,['ITEM_EDIT','RESUMO']);
+assert.deepEqual(flow.routing_model.ITEM_EDIT,['ITENS_UM','ITENS_DOIS']);
+for(const id of ['ITENS_UM','ITENS_DOIS']){
+ const screen=flow.screens.find(x=>x.id===id);
+ assert.deepEqual(screen.layout.children.map(x=>x.type),['NavigationList'],'product catalog stays readable as a focused list');
+ assert.equal(screen.data.itens_lista.type,'array');
+ assert.ok(screen.data.itens_lista.items.properties['on-click-action'],'list entries carry their own dynamic action');
+}
+const editor=flow.screens.find(x=>x.id==='ITEM_EDIT');
+assert.ok(editor.layout.children.some(x=>x.type==='Image'&&x.src==='${data.imagem}'));
+assert.ok(editor.layout.children.some(x=>x.type==='RadioButtonsGroup'&&x.name==='produto'&&x['data-source']==='${data.alternativas}'));
+const quantityInput=editor.layout.children.find(x=>x.type==='TextInput'&&x.name==='quantidade');
+assert.equal(quantityInput?.['input-type'],'number','quantity uses the native numeric keyboard');
+assert.equal(quantityInput?.['init-value'],'${data.quantidade}');
+assert.match(quantityInput?.pattern||'',/10\|\[0-9\]/);
+assert.ok(quantityInput?.['helper-text'],'quantity range and zero-removal behavior are explained');
+assert.equal(editor.layout.children.filter(x=>x.type==='Dropdown').length,0);
 
 assert.equal(flow.screens.at(-1).terminal,true);
 const completePayload=flow.screens.find(s=>s.id==='RESUMO').layout.children.at(-1)['on-click-action'].payload;
 assert.deepEqual(completePayload,{resultado:'solicitacao_para_atendimento',resumo:'${data.resumo}',valor:'${data.valor}',itens:'${data.itens}'});
-for(const s of flow.screens){assert.ok(s.layout.children.length<=50);assert.equal(s.layout.children.filter(x=>x.type==='Footer').length,1);}
-for(const screen of flow.screens.filter(s=>ITEM_SCREENS.includes(s.id))){for(const field of screen.layout.children.filter(c=>c.type==='Dropdown'))assert.equal(field.required,field.visible,`${screen.id}.${field.name} must be required only when visible`);}
-for(let i=1;i<=ITEM_SCREENS.length;i++){
- const screen=flow.screens.find(x=>x.id===ITEM_SCREENS[i-1]);
- assert.ok(screen);assert.equal(screen.layout.children.filter(c=>c.type==='Dropdown').length,16);
- assert.ok(screen.layout.children.filter(c=>c.type==='Dropdown'&&c.label==='Quantidade').length===8);
- assert.equal(screen.layout.children.at(-1)['on-click-action'].name,'data_exchange');
-}
+for(const s of flow.screens){assert.ok(s.layout.children.length<=50);if(s.id==='ITENS_UM'||s.id==='ITENS_DOIS')continue;assert.equal(s.layout.children.filter(x=>x.type==='Footer').length,1);}
+assert.equal(flow.screens.find(x=>x.id==='ITENS_UM').layout.children[0]['on-click-action'],undefined,'each product row supplies its own data-exchange action');
 assert.equal(flow.screens.find(x=>x.id==='TAMANHO').layout.children.at(-1)['on-click-action'].name,'data_exchange');
 assert.equal(flow.screens.at(-1).layout.children.at(-1)['on-click-action'].name,'complete');
 assert.doesNotMatch(JSON.stringify(flow),/submit_order|create_order/);
 const uuid=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0');
+const webp=Uint8Array.from([...Buffer.from('RIFF0000WEBP'),0,1,2,3]);
+const validImageUrl='https://ssbesxgaijknwsjbsbcz.supabase.co/storage/v1/object/public/product-images/openai/grid18/v2/final/ef250a46-9b06-47d2-b31c-99c38232819f/bf8426b7-ba7c-42d5-854e-14b32d28eb90-p16.webp';
+let imageFetchArgs;
+const encodedImage=await loadProductImage(validImageUrl,async(...args)=>{imageFetchArgs=args;return new Response(webp,{headers:{'Content-Type':'image/webp'}})});
+assert.equal(encodedImage,Buffer.from(webp).toString('base64'));
+assert.equal(imageFetchArgs[1].redirect,'error','product image fetch must reject redirects');
+assert.ok(imageFetchArgs[1].signal instanceof AbortSignal,'product image fetch has a hard timeout');
+const transformedImageUrl=new URL(imageFetchArgs[0]);
+assert.match(transformedImageUrl.pathname,/\/storage\/v1\/render\/image\/public\/product-images\//);
+assert.deepEqual(Object.fromEntries(transformedImageUrl.searchParams),{width:'240',height:'190',resize:'contain',quality:'60',format:'webp'},'Supabase photos are resized before entering the Flow payload');
+let imageFetchCalls=0;
+const countedImageFetch=async()=>{imageFetchCalls++;return new Response(webp,{headers:{'Content-Type':'image/webp'}})};
+assert.equal(await loadProductImage('https://evil.example/storage/v1/object/public/product-images/a.webp',countedImageFetch),'');
+assert.equal(await loadProductImage('https://ssbesxgaijknwsjbsbcz.supabase.co/storage/v1/object/public/other-bucket/a.webp',countedImageFetch),'');
+assert.equal(await loadProductImage(validImageUrl+'?width=10',countedImageFetch),'');
+assert.equal(await loadProductImage('https://raw.githubusercontent.com/osvaldosereia/OTHER/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/site/img/produtos_3/a.webp',countedImageFetch),'');
+assert.equal(imageFetchCalls,0,'unapproved image hosts, buckets, and repositories are rejected before fetching');
+assert.equal(await loadProductImage(validImageUrl,async()=>new Response(webp,{headers:{'Content-Type':'text/html'}})),'');
+assert.equal(await loadProductImage(validImageUrl,async()=>new Response(Buffer.from('not-image'),{headers:{'Content-Type':'image/webp'}})),'');
+const oversized=new Uint8Array(MAX_PRODUCT_IMAGE_BYTES+1);oversized.set(Buffer.from('RIFF0000WEBP'));
+assert.equal(await loadProductImage(validImageUrl,async()=>new Response(oversized,{headers:{'Content-Type':'image/webp'}})),'');
+const oversizedStream=new ReadableStream({start(controller){controller.enqueue(oversized);controller.close()}});
+assert.equal(await loadProductImage(validImageUrl,async()=>new Response(oversizedStream,{headers:{'Content-Type':'image/webp'}})),'','streaming body limit is enforced without Content-Length');
+const githubImageUrl='https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/169a4a4ac7cdba62e21518d482fe8a9950e4f1e6/site/img/produtos_3/cadastro/1787583676839_c0f6.webp';
+assert.equal(await loadProductImage(githubImageUrl,async()=>new Response(webp,{headers:{'Content-Type':'image/webp'}})),Buffer.from(webp).toString('base64'));
+assert.equal(await loadProductImage(validImageUrl,async()=>{throw new Error('network timeout')}),'','image transport failures do not break the catalog');
 const flowResponseJson=JSON.stringify({estado:'opaque-session-state',resultado:'solicitacao_para_atendimento',resumo:'Cesta Média · Combinação 2',valor:'R$ 123,45',itens:'1x Feijão\n2x Arroz'});
 const normalizedFlowMessages=canonicalMessagesFromMeta({entry:[{id:'test-waba',changes:[{field:'messages',value:{metadata:{phone_number_id:'12345'},messages:[{from:'5511999999999',id:'wamid.flow.test',timestamp:'1792864800',type:'interactive',interactive:{nfm_reply:{body:'Solicitação de cesta recebida',response_json:flowResponseJson}}}]}}]}]},()=>uuid(8000));
 assert.equal(normalizedFlowMessages.length,1);
@@ -78,13 +113,16 @@ assert.match(labSource,/content\.textContent=value/,'Flow data must be inserted 
 assert.match(labSource,/A conclusão do Flow não cria pedido/);
 assert.match(read('vitrine/admin/whatsapp-lab/index.html'),/id="flowRequestStatus"/);
 const shell={ok:true,baskets:SIZE_KEYS.map((key,i)=>({id:uuid(i+1),size_key:key}))};
-const itemCount=27,basketId=shell.baskets[0].id,items=Array.from({length:itemCount},(_,i)=>({position_id:uuid(i+100),product_id:uuid(i+1000),name:'Produto '+(i+1)+' Marca A 1 kg',quantity:i===0?2:1}));
+const itemCount=27,basketId=shell.baskets[0].id;
+const makeItems=count=>Array.from({length:count},(_,i)=>({position_id:uuid(i+100),product_id:uuid(i+1000),name:'Produto '+(i+1)+' Marca A 1 kg',brand:'Marca A',image_url:'https://ssbesxgaijknwsjbsbcz.supabase.co/storage/v1/object/public/product-images/item-'+i+'.webp',packaging:'1 kg',price_cents:100,stock_quantity:20,quantity:i===0?2:1}));
+let activeItems=makeItems(itemCount),basketCalls=0;
 const secret='A'.repeat(64);
 const deps={
  async shell(){return shell},
- async basket(id,n){return {ok:true,basket:{id,composition_number:n,display_price_cents:17270+n*100,stock_quantity:10},items:items.map(x=>({...x,brand:'Marca '+n}))}},
- async options(_id,_n,positions){return {ok:true,positions:positions.map(row=>({position_id:row.position_id,alternatives:[{product_id:items.find(x=>x.position_id===row.position_id).product_id,name:'Marca A 1 kg',stock_quantity:20},{product_id:uuid(6000+items.findIndex(x=>x.position_id===row.position_id)),name:'Marca B 1 kg',stock_quantity:20}]}))}},
- async quote(id,n,all){assert.equal(all.length,itemCount);assert.equal(id,basketId);assert.equal(n,1);return {ok:true,total_cents:17000+all.reduce((sum,x)=>sum+x.quantity*10,0),basket:{stock_quantity:2},items:all.map((x,i)=>({...x,name:'Produto '+(i+1)+' 1 kg'}))}},
+ async basket(id,n){return {ok:true,basket:{id,composition_number:n,display_price_cents:17270+n*100,stock_quantity:10},items:activeItems.map(x=>({...x,brand:'Marca '+n}))}},
+ async options(_id,_n,positions){return {ok:true,positions:positions.map(row=>{const original=activeItems.find(x=>x.position_id===row.position_id),index=activeItems.findIndex(x=>x.position_id===row.position_id);return {position_id:row.position_id,alternatives:[{product_id:original.product_id,name:original.name,brand:original.brand,image_url:original.image_url,price_cents:100,stock_quantity:20},{product_id:uuid(6000+index),name:'Produto '+(index+1)+' Marca B 1 kg',brand:'Marca B',image_url:original.image_url,price_cents:250,stock_quantity:4}]};})}},
+ async quote(id,n,all){basketCalls++;assert.equal(all.length,activeItems.length);assert.equal(id,basketId);assert.equal(n,1);const items=all.map((x,i)=>{const original=activeItems[i],isAlt=x.product_id!==original.product_id;return {...original,...x,name:isAlt?'Produto '+(i+1)+' Marca B 1 kg':original.name,brand:isAlt?'Marca B':'Marca A',image_url:original.image_url,price_cents:isAlt?250:100,stock_quantity:isAlt?4:20};});return {ok:true,total_cents:items.reduce((sum,x)=>sum+x.quantity*x.price_cents,0),basket:{stock_quantity:2},items}},
+ async image(url){return url?'aW1hZ2U=':''},
  signState:st=>signState(st,secret),verifyState:s=>verifyState(s,secret)
 };
 const init=await flowExchange({action:'INIT'},deps);
@@ -93,41 +131,37 @@ const combos=await flowExchange({action:'data_exchange',screen:'TAMANHO',data:{e
 assert.equal(combos.screen,'COMBINACAO');assert.equal(combos.data.opcoes.length,3);assert.match(combos.data.opcoes[0].description,/R\$/);
 assert.deepEqual(combos.data.resumoMarcas.split('\n'),['Combinação 1: Marca 1','Combinação 2: Marca 2','Combinação 3: Marca 3']);
 const first=await flowExchange({action:'data_exchange',screen:'COMBINACAO',data:{etapa:'combinacao',tamanho:'mini',combinacao:'1'}},deps);
-assert.equal(first.screen,ITEM_SCREENS[0]);assert.equal(first.data.vis0,true);
-assert.equal(first.data.marca0,items[0].product_id);
-let stage=first;
-for(let page=1;page<=Math.ceil(itemCount/PAGE_SIZE);page++){
- const d={etapa:'itens',estado:stage.data.estado,pagina:String(page)};
- for(let j=0;j<PAGE_SIZE;j++){d['marca'+j]=stage.data['marca'+j];d['quant'+j]=stage.data['quant'+j];}
- if(page===1){d.quant0='0';d.marca1=uuid(6001);}
- const res=await flowExchange({action:'data_exchange',screen:ITEM_SCREENS[page-1],data:d},deps);
- const routeSource=ITEM_SCREENS[page-1];
- assert.ok(flow.routing_model[routeSource].includes(res.screen),`route ${routeSource} -> ${res.screen} is declared`);
- if(page<Math.ceil(itemCount/PAGE_SIZE))assert.equal(res.screen,ITEM_SCREENS[page]);
- else{assert.equal(res.screen,'RESUMO');assert.match(res.data.valor,/R\$/);assert.ok(res.data.itens.includes('Produto'));}
- stage=res;
-}
+assert.equal(first.screen,'ITENS_UM');
+assert.equal(first.data.itens_lista.length,16,'14 products plus page and review actions fit the first navigation list');
+assert.ok(first.data.itens_lista[0].start.image,'catalog rows include a real product thumbnail');
+assert.match(first.data.itens_lista[0]['main-content'].metadata,/2 un/);
+const openPayload=first.data.itens_lista[0]['on-click-action'].payload;
+assert.equal(openPayload.etapa,'editar_item');
+const detail=await flowExchange({action:'data_exchange',screen:'ITENS_UM',data:openPayload},deps);
+assert.equal(detail.screen,'ITEM_EDIT');assert.equal(detail.data.imagem,'aW1hZ2U=');
+assert.ok(detail.data.alternativas.some(x=>x.id===uuid(6000)));
+const alternate=uuid(6000);
+const edited=await flowExchange({action:'data_exchange',screen:'ITEM_EDIT',data:{etapa:'salvar_item',estado:detail.data.estado,position_id:detail.data.position_id,return_screen:detail.data.return_screen,produto:alternate,quantidade:'3'}},deps);
+assert.equal(edited.screen,'ITENS_UM');
+assert.match(edited.data.itens_lista[0]['main-content'].metadata,/3 un/);
+assert.ok(edited.data.itens_lista[0]['main-content'].metadata.includes('R$'));
+assert.ok(basketCalls>=2,'initial basket and edit requests are quoted against current prices');
+const updated=await flowExchange({action:'data_exchange',screen:'ITENS_UM',data:edited.data.itens_lista[0]['on-click-action'].payload},deps);
+const stockError=await flowExchange({action:'data_exchange',screen:'ITEM_EDIT',data:{etapa:'salvar_item',estado:updated.data.estado,position_id:updated.data.position_id,return_screen:updated.data.return_screen,produto:alternate,quantidade:'5'}},deps);
+assert.equal(stockError.screen,'ITEM_EDIT');assert.match(stockError.data.aviso,/4/,'over-stock requests return to the item editor with the available quantity');
+const nextPayload=edited.data.itens_lista.find(x=>x['on-click-action']?.payload?.etapa==='pagina_itens')['on-click-action'].payload;
+const second=await flowExchange({action:'data_exchange',screen:'ITENS_UM',data:nextPayload},deps);
+assert.equal(second.screen,'ITENS_DOIS');assert.equal(second.data.itens_lista.length,14,'13 products and a review action fit the second page');
+const reviewPayload=second.data.itens_lista.find(x=>x['on-click-action']?.payload?.etapa==='revisar')['on-click-action'].payload;
+const summary=await flowExchange({action:'data_exchange',screen:'ITENS_DOIS',data:reviewPayload},deps);
+assert.equal(summary.screen,'RESUMO');assert.match(summary.data.valor,/R\$/);assert.match(summary.data.itens,/3x Produto 1 Marca B/);assert.doesNotMatch(summary.data.itens,/R\$/,'chat reply stays concise; item prices remain in Flow and the total is shown separately');
 for(const count of [14,15,16,17,23,24,25,27,30]){
- const rangeItems=Array.from({length:count},(_,i)=>({position_id:uuid(i+100),product_id:uuid(i+1000),name:'Item '+(i+1),quantity:i===0?2:1}));
- const rangeDeps={
-  async shell(){return shell;},
-  async basket(id,n){return {ok:true,basket:{id,composition_number:n,display_price_cents:17270+n*100,stock_quantity:10},items:rangeItems.map(x=>({...x}))};},
-  async options(_id,_n,positions){return {ok:true,positions:positions.map(row=>{const index=rangeItems.findIndex(x=>x.position_id===row.position_id);const item=rangeItems[index];return {position_id:row.position_id,alternatives:[{product_id:item.product_id,name:item.name,stock_quantity:20},{product_id:uuid(7000+index),name:'Alternativa '+index,stock_quantity:20}]};})};},
-  async quote(id,n,all){return {ok:true,total_cents:17000+all.reduce((sum,x)=>sum+x.quantity*10,0),basket:{stock_quantity:2},items:all.map((x,i)=>({...x,name:'Item '+(i+1)}))};},
-  signState:st=>signState(st,secret),verifyState:s=>verifyState(s,secret)
- };
- let pageState=await flowExchange({action:'data_exchange',screen:'COMBINACAO',data:{etapa:'combinacao',tamanho:'mini',combinacao:'1'}},rangeDeps);
- const pageCount=Math.ceil(count/PAGE_SIZE);
- for(let page=1;page<=pageCount;page++){
-  const data={etapa:'itens',estado:pageState.data.estado,pagina:String(page)};
-  for(let j=0;j<PAGE_SIZE;j++){data['marca'+j]=pageState.data['marca'+j];data['quant'+j]=pageState.data['quant'+j];}
-  const current=ITEM_SCREENS[page-1];
-  const next=await flowExchange({action:'data_exchange',screen:current,data},rangeDeps);
-  assert.ok(flow.routing_model[current].includes(next.screen),`route ${current} -> ${next.screen} exists for ${count} items`);
-  if(page<pageCount)assert.equal(next.screen,ITEM_SCREENS[page]);
-  else assert.equal(next.screen,'RESUMO');
-  pageState=next;
- }
+ activeItems=makeItems(count);
+ const page=await flowExchange({action:'data_exchange',screen:'COMBINACAO',data:{etapa:'combinacao',tamanho:'mini',combinacao:'1'}},deps);
+ assert.equal(page.screen,'ITENS_UM');assert.ok(page.data.itens_lista.length<=20,`first list stays within Meta's 20-row limit for ${count} items`);
+ const hasNext=page.data.itens_lista.some(x=>x['on-click-action']?.payload?.etapa==='pagina_itens');
+ assert.equal(hasNext,count>14,`second list is present only when needed for ${count} items`);
+ if(hasNext){const payload=page.data.itens_lista.find(x=>x['on-click-action']?.payload?.etapa==='pagina_itens')['on-click-action'].payload;const next=await flowExchange({action:'data_exchange',screen:'ITENS_UM',data:payload},deps);assert.equal(next.screen,'ITENS_DOIS');assert.ok(next.data.itens_lista.length<=20);}
 }
 assert.throws(()=>parseQty('-1'));assert.throws(()=>parseQty('11'));assert.equal(parseQty('0'),0);
 const validSigned=await signState({ok:true},secret);
@@ -152,4 +186,4 @@ const body='{"some":"data"}',appSecret='B'.repeat(40),digest=await hmac(appSecre
 const signature='sha256='+Buffer.from(digest).toString('hex');
 assert.equal(await verifyAppSignature(body,signature,appSecret),true);
 assert.equal(await verifyAppSignature(body,signature.replace(/.$/,'0'),appSecret),false);
-console.log('PASS Meta dynamic Flow 7 screens/30 item capacity, 14-30 item route branches, choices, brands, quantities, quote, signatures and RSA/AES encryption');
+console.log('PASS Meta dynamic Flow 6 screens/30 item capacity, product navigation, image safety, choices, brands, quantities, quote, signatures and RSA/AES encryption');
