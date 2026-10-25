@@ -16,7 +16,7 @@ assert.ok(bridgePos>0&&bridgePos<mainClose,'admin bridge must be created inside 
 assert.doesNotMatch(admin.slice(mainClose),/window\.DonaAntoniaGuidedBridge\s*=/,'post-runtime scripts must not own the basket/admin bridge');
 
 assert.match(admin,/basket-guided-builder\.js\?v=guided-v3/,'guided compatibility builder may remain loaded during migration');
-assert.match(admin,/basket-admin-section\.js\?v=basket-admin-flow-v1-20261025/,'admin must load the three-tab basket section controller');
+assert.match(admin,/basket-admin-section\.js\?v=basket-admin-flow-v1-20261025/,'admin must load the Flow-ready basket section controller');
 assert.match(guided,/window\.DonaAntoniaAdminBridge/,'technical guided builder must consume the stable admin bridge');
 assert.doesNotMatch(guided,/DonaAntoniaGuidedBridge/,'retired basket-specific bridge must not return');
 
