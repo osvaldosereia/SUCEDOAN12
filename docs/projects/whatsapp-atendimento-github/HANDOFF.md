@@ -57,6 +57,14 @@ GitHub continua como fonte de verdade. Para mostrar produtos e iniciar o carrinh
 
 Plano: depois de obter a exportação completa das cestas, avaliar a jornada nativa de catálogo/carrinho com um telefone controlado e comparar com Flow. Flow passa a ser opcional para dados estruturados complementares ou exceções. Nenhum produto foi sincronizado e nenhuma chamada/publicação Meta foi feita nesta pesquisa. Fontes e comparação detalhada estão em FLOW-RESEARCH.md.
 
+## Parecer revisado após entender a composição da cesta
+
+A análise específica está em BASKET-ORDER-RESEARCH.md. A cesta descrita tem preço-base comercial próprio: não é a soma simples das linhas do catálogo, pois existe um ajuste interno que não deve aparecer como item separado. O preço final precisa ser mostrado claramente antes da confirmação.
+
+A recomendação principal passa a ser Flow dinâmico da Meta com endpoint de cálculo privado. O Flow pode oferecer escolha de marca e uma lista de quantidades, usando zero para retirar; o endpoint recalcula o total ao avançar e valida o pedido final. O Flow não tem controle nativo de quantidade com +/−. O carrinho do catálogo oferece essa UX e permite remover itens, mas mostra total estimado dos preços do catálogo e não conhece automaticamente a fórmula da cesta. Pode ser avaliado como alternativa se o preço final for informado depois que o cliente enviar o carrinho.
+
+O ajuste interno confidencial não deve ser colocado nos arquivos do repositório público, no JSON do Flow ou no JavaScript do navegador; deve ficar no endpoint privado. Produtos e composição permanecem no GitHub. Nenhum código, catálogo ou endpoint foi criado nesta pesquisa.
+
 ## Experiência desejada para o Flow
 
 Preservar as decisões já comunicadas pelo usuário, sempre conferindo o que a Meta realmente suporta:
@@ -103,7 +111,7 @@ Ainda não feito:
 
 ## Próxima ação
 
-Continuar pela rodada 1 do roadmap: obter exportação estruturada das cestas e produtos referenciados pelo Vitrine Admin sem usar Supabase. Depois da coleta, provar a jornada nativa de catálogo/carrinho para quantidades e validar composição por webhook; decidir então se Flow será necessário para etapas complementares. Fechar também a forma segura de gravação GitHub e o runtime HTTPS fora do Supabase antes de qualquer integração dinâmica. Inspecionar qualquer arquivo antes de normalizar os dados. Se não houver exportação pelo admin, solicitar CSV/JSON apropriado sem substituir esse passo por uma consulta Supabase.
+Continuar pela rodada 1 do roadmap: obter exportação estruturada das cestas e produtos referenciados pelo Vitrine Admin sem usar Supabase. Depois da coleta, provar o Flow dinâmico para marca/quantidade/remoção e cálculo do total pelo endpoint. Provar carrinho nativo só como alternativa se o negócio aceitar o total personalizado após o envio do carrinho. Fechar também a forma segura de gravação GitHub e o runtime HTTPS fora do Supabase antes de qualquer integração dinâmica. Inspecionar qualquer arquivo antes de normalizar os dados. Se não houver exportação pelo admin, solicitar CSV/JSON apropriado sem substituir esse passo por uma consulta Supabase.
 
 ## Instrução para retomar em uma nova conversa
 
