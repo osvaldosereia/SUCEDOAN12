@@ -10,7 +10,7 @@ Atualizado: 25/10/2026 (America/Cuiaba)
 - Cada rodada deve produzir um resultado pequeno, revisável e utilizável.
 - Todo trabalho de código futuro começa nesta branch e dentro de projetos/whatsapp-atendimento-github/. Documentação do projeto fica em docs/projects/whatsapp-atendimento-github/.
 - Não alterar main, o site público, Vitrine Admin, catálogo de produção, banco operacional ou configurações existentes.
-- Não usar Supabase nesta iniciativa.
+- Não usar Supabase como banco de produtos/cestas. O escopo atual permite consulta server-side ao cadastro de clientes/endereço; não gravar pedidos nem alterar schema de produção antes da revisão do contrato existente.
 - Não criar senha própria para o admin.
 - Não publicar site/admin nem alterar Flow Meta enquanto isso não for uma etapa planejada e autorizada.
 - Nenhum segredo ou dado de cliente pode ser salvo em JSON versionado ou JavaScript entregue ao navegador.
@@ -34,7 +34,7 @@ Estado: concluída em 25/10/2026. Pesquisa Meta e comparação de padrões de Bl
 - [x] Distinguir Flow estático de dinâmico e registrar por que preço e total de cesta exigem validação em endpoint.
 - [x] Documentar ciclo Draft/Published, preview, validação, teste e retorno ao atendimento.
 - [x] Definir recomendações de interface: wizard guiado, modo JSON avançado, status separado por canal e publicação manual.
-- [x] Registrar limites de segurança, runtime externo ao Supabase e imagens/quantidades que ainda exigem prova no schema e em WhatsApp real.
+- [x] Registrar limites de segurança, endpoint HTTPS privado, imagens/quantidades e necessidade de prova no schema e em WhatsApp real.
 - [ ] Nenhum runtime, integração Meta, Flow, produto, cesta ou tela foi criado nesta rodada.
 
 Saída: pesquisa técnica e requisitos iniciais revisáveis em docs/projects/whatsapp-atendimento-github/FLOW-RESEARCH.md.
@@ -66,7 +66,7 @@ Estado: pesquisa concluída em 25/10/2026; implementação pendente. Relatório 
 
 Estado: bloqueada aguardando exportação bruta. A inspeção encontrou somente um CSV de 15 combinações preparado para catálogo Meta; ele não contém as relações completas de cestas/produtos/quantidades e não será usado como importação. A tela de composição usa o backend atual, que não foi chamado.
 
-Objetivo: trazer apenas os produtos usados nas cestas atuais, sem consultar Supabase.
+Objetivo: trazer apenas os produtos usados nas cestas atuais por exportação do Vitrine Admin/arquivo estruturado, sem usar Supabase como fonte do catálogo.
 
 - Inspecionar o caminho disponível no Vitrine Admin para exportar tamanhos, tipos, produtos relacionados, quantidades e ordem.
 - Preferir exportação já oferecida pelo admin ou arquivo que o usuário possa baixar do admin.
@@ -135,27 +135,44 @@ Objetivo: permitir seleção de marca, quantidade e remoção dentro do WhatsApp
 - Provar seleção de marca e quantidade por lista dentro do Flow, com quantidade zero para remover item.
 - Fazer o endpoint recalcular preço após cada avanço e devolver o novo total na tela seguinte; validar novamente na conclusão.
 - Não prometer atualização a cada toque nem controle +/− no Flow antes de prova oficial em aparelho.
-- A tela pode dar feedback imediato via update_data, mas o total final deve ser recalculado/validado no servidor pelo endpoint HTTPS externo ao Supabase na rodada 5.
+- A tela pode dar feedback via update_data, mas o total final deve ser recalculado/validado no servidor pelo endpoint HTTPS isolado previsto para a rodada 5.
 - Nenhuma publicação ou mensagem a cliente nesta rodada.
 
 Saída: Flow JSON versionado com regras da cesta, preço atualizado e webhook conferidos em canal controlado. A publicação permanece separada e manual.
 
-## Rodada 5 — Runtime dinâmico sem Supabase
+## Rodada 5 — Runtime dinâmico e consulta de cliente
 
-Recomendação técnica: manter o admin/editor e os dados comerciais no GitHub; usar um runtime HTTPS externo ao Supabase para receber webhooks de pedido, validar quantidades/preços e enviar mensagens pela Cloud API. Implementar Data Exchange criptografado somente se a decisão final mantiver Flow dinâmico. Nenhum fornecedor foi escolhido.
+Recomendação técnica: usar uma Edge Function nova e isolada no projeto Supabase existente como candidata principal ao endpoint HTTPS/Data Exchange e webhook, pois agora há autorização para consultar cliente/endereço pelo backend. A função lê a revisão de produto/cesta no GitHub e não usa Supabase como banco do catálogo. Não alterar nem publicar função existente durante esta rodada.
 
-Objetivo: decidir e implementar a parte de servidor necessária para usar os dados atuais durante o Flow.
+Objetivo: preparar o runtime privado da jornada, sem alterar a operação atual.
 
-- GitHub Pages e arquivos JSON podem servir uma prévia e leitura pública, mas não executam a troca criptografada de dados do Flow nem protegem token Meta.
-- Escolher uma função/serviço HTTPS fora do Supabase que possa: receber e validar webhooks Meta; consultar a versão aprovada de produtos/cestas; conferir quantidades e preços no servidor; enviar mensagens pela Cloud API; e manter credenciais no servidor. Se Flow dinâmico for mantido, também validar e descriptografar Data Exchange e responder de forma criptografada.
-- Não selecionar hospedagem nem registrar credenciais antes de avaliar custo, disponibilidade, manutenção e adequação ao fluxo.
-- Definir uma versão de dados publicada e imutável para que o Flow não misture preços/composições durante uma sessão.
-- Falhas de configuração ou criptografia devem bloquear a transação com erro claro e sem aceitar preço enviado pelo cliente.
-- A fase permanece bloqueada até existir runtime aprovado e endpoint HTTPS acessível.
+- GitHub Pages e arquivos JSON servem a interface e a fonte versionada, mas não executam a troca criptografada da Meta nem protegem segredos.
+- Usar o flow_token para associar a sessão ao remetente e canal; manter o token opaco e curto.
+- Reutilizar o resolvedor canônico de cliente após revisar código, permissões e comportamento em telefones ausentes/ambíguos.
+- Buscar no GitHub uma revisão identificável e imutável de produtos/cestas; manter cache curto por revisão para atender o prazo da Meta.
+- Calcular valores no servidor; validar payload, remetente, canal, revisão, preço, quantidades e disponibilidade.
+- Manter chave privada, token Meta e chave Supabase exclusivamente em segredos do servidor; nunca os enviar ao navegador.
+- Não escrever em papoai_order_drafts_v2 ou orders até confirmar qual serviço/RPC mantém as regras e efeitos atuais de criação do pedido.
+- Responder ao endpoint dentro do limite documentado pela Meta (10 segundos), com logs sem PII.
 
-Saída: arquitetura de runtime sem Supabase documentada e um ambiente de teste isolado, sem clientes.
+Saída: contrato e ambiente isolado revisados. Nenhuma função existente alterada e nenhum dado de cliente ou pedido escrito.
 
-## Rodada 6 — Homologação Meta e piloto controlado
+## Rodada 6 — Resumo, confirmação e criação do pedido
+
+Objetivo: fazer o Flow retornar à conversa com um resumo legível e criar o pedido somente após confirmação explícita.
+
+- A conclusão do Flow gera um evento para o webhook; o backend recalcula total e disponibilidade antes de montar o resumo.
+- Enviar ao mesmo chat uma mensagem com nomes dos produtos e quantidades, sem preços unitários; mostrar total final, pagamento, nome e endereço.
+- Incluir os botões oficiais Confirmar pedido, Editar pedido e Cancelar; só Confirmar pedido autoriza a criação do pedido.
+- Reprocessamento do webhook ou clique repetido não pode criar pedidos duplicados.
+- Se preço ou disponibilidade tiver mudado, enviar resumo atualizado e solicitar nova confirmação.
+- Auditar a integração com papoai_order_drafts_v2 e orders; usar o serviço de pedido atual e não inserir diretamente em tabela.
+- Editar reabre o mesmo rascunho; cancelar/expirar fecha a sessão sem gerar pedido.
+- Não registrar nem enviar ao GitHub dados pessoais de cliente.
+
+Saída: fluxo de confirmação ponta a ponta validado no ambiente isolado, sem alteração de pedidos de clientes reais.
+
+## Rodada 7 — Homologação Meta e piloto controlado
 
 Objetivo: confirmar funcionamento dos dois canais antes de abrir atendimento.
 
@@ -183,18 +200,19 @@ Saída: homologação real em ambiente de teste; cliente só entra depois de uma
 
 ## Decisões pendentes que bloqueiam fases posteriores
 
-1. Como obter uma exportação das cestas pelo Vitrine Admin sem Supabase.
-2. Como salvar no GitHub sem senha própria e sem expor token de escrita no navegador.
-3. Qual runtime HTTP fora do Supabase atenderá Data Exchange e operações Meta.
-4. Quais são os IDs oficiais de WABA e telefone para os dois canais.
-5. Confirmar a fórmula do preço-base e o ajuste interno por tamanho, mantendo o ajuste confidencial fora do GitHub público e do Flow JSON.
-6. Em número controlado, validar a jornada Flow por posição: marca, imagens, lista de quantidade, zero para remover, total após cada avanço e retorno do webhook.
-7. Confirmar se cada posição permite uma marca ou se a cesta admite dividir quantidade entre várias marcas; prototipar a segunda opção separadamente.
-8. Testar nos dois números e manter o endpoint como autoridade de preço/composição. Provar catálogo/carrinho apenas se a experiência de quantity control for priorizada sobre atualização contínua do total.
+1. Obter exportação estruturada de produtos/cestas do Vitrine Admin; o CSV de 15 combinações não basta.
+2. Definir persistência GitHub sem senha própria e sem token de escrita no navegador.
+3. Revisar e identificar o resolvedor de cliente/endereço existente, o matching por E.164 e o fallback em caso de cadastro ausente/ambíguo.
+4. Confirmar Edge Function isolada como runtime e acesso permitido ao resolvedor de cliente.
+5. Confirmar IDs oficiais de WABA e phone number para os dois canais.
+6. Confirmar regra de preço-base e ajuste interno por tamanho, mantendo o valor interno fora do GitHub público e do Flow JSON.
+7. Identificar a fonte de estoque/indisponibilidade e o serviço canônico de criação de pedido.
+8. Validar marca, fotos, cinco opções de quantidade, retirada, pré-preenchimento, pagamento, resumo sem preço unitário e botão de confirmação em número controlado.
+9. Testar repetição de eventos, edição, cancelamento e confirmação nos dois canais.
 
 ## Registro do andamento
 
-- 2026-10-25 — R0 concluída. Repo/branch reconhecidos; branch isolada criada; HANDOFF preparado. Nenhum código, importação, consulta Supabase, chamada Meta ou deploy executados.
+- 2026-10-25 — R0 concluída. Repo/branch reconhecidos; branch isolada criada; HANDOFF preparado. Nenhum código, importação, chamada Meta ou deploy executados.
 
 - 2026-10-25 — Pesquisa de Flow concluída: Meta + Blip, Infobip, WATI, Twilio e Gupshup; requisitos e pendências registrados em FLOW-RESEARCH.md. Nenhuma integração Meta ou infraestrutura criada.
 
@@ -203,3 +221,6 @@ Saída: homologação real em ambiente de teste; cliente só entra depois de uma
 - 2026-10-25 — Pesquisa de alternativa Meta concluída: carrinho nativo de catálogo/produtos recomendado para provar seleção de quantidade; produtos precisam de catálogo Meta vinculado, e regras de cesta serão validadas no webhook contra a revisão GitHub. Flow permanece opcional até o teste.
 
 - 2026-10-25 — Pesquisa específica da cesta: Flow dinâmico recomendado para marca/quantidade/remoção com preço-base e ajuste interno calculados no endpoint; carrinho Meta permanece opção de UX, mas seu total estimado não é o preço comercial completo da cesta.
+
+
+- 2026-10-25 — Desenho de checkout atualizado por orientação do usuário: produtos e cestas permanecem no GitHub; cadastro de cliente/endereço pode ser consultado pelo backend Supabase; resumo com total, pagamento e dados confirmados chega como mensagem interativa no chat; pedido só é criado após o botão Confirmar pedido. Inspeção limitada a schema, sem dados pessoais ou escrita. Especificação em ORDER-FLOW-CHECKOUT-DESIGN.md.
