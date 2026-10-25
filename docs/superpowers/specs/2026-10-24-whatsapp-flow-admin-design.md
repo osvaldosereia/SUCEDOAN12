@@ -9,7 +9,7 @@ Manage WhatsApp Flows for Dona Antônia inside the existing Vitrine Admin Market
 - The existing Meta template center calls the authenticated admin-whatsapp-templates-v1 Edge Function through the Admin session.
 - The Meta access token and Graph API version remain server-side; browser code never receives either.
 - The dynamic basket Flow JSON and encrypted exchange endpoint already exist in the repository.
-- The Flow endpoint is not currently deployed. Its runtime requires DA_FLOW_1018_RSA_PKCS8, DA_FLOW_1018_META_APP_SECRET, and DA_FLOW_1018_SESSION_SECRET.
+- The Flow endpoint runtime requires the RSA private key as its only new secret. It reuses the existing META_WHATSAPP_APP_SECRET for request signature verification and derives the short-lived session signing key with a Flow-specific HMAC context.
 
 ## Scope
 
@@ -22,7 +22,7 @@ Manage WhatsApp Flows for Dona Antônia inside the existing Vitrine Admin Market
 ## Security and operational constraints
 
 - Never accept WABA IDs or phone-number IDs from the browser.
-- Never expose Meta tokens, private keys, session secrets, or decrypted Flow state.
+- Never expose Meta tokens, private keys, derived signing keys, or decrypted Flow state.
 - Never select, mutate, test, or send through the channel ending 0975.
 - Never publish unless the Meta validation response is clean and endpoint requirements for that JSON are satisfied.
 - No customer messaging, order creation, or edits to the commercial Attendance UI.
