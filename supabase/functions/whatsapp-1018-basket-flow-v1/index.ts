@@ -1,7 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import {flowExchange} from './engine.mjs';
 import {decryptMetaPayload,encryptMetaResponse,verifyAppSignature,signState,verifyState} from './crypto.mjs';
-import {FLOW_CANARY_RECIPIENT_E164,FLOW_CANARY_SENDER_E164} from '../_shared/whatsapp-flow-session-v1.mjs';
+import {deriveFlowSessionKey,FLOW_CANARY_RECIPIENT_E164,FLOW_CANARY_SENDER_E164} from '../_shared/whatsapp-flow-session-v1.mjs';
 
 // DRAFT ONLY: not deployed. Production Meta canary and commercial webhook untouched.
 // This handler requires encrypted Meta payloads, app signature, signed internal canary
@@ -9,7 +9,6 @@ import {FLOW_CANARY_RECIPIENT_E164,FLOW_CANARY_SENDER_E164} from '../_shared/wha
 const STORE='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2';
 const PRIVATE_PEM=(Deno.env.get('DA_FLOW_1018_RSA_PKCS8')||'').trim();
 const META_SECRET=(Deno.env.get('META_WHATSAPP_APP_SECRET')||'').trim();
-const SESSION_SECRET=(Deno.env.get('DA_FLOW_1018_SESSION_SECRET')||'').trim();
 const DEMO_AUDIENCE=FLOW_CANARY_RECIPIENT_E164;
 const SENDER=FLOW_CANARY_SENDER_E164;
 function deny(status,error){return new Response(JSON.stringify({ok:false,error}),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store'}})}
@@ -34,15 +33,15 @@ const catalog={
 };
 const deps={
  ...catalog,
- signState:state=>signState(state,SESSION_SECRET),
- verifyState:token=>verifyState(token,SESSION_SECRET)
+ signState:async state=>signState(state,await deriveFlowSessionKey(META_SECRET)),
+ verifyState:async token=>verifyState(token,await deriveFlowSessionKey(META_SECRET))
 };
 function allowedCanaryClaims(value){
  return value?.type==='da-flow-1018-canary'&&value?.sender===SENDER&&value?.to===DEMO_AUDIENCE&&typeof value?.nonce==='string'&&value.nonce.length>=12;
 }
 Deno.serve(async req=>{
  if(req.method!=='POST')return deny(405,'method_not_allowed');
- if(!PRIVATE_PEM||META_SECRET.length<16||SESSION_SECRET.length<32)return deny(503,'flow_not_configured');
+ if(!PRIVATE_PEM||META_SECRET.length<16)return deny(503,'flow_not_configured');
  const body=await req.text();
  if(body.length>90000)return deny(413,'payload_too_large');
  if(!await verifyAppSignature(body,req.headers.get('x-hub-signature-256'),META_SECRET))return deny(432,'invalid_meta_signature');
