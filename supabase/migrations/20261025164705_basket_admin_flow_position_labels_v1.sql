@@ -183,7 +183,15 @@ begin
     v_order:=coalesce(nullif(v_row->>'flow_sort_order','')::integer,-1);
     v_mode:=coalesce(v_row->>'selection_mode','');
     v_max:=coalesce(nullif(v_row->>'max_quantity','')::integer,0);
-    v_position_labels:=coalesce(v_row->'position_labels','[]'::jsonb);
+    v_position_labels:=coalesce(
+      v_row->'position_labels',
+      (select case
+        when jsonb_typeof(pt.metadata #> '{flow_v1,position_labels}')='array'
+          then pt.metadata #> '{flow_v1,position_labels}'
+        else '[]'::jsonb
+      end from public.basket_admin_product_types pt where pt.id=v_id),
+      '[]'::jsonb
+    );
     if v_id is null or v_order<0 or v_order>1000
        or v_mode not in ('single','multiple') or v_max<1 or v_max>10
        or jsonb_typeof(v_position_labels)<>'array' then
