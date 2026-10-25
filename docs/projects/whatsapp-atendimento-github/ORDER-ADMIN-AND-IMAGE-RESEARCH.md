@@ -101,3 +101,8 @@ A primeira etapa de programação deve provar uma entrada de pedido por snapshot
 - Nenhum pedido foi escrito, alterado ou enviado ao Bling.
 - Nenhuma chamada de envio, publicação ou configuração foi feita na Meta.
 - O repositório é público; qualquer conteúdo versionado no branch, inclusive arquivos novos, pode ser lido publicamente.
+
+
+## Decisão vigente após orientação do usuário — 25/10/2026
+
+A pesquisa das telas, funções, tabelas e rotinas do Vitrine Admin serve somente para compreender as regras comerciais, o conjunto de produtos, os requisitos externos e os pontos de integração. O código novo não reutilizará nem copiará esses módulos, esquemas, RPCs, endpoints ou máquina de estados. O novo Admin, o runtime de Flow, o gestor de pedidos, o modelo de dados transacional e os conectores Meta/Bling serão implementados do zero. O cadastro de cliente existente permanece a única leitura Supabase explicitamente prevista; os pedidos usam modelo novo e isolado. A versão vigente do plano está em IMPLEMENTATION-PLAN-LUNA-MAX.md.
