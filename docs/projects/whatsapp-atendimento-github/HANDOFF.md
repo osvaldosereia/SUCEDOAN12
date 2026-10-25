@@ -11,7 +11,7 @@ A meta de produto é evoluir o atendimento para que o cliente escolha e personal
 ## Escopo autorizado e decisões atuais
 
 - O projeto fica separado dentro do repositório osvaldosereia/SUCEDOAN12, em diretório próprio, com branch própria.
-- Para este projeto, produtos, cestas e definições de Flow terão sua fonte versionada no GitHub. Não usar Supabase nesta fase, nem para banco, leitura ou escrita.
+- Produtos e cestas deste projeto têm sua fonte versionada no GitHub; Supabase não será o banco de produtos. A orientação atual autoriza consultar o cadastro existente de clientes/endereço pelo backend. Não copiar dados pessoais para arquivos públicos e não alterar schema nem gravar pedidos em produção antes de revisar o contrato de integração.
 - Importar somente os produtos que estiverem referenciados pelas composições de cestas existentes no Vitrine Admin. Não importar o catálogo inteiro.
 - O cadastro de produtos deve ser simples e servir ao configurador de cestas.
 - O configurador de cestas deve permitir tamanhos, tipos de produto, produtos disponíveis por tipo, quantidade por tamanho de cesta e ordem de apresentação.
@@ -43,7 +43,7 @@ Como o repositório é público, os dados em arquivos públicos podem ser lidos 
 
 A pesquisa de Flows está registrada em FLOW-RESEARCH.md, com fontes oficiais da Meta e comparação de Blip, Infobip, WATI, Twilio e Gupshup. Ela recomenda wizard guiado, JSON avançado opcional, validação/preview/teste antes de publicação e estados por canal.
 
-A documentação oficial da Meta descreve a troca de dados de Flows como uma chamada criptografada a um endpoint HTTPS que processa a solicitação e devolve resposta criptografada. GitHub Pages entrega arquivos estáticos e não executa esse endpoint. Portanto, dados dinâmicos, validação durante o Flow e preço atualizado exigirão um runtime HTTP fora do Supabase. A escolha desse runtime permanece em aberto.
+A documentação da Meta exige um endpoint HTTPS acessível e criptografado para Data Exchange. Com a autorização atual para usar o cadastro de clientes, a recomendação é avaliar uma Edge Function nova e isolada no projeto Supabase existente: ela leria a revisão aprovada de produtos/cestas no GitHub e consultaria cliente/endereço pelo backend, sem usar Supabase como catálogo. Não alterar funções existentes nem publicar o endpoint antes de revisar o contrato, segredos e isolamento. GitHub Pages continua servindo apenas a parte estática.
 
 A Meta também oferece update_data para atualizar dados da tela após uma interação sem navegar; listas podem exibir imagem de opção com limite atual documentado de 100 KB por imagem. O total ao mudar a seleção/quantidade ainda precisa de protótipo no Flow Builder e teste em WhatsApp real; o total final e o preço permanecem validados no endpoint de servidor. Não presumir atualização a cada tecla em campo numérico. Referências: https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/implementingyourflowendpoint, https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/components e https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/changelogs.
 
@@ -86,11 +86,11 @@ A Meta documenta imagens nas opções de listas (limite atual de 100 KB por imag
 - schema_version em cada documento e validação automatizada antes de aceitar qualquer gravação.
 - Os arquivos de produto e cesta não devem guardar clientes, pedidos, conversas, consentimentos ou dados transacionais.
 
-Esse modelo é uma proposta de engenharia inicial, ainda não implementada. Ajustar campos somente depois de inspecionar a estrutura atual de cesta no Vitrine Admin e a exportação disponível sem Supabase.
+Esse modelo é uma proposta de engenharia inicial, ainda não implementada. Ajustar campos somente depois de inspecionar a estrutura atual de cesta no Vitrine Admin e a exportação estruturada de produtos/cestas, sem consulta direta ao banco operacional para importar o catálogo.
 
 ## Identidade e modo de atuação para futuras conversas
 
-Atue como Codex, colaborador técnico e programador sênior especializado em sistemas web e e-commerce. Priorize arquitetura modular, simples de operar, leve, validada, auditável e preparada para evolução. Antes de alterar arquivos, diferencie este projeto dos sistemas em produção e leia este handoff e o roadmap. Trabalhe em rodadas pequenas e concluídas, explique o que mudou e como foi verificado, não invente estados de Meta/GitHub, não exponha segredos e não peça confirmação repetidamente quando a ação já estiver autorizada. Respeite a instrução atual do projeto de não usar Supabase nem senha própria.
+Atue como Codex, colaborador técnico e programador sênior especializado em sistemas web e e-commerce. Priorize arquitetura modular, simples de operar, leve, validada, auditável e preparada para evolução. Antes de alterar arquivos, diferencie este projeto dos sistemas em produção e leia este handoff e o roadmap. Trabalhe em rodadas pequenas e concluídas, explique o que mudou e como foi verificado, não invente estados de Meta/GitHub, não exponha segredos e não peça confirmação repetidamente quando a ação já estiver autorizada. Produtos e cestas ficam no GitHub; o uso autorizado do Supabase nesta fase limita-se ao cadastro de clientes/endereço no servidor, sem segredos no navegador nem escrita em produção não revisada. Não criar senha própria do admin.
 
 ## Estado no encerramento deste kickoff
 
@@ -105,17 +105,17 @@ Concluído:
 Ainda não feito:
 - Nenhuma aplicação ou tela foi codificada.
 - Nenhum dado de cesta/produto foi importado.
-- Nenhum acesso ao Supabase foi feito nesta iniciativa.
+- Foi feita somente inspeção de schema do projeto Supabase: não foram lidas linhas de clientes/endereço e nenhuma tabela ou dado foi alterado.
 - Nenhuma operação de criação, validação, publicação ou envio foi feita na Meta.
 - Nenhuma mudança foi feita no main nem no deploy do site.
 
 ## Próxima ação
 
-Continuar pela rodada 1 do roadmap: obter exportação estruturada das cestas e produtos referenciados pelo Vitrine Admin sem usar Supabase. Depois da coleta, provar o Flow dinâmico para marca/quantidade/remoção e cálculo do total pelo endpoint. Provar carrinho nativo só como alternativa se o negócio aceitar o total personalizado após o envio do carrinho. Fechar também a forma segura de gravação GitHub e o runtime HTTPS fora do Supabase antes de qualquer integração dinâmica. Inspecionar qualquer arquivo antes de normalizar os dados. Se não houver exportação pelo admin, solicitar CSV/JSON apropriado sem substituir esse passo por uma consulta Supabase.
+Continuar pela rodada 1 do roadmap: obter exportação estruturada das cestas e produtos referenciados pelo Vitrine Admin, sem consultar diretamente o banco para importar o catálogo. Depois, revisar o resolvedor de cliente e o caminho canônico de pedidos existentes; desenvolver o Flow dinâmico com endpoint isolado, marcas, quantidades, endereço, pagamento e resumo com confirmação no WhatsApp. O desenho está em ORDER-FLOW-CHECKOUT-DESIGN.md. Nenhuma integração, consulta a linhas de clientes, alteração de banco ou operação Meta foi feita.
 
 ## Instrução para retomar em uma nova conversa
 
-Abra primeiro HANDOFF.md, IMPLEMENTATION-ROADMAP.md e FLOW-RESEARCH.md em docs/projects/whatsapp-atendimento-github/ na branch project/whatsapp-atendimento-github-20261025 do repositório osvaldosereia/SUCEDOAN12. Continue na próxima ação registrada. Mantenha o projeto separado, não toque em main nem no site/admin em produção, não use Supabase, não crie senha própria e não publique nem envie mensagens pela Meta. Antes de iniciar o código do admin, resolva a coleta de dados de cestas e documente o mecanismo seguro de persistência GitHub.
+Abra primeiro HANDOFF.md, IMPLEMENTATION-ROADMAP.md, FLOW-RESEARCH.md e ORDER-FLOW-CHECKOUT-DESIGN.md em docs/projects/whatsapp-atendimento-github/ na branch project/whatsapp-atendimento-github-20261025 de osvaldosereia/SUCEDOAN12. Mantenha produtos e cestas no GitHub; use o Supabase existente somente pelo backend para cliente/endereço conforme o desenho; não altere main, site/admin de produção, funções existentes, schema ou pedidos sem revisão do contrato. Não crie senha própria nem exponha token no navegador. Continue pela próxima rodada registrada. Não publique Flow nem envie mensagens reais durante desenvolvimento.
 
 ## Referências técnicas oficiais
 
@@ -131,7 +131,7 @@ Abra primeiro HANDOFF.md, IMPLEMENTATION-ROADMAP.md e FLOW-RESEARCH.md em docs/p
 
 ## Pesquisa de atendimento por Flow — 25/10/2026
 
-A pesquisa técnica e a comparação de sistemas estão em FLOW-RESEARCH.md. O padrão recomendado combina editor guiado, validação de schema, preview, teste em WhatsApp, versionamento e publicação manual separada por número. A Meta oferece update_data para atualização da tela após interações e imagens em opções de listas. O cálculo imediato do total e a seleção múltipla com quantidades independentes precisam de protótipo. O total final exige validação no endpoint HTTPS fora do Supabase. O runtime e o meio seguro de gravação no GitHub ainda não foram escolhidos.
+A pesquisa técnica e a comparação de sistemas estão em FLOW-RESEARCH.md. O padrão recomendado combina editor guiado simples, validação, prévia, teste e publicação manual separada por número. Para o checkout, a orientação atual recomenda endpoint HTTPS isolado no backend para Data Exchange, cálculo de preço e consulta do cadastro de cliente; produtos/cestas continuam em uma revisão imutável do GitHub. A jornada de resumo e confirmação está em ORDER-FLOW-CHECKOUT-DESIGN.md.
 
 Nenhuma chamada à API Meta, publicação, envio de Flow ou criação de endpoint foi feita durante a pesquisa.
 
@@ -139,4 +139,9 @@ Nenhuma chamada à API Meta, publicação, envio de Flow ou criação de endpoin
 
 A inspeção do código encontrou a ação downloadMetaCatalog em vitrine/admin/whatsapp-lab/lab.js. Ela exporta um CSV de 15 combinações de cesta preparado para importação manual de catálogo na Meta. Esse arquivo não é a exportação bruta das cestas, tipos, produtos relacionados, quantidades e ordem necessária para esta migração. Não usar esse CSV como fonte do novo catálogo.
 
-O código do Vitrine Admin carrega composições pelo módulo vitrine/admin/basket-admin-api.js e por serviços existentes vinculados ao backend atual. Nenhuma chamada a esse backend foi feita nesta iniciativa, conforme a restrição de não usar Supabase. A exportação adequada continua pendente; o próximo passo é obter o arquivo estruturado pelo próprio painel, se essa opção existir, ou receber CSV/JSON com o formato listado no Roadmap.
+O código do Vitrine Admin carrega composições pelo módulo vitrine/admin/basket-admin-api.js e por serviços existentes vinculados ao backend atual. Nenhuma consulta ao backend foi feita para importar produtos/cestas. A inspeção posterior de Supabase foi limitada ao schema de clientes/endereço/pedidos; nenhuma linha pessoal foi consultada. A exportação de produtos/cestas continua pendente; obter o arquivo estruturado pelo próprio painel, se existir, ou receber CSV/JSON com o formato listado no Roadmap.
+
+
+## Revisão do checkout e uso limitado do Supabase — 25/10/2026
+
+A orientação mais recente do usuário autoriza aproveitar o cadastro de clientes existente, mantendo o catálogo e as cestas no GitHub. A inspeção somente de schema identificou customers, customer_phones, customer_addresses, papoai_order_drafts_v2 e orders no projeto “Dona Antônia”. Nenhuma linha pessoal foi lida ou alterada. A recomendação é pesquisar por telefone no backend, confirmar nome/endereço, coletar forma de pagamento no Flow e enviar um resumo sem preços unitários na conversa com os botões Confirmar pedido, Editar pedido e Cancelar. Só o primeiro botão confirma e encaminha um pedido. Detalhes, estados, proteções, fontes e gates estão em [ORDER-FLOW-CHECKOUT-DESIGN.md](ORDER-FLOW-CHECKOUT-DESIGN.md).
