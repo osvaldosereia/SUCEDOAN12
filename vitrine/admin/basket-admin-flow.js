@@ -63,7 +63,11 @@
     };
     root.oninput=event=>{
       const t=event.target;
-      if(t.dataset.flowBasketOrder){const row=sizes.find(x=>String(x.id)===String(t.dataset.flowBasketOrder));if(row)row.flow_sort_order=Math.max(0,Math.min(1000,Math.trunc(number(t.value))))}
+      if(t.dataset.previewQty){
+        updatePreviewQuantity(t);
+        root.querySelectorAll('[data-preview-qty]').forEach(input=>{if(input!==t)input.value=String(number(state.preview?.quantities[input.dataset.previewQty]))});
+        const total=root.querySelector('[data-flow-total-value]');if(total)total.textContent=money(previewTotal());
+      }else if(t.dataset.flowBasketOrder){const row=sizes.find(x=>String(x.id)===String(t.dataset.flowBasketOrder));if(row)row.flow_sort_order=Math.max(0,Math.min(1000,Math.trunc(number(t.value))))}
       else if(t.dataset.flowTypeOrder){const row=types.find(x=>String(x.id)===String(t.dataset.flowTypeOrder));if(row)row.flow_sort_order=Math.max(0,Math.min(1000,Math.trunc(number(t.value))))}
       else if(t.dataset.flowMax){const row=types.find(x=>String(x.id)===String(t.dataset.flowMax));if(row)row.max_quantity=Math.max(1,Math.min(10,Math.trunc(number(t.value,10))))}
     };
