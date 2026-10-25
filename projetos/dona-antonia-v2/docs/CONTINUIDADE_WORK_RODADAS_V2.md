@@ -2,7 +2,7 @@
 
 **Versão do dossiê:** 2026-10-24
 **Finalidade:** transferir todas as decisões operacionais, regras de UX, estado da engenharia, riscos, pendências e plano de entrega para um novo Projeto/conversa do ChatGPT em modo Work.  
-**Status atualizado (24/10/2026): R00–R15 concluídas tecnicamente; R16 segue em pré-voo bloqueado e não concluída.** PRs da V2 permanecem draft e sem merge/publicação.
+**Status atualizado (25/10/2026): R00–R15 concluídas tecnicamente; R16 segue em pré-voo bloqueado apenas pelo ensaio de backup/restore e não concluída.** PRs da V2 permanecem draft e sem merge/publicação.
 
 **Snapshot remoto V2 confirmado por leitura:** projeto isolado `hjudhofluihkxykwekir`, `ACTIVE_HEALTHY`, PostgreSQL 17.11, 20 migrations e 33 tabelas; 805 produtos e 805 perfis privados, 0 clientes, 0 pedidos, 0 documentos fiscais e 0 eventos de entrega. Os três SKUs fictícios da R16 estão ativos com 30 unidades cada; há três tipos R16, cesta `r16-test` ativa e três movimentos. Nenhuma conta ou pedido foi criado nesta retomada.
 
@@ -494,3 +494,11 @@ A URL atual continua owner-only. Não houve mudança de audiência, convite, dep
 **Referências oficiais consultadas:** https://supabase.com/docs/guides/platform/backups; https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore; https://supabase.com/docs/guides/local-development/restoring-downloaded-backup; https://supabase.com/docs/guides/platform/manage-your-usage/branching.
 
 **Isolamento:** a verificação foi somente leitura na tela; nenhum pedido foi submetido nem escrita executada no Supabase. Produção, domínio público, `main`, Vitrine/Admin legado, Meta/WhatsApp operacional e Bling continuam intocados.
+
+## Complemento R16 — evidência da prévia privada (25/10/2026)
+
+O gate da URL passou a aceitar a prévia Sites owner-only quando o status HTTP numérico não está exposto, desde que a implantação esteja concluída, a versão e o acesso restrito estejam registrados, os commits Sites/GitHub estejam ligados por evidência e a renderização no navegador tenha data válida. A validação continua rejeitando URL HTTP, implantação falha, acesso público, commit ausente, referência de fonte divergente ou resposta HTTP 4xx/5xx.
+
+O manifesto registra a prévia Admin V2 na rota /admin/, versão 4, deployment `appgdep_6add6d1b4af081919ad862777fa97241`, fonte Sites `0f825c25279c338fe62c230148bc5c8a3fa4fbe1` e fonte GitHub `bd894392d62e2fa0208209b60ca78ff7227800f1`. O campo `httpStatus` permanece `null`; nenhum código HTTP foi presumido. A prévia continua limitada à conta `juniorsereia@gmail.com`, e a conferência visual não criou pedidos nem escreveu no banco.
+
+Verificação local desta alteração: `npm run check` e três testes direcionados da regra passaram. O CI do head do PR #1396 registra a validação integral. O readiness geral segue `blocked` por falta de backup/restore descartável, separado e sem custo; não houve criação de branch, restore, merge ou publicação pública.

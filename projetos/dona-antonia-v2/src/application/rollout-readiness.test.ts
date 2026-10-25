@@ -5,7 +5,7 @@ import { evaluateR16Readiness } from './rollout-readiness';
 
 const projectId = 'hjudhofluihkxykwekir';
 const seedSkus = ['R16-TEST-ARROZ', 'R16-TEST-FEIJAO', 'R16-TEST-OLEO'];
-const date = '2026-10-24';
+const date = '2026-10-25';
 
 function pendingManifest(): R16ReadinessManifest {
   return {
@@ -114,6 +114,36 @@ function readyManifest(
   };
 }
 
+function privateSitesPreviewManifest(): R16ReadinessManifest {
+  const previewUrl = 'https://dona-antonia-v2-admin-preview.juniorsereia.chatgpt.site/admin/';
+  const githubSourceCommitSha = 'bd894392d62e2fa0208209b60ca78ff7227800f1';
+  const base = readyManifest({ stagingUrl: previewUrl });
+
+  return {
+    ...base,
+    gates: {
+      ...base.gates,
+      stagingUrl: {
+        ...base.gates.stagingUrl,
+        httpStatus: null,
+        evidenceRefs: [
+          previewUrl,
+          `https://github.com/osvaldosereia/SUCEDOAN12/commit/${githubSourceCommitSha}`,
+        ],
+        siteDeployment: {
+          deploymentId: 'appgdep_6add6d1b4af081919ad862777fa97241',
+          status: 'succeeded',
+          access: 'owner-only',
+          versionNumber: 4,
+          siteSourceCommitSha: '0f825c25279c338fe62c230148bc5c8a3fa4fbe1',
+          githubSourceCommitSha,
+          browserVerifiedAt: date,
+        },
+      },
+    },
+  };
+}
+
 describe('R16 rollout readiness', () => {
   it('keeps the current evidence blocked while the staging, operator and restore gates are pending', () => {
     const result = evaluateR16Readiness(pendingManifest());
@@ -178,6 +208,74 @@ describe('R16 rollout readiness', () => {
     expect(
       evaluateR16Readiness(readyManifest({ stagingUrl: 'http://staging.example.test' })).status,
     ).toBe('blocked');
+  });
+
+  it('accepts a private Sites deployment when its HTTP status is not exposed but browser render is verified', () => {
+    const result = evaluateR16Readiness(privateSitesPreviewManifest());
+    expect(result.status).toBe('ready-to-start-isolated-staging');
+    expect(result.checks.find((check) => check.id === 'staging-url')?.passed).toBe(true);
+  });
+
+  it('requires the Sites preview to be successful, owner-only and linked to its source commit', () => {
+    const valid = privateSitesPreviewManifest();
+    const validGate = valid.gates.stagingUrl;
+    const validDeployment = validGate.siteDeployment;
+    if (validDeployment === null || validDeployment === undefined) {
+      throw new Error('The private Sites evidence fixture must include deployment details.');
+    }
+
+    const invalidDeployments = [
+      { ...validDeployment, status: 'failed' as const },
+      { ...validDeployment, access: 'public' as const },
+      { ...validDeployment, githubSourceCommitSha: 'not-a-commit' },
+      { ...validDeployment, browserVerifiedAt: '2026-10-24' },
+    ];
+
+    for (const siteDeployment of invalidDeployments) {
+      const manifest: R16ReadinessManifest = {
+        ...valid,
+        gates: {
+          ...valid.gates,
+          stagingUrl: { ...validGate, siteDeployment },
+        },
+      };
+      expect(
+        evaluateR16Readiness(manifest).checks.find((check) => check.id === 'staging-url')?.passed,
+      ).toBe(false);
+    }
+
+    const missingSourceLink: R16ReadinessManifest = {
+      ...valid,
+      gates: {
+        ...valid.gates,
+        stagingUrl: { ...validGate, evidenceRefs: [validGate.url ?? ''] },
+      },
+    };
+    expect(
+      evaluateR16Readiness(missingSourceLink).checks.find((check) => check.id === 'staging-url')
+        ?.passed,
+    ).toBe(false);
+  });
+
+  it('does not accept a staging URL without HTTP or successful deployment evidence', () => {
+    const base = readyManifest();
+    const manifest = {
+      ...base,
+      gates: {
+        ...base.gates,
+        stagingUrl: { ...base.gates.stagingUrl, httpStatus: null },
+      },
+    };
+
+    const result = evaluateR16Readiness(manifest);
+    expect(result.status).toBe('blocked');
+    expect(result.checks.find((check) => check.id === 'staging-url')?.passed).toBe(false);
+
+    const failedHttpStatus = privateSitesPreviewManifest();
+    failedHttpStatus.gates.stagingUrl.httpStatus = 503;
+    const failedHttpResult = evaluateR16Readiness(failedHttpStatus);
+    expect(failedHttpResult.status).toBe('blocked');
+    expect(failedHttpResult.checks.find((check) => check.id === 'staging-url')?.passed).toBe(false);
   });
 
   it('requires a zero-cost restore to a separate target with SHA-256 evidence', () => {

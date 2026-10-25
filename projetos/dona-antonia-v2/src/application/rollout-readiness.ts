@@ -11,6 +11,16 @@ export interface R16EvidenceRecord {
   evidenceRefs: readonly string[];
 }
 
+export interface R16SitesDeploymentEvidence {
+  deploymentId: string;
+  status: 'succeeded' | 'failed';
+  access: 'owner-only' | 'public';
+  versionNumber: number;
+  siteSourceCommitSha: string;
+  githubSourceCommitSha: string;
+  browserVerifiedAt: string;
+}
+
 export interface R16ReadinessManifest {
   schemaVersion: 1;
   projectId: string;
@@ -19,6 +29,7 @@ export interface R16ReadinessManifest {
       url: string | null;
       httpStatus: number | null;
       verifiedProjectId: string | null;
+      siteDeployment?: R16SitesDeploymentEvidence | null;
     };
     testSeed: R16EvidenceRecord & {
       projectId: string | null;
@@ -97,6 +108,32 @@ function isHttpsUrl(value: string | null): boolean {
   }
 }
 
+function hasVerifiedPrivateSitesDeployment(
+  gate: R16ReadinessManifest['gates']['stagingUrl'],
+): boolean {
+  const deployment = gate.siteDeployment;
+  if (deployment === null || deployment === undefined || typeof deployment !== 'object') {
+    return false;
+  }
+  if (!Array.isArray(gate.evidenceRefs) || typeof gate.url !== 'string') return false;
+
+  const githubSourceCommitRef = `https://github.com/osvaldosereia/SUCEDOAN12/commit/${deployment.githubSourceCommitSha}`;
+  return (
+    deployment.status === 'succeeded' &&
+    deployment.access === 'owner-only' &&
+    /^appgdep_[a-z0-9]{12,}$/i.test(deployment.deploymentId) &&
+    Number.isInteger(deployment.versionNumber) &&
+    deployment.versionNumber > 0 &&
+    /^[a-f0-9]{40}$/i.test(deployment.siteSourceCommitSha) &&
+    /^[a-f0-9]{40}$/i.test(deployment.githubSourceCommitSha) &&
+    isValidDate(deployment.browserVerifiedAt) &&
+    deployment.browserVerifiedAt === gate.verifiedAt &&
+    gate.url !== null &&
+    gate.evidenceRefs.includes(gate.url) &&
+    gate.evidenceRefs.includes(githubSourceCommitRef)
+  );
+}
+
 function hasExpectedSeed(manifest: R16ReadinessManifest): boolean {
   const seed = manifest.gates.testSeed;
   if (
@@ -121,15 +158,19 @@ function hasExpectedSeed(manifest: R16ReadinessManifest): boolean {
 
 function hasVerifiedStagingUrl(manifest: R16ReadinessManifest): boolean {
   const gate = manifest.gates.stagingUrl;
+  const successfulHttpResponse =
+    Number.isInteger(gate.httpStatus) &&
+    gate.httpStatus !== null &&
+    gate.httpStatus >= 200 &&
+    gate.httpStatus < 300;
+  const successfulPrivateSitesPreview =
+    gate.httpStatus === null && hasVerifiedPrivateSitesDeployment(gate);
   return (
     hasReviewedEvidence(gate) &&
     manifest.projectId === R16_V2_PROJECT_ID &&
     gate.verifiedProjectId === R16_V2_PROJECT_ID &&
     isHttpsUrl(gate.url) &&
-    Number.isInteger(gate.httpStatus) &&
-    gate.httpStatus !== null &&
-    gate.httpStatus >= 200 &&
-    gate.httpStatus < 300
+    (successfulHttpResponse || successfulPrivateSitesPreview)
   );
 }
 
@@ -173,8 +214,10 @@ export function evaluateR16Readiness(manifest: R16ReadinessManifest): R16Readine
       required: true,
       passed: stagingPassed,
       detail: stagingPassed
-        ? 'URL HTTPS acessível e vinculada ao Supabase V2; evidência registrada.'
-        : 'Falta URL HTTPS acessível e evidência de vínculo ao Supabase V2; não usar produção.',
+        ? manifest.gates.stagingUrl.httpStatus === null
+          ? 'Prévia privada HTTPS renderizada no navegador; implantação Sites, acesso restrito e commit-fonte verificados.'
+          : 'URL HTTPS acessível e vinculada ao Supabase V2; evidência registrada.'
+        : 'Falta URL HTTPS acessível ou evidência válida da prévia privada vinculada ao Supabase V2; não usar produção.',
     },
     {
       id: 'test-seed',

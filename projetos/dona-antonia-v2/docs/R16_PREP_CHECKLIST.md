@@ -2,12 +2,12 @@
 
 Este checklist é exclusivo da Dona Antônia V2. O estado do comando significa apenas se há evidência para começar um ensaio isolado em staging. Ele nunca marca a R16 concluída nem autoriza produção.
 
-## Estado em 24/10/2026
+## Estado em 25/10/2026
 
 | Gate | Estado | Evidência ou bloqueio |
 | --- | --- | --- |
-| Código e CI | Aprovado no head de código | PR #1396 aberto e draft na branch agent/dona-antonia-r16-pilot-preflight, base agent/dona-antonia-r15-audit-homologacao. Head de código 390a0bdce81611e5e25b8e2c1eb6f47fb8f80b38. CI push #40138207500 e pull request #40138209762 passaram todos os gates, incluindo 18/18 testes browser mobile/desktop. |
-| URL de staging acessível | Bloqueado | A prévia disponível é owner-only. Uma URL compartilhada exigiria publicação ou deploy, ambos fora do escopo autorizado. |
+| Código e CI | Validador atualizado; checks ligados ao head do PR | PR #1396 permanece aberto e draft na branch agent/dona-antonia-r16-pilot-preflight, base agent/dona-antonia-r15-audit-homologacao. O checkpoint anterior #40156012331 passou todos os gates; nesta atualização, `npm run check` e os três testes direcionados da nova regra passaram localmente. O CI do novo head pode ser acompanhado nos checks do PR. |
+| URL de staging acessível | Aprovado para o operador autorizado | [Admin Preview V2](https://dona-antonia-v2-admin-preview.juniorsereia.chatgpt.site/admin/) continua owner-only. O Sites registra a versão 4 como concluída (`appgdep_6add6d1b4af081919ad862777fa97241`); o navegador renderizou o catálogo R16 em 25/10. A fonte do Site `0f825c25279c338fe62c230148bc5c8a3fa4fbe1` corresponde ao commit GitHub `bd894392d62e2fa0208209b60ca78ff7227800f1`. O CUA não expôs o status HTTP numérico; o manifesto mantém `httpStatus: null` e registra as evidências da implantação e da renderização. |
 | Seed fictício V2 | Aprovado | No projeto hjudhofluihkxykwekir: R16-TEST-ARROZ, R16-TEST-FEIJAO e R16-TEST-OLEO, estoque 30 cada; três perfis privados, três tipos, cesta r16-test e três movimentos. O manifesto R16_EVIDENCE_MANIFEST.json registra SKUs, estoque, projeto e referência ao checklist. |
 | Operador do staging | Aprovado para um usuário | O único operador informado é a conta ADMIN já confirmada. O manifesto usa referência pseudonimizada, sem gravar e-mail. A validação multioperador permanece coberta pelos testes automatizados da R10; nenhum usuário adicional será criado. |
 | Backup/restore controlado | Bloqueado | Não há alternativa demonstrada que seja gratuita, descartável e não destrutiva. Nenhum branch, PITR, cópia ou restore foi criado. Teste local de rollback não comprova recuperação de snapshot remoto. |
@@ -19,11 +19,11 @@ Projeto `hjudhofluihkxykwekir`: `ACTIVE_HEALTHY`, PostgreSQL 17.11, nenhum branc
 
 ### Resultado atual do readiness
 
-O comando npm run r16:readiness lê o manifesto versionado em docs/R16_EVIDENCE_MANIFEST.json. Ele não aceita os antigos flags DA_V2_* como evidência. Exige referência revisável, data, URL HTTPS com resposta 2xx associada ao projeto V2, SKUs e estoque esperados, uma a três referências únicas de operadores e hashes SHA-256 de backup/restore em alvo diferente com custo registrado como zero.
+O comando npm run r16:readiness lê o manifesto versionado em docs/R16_EVIDENCE_MANIFEST.json. Ele não aceita os antigos flags DA_V2_* como evidência. Exige referência revisável, data e URL HTTPS vinculada ao projeto V2 com resposta 2xx; quando o status HTTP numérico não está disponível, aceita evidência de implantação Sites concluída, owner-only, versão identificada, commit de origem ligado a uma referência GitHub e renderização de navegador registrada. Também exige SKUs e estoque esperados, uma a três referências únicas de operadores e hashes SHA-256 de backup/restore em alvo diferente com custo registrado como zero.
 
-Resultado após a decisão de operador único: o gate de identidade fica aprovado; staging e backup/restore continuam pendentes. O resultado permanece blocked e roundCompleted=false. A autorização produtiva é exibida como informativa. O resultado inclui roundCompleted=false e, mesmo que os gates de pré-voo sejam atendidos no futuro, não substitui a execução nem a conclusão da R16.
+Resultado em 25/10 após a validação da prévia owner-only: identidade e URL de staging estão aprovadas; backup/restore permanece pendente. O resultado geral continua `blocked` e `roundCompleted=false` somente por causa do backup/restore. A autorização produtiva é informativa e o pré-voo nunca substitui a execução nem a conclusão da R16.
 
-O comando verifica a estrutura do manifesto e a existência das referências locais em docs/. Ele não consulta Supabase, não faz probe HTTP da URL, não verifica o conteúdo de backup nem confirma identidades. A pessoa responsável precisa revisar as evidências referenciadas antes de marcar qualquer gate como verificado; os antigos flags de ambiente não podem substituir isso.
+O comando verifica a estrutura do manifesto e a existência das referências locais em docs/. Ele não consulta Supabase, não faz probe HTTP da URL, não verifica o conteúdo de backup nem confirma identidades; a verificação da prévia no navegador foi feita separadamente e registrada no manifesto. A pessoa responsável precisa revisar as evidências referenciadas antes de marcar qualquer gate como verificado; os antigos flags de ambiente não podem substituir isso.
 
 ## Rollback do seed
 

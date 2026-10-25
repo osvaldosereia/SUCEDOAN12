@@ -3,30 +3,53 @@
   "projectId": "hjudhofluihkxykwekir",
   "gates": {
     "stagingUrl": {
-      "status": "pending",
-      "url": null,
+      "status": "verified",
+      "url": "https://dona-antonia-v2-admin-preview.juniorsereia.chatgpt.site/admin/",
       "httpStatus": null,
-      "verifiedProjectId": null,
-      "verifiedAt": null,
-      "evidenceRefs": []
+      "verifiedProjectId": "hjudhofluihkxykwekir",
+      "verifiedAt": "2026-10-25",
+      "evidenceRefs": [
+        "docs/R16_PREP_CHECKLIST.md#preview",
+        "https://dona-antonia-v2-admin-preview.juniorsereia.chatgpt.site/admin/",
+        "https://github.com/osvaldosereia/SUCEDOAN12/commit/bd894392d62e2fa0208209b60ca78ff7227800f1"
+      ],
+      "siteDeployment": {
+        "deploymentId": "appgdep_6add6d1b4af081919ad862777fa97241",
+        "status": "succeeded",
+        "access": "owner-only",
+        "versionNumber": 4,
+        "siteSourceCommitSha": "0f825c25279c338fe62c230148bc5c8a3fa4fbe1",
+        "githubSourceCommitSha": "bd894392d62e2fa0208209b60ca78ff7227800f1",
+        "browserVerifiedAt": "2026-10-25"
+      }
     },
     "testSeed": {
       "status": "verified",
       "projectId": "hjudhofluihkxykwekir",
-      "skus": ["R16-TEST-ARROZ", "R16-TEST-FEIJAO", "R16-TEST-OLEO"],
+      "skus": [
+        "R16-TEST-ARROZ",
+        "R16-TEST-FEIJAO",
+        "R16-TEST-OLEO"
+      ],
       "stockUnitsBySku": {
         "R16-TEST-ARROZ": 30,
         "R16-TEST-FEIJAO": 30,
         "R16-TEST-OLEO": 30
       },
       "verifiedAt": "2026-10-24",
-      "evidenceRefs": ["docs/R16_PREP_CHECKLIST.md"]
+      "evidenceRefs": [
+        "docs/R16_PREP_CHECKLIST.md"
+      ]
     },
     "operators": {
       "status": "verified",
-      "operatorRefs": ["op_owner_01"],
+      "operatorRefs": [
+        "op_owner_01"
+      ],
       "verifiedAt": "2026-10-24",
-      "evidenceRefs": ["docs/R16_PREP_CHECKLIST.md#operadores"]
+      "evidenceRefs": [
+        "docs/R16_PREP_CHECKLIST.md#operadores"
+      ]
     },
     "backupRestore": {
       "status": "pending",
