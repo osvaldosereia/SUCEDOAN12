@@ -16,7 +16,7 @@ export function assertBasket(detail,expectedId,expectedNumber){
  const price=Number(b.display_price_cents),stock=Number(b.stock_quantity);
  if(!Number.isSafeInteger(price)||price<0||!Number.isFinite(stock)||stock<1)throw Error('basket_unavailable');
  for(const item of items)if(!id(item.position_id)||!id(item.product_id)||!Number.isInteger(Number(item.quantity))||Number(item.quantity)<0||!text(item.name))throw Error('basket_item_invalid');
- return {basket:b,items:items.map(x=>({position_id:String(x.position_id),product_id:String(x.product_id),quantity:Number(x.quantity),name:text(x.name,140)}))};
+ return {basket:b,items:items.map(x=>({position_id:String(x.position_id),product_id:String(x.product_id),quantity:Number(x.quantity),name:text(x.name,140),brand:text(x.brand,48)}))};
 }
 function chooseModel(shell,size){
  if(!SIZE_KEYS.includes(size))throw Error('invalid_size');
@@ -38,6 +38,22 @@ export function pricesResponse(shell,details){
  }
  if(!rows.some(x=>x.enabled))throw Error('no_available_combinations');
  return rows;
+}
+function combinationBrandsResponse(details,basketId){
+ return details.map((detail,index)=>{
+  const n=index+1;
+  try{
+   const {items}=assertBasket(detail,basketId,n),brands=[...new Set(items.map(item=>item.brand).filter(Boolean))];
+   if(!brands.length)return 'Combinação '+n+': marcas não cadastradas';
+   const shown=[],prefix='Combinação '+n+': ';
+   for(const brand of brands){
+    const candidate=prefix+[...shown,brand].join(', ');
+    if(candidate.length>240){shown.push((brands.length-shown.length)+' outras');break;}
+    shown.push(brand);
+   }
+   return prefix+shown.join(', ');
+  }catch{return 'Combinação '+n+': indisponível';}
+ }).join('\n');
 }
 const emptySlot=j=>({['nome'+j]:'',['vis'+j]:false,['quant'+j]:'0',['marca'+j]:'00000000-0000-4000-8000-000000000000',['marcas'+j]:[{id:'00000000-0000-4000-8000-000000000000',title:'Sem item'}]});
 export async function pageResponse(state,deps,warning=''){
@@ -74,7 +90,7 @@ export async function flowExchange(payload,deps){
   const size=text(form.tamanho,20),shell=await deps.shell(),model=chooseModel(shell,size);
   const results=await Promise.allSettled([1,2,3].map(n=>deps.basket(model.id,n)));
   const details=results.map(x=>x.status==='fulfilled'?x.value:null);
-  return {screen:'COMBINACAO',data:{tamanho:size,opcoes:pricesResponse(shell,details)}};
+  return {screen:'COMBINACAO',data:{tamanho:size,opcoes:pricesResponse(shell,details),resumoMarcas:combinationBrandsResponse(details,model.id)}};
  }
  if(stage==='combinacao'&&payload.screen==='COMBINACAO'){
   const size=text(form.tamanho,20),n=assertChoice(form.combinacao),shell=await deps.shell(),model=chooseModel(shell,size);
