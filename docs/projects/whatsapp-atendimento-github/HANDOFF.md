@@ -45,7 +45,7 @@ A pesquisa de Flows está registrada em FLOW-RESEARCH.md, com fontes oficiais da
 
 A documentação oficial da Meta descreve a troca de dados de Flows como uma chamada criptografada a um endpoint HTTPS que processa a solicitação e devolve resposta criptografada. GitHub Pages entrega arquivos estáticos e não executa esse endpoint. Portanto, dados dinâmicos, validação durante o Flow e preço atualizado exigirão um runtime HTTP fora do Supabase. A escolha desse runtime permanece em aberto.
 
-Flow estático não deve ser descrito como se consultasse dados ao vivo. A Meta documenta o componente Image, mas o vínculo dinâmico e a experiência de múltiplas opções com quantidades independentes precisam ser provados no schema atual e em WhatsApp real. A referência oficial do endpoint está em https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/implementingyourflowendpoint e dos componentes em https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/components.
+A Meta também oferece update_data para atualizar dados da tela após uma interação sem navegar; listas podem exibir imagem de opção com limite atual documentado de 100 KB por imagem. O total ao mudar a seleção/quantidade ainda precisa de protótipo no Flow Builder e teste em WhatsApp real; o total final e o preço permanecem validados no endpoint de servidor. Não presumir atualização a cada tecla em campo numérico. Referências: https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/implementingyourflowendpoint, https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/components e https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/changelogs.
 
 ## Experiência desejada para o Flow
 
@@ -55,10 +55,10 @@ Preservar as decisões já comunicadas pelo usuário, sempre conferindo o que a 
 2. Depois da escolha do tamanho, avançar por tipo de produto, uma etapa por vez.
 3. Mostrar as opções de produtos com nome e preço individual; iniciar com a opção mais barata quando a regra comercial permitir.
 4. Permitir mais de uma opção de produto quando o tipo da cesta permitir, com quantidade por produto.
-5. Atualizar o total enquanto o cliente personaliza a cesta, quando suportado pelo contrato real do Flow.
+5. Atualizar o total na tela quando a interação suportar; a Meta oferece update_data para mudanças de tela, mas validar cálculo/quantidades em protótipo e sempre recalcular o total final no servidor.
 6. Encerrar com resumo claro antes da confirmação.
 
-A Meta documenta um componente Image; confirmar o formato de imagem, ligação dinâmica e limites vigentes antes de prometer fotos. Não presumir cartões, carrosséis ou controles +/- personalizados. Para múltiplas escolhas com quantidades próprias, validar primeiro a combinação de seleção múltipla, campo numérico, regras de navegação e endpoint.
+A Meta documenta imagens nas opções de listas (limite atual de 100 KB por imagem de opção) e a ação update_data para atualizar dados da tela após interações. Validar renderização, preseleção da opção mais barata, atualização imediata do total, quantidades independentes e limites em protótipo e WhatsApp real. Não presumir cartões ou controles +/- personalizados.
 
 ## Modelo inicial proposto
 
@@ -113,7 +113,7 @@ Abra primeiro HANDOFF.md, IMPLEMENTATION-ROADMAP.md e FLOW-RESEARCH.md em docs/p
 
 ## Pesquisa de atendimento por Flow — 25/10/2026
 
-A pesquisa técnica e a comparação de sistemas estão em FLOW-RESEARCH.md. O padrão recomendado combina editor guiado, validação de schema, preview, teste em WhatsApp, versionamento e publicação manual separada por número. A Meta oferece Flow estático e dinâmico; a cesta com preço e total confiáveis exige endpoint HTTPS fora do Supabase, mantendo chave privada/token no servidor. O runtime e o meio seguro de gravação no GitHub ainda não foram escolhidos. Imagens têm componente oficial, mas o vínculo dinâmico e a seleção múltipla com quantidade individual continuam como verificações obrigatórias antes do escopo final do Flow.
+A pesquisa técnica e a comparação de sistemas estão em FLOW-RESEARCH.md. O padrão recomendado combina editor guiado, validação de schema, preview, teste em WhatsApp, versionamento e publicação manual separada por número. A Meta oferece update_data para atualização da tela após interações e imagens em opções de listas. O cálculo imediato do total e a seleção múltipla com quantidades independentes precisam de protótipo. O total final exige validação no endpoint HTTPS fora do Supabase. O runtime e o meio seguro de gravação no GitHub ainda não foram escolhidos.
 
 Nenhuma chamada à API Meta, publicação, envio de Flow ou criação de endpoint foi feita durante a pesquisa.
 
