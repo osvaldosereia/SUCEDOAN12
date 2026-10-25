@@ -149,8 +149,7 @@ export async function verifyMetaWebhookSignature(
   signature: string | null,
   appSecret: string,
 ): Promise<boolean> {
-  const rawBytes =
-    typeof rawBody === 'string' ? new TextEncoder().encode(rawBody) : rawBody;
+  const rawBytes = typeof rawBody === 'string' ? new TextEncoder().encode(rawBody) : rawBody;
   if (
     rawBytes.byteLength > MAX_ENVELOPE_FIELD_LENGTH ||
     typeof signature !== 'string' ||
