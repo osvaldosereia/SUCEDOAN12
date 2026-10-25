@@ -115,6 +115,95 @@ describe('createWhatsAppFlowController', () => {
     });
   });
 
+  it('quotes a sanitized order on the customer screen before review', async () => {
+    const quote = vi.fn(async () => ({
+      totalCents: 12345,
+      basketSubtotalCents: 10000,
+      extrasSubtotalCents: 2345,
+      itemCount: 3,
+    }));
+    const controller = createWhatsAppFlowController({
+      readCatalog: async () => catalog,
+      quote,
+    });
+
+    const result = await controller({
+      action: 'data_exchange',
+      screen: 'CUSTOMER',
+      flow_token: 'flow-session-1234567890',
+      data: {
+        basketId: 'mini',
+        basketQuantity: 1,
+        basketLines: [{ typeId: 'type-rice', sku: 'SKU-RICE-01', quantity: 2 }],
+        extraLines: [],
+        customerName: 'Maria da Silva',
+        phone: '5565999828360',
+        recipientName: 'Maria da Silva',
+        postalCode: '78000-000',
+        street: 'Rua das Flores',
+        streetNumber: '123',
+        complement: 'Casa 2',
+        neighborhood: 'Centro',
+        city: 'Cuiaba',
+        referenceNote: 'Portão branco',
+        paymentMethod: 'PIX',
+        deliveryDate: '2026-10-26',
+        totalCents: 1,
+      },
+    });
+
+    expect(result.screen).toBe('REVIEW');
+    expect(result.data).toMatchObject({ totalCents: 12345 });
+    expect(result.data.totalLabel).toContain('123,45');
+    expect(quote).toHaveBeenCalledOnce();
+    const quotedRequest = quote.mock.calls[0]?.[0];
+    expect(quotedRequest).toEqual({
+      basketId: 'mini',
+      basketQuantity: 1,
+      basketLines: [{ typeId: 'type-rice', sku: 'SKU-RICE-01', quantity: 2 }],
+      extraLines: [],
+      customer: {
+        name: 'Maria da Silva',
+        phone: '65999828360',
+        address: {
+          recipientName: 'Maria da Silva',
+          postalCode: '78000000',
+          street: 'Rua das Flores',
+          streetNumber: '123',
+          complement: 'Casa 2',
+          neighborhood: 'Centro',
+          city: 'Cuiabá',
+          stateCode: 'MT',
+          referenceNote: 'Portão branco',
+        },
+      },
+      paymentMethod: 'PIX',
+      deliveryDate: '2026-10-26',
+      idempotencyKey: 'flow:flow-session-1234567890',
+    });
+    expect(quotedRequest).not.toHaveProperty('totalCents');
+  });
+
+  it('keeps quote failures generic and inside the customer screen', async () => {
+    const controller = createWhatsAppFlowController({
+      readCatalog: async () => catalog,
+      quote: async () => {
+        throw new Error('private database message');
+      },
+    });
+
+    const result = await controller({
+      action: 'data_exchange',
+      screen: 'CUSTOMER',
+      flow_token: 'flow-session-1234567890',
+      data: { basketId: 'mini', basketQuantity: 1 },
+    });
+
+    expect(result.screen).toBe('CUSTOMER');
+    expect(result.data.errorMessage).toBe('Não foi possível calcular o pedido. Revise os dados.');
+    expect(JSON.stringify(result)).not.toContain('private database message');
+  });
+
   it('rejects an unavailable basket selection and unsupported actions', async () => {
     const controller = createWhatsAppFlowController({
       readCatalog: async () => catalog,
