@@ -6,11 +6,11 @@ Este checklist é exclusivo da Dona Antônia V2. O estado do comando significa a
 
 | Gate | Estado | Evidência ou bloqueio |
 | --- | --- | --- |
-| Código e CI | Validador atualizado; checks ligados ao head do PR | PR #1396 permanece aberto e draft na branch agent/dona-antonia-r16-pilot-preflight, base agent/dona-antonia-r15-audit-homologacao. O checkpoint anterior #40156012331 passou todos os gates; nesta atualização, `npm run check` e os três testes direcionados da nova regra passaram localmente. O CI do novo head pode ser acompanhado nos checks do PR. |
+| Código e CI | Validador aprovado; investigação registrada | PR #1396 permanece aberto e draft na branch agent/dona-antonia-r16-pilot-preflight, base agent/dona-antonia-r15-audit-homologacao. O head `a112ec0bb19071df8e58cade1428d5ea20af3866` passou todos os gates no CI #40156596675, incluindo smoke browser mobile/desktop. Esta atualização registra a investigação de backup/restore. |
 | URL de staging acessível | Aprovado para o operador autorizado | [Admin Preview V2](https://dona-antonia-v2-admin-preview.juniorsereia.chatgpt.site/admin/) continua owner-only. O Sites registra a versão 4 como concluída (`appgdep_6add6d1b4af081919ad862777fa97241`); o navegador renderizou o catálogo R16 em 25/10. A fonte do Site `0f825c25279c338fe62c230148bc5c8a3fa4fbe1` corresponde ao commit GitHub `bd894392d62e2fa0208209b60ca78ff7227800f1`. O CUA não expôs o status HTTP numérico; o manifesto mantém `httpStatus: null` e registra as evidências da implantação e da renderização. |
 | Seed fictício V2 | Aprovado | No projeto hjudhofluihkxykwekir: R16-TEST-ARROZ, R16-TEST-FEIJAO e R16-TEST-OLEO, estoque 30 cada; três perfis privados, três tipos, cesta r16-test e três movimentos. O manifesto R16_EVIDENCE_MANIFEST.json registra SKUs, estoque, projeto e referência ao checklist. |
 | Operador do staging | Aprovado para um usuário | O único operador informado é a conta ADMIN já confirmada. O manifesto usa referência pseudonimizada, sem gravar e-mail. A validação multioperador permanece coberta pelos testes automatizados da R10; nenhum usuário adicional será criado. |
-| Backup/restore controlado | Bloqueado | Não há alternativa demonstrada que seja gratuita, descartável e não destrutiva. Nenhum branch, PITR, cópia ou restore foi criado. Teste local de rollback não comprova recuperação de snapshot remoto. |
+| Backup/restore controlado | Bloqueado por conexão do banco e custo não confirmável | O caminho oficial para dump/restore em destino local requer connection string e senha PostgreSQL, Supabase CLI, Docker e psql ([guia Supabase](https://supabase.com/docs/guides/self-hosting/restore-from-platform)). O conector retorna o host do projeto, mas não a senha nem a URL PostgreSQL completa. O workflow V2 não referencia secret de conexão remota. GitHub Actions em repositório privado pode ser cobrado se exceder minutos incluídos. Nenhum dump, restore ou branch foi iniciado. |
 | Autorização para piloto produtivo | Fora do escopo | É um gate separado. Não bloqueia o pré-voo de staging e continua sem autorização. |
 
 ## Snapshot remoto confirmado por leitura — 24/10/2026
@@ -24,6 +24,14 @@ O comando npm run r16:readiness lê o manifesto versionado em docs/R16_EVIDENCE_
 Resultado em 25/10 após a validação da prévia owner-only: identidade e URL de staging estão aprovadas; backup/restore permanece pendente. O resultado geral continua `blocked` e `roundCompleted=false` somente por causa do backup/restore. A autorização produtiva é informativa e o pré-voo nunca substitui a execução nem a conclusão da R16.
 
 O comando verifica a estrutura do manifesto e a existência das referências locais em docs/. Ele não consulta Supabase, não faz probe HTTP da URL, não verifica o conteúdo de backup nem confirma identidades; a verificação da prévia no navegador foi feita separadamente e registrada no manifesto. A pessoa responsável precisa revisar as evidências referenciadas antes de marcar qualquer gate como verificado; os antigos flags de ambiente não podem substituir isso.
+
+### Caminho seguro avaliado para o backup/restore
+
+A opção tecnicamente adequada é gerar um dump lógico do projeto V2 real e restaurá-lo em uma instância local descartável (sem escrever de volta na origem), seguindo o [guia oficial de restore para self-hosted](https://supabase.com/docs/guides/self-hosting/restore-from-platform). A documentação exige connection string e senha do banco, Supabase CLI, Docker e psql; o dump separa roles, schema e dados. O CI atual testa migrations em PostgreSQL descartável, mas não usa uma conexão com o banco Supabase.
+
+O conector Supabase só entrega o host db.hjudhofluihkxykwekir.supabase.co, sem senha ou connection string completa. O secret de Actions, se já existir, não pode ser consultado pelo conector. Também não é possível confirmar a franquia restante de Actions: em repositórios privados, uso além dos minutos incluídos pode gerar cobrança ([GitHub Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions)). Por isso, nenhum job que possa acessar a base ou gerar custo será iniciado sem conexão segura e execução sem cobrança.
+
+O teste local do rollback de seed e o replay de migrations continuam úteis para integridade do schema, mas não substituem esse restore de dados reais do V2.
 
 ## Rollback do seed
 

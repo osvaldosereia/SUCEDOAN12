@@ -502,3 +502,14 @@ O gate da URL passou a aceitar a prévia Sites owner-only quando o status HTTP n
 O manifesto registra a prévia Admin V2 na rota /admin/, versão 4, deployment `appgdep_6add6d1b4af081919ad862777fa97241`, fonte Sites `0f825c25279c338fe62c230148bc5c8a3fa4fbe1` e fonte GitHub `bd894392d62e2fa0208209b60ca78ff7227800f1`. O campo `httpStatus` permanece `null`; nenhum código HTTP foi presumido. A prévia continua limitada à conta `juniorsereia@gmail.com`, e a conferência visual não criou pedidos nem escreveu no banco.
 
 Verificação local desta alteração: `npm run check` e três testes direcionados da regra passaram. O CI do head do PR #1396 registra a validação integral. O readiness geral segue `blocked` por falta de backup/restore descartável, separado e sem custo; não houve criação de branch, restore, merge ou publicação pública.
+
+
+## Complemento da investigação de backup/restore — 25/10/2026
+
+A documentação oficial atual do Supabase descreve o fluxo plataforma→self-hosted: obter a connection string do V2, gerar arquivos SQL de roles/schema/dados com Supabase CLI e restaurar em alvo self-hosted separado. O procedimento requer senha do banco, CLI, Docker e psql. Referência: https://supabase.com/docs/guides/self-hosting/restore-from-platform.
+
+Verificação de acesso: o conector do projeto V2 informa somente o host `db.hjudhofluihkxykwekir.supabase.co`; não disponibiliza senha nem connection string completa. O workflow V2 atual executa os testes de migration em Postgres descartável e não referencia secret de banco remoto. A interface GitHub conectada não permite verificar se existe secret já cadastrado nem consultar franquia de Actions.
+
+Segurança/custo: no repositório privado, minutos GitHub Actions além da franquia incluída podem ser cobrados (https://docs.github.com/en/billing/concepts/product-billing/github-actions). Sem confirmação de secret de conexão reutilizável e de execução sem cobrança, nenhum workflow de dump/restore foi iniciado. Não foi criada branch Supabase, projeto adicional ou recurso pago.
+
+**Próximo passo técnico:** usar uma connection string já guardada em secret protegido e uma execução local descartável do PostgreSQL/Supabase, ou validar antes que a execução no Actions fique dentro da franquia sem custo; depois comprovar hashes de backup/schema e contagens essenciais sem imprimir dados pessoais. O replay de migrations e o rollback PGlite cobrem schema/rollback, mas não substituem esse teste de restauração de dados do V2.

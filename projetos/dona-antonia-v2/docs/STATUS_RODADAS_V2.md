@@ -21,7 +21,7 @@
 | R13    | NF-e Bling pós-separação                  | **Concluída em staging isolado; PR draft sem merge/publicação** | PR #1382; head `f1af5906`; CI #40102849252 aprovado (17/17 E2E); V2 19 migrations/32 tabelas; 802 produtos/perfis preservados; 0 pedidos/documentos |
 | R14    | Clientes/entrega/relatórios essenciais    | **Concluída em staging isolado; PR draft sem merge/publicação** | PR #1384; head `c97cb236`; CI #40115614242 aprovado (16/16 E2E após correção da expectativa); V2 20 migrations/33 tabelas; 802 produtos/perfis preservados |
 | R15    | Auditoria final/performance/homologação   | **Concluída em V2 isolada; bloqueios de homologação documentados** | PR #1394; head `5344a6c3`; código `8aa59fe0`; CI #40132993673 + checkpoint final #40133495710 aprovado (18/18 E2E), testes locais 124/124, auditoria sintética 802 produtos/3 operadores, npm audit sem vulnerabilidades; Lighthouse/backup remoto pendentes |
-| R16    | Pré-voo para staging isolado | **Parcial; backup/restore ainda bloqueia a conclusão** | PR #1396 draft; Site privado v4 owner-only renderizado e ligado ao commit de fonte; manifesto e validador registram a evidência sem inventar status HTTP; operador único confirmado; CI do head acompanhado no PR; resta somente backup/restore descartável sem custo |
+| R16    | Pré-voo para staging isolado | **Parcial; backup/restore ainda bloqueia a conclusão** | PR #1396 draft; Site privado v4 owner-only validado; CI #40156596675 aprovado; rota de dump/restore local identificada, mas depende de connection string/senha e execução Actions sem cobrança; nenhum dump, restore ou branch criado |
 
 ## Histórico anterior às rodadas
 
