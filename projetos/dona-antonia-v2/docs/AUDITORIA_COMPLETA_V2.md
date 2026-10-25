@@ -21,7 +21,7 @@ Há estruturas de banco para inbox e mensagens Utility, mas o WhatsApp não est�
 
 Foram lidos o dossiê de continuidade, o plano diretor, persistência isolada, as demais referências, o código, testes, SQL, scripts, configurações e workflows dentro de projetos/dona-antonia-v2 na branch indicada. Foi também confirmado o PR #1363, que publicou prévias demonstrativas apenas em /site1 e /admin1, e o CI do SHA-base.
 
-No Supabase, foi consultado somente o projeto dedicado “Dona Antônia V2”. As leituras foram metadados de tabelas, histórico de migrações, funções/Edge Functions, políticas e grants, e contagens agregadas. Nenhuma linha de cliente, pedido ou conversa foi lida. Nenhuma consulta foi emitida aos projetos legados e nenhuma escrita, migração, criação de branch Supabase ou configuração foi feita.
+No Supabase, foi consultado somente o projeto dedicado “Dona Antônia V2”. As leituras foram metadados de tabelas, histórico de migrações, funções/Edge Functions, políticas e grants, e contagens agregadas. Nenhuma linha de cliente, pedido ou conversa foi lida. A listagem de projetos da conta foi usada apenas para localizar o projeto dedicado; consultas de schema, políticas, grants, funções e contagens foram executadas somente no V2. Nenhuma leitura de tabelas foi feita nos projetos legados. Nenhuma escrita, migração, criação de branch Supabase ou configuração foi feita.
 
 A lista de ferramentas disponível não expôs uma operação de inventário de secrets. Valores de chaves Meta, Supabase ou Bling não foram solicitados nem exibidos. A ausência desses valores nesta auditoria não comprova que Vault/secret stores estejam vazios.
 
@@ -70,6 +70,7 @@ O script de arquitetura verificou 62 módulos e restringe tamanho de componentes
 - As 33 tabelas consultadas têm RLS habilitado; FORCE ROW LEVEL SECURITY não está ligado. Políticas de leitura/escrita verificadas usam da_next.has_permission em operações administrativas. As funções SECURITY DEFINER consultadas fixam search_path em pg_catalog. Isso é evidência de configuração, não teste de autorização.
 - O grant direto para authenticated que apareceu nas tabelas operacionais era principalmente SELECT. Para configurações/templates Utility, o grant consultado apareceu somente para service_role; o app não contém serviço de backend para atuar como esse papel.
 - Há triggers/funções de banco que enfileiram eventos Utility. A lista de Edge Functions retornou zero; não foi encontrado consumidor de fila, endpoint de webhook ou adaptador de envio no app V2.
+- O banco inclui controles úteis: conversa única por conta/contato; deduplicação de mensagem por conta + ID do provedor; chaves idempotentes únicas; índices de fila/lease; tentativas Utility limitadas entre 1 e 3. São primitivas de schema, não prova de worker executando ou de integração Meta.
 - As duas configurações Utility estão disabled; há um registro default, mas não habilitado. Cada um dos quatro tipos de evento consultados (OrderReceived, OrderSeparating, OrderReady, OrderDelivered) tem dois templates pendentes e inativos.
 - A contagem de 805 produtos não foi reconciliada com o plano de importação de 802 SKUs. Nenhum conteúdo dos produtos foi lido.
 
