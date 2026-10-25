@@ -26,19 +26,20 @@ async function catalogRequest(action,params={},method='GET'){
  try{
   response=await fetch(url, {...options,signal:AbortSignal.timeout(7200)});
   body=await response.json();
- }catch{throw Error('storefront_unavailable')}
- if(!response.ok||body?.ok!==true)throw Error('storefront_rejected');
+ }catch{throw Error('storefront_unavailable:'+action)}
+ if(!response.ok||body?.ok!==true)throw Error('storefront_rejected:'+action);
  return body;
 }
 const catalog={
  async shell(){return catalogRequest('basket_flow_shell')},
  async configuration(basketId,n){return catalogRequest('basket_flow_configuration',{basket_id:basketId,composition_number:n})},
- async flowQuote(basketId,n,items){return catalogRequest('basket_flow_quote',{basket_id:basketId,composition_number:n,items},'POST')}
+ async flowQuote(basketId,n,items){return catalogRequest('basket_flow_quote',{basket_id:basketId,composition_number:n,items},'POST')},
+ async snapshot(basketId,n,items){return catalogRequest('basket_flow_snapshot',{basket_id:basketId,composition_number:n,items},'POST')}
 };
 const deps={
  ...catalog,
  image:async url=>loadProductImage(url),
- signState:async state=>signState(state,await deriveFlowSessionKey(META_SECRET)),
+ signState:async (state,ttlMs)=>signState(state,await deriveFlowSessionKey(META_SECRET),ttlMs),
  verifyState:async token=>verifyState(token,await deriveFlowSessionKey(META_SECRET))
 };
 function allowedCanaryClaims(value){
