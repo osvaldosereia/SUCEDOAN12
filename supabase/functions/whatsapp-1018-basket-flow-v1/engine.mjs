@@ -245,6 +245,18 @@ async function quoteFlowState(state,deps){
  if(result?.ok!==true||!Number.isSafeInteger(Number(result.total_cents))||!Array.isArray(result.items))throw Error(result?.error||'basket_flow_quote_unavailable');
  return result;
 }
+async function snapshotFlowState(state,deps){
+ if(typeof deps.snapshot==='function'){
+  const result=await deps.snapshot(state.basketId,state.number,state.selections||[]);
+  if(result?.ok!==true||!result.configuration||!result.quote)throw Error(result?.error||'basket_flow_snapshot_unavailable');
+  const config=assertFlowConfiguration(result.configuration,state.basketId,state.number);
+  const quote=result.quote;
+  if(quote?.ok!==true||!Number.isSafeInteger(Number(quote.total_cents))||!Array.isArray(quote.items))throw Error(quote?.error||'basket_flow_quote_unavailable');
+  return {config,quote};
+ }
+ const config=assertFlowConfiguration(await deps.configuration(state.basketId,state.number),state.basketId,state.number);
+ return {config,quote:await quoteFlowState(state,deps)};
+}
 function flowActionRow(id,title,description,metadata,token,etapa,fields={}){
  return {
   id,
@@ -268,15 +280,15 @@ function flowSummaryItems(quote){
  if(lines.length<included)lines.push('E mais '+(included-lines.length)+' item(ns) da cesta.');
  return lines.join('\n')||'Nenhum produto selecionado';
 }
-async function summaryFlowResponse(state,deps){
- const quote=await quoteFlowState(state,deps);
+async function summaryFlowResponse(state,deps,preparedQuote=null){
+ const quote=preparedQuote||await quoteFlowState(state,deps);
  const summary='Cesta '+SIZE_LABELS[state.size]+' · combinação inicial '+state.number;
  return {screen:'RESUMO',data:{resumo:summary,valor:money(quote.total_cents),itens:flowSummaryItems(quote),estado:await deps.signState(state)}};
 }
-async function typeStepResponse(state,deps,notice=''){
- const config=assertFlowConfiguration(await deps.configuration(state.basketId,state.number),state.basketId,state.number);
+async function typeStepResponse(state,deps,notice='',prepared=null){
+ const {config,quote}=prepared||await snapshotFlowState(state,deps);
  const groups=flowGroups(config);
- if(!groups.length)return await summaryFlowResponse(state,deps);
+ if(!groups.length)return await summaryFlowResponse(state,deps,quote);
  const stepIndex=Math.max(0,Math.min(Number(state.stepIndex||0),groups.length-1)),group=groups[stepIndex];
  const allRows=[];
  for(const position of group.positions){
@@ -298,7 +310,6 @@ async function typeStepResponse(state,deps,notice=''){
   if(image)item.start={image,'alt-text':text(option.name,100)||'Foto do produto'};
   return item;
  }));
- const quote=await quoteFlowState(state,deps);
  const actions=[];
  if(pageIndex>0)actions.push(flowActionRow('__opcoes_anteriores','Opções anteriores','Voltar na lista',String(pageIndex*OPTION_PAGE_SIZE)+' anteriores',token,'pagina_opcoes',{pagina:String(pageIndex-1)}));
  if(pageIndex<pageCount-1)actions.push(flowActionRow('__mais_opcoes','Ver mais opções','Continuar neste produto',String(allRows.length-(pageIndex+1)*OPTION_PAGE_SIZE)+' opções restantes',token,'pagina_opcoes',{pagina:String(pageIndex+1)}));
@@ -323,7 +334,11 @@ async function optionEditResponse(state,deps,positionId,productId,notice='',quan
  const option=(position.options||[]).find(x=>String(x.product_id)===String(productId));
  if(!option)throw Error('basket_flow_option_unavailable');
  const image=await getImage(deps,option.image_url),quantity=quantityValue==null?String(quantityFor(state,positionId,productId)):String(quantityValue);
- const editState={...state,editingPositionId:String(positionId),editingProductId:String(productId)};
+ const editState={
+  ...state,editingPositionId:String(positionId),editingProductId:String(productId),
+  editingSelectionMode:position.selection_mode==='multiple'?'multiple':'single',
+  editingMaxQuantity:Math.min(Number(position.max_quantity||10),Number(option.stock_quantity))
+ };
  return {screen:OPTION_SCREEN,data:{
   estado:await deps.signState(editState),position_id:String(positionId),product_id:String(productId),
   titulo:text(position.type_name,120),nome:text(option.name,300),imagem:image,tem_imagem:Boolean(image),
@@ -332,25 +347,16 @@ async function optionEditResponse(state,deps,positionId,productId,notice='',quan
   aviso:text(notice,180),tem_aviso:Boolean(notice)
  }};
 }
-async function setOptionQuantity(state,deps,positionId,productId,quantity){
- const config=assertFlowConfiguration(await deps.configuration(state.basketId,state.number),state.basketId,state.number);
- const position=config.positions.find(x=>String(x.position_id)===String(positionId));
- if(!position||position.editable!==true)throw Error('basket_flow_position_not_editable');
- const type=config.product_types.find(x=>String(x.id)===String(position.type_id));
- const option=(position.options||[]).find(x=>String(x.product_id)===String(productId));
- if(!option||quantity>Math.min(Number(position.max_quantity||10),Number(option.stock_quantity)))throw Error('basket_flow_option_unavailable');
+function setOptionQuantity(state,positionId,productId,quantity){
+ if(String(positionId)!==String(state.editingPositionId)||String(productId)!==String(state.editingProductId))throw Error('basket_flow_edit_mismatch');
+ const maximum=Number(state.editingMaxQuantity);
+ if(!Number.isInteger(maximum)||maximum<0||quantity>maximum)throw Error('basket_flow_option_unavailable');
  const existing=selectionsForPosition(state,positionId).filter(x=>String(x.product_id)!==String(productId));
- const next=quantity>0?[...existing,{product_id:String(productId),quantity}]:existing;
- if(type?.selection_mode==='single'&&quantity>0){
-  const otherSelected=next.filter(x=>Number(x.quantity)>0);
-  if(otherSelected.length)state.selections=(state.selections||[]).filter(x=>String(x.position_id)!==String(positionId));
-  else state.selections=(state.selections||[]).filter(x=>String(x.position_id)!==String(positionId));
-  state.selections=[...(state.selections||[]),{position_id:String(positionId),selections:[{product_id:String(productId),quantity}]}];
- }else{
-  state.selections=(state.selections||[]).filter(x=>String(x.position_id)!==String(positionId));
-  state.selections=[...(state.selections||[]),{position_id:String(positionId),selections:next}];
- }
- delete state.editingPositionId;delete state.editingProductId;
+ let next=quantity>0?[...existing,{product_id:String(productId),quantity}]:existing;
+ if(state.editingSelectionMode==='single'&&quantity>0)next=[{product_id:String(productId),quantity}];
+ state.selections=(state.selections||[]).filter(x=>String(x.position_id)!==String(positionId));
+ state.selections=[...state.selections,{position_id:String(positionId),selections:next}];
+ delete state.editingPositionId;delete state.editingProductId;delete state.editingSelectionMode;delete state.editingMaxQuantity;
  return state;
 }
 export async function flowExchange(payload,deps){
@@ -358,22 +364,34 @@ export async function flowExchange(payload,deps){
  if(action==='ping')return {data:{status:'active'}};
  if(action==='INIT'){
   const shell=await deps.shell();
-  const sizes=(shell?.baskets||[]).filter(x=>SIZE_KEYS.includes(x.size_key)&&isId(x.id)&&Number.isSafeInteger(Number(x.starting_price_cents))&&Number(x.starting_composition_number)>0).map(x=>({
-   id:x.size_key,title:SIZE_LABELS[x.size_key],
-   description:'A partir de '+money(x.starting_price_cents)+' · combinação '+Number(x.starting_composition_number)
-  }));
+  const sizes=await Promise.all((shell?.baskets||[])
+   .filter(x=>SIZE_KEYS.includes(x.size_key)&&isId(x.id)&&Number.isSafeInteger(Number(x.starting_price_cents))&&Number(x.starting_composition_number)>0)
+   .map(async x=>({
+    id:await deps.signState({type:'basket_flow_size_choice_v1',size_key:x.size_key,basket_id:x.id,composition_number:Number(x.starting_composition_number)},24*60*60*1000),
+    title:SIZE_LABELS[x.size_key],
+    description:'A partir de '+money(x.starting_price_cents)+' · combinação '+Number(x.starting_composition_number)
+   })));
   if(!sizes.length)throw Error('no_flow_sizes_available');
   return {screen:'TAMANHO',data:{tamanhos:sizes}};
  }
  if(action!=='data_exchange')throw Error('unsupported_flow_action');
  const form=payload?.data||{},stage=String(form.etapa||'');
  if(stage==='tamanho'&&payload.screen==='TAMANHO'){
-  const size=text(form.tamanho,20),shell=await deps.shell(),model=chooseModel(shell,size),number=assertChoice(model.starting_composition_number);
-  const config=assertFlowConfiguration(await deps.configuration(model.id,number),model.id,number);
-  const selections=config.positions.filter(x=>x.editable===true).map(x=>({position_id:x.position_id,selections:[{product_id:x.base.product_id,quantity:x.base_quantity}]}));
-  const state={size,number,basketId:model.id,issuedAt:Date.now(),stepIndex:0,optionPage:0,selections};
-  await quoteFlowState(state,deps);
-  return await typeStepResponse(state,deps);
+  const selected=String(form.tamanho||'');
+  let model,size,number;
+  if(SIZE_KEYS.includes(selected)){
+   model=chooseModel(await deps.shell(),selected);
+   size=model.size_key;number=assertChoice(model.starting_composition_number);
+  }else{
+   const choice=await deps.verifyState(selected);
+   if(choice?.type!=='basket_flow_size_choice_v1'||!SIZE_KEYS.includes(choice.size_key)||!isId(choice.basket_id))throw Error('invalid_size_choice');
+   model={id:String(choice.basket_id),size_key:choice.size_key};
+   size=choice.size_key;number=assertChoice(choice.composition_number);
+  }
+  const state={size,number,basketId:model.id,issuedAt:Date.now(),stepIndex:0,optionPage:0,selections:[]};
+  const prepared=await snapshotFlowState(state,deps);
+  state.selections=prepared.config.positions.filter(x=>x.editable===true).map(x=>({position_id:x.position_id,selections:[{product_id:x.base.product_id,quantity:x.base_quantity}]}));
+  return await typeStepResponse(state,deps,'',prepared);
  }
  if(stage==='editar_opcao'&&payload.screen===TYPE_SCREEN){
   const state=await deps.verifyState(String(form.estado||'')),positionId=String(form.position_id||''),productId=String(form.product_id||'');
@@ -384,9 +402,9 @@ export async function flowExchange(payload,deps){
   if(positionId!==String(state.editingPositionId)||productId!==String(state.editingProductId))throw Error('basket_flow_edit_mismatch');
   let quantity;try{quantity=parseQty(form.quantidade)}catch{return await optionEditResponse(state,deps,positionId,productId,'Informe uma quantidade de 0 a 10.',form.quantidade)}
   try{
-   const changed=await setOptionQuantity(state,deps,positionId,productId,quantity);
-   await quoteFlowState(changed,deps);
-   return await typeStepResponse(changed,deps);
+   const changed=setOptionQuantity(state,positionId,productId,quantity);
+   const prepared=await snapshotFlowState(changed,deps);
+   return await typeStepResponse(changed,deps,'',prepared);
   }catch(error){return await optionEditResponse(state,deps,positionId,productId,'Estoque ou opção atualizados. Revise a quantidade.',quantity)}
  }
  if(stage==='pagina_opcoes'&&payload.screen===TYPE_SCREEN){
