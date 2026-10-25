@@ -52,7 +52,7 @@ Deno.serve(async req=>{
  try{
   const request=decoded.payload;
   if(request.action!=='ping'){
-   const session=await verifyState(String(request.flow_token||''),SESSION_SECRET);
+   const session=await verifyState(String(request.flow_token||''),await deriveFlowSessionKey(META_SECRET));
    if(!allowedCanaryClaims(session))return deny(427,'flow_token_invalid');
   }
   response=await flowExchange(request,deps);
