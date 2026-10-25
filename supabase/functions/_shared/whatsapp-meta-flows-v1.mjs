@@ -84,7 +84,7 @@ function safeFlow(value){
     status:clean(row.status,40).toUpperCase()||'UNKNOWN',
     categories:Array.isArray(row.categories)?row.categories.slice(0,8).map(x=>clean(x,40)):[],
     endpoint_uri:clean(row.endpoint_uri,500)||null,
-    health_status:clean(row.health_status,80)||null,
+    health_status:typeof row.health_status==='string'?clean(row.health_status,80)||null:null,
     validation_errors:flowValidationErrors(row),
     updated_at:clean(row.updated_at,80)||null
   };
