@@ -1,6 +1,8 @@
 # Arquitetura proposta — Dona Antônia V2
 
 ## Status real
+
+**Revisão R00 (23/10/2026):** este documento foi alinhado à regra de ajuste interno privado e à responsabilidade operacional do app. Consulte docs/AUDITORIA_COMPLETA_V2.md para o baseline auditado na SHA 1a846beba768192c366937c1462bcfd6baeccee9.
 Fase 1 implementada: estrutura isolada, regras puras de cesta, layout responsivo demonstrativo e importador do CSV Bling.
 Fases de backend, autenticação, sincronismo e checkout ainda NÃO implementadas.
 Nenhuma modificação em produção, domínio, Edge Function atual ou banco legado.
@@ -8,9 +10,10 @@ Nenhuma modificação em produção, domínio, Edge Function atual ou banco lega
 ## Fonte de verdade
 | Informação | Origem canônica | Cópia usada pelo site |
 |---|---|---|
-| SKU, EAN unitário, EAN caixa/DUN, nome, marca, unidade, NCM/CEST, fornecedor | Bling | catálogo privado sincronizado |
-| Custo e preço de venda | Bling | custo privado; preço público |
-| Saldo disponível | Bling (depois do balanço) | espelho de disponibilidade no app |
+| Identidade e dados fiscais do SKU (NCM/CEST/fornecedor e vínculo Bling) | Perfil Bling privado, após validação | Perfil fiscal privado no backend; nunca na projeção pública |
+| Custo | Perfil fiscal/fornecedor privado, quando importado e validado | Somente backend e papéis autorizados |
+| Preço operacional de venda | Admin V2/app (autoridade operacional proposta) | Preço público; precedência e reconciliação pendentes antes da integração |
+| Estoque disponível | Operação de estoque V2 (fonte física/canônica ainda a definir) | Validado e reservado transacionalmente pelo backend; Bling não é o admin operacional |
 | Tipos Arroz/Feijão/Açúcar etc. | Admin V2 | banco da_next |
 | Vínculo tipo → SKUs permitidos | Admin V2 | banco da_next |
 | Tamanhos e quantidades-padrão | Admin V2 | banco da_next |
@@ -24,7 +27,7 @@ Nenhuma modificação em produção, domínio, Edge Function atual ou banco lega
 2. O tipo contém uma lista de SKUs elegíveis.
 3. Ao abrir a cesta, selecionar entre os SKUs ativos com estoque para a quantidade desejada o de menor preço.
 4. O cliente pode escolher qualquer outro SKU do tipo, alterar a quantidade até 0, restaurá-la ou trocar de marca.
-5. Total sempre é soma(preço-em-centavos x quantidade) dos SKUs escolhidos. Não há preço fixo ou diferença escondida.
+5. O preço da cesta mostrado ao cliente é agregado: soma dos itens escolhidos mais o ajuste interno autorizado por tamanho, calculado no servidor. O componente do ajuste e o preço unitário dos itens da cesta nunca são expostos. Extras mantêm preço unitário/subtotal visíveis.
 6. Se não houver SKU elegível, mostrar indisponibilidade sem inventar item ou preço.
 7. O servidor precisa recalcular o total e conferir estoque/preços na confirmação. Dados do navegador NÃO são fonte de verdade.
 8. Ao confirmar pedido, gravar cabeçalho/linhas/snapshot de preços e reservar estoque atomicamente; impedir excesso por múltiplos compradores.
@@ -84,3 +87,7 @@ Publicar só após: dados reais importados em staging; fluxo de pedido ponta a p
 - Checkout e Supabase reais exigirão outro ciclo de homologação, principalmente regras de valor interno, estoque e pedidos.
 
 **Atenção:** código separado não significa autenticação pronta. O admin permanece uma prévia sem login nem persistência.
+
+
+## Fonte de estoque e preço — decisão pendente antes de integrar
+O Bling não deve disputar a gestão operacional. O app V2/admin operacional será responsável por catálogo de venda, disponibilidade e pedidos; a origem do saldo físico, reconciliação e regras de entrada/saída ainda precisam ser decididas e documentadas antes de conectar serviços. O CSV de 802 SKUs é histórico de cadastro, não representa saldo atual. Não ativar nem importar em produção.

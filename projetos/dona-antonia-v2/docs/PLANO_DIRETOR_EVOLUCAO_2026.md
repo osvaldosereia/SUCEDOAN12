@@ -104,6 +104,9 @@ Fontes: https://developer.bling.com.br/bling-api; https://developer.bling.com.br
 Clientes e endereços recorrentes, histórico/recompra por WhatsApp, importação XML/fornecedores quando necessário, controle de validade, devoluções/cancelamentos, relatórios e indicadores básicos, conciliação financeira, auditoria de alterações.
 Implementar somente após pedidos e fiscal confiáveis. Evitar módulos de rota/motorista/leitor EAN sem prioridade operacional.
 
+### Escopos de WhatsApp que permanecem separados
+R11/Fase 3 cobre somente atendimento humano dentro da Inbox. R12/Fase 4 cobre somente mensagens Utility transacionais sobre eventos do pedido. IA Ana é uma frente própria de atendimento automatizado, com limites e transferência ao humano; WhatsApp Flow é uma frente de venda interativa/checkout; marketing cobre campanhas e exige consentimento, saída da lista e regras comerciais próprias. Nenhuma dessas três frentes está incluída em R11 ou R12. A numeração, dependências específicas e sequência serão definidos em planejamentos próprios antes da implementação.
+
 ### Fase 7 — Homologação integral e migração autorizada
 Staging de domínio separado e barato, sem workers permanentes desnecessários; teste de carga com cenário real de 802 produtos, fotos otimizadas, observabilidade dos erros, revisão de segurança e acessibilidade, testes mobile com internet fraca, backups, rollback e checklist de ativação.
 **Somente com autorização explícita substituir o site atual.**
@@ -163,3 +166,8 @@ shared/ui                 -> design system com tokens sem regras de negócio
 - Fotos quadradas do catálogo e de cestas seguem 1:1; valor interno da cesta é privado e integrado no backend futuro, não como item separado ao cliente.
 - 40% sobre custo na importação inicial de produtos é *markup* de preço, não margem bruta de 40%; custos nunca aparecem no site.
 - A homologação de emissão fiscal depende de tributação correta e credenciamento/certificado no Bling.
+
+
+## Baseline executada — R00 (23/10/2026)
+A auditoria integral da pasta V2 foi concluída no baseline da SHA 1a846beba768192c366937c1462bcfd6baeccee9. A documentação de acompanhamento está em docs/AUDITORIA_COMPLETA_V2.md e docs/STATUS_RODADAS_V2.md. TypeScript, arquitetura, 35 testes unitários e build passaram; Playwright de 9 casos passou no CI da mesma SHA. A PR #1364 registrou 4 alertas na auditoria npm on-line (2 críticos, 2 moderados) e 0 em --omit=dev naquela consulta. A repetição offline posterior retornou 0 pela cache, sem consultar advisories atuais; a comparação por versão identificou faixas afetadas em dependências dev/importação. A contagem e as fontes estão detalhadas em docs/AUDITORIA_COMPLETA_V2.md. As migrações seguem não testadas em PostgreSQL e não foram aplicadas. Não há backend/auth/checkout persistente.
+**Sequência mantida:** R01 corrige dependências, lockfile, lint/format e consistência visual; R02 reconcilia e testa o schema exclusivamente numa base descartável antes de qualquer homologação remota. Nenhum banco ou serviço de produção foi acessado. A auditoria não autoriza publicação; o workflow em main publica automaticamente apenas /site1 e /admin1 e deverá estar sujeito ao gate específico antes de qualquer merge.

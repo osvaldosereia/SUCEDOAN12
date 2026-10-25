@@ -96,6 +96,7 @@ WhatsApp:
 - Template oficial de confirmação do pedido, atualmente no legado: pedidorecebidosite0975 e pedidorecebidosite1018 (pt_BR); variáveis número pedido, total, entrega e pagamento. Validar templates vigentes na Meta na etapa de conexão.
 - Notificações transacionais futuras dos estados do pedido através de mensagens Utility compatíveis e aprovadas pela Meta, respeitando políticas vigentes, janela de 24h e requisitos de consentimento. Não transformar marketing em utilitário. Evitar duplicatas.
 - Arquitetura: eventos de domínio -> transactional outbox -> fila/worker **sob demanda ou econômico** -> Meta API -> webhooks de status -> logs + retries limitados. Nenhum envio real em mock/staging sem destinatário de teste autorizado.
+- **Separação de funções:** R11 é a Inbox humana; R12 cobre somente mensagens Utility transacionais de andamento do pedido. IA Ana, venda/checkout por WhatsApp Flow e marketing/campanhas são frentes distintas, cada uma com escopo, regras e gate próprios. Não incorporá-las a R11/R12; ordem e número das rodadas ainda não definidos.
 
 Bling:
 - **Uso fiscal** após separação (não tratar Bling como novo admin operacional).
@@ -130,18 +131,18 @@ Confirmado por leitura da branch:
 - Última execução aprovada que consta no histórico: workflow 40056490923. Confirmar commit SHA e workflow mais recente no início da nova conversa.
 **NÃO CONCLUÍDO:** auth/RBAC real, banco isolado, CRUD persistente, importação de dados reais, checkout confirmável, pedidos persistentes, inbox Meta real, envio automático e NF-e, Lighthouse staging, plano de migração efetivo.
 
-## 9. PROBLEMAS E CONTRADIÇÕES QUE A RODADA R00 PRECISA RESOLVER
-1. Docs antigos: docs/ARQUITETURA.md ainda diz que cesta NÃO tem diferença oculta, contrariando regra posterior aprovada de valor interno. Atualizar fonte única e marcar documentação antiga como superada, sem alterar regra silenciosamente.
-2. Estoque: docs antigos indicam Bling como canônico; histórico posterior prioriza estoque físico/Leitor EAN temporariamente e Bling somente fiscal. Definir autoridade, sincronização e prevenção de venda duplicada antes da conexão.
+## 9. ACHADOS DA R00 QUE BLOQUEIAM AS RODADAS SEGUINTES
+1. Resolvido documentalmente nesta R00: docs/ARQUITETURA.md agora registra o preço agregado da cesta com ajuste interno calculado apenas no servidor.
+2. Resolvido parcialmente: documentação agora atribui gestão operacional ao app V2 e marca estoque físico/reconciliação e precedência do preço como decisões pendentes antes da conexão. O CSV histórico não é saldo atual.
 3. CSV/planilha antigo não é estado atual do Supabase nem do Bling. Não importar/ativar 802 sem validação.
 4. V2 pode ter protótipos de backend em JS/TS mas nenhum endpoint persistente. **Código presente não implica funcionalidade final.**
-5. Testar se as migrações db/001–004 realmente aplicam em sequência numa base limpa (IDs, chaves estrangeiras, status, tipos, RLS, schema) antes de qualquer execução real; não presumir.
+5. Confirmado como pendência: db/001–004 não foram aplicados/testados; testar sequência, constraints, relações, grants/policies e rollback numa base descartável antes de qualquer banco remoto.
 6. Verificar se bundle inclui importação acidental de módulo de servidor e se projeções públicas nunca expõem valor interno, custo ou fiscal.
 7. Estado de fotos: placeholders quadrados não significam imagens reais prontas. Definir pipeline de fotos otimizado e adequado.
-8. Base de testes e CI precisam crescer para segurança, concorrência, acessibilidade, falhas de rede e regressão visual.
+8. Confirmado: 35 testes unitários e 9 E2E demonstrativos passam no CI da SHA auditada, mas faltam testes de banco, segurança/RBAC, concorrência real, acessibilidade e falha de rede.
 9. Revisar se build estático via GitHub Pages comporta backend pretendido; frontend pode continuar estático, mas checkout/webhooks/fiscal exigem camada transacional protegida.
 10. Mapear regras atuais do atendimento Vitrine/Admin **somente em leitura**, com foco nas APIs dos números oficiais.
-11. Segurança /site1 e /admin1: noindex não é autenticação. Não ativar banco/segredos em admin público sem RBAC real.
+11. Confirmado: /admin1 é demonstração sem autenticação. Não conectar segredos ou dados reais até existir RBAC/autorização no servidor.
 
 ## 10. ENGENHARIA PADRÃO PARA TODAS AS RODADAS
 - Preferir **monólito modular** em vez de microserviços: UI por domínio + core puro + application commands/queries + adapters de dados, serviços de notificações/fiscal isolados.
@@ -157,7 +158,7 @@ Confirmado por leitura da branch:
 ## 11. ESTRATÉGIA WORK: RODADAS PEQUENAS, FECHADAS E EXECUTÁVEIS
 **Cada rodada deve caber em UMA execução concentrada do modo Work**, com um conjunto pequeno de mudanças relacionadas, sem depender de aprovação intermediária para ajustes em branch isolada. Se aparecer bloqueio externo, concluir tudo que não depende dele, documentar risco e manter o próximo passo inequívoco. Não cronometrar nem prometer trabalho em segundo plano.
 
-### R00 — Auditoria integral + baseline congelado (PRIMEIRA RODADA A EXECUTAR)
+### R00 — Auditoria integral + baseline congelado (CONCLUÍDA EM 23/10/2026)
 - Ler arquivos e estrutura reais de toda a V2, plano diretor, SQL, testes, workflows, PR #1363 e HEAD atualizado; inspecionar apenas em modo leitura a configuração de publicação e eventuais fontes legadas indispensáveis.
 - Executar checagens: typecheck, testes unitários, build, Playwright, inspeção de dependências/licenças, endpoints, DOM mobile e CSS, exposição indevida de dados, lint presente/ausente.
 - Gerar inventário por módulo/arquivo, mapa da arquitetura de verdade, matriz Implementado x Simulado x Ausente, riscos P0/P1/P2, inconsistências de SQL e docs, prioridades de refatoração e relação com roadmap.
@@ -272,3 +273,10 @@ Arquivos relevantes para ler no Work:
 3. Abrir **uma conversa no modo Work** dentro do projeto, com acesso à integração GitHub; Supabase ficará somente read-only nos projetos existentes até configurar o ambiente separado.
 4. Colar o comando fornecido em docs/COMANDO_NOVA_CONVERSA_WORK.md.
 5. Começar pela **R00**, SEM PRÉ-APROVAR alteração de produção. Não pular direto para Bling, Meta ou migração.
+
+
+## 15. REGISTRO DA RODADA R00 — 23/10/2026
+
+Auditoria técnica registrada em docs/AUDITORIA_COMPLETA_V2.md. Baseline da branch agent/dona-antonia-nova-plataforma na SHA 1a846beba768192c366937c1462bcfd6baeccee9; CI 40057635884 aprovado na mesma SHA. Foram inspecionados 90 arquivos da V2, incluindo app, docs, SQL, scripts, testes e workflow. Checks locais architecture, TypeScript, 35 unitários e build passaram. Playwright local não iniciou sem Chromium; a suíte de 9 casos passou no CI. A PR #1364 registrou auditoria npm on-line com 4 alertas (2 moderados, 2 críticos) e 0 com --omit=dev naquela consulta. A repetição offline em 25/10 reportou 0 pela cache e não consultou advisories atuais; isso não confirma ausência de vulnerabilidades. A revisão por pacote/versão e a limitação de não haver lockfile estão detalhadas em docs/AUDITORIA_COMPLETA_V2.md. SQL permanece não executado e não verificado por replay.
+
+Nenhuma alteração de código, execução SQL, acesso aos Supabases existentes ou publicação foi realizada. Documentação antiga de estoque e ajuste de cesta foi alinhada à regra aprovada. R01 é a próxima rodada; deve tratar dependências/lockfile e disciplina visual/qualidade. A revisão de gates de publicação é obrigatória antes de qualquer merge na main.
