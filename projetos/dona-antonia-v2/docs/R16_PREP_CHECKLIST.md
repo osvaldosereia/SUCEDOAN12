@@ -9,7 +9,7 @@ Este checklist é exclusivo da Dona Antônia V2. O estado do comando significa a
 | Código e CI | Aprovado no head de código | PR #1396 aberto e draft na branch agent/dona-antonia-r16-pilot-preflight, base agent/dona-antonia-r15-audit-homologacao. Head de código 390a0bdce81611e5e25b8e2c1eb6f47fb8f80b38. CI push #40138207500 e pull request #40138209762 passaram todos os gates, incluindo 18/18 testes browser mobile/desktop. |
 | URL de staging acessível | Bloqueado | A prévia disponível é owner-only. Uma URL compartilhada exigiria publicação ou deploy, ambos fora do escopo autorizado. |
 | Seed fictício V2 | Aprovado | No projeto hjudhofluihkxykwekir: R16-TEST-ARROZ, R16-TEST-FEIJAO e R16-TEST-OLEO, estoque 30 cada; três perfis privados, três tipos, cesta r16-test e três movimentos. O manifesto R16_EVIDENCE_MANIFEST.json registra SKUs, estoque, projeto e referência ao checklist. |
-| Operadores isolados | Bloqueado | Faltam 2–3 operadores com identidades confirmadas. Nenhuma conta ou credencial foi criada. O manifesto aceita apenas referências pseudonimizadas e evidência revisável; não registrar dados pessoais. |
+| Operador do staging | Aprovado para um usuário | O único operador informado é a conta ADMIN já confirmada. O manifesto usa referência pseudonimizada, sem gravar e-mail. A validação multioperador permanece coberta pelos testes automatizados da R10; nenhum usuário adicional será criado. |
 | Backup/restore controlado | Bloqueado | Não há alternativa demonstrada que seja gratuita, descartável e não destrutiva. Nenhum branch, PITR, cópia ou restore foi criado. Teste local de rollback não comprova recuperação de snapshot remoto. |
 | Autorização para piloto produtivo | Fora do escopo | É um gate separado. Não bloqueia o pré-voo de staging e continua sem autorização. |
 
@@ -19,9 +19,9 @@ Projeto `hjudhofluihkxykwekir`: `ACTIVE_HEALTHY`, PostgreSQL 17.11, nenhum branc
 
 ### Resultado atual do readiness
 
-O comando npm run r16:readiness lê o manifesto versionado em docs/R16_EVIDENCE_MANIFEST.json. Ele não aceita os antigos flags DA_V2_* como evidência. Exige referência revisável, data, URL HTTPS com resposta 2xx associada ao projeto V2, SKUs e estoque esperados, duas ou três referências únicas de operadores e hashes SHA-256 de backup/restore em alvo diferente com custo registrado como zero.
+O comando npm run r16:readiness lê o manifesto versionado em docs/R16_EVIDENCE_MANIFEST.json. Ele não aceita os antigos flags DA_V2_* como evidência. Exige referência revisável, data, URL HTTPS com resposta 2xx associada ao projeto V2, SKUs e estoque esperados, uma a três referências únicas de operadores e hashes SHA-256 de backup/restore em alvo diferente com custo registrado como zero.
 
-Resultado local no head de código 390a0bd: blocked; o seed é o único gate operacional aprovado. Os gates de staging, operadores e backup/restore estão pendentes. A autorização produtiva é exibida como informativa. O resultado inclui roundCompleted=false e, mesmo que os gates de pré-voo sejam atendidos no futuro, não substitui a execução nem a conclusão da R16.
+Resultado após a decisão de operador único: o gate de identidade fica aprovado; staging e backup/restore continuam pendentes. O resultado permanece blocked e roundCompleted=false. A autorização produtiva é exibida como informativa. O resultado inclui roundCompleted=false e, mesmo que os gates de pré-voo sejam atendidos no futuro, não substitui a execução nem a conclusão da R16.
 
 O comando verifica a estrutura do manifesto e a existência das referências locais em docs/. Ele não consulta Supabase, não faz probe HTTP da URL, não verifica o conteúdo de backup nem confirma identidades. A pessoa responsável precisa revisar as evidências referenciadas antes de marcar qualquer gate como verificado; os antigos flags de ambiente não podem substituir isso.
 
@@ -42,7 +42,7 @@ O teste PostgreSQL descartável via PGlite percorre os dois caminhos: exclusão 
 ## Bloqueios para avançar
 
 1. Disponibilizar URL V2 compartilhável sem publicar ou alterar produção.
-2. Confirmar 2–3 operadores e suas identidades antes de provisionar qualquer conta.
+2. Operador único confirmado pelo usuário; não provisionar contas adicionais.
 3. Encontrar um procedimento de backup/restore em alvo descartável, custo zero e sem restaurar sobre a origem. Se não houver, manter o gate bloqueado.
 4. Registrar evidências reais no manifesto e no checklist. Não marcar a R16 concluída antes da execução dos fluxos de homologação e do aceite documentado.
 
@@ -54,7 +54,7 @@ A autorização para executar não remove os pré-requisitos de segurança e de 
 
 - **Prévia existente:** “Dona Antônia V2 · Admin Preview” está publicada no URL já registrado no dossiê, mas a audiência está em modo custom e inclui somente o proprietário. A versão salva #2 registra o source SHA `8e0a78ad450393786d50406954f1f885c66584f1`, não resolvido como commit em `SUCEDOAN12`; assim, não se comprovou que o conteúdo publicado corresponde ao head atual da branch R16. O Sites oferece modo público, que permite acesso a qualquer pessoa com o link; não foi escolhido para uma interface administrativa. O acesso restrito a operadores pode ser concedido por lista de e-mails quando as identidades forem informadas.
 - **Workflow GitHub existente:** `.github/workflows/dona-antonia-v2-preview-publish.yml` só roda por dispatch manual com `authorize_preview=true`; o build é explicitamente sem Supabase, WhatsApp e Bling; a publicação altera `/site1` e `/admin1` e executa push para `main`. Esse workflow não é uma URL isolada para homologação R16 e não foi executado.
-- **Identidades:** ainda faltam 2–3 operadores humanos com e-mails definidos. Não criamos contas, senhas ou convites para pessoas presumidas.
+- **Operadores:** o usuário confirmou que será o único operador, usando a conta ADMIN V2 previamente confirmada. O e-mail não é repetido no checklist; a referência no manifesto é pseudonimizada. Nenhuma senha ou conta adicional foi criada.
 - **Backups:** a documentação Supabase informa backup diário automático para projetos Pro/Team/Enterprise (retenção de 7 dias no plano Pro). Isso não demonstra um restore isolado. O conector Supabase disponível não lista nem baixa snapshots; a ação de restore disponível atua no projeto informado. A alternativa oficial “Restore to a new project” requer projeto adicional e mostra custos antes da criação; não foi iniciada. Referências: [Database Backups](https://supabase.com/docs/guides/platform/backups) e [Restore to a new project](https://supabase.com/docs/guides/platform/clone-project).
 
 **Ações não executadas:** nenhuma mudança de audiência do Site; nenhum convite; nenhum push para `main`; nenhum deploy de staging; nenhum branch/projeto adicional Supabase; nenhum restore ou custo. R16 permanece bloqueada. O próximo passo operacional para abrir o staging de forma restrita é receber os e-mails reais dos operadores; o restore segue bloqueado até existir método zero-custo em alvo descartável.
