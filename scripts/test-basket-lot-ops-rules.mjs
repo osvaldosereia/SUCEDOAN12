@@ -12,7 +12,7 @@ const optionalHygiene=fs.readFileSync('supabase/sql/20261004_optional_hygiene_pe
 const draftLinkMigrationPath='supabase/sql/20261004_basket_link_draft_selection_v1.sql';
 
 const tabs=[...section.matchAll(/data-basket-config-tab="([^"]+)"/g)].map(match=>match[1]);
-assert.deepEqual(tabs,['types','quantities','carousel'],'sessão Cestas deve usar as três abas de configuração');
+assert.deepEqual(tabs,['types','quantities','carousel','flow'],'sessão Cestas deve usar as quatro abas de configuração');
 assert.doesNotMatch(section,/data-basket-advanced|kitLotRow|paintBasketKitAdmin|basket_lot_sale_toggle|data-basket-edit-lot/,'a nova sessão não deve manter a navegação antiga de manutenção');
 assert.match(section,/kits:\{label:'Receitas de kits \(legado\)'/,'legacy kit routing remains available only by internal compatibility call');
 assert.match(section,/store:\{label:'Operação de lotes antigos'/,'legacy store routing remains available only by internal compatibility call');
