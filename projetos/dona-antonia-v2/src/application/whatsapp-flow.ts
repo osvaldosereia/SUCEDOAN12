@@ -46,11 +46,7 @@ function requiredText(
   return text;
 }
 
-function optionalText(
-  record: Record<string, unknown>,
-  field: string,
-  maxLength = 160,
-): string {
+function optionalText(record: Record<string, unknown>, field: string, maxLength = 160): string {
   const value = record[field];
   if (value === undefined || value === null) return '';
   if (typeof value !== 'string' || value.trim().length > maxLength)
@@ -128,8 +124,7 @@ export function parseWhatsAppFlowSubmission(
   if (basketLines.length === 0) throw new Error('A cesta está vazia.');
 
   const customerName = requiredText(response, 'customerName', { minLength: 3, maxLength: 120 });
-  const recipientName =
-    optionalText(response, 'recipientName', 120) || customerName;
+  const recipientName = optionalText(response, 'recipientName', 120) || customerName;
   const cityInput = requiredText(response, 'city', { maxLength: 80 });
   const city = normalizeCity(cityInput);
   if (!city) throw new Error('Cidade fora da área de entrega.');
