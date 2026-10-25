@@ -42,7 +42,7 @@ const publicSite = read('../index.html');
 const adminIndex = read('../vitrine/admin/index.html');
 const featureBridges = read('../vitrine/admin/admin-feature-bridges.js');
 const tabNames = [...section.matchAll(/data-basket-config-tab="([^"]+)"/g)].map(match => match[1]);
-assert.deepEqual(tabNames, ['types', 'quantities', 'carousel']);
+assert.deepEqual(tabNames, ['types', 'quantities', 'carousel', 'flow']);
 for (const globalScript of [
   'orders-visual-v1.js',
   'store-baskets-ops-overview.js',
@@ -80,4 +80,4 @@ assert.ok(storefront.includes('stock_quantity:available'));
 assert.ok(storefront.includes('next_offset:'));
 const quantitiesUi = read('../vitrine/admin/basket-admin-quantities.js');
 assert.ok(quantitiesUi.indexOf("const quantities=[...root.querySelectorAll('[data-qty-basket]')]") < quantitiesUi.indexOf('state.busy=true;render();'), 'read edited quantities before rerendering the form');
-console.log('basket admin three tabs: PASS');
+console.log('basket admin Flow tab: PASS');
