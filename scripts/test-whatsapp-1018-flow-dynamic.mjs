@@ -10,7 +10,7 @@ import {canonicalMessagesFromMeta} from '../supabase/functions/_shared/whatsapp-
 import {parseBasketFlowRequest,latestBasketFlowRequest,CANARY_CONVERSATION} from '../vitrine/admin/whatsapp-lab/reply-parser.mjs';
 globalThis.crypto??=webcrypto;
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
-const flow=JSON.parse(read('vitrine/admin/whatsapp-lab/meta-flow/flow-dynamic-v1.json'));
+const flow=JSON.parse(read('vitrine/admin/whatsapp-lab/meta-flow/flow-dynamic-v2.json'));
 assert.equal(selectCanaryEngine('3300494700136506'),'legacy-v1','published V1 retains its original endpoint protocol');
 assert.equal(selectCanaryEngine(undefined),'legacy-v1','existing canary tokens without a flow ID retain V1 behavior');
 assert.equal(selectCanaryEngine(DYNAMIC_V2_FLOW_ID),'basket-editor-v2','only the new DRAFT uses the item editor engine');
@@ -50,6 +50,9 @@ const productList=flow.screens.find(x=>x.id==='TIPO_PRODUTO');
 assert.equal(productList.layout.children.find(x=>x.type==='NavigationList')?.['list-items'],'${data.itens_lista}');
 assert.equal(productList.data.itens_lista.type,'array');
 assert.ok(productList.data.itens_lista.items.properties['on-click-action'],'each product choice has its own action');
+const itemActionPayload=productList.data.itens_lista.items.properties['on-click-action'].properties.payload.properties;
+assert.equal(itemActionPayload.indice?.type,'string','type navigation action sends a declared index');
+assert.equal(itemActionPayload.pagina?.type,'string','option pagination sends a declared page');
 assert.ok(productList.data.itens_lista.items.optionalProperties.start,'product rows may include a real photo');
 const editor=flow.screens.find(x=>x.id==='OPCAO_EDIT');
 assert.ok(editor.layout.children.some(x=>x.type==='Image'&&x.src==='${data.imagem}'));
