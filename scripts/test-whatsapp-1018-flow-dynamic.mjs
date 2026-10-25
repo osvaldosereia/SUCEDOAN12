@@ -31,6 +31,7 @@ assert.equal(flow.screens.at(-1).terminal,true);
 const completePayload=flow.screens.find(s=>s.id==='RESUMO').layout.children.at(-1)['on-click-action'].payload;
 assert.deepEqual(completePayload,{resultado:'solicitacao_para_atendimento',resumo:'${data.resumo}',valor:'${data.valor}',itens:'${data.itens}'});
 for(const s of flow.screens){assert.ok(s.layout.children.length<=50);assert.equal(s.layout.children.filter(x=>x.type==='Footer').length,1);}
+for(const screen of flow.screens.filter(s=>ITEM_SCREENS.includes(s.id))){for(const field of screen.layout.children.filter(c=>c.type==='Dropdown'))assert.equal(field.required,field.visible,`${screen.id}.${field.name} must be required only when visible`);}
 for(let i=1;i<=ITEM_SCREENS.length;i++){
  const screen=flow.screens.find(x=>x.id===ITEM_SCREENS[i-1]);
  assert.ok(screen);assert.equal(screen.layout.children.filter(c=>c.type==='Dropdown').length,16);
