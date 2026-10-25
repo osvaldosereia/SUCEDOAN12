@@ -164,3 +164,10 @@ A documentação detalhada está em:
 ## Próxima ação para Work Luna Max
 
 Começar pela Rodada 0 do novo plano: confirmar branch e diretório isolados; mapear autenticação sem senha própria; provar os contratos de identidade/SKU/GTIN/estoque, criação de pedido, separação e fiscal. Código começa somente depois desse gate, em projetos/whatsapp-atendimento-github/. Não alterar main, site público, Vitrine Admin ou funções já implantadas. Nenhum Flow deve ser publicado e nenhuma mensagem deve ser enviada a clientes durante a preparação.
+
+
+## Decisão de arquitetura atualizada pelo usuário — 25/10/2026
+
+Construir o produto greenfield. A pesquisa do Vitrine Admin é apenas fonte de requisitos e dados; não reutilizar código, UI, tabelas, RPCs, backend ou estados operacionais antigos. O novo Admin, os conectores Meta/Bling e o fluxo de pedidos terão implementação e modelo de dados próprios. Supabase será consultado para cadastro/endereço do cliente; pedidos ficarão em um esquema novo e isolado. GitHub continua como fonte dos produtos, cestas e imagens. O SUCEDOAN12 é público, então ajustes internos e segredos ficam exclusivamente no servidor.
+
+Esta decisão substitui qualquer texto anterior do handoff/roadmap que sugira reutilizar serviços ou o modelo de pedidos do Vitrine. O plano vigente é [IMPLEMENTATION-PLAN-LUNA-MAX.md](IMPLEMENTATION-PLAN-LUNA-MAX.md). Próxima ação: Rodada 0 de contratos mínimos, seguida da programação por rodadas com Work Luna Max.
