@@ -253,3 +253,10 @@ O repositório SUCEDOAN12 está público. Produtos e fotos versionados são púb
 ### Plano vigente
 
 A execução detalhada, com rodadas, critérios de aceite, limites e instrução inicial para Work Luna Max, está em [IMPLEMENTATION-PLAN-LUNA-MAX.md](IMPLEMENTATION-PLAN-LUNA-MAX.md). A próxima ação é a Rodada 0 de compatibilidade do pedido/estoque/Bling e autenticação, antes de construir telas de Flow ou pedido. Os materiais de pesquisa estão em [ORDER-ADMIN-AND-IMAGE-RESEARCH.md](ORDER-ADMIN-AND-IMAGE-RESEARCH.md).
+
+
+## Decisão vigente — projeto greenfield — 25/10/2026
+
+Orientação mais recente do usuário: fazer o novo Admin e suas integrações do zero, com código, estrutura, estados e modelo de pedido próprios. A leitura do Vitrine Admin foi pesquisa de regras, dados e requisitos; seus módulos, endpoints, RPCs e esquema de pedidos não serão dependências do novo sistema. O cadastro de clientes/endereço é consultado no Supabase; o catálogo de produtos/cestas/imagens fica no GitHub; pedidos usarão modelo transacional novo e isolado. Meta e Bling terão conectores novos, seguindo APIs oficiais e credenciais guardadas no servidor.
+
+Esta decisão supersede qualquer sugestão anterior deste roadmap de reutilizar as APIs, tabelas ou o motor operacional do Vitrine. A versão executável e atualizada está em IMPLEMENTATION-PLAN-LUNA-MAX.md. Nenhum código foi alterado nesta rodada.
