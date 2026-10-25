@@ -47,18 +47,10 @@ assert.match(storeUi,/Valor oculto/,'external basket workspace must expose hidde
 assert.doesNotMatch(storeUi,/position_products|family_key|Adicionar termo/,'external basket workspace must not expose guided positions/families');
 assert.match(guided,/Criar lote \/ reservar/,'technical guided lot creation remains available for compatibility');
 
-for(const source of [publicRoot]){
-  assert.match(source,/basket_categories/,'public site must consume basket categories separately');
-  assert.match(source,/home_size_cards/,'public home must request lightweight cards for the five sizes');
-  assert.match(source,/home_shell:true/,'home size cards must mark the shell that hides price and item count');
-  assert.match(source,/basketCategory/,'public site must track the active Cesta\/Kit category');
-  assert.match(source,/category_slug/,'basket cards must be filtered by their Cesta\/Kit category');
-  assert.match(source,/Cestas e Kits/,'public heading must use the unified name');
-  assert.match(source,/BasketCarousel\.mount\(host\)/,'public home must mount the carousel that renders basket cards');
-  assert.match(basketCarousel,/data-basket=/,'carousel cards must provide an action to open the selected basket');
-  assert.match(source,/Itens do kit/,'kit composition must not be mislabeled as food');
-  assert.match(source,/basketGroupTitle\(group,b\)/,'composition label must consider the commercial category');
-}
+assert.match(publicRoot,/Estamos preparando melhorias/,'public root is temporarily in maintenance');
+assert.match(publicRoot,/https:\/\/wa\.me\/5565998150975/,'maintenance CTA points to WhatsApp');
+assert.match(publicRoot,/noindex/,'maintenance page is not indexed');
+assert.match(basketCarousel,/data-basket=/,'the basket carousel module keeps basket card actions available');
 assert.match(publicVitrine,/<meta http-equiv="refresh" content="0;url=\/">/,'legacy /vitrine/ must redirect to the canonical root');
 assert.match(publicVitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'legacy redirect must preserve query and hash');
 assert.doesNotMatch(publicVitrine,/basket_categories|checkoutWhatsappUnified|submit_order/,'legacy /vitrine/ must not duplicate storefront or checkout behavior');
