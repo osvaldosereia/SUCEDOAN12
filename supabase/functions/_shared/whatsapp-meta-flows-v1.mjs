@@ -150,7 +150,7 @@ export async function sendDraftFlowCanaryViaMeta({accessToken,phoneNumberId,grap
     interactive:{
       type:'flow',header:{type:'text',text:'Teste interno'},body:{text:'Homologação do WhatsApp Flow da cesta.'},
       footer:{text:'Somente teste interno 1018 → 8360.'},
-      action:{name:'flow',parameters:{mode:'draft',flow_message_version:'3',flow_token:token,flow_id:flow,flow_cta:'Iniciar teste',flow_action:'navigate',flow_action_payload:{screen:'TAMANHO'}}}
+      action:{name:'flow',parameters:{mode:'draft',flow_message_version:'3',flow_token:token,flow_id:flow,flow_cta:'Iniciar teste',flow_action:'data_exchange'}}
     }
   };
   const payload=await graphRequest({cfg,path:phone+'/messages',method:'POST',body});
