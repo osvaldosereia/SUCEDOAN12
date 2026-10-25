@@ -52,7 +52,7 @@
       else if(t.hasAttribute('data-flow-step-prev')){if(state.preview)state.preview.index=Math.max(0,state.preview.index-1);renderPreview()}
       else if(t.hasAttribute('data-flow-step-next')){if(state.preview)state.preview.index=Math.min(state.preview.steps.length-1,state.preview.index+1);renderPreview()}
     };
-    root.onkeydown=event=>{if(['Enter',' '].includes(event.key)&&event.target.matches('[data-flow-basket]')){state.selectedBasketId=event.target.dataset.flowBasket;state.preview=null;render()}};
+    root.onkeydown=event=>{if(!event.target.matches('[data-flow-basket]')||!['Enter',' '].includes(event.key))return;event.preventDefault();state.selectedBasketId=event.target.dataset.flowBasket;state.preview=null;state.previewError='';render()};
     root.onchange=event=>{
       const t=event.target;
       if(t.dataset.flowBasketEnabled){const row=sizes.find(x=>String(x.id)===String(t.dataset.flowBasketEnabled));if(row)row.flow_enabled=t.checked}
