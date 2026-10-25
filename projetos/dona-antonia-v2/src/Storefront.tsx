@@ -65,7 +65,10 @@ function Storefront() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const nextTemplate = templates.find((item) => item.id === basketId) ?? templates[0]!;
+    // During the first render, the Supabase-backed catalog is still loading and
+    // templates/types are empty. Wait for a usable snapshot before rebuilding selections.
+    const nextTemplate = templates.find((item) => item.id === basketId) ?? templates[0];
+    if (!nextTemplate || types.length === 0) return;
     setBasketChoices(initialSelections(nextTemplate, types, catalog));
     setExtraChoices(initialExtraSelections(extraGroups, types, catalog));
   }, [catalog, templates, types, extraGroups, basketId]);

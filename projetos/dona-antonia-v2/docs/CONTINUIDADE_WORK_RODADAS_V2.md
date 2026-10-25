@@ -1,11 +1,14 @@
-Warning: truncated output (original token count: 10260)
-Total output lines: 325
-
 # DONA ANTÔNIA V2 — DOSSIÊ DE CONTINUIDADE E PLANO POR RODADAS (WORK)
 
-**Versão do dossiê:** 2026-10-23  
+**Versão do dossiê:** 2026-10-24
 **Finalidade:** transferir todas as decisões operacionais, regras de UX, estado da engenharia, riscos, pendências e plano de entrega para um novo Projeto/conversa do ChatGPT em modo Work.  
-**Status atualizado (24/10/2026): R00–R14 concluídas; R15 técnica concluída em staging isolado com bloqueios de homologação documentados.** PRs da V2 permanecem draft e sem merge/publicação. Projeto Supabase V2 isolado `hjudhofluihkxykwekir`, 20 migrations aplicadas, 802 produtos, 802 perfis privados, 0 pedidos, 0 clientes e 0 documentos fiscais; todos os produtos/perfis seguem inativos/estoque zero e as duas contas Utility permanecem desabilitadas. R14 está na branch `agent/dona-antonia-r14-customers-delivery-reports`, PR #1384 draft, head final `c97cb23616a01fb1354919d30d4b3cce77bc308c`, derivada do checkpoint R13 `60d08bdaaf54fc79bf36fb6151216018b61dd81e`; migration de clientes/entrega/relatórios aplicada somente no V2 isolado. CI #40115614242 passou todos os gates e confirmou a suíte browser.
+**Status atualizado (25/10/2026): R00–R15 concluídas tecnicamente; R16 segue em pré-voo bloqueado apenas pelo ensaio de backup/restore e não concluída.** PRs da V2 permanecem draft e sem merge/publicação.
+
+**Snapshot remoto V2 confirmado por leitura:** projeto isolado `hjudhofluihkxykwekir`, `ACTIVE_HEALTHY`, PostgreSQL 17.11, 20 migrations e 33 tabelas; 805 produtos e 805 perfis privados, 0 clientes, 0 pedidos, 0 documentos fiscais e 0 eventos de entrega. Os três SKUs fictícios da R16 estão ativos com 30 unidades cada; há três tipos R16, cesta `r16-test` ativa e três movimentos. Nenhuma conta ou pedido foi criado nesta retomada.
+
+**R16 atual:** branch `agent/dona-antonia-r16-pilot-preflight`, PR #1396 aberto e draft contra R15. O operador único (`juniorsereia@gmail.com`) está confirmado. A prévia privada agora está na versão 4, vinculada ao código atual e validada no navegador; o gate de URL/proveniência está atendido. Segue pendente um ensaio de backup/restore em destino descartável sem custo e sem risco à origem.
+
+**R14 histórico:** a branch `agent/dona-antonia-r14-customers-delivery-reports`, PR #1384 draft, head `c97cb23616a01fb1354919d30d4b3cce77bc308c`, derivou do checkpoint R13 `60d08bdaaf54fc79bf36fb6151216018b61dd81e`; a migration de clientes/entrega/relatórios foi aplicada somente no V2 isolado e o CI #40115614242 passou os gates e a suíte browser.
 **R10 encerramento técnico:** lock/claim por operador, versão, retry idempotente, conferência de faltas, ajuste de total, outbox/eventos/auditoria e transições PRONTO/ENTREGUE estão implementados. O aceite visual de pedido real segue reservado à homologação com seed vendável, pois o staging continua com 0 pedidos.
 
 **Repositório:** https://github.com/osvaldosereia/SUCEDOAN12  
@@ -445,3 +448,68 @@ R00 foi documental; R01 consolidou qualidade visual/CI; R02 implementou schema e
 - Estado: concluída. PR #1369 permanece draft e sem merge. Sem publicação, alteração em produto, atendimento ou sistema legado.
 - Próxima rodada: R06 — CRUD persistente de tamanhos, tipos, vínculo/ordenação de produtos e extras.
 \n\n## R15 — auditoria final, performance, custos e homologação\n\n**Execução técnica concluída (24/10/2026):** a branch `agent/dona-antonia-r15-audit-homologacao` e o PR draft #1394 (head final `5344a6c3bf479c9f1fc43fee000f27ea5fc841ca` (código `8aa59fe0fee9244b2db0ecee05044b0ef30fdd7d`) adicionam o contrato testável de metas LCP/INP/CLS, auditoria estática de bundle/segredos, carga sintética de 802 produtos com três operadores e teste browser dedicado. O critério de aceite diferencia `pass`, `fail` e `not-measured`, evitando declarar homologação a partir de métrica ausente.\n\n**Evidências:** `npm test` 124/124; PostgreSQL isolado 20 migrations/33 tabelas com RLS/RBAC e rollback; check, lint, formato, arquitetura (136 arquivos), build, diff e npm audit sem vulnerabilidades. `npm run r15:audit` mediu 802 produtos, três operadores, maior duração local de 20,26 ms e bundle JS/CSS de 669.507 bytes; nenhum segredo foi encontrado na fonte de produção. O Playwright local tentou 18 casos, mas o Chromium não está instalado; o CI #40132993673 instalou Chromium e passou os 18 testes. O checkpoint documental final #40133495710 também passou.\n\n**Remoto V2:** ACTIVE_HEALTHY/PostgreSQL 17.11; 802 produtos e 802 perfis privados preservados; 0 clientes, pedidos, documentos fiscais e eventos de entrega. Advisors e logs foram consultados somente para auditoria. Nenhum serviço operacional, custo novo ou dado real foi acionado.\n\n**Bloqueios de homologação:** não há URL pública de staging para Lighthouse em redes distintas/p75 real; o seed permanece inativo/estoque zero; não há pedido comercial nem 2–3 operadores reais para ensaio; backup/restore remoto não foi executado porque seria operação destrutiva ou exigiria cópia com custo. O resultado é tecnicamente concluído, mas não autoriza produção nem piloto.\n\n**Próxima rodada:** R16 só poderá tratar piloto controlado depois de autorização específica e checklist de homologação/rollback; produção, `main`, DNS, atendimento, Bling/Meta operacionais e Supabases legados permanecem intocados.\n
+
+## Registro de execução — R16 (pré-voo de staging isolado)
+
+**Data:** 24/10/2026 (UTC)
+**Branch/base:** `agent/dona-antonia-r16-pilot-preflight`, PR #1396 aberto e draft contra `agent/dona-antonia-r15-audit-homologacao` (base `6f8c195d39de72ec057470e15443f25a6b0ba378`). Head de código confirmado: `390a0bdce81611e5e25b8e2c1eb6f47fb8f80b38`.
+**Estado:** pré-voo bloqueado; R16 não concluída.
+
+**Correções orientadas por teste:** o checkpoint de teste c2214ae3aa0c224e55efbdc82d4f4a61589b2cf7 reproduziu o falso passe dos flags DA_V2_* e a falha FK RESTRICT no rollback após checkout. Os runs #40137723002 (push) e #40137727796 (pull request) falharam no test:db pelo vínculo basket_extra_types; a suíte local também mostrou o script antigo retornando ready com os flags definidos. A implementação removeu esses flags e migrou a fonte de decisão para o manifesto de evidências; o rollback agora exclui somente quando não há histórico relacionado e arquiva os registros em caso de pedido, reserva, movimento adicional ou vínculo externo ao seed. O teste local PGlite percorre ambos os ramos.
+
+**Readiness:** `npm run r16:readiness` lê o manifesto versionado `docs/R16_EVIDENCE_MANIFEST.json` e valida sua estrutura e referências locais, incluindo os valores declarados de SKU/estoque, operadores pseudonimizados e hashes de backup/restore. Retorna `blocked`: o seed é o único gate operacional aprovado. Staging e backup/restore seguem pendentes; o operador único está confirmado. A autorização produtiva é um gate separado com `required=false`; `roundCompleted` é sempre `false`. O script não consulta banco, não faz probe HTTP, não valida conteúdo remoto de backup e não confirma identidades; as referências exigem revisão humana.
+
+**Verificações locais no head de código:** `npm test` (132/132), `npm run test:db` (20 migrations/33 tabelas, RLS/RBAC e ambos os caminhos de rollback), `npm run check`, `npm run r16:readiness`, `npm run lint`, `npm run format:check`, `npm run architecture:check` (138 arquivos), `npm run build` e `git diff --check` passaram. O smoke browser foi executado no CI; testes locais não foram repetidos após esta atualização documental.
+
+**CI do head de código:** #40138207500 (push) e #40138209762 (pull request) passaram os gates de segurança, lint/formato, arquitetura, migrações PostgreSQL descartáveis, TypeScript, testes, build sem deploy e browser mobile/desktop (18/18 E2E).
+
+**Snapshot V2 confirmado por leitura em 24/10/2026:** projeto `hjudhofluihkxykwekir`, `ACTIVE_HEALTHY`, PostgreSQL 17.11 e nenhum branch Supabase. Contagens: 805 produtos, 805 perfis privados, 0 clientes, 0 pedidos, 0 documentos fiscais e 0 eventos de entrega. O seed está ativo e consistente: três SKUs `R16-TEST-*` com 30 unidades cada, três tipos, cesta `r16-test` ativa e três movimentos. Não houve escrita no banco nesta retomada.
+
+**Pendências:** URL V2 privada vinculada ao head atual; a prévia conhecida é owner-only e sua proveniência não foi confirmada. A identidade do operador único foi confirmada. Não foi demonstrado backup/restore em alvo descartável sem custo e sem restore sobre a origem. Nenhum branch, PITR, cópia ou restore foi criado.
+
+**Rollback do seed:** `docs/R16_TEST_SEED_ROLLBACK.sql` é manual e não foi executado remotamente. Remove o seed determinístico quando não há referências; se houver pedido, reserva, movimento adicional ou vínculo externo, arquiva os registros e mantém o histórico. O rollback local não equivale a restore de snapshot remoto.
+
+**Isolamento:** nenhum recurso pago, branch Supabase, usuário, credencial, publicação, deploy, restore ou integração operacional foi criado/acionado. Produção, site/admin em uso, `main`, Supabases legados, atendimento, Meta/Bling operacionais, DNS e workflows de produção ficaram intocados. Só avançar após evidência real dos gates e homologação no staging; R16 permanece incompleta.
+
+## R16 — análise dos bloqueios após autorização (24/10/2026)
+
+A autorização para avançar foi considerada para as ações técnicas seguras na V2. A verificação confirmou que os três pontos restantes não se resolvem apenas com permissão:
+
+- **Staging:** existe o Site “Dona Antônia V2 · Admin Preview”, mas está em audiência customizada com acesso apenas do proprietário. A versão salva #2 registra o source SHA `8e0a78ad450393786d50406954f1f885c66584f1`, não resolvido como commit em `SUCEDOAN12`; assim, não se comprovou que o conteúdo publicado corresponde ao head atual da branch R16. O controle permite acesso público ou por lista; não foi aberto ao público porque qualquer pessoa com o link poderia acessar a interface administrativa. A lista de operadores só pode ser configurada com e-mails reais. O workflow GitHub `.github/workflows/dona-antonia-v2-preview-publish.yml` exige dispatch manual, compila sem Supabase/Meta/Bling e, ao publicar, grava somente `/site1` e `/admin1` e faz push para `main`. Portanto não fornece staging isolado da R16 e não foi acionado.
+- **Operadores:** resolvido para esta prévia. O usuário informou que será o único operador e a conta ADMIN V2 já havia sido confirmada. O gate passa a aceitar uma referência pseudonimizada; a cobertura de concorrência de vários operadores continua nos testes automatizados da R10. Nenhuma conta ou credencial extra foi criada.
+- **Backup/restore:** a documentação vigente do Supabase descreve backups diários para planos Pro/Team/Enterprise, mas a existência de um backup não comprova restauração. O conector disponível não oferece leitura/download de backup ou restauração para alvo descartável; `restore_project` atua no projeto de origem e pode sobrescrevê-lo. “Restore to a new project” cria outro projeto e pode gerar cobrança; branches também podem gerar cobrança. Nenhum desses recursos foi criado. A sessão de execução não dispõe de Supabase CLI, `pg_dump`, `psql`, Docker nem credencial de conexão direta para fazer exportação lógica local.
+
+A URL atual continua owner-only. Não houve mudança de audiência, convite, deploy, push para `main`, branch Supabase, backup ou restore. A identidade do operador único está definida. Permanecem pendentes a URL privada correspondente ao head R16 e uma alternativa descartável de backup/restore sem custo e sem operação sobre a origem.
+
+## Atualização da R16 — prévia e investigação de backup/restore (25/10/2026)
+
+**Estado:** prévia privada validada; R16 continua bloqueada pela evidência de backup/restore. O usuário não autorizou novas despesas e nenhuma branch Supabase foi criada.
+
+**Prévia:** o Site privado “Dona Antônia V2 · Admin Preview” está na versão 4, URL `https://dona-antonia-v2-admin-preview.juniorsereia.chatgpt.site`, acesso custom/owner-only apenas para `juniorsereia@gmail.com`. O código da prévia foi compilado no commit espelhado do Site `0f825c25279c338fe62c230148bc5c8a3fa4fbe1`, correspondente ao código do PR head `bd894392d62e2fa0208209b60ca78ff7227800f1`; a tela R16 e os três itens de teste renderizaram no navegador.
+
+**Correção de runtime:** a tela branca era causada por um efeito do `Storefront` que inicializava seleções antes de o catálogo Supabase chegar; a lista de templates ainda estava vazia e a chamada tentava acessar `lines` de `undefined`. O efeito agora aguarda template e tipos válidos. O check TypeScript e o build Vite passaram; o CI completo do head de código #40155550078 passou segurança, lint/formato, arquitetura, migrações descartáveis, TypeScript, testes, build e E2E mobile/desktop. Na cópia auxiliar da prévia, `npm test` não conseguiu executar somente o teste de readiness porque o mirror não contém `docs/R16_EVIDENCE_MANIFEST.json`; o CI do repositório completo passou essa verificação.
+
+**Backup/restore sem custo — resultado da investigação:** a documentação Supabase recomenda `supabase db dump` com conexão PostgreSQL e senha do banco para backup lógico; restaurar a própria origem causa indisponibilidade e não é seguro como ensaio. O restore de backup de plataforma para outro projeto cria um projeto distinto e pode gerar compute; branches preview são cobradas por uso, a partir de US$ 0,01344/h no tamanho Micro e fora do Spend Cap. O ambiente de execução atual não tem Docker, Supabase CLI, `pg_dump`, `pg_restore` nem `psql`, e não disponibiliza URL/senha de conexão PostgreSQL por canal seguro. A documentação permite desenvolvimento local gratuito, mas depende de CLI e runtime de contêiner; isso ainda não prova recuperação de um backup remoto real. Nenhum backup, dump, branch ou restore foi iniciado.
+
+**Referências oficiais consultadas:** https://supabase.com/docs/guides/platform/backups; https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore; https://supabase.com/docs/guides/local-development/restoring-downloaded-backup; https://supabase.com/docs/guides/platform/manage-your-usage/branching.
+
+**Isolamento:** a verificação foi somente leitura na tela; nenhum pedido foi submetido nem escrita executada no Supabase. Produção, domínio público, `main`, Vitrine/Admin legado, Meta/WhatsApp operacional e Bling continuam intocados.
+
+## Complemento R16 — evidência da prévia privada (25/10/2026)
+
+O gate da URL passou a aceitar a prévia Sites owner-only quando o status HTTP numérico não está exposto, desde que a implantação esteja concluída, a versão e o acesso restrito estejam registrados, os commits Sites/GitHub estejam ligados por evidência e a renderização no navegador tenha data válida. A validação continua rejeitando URL HTTP, implantação falha, acesso público, commit ausente, referência de fonte divergente ou resposta HTTP 4xx/5xx.
+
+O manifesto registra a prévia Admin V2 na rota /admin/, versão 4, deployment `appgdep_6add6d1b4af081919ad862777fa97241`, fonte Sites `0f825c25279c338fe62c230148bc5c8a3fa4fbe1` e fonte GitHub `bd894392d62e2fa0208209b60ca78ff7227800f1`. O campo `httpStatus` permanece `null`; nenhum código HTTP foi presumido. A prévia continua limitada à conta `juniorsereia@gmail.com`, e a conferência visual não criou pedidos nem escreveu no banco.
+
+Verificação local desta alteração: `npm run check` e três testes direcionados da regra passaram. O CI do head do PR #1396 registra a validação integral. O readiness geral segue `blocked` por falta de backup/restore descartável, separado e sem custo; não houve criação de branch, restore, merge ou publicação pública.
+
+
+## Complemento da investigação de backup/restore — 25/10/2026
+
+A documentação oficial atual do Supabase descreve o fluxo plataforma→self-hosted: obter a connection string do V2, gerar arquivos SQL de roles/schema/dados com Supabase CLI e restaurar em alvo self-hosted separado. O procedimento requer senha do banco, CLI, Docker e psql. Referência: https://supabase.com/docs/guides/self-hosting/restore-from-platform.
+
+Verificação de acesso: o conector do projeto V2 informa somente o host `db.hjudhofluihkxykwekir.supabase.co`; não disponibiliza senha nem connection string completa. O workflow V2 atual executa os testes de migration em Postgres descartável e não referencia secret de banco remoto. A interface GitHub conectada não permite verificar se existe secret já cadastrado nem consultar franquia de Actions.
+
+Segurança/custo: no repositório privado, minutos GitHub Actions além da franquia incluída podem ser cobrados (https://docs.github.com/en/billing/concepts/product-billing/github-actions). Sem confirmação de secret de conexão reutilizável e de execução sem cobrança, nenhum workflow de dump/restore foi iniciado. Não foi criada branch Supabase, projeto adicional ou recurso pago.
+
+**Próximo passo técnico:** usar uma connection string já guardada em secret protegido e uma execução local descartável do PostgreSQL/Supabase, ou validar antes que a execução no Actions fique dentro da franquia sem custo; depois comprovar hashes de backup/schema e contagens essenciais sem imprimir dados pessoais. O replay de migrations e o rollback PGlite cobrem schema/rollback, mas não substituem esse teste de restauração de dados do V2.
