@@ -40,11 +40,7 @@ export async function handleWhatsAppFlowEndpoint(
   }
 
   const signature = request.headers.get('x-hub-signature-256');
-  const signatureValid = await verifyMetaWebhookSignature(
-    rawBody,
-    signature,
-    options.appSecret,
-  );
+  const signatureValid = await verifyMetaWebhookSignature(rawBody, signature, options.appSecret);
   if (!signatureValid) return endpointError(432);
 
   let body: unknown;
