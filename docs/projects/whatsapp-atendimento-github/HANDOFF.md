@@ -101,3 +101,10 @@ Abra primeiro este handoff e IMPLEMENTATION-ROADMAP.md em docs/projects/whatsapp
 - Autenticação da API REST do GitHub requer token com permissões adequadas: https://docs.github.com/rest/guides/getting-started-with-the-rest-api
 - Meta WhatsApp Flows — endpoint de troca de dados: https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/implementingyourflowendpoint
 - Meta WhatsApp Flows — referência de componentes: https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/components
+
+
+## Verificação da exportação de cestas — 25/10/2026
+
+A inspeção do código encontrou a ação downloadMetaCatalog em vitrine/admin/whatsapp-lab/lab.js. Ela exporta um CSV de 15 combinações de cesta preparado para importação manual de catálogo na Meta. Esse arquivo não é a exportação bruta das cestas, tipos, produtos relacionados, quantidades e ordem necessária para esta migração. Não usar esse CSV como fonte do novo catálogo.
+
+O código do Vitrine Admin carrega composições pelo módulo vitrine/admin/basket-admin-api.js e por serviços existentes vinculados ao backend atual. Nenhuma chamada a esse backend foi feita nesta iniciativa, conforme a restrição de não usar Supabase. A exportação adequada continua pendente; o próximo passo é obter o arquivo estruturado pelo próprio painel, se essa opção existir, ou receber CSV/JSON com o formato listado no Roadmap.
