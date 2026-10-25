@@ -224,3 +224,32 @@ Saída: homologação real em ambiente de teste; cliente só entra depois de uma
 
 
 - 2026-10-25 — Desenho de checkout atualizado por orientação do usuário: produtos e cestas permanecem no GitHub; cadastro de cliente/endereço pode ser consultado pelo backend Supabase; resumo com total, pagamento e dados confirmados chega como mensagem interativa no chat; pedido só é criado após o botão Confirmar pedido. Inspeção limitada a schema, sem dados pessoais ou escrita. Especificação em ORDER-FLOW-CHECKOUT-DESIGN.md.
+
+
+## Atualização de pesquisa e escopo — 25/10/2026
+
+Esta seção substitui decisões anteriores que aguardavam exportação manual e passa a ser a referência mais recente. O código não foi alterado e a importação ainda não aconteceu.
+
+### Recorte do catálogo confirmado
+
+A consulta somente de leitura da configuração atual basket_admin_* encontrou cinco cestas/tamanhos ativos ligados a produtos e 61 IDs de produto distintos entre as opções. Contagem de opções por cesta: Econômica 24, Mini 55, Pequena 60, Média 60, Grande 60. O resultado não é a soma das linhas; as opções repetem entre tamanhos. Todas as 61 referências têm image_url WebP preenchido; 59 apontam para Supabase Storage e 2 para GitHub Raw. A verificação ainda não confirmou disponibilidade HTTP, dimensão ou qualidade visual.
+
+Usar essa configuração atual como fonte de migração, e não apenas o modelo histórico basket_template_items, que revelou 29 produtos e não contempla todas as opções cadastradas para escolha de marca.
+
+### Imagens
+
+O helper do Flow em whatsapp-1018-basket-flow-v1/images.mjs limita imagem a 27 KB e, para Supabase Storage, redimensiona para 240×190 WebP qualidade 60. Para URLs GitHub Raw, o arquivo precisa chegar pré-otimizado. A carga da nova base deve criar thumbnails no diretório isolado do projeto, com commit SHA, bytes, dimensão e hash documentados, e revisão visual no WhatsApp.
+
+### Admin de pedidos e Bling
+
+O escopo foi ampliado para incluir gestor de pedidos no novo Admin: recebidos, separação/faltas, acompanhamento e solicitação/recuperação de NF-e, expedição e Concluído. O estado Concluído deve corresponder à conclusão operacional após entrega e registro do pagamento, seguindo os gates do Vitrine Admin.
+
+A pesquisa confirmou que o backend atual, sobretudo admin-products-live-v1 e admin-service-intelligence-v1, implementa esses estágios e a integração Bling. Também confirmou uma incompatibilidade importante: o criador canônico ainda consulta public.products para validar produto, preço e estoque; o snapshot fiscal usa product_id para encontrar SKU/GTIN/nome. A nova entrada precisa de um adaptador de snapshot GitHub e identificação aceita pelo Bling. Não espelhar o catálogo inteiro nem chamar o criador antigo sem provar o contrato.
+
+### Segurança
+
+O repositório SUCEDOAN12 está público. Produtos e fotos versionados são públicos; ajuste interno, tokens, chaves e dados pessoais não podem ser commitados. A configuração privada do ajuste fica somente no servidor. “Sem senha própria” não significa gravação anônima: catálogo e operações de pedidos exigem sessão/cargo existente ou identidade GitHub/SSO com autorização server-side.
+
+### Plano vigente
+
+A execução detalhada, com rodadas, critérios de aceite, limites e instrução inicial para Work Luna Max, está em [IMPLEMENTATION-PLAN-LUNA-MAX.md](IMPLEMENTATION-PLAN-LUNA-MAX.md). A próxima ação é a Rodada 0 de compatibilidade do pedido/estoque/Bling e autenticação, antes de construir telas de Flow ou pedido. Os materiais de pesquisa estão em [ORDER-ADMIN-AND-IMAGE-RESEARCH.md](ORDER-ADMIN-AND-IMAGE-RESEARCH.md).
