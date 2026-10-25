@@ -3,7 +3,8 @@
   const MODULES={
     types:{label:'Tipos de cestas',src:'/vitrine/admin/basket-admin-types.js?v=20261023-1',global:'DonaAntoniaBasketAdminTypes'},
     quantities:{label:'Tipos e quantidades',src:'/vitrine/admin/basket-admin-quantities.js?v=20261023-1',global:'DonaAntoniaBasketAdminQuantities'},
-    carousel:{label:'Produtos do carrossel',src:'/vitrine/admin/basket-admin-carousel.js?v=20261023-4',global:'DonaAntoniaBasketAdminCarousel'}
+    carousel:{label:'Produtos do carrossel',src:'/vitrine/admin/basket-admin-carousel.js?v=20261023-4',global:'DonaAntoniaBasketAdminCarousel'},
+    flow:{label:'Atendimento por Flow',src:'/vitrine/admin/basket-admin-flow.js?v=20261025-flow-v1',global:'DonaAntoniaBasketAdminFlow'}
   };
   const COMPATIBILITY_MODULES={
     kits:{label:'Receitas de kits (legado)',src:'/vitrine/admin/kit-builder.js?v=basket-products-v1',global:'DonaAntoniaKitBuilder'},
@@ -24,7 +25,7 @@
   }
   function renderShell(){
     const root=host();if(!root)return null;ensureStyle();
-    root.innerHTML='<section class="basket-config-shell"><div class="basket-config-head"><div><h1>Cestas</h1><p>Defina os tipos, as quantidades e os produtos dos carrosséis.</p></div></div><div class="basket-config-tabs" role="tablist" aria-label="Configuração de cestas"><button type="button" class="basket-config-tab" role="tab" data-basket-config-tab="types">Tipos de cestas</button><button type="button" class="basket-config-tab" role="tab" data-basket-config-tab="quantities">Tipos e quantidades</button><button type="button" class="basket-config-tab" role="tab" data-basket-config-tab="carousel">Produtos do carrossel</button></div><div class="basket-config-workspace" data-basket-config-workspace></div></section>';
+    root.innerHTML='<section class="basket-config-shell"><div class="basket-config-head"><div><h1>Cestas</h1><p>Defina os tipos, as quantidades e os produtos dos carrosséis.</p></div></div><div class="basket-config-tabs" role="tablist" aria-label="Configuração de cestas"><button type="button" class="basket-config-tab" role="tab" data-basket-config-tab="types">Tipos de cestas</button><button type="button" class="basket-config-tab" role="tab" data-basket-config-tab="quantities">Tipos e quantidades</button><button type="button" class="basket-config-tab" role="tab" data-basket-config-tab="carousel">Produtos do carrossel</button><button type="button" class="basket-config-tab" role="tab" data-basket-config-tab="flow">Atendimento por Flow</button></div><div class="basket-config-workspace" data-basket-config-workspace></div></section>';
     root.querySelectorAll('[data-basket-config-tab]').forEach(button=>button.addEventListener('click',()=>void setTab(button.dataset.basketConfigTab)));
     root.querySelectorAll('[role=tab]').forEach((button,index)=>button.addEventListener('keydown',event=>{
       if(!['ArrowRight','ArrowLeft','Home','End'].includes(event.key))return;
