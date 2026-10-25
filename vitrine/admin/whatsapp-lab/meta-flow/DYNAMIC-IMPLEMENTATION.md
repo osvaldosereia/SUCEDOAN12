@@ -1,6 +1,8 @@
 # Dona Antônia · WhatsApp Flows dinâmicos · Rodada 1 (canal 1018)
 
-**Estado:** código DRAFT no GitHub. Não há Flow ID criado/validado pela Meta, nem endpoint implantado. Não integra pedidos, não altera estoque nem envia mensagens.
+**Status verificado em 25/10/2026:** Dona Antônia Cestas Básicas Dynamic V2 está em DRAFT, sem erros reportados e com saúde ainda não informada; Dynamic V1 está publicado. O endpoint fixo está configurado e os pré-requisitos do servidor aparecem como válidos. Nenhum envio de teste ou publicação foi feito nesta revisão.
+
+**Limite de integração:** o runtime em engine.mjs não lê a configuração flow_v1 salva pelo Vitrine Admin. A ordenação por tipo, os modos de seleção e os limites definidos nessa tela ainda são apenas metadados/prévia administrativa; não alteram o atendimento da Meta. O runtime atual seleciona um produto e uma quantidade por posição do molde, e o resumo final apresenta itens e total, sem fotos ou preço individual.
 
 ## Escopo desenvolvido
 - Escolha de 5 tamanhos lendo `home_size_cards` do `storefront-v2`.
@@ -19,7 +21,7 @@ Pela própria tela, um perfil proprietário pode criar rascunhos, enviar o JSON 
 
 A implementação usa a permissão `whatsapp_business_management` da conexão Meta existente. Se a Meta negar uma operação por escopo, a tela apresenta o código sanitizado; não cria uma segunda conexão nem troca de integração. Os segredos de execução continuam sendo configurados no ambiente seguro do Supabase, fora da tela web.
 
-**Disponibilidade:** este código está em uma branch de trabalho. A tela passa a operar depois do merge e da implantação autorizada do código atualizado de `admin-whatsapp-templates-v1`. O endpoint dinâmico ainda precisa de implantação autorizada no Supabase. O fluxo de envio interno está implementado, mas não foi exercitado ao vivo: não há Flow ID, validação oficial, endpoint implantado nem teste real 1018 → 8360 confirmados nesta etapa.
+**Disponibilidade:** o runtime dinâmico e a área Marketing → Flows Meta estão ativos no ambiente consultado. A V2 continua em rascunho; não foi publicada nem exercitada por envio de teste nesta revisão. O documento mantém o checklist de homologação abaixo como referência operacional, mas as instruções que afirmam que ainda não existe Flow ID ou endpoint implantado estão superadas pelo estado verificado em 25/10/2026.
 
 ## Arquivos
 - `vitrine/admin/whatsapp-lab/meta-flow/flow-dynamic-v1.json` — Flow JSON 7.3 / Data API 3.0
