@@ -58,7 +58,9 @@ async function makeFixture() {
     keyPair.publicKey,
     aesKeyBytes,
   );
-  const privateKeyBytes = new Uint8Array(await crypto.subtle.exportKey('pkcs8', keyPair.privateKey));
+  const privateKeyBytes = new Uint8Array(
+    await crypto.subtle.exportKey('pkcs8', keyPair.privateKey),
+  );
   const rawBody = JSON.stringify({
     encrypted_flow_data: toBase64(new Uint8Array(encryptedData)),
     encrypted_aes_key: toBase64(new Uint8Array(encryptedAesKey)),
@@ -106,17 +108,14 @@ describe('handleWhatsAppFlowEndpoint', () => {
   it('maps decryption errors to the Meta endpoint status without calling the controller', async () => {
     const fixture = await makeFixture();
     let controllerCalled = false;
-    const response = await handleWhatsAppFlowEndpoint(
-      request(fixture.rawBody, fixture.signature),
-      {
-        appSecret: 'meta-test-secret',
-        privateKeyPem: 'invalid-private-key',
-        onRequest: () => {
-          controllerCalled = true;
-          return { data: { status: 'active' } };
-        },
+    const response = await handleWhatsAppFlowEndpoint(request(fixture.rawBody, fixture.signature), {
+      appSecret: 'meta-test-secret',
+      privateKeyPem: 'invalid-private-key',
+      onRequest: () => {
+        controllerCalled = true;
+        return { data: { status: 'active' } };
       },
-    );
+    });
 
     expect(response.status).toBe(421);
     expect(controllerCalled).toBe(false);
@@ -125,17 +124,14 @@ describe('handleWhatsAppFlowEndpoint', () => {
   it('returns an encrypted controller response for a signed and decryptable request', async () => {
     const fixture = await makeFixture();
     let received: Record<string, unknown> | null = null;
-    const response = await handleWhatsAppFlowEndpoint(
-      request(fixture.rawBody, fixture.signature),
-      {
-        appSecret: 'meta-test-secret',
-        privateKeyPem: fixture.privateKeyPem,
-        onRequest: (data) => {
-          received = data;
-          return { version: '3.0', data: { status: 'active' } };
-        },
+    const response = await handleWhatsAppFlowEndpoint(request(fixture.rawBody, fixture.signature), {
+      appSecret: 'meta-test-secret',
+      privateKeyPem: fixture.privateKeyPem,
+      onRequest: (data) => {
+        received = data;
+        return { version: '3.0', data: { status: 'active' } };
       },
-    );
+    });
 
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toContain('text/plain');
