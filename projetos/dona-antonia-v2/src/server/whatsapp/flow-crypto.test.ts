@@ -86,7 +86,7 @@ describe('WhatsApp Flow cryptography', () => {
     const clearResponse = await crypto.subtle.decrypt(
       { name: 'AES-GCM', iv: invertedVector, tagLength: 128 },
       aesKey,
-      encryptedResponse,
+      encryptedResponse.buffer as ArrayBuffer,
     );
 
     expect(JSON.parse(new TextDecoder().decode(clearResponse))).toEqual(response);
