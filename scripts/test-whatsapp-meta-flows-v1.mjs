@@ -70,6 +70,8 @@ assert.equal(canarySend.providerMessageId,'wamid.test-flow');
 assert.match(sentFlowBody.to,/^5565999828360$/);
 assert.equal(sentFlowBody.interactive.action.parameters.mode,'draft');
 assert.equal(sentFlowBody.interactive.action.parameters.flow_message_version,'3');
+assert.equal(sentFlowBody.interactive.action.parameters.flow_action,'data_exchange','dynamic draft canary must request INIT data from the endpoint');
+assert.equal(Object.hasOwn(sentFlowBody.interactive.action.parameters,'flow_action_payload'),false,'data_exchange initiation must not supply a navigate-only payload');
 assert.equal(sentFlowBody.interactive.action.parameters.flow_id,'98765');
 assert.equal(sentFlowBody.interactive.action.parameters.flow_token,canaryToken);
 assert.deepEqual(await verifyState(sentFlowBody.interactive.action.parameters.flow_token,canarySecret),canaryClaims);
