@@ -348,7 +348,7 @@ async function setOptionQuantity(state,deps,positionId,productId,quantity){
   state.selections=[...(state.selections||[]),{position_id:String(positionId),selections:[{product_id:String(productId),quantity}]}];
  }else{
   state.selections=(state.selections||[]).filter(x=>String(x.position_id)!==String(positionId));
-  if(next.length)state.selections=[...(state.selections||[]),{position_id:String(positionId),selections:next}];
+  state.selections=[...(state.selections||[]),{position_id:String(positionId),selections:next}];
  }
  delete state.editingPositionId;delete state.editingProductId;
  return state;
