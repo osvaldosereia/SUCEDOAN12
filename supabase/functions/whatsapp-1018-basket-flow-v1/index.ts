@@ -31,10 +31,9 @@ async function catalogRequest(action,params={},method='GET'){
  return body;
 }
 const catalog={
- async shell(){return catalogRequest('home_size_cards')},
- async basket(basketId,n){return catalogRequest('basket',{basket_id:basketId+'@'+n,lightweight:1})},
- async options(basketId,n,positions){return catalogRequest('basket_mold_options_batch',{basket_id:basketId,composition_number:n,positions},'POST')},
- async quote(basketId,n,items){return catalogRequest('basket_mold_quote',{basket_id:basketId,composition_number:n,items,lightweight:true},'POST')}
+ async shell(){return catalogRequest('basket_flow_shell')},
+ async configuration(basketId,n){return catalogRequest('basket_flow_configuration',{basket_id:basketId,composition_number:n})},
+ async flowQuote(basketId,n,items){return catalogRequest('basket_flow_quote',{basket_id:basketId,composition_number:n,items},'POST')}
 };
 const deps={
  ...catalog,
