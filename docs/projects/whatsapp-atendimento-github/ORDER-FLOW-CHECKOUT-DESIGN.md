@@ -3,7 +3,7 @@
 Projeto: WhatsApp Atendimento GitHub — SUCEDOAN12  
 Atualizado: 25/10/2026 (America/Cuiaba)  
 Branch: project/whatsapp-atendimento-github-20261025  
-Estado: desenho aprovado para orientar as próximas rodadas; nenhum código foi alterado, nenhum Flow foi publicado e nenhum dado de cliente foi consultado.
+Estado: proposta documentada para orientar as próximas rodadas; validar os gates antes de programar. Nenhum código foi alterado, nenhum Flow foi publicado e nenhuma linha de cliente foi consultada.
 
 ## 1. Decisão de arquitetura
 
