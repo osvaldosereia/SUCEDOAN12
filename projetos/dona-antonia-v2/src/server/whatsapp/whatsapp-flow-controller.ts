@@ -317,20 +317,37 @@ export function createWhatsAppFlowController(
     }
 
     if (action === 'data_exchange' && body.screen === 'PRODUCTS') {
+      let catalog: WhatsAppFlowCatalog;
+      let products: FlowCatalogProduct[];
+      let baskets: { readonly id: string; readonly title: string }[];
       try {
-        const catalog = await loadCatalog();
-        const products = activeProducts(catalog);
-        const basketId = text(data.basketId, 'cesta', 128);
-        const basket = basketById(catalog, basketId);
-        if (!basket) throw new Error('Cesta indisponível.');
-        const productGroups = productGroupsForBasket(catalog, basket, products);
+        catalog = await loadCatalog();
+        products = activeProducts(catalog);
+        baskets = availableBaskets(catalog, products);
+      } catch {
+        return makeResponse('BASKET', {
+          baskets: [],
+          errorMessage: 'As opções de compra estão temporariamente indisponíveis.',
+        });
+      }
+
+      const basketId = typeof data.basketId === 'string' ? data.basketId : '';
+      const basket = basketById(catalog, basketId);
+      if (!basket || !baskets.some((option) => option.id === basketId))
+        return makeResponse('BASKET', {
+          baskets,
+          errorMessage: 'Esta cesta está temporariamente indisponível.',
+        });
+
+      const productGroups = productGroupsForBasket(catalog, basket, products);
+      const allExtraGroups = extraGroups(catalog, products);
+      try {
         const selectedBasketLines = parseSelectedLines(
           data.basketLines,
           productGroups,
           'cesta',
           true,
         );
-        const allExtraGroups = extraGroups(catalog, products);
         const selectedExtraLines = parseSelectedLines(
           data.extraLines,
           allExtraGroups,
@@ -346,24 +363,13 @@ export function createWhatsAppFlowController(
           extraLines: selectedExtraLines,
         });
       } catch {
-        const catalog = await loadCatalog();
-        const products = activeProducts(catalog);
-        const basketId = typeof data.basketId === 'string' ? data.basketId : '';
-        const basket = basketById(catalog, basketId);
-        if (!basket) {
-          const baskets = availableBaskets(catalog, products);
-          return makeResponse('BASKET', {
-            baskets,
-            errorMessage: 'Esta cesta está temporariamente indisponível.',
-          });
-        }
         return makeResponse('PRODUCTS', {
           basketId: basket.id,
           basketName: basket.name,
           basketQuantity:
             typeof data.basketQuantity === 'number' ? data.basketQuantity : 1,
-          productGroups: productGroupsForBasket(catalog, basket, products),
-          extraGroups: extraGroups(catalog, products),
+          productGroups,
+          extraGroups: allExtraGroups,
           errorMessage: 'Revise as opções selecionadas.',
         });
       }
