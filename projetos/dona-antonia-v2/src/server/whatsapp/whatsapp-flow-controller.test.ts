@@ -116,12 +116,15 @@ describe('createWhatsAppFlowController', () => {
   });
 
   it('quotes a sanitized order on the customer screen before review', async () => {
-    const quote = vi.fn(async () => ({
-      totalCents: 12345,
-      basketSubtotalCents: 10000,
-      extrasSubtotalCents: 2345,
-      itemCount: 3,
-    }));
+    const quote = vi.fn(async (payload: unknown) => {
+      void payload;
+      return {
+        totalCents: 12345,
+        basketSubtotalCents: 10000,
+        extrasSubtotalCents: 2345,
+        itemCount: 3,
+      };
+    });
     const controller = createWhatsAppFlowController({
       readCatalog: async () => catalog,
       quote,
