@@ -123,10 +123,10 @@ describe('R16 rollout readiness', () => {
     expect(result.checks.filter((check) => check.required && !check.passed)).toHaveLength(3);
   });
 
-  it('requires two or three distinct operator evidence references', () => {
+  it('accepts one to three distinct operator evidence references', () => {
     expect(
-      evaluateR16Readiness(readyManifest({ operatorRefs: ['op_r16_operator_01'] })).status,
-    ).toBe('blocked');
+      evaluateR16Readiness(readyManifest({ operatorRefs: ['op_r16_owner_01'] })).status,
+    ).toBe('ready-to-start-isolated-staging');
     expect(
       evaluateR16Readiness(
         readyManifest({ operatorRefs: ['op_r16_operator_01', 'op_r16_operator_02'] }),
