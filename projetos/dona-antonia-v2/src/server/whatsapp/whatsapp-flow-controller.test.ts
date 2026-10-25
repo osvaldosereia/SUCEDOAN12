@@ -185,7 +185,9 @@ describe('createWhatsAppFlowController', () => {
       },
     });
 
-    await expect(controller({ action: 'BACK', screen: 'PRODUCTS', flow_token: 'flow-session-1234567890' })).resolves.toEqual({
+    await expect(
+      controller({ action: 'BACK', screen: 'PRODUCTS', flow_token: 'flow-session-1234567890' }),
+    ).resolves.toEqual({
       screen: 'BASKET',
       data: { baskets: [{ id: 'mini', title: 'Cesta Mini' }] },
     });
@@ -304,7 +306,9 @@ describe('createWhatsAppFlowController', () => {
       },
     });
 
-    await expect(controller({ action: 'DELETE_EVERYTHING', flow_token: 'flow-session-1234567890' })).rejects.toThrow();
+    await expect(
+      controller({ action: 'DELETE_EVERYTHING', flow_token: 'flow-session-1234567890' }),
+    ).rejects.toThrow();
   });
 
   it('acknowledges client error notifications and returns a safe unavailable state', async () => {
@@ -316,9 +320,15 @@ describe('createWhatsAppFlowController', () => {
     });
 
     await expect(
-      controller({ action: 'data_exchange', flow_token: 'flow-session-1234567890', data: { error: 'client error' } }),
+      controller({
+        action: 'data_exchange',
+        flow_token: 'flow-session-1234567890',
+        data: { error: 'client error' },
+      }),
     ).resolves.toEqual({ data: { acknowledged: true } });
-    await expect(controller({ action: 'INIT', flow_token: 'flow-session-1234567890' })).resolves.toEqual({
+    await expect(
+      controller({ action: 'INIT', flow_token: 'flow-session-1234567890' }),
+    ).resolves.toEqual({
       screen: 'BASKET',
       data: {
         baskets: [],
@@ -353,7 +363,9 @@ describe('createWhatsAppFlowController', () => {
       quote: vi.fn(),
     });
 
-    await expect(controller({ action: 'INIT', flow_token: 'flow-session-1234567890' })).resolves.toEqual({
+    await expect(
+      controller({ action: 'INIT', flow_token: 'flow-session-1234567890' }),
+    ).resolves.toEqual({
       screen: 'BASKET',
       data: {
         baskets: [],
