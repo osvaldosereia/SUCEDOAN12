@@ -27,6 +27,18 @@ Estado: concluída nesta data.
 - [ ] O código da aplicação ainda não começou.
 - [ ] A branch ainda não foi publicada nem implantada.
 
+## Rodada 0.5 — Pesquisa do configurador de Flows
+
+Estado: concluída em 25/10/2026. Pesquisa Meta e comparação de padrões de Blip, Infobip, WATI, Twilio e Gupshup registrada em FLOW-RESEARCH.md.
+
+- [x] Distinguir Flow estático de dinâmico e registrar por que preço e total de cesta exigem validação em endpoint.
+- [x] Documentar ciclo Draft/Published, preview, validação, teste e retorno ao atendimento.
+- [x] Definir recomendações de interface: wizard guiado, modo JSON avançado, status separado por canal e publicação manual.
+- [x] Registrar limites de segurança, runtime externo ao Supabase e imagens/quantidades que ainda exigem prova no schema e em WhatsApp real.
+- [ ] Nenhum runtime, integração Meta, Flow, produto, cesta ou tela foi criado nesta rodada.
+
+Saída: pesquisa técnica e requisitos iniciais revisáveis em docs/projects/whatsapp-atendimento-github/FLOW-RESEARCH.md.
+
 ## Rodada 1 — Levantamento da cesta e plano de importação
 
 Estado: bloqueada aguardando exportação bruta. A inspeção encontrou somente um CSV de 15 combinações preparado para catálogo Meta; ele não contém as relações completas de cestas/produtos/quantidades e não será usado como importação. A tela de composição usa o backend atual, que não foi chamado.
@@ -83,20 +95,25 @@ Saída: interface revisável, ligada ao catálogo/cestas versionados sem afetar 
 
 ## Rodada 4 — Configurador de WhatsApp Flow
 
+Estado: pesquisa e requisitos iniciais concluídos; implementação ainda não iniciada. Detalhamento e fontes em FLOW-RESEARCH.md.
+
 Objetivo: transformar a configuração das cestas em um Flow real, por canal.
 
-- Manter configuração independente para os dois números de WhatsApp; referência atual: final 0975 e final 1018.
-- Validar WABA ID, phone number ID, categoria, versão do Graph API e permissões com a conexão Meta existente antes de qualquer chamada de escrita.
-- Configurar nome, telas, navegação e referência ao conjunto de cestas por versão.
-- Validar JSON contra o schema e os componentes reais da Meta; mostrar erros com tela/campo.
-- Gerar prévia de tela realista somente com os componentes oficialmente disponíveis.
-- Verificar especificamente se e como fotos de produtos são suportadas; não substituir ausência de recurso por imagem conceitual.
-- Exibir rascunho, validação, publicação e versão de cada canal de forma separada.
-- Não publicar nem enviar mensagem nesta rodada.
+- Manter configuração independente para os dois números; finais 0975 e 1018 são apenas referências até confirmar WABA ID e phone number ID.
+- Configurar nome, categoria, telas, navegação e referência explícita à revisão da cesta.
+- Usar wizard guiado como caminho principal e editor JSON avançado opcional; cada bloco deve mapear para componente oficial.
+- Validar JSON contra schema e componentes Meta; apontar erro por tela/campo.
+- Oferecer prévia, teste em número controlado e publicação manual, com Draft/Published e saúde do endpoint por canal.
+- A Meta possui componente Image; validar a ligação dinâmica, os limites e o resultado em WhatsApp real antes de prometer fotos de produto ou controles compostos.
+- Usar campos numéricos e seleção apenas conforme validação oficial; provar seleção múltipla com quantidade por item antes de fixar a UX.
+- Flow estático não deve ser descrito como preço ao vivo. Para cálculo/validação de cesta, integrar endpoint HTTPS fora do Supabase na rodada 5.
+- Nenhuma publicação ou mensagem a cliente nesta rodada.
 
-Saída: Flow JSON versionado e prévia fiel, validada antes de integrar com a Meta.
+Saída: Flow JSON versionado, prévia sinalizada como local e jornada testada em canal controlado antes de qualquer publicação.
 
 ## Rodada 5 — Runtime dinâmico sem Supabase
+
+Recomendação técnica da pesquisa: manter o admin/editor e os dados comerciais no GitHub; usar um runtime HTTPS externo ao Supabase apenas para Data Exchange, webhook e chamadas Meta. Nenhum fornecedor foi escolhido.
 
 Objetivo: decidir e implementar a parte de servidor necessária para usar os dados atuais durante o Flow.
 
@@ -141,10 +158,12 @@ Saída: homologação real em ambiente de teste; cliente só entra depois de uma
 2. Como salvar no GitHub sem senha própria e sem expor token de escrita no navegador.
 3. Qual runtime HTTP fora do Supabase atenderá Data Exchange e operações Meta.
 4. Quais são os IDs oficiais de WABA e telefone para os dois canais.
-5. Quais componentes Meta vigentes podem apresentar foto, seleção múltipla, quantidade e total dinâmico.
+5. Confirmar no schema Meta vigente e em aparelho de teste a carga de imagens de produto e a UX de seleção múltipla com quantidades independentes; usar o endpoint para preço e total autoritativos.
 
 ## Registro do andamento
 
 - 2026-10-25 — R0 concluída. Repo/branch reconhecidos; branch isolada criada; HANDOFF preparado. Nenhum código, importação, consulta Supabase, chamada Meta ou deploy executados.
+
+- 2026-10-25 — Pesquisa de Flow concluída: Meta + Blip, Infobip, WATI, Twilio e Gupshup; requisitos e pendências registrados em FLOW-RESEARCH.md. Nenhuma integração Meta ou infraestrutura criada.
 
 - 2026-10-25 — Pré-verificação R1: exportação de 15 combinações identificada, mas insuficiente para a migração; aguardando CSV/JSON com tamanhos, tipos, produtos, quantidades por cesta e ordem. Nenhum dado importado.
