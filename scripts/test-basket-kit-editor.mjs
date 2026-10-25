@@ -20,12 +20,12 @@ for(const legacy of [
   assert.equal(admin.includes(legacy),false,`legacy basket composer must stay retired: ${legacy}`);
 }
 
-assert.match(admin,/basket-admin-section\.js\?v=basket-admin-three-tabs-20261023/,'Admin must load the three-tab Cestas controller');
+assert.match(admin,/basket-admin-section\.js\?v=basket-admin-flow-v1-20261025/,'Admin must load the Flow-ready Cestas controller');
 assert.match(admin,/basket-guided-builder\.js\?v=guided-v3/,'technical guided editor may remain loaded during migration');
 assert.match(adminUi,/DonaAntoniaBasketAdmin\?\.render/,'renderBaskets must delegate to the section controller');
 assert.doesNotMatch(adminUi,/DonaAntoniaGuidedBridge/,'retired basket-specific bridge must not return');
 
-assert.deepEqual([...section.matchAll(/data-basket-config-tab="([^"]+)"/g)].map(match=>match[1]),['types','quantities','carousel'],'Cestas exposes exactly three requested tabs');
+assert.deepEqual([...section.matchAll(/data-basket-config-tab="([^"]+)"/g)].map(match=>match[1]),['types','quantities','carousel','flow'],'Cestas exposes the four requested tabs');
 assert.doesNotMatch(section,/data-basket-advanced|data-basket-config-tab="(?:kits|store)"/,'legacy editors are not visible as tabs in the replaced session');
 assert.match(section,/kits:\{label:'Receitas de kits \(legado\)'/,'legacy kit editor remains callable for compatibility');
 assert.match(section,/store:\{label:'Operação de lotes antigos'/,'legacy lot editor remains callable for compatibility');

@@ -43,7 +43,7 @@ assert.match(ui,/data-mold-save/);
 assert.equal(/kit interno|kit base|assembly_kit/i.test(ui),false,'normal mold editor must not teach internal kits');
 
 const adminHtml=fs.readFileSync('vitrine/admin/index.html','utf8');
-assert.ok(adminHtml.includes('basket-admin-section.js?v=basket-admin-three-tabs-20261023'));
+assert.ok(adminHtml.includes('basket-admin-section.js?v=basket-admin-flow-v1-20261025'));
 const compositionSQL=fs.readFileSync('supabase/migrations/20261013122000_basket_mold_preferred_product_v1.sql','utf8');
 assert.match(compositionSQL,/metadata.*preferred/);
 assert.match(compositionSQL,/bool_or\(s\.is_preferred\)/);
@@ -62,7 +62,7 @@ assert.match(multiPreferredSQL,/count\(\*\) filter \(where s\.is_preferred\)/);
 assert.match(multiPreferredSQL,/\(\(sl\.composition_number - 1\) % r\.preferred_count\) \+ 1/);
 assert.match(multiPreferredSQL,/when c\.is_preferred then 'preferred_in_stock'/);
 assert.match(multiPreferredSQL,/where greatest\(0, coalesce\(s\.loose_sellable_stock/);
-assert.equal((section.match(/data-basket-config-tab=/g)||[]).length,3,'basket admin exposes exactly three tabs');
+assert.equal((section.match(/data-basket-config-tab=/g)||[]).length,4,'basket admin exposes exactly four tabs');
 
 // Gateway forwards the logged-in admin JWT and never loads a privileged server key.
 assert.match(api,/SUPABASE_ANON_KEY/);
