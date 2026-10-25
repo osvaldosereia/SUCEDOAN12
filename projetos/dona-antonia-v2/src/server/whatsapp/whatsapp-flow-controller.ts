@@ -1,3 +1,11 @@
+import {
+  normalizeCity,
+  normalizeDigits,
+  PAYMENT_METHODS,
+  type CheckoutOrderRequest,
+  type PaymentMethod,
+} from '../../core/checkout-order.ts';
+
 export interface FlowCatalogProduct {
   readonly sku: string;
   readonly name: string;
@@ -45,7 +53,7 @@ export interface WhatsAppFlowScreenResponse {
 
 export interface WhatsAppFlowControllerDependencies {
   readonly readCatalog: () => Promise<WhatsAppFlowCatalog>;
-  readonly quote: (payload: Readonly<Record<string, unknown>>) => Promise<unknown>;
+  readonly quote: (payload: CheckoutOrderRequest) => Promise<unknown>;
 }
 
 interface ProductOption {
@@ -246,6 +254,126 @@ function parseSelectedLines(
   return selected;
 }
 
+function optionalText(value: unknown, field: string, maxLength = 160): string {
+  if (value === undefined || value === null || value === '') return '';
+  return text(value, field, maxLength);
+}
+
+function normalizePhone(value: unknown): string {
+  let digits = normalizeDigits(text(value, 'telefone', 32));
+  if (digits.startsWith('00')) digits = digits.slice(2);
+  if (digits.startsWith('55') && (digits.length === 12 || digits.length === 13))
+    digits = digits.slice(2);
+  if (!/^\d{10,11}$/.test(digits)) throw new Error('Telefone inválido.');
+  return digits;
+}
+
+function deliveryDate(value: unknown): string {
+  const date = text(value, 'data de entrega', 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Data de entrega inválida.');
+  const parsed = new Date(`${date}T00:00:00.000Z`);
+  if (Number.isNaN(parsed.valueOf()) || parsed.toISOString().slice(0, 10) !== date)
+    throw new Error('Data de entrega inválida.');
+  return date;
+}
+
+function checkoutRequest(
+  catalog: WhatsAppFlowCatalog,
+  products: readonly FlowCatalogProduct[],
+  data: Record<string, unknown>,
+  flowToken: string,
+): CheckoutOrderRequest {
+  if (!/^[A-Za-z0-9._-]{16,120}$/.test(flowToken))
+    throw new Error('Token do Flow inválido.');
+  const basketId = text(data.basketId, 'cesta', 128);
+  const basket = basketById(catalog, basketId);
+  if (!basket) throw new Error('Cesta indisponível.');
+  const basketGroups = productGroupsForBasket(catalog, basket, products);
+  const basketLines = parseSelectedLines(data.basketLines, basketGroups, 'cesta', true);
+  const extras = parseSelectedLines(
+    data.extraLines,
+    extraGroups(catalog, products),
+    'extras',
+    false,
+  );
+
+  const customerName = text(data.customerName, 'nome', 120);
+  if (customerName.length < 3) throw new Error('Nome inválido.');
+  const city = normalizeCity(text(data.city, 'cidade', 80));
+  if (!city) throw new Error('Cidade fora da área de entrega.');
+  const rawPaymentMethod = text(data.paymentMethod, 'forma de pagamento', 40);
+  if (!(PAYMENT_METHODS as readonly string[]).includes(rawPaymentMethod))
+    throw new Error('Forma de pagamento inválida.');
+  const postalCode = normalizeDigits(text(data.postalCode, 'CEP', 16));
+  if (!/^\d{8}$/.test(postalCode)) throw new Error('CEP inválido.');
+
+  return {
+    basketId,
+    basketQuantity: positiveInteger(data.basketQuantity, 'cesta'),
+    basketLines,
+    extraLines: extras,
+    customer: {
+      name: customerName,
+      phone: normalizePhone(data.phone),
+      address: {
+        recipientName: optionalText(data.recipientName, 'destinatário', 120) || customerName,
+        postalCode,
+        street: text(data.street, 'logradouro', 160),
+        streetNumber: text(data.streetNumber, 'número', 32),
+        complement: optionalText(data.complement, 'complemento', 120),
+        neighborhood: text(data.neighborhood, 'bairro', 120),
+        city,
+        stateCode: 'MT',
+        referenceNote: optionalText(data.referenceNote, 'referência', 240),
+      },
+    },
+    paymentMethod: rawPaymentMethod as PaymentMethod,
+    deliveryDate: deliveryDate(data.deliveryDate),
+    idempotencyKey: `flow:${flowToken}`,
+  };
+}
+
+function publicReviewData(
+  request: CheckoutOrderRequest,
+  flowToken: string,
+  quoteValue: unknown,
+): Record<string, unknown> {
+  const quote = asRecord(quoteValue, 'cotação');
+  if (
+    'privateAdjustmentCents' in quote ||
+    'unitPriceCents' in quote ||
+    'sku' in quote ||
+    !Number.isSafeInteger(quote.totalCents) ||
+    Number(quote.totalCents) < 0
+  )
+    throw new Error('Cotação pública inválida.');
+
+  return {
+    flow_token: flowToken,
+    basketId: request.basketId,
+    basketQuantity: request.basketQuantity,
+    basketLines: request.basketLines,
+    extraLines: request.extraLines,
+    customerName: request.customer.name,
+    phone: request.customer.phone,
+    recipientName: request.customer.address.recipientName,
+    postalCode: request.customer.address.postalCode,
+    street: request.customer.address.street,
+    streetNumber: request.customer.address.streetNumber,
+    complement: request.customer.address.complement,
+    neighborhood: request.customer.address.neighborhood,
+    city: request.customer.address.city,
+    referenceNote: request.customer.address.referenceNote,
+    paymentMethod: request.paymentMethod,
+    deliveryDate: request.deliveryDate,
+    totalCents: Number(quote.totalCents),
+    totalLabel: new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(Number(quote.totalCents) / 100),
+  };
+}
+
 export function createWhatsAppFlowController(
   dependencies: WhatsAppFlowControllerDependencies,
 ): (input: unknown) => Promise<WhatsAppFlowScreenResponse> {
@@ -368,6 +496,21 @@ export function createWhatsAppFlowController(
           productGroups,
           extraGroups: allExtraGroups,
           errorMessage: 'Revise as opções selecionadas.',
+        });
+      }
+    }
+
+    if (action === 'data_exchange' && body.screen === 'CUSTOMER') {
+      try {
+        const catalog = await loadCatalog();
+        const products = activeProducts(catalog);
+        const flowToken = text(body.flow_token, 'flow_token', 120);
+        const request = checkoutRequest(catalog, products, data, flowToken);
+        const quote = await dependencies.quote(request);
+        return makeResponse('REVIEW', publicReviewData(request, flowToken, quote));
+      } catch {
+        return makeResponse('CUSTOMER', {
+          errorMessage: 'Não foi possível calcular o pedido. Revise os dados.',
         });
       }
     }
