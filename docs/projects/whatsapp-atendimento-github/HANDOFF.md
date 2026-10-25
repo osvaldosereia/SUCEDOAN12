@@ -1,0 +1,96 @@
+# Handoff — Admin de Atendimento WhatsApp com dados no GitHub
+
+Atualizado em 25/10/2026 (America/Cuiaba).
+
+## Objetivo do projeto
+
+Criar um admin novo e independente para preparar a operação de cestas básicas pelo WhatsApp. O admin terá um cadastro simples de produtos, um editor de cestas inspirado no Vitrine Admin e um configurador de WhatsApp Flows da Meta para os dois números da Dona Antônia.
+
+A meta de produto é evoluir o atendimento para que o cliente escolha e personalize a cesta dentro do WhatsApp, reduzindo a dependência do site público. A entrega será feita em etapas, com limites claros entre este projeto e a operação que já está no ar.
+
+## Escopo autorizado e decisões atuais
+
+- O projeto fica separado dentro do repositório osvaldosereia/SUCEDOAN12, em diretório próprio, com branch própria.
+- Para este projeto, produtos, cestas e definições de Flow terão sua fonte versionada no GitHub. Não usar Supabase nesta fase, nem para banco, leitura ou escrita.
+- Importar somente os produtos que estiverem referenciados pelas composições de cestas existentes no Vitrine Admin. Não importar o catálogo inteiro.
+- O cadastro de produtos deve ser simples e servir ao configurador de cestas.
+- O configurador de cestas deve permitir tamanhos, tipos de produto, produtos disponíveis por tipo, quantidade por tamanho de cesta e ordem de apresentação.
+- O Flow deverá ser configurado por número/canal Meta, sem misturar os dois números. A referência de contexto é os telefones terminados em 0975 e 1018; confirmar os identificadores oficiais de cada canal antes de qualquer operação Meta.
+- Não criar senha própria de acesso ao admin neste início.
+- Não gravar tokens Meta, chaves privadas, senhas, dados de clientes, mensagens ou pedidos em arquivos versionados.
+- Não publicar Flow, enviar mensagem a cliente, implantar endpoint ou alterar sistema em produção nesta fase de planejamento.
+- Toda interface de Flow deve usar apenas componentes e capacidades confirmados na especificação oficial atual da Meta. Não desenhar recursos fictícios.
+
+## Contexto técnico verificado
+
+- Repositório: osvaldosereia/SUCEDOAN12, público, branch principal main.
+- HEAD verificado de main ao iniciar: a9ae61f44321e93e99ef93e15a014253a202e35e.
+- O repositório também publica o site Dona Antônia e contém o Vitrine Admin e o Admin de catálogo. A raiz contém CNAME e o README descreve o sistema atual como produção.
+- O README atual informa que o site e os admins existentes usam o Supabase canônico. Esta nova iniciativa é uma exceção explícita somente para o projeto novo; não alterar README, runtime, dados, configurações ou arquivos da aplicação atual para impor essa decisão.
+- Branch criada para isolamento: project/whatsapp-atendimento-github-20261025. Ela parte do HEAD acima; não foi feito merge nem deploy.
+- Há especificações e trabalho prévio de WhatsApp Flow no repositório. A especificação docs/superpowers/specs/2026-10-24-whatsapp-flow-admin-design.md descreve um gerenciador dentro do Vitrine Admin que reutiliza Supabase e limita operações ao canal 1018. O plano docs/superpowers/plans/2026-10-25-flow-ready-cestas-admin.md também prepara o Flow a partir da configuração do Vitrine Admin. Usar esses arquivos como contexto, não como arquitetura aprovada para este projeto.
+- A PR #1406 é uma iniciativa distinta de Dona Antônia V2 para venda por WhatsApp Flow, em rascunho e com dependências Supabase. Não misturar nem mesclar esse trabalho automaticamente com o novo admin.
+
+## Limites de arquitetura que precisam ser tratados
+
+### GitHub como fonte de dados
+
+Os registros de produtos, cestas e configurações podem ser arquivos JSON versionados no repositório, com IDs estáveis, schema versionado, validação e histórico de commits. GitHub é armazenamento de arquivos e histórico de mudanças, não banco transacional nem servidor da aplicação.
+
+Como o repositório é público, os dados em arquivos públicos podem ser lidos por qualquer pessoa. Não colocar informação privada ou segredo nesses arquivos. Um admin sem senha ainda precisa de autorização GitHub para gravar mudanças na branch. Não embutir token de escrita no JavaScript do navegador. Até existir uma forma segura de gravar sem criar uma senha própria, manter a interface em preview/local ou somente leitura, e persistir alterações com fluxo GitHub autenticado.
+
+### WhatsApp Flow dinâmico
+
+A documentação oficial da Meta descreve a troca de dados de Flows como uma chamada criptografada a um endpoint HTTPS que processa a solicitação e devolve resposta criptografada. GitHub Pages entrega arquivos estáticos e não executa esse endpoint. Portanto, dados dinâmicos, validação durante o Flow e preço atualizado exigirão um runtime HTTP fora do Supabase. A escolha desse runtime permanece em aberto e precisa ser analisada antes de implementar a integração final.
+
+Um Flow sem endpoint pode ser mais estático e não deve ser apresentado como se consultasse dados ao vivo, atualizasse preços ou validasse disponibilidade em tempo real. A especificação oficial do endpoint está em https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/implementingyourflowendpoint e a referência oficial de componentes em https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/components.
+
+## Experiência desejada para o Flow
+
+Preservar as decisões já comunicadas pelo usuário, sempre conferindo o que a Meta realmente suporta:
+
+1. Mostrar os tamanhos de cesta e o menor preço disponível / indicação “A partir de”.
+2. Depois da escolha do tamanho, avançar por tipo de produto, uma etapa por vez.
+3. Mostrar as opções de produtos com nome e preço individual; iniciar com a opção mais barata quando a regra comercial permitir.
+4. Permitir mais de uma opção de produto quando o tipo da cesta permitir, com quantidade por produto.
+5. Atualizar o total enquanto o cliente personaliza a cesta, quando suportado pelo contrato real do Flow.
+6. Encerrar com resumo claro antes da confirmação.
+
+Fotos de produto são desejadas, mas não assumir que a interface de Flow oferece cartões ou controles personalizados. Confirmar a disponibilidade e o formato exatos na referência Meta vigente antes de desenhar o fluxo final.
+
+## Modelo inicial proposto
+
+- products.json: somente produtos referenciados nas cestas importadas, com ID estável, nome, marca, preço em centavos, imagem/URL quando válida, unidade e situação.
+- baskets.json: tamanhos, tipos/categorias de item, limite de quantidade por tipo/tamanho, produtos elegíveis e ordem.
+- flows/: JSON de Flow por canal e versão, sem credenciais, com relação clara à configuração comercial versionada.
+- schema_version em cada documento e validação automatizada antes de aceitar qualquer gravação.
+- Os arquivos de produto e cesta não devem guardar clientes, pedidos, conversas, consentimentos ou dados transacionais.
+
+Esse modelo é uma proposta de engenharia inicial, ainda não implementada. Ajustar campos somente depois de inspecionar a estrutura atual de cesta no Vitrine Admin e a exportação disponível sem Supabase.
+
+## Identidade e modo de atuação para futuras conversas
+
+Atue como Codex, colaborador técnico e programador sênior especializado em sistemas web e e-commerce. Priorize arquitetura modular, simples de operar, leve, validada, auditável e preparada para evolução. Antes de alterar arquivos, diferencie este projeto dos sistemas em produção e leia este handoff e o roadmap. Trabalhe em rodadas pequenas e concluídas, explique o que mudou e como foi verificado, não invente estados de Meta/GitHub, não exponha segredos e não peça confirmação repetidamente quando a ação já estiver autorizada. Respeite a instrução atual do projeto de não usar Supabase nem senha própria.
+
+## Estado no encerramento deste kickoff
+
+Concluído:
+- Repositório e branch principal reconhecidos.
+- Branch isolada criada a partir do main verificado.
+- Especificações atuais de Flow consultadas para separar o trabalho novo das iniciativas existentes.
+- Limites de repositório público, persistência GitHub sem token no navegador e endpoint dinâmico fora de GitHub Pages registrados.
+
+Ainda não feito:
+- Nenhuma aplicação ou tela foi codificada.
+- Nenhum dado de cesta/produto foi importado.
+- Nenhum acesso ao Supabase foi feito nesta iniciativa.
+- Nenhuma operação de criação, validação, publicação ou envio foi feita na Meta.
+- Nenhuma mudança foi feita no main nem no deploy do site.
+
+## Próxima ação
+
+Começar pela rodada 1 do roadmap: descobrir uma forma de exportar, pelo próprio Vitrine Admin, somente a configuração das cestas e os produtos referenciados, sem usar Supabase. Inspecionar o arquivo/exportação antes de normalizar os dados. Se não houver exportação pelo admin, registrar exatamente o bloqueio e solicitar o artefato necessário, sem substituir esse passo por uma consulta Supabase.
+
+## Instrução para retomar em uma nova conversa
+
+Abra primeiro este handoff e IMPLEMENTATION-ROADMAP.md em docs/projects/whatsapp-atendimento-github/ na branch project/whatsapp-atendimento-github-20261025 do repositório osvaldosereia/SUCEDOAN12. Continue na próxima ação registrada. Mantenha o projeto separado, não toque em main nem no site/admin em produção, não use Supabase, não crie senha própria e não publique nem envie mensagens pela Meta. Antes de iniciar o código do admin, resolva a coleta de dados de cestas e documente o mecanismo seguro de persistência GitHub.
