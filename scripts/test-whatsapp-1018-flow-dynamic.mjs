@@ -17,7 +17,10 @@ assert.equal(selectCanaryEngine(DYNAMIC_V2_FLOW_ID),'basket-editor-v2','only the
 const dispatchedEngines=[];
 await dispatchCanaryFlow({}, {flow_id:DYNAMIC_V2_FLOW_ID}, {}, {"basket-editor-v2":async()=>{dispatchedEngines.push('v2');return 'v2';},"legacy-v1":async()=>{dispatchedEngines.push('v1');return 'v1';}});
 assert.deepEqual(dispatchedEngines,['v2']);
-assert.match(read('supabase/functions/admin-whatsapp-templates-v1/index.ts'),/flow_id:\s*String\(flowId\)/,'signed canary token identifies the selected Meta Flow for safe engine routing');
+const adminFlowsSource=read('supabase/functions/admin-whatsapp-templates-v1/index.ts');
+assert.match(adminFlowsSource,/flow_id:\s*String\(flowId\)/,'signed canary token identifies the selected Meta Flow for safe engine routing');
+assert.match(adminFlowsSource,/FLOW_CANARY_TOKEN_TTL_MS\s*=\s*24\s*\*\s*60\s*\*\s*60\s*\*\s*1000/,'the initial Flow token uses a 24-hour lifetime');
+assert.match(adminFlowsSource,/flowToken=await signState\([^;\n]+FLOW_CANARY_TOKEN_TTL_MS/,'canary signing uses its longer lifetime, not the short edit-state default');
 assert.equal(flow.version,'7.3');assert.equal(flow.data_api_version,'3.0');
 assert.equal(flow.screens.length,6,'product editing uses one reusable screen and two catalog pages');
 const flowJsonText=JSON.stringify(flow);
@@ -130,6 +133,19 @@ const itemCount=27,basketId=shell.baskets[0].id;
 const makeItems=count=>Array.from({length:count},(_,i)=>({position_id:uuid(i+100),product_id:uuid(i+1000),name:'Produto '+(i+1)+' Marca A 1 kg',brand:'Marca A',image_url:'https://ssbesxgaijknwsjbsbcz.supabase.co/storage/v1/object/public/product-images/item-'+i+'.webp',packaging:'1 kg',price_cents:100,stock_quantity:20,quantity:i===0?2:1}));
 let activeItems=makeItems(itemCount),basketCalls=0;
 const secret='A'.repeat(64);
+const canaryIssuedAt=Date.now();
+const canaryToken=await signState({type:'da-flow-1018-canary',sender:'+5565984491018',to:'+5565999828360',flow_id:DYNAMIC_V2_FLOW_ID,nonce:'test-canary-nonce-1234'},secret,24*60*60*1000);
+const shortState=await signState({type:'basket-edit-state'},secret);
+const realDateNow=Date.now;
+Date.now=()=>canaryIssuedAt+8*60*60*1000;
+try{
+ const delayedClaims=await verifyState(canaryToken,secret);
+ assert.equal(delayedClaims.flow_id,DYNAMIC_V2_FLOW_ID,'canary remains valid when the recipient opens it hours after delivery');
+}finally{Date.now=realDateNow;}
+const shortStateIssuedAt=Date.now();
+Date.now=()=>shortStateIssuedAt+46*60*1000;
+try{await assert.rejects(()=>verifyState(shortState,secret),/state_expired/,'per-screen basket state keeps the existing 45-minute expiry');}
+finally{Date.now=realDateNow;}
 const deps={
  async shell(){return shell},
  async basket(id,n){return {ok:true,basket:{id,composition_number:n,display_price_cents:17270+n*100,stock_quantity:10},items:activeItems.map(x=>({...x,brand:'Marca '+n}))}},
