@@ -29,6 +29,8 @@ Estado: concluída nesta data.
 
 ## Rodada 1 — Levantamento da cesta e plano de importação
 
+Estado: bloqueada aguardando exportação bruta. A inspeção encontrou somente um CSV de 15 combinações preparado para catálogo Meta; ele não contém as relações completas de cestas/produtos/quantidades e não será usado como importação. A tela de composição usa o backend atual, que não foi chamado.
+
 Objetivo: trazer apenas os produtos usados nas cestas atuais, sem consultar Supabase.
 
 - Inspecionar o caminho disponível no Vitrine Admin para exportar tamanhos, tipos, produtos relacionados, quantidades e ordem.
@@ -144,3 +146,5 @@ Saída: homologação real em ambiente de teste; cliente só entra depois de uma
 ## Registro do andamento
 
 - 2026-10-25 — R0 concluída. Repo/branch reconhecidos; branch isolada criada; HANDOFF preparado. Nenhum código, importação, consulta Supabase, chamada Meta ou deploy executados.
+
+- 2026-10-25 — Pré-verificação R1: exportação de 15 combinações identificada, mas insuficiente para a migração; aguardando CSV/JSON com tamanhos, tipos, produtos, quantidades por cesta e ordem. Nenhum dado importado.
