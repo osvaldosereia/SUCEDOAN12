@@ -145,3 +145,22 @@ O código do Vitrine Admin carrega composições pelo módulo vitrine/admin/bask
 ## Revisão do checkout e uso limitado do Supabase — 25/10/2026
 
 A orientação mais recente do usuário autoriza aproveitar o cadastro de clientes existente, mantendo o catálogo e as cestas no GitHub. A inspeção somente de schema identificou customers, customer_phones, customer_addresses, papoai_order_drafts_v2 e orders no projeto “Dona Antônia”. Nenhuma linha pessoal foi lida ou alterada. A recomendação é pesquisar por telefone no backend, confirmar nome/endereço, coletar forma de pagamento no Flow e enviar um resumo sem preços unitários na conversa com os botões Confirmar pedido, Editar pedido e Cancelar. Só o primeiro botão confirma e encaminha um pedido. Detalhes, estados, proteções, fontes e gates estão em [ORDER-FLOW-CHECKOUT-DESIGN.md](ORDER-FLOW-CHECKOUT-DESIGN.md).
+
+
+## Complemento de pesquisa — catálogo, imagens, pedidos e Bling — 25/10/2026
+
+Este complemento é o estado mais recente e substitui a pendência antiga de obter um CSV manual antes de começar a migração. A pesquisa somente de leitura identificou a configuração atual em basket_admin_* no Supabase: cinco tamanhos ligados (Econômica, Mini, Pequena, Média e Grande), 61 produtos distintos como opções e 61 URLs de imagem WebP. São 59 URLs de Supabase Storage e 2 de GitHub Raw. As imagens ainda não foram baixadas ou avaliadas visualmente; não houve importação.
+
+O SUCEDOAN12 é um repositório público. Produtos, cesta e imagens versionados ficarão visíveis publicamente. O ajuste comercial interno não pode ser gravado no repositório; deve permanecer em configuração privada do servidor. Nenhuma credencial ou dado pessoal pode ser incluído em commit.
+
+O Vitrine Admin já oferece fila e detalhe de pedidos, separação por linha, faltas, sincronização com Bling, acompanhamento/solicitação de NF-e, gate de saída e conclusão com entrega/pagamento. A referência de operação é o código atual e as Edge Functions admin-products-live-v1/admin-service-intelligence-v1. Não copiar os módulos diretamente nem alterar a UI atual.
+
+Gate técnico prioritário: o criador canônico atual consulta public.products para preço/estoque, e o snapshot fiscal consulta products para identidade SKU/GTIN/nome. A nova entrada precisa usar snapshot do catálogo GitHub sem tornar Supabase a fonte de produtos. Provar o contrato de linha do pedido, estoque e Bling antes de implementar as telas de pedido ou Flow.
+
+A documentação detalhada está em:
+- [Pesquisa de catálogo, imagens, pedidos e Bling](ORDER-ADMIN-AND-IMAGE-RESEARCH.md)
+- [Plano de implementação para Work Luna Max](IMPLEMENTATION-PLAN-LUNA-MAX.md)
+
+## Próxima ação para Work Luna Max
+
+Começar pela Rodada 0 do novo plano: confirmar branch e diretório isolados; mapear autenticação sem senha própria; provar os contratos de identidade/SKU/GTIN/estoque, criação de pedido, separação e fiscal. Código começa somente depois desse gate, em projetos/whatsapp-atendimento-github/. Não alterar main, site público, Vitrine Admin ou funções já implantadas. Nenhum Flow deve ser publicado e nenhuma mensagem deve ser enviada a clientes durante a preparação.
