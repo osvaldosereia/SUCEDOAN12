@@ -28,8 +28,10 @@ assert.throws(()=>assertFlowPublishable({status:'DRAFT',endpoint_uri:'https://x.
 assert.throws(()=>assertFlowPublishable({status:'DRAFT',endpoint_uri:null,validation_errors:[]},{endpointUri:'https://x.test',publicKeyConfigured:true,privateKeyConfigured:true,metaAppSecretConfigured:true,sessionSecretConfigured:true}),e=>e.code==='meta_flow_endpoint_not_configured');
 
 let seen;
-const listed=await listFlowsViaMeta({accessToken:'server-token',graphVersion:'v99.0',wabaId:'123456',fetchImpl:makeFetch({data:[{id:'98765',name:'Cesta',status:'DRAFT',categories:['OTHER'],validation_errors:[]}]},200,(url,init)=>{seen={url,init}})});
+const listed=await listFlowsViaMeta({accessToken:'server-token',graphVersion:'v99.0',wabaId:'123456',fetchImpl:makeFetch({data:[{id:'98765',name:'Cesta',status:'DRAFT',categories:['OTHER'],validation_errors:[],health_status:{status:'AVAILABLE'}},{id:'98766',name:'Cesta B',status:'DRAFT',health_status:'AVAILABLE'}]},200,(url,init)=>{seen={url,init}})});
 assert.equal(listed.items[0].id,'98765');
+assert.equal(listed.items[0].health_status,null);
+assert.equal(listed.items[1].health_status,'AVAILABLE');
 assert.match(seen.url,/123456\/flows/);
 assert.equal(new URL(seen.url).searchParams.get('access_token'),null);
 assert.equal(seen.init.headers.Authorization,'Bearer server-token');
