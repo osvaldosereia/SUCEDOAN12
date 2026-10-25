@@ -39,10 +39,10 @@ Verificado pelo painel oficial da Meta e pelo Vitrine Admin em 25/10/2026:
 - O PR [#1410](https://github.com/osvaldosereia/SUCEDOAN12/pull/1410) está aberto. Esta revisão remove as rotas recíprocas rejeitadas pela Meta e mantém o retorno à lista no motor de navegação.
 - A Meta aceitou o JSON desta revisão sem erros no rascunho `Dona Antônia Cestas Básicas Dynamic V2`, ID `1817973829344642`, estado `DRAFT`. O endpoint retornado pela Meta para esse Flow é `https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/whatsapp-1018-basket-flow-v1`.
 - O Flow V1, ID `3300494700136506`, consta como `PUBLISHED` e não foi alterado.
-- A Edge Function `whatsapp-1018-basket-flow-v1` está `ACTIVE` versão 5, e `admin-whatsapp-templates-v1` está `ACTIVE` versão 26. A leitura posterior pelo conector Supabase confirmou o roteador V1/V2 implantado: tokens assinados com o ID do Flow V1 continuam no motor legado; o canário V2 entra no editor novo.
-- O Vitrine Admin confirmou que a Meta aceitou o envio de teste do rascunho ao número interno final `8360`, pelo remetente `1018`. Nenhum outro destino está disponível nessa ação.
+- A Edge Function `whatsapp-1018-basket-flow-v1` está `ACTIVE` versão 5, e `admin-whatsapp-templates-v1` está `ACTIVE` versão 27. A leitura após a implantação confirmou o roteador V1/V2: tokens assinados com o ID do Flow V1 continuam no motor legado; o canário V2 entra no editor novo.
+- O primeiro teste no aparelho retornou HTTP `427` (`flow_session_unavailable`). O token do convite inicial usava a validade padrão de 45 minutos, embora o convite tenha sido aberto várias horas depois. O emissor agora assina o convite inicial por 24 horas; os estados usados durante a edição continuam com validade de 45 minutos.
 - Os pré-requisitos de token Meta, Graph, número 1018, endpoint, chave privada, chave pública, correspondência entre as chaves e segredo do app aparecem `Pronto` no painel. Nenhum valor de segredo é incluído nesta documentação.
-- O aparelho precisa ainda ser usado para revisar o percurso visual, a resposta final no chat e sua apresentação no atendimento existente. A resposta registrada pelo Flow é uma solicitação para conferência humana; não cria pedido, não reserva estoque e não envia mensagem adicional.
+- Após a implantação, o Vitrine Admin confirmou que a Meta aceitou um novo envio de teste somente de `1018` para `8360`. O endpoint fixo registrou respostas HTTP `200` durante esse novo teste; não houve `427` no intervalo consultado. O aparelho ainda precisa abrir a mensagem mais recente e confirmar a navegação visual e a resposta descriptografada. A mensagem de teste anterior permanece expirada.
 
 ## Arquivos alterados nesta revisão
 
@@ -52,13 +52,13 @@ Verificado pelo painel oficial da Meta e pelo Vitrine Admin em 25/10/2026:
 - `supabase/functions/whatsapp-1018-basket-flow-v1/flow-release-router.mjs` — seleciona o motor por ID assinado do Flow.
 - `supabase/functions/whatsapp-1018-basket-flow-v1/images.mjs` — transformação de imagens e validação de host, caminho, formato, redirecionamento e tamanho.
 - `supabase/functions/whatsapp-1018-basket-flow-v1/index.ts` — integração do carregador de imagem ao endpoint existente.
-- `supabase/functions/admin-whatsapp-templates-v1/index.ts` — inclui o ID do Flow no token assinado do teste interno, sem alterar o remetente nem o destinatário.
-- `scripts/test-whatsapp-1018-flow-dynamic.mjs` — rotas, cotação, resposta de atendimento, criptografia e limites de imagem.
+- `supabase/functions/admin-whatsapp-templates-v1/index.ts` — inclui o ID do Flow e dá 24 horas de validade ao convite inicial do teste interno, mantendo o remetente e o destinatário fixos.
+- `scripts/test-whatsapp-1018-flow-dynamic.mjs` — inclui regressão de convite aberto após oito horas e preserva a expiração de 45 minutos dos estados de edição; também cobre rotas, cotação, atendimento, criptografia e limites de imagem.
 
 ## Próximas etapas
 
-1. Revisar no aparelho interno `8360` as fotos, alternativas, quantidade zero, estoque e total do canário já aceito pela Meta.
-2. Concluir um teste interno e conferir o cartão de resposta no atendimento existente; verificar que nenhum pedido ou reserva foi criado.
+1. Abrir no aparelho interno `8360` a mensagem de teste mais recente enviada por `1018` e confirmar que a resposta é descriptografada; não reutilizar o convite anterior, que expirou.
+2. Revisar fotos, alternativas, quantidade zero, estoque e total; concluir o teste interno e conferir o cartão no atendimento existente, confirmando que nenhum pedido ou reserva foi criado.
 3. Manter o Flow em `DRAFT` até a conferência visual e funcional terminar. A publicação exige uma decisão operacional posterior no Vitrine Admin.
 
 No commit `698378d8664711654a0360086a09b795e47bdb27`, os checks `WhatsApp 1018 Dynamic Flow CI`, `WhatsApp 1018 Basket Lab CI` e `WhatsApp Meta Central CI` passaram. Os checks amplos `Checkout Hotfix CI` e `Basket product carousel` falharam em contratos de checkout/carrossel não alterados por este PR.
