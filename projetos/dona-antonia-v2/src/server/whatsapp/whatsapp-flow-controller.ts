@@ -169,21 +169,23 @@ function extraGroups(
   products: readonly FlowCatalogProduct[],
 ): ExtraGroup[] {
   if (!Array.isArray(catalog.extras)) throw new Error('Catálogo público inválido.');
-  return catalog.extras
+  const groups: ExtraGroup[] = [];
+  const extras = catalog.extras
     .filter((extra) => extra.active === true)
     .slice()
-    .sort((left, right) => left.order - right.order)
-    .map((extra) => {
-      const type = catalog.types.find((item) => item.id === extra.typeId && item.active !== false);
-      const options = productOptions(catalog, extra.typeId, products);
-      if (!type || options.length === 0) return null;
-      return {
-        typeId: text(type.id, 'tipo extra', 128),
-        typeName: text(type.name, 'grupo extra', 100),
-        options,
-      };
-    })
-    .filter((group): group is ExtraGroup => group !== null);
+    .sort((left, right) => left.order - right.order);
+
+  for (const extra of extras) {
+    const type = catalog.types.find((item) => item.id === extra.typeId && item.active !== false);
+    const options = productOptions(catalog, extra.typeId, products);
+    if (!type || options.length === 0) continue;
+    groups.push({
+      typeId: text(type.id, 'tipo extra', 128),
+      typeName: text(type.name, 'grupo extra', 100),
+      options,
+    });
+  }
+  return groups;
 }
 
 function availableBaskets(
