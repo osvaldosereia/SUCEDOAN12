@@ -2,7 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.58.0";
 import {buildTemplateCacheRows,listTemplatesViaMeta,createTemplateViaMeta,editTemplateViaMeta,deleteTemplateViaMeta,MetaTemplatesError} from "../_shared/whatsapp-meta-templates-v1.mjs";
 import {listFlowsViaMeta,getFlowViaMeta,createFlowViaMeta,uploadFlowJsonViaMeta,configureFlowEndpointViaMeta,getBusinessPublicKeyStatusViaMeta,derivePublicKeyPem,registerBusinessPublicKeyViaMeta,publishFlowViaMeta,deleteFlowViaMeta,sendDraftFlowCanaryViaMeta,assertFlowPublishable,validateFlowJson,MetaFlowsError} from "../_shared/whatsapp-meta-flows-v1.mjs";
-import {signState,FLOW_CANARY_SENDER_E164,FLOW_CANARY_RECIPIENT_E164} from "../_shared/whatsapp-flow-session-v1.mjs";
+import {deriveFlowSessionKey,signState,FLOW_CANARY_SENDER_E164,FLOW_CANARY_RECIPIENT_E164} from "../_shared/whatsapp-flow-session-v1.mjs";
 import {sendTemplateViaMeta,MetaTransportError} from "../_shared/whatsapp-meta-transport-v1.mjs";
 import {buildPostorderTemplate} from "../_shared/customer-postorder-template-v3.mjs";
 import {buildPostorderOffersTemplate,buildPostorderConfirmTemplate} from "../_shared/customer-postorder-followup-templates-v1.mjs";
@@ -13,7 +13,6 @@ const META_WHATSAPP_ACCESS_TOKEN=(Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||""
 const META_WHATSAPP_GRAPH_VERSION=(Deno.env.get("META_WHATSAPP_GRAPH_VERSION")||"").trim();
 const DA_FLOW_1018_RSA_PKCS8=(Deno.env.get("DA_FLOW_1018_RSA_PKCS8")||"").trim();
 const META_WHATSAPP_APP_SECRET=(Deno.env.get("META_WHATSAPP_APP_SECRET")||"").trim();
-const DA_FLOW_1018_SESSION_SECRET=(Deno.env.get("DA_FLOW_1018_SESSION_SECRET")||"").trim();
 const FLOW_FUNCTION_PATH="/functions/v1/whatsapp-1018-basket-flow-v1";
 const db=createClient(SUPABASE_URL,SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
@@ -126,8 +125,7 @@ function flowReadiness(account,role){
     private_key:Boolean(DA_FLOW_1018_RSA_PKCS8),
     public_key_registered:false,
     public_key_matches_private:false,
-    meta_app_secret:Boolean(META_WHATSAPP_APP_SECRET),
-    session_secret:Boolean(DA_FLOW_1018_SESSION_SECRET)
+    meta_app_secret:META_WHATSAPP_APP_SECRET.length>=16
   };
   return {ready:Object.values(checks).every(Boolean),channel:"1018",flow_endpoint_url:flowEndpointUri(),can_manage:role==="owner",checks};
 }
@@ -235,9 +233,8 @@ async function handleFlowMutation(req,action,body,auth){
       publicKeyMatchesPrivateKey:readiness.checks.public_key_matches_private,
       privateKeyConfigured:readiness.checks.private_key,
       metaAppSecretConfigured:readiness.checks.meta_app_secret,
-      sessionSecretConfigured:readiness.checks.session_secret
     });
-    const flowToken=await signState({type:"da-flow-1018-canary",sender:FLOW_CANARY_SENDER_E164,to:FLOW_CANARY_RECIPIENT_E164,nonce:crypto.randomUUID()},DA_FLOW_1018_SESSION_SECRET);
+    const flowToken=await signState({type:"da-flow-1018-canary",sender:FLOW_CANARY_SENDER_E164,to:FLOW_CANARY_RECIPIENT_E164,nonce:crypto.randomUUID()},await deriveFlowSessionKey(META_WHATSAPP_APP_SECRET));
     const sent=await sendDraftFlowCanaryViaMeta({...args,flowId,flowToken});
     return json(req,{ok:sent.sent,flow_id:flowId,recipient_last_four:"8360",provider_message_id:sent.providerMessageId},sent.sent?200:502);
   }
@@ -258,7 +255,6 @@ async function handleFlowMutation(req,action,body,auth){
       ...args,flowId,endpointUri:flowEndpointUri(),privateKeyPem:DA_FLOW_1018_RSA_PKCS8,
       privateKeyConfigured:readiness.checks.private_key,
       metaAppSecretConfigured:readiness.checks.meta_app_secret,
-      sessionSecretConfigured:readiness.checks.session_secret
     });
     return json(req,{ok:published.published,flow:published},published.published?200:502);
   }
