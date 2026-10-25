@@ -105,6 +105,16 @@ describe('handleWhatsAppFlowEndpoint', () => {
     expect(invalidSignature.status).toBe(432);
   });
 
+  it('rejects oversized request bodies before signature verification', async () => {
+    const response = await handleWhatsAppFlowEndpoint(request('x'.repeat(1_000_001)), {
+      appSecret: 'meta-test-secret',
+      privateKeyPem: 'not-used',
+      onRequest: () => ({ data: { status: 'active' } }),
+    });
+
+    expect(response.status).toBe(413);
+  });
+
   it('maps decryption errors to the Meta endpoint status without calling the controller', async () => {
     const fixture = await makeFixture();
     let controllerCalled = false;
