@@ -35,7 +35,9 @@ assert.match(api,/loose_sellable_stock/i,'storefront mold detail must read loose
 assert.match(api,/mold_mode\s*:\s*true/i,'public cards must identify mold compositions');
 assert.match(api,/composition_number/i,'public cards/details must keep composition identity');
 assert.match(api,/basket_mold/i,'storefront API must expose mold detail/order payloads');
-assert.match(api,/basket_mold_composition_invalid[^\n]+includes\(e\)\?409:400/i,'mold checkout conflicts must map to HTTP 409');
+const orderConflictCodes=api.match(/const ORDER_CONFLICT_CODES=new Set<string>\(\[([\s\S]*?)\]\);/i);
+assert.ok(orderConflictCodes?.[1].includes('"basket_mold_composition_invalid"'),'composition conflicts are in the centralized conflict-code set');
+assert.match(api,/ORDER_CONFLICT_CODES\.has\(e\)\?409:400/i,'mold checkout conflicts must map to HTTP 409');
 assert.doesNotMatch(api,/stock_reserved:false,reservation_timing:"on_confirmation"/i,'storefront must not override the database on-create reservation result');
 assert.match(api,/stock_reserved:created\.data\?\.stock_reserved===true/i,'storefront event telemetry must reflect the database reservation result');
 assert.match(api,/reservation_timing:created\.data\?\.reservation_timing\|\|null/i,'storefront event telemetry must reflect the database reservation timing');
@@ -113,3 +115,4 @@ assert.ok(root.includes("await api('basket_mold_options'")||root.includes("await
 assert.doesNotMatch(api,/randomized=alts\.slice/,'API must not randomize price ordering');
 
 console.log('basket mold storefront R5: PASS');
+
