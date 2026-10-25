@@ -13,6 +13,7 @@ Permitir que o cliente monte e confirme um pedido de cesta dentro do WhatsApp, u
 - R12 grava eventos Utility em outbox, com contas desabilitadas por padrão; o estado remoto não tem transporte Meta, credenciais, worker ou envios.
 - A V2 expõe `get_storefront_catalog` e já possui `quote_storefront_order` / `create_storefront_order`; o servidor calcula preço e valida estoque, endereço e regras comerciais.
 - A V2 não tem endpoint WhatsApp Flow nem recepção do resultado `nfm_reply`.
+- A consulta somente-leitura do catálogo público do projeto Supabase Dona Antônia V2 encontrou apenas dados de homologação R16: uma cesta de teste, três tipos de produto de teste e nenhum extra. Não há catálogo comercial para publicar ou vender agora.
 
 ## Objetivos e aceite
 
