@@ -17,8 +17,8 @@
 | R08 | Cotação e checkout transacional | **Parcial no banco; sem fluxo ponta a ponta** | Migração/função de cotação existem; 0 pedidos e confirmação no checkout está desabilitada |
 | R09 | Pedidos persistentes, quatro abas | **Parcial no banco; UI demonstrativa** | Estruturas existem; 0 pedidos e painel usa amostras em memória |
 | R10 | Separação e multioperador | **Parcial no banco; não homologada no app** | Comandos/eventos/versionamento existem no banco; interface V2 permanece demonstrativa |
-| R11 | Inbox WhatsApp humano V2 | **Estrutura parcial; não operacional** | Tabelas existem; 0 conversas/mensagens e 0 Edge Functions |
-| R12 | Mensagens Utility Meta por evento | **Scaffold inativo** | 8 templates pendentes/inativos; 2 configurações, nenhuma habilitada; 0 mensagens |
+| R11 | Inbox WhatsApp humano V2 | **Estrutura parcial; não operacional** | Índices de conversa/mensagem idempotente existem; 0 conversas/mensagens e 0 Edge Functions |
+| R12 | Mensagens Utility Meta por evento | **Scaffold inativo** | 8 templates pendentes/inativos; 2 configurações, nenhuma habilitada; idempotência/retry no schema, sem worker; 0 mensagens |
 | R13 | NF-e Bling pós-separação | **Estrutura parcial; integração ausente** | Tabelas/modelos fiscais existem; sem Edge Function ou documentos fiscais |
 | R14 | Clientes/entrega/relatórios essenciais | **Estrutura parcial; sem uso no app** | Tabelas existem; 0 clientes na contagem agregada |
 | R15 | Auditoria final/performance/homologação | Planejada | Depende de integração ponta a ponta e testes de segurança/performance |
