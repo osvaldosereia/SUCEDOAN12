@@ -38,17 +38,19 @@ interface Product {
   name: string;
   brand: string;
   presentation: string;
+  /** Effective individual price: offer price when present, otherwise regular price. */
   unitPriceCents: MoneyCents;
   imagePath: string; // relativo a este projeto; sem Base64
-  sku: string;
+  sku: string | null;
   gtin: string | null;
-  blingProductId: string;
+  blingProductId: string | null;
   active: boolean;
 }
 
 interface BasketProductGroup {
   id: ProductGroupId;
   label: string;
+  category: string;
   productIds: ProductId[];
   minimumQuantity: number;
   maximumQuantity: number;
@@ -61,18 +63,33 @@ interface Basket {
   name: string;
   active: boolean;
   sortOrder: number;
+  /** Commercial starting price, in BRL cents. Never contains the private adjustment as a separate value. */
   basePriceCents: MoneyCents;
   groups: BasketProductGroup[];
 }
 
-interface CatalogDocument {
+interface ProductsDocument {
   schemaVersion: 1;
   products: Product[];
+}
+
+interface BasketsDocument {
+  schemaVersion: 1;
   baskets: Basket[];
 }
 ```
 
-O JSON público não recebe campo para o ajuste interno de preço nem informação de estoque. O servidor calcula o total a partir do commit do catálogo e de regra privada de preço. Imagens usam caminho relativo validado, MIME permitido, checksum e tamanho limitado; a resolução final será definida depois da revisão visual prevista na Rodada 1.
+O JSON público não recebe campo para o ajuste interno de preço nem informação de estoque. O servidor calcula o total a partir do commit do catálogo e de regra privada de preço. Imagens usam caminho relativo validado, MIME permitido, checksum e tamanho limitado. `products.json` e `baskets.json` são documentos separados, ambos com `schemaVersion: 1`.
+
+## 3.1 Resultado da Rodada 1 — catálogo inicial
+
+- A seleção foi refeita na configuração ativa de cesta: cinco tamanhos e 61 produtos distintos, ligados por 110 grupos (13 Econômica, 22 Mini, 25 Pequena, 25 Média e 25 Grande). A configuração ativa é a fonte usada para o catálogo inicial; isso difere das dez posições-base descritas na pesquisa histórica de templates.
+- Só campos de catálogo/composição foram lidos. Estoque, ajustes internos, cadastro de clientes, pedidos e mensagens não fizeram parte da extração.
+- IDs de produto mantêm os identificadores estáveis da origem para reconciliação. IDs de cesta/grupo são nomes estáveis próprios deste projeto. Os campos e documentos resultantes seguem os contratos novos acima.
+- Preço individual publicado usa `offer_price` quando existe e, nos demais casos, `price`, convertido para centavos. Essa regra é explícita no novo catálogo; revisar ofertas antes de ligar o runtime.
+- Dois produtos não têm `blingProductId` e dois não têm `sku`; eles permanecem no catálogo com o campo ausente em `null`, mas a integração fiscal deverá bloquear esses itens até completar o mapeamento.
+- O tratamento de imagens deve registrar SHA-256, dimensões, bytes e origem permitida. Nenhuma URL de origem entra no catálogo de runtime; os caminhos são locais ao projeto.
+- A extração não altera a fonte Supabase. Nenhuma migration, deploy, chamada Meta/Bling, publicação ou mensagem foi feita.
 
 ## 4. Checkout, cliente e pedido
 

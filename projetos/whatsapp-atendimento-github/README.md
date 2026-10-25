@@ -8,7 +8,7 @@ Este é o único diretório de código do projeto novo: `projetos/whatsapp-atend
 
 ## Etapa atual
 
-Rodada 0: definição dos contratos mínimos em [CONTRACTS.md](CONTRACTS.md). Ainda não há tela, runtime, migration, catálogo importado, credencial configurada ou chamada de produção.
+Rodada 1: catálogo e imagens iniciais em [catalog/](catalog/), com tipos e validação em [src/domain/catalog.ts](src/domain/catalog.ts). A origem e os limites da importação estão documentados em [CONTRACTS.md](CONTRACTS.md). Não há tela, runtime, migration, credencial configurada ou chamada de produção.
 
 ## Regras de segurança
 
@@ -27,5 +27,11 @@ Rodada 0: definição dos contratos mínimos em [CONTRACTS.md](CONTRACTS.md). Ai
 - `supabase/functions/`: funções novas deste projeto, isoladas das funções existentes.
 - `supabase/migrations/`: modelo transacional novo, somente depois de o contrato de checkout ser fechado.
 - `catalog/` e `images/`: catálogo público e imagens compactadas, a partir da Rodada 1.
+
+## Catálogo inicial
+
+- O recorte contém os produtos atualmente ligados às cinco cestas ativas; os JSONs não incluem estoque, cliente, pedido nem ajuste interno de preço.
+- Cada foto WebP fica em `images/products/`, em caminho relativo. O manifesto registra a origem permitida, hashes, dimensões e tamanho final.
+- O importador de migração lê um arquivo temporário fora do Git; ele não consulta Supabase e não é dependência do Admin.
 
 Leia também o [handoff](../../docs/projects/whatsapp-atendimento-github/HANDOFF.md), a [pesquisa complementar](../../docs/projects/whatsapp-atendimento-github/ORDER-ADMIN-AND-IMAGE-RESEARCH.md) e o [plano greenfield](../../docs/projects/whatsapp-atendimento-github/IMPLEMENTATION-PLAN-LUNA-MAX.md).
