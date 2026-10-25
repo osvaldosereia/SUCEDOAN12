@@ -37,11 +37,12 @@ A sessão mantém uma cópia assinada dos itens e dos identificadores de posiç�
 Verificado pelo painel oficial da Meta e pelo Vitrine Admin em 25/10/2026:
 
 - O PR [#1410](https://github.com/osvaldosereia/SUCEDOAN12/pull/1410) está aberto. Esta revisão remove as rotas recíprocas rejeitadas pela Meta e mantém o retorno à lista no motor de navegação.
-- A Meta aceitou o JSON desta revisão sem erros no rascunho `Dona Antônia Cestas Básicas Dynamic V2`, ID `1817973829344642`, estado `DRAFT`.
+- A Meta aceitou o JSON desta revisão sem erros no rascunho `Dona Antônia Cestas Básicas Dynamic V2`, ID `1817973829344642`, estado `DRAFT`. O endpoint retornado pela Meta para esse Flow é `https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/whatsapp-1018-basket-flow-v1`.
 - O Flow V1, ID `3300494700136506`, consta como `PUBLISHED` e não foi alterado.
-- A Edge Function `whatsapp-1018-basket-flow-v1` está `ACTIVE`, versão 4. O runtime ainda não contém o carregador de imagens nem esta revisão do motor; por isso o teste interno no telefone ainda não foi executado. Como o Flow V1 publicado aponta para a mesma URL, a revisão mantém o motor antigo e usa o `flow_id` dentro do token assinado do canário para selecionar o motor V2.
+- A Edge Function `whatsapp-1018-basket-flow-v1` está `ACTIVE` versão 5, e `admin-whatsapp-templates-v1` está `ACTIVE` versão 26. A leitura posterior pelo conector Supabase confirmou o roteador V1/V2 implantado: tokens assinados com o ID do Flow V1 continuam no motor legado; o canário V2 entra no editor novo.
+- O Vitrine Admin confirmou que a Meta aceitou o envio de teste do rascunho ao número interno final `8360`, pelo remetente `1018`. Nenhum outro destino está disponível nessa ação.
 - Os pré-requisitos de token Meta, Graph, número 1018, endpoint, chave privada, chave pública, correspondência entre as chaves e segredo do app aparecem `Pronto` no painel. Nenhum valor de segredo é incluído nesta documentação.
-- A homologação deve usar somente o envio 1018 → 8360. Concluir o Flow registra uma solicitação para conferência humana, sem criar pedido, reservar estoque ou enviar mensagem adicional.
+- O aparelho precisa ainda ser usado para revisar o percurso visual, a resposta final no chat e sua apresentação no atendimento existente. A resposta registrada pelo Flow é uma solicitação para conferência humana; não cria pedido, não reserva estoque e não envia mensagem adicional.
 
 ## Arquivos alterados nesta revisão
 
@@ -56,10 +57,11 @@ Verificado pelo painel oficial da Meta e pelo Vitrine Admin em 25/10/2026:
 
 ## Próximas etapas
 
-1. Publicar os commits desta revisão no PR e aguardar os checks específicos do Flow.
-2. Implantar a revisão do endpoint pelo Supabase; a versão ativa atual é anterior ao carregador de imagens e à navegação deste JSON.
-3. Usar **Testar rascunho no 8360** no Vitrine Admin, com remetente fixo 1018, e conferir fotos, alternativas, quantidade zero, estoque, total e a resposta no atendimento existente.
-4. Manter o Flow em `DRAFT` até a homologação visual e funcional no aparelho. A publicação exige uma decisão operacional posterior no Vitrine Admin.
+1. Revisar no aparelho interno `8360` as fotos, alternativas, quantidade zero, estoque e total do canário já aceito pela Meta.
+2. Concluir um teste interno e conferir o cartão de resposta no atendimento existente; verificar que nenhum pedido ou reserva foi criado.
+3. Manter o Flow em `DRAFT` até a conferência visual e funcional terminar. A publicação exige uma decisão operacional posterior no Vitrine Admin.
+
+No commit `698378d8664711654a0360086a09b795e47bdb27`, os checks `WhatsApp 1018 Dynamic Flow CI`, `WhatsApp 1018 Basket Lab CI` e `WhatsApp Meta Central CI` passaram. Os checks amplos `Checkout Hotfix CI` e `Basket product carousel` falharam em contratos de checkout/carrossel não alterados por este PR.
 
 ## Fontes
 
