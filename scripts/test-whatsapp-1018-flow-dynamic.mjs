@@ -91,7 +91,7 @@ const init=await flowExchange({action:'INIT'},deps);
 assert.equal(init.screen,'TAMANHO');assert.equal(init.data.tamanhos.length,5);
 const combos=await flowExchange({action:'data_exchange',screen:'TAMANHO',data:{etapa:'tamanho',tamanho:'mini'}},deps);
 assert.equal(combos.screen,'COMBINACAO');assert.equal(combos.data.opcoes.length,3);assert.match(combos.data.opcoes[0].description,/R\$/);
-assert.deepEqual(combos.data.resumoMarcas.split('\\n'),['Combinação 1: Marca 1','Combinação 2: Marca 2','Combinação 3: Marca 3']);
+assert.deepEqual(combos.data.resumoMarcas.split('\n'),['Combinação 1: Marca 1','Combinação 2: Marca 2','Combinação 3: Marca 3']);
 const first=await flowExchange({action:'data_exchange',screen:'COMBINACAO',data:{etapa:'combinacao',tamanho:'mini',combinacao:'1'}},deps);
 assert.equal(first.screen,ITEM_SCREENS[0]);assert.equal(first.data.vis0,true);
 assert.equal(first.data.marca0,items[0].product_id);
