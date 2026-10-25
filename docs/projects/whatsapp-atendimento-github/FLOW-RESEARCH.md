@@ -220,7 +220,11 @@ A primeira prova deve usar um catálogo e telefone de teste controlados e confir
 
 ### Recomendação de escopo
 
-Não iniciar o admin presumindo que Flow é o único caminho para fechar um pedido. Modelar desde o início IDs de produto e composição de cesta para suportar o carrinho nativo. Após obter os dados reais do Vitrine Admin, fazer a prova de conceito do carrinho com quantidades e validação de cesta. Manter Flow como recurso opcional para coleta de dados complementares ou exceções, se melhorar a experiência. A decisão final da jornada deve se basear nessa prova e não apenas em uma prévia visual.
+A recomendação preliminar de usar o carrinho nativo para resolver quantidades se aplica a compras livres cujo total seja a soma dos preços do catálogo. Depois de compreender a composição real da cesta SUCEDOAN12 — dez posições, quantidades padrão, substituição de marca, exclusão e preço-base com ajuste interno — essa recomendação deixa de ser adequada como jornada principal.
+
+Para esta cesta, a hipótese principal passa a ser Flow dinâmico com endpoint privado: escolha de marca, seletor por lista de quantidades, zero para retirar o item, recálculo ao avançar e total final validado no servidor. O Flow não tem um controle de carrinho com botões +/−; se o controle visual +/− for prioritário, o catálogo/carrinho pode ser provado como alternativa, aceitando que o valor comercial final será recalculado e mostrado depois do envio do carrinho.
+
+A análise específica, fórmula de preço, comparação de Meta e plataformas e sequência recomendada estão em [BASKET-ORDER-RESEARCH.md](BASKET-ORDER-RESEARCH.md). O adicional confidencial não deve ir para o repositório público nem para o JSON do Flow. Nenhuma implementação ou operação Meta foi feita.
 
 ## 9. Referências
 
