@@ -184,6 +184,12 @@ describe('createWhatsAppFlowController', () => {
       quote: vi.fn(),
     });
 
-    await expect(controller({ action: 'INIT' })).rejects.toThrow();
+    await expect(controller({ action: 'INIT' })).resolves.toEqual({
+      screen: 'BASKET',
+      data: {
+        baskets: [],
+        errorMessage: 'As opções de compra estão temporariamente indisponíveis.',
+      },
+    });
   });
 });
