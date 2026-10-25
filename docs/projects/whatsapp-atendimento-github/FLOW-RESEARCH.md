@@ -216,7 +216,7 @@ GitHub permanece como fonte de verdade do novo projeto. Para que o WhatsApp most
 
 Cada produto deve ter ID estável no GitHub, correspondente ao product_retailer_id do catálogo Meta. O admin pode, numa etapa posterior, gerar uma exportação/sincronização revisável para esse catálogo. Nenhuma sincronização ou chamada à Meta foi realizada nesta pesquisa.
 
-A primeira prova deve usar um catálogo e telefone de teste controlados e confirmar: renderização dos produtos, adição de itens, alteração de quantidade, envio do carrinho, recebimento do webhook e validação das regras da cesta. Também deve conferir como o carrinho se comporta quando a jornada envia mais de uma mensagem de produto. A Meta limita a mensagem multiproduto a 30 itens e até 10 seções; listas interativas comuns têm até 10 linhas. Para campanhas/prospecção, a Meta oferece mensagens multiproduto em formato de template, com regras próprias de aprovação e envio.
+A primeira prova deve usar um catálogo e telefone de teste controlados e confirmar: renderização dos produtos, adição de itens, alteração de quantidade, envio do carrinho, recebimento do webhook e validação das regras da cesta. Também deve conferir como o carrinho se comporta quando a jornada envia mais de uma mensagem de produto. A Meta limita a mensagem multiproduto a 30 itens agrupados em seções; templates multiproduto podem organizar até 30 itens em até 10 seções. Listas interativas comuns têm até 10 linhas. Templates têm regras próprias de categoria, aprovação e envio.
 
 ### Recomendação de escopo
 
