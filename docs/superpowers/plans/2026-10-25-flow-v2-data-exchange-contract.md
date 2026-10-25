@@ -32,17 +32,17 @@
 - Modify: `scripts/test-whatsapp-1018-flow-dynamic.mjs`
 - Modify: `.github/workflows/whatsapp-1018-flow-dynamic-ci.yml`
 
-- [ ] Make the existing Flow contract check read `flow-dynamic-v2.json`.
-- [ ] Assert that the nested list-item action payload declares `indice` as a string.
-- [ ] Add the V2 JSON and contract test to the workflow path filter.
-- [ ] Run the workflow once and confirm the new assertion fails against the current draft JSON.
+- [x] Make the existing Flow contract check read `flow-dynamic-v2.json`.
+- [x] Assert that the nested list-item action payload declares `indice` as a string.
+- [x] Add the V2 JSON and contract test to the workflow path filter.
+- [x] Run the workflow once and confirm the new assertion fails against the current draft JSON.
 
 ### Task 2: Correct the V2 JSON and validate in Meta
 
 **Files:**
 - Modify: `vitrine/admin/whatsapp-lab/meta-flow/flow-dynamic-v2.json`
 
-- [ ] Add `indice: { type: "string" }` to the item action payload schema.
-- [ ] Run the dynamic Flow contract workflow and confirm it passes.
-- [ ] Upload the file to the existing V2 DRAFT in Vitrine Admin and inspect the Meta validation result.
-- [ ] Test the draft with the restricted internal recipient; keep it DRAFT for owner review.
+- [x] Add `indice: { type: "string" }` to the item action payload schema.
+- [x] Run the dynamic Flow contract workflow and confirm it passes.
+- [x] Upload the file to the existing V2 DRAFT in Vitrine Admin and inspect the Meta validation result.
+- [x] Test the draft with the restricted internal recipient; keep it DRAFT for owner review.
