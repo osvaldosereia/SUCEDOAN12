@@ -41,15 +41,26 @@ Saída: pesquisa técnica e requisitos iniciais revisáveis em docs/projects/wha
 
 ## Rodada 0.6 — Alternativa nativa para produtos e quantidades
 
-Estado: pesquisa documental concluída em 25/10/2026; prova em número controlado pendente. Detalhes e fontes oficiais em FLOW-RESEARCH.md.
+Estado: pesquisa inicial revisada após detalhar as regras da cesta. Flow dinâmico é a jornada principal recomendada; prova em número controlado pendente. Análise em BASKET-ORDER-RESEARCH.md.
 
 - [x] Comparar Flow com mensagens de catálogo/produtos, carrinho nativo, listas e botões da Meta.
-- [x] Identificar que a mensagem multiproduto permite mostrar até 30 itens em seções e encaminha pedidos ao webhook; templates multiproduto podem usar até 10 seções.
-- [x] Registrar que o carrinho do WhatsApp permite ajustar a quantidade dos itens; testar essa experiência especificamente pela Cloud API e em cada número.
-- [x] Definir GitHub como fonte de verdade e catálogo Meta como cópia necessária para distribuição de produtos no WhatsApp.
+- [x] Registrar que catálogo/carrinho permite alterar e remover itens, mas calcula uma estimativa a partir dos produtos e preços do catálogo.
+- [x] Identificar que a cesta SUCEDOAN12 exige preço-base próprio, alternativas de marca, quantidade por posição e ajuste interno não itemizado; carrinho sozinho não aplica essa fórmula.
+- [x] Recomendar Flow dinâmico com endpoint para validar escolhas e recalcular o total; Flow não oferece controle nativo +/−, então a prova usará seleção de quantidade por lista.
+- [x] Definir GitHub como fonte dos produtos/composição e manter o ajuste comercial confidencial fora do repositório público.
 - [ ] Com exportação das cestas em mãos, validar num número controlado: quantidade por item, pedido no webhook, regra da cesta, preço e comportamento entre mensagens.
 - [ ] Escolher entre carrinho, Flow ou combinação somente após a prova.
 - [ ] Nenhum catálogo foi sincronizado e nenhuma chamada Meta foi feita.
+
+## Rodada 0.7 — Decisão técnica para a cesta econômica
+
+Estado: pesquisa concluída em 25/10/2026; implementação pendente. Relatório completo em BASKET-ORDER-RESEARCH.md.
+
+- [x] Comparar catálogo/carrinho, Flow dinâmico, mensagens de lista/botões e recursos de respond.io, Infobip, WATI e Blip.
+- [x] Definir Flow dinâmico como hipótese principal, pois o endpoint calcula o preço-base + ajuste interno + produtos/marcas/quantidades escolhidos.
+- [x] Definir catálogo/carrinho como alternativa para compra livre; total estimado do carrinho não representa sozinho o preço personalizado da cesta.
+- [ ] Após obter composição atual, validar marca, quantity selector, zero para remover, imagens, atualização do total por etapa, preço final e webhook nos dois números.
+- [ ] Decidir privadamente o valor/ajuste interno de cada tamanho e confirmar o que o cliente verá antes de confirmar.
 
 ## Rodada 1 — Levantamento da cesta e plano de importação
 
@@ -107,24 +118,27 @@ Saída: interface revisável, ligada ao catálogo/cestas versionados sem afetar 
 
 ## Rodada 4 — Configurador de WhatsApp Flow
 
-Estado: pesquisa de Flow e alternativa de carrinho Meta documentadas; implementação e escolha da jornada aguardam prova em número controlado. Detalhes em FLOW-RESEARCH.md.
+Estado: pesquisa de Flow e composição de cesta documentadas; Flow dinâmico é a hipótese principal. Implementação aguarda exportação e prova em número controlado. Detalhes em FLOW-RESEARCH.md e BASKET-ORDER-RESEARCH.md.
 
-Objetivo: escolher e implementar a jornada de pedido que permita selecionar produtos e quantidades dentro do WhatsApp. A hipótese principal é usar catálogo/mensagens multiproduto e carrinho nativo; Flow fica opcional para dados estruturados complementares se a prova justificar.
+Objetivo: permitir seleção de marca, quantidade e remoção dentro do WhatsApp, com total calculado pela regra comercial da cesta e validado no servidor.
 
 - Manter configuração independente para os dois números; finais 0975 e 1018 são apenas referências até confirmar WABA ID e phone number ID.
-- Para a hipótese de carrinho: apresentar tamanho da cesta, enviar produtos elegíveis pelo catálogo Meta e validar o pedido recebido no webhook contra a revisão da cesta.
-- Para Flow, se necessário: configurar nome, categoria, telas, navegação e referência explícita à revisão da cesta.
+- Começar pela lista/botões de tamanho e abrir um Flow dinâmico associado à revisão da cesta.
+- Em cada posição, oferecer marcas permitidas, imagem/preço conforme suporte validado, quantidade por lista com valor padrão e zero para retirar.
+- Configurar nome, categoria, telas, navegação e referência explícita à revisão da cesta.
+- Manter o catálogo/carrinho como hipótese secundária caso a prova mostre que o cliente prefere a edição nativa e aceite receber o preço personalizado após enviar o carrinho.
 - Usar wizard guiado como caminho principal e editor JSON avançado opcional; cada bloco deve mapear para componente oficial.
 - Validar JSON contra schema e componentes Meta; apontar erro por tela/campo.
 - Oferecer prévia, teste em número controlado e publicação manual, com Draft/Published e saúde do endpoint por canal.
 - A Meta documenta imagens em opções de listas (limite atual: 100 KB por imagem de opção); validar assets e renderização em WhatsApp real antes de prometer fotos.
 - A ação update_data (Flow JSON v6.0+) pode atualizar o estado da tela após interações sem chamar o servidor; provar se o total pode ser exibido corretamente quando seleção e quantidade mudam.
-- Provar quantidade por produto no carrinho nativo, recebimento do pedido pelo webhook e validação de composição/preço.
-- Se Flow continuar necessário, usar campos numéricos conforme validação oficial; não assumir controle +/- de carrinho dentro do Flow.
+- Provar seleção de marca e quantidade por lista dentro do Flow, com quantidade zero para remover item.
+- Fazer o endpoint recalcular preço após cada avanço e devolver o novo total na tela seguinte; validar novamente na conclusão.
+- Não prometer atualização a cada toque nem controle +/− no Flow antes de prova oficial em aparelho.
 - A tela pode dar feedback imediato via update_data, mas o total final deve ser recalculado/validado no servidor pelo endpoint HTTPS externo ao Supabase na rodada 5.
 - Nenhuma publicação ou mensagem a cliente nesta rodada.
 
-Saída: escolha de jornada registrada e experiência de produto/quantidade testada em canal controlado. Se Flow for mantido, Flow JSON versionado e prévia local antes da publicação.
+Saída: Flow JSON versionado com regras da cesta, preço atualizado e webhook conferidos em canal controlado. A publicação permanece separada e manual.
 
 ## Rodada 5 — Runtime dinâmico sem Supabase
 
@@ -173,9 +187,10 @@ Saída: homologação real em ambiente de teste; cliente só entra depois de uma
 2. Como salvar no GitHub sem senha própria e sem expor token de escrita no navegador.
 3. Qual runtime HTTP fora do Supabase atenderá Data Exchange e operações Meta.
 4. Quais são os IDs oficiais de WABA e telefone para os dois canais.
-5. Confirmar em número controlado a experiência de carrinho iniciada pelas mensagens de produto da Cloud API, incluindo quantidade por item, webhook e comportamento entre mensagens; validar as mesmas regras nos dois números.
-6. Confirmar se o catálogo Meta já vinculado aos números pode ser usado ou se será necessária uma configuração de catálogo, mantendo os produtos do GitHub como fonte de verdade.
-7. Se Flow permanecer na solução, validar imagens, seleção múltipla, quantidade e atualização via update_data; manter o servidor como autoridade de preço e total final.
+5. Confirmar a fórmula do preço-base e o ajuste interno por tamanho, mantendo o ajuste confidencial fora do GitHub público e do Flow JSON.
+6. Em número controlado, validar a jornada Flow por posição: marca, imagens, lista de quantidade, zero para remover, total após cada avanço e retorno do webhook.
+7. Confirmar se cada posição permite uma marca ou se a cesta admite dividir quantidade entre várias marcas; prototipar a segunda opção separadamente.
+8. Testar nos dois números e manter o endpoint como autoridade de preço/composição. Provar catálogo/carrinho apenas se a experiência de quantity control for priorizada sobre atualização contínua do total.
 
 ## Registro do andamento
 
@@ -186,3 +201,5 @@ Saída: homologação real em ambiente de teste; cliente só entra depois de uma
 - 2026-10-25 — Pré-verificação R1: exportação de 15 combinações identificada, mas insuficiente para a migração; aguardando CSV/JSON com tamanhos, tipos, produtos, quantidades por cesta e ordem. Nenhum dado importado.
 
 - 2026-10-25 — Pesquisa de alternativa Meta concluída: carrinho nativo de catálogo/produtos recomendado para provar seleção de quantidade; produtos precisam de catálogo Meta vinculado, e regras de cesta serão validadas no webhook contra a revisão GitHub. Flow permanece opcional até o teste.
+
+- 2026-10-25 — Pesquisa específica da cesta: Flow dinâmico recomendado para marca/quantidade/remoção com preço-base e ajuste interno calculados no endpoint; carrinho Meta permanece opção de UX, mas seu total estimado não é o preço comercial completo da cesta.
