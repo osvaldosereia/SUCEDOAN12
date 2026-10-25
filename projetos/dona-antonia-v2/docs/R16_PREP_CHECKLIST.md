@@ -10,7 +10,7 @@ Este checklist é exclusivo da Dona Antônia V2. O estado do comando significa a
 | URL de staging acessível | Aprovado para o operador autorizado | [Admin Preview V2](https://dona-antonia-v2-admin-preview.juniorsereia.chatgpt.site/admin/) continua owner-only. O Sites registra a versão 4 como concluída (`appgdep_6add6d1b4af081919ad862777fa97241`); o navegador renderizou o catálogo R16 em 25/10. A fonte do Site `0f825c25279c338fe62c230148bc5c8a3fa4fbe1` corresponde ao commit GitHub `bd894392d62e2fa0208209b60ca78ff7227800f1`. O CUA não expôs o status HTTP numérico; o manifesto mantém `httpStatus: null` e registra as evidências da implantação e da renderização. |
 | Seed fictício V2 | Aprovado | No projeto hjudhofluihkxykwekir: R16-TEST-ARROZ, R16-TEST-FEIJAO e R16-TEST-OLEO, estoque 30 cada; três perfis privados, três tipos, cesta r16-test e três movimentos. O manifesto R16_EVIDENCE_MANIFEST.json registra SKUs, estoque, projeto e referência ao checklist. |
 | Operador do staging | Aprovado para um usuário | O único operador informado é a conta ADMIN já confirmada. O manifesto usa referência pseudonimizada, sem gravar e-mail. A validação multioperador permanece coberta pelos testes automatizados da R10; nenhum usuário adicional será criado. |
-| Backup/restore controlado | Bloqueado por conexão do banco e custo não confirmável | O caminho oficial para dump/restore em destino local requer connection string e senha PostgreSQL, Supabase CLI, Docker e psql ([guia Supabase](https://supabase.com/docs/guides/self-hosting/restore-from-platform)). O conector retorna o host do projeto, mas não a senha nem a URL PostgreSQL completa. O workflow V2 não referencia secret de conexão remota. GitHub Actions em repositório privado pode ser cobrado se exceder minutos incluídos. Nenhum dump, restore ou branch foi iniciado. |
+| Backup/restore controlado | Pendente: conexão PostgreSQL e restauração local isolada | O caminho oficial de dump/restore requer connection string e senha PostgreSQL, Supabase CLI, Docker e psql ([guia Supabase](https://supabase.com/docs/guides/self-hosting/restore-from-platform)). O conector entrega o host do projeto, mas não a senha nem a URL completa. O CI do repositório público passou no head documental `7321a35` (run #40157448942), mas não acessa o banco e não comprova backup/restore. Nenhum dump, restore ou branch foi iniciado. |
 | Autorização para piloto produtivo | Fora do escopo | É um gate separado. Não bloqueia o pré-voo de staging e continua sem autorização. |
 
 ## Snapshot remoto confirmado por leitura — 24/10/2026
@@ -27,11 +27,11 @@ O comando verifica a estrutura do manifesto e a existência das referências loc
 
 ### Caminho seguro avaliado para o backup/restore
 
-A opção tecnicamente adequada é gerar um dump lógico do projeto V2 real e restaurá-lo em uma instância local descartável (sem escrever de volta na origem), seguindo o [guia oficial de restore para self-hosted](https://supabase.com/docs/guides/self-hosting/restore-from-platform). A documentação exige connection string e senha do banco, Supabase CLI, Docker e psql; o dump separa roles, schema e dados. O CI atual testa migrations em PostgreSQL descartável, mas não usa uma conexão com o banco Supabase.
+A opção adequada é fazer um dump lógico do projeto V2 e restaurá-lo em uma instância PostgreSQL local descartável, sem escrever de volta na origem, seguindo o [guia oficial Supabase para restore em ambiente self-hosted](https://supabase.com/docs/guides/self-hosting/restore-from-platform). O procedimento requer connection string e senha PostgreSQL, Supabase CLI, Docker e psql. Não exige criar projeto ou branch Supabase.
 
-O conector Supabase só entrega o host db.hjudhofluihkxykwekir.supabase.co, sem senha ou connection string completa. O secret de Actions, se já existir, não pode ser consultado pelo conector. Também não é possível confirmar a franquia restante de Actions: em repositórios privados, uso além dos minutos incluídos pode gerar cobrança ([GitHub Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions)). Por isso, nenhum job que possa acessar a base ou gerar custo será iniciado sem conexão segura e execução sem cobrança.
+O conector Supabase expõe o host `db.hjudhofluihkxykwekir.supabase.co`, mas não a senha nem a connection string completa. A credencial deve ser recuperada pelo proprietário em canal seguro e usada localmente; não deve ser colada neste chat, gravada no repositório ou injetada em um workflow público. O CI executado no GitHub verifica o código e permanece sem acesso ao banco remoto.
 
-O teste local do rollback de seed e o replay de migrations continuam úteis para integridade do schema, mas não substituem esse restore de dados reais do V2.
+O dump e o restore ainda não foram iniciados. Depois da execução local, registrar hashes SHA-256, alvo, resultado, custo zero de infraestrutura Supabase e evidência de validação no manifesto. Os testes do rollback de seed e o replay das migrations em PostgreSQL descartável continuam úteis, mas não substituem o restore dos dados do V2.
 
 ## Rollback do seed
 
@@ -42,28 +42,24 @@ O teste PostgreSQL descartável via PGlite percorre os dois caminhos: exclusão 
 ## Evidências e isolamento
 
 - Testes locais: npm test — 132/132; npm run test:db — 20 migrations/33 tabelas, incluindo os dois caminhos do rollback; npm run check; npm run r16:readiness; lint; format:check; arquitetura (138 arquivos); build; git diff --check — aprovados.
-- CI do head de código 390a0bd: auditoria de dependências, lint/formato, arquitetura, migrações PostgreSQL, TypeScript, testes, build sem deploy e smoke browser passaram.
+- CI do head documental `7321a35ab7919620f130d94965eadbf1888d1de1` (run #40157448942): auditoria de dependências, lint/formato, arquitetura, migrações PostgreSQL, TypeScript, testes, build sem deploy e smoke browser passaram.
 - Estado remoto conhecido da V2: ACTIVE_HEALTHY, PostgreSQL 17.11, 805 produtos e 805 perfis privados, zero clientes, zero pedidos, zero documentos fiscais e zero eventos de entrega. Nesta atualização não houve escrita no banco.
-- Nenhum branch Supabase novo, usuário real, credencial, custo, deploy, publicação, restore ou integração operacional foi acionado.
+- Nesta rodada não foi criado branch Supabase, conta adicional, credencial, recurso pago ou integração operacional. A única publicação registrada é o Admin Preview V2 owner-only v4, restrito ao operador autorizado; não houve deploy em produção.
 - PR #1396 permanece draft e sem merge. main, produção, site/admin em uso, Supabases legados, atendimento, Meta/Bling operacionais, DNS e workflows de produção permaneceram intocados.
 
 ## Bloqueios para avançar
 
-1. Disponibilizar URL V2 compartilhável sem publicar ou alterar produção.
-2. Operador único confirmado pelo usuário; não provisionar contas adicionais.
-3. Encontrar um procedimento de backup/restore em alvo descartável, custo zero e sem restaurar sobre a origem. Se não houver, manter o gate bloqueado.
-4. Registrar evidências reais no manifesto e no checklist. Não marcar a R16 concluída antes da execução dos fluxos de homologação e do aceite documentado.
+1. O proprietário precisa obter a connection string e a senha PostgreSQL do projeto V2 em canal seguro; não enviar credenciais por chat nem gravá-las no Git.
+2. Executar o dump e restaurá-lo em um PostgreSQL local descartável; verificar o resultado e registrar hashes SHA-256, alvo e evidência no manifesto.
+3. Depois do restore, revisar as evidências e executar os fluxos restantes de homologação antes de marcar a R16 concluída. A autorização produtiva continua sendo um gate separado e fora deste pré-voo.
 
-As estimativas previamente verificadas para branch Supabase e PITR permanecem como razão para não criar recursos nesta rodada: branch a US$ 0,01344/hora; PITR de 7 dias a US$ 0,137/hora, aproximadamente US$ 100/mês, com compute Small. Referências: https://supabase.com/docs/guides/platform/manage-your-usage/branching e https://supabase.com/docs/guides/platform/backups.
+As estimativas previamente verificadas para branch Supabase e PITR permanecem como razão para não criar recursos: branch a US$ 0,01344/hora; PITR de 7 dias a US$ 0,137/hora, aproximadamente US$ 100/mês, com compute Small. Referências: https://supabase.com/docs/guides/platform/manage-your-usage/branching e https://supabase.com/docs/guides/platform/backups.
 
-## Verificação das alternativas após autorização — 24/10/2026
+## Registro histórico — estado anterior de 24/10/2026
 
-A autorização para executar não remove os pré-requisitos de segurança e de evidência:
+Este registro descreve a investigação feita antes da publicação da versão 4 do Admin Preview. Para a prontidão atual, valem a tabela de estado em 25/10 e o manifesto.
 
-- **Prévia existente:** “Dona Antônia V2 · Admin Preview” está publicada no URL já registrado no dossiê, mas a audiência está em modo custom e inclui somente o proprietário. A versão salva #2 registra o source SHA `8e0a78ad450393786d50406954f1f885c66584f1`, não resolvido como commit em `SUCEDOAN12`; assim, não se comprovou que o conteúdo publicado corresponde ao head atual da branch R16. O Sites oferece modo público, que permite acesso a qualquer pessoa com o link; não foi escolhido para uma interface administrativa. O acesso restrito a operadores pode ser concedido por lista de e-mails quando as identidades forem informadas.
-- **Workflow GitHub existente:** `.github/workflows/dona-antonia-v2-preview-publish.yml` só roda por dispatch manual com `authorize_preview=true`; o build é explicitamente sem Supabase, WhatsApp e Bling; a publicação altera `/site1` e `/admin1` e executa push para `main`. Esse workflow não é uma URL isolada para homologação R16 e não foi executado.
-- **Operadores:** o usuário confirmou que será o único operador, usando a conta ADMIN V2 previamente confirmada. O e-mail não é repetido no checklist; a referência no manifesto é pseudonimizada. Nenhuma senha ou conta adicional foi criada.
-- **Backups:** a documentação Supabase informa backup diário automático para projetos Pro/Team/Enterprise (retenção de 7 dias no plano Pro). Isso não demonstra um restore isolado. O conector Supabase disponível não lista nem baixa snapshots; a ação de restore disponível atua no projeto informado. A alternativa oficial “Restore to a new project” requer projeto adicional e mostra custos antes da criação; não foi iniciada. Referências: [Database Backups](https://supabase.com/docs/guides/platform/backups) e [Restore to a new project](https://supabase.com/docs/guides/platform/clone-project).
-
-**Ações não executadas:** nenhuma mudança de audiência do Site; nenhum convite; nenhum push para `main`; nenhum deploy de staging; nenhum branch/projeto adicional Supabase; nenhum restore ou custo. R16 permanece bloqueada. O próximo passo operacional para abrir o staging de forma restrita é receber os e-mails reais dos operadores; o restore segue bloqueado até existir método zero-custo em alvo descartável.
-
+- A prévia antiga ainda não tinha vínculo comprovado com o head da branch. Essa pendência foi substituída pela verificação da versão 4, owner-only, com fonte GitHub e renderização documentadas acima.
+- A configuração antiga do workflow de publicação em `.github/workflows/dona-antonia-v2-preview-publish.yml` não foi executada; continua fora do fluxo de staging porque publica em `main` e altera `/site1` e `/admin1`.
+- Não foi criado projeto ou branch Supabase para restaurar dados. A alternativa “restore to a new project” não foi iniciada devido ao custo de infraestrutura.
+- O PR #1396 permanece draft e sem merge. O domínio público da loja, `main`, bases legadas, DNS e integrações operacionais de Meta/WhatsApp/Bling não foram alterados.
