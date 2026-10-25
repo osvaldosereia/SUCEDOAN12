@@ -107,3 +107,8 @@ Não enviar o ajuste interno no Flow JSON, no navegador ou em arquivos públicos
 - [Blip — WhatsApp Flows](https://help.blip.ai/hc/en-us/articles/19143153044375-What-is-WhatsApp-Flows)
 
 Pesquisa consultada em 25/10/2026. Prevalecem os schemas, limites e estados que a Meta devolver no Flow Builder/API durante a prova controlada.
+
+
+## Atualização — fechamento do pedido com cadastro de cliente — 25/10/2026
+
+A proposta detalhada para concluir o Flow está em [ORDER-FLOW-CHECKOUT-DESIGN.md](ORDER-FLOW-CHECKOUT-DESIGN.md). O Flow não deve solicitar o próprio telefone: o backend associa a sessão ao remetente/canal por flow_token e usa o evento de conclusão para confirmar o número. O cadastro e endereços são consultados pelo backend Supabase; produto e cesta continuam no GitHub. Depois de concluir o Flow, o sistema envia na conversa o resumo sem preços unitários, com total final, pagamento, nome/endereço e botões Confirmar pedido, Editar pedido e Cancelar. Só a ação explícita Confirmar pedido cria o pedido, por serviço canônico após auditoria. Nesta etapa não houve programação nem escrita no Supabase.
