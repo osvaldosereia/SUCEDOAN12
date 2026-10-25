@@ -133,7 +133,10 @@ describe('R16 rollout readiness', () => {
       ).status,
     ).toBe('ready-to-start-isolated-staging');
     const duplicateOperators = readyManifest();
-    duplicateOperators.gates.operators.operatorRefs = ['op_r16_operator_01', 'op_r16_operator_01'];
+    duplicateOperators.gates.operators.operatorRefs = [
+      'op_r16_operator_01',
+      'op_r16_operator_01',
+    ];
     expect(evaluateR16Readiness(duplicateOperators).status).toBe('blocked');
     expect(
       evaluateR16Readiness(
