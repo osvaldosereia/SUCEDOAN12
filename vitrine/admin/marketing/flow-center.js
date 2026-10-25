@@ -64,7 +64,7 @@ function formatValidation(errors){
 function renderReadiness(data){
   canManage=data?.can_manage===true;
   const checks=data?.checks||{};
-  const labels={meta_token:'Token da Meta no servidor',graph_version:'Versão Graph configurada',account:'Conta comercial 1018',endpoint:'URL fixa do endpoint',private_key:'Chave privada cadastrada',public_key_registered:'Chave pública registrada na Meta',public_key_matches_private:'Chave pública corresponde à privada',meta_app_secret:'Segredo do app cadastrado',session_secret:'Segredo de sessão cadastrado'};
+  const labels={meta_token:'Token da Meta no servidor',graph_version:'Versão Graph configurada',account:'Conta comercial 1018',endpoint:'URL fixa do endpoint',private_key:'Chave privada cadastrada',public_key_registered:'Chave pública registrada na Meta',public_key_matches_private:'Chave pública corresponde à privada',meta_app_secret:'Segredo do app cadastrado'};
   const target=rootNode?.querySelector('[data-flow-readiness]');
   if(target)target.innerHTML='<div class="flow-readiness-grid">'+Object.entries(labels).map(([key,label])=>'<div class="flow-check '+(checks[key]?'is-ready':'is-missing')+'"><span aria-hidden="true">'+(checks[key]?'✓':'•')+'</span><strong>'+esc(label)+'</strong><em>'+(checks[key]?'Pronto':'Pendente')+'</em></div>').join('')+'</div><p class="flow-endpoint"><strong>Endpoint fixo:</strong> <code>'+esc(data?.flow_endpoint_url||'URL ainda não disponível')+'</code></p><p class="flow-role">'+(canManage?'Sessão com permissão para gerenciar Flows.':'Leitura disponível; ações de gestão exigem perfil proprietário.')+'</p>';
   setBusy(false);
