@@ -26,7 +26,8 @@ A implementação da experiência solicitada está na branch `fix/whatsapp-flow-
 - O Flow V2 usa as telas `TAMANHO`, `TIPO_PRODUTO`, `OPCAO_EDIT` e `RESUMO`. A pessoa escolhe o tamanho, percorre os tipos na ordem do Admin e ajusta a quantidade de cada produto.
 - As opções exibem dados atuais de catálogo e estoque, incluindo foto, nome, marca e preço unitário. A cotação é atualizada no servidor.
 - A prévia do Admin consome a mesma configuração e cotação do runtime. Mostra preço inicial, posições editáveis e fixas, limites e total ao vivo.
-- O Flow V2 continua em `DRAFT`; o Flow V1 publicado permanece separado. O endpoint atualmente implantado ainda não contém este runtime V2 e a migration de alinhamento ainda não consta no ledger do Supabase.
+- O Flow V2 continua em `DRAFT`; o Flow V1 publicado permanece separado. `storefront-v2` está ativa na versão 115, mas ainda não expõe `basket_flow_configuration` nem `basket_flow_quote`; `whatsapp-1018-basket-flow-v1` está na versão 5 e ainda usa o motor anterior para a configuração. A migration de alinhamento ainda não consta no ledger do Supabase.
+- Uma consulta somente leitura confirmou que os metadados e as quantidades Flow de `Desinfetante`, `Miojo` e `Macarrão` já estão gravados no banco. A migration registra e reproduz esse alinhamento; ao ser aplicada, também atualiza os timestamps dessas configurações.
 - A documentação operacional e os detalhes do contrato estão em `vitrine/admin/whatsapp-lab/meta-flow/DYNAMIC-IMPLEMENTATION.md`.
 
 ## Pendências para operação
