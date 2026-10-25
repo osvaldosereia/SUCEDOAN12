@@ -173,17 +173,17 @@ begin
   end if;
 
   if p_config is null or jsonb_typeof(p_config)<>'object'
-     or jsonb_typeof(p_config->'basket_types')<>'array'
-     or jsonb_typeof(p_config->'product_types')<>'array' then
+     or coalesce(jsonb_typeof(p_config->'basket_types'),'')<>'array'
+     or coalesce(jsonb_typeof(p_config->'product_types'),'')<>'array' then
     raise exception 'basket_admin_flow_configuration_invalid';
   end if;
 
   if exists(
-    select 1 from jsonb_array_elements(p_config->'basket_types') x
-    group by x->>'id' having count(*)>1
+    select 1 from jsonb_array_elements(p_config->'basket_types') as x(value)
+    group by x.value->>'id' having count(*)>1
   ) or exists(
-    select 1 from jsonb_array_elements(p_config->'product_types') x
-    group by x->>'id' having count(*)>1
+    select 1 from jsonb_array_elements(p_config->'product_types') as x(value)
+    group by x.value->>'id' having count(*)>1
   ) then
     raise exception 'basket_admin_flow_duplicate_id';
   end if;
