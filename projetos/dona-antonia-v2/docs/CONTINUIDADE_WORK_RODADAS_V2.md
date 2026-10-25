@@ -96,6 +96,7 @@ WhatsApp:
 - Template oficial de confirmação do pedido, atualmente no legado: pedidorecebidosite0975 e pedidorecebidosite1018 (pt_BR); variáveis número pedido, total, entrega e pagamento. Validar templates vigentes na Meta na etapa de conexão.
 - Notificações transacionais futuras dos estados do pedido através de mensagens Utility compatíveis e aprovadas pela Meta, respeitando políticas vigentes, janela de 24h e requisitos de consentimento. Não transformar marketing em utilitário. Evitar duplicatas.
 - Arquitetura: eventos de domínio -> transactional outbox -> fila/worker **sob demanda ou econômico** -> Meta API -> webhooks de status -> logs + retries limitados. Nenhum envio real em mock/staging sem destinatário de teste autorizado.
+- **Separação de funções:** R11 é a Inbox humana; R12 cobre somente mensagens Utility transacionais de andamento do pedido. IA Ana, venda/checkout por WhatsApp Flow e marketing/campanhas são frentes distintas, cada uma com escopo, regras e gate próprios. Não incorporá-las a R11/R12; ordem e número das rodadas ainda não definidos.
 
 Bling:
 - **Uso fiscal** após separação (não tratar Bling como novo admin operacional).
@@ -276,6 +277,6 @@ Arquivos relevantes para ler no Work:
 
 ## 15. REGISTRO DA RODADA R00 — 23/10/2026
 
-Auditoria técnica registrada em docs/AUDITORIA_COMPLETA_V2.md. Baseline da branch agent/dona-antonia-nova-plataforma na SHA 1a846beba768192c366937c1462bcfd6baeccee9; CI 40057635884 aprovado na mesma SHA. Foram inspecionados 90 arquivos da V2, incluindo app, docs, SQL, scripts, testes e workflow. Checks locais architecture, TypeScript, 35 unitários e build passaram. Playwright local não iniciou sem Chromium; a suíte de 9 casos passou no CI. npm audit completo: 2 vulnerabilidades críticas e 2 moderadas em ferramentas dev/importação; as dependências runtime não tiveram vulnerabilidades reportadas. SQL permanece não executado e não verificado por replay.
+Auditoria técnica registrada em docs/AUDITORIA_COMPLETA_V2.md. Baseline da branch agent/dona-antonia-nova-plataforma na SHA 1a846beba768192c366937c1462bcfd6baeccee9; CI 40057635884 aprovado na mesma SHA. Foram inspecionados 90 arquivos da V2, incluindo app, docs, SQL, scripts, testes e workflow. Checks locais architecture, TypeScript, 35 unitários e build passaram. Playwright local não iniciou sem Chromium; a suíte de 9 casos passou no CI. A PR #1364 registrou auditoria npm on-line com 4 alertas (2 moderados, 2 críticos) e 0 com --omit=dev naquela consulta. A repetição offline em 25/10 reportou 0 pela cache e não consultou advisories atuais; isso não confirma ausência de vulnerabilidades. A revisão por pacote/versão e a limitação de não haver lockfile estão detalhadas em docs/AUDITORIA_COMPLETA_V2.md. SQL permanece não executado e não verificado por replay.
 
 Nenhuma alteração de código, execução SQL, acesso aos Supabases existentes ou publicação foi realizada. Documentação antiga de estoque e ajuste de cesta foi alinhada à regra aprovada. R01 é a próxima rodada; deve tratar dependências/lockfile e disciplina visual/qualidade. A revisão de gates de publicação é obrigatória antes de qualquer merge na main.
