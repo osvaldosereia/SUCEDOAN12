@@ -179,6 +179,49 @@ O exemplo de webhook demonstra também que o Flow é enviado pela API e que a re
 5. Validar no Flow JSON atual o comportamento de imagem dinâmica e seleção múltipla com quantidade por produto.
 6. Depois dessas dependências, converter esta pesquisa em design e plano de execução antes de iniciar integração Meta.
 
+## Alternativa Meta ao Flow para seleção de produtos e quantidades
+
+### Conclusão da pesquisa
+
+Para selecionar produtos e quantidades, a alternativa nativa mais adequada é o catálogo do WhatsApp com mensagens de produto/catálogo da Cloud API e o carrinho do WhatsApp. A documentação da Meta descreve mensagens multiproduto com até 30 itens do catálogo, agrupados em seções; o cliente pode navegar, ver detalhes, adicionar produtos ao carrinho e enviar um pedido. A Meta também documenta o webhook de pedido. A central de ajuda do WhatsApp descreve a alteração da quantidade de cada item no carrinho.
+
+Isso atende melhor ao requisito de controle de quantidade por item que um campo numérico em Flow: o cliente seleciona os produtos e ajusta as quantidades na interface nativa de carrinho. A conclusão combina duas fontes oficiais — o comportamento do carrinho descrito pelo WhatsApp e a mensagem multiproduto/webhook descritos pela Meta para a plataforma. A interface e disponibilidade precisam ser confirmadas num teste de ponta a ponta para cada número e versão de conta antes de prometer esse comportamento em produção.
+
+O webhook de pedido inclui identificador do catálogo e itens com identificador estável do produto, quantidade, preço do item e moeda. Assim, o backend pode localizar os produtos do GitHub pelo identificador e validar o pedido recebido.
+
+### Comparação das ferramentas Meta
+
+| Ferramenta | O que o cliente consegue fazer | Uso recomendado neste projeto |
+| --- | --- | --- |
+| Flow | Preencher uma jornada estruturada com campos e telas; usar TextInput numérico para digitar valores; consultar endpoint dinâmico. Não há um componente nativo de carrinho com controle +/- documentado para montar uma cesta. | Dados estruturados complementares, como endereço ou preferências, se o teste comprovar boa experiência. Não depender dele para resolver sozinho a seleção e quantidade por produto. |
+| Mensagens de catálogo/produtos + carrinho | Ver produtos do catálogo, adicionar mais de um item e ajustar o pedido no carrinho; a submissão retorna como evento de pedido no webhook. | Caminho recomendado para seleção de produtos e quantidade dentro do WhatsApp. |
+| Lista interativa | Escolher uma opção em menu; a API documenta até 10 linhas no total. Não adiciona produto nem controla quantidade no carrinho. | Escolher tamanho da cesta, etapa ou intenção antes de abrir a seleção de produtos. |
+| Botões de resposta | Escolher entre até três respostas predefinidas. Não adiciona produto nem controla quantidade no carrinho. | Confirmações curtas: continuar, voltar, falar com atendente. |
+
+A visão geral dos catálogos da Meta informa que mensagens enviadas pela Cloud API não exibem um ícone de carrinho persistente no cabeçalho da conversa. A jornada precisa abrir o catálogo por uma mensagem de catálogo/produto apropriada. Isso não elimina a mensagem de pedido que retorna do carrinho iniciado pela experiência de catálogo; precisa ser conferido no teste do número real.
+
+### Jornada recomendada para as cestas
+
+1. O bot pergunta o tamanho da cesta com lista ou botões.
+2. O sistema explica as quantidades esperadas para aquele tamanho e envia a seleção de produtos elegíveis em mensagens multiproduto do catálogo, agrupadas por tipo quando isso couber nos limites do formato.
+3. O cliente adiciona os itens e ajusta suas quantidades no carrinho nativo.
+4. Ao receber o evento de pedido, o servidor associa product_retailer_id aos registros versionados no GitHub e confere quantidades por tipo, produtos permitidos, preço atual e versão da composição.
+5. Se o pedido não respeitar a composição da cesta, o atendimento pede o ajuste ou encaminha para uma pessoa. Se estiver válido, apresenta resumo e solicita a confirmação comercial.
+
+O carrinho dá controle de quantidade ao cliente, mas não aplica as regras específicas da cesta por conta própria. Limites como “exatamente dois produtos deste tipo”, lista de produtos elegíveis por tamanho ou estoque precisam ser validados pelo servidor após a submissão. A FAQ do WhatsApp descreve o envio do carrinho como início do pedido; a confirmação do vendedor continua sendo uma etapa comercial.
+
+### Dados e integração
+
+GitHub permanece como fonte de verdade do novo projeto. Para que o WhatsApp mostre cartões e permita iniciar o carrinho, os produtos também precisam existir em um catálogo do Meta Commerce Manager vinculado à WABA/número usado pela Cloud API. Esse catálogo é uma cópia de distribuição para o WhatsApp, não um banco alternativo do projeto nem um uso de Supabase.
+
+Cada produto deve ter ID estável no GitHub, correspondente ao product_retailer_id do catálogo Meta. O admin pode, numa etapa posterior, gerar uma exportação/sincronização revisável para esse catálogo. Nenhuma sincronização ou chamada à Meta foi realizada nesta pesquisa.
+
+A primeira prova deve usar um catálogo e telefone de teste controlados e confirmar: renderização dos produtos, adição de itens, alteração de quantidade, envio do carrinho, recebimento do webhook e validação das regras da cesta. Também deve conferir como o carrinho se comporta quando a jornada envia mais de uma mensagem de produto. A Meta limita a mensagem multiproduto a 30 itens e até 10 seções; listas interativas comuns têm até 10 linhas. Para campanhas/prospecção, a Meta oferece mensagens multiproduto em formato de template, com regras próprias de aprovação e envio.
+
+### Recomendação de escopo
+
+Não iniciar o admin presumindo que Flow é o único caminho para fechar um pedido. Modelar desde o início IDs de produto e composição de cesta para suportar o carrinho nativo. Após obter os dados reais do Vitrine Admin, fazer a prova de conceito do carrinho com quantidades e validação de cesta. Manter Flow como recurso opcional para coleta de dados complementares ou exceções, se melhorar a experiência. A decisão final da jornada deve se basear nessa prova e não apenas em uma prévia visual.
+
 ## 9. Referências
 
 ### Meta e exemplos oficiais
@@ -195,6 +238,16 @@ O exemplo de webhook demonstra também que o Flow é enviado pela API e que a re
 - [Exemplo oficial Node.js de endpoint para agendamento](https://github.com/WhatsApp/WhatsApp-Flows-Tools/tree/main/examples/endpoint/nodejs/book-appointment)
 - [Exemplo oficial de webhook para Flows](https://github.com/WhatsApp/WhatsApp-Flows-Tools/tree/main/examples/webhook/nodejs/flows-webhook)
 - [Coleção Meta Postman antiga, marcada como movida/depreciada](https://www.postman.com/meta/whatsapp-business-platform/collection/y5swede/moved-whatsapp-flows-api)
+
+- [Meta — mensagens multiproduto](https://developers.facebook.com/documentation/business-messaging/whatsapp/catalogs/multi-product-messages/)
+- [Meta — templates de mensagens multiproduto](https://developers.facebook.com/documentation/business-messaging/whatsapp/catalogs/mpm-template-messages)
+- [Meta — respostas a mensagens de catálogo](https://developers.facebook.com/documentation/business-messaging/whatsapp/catalogs/receive-responses/)
+- [Meta — webhook de pedido](https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/reference/messages/order)
+- [Meta — visão geral dos catálogos](https://developers.facebook.com/documentation/business-messaging/whatsapp/catalogs/catalogs-overview/)
+- [Meta — mensagens interativas de lista](https://developers.facebook.com/documentation/business-messaging/whatsapp/messages/interactive-list-messages)
+- [Meta — mensagens interativas de botões](https://developers.facebook.com/documentation/business-messaging/whatsapp/messages/interactive-reply-buttons-messages)
+- [WhatsApp Help Center — como fazer um pedido usando o carrinho](https://faq.whatsapp.com/5495780857144067/?cms_platform=iphone&locale=pt_BR)
+- [Meta Newsroom — carrinhos no WhatsApp](https://about.fb.com/news/2020/12/making-it-easier-to-shop-on-whatsapp-with-carts/)
 
 ### Plataformas consultadas
 
