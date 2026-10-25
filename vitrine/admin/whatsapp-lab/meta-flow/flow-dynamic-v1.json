@@ -17,10 +17,7 @@
       "ITEM_EDIT",
       "RESUMO"
     ],
-    "ITEM_EDIT": [
-      "ITENS_UM",
-      "ITENS_DOIS"
-    ],
+    "ITEM_EDIT": [],
     "RESUMO": []
   },
   "screens": [
@@ -515,7 +512,7 @@
             "label": "Quantidade",
             "input-type": "number",
             "required": true,
-            "max-chars": "2",
+            "max-chars": 2,
             "pattern": "^(10|[0-9])$",
             "helper-text": "Digite de 0 a 10. Zero retira o produto.",
             "init-value": "${data.quantidade}"

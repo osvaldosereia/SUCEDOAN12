@@ -12,7 +12,7 @@
 4. Cada alteração atualiza a cotação com `basket_mold_quote`. A tela final mostra nomes e quantidades numa lista compacta, o total em campo separado e o aviso de que o atendimento confirma preço e disponibilidade.
 5. Ao concluir, a resposta `nfm_reply` é tratada pelo webhook e aparece no atendimento existente. A conclusão registra uma solicitação para conferência humana; não cria pedido, reserva estoque nem envia outra mensagem ao cliente.
 
-O catálogo vem do `storefront-v2` e dos dados comerciais do Supabase. O JSON não contém preço nem produto comercial fixo. O Flow aceita até 30 posições, usando duas páginas quando a cesta tem mais de 14. Cada tela de catálogo tem no máximo 17 linhas (16 produtos e a ação de revisar), dentro do limite de 20 itens da Meta. O JSON usa nove ligações de rota, abaixo do limite documentado de dez.
+O catálogo vem do `storefront-v2` e dos dados comerciais do Supabase. O JSON não contém preço nem produto comercial fixo. O Flow aceita até 30 posições, usando duas páginas quando a cesta tem mais de 14. Cada tela de catálogo tem no máximo 17 linhas (16 produtos e a ação de revisar), dentro do limite de 20 itens da Meta. O JSON declara sete ligações de rota apenas no sentido de avanço; a Meta rejeita a declaração redundante das rotas de retorno.
 
 ### Fotos e segurança de carregamento
 
@@ -34,29 +34,32 @@ A sessão mantém uma cópia assinada dos itens e dos identificadores de posiç�
 
 ## Estado operacional verificado
 
-Na verificação desta revisão:
+Verificado pelo painel oficial da Meta e pelo Vitrine Admin em 25/10/2026:
 
-- O PR [#1410](https://github.com/osvaldosereia/SUCEDOAN12/pull/1410) está aberto. As alterações desta revisão precisam passar pelas verificações e pela validação Meta antes de integração.
-- A Edge Function `whatsapp-1018-basket-flow-v1` está `ACTIVE`, versão 4, no Supabase. Isso confirma uma versão anterior implantada; não confirma que este código revisado esteja no runtime.
-- O gerenciador do Vitrine Admin mostra o rascunho `Dona Antônia Cestas Básicas Dynamic V1`, ID `3300494700136506`, estado `DRAFT`, com relatório sem erros para o JSON então carregado. Esse relatório não valida automaticamente esta revisão do JSON.
-- O mesmo painel mostra endpoint fixo pronto, chave pública registrada e segredo do app pronto. A chave privada e a correspondência entre as chaves estão `Pendente`; por isso o teste criptografado do endpoint e a publicação não estão liberados.
-- Nenhuma publicação do Flow, alteração do atendimento publicado ou mensagem para cliente real é parte desta revisão.
+- O PR [#1410](https://github.com/osvaldosereia/SUCEDOAN12/pull/1410) está aberto. Esta revisão remove as rotas recíprocas rejeitadas pela Meta e mantém o retorno à lista no motor de navegação.
+- A Meta aceitou o JSON desta revisão sem erros no rascunho `Dona Antônia Cestas Básicas Dynamic V2`, ID `1817973829344642`, estado `DRAFT`.
+- O Flow V1, ID `3300494700136506`, consta como `PUBLISHED` e não foi alterado.
+- A Edge Function `whatsapp-1018-basket-flow-v1` está `ACTIVE`, versão 4. O runtime ainda não contém o carregador de imagens nem esta revisão do motor; por isso o teste interno no telefone ainda não foi executado. Como o Flow V1 publicado aponta para a mesma URL, a revisão mantém o motor antigo e usa o `flow_id` dentro do token assinado do canário para selecionar o motor V2.
+- Os pré-requisitos de token Meta, Graph, número 1018, endpoint, chave privada, chave pública, correspondência entre as chaves e segredo do app aparecem `Pronto` no painel. Nenhum valor de segredo é incluído nesta documentação.
+- A homologação deve usar somente o envio 1018 → 8360. Concluir o Flow registra uma solicitação para conferência humana, sem criar pedido, reservar estoque ou enviar mensagem adicional.
 
 ## Arquivos alterados nesta revisão
 
 - `flow-dynamic-v1.json` — seis telas, navegação com `NavigationList`, imagens e editor reutilizável.
 - `supabase/functions/whatsapp-1018-basket-flow-v1/engine.mjs` — paginação, edição por item, validação de estoque, resumo e recotação.
+- `supabase/functions/whatsapp-1018-basket-flow-v1/engine-legacy-v1.mjs` — contrato do motor ativo, preservado para o Flow V1 publicado.
+- `supabase/functions/whatsapp-1018-basket-flow-v1/flow-release-router.mjs` — seleciona o motor por ID assinado do Flow.
 - `supabase/functions/whatsapp-1018-basket-flow-v1/images.mjs` — transformação de imagens e validação de host, caminho, formato, redirecionamento e tamanho.
 - `supabase/functions/whatsapp-1018-basket-flow-v1/index.ts` — integração do carregador de imagem ao endpoint existente.
+- `supabase/functions/admin-whatsapp-templates-v1/index.ts` — inclui o ID do Flow no token assinado do teste interno, sem alterar o remetente nem o destinatário.
 - `scripts/test-whatsapp-1018-flow-dynamic.mjs` — rotas, cotação, resposta de atendimento, criptografia e limites de imagem.
 
-## Verificação pendente
+## Próximas etapas
 
-1. Rodar os testes locais e os checks do CI do PR.
-2. Enviar este JSON pelo painel **Marketing → Flows Meta** ao rascunho acima e guardar o relatório oficial da Meta. Corrigir qualquer incompatibilidade antes do teste no telefone.
-3. Liberar endpoint e teste 1018 → 8360 somente quando o estado seguro das chaves estiver `Pronto` no painel. O teste não deve usar o número 0975.
-4. Homologar no aparelho a seleção de tamanho, as fotos, as alternativas, quantidade zero, estoque, total e o texto que aparece depois da conclusão.
-5. Publicar somente depois da validação Meta e da homologação interna, usando o fluxo existente do Vitrine Admin.
+1. Publicar os commits desta revisão no PR e aguardar os checks específicos do Flow.
+2. Implantar a revisão do endpoint pelo Supabase; a versão ativa atual é anterior ao carregador de imagens e à navegação deste JSON.
+3. Usar **Testar rascunho no 8360** no Vitrine Admin, com remetente fixo 1018, e conferir fotos, alternativas, quantidade zero, estoque, total e a resposta no atendimento existente.
+4. Manter o Flow em `DRAFT` até a homologação visual e funcional no aparelho. A publicação exige uma decisão operacional posterior no Vitrine Admin.
 
 ## Fontes
 

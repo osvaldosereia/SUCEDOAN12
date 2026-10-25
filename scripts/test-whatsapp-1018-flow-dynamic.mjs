@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {webcrypto} from 'node:crypto';
 import {flowExchange,parseQty,assertBasket,SIZE_KEYS,ITEM_SCREENS,PAGE_SIZE} from '../supabase/functions/whatsapp-1018-basket-flow-v1/engine.mjs';
+import {flowExchange as legacyFlowExchange} from '../supabase/functions/whatsapp-1018-basket-flow-v1/engine-legacy-v1.mjs';
+import {dispatchCanaryFlow,selectCanaryEngine,DYNAMIC_V2_FLOW_ID} from '../supabase/functions/whatsapp-1018-basket-flow-v1/flow-release-router.mjs';
 import {loadProductImage,MAX_PRODUCT_IMAGE_BYTES} from '../supabase/functions/whatsapp-1018-basket-flow-v1/images.mjs';
 import {signState,verifyState,hmac,verifyAppSignature,decryptMetaPayload,encryptMetaResponse} from '../supabase/functions/whatsapp-1018-basket-flow-v1/crypto.mjs';
 import {canonicalMessagesFromMeta} from '../supabase/functions/_shared/whatsapp-core-v1.mjs';
@@ -9,6 +11,13 @@ import {parseBasketFlowRequest,latestBasketFlowRequest,CANARY_CONVERSATION} from
 globalThis.crypto??=webcrypto;
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const flow=JSON.parse(read('vitrine/admin/whatsapp-lab/meta-flow/flow-dynamic-v1.json'));
+assert.equal(selectCanaryEngine('3300494700136506'),'legacy-v1','published V1 retains its original endpoint protocol');
+assert.equal(selectCanaryEngine(undefined),'legacy-v1','existing canary tokens without a flow ID retain V1 behavior');
+assert.equal(selectCanaryEngine(DYNAMIC_V2_FLOW_ID),'basket-editor-v2','only the new DRAFT uses the item editor engine');
+const dispatchedEngines=[];
+await dispatchCanaryFlow({}, {flow_id:DYNAMIC_V2_FLOW_ID}, {}, {"basket-editor-v2":async()=>{dispatchedEngines.push('v2');return 'v2';},"legacy-v1":async()=>{dispatchedEngines.push('v1');return 'v1';}});
+assert.deepEqual(dispatchedEngines,['v2']);
+assert.match(read('supabase/functions/admin-whatsapp-templates-v1/index.ts'),/flow_id:\s*String\(flowId\)/,'signed canary token identifies the selected Meta Flow for safe engine routing');
 assert.equal(flow.version,'7.3');assert.equal(flow.data_api_version,'3.0');
 assert.equal(flow.screens.length,6,'product editing uses one reusable screen and two catalog pages');
 const flowJsonText=JSON.stringify(flow);
@@ -25,7 +34,7 @@ assert.ok(storefrontSource.includes('brand:selected.brand||""'),'basket detail e
 
 const edges=Object.values(flow.routing_model).reduce((sum,next)=>sum+next.length,0);
 assert.ok(edges<=10,'Meta Flow routing_model cannot exceed ten edges');
-assert.equal(edges,9);
+assert.equal(edges,7);
 const ids=flow.screens.map(screen=>screen.id);
 assert.ok(ids.every(id=>/^[A-Z_]+$/.test(id)),'screen IDs must contain only letters and underscores');
 assert.equal(new Set(ids).size,ids.length);
@@ -33,7 +42,10 @@ assert.deepEqual(ids,['TAMANHO','COMBINACAO','ITENS_UM','ITENS_DOIS','ITEM_EDIT'
 assert.equal(flow.routing_model.RESUMO.length,0);
 assert.deepEqual(flow.routing_model.ITENS_UM,['ITEM_EDIT','ITENS_DOIS','RESUMO']);
 assert.deepEqual(flow.routing_model.ITENS_DOIS,['ITEM_EDIT','RESUMO']);
-assert.deepEqual(flow.routing_model.ITEM_EDIT,['ITENS_UM','ITENS_DOIS']);
+assert.deepEqual(flow.routing_model.ITEM_EDIT,[],'routes are declared once in the forward direction; Meta supplies back navigation for the connected screen');
+for(const [from,toList] of Object.entries(flow.routing_model)){
+ for(const to of toList)assert.ok(!flow.routing_model[to]?.includes(from),`routing_model must not declare the reciprocal edge ${to}->${from}`);
+}
 for(const id of ['ITENS_UM','ITENS_DOIS']){
  const screen=flow.screens.find(x=>x.id===id);
  assert.deepEqual(screen.layout.children.map(x=>x.type),['NavigationList'],'product catalog stays readable as a focused list');
@@ -45,6 +57,7 @@ assert.ok(editor.layout.children.some(x=>x.type==='Image'&&x.src==='${data.image
 assert.ok(editor.layout.children.some(x=>x.type==='RadioButtonsGroup'&&x.name==='produto'&&x['data-source']==='${data.alternativas}'));
 const quantityInput=editor.layout.children.find(x=>x.type==='TextInput'&&x.name==='quantidade');
 assert.equal(quantityInput?.['input-type'],'number','quantity uses the native numeric keyboard');
+assert.equal(quantityInput?.['max-chars'],2,'Meta expects max-chars to be a number');
 assert.equal(quantityInput?.['init-value'],'${data.quantidade}');
 assert.match(quantityInput?.pattern||'',/10\|\[0-9\]/);
 assert.ok(quantityInput?.['helper-text'],'quantity range and zero-removal behavior are explained');
@@ -125,6 +138,14 @@ const deps={
  async image(url){return url?'aW1hZ2U=':''},
  signState:st=>signState(st,secret),verifyState:s=>verifyState(s,secret)
 };
+const legacyPage=await dispatchCanaryFlow({action:'data_exchange',screen:'COMBINACAO',data:{etapa:'combinacao',tamanho:'mini',combinacao:'1'}},{flow_id:'3300494700136506'},deps,{"basket-editor-v2":flowExchange,"legacy-v1":legacyFlowExchange});
+assert.equal(legacyPage.screen,'ITENS_UM');
+assert.equal(legacyPage.data.pagina,'1');
+assert.ok(legacyPage.data.nome0&&legacyPage.data.marcas0?.length,'published V1 keeps the multi-product form data contract');
+const legacySubmit={etapa:'itens',estado:legacyPage.data.estado,pagina:legacyPage.data.pagina};
+for(let i=0;i<8;i++){legacySubmit['quant'+i]=legacyPage.data['quant'+i];legacySubmit['marca'+i]=legacyPage.data['marca'+i];}
+const legacyNext=await dispatchCanaryFlow({action:'data_exchange',screen:'ITENS_UM',data:legacySubmit},{flow_id:'3300494700136506'},deps,{"basket-editor-v2":flowExchange,"legacy-v1":legacyFlowExchange});
+assert.equal(legacyNext.screen,'ITENS_DOIS','the published Flow can continue to its next product page after endpoint deployment');
 const init=await flowExchange({action:'INIT'},deps);
 assert.equal(init.screen,'TAMANHO');assert.equal(init.data.tamanhos.length,5);
 const combos=await flowExchange({action:'data_exchange',screen:'TAMANHO',data:{etapa:'tamanho',tamanho:'mini'}},deps);

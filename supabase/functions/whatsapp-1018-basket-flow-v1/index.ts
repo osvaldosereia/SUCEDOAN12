@@ -1,11 +1,14 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import {flowExchange} from './engine.mjs';
+import {flowExchange as legacyFlowExchange} from './engine-legacy-v1.mjs';
+import {dispatchCanaryFlow} from './flow-release-router.mjs';
 import {loadProductImage} from './images.mjs';
 import {decryptMetaPayload,encryptMetaResponse,verifyAppSignature,signState,verifyState} from './crypto.mjs';
 import {deriveFlowSessionKey,FLOW_CANARY_RECIPIENT_E164,FLOW_CANARY_SENDER_E164} from '../_shared/whatsapp-flow-session-v1.mjs';
 
-// Draft Flow handler. It is deployed as a guarded canary; production commercial
-// atendimento and webhook remain separate and untouched.
+// Shared Flow endpoint. It is deployed as a guarded canary; production commercial
+// atendimento and webhook remain separate and untouched. Published V1 requests
+// retain the active V1 engine while the V2 draft uses the product editor engine.
 // This handler requires encrypted Meta payloads, app signature, signed internal canary
 // flow_token and strict 1018->8360 audience verification before exposing storefront data.
 const STORE='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2';
@@ -54,11 +57,14 @@ Deno.serve(async req=>{
  let response;
  try{
   const request=decoded.payload;
+  let canary=null;
   if(request.action!=='ping'){
-   const session=await verifyState(String(request.flow_token||''),await deriveFlowSessionKey(META_SECRET));
-   if(!allowedCanaryClaims(session))return deny(427,'flow_token_invalid');
+   canary=await verifyState(String(request.flow_token||''),await deriveFlowSessionKey(META_SECRET));
+   if(!allowedCanaryClaims(canary))return deny(427,'flow_token_invalid');
   }
-  response=await flowExchange(request,deps);
+  response=request.action==='ping'
+   ? await flowExchange(request,deps)
+   : await dispatchCanaryFlow(request,canary,deps,{'basket-editor-v2':flowExchange,'legacy-v1':legacyFlowExchange});
  }catch(error){
   // No basket, price, token or raw decrypted payload in logs.
   const code=error instanceof Error?error.message:'internal_error';
