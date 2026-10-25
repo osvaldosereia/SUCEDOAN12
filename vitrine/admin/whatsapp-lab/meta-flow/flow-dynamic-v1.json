@@ -109,6 +109,10 @@
           "type": "string",
           "__example__": "mini"
         },
+        "resumoMarcas": {
+          "type": "string",
+          "__example__": "Marcas reais consultadas no catálogo"
+        },
         "opcoes": {
           "type": "array",
           "items": {
@@ -154,6 +158,10 @@
           {
             "type": "TextBody",
             "text": "Preços e marcas atualizados conforme disponibilidade. Você poderá personalizar os produtos."
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.resumoMarcas}"
           },
           {
             "type": "RadioButtonsGroup",
@@ -3924,7 +3932,11 @@
           },
           {
             "type": "TextSubheading",
-            "text": "Total: ${data.valor}"
+            "text": "Total da cesta"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.valor}"
           },
           {
             "type": "TextCaption",
