@@ -104,9 +104,10 @@ Objetivo: transformar a configuração das cestas em um Flow real, por canal.
 - Usar wizard guiado como caminho principal e editor JSON avançado opcional; cada bloco deve mapear para componente oficial.
 - Validar JSON contra schema e componentes Meta; apontar erro por tela/campo.
 - Oferecer prévia, teste em número controlado e publicação manual, com Draft/Published e saúde do endpoint por canal.
-- A Meta possui componente Image; validar a ligação dinâmica, os limites e o resultado em WhatsApp real antes de prometer fotos de produto ou controles compostos.
-- Usar campos numéricos e seleção apenas conforme validação oficial; provar seleção múltipla com quantidade por item antes de fixar a UX.
-- Flow estático não deve ser descrito como preço ao vivo. Para cálculo/validação de cesta, integrar endpoint HTTPS fora do Supabase na rodada 5.
+- A Meta documenta imagens em opções de listas (limite atual: 100 KB por imagem de opção); validar assets e renderização em WhatsApp real antes de prometer fotos.
+- A ação update_data (Flow JSON v6.0+) pode atualizar o estado da tela após interações sem chamar o servidor; provar se o total pode ser exibido corretamente quando seleção e quantidade mudam.
+- Usar campos numéricos e seleção conforme validação oficial; provar seleção múltipla com quantidade por item e o comportamento do campo de quantidade antes de fixar a UX.
+- A tela pode dar feedback imediato via update_data, mas o total final deve ser recalculado/validado no servidor pelo endpoint HTTPS externo ao Supabase na rodada 5.
 - Nenhuma publicação ou mensagem a cliente nesta rodada.
 
 Saída: Flow JSON versionado, prévia sinalizada como local e jornada testada em canal controlado antes de qualquer publicação.
@@ -158,7 +159,7 @@ Saída: homologação real em ambiente de teste; cliente só entra depois de uma
 2. Como salvar no GitHub sem senha própria e sem expor token de escrita no navegador.
 3. Qual runtime HTTP fora do Supabase atenderá Data Exchange e operações Meta.
 4. Quais são os IDs oficiais de WABA e telefone para os dois canais.
-5. Confirmar no schema Meta vigente e em aparelho de teste a carga de imagens de produto e a UX de seleção múltipla com quantidades independentes; usar o endpoint para preço e total autoritativos.
+5. Confirmar no schema Meta vigente e em aparelho de teste imagens por opção, seleção múltipla com quantidades independentes e cálculo imediato via update_data; manter endpoint como autoridade de preço e total final.
 
 ## Registro do andamento
 
