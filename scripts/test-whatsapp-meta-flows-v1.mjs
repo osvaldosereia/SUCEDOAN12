@@ -50,7 +50,14 @@ const capped=await listFlowsViaMeta({accessToken:'server-token',graphVersion:'v9
 assert.equal(capped.truncated,true);
 assert.equal(capped.page_count,1);
 
-const canarySecret='flow-session-secret-for-tests-only-123456';
+const deriveFlowSessionKey=(await import('../supabase/functions/_shared/whatsapp-flow-session-v1.mjs')).deriveFlowSessionKey;
+assert.equal(typeof deriveFlowSessionKey,'function','session key should derive from the existing Meta app secret');
+const appSecret='existing-meta-app-secret-for-tests-123456';
+const canarySecret=await deriveFlowSessionKey(appSecret);
+assert.equal(canarySecret.length,64);
+assert.equal(await deriveFlowSessionKey(appSecret),canarySecret);
+assert.notEqual(canarySecret,appSecret);
+assert.notEqual(await deriveFlowSessionKey(appSecret+'-other'),canarySecret);
 const canaryClaims={type:'da-flow-1018-canary',sender:'+5565984491018',to:'+5565999828360',nonce:'test-nonce-8360-only'};
 const canaryToken=await signState(canaryClaims,canarySecret);
 let sentFlowBody;
