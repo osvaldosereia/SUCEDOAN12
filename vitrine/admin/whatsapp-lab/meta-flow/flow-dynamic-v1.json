@@ -3,21 +3,13 @@
   "data_api_version": "3.0",
   "routing_model": {
     "TAMANHO": [
-      "COMBINACAO"
+      "TIPO_PRODUTO"
     ],
-    "COMBINACAO": [
-      "ITENS_UM"
-    ],
-    "ITENS_UM": [
-      "ITEM_EDIT",
-      "ITENS_DOIS",
+    "TIPO_PRODUTO": [
+      "OPCAO_EDIT",
       "RESUMO"
     ],
-    "ITENS_DOIS": [
-      "ITEM_EDIT",
-      "RESUMO"
-    ],
-    "ITEM_EDIT": [],
+    "OPCAO_EDIT": [],
     "RESUMO": []
   },
   "screens": [
@@ -74,18 +66,18 @@
           },
           {
             "type": "TextBody",
-            "text": "Escolha um tamanho para conhecer as três combinações de marcas e seus valores."
+            "text": "Veja o valor a partir da combinação mais barata. Depois, escolha os produtos e as quantidades."
           },
           {
             "type": "RadioButtonsGroup",
             "name": "tamanho",
-            "label": "Tamanho da cesta",
+            "label": "Tamanho e preço inicial",
             "required": true,
             "data-source": "${data.tamanhos}"
           },
           {
             "type": "Footer",
-            "label": "Ver combinações",
+            "label": "Personalizar cesta",
             "on-click-action": {
               "name": "data_exchange",
               "payload": {
@@ -98,18 +90,38 @@
       }
     },
     {
-      "id": "COMBINACAO",
-      "title": "Combinações de marcas",
+      "id": "TIPO_PRODUTO",
+      "title": "Escolha os produtos",
       "data": {
-        "tamanho": {
+        "estado": {
           "type": "string",
-          "__example__": "mini"
+          "__example__": ""
         },
-        "resumoMarcas": {
+        "tipo_nome": {
           "type": "string",
-          "__example__": "Marcas reais consultadas no catálogo"
+          "__example__": ""
         },
-        "opcoes": {
+        "etapa_texto": {
+          "type": "string",
+          "__example__": ""
+        },
+        "lista_titulo": {
+          "type": "string",
+          "__example__": ""
+        },
+        "lista_descricao": {
+          "type": "string",
+          "__example__": ""
+        },
+        "aviso": {
+          "type": "string",
+          "__example__": ""
+        },
+        "tem_aviso": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "itens_lista": {
           "type": "array",
           "items": {
             "type": "object",
@@ -117,31 +129,64 @@
               "id": {
                 "type": "string"
               },
-              "title": {
-                "type": "string"
+              "main-content": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "type": "string"
+                  }
+                }
               },
-              "description": {
-                "type": "string"
+              "on-click-action": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "payload": {
+                    "type": "object",
+                    "properties": {
+                      "etapa": {
+                        "type": "string"
+                      },
+                      "estado": {
+                        "type": "string"
+                      },
+                      "position_id": {
+                        "type": "string"
+                      },
+                      "product_id": {
+                        "type": "string"
+                      },
+                      "pagina": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "optionalProperties": {
+              "start": {
+                "type": "object",
+                "properties": {
+                  "image": {
+                    "type": "string"
+                  },
+                  "alt-text": {
+                    "type": "string"
+                  }
+                }
               }
             }
           },
-          "__example__": [
-            {
-              "id": "1",
-              "title": "Opção de cesta 1",
-              "description": "Preço atual carregado do Supabase"
-            },
-            {
-              "id": "2",
-              "title": "Opção de cesta 2",
-              "description": "Preço atual carregado do Supabase"
-            },
-            {
-              "id": "3",
-              "title": "Opção de cesta 3",
-              "description": "Preço atual carregado do Supabase"
-            }
-          ]
+          "__example__": []
         }
       },
       "layout": {
@@ -149,128 +194,21 @@
         "children": [
           {
             "type": "TextHeading",
-            "text": "Escolha a combinação"
+            "text": "${data.tipo_nome}"
           },
           {
             "type": "TextBody",
-            "text": "Preços e marcas atualizados conforme disponibilidade. Você poderá personalizar os produtos."
+            "text": "${data.etapa_texto}"
           },
           {
-            "type": "TextBody",
-            "text": "${data.resumoMarcas}"
+            "type": "TextCaption",
+            "text": "${data.aviso}",
+            "visible": "${data.tem_aviso}",
+            "font-weight": "bold"
           },
-          {
-            "type": "RadioButtonsGroup",
-            "name": "combinacao",
-            "label": "Combinações",
-            "required": true,
-            "data-source": "${data.opcoes}"
-          },
-          {
-            "type": "Footer",
-            "label": "Ver produtos",
-            "on-click-action": {
-              "name": "data_exchange",
-              "payload": {
-                "etapa": "combinacao",
-                "tamanho": "${data.tamanho}",
-                "combinacao": "${form.combinacao}"
-              }
-            }
-          }
-        ]
-      }
-    },
-    {
-      "id": "ITENS_UM",
-      "title": "Produtos da cesta",
-      "data": {
-        "estado": {
-          "type": "string",
-          "__example__": ""
-        },
-        "lista_titulo": {
-          "type": "string",
-          "__example__": ""
-        },
-        "lista_descricao": {
-          "type": "string",
-          "__example__": ""
-        },
-        "itens_lista": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "main-content": {
-                "type": "object",
-                "properties": {
-                  "title": {
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "metadata": {
-                    "type": "string"
-                  }
-                }
-              },
-              "on-click-action": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "payload": {
-                    "type": "object",
-                    "properties": {
-                      "etapa": {
-                        "type": "string"
-                      },
-                      "estado": {
-                        "type": "string"
-                      },
-                      "position_id": {
-                        "type": "string"
-                      },
-                      "return_screen": {
-                        "type": "string"
-                      },
-                      "pagina": {
-                        "type": "string"
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            "optionalProperties": {
-              "start": {
-                "type": "object",
-                "properties": {
-                  "image": {
-                    "type": "string"
-                  },
-                  "alt-text": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          },
-          "__example__": []
-        }
-      },
-      "layout": {
-        "type": "SingleColumnLayout",
-        "children": [
           {
             "type": "NavigationList",
-            "name": "catalogo",
+            "name": "opcoes",
             "list-items": "${data.itens_lista}",
             "label": "${data.lista_titulo}",
             "description": "${data.lista_descricao}",
@@ -280,106 +218,8 @@
       }
     },
     {
-      "id": "ITENS_DOIS",
-      "title": "Produtos da cesta",
-      "data": {
-        "estado": {
-          "type": "string",
-          "__example__": ""
-        },
-        "lista_titulo": {
-          "type": "string",
-          "__example__": ""
-        },
-        "lista_descricao": {
-          "type": "string",
-          "__example__": ""
-        },
-        "itens_lista": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "main-content": {
-                "type": "object",
-                "properties": {
-                  "title": {
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "metadata": {
-                    "type": "string"
-                  }
-                }
-              },
-              "on-click-action": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "payload": {
-                    "type": "object",
-                    "properties": {
-                      "etapa": {
-                        "type": "string"
-                      },
-                      "estado": {
-                        "type": "string"
-                      },
-                      "position_id": {
-                        "type": "string"
-                      },
-                      "return_screen": {
-                        "type": "string"
-                      },
-                      "pagina": {
-                        "type": "string"
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            "optionalProperties": {
-              "start": {
-                "type": "object",
-                "properties": {
-                  "image": {
-                    "type": "string"
-                  },
-                  "alt-text": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          },
-          "__example__": []
-        }
-      },
-      "layout": {
-        "type": "SingleColumnLayout",
-        "children": [
-          {
-            "type": "NavigationList",
-            "name": "catalogo",
-            "list-items": "${data.itens_lista}",
-            "label": "${data.lista_titulo}",
-            "description": "${data.lista_descricao}",
-            "media-size": "regular"
-          }
-        ]
-      }
-    },
-    {
-      "id": "ITEM_EDIT",
-      "title": "Editar produto",
+      "id": "OPCAO_EDIT",
+      "title": "Quantidade do produto",
       "data": {
         "estado": {
           "type": "string",
@@ -389,7 +229,7 @@
           "type": "string",
           "__example__": ""
         },
-        "return_screen": {
+        "product_id": {
           "type": "string",
           "__example__": ""
         },
@@ -409,42 +249,9 @@
           "type": "boolean",
           "__example__": false
         },
-        "produto": {
-          "type": "string",
-          "__example__": ""
-        },
         "quantidade": {
           "type": "string",
-          "__example__": "1"
-        },
-        "alternativas": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "title": {
-                "type": "string"
-              }
-            },
-            "optionalProperties": {
-              "description": {
-                "type": "string"
-              },
-              "image": {
-                "type": "string"
-              },
-              "alt-text": {
-                "type": "string"
-              },
-              "enabled": {
-                "type": "boolean"
-              }
-            }
-          },
-          "__example__": []
+          "__example__": "0"
         },
         "preco": {
           "type": "string",
@@ -454,13 +261,17 @@
           "type": "string",
           "__example__": ""
         },
+        "max_quantidade": {
+          "type": "string",
+          "__example__": "10"
+        },
         "preco_estoque": {
           "type": "string",
           "__example__": ""
         },
         "aviso": {
           "type": "string",
-          "__example__": "Quantidade disponível."
+          "__example__": ""
         },
         "tem_aviso": {
           "type": "boolean",
@@ -499,14 +310,6 @@
             "font-weight": "bold"
           },
           {
-            "type": "RadioButtonsGroup",
-            "name": "produto",
-            "label": "Marca / produto",
-            "required": true,
-            "data-source": "${data.alternativas}",
-            "init-value": "${data.produto}"
-          },
-          {
             "type": "TextInput",
             "name": "quantidade",
             "label": "Quantidade",
@@ -514,20 +317,19 @@
             "required": true,
             "max-chars": 2,
             "pattern": "^(10|[0-9])$",
-            "helper-text": "Digite de 0 a 10. Zero retira o produto.",
+            "helper-text": "Digite de 0 a 10. Zero remove esta opção.",
             "init-value": "${data.quantidade}"
           },
           {
             "type": "Footer",
-            "label": "Salvar e voltar",
+            "label": "Salvar quantidade",
             "on-click-action": {
               "name": "data_exchange",
               "payload": {
-                "etapa": "salvar_item",
+                "etapa": "salvar_opcao",
                 "estado": "${data.estado}",
                 "position_id": "${data.position_id}",
-                "return_screen": "${data.return_screen}",
-                "produto": "${form.produto}",
+                "product_id": "${data.product_id}",
                 "quantidade": "${form.quantidade}"
               }
             }
