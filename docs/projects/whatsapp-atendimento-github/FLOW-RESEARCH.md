@@ -12,7 +12,7 @@ WhatsApp Flows permite conduzir jornadas estruturadas com telas, campos e navega
 A recomendação para este projeto é construir o configurador em duas camadas:
 
 1. Um editor guiado que lê as cestas e produtos versionados no GitHub, gera Flow JSON compatível e oferece revisão, validação e exportação. As telas e mensagens ficam organizadas por cada um dos dois números.
-2. Quando o fluxo de cesta estiver fechado, conectar um runtime HTTPS fora do Supabase para Data Exchange, cálculo e validação do pedido. O runtime manterá tokens e chave privada fora do repositório e do navegador.
+2. Quando o fluxo de cesta estiver fechado, conectar um endpoint HTTPS isolado para Data Exchange, cálculo e validação do pedido. A recomendação atual é avaliar uma Edge Function nova no Supabase existente para consultar clientes/endereço; produtos e cestas serão lidos da revisão GitHub, não de tabelas Supabase.
 
 O admin pode começar sem uma senha própria, mas isso não torna segura a escrita anônima no repositório. Até existir um caminho de escrita autenticado pelo GitHub ou uma gravação no servidor, o MVP deve permitir leitura, edição em preview e exportação; não deve expor token de escrita no navegador.
 
@@ -136,19 +136,20 @@ Como o repositório atual é público, só devem entrar nele dados de produto e 
 
 Não criar senha própria atende à preferência atual. Mesmo assim, escrita GitHub requer autorização. Um site estático aberto pode ler e montar alterações, mas não deve escrever por meio de token incorporado no navegador. Até a estratégia de escrita ser aprovada, permitir preview e exportação; a persistência deve passar pela identidade GitHub ou por um servidor que assine a gravação.
 
-### Runtime de Flow fora do Supabase
+### Runtime de Flow e uso limitado do Supabase
 
-GitHub Pages pode servir o admin estático, mas não executa o endpoint criptografado da Meta. A cesta ao vivo precisa de um runtime HTTPS fora do Supabase, ainda a selecionar, que:
+GitHub Pages pode servir o admin estático, mas não executa o endpoint criptografado da Meta. A recomendação atual é avaliar uma Edge Function nova e isolada no Supabase existente, pois o usuário autorizou aproveitar o cadastro de clientes/endereço. Essa função deve:
 
-- implemente o contrato criptográfico oficial e validação das requisições;
-- carregue apenas a versão publicada do catálogo/cesta;
-- responda a `ping`, `INIT` e `data_exchange`;
-- calcule total no servidor e não confie em valores do cliente;
-- receba o webhook de conclusão, valide o evento e o correlacione com `flow_token`;
-- mantenha chave privada e token Meta num cofre de segredos/variáveis protegidas;
-- produza métricas de disponibilidade e latência sem guardar payload pessoal em log.
+- implementar o contrato criptográfico oficial e validar as requisições;
+- carregar produtos/cestas de uma revisão publicada e imutável do GitHub, sem ler catálogo de produto do Supabase;
+- responder a ping, INIT e data_exchange;
+- calcular o total no servidor e ignorar valores comerciais enviados pelo cliente;
+- receber o webhook de conclusão, validar remetente/canal e correlacionar a sessão por flow_token;
+- consultar cadastro/endereço somente no servidor, preferencialmente pelo resolvedor já adotado pela operação;
+- manter chave privada Meta, token Meta e chave secreta Supabase apenas em secrets do servidor;
+- produzir métricas de disponibilidade/latência sem guardar payload pessoal nos logs.
 
-Não foi escolhido fornecedor de hospedagem nem criada infraestrutura nesta pesquisa. Essa decisão deve considerar custo, operação, disponibilidade e controle de segredos, sem adicionar Supabase.
+Essa recomendação não autoriza modificar ou implantar função existente. O endpoint novo precisa ser isolado e testado antes de qualquer publicação. A sessão do Flow deve responder dentro do limite de 10 segundos documentado pela Meta.
 
 ## 6. Fluxo operacional proposto
 
@@ -174,7 +175,7 @@ O exemplo de webhook demonstra também que o Flow é enviado pela API e que a re
 
 1. Exportar do Vitrine Admin a composição completa das cestas. A exportação CSV encontrada no laboratório de catálogo não contém os vínculos e quantidades necessários; a migração continua bloqueada até receber CSV/JSON apropriado.
 2. Definir escrita GitHub sem senha própria e sem token no navegador.
-3. Escolher runtime HTTPS fora do Supabase para endpoint e webhook.
+3. Revisar e escolher uma Edge Function nova e isolada (ou outro runtime HTTPS) para endpoint e webhook, preservando o catálogo somente no GitHub.
 4. Confirmar WABA ID e phone number ID dos dois números, sem realizar chamada Meta nesta etapa.
 5. Validar no Flow JSON atual o comportamento de imagem dinâmica e seleção múltipla com quantidade por produto.
 6. Depois dessas dependências, converter esta pesquisa em design e plano de execução antes de iniciar integração Meta.
@@ -263,3 +264,10 @@ A análise específica, fórmula de preço, comparação de Meta e plataformas e
 - [Gupshup — associação de canal e número à configuração](https://docs.gupshup.io/docs/feature-6-flow-feature)
 
 Pesquisa consultada em 25/10/2026. Em divergência de nomenclatura ou capacidade, prevalecem o schema, o changelog e as respostas atuais da Meta.
+
+
+## Atualização — cadastro do cliente e fechamento — 25/10/2026
+
+A decisão atual separa a fonte dos produtos da identificação do cliente: catálogo/composição no GitHub; consulta de cadastro e endereço no Supabase existente, exclusivamente pelo backend. A inspeção leu somente o schema de customers, customer_phones, customer_addresses, papoai_order_drafts_v2 e orders; nenhum dado pessoal foi lido ou alterado.
+
+O Flow não deve pedir o telefone ao cliente. A conclusão chega ao webhook com o remetente da conversa; para pré-preencher os dados antes da conclusão, associar a sessão a um flow_token opaco ligado pelo backend ao número e ao canal. A jornada final coleta pagamento e endereço, conclui o Flow e envia na conversa uma mensagem separada com produtos/quantidades (sem preços unitários), total, cliente e endereço, com botões Confirmar pedido, Editar pedido e Cancelar. O pedido só será criado após Confirmar pedido. A especificação completa e os gates estão em [ORDER-FLOW-CHECKOUT-DESIGN.md](ORDER-FLOW-CHECKOUT-DESIGN.md).
