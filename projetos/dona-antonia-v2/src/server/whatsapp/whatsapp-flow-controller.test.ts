@@ -127,7 +127,13 @@ describe('createWhatsAppFlowController', () => {
         screen: 'BASKET',
         data: { basketId: 'unavailable', basketQuantity: 1 },
       }),
-    ).rejects.toThrow();
+    ).resolves.toEqual({
+      screen: 'BASKET',
+      data: {
+        baskets: [{ id: 'mini', title: 'Cesta Mini' }],
+        errorMessage: 'Esta cesta está temporariamente indisponível.',
+      },
+    });
 
     await expect(controller({ action: 'DELETE_EVERYTHING' })).rejects.toThrow();
   });
