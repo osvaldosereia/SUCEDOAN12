@@ -12,7 +12,7 @@
   };
   const DEPENDENCIES=[
     {src:'/vitrine/admin/basket-admin-domain.js?v=20261023-1',global:'DonaAntoniaBasketAdminDomain'},
-    {src:'/vitrine/admin/basket-admin-api.js?v=20261023-2',global:'DonaAntoniaBasketAdminApi'}
+    {src:'/vitrine/admin/basket-admin-api.js?v=20261025-flow-v1',global:'DonaAntoniaBasketAdminApi'}
   ];
   const state={tab:'types',generation:0,loaders:new Map()};
   const host=()=>document.querySelector('#content');
