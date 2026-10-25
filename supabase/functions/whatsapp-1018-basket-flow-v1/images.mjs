@@ -75,7 +75,7 @@ export async function loadProductImage(value,fetchImpl=globalThis.fetch){
  let response;
  try{
   response=await fetchImpl(target.href,{
-   method:'GET',cache:'no-store',redirect:'error',signal:AbortSignal.timeout(4500),
+   method:'GET',cache:'no-store',redirect:'error',signal:AbortSignal.timeout(1800),
    headers:{accept:ACCEPT}
   });
  }catch{return ''}

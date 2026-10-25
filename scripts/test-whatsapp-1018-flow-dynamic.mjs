@@ -121,7 +121,7 @@ assert.match(read('vitrine/admin/whatsapp-lab/index.html'),/id="flowRequestStatu
 const shell={ok:true,baskets:SIZE_KEYS.map((key,i)=>({id:uuid(i+1),size_key:key,starting_price_cents:17270+i*100,starting_composition_number:1}))};
 const itemCount=27,basketId=shell.baskets[0].id;
 const makeItems=count=>Array.from({length:count},(_,i)=>({position_id:uuid(i+100),product_id:uuid(i+1000),name:'Produto '+(i+1)+' Marca A 1 kg',brand:'Marca A',image_url:'https://ssbesxgaijknwsjbsbcz.supabase.co/storage/v1/object/public/product-images/item-'+i+'.webp',packaging:'1 kg',price_cents:100,stock_quantity:20,quantity:i===0?2:1}));
-let activeItems=makeItems(itemCount),basketCalls=0;
+let activeItems=makeItems(itemCount),basketCalls=0,snapshotCalls=0;
 const secret='A'.repeat(64);
 const canaryIssuedAt=Date.now();
 const canaryToken=await signState({type:'da-flow-1018-canary',sender:'+5565984491018',to:'+5565999828360',flow_id:DYNAMIC_V2_FLOW_ID,nonce:'test-canary-nonce-1234'},secret,24*60*60*1000);
@@ -168,6 +168,11 @@ const deps={
   const total=items.reduce((sum,item)=>sum+Number(item.price_cents||0)*Number(item.quantity||0),0);
   return {ok:true,total_cents:total,basket:{...config.basket,display_price_cents:total,stock_quantity:4},items,extras:[]};
  },
+ async snapshot(id,n,submitted){
+  snapshotCalls++;
+  const configuration=await this.configuration(id,n);
+  return {ok:true,configuration,quote:await this.flowQuote(id,n,submitted)};
+ },
  async image(url){return url?'aW1hZ2U=':''},
  signState:st=>signState(st,secret),verifyState:s=>verifyState(s,secret)
 };
@@ -197,7 +202,8 @@ const edited=await flowExchange({action:'data_exchange',screen:'OPCAO_EDIT',data
 assert.equal(edited.screen,'TIPO_PRODUTO');
 assert.ok(edited.data.itens_lista.find(x=>x['on-click-action']?.payload?.product_id===alternate)['main-content'].metadata.includes('3 un.'));
 assert.ok(edited.data.lista_descricao.includes('Total atualizado R$'));
-assert.ok(basketCalls>=3,'initial and changed selections are priced by the Flow quote contract');
+assert.ok(basketCalls>=2,'initial and changed selections are priced by the Flow quote contract');
+assert.ok(snapshotCalls>=2,'size selection and quantity saves use the combined configuration and quote snapshot');
 const stockError=await flowExchange({action:'data_exchange',screen:'OPCAO_EDIT',data:{etapa:'salvar_opcao',estado:detail.data.estado,position_id:detail.data.position_id,product_id:alternate,quantidade:'5'}},deps);
 assert.equal(stockError.screen,'OPCAO_EDIT');assert.match(stockError.data.aviso,/Estoque ou opção atualizados/);
 const nextOptionsPayload=firstType.data.itens_lista.find(x=>x['on-click-action']?.payload?.etapa==='pagina_opcoes')['on-click-action'].payload;

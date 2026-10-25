@@ -530,11 +530,7 @@ async function basketFlowShell(){
   const ready=baskets.filter(Boolean);
   return {...shell,baskets:ready,flow_admin_config:true};
 }
-async function basketFlowQuote(payload:any){
-  const id=uid(payload?.basket_id),n=Math.trunc(Number(payload?.composition_number||0));
-  if(!id)return {error:"invalid_basket",status:400};
-  const config=await basketFlowConfiguration(id,n);
-  if(config.error)return config;
+function basketFlowQuoteFromConfig(config:any,payload:any){
   const submitted=Array.isArray(payload?.items)?payload.items:[];
   const incoming=new Map<string,any>();
   for(const row of submitted){
@@ -584,6 +580,22 @@ async function basketFlowQuote(payload:any){
   const total=Math.max(0,productTotal+hidden+conditional);
   const basket={...baseBasket,display_price_cents:total,stock_quantity:capacity,conditional_hidden_applied_cents:conditional};
   return {ok:true,total_cents:total,basket,items:resultItems,extras:[]};
+}
+async function basketFlowQuote(payload:any){
+  const id=uid(payload?.basket_id),n=Math.trunc(Number(payload?.composition_number||0));
+  if(!id)return {error:"invalid_basket",status:400};
+  const config=await basketFlowConfiguration(id,n);
+  if(config.error)return config;
+  return basketFlowQuoteFromConfig(config,payload);
+}
+async function basketFlowSnapshot(payload:any){
+  const id=uid(payload?.basket_id),n=Math.trunc(Number(payload?.composition_number||0));
+  if(!id)return {error:"invalid_basket",status:400};
+  const configuration=await basketFlowConfiguration(id,n);
+  if(configuration.error)return configuration;
+  const quote=basketFlowQuoteFromConfig(configuration,payload);
+  if(quote.error)return quote;
+  return {ok:true,configuration,quote};
 }
 
 async function moldQuote(payload:any){
@@ -1173,6 +1185,7 @@ Deno.serve(async(req:Request)=>{
     if(req.method==="POST"&&action==="customer_register"){const r=await registerCustomer(req,body);return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,r,200,{"Cache-Control":"no-store"})}
     if(req.method==="POST"&&action==="basket_quote"){const r=await quote(body);return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,r,200,{"Cache-Control":"no-store"})}
     if(req.method==="POST"&&action==="basket_mold_quote"){const r=await moldQuote(body);return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,r,200,{"Cache-Control":"no-store"})}
+    if(req.method==="POST"&&action==="basket_flow_snapshot"){const r=await basketFlowSnapshot(body);return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,r,200,{"Cache-Control":"no-store"})}
     if(req.method==="POST"&&action==="basket_flow_quote"){const r=await basketFlowQuote(body);return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,r,200,{"Cache-Control":"no-store"})}
     if(req.method==="POST"&&action==="submit_order"){const r=await submit(req,body);const headers={"Cache-Control":"no-store",...(r.retry_after_seconds?{"Retry-After":String(r.retry_after_seconds)}:{})};return r.error?json(req,{ok:false,...r},r.status||400,headers):json(req,{ok:true,...r},200,headers)}
     if(req.method==="POST"&&action==="issue_identity_link")return json(req,{ok:false,error:"retired"},410)
