@@ -45,6 +45,6 @@
 
 - [x] Write a test proving deterministic, context-separated derivation from the existing app secret.
 - [x] Run it and confirm it fails because the derivation function is absent.
-- [ ] Implement derivation, remove the extra environment variable from all Flow paths and publish gates.
-- [ ] Run the Flow crypto/API and Admin manager tests.
-- [ ] Update implementation documentation and commit.
+- [x] Implement derivation, remove the extra environment variable from all Flow paths and publish gates.
+- [x] Run the Flow crypto/API and Admin manager tests.
+- [x] Update implementation documentation and commit.
