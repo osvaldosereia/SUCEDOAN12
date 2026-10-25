@@ -115,6 +115,47 @@ describe('createWhatsAppFlowController', () => {
     });
   });
 
+  it('maps basket selections to active SKU lines and supports BACK navigation', async () => {
+    const controller = createWhatsAppFlowController({
+      readCatalog: async () => catalog,
+      quote: vi.fn(),
+    });
+
+    await expect(
+      controller({
+        action: 'data_exchange',
+        screen: 'PRODUCTS',
+        data: {
+          basketId: 'mini',
+          basketQuantity: 2,
+          basketLines: [
+            {
+              typeId: 'type-rice',
+              sku: 'SKU-RICE-01',
+              quantity: 2,
+              priceCents: 1,
+            },
+          ],
+          extraLines: [],
+        },
+      }),
+    ).resolves.toEqual({
+      screen: 'CUSTOMER',
+      data: {
+        basketId: 'mini',
+        basketName: 'Cesta Mini',
+        basketQuantity: 2,
+        basketLines: [{ typeId: 'type-rice', sku: 'SKU-RICE-01', quantity: 2 }],
+        extraLines: [],
+      },
+    });
+
+    await expect(controller({ action: 'BACK', screen: 'PRODUCTS' })).resolves.toEqual({
+      screen: 'BASKET',
+      data: { baskets: [{ id: 'mini', title: 'Cesta Mini' }] },
+    });
+  });
+
   it('quotes a sanitized order on the customer screen before review', async () => {
     const quote = vi.fn(async (payload: unknown) => {
       void payload;
