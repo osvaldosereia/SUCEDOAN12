@@ -110,7 +110,11 @@ export function parseWhatsAppFlowSubmission(
 ): WhatsAppFlowSubmission {
   if (input.providerAccount !== '0975' && input.providerAccount !== '1018')
     throw new Error('Conta WhatsApp desconhecida.');
-  if (typeof input.messageId !== 'string' || !input.messageId.trim() || input.messageId.length > 255)
+  if (
+    typeof input.messageId !== 'string' ||
+    !input.messageId.trim() ||
+    input.messageId.length > 255
+  )
     throw new Error('Identificador da mensagem inválido.');
 
   const response = parseFlowResponse(input.responseJson);
@@ -158,7 +162,9 @@ export function parseWhatsAppFlowSubmission(
       },
     },
     paymentMethod,
-    deliveryDate: normalizeDeliveryDate(requiredText(response, 'deliveryDate', { maxLength: 10 })),
+    deliveryDate: normalizeDeliveryDate(
+      requiredText(response, 'deliveryDate', { maxLength: 10 }),
+    ),
     idempotencyKey: `flow:${flowToken}`,
   };
 
