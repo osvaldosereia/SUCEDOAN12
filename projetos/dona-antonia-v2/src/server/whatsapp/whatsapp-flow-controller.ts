@@ -283,8 +283,7 @@ function checkoutRequest(
   data: Record<string, unknown>,
   flowToken: string,
 ): CheckoutOrderRequest {
-  if (!/^[A-Za-z0-9._-]{16,120}$/.test(flowToken))
-    throw new Error('Token do Flow inválido.');
+  if (!/^[A-Za-z0-9._-]{16,120}$/.test(flowToken)) throw new Error('Token do Flow inválido.');
   const basketId = text(data.basketId, 'cesta', 128);
   const basket = basketById(catalog, basketId);
   if (!basket) throw new Error('Cesta indisponível.');
