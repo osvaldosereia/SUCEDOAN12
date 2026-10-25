@@ -1,9 +1,14 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import {flowExchange} from './engine.mjs';
+import {flowExchange as legacyFlowExchange} from './engine-legacy-v1.mjs';
+import {dispatchCanaryFlow} from './flow-release-router.mjs';
+import {loadProductImage} from './images.mjs';
 import {decryptMetaPayload,encryptMetaResponse,verifyAppSignature,signState,verifyState} from './crypto.mjs';
 import {deriveFlowSessionKey,FLOW_CANARY_RECIPIENT_E164,FLOW_CANARY_SENDER_E164} from '../_shared/whatsapp-flow-session-v1.mjs';
 
-// DRAFT ONLY: not deployed. Production Meta canary and commercial webhook untouched.
+// Shared Flow endpoint. It is deployed as a guarded canary; production commercial
+// atendimento and webhook remain separate and untouched. Published V1 requests
+// retain the active V1 engine while the V2 draft uses the product editor engine.
 // This handler requires encrypted Meta payloads, app signature, signed internal canary
 // flow_token and strict 1018->8360 audience verification before exposing storefront data.
 const STORE='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2';
@@ -26,13 +31,13 @@ async function catalogRequest(action,params={},method='GET'){
  return body;
 }
 const catalog={
- async shell(){return catalogRequest('home_size_cards')},
- async basket(basketId,n){return catalogRequest('basket',{basket_id:basketId+'@'+n,lightweight:1})},
- async options(basketId,n,positions){return catalogRequest('basket_mold_options_batch',{basket_id:basketId,composition_number:n,positions},'POST')},
- async quote(basketId,n,items){return catalogRequest('basket_mold_quote',{basket_id:basketId,composition_number:n,items,lightweight:true},'POST')}
+ async shell(){return catalogRequest('basket_flow_shell')},
+ async configuration(basketId,n){return catalogRequest('basket_flow_configuration',{basket_id:basketId,composition_number:n})},
+ async flowQuote(basketId,n,items){return catalogRequest('basket_flow_quote',{basket_id:basketId,composition_number:n,items},'POST')}
 };
 const deps={
  ...catalog,
+ image:async url=>loadProductImage(url),
  signState:async state=>signState(state,await deriveFlowSessionKey(META_SECRET)),
  verifyState:async token=>verifyState(token,await deriveFlowSessionKey(META_SECRET))
 };
@@ -51,11 +56,14 @@ Deno.serve(async req=>{
  let response;
  try{
   const request=decoded.payload;
+  let canary=null;
   if(request.action!=='ping'){
-   const session=await verifyState(String(request.flow_token||''),await deriveFlowSessionKey(META_SECRET));
-   if(!allowedCanaryClaims(session))return deny(427,'flow_token_invalid');
+   canary=await verifyState(String(request.flow_token||''),await deriveFlowSessionKey(META_SECRET));
+   if(!allowedCanaryClaims(canary))return deny(427,'flow_token_invalid');
   }
-  response=await flowExchange(request,deps);
+  response=request.action==='ping'
+   ? await flowExchange(request,deps)
+   : await dispatchCanaryFlow(request,canary,deps,{'basket-editor-v2':flowExchange,'legacy-v1':legacyFlowExchange});
  }catch(error){
   // No basket, price, token or raw decrypted payload in logs.
   const code=error instanceof Error?error.message:'internal_error';

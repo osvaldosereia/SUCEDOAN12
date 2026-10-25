@@ -21,8 +21,10 @@ for(const token of ['data-mold-conditional-enabled','data-mold-conditional-hidde
 assert.match(edge,/admin_save_basket_mold_v3/);
 assert.match(storefront,/conditional_hidden_applied_cents/);
 assert.match(storefront,/conditional_hidden_product_id/);
-assert.match(root,/moldConditionalHiddenCents/);
-assert.match(root,/Number\(x\.quantity\|\|0\)>0/);
+assert.match(root,/Estamos preparando melhorias/,'public root stays in maintenance while storefront is offline');
+assert.match(root,/https:\/\/wa\.me\/5565998150975/,'maintenance page keeps the requested WhatsApp channel');
+assert.match(root,/noindex/,'maintenance page remains excluded from search');
+assert.doesNotMatch(root,/moldConditionalHiddenCents|submit_order/,'offline page exposes no ordering behavior');
 assert.match(vitrine,/<meta http-equiv="refresh" content="0;url=\/">/,'legacy /vitrine/ must redirect to the public root');
 assert.match(vitrine,/window\.location\.replace\('\/'\+window\.location\.search\+window\.location\.hash\)/,'legacy redirect must preserve query and hash');
 assert.doesNotMatch(vitrine,/moldConditionalHiddenCents|checkoutWhatsappUnified|submit_order/,'legacy route must not duplicate storefront or checkout behavior');

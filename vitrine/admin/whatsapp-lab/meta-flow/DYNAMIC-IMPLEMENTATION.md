@@ -1,67 +1,37 @@
-# Dona Antônia · WhatsApp Flows dinâmicos · Rodada 1 (canal 1018)
+# Dona Antônia · Flow de cestas ligado ao Vitrine Admin
 
-**Status verificado em 25/10/2026:** Dona Antônia Cestas Básicas Dynamic V2 está em DRAFT, sem erros reportados e com saúde ainda não informada; Dynamic V1 está publicado. O endpoint fixo está configurado e os pré-requisitos do servidor aparecem como válidos. Nenhum envio de teste ou publicação foi feito nesta revisão.
+**Estado verificado em 25/10/2026:** o Flow Dynamic V2 (`1817973829344642`) permanece em `DRAFT`; o Dynamic V1 (`3300494700136506`) permanece publicado. Esta branch integra o contrato novo do atendimento com a configuração do Vitrine Admin. A alteração de runtime ainda precisa ser implantada e homologada; nesta continuação não houve envio de mensagem nem publicação do Flow.
 
-**Limite de integração:** o runtime em engine.mjs não lê a configuração flow_v1 salva pelo Vitrine Admin. A ordenação por tipo, os modos de seleção e os limites definidos nessa tela ainda são apenas metadados/prévia administrativa; não alteram o atendimento da Meta. O runtime atual seleciona um produto e uma quantidade por posição do molde, e o resumo final apresenta itens e total, sem fotos ou preço individual.
+## Experiência planejada
 
-## Escopo desenvolvido
-- Escolha de 5 tamanhos lendo `home_size_cards` do `storefront-v2`.
-- Consulta dos preços **atuais** das 3 combinações do tamanho escolhido via `basket?basket_id=UUID@N&lightweight=1`.
-- Edição por produto, com `Dropdown` de marcas/produtos (`basket_mold_options_batch`) e quantidade 0–10; 0 retira.
-- Até 30 posições em 4 telas de 8 itens, compatível com 14–27 posições que existem hoje. A máquina de navegação pode ir ao resumo após a 2ª, 3ª ou 4ª tela conforme a quantidade real de posições.
-- Cálculo final via `basket_mold_quote` com as posições e SKUs validados. Mostra total da cesta e apenas nomes e quantidades dos itens da cesta, sem preços individuais.
-- Endpoint separado `whatsapp-1018-basket-flow-v1`: Meta Data Exchange criptografado (RSA-OAEP + AES-GCM), validação `X-Hub-Signature-256`, sessão assinada com chave derivada do segredo de app existente e com validade, acesso restrito ao teste 1018 → 8360.
-- Sem escrita em banco, sem checkout, sem criação de pedido, sem alteração de ANA, webhook comercial ou listas antigas.
+1. A pessoa escolhe o tamanho vendo o preço inicial da combinação disponível mais barata.
+2. O Flow abre diretamente o primeiro tipo de produto habilitado no Admin, na ordem definida por `flow_sort_order`.
+3. Cada etapa mostra alternativas com foto, nome, marca, preço unitário e controle de quantidade próprio.
+4. O tipo de seleção define se a pessoa pode escolher uma opção ou várias opções, respeitando o limite configurado por opção.
+5. O total acompanha as alterações usando preços e estoque atuais. O resumo final mostra itens, quantidades, preços unitários e total.
+6. Concluir registra uma solicitação para conferência humana. Não cria pedido nem reserva estoque.
 
-## Gestão pelo Vitrine Admin
+## Contrato do runtime nesta branch
 
-A branch de continuação adiciona a área **Marketing → Flows Meta** ao Admin, reaproveitando a sessão de atendimento já autenticada e o token Meta armazenado no servidor em `admin-whatsapp-templates-v1`. A área fica fixada à conta `dona-antonia-1018`; não oferece seletor de número e não usa o 0975. Um proprietário pode solicitar um envio de rascunho para homologação, com remetente resolvido no servidor pela conta 1018 e destinatário fixo no 8360. A tela não aceita telefone de destino; o backend só permite o envio após validação oficial limpa, endpoint, chave pública e segredo do app verificados.
+- `basket_flow_shell` fornece tamanhos habilitados e o preço inicial das combinações disponíveis.
+- `basket_flow_configuration` devolve configurações do Admin, posições dos moldes, quantidades por tamanho, opções ativas com preço, foto e estoque atuais, além do motivo para posições que permaneçam fixas.
+- `basket_flow_quote` valida produtos e quantidades conforme o modo e o limite do tipo, agrega o estoque por SKU e calcula a cotação sem escrever em cesta, pedido ou estoque.
+- O mapeamento prioriza `metadata.flow_v1.position_labels` e depois considera os rótulos legados. Uma posição só pode ser editada quando o tipo está habilitado, a quantidade administrativa corresponde à composição e a opção-base está configurada.
+- O cálculo mantém os ajustes comerciais do molde e recalcula os produtos com valores atuais.
+- As imagens continuam limitadas a hosts e caminhos permitidos, com redimensionamento e validação do conteúdo.
 
-Pela própria tela, um perfil proprietário pode criar rascunhos, enviar o JSON e consultar a validação oficial, configurar o endpoint fixo, registrar na Meta a chave pública derivada no servidor, publicar depois das verificações e excluir somente rascunhos. A publicação exige confirmação explícita e o backend bloqueia a ação se o Flow não estiver em DRAFT, se não houver relatório oficial sem erros, se o endpoint não corresponder à URL configurada, se a chave não estiver registrada ou se faltar a chave RSA ou o segredo do app. O token e a chave privada nunca são enviados ao navegador.
+## Ajustes de configuração
 
-A implementação usa a permissão `whatsapp_business_management` da conexão Meta existente. Se a Meta negar uma operação por escopo, a tela apresenta o código sanitizado; não cria uma segunda conexão nem troca de integração. Os segredos de execução continuam sendo configurados no ambiente seguro do Supabase, fora da tela web.
+- `Miojo` foi associado ao rótulo da posição de lámen por metadado exclusivo do Flow.
+- `Macarrão` foi habilitado para a posição de espaguete, separando a quantidade da posição de lámen.
+- As quantidades Flow de `Miojo`, `Macarrão` e `Desinfetante` foram alinhadas às posições existentes nos tamanhos ativos.
+- Os ajustes alteram somente metadados e a matriz do Vitrine Admin. Não mudam moldes públicos, preços de produtos, estoque ou pedidos.
+- A migration `20261025180000_basket_admin_flow_product_group_alignment_v1.sql` registra os mesmos ajustes de forma reprodutível.
 
-**Disponibilidade:** o runtime dinâmico e a área Marketing → Flows Meta estão ativos no ambiente consultado. A V2 continua em rascunho; não foi publicada nem exercitada por envio de teste nesta revisão. O documento mantém o checklist de homologação abaixo como referência operacional, mas as instruções que afirmam que ainda não existe Flow ID ou endpoint implantado estão superadas pelo estado verificado em 25/10/2026.
+## Homologação pendente
 
-## Arquivos
-- `vitrine/admin/whatsapp-lab/meta-flow/flow-dynamic-v1.json` — Flow JSON 7.3 / Data API 3.0
-- `supabase/functions/whatsapp-1018-basket-flow-v1/index.ts` — envelope e chamadas de consulta
-- `supabase/functions/whatsapp-1018-basket-flow-v1/engine.mjs` — máquina de estados e cotação
-- `supabase/functions/whatsapp-1018-basket-flow-v1/crypto.mjs` — criptografia e HMAC
-- `scripts/test-whatsapp-1018-flow-dynamic.mjs` — rotas 14–30, assinatura, criptografia, webhook e leitura da solicitação no Lab
-- `vitrine/admin/whatsapp-lab/reply-parser.mjs` — valida e interpreta a resposta `nfm_reply` somente na conversa interna 1018 → 8360
-
-Os `__example__` do JSON são placeholders neutros para a prévia do Flow Builder. Preços, nomes de produtos e marcas usados em execução vêm do endpoint e do catálogo Supabase; o arquivo não fixa valores comerciais.
-
-## Requisitos **antes** de enviar à Meta
-1. Depois do merge e da implantação autorizada do endpoint autenticado do Admin, abrir **Marketing → Flows Meta** e validar o JSON enviado pelo próprio gerenciador. A validação local não substitui as regras oficiais de componentes, referências dinâmicas e rotas; corrigir todos os erros retornados pela Meta antes de publicar.
-2. Gerar uma chave privada RSA de 2048 bits em formato **PKCS#8 sem criptografia** e cadastrá-la no ambiente seguro do Supabase como `DA_FLOW_1018_RSA_PKCS8`. O Vitrine Admin deriva e registra a chave pública usando a conexão Meta existente. A chave privada nunca deve ser commitada ou exibida no navegador.
-3. O segredo de sessão é derivado de `META_WHATSAPP_APP_SECRET`, já existente no servidor; não precisa cadastrar outro secret.
-4. Implantar `whatsapp-1018-basket-flow-v1` e a versão atualizada de `admin-whatsapp-templates-v1` **somente por mecanismo permitido**, já que uma tentativa anterior de implantação foi bloqueada por segurança. Não usar alternativa para contornar esse bloqueio.
-5. O backend autenticado do Admin emite `flow_token` assinado para o teste interno, com remetente 1018 e destino 8360 fixos. O endpoint valida a sessão; qualquer outro destino é recusado. Essa emissão e a nova ação do Admin ainda dependem da implantação autorizada do código atualizado.
-6. Criar o rascunho, enviar `flow-dynamic-v1.json`, registrar o endpoint HTTPS e consultar os erros da Meta pela área **Flows Meta** do Vitrine Admin, usando a conexão já configurada. A conexão precisa ter a permissão `whatsapp_business_management`.
-7. O webhook Meta existente persiste `nfm_reply`. O Flow retorna apenas resumo, total e itens, sem o estado assinado da sessão. O Atendimento existente agora apresenta esse conteúdo em um cartão seguro como solicitação pendente. O total e os itens são dados informados pelo Flow, não uma cotação atual confiável: o atendente deve confirmar preço e estoque atuais e a cesta com a pessoa antes de registrar uma venda pelo fluxo existente **Pedidos → Nova venda WhatsApp**. A resposta do Flow nunca cria pedido nem reserva estoque.
-8. O envio `interactive.flow` em modo `draft` está implementado exclusivamente do 1018 ao 8360. Só expandir para clientes depois da homologação manual e de uma decisão comercial separada.
-
-
-## Revisão do contrato de navegação — 24/10/2026
-- O Flow original tinha 13 arestas de roteamento e excedia o limite de 10 ramos da Meta; a revisão reduziu para **8** (TAMANHO → COMBINACAO → quatro telas de itens, com caminhos declarados para o resumo), mantendo o contrato dinâmico.
-- IDs de telas de edição usam apenas letras e sublinhados: `ITENS_UM` até `ITENS_QUATRO`. Cada tela permite até 8 posições; `ITENS_DOIS` e `ITENS_TRES` também declaram o caminho para `RESUMO`.
-- A verificação inclui os limites de rotas, os caminhos condicionais e cestas entre 14 e 30 posições, inclusive os pontos em que a tela seguinte muda.
-- **Ainda é preciso validar o JSON oficialmente pela Meta**, sobretudo componentes dinâmicos e referências de dados. Essa revisão não concede homologação, não implanta endpoint e não cria/publica Flow.
-
-## Limitações assumidas para este piloto
-- Os mockups gerados com design personalizado **não representam a aparência exata** dos controles nativos do WhatsApp Flow. O arquivo utiliza controles oficiais de `RadioButtonsGroup` e `Dropdown`.
-- A tela inicial não mostra os 15 preços de uma vez: os 3 valores reais são buscados após selecionar o tamanho, para evitar 15 cotações simultâneas no primeiro carregamento.
-- As fotos dos produtos ainda não estão incorporadas ao Flow. Os dropdowns mostram nomes; incluir fotos exige formatos e limites da Meta, otimização de tamanho e testes oficiais.
-- Produtos extras, calendário de entrega, confirmação do cliente, pagamento, criação do pedido e integração automática com a ANA **não fazem parte desta rodada**.
-- Quantidade máxima por produto na UI: 10. O motor oficial aceita mais, porém nenhum valor acima de 10 é permitido neste piloto.
-- A sessão expira, estoque e preço podem variar entre telas; por isso há cotação ao final e um pedido real ainda requer revalidação e confirmação.
-
-## Regra de publicação
-Não fazer deploy nem publicar o Flow enquanto faltarem validação oficial Meta, endpoint e chaves configurados com segurança, proteção de sessão e teste real de ponta a ponta no 1018 → 8360. A solicitação no Lab exige conferência manual de produtos, preço e estoque; concluir o Flow não cria pedido. Testes de CI não equivalem à aprovação da Meta.
-
-## Fontes técnicas
-- Meta oficial: https://developers.facebook.com/docs/whatsapp/flows
-- Exemplo de criptografia: https://github.com/WhatsApp/WhatsApp-Flows-Tools
-- Meta APIs: https://www.postman.com/meta/whatsapp-business-platform/overview
+- Revisar e integrar esta branch à `main`.
+- Implantar as Edge Functions e a migration depois da revisão.
+- Validar a estrutura JSON e as telas no Flow Builder oficial da Meta.
+- Homologar o atendimento no aparelho interno pelo procedimento existente, restrito ao remetente 1018 e ao destinatário interno 8360.
+- Manter o Flow V2 em rascunho até a conferência visual e comercial. Qualquer solicitação recebida exige confirmação humana de preço e disponibilidade.

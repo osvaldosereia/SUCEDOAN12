@@ -3,7 +3,7 @@
   const api=()=>window.DonaAntoniaBasketAdminApi;
   const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const money=cents=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(cents||0)/100);
-  const state={root:null,config:null,busy:false,selectedBasketId:'',openTypeId:'',preview:null,previewLoading:false,previewError:'',startingPrices:Object.create(null),priceLoading:false,priceRequestId:0};
+  const state={root:null,config:null,busy:false,settingsDirty:false,selectedBasketId:'',openTypeId:'',preview:null,previewLoading:false,previewError:'',startingPrices:Object.create(null),priceLoading:false,priceRequestId:0,previewRequestId:0,quoteTimer:null,quoteRequestId:0};
   const basketTypes=()=>[...(state.config?.basket_types||[])].sort((a,b)=>Number(a.flow_sort_order||0)-Number(b.flow_sort_order||0)||String(a.name).localeCompare(String(b.name),'pt-BR'));
   const productTypes=()=>[...(state.config?.product_types||[])].sort((a,b)=>Number(a.flow_sort_order||0)-Number(b.flow_sort_order||0)||String(a.name).localeCompare(String(b.name),'pt-BR'));
   const selectedBasket=()=>basketTypes().find(x=>String(x.id)===String(state.selectedBasketId))||null;
@@ -31,7 +31,7 @@
     }
     for(const basket of basketTypes()){
       if(basket.flow_enabled&&(!basket.linked_template_id||basket.template_active!==true))warnings.push(basket.name+': vincule um modelo comercial ativo antes de habilitar no Flow.');
-      if(basket.flow_enabled&&Number(basket.public_composition_count||0)!==3)warnings.push(basket.name+': o runtime atual espera exatamente três combinações por tamanho.');
+      if(basket.flow_enabled&&(!Number.isInteger(Number(basket.public_composition_count))||Number(basket.public_composition_count)<1||Number(basket.public_composition_count)>6))warnings.push(basket.name+': o Flow aceita de uma a seis combinações por tamanho.');
     }
     for(const type of productTypes()){
       const activeOptions=(type.options||[]).filter(p=>p.is_active===true);
@@ -40,6 +40,24 @@
       if(number(type.max_quantity,10)<1||number(type.max_quantity,10)>10)warnings.push(type.name+': quantidade máxima deve ficar entre 1 e 10.');
     }
     return [...new Set(warnings)];
+  }
+  function invalidatePreviewQuote(){
+    if(state.quoteTimer)clearTimeout(state.quoteTimer);
+    state.quoteTimer=null;
+    state.quoteRequestId++;
+  }
+  function markSettingsDirty(){
+    state.settingsDirty=true;
+    state.preview=null;
+    state.previewError='';
+    state.previewLoading=false;state.previewRequestId++;
+    invalidatePreviewQuote();
+    const saveButtons=state.root?.querySelectorAll('[data-flow-save]')||[];
+    saveButtons.forEach(button=>{if(!state.busy)button.textContent='Salvar alterações'});
+    const previewButton=state.root?.querySelector('[data-flow-preview-start]');
+    if(previewButton)previewButton.disabled=true;
+    const previewHost=state.root?.querySelector('[data-flow-preview]');
+    if(previewHost)previewHost.innerHTML='<div class="da-flow-empty">Salve as alterações para abrir uma prévia com a configuração atual.</div>';
   }
   function render(){
     const root=state.root,c=state.config;if(!root||!c)return;style();
@@ -53,13 +71,13 @@
     const typeHtml=types.map((t,index)=>{
       const options=t.options||[],open=String(t.id)===String(state.openTypeId);
       const optionHtml=options.length?options.map(p=>'<article class="da-flow-option"><img src="'+esc(p.image_url||'/img/sem-foto.svg')+'" alt=""><strong>'+esc(p.name||'Produto')+'</strong><small>'+esc([p.brand,p.packaging,p.sku].filter(Boolean).join(' · ')||'Sem marca informada')+'</small><small class="da-flow-price">'+money(p.price_cents)+'</small><small>'+(p.is_active?'Ativo no catálogo':'Inativo no catálogo')+'</small></article>').join(''):'<div class="da-flow-empty">Nenhum produto vinculado a este tipo.</div>';
-      return '<article class="da-flow-step"><div class="da-flow-step-head"><input type="checkbox" data-flow-type-enabled="'+esc(t.id)+'" '+(t.flow_enabled?'checked':'')+' aria-label="Incluir '+esc(t.name)+' no Flow"><div class="da-flow-step-name"><strong>'+esc(t.name)+'</strong><small>'+esc(t.category)+' · '+options.length+' opção(ões)</small></div><input class="da-flow-order" type="number" min="0" max="1000" data-flow-type-order="'+esc(t.id)+'" value="'+esc(t.flow_sort_order)+'" aria-label="Ordem da etapa '+esc(t.name)+'"><select data-flow-mode="'+esc(t.id)+'" aria-label="Tipo de seleção em '+esc(t.name)+'"><option value="multiple" '+(t.selection_mode==='multiple'?'selected':'')+'>Várias marcas</option><option value="single" '+(t.selection_mode==='single'?'selected':'')+'>Uma marca</option></select><input class="da-flow-max" type="number" min="1" max="10" data-flow-max="'+esc(t.id)+'" value="'+esc(t.max_quantity)+'" aria-label="Quantidade máxima por opção em '+esc(t.name)+'"><button type="button" data-flow-expand="'+esc(t.id)+'">'+(open?'Fechar':'Fotos')+'</button></div>'+(open?(Array.isArray(t.position_labels)?'<div class="da-flow-position-labels"><label>Rótulos das posições do molde que pertencem a este tipo (copie o texto da prévia, um por linha; até 20 rótulos)<textarea maxlength="2419" data-flow-position-labels="'+esc(t.id)+'" aria-label="Rótulos de posição de '+esc(t.name)+'">'+esc((t.position_labels||[]).join('\n'))+'</textarea></label><small class="da-flow-muted">Esse mapeamento afeta apenas a configuração do Flow; não altera o molde público.</small></div>':'<div class="da-flow-status warn">O mapeamento aparecerá após a migração de configuração do Flow.</div>')+'<div class="da-flow-options">'+optionHtml+'</div>':'')+'</article>';
+      return '<article class="da-flow-step"><div class="da-flow-step-head"><input type="checkbox" data-flow-type-enabled="'+esc(t.id)+'" '+(t.flow_enabled?'checked':'')+' aria-label="Incluir '+esc(t.name)+' no Flow"><div class="da-flow-step-name"><strong>'+esc(t.name)+'</strong><small>'+esc(t.category)+' · '+options.length+' opção(ões)</small></div><input class="da-flow-order" type="number" min="0" max="1000" data-flow-type-order="'+esc(t.id)+'" value="'+esc(t.flow_sort_order)+'" aria-label="Ordem da etapa '+esc(t.name)+'"><select data-flow-mode="'+esc(t.id)+'" aria-label="Tipo de seleção em '+esc(t.name)+'"><option value="multiple" '+(t.selection_mode==='multiple'?'selected':'')+'>Várias opções por posição</option><option value="single" '+(t.selection_mode==='single'?'selected':'')+'>Uma opção por posição</option></select><input class="da-flow-max" type="number" min="1" max="10" data-flow-max="'+esc(t.id)+'" value="'+esc(t.max_quantity)+'" aria-label="Quantidade máxima por opção em '+esc(t.name)+'"><button type="button" data-flow-expand="'+esc(t.id)+'">'+(open?'Fechar':'Fotos')+'</button></div>'+(open?(Array.isArray(t.position_labels)?'<div class="da-flow-position-labels"><label>Rótulos das posições do molde que pertencem a este tipo (copie o texto da prévia, um por linha; até 20 rótulos)<textarea maxlength="2419" data-flow-position-labels="'+esc(t.id)+'" aria-label="Rótulos de posição de '+esc(t.name)+'">'+esc((t.position_labels||[]).join('\n'))+'</textarea></label><small class="da-flow-muted">Esse mapeamento afeta apenas a configuração do Flow; não altera o molde público.</small></div>':'<div class="da-flow-status warn">O mapeamento aparecerá após a migração de configuração do Flow.</div>')+'<div class="da-flow-options">'+optionHtml+'</div>':'')+'</article>';
     }).join('');
-    root.innerHTML='<section class="da-flow-admin"><div class="da-flow-head"><h2>Atendimento por Flow</h2><span style="flex:1"></span><button type="button" data-flow-save class="primary" '+(state.busy?'disabled':'')+'>'+(state.busy?'Salvando…':'Salvar configuração')+'</button></div><div class="da-flow-note"><strong>Configuração do atendimento</strong> · A ordem, as opções e os limites ficam separados da publicação da vitrine. Preços e fotos vêm do catálogo atual; esta tela não edita preço, estoque nem pedidos. A configuração salva aqui ainda não é lida pelo runtime do Flow da Meta: use a prévia como simulador administrativo, não como prova do atendimento publicado.</div><div class="da-flow-status warn"><strong>Compatibilidade do runtime atual:</strong> o cliente escolhe tamanho e combinação e depois recebe até quatro telas com até oito posições do molde, na ordem do molde. Cada posição aceita um produto e uma quantidade; o resumo final inclui itens e total, sem foto nem preço individual. A ordenação por tipo e a opção “Várias marcas” desta tela ainda não estão conectadas ao endpoint Meta; várias marcas na mesma posição também não são aceitas pela cotação atual.</div><div class="da-flow-layout"><aside class="da-flow-panel"><h3>Tamanhos da cesta</h3><div class="da-flow-size-list">'+(sizeHtml||'<div class="da-flow-empty">Nenhum tamanho cadastrado.</div>')+'</div><div class="da-flow-subhead" style="margin-top:16px"><strong>Prévia de atendimento</strong></div><p class="da-flow-muted">Os tamanhos mostram o menor preço entre as combinações disponíveis, calculado no catálogo atual.</p><button type="button" data-flow-prices-refresh '+(state.priceLoading?'disabled':'')+'>'+(state.priceLoading?'Atualizando valores…':'Atualizar preços dos tamanhos')+'</button><button type="button" data-flow-preview-start '+(!selected||!selected.flow_enabled||state.previewLoading?'disabled':'')+'>Calcular e abrir prévia</button></aside><main class="da-flow-panel"><div class="da-flow-subhead"><h3 style="margin:0">Etapas de produtos</h3><span class="da-flow-muted">'+activeSteps+' tipo(s) habilitado(s) · arroz aparece primeiro</span></div><div class="da-flow-step-list">'+(typeHtml||'<div class="da-flow-empty">Nenhum tipo de produto configurado.</div>')+'</div><div class="da-flow-save" style="margin-top:12px"><button type="button" class="primary" data-flow-save '+(state.busy?'disabled':'')+'>Salvar configuração</button></div></main></div><div class="da-flow-panel"><h3>Simulador do atendimento</h3><div data-flow-preview></div></div>'+(warnings.length?'<div class="da-flow-status warn"><strong>Revisar antes de usar:</strong><br>'+warnings.map(esc).join('<br>')+'</div>':'<div class="da-flow-status">Configuração sem impedimentos básicos. Confirme fotos, preços, estoque e limites no simulador antes de homologar o Flow.</div>')+'</section>';
+    root.innerHTML='<section class="da-flow-admin"><div class="da-flow-head"><h2>Atendimento por Flow</h2><span style="flex:1"></span><button type="button" data-flow-save class="primary" '+(state.busy?'disabled':'')+'>'+(state.busy?'Salvando…':state.settingsDirty?'Salvar alterações':'Salvar configuração')+'</button></div><div class="da-flow-note"><strong>Configuração do atendimento</strong> · A ordem, as opções, os limites e os rótulos ficam separados da vitrine pública. Preços, fotos e estoque vêm do catálogo atual; esta tela não edita preço, estoque nem pedidos. Salve as alterações antes de abrir a prévia. A atualização do runtime e a homologação do Flow V2 ainda são necessárias para refletir esta configuração no atendimento.</div><div class="da-flow-status warn"><strong>Experiência configurada para o Flow V2:</strong> tamanho, uma etapa por tipo de produto, alternativas com foto e preço individual, quantidade por opção e total recalculado pela cotação atual. A conclusão registra uma solicitação para conferência humana; não cria pedido nem reserva estoque.</div><div class="da-flow-layout"><aside class="da-flow-panel"><h3>Tamanhos da cesta</h3><div class="da-flow-size-list">'+(sizeHtml||'<div class="da-flow-empty">Nenhum tamanho cadastrado.</div>')+'</div><div class="da-flow-subhead" style="margin-top:16px"><strong>Prévia de atendimento</strong></div><p class="da-flow-muted">Os tamanhos mostram o menor preço entre as combinações disponíveis, calculado no catálogo atual.</p><button type="button" data-flow-prices-refresh '+(state.priceLoading?'disabled':'')+'>'+(state.priceLoading?'Atualizando valores…':'Atualizar preços dos tamanhos')+'</button><button type="button" data-flow-preview-start '+(!selected||!selected.flow_enabled||state.previewLoading||state.settingsDirty?'disabled':'')+'>Calcular e abrir prévia</button></aside><main class="da-flow-panel"><div class="da-flow-subhead"><h3 style="margin:0">Etapas de produtos</h3><span class="da-flow-muted">'+activeSteps+' tipo(s) habilitado(s) · ordene as etapas ao lado do nome</span></div><div class="da-flow-step-list">'+(typeHtml||'<div class="da-flow-empty">Nenhum tipo de produto configurado.</div>')+'</div><div class="da-flow-save" style="margin-top:12px"><button type="button" class="primary" data-flow-save '+(state.busy?'disabled':'')+'>Salvar configuração</button></div></main></div><div class="da-flow-panel"><h3>Simulador do atendimento</h3><div data-flow-preview></div></div>'+(warnings.length?'<div class="da-flow-status warn"><strong>Revisar antes de usar:</strong><br>'+warnings.map(esc).join('<br>')+'</div>':'<div class="da-flow-status">Configuração sem impedimentos básicos. Confirme fotos, preços, estoque e limites no simulador antes de homologar o Flow.</div>')+'</section>';
     root.onclick=event=>{
       const t=event.target.closest('[data-flow-basket],[data-flow-expand],[data-flow-save],[data-flow-preview-start],[data-flow-prices-refresh],[data-flow-step-prev],[data-flow-step-next]');
       if(!t)return;
-      if(t.dataset.flowBasket){state.selectedBasketId=t.dataset.flowBasket;state.preview=null;state.previewError='';render()}
+      if(t.dataset.flowBasket){state.selectedBasketId=t.dataset.flowBasket;state.preview=null;state.previewError='';state.previewLoading=false;state.previewRequestId++;invalidatePreviewQuote();render()}
       else if(t.dataset.flowExpand){state.openTypeId=String(state.openTypeId)===String(t.dataset.flowExpand)?'':t.dataset.flowExpand;render()}
       else if(t.hasAttribute('data-flow-save'))void save()
       else if(t.hasAttribute('data-flow-prices-refresh'))void loadStartingPrices()
@@ -67,26 +85,28 @@
       else if(t.hasAttribute('data-flow-step-prev')){if(state.preview)state.preview.index=Math.max(0,state.preview.index-1);renderPreview()}
       else if(t.hasAttribute('data-flow-step-next')){if(state.preview)state.preview.index=Math.min(state.preview.steps.length-1,state.preview.index+1);renderPreview()}
     };
-    root.onkeydown=event=>{if(!event.target.matches('[data-flow-basket]')||!['Enter',' '].includes(event.key))return;event.preventDefault();state.selectedBasketId=event.target.dataset.flowBasket;state.preview=null;state.previewError='';render()};
+    root.onkeydown=event=>{if(!event.target.matches('[data-flow-basket]')||!['Enter',' '].includes(event.key))return;event.preventDefault();state.selectedBasketId=event.target.dataset.flowBasket;state.preview=null;state.previewError='';state.previewLoading=false;state.previewRequestId++;invalidatePreviewQuote();render()};
     root.onchange=event=>{
       const t=event.target;
-      if(t.dataset.flowBasketEnabled){const row=sizes.find(x=>String(x.id)===String(t.dataset.flowBasketEnabled));if(row)row.flow_enabled=t.checked}
-      else if(t.dataset.flowTypeEnabled){const row=types.find(x=>String(x.id)===String(t.dataset.flowTypeEnabled));if(row)row.flow_enabled=t.checked}
-      else if(t.dataset.flowMode){const row=types.find(x=>String(x.id)===String(t.dataset.flowMode));if(row)row.selection_mode=t.value}
-      else if(t.dataset.flowMax){const row=types.find(x=>String(x.id)===String(t.dataset.flowMax));if(row)row.max_quantity=Math.max(1,Math.min(10,Math.trunc(number(t.value,10))))}
-      else if(t.dataset.flowPositionLabels){const row=types.find(x=>String(x.id)===String(t.dataset.flowPositionLabels));if(row)row.position_labels=String(t.value||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean)}
+      if(t.dataset.flowBasketEnabled){const row=sizes.find(x=>String(x.id)===String(t.dataset.flowBasketEnabled));if(row)row.flow_enabled=t.checked;markSettingsDirty()}
+      else if(t.dataset.flowBasketOrder){const row=sizes.find(x=>String(x.id)===String(t.dataset.flowBasketOrder));if(row)row.flow_sort_order=Math.max(0,Math.min(1000,Math.trunc(number(t.value))));markSettingsDirty()}
+      else if(t.dataset.flowTypeOrder){const row=types.find(x=>String(x.id)===String(t.dataset.flowTypeOrder));if(row)row.flow_sort_order=Math.max(0,Math.min(1000,Math.trunc(number(t.value))));markSettingsDirty()}
+      else if(t.dataset.flowTypeEnabled){const row=types.find(x=>String(x.id)===String(t.dataset.flowTypeEnabled));if(row)row.flow_enabled=t.checked;markSettingsDirty()}
+      else if(t.dataset.flowMode){const row=types.find(x=>String(x.id)===String(t.dataset.flowMode));if(row)row.selection_mode=t.value;markSettingsDirty()}
+      else if(t.dataset.flowMax){const row=types.find(x=>String(x.id)===String(t.dataset.flowMax));if(row)row.max_quantity=Math.max(1,Math.min(10,Math.trunc(number(t.value,10))));markSettingsDirty()}
+      else if(t.dataset.flowPositionLabels){const row=types.find(x=>String(x.id)===String(t.dataset.flowPositionLabels));if(row)row.position_labels=String(t.value||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);markSettingsDirty()}
       else if(t.dataset.previewQty){updatePreviewQuantity(t)}
-      if(t.matches('[data-flow-basket-enabled],[data-flow-type-enabled],[data-flow-mode],[data-flow-max],[data-preview-qty]')){if(t.dataset.previewQty)renderPreview();else render()}
+      if(t.matches('[data-flow-basket-enabled],[data-flow-type-enabled],[data-flow-mode],[data-preview-qty]')){if(t.dataset.previewQty)renderPreview();else render()}
     };
     root.oninput=event=>{
       const t=event.target;
       if(t.dataset.previewQty){
         updatePreviewQuantity(t);
         root.querySelectorAll('[data-preview-qty]').forEach(input=>{if(input!==t)input.value=String(number(state.preview?.quantities[input.dataset.previewQty]))});
-        const total=root.querySelector('[data-flow-total-value]');if(total)total.textContent=money(previewTotal());
-      }else if(t.dataset.flowBasketOrder){const row=sizes.find(x=>String(x.id)===String(t.dataset.flowBasketOrder));if(row)row.flow_sort_order=Math.max(0,Math.min(1000,Math.trunc(number(t.value))))}
-      else if(t.dataset.flowTypeOrder){const row=types.find(x=>String(x.id)===String(t.dataset.flowTypeOrder));if(row)row.flow_sort_order=Math.max(0,Math.min(1000,Math.trunc(number(t.value))))}
-      else if(t.dataset.flowMax){const row=types.find(x=>String(x.id)===String(t.dataset.flowMax));if(row)row.max_quantity=Math.max(1,Math.min(10,Math.trunc(number(t.value,10))))}
+        refreshPreviewQuoteUi();
+      }else if(t.dataset.flowBasketOrder){const row=sizes.find(x=>String(x.id)===String(t.dataset.flowBasketOrder));if(row)row.flow_sort_order=Math.max(0,Math.min(1000,Math.trunc(number(t.value))));markSettingsDirty()}
+      else if(t.dataset.flowTypeOrder){const row=types.find(x=>String(x.id)===String(t.dataset.flowTypeOrder));if(row)row.flow_sort_order=Math.max(0,Math.min(1000,Math.trunc(number(t.value))));markSettingsDirty()}
+      else if(t.dataset.flowMax){const row=types.find(x=>String(x.id)===String(t.dataset.flowMax));if(row)row.max_quantity=Math.max(1,Math.min(10,Math.trunc(number(t.value,10))));markSettingsDirty()}
     };
     renderPreview();
   }
@@ -101,14 +121,17 @@
         product_types:productTypes().map(t=>({id:t.id,flow_enabled:t.flow_enabled===true,flow_sort_order:Math.max(0,Math.min(1000,Math.trunc(number(t.flow_sort_order)))),selection_mode:t.selection_mode==='single'?'single':'multiple',max_quantity:Math.max(1,Math.min(10,Math.trunc(number(t.max_quantity,10)))),position_labels:Array.isArray(t.position_labels)?t.position_labels:[]}))
       };
       state.config=await api().saveFlowSettings(configuration);
+      state.settingsDirty=false;state.preview=null;state.previewError='';state.previewLoading=false;state.previewRequestId++;invalidatePreviewQuote();
       api().toast('Configuração do Flow salva sem alterar a vitrine pública.');
     }catch(error){api().toast(error.message||'Não foi possível salvar a configuração do Flow.')}
     finally{state.busy=false;render()}
   }
   function normalize(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim()}
   function findType(label){
-    const key=normalize(label);
-    return productTypes().find(t=>[t.name,...(t.legacy_labels||[]),...(t.position_labels||[])].some(x=>normalize(x)===key||key.startsWith(normalize(x))))||null;
+    const key=normalize(label),types=productTypes();
+    const explicit=types.find(t=>(t.position_labels||[]).some(x=>normalize(x)===key));
+    if(explicit)return explicit;
+    return types.find(t=>[t.name,...(t.legacy_labels||[])].some(x=>normalize(x)===key||key.startsWith(normalize(x))))||null;
   }
   async function loadStartingPrices(){
     if(state.priceLoading)return;
@@ -135,24 +158,28 @@
     }
   }
   async function loadPreview(){
-    const basket=selectedBasket();if(!basket?.linked_template_id||basket.template_active!==true)return;
+    const basket=selectedBasket();if(!basket?.linked_template_id||basket.template_active!==true||state.settingsDirty)return;
+    invalidatePreviewQuote();
+    const requestId=++state.previewRequestId;
     state.previewLoading=true;state.previewError='';state.preview=null;render();
     try{
       const count=Math.max(1,Math.min(6,Number(basket.public_composition_count||3)));
       const quotes=await api().loadBasketCompositions(basket.linked_template_id,count);
+      if(requestId!==state.previewRequestId)return;
       const available=quotes.filter(q=>Number.isSafeInteger(Number(q.basket?.display_price_cents))&&Number(q.basket?.stock_quantity)>0);
       if(!available.length)throw new Error('Nenhuma combinação está disponível para esta cesta.');
       available.sort((a,b)=>Number(a.basket.display_price_cents)-Number(b.basket.display_price_cents)||a.composition_number-b.composition_number);
       const cheapest=available[0];
       state.startingPrices[String(basket.id)]={cents:Number(cheapest.basket.display_price_cents),compositionNumber:cheapest.composition_number};
-      const options=await api().loadPositionOptions(basket.linked_template_id,cheapest.composition_number,cheapest.items);
-      const optionsByPosition=new Map(options.map(x=>[String(x.position_id),x]));
-      const positionRows=cheapest.items.map(item=>{
-        const type=findType(item.label||item.name);
-        const result=optionsByPosition.get(String(item.position_id));
-        const alternatives=(result?.alternatives||[]).filter(x=>Number(x.stock_quantity)>0);
-        const reason=!type?'Sem tipo de produto correspondente no Admin':!type.flow_enabled?'Tipo desabilitado no atendimento':!alternatives.length?'Sem alternativa disponível no estoque':'';
-        return {item,type,alternatives,alternative_count:Number(result?.alternative_count||alternatives.length),reason,editable:!reason};
+      const runtime=await api().loadFlowRuntimeConfiguration(basket.linked_template_id,cheapest.composition_number);
+      if(requestId!==state.previewRequestId)return;
+      const runtimeTypes=Array.isArray(runtime.product_types)?runtime.product_types:[];
+      const typesById=new Map(runtimeTypes.map(type=>[String(type.id),type]));
+      const positionRows=(runtime.positions||[]).map(position=>{
+        const type=typesById.get(String(position.type_id))||null;
+        const item={position_id:position.position_id,label:position.label,quantity:position.base_quantity,product_id:position.base?.product_id,name:position.base?.name,brand:position.base?.brand,packaging:position.base?.packaging,image_url:position.base?.image_url,price_cents:position.base?.price_cents,stock_quantity:position.base?.stock_quantity};
+        const alternatives=(position.options||[]).filter(option=>Number(option.stock_quantity)>0);
+        return {item,type,alternatives,alternative_count:alternatives.length,reason:position.reason||(!type?'Sem tipo de produto correspondente no Admin':''),editable:position.editable===true&&Boolean(type)};
       });
       const grouped=new Map();
       for(const row of positionRows){
@@ -164,22 +191,50 @@
       const quantities={};
       for(const step of steps){
         for(const row of step.positions){
-          const availableProducts=row.alternatives;
-          const initial=availableProducts.find(x=>String(x.product_id)===String(row.item.product_id))
-            ||[...availableProducts].sort((a,b)=>Number(a.price_cents)-Number(b.price_cents))[0];
-          for(const option of availableProducts){
+          const baseProduct=String(row.item.product_id||'');
+          for(const option of row.alternatives){
             const key=String(row.item.position_id)+'|'+String(option.product_id);
             const cap=Math.min(number(step.type.max_quantity,10),number(option.stock_quantity,0));
-            quantities[key]=initial&&String(initial.product_id)===String(option.product_id)
-              ?Math.min(cap,Math.max(0,number(row.item.quantity)))
-              :0;
+            quantities[key]=String(option.product_id)===baseProduct?Math.min(cap,Math.max(0,number(row.item.quantity))):0;
           }
         }
       }
-      const fixedItems=positionRows.filter(row=>!row.editable);
-      state.preview={basketId:basket.linked_template_id,compositionNumber:cheapest.composition_number,basket:cheapest.basket,items:cheapest.items,steps,quantities,index:0,fixedItems};
-    }catch(error){state.previewError=error.message||'Não consegui carregar a prévia do Flow.'}
-    finally{state.previewLoading=false;render()}
+      state.preview={basketId:basket.linked_template_id,compositionNumber:cheapest.composition_number,basket:runtime.basket||cheapest.basket,items:runtime.positions||[],steps,quantities,index:0,fixedItems:positionRows.filter(row=>!row.editable),quote:null,quoteLoading:true,quoteError:''};
+      const preview=state.preview;
+      const quote=await api().quoteFlow(basket.linked_template_id,cheapest.composition_number,previewSelections(preview));
+      if(requestId!==state.previewRequestId||state.preview!==preview)return;
+      preview.quote=quote;preview.quoteLoading=false;
+    }catch(error){
+      if(requestId!==state.previewRequestId)return;
+      if(state.preview){state.preview.quoteLoading=false;state.preview.quoteError=error.message||'Não consegui calcular a cotação do Flow.'}
+      else state.previewError=error.message||'Não consegui carregar a prévia do Flow.';
+    }
+    finally{if(requestId===state.previewRequestId){state.previewLoading=false;render()}}
+  }
+  function previewSelections(preview){
+    return preview.steps.flatMap(step=>step.positions.map(row=>({
+      position_id:String(row.item.position_id),
+      selections:row.alternatives.map(option=>({product_id:String(option.product_id),quantity:Math.max(0,Math.trunc(number(preview.quantities[String(row.item.position_id)+'|'+String(option.product_id)]))) }))
+    })));
+  }
+  function queuePreviewQuote(){
+    const preview=state.preview;if(!preview)return;
+    if(state.quoteTimer)clearTimeout(state.quoteTimer);
+    const requestId=++state.quoteRequestId;
+    preview.quoteLoading=true;preview.quoteError='';refreshPreviewQuoteUi();
+    state.quoteTimer=setTimeout(async()=>{
+      state.quoteTimer=null;
+      try{
+        const quote=await api().quoteFlow(preview.basketId,preview.compositionNumber,previewSelections(preview));
+        if(requestId!==state.quoteRequestId||state.preview!==preview)return;
+        preview.quote=quote;preview.quoteError='';
+      }catch(error){
+        if(requestId!==state.quoteRequestId||state.preview!==preview)return;
+        preview.quoteError=error.message||'Não foi possível calcular a cotação atual.';
+      }finally{
+        if(requestId===state.quoteRequestId&&state.preview===preview){preview.quoteLoading=false;refreshPreviewQuoteUi()}
+      }
+    },220);
   }
   function updatePreviewQuantity(input){
     const preview=state.preview;if(!preview)return;
@@ -189,57 +244,43 @@
     const option=row.alternatives.find(x=>String(x.product_id)===id);
     const max=Math.min(number(step.type?.max_quantity,10),number(option?.stock_quantity,0));
     const qty=Math.max(0,Math.min(max,Math.trunc(number(input.value))));
+    input.value=String(qty);
     if(step.type?.selection_mode==='single'&&qty>0){
       for(const alternative of row.alternatives)preview.quantities[positionId+'|'+String(alternative.product_id)]=String(alternative.product_id)===id?qty:0;
     }else preview.quantities[key]=qty;
+    queuePreviewQuote();
   }
-  function previewTotal(){
-    const preview=state.preview;if(!preview)return 0;
-    let total=Number(preview.basket.hidden_adjustment_cents||0);
-    let conditional=false;
-    const editable=new Map();
-    for(const step of preview.steps)for(const row of step.positions)editable.set(String(row.item.position_id),row);
-    for(const item of preview.items||[]){
-      const row=editable.get(String(item.position_id));
-      if(row){
-        for(const option of row.alternatives){
-          const qty=number(preview.quantities[String(item.position_id)+'|'+String(option.product_id)]);
-          if(qty>0){total+=Number(option.price_cents||0)*qty;if(String(option.product_id)===String(preview.basket.conditional_hidden_product_id))conditional=true}
-        }
-      }else{
-        const qty=number(item.quantity);
-        total+=Number(item.price_cents||0)*qty;
-        if(qty>0&&String(item.product_id)===String(preview.basket.conditional_hidden_product_id))conditional=true;
-      }
-    }
-    if(preview.basket.conditional_hidden_enabled&&conditional)total+=Number(preview.basket.conditional_hidden_adjustment_cents||0);
-    return Math.max(0,Math.round(total));
+  function previewTotal(){return Math.max(0,Math.round(number(state.preview?.quote?.total_cents,state.preview?.basket?.display_price_cents||0)))}
+  function refreshPreviewQuoteUi(){
+    const preview=state.preview,root=state.root;if(!preview||!root)return;
+    const label=root.querySelector('[data-flow-total-label]');if(label)label.textContent=preview.quoteLoading?'Atualizando cotação…':'Total da cotação';
+    const total=root.querySelector('[data-flow-total-value]');if(total)total.textContent=money(previewTotal());
+    const error=root.querySelector('[data-flow-quote-error]');
+    if(error){error.textContent=preview.quoteError||'';error.hidden=!preview.quoteError}
   }
   function renderPreview(){
     const host=state.root?.querySelector('[data-flow-preview]');if(!host)return;
     const preview=state.preview,basket=selectedBasket();
     if(state.previewLoading){host.innerHTML='<div class="da-flow-empty">Consultando preços, estoque e opções atuais…</div>';return}
     if(state.previewError){host.innerHTML='<div class="da-flow-error">'+esc(state.previewError)+'</div>';return}
-    if(!preview){host.innerHTML='<div class="da-flow-empty">'+(basket?'A prévia escolhe a combinação disponível mais barata e agrupa as etapas por tipo de produto.':'Escolha um tamanho na coluna ao lado.')+'</div>';return}
+    if(!preview){host.innerHTML='<div class="da-flow-empty">'+(state.settingsDirty?'Salve as alterações para abrir uma prévia com a configuração atual.':basket?'A prévia escolhe a combinação disponível mais barata e agrupa as etapas por tipo de produto.':'Escolha um tamanho na coluna ao lado.')+'</div>';return}
     const fixedItemsHtml=(preview.fixedItems||[]).length?'<div class="da-flow-preview-step"><strong>Posições que ficam fixas</strong><div class="da-flow-preview-products">'+preview.fixedItems.map(row=>{const item=row.item,qty=Math.max(0,number(item.quantity)),unit=number(item.price_cents);return '<article class="da-flow-preview-product"><img src="'+esc(item.image_url||'/img/sem-foto.svg')+'" alt=""><div><strong>'+esc(item.name||item.label||'Produto')+'</strong><small>'+esc(item.label||'Posição da cesta')+'</small><small>'+qty+' × '+money(unit)+' = '+money(qty*unit)+'</small><small class="da-flow-muted">'+esc(row.reason)+'</small></div></article>'}).join('')+'</div></div>':'';
-    if(!preview.steps.length){host.innerHTML='<div class="da-flow-preview">'+fixedItemsHtml+'<div class="da-flow-empty">Nenhum tipo de produto está habilitado para escolha.</div><div class="da-flow-total"><span>Total atualizado na prévia</span><span>'+money(previewTotal())+'</span></div></div>';return}
+    if(!preview.steps.length){host.innerHTML='<div class="da-flow-preview">'+fixedItemsHtml+'<div class="da-flow-empty">Nenhum tipo de produto está habilitado para escolha.</div><div class="da-flow-total"><span data-flow-total-label>'+(preview.quoteLoading?'Atualizando cotação…':'Total da cotação')+'</span><span data-flow-total-value>'+money(previewTotal())+'</span></div>'+(preview.quoteError?'<div class="da-flow-status warn" data-flow-quote-error>'+esc(preview.quoteError)+'</div>':'<div class="da-flow-status warn" data-flow-quote-error hidden></div>')+'</div>';return}
     const step=preview.steps[preview.index],type=step?.type;
     if(!step){host.innerHTML='<div class="da-flow-empty">Esta combinação não possui etapas de produto.</div>';return}
     const maxStep=preview.steps.length;
     const warnings=[];
     if((preview.fixedItems||[]).length)warnings.push((preview.fixedItems||[]).length+' posição(ões) ficam fixas porque não têm um tipo Flow habilitado e mapeado.');
-    if(type?.selection_mode==='multiple')warnings.push('A seleção de várias marcas nesta prévia ainda não pode ser enviada à cotação atual, que aceita um produto por posição.');
     const positionSections=step.positions.map(row=>{
       const cards=row.alternatives.map(option=>{
         const key=String(row.item.position_id)+'|'+String(option.product_id),qty=number(preview.quantities[key]);
         const max=Math.max(0,Math.min(number(type?.max_quantity,10),number(option.stock_quantity)));
         return '<article class="da-flow-preview-product"><img src="'+esc(option.image_url||'/img/sem-foto.svg')+'" alt=""><div><strong>'+esc(option.name)+'</strong><small>'+esc([option.brand,option.packaging].filter(Boolean).join(' · '))+'</small><small class="da-flow-price">'+money(option.price_cents)+' cada</small><small>Disponível: '+esc(option.stock_quantity)+'</small></div><label style="grid-column:1/-1;font-size:11px;font-weight:800;color:#536159">Quantidade<input type="number" min="0" max="'+max+'" step="1" data-preview-qty="'+esc(key)+'" value="'+esc(qty)+'" aria-label="Quantidade de '+esc(option.name)+'"></label></article>';
       }).join('');
-      if(row.alternative_count>row.alternatives.length)warnings.push('Há '+row.alternative_count+' opções configuradas em '+(row.item.label||type?.name)+', mas o Flow atual mostra até 10.');
       return '<div style="border:1px solid #e1e7e3;border-radius:10px;padding:9px;margin-top:9px"><strong>'+esc(row.item.label||type?.name||'Produto')+'</strong><div class="da-flow-muted">Quantidade-base: '+esc(row.item.quantity)+'</div><div class="da-flow-preview-products">'+(cards||'<div class="da-flow-empty">Nenhuma opção disponível em estoque.</div>')+'</div></div>';
     }).join('');
     const currentCombo=money(preview.basket.display_price_cents);
-    host.innerHTML='<div class="da-flow-preview"><div class="da-flow-preview-top"><div><strong>'+esc(type?.name||'Escolha os produtos')+'</strong><div class="da-flow-muted">Etapa '+(preview.index+1)+' de '+maxStep+' · combinação mais barata nº '+preview.compositionNumber+' ('+currentCombo+')</div></div><div><button type="button" data-flow-step-prev '+(preview.index===0?'disabled':'')+'>Anterior</button> <button type="button" data-flow-step-next '+(preview.index>=maxStep-1?'disabled':'')+'>Próxima etapa</button></div></div><div class="da-flow-preview-step"><div class="da-flow-preview-step-head"><strong>'+esc(type?.name||'Tipo de produto')+'</strong><span class="da-flow-muted">'+(type?.selection_mode==='multiple'?'Pode escolher várias opções; cada uma tem quantidade própria':'Escolha uma opção por item')+'</span></div>'+positionSections+'</div>'+fixedItemsHtml+(warnings.length?'<div class="da-flow-status warn">'+warnings.map(esc).join('<br>')+'</div>':'')+'<div class="da-flow-total"><span>Total atualizado na prévia</span><span data-flow-total-value>'+money(previewTotal())+'</span></div><div class="da-flow-muted">A combinação mais barata foi carregada com preços e estoque atuais. Itens de tipos desabilitados ficam fixos na cesta. Simulação sem criar pedido ou reservar estoque.</div></div>';
+    host.innerHTML='<div class="da-flow-preview"><div class="da-flow-preview-top"><div><strong>'+esc(type?.name||'Escolha os produtos')+'</strong><div class="da-flow-muted">Etapa '+(preview.index+1)+' de '+maxStep+' · combinação mais barata nº '+preview.compositionNumber+' ('+currentCombo+')</div></div><div><button type="button" data-flow-step-prev '+(preview.index===0?'disabled':'')+'>Anterior</button> <button type="button" data-flow-step-next '+(preview.index>=maxStep-1?'disabled':'')+'>Próxima etapa</button></div></div><div class="da-flow-preview-step"><div class="da-flow-preview-step-head"><strong>'+esc(type?.name||'Tipo de produto')+'</strong><span class="da-flow-muted">'+(type?.selection_mode==='multiple'?'Pode escolher várias opções; cada uma tem quantidade própria':'Escolha uma opção por item')+'</span></div>'+positionSections+'</div>'+fixedItemsHtml+(warnings.length?'<div class="da-flow-status warn">'+warnings.map(esc).join('<br>')+'</div>':'')+'<div class="da-flow-total"><span data-flow-total-label>'+(preview.quoteLoading?'Atualizando cotação…':'Total da cotação')+'</span><span data-flow-total-value>'+money(previewTotal())+'</span></div>'+(preview.quoteError?'<div class="da-flow-status warn" data-flow-quote-error>'+esc(preview.quoteError)+'</div>':'<div class="da-flow-status warn" data-flow-quote-error hidden></div>')+'<div class="da-flow-muted">A composição e as opções vêm do mesmo endpoint usado pelo Flow. A cotação consulta preços e estoque atuais, sem criar pedido ou reservar estoque.</div></div>';
   }
   async function open(root){
     state.root=root;root.innerHTML='<div class="da-flow-empty">Carregando configuração do Flow…</div>';

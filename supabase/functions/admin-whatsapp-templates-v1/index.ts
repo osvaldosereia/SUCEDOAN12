@@ -14,6 +14,7 @@ const META_WHATSAPP_GRAPH_VERSION=(Deno.env.get("META_WHATSAPP_GRAPH_VERSION")||
 const DA_FLOW_1018_RSA_PKCS8=(Deno.env.get("DA_FLOW_1018_RSA_PKCS8")||"").trim();
 const META_WHATSAPP_APP_SECRET=(Deno.env.get("META_WHATSAPP_APP_SECRET")||"").trim();
 const FLOW_FUNCTION_PATH="/functions/v1/whatsapp-1018-basket-flow-v1";
+const FLOW_CANARY_TOKEN_TTL_MS=24*60*60*1000;
 const db=createClient(SUPABASE_URL,SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
 
@@ -234,7 +235,7 @@ async function handleFlowMutation(req,action,body,auth){
       privateKeyConfigured:readiness.checks.private_key,
       metaAppSecretConfigured:readiness.checks.meta_app_secret,
     });
-    const flowToken=await signState({type:"da-flow-1018-canary",sender:FLOW_CANARY_SENDER_E164,to:FLOW_CANARY_RECIPIENT_E164,nonce:crypto.randomUUID()},await deriveFlowSessionKey(META_WHATSAPP_APP_SECRET));
+    const flowToken=await signState({type:"da-flow-1018-canary",sender:FLOW_CANARY_SENDER_E164,to:FLOW_CANARY_RECIPIENT_E164,flow_id:String(flowId),nonce:crypto.randomUUID()},await deriveFlowSessionKey(META_WHATSAPP_APP_SECRET),FLOW_CANARY_TOKEN_TTL_MS);
     const sent=await sendDraftFlowCanaryViaMeta({...args,flowId,flowToken});
     return json(req,{ok:sent.sent,flow_id:flowId,recipient_last_four:"8360",provider_message_id:sent.providerMessageId},sent.sent?200:502);
   }
@@ -488,4 +489,5 @@ Deno.serve(async(req:Request)=>{
     return json(req,{ok:false,error:"templates_backend_error"},500);
   }
 });
+
 
