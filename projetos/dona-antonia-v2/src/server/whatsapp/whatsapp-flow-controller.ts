@@ -174,9 +174,7 @@ function extraGroups(
     .slice()
     .sort((left, right) => left.order - right.order)
     .map((extra) => {
-      const type = catalog.types.find(
-        (item) => item.id === extra.typeId && item.active !== false,
-      );
+      const type = catalog.types.find((item) => item.id === extra.typeId && item.active !== false);
       const options = productOptions(catalog, extra.typeId, products);
       if (!type || options.length === 0) return null;
       return {
@@ -214,9 +212,7 @@ function availableBaskets(
 }
 
 function basketById(catalog: WhatsAppFlowCatalog, basketId: string): FlowCatalogBasket | null {
-  return (
-    catalog.baskets.find((basket) => basket.active === true && basket.id === basketId) ?? null
-  );
+  return catalog.baskets.find((basket) => basket.active === true && basket.id === basketId) ?? null;
 }
 
 function parseSelectedLines(
@@ -366,8 +362,7 @@ export function createWhatsAppFlowController(
         return makeResponse('PRODUCTS', {
           basketId: basket.id,
           basketName: basket.name,
-          basketQuantity:
-            typeof data.basketQuantity === 'number' ? data.basketQuantity : 1,
+          basketQuantity: typeof data.basketQuantity === 'number' ? data.basketQuantity : 1,
           productGroups,
           extraGroups: allExtraGroups,
           errorMessage: 'Revise as opções selecionadas.',
