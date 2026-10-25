@@ -43,7 +43,7 @@ assert.match(ui,/data-mold-save/);
 assert.equal(/kit interno|kit base|assembly_kit/i.test(ui),false,'normal mold editor must not teach internal kits');
 
 const adminHtml=fs.readFileSync('vitrine/admin/index.html','utf8');
-assert.ok(adminHtml.includes('basket-admin-section.js?v=basket-admin-flow-v1-20261025'));
+assert.ok(adminHtml.includes('basket-admin-section.js?v=basket-admin-flow-v2-20261025'));
 const compositionSQL=fs.readFileSync('supabase/migrations/20261013122000_basket_mold_preferred_product_v1.sql','utf8');
 assert.match(compositionSQL,/metadata.*preferred/);
 assert.match(compositionSQL,/bool_or\(s\.is_preferred\)/);
