@@ -42,7 +42,7 @@ const publicSite = read('../index.html');
 const adminIndex = read('../vitrine/admin/index.html');
 const featureBridges = read('../vitrine/admin/admin-feature-bridges.js');
 const tabNames = [...section.matchAll(/data-basket-config-tab="([^"]+)"/g)].map(match => match[1]);
-assert.deepEqual(tabNames, ['types', 'quantities', 'carousel']);
+assert.deepEqual(tabNames, ['types', 'quantities', 'carousel', 'flow']);
 for (const globalScript of [
   'orders-visual-v1.js',
   'store-baskets-ops-overview.js',
@@ -58,15 +58,9 @@ assert.ok(storefront.includes('const detail=await moldDetail(match[1],Number(mat
 assert.ok(storefront.includes('u.searchParams.get("lightweight")==="1"'));
 assert.ok(storefront.includes('basketBySize(u.searchParams.get("size_key")||"",u.searchParams.get("lightweight")==="1")'));
 assert.ok(storefront.includes('action==="basket_by_size"'));
-const basketOpenStart=publicSite.indexOf('async function openBasket(');
-const basketOpenEnd=publicSite.indexOf('function basketGroupTitle',basketOpenStart);
-assert.ok(basketOpenStart>=0&&basketOpenEnd>basketOpenStart,'public basket open function exists');
-const basketOpen=publicSite.slice(basketOpenStart,basketOpenEnd);
-assert.ok(basketOpen.includes('if(cachedBasket?.home_shell===true)await resolveHomeSizeCards()'));
-assert.ok(basketOpen.includes('loadHomeBasketDetail(currentBasket,traceId,controller.signal)'));
-assert.equal(basketOpen.includes('api(action,params,{signal:controller.signal})'),false,'basket opening shares canonical direct-detail requests');
-assert.ok(publicSite.includes("const BASKET_PREVIEW_PREFETCH_CONCURRENCY=1"),'background detail work remains low priority');
-assert.ok(publicSite.includes("if(!data?.basket||!Array.isArray(data.items))"));
+assert.match(publicSite,/Estamos preparando melhorias/,'public homepage is in maintenance mode');
+assert.match(publicSite,/https:\/\/wa\.me\/5565998150975/,'maintenance page links to the requested WhatsApp number');
+assert.match(publicSite,/noindex/,'maintenance page is excluded from search indexing');
 assert.ok(migration.includes("('Doação',0,null::text)"));
 assert.ok(migration.includes("('Família',6,null::text)"));
 assert.ok(migration.includes('enable row level security'));
@@ -80,4 +74,4 @@ assert.ok(storefront.includes('stock_quantity:available'));
 assert.ok(storefront.includes('next_offset:'));
 const quantitiesUi = read('../vitrine/admin/basket-admin-quantities.js');
 assert.ok(quantitiesUi.indexOf("const quantities=[...root.querySelectorAll('[data-qty-basket]')]") < quantitiesUi.indexOf('state.busy=true;render();'), 'read edited quantities before rerendering the form');
-console.log('basket admin three tabs: PASS');
+console.log('basket admin Flow tab: PASS');

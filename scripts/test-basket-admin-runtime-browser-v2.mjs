@@ -34,7 +34,7 @@ try{
   await page.addScriptTag({content:section});
   await page.evaluate(()=>window.DonaAntoniaBasketAdmin.render());
   await page.waitForSelector('[data-admin-module="DonaAntoniaBasketAdminTypes"]');
-  assert.deepEqual(await page.locator('[data-basket-config-tab]').evaluateAll(nodes=>nodes.map(node=>node.dataset.basketConfigTab)),['types','quantities','carousel']);
+  assert.deepEqual(await page.locator('[data-basket-config-tab]').evaluateAll(nodes=>nodes.map(node=>node.dataset.basketConfigTab)),['types','quantities','carousel','flow']);
 
   await page.evaluate(()=>window.DonaAntoniaBasketAdmin.refresh());
   await page.waitForFunction(()=>window.calls.length===2);
@@ -47,5 +47,5 @@ try{
   await page.waitForFunction(()=>window.calls.at(-1)==='DonaAntoniaBasketAdminCarousel');
   assert.equal(await page.locator('[data-basket-config-tab="carousel"]').getAttribute('aria-selected'),'true');
   assert.equal(await page.evaluate(()=>typeof window.DonaAntoniaBasketAdmin.setTab),'function');
-  console.log('basket three-tab keyboard and refresh: PASS');
+  console.log('basket Flow-tab keyboard and refresh: PASS');
 }finally{await browser.close()}

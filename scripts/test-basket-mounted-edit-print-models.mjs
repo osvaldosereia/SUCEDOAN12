@@ -20,7 +20,7 @@ assert.match(guided,/Editar lote/,'technical guided flow must still support rese
 assert.match(guided,/Em montagem|Montado/,'technical guided flow must still surface assembly states');
 
 // O cutover deliberadamente remove edição/impressão/arquivamento do controlador normal.
-assert.deepEqual([...section.matchAll(/data-basket-config-tab="([^"]+)"/g)].map(match=>match[1]),['types','quantities','carousel'],'the replacement session must expose only its three tabs');
+assert.deepEqual([...section.matchAll(/data-basket-config-tab="([^"]+)"/g)].map(match=>match[1]),['types','quantities','carousel','flow'],'the replacement session must expose the four configured tabs');
 assert.doesNotMatch(section,/data-basket-advanced|data-basket-config-tab="(?:kits|store)"/,'legacy modules are not exposed as additional tabs');
 assert.match(section,/kits:\{label:'Receitas de kits \(legado\)'/,'legacy kit operational routing remains available');
 assert.match(section,/store:\{label:'Operação de lotes antigos'/,'legacy lot operational routing remains available');

@@ -98,9 +98,9 @@ assert.match(runtime, /openProductEditor:async productId/);
 assert.match(storefront, /async function basketBySize\(sizeKey:string,lightweight=false\)/);
 assert.match(storefront, /moldDetail\(match\[1\],Number\(match\[2\]\),null,!lightweight,lightweight\)/);
 assert.match(storefront, /u\.searchParams\.get\("lightweight"\)==="1"/);
-assert.match(publicPage, /function prefetchBasketPreviews\(\)/);
-assert.match(publicPage, /requestIdleCallback/);
-assert.match(publicPage, /rememberBasketPreview\(cachedBasket,data\.basket,data\.items\)/);
+assert.match(publicPage, /Estamos preparando melhorias/,'public homepage is temporarily in maintenance');
+assert.match(publicPage, /https:\/\/wa\.me\/5565998150975/,'maintenance CTA uses the requested WhatsApp number');
+assert.match(publicPage, /noindex/,'maintenance page is excluded from search indexing');
 assert.match(migration, /'is_active',p\.is_active/);
 
 console.log('Basket carousel inline stock/status edits, zero-stock activation, navigation recovery, and lightweight previews passed.');

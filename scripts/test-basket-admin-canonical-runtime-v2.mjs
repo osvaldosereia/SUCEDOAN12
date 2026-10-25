@@ -16,7 +16,7 @@ assert.ok(bridgePos>0&&bridgePos<mainClose,'admin bridge must be created inside 
 assert.doesNotMatch(admin.slice(mainClose),/window\.DonaAntoniaGuidedBridge\s*=/,'post-runtime scripts must not own the basket/admin bridge');
 
 assert.match(admin,/basket-guided-builder\.js\?v=guided-v3/,'guided compatibility builder may remain loaded during migration');
-assert.match(admin,/basket-admin-section\.js\?v=basket-admin-three-tabs-20261023/,'admin must load the three-tab basket section controller');
+assert.match(admin,/basket-admin-section\.js\?v=basket-admin-flow-v1-20261025/,'admin must load the Flow-ready basket section controller');
 assert.match(guided,/window\.DonaAntoniaAdminBridge/,'technical guided builder must consume the stable admin bridge');
 assert.doesNotMatch(guided,/DonaAntoniaGuidedBridge/,'retired basket-specific bridge must not return');
 
@@ -27,7 +27,7 @@ const renderBlock=admin.slice(renderStart,renderEnd);
 assert.match(renderBlock,/DonaAntoniaBasketAdmin\?\.render/,'index renderBaskets must delegate to the section controller');
 assert.doesNotMatch(renderBlock,/basket_commercial_admin|basketCommercialCard|openBasketCommercialCreate/,'index must not keep another baskets implementation');
 
-assert.deepEqual([...section.matchAll(/data-basket-config-tab="([^"]+)"/g)].map(match=>match[1]),['types','quantities','carousel'],'controller must expose the three requested configuration tabs');
+assert.deepEqual([...section.matchAll(/data-basket-config-tab="([^"]+)"/g)].map(match=>match[1]),['types','quantities','carousel','flow'],'controller must expose the four requested configuration tabs');
 assert.match(section,/basket-admin-types\.js/,'controller must load the basket type editor');
 assert.match(section,/basket-admin-quantities\.js/,'controller must load the quantity matrix editor');
 assert.match(section,/basket-admin-carousel\.js/,'controller must load the carousel editor');

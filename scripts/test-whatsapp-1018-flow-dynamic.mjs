@@ -22,13 +22,10 @@ assert.match(adminFlowsSource,/flow_id:\s*String\(flowId\)/,'signed canary token
 assert.match(adminFlowsSource,/FLOW_CANARY_TOKEN_TTL_MS\s*=\s*24\s*\*\s*60\s*\*\s*60\s*\*\s*1000/,'the initial Flow token uses a 24-hour lifetime');
 assert.match(adminFlowsSource,/flowToken=await signState\([^;\n]+FLOW_CANARY_TOKEN_TTL_MS/,'canary signing uses its longer lifetime, not the short edit-state default');
 assert.equal(flow.version,'7.3');assert.equal(flow.data_api_version,'3.0');
-assert.equal(flow.screens.length,6,'product editing uses one reusable screen and two catalog pages');
+assert.equal(flow.screens.length,4,'the V2 uses one screen per product type and one reusable quantity editor');
 const flowJsonText=JSON.stringify(flow);
 assert.doesNotMatch(flowJsonText,/R\s*\$\s*\d/,'Flow JSON examples must not contain invented commercial prices');
 assert.doesNotMatch(flowJsonText,/Arroz 5 kg|Marca 1|Marca 2/,'Flow JSON examples must not present invented product or brand names');
-const combinationScreen=flow.screens.find(s=>s.id==='COMBINACAO');
-assert.equal(combinationScreen.data.resumoMarcas?.type,'string','brand mix summary is populated dynamically');
-assert.ok(combinationScreen.layout.children.some(x=>x.type==='TextBody'&&x.text==='\u0024{data.resumoMarcas}'),'customer can compare the real brands in all three combinations');
 const totalNode=flow.screens.find(s=>s.id==='RESUMO').layout.children.find(x=>x.text?.includes('\u0024{data.valor}'));
 assert.equal(totalNode?.text,'\u0024{data.valor}','Meta text interpolation must be a standalone dynamic binding');
 const storefrontSource=read('supabase/functions/storefront-v2/index.ts');
@@ -37,42 +34,35 @@ assert.ok(storefrontSource.includes('brand:selected.brand||""'),'basket detail e
 
 const edges=Object.values(flow.routing_model).reduce((sum,next)=>sum+next.length,0);
 assert.ok(edges<=10,'Meta Flow routing_model cannot exceed ten edges');
-assert.equal(edges,7);
+assert.equal(edges,3);
 const ids=flow.screens.map(screen=>screen.id);
 assert.ok(ids.every(id=>/^[A-Z_]+$/.test(id)),'screen IDs must contain only letters and underscores');
 assert.equal(new Set(ids).size,ids.length);
-assert.deepEqual(ids,['TAMANHO','COMBINACAO','ITENS_UM','ITENS_DOIS','ITEM_EDIT','RESUMO']);
+assert.deepEqual(ids,['TAMANHO','TIPO_PRODUTO','OPCAO_EDIT','RESUMO']);
 assert.equal(flow.routing_model.RESUMO.length,0);
-assert.deepEqual(flow.routing_model.ITENS_UM,['ITEM_EDIT','ITENS_DOIS','RESUMO']);
-assert.deepEqual(flow.routing_model.ITENS_DOIS,['ITEM_EDIT','RESUMO']);
-assert.deepEqual(flow.routing_model.ITEM_EDIT,[],'routes are declared once in the forward direction; Meta supplies back navigation for the connected screen');
+assert.deepEqual(flow.routing_model.TAMANHO,['TIPO_PRODUTO']);
+assert.deepEqual(flow.routing_model.TIPO_PRODUTO,['OPCAO_EDIT','RESUMO']);
+assert.deepEqual(flow.routing_model.OPCAO_EDIT,[],'Meta supplies back navigation to the product list');
 for(const [from,toList] of Object.entries(flow.routing_model)){
  for(const to of toList)assert.ok(!flow.routing_model[to]?.includes(from),`routing_model must not declare the reciprocal edge ${to}->${from}`);
 }
-for(const id of ['ITENS_UM','ITENS_DOIS']){
- const screen=flow.screens.find(x=>x.id===id);
- assert.deepEqual(screen.layout.children.map(x=>x.type),['NavigationList'],'product catalog stays readable as a focused list');
- assert.equal(screen.data.itens_lista.type,'array');
- assert.ok(screen.data.itens_lista.items.properties['on-click-action'],'list entries carry their own dynamic action');
-}
-const editor=flow.screens.find(x=>x.id==='ITEM_EDIT');
+const productList=flow.screens.find(x=>x.id==='TIPO_PRODUTO');
+assert.equal(productList.layout.children.find(x=>x.type==='NavigationList')?.['list-items'],'${data.itens_lista}');
+assert.equal(productList.data.itens_lista.type,'array');
+assert.ok(productList.data.itens_lista.items.properties['on-click-action'],'each product choice has its own action');
+assert.ok(productList.data.itens_lista.items.optionalProperties.start,'product rows may include a real photo');
+const editor=flow.screens.find(x=>x.id==='OPCAO_EDIT');
 assert.ok(editor.layout.children.some(x=>x.type==='Image'&&x.src==='${data.imagem}'));
-assert.ok(editor.layout.children.some(x=>x.type==='RadioButtonsGroup'&&x.name==='produto'&&x['data-source']==='${data.alternativas}'));
 const quantityInput=editor.layout.children.find(x=>x.type==='TextInput'&&x.name==='quantidade');
 assert.equal(quantityInput?.['input-type'],'number','quantity uses the native numeric keyboard');
 assert.equal(quantityInput?.['max-chars'],2,'Meta expects max-chars to be a number');
 assert.equal(quantityInput?.['init-value'],'${data.quantidade}');
 assert.match(quantityInput?.pattern||'',/10\|\[0-9\]/);
 assert.ok(quantityInput?.['helper-text'],'quantity range and zero-removal behavior are explained');
-assert.equal(editor.layout.children.filter(x=>x.type==='Dropdown').length,0);
-
 assert.equal(flow.screens.at(-1).terminal,true);
 const completePayload=flow.screens.find(s=>s.id==='RESUMO').layout.children.at(-1)['on-click-action'].payload;
 assert.deepEqual(completePayload,{resultado:'solicitacao_para_atendimento',resumo:'${data.resumo}',valor:'${data.valor}',itens:'${data.itens}'});
-for(const s of flow.screens){assert.ok(s.layout.children.length<=50);if(s.id==='ITENS_UM'||s.id==='ITENS_DOIS')continue;assert.equal(s.layout.children.filter(x=>x.type==='Footer').length,1);}
-assert.equal(flow.screens.find(x=>x.id==='ITENS_UM').layout.children[0]['on-click-action'],undefined,'each product row supplies its own data-exchange action');
-assert.equal(flow.screens.find(x=>x.id==='TAMANHO').layout.children.at(-1)['on-click-action'].name,'data_exchange');
-assert.equal(flow.screens.at(-1).layout.children.at(-1)['on-click-action'].name,'complete');
+for(const screen of flow.screens){assert.ok(screen.layout.children.length<=50);if(screen.id==='TIPO_PRODUTO')continue;assert.equal(screen.layout.children.filter(x=>x.type==='Footer').length,1);}
 assert.doesNotMatch(JSON.stringify(flow),/submit_order|create_order/);
 const uuid=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0');
 const webp=Uint8Array.from([...Buffer.from('RIFF0000WEBP'),0,1,2,3]);
@@ -128,7 +118,7 @@ assert.match(labSource,/readFlowRequestBtn/);
 assert.match(labSource,/content\.textContent=value/,'Flow data must be inserted as text, not HTML');
 assert.match(labSource,/A conclusão do Flow não cria pedido/);
 assert.match(read('vitrine/admin/whatsapp-lab/index.html'),/id="flowRequestStatus"/);
-const shell={ok:true,baskets:SIZE_KEYS.map((key,i)=>({id:uuid(i+1),size_key:key}))};
+const shell={ok:true,baskets:SIZE_KEYS.map((key,i)=>({id:uuid(i+1),size_key:key,starting_price_cents:17270+i*100,starting_composition_number:1}))};
 const itemCount=27,basketId=shell.baskets[0].id;
 const makeItems=count=>Array.from({length:count},(_,i)=>({position_id:uuid(i+100),product_id:uuid(i+1000),name:'Produto '+(i+1)+' Marca A 1 kg',brand:'Marca A',image_url:'https://ssbesxgaijknwsjbsbcz.supabase.co/storage/v1/object/public/product-images/item-'+i+'.webp',packaging:'1 kg',price_cents:100,stock_quantity:20,quantity:i===0?2:1}));
 let activeItems=makeItems(itemCount),basketCalls=0;
@@ -151,6 +141,33 @@ const deps={
  async basket(id,n){return {ok:true,basket:{id,composition_number:n,display_price_cents:17270+n*100,stock_quantity:10},items:activeItems.map(x=>({...x,brand:'Marca '+n}))}},
  async options(_id,_n,positions){return {ok:true,positions:positions.map(row=>{const original=activeItems.find(x=>x.position_id===row.position_id),index=activeItems.findIndex(x=>x.position_id===row.position_id);return {position_id:row.position_id,alternatives:[{product_id:original.product_id,name:original.name,brand:original.brand,image_url:original.image_url,price_cents:100,stock_quantity:20},{product_id:uuid(6000+index),name:'Produto '+(index+1)+' Marca B 1 kg',brand:'Marca B',image_url:original.image_url,price_cents:250,stock_quantity:4}]};})}},
  async quote(id,n,all){basketCalls++;assert.equal(all.length,activeItems.length);assert.equal(id,basketId);assert.equal(n,1);const items=all.map((x,i)=>{const original=activeItems[i],isAlt=x.product_id!==original.product_id;return {...original,...x,name:isAlt?'Produto '+(i+1)+' Marca B 1 kg':original.name,brand:isAlt?'Marca B':'Marca A',image_url:original.image_url,price_cents:isAlt?250:100,stock_quantity:isAlt?4:20};});return {ok:true,total_cents:items.reduce((sum,x)=>sum+x.quantity*x.price_cents,0),basket:{stock_quantity:2},items}},
+ async configuration(id,n){
+  const productTypes=[
+   {id:uuid(7000),name:'Arroz',flow_enabled:true,flow_sort_order:1,selection_mode:'multiple',max_quantity:10},
+   {id:uuid(7001),name:'Feijão',flow_enabled:true,flow_sort_order:2,selection_mode:'single',max_quantity:10}
+  ];
+  const positions=activeItems.map((item,index)=>{
+   const type=productTypes[index<Math.ceil(activeItems.length/2)?0:1],alternativeId=uuid(6000+index);
+   const base={product_id:item.product_id,name:item.name,brand:item.brand,packaging:item.packaging,image_url:item.image_url,price_cents:item.price_cents,stock_quantity:item.stock_quantity};
+   const alternative={product_id:alternativeId,name:'Produto '+(index+1)+' Marca B 1 kg',brand:'Marca B',packaging:'1 kg',image_url:item.image_url,price_cents:250,stock_quantity:4};
+   return {position_id:item.position_id,label:type.name+' · '+(index+1),base_quantity:item.quantity,base,type_id:type.id,type_name:type.name,editable:true,reason:'',selection_mode:type.selection_mode,max_quantity:type.max_quantity,options:[base,alternative]};
+  });
+  return {ok:true,basket:{id,composition_number:n,display_price_cents:17270+n*100,stock_quantity:10,hidden_adjustment_cents:0,conditional_hidden_enabled:false,conditional_hidden_product_id:null,conditional_hidden_adjustment_cents:0},product_types:productTypes,positions};
+ },
+ async flowQuote(id,n,submitted){
+  basketCalls++;
+  const config=await this.configuration(id,n),incoming=new Map((submitted||[]).map(row=>[String(row.position_id),row.selections||[]])),items=[];
+  for(const position of config.positions){
+   if(!position.editable){items.push({...position.base,position_id:position.position_id,quantity:position.base_quantity,fixed:true});continue;}
+   const selections=incoming.has(position.position_id)?incoming.get(position.position_id):[{product_id:position.base.product_id,quantity:position.base_quantity}];
+   for(const selection of selections){
+    const quantity=Number(selection.quantity||0);if(quantity<=0)continue;
+    const option=position.options.find(item=>String(item.product_id)===String(selection.product_id));if(option)items.push({...option,position_id:position.position_id,quantity,fixed:false});
+   }
+  }
+  const total=items.reduce((sum,item)=>sum+Number(item.price_cents||0)*Number(item.quantity||0),0);
+  return {ok:true,total_cents:total,basket:{...config.basket,display_price_cents:total,stock_quantity:4},items,extras:[]};
+ },
  async image(url){return url?'aW1hZ2U=':''},
  signState:st=>signState(st,secret),verifyState:s=>verifyState(s,secret)
 };
@@ -164,41 +181,47 @@ const legacyNext=await dispatchCanaryFlow({action:'data_exchange',screen:'ITENS_
 assert.equal(legacyNext.screen,'ITENS_DOIS','the published Flow can continue to its next product page after endpoint deployment');
 const init=await flowExchange({action:'INIT'},deps);
 assert.equal(init.screen,'TAMANHO');assert.equal(init.data.tamanhos.length,5);
-const combos=await flowExchange({action:'data_exchange',screen:'TAMANHO',data:{etapa:'tamanho',tamanho:'mini'}},deps);
-assert.equal(combos.screen,'COMBINACAO');assert.equal(combos.data.opcoes.length,3);assert.match(combos.data.opcoes[0].description,/R\$/);
-assert.deepEqual(combos.data.resumoMarcas.split('\n'),['Combinação 1: Marca 1','Combinação 2: Marca 2','Combinação 3: Marca 3']);
-const first=await flowExchange({action:'data_exchange',screen:'COMBINACAO',data:{etapa:'combinacao',tamanho:'mini',combinacao:'1'}},deps);
-assert.equal(first.screen,'ITENS_UM');
-assert.equal(first.data.itens_lista.length,16,'14 products plus page and review actions fit the first navigation list');
-assert.ok(first.data.itens_lista[0].start.image,'catalog rows include a real product thumbnail');
-assert.match(first.data.itens_lista[0]['main-content'].metadata,/2 un/);
-const openPayload=first.data.itens_lista[0]['on-click-action'].payload;
-assert.equal(openPayload.etapa,'editar_item');
-const detail=await flowExchange({action:'data_exchange',screen:'ITENS_UM',data:openPayload},deps);
-assert.equal(detail.screen,'ITEM_EDIT');assert.equal(detail.data.imagem,'aW1hZ2U=');
-assert.ok(detail.data.alternativas.some(x=>x.id===uuid(6000)));
+assert.match(init.data.tamanhos[0].description,/A partir de R\$/);
+const firstType=await flowExchange({action:'data_exchange',screen:'TAMANHO',data:{etapa:'tamanho',tamanho:'mini'}},deps);
+assert.equal(firstType.screen,'TIPO_PRODUTO');assert.equal(firstType.data.tipo_nome,'Arroz');
+assert.match(firstType.data.lista_descricao,/Total atualizado R\$/);
+assert.equal(firstType.data.itens_lista.length,14,'12 product options and two navigation actions fit the list');
+assert.ok(firstType.data.itens_lista[0].start.image,'catalog rows include a real product thumbnail');
+assert.match(firstType.data.itens_lista[0]['main-content'].metadata,/2 un/);
+const openPayload=firstType.data.itens_lista[0]['on-click-action'].payload;
+assert.equal(openPayload.etapa,'editar_opcao');
+const detail=await flowExchange({action:'data_exchange',screen:'TIPO_PRODUTO',data:openPayload},deps);
+assert.equal(detail.screen,'OPCAO_EDIT');assert.equal(detail.data.imagem,'aW1hZ2U=');assert.equal(detail.data.quantidade,'2');
 const alternate=uuid(6000);
-const edited=await flowExchange({action:'data_exchange',screen:'ITEM_EDIT',data:{etapa:'salvar_item',estado:detail.data.estado,position_id:detail.data.position_id,return_screen:detail.data.return_screen,produto:alternate,quantidade:'3'}},deps);
-assert.equal(edited.screen,'ITENS_UM');
-assert.match(edited.data.itens_lista[0]['main-content'].metadata,/3 un/);
-assert.ok(edited.data.itens_lista[0]['main-content'].metadata.includes('R$'));
-assert.ok(basketCalls>=2,'initial basket and edit requests are quoted against current prices');
-const updated=await flowExchange({action:'data_exchange',screen:'ITENS_UM',data:edited.data.itens_lista[0]['on-click-action'].payload},deps);
-const stockError=await flowExchange({action:'data_exchange',screen:'ITEM_EDIT',data:{etapa:'salvar_item',estado:updated.data.estado,position_id:updated.data.position_id,return_screen:updated.data.return_screen,produto:alternate,quantidade:'5'}},deps);
-assert.equal(stockError.screen,'ITEM_EDIT');assert.match(stockError.data.aviso,/4/,'over-stock requests return to the item editor with the available quantity');
-const nextPayload=edited.data.itens_lista.find(x=>x['on-click-action']?.payload?.etapa==='pagina_itens')['on-click-action'].payload;
-const second=await flowExchange({action:'data_exchange',screen:'ITENS_UM',data:nextPayload},deps);
-assert.equal(second.screen,'ITENS_DOIS');assert.equal(second.data.itens_lista.length,14,'13 products and a review action fit the second page');
-const reviewPayload=second.data.itens_lista.find(x=>x['on-click-action']?.payload?.etapa==='revisar')['on-click-action'].payload;
-const summary=await flowExchange({action:'data_exchange',screen:'ITENS_DOIS',data:reviewPayload},deps);
-assert.equal(summary.screen,'RESUMO');assert.match(summary.data.valor,/R\$/);assert.match(summary.data.itens,/3x Produto 1 Marca B/);assert.doesNotMatch(summary.data.itens,/R\$/,'chat reply stays concise; item prices remain in Flow and the total is shown separately');
+const edited=await flowExchange({action:'data_exchange',screen:'OPCAO_EDIT',data:{etapa:'salvar_opcao',estado:detail.data.estado,position_id:detail.data.position_id,product_id:detail.data.product_id,quantidade:'3'}},deps);
+assert.equal(edited.screen,'TIPO_PRODUTO');
+assert.ok(edited.data.itens_lista.find(x=>x['on-click-action']?.payload?.product_id===alternate)['main-content'].metadata.includes('3 un.'));
+assert.ok(edited.data.lista_descricao.includes('Total atualizado R$'));
+assert.ok(basketCalls>=3,'initial and changed selections are priced by the Flow quote contract');
+const stockError=await flowExchange({action:'data_exchange',screen:'OPCAO_EDIT',data:{etapa:'salvar_opcao',estado:detail.data.estado,position_id:detail.data.position_id,product_id:alternate,quantidade:'5'}},deps);
+assert.equal(stockError.screen,'OPCAO_EDIT');assert.match(stockError.data.aviso,/Estoque ou opção atualizados/);
+const nextOptionsPayload=firstType.data.itens_lista.find(x=>x['on-click-action']?.payload?.etapa==='pagina_opcoes')['on-click-action'].payload;
+const nextOptions=await flowExchange({action:'data_exchange',screen:'TIPO_PRODUTO',data:nextOptionsPayload},deps);
+assert.equal(nextOptions.screen,'TIPO_PRODUTO');assert.ok(nextOptions.data.itens_lista.length<=16);
+let reviewPage=await flowExchange({action:'data_exchange',screen:'TIPO_PRODUTO',data:{etapa:'navegar_tipo',estado:edited.data.estado,indice:'1'}},deps);
+assert.equal(reviewPage.data.tipo_nome,'Feijão');
+while(!reviewPage.data.itens_lista.some(x=>x['on-click-action']?.payload?.etapa==='revisar')){
+ const nextPage=reviewPage.data.itens_lista.find(x=>x['on-click-action']?.payload?.etapa==='pagina_opcoes');
+ assert.ok(nextPage,'the final product step has a next page until all options are shown');
+ reviewPage=await flowExchange({action:'data_exchange',screen:'TIPO_PRODUTO',data:nextPage['on-click-action'].payload},deps);
+}
+const reviewPayload=reviewPage.data.itens_lista.find(x=>x['on-click-action']?.payload?.etapa==='revisar')['on-click-action'].payload;
+const summary=await flowExchange({action:'data_exchange',screen:'TIPO_PRODUTO',data:reviewPayload},deps);
+assert.equal(summary.screen,'RESUMO');assert.match(summary.data.valor,/R\$/);assert.match(summary.data.itens,/3x Produto 1 Marca B/);assert.match(summary.data.itens,/cada/);
 for(const count of [14,15,16,17,23,24,25,27,30]){
  activeItems=makeItems(count);
- const page=await flowExchange({action:'data_exchange',screen:'COMBINACAO',data:{etapa:'combinacao',tamanho:'mini',combinacao:'1'}},deps);
- assert.equal(page.screen,'ITENS_UM');assert.ok(page.data.itens_lista.length<=20,`first list stays within Meta's 20-row limit for ${count} items`);
- const hasNext=page.data.itens_lista.some(x=>x['on-click-action']?.payload?.etapa==='pagina_itens');
- assert.equal(hasNext,count>14,`second list is present only when needed for ${count} items`);
- if(hasNext){const payload=page.data.itens_lista.find(x=>x['on-click-action']?.payload?.etapa==='pagina_itens')['on-click-action'].payload;const next=await flowExchange({action:'data_exchange',screen:'ITENS_UM',data:payload},deps);assert.equal(next.screen,'ITENS_DOIS');assert.ok(next.data.itens_lista.length<=20);}
+ const page=await flowExchange({action:'data_exchange',screen:'TAMANHO',data:{etapa:'tamanho',tamanho:'mini'}},deps);
+ assert.equal(page.screen,'TIPO_PRODUTO');assert.ok(page.data.itens_lista.length<=16,`first product step stays within the Meta 20-row limit for ${count} positions`);
+ const hasNext=page.data.itens_lista.some(x=>x['on-click-action']?.payload?.etapa==='pagina_opcoes');
+ assert.ok(hasNext,`a large product type gets another option page for ${count} positions`);
+ const payload=page.data.itens_lista.find(x=>x['on-click-action']?.payload?.etapa==='pagina_opcoes')['on-click-action'].payload;
+ const next=await flowExchange({action:'data_exchange',screen:'TIPO_PRODUTO',data:payload},deps);
+ assert.equal(next.screen,'TIPO_PRODUTO');assert.ok(next.data.itens_lista.length<=16);
 }
 assert.throws(()=>parseQty('-1'));assert.throws(()=>parseQty('11'));assert.equal(parseQty('0'),0);
 const validSigned=await signState({ok:true},secret);
@@ -223,4 +246,4 @@ const body='{"some":"data"}',appSecret='B'.repeat(40),digest=await hmac(appSecre
 const signature='sha256='+Buffer.from(digest).toString('hex');
 assert.equal(await verifyAppSignature(body,signature,appSecret),true);
 assert.equal(await verifyAppSignature(body,signature.replace(/.$/,'0'),appSecret),false);
-console.log('PASS Meta dynamic Flow 6 screens/30 item capacity, product navigation, image safety, choices, brands, quantities, quote, signatures and RSA/AES encryption');
+console.log('PASS Meta dynamic Flow product steps, quantity editor, live quote, image safety, V1 compatibility, signatures and RSA/AES encryption');

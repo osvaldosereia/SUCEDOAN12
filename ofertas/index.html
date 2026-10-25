@@ -1,65 +1,44 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="robots" content="noindex,nofollow,noarchive">
-<meta name="referrer" content="no-referrer">
-<meta name="theme-color" content="#f7f8f6">
-<title>Ofertas do seu pedido · Dona Antônia</title>
-<style>
-*{box-sizing:border-box}body{margin:0;min-height:100dvh;display:grid;place-items:center;padding:18px;background:#f7f8f6;font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;color:#1d2e23}
-main{width:min(100%,440px);border:1px solid #dbe7dd;background:#fff;border-radius:18px;padding:24px;text-align:center;box-shadow:0 7px 30px #153c2510}
-h1{font-size:22px;margin:0 0 10px}p{margin:0;color:#5d6b60}a{color:#176b43;font-weight:700}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#f5f2e8">
+  <title>Manutenção temporária · Dona Antônia</title>
+  <style>
+    :root{color-scheme:light;--green:#176b43;--ink:#1c2a21;--muted:#637168;--cream:#f5f2e8;--card:#fff;--line:#e4e8e1}
+    *{box-sizing:border-box}
+    html,body{min-height:100%;margin:0}
+    body{display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 15% 10%,#e5f0e7 0,transparent 35%),var(--cream);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink)}
+    main{width:min(100%,520px);padding:clamp(26px,7vw,46px);border:1px solid var(--line);border-radius:24px;background:var(--card);box-shadow:0 18px 60px #203c2912;text-align:center}
+    .logo{display:block;width:min(190px,58%);height:auto;margin:0 auto 28px;object-fit:contain}
+    .badge{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;background:#edf5ef;color:var(--green);font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+    .dot{width:8px;height:8px;border-radius:50%;background:#d59b38}
+    h1{margin:18px 0 10px;font-size:clamp(27px,7vw,38px);line-height:1.12;letter-spacing:-.035em}
+    p{margin:0 auto;color:var(--muted);max-width:390px}
+    .action{display:flex;min-height:54px;align-items:center;justify-content:center;gap:10px;margin:26px auto 12px;padding:0 20px;border-radius:13px;background:var(--green);color:#fff;text-decoration:none;font-weight:800;box-shadow:0 7px 16px #176b4325;transition:transform .15s,background .15s}
+    .action:hover{background:#125735;transform:translateY(-1px)}
+    .action:focus-visible{outline:3px solid #b2d7bd;outline-offset:3px}
+    .action svg{width:21px;height:21px;fill:currentColor}
+    .phone{font-size:14px;color:var(--muted)}
+    .phone strong{color:var(--ink);font-variant-numeric:tabular-nums}
+    .foot{margin-top:30px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:#7b857e}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+  </style>
 </head>
 <body>
-<main role="status" aria-live="polite">
-<h1>🛍️ Ofertas do seu pedido</h1>
-<p id="status">Abrindo ofertas disponíveis…</p>
-<p id="back" hidden style="margin-top:18px"><a href="/pedido/">Voltar ao pedido</a></p>
-</main>
-<script>
-(async()=>{'use strict';
-const API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/order-customer-actions-v1';
-const valid=/^[a-f0-9]{64}$/i;
-const qs=new URLSearchParams(location.search);
-const token=(qs.get('c')||'').trim();
-const status=document.getElementById('status');
-const back=document.getElementById('back');
-const close=message=>{status.textContent=message;};
-if(!token){location.replace('/?ofertas=1');return;}
-if(!valid.test(token)){close('Este link não é válido. Abra o pedido pelo WhatsApp.');return;}
-// Remove the 256-bit capability from address/history before any network request.
-history.replaceState(null,'',location.pathname);
-async function api(action,method){
-  const response=await fetch(API+'?action='+encodeURIComponent(action),{
-    method:method||'GET',cache:'no-store',referrerPolicy:'no-referrer',
-    headers:{'X-Customer-Action-Token':token}
-  });
-  const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
-  if(!response.ok||data.ok!==true)throw new Error(String(data.error||'unavailable'));
-  return data;
-}
-try{
-  const session=await api('session');
-  if(/^[a-f0-9]{16}$/i.test(String(session.public_token||''))){
-    back.querySelector('a').href='/pedido/?k='+encodeURIComponent(session.public_token);
-    back.hidden=false;
-  }
-  if(session.can_add_offers!==true){
-    close('O prazo de ofertas terminou ou o pedido já está confirmado. Consulte seu pedido.');
-    return;
-  }
-  if(!/^[a-f0-9]{16}$/i.test(String(session.public_token||'')))throw new Error('invalid_order_link');
-  const added=await api('addon_session','POST');
-  if(!/^[A-Za-z0-9_-]{32,96}$/.test(String(added.addon_token||'')))throw new Error('invalid_addon_token');
-  const url='/adicionar/?k='+encodeURIComponent(session.public_token)+'#t='+encodeURIComponent(added.addon_token);
-  location.replace(url);
-}catch{
-  close('Não foi possível abrir as ofertas agora. Abra novamente o pedido pelo WhatsApp.');
-}
-})();
-</script>
+  <main>
+    <img class="logo" src="/img/logoantonia5.png" alt="Dona Antônia">
+    <span class="badge"><span class="dot" aria-hidden="true"></span> Loja temporariamente em manutenção</span>
+    <h1>Estamos preparando melhorias</h1>
+    <p>Enquanto nossa loja online passa por ajustes, nossa equipe continua atendendo pelo WhatsApp. Chame a gente para consultar produtos e fazer seu pedido.</p>
+    <a class="action" href="https://wa.me/5565998150975?text=Ol%C3%A1%2C%20gostaria%20de%20fazer%20um%20pedido." target="_blank" rel="noopener noreferrer">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.52 3.48A11.82 11.82 0 0 0 12.08 0C5.53 0 .2 5.33.2 11.88c0 2.1.55 4.15 1.6 5.96L.1 24l6.32-1.66a11.9 11.9 0 0 0 5.66 1.44h.01c6.55 0 11.88-5.33 11.89-11.88a11.82 11.82 0 0 0-3.46-8.42ZM12.09 21.8a9.9 9.9 0 0 1-5.04-1.38l-.36-.21-3.75.98 1-3.66-.24-.38a9.87 9.87 0 0 1-1.52-5.27c0-5.46 4.45-9.91 9.92-9.91a9.85 9.85 0 0 1 7.01 2.91 9.85 9.85 0 0 1 2.9 7.02c0 5.47-4.45 9.92-9.92 9.92Zm5.45-7.43c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.14-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.48-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.49s1.07 2.89 1.22 3.09c.15.2 2.11 3.22 5.12 4.52.72.31 1.28.5 1.72.64.72.23 1.38.2 1.9.12.58-.09 1.76-.72 2.01-1.42.25-.7.25-1.3.17-1.42-.08-.13-.27-.2-.57-.35Z"/></svg>
+      Conversar pelo WhatsApp
+    </a>
+    <div class="phone">WhatsApp <strong>(65) 99815-0975</strong></div>
+    <div class="foot">Dona Antônia · Cuiabá e Várzea Grande</div>
+  </main>
 </body>
 </html>

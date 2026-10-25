@@ -12,7 +12,9 @@ const RPCS:Record<string,string>={
   list:"admin_basket_configuration_v1",
   types_save:"admin_basket_configuration_types_save_v1",
   quantities_save:"admin_basket_configuration_quantities_save_v1",
-  product_type_save:"admin_basket_configuration_product_type_save_v1"
+  product_type_save:"admin_basket_configuration_product_type_save_v1",
+  flow_list:"admin_basket_flow_configuration_v1",
+  flow_save:"admin_basket_flow_configuration_save_v1"
 };
 function rpcError(error:any){
   const detail=clean(error?.message||error,300);
@@ -42,8 +44,9 @@ Deno.serve(async(req:Request)=>{
   if(!rpc)return json(req,{ok:false,error:"action_invalid"},400);
   const args=action==="types_save"?{p_types:input.types}
     :action==="quantities_save"?{p_quantities:input.quantities}
-    :action==="product_type_save"?{p_product_type:input.product_type}:{};
+    :action==="product_type_save"?{p_product_type:input.product_type}
+    :action==="flow_save"?{p_config:input.configuration}:{};
   const result=await db.rpc(rpc,args);
   if(result.error){const mapped=rpcError(result.error);return json(req,{ok:false,...mapped},Number(mapped.status||500))}
-  return json(req,{ok:true,...(action==="list"?result.data:{configuration:result.data})});
+  return json(req,{ok:true,...(["list","flow_list"].includes(action)?result.data:{configuration:result.data})});
 });

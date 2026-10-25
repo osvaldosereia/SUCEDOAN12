@@ -47,16 +47,9 @@ const [publicPage, edge] = await Promise.all([
   readFile(new URL('../index.html', import.meta.url), 'utf8'),
   readFile(new URL('../supabase/functions/storefront-v2/index.ts', import.meta.url), 'utf8')
 ]);
-const prefetchStart = publicPage.indexOf('function prefetchBasketPreviews(){');
-const prefetchEnd = publicPage.indexOf('function scheduleBasketPreviewPrefetch()', prefetchStart);
-assert.ok(prefetchStart >= 0 && prefetchEnd > prefetchStart);
-const prefetch=publicPage.slice(prefetchStart,prefetchEnd);
-assert.match(prefetch,/await resolveHomeSizeCards\(\)/,'idle prefetch shares the one-time lightweight size-ID resolution');
-assert.match(prefetch,/loadHomeBasketDetail\(card,traceId\)/,'idle prefetch uses the canonical direct detail route');
-assert.match(publicPage,/return api\('basket_by_size'/,'size-based lookup remains only as a fallback when lightweight resolution is unavailable');
-assert.match(publicPage,/api\('basket',\{basket_id:resolvedKey,lightweight:1,trace_id:traceId\}\)/,'direct detail reads still carry the canonical ID and trace ID');
-assert.match(publicPage,/BASKET_PREVIEW_PREFETCH_CONCURRENCY=1/,'the low-priority preview queue is bounded to one request');
-assert.match(publicPage, /Sem estoque para esta quantidade/, 'unavailable products are visible in the basket editor');
-assert.match(publicPage, /Number\(b\.stock_quantity\|\|0\)<1/, 'basket cannot be added with no sellable capacity');
+assert.match(publicPage,/Estamos preparando melhorias/,'public homepage is in maintenance mode');
+assert.match(publicPage,/https:\/\/wa\.me\/5565998150975/,'maintenance page links to the requested WhatsApp number');
+assert.match(publicPage,/noindex/,'maintenance page is excluded from search indexing');
+assert.doesNotMatch(publicPage,/prefetchBasketPreviews|BasketCarousel\.mount/,'storefront UI is not exposed during maintenance');
 assert.match(edge, /allowUnavailablePreview/);
 console.log('storefront basket lightweight defaults: PASS');

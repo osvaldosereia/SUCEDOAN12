@@ -34,7 +34,7 @@ try{
   await page.addScriptTag({content:section});
   await page.evaluate(()=>window.DonaAntoniaBasketAdmin.render());
   await page.waitForSelector('[data-admin-module="DonaAntoniaBasketAdminTypes"]');
-  assert.deepEqual(await page.locator('[data-basket-config-tab]').evaluateAll(nodes=>nodes.map(node=>node.dataset.basketConfigTab)),['types','quantities','carousel']);
+  assert.deepEqual(await page.locator('[data-basket-config-tab]').evaluateAll(nodes=>nodes.map(node=>node.dataset.basketConfigTab)),['types','quantities','carousel','flow']);
 
   await page.click('[data-basket-config-tab="quantities"]');
   await page.waitForSelector('[data-admin-module="DonaAntoniaBasketAdminQuantities"]');
@@ -45,5 +45,5 @@ try{
   assert.deepEqual(await page.evaluate(()=>window.calls),['DonaAntoniaBasketAdminTypes','DonaAntoniaBasketAdminQuantities','DonaAntoniaBasketAdminCarousel']);
   assert.equal(await page.locator('[data-basket-simple-tab]').count(),0);
   assert.equal(await page.locator('[data-basket-advanced]').count(),0);
-  console.log('basket three-tab browser navigation: PASS');
+  console.log('basket Flow-tab browser navigation: PASS');
 }finally{await browser.close()}

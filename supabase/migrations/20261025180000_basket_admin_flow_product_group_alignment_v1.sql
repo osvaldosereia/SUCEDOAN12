@@ -17,7 +17,8 @@ set metadata=jsonb_set(
         'enabled',true,
         'sort_order',5,
         'selection_mode','multiple',
-        'max_quantity',10
+        'max_quantity',10,
+        'position_labels',jsonb_build_array('Macarrão Espaguete com Ovos QDelícia 500 g')
       )
       else jsonb_build_object('enabled',true)
     end,
