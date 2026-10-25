@@ -4,7 +4,7 @@
     types:{label:'Tipos de cestas',src:'/vitrine/admin/basket-admin-types.js?v=20261023-1',global:'DonaAntoniaBasketAdminTypes'},
     quantities:{label:'Tipos e quantidades',src:'/vitrine/admin/basket-admin-quantities.js?v=20261023-1',global:'DonaAntoniaBasketAdminQuantities'},
     carousel:{label:'Produtos do carrossel',src:'/vitrine/admin/basket-admin-carousel.js?v=20261023-4',global:'DonaAntoniaBasketAdminCarousel'},
-    flow:{label:'Atendimento por Flow',src:'/vitrine/admin/basket-admin-flow.js?v=20261025-flow-v1',global:'DonaAntoniaBasketAdminFlow'}
+    flow:{label:'Atendimento por Flow',src:'/vitrine/admin/basket-admin-flow.js?v=20261025-flow-v2',global:'DonaAntoniaBasketAdminFlow'}
   };
   const COMPATIBILITY_MODULES={
     kits:{label:'Receitas de kits (legado)',src:'/vitrine/admin/kit-builder.js?v=basket-products-v1',global:'DonaAntoniaKitBuilder'},
@@ -12,7 +12,7 @@
   };
   const DEPENDENCIES=[
     {src:'/vitrine/admin/basket-admin-domain.js?v=20261023-1',global:'DonaAntoniaBasketAdminDomain'},
-    {src:'/vitrine/admin/basket-admin-api.js?v=20261025-flow-v1',global:'DonaAntoniaBasketAdminApi'}
+    {src:'/vitrine/admin/basket-admin-api.js?v=20261025-flow-v2',global:'DonaAntoniaBasketAdminApi'}
   ];
   const state={tab:'types',generation:0,loaders:new Map()};
   const host=()=>document.querySelector('#content');
@@ -48,7 +48,7 @@
     return new Promise((resolve,reject)=>{
       const script=existing||document.createElement('script');
       const finish=()=>{script.dataset.loaded='true';const module=window[global];module?resolve(module):reject(new Error('basket_admin_module_unavailable'))};
-      script.addEventListener('load',finish,{once:true});script.addEventListener('error',()=>reject(new Error('basket_admin_module_load_failed')),{once:true});
+      script.addEventListener('load',finish,{once:true});script.addEventListener('error',()=>{script.remove();reject(new Error('basket_admin_module_load_failed'))},{once:true});
       if(!existing){script.src=src;script.async=true;script.dataset.basketConfigLoader=global;document.head.appendChild(script)}
     });
   }
