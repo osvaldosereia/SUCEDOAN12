@@ -10,6 +10,12 @@ Atualizado em 26/10/2026. Este roteiro lista somente os bloqueios que impedem o 
 - As quatro migrations próprias do projeto estão aplicadas. As cinco funções novas ainda não estão implantadas.
 - A chave Flow do canal 1018 foi observada no runtime. A chave privada do 0975 e as credenciais da GitHub App do novo projeto não foram confirmadas.
 
+## Onde o Admin fica
+
+A interface do novo Admin será publicada pelo GitHub a partir deste repositório. O Supabase não hospeda a interface: ele fornece login, dados de clientes e Edge Functions. O endereço `https://ssbesxgaijknwsjbsbcz.supabase.co/auth/v1/callback` é somente o retorno técnico do OAuth depois do login; não é o endereço do Admin.
+
+A publicação GitHub desta pasta ainda não está configurada, então o endereço público final ainda será definido pela configuração de publicação no GitHub. Esse endereço será adicionado ao redirect allowlist depois que existir. Não é necessário escolher hospedagem no Supabase.
+
 ## Desbloqueio de autenticação
 
 1. Entre no Dashboard Supabase do projeto `Dona Antônia` (`ssbesxgaijknwsjbsbcz`). Não compartilhe senha, códigos ou tokens no chat.

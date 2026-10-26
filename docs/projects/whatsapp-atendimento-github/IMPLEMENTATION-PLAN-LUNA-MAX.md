@@ -14,6 +14,10 @@ Não copiar nem adaptar a UI, funções, tabelas, RPCs, máquina de estados, com
 
 Podemos consultar no Vitrine e nos serviços atuais, somente para pesquisa, quais produtos estão nas cestas, as regras comerciais, os identificadores de integração e a configuração das contas Meta/Bling. O cadastro de clientes existente no Supabase pode ser consultado pelo servidor conforme orientação do usuário. A implementação de cada integração será nova e seguirá as APIs oficiais.
 
+### Hospedagem da interface
+
+A interface do novo Admin será publicada pelo GitHub, a partir do repositório e da pasta `projetos/whatsapp-atendimento-github/`. O Supabase não hospeda essa interface: fornece autenticação, dados de clientes e Edge Functions. O endereço `https://ssbesxgaijknwsjbsbcz.supabase.co/auth/v1/callback` é somente o callback técnico de OAuth. A publicação GitHub desta pasta ainda precisa ser configurada; seu endereço final será usado depois na allowlist de redirects do Supabase. Não pedir ao usuário que escolha hospedagem no Supabase.
+
 ### Decisão posterior sobre conexões existentes
 
 O usuário autorizou usar a conexão Bling e os secrets já ativos no Supabase/GitHub, e reaproveitar ANA para os dois números. O Admin, os contratos de pedido, o comparador/idempotência, a interface e a integração comercial continuam novos. Para conectar sem pedir uma nova autorização Bling nem ler/imprimir segredos, a Edge Function usa uma lista fixa de RPCs server-side da integração existente para credencial, lock de rotação do refresh token e rate limit; para a Central ANA, um adaptador autenticado conversa com os serviços existentes, que continuam responsáveis por autorização de operador, janela e gates de envio. Essa ponte não copia implementação, UI ou schema e não permite chamadas arbitrárias.
