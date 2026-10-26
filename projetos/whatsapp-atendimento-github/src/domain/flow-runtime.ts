@@ -1,4 +1,4 @@
-import type { Basket, BasketProductGroup, MoneyCents, Product } from "./catalog";
+import { hasFiscalIdentifiers, type Basket, type BasketProductGroup, type MoneyCents, type Product } from "./catalog";
 
 export interface BasketSelection {
   productId: string;
@@ -60,6 +60,9 @@ export function quoteBasket(
     const reference = referenceProduct(group, products);
     const selected = findGroupProduct(group, selection.productId, products);
     if (selection.quantity !== 0) {
+      if (!hasFiscalIdentifiers(selected)) {
+        throw new FlowSelectionError("Este produto está indisponível no momento.");
+      }
       const available = availableStockByProduct?.get(selected.id);
       if (availableStockByProduct && !Number.isSafeInteger(available)) {
         throw new FlowSelectionError("O estoque desta opção não pôde ser confirmado.");

@@ -1,4 +1,4 @@
-import { validateCatalog, type Basket, type CatalogDocuments, type Product } from "../../../src/domain/catalog.ts";
+import { hasFiscalIdentifiers, validateCatalog, type Basket, type CatalogDocuments, type Product } from "../../../src/domain/catalog.ts";
 import { supabaseSecretKey } from "../_shared/supabase-api-keys.ts";
 import {
   FlowSelectionError,
@@ -483,7 +483,7 @@ function stockAwareDefaults(
   return Object.fromEntries(basket.groups.map((group) => {
     const product = group.productIds
       .map((id) => byId.get(id))
-      .find((candidate) => candidate?.active && (stockByProduct.get(candidate.id) ?? 0) > 0);
+      .find((candidate) => candidate?.active && hasFiscalIdentifiers(candidate) && (stockByProduct.get(candidate.id) ?? 0) > 0);
     const fallback = group.productIds.map((id) => byId.get(id)).find((candidate) => candidate?.active);
     const selected = product ?? fallback;
     if (!selected) throw new FlowSelectionError("A composição desta cesta não tem uma opção de produto ativa.");
@@ -503,7 +503,7 @@ function productOptions(
   const byId = new Map(products.map((product) => [product.id, product]));
   const options = group.productIds.flatMap((id) => {
     const product = byId.get(id);
-    if (!product?.active) return [];
+    if (!product?.active || !hasFiscalIdentifiers(product)) return [];
     const available = stockByProduct.get(product.id);
     const price = currency(product.unitPriceCents);
     const status = available === undefined
@@ -540,7 +540,7 @@ async function groupScreen(
   const effective = { ...defaults, ...prior, [group.id]: current };
   const quote = quoteBasket(basket, products, effective, stockByProduct);
   const product = products.find((candidate) => candidate.id === current.productId && candidate.active);
-  const selected = current.quantity > 0 && product && (stockByProduct.get(product.id) ?? 0) > 0;
+  const selected = current.quantity > 0 && product && hasFiscalIdentifiers(product) && (stockByProduct.get(product.id) ?? 0) > 0;
   const image = selected ? await productImageBase64(product, commit) : null;
   const stock = selected ? stockByProduct.get(product.id) ?? 0 : 0;
   const maximum = Math.min(FLOW_MAX_PRODUCT_QUANTITY, stock);
@@ -622,6 +622,7 @@ function selectionForAction(
   if (!group.productIds.includes(productId)) throw new FlowSelectionError("Escolha um produto disponível neste tipo.");
   const product = products.find((candidate) => candidate.id === productId && candidate.active);
   if (!product) throw new FlowSelectionError("Esta opção não está disponível.");
+  if (!hasFiscalIdentifiers(product)) throw new FlowSelectionError("Esta opção está indisponível no momento.");
   const stock = stockByProduct.get(product.id);
   if (!Number.isSafeInteger(stock) || (stock as number) < 1) throw new FlowSelectionError("Este produto está sem estoque.");
   const maximum = Math.min(FLOW_MAX_PRODUCT_QUANTITY, stock as number);

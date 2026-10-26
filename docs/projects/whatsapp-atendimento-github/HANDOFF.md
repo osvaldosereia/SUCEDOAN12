@@ -384,3 +384,17 @@ A referência oficial atual informa o limite de 256 MB de memória por Edge Func
 A lista read-only do Supabase confirma `admin-whatsapp-ops-v1` ACTIVE v39; o código ativo obtido pela referência GitHub mostra que `action=media` pode criar cache privado para a mensagem. A interface chama essa ação somente quando o operador pede “Ver anexo”. Não invoquei a rota, não baixei mídias, não consultei conversa pessoal, não fiz gravação no Supabase, envio Meta/Bling, deploy, migration ou publicação de Flow.
 
 `pnpm build` passou (`tsc --noEmit` e Vite); `git diff --check` passou. Nenhum teste automatizado foi criado ou executado. A pesquisa do changelog atual filtrada para Edge Functions não mostrou alteração breaking aplicável à transmissão HTTP usada aqui.
+
+## Continuação local — catálogo fiscal e integridade das imagens (26/10/2026)
+
+A consulta somente leitura a `public.products` no projeto Supabase `ssbesxgaijknwsjbsbcz` foi limitada aos quatro produtos já listados como pendentes em `catalog/import-report.json`. Café Brasileiro 250 g e Close Up 70 g têm GTIN e ID Bling, mas `sku` é nulo na fonte; Personal 20 m e Superian 12 rolos têm SKU/GTIN, mas o ID Bling é nulo. Não converti GTIN em SKU nem inventei vínculo fiscal. Os quatro bloqueios permanecem corretamente registrados no relatório do catálogo.
+
+A mesma consulta mostrou diferenças atuais entre `stock` do Supabase e `stockQuantity` do GitHub em três produtos consultados (Close Up: 300/296; Personal: 3/0; Superian: 2/0). O GitHub continua sendo o saldo operacional do novo projeto; não sincronizei nem sobrescrevi esses valores usando a base de referência. Café permanece em 4 nas duas fontes.
+
+Para evitar que um cliente avance com uma escolha que depois não pode gerar venda/NF-e, os rascunhos estáticos e a tela dinâmica agora só oferecem produtos ativos com SKU e ID Bling preenchidos. O runtime recusa seleções diretas/incompletas e a cotação rejeita quantidades positivas sem ambos os identificadores. A opção final “Não quero esse produto” continua disponível e seleção zero não exige vínculo fiscal.
+
+Auditoria pontual dos assets, sem alterar arquivos: 61 produtos, 61 entradas únicas no manifesto e 61 imagens existentes; hashes e tamanhos conferem com o manifesto, dimensões continuam 240×190 e nenhuma excede 27 KB. Total versionado: 207.436 bytes; maior arquivo: 6.920 bytes.
+
+A documentação oficial do Bling consultada descreve a API REST/OAuth e o recurso de leitura de produtos. O changelog atual do Supabase indica que a mudança de exposição automática em 30/10 se aplica a tabelas novas no schema público; o projeto mantém os dados operacionais no schema privado. Nenhuma incompatibilidade desta alteração local foi identificada.
+
+Verificação: `pnpm build` passou, incluindo `tsc --noEmit` e o bundle Vite; `git diff --check` passou, com apenas avisos já conhecidos de conversão LF/CRLF no checkout. Nenhum teste automatizado foi criado/executado. Não houve escrita no Supabase/GitHub remoto/Bling/Meta, chamada de API operacional, migration aplicada, deploy, Flow publicado ou mensagem enviada. A próxima pendência fiscal é obter SKU para Café/Close Up e IDs Bling para Personal/Superian a partir de registros autorizados; não inferir esses campos. `supabase/.temp/` continua intocado e não deve ser commitado.

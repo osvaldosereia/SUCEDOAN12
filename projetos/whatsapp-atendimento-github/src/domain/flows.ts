@@ -1,4 +1,4 @@
-import type { Basket, BasketProductGroup, Product, BasketsDocument } from "./catalog";
+import { hasFiscalIdentifiers, type Basket, type BasketProductGroup, type Product, type BasketsDocument } from "./catalog";
 import { FLOW_MAX_PRODUCT_QUANTITY } from "./flow-runtime";
 
 export const FLOW_CHANNELS = ["0975", "1018"] as const;
@@ -62,7 +62,7 @@ export function emptyChannelFlow(channel: FlowChannel): ChannelFlowDocument {
 function groupProducts(group: BasketProductGroup, products: Map<string, Product>): Product[] {
   return [...new Set(group.productIds)].flatMap((id) => {
     const product = products.get(id);
-    return product?.active ? [product] : [];
+    return product?.active && hasFiscalIdentifiers(product) ? [product] : [];
   });
 }
 
