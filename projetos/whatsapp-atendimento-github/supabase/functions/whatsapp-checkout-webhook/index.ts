@@ -6,6 +6,7 @@ import { validateCatalog, type Basket, type CatalogDocuments } from "../../../sr
 import { FlowSelectionError, quoteBasket, type BasketSelections } from "../../../src/domain/flow-runtime.ts";
 import { wakeOutboxWorker } from "../_shared/outbox-dispatch.ts";
 import { decrementGitHubStockForConfirmation } from "../_shared/github-stock.ts";
+import { CHECKOUT_ACTION_PREFIX, CHECKOUT_BASKET_REPLY_PREFIX, isCheckoutStartText } from "../_shared/checkout-routing.ts";
 
 const OWNER = "osvaldosereia";
 const REPOSITORY = "SUCEDOAN12";
@@ -298,7 +299,7 @@ async function queueBasketMenu(tx: Sql, channel: Channel, phone: string, eventId
   const baskets = catalog.documents.baskets.baskets.filter((basket) => basket.active).sort((a, b) => a.sortOrder - b.sortOrder);
   if (!baskets.length) throw new WebhookError(503, "Não há cestas ativas para atendimento.");
   const rows = baskets.map((basket) => ({
-    id: `basket:${basket.id}`,
+    id: `${CHECKOUT_BASKET_REPLY_PREFIX}${basket.id}`,
     title: basket.name,
     description: `A partir de ${formatMoney(basket.basePriceCents)}`,
   }));
@@ -532,9 +533,9 @@ async function createDraft(tx: Sql, message: WebhookMessage, channel: Channel, p
     type: "button",
     body: { text: body },
     action: { buttons: [
-      { type: "reply", reply: { id: `confirm:${draftId}:1`, title: "Confirmar pedido" } },
-      { type: "reply", reply: { id: `edit:${draftId}:1`, title: "Editar pedido" } },
-      { type: "reply", reply: { id: `cancel:${draftId}:1`, title: "Cancelar" } },
+      { type: "reply", reply: { id: `${CHECKOUT_ACTION_PREFIX}confirm:${draftId}:1`, title: "Confirmar pedido" } },
+      { type: "reply", reply: { id: `${CHECKOUT_ACTION_PREFIX}edit:${draftId}:1`, title: "Editar pedido" } },
+      { type: "reply", reply: { id: `${CHECKOUT_ACTION_PREFIX}cancel:${draftId}:1`, title: "Cancelar" } },
     ] },
   }));
 }
@@ -697,13 +698,13 @@ async function processMessage(message: WebhookMessage, channel: Channel, rawBody
 
     if (message.type === "text") {
       const body = message.text?.body?.trim().toLocaleLowerCase("pt-BR");
-      if (body && /^(oi|ol[aá]|quero|comprar|cesta|pedido)\b/.test(body)) await queueBasketMenu(tx, channel, phone, message.id);
+      if (isCheckoutStartText(body)) await queueBasketMenu(tx, channel, phone, message.id);
       return;
     }
 
     const listId = message.interactive?.list_reply?.id;
-    if (message.type === "interactive" && typeof listId === "string" && listId.startsWith("basket:")) {
-      await createSessionFromReply(tx, channel, phone, listId.slice("basket:".length), message.id);
+    if (message.type === "interactive" && typeof listId === "string" && listId.startsWith(CHECKOUT_BASKET_REPLY_PREFIX)) {
+      await createSessionFromReply(tx, channel, phone, listId.slice(CHECKOUT_BASKET_REPLY_PREFIX.length), message.id);
       return;
     }
 
@@ -714,13 +715,13 @@ async function processMessage(message: WebhookMessage, channel: Channel, rawBody
     }
 
     const buttonId = message.interactive?.button_reply?.id;
-    const adjustment = typeof buttonId === "string" ? buttonId.match(/^(accept-adjustment|cancel-adjustment):([0-9a-f-]{36}):(\d+)$/i) : null;
+    const adjustment = typeof buttonId === "string" ? buttonId.match(/^wa-gh-(accept-adjustment|cancel-adjustment):([0-9a-f-]{36}):(\d+)$/i) : null;
     if (message.type === "interactive" && adjustment) {
       const adjustmentAction = adjustment[1].toLowerCase() as "accept-adjustment" | "cancel-adjustment";
       await resolveOrderAdjustment(tx, channel, phone, adjustment[2], Number(adjustment[3]), adjustmentAction, message.id);
       return;
     }
-    const action = typeof buttonId === "string" ? buttonId.match(/^(confirm|edit|cancel):([0-9a-f-]{36}):(\d+)$/i) : null;
+    const action = typeof buttonId === "string" ? buttonId.match(/^wa-gh-(confirm|edit|cancel):([0-9a-f-]{36}):(\d+)$/i) : null;
     if (message.type === "interactive" && action) {
       const [, actionName, draftId, revisionText] = action;
       const revision = Number(revisionText);

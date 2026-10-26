@@ -453,3 +453,28 @@ A conferência SQL identificou as 14 tabelas privadas em `whatsapp_atendimento` 
 6. Validar Flow JSON/imagens nos dois números e só então publicar/vincular cada Flow; verificar chegada do pedido no Admin e na conversa.
 
 O projeto ainda **não aceita pedidos reais**. O próximo avanço que não depende do operador é terminar a revisão/deploy isolado das Edge Functions, mas o fluxo de cliente continuará bloqueado até OAuth/GitHub App, chave 0975 e o roteamento do callback serem resolvidos.
+
+## Rodada — roteador de webhook isolado (26/10/2026)
+
+Esta nota atualiza o bloqueio anterior: o roteamento agora está programado localmente, mas ainda não implantado nem selecionado no callback Meta.
+
+### Revisão de referência ativa
+
+Foi consultado somente o código implantado de `whatsapp-meta-webhook-v1` no projeto `ssbesxgaijknwsjbsbcz`; não foram consultados clientes, mensagens reais nem valores de secrets. A função normaliza mensagens interativas e o helper ANA lê o texto de `nfm_reply`, grava no histórico e pode enfileirar ANA. Ela não cria o pedido do checkout novo nem valida as sessões dele. O roteador separado é necessário para conectar o Flow novo sem substituir o serviço existente.
+
+### Implementação local
+
+- Criada `supabase/functions/whatsapp-meta-order-router/index.ts`, com `verify_jwt = false` apenas para entrada de webhook Meta. POST exige assinatura HMAC válida, limita corpo a 1 MB e repassa o payload filtrado com nova assinatura aos handlers que validam novamente.
+- GET do protocolo Meta é relayed à função ANA ativa para reutilizar o token de verificação já configurado; não foi criado outro token obrigatório para o callback.
+- Mensagens conversacionais e status de entregas antigas permanecem no handler ANA. Status são encaminhados ao checkout somente quando o `wamid` consta no outbox novo.
+- Respostas `nfm_reply` só entram no checkout quando o hash do `flow_token` corresponde a uma sessão criada por este projeto, no mesmo canal e telefone. Respostas de Flow antigo seguem para ANA.
+- A seleção de cesta e botões novos usam prefixo próprio (`wa-gh-*`), impedindo que interações antigas com IDs genéricos sejam capturadas. As intenções textuais foram estreitadas para início de compra, evitando interceptar frases gerais como “quero falar com atendente” ou “cadê meu pedido”.
+- `supabase/functions/_shared/checkout-routing.ts` mantém essa classificação alinhada entre roteador e checkout. `tsconfig.json` inclui o roteador no type-check e `supabase/config.toml` registra a verificação JWT desligada para o webhook assinado.
+
+### Verificação e estado
+
+`pnpm build` passou, incluindo `tsc --noEmit` e Vite; permanece o alerta de chunk JavaScript acima de 500 KB. `git diff --check` passou com avisos de conversão LF/CRLF. Nenhum teste automatizado foi criado/executado. O `supabase/.temp/` fora da pasta do projeto permaneceu fora do staging.
+
+O código está pronto para revisão local, mas deploy/cutover exigem confirmação server-side de `SUPABASE_DB_URL`, segredo Meta compartilhado, existência dos endpoints destinos e callback configurável. O projeto ainda tem bloqueios independentes: OAuth GitHub do Supabase desabilitado, allowlist/origens e GitHub App ausentes no runtime, chave Flow 0975 não localizada. O preflight não confirmou essas dependências, então não foi feito deploy nem mudança do callback. Nenhum Flow foi publicado, nenhuma mensagem enviada e nenhuma escrita Meta/Bling ocorreu.
+
+Fontes Supabase consultadas: [autenticação de Edge Functions](https://supabase.com/docs/guides/functions/auth) e [cabeçalhos de autenticação](https://supabase.com/docs/guides/functions/auth-headers), sobre webhooks externos com verificação da assinatura do provedor no handler.

@@ -167,17 +167,23 @@ O usuário autorizou avançar nas mudanças de GitHub/Supabase para pôr o proje
 - O GitHub OAuth está desabilitado no Supabase Auth e o login respondeu `provider is not enabled`.
 - O projeto novo requer GitHub App ID/installation/private key e allowlist/origem em secrets do runtime. O conector de banco/repositório não configura esses itens; a sessão do Dashboard Supabase estava encerrada.
 - O runtime atual tem aliases server-side Meta para token/app secret/Graph API e chave Flow 1018. A chave Flow 0975 não foi localizada.
-- O callback atual da Meta segue em `whatsapp-meta-webhook-v1`; o novo `whatsapp-checkout-webhook` ainda não recebe `nfm_reply`.
-- Nenhuma das quatro Edge Functions novas está implantada, nenhum Flow foi publicado e o worker de mensagens está desligado.
+- O callback atual da Meta segue em `whatsapp-meta-webhook-v1`; a nova ponte está somente no código local, sem deploy ou troca do callback.
+- Nenhuma das cinco Edge Functions novas está implantada, nenhum Flow foi publicado e o worker de mensagens está desligado.
 
 ### Sequência de fechamento
 
 1. Obter configuração do GitHub OAuth e habilitar o provider no Supabase Auth; autorizar redirect local e domínio de produção.
 2. Provisionar GitHub App com permissões mínimas ao repositório e secrets server-side; cadastrar operador autorizado na allowlist.
 3. Confirmar as chaves privadas Flow de ambos os números (criar 0975 se ausente) e verificar os nomes Meta necessários por presença, sem ler valores.
-4. Implantar Admin API, Flow runtime, webhook e outbox worker; verificar endpoints autenticados/assinados e manter envio desativado.
-5. Integrar `nfm_reply` no caminho Meta em uso sem interromper o webhook/atendimento ANA atual.
+4. Confirmar presença das dependências server-side e implantar, após preflight, as quatro funções de operação e o roteador; manter envio desativado.
+5. Configurar o callback Meta para o roteador após validar o relay de verificação; manter eventos ANA e desviar somente interações identificadas como sessões do checkout novo.
 6. Executar pedido controlado para provar confirmação, baixa GitHub idempotente mesmo com saldo negativo, venda Bling após separação, NF-e e reconciliação.
 7. Validar os JSON/imagens no Flow Builder e nos canais 0975 e 1018, publicar/vincular os dois Flows e só então abrir pedidos aos clientes.
 
 Não declarar entrada em operação antes de os passos 1–6 passarem e a confirmação do pedido chegar ao Admin. Se o acesso do Dashboard e a configuração das credenciais seguirem indisponíveis pelos conectores, registrar o item exato que o operador precisa aplicar em vez de repetir a autorização.
+
+### Atualização de fechamento — ponte de callback isolada (26/10/2026)
+
+A função ativa `whatsapp-meta-webhook-v1` normaliza mensagens interativas para o histórico ANA, mas não interpreta a sessão do checkout novo. Foi criada localmente `whatsapp-meta-order-router` para preservar esse webhook como destino de eventos ANA, identificar checkout por frases claras e IDs próprios de interação, e desviar `nfm_reply` apenas se `flow_token` corresponder a uma sessão do projeto por hash, canal e telefone. O roteador encaminha o desafio GET para o webhook atual, valida HMAC dos POSTs e encaminha status do outbox novo ao checkout. A mudança não toca na função ativa nem no cadastro de canais.
+
+`verify_jwt = false` fica restrito ao roteador assinado pela Meta; as rotas de destino validam assinatura novamente. O código está local, sem deploy e sem alteração do callback. Preflight de `SUPABASE_DB_URL`, alias do segredo Meta, configuração OAuth/allowlist/GitHub App e chave Flow 0975 ainda impede a ativação operacional. A documentação oficial Supabase consultada para webhooks externos: [autenticação](https://supabase.com/docs/guides/functions/auth) e [cabeçalhos](https://supabase.com/docs/guides/functions/auth-headers).
