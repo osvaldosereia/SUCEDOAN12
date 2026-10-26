@@ -77,10 +77,15 @@ export function renderAttendancePanel(input: AttendancePanelInput): string {
   const detail = record(input.conversation?.conversation);
   const mode = text(detail.mode ?? current?.mode, "ai");
   const capability = record(input.conversation?.send_capability);
-  const canSend = capability.enabled === true && ["human", "human_copilot"].includes(mode);
+  const operatorAssignment = text(detail.operator_assignment, "unassigned");
+  const isAssignedToCurrentOperator = operatorAssignment === "current";
+  const isAssignedToOtherOperator = operatorAssignment === "other";
+  const canSend = capability.enabled === true && ["human", "human_copilot"].includes(mode) && isAssignedToCurrentOperator;
   const serviceWindow = record(input.conversation?.service_window);
   const anaEnabled = channelConfig?.ana_enabled === true;
   const owner = input.ana?.role === "owner";
+  const humanMode = ["human", "human_copilot"].includes(mode);
+  const cannotTakeOverOwnedConversation = mode === "human" && isAssignedToOtherOperator;
 
   const channelButtons = (["0975", "1018"] as const).map((channel) => {
     const selected = input.channel === channel;
@@ -97,7 +102,7 @@ export function renderAttendancePanel(input: AttendancePanelInput): string {
 
   const conversationHeader = current
     ? `<div class="attendance-conversation-heading"><div><span class="eyebrow">Canal ${input.channel} · ${phoneHint(detail.phone_e164 ?? current.phone_e164)}</span><h2>${escapeHtml(conversationName(detail, current))}</h2><span class="attendance-mode-pill">${escapeHtml(modeLabel(mode))}</span></div><div class="attendance-actions">
-        ${mode === "human" ? `<button class="button button-soft" data-action="attendance-resume" data-id="${escapeHtml(input.selectedConversationId)}">Liberar para ANA</button>` : `<button class="button button-soft" data-action="attendance-takeover" data-id="${escapeHtml(input.selectedConversationId)}">Assumir atendimento</button>`}
+        ${humanMode && isAssignedToCurrentOperator ? `<button class="button button-soft" data-action="attendance-resume" data-id="${escapeHtml(input.selectedConversationId)}">Liberar para ANA</button>` : cannotTakeOverOwnedConversation ? `<span class="attendance-owner-note">Atendimento atribuído a outra pessoa</span>` : `<button class="button button-soft" data-action="attendance-takeover" data-id="${escapeHtml(input.selectedConversationId)}" data-assignment="${escapeHtml(operatorAssignment)}">Assumir atendimento</button>`}
       </div></div>`
     : `<div class="attendance-empty"><strong>Selecione uma conversa</strong><span>As mensagens e os controles de atendimento aparecerão aqui.</span></div>`;
 
@@ -111,7 +116,7 @@ export function renderAttendancePanel(input: AttendancePanelInput): string {
       <form id="attendance-send-form" class="attendance-composer">
         <label class="sr-only" for="attendance-message-text">Mensagem</label>
         <textarea id="attendance-message-text" name="text" maxlength="4000" rows="3" placeholder="Escreva uma resposta…" ${canSend ? "" : "disabled"} required></textarea>
-        <div><span>${canSend ? (serviceWindow.open === true ? "Janela de atendimento aberta" : "Envio humano autorizado pelo canal") : "Assuma o atendimento e confira a janela e a homologação para responder"}</span><button class="button button-primary" type="submit" ${canSend && !input.busy ? "" : "disabled"}>Enviar</button></div>
+        <div><span>${canSend ? (serviceWindow.open === true ? "Janela de atendimento aberta" : "Envio humano autorizado pelo canal") : isAssignedToOtherOperator ? "A conversa está atribuída a outro operador." : !isAssignedToCurrentOperator ? "Assuma a conversa antes de responder." : "Confira a janela e a homologação para responder."}</span><button class="button button-primary" type="submit" ${canSend && !input.busy ? "" : "disabled"}>Enviar</button></div>
       </form>`
     : `<div class="attendance-messages attendance-empty-space"></div>`;
 

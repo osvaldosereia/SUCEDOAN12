@@ -1437,6 +1437,8 @@ appRoot.addEventListener("click", async (event) => {
   } else if ((action === "attendance-takeover" || action === "attendance-resume") && state.session) {
     const account = state.attendanceAccounts.find((item) => attendanceChannelFromPhone(item.phone_e164) === state.attendanceChannel);
     if (!account) return;
+    if (action === "attendance-takeover" && target.dataset.assignment === "other"
+      && !window.confirm("Esta conversa está atribuída a outra pessoa. Assumir transfere o atendimento para você. Continuar?")) return;
     if (action === "attendance-resume" && !window.confirm("Liberar a conversa para a ANA? O atendimento automático poderá responder conforme as regras e os gates ativos.")) return;
     state.busy = true;
     state.attendanceNotice = action === "attendance-resume" ? "Retomando atendimento ANA…" : "Assumindo a conversa…";

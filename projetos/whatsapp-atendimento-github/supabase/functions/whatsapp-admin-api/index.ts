@@ -179,7 +179,36 @@ async function requireSupportedAttendanceConversation(
   return { ...forwarded, accountId };
 }
 
-async function proxyAttendanceOperation(request: Request, body: Record<string, unknown>) {
+type AttendanceOperatorAssignment = "current" | "other" | "unassigned";
+
+interface AttendanceControlState {
+  mode: string;
+  operatorAssignment: AttendanceOperatorAssignment;
+}
+
+/** Reads only the current mode and owner; the operator UUID stays server-side. */
+async function attendanceControlState(
+  conversationId: string,
+  accountId: string,
+  operatorId: string,
+): Promise<AttendanceControlState> {
+  const rows = await ordersDb()<{ mode: string; assigned_admin_user_id: string | null }>`
+    select mode, assigned_admin_user_id
+    from public.conversations
+    where id = ${conversationId} and whatsapp_account_id = ${accountId}
+    limit 1
+  `;
+  if (!rows.length) throw new HttpError(409, "A atribuição desta conversa não pôde ser confirmada.");
+  const { mode, assigned_admin_user_id: assignedOperatorId } = rows[0];
+  if (typeof mode !== "string" || !mode) throw new HttpError(502, "O modo da conversa retornou um formato inválido.");
+  if (assignedOperatorId !== null && (typeof assignedOperatorId !== "string" || !ORDER_ID.test(assignedOperatorId))) {
+    throw new HttpError(502, "A atribuição da conversa retornou um formato inválido.");
+  }
+  const operatorAssignment = assignedOperatorId === operatorId ? "current" : assignedOperatorId ? "other" : "unassigned";
+  return { mode, operatorAssignment };
+}
+
+async function proxyAttendanceOperation(request: Request, body: Record<string, unknown>, operatorId: string) {
   const action = typeof body.action === "string" ? body.action : "";
   const conversationId = typeof body.conversation_id === "string" && ORDER_ID.test(body.conversation_id) ? body.conversation_id : "";
   const accountId = typeof body.accountId === "string" ? body.accountId : "";
@@ -190,17 +219,20 @@ async function proxyAttendanceOperation(request: Request, body: Record<string, u
     throw new HttpError(400, "Revise o texto e a chave da resposta.");
   }
   const conversationSnapshot = await requireSupportedAttendanceConversation(request, conversationId, accountId);
-  const conversation = isRecord(conversationSnapshot.payload) && isRecord(conversationSnapshot.payload.conversation)
-    ? conversationSnapshot.payload.conversation
-    : {};
-  if (conversation.mode !== "human" && conversation.mode !== "human_copilot") {
-    throw new HttpError(409, "Assuma a conversa no atendimento humano antes de responder.");
-  }
   const sendCapability = isRecord(conversationSnapshot.payload) && isRecord(conversationSnapshot.payload.send_capability)
     ? conversationSnapshot.payload.send_capability
     : {};
   if (sendCapability.enabled !== true) {
     throw new HttpError(409, "O canal não está liberado para envio humano neste momento.");
+  }
+  const control = await attendanceControlState(conversationId, accountId, operatorId);
+  if (control.mode !== "human" && control.mode !== "human_copilot") {
+    throw new HttpError(409, "Assuma a conversa no atendimento humano antes de responder.");
+  }
+  if (control.operatorAssignment !== "current") {
+    throw new HttpError(409, control.operatorAssignment === "other"
+      ? "A conversa está atribuída a outro operador. Assuma a conversa antes de responder."
+      : "Assuma a conversa antes de responder.");
   }
   const forwarded = await forwardSupabaseFunction(
     request,
@@ -3250,11 +3282,15 @@ Deno.serve(async (request) => {
       const accountId = url.searchParams.get("accountId") ?? "";
       if (!ORDER_ID.test(accountId)) throw new HttpError(400, "Selecione um canal WhatsApp válido.");
       const forwarded = await requireSupportedAttendanceConversation(request, attendanceConversation[1], accountId);
-      return jsonResponse(forwarded.payload, forwarded.status, headers);
+      const control = await attendanceControlState(attendanceConversation[1], accountId, authorization.operator.id);
+      const payload = isRecord(forwarded.payload) && isRecord(forwarded.payload.conversation)
+        ? { ...forwarded.payload, conversation: { ...forwarded.payload.conversation, mode: control.mode, operator_assignment: control.operatorAssignment } }
+        : forwarded.payload;
+      return jsonResponse(payload, forwarded.status, headers);
     }
     if (url.pathname.endsWith("/attendance/operations") && request.method === "POST") {
       const body = await readJson(request);
-      const forwarded = await proxyAttendanceOperation(request, body);
+      const forwarded = await proxyAttendanceOperation(request, body, authorization.operator.id);
       return jsonResponse(forwarded.payload, forwarded.status, headers);
     }
     if (url.pathname.endsWith("/attendance/mode") && request.method === "POST") {
