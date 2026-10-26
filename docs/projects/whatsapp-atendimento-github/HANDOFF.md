@@ -163,7 +163,7 @@ A documentação detalhada está em:
 
 ## Estado e próxima ação para Work Luna Max — 25/10/2026
 
-Rodadas 0, 0.5–0.7, 1 e 2 foram concluídas na branch `project/whatsapp-atendimento-github-20261025`. A Rodada 3 (configurador local de rascunhos Flow por canal) está em implementação. A sequência vigente está em `IMPLEMENTATION-PLAN-LUNA-MAX.md`; o roadmap abaixo conserva números históricos. Próximo passo: concluir revisão, documentação e build da Rodada 3 e então avançar ao runtime da Rodada 4. O contrato do runtime ainda precisa fechar fluxo de dados Meta, cotação server-side e consulta de cliente antes de qualquer integração live. Permanecem as restrições: não alterar main, site, Vitrine ou funções existentes; não publicar Flow e não enviar mensagem a cliente.
+Rodadas 0, 0.5–0.7, 1, 2 e 3 foram concluídas na branch `project/whatsapp-atendimento-github-20261025`. A Rodada 3 entrega somente rascunhos locais de Flow, JSON exportável e gravação opcional pela Admin API autenticada; não integra com Meta. A sequência vigente está em `IMPLEMENTATION-PLAN-LUNA-MAX.md`; o roadmap antigo conserva números históricos. Próximo passo: Rodada 4 — runtime de atendimento, com cotação server-side, protocolo criptografado e consulta autorizada de cliente, sem publicação ou mensagem real. Permanecem as restrições: não alterar main, site, Vitrine ou funções existentes; não publicar Flow e não enviar mensagem a cliente.
 
 
 ## Decisão de arquitetura atualizada pelo usuário — 25/10/2026

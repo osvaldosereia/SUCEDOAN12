@@ -4,7 +4,7 @@ Projeto: WhatsApp Atendimento GitHub — SUCEDOAN12
 Branch isolada: project/whatsapp-atendimento-github-20261025  
 Diretório do novo código: projetos/whatsapp-atendimento-github/  
 Execução prevista: Work Luna Max  
-Estado: Rodadas 0, 0.5–0.7, 1 e 2 concluídas; Rodada 3 em implementação nesta branch.
+Estado: Rodadas 0, 0.5–0.7, 1, 2 e 3 concluídas; próxima é a Rodada 4.
 
 ## Decisão principal
 
