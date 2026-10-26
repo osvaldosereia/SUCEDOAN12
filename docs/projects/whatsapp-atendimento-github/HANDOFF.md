@@ -503,4 +503,4 @@ A auditoria de paridade encontrou que a tela gerava conteúdo idêntico, mas o e
 
 A tela de revisão agora informa que a gravação afeta os dois arquivos. Após resposta de sucesso, o Admin atualiza os dois documentos com o snapshot sincronizado. Isso torna a paridade uma regra de persistência, não apenas uma consequência do mesmo gerador. Nenhum dado Meta, Flow publicado ou mensagem de cliente foi alterado.
 
-Verificação: `pnpm build` passou (`tsc --noEmit` e Vite; permanece o aviso de bundle >500 KB). Não foram criados nem executados testes automatizados. O diff ainda precisa da conferência final e do commit desta rodada; sem deploy ou escrita externa no Supabase/Meta/Bling.
+Verificação: `pnpm build` passou (`tsc --noEmit` e Vite; permanece o aviso de bundle >500 KB) e `git diff --check` passou com avisos LF/CRLF. Não foram criados nem executados testes automatizados. O commit `4d414af` foi enviado à branch do projeto. Sem deploy ou escrita externa no Supabase/Meta/Bling.
