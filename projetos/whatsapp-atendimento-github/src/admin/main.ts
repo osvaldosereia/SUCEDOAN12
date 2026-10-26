@@ -24,8 +24,9 @@ import {
   type ChannelFlowDocument,
   type FlowChannel,
 } from "../domain/flows";
-import { AdminApiError, assignOrder, completeOrderSeparation, getCatalog, getFlowDraft, getOrder, getOrders, reconcileOrderBlingSale, saveCatalog, saveFlowDraft, saveOrderBlingContact, saveOrderPicking, type PendingImage } from "./api";
+import { AdminApiError, assignOrder, completeOrderSeparation, getCatalog, getFlowDraft, getOrder, getOrders, getOutbox, reconcileOrderBlingSale, saveCatalog, saveFlowDraft, saveOrderBlingContact, saveOrderPicking, type PendingImage } from "./api";
 import type { OrderDetailRecord, OrderListEntry } from "../domain/orders";
+import type { OutboxMessageSummary, OutboxQueueSnapshot, OutboxStatus } from "../domain/outbox";
 import { renderFlowsPanel } from "./flows-panel";
 import "./styles.css";
 
@@ -67,7 +68,7 @@ const state = {
   access: "preview" as "preview" | "loading" | "authorized" | "denied",
   accessMessage: "Prévia local: alterações ficam apenas nesta sessão do navegador.",
   busy: false,
-  tab: "products" as "products" | "baskets" | "flows" | "orders",
+  tab: "products" as "products" | "baskets" | "flows" | "orders" | "outbox",
   search: "",
   selectedBasketId: initialDocuments.baskets.baskets[0]?.id ?? "",
   flowDocuments: structuredClone(initialFlowDocuments),
@@ -88,6 +89,11 @@ const state = {
   orders: [] as OrderListEntry[],
   selectedOrder: null as OrderDetailRecord | null,
   ordersLoaded: false,
+  outbox: [] as OutboxMessageSummary[],
+  outboxCounts: { pending: 0, sent: 0, failed: 0, cancelled: 0 } as OutboxQueueSnapshot["counts"],
+  outboxLimit: 50,
+  outboxLoaded: false,
+  outboxSenderEnabled: false,
   reconciliationRequestKeys: new Map<string, string>(),
 };
 
@@ -329,6 +335,31 @@ async function loadOrders(): Promise<void> {
   }
 }
 
+async function loadOutbox(): Promise<void> {
+  if (!state.session || state.access !== "authorized") {
+    tell("Entre com a conta GitHub autorizada para acompanhar as mensagens.", "error");
+    return;
+  }
+  state.busy = true;
+  render();
+  try {
+    const snapshot = await getOutbox(state.session.access_token);
+    state.outbox = snapshot.messages;
+    state.outboxCounts = snapshot.counts;
+    state.outboxLimit = snapshot.limit;
+    state.outboxSenderEnabled = snapshot.senderEnabled;
+    state.outboxLoaded = true;
+    state.notice = "Acompanhamento de mensagens atualizado.";
+    state.noticeType = "success";
+  } catch (error) {
+    state.notice = error instanceof AdminApiError ? error.message : "Não foi possível consultar o estado das mensagens.";
+    state.noticeType = "error";
+  } finally {
+    state.busy = false;
+    render();
+  }
+}
+
 async function openOrder(orderId: string): Promise<void> {
   if (!state.session) return;
   state.busy = true;
@@ -347,6 +378,45 @@ async function openOrder(orderId: string): Promise<void> {
 
 function orderStatusLabel(status: string): string {
   return ({ received: "Recebido", packing: "Em separação", attention: "Atenção", awaiting_invoice: "Pré-validação Bling", invoice_authorized: "NF-e autorizada", out_for_delivery: "Saiu para entrega", completed: "Concluído", cancelled: "Cancelado" } as Record<string, string>)[status] ?? status;
+}
+
+function outboxStatusLabel(status: OutboxStatus): string {
+  return ({ pending: "Na fila", sent: "Aceita pela Meta", failed: "Falha para conferir", cancelled: "Cancelada" })[status];
+}
+
+function outboxTypeLabel(type: OutboxMessageSummary["messageType"]): string {
+  return ({ basket_menu: "Menu de cestas", flow_launch: "Abertura do Flow", order_summary: "Resumo do pedido", order_adjustment: "Ajuste da separação", order_cancelled: "Cancelamento" })[type];
+}
+
+function outboxErrorLabel(code: string | null): string {
+  if (!code) return "Sem erro registrado.";
+  if (code === "delivery_unknown") return "Entrega incerta. Confira o histórico no WhatsApp Manager antes de qualquer reenvio manual.";
+  const graphError = code.match(/^meta_http_(\d{3})_code_(\d+|unknown)$/);
+  if (graphError) return `A Graph API respondeu HTTP ${graphError[1]} (código ${graphError[2]}).`;
+  const labels: Record<string, string> = {
+    channel_credentials_missing: "Credenciais do canal incompletas.",
+    encryption_key_missing: "Chave de cifragem não configurada.",
+    encryption_key_invalid: "Chave de cifragem inválida.",
+    encrypted_payload_invalid: "Payload cifrado incompleto ou acima do limite.",
+    payload_decryption_failed: "Não foi possível abrir o payload cifrado.",
+    payload_json_invalid: "O payload cifrado não contém JSON válido.",
+    payload_shape_invalid: "O payload não corresponde ao formato esperado.",
+    flow_configuration_mismatch: "O Flow da mensagem difere da configuração do canal.",
+    message_type_unsupported: "Tipo de mensagem não reconhecido.",
+    message_payload_invalid: "O conteúdo não corresponde ao tipo de mensagem.",
+    recipient_invalid: "O destinatário da mensagem não passou pela validação.",
+    outbox_processing_failed: "Falha interna ao processar a mensagem.",
+  };
+  return labels[code] ?? `Falha registrada (${code}).`;
+}
+
+function outboxView(): string {
+  if (state.access !== "authorized") return `<section class="workspace-heading"><div><span class="eyebrow">Operação</span><h1>Mensagens WhatsApp</h1><p>O acompanhamento exige uma sessão GitHub autorizada.</p></div></section><div class="empty-state"><strong>Acesso administrativo necessário</strong><span>Entre com a conta GitHub autorizada para consultar a outbox.</span></div>`;
+  return `<section class="workspace-heading"><div><span class="eyebrow">Operação · outbox</span><h1>Mensagens WhatsApp</h1><p>Acompanhe o que aguarda envio e o que precisa de conferência.</p></div><button class="button button-primary" data-action="outbox-refresh">Atualizar mensagens</button></section>
+    <div class="outbox-safety-note ${state.outboxSenderEnabled && state.outboxLoaded ? "is-enabled" : ""}"><strong>${!state.outboxLoaded ? "Estado do envio não consultado" : state.outboxSenderEnabled ? "Gate de envio ligado no servidor" : "Gate de envio desligado no servidor"}</strong><span>Este estado indica somente a flag do worker; não confirma credenciais nem entrega. O conteúdo e o telefone não são exibidos aqui. Não há reenvio nesta tela. Mensagens com entrega incerta precisam ser conferidas no WhatsApp Manager antes de qualquer recuperação manual.</span></div>
+    ${!state.outboxLoaded ? `<div class="empty-state"><strong>Carregue o acompanhamento</strong><span>A consulta mostra apenas status e metadados mínimos da fila.</span><button class="button button-primary" data-action="outbox-refresh">Carregar mensagens</button></div>` : `<div class="outbox-count-grid">${(["pending", "sent", "failed", "cancelled"] as OutboxStatus[]).map((status) => `<article class="outbox-count-card"><span>${escapeHtml(outboxStatusLabel(status))}</span><strong>${state.outboxCounts[status].toLocaleString("pt-BR")}</strong></article>`).join("")}</div>
+      <div class="outbox-list-heading"><strong>Últimas ${state.outbox.length} de até ${state.outboxLimit} mensagens</strong><span>Ordenadas da mais recente para a mais antiga.</span></div>
+      ${state.outbox.length ? `<div class="outbox-list">${state.outbox.map((message) => `<article class="outbox-row"><div class="outbox-row-top"><span class="outbox-status-pill is-${escapeHtml(message.status)}">${escapeHtml(outboxStatusLabel(message.status))}</span><span>${escapeHtml(outboxTypeLabel(message.messageType))}</span><strong>Canal ${escapeHtml(message.channel)}</strong></div><div class="outbox-row-meta"><span>Criada ${new Date(message.createdAt).toLocaleString("pt-BR")}</span>${message.status === "pending" ? `<span>Disponível ${new Date(message.availableAt).toLocaleString("pt-BR")}</span>` : ""}${message.sentAt ? `<span>Aceita ${new Date(message.sentAt).toLocaleString("pt-BR")}</span>` : ""}</div>${message.status === "failed" ? `<p class="outbox-row-error">${escapeHtml(outboxErrorLabel(message.lastErrorCode))}</p>` : ""}</article>`).join("")}</div>` : `<div class="empty-state"><strong>Nenhuma mensagem na outbox</strong><span>Quando o webhook ou a separação gerar uma mensagem, ela aparecerá aqui.</span></div>`}`}`;
 }
 
 function integrationBlockerLabel(code: string): string {
@@ -456,8 +526,8 @@ function render(): void {
       <div class="topbar-actions"><span class="access-status ${statusClass}"><i></i>${escapeHtml(accessLabel())}</span>${state.session ? `<span class="user-chip"><span class="user-avatar">${escapeHtml(String(identityLabel).slice(0, 1).toUpperCase())}</span>${escapeHtml(identityLabel)}</span><button class="button button-soft" data-action="sign-out">Sair</button>` : `<button class="button button-dark" data-action="sign-in" ${supabase ? "" : "disabled title=Configure%20Supabase%20em%20.env.local"}>Entrar com GitHub</button>`}</div>
     </header>
     <div class="security-banner ${state.access === "authorized" ? "is-ready" : ""}"><span class="security-icon">${state.access === "authorized" ? "✓" : "⌑"}</span><span><strong>${state.access === "authorized" ? "Acesso confirmado pelo servidor" : escapeHtml(state.accessMessage)}</strong><small>${state.access === "authorized" ? `Gravações ficam restritas ao branch project/whatsapp-atendimento-github-20261025${state.commitSha ? ` · revisão ${state.commitSha.slice(0, 7)}` : ""}.` : "Sem GitHub App, allowlist e origem configurados no servidor, nenhuma gravação será aceita."}</small></span>${state.commitUrl ? `<a class="text-link" href="${escapeHtml(state.commitUrl)}" target="_blank" rel="noreferrer">Ver commit ↗</a>` : ""}</div>
-    <div class="app-body"><aside class="main-nav"><div class="nav-label">CATÁLOGO</div><button class="nav-item ${state.tab === "products" ? "is-active" : ""}" data-action="tab" data-tab="products"><span class="nav-icon">▦</span> Produtos <span class="nav-count">${state.products.products.length}</span></button><button class="nav-item ${state.tab === "baskets" ? "is-active" : ""}" data-action="tab" data-tab="baskets"><span class="nav-icon">▤</span> Cestas <span class="nav-count">${state.baskets.baskets.length}</span></button><button class="nav-item ${state.tab === "flows" ? "is-active" : ""}" data-action="tab" data-tab="flows"><span class="nav-icon">⌁</span> Flows <span class="nav-count">${state.flowDocuments[state.flowChannel].drafts.length}</span></button><div class="nav-label nav-orders-label">OPERAÇÃO</div><button class="nav-item ${state.tab === "orders" ? "is-active" : ""}" data-action="tab" data-tab="orders"><span class="nav-icon">▣</span> Pedidos <span class="nav-count">${state.orders.length}</span></button></aside>
-      <main class="content"><div class="content-topline"><span>Administração</span><span class="breadcrumb-sep">/</span><strong>${state.tab === "products" ? "Produtos" : state.tab === "baskets" ? "Cestas" : state.tab === "flows" ? "Flows" : "Pedidos"}</strong><span class="dirty-indicator ${isDirty() && state.tab !== "orders" ? "is-dirty" : ""}">${isDirty() && state.tab !== "orders" ? "Alterações pendentes" : "Tudo salvo"}</span></div>${state.notice ? `<div class="notice notice-${state.noticeType}" role="status"><span>${escapeHtml(state.notice)}</span>${state.conflict ? `<div class="conflict-actions"><button class="text-button" data-action="export-draft">Baixar meu rascunho</button><button class="text-button" data-action="reload-catalog">Descartar e recarregar</button></div>` : ""}<button data-action="clear-notice" aria-label="Fechar">×</button></div>` : ""}${state.tab === "products" ? productsView() : state.tab === "baskets" ? selectedBasket ? basketEditor(selectedBasket) : `<div class="empty-state"><strong>Nenhuma cesta cadastrada</strong><span>Crie a primeira cesta para começar.</span><button class="button button-primary" data-action="new-basket">＋ Nova cesta</button></div>` : state.tab === "flows" ? flowsPanel : ordersView()}</main>
+    <div class="app-body"><aside class="main-nav"><div class="nav-label">CATÁLOGO</div><button class="nav-item ${state.tab === "products" ? "is-active" : ""}" data-action="tab" data-tab="products"><span class="nav-icon">▦</span> Produtos <span class="nav-count">${state.products.products.length}</span></button><button class="nav-item ${state.tab === "baskets" ? "is-active" : ""}" data-action="tab" data-tab="baskets"><span class="nav-icon">▤</span> Cestas <span class="nav-count">${state.baskets.baskets.length}</span></button><button class="nav-item ${state.tab === "flows" ? "is-active" : ""}" data-action="tab" data-tab="flows"><span class="nav-icon">⌁</span> Flows <span class="nav-count">${state.flowDocuments[state.flowChannel].drafts.length}</span></button><div class="nav-label nav-orders-label">OPERAÇÃO</div><button class="nav-item ${state.tab === "orders" ? "is-active" : ""}" data-action="tab" data-tab="orders"><span class="nav-icon">▣</span> Pedidos <span class="nav-count">${state.orders.length}</span></button><button class="nav-item ${state.tab === "outbox" ? "is-active" : ""}" data-action="tab" data-tab="outbox"><span class="nav-icon">↗</span> Mensagens ${state.outboxLoaded ? `<span class="nav-count">${state.outboxCounts.pending + state.outboxCounts.failed}</span>` : ""}</button></aside>
+      <main class="content"><div class="content-topline"><span>Administração</span><span class="breadcrumb-sep">/</span><strong>${state.tab === "products" ? "Produtos" : state.tab === "baskets" ? "Cestas" : state.tab === "flows" ? "Flows" : state.tab === "orders" ? "Pedidos" : "Mensagens WhatsApp"}</strong><span class="dirty-indicator ${isDirty() && state.tab !== "orders" && state.tab !== "outbox" ? "is-dirty" : ""}">${isDirty() && state.tab !== "orders" && state.tab !== "outbox" ? "Alterações pendentes" : "Tudo salvo"}</span></div>${state.notice ? `<div class="notice notice-${state.noticeType}" role="status"><span>${escapeHtml(state.notice)}</span>${state.conflict ? `<div class="conflict-actions"><button class="text-button" data-action="export-draft">Baixar meu rascunho</button><button class="text-button" data-action="reload-catalog">Descartar e recarregar</button></div>` : ""}<button data-action="clear-notice" aria-label="Fechar">×</button></div>` : ""}${state.tab === "products" ? productsView() : state.tab === "baskets" ? selectedBasket ? basketEditor(selectedBasket) : `<div class="empty-state"><strong>Nenhuma cesta cadastrada</strong><span>Crie a primeira cesta para começar.</span><button class="button button-primary" data-action="new-basket">＋ Nova cesta</button></div>` : state.tab === "flows" ? flowsPanel : state.tab === "outbox" ? outboxView() : ordersView()}</main>
     </div>
     <footer class="page-footer"><span>Catálogo público versionado no GitHub</span><span>Dados pessoais e credenciais ficam fora deste projeto</span></footer>
     ${state.access === "authorized" && isDirty() ? `<button class="floating-save" data-action="review-save"><span>Revisar alterações</span><strong>Salvar no GitHub ↗</strong></button>` : ""}
@@ -589,6 +659,11 @@ function reviewChanges(): string {
 
 async function reloadCatalog(session: Session): Promise<void> {
   state.access = "loading";
+  state.outboxLoaded = false;
+  state.outbox = [];
+  state.outboxCounts = { pending: 0, sent: 0, failed: 0, cancelled: 0 };
+  state.outboxLimit = 50;
+  state.outboxSenderEnabled = false;
   state.accessMessage = "Validando sua identidade e a autorização do servidor.";
   render();
   try {
@@ -661,6 +736,11 @@ async function initializeAuth(): Promise<void> {
       state.pendingImages.clear();
       state.editorImage = null;
       state.editorImageProductId = "";
+      state.outboxLoaded = false;
+      state.outbox = [];
+      state.outboxCounts = { pending: 0, sent: 0, failed: 0, cancelled: 0 };
+      state.outboxLimit = 50;
+      state.outboxSenderEnabled = false;
       render();
     }
   });
@@ -974,12 +1054,15 @@ appRoot.addEventListener("click", async (event) => {
     await supabase?.auth.signOut();
   } else if (action === "tab") {
     const nextTab = target.dataset.tab;
-    state.tab = nextTab === "baskets" || nextTab === "flows" || nextTab === "orders" ? nextTab : "products";
+    state.tab = nextTab === "baskets" || nextTab === "flows" || nextTab === "orders" || nextTab === "outbox" ? nextTab : "products";
     state.notice = "";
     render();
     if (state.tab === "orders" && !state.ordersLoaded && state.access === "authorized") await loadOrders();
+    if (state.tab === "outbox" && !state.outboxLoaded && state.access === "authorized") await loadOutbox();
   } else if (action === "orders-refresh") {
     await loadOrders();
+  } else if (action === "outbox-refresh") {
+    await loadOutbox();
   } else if (action === "order-open") {
     await openOrder(id);
   } else if (action === "orders-back") {

@@ -1,6 +1,7 @@
 import type { CatalogDocuments } from "../domain/catalog";
 import type { FlowChannel, FlowDraftSnapshot, SaveFlowDraftInput } from "../domain/flows";
 import type { OrderDetailRecord, OrderListEntry, OrderPickingInput } from "../domain/orders";
+import type { OutboxQueueSnapshot } from "../domain/outbox";
 
 export interface CatalogSnapshot extends CatalogDocuments {
   commitSha: string;
@@ -78,6 +79,10 @@ export function saveFlowDraft(accessToken: string, channel: FlowChannel, input: 
 
 export function getOrders(accessToken: string): Promise<{ orders: OrderListEntry[] }> {
   return apiRequest<{ orders: OrderListEntry[] }>("/orders", accessToken);
+}
+
+export function getOutbox(accessToken: string): Promise<OutboxQueueSnapshot> {
+  return apiRequest<OutboxQueueSnapshot>("/outbox", accessToken);
 }
 
 export function getOrder(accessToken: string, orderId: string): Promise<OrderDetailRecord> {

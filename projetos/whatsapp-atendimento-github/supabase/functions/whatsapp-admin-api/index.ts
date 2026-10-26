@@ -8,6 +8,7 @@ import {
 } from "../../../src/domain/bling.ts";
 import { validateCatalog, type Basket, type CatalogDocuments, type Product } from "../../../src/domain/catalog.ts";
 import { quoteBasket, type BasketSelections } from "../../../src/domain/flow-runtime.ts";
+import type { OutboxMessageType, OutboxStatus } from "../../../src/domain/outbox.ts";
 import {
   FLOW_CHANNELS,
   validateChannelFlowDocument,
@@ -27,6 +28,7 @@ const GITHUB_API_VERSION = "2022-11-28";
 const MAX_IMAGE_BYTES = 27 * 1024;
 const MAX_PENDING_IMAGES = 61;
 const MAX_FLOW_DRAFT_BYTES = 150_000;
+const OUTBOX_RECENT_LIMIT = 50;
 const ORDER_ID = /^[0-9a-f-]{36}$/i;
 const BLING_API = "https://api.bling.com.br/Api/v3";
 const BLING_AUTHORIZE_URL = "https://www.bling.com.br/Api/v3/oauth/authorize";
@@ -533,6 +535,17 @@ interface DbOrderQueueRow {
   item_count: number;
   revision: number;
   created_at: string;
+}
+
+interface DbOutboxQueueRow {
+  id: string;
+  channel: string;
+  message_type: string;
+  status: string;
+  available_at: string;
+  created_at: string;
+  sent_at: string | null;
+  last_error_code: string | null;
 }
 
 interface BlingSalePreviewSummary {
@@ -1088,6 +1101,42 @@ async function listOrders() {
     revision: order.revision,
     createdAt: order.created_at,
   }));
+}
+
+async function listOutboxMessages() {
+  const db = ordersDb();
+  const [countRows, messageRows] = await Promise.all([
+    db<{ status: string; count: number }>`
+      select status, count(*)::integer as count
+      from whatsapp_atendimento.message_outbox
+      group by status
+    `,
+    db<DbOutboxQueueRow>`
+      select id, channel, message_type, status, available_at, created_at, sent_at, last_error_code
+      from whatsapp_atendimento.message_outbox
+      order by created_at desc, id desc
+      limit ${OUTBOX_RECENT_LIMIT}
+    `,
+  ]);
+  const counts: Record<OutboxStatus, number> = { pending: 0, sent: 0, failed: 0, cancelled: 0 };
+  for (const row of countRows) {
+    if (row.status in counts) counts[row.status as OutboxStatus] = Number(row.count);
+  }
+  return {
+    messages: messageRows.map((message) => ({
+      id: message.id,
+      channel: message.channel as "0975" | "1018",
+      messageType: message.message_type as OutboxMessageType,
+      status: message.status as OutboxStatus,
+      availableAt: message.available_at,
+      createdAt: message.created_at,
+      sentAt: message.sent_at,
+      lastErrorCode: message.last_error_code,
+    })),
+    counts,
+    senderEnabled: Deno.env.get("META_OUTBOX_SENDER_ENABLED") === "true",
+    limit: OUTBOX_RECENT_LIMIT,
+  };
 }
 
 async function orderDetail(orderId: string) {
@@ -1773,6 +1822,9 @@ Deno.serve(async (request) => {
       }
       const token = await installationToken("write");
       return jsonResponse(await writeFlowDraft(flowMatch[1], input, token), 200, headers);
+    }
+    if (url.pathname.endsWith("/outbox") && request.method === "GET") {
+      return jsonResponse(await listOutboxMessages(), 200, headers);
     }
     if (url.pathname.endsWith("/orders") && request.method === "GET") {
       return jsonResponse({ orders: await listOrders() }, 200, headers);

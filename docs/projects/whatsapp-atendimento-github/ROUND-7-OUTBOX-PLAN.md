@@ -16,6 +16,7 @@ Concluir localmente a entrega do resumo e das mensagens de operação que já s�
 - O worker valida o tipo de mensagem, canal, destinatário e consistência do Flow ID; decifra a mensagem AES-GCM apenas em memória e não registra conteúdo ou dados do cliente. O `to` enviado à Cloud API usa somente os dígitos do telefone E.164.
 - Para não duplicar uma mensagem que a Meta talvez já tenha aceitado, a linha deixa `pending` e fica `failed/delivery_unknown` antes do `POST`. Apenas HTTP 2xx com `messages[0].id` a marca `sent`. Não há retry automático. Erros de entrega ficam com códigos curtos; timeout, queda da função ou resposta incompleta exigem reconciliação manual antes de qualquer reenvio.
 - `sent` representa aceite da Graph API, não entrega ou leitura no aparelho. O webhook para status de entrega/leitura ainda não foi implementado.
+- A tela administrativa `Mensagens` consulta `GET /outbox` sob a autorização GitHub existente, apresenta contagens e até 50 itens recentes, sem destinatário, conteúdo ou ciphertext. A tela é somente leitura e não expõe reenvio/cancelamento; o status do sender indica apenas a flag do worker, não a validade das credenciais.
 
 ## Configuração futura
 
