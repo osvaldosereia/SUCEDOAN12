@@ -56,6 +56,12 @@ a { color: inherit; }
 .security-banner small { margin-top: 3px; color: inherit; opacity: .82; font-size: 11px; }
 .text-link { margin-left: auto; color: inherit; font-size: 11px; font-weight: 700; text-decoration: none; white-space: nowrap; }
 .text-link:hover { text-decoration: underline; }
+.auth-card { display: flex; align-items: center; justify-content: space-between; gap: 22px; margin: 0 0 22px; padding: 18px 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
+.auth-card h2 { margin: 0 0 4px; font-size: 18px; }
+.auth-card p { margin: 0; color: var(--muted); font-size: 11px; }
+.auth-card form { display: flex; align-items: flex-end; gap: 10px; }
+.auth-card form label { min-width: min(280px, 34vw); }
+.auth-feedback { display: block; flex-basis: 100%; color: #68665e; font-size: 10px; }
 
 .app-body { display: grid; grid-template-columns: 218px minmax(0, 1fr); min-height: calc(100vh - 190px); }
 .main-nav { padding: 30px 14px 24px 24px; background: #f2f0e9; border-right: 1px solid var(--line); }
@@ -270,6 +276,9 @@ label small { color: #a09c92; font-size: 9px; font-weight: 400; }
   .topbar-actions .button { min-height: 33px; padding: 0 9px; font-size: 10px; }
   .security-banner { align-items: flex-start; padding: 12px 14px; }
   .security-banner small { line-height: 1.45; }
+  .auth-card { align-items: stretch; flex-direction: column; gap: 12px; padding: 14px; }
+  .auth-card form { align-items: stretch; flex-direction: column; }
+  .auth-card form label { min-width: 0; }
   .text-link { display: none; }
   .app-body { grid-template-columns: 1fr; }
   .main-nav { position: sticky; top: 0; z-index: 3; display: flex; gap: 6px; padding: 7px 12px; border-right: 0; border-bottom: 1px solid var(--line); }

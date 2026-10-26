@@ -15,13 +15,16 @@ Não copiar código, componentes, migrations, tabelas, RPCs ou estados do Vitrin
 
 ## 2. Identidade e permissão
 
-- Login do operador: GitHub OAuth via Supabase Auth, sem senha própria. O provedor OAuth GitHub precisa estar configurado no projeto Supabase antes do primeiro uso; essa configuração não pôde ser confirmada pela leitura de metadados.
-- Autorização: allowlist server-side de UUIDs `auth.users.id` permitidos, exigindo também uma identidade GitHub validada. Não usar `user_metadata` editável para conceder acesso.
-- Admin API: exige JWT válido e verifica a allowlist em cada ação. Sem sessão autorizada, nenhuma leitura operacional ou gravação é feita.
+- Login do operador: link de acesso por e-mail pelo Supabase Auth (`signInWithOtp` com `shouldCreateUser: false`), sem senha própria e sem criação de usuários. GitHub OAuth não é requisito.
+- Autorização: cada ação valida o JWT no endpoint `/auth/v1/user` e consulta `public.admin_users` pelo `auth.users.id`, exigindo `role = 'owner'` e `is_active = true`. A decisão usa o cadastro operacional já existente no Supabase, sem identidade editável em `user_metadata` e sem uma allowlist paralela.
+- Admin API: verifica sessão e papel de proprietário em cada ação. CORS aceita apenas `https://donaantonia.com.br`, `https://www.donaantonia.com.br`, `http://localhost:5173` e `http://127.0.0.1:5173`.
 - GitHub: um GitHub App instalado somente em `osvaldosereia/SUCEDOAN12`, com permissão `Contents: read/write`, fornece credencial ao backend. O backend fixa a branch indicada e recusa qualquer outra referência ou caminho fora desta pasta.
-- Navegador: recebe apenas a sessão normal do Supabase Auth. Tokens do GitHub, chave `service_role`, segredos Meta e credenciais Bling ficam exclusivamente no servidor. O token OAuth do provedor não é usado para chamadas administrativas.
+- Leitura: por ser público, o catálogo pode ser consultado pela API GitHub sem credencial; a função usa uma instalação somente leitura quando já configurada e recua para acesso público caso não exista.
+- Navegador: recebe apenas a sessão normal do Supabase Auth. Tokens do GitHub, chave `service_role`, segredos Meta e credenciais Bling ficam exclusivamente no servidor.
 
 O conector consultado não expõe os nomes/presença das variáveis secretas. Nenhum valor foi lido. A configuração necessária deverá ser confirmada por presença, sem revelar valores, antes de homologação.
+
+Atualização de autenticação em 26/10/2026: a inspeção do código do Vitrine confirmou que ele usa a sessão Supabase e `public.admin_users`, não GitHub OAuth. O Admin novo usa link por e-mail sem senha, valida apenas proprietário ativo e não exige OAuth GitHub nem uma allowlist de UUIDs separada. As referências a GitHub OAuth/allowlist nas anotações históricas abaixo foram substituídas por esta seção e pela lista atual de dependências.
 
 ## 3. Catálogo público
 
@@ -192,12 +195,12 @@ O resumo enviado ao cliente será tratado em etapa posterior: lista e quantidade
 
 Os nomes abaixo são referências para configuração; não contêm nem confirmam valores. A rodada não lê, cria, altera ou revela segredos.
 
-- Supabase Edge Functions: variáveis nativas do projeto, `SUPABASE_URL` e chave de serviço apenas no runtime do servidor.
-- GitHub OAuth: client ID e client secret do provedor GitHub no Supabase Auth.
-- GitHub App: app ID, installation ID e private key para acesso de conteúdo somente ao repositório.
+- Supabase Edge Functions: variáveis nativas do projeto `SUPABASE_URL`, `SUPABASE_DB_URL` e chaves API no runtime do servidor; não cadastrá-las de novo como secrets.
+- Redirects do Auth: `https://donaantonia.com.br/whatsapp-admin/`, `http://127.0.0.1:5173/` e `http://localhost:5173/`. Foram adicionados sem alterar o Site URL global.
+- GitHub App: app ID, installation ID e private key para gravação de conteúdo e baixa de estoque somente neste repositório. Os nomes não estão presentes na lista atual de custom secrets.
 - Meta: app secret, access token, IDs verificados de WABA/número e chave privada por canal para o endpoint de Flow.
 - Bling: client ID, client secret e tokens OAuth renováveis guardados no servidor.
-- Autorização: lista de UUIDs de operadores permitidos, sem senha local.
+- Autorização: operador ativo com papel `owner` em `public.admin_users`; a tabela já contém um proprietário ativo.
 
 ## 7. Confirmações da Rodada 0
 
@@ -222,7 +225,7 @@ Os nomes abaixo são referências para configuração; não contêm nem confirma
 
 ## 8. Dependências antes de homologação
 
-1. Confirmar configuração do provedor GitHub no Supabase Auth e registrar o UUID do operador autorizado em mecanismo server-side.
+1. O acesso sem senha está alinhado ao proprietário ativo de `public.admin_users`; redirects do Admin já estão permitidos no Supabase Auth.
 2. Confirmar presença dos segredos necessários por nome/status, sem revelar valores, no ambiente de desenvolvimento controlado.
 3. Confirmar os IDs oficiais de cada WABA/número antes de qualquer teste Meta.
 4. Confirmar a conta/token OAuth Bling e os campos mínimos que a NF-e precisa, sem expor tokens.

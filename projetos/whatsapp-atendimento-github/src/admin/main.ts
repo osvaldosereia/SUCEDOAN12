@@ -70,7 +70,9 @@ const state = {
   commitUrl: "",
   session: null as Session | null,
   access: "preview" as "preview" | "loading" | "authorized" | "denied",
-  accessMessage: "Prévia local: o acesso administrativo ainda não foi habilitado no Supabase Auth.",
+  accessMessage: "Prévia local: entre com o link enviado ao e-mail de uma conta administrativa ativa.",
+  authEmail: "",
+  authMessage: "",
   busy: false,
   tab: "products" as "products" | "baskets" | "flows" | "orders" | "outbox" | "customers" | "attendance",
   search: "",
@@ -366,7 +368,7 @@ function basketEditor(basket: Basket): string {
 
 async function loadOrders(): Promise<void> {
   if (!state.session || state.access !== "authorized") {
-    tell("Entre com a conta GitHub autorizada para acessar os pedidos.", "error");
+    tell("Entre com o e-mail de uma conta administrativa ativa para acessar os pedidos.", "error");
     return;
   }
   state.busy = true;
@@ -436,7 +438,7 @@ async function refreshMetaFlows(channel = state.flowChannel): Promise<void> {
 
 async function loadOutbox(): Promise<void> {
   if (!state.session || state.access !== "authorized") {
-    tell("Entre com a conta GitHub autorizada para acompanhar as mensagens.", "error");
+    tell("Entre com o e-mail de uma conta administrativa ativa para acompanhar as mensagens.", "error");
     return;
   }
   state.busy = true;
@@ -461,7 +463,7 @@ async function loadOutbox(): Promise<void> {
 
 async function loadAttendance(): Promise<void> {
   if (!state.session || state.access !== "authorized") {
-    state.attendanceNotice = "Entre com a conta GitHub autorizada para abrir o atendimento.";
+    state.attendanceNotice = "Entre com o e-mail de uma conta administrativa ativa para abrir o atendimento.";
     render();
     return;
   }
@@ -617,7 +619,7 @@ function outboxErrorLabel(code: string | null): string {
 }
 
 function outboxView(): string {
-  if (state.access !== "authorized") return `<section class="workspace-heading"><div><span class="eyebrow">Operação</span><h1>Mensagens WhatsApp</h1><p>O acompanhamento exige uma sessão GitHub autorizada.</p></div></section><div class="empty-state"><strong>Acesso administrativo necessário</strong><span>Entre com a conta GitHub autorizada para consultar a outbox.</span></div>`;
+  if (state.access !== "authorized") return `<section class="workspace-heading"><div><span class="eyebrow">Operação</span><h1>Mensagens WhatsApp</h1><p>O acompanhamento exige uma sessão administrativa ativa.</p></div></section><div class="empty-state"><strong>Acesso administrativo necessário</strong><span>Entre com o e-mail de uma conta administrativa ativa para consultar a outbox.</span></div>`;
   return `<section class="workspace-heading"><div><span class="eyebrow">Operação · outbox</span><h1>Mensagens WhatsApp</h1><p>Acompanhe o que aguarda envio e o que precisa de conferência.</p></div><button class="button button-primary" data-action="outbox-refresh">Atualizar mensagens</button></section>
     <div class="outbox-safety-note ${state.outboxSenderEnabled && state.outboxLoaded ? "is-enabled" : ""}"><strong>${!state.outboxLoaded ? "Estado do envio não consultado" : state.outboxSenderEnabled ? "Gate de envio ligado no servidor" : "Gate de envio desligado no servidor"}</strong><span>Este estado indica somente a flag do worker; não confirma credenciais nem entrega. O conteúdo e o telefone não são exibidos aqui. Não há reenvio nesta tela. Mensagens com entrega incerta precisam ser conferidas no WhatsApp Manager antes de qualquer recuperação manual.</span></div>
     ${!state.outboxLoaded ? `<div class="empty-state"><strong>Carregue o acompanhamento</strong><span>A consulta mostra apenas status e metadados mínimos da fila.</span><button class="button button-primary" data-action="outbox-refresh">Carregar mensagens</button></div>` : `<div class="outbox-count-grid">${(["pending", "sent", "failed", "cancelled"] as OutboxStatus[]).map((status) => `<article class="outbox-count-card"><span>${escapeHtml(outboxStatusLabel(status))}</span><strong>${state.outboxCounts[status].toLocaleString("pt-BR")}</strong></article>`).join("")}</div>
@@ -668,7 +670,7 @@ function invoiceStatusLabel(status: OrderDetailRecord["invoiceStatus"]): string 
 }
 
 function ordersView(): string {
-  if (state.access !== "authorized") return `<section class="workspace-heading"><div><span class="eyebrow">Operação</span><h1>Pedidos</h1><p>A fila exige uma sessão GitHub autorizada pelo servidor.</p></div></section><div class="empty-state"><strong>Acesso administrativo necessário</strong><span>Entre com a conta GitHub autorizada para consultar os pedidos.</span></div>`;
+  if (state.access !== "authorized") return `<section class="workspace-heading"><div><span class="eyebrow">Operação</span><h1>Pedidos</h1><p>A fila exige uma sessão administrativa autorizada pelo servidor.</p></div></section><div class="empty-state"><strong>Acesso administrativo necessário</strong><span>Entre com o e-mail de uma conta administrativa ativa para consultar os pedidos.</span></div>`;
   const order = state.selectedOrder;
   if (order) {
     const pending = order.customerAcceptanceStatus === "pending";
@@ -790,11 +792,11 @@ function render(): void {
 
   appRoot.innerHTML = `<div class="app-shell">
     <header class="topbar"><a class="brand" href="#"><span class="brand-mark">DA</span><span><strong>Dona Antônia</strong><small>Atendimento WhatsApp</small></span></a>
-      <div class="topbar-actions"><span class="access-status ${statusClass}"><i></i>${escapeHtml(accessLabel())}</span>${state.session ? `<span class="user-chip"><span class="user-avatar">${escapeHtml(String(identityLabel).slice(0, 1).toUpperCase())}</span>${escapeHtml(identityLabel)}</span><button class="button button-soft" data-action="sign-out">Sair</button>` : `<button class="button button-dark" data-action="sign-in" ${supabase ? "" : "disabled title=Configure%20Supabase%20em%20.env.local"}>Entrar com GitHub</button>`}</div>
+      <div class="topbar-actions"><span class="access-status ${statusClass}"><i></i>${escapeHtml(accessLabel())}</span>${state.session ? `<span class="user-chip"><span class="user-avatar">${escapeHtml(String(identityLabel).slice(0, 1).toUpperCase())}</span>${escapeHtml(identityLabel)}</span><button class="button button-soft" data-action="sign-out">Sair</button>` : `<button class="button button-dark" data-action="sign-in" ${supabase ? "" : "disabled title=Configure%20Supabase%20em%20.env.local"}>Entrar</button>`}</div>
     </header>
-    <div class="security-banner ${state.access === "authorized" ? "is-ready" : ""}"><span class="security-icon">${state.access === "authorized" ? "✓" : "⌑"}</span><span><strong>${state.access === "authorized" ? "Acesso confirmado pelo servidor" : escapeHtml(state.accessMessage)}</strong><small>${state.access === "authorized" ? `Gravações ficam restritas ao branch project/whatsapp-atendimento-github-20261025${state.commitSha ? ` · revisão ${state.commitSha.slice(0, 7)}` : ""}.` : supabase ? "O login exige GitHub OAuth habilitado no Supabase Auth. Gravações também exigem allowlist, origem e GitHub App em secrets do servidor." : "Configure Supabase no .env.local para habilitar o login; sem autorização do servidor, nenhuma gravação será aceita."}</small></span>${state.commitUrl ? `<a class="text-link" href="${escapeHtml(state.commitUrl)}" target="_blank" rel="noreferrer">Ver commit ↗</a>` : ""}</div>
+    <div class="security-banner ${state.access === "authorized" ? "is-ready" : ""}"><span class="security-icon">${state.access === "authorized" ? "✓" : "⌑"}</span><span><strong>${state.access === "authorized" ? "Acesso confirmado pelo servidor" : escapeHtml(state.accessMessage)}</strong><small>${state.access === "authorized" ? `Gravações ficam restritas ao branch project/whatsapp-atendimento-github-20261025${state.commitSha ? ` · revisão ${state.commitSha.slice(0, 7)}` : ""}.` : supabase ? "O acesso usa a conta Supabase já cadastrada como administradora; não há senha própria nem login GitHub separado." : "Configure Supabase no .env.local para habilitar o login; sem autorização do servidor, nenhuma gravação será aceita."}</small></span>${state.commitUrl ? `<a class="text-link" href="${escapeHtml(state.commitUrl)}" target="_blank" rel="noreferrer">Ver commit ↗</a>` : ""}</div>
     <div class="app-body"><aside class="main-nav"><div class="nav-label">CATÁLOGO</div><button class="nav-item ${state.tab === "products" ? "is-active" : ""}" data-action="tab" data-tab="products"><span class="nav-icon">▦</span> Produtos <span class="nav-count">${state.products.products.length}</span></button><button class="nav-item ${state.tab === "baskets" ? "is-active" : ""}" data-action="tab" data-tab="baskets"><span class="nav-icon">▤</span> Cestas <span class="nav-count">${state.baskets.baskets.length}</span></button><button class="nav-item ${state.tab === "flows" ? "is-active" : ""}" data-action="tab" data-tab="flows"><span class="nav-icon">⌁</span> Flows <span class="nav-count">${state.flowDocuments[state.flowChannel].drafts.length}</span></button><div class="nav-label nav-orders-label">OPERAÇÃO</div><button class="nav-item ${state.tab === "attendance" ? "is-active" : ""}" data-action="tab" data-tab="attendance"><span class="nav-icon">☏</span> Atendimento</button><button class="nav-item ${state.tab === "customers" ? "is-active" : ""}" data-action="tab" data-tab="customers"><span class="nav-icon">♙</span> Clientes ${state.customersLoaded ? `<span class="nav-count">${state.customers.length}</span>` : ""}</button><button class="nav-item ${state.tab === "orders" ? "is-active" : ""}" data-action="tab" data-tab="orders"><span class="nav-icon">▣</span> Pedidos <span class="nav-count">${state.orders.length}</span></button><button class="nav-item ${state.tab === "outbox" ? "is-active" : ""}" data-action="tab" data-tab="outbox"><span class="nav-icon">↗</span> Mensagens ${state.outboxLoaded ? `<span class="nav-count">${state.outboxCounts.pending + state.outboxCounts.failed}</span>` : ""}</button></aside>
-      <main class="content"><div class="content-topline"><span>Administração</span><span class="breadcrumb-sep">/</span><strong>${state.tab === "products" ? "Produtos" : state.tab === "baskets" ? "Cestas" : state.tab === "flows" ? "Flows" : state.tab === "orders" ? "Pedidos" : state.tab === "customers" ? "Clientes" : state.tab === "attendance" ? "Atendimento" : "Mensagens WhatsApp"}</strong><span class="dirty-indicator ${isDirty() && !["orders", "outbox", "customers", "attendance"].includes(state.tab) ? "is-dirty" : ""}">${isDirty() && !["orders", "outbox", "customers", "attendance"].includes(state.tab) ? "Alterações pendentes" : "Tudo salvo"}</span></div>${state.notice ? `<div class="notice notice-${state.noticeType}" role="status"><span>${escapeHtml(state.notice)}</span>${state.conflict ? `<div class="conflict-actions"><button class="text-button" data-action="export-draft">Baixar meu rascunho</button><button class="text-button" data-action="reload-catalog">Descartar e recarregar</button></div>` : ""}<button data-action="clear-notice" aria-label="Fechar">×</button></div>` : ""}${state.tab === "products" ? productsView() : state.tab === "baskets" ? selectedBasket ? basketEditor(selectedBasket) : `<div class="empty-state"><strong>Nenhuma cesta cadastrada</strong><span>Crie a primeira cesta para começar.</span><button class="button button-primary" data-action="new-basket">＋ Nova cesta</button></div>` : state.tab === "flows" ? flowsPanel : state.tab === "customers" ? customersPanel : state.tab === "outbox" ? outboxView() : state.tab === "attendance" ? attendancePanel : ordersView()}</main>
+      <main class="content"><div class="content-topline"><span>Administração</span><span class="breadcrumb-sep">/</span><strong>${state.tab === "products" ? "Produtos" : state.tab === "baskets" ? "Cestas" : state.tab === "flows" ? "Flows" : state.tab === "orders" ? "Pedidos" : state.tab === "customers" ? "Clientes" : state.tab === "attendance" ? "Atendimento" : "Mensagens WhatsApp"}</strong><span class="dirty-indicator ${isDirty() && !["orders", "outbox", "customers", "attendance"].includes(state.tab) ? "is-dirty" : ""}">${isDirty() && !["orders", "outbox", "customers", "attendance"].includes(state.tab) ? "Alterações pendentes" : "Tudo salvo"}</span></div>${!state.session && supabase ? `<section class="auth-card"><div><span class="eyebrow">Acesso ao Admin</span><h2>Entrar sem senha</h2><p>Enviaremos um link ao e-mail de uma conta administrativa ativa no Supabase.</p></div><form id="auth-form"><label for="auth-email">E-mail da conta<input id="auth-email" name="email" type="email" autocomplete="email" required maxlength="254" value="${escapeHtml(state.authEmail)}" placeholder="voce@exemplo.com"></label><button class="button button-dark" type="submit" ${state.busy ? "disabled" : ""}>Enviar link de acesso</button></form>${state.authMessage ? `<small class="auth-feedback" role="status">${escapeHtml(state.authMessage)}</small>` : ""}</section>` : ""}${state.notice ? `<div class="notice notice-${state.noticeType}" role="status"><span>${escapeHtml(state.notice)}</span>${state.conflict ? `<div class="conflict-actions"><button class="text-button" data-action="export-draft">Baixar meu rascunho</button><button class="text-button" data-action="reload-catalog">Descartar e recarregar</button></div>` : ""}<button data-action="clear-notice" aria-label="Fechar">×</button></div>` : ""}${state.tab === "products" ? productsView() : state.tab === "baskets" ? selectedBasket ? basketEditor(selectedBasket) : `<div class="empty-state"><strong>Nenhuma cesta cadastrada</strong><span>Crie a primeira cesta para começar.</span><button class="button button-primary" data-action="new-basket">＋ Nova cesta</button></div>` : state.tab === "flows" ? flowsPanel : state.tab === "customers" ? customersPanel : state.tab === "outbox" ? outboxView() : state.tab === "attendance" ? attendancePanel : ordersView()}</main>
     </div>
     <footer class="page-footer"><span>Catálogo público versionado no GitHub</span><span>Dados pessoais e credenciais ficam fora deste projeto</span></footer>
     ${state.access === "authorized" && isDirty() && !["customers", "orders", "outbox", "attendance"].includes(state.tab) ? `<button class="floating-save" data-action="review-save"><span>Revisar alterações</span><strong>Salvar no GitHub ↗</strong></button>` : ""}
@@ -970,7 +972,7 @@ async function reloadCatalog(session: Session): Promise<void> {
 
 async function initializeAuth(): Promise<void> {
   if (!supabase) {
-    state.accessMessage = "Prévia local: configure Supabase no .env.local para habilitar o login GitHub.";
+    state.accessMessage = "Prévia local: configure Supabase no .env.local para habilitar o link de acesso.";
     render();
     return;
   }
@@ -989,7 +991,7 @@ async function initializeAuth(): Promise<void> {
       return;
     } else {
       state.access = "preview";
-      state.accessMessage = "Prévia local: o acesso administrativo ainda não foi habilitado no Supabase Auth.";
+      state.accessMessage = "Prévia local: entre com o link enviado ao e-mail de uma conta administrativa ativa.";
       state.commitSha = "";
       state.catalogRevision = "";
       state.commitUrl = "";
@@ -1109,6 +1111,7 @@ async function convertImage(file: File): Promise<{ contentBase64: string; previe
 appRoot.addEventListener("input", (event) => {
   if (state.busy) return;
   const target = event.target;
+  if (target instanceof HTMLInputElement && target.id === "auth-email") state.authEmail = target.value;
   if (target instanceof HTMLInputElement && target.id === "flow-name") state.flowName = target.value;
   if (target instanceof HTMLInputElement && target.id === "product-search") {
     state.search = target.value;
@@ -1190,6 +1193,33 @@ appRoot.addEventListener("submit", async (event) => {
   if (state.busy) return;
   const target = event.target;
   if (!(target instanceof HTMLFormElement)) return;
+  if (target.id === "auth-form") {
+    event.preventDefault();
+    if (!supabase) return;
+    const email = String(new FormData(target).get("email") ?? "").trim().toLowerCase();
+    if (!email) return;
+    state.authEmail = email;
+    state.authMessage = "";
+    state.busy = true;
+    render();
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: `${window.location.origin}${window.location.pathname}`,
+        },
+      });
+      if (error) throw error;
+      state.authMessage = "Se o endereço pertence a uma conta administrativa ativa, o link de acesso foi enviado.";
+    } catch {
+      state.authMessage = "Não foi possível enviar o link. Confira o e-mail e tente novamente.";
+    } finally {
+      state.busy = false;
+      render();
+    }
+    return;
+  }
   if (target.id === "attendance-search-form") {
     event.preventDefault();
     state.attendanceSearch = String(new FormData(target).get("query") ?? "").trim().slice(0, 80);
@@ -1418,19 +1448,9 @@ appRoot.addEventListener("click", async (event) => {
   const basketForm = document.querySelector<HTMLFormElement>("#basket-form");
 
   if (action === "sign-in") {
-    if (!supabase) return;
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "github",
-      options: { redirectTo: `${window.location.origin}${window.location.pathname}` },
-    });
-    if (error) {
-      const providerDisabled = /provider is not enabled|unsupported provider/i.test(error.message);
-      if (providerDisabled) state.accessMessage = "GitHub OAuth está desabilitado no Supabase Auth.";
-      render();
-      tell(providerDisabled
-        ? "O botão GitHub depende de habilitar o provedor OAuth no Supabase Auth e configurar o callback. O acesso do conector Codex não ativa esse login do Admin."
-        : `Não foi possível iniciar o login GitHub: ${error.message}`, "error");
-    }
+    const emailInput = document.querySelector<HTMLInputElement>("#auth-email");
+    emailInput?.scrollIntoView({ behavior: "smooth", block: "center" });
+    emailInput?.focus({ preventScroll: true });
   } else if (action === "sign-out") {
     if (isDirty() && !window.confirm("Sair descartará as alterações desta prévia. Deseja continuar?")) return;
     await supabase?.auth.signOut();

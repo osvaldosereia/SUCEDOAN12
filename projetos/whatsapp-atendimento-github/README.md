@@ -16,7 +16,11 @@ A fila e separação mantêm proposta cifrada para falta/substituição. Ao conc
 
 As quatro migrations próprias deste projeto foram aplicadas no Supabase `ssbesxgaijknwsjbsbcz`. As 14 tabelas transacionais e a tabela pública de sessão têm RLS ligado; a consulta de privilégios confirmou que `anon` e `authenticated` não leem essas tabelas e que `service_role` pode acessá-las. O aviso do advisor “RLS enabled, no policy” é esperado para essas tabelas: não há política pública e os grants são exclusivos do backend.
 
-As quatro Edge Functions de operação ainda não foram implantadas. O roteador novo `whatsapp-meta-order-router` está somente no código local e também aguarda preflight. O login GitHub foi verificado e o Supabase Auth retorna `Unsupported provider: provider is not enabled`; acesso do conector Codex ao repositório/banco não habilita o login de usuários do Admin. A configuração exige um OAuth App GitHub e o callback/redirect no Supabase Auth, além de allowlist, origem e credenciais do GitHub App como secrets server-side. Nenhuma ferramenta conectada disponível nesta sessão permite habilitar o provider ou gravar secrets do projeto.
+Foi encontrada e corrigida a confusão de autenticação: o Vitrine valida operadores na tabela `public.admin_users` e mantém sessão Supabase; não depende de GitHub OAuth. O Admin novo agora segue a mesma fonte de operadores, com link de acesso por e-mail sem senha própria, sem criação automática de conta, e valida no backend um operador ativo com papel `owner`. O provider GitHub continua desabilitado, mas deixa de ser requisito. A allowlist do Supabase recebeu o redirect exato de produção e os dois endereços locais de desenvolvimento; o Site URL global permaneceu intacto.
+
+A lista de secrets do Supabase confirma as chaves Meta compartilhadas e a chave do Flow 1018. Não há secrets do GitHub App nem chave do Flow 0975. Os secrets padrão do Supabase (`SUPABASE_URL`, `SUPABASE_DB_URL` e chaves API) são fornecidos pelo runtime e não devem ser cadastrados novamente. O catálogo público pode ser lido sem GitHub App; gravações no GitHub e a baixa do estoque após confirmação ainda dependem do App instalado no repositório.
+
+As funções novas ainda não foram implantadas. O Admin API pode operar autenticação, leitura pública do catálogo e as rotas de atendimento após deploy; alterações de catálogo/Flow e baixa de estoque continuam bloqueadas sem o GitHub App. O roteador novo `whatsapp-meta-order-router` está somente no código local e aguarda preflight antes de qualquer troca de callback.
 
 O código novo agora aceita os nomes Meta existentes no runtime (`META_WHATSAPP_ACCESS_TOKEN`, `META_WHATSAPP_GRAPH_VERSION`, `META_WHATSAPP_APP_SECRET` e, para 1018, `DA_FLOW_1018_RSA_PKCS8`) sem imprimir seus valores. Os IDs de canal 0975/1018 são resolvidos pela tabela ativa `whatsapp_accounts`. Ainda não foi localizada a chave privada de Flow do canal 0975. O callback Meta segue apontado para `whatsapp-meta-webhook-v1`; o roteador novo, que encaminhará os eventos sem trocar o destino ANA, ainda não foi implantado nem configurado como callback. Portanto, não há como receber pedidos reais pelo projeto novo ainda.
 
@@ -30,7 +34,7 @@ Nenhuma função nova foi implantada, Flow publicado, mensagem enviada ou escrit
 - Nenhum token de escrita do GitHub, chave Meta/Bling ou chave `service_role` pode aparecer no navegador.
 - As gravações de catálogo ficam limitadas à branch `project/whatsapp-atendimento-github-20261025`.
 - Não publicar Flow nem enviar mensagens reais sem autorização específica da operação. Deploys do projeto novo estão autorizados, após preflight de dependências e segredos; não alterar tabelas, funções ou atendimento existentes do Vitrine.
-- O acesso de gravação exige GitHub OAuth pelo Supabase Auth, UUID em allowlist server-side e GitHub App. Sem configuração completa, o app opera em prévia local e a API recusa ações.
+- O acesso exige sessão Supabase por link de e-mail e correspondência com `public.admin_users` (`role = owner`, `is_active = true`). A API confere isso em cada ação no backend. O GitHub App é usado somente para gravações autenticadas no repositório e para a baixa do estoque.
 - A API valida a sessão a cada chamada, exige identidade GitHub e só emite tokens temporários do GitHub App para este repositório. O navegador nunca recebe essa credencial.
 
 ## Organização prevista
@@ -52,21 +56,19 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Sem configuração, o app abre em prévia local com o catálogo versionado no checkout. Edições ficam somente na memória do navegador. Para login, copie os valores `VITE_*` de `.env.example` para `.env.local`, configure o provedor GitHub no Supabase Auth e permita o endereço local na lista de redirects do Supabase. A URL da Edge Function é derivada de `VITE_SUPABASE_URL`, impedindo que a sessão seja enviada a outro host por configuração acidental. Essas configurações externas não foram alteradas.
+Sem configuração, o app abre em prévia local com o catálogo versionado no checkout. Edições ficam somente na memória do navegador. Para login, copie os valores `VITE_*` de `.env.example` para `.env.local`; o Supabase Auth envia um link de acesso ao e-mail já cadastrado, e a sessão só recebe permissão quando o usuário está ativo como `owner` em `public.admin_users`. O redirect exato de produção e os redirects locais já estão na allowlist do Supabase. A URL da Edge Function é derivada de `VITE_SUPABASE_URL`, impedindo que a sessão seja enviada a outro host por configuração acidental.
 
-Para habilitar gravações na homologação, configure **somente como segredos da Edge Function** `whatsapp-admin-api`:
+Para habilitar gravações no catálogo e a baixa do estoque, configure **somente como secrets das Edge Functions** `whatsapp-admin-api` e `whatsapp-checkout-webhook`:
 
-- `ADMIN_ALLOWED_USER_IDS`: UUIDs de `auth.users.id` autorizados, separados por vírgula;
-- `ADMIN_ALLOWED_ORIGINS`: origens web explícitas permitidas, separadas por vírgula;
 - `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID` e `GITHUB_PRIVATE_KEY` do GitHub App instalado somente em `osvaldosereia/SUCEDOAN12`;
 - Supabase disponibiliza `SUPABASE_URL`, `SUPABASE_DB_URL` e os conjuntos `SUPABASE_PUBLISHABLE_KEYS`/`SUPABASE_SECRET_KEYS` no runtime; as funções também aceitam as chaves legadas `SUPABASE_ANON_KEY`/`SUPABASE_SERVICE_ROLE_KEY`. Não cadastre nomes `SUPABASE_*` como secrets próprios. A conexão Postgres privada usa o `SUPABASE_DB_URL` injetado pelo projeto.
 - A integração Bling usa o cofre/refresh-token compartilhado já mantido no Supabase por funções server-side autorizadas; não configure nem exponha credenciais Bling próprias no Admin novo.
 - Os segredos GitHub App também precisam estar disponíveis a `whatsapp-checkout-webhook`, com `Contents: write`, para registrar a baixa do estoque e o marcador opaco no mesmo commit GitHub.
 - Para os controles Meta do Admin e endpoint, podem ser usados os nomes específicos por canal; o código também lê como fallback os nomes já usados no runtime (`META_WHATSAPP_ACCESS_TOKEN`, `META_WHATSAPP_GRAPH_VERSION`, `META_WHATSAPP_APP_SECRET` e `DA_FLOW_0975_RSA_PKCS8`/`DA_FLOW_1018_RSA_PKCS8`). A chave privada do canal 0975 ainda precisa ser confirmada no runtime. `WHATSAPP_FLOW_ENDPOINT_URI` é opcional: por padrão, o código deriva a URL da função nova. Os WABAs e phone number IDs são obtidos server-side de `public.whatsapp_accounts` pela associação fixa `dona-antonia-{canal}`; o Flow publicado escolhido é persistido por canal em `whatsapp_atendimento.channel_flow_bindings`.
 
-Não coloque os segredos acima em `.env.local`, em variável `VITE_*` ou em commit. A função mantém `verify_jwt = true` e confere o UUID e a identidade GitHub no Supabase Auth. O Admin API lê/grava catálogo e imagens no GitHub, acessa clientes somente via Postgres privado e chama a Graph API Meta somente em ações explícitas para o canal selecionado. A foto escolhida no editor é convertida no navegador para WebP 240×190 com limite de 27 KB.
+Não coloque os segredos acima em `.env.local`, em variável `VITE_*` ou em commit. O Admin API confere a sessão Supabase e o papel/estado do operador no Postgres privado; o CORS fica limitado aos domínios do Admin e endereços locais documentados no código. O Admin API lê o catálogo público sem token do GitHub, grava catálogo e imagens somente com o GitHub App server-side, acessa clientes pelo Postgres privado e chama a Graph API Meta somente em ações explícitas para o canal selecionado. A foto escolhida no editor é convertida no navegador para WebP 240×190 com limite de 27 KB.
 
-O provedor GitHub OAuth, a allowlist e o GitHub App ainda não estão configurados; as quatro funções de operação e o novo roteador não foram implantados. Nenhum Flow foi publicado e nenhum pedido de cesta foi recebido pelo projeto novo. O único canário real registrado anteriormente veio do painel existente do Vitrine Admin, fora deste worker. A solicitação de venda/NF-e só poderá operar depois de ligar o callback ao roteador novo e conferir os contratos no ambiente autorizado.
+O GitHub App e a chave privada do Flow 0975 ainda não estão configurados; as funções de operação e o novo roteador ainda não foram implantados. Nenhum Flow foi publicado e nenhum pedido de cesta foi recebido pelo projeto novo. O único canário real registrado anteriormente veio do painel existente do Vitrine Admin, fora deste worker. A solicitação de venda/NF-e só poderá operar depois de ligar o callback ao roteador novo e conferir os contratos no ambiente autorizado.
 
 ## Runtime Flow local
 

@@ -38,12 +38,17 @@ const CHANNEL_PATTERN = WHATSAPP_CHANNEL_PATTERN;
 const BLING_API = "https://api.bling.com.br/Api/v3";
 const BLING_AUTHORIZE_URL = "https://www.bling.com.br/Api/v3/oauth/authorize";
 const BLING_TOKEN_URL = `${BLING_API}/oauth/token`;
+const ADMIN_ORIGINS = new Set([
+  "https://donaantonia.com.br",
+  "https://www.donaantonia.com.br",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+]);
+const USER_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 let orderDatabase: Sql | null = null;
 
 interface Operator {
   id: string;
-  app_metadata?: { provider?: string; providers?: string[] };
-  identities?: Array<{ provider?: string }>;
 }
 
 interface GitHubResponse {
@@ -69,10 +74,6 @@ class HttpError extends Error {
   }
 }
 
-function configuredList(name: string): string[] {
-  return (Deno.env.get(name) ?? "").split(",").map((value) => value.trim()).filter(Boolean);
-}
-
 function jsonResponse(payload: unknown, status = 200, headers: HeadersInit = {}): Response {
   const responseHeaders = new Headers(headers);
   responseHeaders.set("Content-Type", "application/json; charset=utf-8");
@@ -81,8 +82,7 @@ function jsonResponse(payload: unknown, status = 200, headers: HeadersInit = {})
 }
 
 function corsHeaders(origin: string): Headers {
-  const origins = configuredList("ADMIN_ALLOWED_ORIGINS");
-  if (!origin || !origins.includes(origin)) throw new HttpError(403, "Origem não autorizada.");
+  if (!ADMIN_ORIGINS.has(origin)) throw new HttpError(403, "Origem não autorizada.");
 
   return new Headers({
     "Access-Control-Allow-Origin": origin,
@@ -95,15 +95,12 @@ function corsHeaders(origin: string): Headers {
 
 async function authorize(request: Request): Promise<{ operator: Operator; headers: Headers }> {
   const headers = corsHeaders(request.headers.get("Origin") ?? "");
-  const allowedUsers = configuredList("ADMIN_ALLOWED_USER_IDS");
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const publishableKey = supabasePublishableKey();
   const accessToken = request.headers.get("Authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
 
-  if (!allowedUsers.length || !supabaseUrl || !publishableKey) {
-    throw new HttpError(503, "Acesso administrativo ainda não foi configurado no servidor.");
-  }
-  if (!accessToken) throw new HttpError(401, "Entre com sua conta GitHub autorizada.");
+  if (!supabaseUrl || !publishableKey) throw new HttpError(503, "A autenticação do Admin não está configurada no servidor.");
+  if (!accessToken) throw new HttpError(401, "Entre com o e-mail da sua conta administrativa.");
 
   const response = await fetch(`${supabaseUrl.replace(/\/$/, "")}/auth/v1/user`, {
     headers: { apikey: publishableKey, Authorization: `Bearer ${accessToken}` },
@@ -111,11 +108,21 @@ async function authorize(request: Request): Promise<{ operator: Operator; header
   if (!response.ok) throw new HttpError(401, "Sessão inválida ou expirada.");
 
   const operator = await response.json() as Operator;
-  const hasGitHubIdentity = Array.isArray(operator.identities)
-    && operator.identities.some((identity) => identity.provider === "github");
-  if (!operator.id || !hasGitHubIdentity || operator.app_metadata?.provider !== "github" || !allowedUsers.includes(operator.id)) {
-    throw new HttpError(403, "Esta conta não está autorizada a administrar o catálogo.");
+  if (!USER_ID_PATTERN.test(operator.id ?? "")) throw new HttpError(401, "A sessão não contém uma identidade válida.");
+  let activeOwner: Array<{ user_id: string }>;
+  try {
+    activeOwner = await ordersDb()`
+      select user_id
+      from public.admin_users
+      where user_id = ${operator.id}::uuid
+        and role = 'owner'
+        and is_active is true
+      limit 1
+    `;
+  } catch {
+    throw new HttpError(503, "Não foi possível validar o cadastro administrativo no Supabase.");
   }
+  if (!activeOwner.length) throw new HttpError(403, "Esta conta não está ativa como administradora do projeto.");
   return { operator, headers };
 }
 
@@ -445,7 +452,7 @@ async function createAppJwt(): Promise<string> {
 async function githubRequest(path: string, token: string, init: RequestInit = {}): Promise<GitHubResponse> {
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/vnd.github+json");
-  headers.set("Authorization", `Bearer ${token}`);
+  if (token) headers.set("Authorization", `Bearer ${token}`);
   headers.set("X-GitHub-Api-Version", GITHUB_API_VERSION);
   headers.set("User-Agent", "whatsapp-atendimento-github-admin");
   if (init.body) headers.set("Content-Type", "application/json");
@@ -479,6 +486,15 @@ async function installationToken(permission: "read" | "write"): Promise<string> 
   const result = await response.json() as { token?: string };
   if (!result.token) throw new HttpError(503, "O GitHub App não forneceu uma credencial temporária.");
   return result.token;
+}
+
+async function publicCatalogReadToken(): Promise<string> {
+  try {
+    return await installationToken("read");
+  } catch (error) {
+    if (error instanceof HttpError && error.status === 503) return "";
+    throw error;
+  }
 }
 
 async function githubJson<T>(path: string, token: string, init?: RequestInit): Promise<T> {
@@ -1571,7 +1587,7 @@ async function orderDetail(orderId: string) {
 
 async function catalogAt(commit: string): Promise<CatalogDocuments> {
   if (!/^[0-9a-f]{40}$/i.test(commit)) throw new HttpError(409, "A revisão de catálogo do pedido é inválida.");
-  const token = await installationToken("read");
+  const token = await publicCatalogReadToken();
   const ref = new URLSearchParams({ ref: commit });
   const [productsFile, basketsFile] = await Promise.all([
     githubJson<{ content: string }>(repositoryPath(`/contents/${PRODUCTS_PATH}?${ref}`), token),
@@ -1862,7 +1878,7 @@ async function lookupBlingProductByCatalogGtin(productId: string) {
   }
   if (!ORDER_ID.test(productId)) throw new HttpError(400, "O produto selecionado é inválido.");
 
-  const catalog = await readCatalog(await installationToken("read"));
+  const catalog = await readCatalog(await publicCatalogReadToken());
   const product = catalog.products.products.find((item: Product) => item.id === productId);
   if (!product) throw new HttpError(404, "O produto não existe na revisão atual do catálogo GitHub.");
   if (product.blingProductId?.trim()) throw new HttpError(409, "Este produto já tem um ID Bling no catálogo. Revise o cadastro atual antes de substituir.");
@@ -3226,7 +3242,7 @@ async function uploadMetaFlow(channel: FlowChannel, flowId: string, body: Record
   if (typeof name !== "string" || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name) || name.length > 60) throw new HttpError(422, "O nome técnico do Flow é inválido.");
   const basketId = body.basketId;
   if (typeof basketId !== "string" || !/^[a-z0-9][a-z0-9-]{0,79}$/.test(basketId)) throw new HttpError(422, "Selecione a cesta associada a este rascunho.");
-  const catalog = await readCatalog(await installationToken("read"));
+  const catalog = await readCatalog(await publicCatalogReadToken());
   const basket = catalog.baskets.baskets.find((item: Basket) => item.id === basketId && item.active);
   if (!basket || !isRecord(body.flowJson) || validateBasketFlow(basket, catalog.products.products, body.flowJson).length) {
     throw new HttpError(422, "O JSON enviado não corresponde à cesta ativa selecionada nesta revisão do GitHub.");
@@ -3353,7 +3369,7 @@ async function bindPublishedMetaFlow(channel: FlowChannel, body: Record<string, 
   `;
   const upload = uploads[0];
   if (!upload) throw new HttpError(409, "Este Flow não recebeu um JSON gerado e validado pelo Admin novo; faça o upload do rascunho greenfield antes de vincular.");
-  const currentCatalog = await readCatalog(await installationToken("read"));
+  const currentCatalog = await readCatalog(await publicCatalogReadToken());
   if (upload.catalog_revision !== currentCatalog.catalogRevision
     || !currentCatalog.baskets.baskets.some((basket: Basket) => basket.id === upload.basket_id && basket.active)) {
     throw new HttpError(409, "O catálogo mudou após o upload do Flow. Gere e envie novamente o JSON desta cesta antes de vincular.");
@@ -3526,7 +3542,7 @@ Deno.serve(async (request) => {
       return jsonResponse(await lookupBlingProductByCatalogGtin(blingProductLookup[1]), 200, headers);
     }
     if (url.pathname.endsWith("/catalog") && request.method === "GET") {
-      const token = await installationToken("read");
+      const token = await publicCatalogReadToken();
       return jsonResponse(await readCatalog(token), 200, headers);
     }
     if (url.pathname.endsWith("/catalog") && request.method === "PUT") {
@@ -3543,7 +3559,7 @@ Deno.serve(async (request) => {
     }
     const flowMatch = url.pathname.match(new RegExp(`\\/flow-drafts\\/(${CHANNEL_PATTERN})$`));
     if (flowMatch && isFlowChannel(flowMatch[1]) && request.method === "GET") {
-      const token = await installationToken("read");
+      const token = await publicCatalogReadToken();
       return jsonResponse(await readFlowDraft(flowMatch[1], token), 200, headers);
     }
     if (flowMatch && isFlowChannel(flowMatch[1]) && request.method === "PUT") {
