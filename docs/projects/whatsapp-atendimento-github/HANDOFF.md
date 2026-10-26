@@ -480,3 +480,11 @@ O código está pronto para revisão local, mas deploy/cutover exigem confirmaç
 Fontes Supabase consultadas: [autenticação de Edge Functions](https://supabase.com/docs/guides/functions/auth) e [cabeçalhos de autenticação](https://supabase.com/docs/guides/functions/auth-headers), sobre webhooks externos com verificação da assinatura do provedor no handler.
 
 Commit da ponte local: `c96dc6f` (`feat: route basket checkout webhooks safely`), enviado para `project/whatsapp-atendimento-github-20261025`.
+
+## Paridade funcional — canais 0975 e 1018 (26/10/2026)
+
+Orientação do usuário: Flow idêntico nos dois números e os mesmos recursos do Admin. A conferência local encontrou um gerador de Flow compartilhado (`generateBasketFlow`) ligado ao mesmo catálogo GitHub; o JSON gerado não recebe o canal como entrada, portanto usa as mesmas telas, produtos, quantidades e regras. Os dois arquivos de rascunho inicial são iguais salvo pelo campo de identificação do canal (`channel`). O runtime e os módulos de atendimento, pedidos e catálogo expõem ambos os canais sem feature gate específico por número.
+
+O Admin precisa manter separado somente o que pertence à conta/canal: número/WABA, Flow Meta ID, status, chave de criptografia e vínculo publicado. A tela de Flows agora explica que o conteúdo é igual e que essas credenciais/vínculos são por número. Não reutilizar chave privada de um canal no outro por suposição. `DA_FLOW_1018_RSA_PKCS8` foi observado no runtime; uma chave correspondente ao 0975 ainda não foi confirmada. Isso bloqueia criptografar/publicar/homologar o canal 0975, mas não justifica remover recurso ou tela do Admin.
+
+Nenhum Flow foi criado, alterado ou publicado na Meta nesta etapa. A interface e o plano agora declaram a paridade do conteúdo entre 0975 e 1018. `pnpm build` (TypeScript e Vite) e `git diff --check` passaram; não foram criados ou executados testes automatizados. A mudança local será commitada e enviada à branch do projeto. A rotina continua sem envio a clientes.
