@@ -232,7 +232,6 @@
       });
       state.fiscalByOrder[o.id]=state.currentOrderFiscal;
       paintOrderDetail();
-      if(state.tab==='closure')renderClosure();
       toast(state.currentOrderFiscal?.fiscal_status==='ready'?'Recebimento confirmado · fiscal pronto':'Recebimento confirmado');
     }catch(e){
       toast(errorMessage(e.message));
@@ -944,7 +943,7 @@
     // Link direto vindo do Atendimento: exibir pedido no modal para revisão e confirmação humana.
     const directOrderId=params.get('pedido')||'';
     if(directOrderId){
-      if(!uuid.test(directOrderId)){setTab('today');toast('Link de pedido inválido');return}
+      if(!uuid.test(directOrderId)){setTab('attendance');toast('Link de pedido inválido');return}
       state.orderStatusTab='new';
       await setTab('orders');
       await openOrder(directOrderId);
@@ -957,9 +956,10 @@
       try{
         const hashTab=decodeURIComponent(location.hash.replace(/^#/,''));
         const sessionTab=sessionStorage.getItem('da_admin_current_tab_v1')||'';
-        restored=isValidTab(sessionTab)?sessionTab:isValidTab(hashTab)?hashTab:'';
+        const queryTab=params.get('tab')||'';
+        restored=isValidTab(queryTab)?queryTab:isValidTab(sessionTab)?sessionTab:isValidTab(hashTab)?hashTab:'';
       }catch{}
-      setTab(restored||'today');
+      setTab(restored||'attendance');
       return;
     }
     await setTab('orders');

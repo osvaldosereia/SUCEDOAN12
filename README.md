@@ -1,14 +1,24 @@
-# Dona Antônia — Site + Vitrine Admin
+# Sucedona12 · Vitrine Admin
 
-Este repositório contém somente o sistema em produção da Dona Antônia:
+Painel operacional simples para atendimento, pedidos, catálogo, clientes e orçamentos. O backend Supabase é mantido em supabase/.
 
-- site público: https://www.donaantonia.com.br/
-- administração operacional: https://www.donaantonia.com.br/vitrine/admin/
-- administração do catálogo: https://www.donaantonia.com.br/catalogo-admin/
+## Áreas do Admin
 
-## Supabase
+- **Atendimento:** conversas dos números 0975 e 1018; texto, áudio, imagem e vídeo.
+- **Pedidos:** fluxo operacional e fiscal mantido.
+- **Produtos e Cestas:** cadastro de produtos e montagem de cestas com custo interno e preço de venda.
+- **Clientes:** cadastrar e editar.
+- **ANA:** gestão de comportamento, conhecimento, automações, testes e histórico.
+- **Orçamentos:** aplicação integrada ao Supabase e ao Bling.
+- **Bling técnico:** diagnósticos das conexões Bling, Meta e Supabase.
 
-- canônico do site, clientes, Bling e fiscal: `ssbesxgaijknwsjbsbcz`
-- Vitrine Admin e site público usam exclusivamente o Supabase canônico `ssbesxgaijknwsjbsbcz`; o antigo Chat Commerce OS foi retirado do runtime.
+A abertura do sistema direciona para Atendimento. Os fluxos de pedido, montagem, orçamento e link público do pedido permanecem disponíveis.
 
-Os painéis públicos e administrativos permanecem neste repositório e usam o catálogo canônico. Novas áreas administrativas devem reutilizar o projeto Supabase oficial, sem criar bancos paralelos.
+## Runtime do Admin
+
+O JavaScript de operação é gerado de arquivos menores em vitrine/admin/runtime-src/:
+
+    node scripts/build-vitrine-admin-runtime.mjs
+    node scripts/build-vitrine-admin-runtime.mjs --check
+
+Os testes de contrato e escopo ficam em scripts/. Nenhum valor de token ou chave deve ser escrito em documentação ou no código-fonte.

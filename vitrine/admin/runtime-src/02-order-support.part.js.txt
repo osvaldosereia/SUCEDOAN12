@@ -1,0 +1,73 @@
+  async function loadFiscalForOrders(rows){
+    const queue=(rows||[]).filter(o=>!state.fiscalByOrder[o.id]);
+    let cursor=0;
+    async function worker(){
+      while(cursor<queue.length){
+        const o=queue[cursor++];
+        if(state.fiscalByOrder[o.id])continue;
+        try{
+          state.fiscalByOrder[o.id]=await api('order_fiscal_status',{}, {
+            method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id})
+          });
+        }catch(e){
+          state.fiscalByOrder[o.id]={error:String(e?.message||'fiscal_unavailable')};
+        }
+      }
+    }
+    await Promise.all([worker(),worker(),worker()]);
+  }
+  function financeTokenPayload(token){
+    try{
+      const raw=String(token||'').split('.')[1]||'';
+      const pad=raw.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-raw.length%4)%4);
+      return JSON.parse(atob(pad));
+    }catch{return {}}
+  }
+  function financeSessionToken(){
+    const token=sessionStorage.getItem('da_finance_access_token_v1')||'';
+    if(!token)return '';
+    const exp=Number(financeTokenPayload(token)?.exp||0);
+    if(!exp||exp<=Math.floor(Date.now()/1000)+60){
+      sessionStorage.removeItem('da_finance_access_token_v1');
+      return '';
+    }
+    return token;
+  }
+  function clearFinanceSession(expectedToken=''){
+    const current=financeSessionToken();
+    if(expectedToken&&current&&current!==expectedToken)return false;
+    sessionStorage.removeItem('da_finance_access_token_v1');
+    return true;
+  }
+  async function adminStepUp(){return await financeStepUp()}
+  async function financeStepUp(){
+    const existing=financeSessionToken();
+    if(existing)return existing;
+    if(state.financeAuthPromise)return await state.financeAuthPromise;
+    state.financeAuthPromise=(async()=>{
+      try{
+        const authRes=await fetch(FINANCE_AUTH_API,{
+          method:'POST',
+          headers:{'Content-Type':'application/json','apikey':FINANCE_PUBLIC_KEY},
+          body:JSON.stringify({pin:'000000'}),
+          cache:'no-store'
+        });
+        const auth=await authRes.json().catch(()=>({}));
+        if(!authRes.ok||!auth?.ok)throw new Error(auth?.error||'admin_auto_auth_failed');
+        const verifyRes=await fetch(FINANCE_VERIFY_API,{
+          method:'POST',
+          headers:{'Content-Type':'application/json','apikey':FINANCE_PUBLIC_KEY},
+          body:JSON.stringify({token_hash:auth.token_hash,type:auth.verification_type||'email'}),
+          cache:'no-store'
+        });
+        const verified=await verifyRes.json().catch(()=>({}));
+        const token=String(verified?.access_token||'').trim();
+        if(!verifyRes.ok||!token)throw new Error(verified?.msg||verified?.error_description||verified?.error||'admin_auto_session_failed');
+        sessionStorage.setItem('da_finance_access_token_v1',token);
+        return token;
+      }finally{
+        state.financeAuthPromise=null;
+      }
+    })();
+    return await state.financeAuthPromise;
+  }

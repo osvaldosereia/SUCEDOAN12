@@ -1,0 +1,87 @@
+  async function renderBalance(){
+    const content=$('#content');
+    content.innerHTML='<div class="page-head"><div><h1>Revisar retorno</h1><p>Registre apenas os itens avariados, vencidos ou faltantes que voltaram do cliente.</p></div></div>'+
+      '<section class="panel" style="padding:16px"><label><span>Buscar produto</span><input id="balanceManualSearch" type="search" autocomplete="off" placeholder="Nome ou código"></label><div id="balanceManualResults" class="balance-search-results"></div>'+
+      '<div id="balanceSelectedProduct" class="sub" style="margin:12px 0">Selecione um produto para continuar.</div>'+
+      '<div class="form-grid"><label><span>Tipo</span><select id="inventoryIncidentType"><option value="damage">Avaria</option><option value="expired">Vencido</option><option value="loss">Perda / extravio</option><option value="return">Retorno para inspeção</option><option value="other">Outro</option></select></label><label><span>Quantidade</span><input id="balanceQuantity" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0"></label></div>'+
+      '<label style="display:block;margin-top:12px"><span>Observação</span><input id="inventoryIncidentNote" maxlength="500" placeholder="Opcional"></label>'+
+      '<button class="primary" id="balanceConfirm" type="button" disabled style="margin-top:14px">Registrar ocorrência</button></section>'+
+      '<section class="panel" style="margin-top:14px;padding:16px"><strong>Ocorrências abertas</strong><div id="balanceHistory" class="simple-list" style="margin-top:10px"></div></section>';
+    $('#inventoryIncidentType').value=state.inventoryIncidentType||'damage';
+    $('#inventoryIncidentType').onchange=e=>state.inventoryIncidentType=e.currentTarget.value;
+    $('#inventoryIncidentNote').value=state.inventoryIncidentNote||'';
+    $('#inventoryIncidentNote').oninput=e=>state.inventoryIncidentNote=e.currentTarget.value;
+    $('#balanceQuantity').value=state.balanceQty||'';
+    $('#balanceQuantity').oninput=e=>{state.balanceQty=e.currentTarget.value;paintBalance()};
+    $('#balanceManualSearch').oninput=e=>{
+      clearTimeout(state.balanceManualSearchTimer);
+      const query=String(e.currentTarget.value||'').trim();
+      if(query.length<2){$('#balanceManualResults').innerHTML='';return}
+      state.balanceManualSearchTimer=setTimeout(()=>searchBalanceProducts(query),220);
+    };
+    $('#balanceConfirm').onclick=confirmBalance;
+    paintBalance();
+    await loadInventoryIncidents();
+  }
+
+  async function searchBalanceProducts(query){
+    const host=$('#balanceManualResults');if(!host)return;
+    host.innerHTML='<div class="loading">Buscando…</div>';
+    try{
+      const data=await api('products',{q:query,limit:10});
+      const rows=data.products||[];
+      host.innerHTML=rows.length?rows.map(p=>'<button class="balance-search-result" type="button" data-balance-pick="'+esc(p.id)+'"><span><strong>'+esc(p.name)+'</strong><small class="sub">'+esc(p.gtin||p.sku||'Sem código')+'</small></span></button>').join(''):'<div class="history-empty">Nenhum produto encontrado.</div>';
+      host.querySelectorAll('[data-balance-pick]').forEach(button=>button.onclick=()=>{
+        const product=rows.find(row=>row.id===button.dataset.balancePick);
+        if(product)selectBalanceProduct(product);
+      });
+    }catch{
+      host.innerHTML='<div class="history-empty">Não consegui buscar agora.</div>';
+    }
+  }
+
+  function selectBalanceProduct(product){
+    state.balanceProduct=product;
+    paintBalance();
+  }
+
+  function paintBalance(){
+    if(state.tab!=='balance')return;
+    const selected=$('#balanceSelectedProduct'),quantity=$('#balanceQuantity'),confirm=$('#balanceConfirm');
+    if(!selected||!quantity||!confirm)return;
+    selected.textContent=state.balanceProduct?state.balanceProduct.name+' · '+(state.balanceProduct.gtin||state.balanceProduct.sku||'Sem código'):'Selecione um produto para continuar.';
+    confirm.disabled=!state.balanceProduct||!(Number(quantity.value)>0);
+    const history=$('#balanceHistory');
+    const rows=state.inventoryIncidents||[];
+    if(history)history.innerHTML=rows.length?rows.map(row=>'<div class="simple-row"><div class="simple-main"><strong>'+esc(row.product_name)+'</strong><small>'+esc(inventoryIncidentLabel(row.incident_type))+' · '+esc(dateTime(row.created_at))+(row.note?' · '+esc(row.note):'')+'</small></div><div class="simple-number">'+esc(fmtQty(row.quantity))+'</div></div>').join(''):'<div class="history-empty">Nenhuma ocorrência aberta.</div>';
+  }
+
+  async function confirmBalance(){
+    if(!state.balanceProduct||!(Number(state.balanceQty)>0))return;
+    const button=$('#balanceConfirm'),operator=requireOperator();if(!operator)return;
+    button.disabled=true;button.textContent='Salvando…';
+    try{
+      const data=await api('inventory_incident_create',{},{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          product_id:state.balanceProduct.id,
+          incident_type:state.inventoryIncidentType||'damage',
+          quantity:Number(state.balanceQty),
+          operator,
+          note:state.inventoryIncidentNote||''
+        })
+      });
+      toast(inventoryIncidentLabel(data.incident?.incident_type)+' registrada');
+      state.balanceProduct=null;state.balanceQty='';state.inventoryIncidentNote='';
+      $('#balanceManualSearch').value='';
+      $('#balanceManualResults').innerHTML='';
+      $('#balanceQuantity').value='';
+      $('#inventoryIncidentNote').value='';
+      await loadInventoryIncidents();
+      button.textContent='Registrar ocorrência';
+    }catch(error){
+      toast(errorMessage(error.message));
+      button.disabled=false;button.textContent='Registrar ocorrência';
+    }
+  }

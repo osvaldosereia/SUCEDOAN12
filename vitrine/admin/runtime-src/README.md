@@ -1,30 +1,22 @@
-# Vitrine Admin — runtime organizado em fontes ordenadas
+# Vitrine Admin runtime
 
-O arquivo servido pelo navegador continua sendo `/vitrine/admin/admin-runtime.js`.
-O código-fonte foi separado em nove fragmentos ordenados dentro de `runtime-src/`.
+O navegador executa `vitrine/admin/admin-runtime.js`, gerado pela concatenação ordenada dos fragmentos desta pasta. Eles compartilham a mesma sessão para preservar os fluxos de Pedidos e as integrações existentes.
 
-**Importante:** cada `*.part.js.txt` é um fragmento textual, não um módulo JavaScript independente. Os nomes indicam aproximadamente a região do código, não isolamento de domínio. As fronteiras atuais foram alinhadas a declarações de funções de nível superior; nenhuma função foi cortada entre dois fragmentos. Esta primeira divisão é **estrutural e conservadora**: o build recompõe byte a byte o mesmo runtime e mantém uma única IIFE, com o mesmo escopo, hoisting, dependências e ordem de execução. Não carregar os fragmentos diretamente no HTML.
+## Fragmentos
 
-## Comandos
+- `01-core-navigation`: navegação, orçamentos e ponte Meta/PapoAI.
+- `02-order-support`: consulta fiscal de Pedidos e autenticação compartilhada do Admin.
+- `03-operations`: lista simples de produtos e cestas.
+- `04-products`: formulário de produtos e consulta de ocorrências.
+- `05-order-stock-review`: registro de itens avariados no fluxo de retorno de Pedidos.
+- `07-customers`: edição de clientes e diagnóstico Bling, Meta e Supabase.
+- `08-orders-detail` e `09-bootstrap`: detalhe, fiscal e operações preservadas de Pedidos.
+
+Cada fragmento contém declarações completas e é concatenado pelo gerador. Não o carregue diretamente no HTML.
+
+## Build
 
 ```sh
-python3 scripts/build-vitrine-admin-runtime.py --check
-python3 scripts/build-vitrine-admin-runtime.py
+node scripts/build-vitrine-admin-runtime.mjs
+node scripts/build-vitrine-admin-runtime.mjs --check
 ```
-
-A primeira opção verifica se o runtime distribuído está idêntico à concatenação dos fragmentos; a segunda regenera o runtime distribuído. O HTML permanece apontando para o mesmo arquivo `admin-runtime.js`.
-
-## Manutenção
-
-1. Edite os fragmentos em ordem, mantendo as fronteiras em declarações de funções completas.
-2. Regenere `admin-runtime.js` e inclua o arquivo gerado no mesmo commit.
-3. Use `--check` para detectar divergências.
-4. Uma futura modularização semântica por domínio exigirá extrair funções completas e injetar explicitamente dependências compartilhadas; **não** mover declarações de uma IIFE para scripts globais, pois isso pode alterar o funcionamento.
-
-Esta rodada deliberadamente não altera APIs, autenticação, impressão, fiscal, estoque, atendimento, Bling ou montagem de pedidos.
-
-## Rodada de alinhamento de fronteiras
-
-Os nove fragmentos foram redistribuídos sem modificar nenhum caractere do runtime recomposto. Os oito cortes ocorrem imediatamente antes das funções: `confirmDeliveryFromExpedition`, `openFinanceEditor`, `openProductEditor`, `processInventorySheetEntries`, `loadPurchases`, `xmlCatalogDetailRefresh`, `openManualBasketConfig` e `fiscalBlockReasonLabel`. A concatenação foi comparada diretamente ao arquivo `admin-runtime.js` e resultou idêntica.
-
-Os nomes dos fragmentos continuam indicativos, não representam ainda módulos independentes nem isolamento perfeito por domínio.

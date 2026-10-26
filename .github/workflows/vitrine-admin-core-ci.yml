@@ -1,0 +1,51 @@
+name: Vitrine Admin core
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/vitrine-admin-core-ci.yml'
+      - 'index.html'
+      - 'vitrine/admin/**'
+      - 'orcamento/**'
+      - 'scripts/build-vitrine-admin-runtime.mjs'
+      - 'scripts/test-attendance-simple-chat.mjs'
+      - 'scripts/test-admin-ana-section-v1.mjs'
+      - 'scripts/test-vitrine-admin-*.mjs'
+      - 'scripts/test-orcamento-*.mjs'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/vitrine-admin-core-ci.yml'
+      - 'index.html'
+      - 'vitrine/admin/**'
+      - 'orcamento/**'
+      - 'scripts/build-vitrine-admin-runtime.mjs'
+      - 'scripts/test-attendance-simple-chat.mjs'
+      - 'scripts/test-admin-ana-section-v1.mjs'
+      - 'scripts/test-vitrine-admin-*.mjs'
+      - 'scripts/test-orcamento-*.mjs'
+
+permissions:
+  contents: read
+
+jobs:
+  admin-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/build-vitrine-admin-runtime.mjs --check
+      - run: node --check vitrine/admin/admin-runtime.js
+      - run: node --check vitrine/admin/atendimento/attendance-app.js
+      - run: node --check vitrine/admin/atendimento/attendance-media-send.js
+      - run: node scripts/test-attendance-simple-chat.mjs
+      - run: node scripts/test-vitrine-admin-navigation.mjs
+      - run: node scripts/test-admin-ana-section-v1.mjs
+      - run: node scripts/test-vitrine-admin-simple-products.mjs
+      - run: node scripts/test-vitrine-admin-simple-baskets-customers.mjs
+      - run: node scripts/test-vitrine-admin-repository-scope.mjs
+      - run: node scripts/test-orcamento-admin-integration.mjs
+      - run: node scripts/test-orcamento-lazy-product-search.mjs
+      - run: node scripts/test-orcamento-modos-v2.mjs

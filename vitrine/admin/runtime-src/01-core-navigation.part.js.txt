@@ -16,15 +16,11 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderStatusTab:'new',orderCounts:{},orderOffset:0,orderHasMore:false,orderRequestSequence:0,orderSearchTimer:null,orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productSort:'',baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',sourceSystem:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},productFacetsCache:{},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',balanceSubtab:'scanner',balanceGondola:'',balanceValidity:'',balanceLotId:'',balanceNeedsPhoto:false,balanceReadiness:null,balanceCameraStream:null,balanceCameraDetector:null,balanceCameraRunning:false,balanceLastCameraEan:'',balanceLastCameraAt:0,balanceManualSearchTimer:null,inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',purchaseAdvancedOpen:false,purchaseAdvancedLoaded:false,purchaseAdvancedLoading:false,purchaseAdvancedError:'',purchaseBlingCompareOpen:false,purchaseBlingCompareLoaded:false,purchaseBlingCompareLoading:false,purchaseBlingCompareError:'',purchaseBlingCompareKey:'',opsSummary:null,opsAttention:null,opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],deliveryCatalog:{regions:[],drivers:[],vehicles:[]},deliveryPlan:{region_id:'',driver_id:'',vehicle_id:''},driverVehicle:'all'};
+  const state={tab:'attendance',orderFilter:'all',orderStatusTab:'new',orderCounts:{},orderOffset:0,orderHasMore:false,orderRequestSequence:0,orderSearchTimer:null,orderIssueFilter:'all',orderQuery:'',orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},products:[],productOffset:0,productNext:null,productSort:'',baskets:[],basketSummary:null,basketDetail:null,basketLotDraft:null,basketKits:[],basketKitSummary:null,basketKitDetail:null,basketKitLotDraft:null,basketItemSelectedProduct:null,basketItemSearchTimer:null,productFilters:{category:'',subcategory:'',active:'',sourceSystem:'',basketKit:'',lotStatus:''},productFacets:{categories:[],subcategories:[]},productFacetsCache:{},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',balanceSubtab:'scanner',balanceGondola:'',balanceValidity:'',balanceLotId:'',balanceNeedsPhoto:false,balanceReadiness:null,balanceCameraStream:null,balanceCameraDetector:null,balanceCameraRunning:false,balanceLastCameraEan:'',balanceLastCameraAt:0,balanceManualSearchTimer:null,inventorySheetScan:null,inventorySheetBusy:false,inventorySheetPreviewUrl:'',inventorySheetBatches:[],inventorySheetOcrWorkers:null,inventorySheetQueue:[],inventorySheetProcessing:false,inventorySheetPendingManual:[],inventorySheetPendingSummary:{count:0},inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',gondolaMode:'assign',gondolaCountProduct:null,gondolaCountQty:'',bling:null,blingProbe:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,purchaseExpandedId:null,purchaseDetailCache:{},purchaseCatalogQueue:null,purchaseCatalogFilter:'pending',purchaseCatalogSearch:'',purchaseAdvancedOpen:false,purchaseAdvancedLoaded:false,purchaseAdvancedLoading:false,purchaseAdvancedError:'',purchaseBlingCompareOpen:false,purchaseBlingCompareLoaded:false,purchaseBlingCompareLoading:false,purchaseBlingCompareError:'',purchaseBlingCompareKey:'',opsSummary:null,opsAttention:null,opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
-  const MARKETING_BRANDS=[{key:'nivea',label:'NIVEA'},{key:'elseve',label:'Elseve'}];
-  const MARKETING_SEGMENTS=[{key:'bebe',label:'Bebê'},{key:'cabelos',label:'Cabelos'},{key:'beleza',label:'Beleza e cuidados'},{key:'higiene',label:'Higiene pessoal'},{key:'limpeza',label:'Limpeza'},{key:'lavanderia',label:'Lavanderia'},{key:'pet',label:'Pet'},{key:'casa',label:'Casa'},{key:'doces-lanches',label:'Doces e lanches'}];
-  function marketingSegmentOf(p){const sub=normalize(p?.subcategory||''),leaf=normalize(p?.subsubcategory||'');if(sub.includes('bebe')||leaf.includes('fralda')||leaf.includes('bebe'))return 'Bebê';if(sub==='cabelos')return 'Cabelos';if(sub.includes('beleza'))return 'Beleza e cuidados';if(sub.includes('higiene pessoal'))return 'Higiene pessoal';if(sub==='limpeza')return 'Limpeza';if(sub==='lavanderia')return 'Lavanderia';if(sub==='pets'||leaf.includes('pet')||leaf==='caes'||leaf==='gatos')return 'Pet';if(sub.includes('casa e utilidades'))return 'Casa';if(['biscoitos','chocolates e doces','balas e chicletes','salgadinhos e petiscos','bebidas','cereais e barras'].includes(leaf))return 'Doces e lanches';return 'Outros'}
   function adminSlug(v){return normalize(v).replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60)}
-  function marketingCampaignSlug(v){return adminSlug(v||'')}
   const OPERATOR_KEY='da_operator_name_v1';
   function currentOperator(){return 'Operação'}
   function paintOperatorBadge(){
@@ -154,8 +150,9 @@
   }
 
   function setTab(tab){
-    if(tab!=='products'){disconnectProductScrollObserver();productListGeneration++}
-    if(state.tab==='balance'&&tab!=='balance')stopBalanceCamera();
+    const allowedTabs=new Set(['attendance','orders','products','customers','ana','baskets','quotes','bling','balance']);
+    if(!allowedTabs.has(tab))tab='attendance';
+    if(tab!=='products')disconnectProductScrollObserver();
     if(tab!=='orders')document.body.classList.remove('orders-tab-active');
     state.tab=tab;
     try{
@@ -166,35 +163,17 @@
     document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
     syncNavGroups();
     closeNavMenus();
-    if(tab==='today')renderToday();
     if(tab==='attendance')renderAttendance();
-    if(tab==='ana')import('/vitrine/admin/ana/ana-admin.js?v=1').then(module=>module.mountAnaAdmin($('#content'))).catch(error=>{$('#content').innerHTML='<section class="panel"><h1>ANA</h1><p>Não foi possível abrir a gestão da ANA.</p></section>';console.error('admin_ana_load',error)});
     if(tab==='products')renderProducts();
     if(tab==='baskets')renderBaskets();
     if(tab==='quotes')renderQuotes();
-    if(tab==='marketing')renderMarketing();
-    if(tab==='expiry')renderExpirations();
-    if(tab==='purchases')renderPurchases();
-    if(tab==='balance')renderBalance();
-    if(tab==='gondolas')renderGondolas();
     if(tab==='customers')renderCustomers();
-    if(tab==='finance')renderFinance();
+    if(tab==='ana')import('/vitrine/admin/ana/ana-admin.js?v=1').then(module=>module.mountAnaAdmin($('#content'))).catch(error=>{$('#content').innerHTML='<section class="panel"><h1>ANA</h1><p>Não foi possível abrir a gestão da ANA.</p></section>';console.error('admin_ana_load',error)});
     if(tab==='bling')renderBling();
+    if(tab==='balance')renderBalance();
     if(tab==='orders')return renderOrders();
-    if(tab==='expedition')renderExpedition();
-    if(tab==='driver')renderDriver();
-    if(tab==='closure')renderClosure();
   }
   document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
-
-  async function renderMarketing(){
-    const content=$('#content');content.innerHTML='<div class="page-head"><div><h1>Marketing</h1><p>Radar de oportunidades, segmentação e links de campanha. Nenhum envio é feito por esta tela.</p></div><button class="secondary" type="button" id="refreshMarketing">Atualizar</button></div><div class="panel"><div class="loading" id="marketingLoading">Lendo ofertas ativas do catálogo…</div></div>';
-    if($('#refreshMarketing'))$('#refreshMarketing').onclick=renderMarketing;
-    try{const data=await storefrontApi('offers'),offers=Array.isArray(data.offers)?data.offers:[],groups=new Map();for(const p of offers){const name=marketingSegmentOf(p),x=groups.get(name)||{name,offers:0,stock:0,brands:new Set()};x.offers++;x.stock+=Number(p.stock_quantity||0);if(p.brand)x.brands.add(p.brand);groups.set(name,x)}const cards=[...groups.values()].sort((a,b)=>b.offers-a.offers).map(x=>'<div class="marketing-card"><h3>'+esc(x.name)+'</h3><p>Oportunidade baseada nas ofertas públicas ativas agora.</p><div class="marketing-kpis"><span>'+x.offers+' ofertas</span><span>'+fmtQty(x.stock)+' un. disponíveis</span>'+(x.brands.size?'<span>'+esc([...x.brands].slice(0,3).join(' · '))+'</span>':'')+'</div></div>').join('')||'<div class="empty">Nenhuma oferta ativa para montar radar agora.</div>';
-      content.innerHTML='<div class="page-head"><div><h1>Marketing</h1><p>Inteligência comercial sem disparo automático.</p></div><button class="secondary" type="button" id="refreshMarketing">Atualizar</button></div><section><div class="section-title" style="border-top:0;margin-top:0">Radar de Marketing</div><div class="marketing-grid">'+cards+'</div></section><section class="marketing-section"><div class="section-title">Segmentação</div><p class="muted">Os componentes automáticos das cestas não contam para afinidade de categoria ou marca. Só produtos avulsos alimentam os sinais do pedido.</p><div class="marketing-chip-list" style="margin-top:9px">'+MARKETING_SEGMENTS.map(x=>'<span class="marketing-chip">INT_'+esc(x.key.replace('-','_').toUpperCase())+'</span>').join('')+'</div><div class="section-title">Marcas autorizadas</div><div class="marketing-chip-list">'+MARKETING_BRANDS.map(x=>'<span class="marketing-chip">'+esc(x.label)+'</span>').join('')+'</div><p class="muted" style="margin-top:8px">A allowlist persistente já está preparada no banco. Enquanto o projeto está no limite de Edge Functions, esta versão usa a mesma lista fixa no site/Admin e não cria dependência de função nova.</p></section><section class="marketing-section"><div class="section-title">Links / Campanhas</div><div class="marketing-builder"><label><span>Canal</span><select id="mktChannel"><option value="0975">0975</option><option value="1018">1018</option></select></label><label><span>Destino</span><select id="mktTarget"><option value="offers">Ofertas</option>'+MARKETING_SEGMENTS.map(x=>'<option value="category:'+esc(x.key)+'">'+esc(x.label)+'</option>').join('')+'</select></label><label><span>Marca (opcional)</span><select id="mktBrand"><option value="">Nenhuma</option>'+MARKETING_BRANDS.map(x=>'<option value="'+esc(x.key)+'">'+esc(x.label)+'</option>').join('')+'</select></label><label style="grid-column:1/-1"><span>Nome da campanha (opcional)</span><input id="mktCampaign" placeholder="ex.: semana_bebe_out26"></label><div class="marketing-url"><input id="mktUrl" readonly><button class="primary" type="button" id="copyMktUrl">Copiar link</button></div></div></section><section class="marketing-section"><div class="section-title">Configuração</div><div class="panel" style="padding:12px"><strong>Prioridade atual de CTA pós-pedido</strong><p class="muted">Bebê → Cabelos → Beleza → Limpeza → Lavanderia → Pet → Ofertas para cesta.</p><p class="muted">O CTA só é sinalizado quando o cliente autorizou ofertas pelo WhatsApp.</p></div></section>';
-      const updateLink=()=>{const channel=$('#mktChannel')?.value||'0975',target=$('#mktTarget')?.value||'offers',brand=$('#mktBrand')?.value||'',campaign=marketingCampaignSlug($('#mktCampaign')?.value||''),u=new URL('https://www.donaantonia.com.br/');u.searchParams.set('origem',channel);if(brand)u.searchParams.set('marca',brand);else if(target==='offers')u.searchParams.set('ofertas','1');else if(target.startsWith('category:'))u.searchParams.set('categoria',target.slice(9));if(campaign)u.searchParams.set('campanha',campaign);if($('#mktUrl'))$('#mktUrl').value=u.toString()};['mktChannel','mktTarget','mktBrand','mktCampaign'].forEach(id=>$('#'+id)?.addEventListener(id==='mktCampaign'?'input':'change',updateLink));$('#mktTarget')?.addEventListener('change',()=>{if($('#mktBrand'))$('#mktBrand').value='';updateLink()});$('#mktBrand')?.addEventListener('change',()=>updateLink());if($('#copyMktUrl'))$('#copyMktUrl').onclick=async()=>{updateLink();const value=$('#mktUrl')?.value||'';try{await navigator.clipboard.writeText(value);toast('Link copiado')}catch{const i=$('#mktUrl');i?.select();document.execCommand('copy');toast('Link copiado')}};if($('#refreshMarketing'))$('#refreshMarketing').onclick=renderMarketing;updateLink();
-    }catch(e){content.innerHTML='<div class="page-head"><div><h1>Marketing</h1><p>Radar de oportunidades.</p></div></div><div class="empty">Não consegui carregar as ofertas agora.<br><button class="text" id="retryMarketing">Tentar novamente</button></div>';if($('#retryMarketing'))$('#retryMarketing').onclick=renderMarketing}
-  }
 
   async function renderQuotes(){
     const content=$('#content');
@@ -389,55 +368,6 @@
     if(filter==='problems')return state.orders.filter(o=>orderProblemReasons(o).length>0).length;
     return state.orders.filter(o=>orderFilterMatch(o,filter)).length;
   }
-  function todayCardCount(key){
-    if(key==='closure')return Number(state.closurePendingCount||0);
-    return orderFilterCount(key);
-  }
-  function renderTodayCards(){
-    const cards=[
-      ['new','Novos','Pedidos para confirmar'],
-      ['separate','Separação','Pedidos para separar'],
-      ['ready','Prontos','Aguardando saída'],
-      ['delivery','Em entrega','Pedidos na rua'],
-      ['delivered','Entregues hoje','Conferir fechamento'],
-      ['closure','Fechamento','Recebimento ou fiscal pendente'],
-      ['backlog','De dias anteriores','Não deixar pedido para trás'],
-      ['problems','Precisa de você','Pendências operacionais']
-    ];
-    return '<div class="ops-cards">'+cards.map(([key,label,sub])=>{
-      const count=todayCardCount(key);
-      const danger=(key==='problems'||key==='backlog'||key==='closure')&&count;
-      const target=key==='closure'?' data-today-tab="closure"':' data-today-filter="'+key+'"';
-      return '<button class="ops-card '+(danger?'danger':'')+'" type="button"'+target+'><small>'+esc(label)+'</small><strong>'+count+'</strong><span>'+esc(sub)+'</span></button>';
-    }).join('')+'</div>'+
-      renderTodayIssueBreakdown();
-  }
-  function renderTodayIssueBreakdown(){
-    const issues=[
-      ['address','Endereço'],
-      ['customer','Cliente'],
-      ['payment','Pagamento'],
-      ['history','Histórico'],
-      ['stock','Estoque']
-    ].map(([key,label])=>[key,label,orderIssueCount(key)]).filter(([, ,count])=>count>0);
-    if(!issues.length)return '';
-    return '<div class="order-filters" style="margin:-2px 0 14px"><span class="filter-count">Pendências:</span>'+
-      issues.map(([key,label,count])=>'<button class="filter-chip danger" type="button" data-today-issue="'+key+'">'+esc(label)+' · '+count+'</button>').join('')+
-    '</div>';
-  }
-  function renderTodayExpiryAlert(){
-    const data=state.expiryAlerts||{},s=data.summary||{},total=Number(s.total||0);
-    if(!total)return '';
-    const urgent=Number(s.due_today||0)+Number(s.days_1_7||0);
-    const cls=urgent?' danger':'';
-    const parts=[];
-    if(Number(s.due_today||0))parts.push(s.due_today+' vence(m) hoje');
-    if(Number(s.days_1_7||0))parts.push(s.days_1_7+' em até 7 dias');
-    if(Number(s.days_8_15||0))parts.push(s.days_8_15+' em 8–15 dias');
-    if(Number(s.days_16_30||0))parts.push(s.days_16_30+' em 16–30 dias');
-    return '<div class="bling-banner expiry-alert-banner'+cls+'"><strong>Validades exigem atenção · '+esc(total)+' produto(s) vencem em até 30 dias</strong><small>'+esc(parts.join(' · '))+'</small><div class="bling-actions"><button class="secondary" type="button" data-today-expiry>Ver validades</button></div></div>';
-  }
-
   async function reconnectBlingOauth(){
     const ok=confirm('Reconectar o Bling agora?\n\nUse este botão depois de salvar os novos escopos no aplicativo do Bling. Você será enviado ao Bling para autorizar novamente e depois voltará automaticamente para este Admin.');
     if(!ok)return;
@@ -454,66 +384,12 @@
     try{
       const data=await api('bling_status_catalog_probe',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
       toast('Permissão do Bling validada');
-      await renderToday();
+      await loadBlingStatus();
       return data;
     }catch(e){
       toast(errorMessage(e.message));
       if(btn){btn.disabled=false;btn.textContent='Testar novamente'}
     }
-  }
-
-  function attentionTargetTab(a){
-    if(a?.type==='product_location_incomplete')return 'gondolas';
-    if(a?.type==='bling_scope_missing')return 'bling';
-    if(a?.type==='papoai_legacy_endpoint')return 'more';
-    return 'today';
-  }
-  function renderOpsAttention(){
-    if(state.opsAttention===null)return '<section class="panel" style="margin-bottom:14px"><div class="loading">Carregando pendências…</div></section>';
-    const items=Array.isArray(state.opsAttention)?state.opsAttention:[];
-    const rankLabel={critical:'Crítica',high:'Alta',normal:'Normal',low:'Baixa'};
-    if(!items.length)return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px"><strong>Precisa de você</strong><span class="muted">Nenhuma pendência aberta.</span></div></section>';
-    return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px 14px 0"><strong>Precisa de você</strong><span class="muted">'+items.length+' pendência'+(items.length===1?'':'s')+' aberta'+(items.length===1?'':'s')+'</span></div><div style="padding:8px 14px 14px">'+items.slice(0,8).map(a=>'<div class="history-row" style="align-items:center"><div><span class="pill '+(a.priority==='critical'||a.priority==='high'?'danger':'')+'">'+esc(rankLabel[a.priority]||a.priority)+'</span></div><div class="history-main"><strong>'+esc(a.summary)+'</strong><small>'+esc(a.recommended_action||'Abrir para revisar')+'</small></div><button class="quick-link" type="button" data-attention-open="'+esc(a.id)+'" data-attention-tab="'+esc(attentionTargetTab(a))+'">Abrir</button></div>').join('')+'</div></section>';
-  }
-
-  function renderOpsPrintQueue(){
-    const q=state.opsPrintQueue||{},jobs=Array.isArray(q.jobs)?q.jobs:[];
-    if(!jobs.length)return '';
-    const active=jobs.filter(j=>['pending','failed','claimed'].includes(j.status));
-    if(!active.length)return '';
-    const label={pending:'Aguardando',failed:'Falhou',claimed:'Em impressão'};
-    return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px 14px 0"><strong>Fila de impressão</strong><span class="muted">a impressão automática ainda está em homologação</span></div><div style="padding:8px 14px 14px">'+active.slice(0,8).map(j=>'<div class="history-row" style="align-items:center"><span class="pill '+(j.status==='failed'?'danger':'')+'">'+esc(label[j.status]||j.status)+'</span><div class="history-main"><strong>Separação · #'+esc(orderDisplayCode(state.orders.find(o=>String(o.id)===String(j.entity_id))))+'</strong><small>'+esc(j.printer_profile||'85 mm')+(j.last_error?' · '+esc(j.last_error):'')+'</small></div><button class="quick-link" type="button" data-print-order="'+esc(j.entity_id)+'">Abrir pedido</button></div>').join('')+'</div></section>';
-  }
-
-  function renderOpsTimeline(){
-    const rows=Array.isArray(state.opsTimeline)?state.opsTimeline:[];
-    if(!rows.length)return '';
-    const sourceLabel={dona_antonia:'Dona Antônia',storefront:'Site',bling:'Bling',papoai:'PapoAI',chatgpt:'ChatGPT'};
-    return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px 14px 0"><strong>Atividade recente</strong><span class="muted">eventos importantes · sem log técnico bruto</span></div><div style="padding:8px 14px 14px">'+rows.slice(0,12).map(e=>'<div class="history-row"><div><span class="pill '+(e.severity==='error'||e.severity==='critical'?'danger':'')+'">'+esc(sourceLabel[e.source_system]||e.source_system||'Sistema')+'</span></div><div class="history-main"><strong>'+esc(e.summary||e.event_type||'Evento')+'</strong><small>'+esc(e.actor_label||e.actor_type||'Sistema')+' · '+esc(dateTime(e.occurred_at))+'</small></div></div>').join('')+'</div></section>';
-  }
-
-  function renderOps2Summary(){
-    if(state.opsSummary===null)return '<section class="panel" style="margin-bottom:14px"><div class="loading">Carregando indicadores operacionais…</div></section>';
-    const s=state.opsSummary||{};
-    const w=s.whatsapp||{},a=s.attention||{},ap=s.approvals||{},i=s.inventory||{},pr=s.printing||{},pay=s.payments||{},del=s.delivery||{},pa=state.opsPapoAi||{};
-    const printNeeds=Number(pr.pending||0)+Number(pr.failed||0);
-    const papoSeen=Number(pa.captured_24h||0),identity=pa.identity||{};
-    const cards=[
-      ['Precisa de humano',Number(w.human_required||0),'Conversas WhatsApp'],
-      ['Atenções',Number(a.open||0),'Fila da Central'],
-      ['Aprovações',Number(ap.pending||0),'Ações aguardando decisão'],
-      ['Ocorrências estoque',Number(i.incidents_open||0),'Avaria / vencido / retorno'],
-      ['Diferenças balanço',Number(i.count_differences_pending||0),'Aguardando reconciliação'],
-      ['Pagamentos p/ Bling',Number(pay.captured_unsynced||0),'Recebidos · sincronização pendente'],
-      ['Retornando',Number(del.returning||0),'Mercadoria voltando ao depósito'],
-      ['Retorno em revisão',Number(del.return_review||0),'Bloqueado para nova saída'],
-      ['PapoAI',papoSeen,pa.capture_enabled?(Number(pa.review_required||0)?Number(pa.review_required||0)+' precisa(m) revisão':Number(pa.conversation_unlinked_24h||0)?Number(pa.conversation_unlinked_24h||0)+' sem conversa':'ponte ok · '+Number(pa.conversation_linked_24h||0)+' vinculado(s)'):'captura desligada'],
-      ['Cadastros pendentes',Number(identity.provisional_without_name||0),Number(identity.site_orders_without_customer_with_phone_31d||0)?Number(identity.site_orders_without_customer_with_phone_31d||0)+' pedido(s) sem cliente':'todos os pedidos com telefone têm cliente'],
-      ['Impressões',printNeeds,printNeeds?'Fila de separação':'Fila em dia'],
-      ['Sem estoque',Number(i.zero_or_negative||0),'Produtos ativos'],
-      ['Vencem em 90 dias',Number(i.expires_90d||0),'Revisar lotes/validade']
-    ];
-    return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px 14px 0"><strong>Central de Controle</strong><span class="muted">visão rápida · sem consultas externas extras</span></div><div class="ops-cards" style="padding:14px">'+cards.map(c=>'<div class="ops-card"><small>'+esc(c[0])+'</small><strong>'+esc(c[1])+'</strong><span>'+esc(c[2])+'</span></div>').join('')+'</div></section>';
   }
 
   function renderPapoAiBridgePanel(){
@@ -565,194 +441,10 @@
         catch{prompt('Link criado. Copie abaixo:',url)}
       }else toast('Link criado');
       const fresh=await api('ops_papoai_capture_status').catch(()=>null);
-      if(fresh?.papoai){state.opsPapoAi=fresh.papoai;const host=$('#papoAiBridgeSlot');if(host)host.innerHTML=renderPapoAiBridgePanel()}
+      if(fresh?.papoai){state.opsPapoAi=fresh.papoai;const host=$('#papoAiBridgeSlot');if(host){host.innerHTML=renderPapoAiBridgePanel();host.querySelector('[data-papoai-create-link]')?.addEventListener('click',createPapoAiCatalogLink)}}
     }catch(e){toast(errorMessage(e.message))}
   }
 
-  async function renderToday(){
-    // CENTRAL_LAZY_ON_DEMAND_V1
-    const content=$('#content');
-    const sectionState=new Map();
-    const sections=[
-      ['orders','Pedidos e expedição','Separação, prontos, entrega e fechamento'],
-      ['health','Saúde do sistema','Produtos, Bling, fiscal, filas e automações'],
-      ['attention','Precisa de atenção','Pendências operacionais que exigem ação'],
-      ['expiry','Estoque e validades','Alertas de validade para revisar'],
-      ['integrations','WhatsApp e integrações','Situação dos canais e integrações'],
-      ['printing','Impressão','Fila de impressão operacional']
-    ];
-    const sectionHtml=sections.map(([key,title,subtitle])=>
-      '<section class="panel" style="margin-bottom:10px">'+
-        '<button class="secondary" type="button" data-central-toggle="'+key+'" aria-expanded="false" style="width:100%;border:0;border-radius:0;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;padding:12px 14px">'+
-          '<span><strong style="display:block">'+esc(title)+'</strong><small class="muted" style="display:block;margin-top:2px">'+esc(subtitle)+'</small></span>'+
-          '<span data-central-status="'+key+'" class="muted" style="white-space:nowrap">Carregar</span>'+
-        '</button>'+
-        '<div id="centralSection-'+key+'" hidden style="border-top:1px solid var(--line);padding:12px 14px"></div>'+
-      '</section>'
-    ).join('');
-    content.innerHTML=
-      '<div class="page-head"><div><h1>Central</h1><p>Acessos rápidos e informações carregadas somente quando você precisar.</p></div><button class="secondary" id="refreshToday">Atualizar</button></div>'+
-      '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px">'+
-        '<button class="secondary" type="button" data-central-shortcut="orders">Pedidos</button>'+
-        '<button class="secondary" type="button" data-central-shortcut="attendance">Atendimento</button>'+
-        '<button class="secondary" type="button" data-central-shortcut="products">Produtos</button>'+
-      '</div>'+sectionHtml;
-    $('#refreshToday').onclick=renderToday;
-    content.querySelectorAll('[data-central-shortcut]').forEach(b=>b.onclick=()=>setTab(b.dataset.centralShortcut));
-
-  async function loadCentralSection(name,body){
-      if(name==='orders'){
-        const [data,closureData]=await Promise.all([
-          api('orders'),
-          api('closure_orders').catch(()=>null)
-        ]);
-        state.orders=data.orders||[];
-        if(closureData){
-          state.closureOrders=closureData.orders||[];
-          state.closurePendingCount=Number(closureData.pending_count||0);
-          state.fiscalByOrder={...state.fiscalByOrder,...(closureData.fiscal_by_order||{})};
-        }else state.closurePendingCount=0;
-        const pending=sortOperationalOrders(state.orders.filter(o=>!['delivered','cancelled'].includes(o.status))).slice(0,8);
-        body.innerHTML=renderTodayCards()+
-          '<div class="panel"><div class="history-title" style="padding:14px 14px 0"><strong>Próximos pedidos</strong><span class="muted">pendências primeiro · depois os mais antigos</span></div><div id="todayOrders"></div></div>';
-        const todayOrders=body.querySelector('#todayOrders');
-        if(todayOrders){
-          todayOrders.innerHTML=pending.length?pending.map(o=>'<button class="history-row today-order-row" type="button" data-today-order="'+esc(o.id)+'"><strong>#'+esc(orderDisplayCode(o))+'</strong><div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+money(o.total_cents)+' · '+esc(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado')+'</small></div><span class="next-action">'+esc(orderNextAction(o))+'</span><span class="today-status">'+statusPill(o.status)+'</span></button>').join(''):'<div class="history-empty">Nenhum pedido pendente agora.</div>';
-          todayOrders.querySelectorAll('[data-today-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.todayOrder));
-        }
-        body.querySelectorAll('[data-today-filter]').forEach(b=>b.onclick=()=>{state.orderFilter=b.dataset.todayFilter;if(state.orderFilter!=='problems')state.orderIssueFilter='all';setTab('orders')});
-        body.querySelectorAll('[data-today-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.todayTab));
-        body.querySelectorAll('[data-today-issue]').forEach(b=>b.onclick=()=>{state.orderFilter='problems';state.orderIssueFilter=b.dataset.todayIssue;setTab('orders')});
-        return;
-      }
-      if(name==='attention'){
-        const attentionData=await api('ops_attention',{limit:20});
-        state.opsAttention=attentionData?.attention||[];
-        body.innerHTML=renderOpsAttention();
-        body.querySelectorAll('[data-attention-open]').forEach(b=>b.onclick=()=>setTab(b.dataset.attentionTab||'today'));
-        return;
-      }
-      if(name==='expiry'){
-        const expiryAlerts=await api('expiry_alerts');
-        state.expiryAlerts=expiryAlerts||null;
-        body.innerHTML=renderTodayExpiryAlert()||'<div class="history-empty">Nenhum alerta de validade agora.</div>';
-        body.querySelectorAll('[data-today-expiry]').forEach(b=>b.onclick=()=>setTab('expiry'));
-        return;
-      }
-      if(name==='integrations'){
-        const papoData=await api('ops_papoai_capture_status').catch(()=>null);
-        state.opsPapoAi=papoData?.papoai||null;
-        body.innerHTML='<div id="integrationOperationalAlert"></div><div id="papoAiBridgeSlot">'+renderPapoAiBridgePanel()+'</div>';
-        const papoLinkBtn=body.querySelector('[data-papoai-create-link]');if(papoLinkBtn)papoLinkBtn.onclick=createPapoAiCatalogLink;
-        body.querySelectorAll('[data-retry-bling-status]').forEach(b=>b.onclick=retryBlingStatusCatalog);
-        await loadOperationalIntegrationAlert();
-        return;
-      }
-      if(name==='printing'){
-        const printData=await api('ops_print_queue',{limit:20});
-        state.opsPrintQueue=printData?.queue||null;
-        body.innerHTML=renderOpsPrintQueue()||'<div class="history-empty">Nenhuma impressão pendente agora.</div>';
-        body.querySelectorAll('[data-print-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.printOrder));
-      }
-    }
-
-    async function toggleCentralSection(name){
-      const body=$('#centralSection-'+name);
-      const button=content.querySelector('[data-central-toggle="'+name+'"]');
-      const status=content.querySelector('[data-central-status="'+name+'"]');
-      if(!body||!button)return;
-      if(!body.hidden){
-        body.hidden=true;
-        button.setAttribute('aria-expanded','false');
-        if(status)status.textContent=sectionState.get(name)==='loaded'?'Abrir':'Carregar';
-        return;
-      }
-      body.hidden=false;
-      button.setAttribute('aria-expanded','true');
-      if(sectionState.get(name)==='loaded'){
-        if(status)status.textContent='Fechar';
-        return;
-      }
-      sectionState.set(name,'loading');
-      if(status)status.textContent='Carregando…';
-      body.innerHTML='<div class="loading">Carregando…</div>';
-      try{
-        await loadCentralSection(name,body);
-        sectionState.set(name,'loaded');
-        if(status)status.textContent='Fechar';
-      }catch(e){
-        sectionState.delete(name);
-        if(status)status.textContent='Tentar novamente';
-        body.innerHTML='<div class="empty">Não consegui carregar este bloco. <button class="text" type="button" data-central-retry> Tentar novamente</button></div>';
-        const retry=body.querySelector('[data-central-retry]');
-        if(retry)retry.onclick=async()=>{body.hidden=true;await toggleCentralSection(name)};
-      }
-    }
-
-    content.querySelectorAll('[data-central-toggle]').forEach(b=>b.onclick=()=>toggleCentralSection(b.dataset.centralToggle));
-  }
-  function expeditionFiscalState(o){
-    if(o?.status==='ready'&&o?.delivery_return?.dispatch_blocked===true)return {authorized:false,title:'Retorno em revisão',detail:'Inspecionar mercadoria antes de nova saída',kind:'warn'};
-    if(o?.status!=='ready')return {authorized:true,title:'',detail:'',kind:'ok'};
-    const f=state.fiscalByOrder[o.id];
-    if(!f)return {authorized:false,title:'Fiscal carregando',detail:'Aguardando conferência',kind:'warn'};
-    if(f.error)return {authorized:false,title:'Fiscal indisponível',detail:'Abra o pedido para revisar',kind:'warn'};
-    const gate=f.dispatch_gate||{};
-    if(gate.authorized===true&&gate.allowed===true){
-      return {
-        authorized:true,
-        title:'Fiscal autorizado',
-        detail:(gate.bling_invoice_number?'NF-e '+gate.bling_invoice_number:'Liberado para saída'),
-        kind:'ok'
-      };
-    }
-    return {
-      authorized:false,
-      title:'Fiscal pendente',
-      detail:'Emitir NF-e antes da saída',
-      kind:'warn'
-    };
-  }
-  function fiscalAuthorizedForDispatch(o){
-    return expeditionFiscalState(o).authorized===true;
-  }
-
-  function expeditionRow(o){
-    const a=o.delivery_address_snapshot||{};
-    const address=[a.street,a.number,a.district,a.city].filter(Boolean).join(', ')||'Endereço não informado';
-    const payment=actualPaymentText(o)||(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado');
-    const fiscal=expeditionFiscalState(o),ret=o.delivery_return||null;
-    const returnNote=ret
-      ? '<small class="warn-text">'+(ret.status==='returning'?'Retornando ao depósito':ret.status==='returned_review'?'Retorno em revisão':'Retorno')+' · '+esc(ret.reason_label||'Motivo não informado')+'</small>'
-      : '';
-    const wa=whatsappHref(o.whatsapp_phone_e164||a.phone||'');
-    const maps=mapsHrefFromAddress(a);
-    const selected=state.expeditionSelected.includes(o.id);
-    const deliveryActions=o.status==='out_for_delivery'
-      ? (ret?.status==='returning'
-        ? '<button class="quick-link primary-link" type="button" data-confirm-return="'+esc(o.id)+'">Confirmar retorno</button>'
-        : '<button class="quick-link primary-link" type="button" data-confirm-delivery="'+esc(o.id)+'">Confirmar entrega</button><button class="quick-link" type="button" data-return-expedition="'+esc(o.id)+'">Não entregou</button>')
-      : '';
-    return '<div class="history-row dispatch-row">'+
-      '<div>'+(o.status==='ready'&&fiscal.authorized?'<label class="dispatch-select"><input type="checkbox" data-dispatch-select="'+esc(o.id)+'" '+(selected?'checked':'')+'>#'+esc(orderDisplayCode(o))+'</label>':'<strong>#'+esc(orderDisplayCode(o))+'</strong>')+'<span class="sub">'+esc(relativeAge(o.created_at))+'</span>'+(o.status==='ready'?'<span class="sub '+(fiscal.authorized?'ok-text':'warn-text')+'">'+esc(fiscal.title)+'</span>':'')+'</div>'+
-      '<div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+esc(address)+'</small>'+returnNote+'</div>'+
-      '<div class="history-main"><strong>'+money(o.total_cents)+'</strong><small>'+esc(payment)+'</small>'+(o.status==='ready'?'<small class="'+(fiscal.authorized?'ok-text':'warn-text')+'">'+esc(fiscal.detail)+'</small>':'')+'</div>'+
-      '<span>'+statusPill(o.status)+'</span>'+
-      '<div class="dispatch-actions">'+
-        (wa?'<a class="quick-link primary-link" href="'+esc(wa)+'" target="_blank" rel="noopener">WhatsApp</a>':'')+
-        (maps?'<a class="quick-link" href="'+esc(maps)+'" target="_blank" rel="noopener">Maps</a>':'')+
-        (ret?.status==='returned_review'?'<button class="quick-link primary-link" type="button" data-resolve-return="'+esc(o.id)+'">Resolver retorno</button>':'')+
-        (o.status==='ready'&&!fiscal.authorized&&ret?.status!=='returned_review'?'<button class="quick-link primary-link" type="button" data-expedition-fiscal="'+esc(o.id)+'">Resolver fiscal</button>':'')+
-        (o.status==='ready'&&fiscal.authorized?'<button class="quick-link" type="button" data-expedition-danfe="'+esc(o.id)+'">Imprimir DANFE</button>':'')+
-        deliveryActions+
-        '<button class="quick-link" type="button" data-expedition-order="'+esc(o.id)+'">Abrir</button>'+
-      '</div>'+
-    '</div>';
-  }
-  function expeditionSection(title,subtitle,rows,empty){
-    return '<section class="panel dispatch-section"><div class="history-title dispatch-head"><div><strong>'+esc(title)+'</strong><span>'+esc(subtitle)+'</span></div><b>'+rows.length+'</b></div>'+
-      '<div>'+(rows.length?rows.map(expeditionRow).join(''):'<div class="history-empty">'+esc(empty)+'</div>')+'</div></section>';
-  }
   async function returnOrderToExpedition(id,fromDetail=false){
     const o=(fromDetail?state.currentOrder?.order:null)||state.orders.find(x=>x.id===id);
     if(!o||o.status!=='out_for_delivery'){toast('Este pedido não está mais em entrega');return}
@@ -785,7 +477,6 @@
         const fresh=await api('order',{id:o.id});state.currentOrder=fresh;
         await loadCurrentOrderFiscal(false);paintOrderDetail();loadOrders();
       }
-      if(state.tab==='driver')paintDriverQueue();else if(state.tab==='expedition')paintExpeditionBody();
       toast('Não entrega registrada · aguardando retorno físico');
     }catch(e){toast(errorMessage(e.message))}
   }
@@ -805,7 +496,6 @@
         body:JSON.stringify({case_id:ret.id,disposition:suggested,operator})
       });
       const data=await api('orders');state.orders=data.orders||[];
-      if(state.tab==='driver')paintDriverQueue();else if(state.tab==='expedition')paintExpeditionBody();
       if(state.currentOrder?.order?.id===id){const fresh=await api('order',{id});state.currentOrder=fresh;paintOrderDetail()}
       toast(suggested==='redelivery'?'Retorno confirmado · pedido pronto para reentrega':'Retorno confirmado · bloqueado para revisão');
     }catch(e){toast(errorMessage(e.message))}
@@ -844,77 +534,8 @@
       });
       $('#editor').close();
       const rows=await api('orders');state.orders=rows.orders||[];
-      if(state.tab==='expedition')paintExpeditionBody();else if(state.tab==='today')renderToday();
+      if(state.tab==='orders')await renderOrders();else await setTab('orders');
       toast(action==='redelivery'?'Retorno revisado · liberado para reentrega':'Pedido cancelado · estoque íntegro restaurado · fiscal pendente');
       return data;
     }catch(e){toast(errorMessage(e.message));buttons.forEach(b=>b.disabled=false)}
-  }
-
-  function deliveryPaymentMethodOptions(selected=''){
-    const rows=[['pix','PIX'],['cash','Dinheiro'],['credit_card','Cartão de crédito'],['food_card','Cartão alimentação'],['meal_card','Cartão refeição'],['other','Outro']];
-    return rows.map(([v,l])=>'<option value="'+v+'" '+(v===selected?'selected':'')+'>'+l+'</option>').join('');
-  }
-  function deliveryPaymentDefaultMethod(o){
-    const raw=String(o?.payment_method_snapshot?.method||'').toLowerCase();
-    const map={pix:'pix',cash:'cash',dinheiro:'cash',credit:'credit_card',credit_card:'credit_card',card:'credit_card',food_card:'food_card',meal_card:'meal_card'};
-    return map[raw]||'pix';
-  }
-  function paymentAmountInput(cents){return (Number(cents||0)/100).toFixed(2).replace('.',',')}
-  function parsePaymentAmountCents(value){
-    let s=String(value||'').trim().replace(/R\$/gi,'').replace(/\s+/g,'');
-    if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');
-    const n=Number(s);return Number.isFinite(n)?Math.round(n*100):0;
-  }
-  function actualPaymentText(o){
-    const parts=o?.payment_method_snapshot?.actual?.parts||[];
-    return parts.length?parts.map(p=>(p.label||p.method)+' '+money(p.amount_cents)).join(' + '):'';
-  }
-  function paintDeliveryPaymentDraft(){
-    const d=state.deliveryPaymentDraft;if(!d)return;
-    const host=$('#deliveryPaymentParts');if(!host)return;
-    host.innerHTML=d.parts.map((p,index)=>'<div class="form-grid delivery-payment-row" data-payment-index="'+index+'" style="align-items:end;margin-bottom:10px">'+
-      '<label><span>Forma '+(d.parts.length>1?index+1:'')+'</span><select data-payment-method>'+deliveryPaymentMethodOptions(p.method)+'</select></label>'+
-      '<label><span>Valor</span><input data-payment-amount inputmode="decimal" value="'+esc(paymentAmountInput(p.amount_cents))+'"></label>'+
-      (index>0?'<button class="text danger" type="button" data-remove-payment-part="'+index+'">Remover</button>':'')+
-    '</div>').join('');
-    const sum=d.parts.reduce((s,p)=>s+Number(p.amount_cents||0),0),diff=Number(d.order.total_cents||0)-sum;
-    $('#deliveryPaymentSum').innerHTML='<strong>'+money(sum)+'</strong><span class="'+(diff===0?'ok-text':'warn-text')+'">'+(diff===0?'Total confere':'Diferença '+money(Math.abs(diff))+(diff>0?' faltando':' a mais'))+'</span>';
-    host.querySelectorAll('[data-payment-method]').forEach((el,index)=>el.onchange=()=>{d.parts[index].method=el.value});
-    host.querySelectorAll('[data-payment-amount]').forEach((el,index)=>el.oninput=()=>{d.parts[index].amount_cents=parsePaymentAmountCents(el.value);const sum2=d.parts.reduce((s,p)=>s+Number(p.amount_cents||0),0),diff2=Number(d.order.total_cents||0)-sum2;$('#deliveryPaymentSum').innerHTML='<strong>'+money(sum2)+'</strong><span class="'+(diff2===0?'ok-text':'warn-text')+'">'+(diff2===0?'Total confere':'Diferença '+money(Math.abs(diff2))+(diff2>0?' faltando':' a mais'))+'</span>'});
-    host.querySelectorAll('[data-remove-payment-part]').forEach(b=>b.onclick=()=>{d.parts.splice(Number(b.dataset.removePaymentPart),1);paintDeliveryPaymentDraft()});
-    const split=$('#addDeliveryPaymentPart');if(split)split.disabled=d.parts.length>=2;
-  }
-  async function finalizeDeliveredOrder(o){
-    const actual=o?.payment_method_snapshot?.actual||{};
-    const parts=Array.isArray(actual.parts)?actual.parts:[];
-    if(parts.length!==1)throw new Error('delivery_already_captured_requires_canonical_review');
-    const method=String(parts[0]?.method||'').trim();
-    const amount=Number(parts[0]?.amount_cents||0);
-    if(!method||amount!==Number(o.total_cents||0))throw new Error('delivery_already_captured_requires_canonical_review');
-    await api('order_delivery_complete_v3',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,method,amount_cents:amount,operator:currentOperator()||'Entrega',idempotency_key:'delivery-v3:'+o.id})});
-    const data=await api('orders');state.orders=data.orders||[];paintExpeditionBody();
-  }
-  async function captureDeliveryPaymentAndFinish(){
-    const d=state.deliveryPaymentDraft;if(!d)return;
-    const rows=[...document.querySelectorAll('.delivery-payment-row')];
-    const parts=rows.map(row=>({method:row.querySelector('[data-payment-method]')?.value||'',amount_cents:parsePaymentAmountCents(row.querySelector('[data-payment-amount]')?.value||'')}));
-    const total=parts.reduce((s,p)=>s+p.amount_cents,0);
-    if(parts.some(p=>!p.method||p.amount_cents<=0)){toast('Informe a forma e o valor de cada pagamento');return}
-    if(total!==Number(d.order.total_cents||0)){toast('Os pagamentos precisam somar exatamente '+money(d.order.total_cents));return}
-    const operator=requireOperator();if(!operator)return;
-    const btn=$('#deliveryPaymentConfirm');if(btn){btn.disabled=true;btn.textContent='SALVANDO…'}
-    try{
-      if(parts.length===1){
-        await api('order_delivery_complete_v3',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:d.order.id,method:parts[0].method,amount_cents:parts[0].amount_cents,operator,idempotency_key:'delivery-v3:'+d.order.id})});
-      }else{
-        await api('order_payment_capture',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:d.order.id,parts,operator})});
-        await api('order_delivery_finalize_v4',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:d.order.id,operator,idempotency_key:'delivery-finalize-v4:'+d.order.id})});
-      }
-      const data=await api('orders');state.orders=data.orders||[];paintExpeditionBody();
-      $('#editor').close();state.deliveryPaymentDraft=null;
-      toast('Entrega e pagamento registrados');
-    }catch(e){
-      toast(errorMessage(e.message));
-      if(btn){btn.disabled=false;btn.textContent='CONFIRMAR ENTREGA E PAGAMENTO'}
-    }
   }

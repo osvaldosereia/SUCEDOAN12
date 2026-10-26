@@ -1,319 +1,525 @@
-import {attendanceJsonApi,ensureAttendanceToken,attendanceAuthorizedFetch} from './attendance-auth.js';
-import {MAX_PRODUCT_BATCH,attendanceProductSelection,attendanceProductFailedSelection,isAttendanceProductSelected,toggleAttendanceProductSelection,clearAttendanceProductSelection,sendAttendanceProductBatch,retryFailedAttendanceProducts} from './attendance-product-send.js?v=product-media-v1';
-import {parseBasketFlowReply} from './flow-reply-parser.mjs?v=flow-reply-v1';
-const ADMIN_ATTENDANCE_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-whatsapp-ops-v1';
-const ORDERS_ADMIN_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-products-live-v1';
-const orderConfirmingIds=new Set();
-const ADMIN_TOKEN_KEY='da_finance_access_token_v1';
-const CHANNELS=['0975','1018'];
-const QUEUE_PAGE_SIZE=50;
-const MESSAGE_PAGE_SIZE=30;
-const REFRESH_MS=15000;
+import { attendanceJsonApi, ensureAttendanceToken } from './attendance-auth.js?v=simple-chat-v1';
 
+const CHANNELS = ['0975', '1018'];
+const QUEUE_PAGE_SIZE = 50;
+const MESSAGE_PAGE_SIZE = 30;
+const REFRESH_MS = 15000;
+const params = new URLSearchParams(location.search);
+const embeddedOrder = params.get('embedded') === 'order';
+const state = {
+  accounts: {},
+  activeChannel: 'all',
+  search: '',
+  queue: [],
+  selected: null,
+  conversation: null,
+  conversationOpen: false,
+  loadingOlder: false,
+  refreshing: false,
+};
+const $ = selector => document.querySelector(selector);
+const $$ = selector => [...document.querySelectorAll(selector)];
+let refreshTimer = null;
+let searchTimer = null;
+let queueSequence = 0;
 
-const embeddedOrderParams=new URLSearchParams(location.search);
-const EMBEDDED_ORDER=embeddedOrderParams.get('embedded')==='order';
-if(EMBEDDED_ORDER)document.body.classList.add('order-embedded');
-function canonicalOrderPhone(value){
-  let digits=String(value||'').replace(/\D/g,'');
-  if(digits.length===10||digits.length===11)digits='55'+digits;
-  return digits.startsWith('55')&&(digits.length===12||digits.length===13)?digits:'';
+async function api(action, values = {}, method = 'GET') {
+  return attendanceJsonApi(action, values, method);
 }
-function embeddedOrderNotice(title,message,candidates=[]){
-  const empty=$('#conversationEmpty'),messages=$('#messages');
-  messages.hidden=true;
-  empty.hidden=false;
+
+function digits(value) { return String(value || '').replace(/\D/g, ''); }
+function channelByPhone(value) {
+  const number = digits(value);
+  return CHANNELS.find(channel => number.endsWith(channel)) || '';
+}
+function selectedId() { return state.selected?.id || ''; }
+function displayName(item) { return item.display_name || item.phone_e164 || 'Conversa'; }
+function initials(value) {
+  const parts = String(value || '').trim().split(/\s+/).filter(Boolean);
+  return parts.length ? (parts[0][0] + (parts.length > 1 ? parts.at(-1)[0] : '')).toUpperCase() : '•';
+}
+function formatTime(value) {
+  const date = new Date(value);
+  if (!value || Number.isNaN(+date)) return '';
+  return new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(date);
+}
+function formatQueueTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(+date)) return '';
+  const today = new Date();
+  return date.toDateString() === today.toDateString()
+    ? formatTime(value)
+    : new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit' }).format(date);
+}
+function dateKey(value) {
+  const date = new Date(value);
+  return Number.isNaN(+date) ? '' : `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+}
+function dateLabel(value) {
+  const today = dateKey(new Date());
+  const yesterday = dateKey(new Date(Date.now() - 86400000));
+  const key = dateKey(value);
+  if (key === today) return 'Hoje';
+  if (key === yesterday) return 'Ontem';
+  return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(value));
+}
+function setConnection(message, tone = 'neutral') {
+  const status = $('#connectionStatus');
+  status.textContent = message;
+  status.dataset.tone = tone;
+}
+function queueState(message, error = false) {
+  const list = $('#queueList');
+  list.replaceChildren();
+  const stateNode = document.createElement('div');
+  stateNode.className = `queue-state${error ? ' error' : ''}`;
+  stateNode.textContent = message;
+  if (error) {
+    const retry = document.createElement('button');
+    retry.type = 'button';
+    retry.textContent = 'Tentar novamente';
+    retry.onclick = () => loadQueue().catch(() => {});
+    stateNode.append(retry);
+  }
+  list.append(stateNode);
+}
+
+async function loadAccounts() {
+  const data = await api('accounts');
+  state.accounts = {};
+  for (const account of data.items || []) {
+    const channel = channelByPhone(account.phone_e164);
+    if (channel) state.accounts[channel] = account;
+  }
+  const connected = CHANNELS.filter(channel => state.accounts[channel]?.id).length;
+  if (!connected) throw new Error('accounts_unavailable');
+  setConnection(connected === 2 ? '0975 e 1018 conectados' : 'Atendimento conectado parcialmente', connected === 2 ? 'success' : 'warning');
+  syncChannelSwitcher();
+}
+
+function syncChannelSwitcher() {
+  for (const button of $$('[data-channel-switch]')) {
+    const channel = button.dataset.channelSwitch;
+    button.classList.toggle('active', channel === state.activeChannel);
+    button.setAttribute('aria-selected', String(channel === state.activeChannel));
+    button.disabled = channel !== 'all' && !state.accounts[channel]?.id;
+  }
+  $('#activeChannelStatus').textContent = state.activeChannel === 'all' ? '0975 e 1018' : `Número ${state.activeChannel}`;
+}
+
+async function loadChannelQueue(channel) {
+  const account = state.accounts[channel];
+  if (!account?.id) return [];
+  const data = await api('queue', { account_id: account.id, limit: QUEUE_PAGE_SIZE, search: state.search });
+  return (data.items || []).map(item => ({ ...item, __channel: channel }));
+}
+
+function messagePreview(item) {
+  const type = item.last_message_type;
+  if (type === 'image') return 'Imagem';
+  if (type === 'audio') return 'Áudio';
+  if (type === 'video') return 'Vídeo';
+  return item.last_message_text || (type ? 'Mensagem recebida' : 'Sem mensagens');
+}
+
+function queueCard(item) {
+  const name = displayName(item);
+  const card = document.createElement('button');
+  card.type = 'button';
+  card.className = `queue-card${selectedId() === item.conversation_id ? ' selected' : ''}`;
+  card.dataset.conversationId = item.conversation_id;
+  card.dataset.channel = item.__channel;
+
+  const avatar = document.createElement('span');
+  avatar.className = 'queue-avatar';
+  avatar.textContent = initials(name);
+  const main = document.createElement('span');
+  main.className = 'queue-card-main';
+  const title = document.createElement('span');
+  title.className = 'queue-title';
+  const person = document.createElement('strong');
+  person.textContent = name;
+  const time = document.createElement('span');
+  time.className = 'queue-time';
+  time.textContent = formatQueueTime(item.canonical_last_message_at || item.last_message_at);
+  title.append(person, time);
+
+  const preview = document.createElement('span');
+  preview.className = 'queue-preview';
+  const previewText = document.createElement('span');
+  previewText.className = 'preview-text';
+  previewText.textContent = messagePreview(item);
+  preview.append(previewText);
+  const unreadCount = Number(item.unread_count || 0);
+  if (unreadCount > 0) {
+    const unread = document.createElement('span');
+    unread.className = 'unread-badge';
+    unread.textContent = String(Math.min(99, unreadCount));
+    preview.append(unread);
+  }
+  const channel = document.createElement('span');
+  channel.className = 'chip';
+  channel.textContent = item.__channel;
+  main.append(title, preview, channel);
+  card.append(avatar, main);
+  card.onclick = () => selectConversation(item.conversation_id, item.__channel).catch(() => {});
+  return card;
+}
+
+async function loadQueue({ silent = false } = {}) {
+  const request = ++queueSequence;
+  if (!silent && !state.queue.length) queueState('Carregando conversas…');
+  const channels = state.activeChannel === 'all' ? CHANNELS : [state.activeChannel];
+  const results = await Promise.allSettled(channels.map(loadChannelQueue));
+  if (request !== queueSequence) return;
+  const items = [];
+  let failed = false;
+  for (const result of results) {
+    if (result.status === 'fulfilled') items.push(...result.value);
+    else failed = true;
+  }
+  if (failed && !items.length) {
+    $('#activeChannelStatus').textContent = 'Reconectando…';
+    if (!state.queue.length) queueState('Não foi possível carregar as conversas.', true);
+    return;
+  }
+  state.queue = items.sort((left, right) => new Date(right.canonical_last_message_at || right.last_message_at || 0) - new Date(left.canonical_last_message_at || left.last_message_at || 0));
+  const list = $('#queueList');
+  list.replaceChildren();
+  for (const item of state.queue) list.append(queueCard(item));
+  if (!state.queue.length) queueState('Nenhuma conversa encontrada.');
+  $('#activeChannelCount').textContent = String(state.queue.length);
+  $('#activeChannelStatus').textContent = failed ? 'Conexão instável' : (state.activeChannel === 'all' ? '0975 e 1018' : `Número ${state.activeChannel}`);
+}
+
+function setConversationEmpty(title, message) {
+  const empty = $('#conversationEmpty');
   empty.replaceChildren();
-  const heading=document.createElement('strong');heading.textContent=title;
-  const hint=document.createElement('span');hint.textContent=message;
-  empty.append(heading,hint);
-  for(const item of candidates){
-    const button=document.createElement('button');
-    button.type='button';button.className='order-chat-candidate';
-    button.textContent=(item.display_name||item.phone_e164||'Conversa')+' · Canal '+item.__channel;
-    button.onclick=()=>selectConversation(item.conversation_id,item.__channel).catch(()=>{});
-    empty.append(button);
+  const heading = document.createElement('strong');
+  heading.textContent = title;
+  const hint = document.createElement('span');
+  hint.textContent = message;
+  empty.append(heading, hint);
+  empty.hidden = false;
+  $('#messages').hidden = true;
+}
+
+function syncMobile() {
+  $('#conversationPane').classList.toggle('mobile-open', Boolean(state.conversationOpen && selectedId()));
+}
+
+function resetConversation() {
+  state.selected = null;
+  state.conversation = null;
+  state.conversationOpen = false;
+  syncMobile();
+  $('#messages').replaceChildren();
+  $('#conversationAvatar').textContent = '…';
+  $('#conversationHead strong').textContent = 'Selecione uma conversa';
+  $('#conversationSubhead').textContent = state.activeChannel === 'all' ? '0975 e 1018' : `Número ${state.activeChannel}`;
+  $('#serviceWindow').className = 'service-window neutral';
+  $('#serviceWindow').textContent = 'Nenhuma conversa selecionada';
+  setConversationEmpty('Escolha uma conversa', 'As mensagens aparecerão aqui.');
+}
+
+function switchChannel(channel) {
+  if (!['all', ...CHANNELS].includes(channel)) return;
+  if (channel !== 'all' && !state.accounts[channel]?.id) return;
+  state.activeChannel = channel;
+  syncChannelSwitcher();
+  resetConversation();
+  loadQueue().catch(() => {});
+}
+
+async function resolveMedia(messageId) {
+  return api('media', { message_id: messageId });
+}
+
+function mediaPlaceholder(message) {
+  const labels = { image: ['🖼️', 'Ver imagem'], audio: ['▶', 'Ouvir áudio'], video: ['▶', 'Ver vídeo'] };
+  const [icon, label] = labels[message.message_type] || ['↧', 'Carregar mídia'];
+  const host = document.createElement('div');
+  host.className = 'media-content';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'media-load';
+  const symbol = document.createElement('span');
+  symbol.className = 'media-load-icon';
+  symbol.textContent = icon;
+  const copy = document.createElement('span');
+  copy.className = 'media-load-copy';
+  const title = document.createElement('strong');
+  title.textContent = label;
+  const hint = document.createElement('small');
+  hint.textContent = 'Toque para carregar';
+  copy.append(title, hint);
+  button.append(symbol, copy);
+  button.onclick = async () => {
+    const conversationId = selectedId();
+    button.disabled = true;
+    title.textContent = 'Carregando…';
+    try {
+      const data = await resolveMedia(message.id);
+      if (host.isConnected && selectedId() === conversationId) renderResolvedMedia(host, message, data);
+    } catch {
+      button.disabled = false;
+      title.textContent = 'Tentar novamente';
+      hint.textContent = 'Não foi possível carregar agora';
+    }
+  };
+  host.append(button);
+  if (message.text_body && message.message_type !== 'audio') {
+    const caption = document.createElement('div');
+    caption.className = 'media-caption';
+    caption.textContent = message.text_body;
+    host.append(caption);
+  }
+  return host;
+}
+
+function renderResolvedMedia(host, message, data) {
+  host.replaceChildren();
+  if (message.message_type === 'image') {
+    const image = document.createElement('img');
+    image.className = 'message-media-image';
+    image.src = data.url;
+    image.alt = message.text_body || 'Imagem';
+    image.loading = 'lazy';
+    host.append(image);
+  } else if (message.message_type === 'audio') {
+    const audio = document.createElement('audio');
+    audio.className = 'message-audio';
+    audio.controls = true;
+    audio.preload = 'metadata';
+    audio.src = data.url;
+    host.append(audio);
+  } else if (message.message_type === 'video') {
+    const video = document.createElement('video');
+    video.className = 'message-video';
+    video.controls = true;
+    video.preload = 'metadata';
+    video.playsInline = true;
+    video.src = data.url;
+    host.append(video);
+  }
+  if (message.text_body && message.message_type !== 'audio') {
+    const caption = document.createElement('div');
+    caption.className = 'media-caption';
+    caption.textContent = message.text_body;
+    host.append(caption);
   }
 }
-async function openEmbeddedOrderConversation(){
-  const phone=canonicalOrderPhone(embeddedOrderParams.get('phone'));
-  const customerId=String(embeddedOrderParams.get('customer_id')||'').trim();
-  if(!phone){
-    embeddedOrderNotice('Telefone indisponível','Não foi possível identificar o telefone do pedido.');
+
+function messageNode(message) {
+  const row = document.createElement('div');
+  row.className = `message-row ${message.direction === 'outbound' ? 'outbound' : 'inbound'}`;
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  if (['text', 'template'].includes(message.message_type) && message.text_body) {
+    bubble.textContent = message.text_body;
+  } else if (['image', 'audio', 'video'].includes(message.message_type)) {
+    bubble.append(mediaPlaceholder(message));
+  } else {
+    const text = document.createElement('span');
+    text.className = 'media-placeholder';
+    text.textContent = message.text_body || 'Conteúdo indisponível';
+    bubble.append(text);
+  }
+  const meta = document.createElement('span');
+  meta.className = 'message-meta';
+  meta.textContent = formatTime(message.message_at);
+  bubble.append(meta);
+  row.append(bubble);
+  return row;
+}
+
+function renderServiceWindow() {
+  const status = $('#serviceWindow');
+  const windowState = state.conversation?.service_window;
+  if (!windowState) {
+    status.className = 'service-window neutral';
+    status.textContent = 'Janela de atendimento indisponível';
+  } else if (windowState.open) {
+    const minutes = Math.floor(Number(windowState.remaining_seconds || 0) / 60);
+    status.className = 'service-window open';
+    status.textContent = `Janela de atendimento aberta · ${Math.floor(minutes / 60)}h ${minutes % 60}min`;
+  } else {
+    status.className = 'service-window closed';
+    status.textContent = 'Janela de 24h encerrada';
+  }
+}
+
+function renderMessages({ keepPosition = false, previousHeight = 0, previousTop = 0 } = {}) {
+  const list = $('#messages');
+  list.replaceChildren();
+  let lastDate = '';
+  for (const message of state.conversation?.messages || []) {
+    const key = dateKey(message.message_at);
+    if (key && key !== lastDate) {
+      const separator = document.createElement('div');
+      separator.className = 'message-date-separator';
+      separator.textContent = dateLabel(message.message_at);
+      list.append(separator);
+      lastDate = key;
+    }
+    list.append(messageNode(message));
+  }
+  list.hidden = false;
+  $('#conversationEmpty').hidden = true;
+  if (keepPosition) {
+    requestAnimationFrame(() => { list.scrollTop = Math.max(0, previousTop + (list.scrollHeight - previousHeight)); });
+  } else list.scrollTop = list.scrollHeight;
+  renderServiceWindow();
+}
+
+function renderConversationHeader() {
+  const conversation = state.conversation?.conversation;
+  if (!conversation || !state.selected) return;
+  const name = state.selected.display_name || conversation.phone_e164 || 'Conversa';
+  $('#conversationHead strong').textContent = name;
+  $('#conversationSubhead').textContent = `${state.selected.channel} · ${conversation.phone_e164 || ''}`;
+  $('#conversationAvatar').textContent = initials(name);
+}
+
+async function selectConversation(id, channel) {
+  const item = state.queue.find(row => row.conversation_id === id && row.__channel === channel);
+  state.selected = { id, channel, display_name: item ? displayName(item) : '' };
+  state.conversationOpen = true;
+  $$('.queue-card').forEach(card => card.classList.toggle('selected', card.dataset.conversationId === id && card.dataset.channel === channel));
+  syncMobile();
+  setConversationEmpty('Carregando conversa…', 'Buscando mensagens.');
+  try {
+    const conversation = await api('conversation', { conversation_id: id, limit: MESSAGE_PAGE_SIZE });
+    if (selectedId() !== id) return;
+    state.conversation = conversation;
+    renderConversationHeader();
+    renderMessages();
+    const inbound = [...(conversation.messages || [])].reverse().find(message => message.direction === 'inbound');
+    if (inbound) api('mark_read', { conversation_id: id, message_id: inbound.id }, 'POST').catch(() => {});
+    loadQueue({ silent: true }).catch(() => {});
+  } catch {
+    if (selectedId() === id) setConversationEmpty('Não foi possível abrir esta conversa', 'Tente selecionar a conversa novamente.');
+  }
+}
+
+async function loadOlder() {
+  if (state.loadingOlder || !state.conversation?.next_before || !selectedId()) return;
+  state.loadingOlder = true;
+  const list = $('#messages');
+  const previousHeight = list.scrollHeight;
+  const previousTop = list.scrollTop;
+  try {
+    const older = await api('conversation', { conversation_id: selectedId(), before: state.conversation.next_before, limit: MESSAGE_PAGE_SIZE });
+    state.conversation.messages = [...(older.messages || []), ...(state.conversation.messages || [])];
+    state.conversation.next_before = older.next_before;
+    renderMessages({ keepPosition: true, previousHeight, previousTop });
+  } finally {
+    state.loadingOlder = false;
+  }
+}
+
+async function refreshSelected() {
+  if (document.hidden || state.refreshing || !selectedId()) return;
+  state.refreshing = true;
+  const id = selectedId();
+  try {
+    const latest = await api('conversation', { conversation_id: id, limit: MESSAGE_PAGE_SIZE });
+    if (selectedId() !== id) return;
+    const before = state.conversation?.messages?.at(-1)?.id;
+    const after = latest.messages?.at(-1)?.id;
+    state.conversation = latest;
+    document.dispatchEvent(new CustomEvent('attendance:conversation-refreshed', { detail: { conversation_id: id, messages: latest.messages || [] } }));
+    if (before !== after) {
+      renderConversationHeader();
+      renderMessages();
+    } else renderServiceWindow();
+  } catch {
+    // Keep the last successful messages visible during a temporary connection failure.
+  } finally {
+    state.refreshing = false;
+  }
+}
+
+async function backgroundRefresh() {
+  if (document.hidden) return;
+  await loadQueue({ silent: true });
+  await refreshSelected();
+}
+
+function canonicalOrderPhone(value) {
+  let phone = digits(value);
+  if (phone.length === 10 || phone.length === 11) phone = `55${phone}`;
+  return phone.startsWith('55') && [12, 13].includes(phone.length) ? phone : '';
+}
+
+async function openOrderConversation() {
+  const phone = canonicalOrderPhone(params.get('phone'));
+  const customerId = String(params.get('customer_id') || '').trim();
+  if (!phone) {
+    setConversationEmpty('Telefone indisponível', 'Não foi possível identificar o telefone deste pedido.');
     return;
   }
-  // Buscar ambos os canais, sem depender das 50 conversas mais recentes.
-  state.activeChannel='all';
-  state.search=phone.slice(-9);
-  $('#globalSearch').value=state.search;
+  state.activeChannel = 'all';
+  state.search = phone.slice(-9);
+  $('#globalSearch').value = state.search;
   await loadQueue();
-  if($('#queueList .queue-state.error')){
-    embeddedOrderNotice('Atendimento indisponível','Não foi possível consultar as conversas. Feche e tente novamente.');
-    return;
-  }
-  const samePhone=state.queue.filter(item=>canonicalOrderPhone(item.phone_e164)===phone);
-  const sameCustomer=customerId?samePhone.filter(item=>String(item.customer_id||'')===customerId):[];
-  const matches=sameCustomer.length?sameCustomer:samePhone;
-  if(matches.length===1&&(!customerId||!matches[0].customer_id||String(matches[0].customer_id)===customerId)){
-    await selectConversation(matches[0].conversation_id,matches[0].__channel);
-    return;
-  }
-  if(matches.length>1){
-    embeddedOrderNotice('Escolha a conversa','Há mais de uma conversa neste telefone. Selecione o canal correto:',matches);
-    return;
-  }
-  if(matches.length===1){
-    embeddedOrderNotice('Confirmar vínculo','A conversa encontrada está vinculada a outro cadastro. Confirme antes de abrir:',matches);
-    return;
-  }
-  embeddedOrderNotice('Conversa não localizada','Não existe uma conversa do WhatsApp identificada com o telefone deste pedido nos canais 0975 ou 1018.');
-}
-const state={accounts:{},activeChannel:'all',search:'',quickFilter:'recent',labelFilter:'',queue:[],selected:null,conversation:null,context:null,contextTab:'customer',labels:[],conversationLabelIds:[],quickReplies:[],conversationOpen:false,loadingOlder:false,refreshing:false};
-const $=s=>document.querySelector(s);const $$=s=>[...document.querySelectorAll(s)];
-const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const initials=v=>{const p=String(v||'').trim().split(/\s+/).filter(Boolean);return p.length?(p[0][0]+(p.length>1?p[p.length-1][0]:'')).toUpperCase():'•'};
-const fmtTime=v=>{const d=new Date(v);return v&&!Number.isNaN(+d)?new Intl.DateTimeFormat('pt-BR',{hour:'2-digit',minute:'2-digit'}).format(d):''};
-const fmtDate=v=>{const d=new Date(v);return v&&!Number.isNaN(+d)?new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}).format(d):'—'};
-const dayKey=v=>{const d=new Date(v);return Number.isNaN(+d)?'':`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`};
-const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
-let refreshTimer=null,searchTimer=null,productTimer=null;
-// Keep the latest successful snapshot of each channel/filter across transient timeouts.
-// Do not allow overlapping refreshes or stale responses to replace newer selections.
-const queueCache=new Map(),queueRequests=new Map();
-let queueSequence=0;
-let productBatchSending=false;
-
-async function api(action,params={},method='GET'){return await attendanceJsonApi(action,params,method)}
-function channelByPhone(v){const d=String(v||'').replace(/\D/g,'');return d.endsWith('0975')?'0975':d.endsWith('1018')?'1018':''}
-function selectedId(){return state.selected?.id||''}
-function showNote(text,tone='neutral'){const n=$('#composerNote');if(n){n.textContent=text;n.dataset.tone=tone}}
-function setConnection(text,tone='neutral'){const n=$('#connectionStatus');if(n){n.textContent=text;n.dataset.tone=tone}}
-function queueState(text,error=false){const box=$('#queueList');box.replaceChildren();const el=document.createElement('div');el.className=`queue-state${error?' error':''}`;el.textContent=text;if(error){const retry=document.createElement('button');retry.type='button';retry.textContent='Tentar novamente';retry.onclick=()=>Object.keys(state.accounts).length?loadQueue().catch(()=>{}):location.reload();el.append(retry)}box.append(el)}
-function setDraft(text){const d=$('#messageDraft');if(!d)return;d.value=text;d.dispatchEvent(new Event('input',{bubbles:true}));d.focus()}
-function syncFallback(){const selected=Boolean(selectedId()),draft=Boolean($('#messageDraft')?.value.trim());$('#copyReplyBtn').disabled=!selected||!draft}
-function syncMobile(){$('#conversationPane')?.classList.toggle('mobile-open',Boolean(state.conversationOpen&&selectedId()))}
-function closeMobileConversation(){if(!state.conversationOpen)return;state.conversationOpen=false;$('#contextPane')?.classList.remove('open');closePanels();syncMobile();const card=$('.queue-card.selected');requestAnimationFrame(()=>{card?.scrollIntoView?.({block:'nearest'});try{card?.focus?.({preventScroll:true})}catch{card?.focus?.()}})}
-
-async function loadAccounts(){const data=await api('accounts');state.accounts={};for(const a of data.items||[]){const c=channelByPhone(a.phone_e164);if(c)state.accounts[c]=a}const count=CHANNELS.filter(c=>state.accounts[c]?.id).length;if(!count)throw new Error('accounts_unavailable');setConnection(count===2?'2 canais conectados · Meta + histórico canônico':`${count} canal conectado · operação parcial`,count===2?'success':'warning');syncSwitcher()}
-function syncSwitcher(){$$('[data-channel-switch]').forEach(b=>{const c=b.dataset.channelSwitch;b.classList.toggle('active',c===state.activeChannel);b.setAttribute('aria-selected',String(c===state.activeChannel));b.disabled=c!=='all'&&!state.accounts[c]?.id});$('#activeChannelStatus').textContent=state.activeChannel==='all'?'0975 e 1018 juntos':`Canal ${state.activeChannel}`}
-async function channelQueue(channel){
-  const a=state.accounts[channel];
-  if(!a?.id)return {channel,items:[],error:true,hasCache:false};
-  const search=state.search,labelFilter=state.labelFilter,key=JSON.stringify([channel,search,labelFilter]);
-  if(queueRequests.has(key))return await queueRequests.get(key);
-  const request=(async()=>{
-    try{
-      const data=await api('queue',{account_id:a.id,limit:QUEUE_PAGE_SIZE,search,label_id:labelFilter});
-      const items=(data.items||[]).map(x=>({...x,__channel:channel}));
-      queueCache.set(key,items);
-      return {channel,items,error:false,hasCache:true};
-    }catch(error){
-      console.warn('[atendimento] Falha temporária na fila',channel,error?.status||error?.message||'network_error');
-      return {channel,items:queueCache.get(key)||[],error:true,hasCache:queueCache.has(key)};
+  const exact = state.queue.filter(item => canonicalOrderPhone(item.phone_e164) === phone);
+  const linked = customerId ? exact.filter(item => String(item.customer_id || '') === customerId) : [];
+  const matches = linked.length ? linked : exact;
+  if (matches.length === 1) {
+    await selectConversation(matches[0].conversation_id, matches[0].__channel);
+  } else if (matches.length > 1) {
+    const empty = $('#conversationEmpty');
+    setConversationEmpty('Escolha a conversa', 'Há mais de uma conversa para este telefone.');
+    for (const item of matches) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = `${displayName(item)} · ${item.__channel}`;
+      button.onclick = () => selectConversation(item.conversation_id, item.__channel).catch(() => {});
+      empty.append(button);
     }
-  })().finally(()=>queueRequests.delete(key));
-  queueRequests.set(key,request);
-  return await request;
+  } else setConversationEmpty('Conversa não localizada', 'Não há conversa com este telefone nos canais 0975 ou 1018.');
 }
-function filtered(item){return state.quickFilter==='recent'?true:state.quickFilter==='order'?Boolean(item.has_recent_order):state.quickFilter==='pending'?Boolean(item.has_recent_order&&item.registration_incomplete):state.quickFilter==='label'?true:true}
-function chip(text,kind=''){const c=document.createElement('span');c.className=`chip ${kind}`.trim();c.textContent=text;return c}
-function receivedOrder(item){return item?.received_order_id&&/^[0-9a-f-]{36}$/i.test(String(item.received_order_id))?item:null}
-function priorityOrderDate(item){const ms=Date.parse(item?.received_order_at||'');return Number.isFinite(ms)?ms:0}
-function preview(item){return item.last_message_text||({audio:'Áudio',image:'Imagem',document:'Documento',location:'Localização',unknown:'Mensagem recebida'}[item.last_message_type]||'Sem mensagem')}
-function queueCard(item){const name=item.display_name||item.phone_e164||'Contato',b=document.createElement('button');b.type='button';b.className='queue-card';b.dataset.conversationId=item.conversation_id;b.dataset.channel=item.__channel;if(receivedOrder(item))b.classList.add('received-order-priority');if(selectedId()===item.conversation_id)b.classList.add('selected');const av=document.createElement('span');av.className='queue-avatar';av.textContent=initials(name);const main=document.createElement('span');main.className='queue-card-main';const title=document.createElement('span');title.className='queue-title';const strong=document.createElement('strong');strong.textContent=name;const time=document.createElement('span');time.className='queue-time';time.textContent=fmtTimeOrDate(item.canonical_last_message_at||item.last_message_at);title.append(strong,time);const pr=document.createElement('span');pr.className='queue-preview';const txt=document.createElement('span');txt.className='preview-text';txt.textContent=preview(item);pr.append(txt);if(Number(item.unread_count||0)>0){const u=document.createElement('span');u.className='unread-badge';u.textContent=String(Math.min(99,Number(item.unread_count)));pr.append(u)}const chips=document.createElement('span');chips.className='chips';if(receivedOrder(item)){chips.append(chip('🟠 RECEBIDO · CONFIRMAR','received-order'));if(Number(item.received_order_count||0)>1)chips.append(chip(String(item.received_order_count)+' pedidos','received-order-count'))}if(item.mode==='human'||item.mode==='human_copilot'||item.human_required)chips.append(chip('Humano','human'));if(item.has_recent_order)chips.append(chip('Pedido','order'));if(item.has_recent_order&&item.registration_incomplete)chips.append(chip('Cadastro pendente','pending'));chips.append(chip(item.__channel,'channel'));for(const l of item.labels||[]){const c=document.createElement('span');c.className='label-chip';c.textContent=l.name;c.style.setProperty('--label-color',l.color||'#5f6368');chips.append(c)}main.append(title,pr,chips);b.append(av,main);b.onclick=()=>selectConversation(item.conversation_id,item.__channel).catch(()=>{});return b}
-function fmtTimeOrDate(v){const d=new Date(v);if(Number.isNaN(+d))return '';return dayKey(d)===dayKey(new Date())?fmtTime(d):new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit'}).format(d)}
-function queueFilterTitle(){if(state.quickFilter==='order')return 'PEDIDOS';if(state.quickFilter==='pending')return 'CADASTRO';if(state.quickFilter==='label'){const l=state.labels.find(x=>x.id===state.labelFilter);return l?.name||'ETIQUETA'}return 'RECENTE'}
-function syncQueueFilterMenu(){const title=$('#queueFilterMenuLabel');if(title)title.textContent=queueFilterTitle();$$('[data-queue-filter]').forEach(b=>b.classList.toggle('active',state.quickFilter===b.dataset.queueFilter));$$('#queueLabelFilters [data-label-id]').forEach(b=>b.classList.toggle('active',state.quickFilter==='label'&&state.labelFilter===b.dataset.labelId))}
-async function applyQueueFilter(kind,labelId=''){state.quickFilter=kind||'recent';state.labelFilter=kind==='label'?labelId:'';syncQueueFilterMenu();const menu=$('#queueFilterMenu');if(menu)menu.hidden=true;const trigger=$('#queueFilterMenuBtn');if(trigger)trigger.setAttribute('aria-expanded','false');await loadQueue()}
-function renderQueueLabelFilters(){const box=$('#queueLabelFilters');if(!box)return;box.replaceChildren();for(const l of state.labels){const b=document.createElement('button');b.type='button';b.className='queue-filter-label';b.dataset.labelId=l.id;b.setAttribute('role','menuitem');const dot=document.createElement('span');dot.className='queue-filter-label-dot';dot.style.background=l.color||'#5f6368';const name=document.createElement('span');name.textContent=l.name;b.append(dot,name);b.onclick=()=>applyQueueFilter('label',l.id).catch(()=>{});box.append(b)}if(!box.children.length){const e=document.createElement('span');e.className='queue-filter-empty';e.textContent='Nenhuma etiqueta criada.';box.append(e)}syncQueueFilterMenu()}
-function toggleQueueFilterMenu(){const menu=$('#queueFilterMenu'),trigger=$('#queueFilterMenuBtn');if(!menu||!trigger)return;menu.hidden=!menu.hidden;trigger.setAttribute('aria-expanded',String(!menu.hidden));if(!menu.hidden)syncQueueFilterMenu()}
-async function loadQueue({silent=false}={}){
-  const requestId=++queueSequence;
-  if(!silent&&!state.queue.length)queueState('Carregando conversas…');
-  const channels=state.activeChannel==='all'?CHANNELS:[state.activeChannel];
-  const parts=await Promise.all(channels.map(channelQueue));
-  if(requestId!==queueSequence)return; // newer channel, search or refresh won
-  const usable=parts.filter(p=>!p.error||p.hasCache),bad=parts.filter(p=>p.error);
-  const base=state.activeChannel==='all'?'0975 e 1018 juntos':`Canal ${state.activeChannel}`;
-  if(!usable.length){
-    $('#activeChannelStatus').textContent=`${base} · reconectando…`;
-    if(!state.queue.length)queueState('Não foi possível carregar as conversas.',true);
-    return;
-  }
-  state.queue=usable.flatMap(x=>x.items).sort((a,b)=>Number(Boolean(receivedOrder(b)))-Number(Boolean(receivedOrder(a)))||priorityOrderDate(b)-priorityOrderDate(a)||new Date(b.canonical_last_message_at||b.last_message_at||0)-new Date(a.canonical_last_message_at||a.last_message_at||0));
-  syncQueueFilterMenu();syncReceivedOrderButton();
-  const visible=state.queue.filter(filtered),box=$('#queueList');box.replaceChildren();
-  for(const item of visible)box.append(queueCard(item));
-  if(!visible.length)queueState('Nenhuma conversa neste filtro.');
-  $('#activeChannelCount').textContent=String(visible.length);
-  $('#activeChannelStatus').textContent=bad.length?`${base} · conexão instável (lista preservada)`:base;
-}
-async function switchChannel(channel){if(!['all',...CHANNELS].includes(channel)||channel!=='all'&&!state.accounts[channel]?.id)return;state.activeChannel=channel;syncSwitcher();resetConversation();await loadQueue()}
 
-function resetConversation(){clearAttendanceProductSelection();$('#openReceivedOrderBtn').hidden=true;$('#openReceivedOrderBtn').dataset.orderId='';state.selected=null;state.conversation=null;state.context=null;state.conversationLabelIds=[];state.conversationOpen=false;syncMobile();$('#messages').replaceChildren();$('#messages').hidden=true;$('#conversationEmpty').hidden=false;$('#conversationEmpty').innerHTML='<strong>Escolha uma conversa</strong><span>As mensagens aparecerão aqui.</span>';const head=$('#conversationHead');head.querySelector('strong').textContent='Selecione uma conversa';head.querySelector('small').textContent=state.activeChannel==='all'?'0975 e 1018 em uma única central':`Canal ${state.activeChannel}`;$('#conversationAvatar').textContent='…';for(const id of ['catalogBtn','quickRepliesBtn','productsBtn','moreToolsBtn','conversationLabelsBtn','quoteBtn','saleBtn','followUpBtn','optOutBtn','openContextBtn'])$(`#${id}`).disabled=true;$('#serviceWindow').className='service-window neutral';$('#serviceWindow').textContent='Nenhuma conversa selecionada';renderContext();syncFallback()}
-function syncReceivedOrderButton(){
-  const b=$('#openReceivedOrderBtn');
-  if(!b)return;
-  const selected=state.queue.find(x=>x.conversation_id===selectedId()&&x.__channel===state.selected?.channel);
-  const pending=receivedOrder(selected);
-  b.hidden=!pending;
-  b.dataset.orderId=pending?.received_order_id||'';
-  if(pending){
-    const suffix=pending.received_order_number?' #'+String(pending.received_order_number).slice(-22):'';
-    b.textContent='📦 ABRIR PEDIDO'+suffix;
-    b.title='Abrir pedido recebido para revisar e confirmar manualmente';
-  }
-}
-function openReceivedOrderFromChat(){
-  const orderId=$('#openReceivedOrderBtn')?.dataset.orderId||'';
-  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(orderId))return;
-  window.open('/vitrine/admin/?pedido='+encodeURIComponent(orderId),'_blank','noopener,noreferrer');
-}
-function renderHead(){const c=state.conversation?.conversation;if(!c||!state.selected)return;const name=state.context?.customer?.name||state.selected.display_name||c.phone_e164||'Conversa',head=$('#conversationHead');head.querySelector('strong').textContent=name;const mode=c.mode==='human'||c.mode==='human_copilot'?'Atendimento humano':c.mode==='paused'?'IA pausada':'ANA atendendo';head.querySelector('small').textContent=`${state.selected.channel} · ${mode}`;$('#conversationAvatar').textContent=initials(name);$('#openContextBtn').disabled=false;syncReceivedOrderButton()}
-function renderWindow(){const b=$('#serviceWindow'),w=state.conversation?.service_window;if(!w){b.className='service-window neutral';b.textContent='Janela de atendimento indisponível';return}if(w.open){const h=Math.floor(Number(w.remaining_seconds||0)/3600),m=Math.floor((Number(w.remaining_seconds||0)%3600)/60);b.className='service-window open';b.textContent=`● Janela aberta · ${h}h ${m}min restantes`}else{b.className='service-window closed';b.textContent='● Janela de 24h encerrada · use template aprovado'}}
-async function resolveMedia(id){return api('media',{message_id:id})}
-function mediaLoadCopy(type){if(type==='image')return ['🖼️','Ver imagem','A imagem só será carregada quando você tocar aqui.'];if(type==='audio')return ['▶','Ouvir áudio','O áudio só será carregado quando você tocar aqui.'];return ['📄','Abrir arquivo','O arquivo só será carregado quando você tocar aqui.']}
-function openImageViewer(url,alt='Imagem'){const viewer=document.createElement('div');viewer.className='media-viewer';viewer.setAttribute('role','dialog');viewer.setAttribute('aria-modal','true');viewer.setAttribute('aria-label',alt||'Imagem');const frame=document.createElement('div');frame.className='media-viewer-frame';const img=document.createElement('img');img.src=url;img.alt=alt||'Imagem';const close=document.createElement('button');close.type='button';close.className='media-viewer-close';close.setAttribute('aria-label','Fechar imagem');close.textContent='×';const finish=()=>{document.removeEventListener('keydown',onKey);viewer.remove()};const onKey=event=>{if(event.key==='Escape')finish()};close.onclick=finish;viewer.onclick=event=>{if(event.target===viewer)finish()};document.addEventListener('keydown',onKey);frame.append(img,close);viewer.append(frame);document.body.append(viewer);close.focus()}
-function renderResolvedMedia(host,msg,data){host.replaceChildren();if(msg.message_type==='image'){const img=document.createElement('img');img.className='message-media-image';img.src=data.url;img.alt=msg.text_body||'Imagem';img.loading='lazy';img.decoding='async';img.onclick=()=>openImageViewer(data.url,img.alt);host.append(img)}else if(msg.message_type==='audio'){const a=document.createElement('audio');a.className='message-audio';a.controls=true;a.preload='metadata';a.src=data.url;host.append(a);a.play().catch(()=>{})}else if(msg.message_type==='document'){const f=document.createElement('div');f.className='media-file';const n=document.createElement('span');n.className='media-file-name';n.textContent=data.filename||'Arquivo';const actions=document.createElement('span');actions.className='media-file-actions';const open=document.createElement('a');open.href=data.url;open.target='_blank';open.rel='noopener';open.textContent='Abrir';actions.append(open);f.append(n,actions);host.append(f)}if(msg.text_body&&msg.message_type!=='audio'){const cap=document.createElement('div');cap.className='media-caption';cap.textContent=msg.text_body;host.append(cap)}}
-function mediaMessage(msg){const host=document.createElement('div');host.className='media-content';const [icon,label,hint]=mediaLoadCopy(msg.message_type);const trigger=document.createElement('button');trigger.type='button';trigger.className=`media-load media-load-${msg.message_type}`;const iconEl=document.createElement('span');iconEl.className='media-load-icon';iconEl.setAttribute('aria-hidden','true');iconEl.textContent=icon;const copy=document.createElement('span');copy.className='media-load-copy';const strong=document.createElement('strong');strong.textContent=label;const small=document.createElement('small');small.textContent=hint;copy.append(strong,small);trigger.append(iconEl,copy);trigger.onclick=async()=>{if(trigger.dataset.loading==='1')return;trigger.dataset.loading='1';trigger.disabled=true;strong.textContent='Carregando…';small.textContent='Buscando a mídia com segurança.';const conversationId=selectedId();try{const data=await resolveMedia(msg.id);if(!host.isConnected||selectedId()!==conversationId)return;renderResolvedMedia(host,msg,data)}catch{if(!host.isConnected)return;trigger.dataset.loading='0';trigger.disabled=false;strong.textContent='Tentar novamente';small.textContent='Não foi possível carregar esta mídia agora.'}};host.append(trigger);if(msg.text_body&&msg.message_type!=='audio'){const cap=document.createElement('div');cap.className='media-caption media-caption-preview';cap.textContent=msg.text_body;host.append(cap)}return host}
-function basketFlowReplyCard(msg){const data=parseBasketFlowReply(msg);if(!data)return null;const card=document.createElement('section');card.className='flow-reply-card';const title=document.createElement('strong');title.textContent='Solicitação de cesta pelo Flow';card.append(title);if(data.summary){const summary=document.createElement('p');summary.className='flow-reply-summary';summary.textContent=data.summary;card.append(summary)}if(data.total){const total=document.createElement('p');total.className='flow-reply-total';const label=document.createElement('span');label.textContent='Total informado pelo Flow (revalidar): ';const value=document.createElement('strong');value.textContent=data.total;total.append(label,value);card.append(total)}if(data.items){const itemsLabel=document.createElement('span');itemsLabel.className='flow-reply-label';itemsLabel.textContent='Itens informados';const items=document.createElement('p');items.className='flow-reply-items';items.textContent=data.items;card.append(itemsLabel,items)}const note=document.createElement('p');note.className='flow-reply-note';note.textContent='O Flow não cria pedido. Confira preço e estoque atuais e confirme a cesta com a pessoa antes de registrar uma venda em Pedidos → Nova venda WhatsApp.';card.append(note);return card}
-function messageNode(msg){const row=document.createElement('div');row.className=`message-row ${msg.direction==='outbound'?'outbound':'inbound'}`;const b=document.createElement('div');b.className='bubble';const flowReply=msg.message_type==='interactive'?basketFlowReplyCard(msg):null;if(flowReply)b.append(flowReply);else if((msg.message_type==='text'||msg.message_type==='template')&&msg.text_body)b.textContent=msg.text_body;else if(['image','audio','document'].includes(msg.message_type))b.append(mediaMessage(msg));else{const s=document.createElement('span');s.className='media-placeholder';s.textContent=msg.text_body||'Mensagem recebida, mas o conteúdo não está disponível';b.append(s)}const meta=document.createElement('span');meta.className='message-meta';meta.textContent=fmtTime(msg.message_at);b.append(meta);row.append(b);return row}
-function renderMessages(){const box=$('#messages');box.replaceChildren();let last='';for(const msg of state.conversation?.messages||[]){const key=dayKey(msg.message_at);if(key&&key!==last){const sep=document.createElement('div');sep.className='message-date-separator';sep.textContent=messageDay(msg.message_at);box.append(sep);last=key}box.append(messageNode(msg))}box.hidden=false;$('#conversationEmpty').hidden=true;box.scrollTop=box.scrollHeight;renderHead();renderWindow()}
-function messageDay(v){const key=dayKey(v),today=dayKey(new Date()),yesterday=dayKey(new Date(Date.now()-86400000));return key===today?'Hoje':key===yesterday?'Ontem':new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(v))}
-function enableTools(){for(const id of ['catalogBtn','quickRepliesBtn','productsBtn','moreToolsBtn','conversationLabelsBtn','followUpBtn'])$(`#${id}`).disabled=false;const customer=Boolean(state.context?.customer?.id);for(const id of ['quoteBtn','saleBtn','optOutBtn'])$(`#${id}`).disabled=!customer;syncFallback()}
-async function selectConversation(id,channel){state.selected={id,channel,display_name:state.queue.find(x=>x.conversation_id===id)?.display_name||''};state.conversationOpen=true;state.context=null;state.conversationLabelIds=[];$('#contextPane')?.classList.remove('open');syncMobile();$$('.queue-card').forEach(x=>x.classList.toggle('selected',x.dataset.conversationId===id));$('#conversationEmpty').hidden=false;$('#conversationEmpty').innerHTML='<strong>Carregando conversa…</strong><span>Buscando mensagens.</span>';try{const conversation=await api('conversation',{conversation_id:id,limit:MESSAGE_PAGE_SIZE});if(selectedId()!==id)return;state.conversation=conversation;renderMessages();renderContext();enableTools();const inbound=[...(conversation.messages||[])].reverse().find(m=>m.direction==='inbound');if(inbound)api('mark_read',{conversation_id:id,message_id:inbound.id},'POST').catch(()=>{});Promise.allSettled([api('context',{conversation_id:id}),api('conversation_labels',{conversation_id:id})]).then(results=>{if(selectedId()!==id)return;const [contextResult,labelsResult]=results;if(contextResult.status==='fulfilled')state.context=contextResult.value;if(labelsResult.status==='fulfilled')state.conversationLabelIds=labelsResult.value?.label_ids||[];renderContext();enableTools()}).catch(()=>{});setTimeout(()=>loadQueue({silent:true}).catch(()=>{}),150)}catch{if(selectedId()===id){$('#conversationEmpty').innerHTML='<strong>Não foi possível abrir esta conversa</strong><span>Tente novamente.</span>';showNote('Falha ao carregar conversa','error')}}}
-async function loadOlder(){if(state.loadingOlder||!state.conversation?.next_before||!selectedId())return;state.loadingOlder=true;const box=$('#messages'),previousHeight=box?.scrollHeight||0,previousTop=box?.scrollTop||0;try{const older=await api('conversation',{conversation_id:selectedId(),before:state.conversation.next_before,limit:MESSAGE_PAGE_SIZE});state.conversation.messages=[...(older.messages||[]),...(state.conversation.messages||[])];state.conversation.next_before=older.next_before;renderMessages();requestAnimationFrame(()=>{if(box)box.scrollTop=Math.max(0,previousTop+(box.scrollHeight-previousHeight))})}finally{state.loadingOlder=false}}
-async function refreshSelected(){if(document.hidden||state.refreshing||!state.conversationOpen||!selectedId())return;state.refreshing=true;const id=selectedId();try{const current=await api('conversation',{conversation_id:id,limit:MESSAGE_PAGE_SIZE});if(selectedId()!==id)return;const before=state.conversation?.messages?.at(-1)?.id,after=current.messages?.at(-1)?.id;state.conversation=current;document.dispatchEvent(new CustomEvent('attendance:conversation-refreshed',{detail:{conversation_id:id,messages:Array.isArray(current.messages)?current.messages:[]}}));if(before!==after)renderMessages();else renderWindow()}catch{}finally{state.refreshing=false}}
-async function backgroundRefresh(){if(document.hidden)return;await loadQueue({silent:true});await refreshSelected()}
-
-function adminLink(tab,params={}){const u=new URL('/vitrine/admin/',location.origin);u.searchParams.set('tab',tab);for(const [k,v] of Object.entries(params))if(v)u.searchParams.set(k,v);return u.toString()}
-function actionLink(label,href,primary=false){const a=document.createElement('a');a.href=href;a.textContent=label;if(primary)a.className='primary-action';return a}
-const VALID_ORDER_ID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-function isConfirmableOrder(order){
-  return Boolean(order&&VALID_ORDER_ID.test(String(order.id||''))&&['storefront_received','created'].includes(String(order.status||'').toLowerCase())&&!order.confirmed_at&&!order.cancelled_at);
-}
-function orderStatusLabel(status){
-  const labels={storefront_received:'Recebido · aguardando confirmação',created:'Recebido · aguardando confirmação',confirmed:'Confirmado',processing:'Em separação',ready:'Separado',out_for_delivery:'Em entrega',delivered:'Entregue',cancelled:'Cancelado'};
-  return labels[String(status||'').toLowerCase()]||status||'—';
-}
-function confirmOrderErrorMessage(error){
-  const code=String(error?.payload?.error||error?.message||'');
-  if(code==='order_operational_data_incomplete'){
-    const names={customer_required:'nome do cliente',delivery_street_required:'rua',delivery_number_required:'número',delivery_city_required:'cidade',delivery_state_required:'estado',payment_method_required:'forma de pagamento'};
-    const fields=(error?.payload?.blockers||[]).map(key=>names[key]||key);
-    return 'Confirmação impedida. Preencha no pedido: '+(fields.join(', ')||'dados obrigatórios')+'.';
-  }
-  if(code==='invalid_status_transition')return 'O pedido mudou de situação. Atualize a lista antes de confirmar.';
-  if(['stock_unavailable','insufficient_stock','stock_reservation_failed'].includes(code))return 'Não há estoque suficiente. Abra o pedido para conferir os itens.';
-  if(code==='forbidden')return 'Sua sessão não tem permissão para confirmar pedidos.';
-  if(code==='order_not_found')return 'Pedido não localizado. Atualize a lista.';
-  if(code==='legacy_order_read_only')return 'Este pedido é somente leitura no sistema.';
-  if(code==='confirmation_state_changed')return 'O pedido já foi alterado. Atualize a lista para conferir.';
-  return 'Não foi possível confirmar o pedido ('+(code||'erro de comunicação')+'). Abra o pedido para conferir.';
-}
-async function adminOrderRequest(action,id,payload=null){
-  const url=new URL(ORDERS_ADMIN_API);
-  url.searchParams.set('action',action);
-  if(payload===null)url.searchParams.set('id',id);
-  const options=payload===null?{method:'GET'}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)};
-  const response=await attendanceAuthorizedFetch(url,options);
-  const data=await response.json().catch(()=>({ok:false,error:'resposta_invalida'}));
-  if(!response.ok||data?.ok===false){const error=new Error(String(data?.error||'service_error'));error.payload=data;error.status=response.status;throw error}
-  return data;
-}
-function createConfirmOrderButton(order){
-  const button=document.createElement('button');
-  button.type='button';
-  button.className='confirm-order-quick';
-  button.textContent='✓ Confirmar pedido';
-  button.disabled=orderConfirmingIds.has(String(order.id));
-  button.title='Confirma imediatamente este pedido e move para Confirmados';
-  button.onclick=()=>confirmOrderFromAttendance(order.id,button);
-  return button;
-}
-async function confirmOrderFromAttendance(orderId,button){
-  const id=String(orderId||''),conversationId=selectedId();
-  if(!VALID_ORDER_ID.test(id)||orderConfirmingIds.has(id))return;
-  const order=(state.context?.orders||[]).find(x=>String(x.id)===id);
-  if(!conversationId||!isConfirmableOrder(order))return;
-  orderConfirmingIds.add(id);
-  button.disabled=true;button.textContent='Confirmando…';
-  try{
-    // Confira novamente o estado canônico antes da única gravação.
-    const latest=(await adminOrderRequest('order',id)).order;
-    if(!isConfirmableOrder(latest))throw Object.assign(new Error('confirmation_state_changed'),{payload:{error:'confirmation_state_changed'}});
-    await adminOrderRequest('order_update',id,{id,status:'confirmed',operator:'Atendimento'});
-    if(selectedId()===conversationId&&state.context){
-      state.context.orders=(state.context.orders||[]).map(o=>String(o.id)===id?{...o,status:'confirmed',confirmed_at:new Date().toISOString()}:o);
-      renderContext();
-      showNote('Pedido '+(order.public_order_code||order.order_number||'')+' confirmado. Está em Confirmados.','success');
-      const refreshed=await Promise.allSettled([api('context',{conversation_id:conversationId}),loadQueue({silent:true})]);
-      if(selectedId()===conversationId&&refreshed[0].status==='fulfilled'){
-        state.context=refreshed[0].value;
-        renderContext();
-      }
+function bind() {
+  $('#globalSearch').addEventListener('input', event => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      state.search = event.target.value.trim();
+      loadQueue().catch(() => {});
+    }, 250);
+  });
+  $$('[data-channel-switch]').forEach(button => button.addEventListener('click', () => switchChannel(button.dataset.channelSwitch)));
+  $('#messages').addEventListener('scroll', event => { if (event.currentTarget.scrollTop < 36) loadOlder().catch(() => {}); });
+  $('#mobileChatBackBtn').addEventListener('click', () => {
+    state.conversationOpen = false;
+    syncMobile();
+  });
+  window.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && state.conversationOpen) {
+      state.conversationOpen = false;
+      syncMobile();
     }
-  }catch(error){
-    if(button.isConnected){
-      button.disabled=false;button.textContent='✓ Confirmar pedido';
-      let note=button.parentElement?.querySelector('.order-confirm-feedback');
-      if(!note){note=document.createElement('div');note.className='order-confirm-feedback';note.setAttribute('role','alert');button.parentElement?.append(note)}
-      if(note)note.textContent=confirmOrderErrorMessage(error);
-    }
-    showNote(confirmOrderErrorMessage(error),'error');
-    if(error?.payload?.error==='invalid_status_transition'||error?.payload?.error==='confirmation_state_changed'){
-      api('context',{conversation_id:conversationId}).then(data=>{if(selectedId()===conversationId){state.context=data;renderContext()}}).catch(()=>{});
-      loadQueue({silent:true}).catch(()=>{});
-    }
-  }finally{
-    orderConfirmingIds.delete(id);
+  });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) backgroundRefresh().catch(() => {}); });
+  document.addEventListener('attendance:sent', event => {
+    if (event.detail?.conversationId === selectedId()) setTimeout(() => refreshSelected(), 500);
+  });
+  window.addEventListener('beforeunload', () => clearInterval(refreshTimer));
+}
+
+async function boot() {
+  bind();
+  try {
+    await ensureAttendanceToken();
+    await loadAccounts();
+    if (embeddedOrder) await openOrderConversation();
+    else await loadQueue();
+    refreshTimer = setInterval(() => backgroundRefresh().catch(() => {}), REFRESH_MS);
+  } catch {
+    setConnection('Não foi possível iniciar o atendimento', 'error');
+    queueState('Não foi possível conectar. Verifique a sessão do Admin.', true);
   }
 }
 
-function renderOverview(box){box.replaceChildren();const c=state.context?.customer,conversationPhone=state.conversation?.conversation?.phone_e164||'',a=state.context?.address,r=state.context?.registration,orders=[...(state.context?.orders||[])];const customer=document.createElement('section');customer.className='context-card';customer.innerHTML='<h3>Cliente</h3>';if(c){const hero=document.createElement('div');hero.className='customer-hero';hero.innerHTML=`<span class="avatar">${initials(c.name||c.phone_e164)}</span><div><strong>${c.name||'Cliente'}</strong><small>${conversationPhone}</small>${r?.registration_complete?'':'<span class="status-chip">Cadastro pendente</span>'}</div>`;customer.append(hero);for(const [label,value] of [['Endereço',a?[a.street,a.number,a.neighborhood,a.city].filter(Boolean).join(', '):'Não informado'],['Documento',c.masked_document||'Não informado'],['Comprado',money(c.lifetime_value||0)],['Marketing',c.marketing_opt_in?'Autorizado':'Não autorizado']]){const row=document.createElement('div');row.className='context-row';const l=document.createElement('span');l.textContent=label;const v=document.createElement('strong');v.textContent=value;row.append(l,v);customer.append(row)}const actions=document.createElement('div');actions.className='context-actions';actions.append(actionLink('Abrir cliente',adminLink('customers',{customer_id:c.id})),actionLink('Criar orçamento',adminLink('quotes',{customer_id:c.id,source:'attendance'})));customer.append(actions)}else customer.innerHTML+='<div class="context-empty">Conversa sem cliente vinculado. O chat continua disponível pelo telefone.</div>';box.append(customer);const order=document.createElement('section');order.className='context-card';order.innerHTML='<h3>Pedido atual</h3>';const current=orders[0];if(current){const head=document.createElement('div');head.className='order-head';head.innerHTML=`<strong>${current.public_order_code||current.order_number||'Pedido'}</strong><small>${fmtDate(current.confirmed_at||current.created_at)}</small>`;order.append(head);const row=document.createElement('div');row.className='context-row';row.innerHTML=`<span>${current.status||'Pedido'}</span><strong>${money(current.total)}</strong>`;order.append(row);const actions=document.createElement('div');actions.className='context-actions';actions.append(actionLink('Abrir pedido',adminLink('orders',{pedido:current.id}),true));if(isConfirmableOrder(current))actions.append(createConfirmOrderButton(current));const publicUrl=String(current.public_order_url||'').trim()||`https://donaantonia.com.br/pedido/?o=${encodeURIComponent(current.id)}`;actions.append(actionLink('Abrir vitrine',publicUrl));const copy=document.createElement('button');copy.type='button';copy.textContent='Copiar link';copy.onclick=async()=>{try{await navigator.clipboard.writeText(publicUrl);copy.textContent='Copiado'}catch{}setTimeout(()=>{if(copy.isConnected)copy.textContent='Copiar link'},1200)};actions.append(copy);order.append(actions)}else order.innerHTML+='<div class="context-empty">Nenhum pedido encontrado.</div>';box.append(order)}
-function renderOrders(box){
-  box.replaceChildren();
-  const orders=state.context?.orders||[];
-  if(!orders.length){box.innerHTML='<div class="context-empty">Nenhum pedido encontrado.</div>';return}
-  for(const order of orders){
-    const card=document.createElement('article');
-    card.className='order-card';
-    card.innerHTML=`<div class="order-head"><strong>${order.public_order_code||order.order_number||'Pedido'}</strong><small>${fmtDate(order.confirmed_at||order.created_at)}</small></div><div class="context-row"><span>${orderStatusLabel(order.status)}</span><strong>${money(order.total)}</strong></div>`;
-    const actions=document.createElement('div');
-    actions.className='context-actions';
-    actions.append(actionLink('Abrir pedido',adminLink('orders',{pedido:order.id})));
-    if(isConfirmableOrder(order))actions.append(createConfirmOrderButton(order));
-    card.append(actions);
-    box.append(card);
-  }
-}
-function syncProductCards(list){for(const card of list.querySelectorAll('.product-card[data-product-id]')){const active=isAttendanceProductSelected(card.dataset.productId);card.classList.toggle('selected',active);const button=card.querySelector('.product-select-btn');if(button){button.classList.toggle('active',active);button.textContent=active?'Selecionado':'Selecionar'}}}
-function syncProductBatchBar(list,message=''){const bar=list.parentElement?.querySelector('.product-batch-bar');if(!bar)return;const items=attendanceProductSelection(),failedItems=attendanceProductFailedSelection(),count=items.length,status=bar.querySelector('[data-product-batch-status]'),clear=bar.querySelector('[data-product-batch-clear]'),send=bar.querySelector('[data-product-batch-send]'),windowOpen=state.conversation?.service_window?.open===true;if(status){if(message)status.textContent=message;else if(!windowOpen&&count)status.textContent='Janela de 24h encerrada. Produtos não podem ser enviados.';else status.textContent=count?count+' de '+MAX_PRODUCT_BATCH+' selecionado'+(count===1?'':'s'):'Selecione até '+MAX_PRODUCT_BATCH+' produtos.'}if(clear)clear.disabled=productBatchSending||count===0;if(send){const retry=failedItems.length>0&&failedItems.length===count;bar.dataset.retry=retry?'true':'false';send.textContent=retry?'Tentar novamente '+failedItems.length:'Enviar '+count+' produto'+(count===1?'':'s');send.disabled=productBatchSending||count===0||!windowOpen}syncProductCards(list)}
-async function sendSelectedProducts(list,retry=false){if(productBatchSending)return;const conversationId=selectedId(),windowOpen=state.conversation?.service_window?.open===true;if(!conversationId){syncProductBatchBar(list,'Selecione uma conversa antes de enviar.');return}if(!windowOpen){syncProductBatchBar(list,'Janela de 24h encerrada. Produtos não podem ser enviados.');return}const products=retry?attendanceProductFailedSelection():attendanceProductSelection();if(!products.length){syncProductBatchBar(list);return}productBatchSending=true;syncProductBatchBar(list,'Preparando '+products.length+' produto'+(products.length===1?'':'s')+'…');try{const runner=retry?retryFailedAttendanceProducts:sendAttendanceProductBatch;const options={conversationId,serviceWindowOpen:windowOpen,onProgress:info=>{if(selectedId()!==conversationId)return;if(info.phase==='sending')syncProductBatchBar(list,'Enviando '+info.current+' de '+info.total+'…')}};if(!retry)options.products=products;const result=await runner(options);if(selectedId()!==conversationId)return;const sentCount=result.sent?.length||0,failedCount=result.failed?.length||0;syncProductBatchBar(list,failedCount?sentCount+' enviado'+(sentCount===1?'':'s')+' · '+failedCount+' falhou':sentCount+' produto'+(sentCount===1?' enviado':'s enviados'));const fresh=await api('conversation',{conversation_id:conversationId,limit:MESSAGE_PAGE_SIZE}).catch(()=>null);if(fresh&&selectedId()===conversationId){state.conversation=fresh;renderMessages()}loadQueue({silent:true}).catch(()=>{})}catch(error){if(selectedId()===conversationId)syncProductBatchBar(list,String(error?.message||'Falha ao enviar produtos.'))}finally{productBatchSending=false;if(selectedId()===conversationId)syncProductBatchBar(list)}}
-async function searchProducts(input,box){const q=input.value.trim();if(q.length<2){box.replaceChildren();syncProductBatchBar(box);return}box.textContent='Buscando…';try{const data=await api('products',{q,limit:12});box.replaceChildren();for(const p of data.items||[]){const card=document.createElement('article');card.className='product-card';card.dataset.productId=p.id;if(isAttendanceProductSelected(p.id))card.classList.add('selected');const line=document.createElement('div');line.className='product-line';if(p.image_url){const img=document.createElement('img');img.className='product-thumb';img.src=p.image_url;img.alt=p.name||'Produto';img.loading='lazy';line.append(img)}const meta=document.createElement('div');const strong=document.createElement('strong');strong.textContent=p.name;const price=document.createElement('div');price.className='product-price';price.textContent=money(p.offer?.active?p.offer.price:p.sale_price)+' · estoque '+p.sellable_stock;meta.append(strong,price);line.append(meta);card.append(line);const actions=document.createElement('div');actions.className='product-card-actions';const select=document.createElement('button');select.type='button';select.className='product-select-btn';select.textContent=isAttendanceProductSelected(p.id)?'Selecionado':'Selecionar';select.classList.toggle('active',isAttendanceProductSelected(p.id));select.onclick=()=>{const result=toggleAttendanceProductSelection(p);if(result.ok!==true){syncProductBatchBar(box,'Limite de '+MAX_PRODUCT_BATCH+' produtos por envio.');return}syncProductBatchBar(box)};const text=document.createElement('button');text.type='button';text.textContent='Texto';text.title='Colocar nome e preço no campo de mensagem';text.onclick=()=>setDraft(p.name+' — '+money(p.offer?.active?p.offer.price:p.sale_price));actions.append(select,text);card.append(actions);box.append(card)}if(!box.children.length)box.innerHTML='<div class="context-empty">Nenhum produto encontrado.</div>';syncProductBatchBar(box)}catch{box.textContent='Não foi possível buscar produtos.';syncProductBatchBar(box)}}
-function renderProducts(box){box.replaceChildren();const input=document.createElement('input');input.className='product-search';input.type='search';input.placeholder='Buscar por nome ou EAN';const bar=document.createElement('div');bar.className='product-batch-bar';const status=document.createElement('span');status.dataset.productBatchStatus='';const actions=document.createElement('div');actions.className='product-batch-actions';const clear=document.createElement('button');clear.type='button';clear.dataset.productBatchClear='';clear.textContent='Limpar';clear.onclick=()=>{clearAttendanceProductSelection();syncProductBatchBar(list)};const send=document.createElement('button');send.type='button';send.dataset.productBatchSend='';send.className='primary';send.textContent='Enviar 0 produtos';send.onclick=()=>sendSelectedProducts(list,bar.dataset.retry==='true').catch(()=>{});actions.append(clear,send);bar.append(status,actions);const list=document.createElement('div');list.className='products-list';input.oninput=()=>{clearTimeout(productTimer);productTimer=setTimeout(()=>searchProducts(input,list),250)};box.append(input,bar,list);syncProductBatchBar(list)}
-function renderAssistant(box){box.innerHTML='<section class="context-card"><h3>ANA · prévia segura</h3><p class="context-muted">Gere uma sugestão para avaliação. A prévia não envia mensagem automaticamente.</p></section>'}
-function renderContext(){const box=$('#contextBody');if(!selectedId()){box.innerHTML='<div class="context-empty">Selecione uma conversa.</div>';return}if(state.contextTab==='customer')renderOverview(box);else if(state.contextTab==='orders')renderOrders(box);else if(state.contextTab==='products')renderProducts(box);else renderAssistant(box)}
-
-function closePanels(){for(const id of ['quickRepliesMenu','followUpPanel','moreToolsMenu','conversationLabelsMenu']){const e=$(`#${id}`);if(e)e.hidden=true}}
-function renderQuickReplies(){const box=$('#quickRepliesList');box.replaceChildren();for(const q of state.quickReplies.filter(x=>x.is_active!==false&&x.is_favorite!==false)){const b=document.createElement('button');b.type='button';b.className='quick-reply';b.textContent=q.title;b.onclick=()=>{setDraft(q.content);$('#quickRepliesMenu').hidden=true};box.append(b)}if(!box.children.length)box.innerHTML='<span class="context-empty">Nenhuma resposta favorita.</span>'}
-async function loadQuickReplies(){const data=await api('quick_replies');state.quickReplies=data.items||[];renderQuickReplies()}
-function renderLabelManager(){const box=$('#labelManagerList');if(!box)return;box.replaceChildren();for(const l of state.labels){const row=document.createElement('div');row.className='manager-item label-manager-item';const info=document.createElement('div');const title=document.createElement('strong');const dot=document.createElement('span');dot.className='label-manager-dot';dot.style.background=l.color||'#5f6368';title.append(dot,document.createTextNode(l.name));const sub=document.createElement('small');sub.textContent=`Ordem ${Number(l.sort_order||0)}`;info.append(title,sub);const actions=document.createElement('div');actions.className='manager-item-actions';const edit=document.createElement('button');edit.type='button';edit.textContent='Editar';edit.onclick=()=>{const form=$('#labelForm');$('#labelEditId').value=l.id;$('#labelName').value=l.name;$('#labelColor').value=l.color||'#5f6368';$('#labelSortOrder').value=String(Number(l.sort_order||0));form?.querySelector('#labelName')?.focus()};const remove=document.createElement('button');remove.type='button';remove.className='danger';remove.textContent='Apagar';remove.onclick=()=>deactivateLabel(l.id).catch(()=>showNote('Não consegui apagar etiqueta','error'));actions.append(edit,remove);row.append(info,actions);box.append(row)}if(!box.children.length)box.innerHTML='<span class="context-empty">Nenhuma etiqueta criada.</span>'}
-function resetLabelForm(){const form=$('#labelForm');if(form)form.reset();$('#labelEditId').value='';$('#labelColor').value='#5f6368';$('#labelSortOrder').value='0'}
-function openLabelManager(){renderLabelManager();$('#labelManager').hidden=false;setTimeout(()=>$('#labelName')?.focus(),0)}
-function closeLabelManager(){const d=$('#labelManager');if(d)d.hidden=true;resetLabelForm()}
-async function saveLabelForm(event){event?.preventDefault();const id=$('#labelEditId').value.trim(),name=$('#labelName').value.trim(),color=$('#labelColor').value,sort_order=Number($('#labelSortOrder').value||0);if(!name)return;await api('label_save',{id:id||null,name,color,sort_order},'POST');resetLabelForm();await loadLabels();await loadQueue({silent:true});renderLabelManager()}
-async function deactivateLabel(id){if(!id||!confirm('Apagar esta etiqueta?'))return;await api('label_deactivate',{id},'POST');if(state.labelFilter===id){state.quickFilter='recent';state.labelFilter=''}await loadLabels();await loadQueue({silent:true});renderLabelManager()}
-async function loadLabels(){const data=await api('labels');state.labels=data.items||[];if(state.labelFilter&&!state.labels.some(x=>x.id===state.labelFilter)){state.quickFilter='recent';state.labelFilter=''}renderQueueLabelFilters();renderConversationLabels();renderLabelManager()}
-function renderConversationLabels(){const box=$('#conversationLabelsList');if(!box)return;box.replaceChildren();for(const l of state.labels){const label=document.createElement('label');label.className='conversation-label-choice';const input=document.createElement('input');input.type='checkbox';input.value=l.id;input.checked=state.conversationLabelIds.includes(l.id);const c=document.createElement('span');c.className='label-chip';c.textContent=l.name;c.style.setProperty('--label-color',l.color||'#5f6368');label.append(input,c);box.append(label)}}
-async function saveConversationLabels(){const ids=$$('#conversationLabelsList input:checked').map(x=>x.value),data=await api('conversation_labels_set',{conversation_id:selectedId(),label_ids:ids},'POST');state.conversationLabelIds=(data.labels||[]).map(x=>x.id);$('#conversationLabelsMenu').hidden=true;await loadQueue({silent:true})}
-async function prepareCatalog(){if(!selectedId())return;showNote('Gerando link identificado do catálogo…');try{const data=await api('issue_catalog',{conversation_id:selectedId()},'POST'),url=data.catalog_url||(data.catalog_path?`https://www.donaantonia.com.br${data.catalog_path}`:'');if(!url)throw new Error();setDraft(`Separei seu catálogo da Dona Antônia 😊\nO link já leva ao checkout com seu telefone preenchido:\n${url}\n\nSe preferir não fazer o pedido pelo site, me avise que monto por aqui.`);showNote('Link identificado preparado no rascunho','success')}catch{showNote('Não consegui gerar o catálogo','error')}}
-function openFollowUp(){closePanels();$('#followUpPanel').hidden=false;const input=$('#followUpAt');if(!input.value){const d=new Date(Date.now()+3600000);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());input.value=d.toISOString().slice(0,16)}}
-async function saveFollowUp(){const raw=$('#followUpAt').value;if(!raw||Date.parse(raw)<=Date.now()){showNote('Escolha uma data futura','error');return}await api('follow_up',{conversation_id:selectedId(),follow_up_at:new Date(raw).toISOString()},'POST');$('#followUpPanel').hidden=true;showNote('Retorno marcado','success');await loadQueue({silent:true})}
-async function clearFollowUp(){await api('follow_up',{conversation_id:selectedId(),follow_up_at:null},'POST');$('#followUpPanel').hidden=true;showNote('Retorno removido')}
-async function optOut(){if(!state.context?.customer?.id||!confirm('Parar de enviar ofertas para este cliente?'))return;await api('marketing_opt_out',{conversation_id:selectedId()},'POST');state.context.customer.marketing_opt_in=false;renderContext();showNote('Ofertas desativadas','success')}
-async function copyDraft(){const text=$('#messageDraft').value.trim();if(!text)return;try{await navigator.clipboard.writeText(text);showNote('Resposta copiada','success')}catch{showNote('Não consegui copiar automaticamente','error')}}
-function bind(){$('#openReceivedOrderBtn').onclick=openReceivedOrderFromChat;const mobileBack=$('#mobileChatBackBtn');if(mobileBack)mobileBack.onclick=closeMobileConversation;window.addEventListener('keydown',event=>{if(event.key==='Escape'&&window.matchMedia('(max-width:680px)').matches&&state.conversationOpen)closeMobileConversation()});$('#messages').onscroll=e=>{if(e.currentTarget.scrollTop<36)loadOlder().catch(()=>{})};$('#globalSearch').oninput=e=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{state.search=e.target.value.trim();loadQueue().catch(()=>{})},250)};$$('[data-channel-switch]').forEach(b=>b.onclick=()=>switchChannel(b.dataset.channelSwitch).catch(()=>{}));$$('[data-queue-filter]').forEach(b=>b.onclick=()=>applyQueueFilter(b.dataset.queueFilter).catch(()=>{}));$('#queueFilterMenuBtn').onclick=e=>{e.stopPropagation();toggleQueueFilterMenu()};$('#queueFilterMenu').onclick=e=>e.stopPropagation();$$('.context-tabs [data-context-tab]').forEach(b=>b.onclick=()=>{$$('.context-tabs [data-context-tab]').forEach(x=>x.classList.toggle('active',x===b));state.contextTab=b.dataset.contextTab;renderContext()});$('#openContextBtn').onclick=()=>$('#contextPane').classList.add('open');$('#closeContextBtn').onclick=()=>$('#contextPane').classList.remove('open');$('#quickRepliesBtn').onclick=()=>{const p=$('#quickRepliesMenu'),open=p.hidden;closePanels();p.hidden=!open};$('#productsBtn').onclick=()=>{state.contextTab='products';$$('.context-tabs [data-context-tab]').forEach(x=>x.classList.toggle('active',x.dataset.contextTab==='products'));renderContext();$('#contextPane').classList.add('open')};$('#moreToolsBtn').onclick=()=>{const p=$('#moreToolsMenu'),open=p.hidden;closePanels();p.hidden=!open};$('#conversationLabelsBtn').onclick=()=>{renderConversationLabels();const p=$('#conversationLabelsMenu'),open=p.hidden;closePanels();p.hidden=!open};$('#saveConversationLabelsBtn').onclick=()=>saveConversationLabels().catch(()=>showNote('Não consegui salvar etiquetas','error'));$('#catalogBtn').onclick=()=>prepareCatalog().catch(()=>{});$('#quoteBtn').onclick=()=>{const id=state.context?.customer?.id;if(id)location.assign(adminLink('quotes',{customer_id:id,source:'attendance'}))};$('#saleBtn').onclick=()=>{const id=state.context?.customer?.id;if(id)location.assign(adminLink('quotes',{customer_id:id,source:'attendance',new_sale:'1'}))};$('#followUpBtn').onclick=openFollowUp;$('#saveFollowUpBtn').onclick=()=>saveFollowUp().catch(()=>showNote('Não consegui marcar retorno','error'));$('#clearFollowUpBtn').onclick=()=>clearFollowUp().catch(()=>showNote('Não consegui limpar retorno','error'));$('#cancelFollowUpBtn').onclick=()=>$('#followUpPanel').hidden=true;$('#optOutBtn').onclick=()=>optOut().catch(()=>showNote('Não consegui atualizar marketing','error'));$('#copyReplyBtn').onclick=()=>copyDraft().catch(()=>{});$('#messageDraft').oninput=syncFallback;$('#manageLabelsBtn').onclick=()=>{const menu=$('#queueFilterMenu');if(menu)menu.hidden=true;$('#queueFilterMenuBtn')?.setAttribute('aria-expanded','false');openLabelManager()};$('#closeLabelManagerBtn').onclick=closeLabelManager;$('#labelForm').onsubmit=e=>saveLabelForm(e).catch(()=>showNote('Não consegui salvar etiqueta','error'));$('#labelManager').onclick=e=>{if(e.target===$('#labelManager'))closeLabelManager()};document.addEventListener('click',e=>{const wrap=$('#queueFilterWrap');if(wrap&&!wrap.contains(e.target)){const menu=$('#queueFilterMenu');if(menu)menu.hidden=true;$('#queueFilterMenuBtn')?.setAttribute('aria-expanded','false')}});$('#manageQuickRepliesBtn').onclick=()=>showNote('Respostas rápidas permanecem disponíveis nesta central.');document.addEventListener('visibilitychange',()=>{if(!document.hidden)backgroundRefresh().catch(()=>{})});window.addEventListener('beforeunload',()=>{if(refreshTimer)clearInterval(refreshTimer)})}
-async function boot(){bind();syncFallback();try{await ensureAttendanceToken();await loadAccounts();await Promise.allSettled([loadLabels(),loadQuickReplies()]);if(EMBEDDED_ORDER)await openEmbeddedOrderConversation();else await loadQueue();if(refreshTimer)clearInterval(refreshTimer);refreshTimer=setInterval(()=>backgroundRefresh().catch(()=>{}),REFRESH_MS)}catch(error){setConnection('Não foi possível iniciar o atendimento','error');queueState('Falha ao conectar o Atendimento. Sua sessão pode ter expirado.',true);if(EMBEDDED_ORDER)embeddedOrderNotice('Atendimento indisponível','Não foi possível carregar o chat. Verifique a sessão do Admin e tente novamente.')}}
 boot();
-

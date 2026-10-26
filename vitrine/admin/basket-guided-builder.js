@@ -1,208 +1,324 @@
-(()=>{
+(() => {
   'use strict';
-  const API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-basket-guided-v1';
-  const KIT_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-kit-builder-v1';
-  const STATUS_LABELS={assembling:'Em montagem',mounted:'Montado',paused:'Pausado',depleted:'Esgotado',cancelled:'Cancelado'};
-  const BUSINESS_LABELS={basic_complete:'Cesta completa',basic_food:'Só alimento',cleaning_hygiene:'Limpeza e higiene',cleaning:'Limpeza',hygiene:'Higiene'};
-  const RECIPE_TYPE_LABELS={food:'Alimentos',cleaning_hygiene:'Limpeza e higiene',other:'Outro'};
-  const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v||0));
-  const qty=v=>new Intl.NumberFormat('pt-BR',{maximumFractionDigits:3}).format(Number(v||0));
-  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let state=null,observer=null;
 
-  function bridge(){return window.DonaAntoniaAdminBridge||{}}
-  function toast(msg){const b=bridge();if(typeof b.toast==='function')b.toast(msg);else alert(msg)}
-  function operator(){const b=bridge();return typeof b.operator==='function'?(b.operator()||'Operação'):'Operação'}
-  async function token(){const b=bridge();if(typeof b.token!=='function')throw new Error('admin_bridge_unavailable');return await b.token()}
-  // Shared response handling for the guided basket and kit endpoints.
-  // Preserve endpoint-specific error codes and the attached response metadata.
-  async function readApiResponse(res,fallbackError){
-    const data=await res.json().catch(()=>({ok:false,error:'invalid_response'}));
-    if(!res.ok||data?.ok===false){
-      const e=new Error(data?.error||fallbackError);
-      e.data=data;
-      e.status=res.status;
-      throw e;
+  const ENDPOINT = 'https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-basket-guided-v1';
+  const state = { basketId: '', model: null, categories: [], subcategories: [], positions: [] };
+  const money = value => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value || 0));
+  const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+  const bridge = () => window.DonaAntoniaAdminBridge || {};
+  const toast = message => typeof bridge().toast === 'function' ? bridge().toast(message) : console.warn(message);
+  const operator = () => typeof bridge().operator === 'function' ? bridge().operator() || 'Operação' : 'Operação';
+
+  async function call(action, payload = {}) {
+    const token = await bridge().token?.();
+    if (!token) throw new Error('Sessão administrativa indisponível.');
+    const response = await fetch(ENDPOINT, {
+      method: 'POST', cache: 'no-store',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ action, ...payload })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.ok === false) {
+      const error = new Error(data.message || data.error || 'Não foi possível salvar a cesta.');
+      error.data = data;
+      throw error;
     }
     return data;
   }
-  async function call(action,payload={}){
-    const t=await token();
-    const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},body:JSON.stringify({action,...payload}),cache:'no-store'});
-    return readApiResponse(res,'guided_request_failed');
-  }
-  async function kitCall(action,payload={}){
-    const t=await token();
-    const q=new URLSearchParams({action});
-    Object.entries(payload||{}).forEach(([k,v])=>{if(v!==undefined&&v!==null&&v!=='')q.set(k,String(v))});
-    const res=await fetch(KIT_API+'?'+q.toString(),{method:'GET',headers:{Authorization:'Bearer '+t},cache:'no-store'});
-    return readApiResponse(res,'kit_builder_request_failed');
+
+  function dialog() {
+    let modal = document.getElementById('simpleBasketEditor');
+    if (modal) return modal;
+    const style = document.createElement('style');
+    style.id = 'simpleBasketEditorStyles';
+    style.textContent = `
+      #simpleBasketEditor{width:min(96vw,980px);max-height:94vh;border:0;border-radius:14px;padding:0;color:#18221c;box-shadow:0 20px 70px #0004}
+      #simpleBasketEditor::backdrop{background:#10181488}.simple-basket-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:12px;padding:14px;background:#fff;border-bottom:1px solid #e5e9e6}.simple-basket-head strong{flex:1;font-size:18px}
+      .simple-basket-editor-body{padding:14px;background:#f7f8f7}.simple-basket-form,.simple-basket-positions{display:grid;gap:10px}.simple-basket-card{padding:14px;margin-bottom:12px;background:white;border:1px solid #e2e7e3;border-radius:12px}.simple-basket-card h3{margin:0 0 10px;font-size:16px}.simple-basket-card p{margin:0 0 10px;color:#66716a;font-size:12px}
+      .simple-basket-form{grid-template-columns:1fr 1fr}.simple-basket-form label,.simple-basket-position label{display:grid;gap:4px;font-size:12px;font-weight:800}.simple-basket-form input,.simple-basket-form select,.simple-basket-position input{min-width:0;min-height:40px;padding:8px 10px;border:1px solid #dce2de;border-radius:8px;background:white}.simple-basket-wide{grid-column:1/-1}
+      .simple-basket-position{display:grid;grid-template-columns:minmax(160px,1fr) 100px auto;gap:8px;align-items:end;padding:10px;border:1px solid #e1e6e2;border-radius:10px}.simple-basket-position-controls{display:flex;gap:6px}.simple-basket-product-list{display:flex;gap:8px;overflow:auto;padding:8px 0}.simple-basket-product{flex:0 0 170px;padding:9px;border:1px solid #e1e6e2;border-radius:10px;background:#fff}.simple-basket-product.selected{border:2px solid #176b43}.simple-basket-product img{width:100%;height:86px;object-fit:contain}.simple-basket-product strong,.simple-basket-product small{display:block}.simple-basket-product small{margin-top:5px;color:#66716a}.simple-basket-product button{width:100%;margin-top:8px}
+      .simple-basket-summary{position:sticky;bottom:0;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px;padding:10px;background:white;border:1px solid #dce2de;border-radius:10px;box-shadow:0 -4px 12px #0001}.simple-basket-summary span{display:grid;gap:3px;font-size:10px;color:#66716a}.simple-basket-summary strong{font-size:14px;color:#18221c}.simple-basket-actions{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px}.simple-basket-empty{padding:14px;text-align:center;color:#66716a}
+      @media(max-width:640px){#simpleBasketEditor{width:100vw;max-width:none;height:100vh;max-height:100vh;border-radius:0}.simple-basket-form{grid-template-columns:1fr}.simple-basket-wide{grid-column:auto}.simple-basket-position{grid-template-columns:1fr 90px}.simple-basket-position-controls{grid-column:1/-1}.simple-basket-summary{grid-template-columns:1fr 1fr}}
+    `;
+    document.head.append(style);
+    modal = document.createElement('dialog');
+    modal.id = 'simpleBasketEditor';
+    modal.innerHTML = '<div class="simple-basket-head"><strong id="simpleBasketTitle">Editar cesta</strong><button type="button" class="secondary" id="closeSimpleBasket">Fechar</button></div><div class="simple-basket-editor-body" id="simpleBasketBody"></div>';
+    document.body.append(modal);
+    modal.querySelector('#closeSimpleBasket').addEventListener('click', () => modal.close());
+    return modal;
   }
 
-  function ensureShell(){
-    if(!document.getElementById('basketGuidedStyles')){
-      const style=document.createElement('style');style.id='basketGuidedStyles';style.textContent=`
-        #basketGuidedDialog{width:min(98vw,1120px);max-height:94vh;border:0;border-radius:18px;padding:0;color:#18221c;box-shadow:0 24px 90px rgba(0,0,0,.28)}
-        #basketGuidedDialog::backdrop{background:rgba(15,23,18,.52)}
-        .bg-head{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid #e5e9e6;display:flex;gap:10px;align-items:center;padding:12px 14px}.bg-head strong{font-size:18px;flex:1}.bg-head button{min-height:40px}
-        .bg-body{padding:14px;background:#f7f8f7}.bg-section{background:#fff;border:1px solid #e5e9e6;border-radius:14px;padding:13px;margin-bottom:12px}.bg-section h3{margin:0 0 4px;font-size:16px}.bg-section>p{margin:0 0 11px;color:#66716a;font-size:12px}
-        .bg-commercial{display:grid;grid-template-columns:1.4fr .7fr .7fr;gap:9px}.bg-stat{background:#f5f7f5;border-radius:10px;padding:9px}.bg-stat small{display:block;color:#66716a;font-size:10px}.bg-stat strong{display:block;margin-top:2px}
-        .bg-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.bg-toolbar .spacer{flex:1}.bg-toolbar button,.bg-actions button,.bg-position-actions button{border:1px solid #e1e6e2;background:#fff;border-radius:9px;min-height:38px;padding:0 11px;font-weight:800}.bg-toolbar .primary,.bg-actions .primary{background:#176b43;color:#fff;border-color:#176b43}.bg-toolbar .danger,.bg-actions .danger{color:#9d2235}
-        .bg-positions{display:grid;gap:11px}.bg-position{border:1px solid #e1e6e2;border-radius:12px;padding:11px;background:#fff}.bg-position-top{display:grid;grid-template-columns:minmax(180px,1fr) 110px auto;gap:8px;align-items:end}.bg-position-top label span,.bg-advanced label span,.bg-lot-controls label span{display:block;font-size:10px;font-weight:800;color:#66716a;margin-bottom:3px}.bg-position input{width:100%;min-height:40px;border:1px solid #dce2de;border-radius:9px;padding:8px 10px}.bg-position-actions{display:flex;gap:5px}.bg-position-actions button{min-width:38px;padding:0 8px}.bg-family{display:inline-flex;margin-top:7px;border-radius:999px;background:#edf5f0;color:#135938;padding:4px 8px;font-size:10px;font-weight:800}.bg-selected{margin-top:9px;border-left:3px solid #176b43;padding:7px 9px;background:#f6faf7;border-radius:0 8px 8px 0}.bg-selected strong{display:block}.bg-selected small{color:#66716a}
-        .bg-carousel{display:flex;gap:8px;overflow-x:auto;padding:9px 1px 3px;scroll-snap-type:x proximity}.bg-product{flex:0 0 184px;border:1px solid #e1e6e2;border-radius:11px;padding:8px;background:#fff;scroll-snap-align:start;position:relative}.bg-product.selected{border:2px solid #176b43;padding:7px}.bg-product.disabled{opacity:.62}.bg-product img{width:100%;height:110px;object-fit:contain;background:#fafafa;border-radius:8px}.bg-product h4{font-size:12px;line-height:1.25;margin:7px 0 3px;min-height:30px}.bg-product .meta{font-size:9px;color:#66716a;min-height:26px}.bg-prices{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px}.bg-prices div,.bg-stock div{background:#f5f7f5;border-radius:7px;padding:5px}.bg-prices small,.bg-stock small{display:block;color:#66716a;font-size:8px}.bg-prices strong,.bg-stock strong{font-size:10px}.bg-stock{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-top:4px}.bg-product button{width:100%;border:0;background:#176b43;color:white;border-radius:8px;min-height:34px;margin-top:7px;font-weight:800}.bg-product button:disabled{background:#d7dcd9;color:#6f7772}.bg-more{flex:0 0 110px;align-self:stretch;border:1px dashed #b9c4bd;border-radius:10px;background:#fff;font-weight:800}
-        .bg-advanced{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}.bg-advanced label.check{display:flex;align-items:center;gap:6px}.bg-advanced label.check input{width:18px;min-height:auto}.bg-summary-title{display:block;margin:0 0 7px;font-size:12px;font-weight:900}.bg-summary{position:sticky;bottom:0;z-index:4;background:#fff;border:1px solid #dce2de;box-shadow:0 -8px 22px rgba(0,0,0,.06);border-radius:13px;padding:10px;margin-top:12px}.bg-summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.bg-summary-box{background:#f5f7f5;border-radius:9px;padding:8px}.bg-summary-box small{display:block;color:#66716a;font-size:9px}.bg-summary-box strong{font-size:13px}.bg-alert{margin-top:7px;border:1px solid #f1d09a;background:#fff8e8;color:#735008;border-radius:9px;padding:8px;font-size:11px}.bg-alert.error{border-color:#efb8b5;background:#fff4f4;color:#932526}
-        .bg-recipe-list{display:grid;gap:8px;margin:9px 0}.bg-recipe-card{display:grid;grid-template-columns:minmax(220px,1fr) 110px 150px auto;gap:8px;align-items:end;border:1px solid #e1e6e2;border-radius:11px;padding:10px;background:#fbfcfb}.bg-recipe-card h4{margin:0 0 3px;font-size:13px}.bg-recipe-meta{font-size:10px;color:#66716a;line-height:1.45}.bg-recipe-card label span,.bg-recipe-add label span{display:block;font-size:10px;font-weight:800;color:#66716a;margin-bottom:3px}.bg-recipe-card input[type=number],.bg-recipe-add select{width:100%;min-height:40px;border:1px solid #dce2de;border-radius:9px;padding:7px 9px;background:#fff}.bg-recipe-required{display:flex;gap:7px;align-items:center;min-height:40px;font-size:11px;font-weight:800}.bg-recipe-required input{width:18px;height:18px}.bg-recipe-remove{min-height:40px;border:1px solid #e1e6e2;background:#fff;color:#9d2235;border-radius:9px;font-weight:900;padding:0 10px}.bg-recipe-add{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:end}.bg-recipe-empty{padding:12px;border:1px dashed #c9d2cc;border-radius:10px;color:#66716a;font-size:11px;background:#fafbfa}
-        .bg-lot-fields{display:grid;grid-template-columns:1.25fr .55fr .7fr 1fr;gap:8px;margin-bottom:10px}.bg-lot-fields label span{display:block;font-size:10px;font-weight:800;color:#66716a;margin-bottom:3px}.bg-lot-fields input,.bg-lot-fields select{width:100%;min-height:42px;border:1px solid #dce2de;border-radius:9px;padding:8px 10px;background:#fff}.bg-linked-box{border:1px solid #dce2de;border-radius:10px;padding:9px;margin:8px 0;background:#fafcfb}.bg-linked-box>strong{display:block;font-size:11px;margin-bottom:6px}.bg-linked-list{display:grid;gap:5px}.bg-linked-item{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;border-top:1px solid #edf0ee;padding-top:5px;font-size:10px}.bg-linked-item:first-child{border-top:0;padding-top:0}.bg-linked-item small{color:#66716a}.bg-lot-controls{display:grid;grid-template-columns:150px 1fr auto;gap:8px;align-items:end}.bg-lot-controls input{min-height:42px;border:1px solid #dce2de;border-radius:9px;padding:8px 10px}.bg-preview{overflow:auto;margin-top:10px}.bg-preview table{width:100%;border-collapse:collapse;font-size:11px}.bg-preview th,.bg-preview td{padding:7px 8px;border-bottom:1px solid #e8ece9;text-align:right;white-space:nowrap}.bg-preview th:first-child,.bg-preview td:first-child{text-align:left}.bg-preview tr.bad{background:#fff1f1;color:#912035}.bg-preview-foot{display:flex;gap:7px;justify-content:flex-end;flex-wrap:wrap;margin-top:9px}.bg-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.bg-status{display:inline-flex;border-radius:999px;padding:5px 9px;background:#edf5f0;color:#135938;font-size:11px;font-weight:900}.bg-status.cancelled{background:#fff0f2;color:#912035}.bg-legacy-note{font-size:10px;color:#66716a;margin-top:7px}
-        @media(max-width:760px){#basketGuidedDialog{width:100vw;max-width:none;max-height:100vh;height:100vh;border-radius:0}.bg-body{padding:9px}.bg-commercial,.bg-position-top,.bg-lot-fields,.bg-lot-controls,.bg-recipe-card,.bg-recipe-add{grid-template-columns:1fr}.bg-position-actions{justify-content:flex-start}.bg-advanced{grid-template-columns:1fr 1fr}.bg-summary-grid{grid-template-columns:1fr 1fr}.bg-summary-box:last-child{grid-column:1/-1}.bg-product{flex-basis:158px}}
-      `;document.head.appendChild(style);
+  function normalizePosition(position, index) {
+    return {
+      ...position,
+      id: position.id || null,
+      product_id: position.product_id || null,
+      product_name: position.product_name || '',
+      position_label: position.position_label || position.product_name || '',
+      family_key: position.family_key || null,
+      search_query: position.search_query || position.product_name || position.position_label || '',
+      quantity: Number(position.quantity || 1),
+      removable: position.removable !== false,
+      quantity_editable: position.quantity_editable !== false,
+      min_quantity: Number(position.min_quantity || 0),
+      max_quantity: position.max_quantity == null ? null : Number(position.max_quantity),
+      remove_unit_delta: position.remove_unit_delta == null ? null : Number(position.remove_unit_delta),
+      add_unit_delta: position.add_unit_delta == null ? null : Number(position.add_unit_delta),
+      sort_order: index,
+      catalog: [], next_offset: null, loading: false,
+      selectedProduct: position.product_id ? {
+        id: position.product_id, name: position.product_name || '',
+        sale_price: Number(position.price || 0), cost_price: null
+      } : null
+    };
+  }
+
+  async function loadModel() {
+    const result = await call('model_editor', { basket_id: state.basketId });
+    state.model = result.editor || result.model || {};
+    state.categories = Array.isArray(result.categories) ? result.categories : [];
+    state.subcategories = Array.isArray(result.subcategories) ? result.subcategories : [];
+    state.positions = (state.model.positions || []).map(normalizePosition);
+  }
+
+  function categoryOptions(selected) {
+    return state.categories.map(category => '<option value="' + esc(category.id) + '" ' +
+      (String(category.id) === String(selected || '') ? 'selected' : '') + '>' + esc(category.name) + '</option>').join('');
+  }
+
+  function subcategoryOptions(categoryId, selected) {
+    return state.subcategories.filter(item => String(item.category_id) === String(categoryId || '')).map(item =>
+      '<option value="' + esc(item.id) + '" ' + (String(item.id) === String(selected || '') ? 'selected' : '') + '>' + esc(item.name) + '</option>').join('');
+  }
+
+  function currentForm() {
+    const root = document.getElementById('simpleBasketBody');
+    const basket = state.model?.basket || {};
+    const categoryId = root.querySelector('#basketCategory')?.value || basket.category_id || '';
+    return {
+      name: root.querySelector('#basketName')?.value.trim() || '',
+      category_id: categoryId,
+      subcategory_id: root.querySelector('#basketSubcategory')?.value || '',
+      base_price: Number(String(root.querySelector('#basketPrice')?.value || '0').replace(',', '.')),
+      image_url: root.querySelector('#basketImage')?.value.trim() || ''
+    };
+  }
+
+  function selectedProduct(position) {
+    return position.selectedProduct || { name: position.product_name, sale_price: 0, cost_price: null };
+  }
+
+  function summary() {
+    let cost = 0, sale = 0, known = true;
+    for (const position of state.positions) {
+      const product = selectedProduct(position), quantity = Number(position.quantity || 0);
+      sale += Number(product.sale_price || 0) * quantity;
+      if (product.cost_price == null || !Number.isFinite(Number(product.cost_price))) known = false;
+      else cost += Number(product.cost_price) * quantity;
     }
-    let d=document.getElementById('basketGuidedDialog');
-    if(!d){d=document.createElement('dialog');d.id='basketGuidedDialog';d.innerHTML='<div class="bg-head"><strong id="bgTitle">Cestas/Kits</strong><button class="secondary" id="bgClose" type="button">Fechar</button></div><div class="bg-body" id="bgBody"></div>';document.body.appendChild(d);d.querySelector('#bgClose').onclick=()=>d.close()}
-    return d;
+    const final = Number(currentForm().base_price || 0);
+    return '<div class="simple-basket-summary">' +
+      '<span>Custo interno<strong>' + (known ? money(cost) : '—') + '</strong></span>' +
+      '<span>Venda dos itens<strong>' + money(sale) + '</strong></span>' +
+      '<span>Valor da cesta<strong>' + money(final) + '</strong></span>' +
+      '<span>Valor oculto<strong>' + money(final - sale) + '</strong></span></div>';
   }
 
-  function normalizePosition(p,i){return {
-    key:p.id||('new-'+Date.now()+'-'+i+'-'+Math.random().toString(36).slice(2)),id:p.id||null,product_id:p.product_id||null,product_name:p.product_name||'',position_label:p.position_label||p.family_label||p.product_name||'',family_key:p.family_key||null,search_query:p.search_query||(!p.family_key?(p.position_label||p.product_name||''):null),quantity:Number(p.quantity||1),removable:p.removable!==false,quantity_editable:p.quantity_editable!==false,min_quantity:Number(p.min_quantity??0),max_quantity:p.max_quantity==null?null:Number(p.max_quantity),remove_unit_delta:p.remove_unit_delta==null?null:Number(p.remove_unit_delta),add_unit_delta:p.add_unit_delta==null?null:Number(p.add_unit_delta),sort_order:i,selectedProduct:p.product_id?{id:p.product_id,name:p.product_name||'',sale_price:Number(p.price||0),cost_price:null,effective_sellable_stock:null,basket_locked_quantity:null,loose_stock:null,is_active:true}:null,catalog:null,next_offset:null,loading:false
-  }}
-  function normalizeRecipeKit(k,i){return {kit_id:k.kit_id||k.id,name:k.name||'Kit interno',type:k.type||'other',quantity:Number(k.quantity||1),is_required:k.is_required!==false,sort_order:Number(k.sort_order??i),item_count:Number(k.item_count||0),unit_cost_total:Number(k.unit_cost_total??k.cost_total??0),unit_sale_total:Number(k.unit_sale_total??k.sale_total??0),cost_total:Number(k.cost_total??0),sale_total:Number(k.sale_total??0)}}
-  async function loadModel(){const r=await call('model_editor',{basket_id:state.basketId});state.model=r.editor||r.model||{};state.categories=Array.isArray(r.categories)?r.categories:[];state.subcategories=Array.isArray(r.subcategories)?r.subcategories:[];const data=state.model;state.positions=(data.positions||[]).map(normalizePosition);state.recipeKits=(data.recipe_kits||[]).map(normalizeRecipeKit);state.preview=null;return data}
-  async function loadRecipeKitCatalog(){if(!state||state.recipeKitCatalogLoading)return;state.recipeKitCatalogLoading=true;try{const r=await kitCall('kits',{limit:100});state.recipeKitCatalog=Array.isArray(r.kits)?r.kits.map((k,i)=>normalizeRecipeKit(k,i)):[]}catch(e){state.recipeKitCatalog=[];toast('Não consegui carregar o catálogo de kits internos.')}finally{state.recipeKitCatalogLoading=false}}
-
-  function currentLinkedLot(){return (state?.linkableLots||[]).find(x=>String(x.id)===String(state?.lotLinkedLotId||''))||null}
-  async function loadLinkableLots(){
-    if(!state||state.linkableLoading||state.linkableLoaded)return;
-    state.linkableLoading=true;
-    try{
-      const r=await call('linkable_lots',{basket_id:state.basketId});
-      state.linkableLots=Array.isArray(r.lots)?r.lots:[];
-      state.linkableLoaded=true;
-      const linked=currentLinkedLot();
-      if(linked&&linked.business_type)state.lotLinkedType=String(linked.business_type);
-    }finally{state.linkableLoading=false}
-  }
-  function syncLotForm(){
-    if(!state)return;
-    const qtyEl=document.getElementById('bgLotQty');
-    const nameEl=document.getElementById('bgLotPublicName');
-    const priceEl=document.getElementById('bgLotSalePrice');
-    const typeEl=document.getElementById('bgLotLinkedType');
-    const lotEl=document.getElementById('bgLotLinkedLot');
-    if(qtyEl)state.lotQuantity=Math.max(1,Math.min(500,Number(qtyEl.value||1)));
-    if(nameEl)state.lotPublicName=nameEl.value.trim();
-    if(priceEl){const n=Number(String(priceEl.value||'').replace(',','.'));if(Number.isFinite(n)&&n>=0)state.lotSalePrice=n}
-    if(typeEl)state.lotLinkedType=String(typeEl.value||'');
-    if(lotEl)state.lotLinkedLotId=String(lotEl.value||'')||null;
-  }
-  function linkedLotHtml(){
-    const linked=currentLinkedLot();if(!linked)return '';
-    const rows=(linked.items||[]).map(x=>'<div class="bg-linked-item"><strong>'+esc(x.product?.name||x.product_name||'Produto')+'</strong><small>'+qty(x.quantity_per_basket||x.quantity_per_kit||0)+' × por unidade</small><small>Avulso: '+qty(x.loose_stock??x.product?.loose_stock??0)+'</small></div>').join('');
-    return '<div class="bg-linked-box"><strong>Itens do lote vinculado</strong><div class="bg-linked-list">'+(rows||'<small>Sem itens para exibir.</small>')+'</div></div>';
-  }
-  function lotCommercialHtml(){
-    const types=Object.entries(BUSINESS_LABELS);
-    const choices=(state.linkableLots||[]).filter(x=>!state.lotLinkedType||String(x.business_type||'')===String(state.lotLinkedType));
-    return '<div class="bg-lot-fields">'+
-      '<label><span>Nome público do lote</span><input id="bgLotPublicName" maxlength="120" value="'+esc(state.lotPublicName||'')+'"></label>'+
-      '<label><span>Preço final do lote</span><input id="bgLotSalePrice" type="number" min="0" step="0.01" value="'+esc(Number(state.lotSalePrice??0).toFixed(2))+'"></label>'+
-      '<label><span>Tipo do lote vinculado (opcional)</span><select id="bgLotLinkedType"><option value="">Sem vínculo</option>'+types.map(([key,label])=>'<option value="'+esc(key)+'" '+(state.lotLinkedType===key?'selected':'')+'>'+esc(label)+'</option>').join('')+'</select></label>'+
-      '<label><span>Escolher lote</span><select id="bgLotLinkedLot" '+(!state.lotLinkedType?'disabled':'')+'><option value="">Sem lote vinculado</option>'+choices.map(x=>'<option value="'+esc(x.id)+'" '+(String(state.lotLinkedLotId||'')===String(x.id)?'selected':'')+'>'+esc(x.short_code||x.lot_code||'Lote')+' · '+esc(x.public_name||BUSINESS_LABELS[x.business_type]||'')+' · '+money(x.sale_price_override??x.own_sale_price_override??0)+'</option>').join('')+'</select></label>'+
-      '</div>'+linkedLotHtml();
+  function productCard(product, position, index) {
+    const active = String(position.product_id) === String(product.id);
+    const enabled = product.selectable !== false || active;
+    return '<article class="simple-basket-product ' + (active ? 'selected' : '') + '">' +
+      '<img src="' + esc(product.image_url || '/img/sem-foto.svg') + '" alt="">' +
+      '<strong>' + esc(product.name) + '</strong><small>Custo interno: ' + money(product.cost_price) + '<br>Venda: ' + money(product.sale_price) + '</small>' +
+      '<button type="button" class="' + (active ? 'secondary' : 'primary') + '" data-select-product="' + index + '" data-product-id="' + esc(product.id) + '" ' + (!enabled ? 'disabled' : '') + '>' +
+      (active ? 'Selecionado' : 'Selecionar') + '</button></article>';
   }
 
-  function syncCommercialForm(){
-    if(!state?.model?.basket)return;
-    const basket=state.model.basket;
-    const name=document.getElementById('bgCommercialName');
-    const category=document.getElementById('bgCommercialCategory');
-    const price=document.getElementById('bgCommercialPrice');
-    const subcategory=document.getElementById('bgCommercialSubcategory');
-    const image=document.getElementById('bgCommercialImage');
-    if(name)basket.name=name.value.trim();
-    if(category)basket.category_id=category.value;
-    if(subcategory)basket.subcategory_id=subcategory.value;
-    if(price){const n=Number(String(price.value||'').replace(',','.'));if(Number.isFinite(n)&&n>=0)basket.base_price=n}
-    if(image)basket.image_url=image.value.trim();
-  }
-  function syncRecipeKitForm(){if(!state)return;document.querySelectorAll('#basketGuidedDialog [data-bg-recipe-kit-index]').forEach(node=>{const i=Number(node.dataset.bgRecipeKitIndex),k=state.recipeKits[i];if(!k)return;const q=node.querySelector('[data-bg-recipe-kit-qty]');const required=node.querySelector('[data-bg-recipe-kit-required]');if(q){const n=Number(q.value||1);if(Number.isFinite(n)&&n>0)k.quantity=n}if(required)k.is_required=required.checked})}
-
-  function syncForm(){if(!state)return;syncCommercialForm();syncRecipeKitForm();document.querySelectorAll('#basketGuidedDialog [data-bg-index]').forEach(node=>{const i=Number(node.dataset.bgIndex),p=state.positions[i];if(!p)return;const term=node.querySelector('[data-bg-term]');const qn=node.querySelector('[data-bg-qty]');const min=node.querySelector('[data-bg-min]');const max=node.querySelector('[data-bg-max]');const rem=node.querySelector('[data-bg-removable]');const editable=node.querySelector('[data-bg-qty-editable]');if(term){p.position_label=term.value.trim();if(!p.family_key)p.search_query=p.position_label}if(qn)p.quantity=Math.max(.001,Number(qn.value||1));if(min)p.min_quantity=Math.max(0,Number(min.value||0));if(max)p.max_quantity=max.value===''?null:Math.max(0,Number(max.value));if(rem)p.removable=rem.checked;if(editable)p.quantity_editable=editable.checked});syncLotForm()}
-
-  function duplicates(){const map=new Map();state.positions.forEach((p,i)=>{if(!p.product_id)return;const a=map.get(p.product_id)||[];a.push(i);map.set(p.product_id,a)});return [...map.values()].filter(a=>a.length>1)}
-  function confirmDuplicates(){const d=duplicates();if(!d.length)return true;const labels=d.map(g=>g.map(i=>state.positions[i].position_label||('posição '+(i+1))).join(' + ')).join('\n');return confirm('O mesmo produto foi escolhido em mais de uma posição:\n\n'+labels+'\n\nConfirma que isso é intencional?')}
-  function validatePositions(){syncForm();if(!state.positions.length){toast('Adicione pelo menos um item.');return false}for(const p of state.positions){if(!p.position_label){toast('Informe o termo de todas as posições.');return false}if(!p.product_id){toast('Selecione um produto para '+p.position_label+'.');return false}if(!(p.quantity>0)){toast('Informe a quantidade de '+p.position_label+'.');return false}}return confirmDuplicates()}
-
-  function summaryData(){let sale=0,cost=0,costKnown=true,alerts=[];for(const p of state.positions){const x=p.selectedProduct;if(x){sale+=Number(x.sale_price||0)*Number(p.quantity||0);if(x.cost_price===null||x.cost_price===undefined)costKnown=false;else cost+=Number(x.cost_price||0)*Number(p.quantity||0);if(x.loose_stock!==null&&Number(x.loose_stock||0)<=0)alerts.push((p.position_label||x.name)+' sem estoque avulso')}else costKnown=false}const final=Number(state.model?.basket?.base_price||0);return {sale,cost,costKnown,final,hidden:final-sale,alerts}}
-  function renderSummary(){const s=summaryData();return '<div class="bg-summary"><strong class="bg-summary-title">Resumo</strong><div class="bg-summary-grid">' +
-    '<div class="bg-summary-box"><small>Custo dos produtos</small><strong>'+(s.costKnown?money(s.cost):'—')+'</strong></div>'+ 
-    '<div class="bg-summary-box"><small>Soma dos preços</small><strong>'+money(s.sale)+'</strong></div>'+ 
-    '<div class="bg-summary-box"><small>Preço final</small><strong>'+money(s.final)+'</strong></div>'+ 
-    '<div class="bg-summary-box"><small>Ajuste oculto</small><strong>'+money(s.hidden)+'</strong></div>'+ 
-    '<div class="bg-summary-box"><small>Posições</small><strong>'+state.positions.length+'</strong></div></div>'+ 
-    (s.alerts.length?'<div class="bg-alert error">'+esc(s.alerts.join(' · '))+'</div>':'')+'</div>'}
-
-  function productHtml(prod,p){const selected=String(p.product_id)===String(prod.id),enabled=prod.selectable||selected;return '<article class="bg-product '+(selected?'selected ':'')+(!enabled?'disabled':'')+'"><img src="'+esc(prod.image_url||'/img/sem-foto.svg')+'" alt=""><h4>'+esc(prod.name)+'</h4><div class="meta">'+esc(prod.packaging||'')+'<br>'+esc(prod.sku||'')+(prod.gtin?' · '+esc(prod.gtin):'')+'</div><div class="bg-prices"><div><small>Custo</small><strong>'+money(prod.cost_price)+'</strong></div><div><small>Venda</small><strong>'+money(prod.sale_price)+'</strong></div></div><div class="bg-stock"><div><small>Total</small><strong>'+qty(prod.effective_sellable_stock)+'</strong></div><div><small>Reservado</small><strong>'+qty(prod.basket_locked_quantity)+'</strong></div><div><small>Avulso</small><strong>'+qty(prod.loose_stock)+'</strong></div></div><button type="button" data-bg-product="'+esc(prod.id)+'" '+(!enabled?'disabled':'')+'>'+(selected?'Selecionado':'Selecionar')+'</button></article>'}
-
-  function positionHtml(p,i){const selected=p.selectedProduct?'<div class="bg-selected"><strong>Selecionado: '+esc(p.selectedProduct.name||p.product_name||'Produto')+'</strong><small>'+esc(p.product_id||'')+'</small></div>':'';return '<section class="bg-position" data-bg-index="'+i+'"><div class="bg-position-top"><label><span>Termo / posição</span><input data-bg-term maxlength="80" value="'+esc(p.position_label)+'" placeholder="Ex.: Arroz"></label><label><span>Quantidade por cesta</span><input data-bg-qty type="number" min="0.001" max="100" step="0.001" value="'+esc(p.quantity)+'"></label><div class="bg-position-actions"><button type="button" data-bg-up title="Subir">↑</button><button type="button" data-bg-down title="Descer">↓</button><button type="button" data-bg-remove class="danger" title="Remover">×</button></div></div>'+(p.family_key?'<span class="bg-family">Família: '+esc(p.family_key)+'</span>':'<span class="bg-family">Busca: '+esc(p.search_query||p.position_label)+'</span>')+selected+'<div class="bg-carousel" data-bg-products>'+((p.catalog||[]).map(x=>productHtml(x,p)).join('')||'<button class="bg-more" type="button" data-bg-load>Carregar produtos</button>')+(p.next_offset!=null?'<button class="bg-more" type="button" data-bg-more>Ver mais</button>':'')+'</div><details><summary style="margin-top:8px;font-size:11px;font-weight:800;cursor:pointer">Regras da posição</summary><div class="bg-advanced"><label class="check"><input type="checkbox" data-bg-removable '+(p.removable?'checked':'')+'><span>Removível</span></label><label class="check"><input type="checkbox" data-bg-qty-editable '+(p.quantity_editable?'checked':'')+'><span>Quantidade editável</span></label><label><span>Mínimo</span><input data-bg-min type="number" min="0" step="0.001" value="'+esc(p.min_quantity)+'"></label><label><span>Máximo</span><input data-bg-max type="number" min="0" step="0.001" value="'+esc(p.max_quantity??'')+'" placeholder="Sem limite"></label></div></details></section>'}
-
-  function recipeKitCardHtml(k,i){return '<div class="bg-recipe-card" data-bg-recipe-kit-index="'+i+'"><div><h4>'+esc(k.name||'Kit interno')+'</h4><div class="bg-recipe-meta">'+esc(RECIPE_TYPE_LABELS[k.type]||k.type||'Outro')+' · '+qty(k.item_count||0)+' produtos · custo '+money(k.unit_cost_total||0)+' · venda '+money(k.unit_sale_total||0)+'</div></div><label><span>Quantidade por cesta</span><input data-bg-recipe-kit-qty type="number" min="0.001" max="100" step="0.001" value="'+esc(k.quantity||1)+'"></label><label class="bg-recipe-required"><input data-bg-recipe-kit-required type="checkbox" '+(k.is_required!==false?'checked':'')+'> Obrigatório</label><button class="bg-recipe-remove" type="button" data-bg-recipe-kit-remove>Remover</button></div>'}
-  function recipeKitsHtml(){const linkedIds=new Set((state.recipeKits||[]).map(k=>String(k.kit_id)));const available=(state.recipeKitCatalog||[]).filter(k=>!linkedIds.has(String(k.kit_id)));return '<section class="bg-section"><h3>Kits internos</h3><p>Receitas reutilizáveis que fazem parte deste modelo. <strong>Vincular receita não reserva estoque.</strong> A reserva física continua acontecendo somente ao criar o lote.</p><div class="bg-recipe-list">'+((state.recipeKits||[]).map(recipeKitCardHtml).join('')||'<div class="bg-recipe-empty">Nenhum kit interno vinculado.</div>')+'</div><div class="bg-recipe-add"><label><span>Adicionar receita existente</span><select id="bgRecipeKitAdd"><option value="">Escolha um kit</option>'+available.map(k=>'<option value="'+esc(k.kit_id)+'">'+esc(k.name)+' · '+qty(k.item_count||0)+' itens · '+money(k.unit_sale_total||0)+'</option>').join('')+'</select></label><button type="button" data-bg-recipe-kit-add '+(!available.length?'disabled':'')+'>Adicionar kit</button><button class="primary" type="button" data-bg-recipe-kits-save>Salvar kits internos</button></div><div class="bg-legacy-note">Este vínculo é apenas de receita/configuração nesta etapa; ele não altera estoque avulso nem reservado.</div></section>'}
-
-  function previewHtml(){const p=state.preview;if(!p)return '';const rows=(p.requirements||[]).map(r=>'<tr class="'+(r.ok===false||Number(r.balance_after)<0?'bad':'')+'"><td>'+esc(r.name||r.product_name||r.product_id)+'</td><td>'+qty(r.quantity_per_basket)+'</td><td>'+qty(state.lotQuantity)+'</td><td>'+qty(r.required)+'</td><td>'+qty(r.available)+'</td><td>'+qty(r.balance_after)+'</td></tr>').join('');return '<div class="bg-preview"><table><thead><tr><th>Produto</th><th>Por cesta</th><th>Lote</th><th>Necessário</th><th>Avulso</th><th>Saldo</th></tr></thead><tbody>'+rows+'</tbody></table><div class="bg-preview-foot"><span class="bg-status '+(p.ok?'':'cancelled')+'">'+(p.ok?'Estoque suficiente':'Estoque insuficiente')+'</span><strong>'+money(p.sale_price)+'</strong></div></div>'}
-
-  function lotOpsHtml(){const l=state.lot;if(!l)return '';const assembly=l.assembly_status||'assembling',label=STATUS_LABELS[assembly]||STATUS_LABELS[l.status]||assembly;let actions='';if(assembly==='assembling')actions='<button type="button" data-bg-edit-lot>Editar lote</button><button class="primary" type="button" data-bg-mount>Marcar como montado</button><button class="danger" type="button" data-bg-cancel>Cancelar lote</button>';else if(assembly==='mounted')actions='<button type="button" data-bg-reopen>Reabrir para editar</button><button class="danger" type="button" data-bg-cancel>Cancelar lote</button><button class="primary" type="button" data-bg-sale-on>Ativar venda</button>';return '<div class="bg-section"><h3>Lote '+esc(l.short_code||l.lot_code||'')+'</h3><p><span class="bg-status '+(assembly==='cancelled'?'cancelled':'')+'">'+esc(label)+'</span> · montagem e venda são estados separados.</p><div class="bg-actions">'+actions+'</div></div>'}
-
-  function render(){if(!state)return;const d=ensureShell(),m=state.model||{},basket=m.basket||{};d.querySelector('#bgTitle').textContent=(basket.name||'Cesta/Kit')+' · montagem guiada';const categories=state.categories||[];const body=d.querySelector('#bgBody');body.innerHTML='<section class="bg-section"><h3>Dados comerciais</h3><p>O modelo define o que a Cesta/Kit é. Salvar estes dados e os itens não reserva estoque.</p><div class="bg-commercial"><label><span>Nome</span><input id="bgCommercialName" maxlength="180" value="'+esc(basket.name||'')+'"></label><label><span>Categoria</span><select id="bgCommercialCategory">'+categories.map(c=>'<option value="'+esc(c.id)+'" '+(String(c.id)===String(basket.category_id)?'selected':'')+'>'+esc(c.name)+'</option>').join('')+'</select></label><label><span>Subcategoria</span><select id="bgCommercialSubcategory"><option value="">Selecione uma subdivisão</option>'+((state.subcategories||[]).filter(s=>String(s.category_id)===String(basket.category_id)).map(s=>'<option value="'+esc(s.id)+'" '+(String(s.id)===String(basket.subcategory_id)?'selected':'')+'>'+esc(s.name)+'</option>').join(''))+'</select></label><label><span>Preço final</span><input id="bgCommercialPrice" type="number" min="0" step="0.01" value="'+esc(Number(basket.base_price||0).toFixed(2))+'"></label><label style="grid-column:1/-1"><span>Imagem</span><input id="bgCommercialImage" maxlength="1000" placeholder="URL da imagem" value="'+esc(basket.image_url||'')+'"></label></div><div class="bg-legacy-note">Status: '+(basket.is_active===false?'Inativo':'Ativo')+'. Alterar o modelo não reserva estoque.</div></section>'+lotOpsHtml()+'<section class="bg-section"><h3>Itens da cesta/kit</h3><p>Defina os termos separadamente. Cada termo abre seu carrossel de produtos.</p><div class="bg-toolbar"><button type="button" data-bg-add>+ Adicionar termo</button><button type="button" data-bg-save>Salvar modelo</button><span class="spacer"></span><small>Modelo = definição · lote = estoque reservado</small></div><div class="bg-positions">'+state.positions.map(positionHtml).join('')+'</div>'+renderSummary()+'</section>'+recipeKitsHtml()+'<section class="bg-section"><h3>Montagem do lote</h3><p>A prévia não altera estoque. A reserva acontece somente ao confirmar o lote.</p>'+lotCommercialHtml()+'<div class="bg-lot-controls"><label><span>Quantidade a montar</span><input id="bgLotQty" type="number" min="1" max="500" step="1" value="'+esc(state.lotQuantity)+'"></label><div class="bg-stat"><small>Fluxo</small><strong>Prévia → Criar lote / reservar → Montar → Ativar venda</strong></div><button type="button" data-bg-preview>Calcular prévia</button></div>'+previewHtml()+'<div class="bg-actions"><button class="primary" type="button" data-bg-reserve '+(!(state.preview?.ok)?'disabled':'')+'>'+(state.lot?.assembly_status==='assembling'?'Atualizar lote reservado':'Criar lote / reservar')+'</button></div></section>';bind();setupObserver()}
-
-  function bind(){const d=ensureShell();d.querySelector('#bgCommercialCategory')?.addEventListener('change',e=>{syncCommercialForm();state.model.basket.subcategory_id='';const id=String(e.target.value||''),sub=d.querySelector('#bgCommercialSubcategory');if(sub)sub.innerHTML='<option value="">Selecione uma subdivisão</option>'+((state.subcategories||[]).filter(x=>String(x.category_id)===id).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join(''))});d.querySelector('#bgLotPublicName')?.addEventListener('input',e=>{state.lotPublicName=e.target.value;state.lotNameCustomized=true;state.preview=null});d.querySelector('#bgLotSalePrice')?.addEventListener('input',e=>{const n=Number(String(e.target.value||'').replace(',','.'));if(Number.isFinite(n)&&n>=0)state.lotSalePrice=n;state.lotPriceCustomized=true;state.preview=null});d.querySelector('#bgLotLinkedType')?.addEventListener('change',e=>{syncLotForm();state.lotLinkedType=String(e.target.value||'');const linked=currentLinkedLot();if(linked&&String(linked.business_type||'')!==state.lotLinkedType)state.lotLinkedLotId=null;if(!state.lotLinkedType)state.lotLinkedLotId=null;state.preview=null;render()});d.querySelector('#bgLotLinkedLot')?.addEventListener('change',e=>{syncLotForm();state.lotLinkedLotId=String(e.target.value||'')||null;const linked=currentLinkedLot();if(linked?.business_type)state.lotLinkedType=String(linked.business_type);state.preview=null;render()});d.querySelector('[data-bg-add]')?.addEventListener('click',()=>{syncForm();const term=prompt('Digite o termo da nova posição. Ex.: Arroz');if(!term?.trim())return;state.positions.push(normalizePosition({position_label:term.trim(),search_query:term.trim(),quantity:1,removable:true,quantity_editable:true,min_quantity:0},state.positions.length));render()});d.querySelector('[data-bg-save]')?.addEventListener('click',saveModel);d.querySelector('[data-bg-recipe-kit-add]')?.addEventListener('click',addRecipeKit);d.querySelector('[data-bg-recipe-kits-save]')?.addEventListener('click',saveRecipeKits);d.querySelectorAll('[data-bg-recipe-kit-index]').forEach(node=>{const i=Number(node.dataset.bgRecipeKitIndex);node.querySelector('[data-bg-recipe-kit-remove]')?.addEventListener('click',()=>{syncRecipeKitForm();state.recipeKits.splice(i,1);render()});node.querySelector('[data-bg-recipe-kit-qty]')?.addEventListener('change',()=>syncRecipeKitForm());node.querySelector('[data-bg-recipe-kit-required]')?.addEventListener('change',()=>syncRecipeKitForm())});d.querySelector('[data-bg-preview]')?.addEventListener('click',previewLot);d.querySelector('[data-bg-reserve]')?.addEventListener('click',reserveOrUpdateLot);d.querySelector('[data-bg-mount]')?.addEventListener('click',mountLot);d.querySelector('[data-bg-cancel]')?.addEventListener('click',cancelLot);d.querySelector('[data-bg-reopen]')?.addEventListener('click',reopenLot);d.querySelector('[data-bg-sale-on]')?.addEventListener('click',async()=>{const id=state.lot?.lot_id||state.lot?.id;if(id&&window.DonaAntoniaBasketAdmin?.setSale){const ok=await window.DonaAntoniaBasketAdmin.setSale(id,true);if(ok){state.lot={...state.lot,sale_enabled:true};render()}}});d.querySelector('[data-bg-edit-lot]')?.addEventListener('click',()=>d.querySelector('.bg-positions')?.scrollIntoView({behavior:'smooth',block:'start'}));d.querySelectorAll('[data-bg-index]').forEach(node=>{const i=Number(node.dataset.bgIndex);node.querySelector('[data-bg-up]')?.addEventListener('click',()=>{syncForm();if(i>0){[state.positions[i-1],state.positions[i]]=[state.positions[i],state.positions[i-1]];render()}});node.querySelector('[data-bg-down]')?.addEventListener('click',()=>{syncForm();if(i<state.positions.length-1){[state.positions[i+1],state.positions[i]]=[state.positions[i],state.positions[i+1]];render()}});node.querySelector('[data-bg-remove]')?.addEventListener('click',()=>{syncForm();const p=state.positions[i];if(p?.removable===false){toast('Esta posição está marcada como obrigatória. Altere a regra antes de remover.');return}state.positions.splice(i,1);render()});node.querySelector('[data-bg-load]')?.addEventListener('click',()=>loadProducts(i,0));node.querySelector('[data-bg-more]')?.addEventListener('click',()=>loadProducts(i,state.positions[i].next_offset||0));node.querySelectorAll('[data-bg-product]').forEach(btn=>btn.addEventListener('click',()=>selectProduct(i,btn.dataset.bgProduct)));node.querySelector('[data-bg-term]')?.addEventListener('change',e=>{const p=state.positions[i];p.position_label=e.target.value.trim();if(!p.family_key){p.search_query=p.position_label;p.catalog=null;p.next_offset=null}});node.querySelector('[data-bg-qty]')?.addEventListener('change',()=>{syncForm();state.preview=null;render()})})}
-
-  function setupObserver(){if(observer)observer.disconnect();if(!('IntersectionObserver'in window))return;observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){const i=Number(e.target.dataset.bgIndex),p=state.positions[i];if(p&&!p.catalog&&!p.loading)loadProducts(i,0)}}),{root:document.getElementById('basketGuidedDialog'),rootMargin:'180px'});document.querySelectorAll('#basketGuidedDialog [data-bg-index]').forEach(n=>observer.observe(n))}
-
-  async function loadProducts(index,offset=0){const p=state.positions[index];if(!p||p.loading)return;p.loading=true;try{const r=await call('position_products',{kit_template_item_id:p.id||null,family_key:p.family_key||null,q:p.search_query||p.position_label,limit:12,offset});const incoming=r.products||[];p.catalog=offset?[...(p.catalog||[]),...incoming]:incoming;p.next_offset=r.next_offset??null;if(p.product_id){const found=p.catalog.find(x=>String(x.id)===String(p.product_id));if(found)p.selectedProduct=found}render()}catch(e){toast(e.data?.message||'Não consegui carregar os produtos desta posição.')}finally{p.loading=false}}
-  function selectProduct(index,id){syncForm();const p=state.positions[index],prod=(p.catalog||[]).find(x=>String(x.id)===String(id));if(!prod)return;if(prod.selectable===false&&String(p.product_id)!==String(prod.id)){toast('Este produto está sem estoque avulso e não pode ser selecionado agora.');return}p.product_id=prod.id;p.product_name=prod.name;p.selectedProduct=prod;state.preview=null;render()}
-
-  function addRecipeKit(){syncRecipeKitForm();const select=document.getElementById('bgRecipeKitAdd');const id=String(select?.value||'');if(!id){toast('Escolha um kit interno para adicionar.');return}if(state.recipeKits.some(k=>String(k.kit_id)===id)){toast('Este kit já está vinculado.');return}const source=state.recipeKitCatalog.find(k=>String(k.kit_id)===id);if(!source){toast('Kit interno não encontrado no catálogo.');return}state.recipeKits.push({...normalizeRecipeKit(source,state.recipeKits.length),quantity:1,is_required:true});render()}
-  async function saveRecipeKits(){syncRecipeKitForm();for(const k of state.recipeKits){if(!(Number(k.quantity)>0&&Number(k.quantity)<=100)){toast('Revise a quantidade do kit '+(k.name||'interno')+'.');return false}}const recipe_kits=state.recipeKits.map(k=>({kit_id:k.kit_id,quantity:Number(k.quantity),is_required:k.is_required!==false}));try{const r=await call('recipe_kits_save',{basket_id:state.basketId,recipe_kits,operator:operator()});state.recipeKits=(r.recipe_kits||[]).map(normalizeRecipeKit);toast('Kits internos salvos. Vincular receita não reserva estoque.');render();return true}catch(e){toast(e.data?.message||'Não consegui salvar os kits internos.');return false}}
-
-  async function saveModel(){
-    if(!validatePositions())return false;
-    const dupGroups=duplicates(),dupIds=new Set(dupGroups.flat());
-    const positions=state.positions.map((p,i)=>({id:p.id||null,product_id:p.product_id,position_label:p.position_label,family_key:p.family_key||null,search_query:p.family_key?null:(p.search_query||p.position_label),quantity:Number(p.quantity),removable:p.removable,quantity_editable:p.quantity_editable,min_quantity:Number(p.min_quantity||0),max_quantity:p.max_quantity==null?null:Number(p.max_quantity),remove_unit_delta:p.remove_unit_delta,add_unit_delta:p.add_unit_delta,duplicate_confirmed:dupIds.has(i),sort_order:i}));
-    try{syncCommercialForm();const basket=state.model?.basket||{};await call('model_save',{basket_id:state.basketId,commercial:{name:basket.name||'',category_id:basket.category_id||'',subcategory_id:basket.subcategory_id||'',base_price:Number(basket.base_price||0),image_url:basket.image_url||''},positions,operator:operator()});await loadModel();if(!state.lotNameCustomized)state.lotPublicName=state.model?.basket?.name||'';if(!state.lotPriceCustomized)state.lotSalePrice=Number(state.model?.basket?.base_price||0);toast('Modelo salvo. Nenhum estoque foi reservado.');render();return true}catch(e){toast(e.data?.message||e.message||'Não consegui salvar o modelo.');return false}
+  function positionHtml(position, index) {
+    const chosen = position.selectedProduct ? '<p>Produto atual: <strong>' + esc(position.selectedProduct.name || position.product_name || 'Produto') + '</strong></p>' : '';
+    const products = (position.catalog || []).map(product => productCard(product, position, index)).join('');
+    return '<section class="simple-basket-card simple-basket-position-card" data-position="' + index + '">' +
+      '<div class="simple-basket-position"><label>Item da cesta<input data-position-name value="' + esc(position.position_label) + '" placeholder="Ex.: Arroz"></label>' +
+      '<label>Quantidade<input data-position-quantity type="number" min="0.001" max="100" step="0.001" value="' + esc(position.quantity) + '"></label>' +
+      '<div class="simple-basket-position-controls"><button type="button" class="secondary" data-search-products="' + index + '" ' + (position.loading ? 'disabled' : '') + '>Buscar produtos</button>' +
+      (position.next_offset != null ? '<button type="button" class="secondary" data-more-products="' + index + '">Mais</button>' : '') +
+      '<button type="button" class="text danger" data-remove-position="' + index + '">Remover</button></div></div>' + chosen +
+      '<div class="simple-basket-product-list">' + (products || '<div class="simple-basket-empty">Use “Buscar produtos” para escolher o item.</div>') + '</div></section>';
   }
 
-  async function ensureSavedForLot(){syncForm();if(state.positions.some(p=>!p.id)){const ok=await saveModel();if(!ok)return false}return validatePositions()}
-  function lotItems(){return state.positions.map((p,i)=>({kit_template_item_id:p.id,source_template_item_id:null,product_id:p.product_id,quantity_per_basket:Number(p.quantity),position_order:i,position_label:p.position_label,family_key:p.family_key||null,search_query:p.search_query||null,substitution_reason:p.product_id!==p.selectedProduct?.template_product_id?'Seleção manual no editor guiado':null}))}
+  function render() {
+    const modal = dialog(), basket = state.model?.basket || {}, form = currentForm();
+    modal.querySelector('#simpleBasketTitle').textContent = (basket.name || 'Cesta') + ' · composição';
+    modal.querySelector('#simpleBasketBody').innerHTML = '<section class="simple-basket-card"><h3>Dados da cesta</h3>' +
+      '<div class="simple-basket-form"><label class="simple-basket-wide">Nome<input id="basketName" maxlength="180" value="' + esc(form.name || basket.name || '') + '"></label>' +
+      '<label>Categoria<select id="basketCategory"><option value="">Selecione</option>' + categoryOptions(form.category_id || basket.category_id) + '</select></label>' +
+      '<label>Subcategoria<select id="basketSubcategory"><option value="">Selecione</option>' + subcategoryOptions(form.category_id || basket.category_id, form.subcategory_id || basket.subcategory_id) + '</select></label>' +
+      '<label>Valor da cesta<input id="basketPrice" type="number" min="0" step="0.01" value="' + esc(Number(form.base_price ?? basket.base_price ?? 0).toFixed(2)) + '"></label>' +
+      '<label>Imagem (URL)<input id="basketImage" maxlength="1000" value="' + esc(form.image_url || basket.image_url || '') + '"></label></div></section>' +
+      '<section class="simple-basket-card"><h3>Composição</h3><p>Escolha os produtos e quantidades que formam a cesta.</p>' +
+      '<div class="simple-basket-actions"><button type="button" class="secondary" id="addBasketPosition">+ Adicionar item</button><button type="button" class="primary" id="saveBasketModel">Salvar cesta</button></div>' +
+      '<div class="simple-basket-positions">' + (state.positions.map(positionHtml).join('') || '<div class="simple-basket-empty">Adicione o primeiro item da cesta.</div>') + '</div>' + summary() + '</section>';
+    bind(modal);
+  }
 
-  async function previewLot(){if(!(await ensureSavedForLot()))return;syncForm();try{const r=await call('lot_preview',{basket_id:state.basketId,quantity:state.lotQuantity,items:lotItems()});state.preview=r.preview;render();if(state.preview?.ok===false)toast('Há produto com estoque insuficiente para este lote.')}catch(e){toast(e.data?.message||'Não consegui calcular a prévia.')}}
-  async function reserveOrUpdateLot(){if(!(await ensureSavedForLot()))return;syncForm();if(!state.preview){await previewLot();if(!state.preview)return}if(state.preview?.ok===false){toast('Corrija os itens com estoque insuficiente antes de reservar.');return}const payload={quantity:state.lotQuantity,items:lotItems(),public_name:state.lotPublicName||state.model?.basket?.name||null,sale_price:Number(state.lotSalePrice??state.model?.basket?.base_price??0),linked_lot_id:state.lotLinkedLotId||null,operator:operator()};try{const r=state.lot?.assembly_status==='assembling'?await call('lot_update',{...payload,lot_id:state.lot.lot_id||state.lot.id}):await call('lot_reserve',{...payload,basket_id:state.basketId});state.lot=r.lot;state.preview=null;toast(state.lot?.assembly_status==='assembling'?'Lote reservado. Estoque avulso atualizado.':'Lote atualizado.');render();await bridge().refresh?.()}catch(e){toast(e.data?.message||'Não consegui reservar/atualizar o lote.')}}
-  async function mountLot(){const id=state.lot?.lot_id||state.lot?.id;if(!id)return;if(!confirm('Confirma que este lote foi fisicamente montado? A venda continuará desligada.'))return;try{const r=await call('lot_mount',{lot_id:id,operator:operator()});state.lot=r.lot;toast('Lote marcado como Montado. Ativar venda continua separado.');render();await bridge().refresh?.()}catch(e){toast(e.data?.message||'Não consegui marcar o lote como montado.')}}
-  async function cancelLot(){const id=state.lot?.lot_id||state.lot?.id;if(!id)return;if(!confirm('Cancelar este lote? Se ele ainda estiver Em montagem, a reserva será liberada.'))return;try{const r=await call('lot_cancel',{lot_id:id,operator:operator(),reason:'Cancelado no editor guiado'});state.lot=r.lot||{...state.lot,assembly_status:'cancelled',status:'cancelled'};toast('Lote cancelado.');render();await bridge().refresh?.()}catch(e){toast(e.data?.message||'Não foi possível cancelar este lote.')}}
-  async function reopenLot(){const id=state.lot?.lot_id||state.lot?.id;if(!id)return;if(!confirm('Reabrir este lote montado para edição?'))return;try{const r=await call('lot_reopen',{lot_id:id,operator:operator()});state.lot=r.lot;toast('Lote reaberto para edição.');render();await bridge().refresh?.()}catch(e){toast(e.data?.message||'Não foi possível reabrir este lote.')}}
-
-  function applyDuplicateSeed(){
-    const source=state?.lot||state?.duplicateLot;if(!source)return;
-    const items=Array.isArray(source.items)?source.items:[];
-    state.lotQuantity=Math.max(1,Number(source.quantity_built||1));
-    if(source.public_name){state.lotPublicName=String(source.public_name);state.lotNameCustomized=true}
-    const savedPrice=source.sale_price_override??source.own_sale_price_override;
-    if(savedPrice!==null&&savedPrice!==undefined){state.lotSalePrice=Number(savedPrice);state.lotPriceCustomized=true}
-    state.lotLinkedLotId=source.linked_lot_id||null;
-    items.forEach((item,itemIndex)=>{
-      let i=state.positions.findIndex(p=>String(p.id||'')===String(item.kit_template_item_id||item.source_template_item_id||''));
-      if(i<0&&Number.isInteger(Number(item.position_order)))i=Number(item.position_order);
-      if(i<0)i=state.positions.findIndex(p=>String(p.product_id||'')===String(item.product_id||''));
-      if(i<0||!state.positions[i])return;
-      const pos=state.positions[i],prod=item.product||{};
-      pos.product_id=item.product_id||prod.id||pos.product_id;
-      pos.product_name=prod.name||pos.product_name;
-      pos.quantity=Number(item.quantity_per_kit??item.quantity_per_basket??item.quantity??pos.quantity??1);
-      pos.selectedProduct={id:pos.product_id,name:pos.product_name||prod.name||'',image_url:prod.image_url||'',packaging:prod.packaging||'',sku:prod.sku||'',gtin:prod.gtin||'',sale_price:Number(prod.price||0),cost_price:prod.cost==null?null:Number(prod.cost),effective_sellable_stock:null,basket_locked_quantity:null,loose_stock:null,is_active:prod.is_active!==false,template_product_id:pos.product_id};
-      pos.catalog=null;pos.next_offset=null;
+  function syncPositions() {
+    document.querySelectorAll('#simpleBasketBody [data-position]').forEach(element => {
+      const position = state.positions[Number(element.dataset.position)];
+      if (!position) return;
+      const name = element.querySelector('[data-position-name]')?.value.trim();
+      const quantity = Number(element.querySelector('[data-position-quantity]')?.value || 1);
+      if (name) {
+        position.position_label = name;
+        if (!position.family_key) position.search_query = name;
+      }
+      if (quantity > 0) position.quantity = quantity;
     });
-    state.preview=null;
   }
 
-  async function open(basketId,options={}){if(!basketId){toast('Cesta/Kit inválida.');return}ensureShell();state={basketId:String(basketId),mode:options.mode||'model',commercial:options.commercial||null,model:null,categories:[],positions:[],recipeKits:[],recipeKitCatalog:[],recipeKitCatalogLoading:false,lotQuantity:1,lotPublicName:null,lotSalePrice:null,lotLinkedType:'',lotLinkedLotId:null,linkableLots:[],linkableLoaded:false,linkableLoading:false,lotNameCustomized:false,lotPriceCustomized:false,preview:null,lot:options.lot||null,duplicateLot:options.duplicateLot||null};const d=ensureShell();d.querySelector('#bgBody').innerHTML='<div style="padding:28px;text-align:center;color:#66716a">Carregando editor guiado…</div>';if(!d.open)d.showModal();try{await loadModel();state.lotPublicName=state.model?.basket?.name||'';state.lotSalePrice=Number(state.model?.basket?.base_price||0);applyDuplicateSeed();await Promise.all([loadLinkableLots(),loadRecipeKitCatalog()]);const linked=currentLinkedLot();if(linked?.business_type)state.lotLinkedType=String(linked.business_type);render()}catch(e){d.querySelector('#bgBody').innerHTML='<div class="bg-section"><h3>Não foi possível abrir o editor</h3><p>'+esc(e.data?.message||e.message||'Falha ao carregar')+'</p></div>'}}
+  function bind(modal) {
+    const root = modal.querySelector('#simpleBasketBody');
+    root.querySelector('#basketCategory')?.addEventListener('change', event => {
+      const subcategory = root.querySelector('#basketSubcategory');
+      subcategory.innerHTML = '<option value="">Selecione</option>' + subcategoryOptions(event.target.value, '');
+    });
+    root.querySelector('#basketPrice')?.addEventListener('input', () => {
+      const box = root.querySelector('.simple-basket-summary');
+      if (box) box.outerHTML = summary();
+    });
+    root.querySelector('#addBasketPosition')?.addEventListener('click', () => {
+      const name = prompt('Qual item deve entrar na cesta?');
+      if (!name?.trim()) return;
+      syncPositions();
+      state.positions.push(normalizePosition({ position_label: name.trim(), search_query: name.trim(), quantity: 1, removable: true, quantity_editable: true }, state.positions.length));
+      render();
+      void loadProducts(state.positions.length - 1);
+    });
+    root.querySelector('#saveBasketModel')?.addEventListener('click', save);
+    root.querySelectorAll('[data-search-products]').forEach(button => button.addEventListener('click', () => {
+      syncPositions(); void loadProducts(Number(button.dataset.searchProducts));
+    }));
+    root.querySelectorAll('[data-more-products]').forEach(button => button.addEventListener('click', () => {
+      const index = Number(button.dataset.moreProducts); void loadProducts(index, state.positions[index]?.next_offset || 0);
+    }));
+    root.querySelectorAll('[data-remove-position]').forEach(button => button.addEventListener('click', () => {
+      syncPositions(); state.positions.splice(Number(button.dataset.removePosition), 1); render();
+    }));
+    root.querySelectorAll('[data-select-product]').forEach(button => button.addEventListener('click', () => {
+      syncPositions();
+      const index = Number(button.dataset.selectProduct), position = state.positions[index];
+      const product = position?.catalog.find(item => String(item.id) === String(button.dataset.productId));
+      if (!position || !product) return;
+      if (product.selectable === false && String(position.product_id) !== String(product.id)) {
+        toast('Este produto está sem estoque avulso.'); return;
+      }
+      position.product_id = product.id;
+      position.product_name = product.name;
+      position.selectedProduct = product;
+      render();
+    }));
+  }
 
-  window.DonaAntoniaBasketGuided={open,call,statusLabels:STATUS_LABELS};
+  async function loadProducts(index, offset = 0) {
+    const position = state.positions[index];
+    if (!position || position.loading) return;
+    position.loading = true;
+    render();
+    try {
+      const result = await call('position_products', {
+        kit_template_item_id: position.id,
+        family_key: position.family_key,
+        q: position.search_query || position.position_label,
+        limit: 12, offset
+      });
+      const products = result.products || [];
+      position.catalog = offset ? [...position.catalog, ...products] : products;
+      position.next_offset = result.next_offset ?? null;
+      const selected = position.catalog.find(product => String(product.id) === String(position.product_id));
+      if (selected) position.selectedProduct = selected;
+      else if (position.product_id && typeof bridge().api === 'function') {
+        const detail = await bridge().api('product_detail', { id: position.product_id });
+        const product = detail.product || {};
+        position.selectedProduct = {
+          id: position.product_id,
+          name: position.product_name || product.name || '',
+          cost_price: Number(product.cost_cents || 0) / 100,
+          sale_price: Number(product.sale_price_cents || 0) / 100
+        };
+      }
+    } catch (error) {
+      toast(error.data?.message || error.message || 'Não foi possível buscar produtos.');
+    } finally {
+      position.loading = false;
+      render();
+    }
+  }
+
+  function validate() {
+    syncPositions();
+    const form = currentForm();
+    if (!form.name || !form.category_id || !form.subcategory_id || !Number.isFinite(form.base_price) || form.base_price < 0) {
+      toast('Preencha nome, categoria, subcategoria e valor da cesta.'); return false;
+    }
+    if (!state.positions.length || state.positions.some(position => !position.position_label || !position.product_id || !(position.quantity > 0))) {
+      toast('Confira os itens, produtos e quantidades da composição.'); return false;
+    }
+    const repeated = new Map();
+    state.positions.forEach((position, index) => {
+      const group = repeated.get(position.product_id) || [];
+      group.push(index); repeated.set(position.product_id, group);
+    });
+    const duplicates = [...repeated.values()].filter(group => group.length > 1);
+    if (duplicates.length && !confirm('O mesmo produto aparece em mais de um item. Deseja continuar?')) return false;
+    return { form, duplicateIndexes: new Set(duplicates.flat()) };
+  }
+
+  async function save() {
+    const valid = validate();
+    if (!valid) return;
+    const button = document.getElementById('saveBasketModel');
+    button.disabled = true;
+    button.textContent = 'Salvando…';
+    const positions = state.positions.map((position, index) => ({
+      id: position.id || null, product_id: position.product_id,
+      position_label: position.position_label, family_key: position.family_key || null,
+      search_query: position.family_key ? null : position.search_query || position.position_label,
+      quantity: Number(position.quantity), removable: position.removable,
+      quantity_editable: position.quantity_editable, min_quantity: Number(position.min_quantity || 0),
+      max_quantity: position.max_quantity == null ? null : Number(position.max_quantity),
+      remove_unit_delta: position.remove_unit_delta, add_unit_delta: position.add_unit_delta,
+      duplicate_confirmed: valid.duplicateIndexes.has(index), sort_order: index
+    }));
+    try {
+      await call('model_save', { basket_id: state.basketId, commercial: valid.form, positions, operator: operator() });
+      await loadModel();
+      toast('Cesta salva.');
+      render();
+      await bridge().refresh?.();
+    } catch (error) {
+      toast(error.data?.message || error.message || 'Não foi possível salvar a cesta.');
+      button.disabled = false;
+      button.textContent = 'Salvar cesta';
+    }
+  }
+
+  async function open(basketId) {
+    if (!basketId) return;
+    state.basketId = String(basketId);
+    state.model = null; state.positions = [];
+    const modal = dialog();
+    modal.querySelector('#simpleBasketBody').innerHTML = '<div class="simple-basket-empty">Carregando composição…</div>';
+    if (!modal.open) modal.showModal();
+    try {
+      await loadModel();
+      render();
+      await Promise.all(state.positions.map((_, index) => loadProducts(index)));
+    } catch (error) {
+      modal.querySelector('#simpleBasketBody').innerHTML = '<div class="simple-basket-empty">' + esc(error.data?.message || error.message || 'Não foi possível abrir a cesta.') + '</div>';
+    }
+  }
+
+  window.DonaAntoniaBasketGuided = { open };
 })();
