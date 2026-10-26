@@ -24,7 +24,7 @@ Antes de uma homologação deliberada, ainda será necessário instalar as migra
 
 ## Fechamento local
 
-- `pnpm build` compila a aplicação e as entradas TypeScript declaradas, incluindo o worker.
+- `pnpm build` executa `tsc --noEmit` na aplicação e nas quatro entradas de Edge Functions listadas em `tsconfig.json` (Admin API, Flow runtime, checkout webhook e outbox worker), incluindo imports locais, e então gera o bundle Vite. O Deno CLI não está instalado para a checagem específica de Deno; a documentação Supabase esclarece que o CLI usa o Edge Runtime próprio e que o Deno separado serve para LSP e ferramentas próprias: https://supabase.com/docs/guides/functions/development-environment.
 - `git diff --check` não apontou erros.
 - Nenhum teste foi criado ou executado. Nenhum segredo foi inserido, migration aplicada, função implantada, Flow publicado, chamada Meta/Bling ou mensagem enviada.
 
