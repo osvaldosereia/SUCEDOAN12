@@ -115,3 +115,15 @@ export function completeOrderSeparation(accessToken: string, orderId: string, re
     body: JSON.stringify({ revision }),
   });
 }
+
+export function reconcileOrderBlingSale(
+  accessToken: string,
+  orderId: string,
+  revision: number,
+  idempotencyKey: string,
+): Promise<OrderDetailRecord> {
+  return apiRequest<OrderDetailRecord>(`/orders/${encodeURIComponent(orderId)}/bling-sale/reconcile`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ revision, idempotencyKey }),
+  });
+}

@@ -70,6 +70,15 @@ export interface OrderDetailRecord extends OrderListEntry {
     errorCode: string | null;
     blockers: string[];
     commercialTotals: BlingCommercialTotals | null;
+    reconciliationEnabled: boolean;
+    reconciliation: {
+      status: "running" | "complete";
+      outcome: "absent" | "matched" | "ambiguous" | "unknown" | null;
+      externalId: string | null;
+      startedAt: string | null;
+      completedAt: string | null;
+      idempotencyKey: null;
+    } | null;
     salePreview: {
       externalReference: string;
       saleDate: string;

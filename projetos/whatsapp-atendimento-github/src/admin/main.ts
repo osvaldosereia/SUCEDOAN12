@@ -22,7 +22,7 @@ import {
   type ChannelFlowDocument,
   type FlowChannel,
 } from "../domain/flows";
-import { AdminApiError, assignOrder, completeOrderSeparation, getCatalog, getFlowDraft, getOrder, getOrders, saveCatalog, saveFlowDraft, saveOrderBlingContact, saveOrderPicking, type PendingImage } from "./api";
+import { AdminApiError, assignOrder, completeOrderSeparation, getCatalog, getFlowDraft, getOrder, getOrders, reconcileOrderBlingSale, saveCatalog, saveFlowDraft, saveOrderBlingContact, saveOrderPicking, type PendingImage } from "./api";
 import type { OrderDetailRecord, OrderListEntry } from "../domain/orders";
 import { renderFlowsPanel } from "./flows-panel";
 import "./styles.css";
@@ -85,6 +85,7 @@ const state = {
   orders: [] as OrderListEntry[],
   selectedOrder: null as OrderDetailRecord | null,
   ordersLoaded: false,
+  reconciliationRequestKeys: new Map<string, string>(),
 };
 
 function escapeHtml(value: unknown): string {
@@ -378,6 +379,18 @@ function integrationBlockerLabel(code: string): string {
   } as Record<string, string>)[code] ?? code;
 }
 
+function reconciliationOutcomeLabel(order: OrderDetailRecord): string {
+  const reconciliation = order.integrationJob?.reconciliation;
+  if (!reconciliation) return "";
+  if (reconciliation.status === "running") return "Consulta somente leitura em andamento.";
+  if (reconciliation.outcome === "absent") return "Consulta concluída: nenhuma venda encontrada para esta referência.";
+  if (reconciliation.outcome === "matched") {
+    return `Venda compatível localizada (ID ${reconciliation.externalId ?? "indisponível"}). A operação continua bloqueada até a revisão do contrato fiscal.`;
+  }
+  if (reconciliation.outcome === "ambiguous") return "Mais de uma venda usa esta referência. O pedido permanece bloqueado para revisão manual.";
+  return "A consulta foi inconclusiva. O pedido permanece bloqueado e nenhuma venda foi criada.";
+}
+
 function ordersView(): string {
   if (state.access !== "authorized") return `<section class="workspace-heading"><div><span class="eyebrow">Operação</span><h1>Pedidos</h1><p>A fila exige uma sessão GitHub autorizada pelo servidor.</p></div></section><div class="empty-state"><strong>Acesso administrativo necessário</strong><span>Entre com a conta GitHub autorizada para consultar os pedidos.</span></div>`;
   const order = state.selectedOrder;
@@ -400,12 +413,19 @@ function ordersView(): string {
     const salePreviewMarkup = salePreview
       ? `<span>Referência ${escapeHtml(salePreview.externalReference)} · data ${escapeHtml(salePreview.saleDate)} · ${salePreview.itemCount} item(ns) · ${escapeHtml(salePreview.paymentObservation)} · impressão digital ${salePreview.fingerprintReady ? "calculada no servidor" : "aguardando correções"}</span>`
       : "";
+    const reconciliation = order.integrationJob?.reconciliation;
+    const reconciliationMarkup = reconciliation
+      ? `<span>${escapeHtml(reconciliationOutcomeLabel(order))}${reconciliation.completedAt ? ` · concluída em ${new Date(reconciliation.completedAt).toLocaleString("pt-BR")}` : ""}</span>`
+      : "";
+    const reconciliationAction = order.integrationJob?.reconciliationEnabled
+      ? `<button class="button button-soft" data-action="order-bling-reconcile" data-id="${escapeHtml(order.id)}" data-revision="${order.revision}">Consultar referência no Bling (GET)</button>`
+      : `<span>Consulta ao Bling desligada neste ambiente.</span>`;
     return `<section class="workspace-heading"><div><span class="eyebrow">Pedido · ${escapeHtml(order.id.slice(0, 8))}</span><h1>${escapeHtml(order.customerName)}</h1><p>${escapeHtml(order.basketName)} · ${escapeHtml(order.city)} · recebido ${new Date(order.createdAt).toLocaleString("pt-BR")}</p></div><div class="order-heading-actions"><button class="button button-soft" data-action="orders-back">← Fila</button><button class="button button-soft" data-action="orders-refresh">Atualizar</button></div></section>
       <div class="order-summary-grid"><article><span>Status</span><strong>${escapeHtml(orderStatusLabel(order.status))}</strong></article><article><span>Total confirmado</span><strong>${money(order.totalCents)}</strong></article><article><span>Canal / pagamento</span><strong>${escapeHtml(order.channel)} · ${escapeHtml(order.paymentMethod ?? "—")}</strong></article><article><span>Revisão</span><strong>${order.revision}</strong></article></div>
       <section class="order-items-card"><div class="section-title"><div><span class="eyebrow">Entrega</span><h2>Endereço confirmado</h2></div></div><p>${escapeHtml(addressLine || "Endereço não disponível")}</p>${address.reference ? `<small>Referência: ${escapeHtml(address.reference)}</small>` : ""}</section>
       ${pending ? `<div class="flow-safety-note"><strong>Aguardando aceite do cliente</strong><span>Há falta ou substituição pendente. A separação e o Bling ficam bloqueados até a resposta chegar pelo webhook.</span></div>` : ""}
       <section class="order-items-card"><div class="section-title"><div><span class="eyebrow">Integração Bling</span><h2>Vínculo do contato</h2></div><strong>${order.blingContactId ? `ID ${order.blingContactId} · conferido manualmente` : "Sem vínculo"}</strong></div><p>Informe o ID do contato e confirme que conferiu a identidade no painel Bling. Esta tela não consulta o Bling; o ID será salvo no cadastro privado do cliente.</p><form id="order-bling-contact-form"><label>ID do contato Bling<input name="bling_contact_id" type="number" min="1" max="9007199254740991" step="1" value="${order.blingContactId ?? ""}" required></label><label class="checkbox-label"><input name="customer_match_confirmed" type="checkbox" required> Conferi que este contato pertence a ${escapeHtml(order.customerName)}</label><button class="button button-soft" type="submit">${order.blingContactId ? "Atualizar vínculo" : "Salvar vínculo"}</button></form>${order.blingContactVerifiedAt ? `<small>Conferido em ${new Date(order.blingContactVerifiedAt).toLocaleString("pt-BR")}</small>` : ""}</section>
-      ${order.status === "awaiting_invoice" ? `<div class="flow-safety-note"><strong>Prévia local da venda · integração bloqueada</strong><span>Nenhuma venda ou NF-e foi criada. O payload não é exibido; a futura reconciliação deverá consultar a referência estável antes de qualquer tentativa.</span>${salePreviewMarkup}${commercialPreview}<ul>${(order.integrationJob?.blockers ?? []).map((code) => `<li>${escapeHtml(integrationBlockerLabel(code))}</li>`).join("") || `<li>Consulte o estado de integração no servidor.</li>`}</ul></div>` : ""}
+      ${order.status === "awaiting_invoice" ? `<div class="flow-safety-note"><strong>Prévia local da venda · integração bloqueada</strong><span>Nenhuma venda ou NF-e foi criada. A consulta abaixo é somente leitura; não libera nem cria a venda.</span>${salePreviewMarkup}${commercialPreview}${reconciliationMarkup}${reconciliationAction}<ul>${(order.integrationJob?.blockers ?? []).map((code) => `<li>${escapeHtml(integrationBlockerLabel(code))}</li>`).join("") || `<li>Consulte o estado de integração no servidor.</li>`}</ul></div>` : ""}
       <section class="order-items-card"><div class="section-title"><div><span class="eyebrow">Separação</span><h2>Itens do pedido</h2></div>${!pending && ["received", "packing", "attention"].includes(order.status) ? `<button class="button button-soft" data-action="order-assign" data-id="${escapeHtml(order.id)}" data-revision="${order.revision}">Assumir separação</button>` : ""}</div>
       ${order.items.map((item) => `<form class="order-item-row" id="order-picking-item" data-item-id="${item.id}"><div class="order-item-main"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.brand)} · ${escapeHtml(item.presentation)} · ${item.quantity} pedida(s)</span><small>Separada(s): ${item.pickedQuantity} · ${escapeHtml(item.pickingStatus)}</small></div><label>Separar<input name="picked_quantity" type="number" min="0" max="${item.quantity}" step="1" value="${item.pickedQuantity}" required></label><label>Substituto<select name="replacement_product_id"><option value="">Sem substituição</option>${item.replacementOptions.filter((option) => option.id !== item.productId).map((option) => `<option value="${escapeHtml(option.id)}">${escapeHtml(option.name)} · ${escapeHtml(option.brand)}</option>`).join("")}</select></label><button class="button button-soft" type="submit" ${pending || !["received", "packing", "attention"].includes(order.status) ? "disabled" : ""}>Salvar linha</button></form>`).join("") || `<div class="empty-state"><strong>Sem itens para separar</strong></div>`}
       <div class="order-footer-actions"><span>As faltas e substituições só alteram o total após o cliente aceitar.</span><button class="button button-primary" data-action="order-separation-complete" data-id="${escapeHtml(order.id)}" data-revision="${order.revision}" ${pending || !["received", "packing", "attention"].includes(order.status) ? "disabled" : ""}>Concluir separação e validar Bling</button></div></section>`;
@@ -975,6 +995,32 @@ appRoot.addEventListener("click", async (event) => {
       state.noticeType = "success";
     } catch (error) {
       state.notice = error instanceof AdminApiError ? error.message : "Não foi possível concluir a separação.";
+      state.noticeType = "error";
+    } finally {
+      state.busy = false;
+      render();
+    }
+  } else if (action === "order-bling-reconcile" && state.session && state.selectedOrder) {
+    const idempotencyKey = state.reconciliationRequestKeys.get(id) ?? crypto.randomUUID();
+    state.reconciliationRequestKeys.set(id, idempotencyKey);
+    state.busy = true;
+    render();
+    try {
+      state.selectedOrder = await reconcileOrderBlingSale(
+        state.session.access_token,
+        id,
+        Number(target.dataset.revision),
+        idempotencyKey,
+      );
+      state.reconciliationRequestKeys.delete(id);
+      state.notice = reconciliationOutcomeLabel(state.selectedOrder);
+      state.noticeType = state.selectedOrder.integrationJob?.reconciliation?.outcome === "unknown"
+        || state.selectedOrder.integrationJob?.reconciliation?.outcome === "ambiguous" ? "error" : "success";
+    } catch (error) {
+      if (error instanceof AdminApiError && [400, 404, 409].includes(error.status ?? 0)) {
+        state.reconciliationRequestKeys.delete(id);
+      }
+      state.notice = error instanceof AdminApiError ? error.message : "Não foi possível consultar a referência Bling.";
       state.noticeType = "error";
     } finally {
       state.busy = false;
