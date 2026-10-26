@@ -1,4 +1,4 @@
-import { hasFiscalIdentifiers, type Basket, type BasketProductGroup, type MoneyCents, type Product } from "./catalog";
+import { hasBlingProductId, type Basket, type BasketProductGroup, type MoneyCents, type Product } from "./catalog";
 
 export interface BasketSelection {
   productId: string;
@@ -60,7 +60,7 @@ export function quoteBasket(
     const reference = referenceProduct(group, products);
     const selected = findGroupProduct(group, selection.productId, products);
     if (selection.quantity !== 0) {
-      if (!hasFiscalIdentifiers(selected)) {
+      if (!hasBlingProductId(selected)) {
         throw new FlowSelectionError("Este produto está indisponível no momento.");
       }
       const available = availableStockByProduct?.get(selected.id);

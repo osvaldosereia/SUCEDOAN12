@@ -183,8 +183,6 @@ def build(input_path: Path) -> None:
         }
         if not mapped["name"]:
             raise ValueError(f"Produto sem nome: {product_id}")
-        if mapped["sku"] is None:
-            missing_integration_fields.append(f"{product_id}:sku")
         if mapped["blingProductId"] is None:
             missing_integration_fields.append(f"{product_id}:blingProductId")
         products.append(mapped)
@@ -277,7 +275,7 @@ def build(input_path: Path) -> None:
                 "groupCount": sum(len(basket["groups"]) for basket in baskets),
                 "optionCount": len(configured_ids),
                 "missingIntegrationFields": missing_integration_fields,
-                "note": "Resolve missing fiscal identifiers before enabling affected products for confirmed orders.",
+                "note": "Resolve missing Bling product IDs before enabling affected products; SKU is optional when the Bling item is sent by product ID.",
             },
             ensure_ascii=False,
             indent=2,

@@ -642,7 +642,7 @@ function integrationBlockerLabel(code: string): string {
     BLING_SALE_ADDRESS_INCOMPLETE: "Completar o endereço de entrega do pedido",
     BLING_SALE_PAYMENT_METHOD_UNSUPPORTED: "Revisar a forma de pagamento registrada no pedido",
     BLING_SALE_TOTALS_OR_ITEMS_INVALID: "Revisar itens e totais da prévia da venda",
-    BLING_SALE_ITEM_MAPPING_INVALID: "Revisar SKU e vínculo Bling de um ou mais itens",
+    BLING_SALE_ITEM_MAPPING_INVALID: "Revisar vínculo Bling e dados comerciais de um ou mais itens",
     BLING_SHARED_CREDENTIALS_UNAVAILABLE: "A conexão compartilhada do Bling não está disponível no servidor",
   } as Record<string, string>)[code] ?? code;
 }

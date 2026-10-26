@@ -837,7 +837,7 @@ interface BlingSaleRequestPreview {
   desconto: { valor: number; unidade: "REAL" };
   itens: Array<{
     produto: { id: number };
-    codigo: string;
+    codigo?: string;
     descricao: string;
     quantidade: number;
     valor: number;
@@ -1243,7 +1243,7 @@ async function buildBlingSalePreview(
     const quantity = item.picked_quantity;
     const expectedLineTotal = unitPriceCents * quantity;
     const actualLineTotal = Number(item.line_total_cents);
-    if (!Number.isSafeInteger(productId) || productId <= 0 || !sku || !description
+    if (!Number.isSafeInteger(productId) || productId <= 0 || !description
       || !Number.isSafeInteger(quantity) || quantity <= 0
       || !Number.isSafeInteger(unitPriceCents) || unitPriceCents < 0
       || !Number.isSafeInteger(expectedLineTotal) || expectedLineTotal !== actualLineTotal) {
@@ -1252,7 +1252,7 @@ async function buildBlingSalePreview(
     }
     lineTotalCents += actualLineTotal;
     previewItems.push({
-      produto: { id: productId }, codigo: sku, descricao: description,
+      produto: { id: productId }, ...(sku ? { codigo: sku } : {}), descricao: description,
       quantidade: quantity, valor: unitPriceCents / 100,
     });
   }
@@ -1895,7 +1895,7 @@ function adjustedSnapshot(snapshot: Record<string, unknown>, basket: Basket, pro
     const choice = quote.selections[group.id];
     if (!choice.quantity) return [];
     const product = productById.get(choice.productId);
-    if (!product?.sku || !product.blingProductId) throw new HttpError(409, `A opção ${product?.name ?? choice.productId} ainda não possui SKU e vínculo Bling.`);
+    if (!product?.blingProductId) throw new HttpError(409, `A opção ${product?.name ?? choice.productId} ainda não possui vínculo Bling.`);
     return [{
       groupId: group.id, productId: product.id, name: product.name, brand: product.brand,
       presentation: product.presentation, sku: product.sku, gtin: product.gtin,

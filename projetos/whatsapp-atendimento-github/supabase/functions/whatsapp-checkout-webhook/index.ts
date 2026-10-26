@@ -418,7 +418,7 @@ async function buildOrderSnapshot(
     const selection = quote.selections[group.id];
     if (selection.quantity === 0) return [];
     const product = productById.get(selection.productId);
-    if (!product?.sku || !product.blingProductId) throw new WebhookError(409, `A opção ${product?.name ?? selection.productId} ainda não possui SKU e vínculo Bling.`);
+    if (!product?.blingProductId) throw new WebhookError(409, `A opção ${product?.name ?? selection.productId} ainda não possui vínculo Bling.`);
     return [{
       groupId: group.id,
       productId: product.id,

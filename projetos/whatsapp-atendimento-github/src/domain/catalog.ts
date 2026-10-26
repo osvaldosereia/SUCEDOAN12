@@ -17,8 +17,8 @@ export interface Product {
   active: boolean;
 }
 
-export function hasFiscalIdentifiers(product: Product): boolean {
-  return Boolean(product.sku?.trim() && product.blingProductId?.trim());
+export function hasBlingProductId(product: Product): boolean {
+  return Boolean(product.blingProductId?.trim());
 }
 
 export interface BasketProductGroup {
