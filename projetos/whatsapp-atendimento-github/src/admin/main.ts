@@ -541,7 +541,12 @@ function paymentMethodLabel(method: string | null): string {
 }
 
 function outboxStatusLabel(status: OutboxStatus): string {
-  return ({ pending: "Na fila", sent: "Aceita pela Meta", failed: "Falha para conferir", cancelled: "Cancelada" })[status];
+  return ({ pending: "Na fila", sent: "Aceita pela Graph", failed: "Falha para conferir", cancelled: "Cancelada" })[status];
+}
+
+function outboxProviderStatusLabel(status: OutboxMessageSummary["providerStatus"]): string | null {
+  if (!status) return null;
+  return ({ accepted: "Aceita pela Graph", sent: "Enviada pela Meta", delivered: "Entregue", read: "Lida", failed: "Falha reportada pela Meta" })[status];
 }
 
 function outboxTypeLabel(type: OutboxMessageSummary["messageType"]): string {
@@ -551,6 +556,8 @@ function outboxTypeLabel(type: OutboxMessageSummary["messageType"]): string {
 function outboxErrorLabel(code: string | null): string {
   if (!code) return "Sem erro registrado.";
   if (code === "delivery_unknown") return "Entrega incerta. Confira o histórico no WhatsApp Manager antes de qualquer reenvio manual.";
+  const providerFailure = code.match(/^meta_status_failed_(\d+|unknown)$/);
+  if (providerFailure) return `A Meta reportou falha de entrega${providerFailure[1] === "unknown" ? "." : ` (código ${providerFailure[1]}).`}`;
   const graphError = code.match(/^meta_http_(\d{3})_code_(\d+|unknown)$/);
   if (graphError) return `A Graph API respondeu HTTP ${graphError[1]} (código ${graphError[2]}).`;
   const labels: Record<string, string> = {
@@ -576,7 +583,17 @@ function outboxView(): string {
     <div class="outbox-safety-note ${state.outboxSenderEnabled && state.outboxLoaded ? "is-enabled" : ""}"><strong>${!state.outboxLoaded ? "Estado do envio não consultado" : state.outboxSenderEnabled ? "Gate de envio ligado no servidor" : "Gate de envio desligado no servidor"}</strong><span>Este estado indica somente a flag do worker; não confirma credenciais nem entrega. O conteúdo e o telefone não são exibidos aqui. Não há reenvio nesta tela. Mensagens com entrega incerta precisam ser conferidas no WhatsApp Manager antes de qualquer recuperação manual.</span></div>
     ${!state.outboxLoaded ? `<div class="empty-state"><strong>Carregue o acompanhamento</strong><span>A consulta mostra apenas status e metadados mínimos da fila.</span><button class="button button-primary" data-action="outbox-refresh">Carregar mensagens</button></div>` : `<div class="outbox-count-grid">${(["pending", "sent", "failed", "cancelled"] as OutboxStatus[]).map((status) => `<article class="outbox-count-card"><span>${escapeHtml(outboxStatusLabel(status))}</span><strong>${state.outboxCounts[status].toLocaleString("pt-BR")}</strong></article>`).join("")}</div>
       <div class="outbox-list-heading"><strong>Últimas ${state.outbox.length} de até ${state.outboxLimit} mensagens</strong><span>Ordenadas da mais recente para a mais antiga.</span></div>
-      ${state.outbox.length ? `<div class="outbox-list">${state.outbox.map((message) => `<article class="outbox-row"><div class="outbox-row-top"><span class="outbox-status-pill is-${escapeHtml(message.status)}">${escapeHtml(outboxStatusLabel(message.status))}</span><span>${escapeHtml(outboxTypeLabel(message.messageType))}</span><strong>Canal ${escapeHtml(message.channel)}</strong></div><div class="outbox-row-meta"><span>Criada ${new Date(message.createdAt).toLocaleString("pt-BR")}</span>${message.status === "pending" ? `<span>Disponível ${new Date(message.availableAt).toLocaleString("pt-BR")}</span>` : ""}${message.sentAt ? `<span>Aceita ${new Date(message.sentAt).toLocaleString("pt-BR")}</span>` : ""}</div>${message.status === "failed" ? `<p class="outbox-row-error">${escapeHtml(outboxErrorLabel(message.lastErrorCode))}</p>` : ""}</article>`).join("")}</div>` : `<div class="empty-state"><strong>Nenhuma mensagem na outbox</strong><span>Quando o webhook ou a separação gerar uma mensagem, ela aparecerá aqui.</span></div>`}`}`;
+      ${state.outbox.length ? `<div class="outbox-list">${state.outbox.map((message) => {
+        const providerStatusLabel = outboxProviderStatusLabel(message.providerStatus);
+        const providerStatusTime = message.providerStatusAt ?? (message.providerStatus === "accepted" ? message.sentAt : null);
+        const providerStatusMeta = providerStatusLabel
+          ? `<span>${escapeHtml(providerStatusLabel)}${providerStatusTime ? ` · ${new Date(providerStatusTime).toLocaleString("pt-BR")}` : ""}</span>`
+          : message.sentAt ? `<span>Aceita ${new Date(message.sentAt).toLocaleString("pt-BR")}</span>` : "";
+        const failureMessage = message.providerStatus === "failed"
+          ? `A Meta reportou falha de entrega${message.providerErrorCode ? ` (código ${message.providerErrorCode})` : " (código não informado)"}.`
+          : outboxErrorLabel(message.lastErrorCode);
+        return `<article class="outbox-row"><div class="outbox-row-top"><span class="outbox-status-pill is-${escapeHtml(message.status)}">${escapeHtml(outboxStatusLabel(message.status))}</span><span>${escapeHtml(outboxTypeLabel(message.messageType))}</span><strong>Canal ${escapeHtml(message.channel)}</strong></div><div class="outbox-row-meta"><span>Criada ${new Date(message.createdAt).toLocaleString("pt-BR")}</span>${message.status === "pending" ? `<span>Disponível ${new Date(message.availableAt).toLocaleString("pt-BR")}</span>` : ""}${providerStatusMeta}</div>${message.status === "failed" ? `<p class="outbox-row-error">${escapeHtml(failureMessage)}</p>` : ""}</article>`;
+      }).join("")}</div>` : `<div class="empty-state"><strong>Nenhuma mensagem na outbox</strong><span>Quando o webhook ou a separação gerar uma mensagem, ela aparecerá aqui.</span></div>`}`}`;
 }
 
 function integrationBlockerLabel(code: string): string {

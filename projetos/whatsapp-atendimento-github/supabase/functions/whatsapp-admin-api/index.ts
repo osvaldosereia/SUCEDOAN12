@@ -682,6 +682,9 @@ interface DbOutboxQueueRow {
   created_at: string;
   sent_at: string | null;
   last_error_code: string | null;
+  provider_status: string | null;
+  provider_status_at: string | null;
+  provider_error_code: string | null;
 }
 
 interface BlingSalePreviewSummary {
@@ -1278,7 +1281,8 @@ async function listOutboxMessages() {
       group by status
     `,
     db<DbOutboxQueueRow>`
-      select id, channel, message_type, status, available_at, created_at, sent_at, last_error_code
+      select id, channel, message_type, status, available_at, created_at, sent_at, last_error_code,
+        provider_status, provider_status_at, provider_error_code
       from whatsapp_atendimento.message_outbox
       order by created_at desc, id desc
       limit ${OUTBOX_RECENT_LIMIT}
@@ -1298,6 +1302,13 @@ async function listOutboxMessages() {
       createdAt: message.created_at,
       sentAt: message.sent_at,
       lastErrorCode: message.last_error_code,
+      providerStatus: ["accepted", "sent", "delivered", "read", "failed"].includes(message.provider_status ?? "")
+        ? message.provider_status as "accepted" | "sent" | "delivered" | "read" | "failed"
+        : null,
+      providerStatusAt: message.provider_status_at,
+      providerErrorCode: message.provider_error_code && /^[0-9]{1,12}$/.test(message.provider_error_code)
+        ? message.provider_error_code
+        : null,
     })),
     counts,
     senderEnabled: Deno.env.get("META_OUTBOX_SENDER_ENABLED") === "true",

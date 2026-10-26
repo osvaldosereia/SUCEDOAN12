@@ -1,4 +1,5 @@
 import postgres, { type Sql } from "npm:postgres@3.4.7";
+import { recordProviderStatus, validProviderMessageId, type ProviderDeliveryStatus } from "../_shared/outbox-status.ts";
 import { validateCatalog, type Basket, type CatalogDocuments } from "../../../src/domain/catalog.ts";
 import { FlowSelectionError, quoteBasket, type BasketSelections } from "../../../src/domain/flow-runtime.ts";
 import { wakeOutboxWorker } from "../_shared/outbox-dispatch.ts";
@@ -741,21 +742,66 @@ async function processMessage(message: WebhookMessage, channel: Channel, rawBody
   });
 }
 
-async function handleWebhook(rawBody: string): Promise<void> {
+function providerErrorCode(value: unknown): string | null {
+  if (!Array.isArray(value)) return null;
+  for (const item of value) {
+    if (!isRecord(item)) continue;
+    const code = item.code;
+    if (typeof code === "number" && Number.isSafeInteger(code) && code >= 0 && String(code).length <= 12) return String(code);
+    if (typeof code === "string" && /^[0-9]{1,12}$/.test(code)) return code;
+  }
+  return null;
+}
+
+async function processProviderStatus(value: Record<string, unknown>, channel: Channel): Promise<void> {
+  const providerMessageId = value.id;
+  const providerStatus = value.status;
+  const timestamp = value.timestamp;
+  if (!validProviderMessageId(providerMessageId)
+    || typeof providerStatus !== "string"
+    || !["sent", "delivered", "read", "failed"].includes(providerStatus)
+    || typeof timestamp !== "string" || !/^[0-9]{10}$/.test(timestamp)) return;
+  const eventTime = new Date(Number(timestamp) * 1000);
+  if (!Number.isFinite(eventTime.getTime())) return;
+  const normalizedStatus = providerStatus as ProviderDeliveryStatus;
+  const errorCode = providerErrorCode(value.errors);
+  const eventKey = await digestHex(`${channel}\n${providerMessageId}\n${normalizedStatus}\n${timestamp}\n${errorCode ?? ""}`);
+  await recordProviderStatus(getDatabase(), {
+    eventKey,
+    channel,
+    providerMessageId,
+    providerStatus: normalizedStatus,
+    providerStatusAt: eventTime.toISOString(),
+    providerErrorCode: normalizedStatus === "failed" ? errorCode : null,
+  });
+}
+
+async function handleWebhook(rawBody: string): Promise<boolean> {
   let payload: unknown;
   try { payload = JSON.parse(rawBody); } catch { throw new WebhookError(400, "O corpo do webhook não é JSON válido."); }
   if (!isRecord(payload) || !Array.isArray(payload.entry)) throw new WebhookError(400, "O corpo do webhook não tem o formato esperado.");
+  let hasInboundMessages = false;
   for (const entry of payload.entry) {
     if (!isRecord(entry) || !Array.isArray(entry.changes)) continue;
     for (const change of entry.changes) {
       if (!isRecord(change) || !isRecord(change.value) || !isRecord(change.value.metadata)) continue;
       const channel = channelForPhoneNumberId(change.value.metadata.phone_number_id);
-      if (!Array.isArray(change.value.messages)) continue;
-      for (const rawMessage of change.value.messages) {
-        if (isRecord(rawMessage)) await processMessage(rawMessage as unknown as WebhookMessage, channel, rawBody);
+      if (Array.isArray(change.value.statuses)) {
+        for (const rawStatus of change.value.statuses) {
+          if (isRecord(rawStatus)) await processProviderStatus(rawStatus, channel);
+        }
+      }
+      if (Array.isArray(change.value.messages)) {
+        for (const rawMessage of change.value.messages) {
+          if (isRecord(rawMessage)) {
+            hasInboundMessages = true;
+            await processMessage(rawMessage as unknown as WebhookMessage, channel, rawBody);
+          }
+        }
       }
     }
   }
+  return hasInboundMessages;
 }
 
 function plain(status: number, message: string): Response {
@@ -798,8 +844,8 @@ async function handle(request: Request): Promise<Response> {
   if (body === null) return plain(413, "Payload too large");
   try {
     if (!await verifySignature(body, request.headers.get("X-Hub-Signature-256"))) return plain(432, "Invalid signature");
-    await handleWebhook(body);
-    wakeOutboxWorker();
+    const hasInboundMessages = await handleWebhook(body);
+    if (hasInboundMessages) wakeOutboxWorker();
     return Response.json({ accepted: true });
   } catch (error) {
     if (error instanceof WebhookError) return plain(error.status, error.message);

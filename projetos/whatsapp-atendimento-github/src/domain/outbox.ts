@@ -1,4 +1,5 @@
 export type OutboxStatus = "pending" | "sent" | "failed" | "cancelled";
+export type OutboxProviderStatus = "accepted" | "sent" | "delivered" | "read" | "failed";
 
 export type OutboxMessageType =
   | "basket_menu"
@@ -16,6 +17,9 @@ export interface OutboxMessageSummary {
   createdAt: string;
   sentAt: string | null;
   lastErrorCode: string | null;
+  providerStatus: OutboxProviderStatus | null;
+  providerStatusAt: string | null;
+  providerErrorCode: string | null;
 }
 
 export interface OutboxQueueSnapshot {

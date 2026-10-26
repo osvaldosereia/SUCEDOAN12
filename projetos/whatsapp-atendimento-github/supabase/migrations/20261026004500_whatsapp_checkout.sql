@@ -84,8 +84,30 @@ create table whatsapp_atendimento.message_outbox (
   available_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
   sent_at timestamptz,
-  last_error_code text
+  last_error_code text,
+  provider_message_id text check (provider_message_id is null or provider_message_id ~ '^wamid[.][A-Za-z0-9._=-]{1,250}$'),
+  provider_status text check (provider_status is null or provider_status in ('accepted', 'sent', 'delivered', 'read', 'failed')),
+  provider_status_at timestamptz,
+  provider_error_code text check (provider_error_code is null or provider_error_code ~ '^[0-9]{1,12}$'),
+  unique (channel, provider_message_id)
 );
+
+create table whatsapp_atendimento.outbox_pending_status_events (
+  id bigint generated always as identity primary key,
+  event_key text not null unique check (event_key ~ '^[0-9a-f]{64}$'),
+  channel text not null check (channel in ('0975', '1018')),
+  provider_message_id text not null check (provider_message_id ~ '^wamid[.][A-Za-z0-9._=-]{1,250}$'),
+  provider_status text not null check (provider_status in ('sent', 'delivered', 'read', 'failed')),
+  provider_status_at timestamptz not null,
+  provider_error_code text check (provider_error_code is null or provider_error_code ~ '^[0-9]{1,12}$'),
+  expires_at timestamptz not null default (now() + interval '30 minutes'),
+  created_at timestamptz not null default now()
+);
+
+create index outbox_pending_status_events_expiry_idx
+  on whatsapp_atendimento.outbox_pending_status_events (expires_at);
+create index outbox_pending_status_events_provider_idx
+  on whatsapp_atendimento.outbox_pending_status_events (channel, provider_message_id, provider_status_at);
 
 alter table whatsapp_atendimento.webhook_events enable row level security;
 alter table whatsapp_atendimento.order_drafts enable row level security;
@@ -93,6 +115,7 @@ alter table whatsapp_atendimento.orders enable row level security;
 alter table whatsapp_atendimento.order_items enable row level security;
 alter table whatsapp_atendimento.order_events enable row level security;
 alter table whatsapp_atendimento.message_outbox enable row level security;
+alter table whatsapp_atendimento.outbox_pending_status_events enable row level security;
 
 revoke all on all tables in schema whatsapp_atendimento from public, anon, authenticated;
 revoke all on all sequences in schema whatsapp_atendimento from public, anon, authenticated;

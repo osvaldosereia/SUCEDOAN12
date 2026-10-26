@@ -1,5 +1,6 @@
 import postgres, { type Sql } from "npm:postgres@3.4.7";
 import { wakeOutboxWorker } from "../_shared/outbox-dispatch.ts";
+import { lockOutboxProviderMessage, replayPendingProviderStatuses, validProviderMessageId } from "../_shared/outbox-status.ts";
 
 const CHANNELS = ["0975", "1018"] as const;
 type Channel = typeof CHANNELS[number];
@@ -198,14 +199,22 @@ async function updateFailure(db: Sql, messageId: string, code: string): Promise<
   `;
 }
 
-async function markSent(db: Sql, messageId: string): Promise<void> {
-  const updated = await db<{ id: string }>`
-    update whatsapp_atendimento.message_outbox
-    set status = 'sent', sent_at = now(), last_error_code = null
-    where id = ${messageId} and status = 'failed' and last_error_code = 'delivery_unknown'
-    returning id
-  `;
-  if (updated.length !== 1) throw new WorkerError("outbox_state_changed");
+async function markSent(db: Sql, messageId: string, providerMessageId: string): Promise<void> {
+  await db.begin(async (tx) => {
+    const channels = await tx<{ channel: Channel }>`select channel from whatsapp_atendimento.message_outbox where id = ${messageId}`;
+    if (!channels[0]) throw new WorkerError("outbox_state_changed");
+    const channel = channels[0].channel;
+    await lockOutboxProviderMessage(tx, channel, providerMessageId);
+    const updated = await tx<{ id: string; channel: Channel }>`
+      update whatsapp_atendimento.message_outbox
+      set status = 'sent', sent_at = now(), last_error_code = null, provider_message_id = ${providerMessageId},
+        provider_status = 'accepted', provider_status_at = null, provider_error_code = null
+      where id = ${messageId} and status = 'failed' and last_error_code = 'delivery_unknown'
+      returning id, channel
+    `;
+    if (updated.length !== 1) throw new WorkerError("outbox_state_changed");
+    await replayPendingProviderStatuses(tx, updated[0].channel, providerMessageId);
+  });
 }
 
 async function metaErrorCode(response: Response): Promise<string> {
@@ -259,13 +268,13 @@ async function sendOne(db: Sql, message: OutboxMessage, key: CryptoKey, graphVer
       await updateFailure(db, message.id, "delivery_unknown");
       return false;
     }
-    const accepted = isRecord(body) && Array.isArray(body.messages) && isRecord(body.messages[0])
-      && typeof body.messages[0].id === "string" && body.messages[0].id.length > 0;
-    if (!accepted) {
+    const providerMessageId = isRecord(body) && Array.isArray(body.messages) && isRecord(body.messages[0])
+      ? body.messages[0].id : null;
+    if (!validProviderMessageId(providerMessageId)) {
       await updateFailure(db, message.id, "delivery_unknown");
       return false;
     }
-    await markSent(db, message.id);
+    await markSent(db, message.id, providerMessageId);
     return true;
   } catch (error) {
     const code = error instanceof WorkerError ? error.code : "outbox_processing_failed";
