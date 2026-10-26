@@ -36,11 +36,11 @@ O login sozinho não libera alterações. Para catálogo, clientes e baixa de es
 
 Os secrets server-side esperados são `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_PRIVATE_KEY`, `ADMIN_ALLOWED_USER_IDS` e `ADMIN_ALLOWED_ORIGINS`. Depois do primeiro login, `ADMIN_ALLOWED_USER_IDS` deve conter o UUID do operador em `auth.users`; `ADMIN_ALLOWED_ORIGINS` deve listar `https://donaantonia.com.br` e `http://127.0.0.1:5173` somente durante desenvolvimento. CORS recebe a origem, sem o caminho `/whatsapp-admin/`.
 
-O GitHub connector desta sessão não oferece criação de GitHub App nem gravação de secrets. O Dashboard não está autenticado. Por isso, não é possível concluir esses cadastros em nome do operador nesta sessão.
+O GitHub connector desta sessão não oferece criação de GitHub App nem gravação de secrets. O conector Supabase permite implantar Edge Functions, mas não expõe leitura/gravação do cofre de secrets nem configuração de provider OAuth. O Dashboard não está autenticado e o Computer Use não pode automatizar uma tela de login. Por isso, não consigo habilitar o provider ou confirmar os secrets requeridos enquanto não houver uma sessão autenticada no Dashboard.
 
 ## Liberação técnica após os cadastros
 
-Antes de implantar qualquer função, confirmar apenas a **presença** dos secrets obrigatórios, conferir o destino `ssbesxgaijknwsjbsbcz`, os nomes e as versões das funções, e fazer build. Nunca imprimir valores de secret.
+Antes de implantar qualquer função, confirmar apenas a **presença** dos secrets obrigatórios, conferir o destino `ssbesxgaijknwsjbsbcz`, os nomes e as versões das funções, e fazer build. Nunca imprimir valores de secret. O deploy fica pendente até essa checagem; implantar agora sem saber se o runtime tem as credenciais necessárias deixaria o Admin publicado sem as rotas operacionais.
 
 Ainda são necessários: `DA_FLOW_0975_RSA_PKCS8`, confirmação da chave de 1018 e Meta IDs/canal para ambos; secrets da GitHub App; confirmação de `SUPABASE_DB_URL` e dos aliases Meta já observados. O roteador novo precisa ser implantado e selecionado no callback Meta para que `nfm_reply` do novo Flow chegue ao checkout. Essa alteração isolada precisa manter o webhook ANA como relay dos demais eventos.
 
