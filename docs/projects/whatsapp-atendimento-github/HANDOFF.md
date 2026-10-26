@@ -478,3 +478,5 @@ Foi consultado somente o código implantado de `whatsapp-meta-webhook-v1` no pro
 O código está pronto para revisão local, mas deploy/cutover exigem confirmação server-side de `SUPABASE_DB_URL`, segredo Meta compartilhado, existência dos endpoints destinos e callback configurável. O projeto ainda tem bloqueios independentes: OAuth GitHub do Supabase desabilitado, allowlist/origens e GitHub App ausentes no runtime, chave Flow 0975 não localizada. O preflight não confirmou essas dependências, então não foi feito deploy nem mudança do callback. Nenhum Flow foi publicado, nenhuma mensagem enviada e nenhuma escrita Meta/Bling ocorreu.
 
 Fontes Supabase consultadas: [autenticação de Edge Functions](https://supabase.com/docs/guides/functions/auth) e [cabeçalhos de autenticação](https://supabase.com/docs/guides/functions/auth-headers), sobre webhooks externos com verificação da assinatura do provedor no handler.
+
+Commit da ponte local: `c96dc6f` (`feat: route basket checkout webhooks safely`), enviado para `project/whatsapp-atendimento-github-20261025`.
