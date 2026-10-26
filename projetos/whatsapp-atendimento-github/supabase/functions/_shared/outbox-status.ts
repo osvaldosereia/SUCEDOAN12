@@ -48,7 +48,7 @@ function shouldApplyProviderStatus(
   const incomingTime = new Date(incomingAt).getTime();
   if (incomingTime !== currentTime) return incomingTime > currentTime;
   // Webhook arrival order is not reliable; use a deterministic tie-break for second-level timestamps.
-  const priority: Record<ProviderStatus, number> = { accepted: 0, sent: 1, delivered: 2, read: 3, failed: 4 };
+  const priority: Record<ProviderStatus, number> = { accepted: 0, sent: 1, failed: 2, delivered: 3, read: 4 };
   return priority[incoming] >= priority[current];
 }
 

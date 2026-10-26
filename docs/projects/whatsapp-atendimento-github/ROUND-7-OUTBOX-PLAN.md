@@ -34,7 +34,7 @@ A política no máximo uma vez evita reenvio cego, mas pode perder uma mensagem 
 
 ## Atualização local — status de entrega Meta (26/10/2026)
 
-A migration local `20261026004500_whatsapp_checkout.sql` agora inclui `provider_message_id`, status/timestamp/código numérico, uma constraint para o formato do ID e a fila temporária privada para callbacks que chegam antes do `markSent`. O worker grava o ID da resposta 2xx e reaplica os callbacks pendentes de forma transacional sob advisory lock por canal/ID. A regra de projeção usa timestamp Meta e, em igualdade de segundo, prioridade `failed > read > delivered > sent`. Não guardar texto de erro recebido da Meta.
+A migration local `20261026004500_whatsapp_checkout.sql` agora inclui `provider_message_id`, status/timestamp/código numérico, uma constraint para o formato do ID e a fila temporária privada para callbacks que chegam antes do `markSent`. O worker grava o ID da resposta 2xx e reaplica os callbacks pendentes de forma transacional sob advisory lock por canal/ID. A regra de projeção usa timestamp Meta e, em igualdade de segundo, prioriza evidência positiva mais forte: `read > delivered > failed > sent`. Não guardar texto de erro recebido da Meta.
 
 O webhook autenticado processa status e mensagens inbound separadamente; callback de status não acorda o sender. `GET /outbox` e a UI mostram status e timestamp sem revelar ID do provedor, telefone, payload ou ciphertext. O worker continua condicionado a `META_OUTBOX_SENDER_ENABLED=true`; o `.env.example` mantém `false` e nenhum envio foi feito.
 
