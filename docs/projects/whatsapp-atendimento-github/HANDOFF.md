@@ -758,3 +758,12 @@ A autenticação continua sendo a sessão Supabase já existente porque as rotas
 - Nova captura do canal 1018 mostra **“Conta Meta associada — Endpoint pronto”**. Com a confirmação visual anterior do 0975, ambos os números estão configurados para a chave pública Meta. O erro `otp_expired` continua sendo apenas do link de acesso antigo; não desfaz as configurações já persistidas.
 - O Flow selecionado para 1018 segue em `DRAFT`, aparece como Flow externo, informa `Endpoint: não configurado` no objeto do Flow e `Conteúdo deste Admin: não — envie o conteúdo para habilitar o vínculo`. O vínculo atual permanece nenhum. Isso é distinto da chave pública já pronta no número.
 - Próximo avanço: enviar o JSON do Admin ao rascunho escolhido (ou criar um rascunho próprio), validar o retorno da Meta, revisar o vínculo nos dois canais e só então decidir publicação. Nenhum conteúdo foi enviado à Meta nesta rodada; Flow continua sem publicação e sem vínculo.
+
+
+
+## Retomada após autorização para carregar o rascunho (26/10/2026)
+
+- O operador respondeu “continue” após a solicitação de autorização para enviar o conteúdo do Admin aos rascunhos Meta. A intenção de prosseguir com o envio aos rascunhos está registrada; publicação permanece fora do escopo.
+- A captura mais recente confirma o canal 1018 como `Endpoint pronto`, complementando a confirmação anterior do 0975. Ambos têm a chave pública configurada.
+- A página acessível ao agente mostra `Acesso pendente`; a URL fornecida pelo operador contém `error_code=otp_expired`. Portanto, as chamadas administrativas com sessão não podem prosseguir por esta aba até que o operador abra um link de acesso Supabase válido. O link expirado não altera o estado Meta já salvo.
+- Nenhum JSON foi enviado à Meta e nenhum Flow foi vinculado/publicado. Após uma sessão válida, enviar o conteúdo aos rascunhos selecionados e conferir as respostas da Meta; não publicar nem vincular sem pedido específico.
