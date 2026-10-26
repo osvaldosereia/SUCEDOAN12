@@ -51,12 +51,20 @@ export interface OrderDetailRecord extends OrderListEntry {
   attentionCode: string | null;
   blingContactId: number | null;
   blingContactVerifiedAt: string | null;
+  blingSaleReference: string | null;
   integrationJob: {
     operation: string;
     status: string;
     errorCode: string | null;
     blockers: string[];
     commercialTotals: BlingCommercialTotals | null;
+    salePreview: {
+      externalReference: string;
+      saleDate: string;
+      itemCount: number;
+      paymentObservation: string;
+      fingerprintReady: boolean;
+    } | null;
   } | null;
 }
 

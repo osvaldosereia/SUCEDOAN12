@@ -507,13 +507,171 @@ interface DbOrder {
   id: string; status: string; total_cents: number; snapshot: Record<string, unknown>; channel: string;
   revision: number; assigned_operator_id: string | null; customer_acceptance_status: string;
   invoice_status: string; invoice_id: number | null; attention_code: string | null;
-  created_at: string; separation_completed_at: string | null;
+  created_at: string; separation_completed_at: string | null; bling_sale_reference: string | null;
 }
 
 interface DbOrderItem {
   id: number; group_id: string; product_id: string; quantity: number; picked_quantity: number;
   unit_price_cents: number; line_total_cents: number; picking_status: string; snapshot: Record<string, unknown>;
   replacement_product_id: string | null;
+}
+
+interface BlingSalePreviewSummary {
+  externalReference: string;
+  saleDate: string;
+  itemCount: number;
+  paymentObservation: string;
+}
+
+interface BlingSaleRequestPreview {
+  contato: { id: number };
+  data: string;
+  numeroLoja: string;
+  totalProdutos: number;
+  total: number;
+  outrasDespesas: number;
+  desconto: { valor: number; unidade: "REAL" };
+  itens: Array<{
+    produto: { id: number };
+    codigo: string;
+    descricao: string;
+    quantidade: number;
+    valor: number;
+  }>;
+  transporte: { etiqueta: {
+    nome: string;
+    endereco: string;
+    numero: string;
+    complemento?: string;
+    bairro: string;
+    municipio: string;
+    uf: string;
+    cep: string;
+  } };
+  observacoes: string;
+}
+
+function stableBlingSaleReference(orderId: string): string | null {
+  if (!ORDER_ID.test(orderId)) return null;
+  return `WA-${orderId.replaceAll("-", "").toLowerCase()}`;
+}
+
+function blingSaleDate(createdAt: string): string | null {
+  const date = new Date(createdAt);
+  if (!Number.isFinite(date.getTime())) return null;
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Cuiaba", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(date);
+  const fields = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return fields.year && fields.month && fields.day ? `${fields.year}-${fields.month}-${fields.day}` : null;
+}
+
+function paymentObservation(value: unknown): string | null {
+  const labels: Record<string, string> = {
+    pix: "PIX", cash: "Dinheiro", debit_card: "Cartão de débito", credit_card: "Cartão de crédito",
+  };
+  return typeof value === "string" ? labels[value] ?? null : null;
+}
+
+function safeText(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const text = value.trim();
+  return text && text.length <= 240 ? text : null;
+}
+
+async function hashBlingSaleRequest(request: BlingSaleRequestPreview): Promise<string> {
+  const bytes = new TextEncoder().encode(JSON.stringify(request));
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
+  return Array.from(digest, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function buildBlingSalePreview(
+  order: DbOrder,
+  items: DbOrderItem[],
+  contactId: number | null,
+  commercialTotals: BlingCommercialTotals | null,
+): Promise<{
+  requestSha256: string | null;
+  summary: BlingSalePreviewSummary | null;
+  blockers: string[];
+}> {
+  const blockers: string[] = [];
+  const customer = isRecord(order.snapshot.customer) ? order.snapshot.customer : {};
+  const address = isRecord(customer.address) ? customer.address : {};
+  const externalReference = order.bling_sale_reference ?? stableBlingSaleReference(order.id);
+  const saleDate = blingSaleDate(order.created_at);
+  const paymentLabel = paymentObservation(order.snapshot.paymentMethod);
+  const customerName = safeText(customer.name);
+  const street = safeText(address.street);
+  const number = safeText(address.number);
+  const neighborhood = safeText(address.neighborhood);
+  const city = safeText(address.city);
+  const state = safeText(address.state);
+  const postalCode = safeText(address.postalCode);
+
+  if (!externalReference || !saleDate) blockers.push("BLING_SALE_REFERENCE_OR_DATE_INVALID");
+  if (!Number.isSafeInteger(contactId) || Number(contactId) <= 0) blockers.push("BLING_CUSTOMER_CONTACT_MAPPING_MISSING");
+  if (!customerName || !street || !number || !neighborhood || !city || !state || !postalCode) {
+    blockers.push("BLING_SALE_ADDRESS_INCOMPLETE");
+  }
+  if (!paymentLabel) blockers.push("BLING_SALE_PAYMENT_METHOD_UNSUPPORTED");
+  if (!commercialTotals?.balances || !items.length) blockers.push("BLING_SALE_TOTALS_OR_ITEMS_INVALID");
+
+  let lineTotalCents = 0;
+  const previewItems: BlingSaleRequestPreview["itens"] = [];
+  for (const item of items) {
+    const snapshot = item.snapshot;
+    const productIdText = typeof snapshot.blingProductId === "string" || typeof snapshot.blingProductId === "number"
+      ? String(snapshot.blingProductId) : "";
+    const productId = /^\d+$/.test(productIdText) ? Number(productIdText) : NaN;
+    const sku = safeText(snapshot.sku);
+    const description = safeText(snapshot.name);
+    const unitPriceCents = Number(item.unit_price_cents);
+    const quantity = item.picked_quantity;
+    const expectedLineTotal = unitPriceCents * quantity;
+    const actualLineTotal = Number(item.line_total_cents);
+    if (!Number.isSafeInteger(productId) || productId <= 0 || !sku || !description
+      || !Number.isSafeInteger(quantity) || quantity <= 0
+      || !Number.isSafeInteger(unitPriceCents) || unitPriceCents < 0
+      || !Number.isSafeInteger(expectedLineTotal) || expectedLineTotal !== actualLineTotal) {
+      blockers.push("BLING_SALE_ITEM_MAPPING_INVALID");
+      continue;
+    }
+    lineTotalCents += actualLineTotal;
+    previewItems.push({
+      produto: { id: productId }, codigo: sku, descricao: description,
+      quantidade: quantity, valor: unitPriceCents / 100,
+    });
+  }
+  if (!Number.isSafeInteger(lineTotalCents) || lineTotalCents !== commercialTotals?.lineTotalCents
+    || Number(order.total_cents) !== commercialTotals?.acceptedTotalCents) {
+    blockers.push("BLING_SALE_TOTALS_OR_ITEMS_INVALID");
+  }
+
+  const summary = externalReference && saleDate && paymentLabel ? {
+    externalReference, saleDate, itemCount: items.length, paymentObservation: `Pagamento: ${paymentLabel}`,
+  } : null;
+  if (blockers.length || !summary || !customerName || !street || !number || !neighborhood || !city || !state || !postalCode || !paymentLabel) {
+    return { requestSha256: null, summary, blockers: [...new Set(blockers)] };
+  }
+
+  const request: BlingSaleRequestPreview = {
+    contato: { id: Number(contactId) },
+    data: summary.saleDate,
+    numeroLoja: summary.externalReference,
+    totalProdutos: lineTotalCents / 100,
+    total: Number(order.total_cents) / 100,
+    outrasDespesas: commercialTotals!.otherExpensesCents / 100,
+    desconto: { valor: commercialTotals!.discountCents / 100, unidade: "REAL" },
+    itens: previewItems,
+    transporte: { etiqueta: {
+      nome: customerName, endereco: street, numero: number,
+      ...(safeText(address.complement) ? { complemento: safeText(address.complement)! } : {}),
+      bairro: neighborhood, municipio: city, uf: state, cep: postalCode,
+    } },
+    observacoes: `Pagamento: ${paymentLabel}`,
+  };
+  return { requestSha256: await hashBlingSaleRequest(request), summary, blockers: [] };
 }
 
 function orderPresentation(order: DbOrder, items: DbOrderItem[] = []) {
@@ -548,7 +706,12 @@ function orderPresentation(order: DbOrder, items: DbOrderItem[] = []) {
     separationCompletedAt: order.separation_completed_at,
     blingContactId: null as number | null,
     blingContactVerifiedAt: null as string | null,
-    integrationJob: null as { operation: string; status: string; errorCode: string | null; blockers: string[]; commercialTotals: BlingCommercialTotals | null } | null,
+    blingSaleReference: order.bling_sale_reference,
+    integrationJob: null as {
+      operation: string; status: string; errorCode: string | null; blockers: string[];
+      commercialTotals: BlingCommercialTotals | null;
+      salePreview: (BlingSalePreviewSummary & { fingerprintReady: boolean }) | null;
+    } | null,
   };
 }
 
@@ -587,8 +750,8 @@ async function orderDetail(orderId: string) {
     }
   }
   const jobs = await db<{
-    operation: string; status: string; error_code: string | null; result_summary: Record<string, unknown>;
-  }>`select operation, status, error_code, result_summary from whatsapp_atendimento.integration_jobs where order_id = ${orderId} order by created_at desc limit 1`;
+    operation: string; status: string; error_code: string | null; request_sha256: string | null; result_summary: Record<string, unknown>;
+  }>`select operation, status, error_code, request_sha256, result_summary from whatsapp_atendimento.integration_jobs where order_id = ${orderId} order by created_at desc limit 1`;
   if (jobs[0]) {
     const blockers = Array.isArray(jobs[0].result_summary.blockers)
       ? jobs[0].result_summary.blockers.filter((value): value is string => typeof value === "string")
@@ -603,7 +766,21 @@ async function orderDetail(orderId: string) {
       && typeof rawTotals.balances === "boolean"
       ? rawTotals as unknown as BlingCommercialTotals
       : null;
-    detail.integrationJob = { operation: jobs[0].operation, status: jobs[0].status, errorCode: jobs[0].error_code, blockers, commercialTotals };
+    const rawPreview = jobs[0].result_summary.salePreview;
+    const salePreview = isRecord(rawPreview)
+      && typeof rawPreview.externalReference === "string"
+      && typeof rawPreview.saleDate === "string"
+      && typeof rawPreview.itemCount === "number" && Number.isSafeInteger(rawPreview.itemCount)
+      && typeof rawPreview.paymentObservation === "string"
+      ? {
+        externalReference: rawPreview.externalReference,
+        saleDate: rawPreview.saleDate,
+        itemCount: rawPreview.itemCount,
+        paymentObservation: rawPreview.paymentObservation,
+        fingerprintReady: /^[0-9a-f]{64}$/.test(jobs[0].request_sha256 ?? ""),
+      }
+      : null;
+    detail.integrationJob = { operation: jobs[0].operation, status: jobs[0].status, errorCode: jobs[0].error_code, blockers, commercialTotals, salePreview };
   }
   const catalog = await catalogAt(String(order.snapshot.catalogCommit ?? ""));
   const basket = catalog.baskets.baskets.find((candidate) => candidate.id === order.snapshot.basketId);
@@ -991,7 +1168,8 @@ async function assignOrder(orderId: string, operatorId: string, body: Record<str
 
 async function saveOrderBlingContact(orderId: string, operatorId: string, body: Record<string, unknown>) {
   if (typeof body.revision !== "number" || !Number.isSafeInteger(body.revision)) throw new HttpError(400, "A revisão do pedido é obrigatória.");
-  if (typeof body.blingContactId !== "number" || !Number.isSafeInteger(body.blingContactId) || body.blingContactId <= 0) {
+  const blingContactId = body.blingContactId;
+  if (typeof blingContactId !== "number" || !Number.isSafeInteger(blingContactId) || blingContactId <= 0) {
     throw new HttpError(400, "Informe um ID de contato Bling válido.");
   }
   if (body.customerMatchConfirmed !== true) throw new HttpError(400, "Confirme que verificou o contato no Bling.");
@@ -1005,19 +1183,20 @@ async function saveOrderBlingContact(orderId: string, operatorId: string, body: 
       const customer = isRecord(order.snapshot.customer) ? order.snapshot.customer : {};
       const customerId = typeof customer.customerId === "string" ? customer.customerId : "";
       if (!ORDER_ID.test(customerId)) throw new HttpError(409, "Este pedido não tem um cliente cadastrado para vincular.");
+      await tx`select pg_advisory_xact_lock(hashtext(${customerId}))`;
 
       const duplicate = await tx<{ customer_id: string }>`
         select customer_id from whatsapp_atendimento.customer_bling_contacts
-        where bling_contact_id = ${body.blingContactId} and customer_id <> ${customerId}
+        where bling_contact_id = ${blingContactId} and customer_id <> ${customerId}
       `;
       if (duplicate.length) throw new HttpError(409, "Este contato Bling já está vinculado a outro cliente.");
       const current = await tx<{ bling_contact_id: number }>`
         select bling_contact_id from whatsapp_atendimento.customer_bling_contacts where customer_id = ${customerId}
       `;
-      if (!current[0] || Number(current[0].bling_contact_id) !== body.blingContactId) {
+      if (!current[0] || Number(current[0].bling_contact_id) !== blingContactId) {
         await tx`
           insert into whatsapp_atendimento.customer_bling_contacts (customer_id, bling_contact_id, verified_at, updated_by)
-          values (${customerId}, ${body.blingContactId}, now(), ${operatorId})
+          values (${customerId}, ${blingContactId}, now(), ${operatorId})
           on conflict (customer_id) do update
           set bling_contact_id = excluded.bling_contact_id, verified_at = excluded.verified_at,
               updated_by = excluded.updated_by, updated_at = now()
@@ -1026,26 +1205,62 @@ async function saveOrderBlingContact(orderId: string, operatorId: string, body: 
         await tx`
           insert into whatsapp_atendimento.order_events (order_id, event_key, event_type, event_data)
           values (${orderId}, ${`${orderId}:bling-contact:${order.revision + 1}`}, 'bling_contact_linked',
-            ${tx.json({ operatorId, customerId, blingContactId: body.blingContactId })})
+            ${tx.json({ operatorId, customerId, blingContactId })})
           on conflict (event_key) do nothing
         `;
       }
-      await tx`
-        update whatsapp_atendimento.integration_jobs j
-        set result_summary = jsonb_set(
-          j.result_summary,
-          '{blockers}',
-          coalesce((
-            select jsonb_agg(blocker.value)
-            from jsonb_array_elements_text(coalesce(j.result_summary->'blockers', '[]'::jsonb)) as blocker(value)
-            where blocker.value not in ('BLING_CUSTOMER_CONTACT_MAPPING_MISSING', 'BLING_PAYMENT_FORM_MAPPING_MISSING', 'BLING_DUE_DATE_POLICY_MISSING')
-          ), '[]'::jsonb),
-          true
-        ), updated_at = now()
+      const affectedOrders = await tx<DbOrder & { result_summary: Record<string, unknown> }>`
+        select o.*, j.result_summary
         from whatsapp_atendimento.orders o
-        where j.order_id = o.id and o.snapshot #>> '{customer,customerId}' = ${customerId}
+        join whatsapp_atendimento.integration_jobs j on j.order_id = o.id
+        where o.snapshot #>> '{customer,customerId}' = ${customerId}
           and j.operation = 'create_sale' and j.status = 'blocked' and j.error_code = 'BLING_PREFLIGHT_REQUIRED'
+        order by o.created_at, o.id
       `;
+      const previewBlockers = new Set([
+        "BLING_CUSTOMER_CONTACT_MAPPING_MISSING", "BLING_SALE_REFERENCE_OR_DATE_INVALID",
+        "BLING_SALE_ADDRESS_INCOMPLETE", "BLING_SALE_PAYMENT_METHOD_UNSUPPORTED",
+        "BLING_SALE_TOTALS_OR_ITEMS_INVALID", "BLING_SALE_ITEM_MAPPING_INVALID",
+        "BLING_PAYMENT_FORM_MAPPING_MISSING", "BLING_DUE_DATE_POLICY_MISSING",
+      ]);
+      const retainedBlockers = new Set([
+        "BLING_OAUTH_CREDENTIAL_MISSING", "BLING_TOTAL_RECONCILIATION_INVALID",
+        "BLING_CONNECTOR_DISABLED_IN_DEVELOPMENT", "BLING_BASKET_ADJUSTMENT_RULE_UNRESOLVED",
+      ]);
+      for (const affectedOrder of affectedOrders) {
+        const affectedItems = await tx<DbOrderItem>`
+          select * from whatsapp_atendimento.order_items where order_id = ${affectedOrder.id} order by position
+        `;
+        const rawTotals = affectedOrder.result_summary.commercialTotals;
+        const totals = isRecord(rawTotals)
+          && typeof rawTotals.lineTotalCents === "number" && Number.isSafeInteger(rawTotals.lineTotalCents)
+          && typeof rawTotals.acceptedTotalCents === "number" && Number.isSafeInteger(rawTotals.acceptedTotalCents)
+          && typeof rawTotals.commercialDeltaCents === "number" && Number.isSafeInteger(rawTotals.commercialDeltaCents)
+          && typeof rawTotals.otherExpensesCents === "number" && Number.isSafeInteger(rawTotals.otherExpensesCents)
+          && typeof rawTotals.discountCents === "number" && Number.isSafeInteger(rawTotals.discountCents)
+          && typeof rawTotals.balances === "boolean"
+          ? rawTotals as unknown as BlingCommercialTotals
+          : null;
+        const reference = affectedOrder.bling_sale_reference ?? stableBlingSaleReference(affectedOrder.id);
+        if (affectedOrder.id === orderId && reference && !affectedOrder.bling_sale_reference) {
+          await tx`update whatsapp_atendimento.orders set bling_sale_reference = ${reference} where id = ${affectedOrder.id}`;
+        }
+        const preview = await buildBlingSalePreview(affectedOrder, affectedItems, blingContactId, totals);
+        const previousBlockers = Array.isArray(affectedOrder.result_summary.blockers)
+          ? affectedOrder.result_summary.blockers.filter((value): value is string => typeof value === "string")
+          : [];
+        const blockers = [...new Set([
+          ...previousBlockers.filter((value) => retainedBlockers.has(value) && !previewBlockers.has(value)),
+          ...preview.blockers,
+        ])];
+        await tx`
+          update whatsapp_atendimento.integration_jobs
+          set request_sha256 = ${preview.requestSha256},
+              result_summary = ${tx.json({ blockers, commercialTotals: totals, salePreview: preview.summary })},
+              updated_at = now()
+          where order_id = ${affectedOrder.id} and operation = 'create_sale' and status = 'blocked'
+        `;
+      }
     });
   } catch (error) {
     if (isRecord(error) && error.code === "23505") throw new HttpError(409, "Este contato Bling já está vinculado a outro cliente.");
@@ -1082,16 +1297,24 @@ async function finishSeparation(orderId: string, operatorId: string, body: Recor
     const commercialTotals = itemLineTotals.every((value) => Number.isSafeInteger(value) && value >= 0)
       ? reconcileBlingCommercialTotals(lineTotalCents, acceptedTotalCents)
       : null;
+    const saleReference = order.bling_sale_reference ?? stableBlingSaleReference(order.id);
+    const salePreview = await buildBlingSalePreview(
+      { ...order, bling_sale_reference: saleReference },
+      items,
+      contactMapping[0] ? Number(contactMapping[0].bling_contact_id) : null,
+      commercialTotals,
+    );
     const blockers = [
       ...(!contactMapping.length || !Number.isSafeInteger(Number(contactMapping[0]?.bling_contact_id)) || !contactMapping[0]?.verified_at ? ["BLING_CUSTOMER_CONTACT_MAPPING_MISSING"] : []),
       ...(!credential.length ? ["BLING_OAUTH_CREDENTIAL_MISSING"] : []),
       ...(!commercialTotals?.balances ? ["BLING_TOTAL_RECONCILIATION_INVALID"] : []),
+      ...salePreview.blockers,
       "BLING_CONNECTOR_DISABLED_IN_DEVELOPMENT",
     ];
-    await tx`update whatsapp_atendimento.orders set status = 'awaiting_invoice', separation_completed_at = now(), revision = revision + 1, attention_code = 'bling_preflight_required', updated_at = now() where id = ${orderId}`;
+    await tx`update whatsapp_atendimento.orders set status = 'awaiting_invoice', separation_completed_at = now(), bling_sale_reference = ${saleReference}, revision = revision + 1, attention_code = 'bling_preflight_required', updated_at = now() where id = ${orderId}`;
     await tx`
-      insert into whatsapp_atendimento.integration_jobs (order_id, operation, idempotency_key, status, error_code, result_summary)
-      values (${orderId}, 'create_sale', ${`${orderId}:create_sale`}, 'blocked', 'BLING_PREFLIGHT_REQUIRED', ${tx.json({ blockers, commercialTotals })})
+      insert into whatsapp_atendimento.integration_jobs (order_id, operation, idempotency_key, status, error_code, request_sha256, result_summary)
+      values (${orderId}, 'create_sale', ${`${orderId}:create_sale`}, 'blocked', 'BLING_PREFLIGHT_REQUIRED', ${salePreview.requestSha256}, ${tx.json({ blockers: [...new Set(blockers)], commercialTotals, salePreview: salePreview.summary })})
       on conflict (order_id, operation) do nothing
     `;
     await tx`insert into whatsapp_atendimento.order_events (order_id, event_key, event_type, event_data) values (${orderId}, ${`${orderId}:separation-complete:${order.revision + 1}`}, 'separation_completed', ${tx.json({ operatorId, integrationBlocked: true })}) on conflict (event_key) do nothing`;

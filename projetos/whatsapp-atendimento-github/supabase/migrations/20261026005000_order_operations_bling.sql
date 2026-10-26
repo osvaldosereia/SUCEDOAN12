@@ -59,6 +59,10 @@ create index integration_jobs_queue_idx
   on whatsapp_atendimento.integration_jobs (created_at)
   where status in ('pending', 'unknown');
 
+create unique index orders_bling_sale_reference_key
+  on whatsapp_atendimento.orders (bling_sale_reference)
+  where bling_sale_reference is not null;
+
 create table whatsapp_atendimento.customer_bling_contacts (
   customer_id uuid primary key,
   bling_contact_id bigint not null unique check (bling_contact_id > 0),

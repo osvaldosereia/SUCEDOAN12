@@ -2,7 +2,7 @@
 
 Data: 25/10/2026
 Branch: `project/whatsapp-atendimento-github-20261025`
-Estado: fila, separação, preflight e OAuth local implementados; migration e credenciais externas não aplicadas. Conexão está desligada por padrão e escritas Bling seguem bloqueadas.
+Estado: fila, separação, preflight, OAuth local e prévia redigida da venda implementados; migration e credenciais externas não aplicadas. Conexão está desligada por padrão e escritas Bling seguem bloqueadas.
 
 ## Decisão
 
@@ -26,6 +26,8 @@ Quando a falta altera o total, o pedido fica em `attention` aguardando novo acei
 - Não atualizar estoque externo automaticamente nesta rodada.
 - Não emitir nem autorizar NF-e automaticamente; despacho exige status autorizado confirmado no Bling.
 - Em timeout na criação da venda, reconciliar pela referência estável `numeroLoja` antes de repetir.
+- A referência local é `WA-{UUID sem hífens}`, protegida por unicidade. Hash SHA-256 cobre o candidato completo; `result_summary` persiste somente a referência e um resumo redigido sem campos pessoais.
+- Consulta por referência com resultado ambíguo, dados divergentes ou timeout inconclusivo marca o job `unknown`; nunca repetir cegamente. A implementação futura precisa provar ausência com filtro e paginação exaustivos em homologação antes de liberar retry.
 - Se os totais não forem centavos inteiros seguros ou o balanço das linhas, `outrasDespesas` e `desconto` não corresponder ao valor aceito, bloquear a venda. Não adicionar linha fictícia.
 - Não enviar mensagem ao cliente, não aplicar migration e não conectar conta Bling durante desenvolvimento.
 
@@ -36,7 +38,9 @@ Quando a falta altera o total, o pedido fica em `attention` aguardando novo acei
 - O pedido concluído entra em `awaiting_invoice`, mas a operação Bling `create_sale` é registrada `blocked`. O preflight guarda códigos de bloqueio e o resumo da conciliação comercial.
 - O operador pode salvar, no schema privado, um ID de contato informado manualmente e confirmar que o conferiu no painel Bling. A alteração é protegida pela sessão GitHub/allowlist, revisão do pedido e evento de auditoria; não consulta o Bling. O preflight aceita somente vínculos revisados.
 - O preflight calcula `delta = total aceito - soma das linhas`; delta positivo é mostrado como `outrasDespesas`, delta negativo como `desconto`. A prévia de conciliação é visível somente na tela administrativa autenticada e não inclui dados pessoais nem payload de venda.
+- O servidor agora monta uma proposta local de venda a partir do snapshot fixado e dos itens separados, calcula a impressão digital SHA-256 sem armazenar o JSON e grava a referência determinística no pedido. A tela autenticada mostra referência, data, contagem de itens, observação de pagamento e se o hash foi calculado; o objeto `integrationJob` não inclui campos pessoais nem JSON da requisição. O endpoint de detalhe mantém o snapshot operacional já retornado a operadores autenticados.
+- A reconciliação futura deve buscar por `numeroLoja` antes de POST e depois de qualquer sucesso ou timeout. Uma venda compatível pode ser vinculada; ausência inconclusiva, duplicidade ou incompatibilidade mantém `unknown` para revisão. Nenhum GET ou POST ao Bling foi adicionado a esta rodada.
 - `integration_credentials` e `integration_oauth_states` são tabelas privadas. O início OAuth exige sessão administrativa e allowlist; o callback valida e consome uma única vez o hash de `state`, troca o código server-side e cifra tokens AES-GCM antes de gravá-los. Um helper server-side renova access/refresh tokens sob lock transacional e persiste o par rotacionado cifrado. `BLING_OAUTH_ENABLED` permanece `false`; não há credencial, conexão, consumidor outbox ou chamada externa ativos.
-- Para habilitar escrita futura, ainda faltam OAuth válido, reconciliação idempotente da venda e as etapas de NF-e. A baixa/conta financeira exigirá contrato próprio caso seja adicionada. Existe um cliente Bling limitado a GET server-side, mas nenhuma rota o chama; o refresh não é acionado sem uma chamada futura a esse cliente.
+- Para habilitar escrita futura, ainda faltam OAuth válido, worker de reconciliação idempotente da venda e as etapas de NF-e. A baixa/conta financeira exigirá contrato próprio caso seja adicionada. Existe um cliente Bling limitado a GET server-side, mas nenhuma rota o chama; o refresh não é acionado sem uma chamada futura a esse cliente.
 - Referência do fluxo Authorization Code e refresh token: [documentação oficial Bling](https://developer.bling.com.br/aplicativos).
 - Migration criada pelo Supabase CLI, ainda não aplicada. `pnpm build` é verificado; não executar testes nem deploy durante esta rodada.
