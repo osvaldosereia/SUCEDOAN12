@@ -1824,6 +1824,51 @@ export async function blingApiGet(path: string): Promise<unknown> {
   try { return await response.json(); } catch { throw new HttpError(502, "O Bling retornou uma resposta inválida."); }
 }
 
+async function lookupBlingProductByCatalogGtin(productId: string) {
+  if (Deno.env.get("BLING_PRODUCT_LOOKUP_ENABLED") !== "true"
+    || Deno.env.get("BLING_OAUTH_ENABLED") !== "true") {
+    throw new HttpError(503, "A consulta de produtos Bling está desabilitada neste ambiente.");
+  }
+  if (!ORDER_ID.test(productId)) throw new HttpError(400, "O produto selecionado é inválido.");
+
+  const catalog = await readCatalog(await installationToken("read"));
+  const product = catalog.products.products.find((item: Product) => item.id === productId);
+  if (!product) throw new HttpError(404, "O produto não existe na revisão atual do catálogo GitHub.");
+  if (product.blingProductId?.trim()) throw new HttpError(409, "Este produto já tem um ID Bling no catálogo. Revise o cadastro atual antes de substituir.");
+
+  const gtin = product.gtin?.replace(/\D/g, "") ?? "";
+  if (!/^(?:\d{8}|\d{12,14})$/.test(gtin)) {
+    throw new HttpError(422, "Cadastre um GTIN/EAN válido no catálogo GitHub antes de consultar o Bling.");
+  }
+
+  const query = new URLSearchParams();
+  query.append("gtins[]", gtin);
+  const response = await blingApiGet(`/produtos?${query.toString()}`);
+  if (!isRecord(response) || !Array.isArray(response.data)) {
+    throw new HttpError(502, "O Bling retornou uma lista de produtos inválida.");
+  }
+  if (response.data.length > 25) {
+    throw new HttpError(502, "A busca por GTIN retornou muitos resultados para uma associação segura.");
+  }
+
+  const products = new Map<string, { id: string; name: string; sku: string | null }>();
+  for (const value of response.data) {
+    if (!isRecord(value)) continue;
+    const id = typeof value.id === "string" && /^\d{1,20}$/.test(value.id)
+      ? value.id
+      : typeof value.id === "number" && Number.isSafeInteger(value.id) && value.id > 0
+        ? String(value.id)
+        : "";
+    const name = typeof value.nome === "string" ? value.nome.trim().slice(0, 160) : "";
+    if (!id || !name) continue;
+    const sku = typeof value.codigo === "string" && value.codigo.trim()
+      ? value.codigo.trim().slice(0, 80)
+      : null;
+    products.set(id, { id, name, sku });
+  }
+  return { gtin, products: [...products.values()] };
+}
+
 async function startBlingOAuth(operatorId: string) {
   const config = blingOAuthConfig();
   const state = base64Url(crypto.getRandomValues(new Uint8Array(32)));
@@ -3445,6 +3490,10 @@ Deno.serve(async (request) => {
     }
     if (url.pathname.endsWith("/integrations/bling/oauth/start") && request.method === "POST") {
       return jsonResponse(await startBlingOAuth(authorization.operator.id), 200, headers);
+    }
+    const blingProductLookup = url.pathname.match(/\/catalog\/products\/([0-9a-f-]{36})\/bling-lookup$/i);
+    if (blingProductLookup && request.method === "GET") {
+      return jsonResponse(await lookupBlingProductByCatalogGtin(blingProductLookup[1]), 200, headers);
     }
     if (url.pathname.endsWith("/catalog") && request.method === "GET") {
       const token = await installationToken("read");

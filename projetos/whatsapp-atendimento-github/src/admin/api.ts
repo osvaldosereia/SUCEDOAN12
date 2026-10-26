@@ -17,6 +17,17 @@ export interface PendingImage {
   previewUrl?: string;
 }
 
+export interface BlingProductLookupCandidate {
+  id: string;
+  name: string;
+  sku: string | null;
+}
+
+export interface BlingProductLookupResult {
+  gtin: string;
+  products: BlingProductLookupCandidate[];
+}
+
 export interface SaveCatalogInput {
   expectedCommit: string;
   products: CatalogDocuments["products"];
@@ -105,6 +116,10 @@ export function saveCatalog(accessToken: string, input: SaveCatalogInput): Promi
     method: "PUT",
     body: JSON.stringify(input),
   });
+}
+
+export function lookupBlingProductByCatalogGtin(accessToken: string, productId: string): Promise<BlingProductLookupResult> {
+  return apiRequest<BlingProductLookupResult>(`/catalog/products/${encodeURIComponent(productId)}/bling-lookup`, accessToken);
 }
 
 export function getFlowDraft(accessToken: string, channel: FlowChannel): Promise<FlowDraftSnapshot> {

@@ -206,6 +206,14 @@ label small { color: #a09c92; font-size: 9px; font-weight: 400; }
 .upload-button input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .image-editor small { color: #949187; font-size: 9px; line-height: 1.5; }
 .image-editor #image-feedback { color: var(--red); }
+.bling-product-lookup { display: grid; gap: 6px; padding: 9px; border: 1px solid var(--line); border-radius: 8px; background: #faf9f5; }
+.bling-product-lookup > small, .bling-lookup-candidates small { color: var(--muted); font-size: 9px; line-height: 1.5; }
+.bling-lookup-candidates { display: grid; gap: 6px; }
+.bling-lookup-candidates > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px; border: 1px solid var(--line); border-radius: 7px; background: #fff; }
+.bling-lookup-candidates > div > span, .bling-lookup-candidates strong, .bling-lookup-candidates small { display: block; min-width: 0; }
+.bling-lookup-candidates strong { font-size: 10px; }
+.bling-lookup-candidates small { margin-top: 3px; }
+.bling-lookup-candidates .button { flex: 0 0 auto; }
 .form-label { margin-bottom: 7px; color: #68665e; font-size: 10px; font-weight: 600; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 21px; padding-top: 15px; border-top: 1px solid #eeece5; }
 .modal-actions .button { min-height: 36px; }

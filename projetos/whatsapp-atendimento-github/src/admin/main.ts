@@ -24,7 +24,7 @@ import {
   type ChannelFlowDocument,
   type FlowChannel,
 } from "../domain/flows";
-import { AdminApiError, assignOrder, bindPublishedMetaFlow, completeOrderDelivery, completeOrderSeparation, createMetaFlow, createOrderBlingSale, generateOrderBlingInvoice, getAnaAdmin, getAttendanceAccounts, getAttendanceConversation, getAttendanceMedia, getAttendanceQueue, getCatalog, getCustomer, getCustomers, getFlowDraft, getMetaFlows, getOrder, getOrders, getOutbox, publishMetaFlow, reconcileOrderBlingSale, saveCatalog, saveCustomer, saveFlowDraft, saveOrderBlingContact, saveOrderPicking, sendAttendanceText, setAnaChannel, setAttendanceMode, setupMetaFlowEncryption, startOrderDispatch, unbindMetaFlow, uploadMetaFlowJson, type MetaChannelSnapshot, type PendingImage } from "./api";
+import { AdminApiError, assignOrder, bindPublishedMetaFlow, completeOrderDelivery, completeOrderSeparation, createMetaFlow, createOrderBlingSale, generateOrderBlingInvoice, getAnaAdmin, getAttendanceAccounts, getAttendanceConversation, getAttendanceMedia, getAttendanceQueue, getCatalog, getCustomer, getCustomers, getFlowDraft, getMetaFlows, getOrder, getOrders, getOutbox, lookupBlingProductByCatalogGtin, publishMetaFlow, reconcileOrderBlingSale, saveCatalog, saveCustomer, saveFlowDraft, saveOrderBlingContact, saveOrderPicking, sendAttendanceText, setAnaChannel, setAttendanceMode, setupMetaFlowEncryption, startOrderDispatch, unbindMetaFlow, uploadMetaFlowJson, type MetaChannelSnapshot, type PendingImage } from "./api";
 import type { OrderDetailRecord, OrderListEntry } from "../domain/orders";
 import type { OutboxMessageSummary, OutboxQueueSnapshot, OutboxStatus } from "../domain/outbox";
 import { attendanceChannelFromPhone, type AnaAdminSnapshot, type AttendanceChannel, type AttendanceConversationSnapshot, type AttendanceMediaPreview, type AttendanceQueueItem } from "../domain/attendance";
@@ -124,6 +124,10 @@ function escapeHtml(value: unknown): string {
   return String(value ?? "").replace(/[&<>"']/g, (character) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
   })[character] ?? character);
+}
+
+function normalizeGtin(value: string): string {
+  return value.replace(/\D/g, "");
 }
 
 function money(cents: number): string {
@@ -823,7 +827,7 @@ function openProductEditor(productId?: string): void {
   const modal = openModal(`<form id="product-form" class="modal-card">
     <div class="modal-heading"><div><span class="eyebrow">${product ? "Editar cadastro" : "Novo cadastro"}</span><h2>${product ? "Produto" : "Adicionar produto"}</h2></div><button type="button" class="icon-button" data-action="close-modal" aria-label="Fechar">×</button></div>
     <input type="hidden" name="product_id" value="${escapeHtml(id)}">
-    <div class="product-form-layout"><div><label>Nome do produto<input name="name" required maxlength="160" value="${escapeHtml(product?.name ?? "")}"></label><div class="form-grid"><label>Marca<input name="brand" required maxlength="80" value="${escapeHtml(product?.brand ?? "")}"></label><label>Apresentação<input name="presentation" required maxlength="80" placeholder="Ex.: 500 g" value="${escapeHtml(product?.presentation ?? "")}"></label></div><div class="form-grid"><label>Preço unitário (R$)<input name="price" type="number" min="0" step="0.01" required value="${product ? priceInputValue(product.unitPriceCents) : "0.00"}"></label><label>Estoque no GitHub<input name="stock_quantity" type="number" step="1" value="${product?.stockQuantity ?? 0}" required><small>Saldo pode ficar negativo após uma confirmação.</small></label></div><small>O catálogo GitHub mantém e controla o saldo. A baixa ocorre quando o cliente confirma o pedido.</small><div class="form-grid"><label>SKU<input name="sku" maxlength="80" value="${escapeHtml(product?.sku ?? "")}"></label><label>GTIN / EAN<input name="gtin" maxlength="32" value="${escapeHtml(product?.gtin ?? "")}"></label></div><label>ID do Bling<input name="bling" maxlength="80" value="${escapeHtml(product?.blingProductId ?? "")}"></label><label class="checkbox-label"><input name="active" type="checkbox" ${product?.active ?? true ? "checked" : ""}> Produto ativo</label></div>
+    <div class="product-form-layout"><div><label>Nome do produto<input name="name" required maxlength="160" value="${escapeHtml(product?.name ?? "")}"></label><div class="form-grid"><label>Marca<input name="brand" required maxlength="80" value="${escapeHtml(product?.brand ?? "")}"></label><label>Apresentação<input name="presentation" required maxlength="80" placeholder="Ex.: 500 g" value="${escapeHtml(product?.presentation ?? "")}"></label></div><div class="form-grid"><label>Preço unitário (R$)<input name="price" type="number" min="0" step="0.01" required value="${product ? priceInputValue(product.unitPriceCents) : "0.00"}"></label><label>Estoque no GitHub<input name="stock_quantity" type="number" step="1" value="${product?.stockQuantity ?? 0}" required><small>Saldo pode ficar negativo após uma confirmação.</small></label></div><small>O catálogo GitHub mantém e controla o saldo. A baixa ocorre quando o cliente confirma o pedido.</small><div class="form-grid"><label>SKU<input name="sku" maxlength="80" value="${escapeHtml(product?.sku ?? "")}"></label><label>GTIN / EAN<input name="gtin" maxlength="32" value="${escapeHtml(product?.gtin ?? "")}"></label></div><label>ID do Bling<input name="bling" maxlength="80" value="${escapeHtml(product?.blingProductId ?? "")}"></label>${product && !product.blingProductId && state.access === "authorized" ? isDirty() ? `<small>Grave as alterações pendentes do catálogo antes de consultar o GTIN no Bling.</small>` : `<div class="bling-product-lookup"><button type="button" class="button button-soft" data-action="lookup-bling-product" data-id="${escapeHtml(product.id)}">Buscar no Bling pelo GTIN salvo</button><small>A consulta usa o GTIN do catálogo no GitHub. Confira o nome e o SKU antes de selecionar; o vínculo só será gravado na revisão do catálogo.</small><div id="bling-lookup-results" aria-live="polite"></div></div>` : ""}<label class="checkbox-label"><input name="active" type="checkbox" ${product?.active ?? true ? "checked" : ""}> Produto ativo</label></div>
       <div class="image-editor"><div class="image-preview-box">${source ? `<img id="product-image-preview" src="${escapeHtml(source)}" alt="Prévia do produto">` : `<div class="image-empty" id="product-image-empty"><span>＋</span>Foto do produto</div>`}</div><label class="button button-soft upload-button">Escolher foto<input id="product-image-input" type="file" accept="image/*" hidden></label><small>Será convertida para WebP 240 × 190, até 27 KB.${product ? " A foto atual é mantida se você não selecionar outra." : " Selecione uma foto para cadastrar o produto."}</small><small id="image-feedback" role="status"></small></div></div>
     <div class="modal-actions"><button type="button" class="button button-soft" data-action="close-modal">Cancelar</button><button class="button button-primary" type="submit">Aplicar produto</button></div>
   </form>`, "product");
@@ -1849,6 +1853,50 @@ appRoot.addEventListener("click", async (event) => {
     openProductEditor();
   } else if (action === "edit-product") {
     openProductEditor(id);
+  } else if (action === "lookup-bling-product") {
+    const form = document.querySelector<HTMLFormElement>("#product-form");
+    const results = document.querySelector<HTMLElement>("#bling-lookup-results");
+    if (!state.session || !form || !results) return;
+    target.setAttribute("disabled", "true");
+    target.textContent = "Consultando…";
+    results.textContent = "Consultando o catálogo Bling pelo GTIN salvo no GitHub…";
+    try {
+      const lookup = await lookupBlingProductByCatalogGtin(state.session.access_token, id);
+      const gtinField = form.elements.namedItem("gtin");
+      const currentGtin = gtinField instanceof HTMLInputElement ? normalizeGtin(gtinField.value) : "";
+      results.dataset.gtin = lookup.gtin;
+      if (currentGtin !== lookup.gtin) {
+        results.innerHTML = `<small>O GTIN do formulário (${escapeHtml(currentGtin || "vazio")}) difere do catálogo salvo (${escapeHtml(lookup.gtin)}). Atualize ou salve o catálogo antes de associar um ID.</small>`;
+      } else if (!lookup.products.length) {
+        results.innerHTML = `<small>Nenhum produto foi encontrado para o GTIN ${escapeHtml(lookup.gtin)}. O ID Bling continua sem vínculo.</small>`;
+      } else {
+        results.innerHTML = `<p class="inline-note">${lookup.products.length} resultado(s) para ${escapeHtml(lookup.gtin)}. Confira a descrição/SKU e escolha o produto correspondente.</p><div class="bling-lookup-candidates">${lookup.products.map((candidate) => `<div><span><strong>${escapeHtml(candidate.name)}</strong><small>ID ${escapeHtml(candidate.id)}${candidate.sku ? ` · SKU ${escapeHtml(candidate.sku)}` : ""}</small></span><button type="button" class="button button-soft" data-action="select-bling-product" data-id="${escapeHtml(candidate.id)}">Usar este ID</button></div>`).join("")}<small id="bling-lookup-status" role="status"></small></div>`;
+      }
+    } catch (error) {
+      results.textContent = error instanceof AdminApiError ? error.message : "Não foi possível consultar o catálogo Bling.";
+    } finally {
+      if (target.isConnected) {
+        target.removeAttribute("disabled");
+        target.textContent = "Consultar novamente";
+      }
+    }
+  } else if (action === "select-bling-product") {
+    const form = document.querySelector<HTMLFormElement>("#product-form");
+    const results = document.querySelector<HTMLElement>("#bling-lookup-results");
+    const idInput = form?.elements.namedItem("bling");
+    const gtinField = form?.elements.namedItem("gtin");
+    if (!form || !results || !(idInput instanceof HTMLInputElement) || !(gtinField instanceof HTMLInputElement)) return;
+    const currentGtin = normalizeGtin(gtinField.value);
+    const resultIds = [...results.querySelectorAll<HTMLElement>('[data-action="select-bling-product"]')]
+      .map((candidate) => candidate.dataset.id);
+    const status = results.querySelector<HTMLElement>("#bling-lookup-status");
+    if (currentGtin !== results.dataset.gtin) {
+      if (status) status.textContent = "O GTIN foi alterado. Faça a consulta novamente antes de associar o ID.";
+      return;
+    }
+    if (!/^\d{1,20}$/.test(id) || !resultIds.includes(id)) return;
+    idInput.value = id;
+    if (status) status.textContent = `ID ${id} preenchido. A associação será gravada somente ao salvar a revisão do catálogo.`;
   } else if (action === "delete-product") {
     const referenced = state.baskets.baskets.some((basket) => basket.groups.some((group) => group.productIds.includes(id)));
     if (referenced) tell("Remova este produto das opções das cestas antes de excluí-lo.", "error");
