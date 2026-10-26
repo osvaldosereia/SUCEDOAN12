@@ -401,3 +401,11 @@ A documentação oficial do Bling consultada descreve a API REST/OAuth e o recur
 
 
 Verificação: `pnpm build` passou, incluindo `tsc --noEmit` e o bundle Vite; `git diff --check` passou, com apenas avisos já conhecidos de conversão LF/CRLF no checkout. Nenhum teste automatizado foi criado/executado. Não houve escrita no Supabase/GitHub remoto/Bling/Meta, chamada de API operacional, migration aplicada, deploy, Flow publicado ou mensagem enviada. A pendência fiscal restante é obter IDs Bling verificados para Personal/Superian antes de oferecer esses itens quando voltarem a ter saldo positivo. `supabase/.temp/` continua intocado e não deve ser commitado.
+
+### Busca adicional read-only — IDs Bling de Personal e Superian (26/10/2026)
+
+Foram consultadas somente as linhas dos dois produtos pendentes em `product_fiscal_evidence`, `product_fiscal_catalog_scan_v1`, `ops2_catalog_product_parity_reviews`, `ops2_bling_orphan_product_reviews`, `bling_hub_jobs_v2`, `bling_hub_entity_links_v2`, `bling_product_binding_events` e `product_identifiers`. Não há evidência fiscal Bling, revisão de paridade, produto órfão, job de produto, vínculo ou evento de binding para os GTINs `7896110010731` e `7898901374626`; o scan registra zero evidências Bling para ambos. `product_identifiers` contém somente o GTIN já conhecido.
+
+Não invoquei `blingHubReconcileProductsReadonly`: a implementação consultada faz GET no catálogo Bling, mas também grava vínculos e auditoria no Supabase. Não foi encontrada uma ferramenta de GET Bling que mantenha a consulta sem essas gravações. Portanto, os dois IDs continuam sem comprovação; nenhum ID foi inferido a partir de GTIN ou nome. Os produtos seguem fora do Flow enquanto não tiverem ID e saldo GitHub positivo.
+
+A pesquisa oficial desta rodada confirmou que a mudança do Supabase em 30/10/2026 trata da exposição automática de novas tabelas no schema `public`; as novas tabelas deste projeto permanecem no schema privado `whatsapp_atendimento` ([changelog oficial](https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically)). Nenhuma migration ou alteração de grants foi necessária nesta rodada.
