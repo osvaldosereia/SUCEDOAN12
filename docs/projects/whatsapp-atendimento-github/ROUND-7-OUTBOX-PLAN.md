@@ -42,5 +42,5 @@ Nesta atualização, `pnpm build` e `git diff --check` foram verificados. Deno C
 
 ## Atualização — saldo atual e canário autorizado (26/10/2026)
 
-- O catálogo GitHub deixa de carregar saldo (`products.json` schema 3). O Flow runtime consulta estoque vendável no Supabase server-side e desconta reservas válidas; o webhook revalida quantidades antes de criar o rascunho. As consultas são read-only; não há reserva ou decremento automático.
+- **Nota intermediária supersedida pela decisão posterior do usuário:** estoque operacional do novo projeto fica no cadastro versionado do GitHub (`products.json` schema 4), e não é consultado nem mantido no Supabase. O Flow runtime usa a revisão fixada no GitHub; a confirmação faz uma única baixa idempotente nesse catálogo. Saldo zero/negativo não é oferecido no Flow, e saldo negativo depois da confirmação não bloqueia a venda fiscal Bling. A especificação vigente está em `IMPLEMENTATION-PLAN-LUNA-MAX.md` e no fechamento mais recente do `HANDOFF.md`.
 - Foi executado o canário solicitado pelo usuário pelo painel existente, sem alterar o código do Vitrine: uma lista interativa de cinco tamanhos/preços enviada do 1018 para o final 8360. A Meta aceitou a mensagem às 03:27 UTC; aceite não confirma entrega/leitura. Não houve publicação de Flow, envio pelo worker novo ou chamada Bling.

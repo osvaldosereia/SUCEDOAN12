@@ -1,6 +1,10 @@
 # Handoff — Admin de Atendimento WhatsApp com dados no GitHub
 
-Atualizado em 25/10/2026 (America/Cuiaba).
+Atualizado em 26/10/2026 (America/Cuiaba).
+
+## Estado vigente em 26/10/2026
+
+As rodadas 0–7 e o Admin novo estão no branch próprio. Quatro migrations estão aplicadas no projeto Supabase ativo. A listagem read-only atual encontrou somente os endpoints antigos de Flow/webhook; cinco funções novas deste projeto ainda não foram implantadas. O login GitHub do Supabase retornou `provider is not enabled`; secrets de OAuth/GitHub App e a chave privada do Flow 0975 não estão confirmados. Flow nenhum foi publicado nesta etapa e o worker novo de envio permanece desligado. O catálogo GitHub guarda produtos, cestas, imagens e estoque; confirmar pedido reduz o saldo uma vez no GitHub, e saldo negativo não bloqueia o Bling. Para o fechamento atual e as verificações, veja as últimas seções deste HANDOFF.
 
 ## Objetivo do projeto
 
@@ -504,3 +508,13 @@ A auditoria de paridade encontrou que a tela gerava conteúdo idêntico, mas o e
 A tela de revisão agora informa que a gravação afeta os dois arquivos. Após resposta de sucesso, o Admin atualiza os dois documentos com o snapshot sincronizado. Isso torna a paridade uma regra de persistência, não apenas uma consequência do mesmo gerador. Nenhum dado Meta, Flow publicado ou mensagem de cliente foi alterado.
 
 Verificação: `pnpm build` passou (`tsc --noEmit` e Vite; permanece o aviso de bundle >500 KB) e `git diff --check` passou com avisos LF/CRLF. Não foram criados nem executados testes automatizados. O commit `4d414af` foi enviado à branch do projeto. Sem deploy ou escrita externa no Supabase/Meta/Bling.
+
+## Preflight operacional read-only — funções e secrets (26/10/2026)
+
+O conector Supabase confirmou que o projeto `ssbesxgaijknwsjbsbcz` está ativo. A listagem read-only de Edge Functions encontrou os handlers antigos `whatsapp-flow-data-exchange-v1` (v76), `whatsapp-meta-webhook-v1` (v30) e `whatsapp-1018-basket-flow-v1` (v7); os endpoints novos `whatsapp-admin-api`, `whatsapp-flow-runtime`, `whatsapp-checkout-webhook`, `whatsapp-outbox-worker` e `whatsapp-meta-order-router` não estão implantados. Não foram lidos dados de cliente nem código de produção nesta consulta.
+
+Não há CLI Supabase instalada no host e o conector não oferece listagem/configuração do cofre de secrets nem do provider OAuth. A documentação oficial descreve `supabase secrets list` como a forma de listar secrets do projeto ([referência CLI](https://supabase.com/docs/reference/cli/supabase-secrets-list)); não tentei instalar outra CLI nem exibir valores. Logo, não foi possível confirmar a presença dos nomes de secrets exigidos para um deploy seguro. Nenhuma função foi implantada ou sobrescrita.
+
+A anotação intermediária de estoque em `ROUND-7-OUTBOX-PLAN.md` foi marcada como supersedida: a fonte operacional do saldo permanece `stockQuantity` no catálogo GitHub, e o webhook faz baixa idempotente ao confirmar. O runtime novo lê o saldo da revisão GitHub. Isso corrige a documentação para refletir a orientação mais recente do usuário.
+
+Próxima execução técnica independente: validar o pacote local das Edge Functions com um verificador compatível com Deno/Edge Runtime (a CLI Supabase não está disponível), sem publicar nem ligar rotas. Ativação continua dependente de provider OAuth/redirect, GitHub App e allowlist/secrets, chave do Flow 0975, roteamento Meta e homologação Bling. Nada foi publicado, enviado a clientes ou gravado em Meta/Bling.

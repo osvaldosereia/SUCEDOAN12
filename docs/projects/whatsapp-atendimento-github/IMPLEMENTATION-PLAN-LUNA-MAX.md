@@ -4,7 +4,7 @@ Projeto: WhatsApp Atendimento GitHub — SUCEDOAN12
 Branch isolada: project/whatsapp-atendimento-github-20261025  
 Diretório do novo código: projetos/whatsapp-atendimento-github/  
 Execução prevista: Work Luna Max  
-Estado em 26/10/2026: Rodadas 0–7 implementadas localmente no branch de trabalho. O catálogo usa `schemaVersion: 4` com estoque assinado em GitHub; a confirmação reduz o saldo uma vez por pedido. O Admin de clientes, a Central ANA/humano para 0975/1018 e a integração server-side Bling (venda após separação, reconciliação, confirmação de NF-e e leitura de situação/DANFE) também estão no código. Migrations, secrets e funções não foram aplicados/configurados; Flow em aparelho, homologação real Bling e transição de envio continuam pendentes. Nenhum Flow novo foi publicado nem NF-e emitida.
+Estado em 26/10/2026: Rodadas 0–7 implementadas localmente no branch de trabalho. O catálogo usa `schemaVersion: 4` com estoque assinado em GitHub; a confirmação reduz o saldo uma vez por pedido. O Admin de clientes, a Central ANA/humano para 0975/1018 e a integração server-side Bling (venda após separação, reconciliação, confirmação de NF-e e leitura de situação/DANFE) também estão no código. Quatro migrations já foram aplicadas ao projeto Supabase ativo; as cinco Edge Functions novas deste projeto ainda não foram implantadas. O provider GitHub OAuth está desabilitado, e secrets operacionais/chave privada do Flow 0975 não foram confirmados. Flow em aparelho, homologação real Bling e transição de envio continuam pendentes. Nenhum Flow novo foi publicado nem NF-e emitida.
 
 ## Decisão principal
 
