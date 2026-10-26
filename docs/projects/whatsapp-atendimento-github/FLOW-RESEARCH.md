@@ -271,7 +271,7 @@ Para o novo Flow de cestas, cada tipo ocupa uma etapa própria com **um único p
 
 O saldo e o cadastro de produtos vêm do catálogo novo versionado no GitHub; não usar tabela de produto do Supabase. Saldo desconhecido (`null`) e saldo zero impedem a seleção. O Supabase fica limitado à consulta server-side de cliente/endereço. A tela de revisão inclui itens, total, endereço cadastrado e modalidade de pagamento; concluir o Flow ainda exige uma mensagem separada de revisão/aceite no chat, que é responsabilidade do webhook/outbox e não da tela terminal.
 
-Implementação local da Rodada 7: JSON Flow 6.0 com Data Exchange 3.0, tela reutilizável `GROUP` e etapa final `CUSTOMER_REVIEW`, conectadas ao runtime e ao webhook do projeto novo. Os valores de estoque dos 61 produtos estão `null`, pois nenhum saldo foi importado de tabelas do Supabase. Não há reserva/decremento automático de saldo, consumidor da outbox, validação Flow Builder/Meta nem teste em aparelho. Nenhum Flow foi publicado e nenhuma mensagem foi enviada.
+Snapshot da implementação local no fechamento inicial da Rodada 7: JSON Flow 6.0 com Data Exchange 3.0, tela reutilizável `GROUP` e etapa final `CUSTOMER_REVIEW`. Este snapshot foi posteriormente supersedido: o catálogo agora usa saldo GitHub, a confirmação baixa estoque uma vez, há consumidor local da outbox desligado por padrão e o gerador foi atualizado para Flow JSON 7.3/Data API 4.0. O estado vigente e os gates externos estão no [HANDOFF](HANDOFF.md). Nenhum Flow foi publicado nesta pesquisa.
 
 
 ## Atualização — cadastro do cliente e fechamento — 25/10/2026

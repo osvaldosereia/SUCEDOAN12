@@ -4,8 +4,8 @@ import { FLOW_MAX_PRODUCT_QUANTITY } from "./flow-runtime";
 export const FLOW_CHANNELS = ["0975", "1018"] as const;
 export type FlowChannel = typeof FLOW_CHANNELS[number];
 
-const FLOW_VERSION = "6.0" as const;
-const DATA_API_VERSION = "3.0" as const;
+const FLOW_VERSION = "7.3" as const;
+const DATA_API_VERSION = "4.0" as const;
 export const FLOW_NO_PRODUCT_ID = "__skip_product__";
 const SAMPLE_IMAGE = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/pOsAAAAASUVORK5CYII=";
 

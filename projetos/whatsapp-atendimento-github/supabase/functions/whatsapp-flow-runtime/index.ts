@@ -30,6 +30,7 @@ interface FlowSession {
 interface DecryptedRequest {
   action: string;
   flow_token?: string;
+  flow_token_signature?: string;
   screen?: string;
   data?: unknown;
   version?: string;
@@ -198,6 +199,59 @@ async function verifySignature(rawBody: string, signatureHeader: string | null):
     mismatch |= (expected.charCodeAt(index) || 0) ^ (signatureHeader.toLowerCase().charCodeAt(index) || 0);
   }
   return mismatch === 0;
+}
+
+function dataApiVersion(version?: string): "3.0" | "4.0" {
+  if (version === undefined || version === "3.0") return "3.0";
+  if (version === "4.0") return "4.0";
+  throw new RuntimeError(400, "A versão do Data API não é suportada.");
+}
+
+function decodeBase64Url(value: string): Uint8Array | null {
+  if (!value || value.length > 4096 || !/^[A-Za-z0-9_-]+$/.test(value)) return null;
+  try {
+    const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+    return bytesFromBase64(normalized + "=".repeat((4 - normalized.length % 4) % 4));
+  } catch {
+    return null;
+  }
+}
+
+function decodeJwtJson(segment: string): unknown {
+  const bytes = decodeBase64Url(segment);
+  if (!bytes) return null;
+  try {
+    return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes)) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+async function verifyFlowTokenSignature(flowToken: string, value: unknown): Promise<boolean> {
+  if (typeof value !== "string" || value.length > 4096) return false;
+  const parts = value.split(".");
+  if (parts.length !== 3) return false;
+  const header = decodeJwtJson(parts[0]);
+  const payload = decodeJwtJson(parts[1]);
+  const signature = decodeBase64Url(parts[2]);
+  if (!isRecord(header) || header.alg !== "HS256" || !isRecord(payload)
+    || payload.flow_token !== flowToken || !signature || signature.byteLength !== 32) return false;
+
+  const secret = Deno.env.get("META_APP_SECRET");
+  if (!secret) throw new RuntimeError(503, "O segredo do aplicativo Meta ainda não está configurado.");
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["verify"],
+  );
+  return crypto.subtle.verify(
+    "HMAC",
+    key,
+    asArrayBuffer(signature),
+    new TextEncoder().encode(`${parts[0]}.${parts[1]}`),
+  );
 }
 
 function serviceHeaders(): Headers {
@@ -592,11 +646,16 @@ function reviewAddressOptions(customer: CustomerMatch["customer"]): Array<Record
 }
 
 async function handleDataExchange(request: DecryptedRequest, channel: FlowChannel): Promise<Record<string, unknown>> {
-  if (request.action === "ping") return { version: "3.0", data: { status: "active" } };
+  const version = dataApiVersion(request.version);
+  if (request.action === "ping") return { version, data: { status: "active" } };
   if (request.action !== "INIT" && request.action !== "data_exchange" && request.action !== "BACK") {
     throw new RuntimeError(400, "Ação de Flow não suportada.");
   }
   const flowToken = validateFlowToken(request.flow_token);
+  if (request.flow_token_signature !== undefined
+    && !await verifyFlowTokenSignature(flowToken, request.flow_token_signature)) {
+    throw new RuntimeError(401, "A assinatura do token desta sessão não é válida.");
+  }
   const session = await readSession(flowToken);
   if (session.channel !== channel) throw new RuntimeError(427, "Esta sessão não é válida para este canal.");
   const snapshot = await loadCatalog(session.catalog_commit);
@@ -609,7 +668,7 @@ async function handleDataExchange(request: DecryptedRequest, channel: FlowChanne
   const defaults = stockAwareDefaults(basket, products, stockByProduct);
 
   if (request.action === "INIT") {
-    return { version: "3.0", ...await groupScreen(basket, products, 0, {}, defaults[basket.groups[0].id], session.catalog_commit, stockByProduct) };
+    return { version, ...await groupScreen(basket, products, 0, {}, defaults[basket.groups[0].id], session.catalog_commit, stockByProduct) };
   }
   if (typeof request.screen !== "string" || !isRecord(request.data)) {
     throw new FlowSelectionError("Não foi possível identificar esta etapa do atendimento.");
@@ -621,7 +680,7 @@ async function handleDataExchange(request: DecryptedRequest, channel: FlowChanne
       const index = basket.groups.length - 1;
       const group = basket.groups[index];
       const prior = Object.fromEntries(basket.groups.slice(0, index).map((item) => [item.id, all[item.id]]));
-      return { version: "3.0", ...await groupScreen(basket, products, index, prior, all[group.id], session.catalog_commit, stockByProduct) };
+      return { version, ...await groupScreen(basket, products, index, prior, all[group.id], session.catalog_commit, stockByProduct) };
     }
     if (request.screen !== "GROUP") throw new FlowSelectionError("Esta etapa não pertence à cesta selecionada.");
     const prior = orderedPriorSelections(request.data.selections_json, basket);
@@ -629,7 +688,7 @@ async function handleDataExchange(request: DecryptedRequest, channel: FlowChanne
     const group = basket.groups[previousIndex];
     const groupSelection = prior[group.id] ?? defaults[group.id];
     const previous = Object.fromEntries(basket.groups.slice(0, previousIndex).map((item) => [item.id, prior[item.id]]));
-    return { version: "3.0", ...await groupScreen(basket, products, previousIndex, previous, groupSelection, session.catalog_commit, stockByProduct) };
+    return { version, ...await groupScreen(basket, products, previousIndex, previous, groupSelection, session.catalog_commit, stockByProduct) };
   }
   if (request.screen !== "GROUP") throw new FlowSelectionError("Esta etapa não pertence à cesta selecionada.");
 
@@ -647,10 +706,10 @@ async function handleDataExchange(request: DecryptedRequest, channel: FlowChanne
     current = selectionForAction(group, request.data.product_id, request.data.quantity, action, currentFallback, products, stockByProduct);
   } catch (error) {
     if (!(error instanceof FlowSelectionError)) throw error;
-    return { version: "3.0", ...await groupScreen(basket, products, groupIndex, prior, currentFallback, session.catalog_commit, stockByProduct, error.message) };
+    return { version, ...await groupScreen(basket, products, groupIndex, prior, currentFallback, session.catalog_commit, stockByProduct, error.message) };
   }
   if (action !== "continue") {
-    return { version: "3.0", ...await groupScreen(basket, products, groupIndex, prior, current, session.catalog_commit, stockByProduct) };
+    return { version, ...await groupScreen(basket, products, groupIndex, prior, current, session.catalog_commit, stockByProduct) };
   }
 
   const selections = { ...prior, [group.id]: current };
@@ -658,10 +717,10 @@ async function handleDataExchange(request: DecryptedRequest, channel: FlowChanne
   const quote = quoteBasket(basket, products, effective, stockByProduct);
   if (groupIndex + 1 < basket.groups.length) {
     const nextGroup = basket.groups[groupIndex + 1];
-    return { version: "3.0", ...await groupScreen(basket, products, groupIndex + 1, selections, defaults[nextGroup.id], session.catalog_commit, stockByProduct) };
+    return { version, ...await groupScreen(basket, products, groupIndex + 1, selections, defaults[nextGroup.id], session.catalog_commit, stockByProduct) };
   }
   if (!Object.values(quote.selections).some((selection) => selection.quantity > 0)) {
-    return { version: "3.0", ...await groupScreen(basket, products, groupIndex, prior, current, session.catalog_commit, stockByProduct, "Mantenha pelo menos um produto na cesta para continuar.") };
+    return { version, ...await groupScreen(basket, products, groupIndex, prior, current, session.catalog_commit, stockByProduct, "Mantenha pelo menos um produto na cesta para continuar.") };
   }
   const customer = await findCustomer(session.phone_e164);
   const productById = new Map(products.map((product) => [product.id, product]));
@@ -680,7 +739,7 @@ async function handleDataExchange(request: DecryptedRequest, channel: FlowChanne
     ? "Confira o endereço e o pagamento. O resumo será enviado nesta conversa após concluir; o pedido só será confirmado com seu aceite."
     : "Não encontramos um cadastro e endereço únicos para este telefone. Feche o Flow e chame o atendimento para continuar.";
   return {
-    version: "3.0",
+    version,
     screen: "CUSTOMER_REVIEW",
     data: {
       basketName: basket.name,
@@ -760,10 +819,11 @@ Deno.serve(async (httpRequest) => {
       if (error instanceof FlowSelectionError) {
         const requestData = isRecord(decrypted.request.data) ? decrypted.request.data : {};
         const selectionsJson = typeof requestData.selections_json === "string" ? requestData.selections_json : "{}";
+        const version = dataApiVersion(decrypted.request.version);
         const isReview = decrypted.request.screen === "CUSTOMER_REVIEW";
         const errorResponse = isReview
           ? {
-            version: "3.0",
+            version,
             screen: "CUSTOMER_REVIEW",
             data: {
               basketName: "",
@@ -778,7 +838,7 @@ Deno.serve(async (httpRequest) => {
             },
           }
           : {
-            version: "3.0",
+            version,
             screen: "GROUP",
             data: {
               stepLabel: "Revise sua escolha",
