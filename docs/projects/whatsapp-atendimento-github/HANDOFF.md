@@ -742,3 +742,11 @@ A autenticação continua sendo a sessão Supabase já existente porque as rotas
 - CI pós-commit: {"statuses":[]}
 - Estado Meta ainda não confirmado, porque os pedidos anteriores falharam antes da chamada efetiva. Próximo passo: no Admin com a sessão aberta, recarregar a página, clicar “Configurar endpoint” em 0975 e confirmar; repetir em 1018; depois usar “Consultar status” em cada canal. A autorização existente cobre somente registrar a chave pública. Não clicar “Publicar Flow”, não enviar conteúdo, não vincular Flow nem enviar mensagens.
 - Nesta rodada não houve publicação de Flow, envio de mensagem, alteração no callback, gravação no Bling, alteração do Vitrine nem leitura de PII. Nenhum teste automatizado foi criado ou executado.
+
+
+
+## Confirmação no Admin — endpoint do 0975 (26/10/2026)
+
+- Captura enviada pelo operador após o deploy v8 mostra o canal 0975 com **“Endpoint pronto”** e o botão “Configurar endpoint” desabilitado. Isso confirma que a configuração da chave pública do 0975 foi gravada na Meta. O Flow exibido continua em DRAFT e sem vínculo; não foi publicado.
+- A URL contém `error_code=otp_expired` do link antigo de acesso por e-mail. Esse erro de autenticação não reverte a configuração Meta já persistida; não solicitar outro link enquanto a sessão ativa do Admin continuar válida.
+- O canal 1018 não aparece selecionado nessa captura, portanto seu estado após v8 não está confirmado. Próximo passo: selecionar 1018, repetir “Configurar endpoint”, confirmar e consultar status. Depois conferir ambos os canais. Não publicar Flow nem enviar conteúdo/mensagens.
