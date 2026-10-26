@@ -605,3 +605,14 @@ A função nova foi implantada em `ssbesxgaijknwsjbsbcz` como `whatsapp-flow-run
 `pnpm build` (`tsc --noEmit` e Vite) e `git diff --check` passaram. O alerta conhecido do bundle >500 KB permanece; nenhum teste automatizado foi criado ou executado. `README.md` e este HANDOFF agora refletem dois deploys novos, sem as afirmações antigas de que nenhum estava ativo. O código de origem já estava na branch; esta rodada altera somente documentação.
 
 Próximos bloqueios: obter credenciais GitHub App no runtime Supabase para gravação/baixa idempotente; implantar checkout e roteador após esse preflight; preservar ANA sem trocar callback até revisão específica; obter chave Flow do 0975; e validar a jornada controlada de pedido e NF-e. O worker de mensagens permanece desligado e nenhum Flow foi publicado.
+
+
+## Acesso por e-mail e simplificação da tela de Flow — 26/10/2026
+
+O usuário informou que não recebeu o link e pediu reenvio. Enviei novamente a solicitação de magic link ao Supabase Auth para a conta administrativa que já aparece autenticada na captura do Admin, com `create_user=false` e retorno para `https://donaantonia.com.br/whatsapp-admin/`. O endpoint aceitou a solicitação (HTTP 200); isso confirma o aceite do Auth, não a entrega na caixa postal. Ação imediata do operador: conferir Entrada e Spam. Se a mensagem não chegar, o próximo diagnóstico é a entrega/configuração SMTP do projeto Supabase; nenhuma senha ou conta foi criada.
+
+A tela de Flows foi reorganizada para uma única configuração da cesta e uma única ação que sincroniza os rascunhos de 0975 e 1018. A prévia ficou em coluna única com seletores de produto e quantidade largos; o JSON técnico e a configuração operacional da Meta agora ficam recolhidos. Dentro da área Meta, a seleção do canal afeta somente conta, chave, Flow ID, publicação e vínculo daquele número, sem reiniciar nem duplicar a configuração compartilhada. A gravação continua sincronizando os dois documentos GitHub no mesmo commit.
+
+A revisão de UX consultou os guias oficiais de Manychat (editor linear e mapa de automação) e Twilio Studio (um Flow pode atender vários números, com publicação explícita); apenas padrões de organização foram usados como referência. A mudança não copiou código ou UI. Fonte e decisões: [FLOW-RESEARCH.md](FLOW-RESEARCH.md).
+
+Verificação local: `pnpm build` passou (`tsc --noEmit` e Vite; alerta anterior de bundle acima de 500 KB permanece) e `git diff --check` passou, com aviso de conversão LF/CRLF do Git no Windows. Nenhum teste automatizado foi criado ou executado. O código, a pesquisa UX e o plano foram gravados no commit `50350ae94` da branch `project/whatsapp-atendimento-github-20261025`; a publicação depende do push da branch. Nenhuma chamada de escrita à Meta, publicação de Flow, mensagem a cliente, deploy de função ou escrita Bling ocorreu. `supabase/.temp/` permanece fora do staging.

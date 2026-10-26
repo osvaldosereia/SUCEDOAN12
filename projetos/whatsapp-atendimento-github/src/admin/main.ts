@@ -79,6 +79,7 @@ const state = {
   selectedBasketId: initialDocuments.baskets.baskets[0]?.id ?? "",
   flowDocuments: structuredClone(initialFlowDocuments),
   flowChannel: "0975" as FlowChannel,
+  flowMetaDetailsOpen: false,
   flowBasketId: initialFlowBasket?.id ?? "",
   flowName: initialFlowBasket ? flowNameForBasket(initialFlowBasket) : "cesta-atendimento",
   flowProductChoices: new Map<string, string>(),
@@ -221,8 +222,9 @@ function flowDocumentWithDraft(): { document: ChannelFlowDocument | null; errors
   const basket = selectedFlowBasket();
   if (!draft || !basket) return { document: null, errors: ["Escolha uma cesta ativa."], refreshedCount: 0 };
   const existing = state.flowDocuments[state.flowChannel];
+  const sharedDrafts = state.flowDocuments[FLOW_CHANNELS[0]].drafts;
   const activeBaskets = new Map(state.baskets.baskets.filter((item) => item.active).map((item) => [item.id, item]));
-  const drafts: BasketFlowDraft[] = existing.drafts.flatMap((saved) => {
+  const drafts: BasketFlowDraft[] = sharedDrafts.flatMap((saved) => {
     if (saved.basketId === basket.id) return [];
     const latestBasket = activeBaskets.get(saved.basketId);
     if (!latestBasket) return [];
@@ -760,6 +762,7 @@ function render(): void {
       encryptionConfigured: false, endpointUri: null, bindingStoreReady: false, activeBinding: null,
     },
     selectedMetaFlowId: state.metaSelectedFlowIds[state.flowChannel] ?? "",
+    metaDetailsOpen: state.flowMetaDetailsOpen,
   });
   const customersPanel = renderCustomersPanel({
     customers: state.customers,
@@ -957,7 +960,7 @@ async function reloadCatalog(session: Session): Promise<void> {
     if (!state.baskets.baskets.some((basket) => basket.id === state.flowBasketId && basket.active)) {
       state.flowBasketId = state.baskets.baskets.find((basket) => basket.active)?.id ?? "";
     }
-    const savedFlow = state.flowDocuments[state.flowChannel].drafts.find((draft) => draft.basketId === state.flowBasketId);
+    const savedFlow = state.flowDocuments[FLOW_CHANNELS[0]].drafts.find((draft) => draft.basketId === state.flowBasketId);
     const selectedFlowBasket = state.baskets.baskets.find((basket) => basket.id === state.flowBasketId);
     state.flowName = savedFlow?.flowName ?? (selectedFlowBasket ? flowNameForBasket(selectedFlowBasket) : "cesta-atendimento");
     state.flowProductChoices.clear();
@@ -1108,6 +1111,13 @@ async function convertImage(file: File): Promise<{ contentBase64: string; previe
   return { contentBase64: dataUrl.split(",", 2)[1], previewUrl: dataUrl };
 }
 
+appRoot.addEventListener("toggle", (event) => {
+  const target = event.target;
+  if (target instanceof HTMLDetailsElement && target.classList.contains("meta-flow-admin")) {
+    state.flowMetaDetailsOpen = target.open;
+  }
+}, true);
+
 appRoot.addEventListener("input", (event) => {
   if (state.busy) return;
   const target = event.target;
@@ -1162,7 +1172,7 @@ appRoot.addEventListener("change", async (event) => {
   }
   if (target instanceof HTMLSelectElement && target.id === "flow-basket") {
     state.flowBasketId = target.value;
-    const saved = state.flowDocuments[state.flowChannel].drafts.find((draft) => draft.basketId === target.value);
+    const saved = state.flowDocuments[FLOW_CHANNELS[0]].drafts.find((draft) => draft.basketId === target.value);
     const selected = state.baskets.baskets.find((basket) => basket.id === target.value);
     state.flowName = saved?.flowName ?? (selected ? flowNameForBasket(selected) : "cesta-atendimento");
     state.flowProductChoices.clear();
@@ -1732,11 +1742,7 @@ appRoot.addEventListener("click", async (event) => {
     const channel = target.dataset.channel;
     if (!FLOW_CHANNELS.includes(channel as FlowChannel)) return;
     state.flowChannel = channel as FlowChannel;
-    const saved = state.flowDocuments[state.flowChannel].drafts.find((draft) => draft.basketId === state.flowBasketId);
-    const selected = state.baskets.baskets.find((basket) => basket.id === state.flowBasketId);
-    state.flowName = saved?.flowName ?? (selected ? flowNameForBasket(selected) : "cesta-atendimento");
-    state.flowProductChoices.clear();
-    state.flowQuantities.clear();
+    state.flowMetaDetailsOpen = true;
     state.notice = "";
     render();
     if (!state.metaChannels[state.flowChannel] && state.access === "authorized") await refreshMetaFlows(state.flowChannel);
@@ -1866,7 +1872,7 @@ appRoot.addEventListener("click", async (event) => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${draft.flowName || "flow-rascunho"}-${state.flowChannel}.json`;
+    link.download = `${draft.flowName || "flow-rascunho"}-compartilhado.json`;
     link.click();
     URL.revokeObjectURL(url);
   } else if (action === "review-flow-save") {

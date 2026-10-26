@@ -273,6 +273,14 @@ O saldo e o cadastro de produtos vêm do catálogo novo versionado no GitHub; n�
 
 Snapshot da implementação local no fechamento inicial da Rodada 7: JSON Flow 6.0 com Data Exchange 3.0, tela reutilizável `GROUP` e etapa final `CUSTOMER_REVIEW`. Este snapshot foi posteriormente supersedido: o catálogo agora usa saldo GitHub, a confirmação baixa estoque uma vez, há consumidor local da outbox desligado por padrão e o gerador foi atualizado para Flow JSON 7.3/Data API 4.0. O estado vigente e os gates externos estão no [HANDOFF](HANDOFF.md). Nenhum Flow foi publicado nesta pesquisa.
 
+## Revisão da experiência do configurador — 26/10/2026
+
+Consultei os guias oficiais atuais de [Manychat](https://help.manychat.com/hc/en-us/articles/14281166306332-How-to-build-a-Manychat-automation) e [Twilio Studio](https://www.twilio.com/docs/studio/user-guide/get-started). Manychat oferece uma visualização linear para automações simples e uma visão de mapa para fluxos mais complexos; Twilio documenta um Flow que pode atender vários números, com conexão e publicação tratadas como ações explícitas. Usei apenas esses padrões de organização como referência, sem copiar código, componentes ou contratos.
+
+Para o Admin novo, a tela agora apresenta um editor único da cesta, uma prévia linear e uma única ação que salva o mesmo conteúdo para 0975 e 1018. O JSON técnico e as operações da Meta ficam recolhidos. Ao abrir a área Meta, o operador seleciona o número cujos dados técnicos quer consultar ou configurar. WABA, criptografia, Flow ID, estado de publicação e vínculo continuam próprios por canal; não se presume que uma credencial ou vínculo sirva aos dois.
+
+A prévia continua respeitando um produto por tipo, quantidade de 1 a 6 limitada pelo estoque desta revisão e a última escolha `Não quero esse produto`. O seletor de quantidade passou a usar a largura disponível para facilitar leitura em desktop e celular. Nenhuma chamada de escrita à Meta, publicação ou mensagem foi feita nesta revisão.
+
 
 ## Atualização — cadastro do cliente e fechamento — 25/10/2026
 

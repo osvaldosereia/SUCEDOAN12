@@ -28,7 +28,7 @@ O novo Admin terá cinco áreas diretas:
 
 1. **Produtos:** cadastro simples dos produtos usados nas cestas, com foto, marca, apresentação, preço e identificadores necessários para a emissão no Bling.
 2. **Cestas:** tamanhos, tipos de produto, opções, ordem, quantidade inicial, edição, remoção e regra de preço.
-3. **Flows:** configuração e validação do atendimento para cada um dos dois números da Meta, com teste e publicação deliberada.
+3. **Flows:** uma configuração compartilhada da cesta para 0975 e 1018; a conexão/publicação da Meta permanece separada por número.
 4. **Pedidos:** fila, detalhe, separação dos itens, correção de faltas, etapa fiscal e conclusão.
 5. **Acompanhamento:** estado do pedido e erros que exigem ação, sem painel técnico excessivo.
 
@@ -194,7 +194,7 @@ A função ativa `whatsapp-meta-webhook-v1` normaliza mensagens interativas para
 
 ### Decisão — paridade dos canais 0975 e 1018
 
-Os canais terão as mesmas telas e recursos do Admin, usando um único gerador de Flow, o mesmo catálogo GitHub e as mesmas regras de pedido. O JSON de cada Flow será semanticamente idêntico; identidade Meta, WABA, Flow ID, chave de criptografia, status e vínculo permanecem separados por número. A interface deixa essa diferença operacional explícita. A configuração do canal 0975 ainda depende da chave privada correspondente no runtime, sem reutilizar uma chave do 1018 por suposição.
+Os canais terão os mesmos recursos do Admin, usando um único editor/gerador de Flow, o mesmo catálogo GitHub e as mesmas regras de pedido. A tela oferece uma configuração compartilhada para ambas as linhas e recolhe os detalhes técnicos da Meta até que sejam necessários. O conteúdo JSON dos dois canais permanece semanticamente idêntico; identidade Meta, WABA, Flow ID, chave de criptografia, status e vínculo continuam separados por número. A chave privada do canal 0975 nunca é presumida a partir da chave do 1018.
 
 O contrato TypeScript dos dois canais fica centralizado em `src/domain/channels.ts`; Flow, atendimento, pedidos, outbox, resolução de contas e rotas server-side derivam desse registro. A associação ao WABA e os segredos criptográficos continuam separados por canal.
 
