@@ -16,7 +16,8 @@ Criar uma área operacional menor que o Vitrine Admin para trabalhar pelo WhatsA
 - Produtos usarão `admin-products-live-v1`. Esta primeira tela permite localizar, ativar/desativar e corrigir preço. Estoque permanece somente leitura neste atalho porque a API atual encaminha alterações ao controle oficial do Bling.
 - Cestas e Pedidos serão exibidos a partir das abas atuais do Vitrine Admin. Isso preserva as regras operacionais já existentes enquanto o novo painel recebe uma interface própria.
 - A preparação do catálogo consulta apenas produtos ativos. As categorias escolhidas são: CESTAS BÁSICAS, MERCEARIA, LIMPEZA, LAVANDERIA, HIGIENE, BELEZA, CASA e PET.
-- A primeira versão só mostra classificação, validação e prévia local. Ela não envia alterações para a Meta.
+- A primeira versão mostra classificação, validação, prévia local e CSV interno de revisão. O CSV não é um feed de importação e a tela não envia alterações para a Meta.
+- País de origem é um dado obrigatório por item segundo a Central de Ajuda do WhatsApp. A tabela `products` não tem coluna dedicada para esse dado, então a prontidão de publicação permanece bloqueada até encontrar a fonte ou cadastrar o valor correto.
 - Nenhuma migration, Edge Function implantada, regra RLS, policy, segredo ou configuração de canal será alterada nesta rodada.
 
 ## Interfaces existentes reutilizadas
@@ -43,6 +44,8 @@ O fluxo proposto é: escolha de seção por lista interativa; envio de uma sele�
 
 O catálogo Commerce é a fonte de itens exibidos nas mensagens de produto. As mensagens de múltiplos produtos são adequadas para seleções curadas, não para reproduzir 388 itens numa única mensagem. O catálogo completo e as mensagens curadas devem coexistir.
 
+Para a cesta personalizada, manter a jornada já aprovada: tamanho/preço inicial, arroz, uma etapa por tipo com imagem/preço/quantidade, total dinâmico e resumo. A viabilidade de campos repetidos de quantidade deve ser confirmada no Flow Builder antes de prometer a experiência. O catálogo/carrinho nativo cobre seleção de produtos avulsos e serve de alternativa quando a quantidade por opção não couber claramente no Flow.
+
 Uma ordem recebida da Meta deve virar um rascunho reconciliado por ID estável do catálogo. O backend precisa reler preço, ativo e saldo atual antes de confirmar o pedido. O evento recebido não confirma pagamento nem disponibilidade.
 
 ## Limites observados nos dados
@@ -51,6 +54,7 @@ Uma ordem recebida da Meta deve virar um rascunho reconciliado por ID estável d
 - 42 ativos estão sem preço válido, 49 sem imagem, 60 sem marca e 209 sem descrição cadastrada.
 - 331 têm nome, preço positivo e imagem; esse número não resolve a classificação em oito seções.
 - A taxonomia mistura grupos. Há valores como `limpeza_lavanderia`, `higiene_beleza` e `casa_pet`; 23 produtos ativos não têm `whatsapp_category`.
+- A regra revisada sugere seção para todos os ativos: Mercearia 182, Limpeza 83, Lavanderia 94, Higiene 26, Casa 3, Beleza 0 e Pet 0. As cinco cestas ativas para WhatsApp ficam separadas em Cestas Básicas.
 - Há cinco cestas marcadas como ativas para WhatsApp, mas os preços atuais do banco diferem da lista mais recente aprovada na conversa. As cestas ficam fora de uma sincronização até reconciliar as variantes de arroz e os respectivos preços.
 - Os números 0975 e 1018 pertencem a WABAs diferentes. O catálogo ligado e o direito de atualização devem ser verificados para cada uma.
 
