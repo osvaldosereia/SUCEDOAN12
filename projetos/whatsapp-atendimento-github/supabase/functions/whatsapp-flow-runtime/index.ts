@@ -419,7 +419,8 @@ async function handleDataExchange(request: DecryptedRequest, channel: FlowChanne
   if (request.action !== "INIT" && request.action !== "data_exchange") {
     throw new RuntimeError(400, "Ação de Flow não suportada.");
   }
-  const session = await readSession(validateFlowToken(request.flow_token));
+  const flowToken = validateFlowToken(request.flow_token);
+  const session = await readSession(flowToken);
   if (session.channel !== channel) throw new RuntimeError(427, "Esta sessão não é válida para este canal.");
   const snapshot = await loadCatalog(session.catalog_commit);
   if (snapshot.revision !== session.catalog_revision) throw new RuntimeError(409, "A revisão do catálogo da sessão não corresponde ao conteúdo fixado.");
@@ -458,6 +459,7 @@ async function handleDataExchange(request: DecryptedRequest, channel: FlowChanne
     data: {
       basketName: basket.name,
       totalCents: quote.totalCents,
+      flow_token: flowToken,
       customerStatus: customer.status,
       customerName: customer.customer?.name ?? "",
       addresses: customer.customer?.addresses ?? [],

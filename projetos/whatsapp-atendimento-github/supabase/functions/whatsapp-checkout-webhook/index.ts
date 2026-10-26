@@ -444,16 +444,23 @@ async function createDraft(tx: Sql, message: WebhookMessage, channel: Channel, p
   let response: unknown;
   try { response = JSON.parse(responseJson); } catch { throw new WebhookError(422, "A resposta do Flow não é JSON válido."); }
   if (!isRecord(response) || response.contract_version !== 1 || typeof response.flow_token !== "string"
-    || typeof response.customer_id !== "string" || typeof response.address_id !== "string"
+    || typeof response.address_id !== "string"
     || typeof response.payment_method !== "string" || !["pix", "cash", "debit_card", "credit_card"].includes(response.payment_method)) {
     throw new WebhookError(422, "A resposta do Flow não corresponde ao contrato de checkout versão 1.");
+  }
+  let selectedCustomerId: string | undefined;
+  if (response.customer_id !== undefined) {
+    if (typeof response.customer_id !== "string" || response.customer_id.length === 0) {
+      throw new WebhookError(422, "O identificador de cliente enviado pelo Flow é inválido.");
+    }
+    selectedCustomerId = response.customer_id;
   }
   const session = await loadSession(tx, response.flow_token, channel, phone);
   const catalog = await catalogAt(session.catalog_commit);
   if (catalog.revision !== session.catalog_revision) {
     throw new WebhookError(409, "A revisão de catálogo mudou; reabra o Flow antes de confirmar.");
   }
-  const customer = await findCustomer(phone, response.customer_id, response.address_id);
+  const customer = await findCustomer(phone, selectedCustomerId, response.address_id);
   const built = buildOrderSnapshot(catalog, session, parseSelections(response.selections), customer, response.payment_method);
   const snapshotJson = JSON.stringify(built.snapshot);
   const summaryHash = await digestHex(snapshotJson);
