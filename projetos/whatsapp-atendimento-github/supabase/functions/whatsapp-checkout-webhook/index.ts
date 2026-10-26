@@ -830,7 +830,8 @@ async function handle(request: Request): Promise<Response> {
     const mode = url.searchParams.get("hub.mode");
     const token = url.searchParams.get("hub.verify_token");
     const challenge = url.searchParams.get("hub.challenge");
-    const expected = Deno.env.get("META_WEBHOOK_VERIFY_TOKEN");
+    const expected = Deno.env.get("META_WEBHOOK_VERIFY_TOKEN")
+      ?? Deno.env.get("META_WHATSAPP_VERIFY_TOKEN");
     if (!expected) return plain(503, "Webhook verification is not configured.");
     if (mode !== "subscribe" || !token || !challenge || !constantTimeEqual(token, expected)) return plain(403, "Forbidden");
     return new Response(challenge, { status: 200, headers: { "Content-Type": "text/plain", "Cache-Control": "no-store" } });
