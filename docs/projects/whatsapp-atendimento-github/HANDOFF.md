@@ -720,3 +720,17 @@ A autenticação continua sendo a sessão Supabase já existente porque as rotas
 - Migrations próprias `whatsapp_flow_sessions`, `whatsapp_checkout`, `whatsapp_order_operations_bling` e `whatsapp_channel_flow_bindings` aparecem aplicadas no Supabase.
 - Build/publicação do texto atualizado do Admin terminou success nos runs `40372897964` e `40372917424`; asset ativo confirmado como `index-x4meayBC.js`.
 - Pendência real verificada: a configuração pública de criptografia ainda não foi executada para os dois canais. Os aliases Meta já aparecem no código Vitrine e no runtime novo; não pedir credencial Meta adicional. A chave pública ainda exige a operação Meta autenticada, sem publicar Flow.
+
+
+## Atualização de retomada — correção do Admin e reconciliação da chave Meta (26/10/2026)
+
+- Confirmada a causa do erro 500 no catálogo: a consulta passava o texto `"text"` como OID do tipo PostgreSQL para `postgres.js`. Corrigido em `catalog-source.ts` no commit `4ae188eaf1ee185a248c8abc896de36abc929ed3`; a API e o preview carregaram os 61 produtos e a configuração da cesta.
+- Removido o reaproveitamento do token de sessão do Vitrine. A rota pública que o emitia não comprovava a identidade do solicitante, portanto o novo Admin exige uma sessão Supabase real. Não há nova conta nem senha. Um link de acesso à conta administradora existente foi solicitado em 26/10; falta o operador clicar nesse link para retomar ações autenticadas.
+- Leitura apenas do Vitrine Admin: o Flow do 1018 mostra os sete pré-requisitos Meta como Pronto, inclusive chave pública registrada e correspondente à privada. O runtime antigo usa exatamente o secret `DA_FLOW_1018_RSA_PKCS8`.
+- Corrigida a ordem de leitura dos secrets no módulo greenfield para priorizar o nome já usado pelo Vitrine; o nome com extensão `.pem` e os aliases do projeto seguem como fallback. Nenhum valor secreto foi lido, exposto ou gravado.
+- Branch HEAD: `6cba7dbef7bab080229b2aeaba7f603bf7fc7de7`. GitHub Action `40384194615` concluiu com sucesso.
+- Supabase: `whatsapp-admin-api` ACTIVE v7, hash `b9b5deec8f537475779dacfe1f2a77b881498d3d34c4eb51433bdae32c8913bf`; `whatsapp-flow-runtime` ACTIVE v5, hash `398abd84e5e7971166ce914ae3042c73319d91ad3259b30baeab15f5f9ba876d`.
+- A prioridade corrigida foi implantada nas duas funções. A releitura da chave e a configuração Meta dos canais no novo Admin ainda precisam ser confirmadas após a reautenticação; a última tela mostrava endpoint pendente. A autorização já recebida cobre somente registrar a chave pública nos números, sem publicar Flow.
+- Nada foi publicado ou vinculado na Meta; nenhuma mensagem, pedido, operação Bling ou alteração em tabela/função/callback do Vitrine foi realizada.
+- Próximo passo objetivo após o clique no link: abrir o novo Admin, verificar se 1018 reconhece a chave já registrada, e configurar a chave pública em 0975 se o status continuar pendente. Depois validar e salvar os rascunhos compartilhados para os dois canais; publicação e envio continuam separados e não autorizados.
+
