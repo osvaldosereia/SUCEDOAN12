@@ -24,11 +24,13 @@ import {
   type ChannelFlowDocument,
   type FlowChannel,
 } from "../domain/flows";
-import { AdminApiError, assignOrder, bindPublishedMetaFlow, completeOrderSeparation, createMetaFlow, getCatalog, getCustomer, getCustomers, getFlowDraft, getMetaFlows, getOrder, getOrders, getOutbox, publishMetaFlow, reconcileOrderBlingSale, saveCatalog, saveCustomer, saveFlowDraft, saveOrderBlingContact, saveOrderPicking, setupMetaFlowEncryption, unbindMetaFlow, uploadMetaFlowJson, type MetaChannelSnapshot, type PendingImage } from "./api";
+import { AdminApiError, assignOrder, bindPublishedMetaFlow, completeOrderSeparation, createMetaFlow, createOrderBlingSale, generateOrderBlingInvoice, getAnaAdmin, getAttendanceAccounts, getAttendanceConversation, getAttendanceQueue, getCatalog, getCustomer, getCustomers, getFlowDraft, getMetaFlows, getOrder, getOrders, getOutbox, publishMetaFlow, reconcileOrderBlingSale, saveCatalog, saveCustomer, saveFlowDraft, saveOrderBlingContact, saveOrderPicking, sendAttendanceText, setAnaChannel, setAttendanceMode, setupMetaFlowEncryption, unbindMetaFlow, uploadMetaFlowJson, type MetaChannelSnapshot, type PendingImage } from "./api";
 import type { OrderDetailRecord, OrderListEntry } from "../domain/orders";
 import type { OutboxMessageSummary, OutboxQueueSnapshot, OutboxStatus } from "../domain/outbox";
+import { attendanceChannelFromPhone, type AnaAdminSnapshot, type AttendanceChannel, type AttendanceConversationSnapshot, type AttendanceQueueItem } from "../domain/attendance";
 import { emptyCustomer, type CustomerListItem, type CustomerRecord } from "../domain/customers";
 import { renderFlowsPanel } from "./flows-panel";
+import { renderAttendancePanel } from "./attendance-panel";
 import { renderCustomerAddressEditor, renderCustomersPanel } from "./customers-panel";
 import "./styles.css";
 
@@ -70,7 +72,7 @@ const state = {
   access: "preview" as "preview" | "loading" | "authorized" | "denied",
   accessMessage: "Prévia local: alterações ficam apenas nesta sessão do navegador.",
   busy: false,
-  tab: "products" as "products" | "baskets" | "flows" | "orders" | "outbox" | "customers",
+  tab: "products" as "products" | "baskets" | "flows" | "orders" | "outbox" | "customers" | "attendance",
   search: "",
   selectedBasketId: initialDocuments.baskets.baskets[0]?.id ?? "",
   flowDocuments: structuredClone(initialFlowDocuments),
@@ -103,6 +105,16 @@ const state = {
   outboxLoaded: false,
   outboxSenderEnabled: false,
   reconciliationRequestKeys: new Map<string, string>(),
+  attendanceChannel: "0975" as AttendanceChannel,
+  attendanceAccounts: [] as Array<{ id: string; display_name: string; phone_e164: string; is_active: boolean }>,
+  attendanceQueue: [] as AttendanceQueueItem[],
+  attendanceQueueLoaded: false,
+  attendanceSelectedConversationId: "",
+  attendanceConversation: null as AttendanceConversationSnapshot | null,
+  attendanceSearch: "",
+  attendanceAna: null as AnaAdminSnapshot | null,
+  attendanceNotice: "",
+  attendanceSendKey: null as { conversationId: string; text: string; key: string } | null,
 };
 
 function escapeHtml(value: unknown): string {
@@ -415,6 +427,95 @@ async function loadOutbox(): Promise<void> {
   }
 }
 
+async function loadAttendance(): Promise<void> {
+  if (!state.session || state.access !== "authorized") {
+    state.attendanceNotice = "Entre com a conta GitHub autorizada para abrir o atendimento.";
+    render();
+    return;
+  }
+  state.busy = true;
+  state.attendanceNotice = "Consultando os canais autorizados…";
+  render();
+  try {
+    const token = state.session.access_token;
+    const [accountsResult, anaResult] = await Promise.allSettled([
+      getAttendanceAccounts(token),
+      getAnaAdmin(token),
+    ]);
+    if (accountsResult.status === "rejected") throw accountsResult.reason;
+    state.attendanceAccounts = accountsResult.value;
+    state.attendanceAna = anaResult.status === "fulfilled" ? anaResult.value : null;
+    const account = state.attendanceAccounts.find((item) => attendanceChannelFromPhone(item.phone_e164) === state.attendanceChannel);
+    if (!account) {
+      state.attendanceQueue = [];
+      state.attendanceQueueLoaded = false;
+      state.attendanceSelectedConversationId = "";
+      state.attendanceConversation = null;
+      state.attendanceNotice = `O número final ${state.attendanceChannel} não foi retornado pelo serviço autorizado.`;
+      return;
+    }
+    state.attendanceQueue = await getAttendanceQueue(token, account.id, state.attendanceSearch);
+    state.attendanceQueueLoaded = true;
+    if (!state.attendanceQueue.some((item) => String(item.conversation_id ?? item.id ?? "") === state.attendanceSelectedConversationId)) {
+      state.attendanceSelectedConversationId = "";
+      state.attendanceConversation = null;
+    }
+    if (state.attendanceSelectedConversationId) {
+      state.attendanceConversation = await getAttendanceConversation(token, state.attendanceSelectedConversationId, account.id);
+    }
+    state.attendanceNotice = anaResult.status === "rejected"
+      ? "A fila carregou. A configuração global da ANA não pôde ser consultada pela permissão atual."
+      : `Canal ${state.attendanceChannel} atualizado.`;
+  } catch (error) {
+    state.attendanceNotice = error instanceof AdminApiError ? error.message : "Não foi possível consultar o atendimento.";
+    state.attendanceQueueLoaded = false;
+  } finally {
+    state.busy = false;
+    render();
+  }
+}
+
+async function selectAttendanceChannel(channel: AttendanceChannel): Promise<void> {
+  state.attendanceChannel = channel;
+  state.attendanceSearch = "";
+  state.attendanceSelectedConversationId = "";
+  state.attendanceConversation = null;
+  state.attendanceQueue = [];
+  state.attendanceQueueLoaded = false;
+  await loadAttendance();
+}
+
+async function openAttendanceConversation(conversationId: string): Promise<void> {
+  if (!state.session || !conversationId) return;
+  state.busy = true;
+  state.attendanceNotice = "Carregando conversa…";
+  render();
+  try {
+    state.attendanceSelectedConversationId = conversationId;
+    const account = state.attendanceAccounts.find((item) => attendanceChannelFromPhone(item.phone_e164) === state.attendanceChannel);
+    if (!account) throw new AdminApiError("O canal selecionado não está disponível.");
+    state.attendanceConversation = await getAttendanceConversation(state.session.access_token, conversationId, account.id);
+    state.attendanceNotice = "Conversa atualizada."
+  } catch (error) {
+    state.attendanceConversation = null;
+    state.attendanceNotice = error instanceof AdminApiError ? error.message : "Não foi possível abrir esta conversa.";
+  } finally {
+    state.busy = false;
+    render();
+  }
+}
+
+async function refreshAttendanceConversation(): Promise<void> {
+  if (!state.session || !state.attendanceSelectedConversationId) return;
+  try {
+    const account = state.attendanceAccounts.find((item) => attendanceChannelFromPhone(item.phone_e164) === state.attendanceChannel);
+    if (!account) throw new AdminApiError("O canal selecionado não está disponível.");
+    state.attendanceConversation = await getAttendanceConversation(state.session.access_token, state.attendanceSelectedConversationId, account.id);
+  } catch (error) {
+    state.attendanceNotice = error instanceof AdminApiError ? error.message : "Não foi possível atualizar o histórico.";
+  }
+}
+
 async function openOrder(orderId: string): Promise<void> {
   if (!state.session) return;
   state.busy = true;
@@ -479,7 +580,6 @@ function integrationBlockerLabel(code: string): string {
     BLING_CUSTOMER_CONTACT_MAPPING_MISSING: "Vincular o cliente ao contato do Bling",
     BLING_PAYMENT_FORM_MAPPING_MISSING: "Mapear a forma de pagamento",
     BLING_DUE_DATE_POLICY_MISSING: "Definir o vencimento da parcela",
-    BLING_OAUTH_CREDENTIAL_MISSING: "Conectar a conta Bling por OAuth",
     BLING_BASKET_ADJUSTMENT_RULE_UNRESOLVED: "Definir o tratamento fiscal do ajuste da cesta",
     BLING_TOTAL_RECONCILIATION_INVALID: "Revisar a conciliação do total comercial com as linhas",
     BLING_SALE_REFERENCE_OR_DATE_INVALID: "Revisar a referência ou data da prévia da venda",
@@ -487,8 +587,7 @@ function integrationBlockerLabel(code: string): string {
     BLING_SALE_PAYMENT_METHOD_UNSUPPORTED: "Revisar a forma de pagamento registrada no pedido",
     BLING_SALE_TOTALS_OR_ITEMS_INVALID: "Revisar itens e totais da prévia da venda",
     BLING_SALE_ITEM_MAPPING_INVALID: "Revisar SKU e vínculo Bling de um ou mais itens",
-    BLING_SALE_CONTRACT_REVIEW_REQUIRED: "Confirmar o contrato de venda e parcelas em homologação",
-    BLING_CONNECTOR_DISABLED_IN_DEVELOPMENT: "Conector desativado durante o desenvolvimento",
+    BLING_SHARED_CREDENTIALS_UNAVAILABLE: "A conexão compartilhada do Bling não está disponível no servidor",
   } as Record<string, string>)[code] ?? code;
 }
 
@@ -498,10 +597,14 @@ function reconciliationOutcomeLabel(order: OrderDetailRecord): string {
   if (reconciliation.status === "running") return "Consulta somente leitura em andamento.";
   if (reconciliation.outcome === "absent") return "Consulta concluída: nenhuma venda encontrada para esta referência.";
   if (reconciliation.outcome === "matched") {
-    return `Venda compatível localizada (ID ${reconciliation.externalId ?? "indisponível"}). A operação continua bloqueada até a revisão do contrato fiscal.`;
+    return `Venda compatível localizada (ID ${reconciliation.externalId ?? "indisponível"}) e vinculada ao pedido.`;
   }
-  if (reconciliation.outcome === "ambiguous") return "Mais de uma venda usa esta referência. O pedido permanece bloqueado para revisão manual.";
-  return "A consulta foi inconclusiva. O pedido permanece bloqueado e nenhuma venda foi criada.";
+  if (reconciliation.outcome === "ambiguous") return "Mais de uma venda usa esta referência. Confira no Bling antes de qualquer nova tentativa.";
+  return "A consulta foi inconclusiva. Confira no Bling antes de qualquer nova tentativa.";
+}
+
+function invoiceStatusLabel(status: OrderDetailRecord["invoiceStatus"]): string {
+  return ({ not_requested: "Ainda não solicitada", pending: "Aguardando autorização", authorized: "Autorizada", rejected: "Rejeitada", unknown: "Estado incerto" })[status];
 }
 
 function ordersView(): string {
@@ -530,15 +633,28 @@ function ordersView(): string {
     const reconciliationMarkup = reconciliation
       ? `<span>${escapeHtml(reconciliationOutcomeLabel(order))}${reconciliation.completedAt ? ` · concluída em ${new Date(reconciliation.completedAt).toLocaleString("pt-BR")}` : ""}</span>`
       : "";
-    const reconciliationAction = order.integrationJob?.reconciliationEnabled
+    const reconciliationAction = !order.blingSaleId && order.integrationJob?.reconciliationEnabled
+      && (order.integrationJob.status === "blocked" || order.integrationJob.status === "unknown")
       ? `<button class="button button-soft" data-action="order-bling-reconcile" data-id="${escapeHtml(order.id)}" data-revision="${order.revision}">Consultar referência no Bling (GET)</button>`
-      : `<span>Consulta ao Bling desligada neste ambiente.</span>`;
+      : "";
+    const canRetrySale = !order.blingSaleId && (order.integrationJob?.status === "blocked" || order.integrationJob?.status === "failed"
+      || order.integrationJob?.reconciliation?.outcome === "absent");
+    const saleRetryAction = canRetrySale
+      ? `<button class="button button-soft" data-action="order-bling-create" data-id="${escapeHtml(order.id)}" data-revision="${order.revision}">Tentar criar venda no Bling</button>`
+      : "";
+    const invoiceStatus = invoiceStatusLabel(order.invoiceStatus);
+    const invoiceAction = order.blingSaleId && order.invoiceStatus !== "authorized"
+      ? `<button class="button button-primary" data-action="order-invoice-generate" data-id="${escapeHtml(order.id)}" data-revision="${order.revision}" ${order.invoiceJob?.status === "running" ? "disabled" : ""}>${order.invoiceId ? "Consultar NF-e no Bling" : "Solicitar NF-e no Bling"}</button>`
+      : "";
+    const invoiceMarkup = order.blingSaleId
+      ? `<div class="bling-invoice-summary"><strong>Venda Bling ${order.blingSaleId}</strong><span>NF-e: ${escapeHtml(invoiceStatus)}${order.invoiceId ? ` · ID ${order.invoiceId}` : ""}${order.invoiceJob?.invoiceNumber ? ` · nº ${escapeHtml(order.invoiceJob.invoiceNumber)}` : ""}</span>${order.invoiceJob?.errorCode ? `<small>Estado técnico: ${escapeHtml(order.invoiceJob.errorCode)}</small>` : ""}${order.invoiceJob?.danfeUrl ? `<a href="${escapeHtml(order.invoiceJob.danfeUrl)}" target="_blank" rel="noopener noreferrer">Abrir DANFE no Bling</a>` : ""}<p>Solicitar a NF-e requer confirmação digitada. O Bling ainda controla a autorização fiscal.</p>${invoiceAction}</div>`
+      : `<div class="bling-invoice-summary"><strong>NF-e aguardando venda</strong><span>A venda é criada após a separação, desde que o pedido e o contato estejam válidos no Bling.</span></div>`;
     return `<section class="workspace-heading"><div><span class="eyebrow">Pedido · ${escapeHtml(order.id.slice(0, 8))}</span><h1>${escapeHtml(order.customerName)}</h1><p>${escapeHtml(order.basketName)} · ${escapeHtml(order.city)} · recebido ${new Date(order.createdAt).toLocaleString("pt-BR")}</p></div><div class="order-heading-actions"><button class="button button-soft" data-action="orders-back">← Fila</button><button class="button button-soft" data-action="orders-refresh">Atualizar</button></div></section>
       <div class="order-summary-grid"><article><span>Status</span><strong>${escapeHtml(orderStatusLabel(order.status))}</strong></article><article><span>Total confirmado</span><strong>${money(order.totalCents)}</strong></article><article><span>Canal / pagamento</span><strong>${escapeHtml(order.channel)} · ${escapeHtml(order.paymentMethod ?? "—")}</strong></article><article><span>Revisão</span><strong>${order.revision}</strong></article></div>
       <section class="order-items-card"><div class="section-title"><div><span class="eyebrow">Entrega</span><h2>Endereço confirmado</h2></div></div><p>${escapeHtml(addressLine || "Endereço não disponível")}</p>${address.reference ? `<small>Referência: ${escapeHtml(address.reference)}</small>` : ""}</section>
       ${pending ? `<div class="flow-safety-note"><strong>Aguardando aceite do cliente</strong><span>Há falta ou substituição pendente. A separação e o Bling ficam bloqueados até a resposta chegar pelo webhook.</span></div>` : ""}
       <section class="order-items-card"><div class="section-title"><div><span class="eyebrow">Integração Bling</span><h2>Vínculo do contato</h2></div><strong>${order.blingContactId ? `ID ${order.blingContactId} · conferido manualmente` : "Sem vínculo"}</strong></div><p>Informe o ID do contato e confirme que conferiu a identidade no painel Bling. Esta tela não consulta o Bling; o ID será salvo no cadastro privado do cliente.</p><form id="order-bling-contact-form"><label>ID do contato Bling<input name="bling_contact_id" type="number" min="1" max="9007199254740991" step="1" value="${order.blingContactId ?? ""}" required></label><label class="checkbox-label"><input name="customer_match_confirmed" type="checkbox" required> Conferi que este contato pertence a ${escapeHtml(order.customerName)}</label><button class="button button-soft" type="submit">${order.blingContactId ? "Atualizar vínculo" : "Salvar vínculo"}</button></form>${order.blingContactVerifiedAt ? `<small>Conferido em ${new Date(order.blingContactVerifiedAt).toLocaleString("pt-BR")}</small>` : ""}</section>
-      ${order.status === "awaiting_invoice" ? `<div class="flow-safety-note"><strong>Prévia local da venda · integração bloqueada</strong><span>Nenhuma venda ou NF-e foi criada. A consulta abaixo é somente leitura; não libera nem cria a venda.</span>${salePreviewMarkup}${commercialPreview}${reconciliationMarkup}${reconciliationAction}<ul>${(order.integrationJob?.blockers ?? []).map((code) => `<li>${escapeHtml(integrationBlockerLabel(code))}</li>`).join("") || `<li>Consulte o estado de integração no servidor.</li>`}</ul></div>` : ""}
+      ${["awaiting_invoice", "invoice_authorized"].includes(order.status) ? `<div class="flow-safety-note"><strong>Integração Bling · venda ${order.blingSaleId ? "confirmada" : escapeHtml(order.integrationJob?.status ?? "aguardando")}</strong><span>Ao concluir a separação, o servidor tenta criar a venda com a conexão Bling já usada pelo atendimento. O estoque negativo não bloqueia essa etapa. A NF-e só é solicitada mediante confirmação do operador.</span>${salePreviewMarkup}${commercialPreview}${reconciliationMarkup}${reconciliationAction}${saleRetryAction}<ul>${(order.integrationJob?.blockers ?? []).map((code) => `<li>${escapeHtml(integrationBlockerLabel(code))}</li>`).join("") || (!order.blingSaleId ? `<li>${order.integrationJob?.status === "unknown" ? "Reconcilie a referência no Bling antes de repetir." : canRetrySale ? "Revise os dados acima e confirme a tentativa manual." : "A venda aguarda o processamento no servidor."}</li>` : "")}</ul>${invoiceMarkup}</div>` : ""}
       <section class="order-items-card"><div class="section-title"><div><span class="eyebrow">Separação</span><h2>Itens do pedido</h2></div>${!pending && ["received", "packing", "attention"].includes(order.status) ? `<button class="button button-soft" data-action="order-assign" data-id="${escapeHtml(order.id)}" data-revision="${order.revision}">Assumir separação</button>` : ""}</div>
       ${order.items.map((item) => `<form class="order-item-row" id="order-picking-item" data-item-id="${item.id}"><div class="order-item-main"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.brand)} · ${escapeHtml(item.presentation)} · ${item.quantity} pedida(s)</span><small>Separada(s): ${item.pickedQuantity} · ${escapeHtml(item.pickingStatus)}</small></div><label>Separar<input name="picked_quantity" type="number" min="0" max="${item.quantity}" step="1" value="${item.pickedQuantity}" required></label><label>Substituto<select name="replacement_product_id"><option value="">Sem substituição</option>${item.replacementOptions.filter((option) => option.id !== item.productId).map((option) => `<option value="${escapeHtml(option.id)}">${escapeHtml(option.name)} · ${escapeHtml(option.brand)}</option>`).join("")}</select></label><button class="button button-soft" type="submit" ${pending || !["received", "packing", "attention"].includes(order.status) ? "disabled" : ""}>Salvar linha</button></form>`).join("") || `<div class="empty-state"><strong>Sem itens para separar</strong></div>`}
       <div class="order-footer-actions"><span>As faltas e substituições só alteram o total após o cliente aceitar.</span><button class="button button-primary" data-action="order-separation-complete" data-id="${escapeHtml(order.id)}" data-revision="${order.revision}" ${pending || !["received", "packing", "attention"].includes(order.status) ? "disabled" : ""}>Concluir separação e validar Bling</button></div></section>`;
@@ -583,6 +699,19 @@ function render(): void {
     editor: state.customerEditor,
     authorized: state.access === "authorized",
   });
+  const attendancePanel = renderAttendancePanel({
+    authorized: state.access === "authorized",
+    busy: state.busy || state.access === "loading",
+    loaded: state.attendanceQueueLoaded,
+    channel: state.attendanceChannel,
+    accounts: state.attendanceAccounts,
+    queue: state.attendanceQueue,
+    selectedConversationId: state.attendanceSelectedConversationId,
+    conversation: state.attendanceConversation,
+    search: state.attendanceSearch,
+    ana: state.attendanceAna,
+    notice: state.attendanceNotice,
+  });
   const identityLabel = state.session?.user.user_metadata?.user_name
     ?? state.session?.user.user_metadata?.preferred_username
     ?? state.session?.user.email
@@ -594,11 +723,11 @@ function render(): void {
       <div class="topbar-actions"><span class="access-status ${statusClass}"><i></i>${escapeHtml(accessLabel())}</span>${state.session ? `<span class="user-chip"><span class="user-avatar">${escapeHtml(String(identityLabel).slice(0, 1).toUpperCase())}</span>${escapeHtml(identityLabel)}</span><button class="button button-soft" data-action="sign-out">Sair</button>` : `<button class="button button-dark" data-action="sign-in" ${supabase ? "" : "disabled title=Configure%20Supabase%20em%20.env.local"}>Entrar com GitHub</button>`}</div>
     </header>
     <div class="security-banner ${state.access === "authorized" ? "is-ready" : ""}"><span class="security-icon">${state.access === "authorized" ? "✓" : "⌑"}</span><span><strong>${state.access === "authorized" ? "Acesso confirmado pelo servidor" : escapeHtml(state.accessMessage)}</strong><small>${state.access === "authorized" ? `Gravações ficam restritas ao branch project/whatsapp-atendimento-github-20261025${state.commitSha ? ` · revisão ${state.commitSha.slice(0, 7)}` : ""}.` : "Sem GitHub App, allowlist e origem configurados no servidor, nenhuma gravação será aceita."}</small></span>${state.commitUrl ? `<a class="text-link" href="${escapeHtml(state.commitUrl)}" target="_blank" rel="noreferrer">Ver commit ↗</a>` : ""}</div>
-    <div class="app-body"><aside class="main-nav"><div class="nav-label">CATÁLOGO</div><button class="nav-item ${state.tab === "products" ? "is-active" : ""}" data-action="tab" data-tab="products"><span class="nav-icon">▦</span> Produtos <span class="nav-count">${state.products.products.length}</span></button><button class="nav-item ${state.tab === "baskets" ? "is-active" : ""}" data-action="tab" data-tab="baskets"><span class="nav-icon">▤</span> Cestas <span class="nav-count">${state.baskets.baskets.length}</span></button><button class="nav-item ${state.tab === "flows" ? "is-active" : ""}" data-action="tab" data-tab="flows"><span class="nav-icon">⌁</span> Flows <span class="nav-count">${state.flowDocuments[state.flowChannel].drafts.length}</span></button><div class="nav-label nav-orders-label">OPERAÇÃO</div><button class="nav-item ${state.tab === "customers" ? "is-active" : ""}" data-action="tab" data-tab="customers"><span class="nav-icon">♙</span> Clientes ${state.customersLoaded ? `<span class="nav-count">${state.customers.length}</span>` : ""}</button><button class="nav-item ${state.tab === "orders" ? "is-active" : ""}" data-action="tab" data-tab="orders"><span class="nav-icon">▣</span> Pedidos <span class="nav-count">${state.orders.length}</span></button><button class="nav-item ${state.tab === "outbox" ? "is-active" : ""}" data-action="tab" data-tab="outbox"><span class="nav-icon">↗</span> Mensagens ${state.outboxLoaded ? `<span class="nav-count">${state.outboxCounts.pending + state.outboxCounts.failed}</span>` : ""}</button></aside>
-      <main class="content"><div class="content-topline"><span>Administração</span><span class="breadcrumb-sep">/</span><strong>${state.tab === "products" ? "Produtos" : state.tab === "baskets" ? "Cestas" : state.tab === "flows" ? "Flows" : state.tab === "orders" ? "Pedidos" : state.tab === "customers" ? "Clientes" : "Mensagens WhatsApp"}</strong><span class="dirty-indicator ${isDirty() && !["orders", "outbox", "customers"].includes(state.tab) ? "is-dirty" : ""}">${isDirty() && !["orders", "outbox", "customers"].includes(state.tab) ? "Alterações pendentes" : "Tudo salvo"}</span></div>${state.notice ? `<div class="notice notice-${state.noticeType}" role="status"><span>${escapeHtml(state.notice)}</span>${state.conflict ? `<div class="conflict-actions"><button class="text-button" data-action="export-draft">Baixar meu rascunho</button><button class="text-button" data-action="reload-catalog">Descartar e recarregar</button></div>` : ""}<button data-action="clear-notice" aria-label="Fechar">×</button></div>` : ""}${state.tab === "products" ? productsView() : state.tab === "baskets" ? selectedBasket ? basketEditor(selectedBasket) : `<div class="empty-state"><strong>Nenhuma cesta cadastrada</strong><span>Crie a primeira cesta para começar.</span><button class="button button-primary" data-action="new-basket">＋ Nova cesta</button></div>` : state.tab === "flows" ? flowsPanel : state.tab === "customers" ? customersPanel : state.tab === "outbox" ? outboxView() : ordersView()}</main>
+    <div class="app-body"><aside class="main-nav"><div class="nav-label">CATÁLOGO</div><button class="nav-item ${state.tab === "products" ? "is-active" : ""}" data-action="tab" data-tab="products"><span class="nav-icon">▦</span> Produtos <span class="nav-count">${state.products.products.length}</span></button><button class="nav-item ${state.tab === "baskets" ? "is-active" : ""}" data-action="tab" data-tab="baskets"><span class="nav-icon">▤</span> Cestas <span class="nav-count">${state.baskets.baskets.length}</span></button><button class="nav-item ${state.tab === "flows" ? "is-active" : ""}" data-action="tab" data-tab="flows"><span class="nav-icon">⌁</span> Flows <span class="nav-count">${state.flowDocuments[state.flowChannel].drafts.length}</span></button><div class="nav-label nav-orders-label">OPERAÇÃO</div><button class="nav-item ${state.tab === "attendance" ? "is-active" : ""}" data-action="tab" data-tab="attendance"><span class="nav-icon">☏</span> Atendimento</button><button class="nav-item ${state.tab === "customers" ? "is-active" : ""}" data-action="tab" data-tab="customers"><span class="nav-icon">♙</span> Clientes ${state.customersLoaded ? `<span class="nav-count">${state.customers.length}</span>` : ""}</button><button class="nav-item ${state.tab === "orders" ? "is-active" : ""}" data-action="tab" data-tab="orders"><span class="nav-icon">▣</span> Pedidos <span class="nav-count">${state.orders.length}</span></button><button class="nav-item ${state.tab === "outbox" ? "is-active" : ""}" data-action="tab" data-tab="outbox"><span class="nav-icon">↗</span> Mensagens ${state.outboxLoaded ? `<span class="nav-count">${state.outboxCounts.pending + state.outboxCounts.failed}</span>` : ""}</button></aside>
+      <main class="content"><div class="content-topline"><span>Administração</span><span class="breadcrumb-sep">/</span><strong>${state.tab === "products" ? "Produtos" : state.tab === "baskets" ? "Cestas" : state.tab === "flows" ? "Flows" : state.tab === "orders" ? "Pedidos" : state.tab === "customers" ? "Clientes" : state.tab === "attendance" ? "Atendimento" : "Mensagens WhatsApp"}</strong><span class="dirty-indicator ${isDirty() && !["orders", "outbox", "customers", "attendance"].includes(state.tab) ? "is-dirty" : ""}">${isDirty() && !["orders", "outbox", "customers", "attendance"].includes(state.tab) ? "Alterações pendentes" : "Tudo salvo"}</span></div>${state.notice ? `<div class="notice notice-${state.noticeType}" role="status"><span>${escapeHtml(state.notice)}</span>${state.conflict ? `<div class="conflict-actions"><button class="text-button" data-action="export-draft">Baixar meu rascunho</button><button class="text-button" data-action="reload-catalog">Descartar e recarregar</button></div>` : ""}<button data-action="clear-notice" aria-label="Fechar">×</button></div>` : ""}${state.tab === "products" ? productsView() : state.tab === "baskets" ? selectedBasket ? basketEditor(selectedBasket) : `<div class="empty-state"><strong>Nenhuma cesta cadastrada</strong><span>Crie a primeira cesta para começar.</span><button class="button button-primary" data-action="new-basket">＋ Nova cesta</button></div>` : state.tab === "flows" ? flowsPanel : state.tab === "customers" ? customersPanel : state.tab === "outbox" ? outboxView() : state.tab === "attendance" ? attendancePanel : ordersView()}</main>
     </div>
     <footer class="page-footer"><span>Catálogo público versionado no GitHub</span><span>Dados pessoais e credenciais ficam fora deste projeto</span></footer>
-    ${state.access === "authorized" && isDirty() && !["customers", "orders", "outbox"].includes(state.tab) ? `<button class="floating-save" data-action="review-save"><span>Revisar alterações</span><strong>Salvar no GitHub ↗</strong></button>` : ""}
+    ${state.access === "authorized" && isDirty() && !["customers", "orders", "outbox", "attendance"].includes(state.tab) ? `<button class="floating-save" data-action="review-save"><span>Revisar alterações</span><strong>Salvar no GitHub ↗</strong></button>` : ""}
     ${modalMarkup()}
   </div>`;
   const locked = state.busy || state.access === "loading";
@@ -985,6 +1114,49 @@ appRoot.addEventListener("submit", async (event) => {
   if (state.busy) return;
   const target = event.target;
   if (!(target instanceof HTMLFormElement)) return;
+  if (target.id === "attendance-search-form") {
+    event.preventDefault();
+    state.attendanceSearch = String(new FormData(target).get("query") ?? "").trim().slice(0, 80);
+    state.attendanceSelectedConversationId = "";
+    state.attendanceConversation = null;
+    await loadAttendance();
+    return;
+  }
+  if (target.id === "attendance-send-form") {
+    event.preventDefault();
+    if (!state.session || !state.attendanceSelectedConversationId) return;
+    const message = String(new FormData(target).get("text") ?? "").trim();
+    if (!message) return;
+    const conversationId = state.attendanceSelectedConversationId;
+    const account = state.attendanceAccounts.find((item) => attendanceChannelFromPhone(item.phone_e164) === state.attendanceChannel);
+    if (!account) return;
+    if (state.attendanceSendKey?.conversationId !== conversationId || state.attendanceSendKey.text !== message) {
+      state.attendanceSendKey = { conversationId, text: message, key: `att:${crypto.randomUUID()}` };
+    }
+    state.busy = true;
+    state.attendanceNotice = "Enviando pela conexão existente, sujeita aos gates do canal…";
+    render();
+    try {
+      const result = await sendAttendanceText(state.session.access_token, {
+        conversationId,
+        accountId: account.id,
+        text: message,
+        idempotencyKey: state.attendanceSendKey.key,
+      });
+      if (result.ok !== true) throw new AdminApiError(String(result.error ?? "O canal não aceitou a resposta."));
+      state.attendanceSendKey = null;
+      state.attendanceConversation = await getAttendanceConversation(state.session.access_token, conversationId, account.id);
+      state.attendanceQueue = await getAttendanceQueue(state.session.access_token, account.id, state.attendanceSearch);
+      state.attendanceNotice = "Resposta aceita pelo serviço de atendimento. Confira o estado da mensagem na conversa.";
+      target.reset();
+    } catch (error) {
+      state.attendanceNotice = error instanceof AdminApiError ? error.message : "Não foi possível enviar a resposta. Repetir mantém a mesma chave de idempotência.";
+    } finally {
+      state.busy = false;
+      render();
+    }
+    return;
+  }
   if (target.id === "customer-search-form") {
     event.preventDefault();
     await loadCustomers(String(new FormData(target).get("query") ?? ""));
@@ -1180,12 +1352,13 @@ appRoot.addEventListener("click", async (event) => {
     await supabase?.auth.signOut();
   } else if (action === "tab") {
     const nextTab = target.dataset.tab;
-    state.tab = nextTab === "baskets" || nextTab === "flows" || nextTab === "orders" || nextTab === "outbox" || nextTab === "customers" ? nextTab : "products";
+    state.tab = nextTab === "baskets" || nextTab === "flows" || nextTab === "orders" || nextTab === "outbox" || nextTab === "customers" || nextTab === "attendance" ? nextTab : "products";
     state.notice = "";
     render();
     if (state.tab === "orders" && !state.ordersLoaded && state.access === "authorized") await loadOrders();
     if (state.tab === "outbox" && !state.outboxLoaded && state.access === "authorized") await loadOutbox();
     if (state.tab === "customers" && !state.customersLoaded && state.access === "authorized") await loadCustomers("");
+    if (state.tab === "attendance" && !state.attendanceQueueLoaded && state.access === "authorized") await loadAttendance();
     if (state.tab === "flows" && !state.metaChannels[state.flowChannel] && state.access === "authorized") await refreshMetaFlows();
   } else if (action === "customer-new") {
     state.customerEditor = emptyCustomer();
@@ -1225,6 +1398,50 @@ appRoot.addEventListener("click", async (event) => {
     await loadOrders();
   } else if (action === "outbox-refresh") {
     await loadOutbox();
+  } else if (action === "attendance-refresh") {
+    await loadAttendance();
+  } else if (action === "attendance-channel") {
+    const channel = target.dataset.channel;
+    if (channel === "0975" || channel === "1018") await selectAttendanceChannel(channel);
+  } else if (action === "attendance-open") {
+    await openAttendanceConversation(id);
+  } else if ((action === "attendance-takeover" || action === "attendance-resume") && state.session) {
+    const account = state.attendanceAccounts.find((item) => attendanceChannelFromPhone(item.phone_e164) === state.attendanceChannel);
+    if (!account) return;
+    if (action === "attendance-resume" && !window.confirm("Liberar a conversa para a ANA? O atendimento automático poderá responder conforme as regras e os gates ativos.")) return;
+    state.busy = true;
+    state.attendanceNotice = action === "attendance-resume" ? "Retomando atendimento ANA…" : "Assumindo a conversa…";
+    render();
+    try {
+      const result = await setAttendanceMode(state.session.access_token, id, account.id, action === "attendance-resume" ? "ai" : "human");
+      if (result.ok === false) throw new AdminApiError(String(result.error ?? "O modo não foi alterado."));
+      await refreshAttendanceConversation();
+      state.attendanceNotice = action === "attendance-resume" ? "A conversa foi liberada para a ANA." : "Conversa atribuída ao atendimento humano.";
+    } catch (error) {
+      state.attendanceNotice = error instanceof AdminApiError ? error.message : "Não foi possível alterar o modo da conversa.";
+    } finally {
+      state.busy = false;
+      render();
+    }
+  } else if (action === "attendance-toggle-ana" && state.session) {
+    const accountId = target.dataset.account ?? "";
+    const enabled = target.dataset.enabled === "true";
+    const selectedAccount = state.attendanceAccounts.find((item) => item.id === accountId && attendanceChannelFromPhone(item.phone_e164) === state.attendanceChannel);
+    if (!selectedAccount || !window.confirm(`${enabled ? "Ativar" : "Desligar"} a ANA para o número final ${state.attendanceChannel}?`)) return;
+    state.busy = true;
+    state.attendanceNotice = "Atualizando o canal ANA…";
+    render();
+    try {
+      const result = await setAnaChannel(state.session.access_token, accountId, enabled);
+      if (result.ok === false) throw new AdminApiError(String(result.error ?? "O canal ANA não foi alterado."));
+      state.attendanceAna = await getAnaAdmin(state.session.access_token);
+      state.attendanceNotice = `ANA ${enabled ? "ativada" : "desligada"} para o número final ${state.attendanceChannel}.`;
+    } catch (error) {
+      state.attendanceNotice = error instanceof AdminApiError ? error.message : "Não foi possível alterar o canal ANA.";
+    } finally {
+      state.busy = false;
+      render();
+    }
   } else if (action === "order-open") {
     await openOrder(id);
   } else if (action === "orders-back") {
@@ -1252,7 +1469,9 @@ appRoot.addEventListener("click", async (event) => {
       state.selectedOrder = await completeOrderSeparation(state.session.access_token, id, Number(target.dataset.revision));
       const result = await getOrders(state.session.access_token);
       state.orders = result.orders;
-      state.notice = "Separação concluída. A venda continua bloqueada durante o desenvolvimento.";
+      state.notice = state.selectedOrder.blingSaleId
+        ? `Separação concluída e venda ${state.selectedOrder.blingSaleId} confirmada no Bling. A NF-e exige confirmação do operador.`
+        : `Separação concluída. Estado da venda no Bling: ${state.selectedOrder.integrationJob?.status ?? "em processamento"}.`;
       state.noticeType = "success";
     } catch (error) {
       state.notice = error instanceof AdminApiError ? error.message : "Não foi possível concluir a separação.";
@@ -1282,6 +1501,40 @@ appRoot.addEventListener("click", async (event) => {
         state.reconciliationRequestKeys.delete(id);
       }
       state.notice = error instanceof AdminApiError ? error.message : "Não foi possível consultar a referência Bling.";
+      state.noticeType = "error";
+    } finally {
+      state.busy = false;
+      render();
+    }
+  } else if (action === "order-bling-create" && state.session && state.selectedOrder) {
+    const confirmation = window.prompt("Para tentar criar a venda, digite CRIAR_VENDA:");
+    if (confirmation !== "CRIAR_VENDA") return;
+    state.busy = true;
+    render();
+    try {
+      state.selectedOrder = await createOrderBlingSale(state.session.access_token, id, Number(target.dataset.revision));
+      state.notice = state.selectedOrder.blingSaleId
+        ? `Venda ${state.selectedOrder.blingSaleId} confirmada no Bling.`
+        : `A venda não foi confirmada. Estado: ${state.selectedOrder.integrationJob?.status ?? "desconhecido"}.`;
+      state.noticeType = state.selectedOrder.blingSaleId ? "success" : "error";
+    } catch (error) {
+      state.notice = error instanceof AdminApiError ? error.message : "Não foi possível tentar a venda no Bling.";
+      state.noticeType = "error";
+    } finally {
+      state.busy = false;
+      render();
+    }
+  } else if (action === "order-invoice-generate" && state.session && state.selectedOrder) {
+    const confirmation = window.prompt("A NF-e será solicitada ao Bling. Digite EMITIR_NFE para confirmar:");
+    if (confirmation !== "EMITIR_NFE") return;
+    state.busy = true;
+    render();
+    try {
+      state.selectedOrder = await generateOrderBlingInvoice(state.session.access_token, id, Number(target.dataset.revision));
+      state.notice = `NF-e no Bling: ${invoiceStatusLabel(state.selectedOrder.invoiceStatus)}.`;
+      state.noticeType = state.selectedOrder.invoiceStatus === "authorized" ? "success" : "info";
+    } catch (error) {
+      state.notice = error instanceof AdminApiError ? error.message : "Não foi possível solicitar ou consultar a NF-e no Bling.";
       state.noticeType = "error";
     } finally {
       state.busy = false;

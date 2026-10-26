@@ -52,3 +52,13 @@ Quando a falta altera o total, o pedido fica em `attention` aguardando novo acei
 - Os fluxos administrativos de fila, atribuição, separação e ajuste trabalham com revisão otimista, catálogo fixado e eventos idempotentes; as respostas não expõem o snapshot pessoal bruto.
 - OAuth Bling e a rota de reconciliação existem no servidor e exigem sessão/allowlist; ambas as flags permanecem `false` por padrão. A reconciliação usa somente GET, registra resultado redigido com chave idempotente/lease e nunca libera `create_sale`.
 - O critério local da Rodada 6 está atendido. O projeto não está pronto para operação: falta decidir valores/datas de vencimento e o mapeamento da forma de pagamento, implementar e homologar a escrita da venda, fechar NF-e e despacho, e validar a ligação dos Flows. Esses itens passam como gates explícitos para a Rodada 7; nenhuma API real, conta ou migration foi acionada nesta rodada.
+
+## Atualização vigente — integração compartilhada local (26/10/2026)
+
+Esta atualização substitui as afirmações acima de que a escrita Bling continua bloqueada no código. Atendendo à orientação posterior do usuário, a função nova usa em server-side apenas a ponte allowlisted para credenciais/lock/refresh-rate já mantidos pela integração Bling ativa; nenhum valor secreto é lido para o cliente ou gravado em arquivo. O domínio, validação, payload, jobs, idempotência e interface são novos.
+
+Após concluir a separação, `finishSeparation` tenta criar a venda. Primeiro consulta todas as páginas por `numeroLoja`, confere o detalhe e só então envia o POST; em seguida lê o pedido criado para verificar os campos principais. Timeout ou divergência fica `unknown`, sem repetição automática. A ação manual de recuperação também exige confirmação `CRIAR_VENDA` e refaz reconciliação antes de escrever. Estoque negativo não é bloqueio.
+
+A solicitação de NF-e está disponível após venda confirmada e exige a confirmação literal `EMITIR_NFE`. A API procura documento existente antes do POST, associa ID/situação e apresenta número/DANFE; se um ID já estiver armazenado, o botão apenas lê esse documento. Autorização fiscal automática, envio de e-mail e operações de despacho/entrega não são executados. Esta rodada não chamou o Bling nem aplicou migration/deploy; homologação real da criação e da NF-e ainda é etapa operacional.
+
+Verificação local no código: `pnpm build` passou. `git diff --check` deve ser repetido após a revisão do diff; nenhum teste automatizado foi criado ou executado.

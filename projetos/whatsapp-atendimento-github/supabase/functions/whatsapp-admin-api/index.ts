@@ -115,6 +115,140 @@ async function authorize(request: Request): Promise<{ operator: Operator; header
   return { operator, headers };
 }
 
+function supabaseFunctionUrl(slug: string): URL {
+  const base = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "");
+  if (!base || !/^[a-z0-9-]+$/.test(slug)) throw new HttpError(503, "O atendimento não está configurado no servidor.");
+  return new URL(`${base}/functions/v1/${slug}`);
+}
+
+async function forwardSupabaseFunction(
+  request: Request,
+  slug: string,
+  method: "GET" | "POST",
+  query?: URLSearchParams,
+  body?: unknown,
+): Promise<{ payload: unknown; status: number }> {
+  const accessToken = request.headers.get("Authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
+  const publishableKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY");
+  if (!accessToken || !publishableKey) throw new HttpError(503, "O atendimento não está configurado no servidor.");
+  const endpoint = supabaseFunctionUrl(slug);
+  if (query) endpoint.search = query.toString();
+  const headers = new Headers({ Authorization: `Bearer ${accessToken}`, apikey: publishableKey });
+  if (body !== undefined) headers.set("Content-Type", "application/json");
+  const response = await fetch(endpoint, {
+    method,
+    headers,
+    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+    signal: AbortSignal.timeout(20_000),
+  });
+  const raw = await response.text();
+  let payload: unknown = {};
+  try { payload = raw ? JSON.parse(raw) : {}; } catch { payload = { error: "attendance_backend_invalid_response" }; }
+  return { payload, status: response.status };
+}
+
+async function requireSupportedAttendanceAccount(request: Request, accountId: string): Promise<"0975" | "1018"> {
+  if (!ORDER_ID.test(accountId)) throw new HttpError(400, "Selecione um canal WhatsApp válido.");
+  const { payload, status } = await forwardSupabaseFunction(request, "admin-whatsapp-ops-v1", "GET", new URLSearchParams({ action: "accounts" }));
+  if (status < 200 || status >= 300 || !isRecord(payload) || !Array.isArray(payload.items)) {
+    throw new HttpError(502, "Não foi possível validar o canal WhatsApp.");
+  }
+  const account = payload.items.find((item) => isRecord(item) && item.id === accountId);
+  if (!isRecord(account) || typeof account.phone_e164 !== "string") throw new HttpError(404, "Canal WhatsApp não encontrado.");
+  const digits = account.phone_e164.replace(/\D/g, "");
+  if (digits.endsWith("0975")) return "0975";
+  if (digits.endsWith("1018")) return "1018";
+  throw new HttpError(403, "A Central deste Admin atende somente os canais 0975 e 1018.");
+}
+
+async function requireSupportedAttendanceConversation(
+  request: Request,
+  conversationId: string,
+  expectedAccountId?: string,
+): Promise<{ payload: unknown; status: number; accountId: string }> {
+  const query = new URLSearchParams({ action: "conversation", conversation_id: conversationId, limit: "50" });
+  const forwarded = await forwardSupabaseFunction(request, "admin-whatsapp-ops-v1", "GET", query);
+  if (forwarded.status < 200 || forwarded.status >= 300 || !isRecord(forwarded.payload) || !isRecord(forwarded.payload.conversation)) {
+    throw new HttpError(forwarded.status === 404 ? 404 : 502, "A conversa não pôde ser validada.");
+  }
+  const accountId = forwarded.payload.conversation.whatsapp_account_id;
+  if (typeof accountId !== "string") throw new HttpError(502, "O canal da conversa não foi informado pelo serviço.");
+  await requireSupportedAttendanceAccount(request, accountId);
+  if (expectedAccountId && accountId !== expectedAccountId) throw new HttpError(403, "A conversa pertence a outro canal selecionado.");
+  return { ...forwarded, accountId };
+}
+
+async function proxyAttendanceOperation(request: Request, body: Record<string, unknown>) {
+  const action = typeof body.action === "string" ? body.action : "";
+  const conversationId = typeof body.conversation_id === "string" && ORDER_ID.test(body.conversation_id) ? body.conversation_id : "";
+  const accountId = typeof body.accountId === "string" ? body.accountId : "";
+  if (action !== "send_text" || !conversationId || !accountId) throw new HttpError(400, "A operação de atendimento é inválida.");
+  const text = typeof body.text === "string" ? body.text.trim() : "";
+  const idempotencyKey = typeof body.idempotency_key === "string" ? body.idempotency_key.trim() : "";
+  if (!text || text.length > 4000 || !/^[A-Za-z0-9:_-]{8,160}$/.test(idempotencyKey)) {
+    throw new HttpError(400, "Revise o texto e a chave da resposta.");
+  }
+  await requireSupportedAttendanceConversation(request, conversationId, accountId);
+  const forwarded = await forwardSupabaseFunction(
+    request,
+    "admin-whatsapp-ops-v1",
+    "POST",
+    new URLSearchParams({ action }),
+    { conversation_id: conversationId, text, idempotency_key: idempotencyKey },
+  );
+  return forwarded;
+}
+
+async function updateAttendanceMode(request: Request, body: Record<string, unknown>) {
+  const conversationId = body.conversationId;
+  const mode = body.mode;
+  const accountId = body.accountId;
+  if (typeof conversationId !== "string" || !ORDER_ID.test(conversationId) || typeof accountId !== "string"
+    || !ORDER_ID.test(accountId) || (mode !== "human" && mode !== "ai")) {
+    throw new HttpError(400, "A alteração do modo de atendimento é inválida.");
+  }
+  await requireSupportedAttendanceConversation(request, conversationId, accountId);
+  const accessToken = request.headers.get("Authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
+  const publishableKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY");
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "");
+  if (!accessToken || !publishableKey || !supabaseUrl) throw new HttpError(503, "O controle de atendimento não está configurado.");
+  const rpc = mode === "human" ? "ops2_admin_attendance_takeover_v1" : "ops2_admin_attendance_resume_ai_v1";
+  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${rpc}`, {
+    method: "POST",
+    headers: {
+      apikey: publishableKey,
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ p_conversation_id: conversationId }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (response.status === 401 || response.status === 403) throw new HttpError(response.status, "Sua conta não tem permissão para alterar o modo desta conversa.");
+  if (!response.ok) throw new HttpError(502, "O estado de atendimento não pôde ser atualizado.");
+  return payload;
+}
+
+async function proxyAnaAdmin(request: Request, body: Record<string, unknown>) {
+  const action = body.action;
+  if (action !== "admin_load" && action !== "admin_set_channel") throw new HttpError(400, "A ação da ANA é inválida.");
+  if (action === "admin_load") {
+    return await forwardSupabaseFunction(request, "admin-whatsapp-ana-preview-v1", "POST", undefined, { action });
+  }
+  const accountId = body.whatsapp_account_id;
+  const enabled = body.enabled;
+  if (typeof accountId !== "string" || !ORDER_ID.test(accountId) || typeof enabled !== "boolean") {
+    throw new HttpError(400, "A alteração do canal ANA é inválida.");
+  }
+  await requireSupportedAttendanceAccount(request, accountId);
+  const forwarded = await forwardSupabaseFunction(request, "admin-whatsapp-ana-preview-v1", "POST", undefined, {
+    action,
+    whatsapp_account_id: accountId,
+    enabled,
+  });
+  return forwarded;
+}
+
 function base64Url(bytes: Uint8Array): string {
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
@@ -516,7 +650,7 @@ interface DbOrder {
   id: string; status: string; total_cents: number; snapshot: Record<string, unknown>; channel: string;
   revision: number; assigned_operator_id: string | null; customer_acceptance_status: string;
   invoice_status: string; invoice_id: number | null; attention_code: string | null;
-  created_at: string; separation_completed_at: string | null; bling_sale_reference: string | null;
+  created_at: string; separation_completed_at: string | null; bling_sale_reference: string | null; bling_sale_id: number | null;
 }
 
 interface DbOrderItem {
@@ -787,10 +921,6 @@ function isRecentReconciliationLease(startedAt: unknown): boolean {
 }
 
 async function reconcileOrderBlingSale(orderId: string, operatorId: string, body: Record<string, unknown>) {
-  if (Deno.env.get("BLING_SALE_RECONCILIATION_ENABLED") !== "true") {
-    throw new HttpError(503, "A consulta de reconciliação Bling está desabilitada neste ambiente.");
-  }
-  blingOAuthConfig();
   if (typeof body.revision !== "number" || !Number.isSafeInteger(body.revision)) {
     throw new HttpError(400, "A revisão do pedido é obrigatória.");
   }
@@ -906,7 +1036,17 @@ async function reconcileOrderBlingSale(orderId: string, operatorId: string, body
 
   let result: { outcome: BlingSaleReconciliationOutcome; externalId: string | null };
   try {
-    result = await reconcileBlingSaleByReference(lookup.reference, lookup.candidate);
+    const token = await getSharedBlingAccessToken();
+    const remote = await lookupSharedBlingSale(lookup.reference, token);
+    const candidateMatches = remote.ids.length === 1 && remote.detail
+      ? sharedBlingSaleMatches(remote.detail, lookup.candidate)
+      : null;
+    const outcome = classifyBlingSaleReconciliation({
+      lookupComplete: remote.complete,
+      matchingIds: remote.ids,
+      candidateMatches,
+    });
+    result = { outcome, externalId: outcome === "matched" ? String(remote.ids[0]) : null };
   } catch {
     result = { outcome: "unknown", externalId: null };
   }
@@ -933,8 +1073,19 @@ async function reconcileOrderBlingSale(orderId: string, operatorId: string, body
       && latest.requestSha256 === lookup.requestSha256) {
       const reconciliation = { ...latest, status: "complete", outcome, externalId, completedAt };
       await tx`update whatsapp_atendimento.integration_jobs
-        set result_summary = ${tx.json({ ...job.result_summary, reconciliation })}, updated_at = now()
+        set result_summary = ${tx.json({ ...job.result_summary, blockers: outcome === "matched" ? [] : job.result_summary.blockers, reconciliation })}, updated_at = now()
         where order_id = ${orderId} and operation = 'create_sale'`;
+    }
+    if (currentCandidate && outcome === "matched" && externalId && /^\d+$/.test(externalId)) {
+      await tx`update whatsapp_atendimento.orders
+        set bling_sale_id = ${Number(externalId)}, attention_code = 'bling_invoice_pending', updated_at = now()
+        where id = ${orderId} and status = 'awaiting_invoice'`;
+      await tx`update whatsapp_atendimento.integration_jobs
+        set status = 'succeeded', error_code = null, external_id = ${externalId}, finished_at = now(), updated_at = now()
+        where order_id = ${orderId} and operation = 'create_sale'`;
+      await tx`insert into whatsapp_atendimento.integration_jobs (order_id, operation, idempotency_key, status, error_code, result_summary)
+        values (${orderId}, 'generate_invoice', ${`${orderId}:generate_invoice`}, 'blocked', 'BLING_NFE_HUMAN_CONFIRMATION_REQUIRED', ${tx.json({ externalReference: lookup.reference, saleId: Number(externalId) })})
+        on conflict (order_id, operation) do nothing`;
     }
   });
   return orderDetail(orderId);
@@ -1053,11 +1204,16 @@ function orderPresentation(order: DbOrder, items: DbOrderItem[] = []) {
     customerAcceptanceStatus: order.customer_acceptance_status,
     invoiceStatus: order.invoice_status,
     invoiceId: order.invoice_id,
+    blingSaleId: order.bling_sale_id === null ? null : Number(order.bling_sale_id),
     attentionCode: order.attention_code,
     separationCompletedAt: order.separation_completed_at,
     blingContactId: null as number | null,
     blingContactVerifiedAt: null as string | null,
     blingSaleReference: order.bling_sale_reference,
+    invoiceJob: null as {
+      status: string; errorCode: string | null; invoiceNumber: string | null;
+      invoiceStatus: "authorized" | "pending" | "rejected" | "unknown" | null; danfeUrl: string | null;
+    } | null,
     integrationJob: null as {
       operation: string; status: string; errorCode: string | null; blockers: string[];
       commercialTotals: BlingCommercialTotals | null;
@@ -1171,12 +1327,28 @@ async function orderDetail(orderId: string) {
   }
   const jobs = await db<{
     operation: string; status: string; error_code: string | null; request_sha256: string | null; result_summary: Record<string, unknown>;
-  }>`select operation, status, error_code, request_sha256, result_summary from whatsapp_atendimento.integration_jobs where order_id = ${orderId} order by created_at desc limit 1`;
-  if (jobs[0]) {
-    const blockers = Array.isArray(jobs[0].result_summary.blockers)
-      ? jobs[0].result_summary.blockers.filter((value): value is string => typeof value === "string")
+  }>`select operation, status, error_code, request_sha256, result_summary from whatsapp_atendimento.integration_jobs where order_id = ${orderId} and operation in ('create_sale', 'generate_invoice') order by created_at desc`;
+  const saleJob = jobs.find((job) => job.operation === "create_sale");
+  const invoiceJob = jobs.find((job) => job.operation === "generate_invoice");
+  if (invoiceJob) {
+    const rawInvoiceStatus = invoiceJob.result_summary.invoiceStatus;
+    detail.invoiceJob = {
+      status: invoiceJob.status,
+      errorCode: invoiceJob.error_code,
+      invoiceNumber: typeof invoiceJob.result_summary.invoiceNumber === "string" ? invoiceJob.result_summary.invoiceNumber : null,
+      invoiceStatus: ["authorized", "pending", "rejected", "unknown"].includes(String(rawInvoiceStatus))
+        ? rawInvoiceStatus as "authorized" | "pending" | "rejected" | "unknown"
+        : null,
+      danfeUrl: typeof invoiceJob.result_summary.danfeUrl === "string"
+        && /^https:\/\/([a-z0-9-]+\.)*bling\.com\.br\//i.test(invoiceJob.result_summary.danfeUrl)
+        ? invoiceJob.result_summary.danfeUrl : null,
+    };
+  }
+  if (saleJob) {
+    const blockers = Array.isArray(saleJob.result_summary.blockers)
+      ? saleJob.result_summary.blockers.filter((value): value is string => typeof value === "string")
       : [];
-    const rawTotals = jobs[0].result_summary.commercialTotals;
+    const rawTotals = saleJob.result_summary.commercialTotals;
     const commercialTotals = isRecord(rawTotals)
       && typeof rawTotals.lineTotalCents === "number" && Number.isSafeInteger(rawTotals.lineTotalCents)
       && typeof rawTotals.acceptedTotalCents === "number" && Number.isSafeInteger(rawTotals.acceptedTotalCents)
@@ -1186,7 +1358,7 @@ async function orderDetail(orderId: string) {
       && typeof rawTotals.balances === "boolean"
       ? rawTotals as unknown as BlingCommercialTotals
       : null;
-    const rawPreview = jobs[0].result_summary.salePreview;
+    const rawPreview = saleJob.result_summary.salePreview;
     const salePreview = isRecord(rawPreview)
       && typeof rawPreview.externalReference === "string"
       && typeof rawPreview.saleDate === "string"
@@ -1197,10 +1369,10 @@ async function orderDetail(orderId: string) {
         saleDate: rawPreview.saleDate,
         itemCount: rawPreview.itemCount,
         paymentObservation: rawPreview.paymentObservation,
-        fingerprintReady: /^[0-9a-f]{64}$/.test(jobs[0].request_sha256 ?? ""),
+      fingerprintReady: /^[0-9a-f]{64}$/.test(saleJob.request_sha256 ?? ""),
       }
       : null;
-    const rawReconciliation = jobs[0].result_summary.reconciliation;
+    const rawReconciliation = saleJob.result_summary.reconciliation;
     const reconciliation = isRecord(rawReconciliation)
       && (rawReconciliation.status === "running" || rawReconciliation.status === "complete")
       ? {
@@ -1217,9 +1389,8 @@ async function orderDetail(orderId: string) {
       }
       : null;
     detail.integrationJob = {
-      operation: jobs[0].operation, status: jobs[0].status, errorCode: jobs[0].error_code, blockers, commercialTotals, salePreview,
-      reconciliationEnabled: Deno.env.get("BLING_SALE_RECONCILIATION_ENABLED") === "true"
-        && Deno.env.get("BLING_OAUTH_ENABLED") === "true",
+      operation: saleJob.operation, status: saleJob.status, errorCode: saleJob.error_code, blockers, commercialTotals, salePreview,
+      reconciliationEnabled: true,
       reconciliation,
     };
   }
@@ -1405,6 +1576,102 @@ async function getBlingAccessToken(): Promise<string> {
     `;
     return renewed.access_token;
   });
+}
+
+async function sharedBlingRpc<T = unknown>(name: string, args: Record<string, unknown> = {}): Promise<T> {
+  const base = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!base || !serviceKey || !/^(get_bling_api_credentials_v1|claim_bling_hub_oauth_lock_v2|release_bling_hub_oauth_lock_v2|set_bling_api_refresh_token_v1|reserve_bling_hub_rate_slot_v2)$/.test(name)) {
+    throw new HttpError(503, "A conexão Bling compartilhada não está disponível no servidor.");
+  }
+  const response = await fetch(`${base}/rest/v1/rpc/${name}`, {
+    method: "POST",
+    headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify(args),
+    signal: AbortSignal.timeout(12_000),
+  });
+  if (!response.ok) throw new HttpError(503, "A conexão Bling existente não pôde ser consultada.");
+  return await response.json() as T;
+}
+
+async function getSharedBlingAccessToken(): Promise<string> {
+  const owner = crypto.randomUUID();
+  let locked = false;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const claimed = await sharedBlingRpc<boolean>("claim_bling_hub_oauth_lock_v2", { p_owner: owner, p_ttl_seconds: 90 });
+    if (claimed === true) { locked = true; break; }
+    if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, [800, 1800, 3200][attempt]));
+  }
+  if (!locked) throw new HttpError(503, "A renovação segura da sessão Bling está ocupada. Tente novamente.");
+  try {
+    const raw = await sharedBlingRpc<unknown>("get_bling_api_credentials_v1");
+    if (!isRecord(raw)) throw new HttpError(503, "A conexão Bling compartilhada está incompleta.");
+    const clientId = typeof raw.client_id === "string" ? raw.client_id.trim() : "";
+    const clientSecret = typeof raw.client_secret === "string" ? raw.client_secret.trim() : "";
+    const refreshToken = typeof raw.refresh_token === "string" ? raw.refresh_token.trim() : "";
+    if (!clientId || !clientSecret || !refreshToken) throw new HttpError(503, "A conexão Bling compartilhada está incompleta.");
+    const authorization = `Basic ${btoa(`${clientId}:${clientSecret}`)}`;
+    const endpoints = ["https://api.bling.com.br/oauth/token", BLING_TOKEN_URL];
+    let tokenResult: Record<string, unknown> | null = null;
+    let lastStatus = 0;
+    for (const endpoint of endpoints) {
+      let response: Response;
+      try {
+        response = await fetch(endpoint, {
+          method: "POST",
+          headers: { Authorization: authorization, "Content-Type": "application/x-www-form-urlencoded", Accept: "1.0", "enable-jwt": "1" },
+          body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: refreshToken }),
+          signal: AbortSignal.timeout(10_000),
+        });
+      } catch { throw new HttpError(503, "O Bling não respondeu à renovação do token."); }
+      lastStatus = response.status;
+      const parsed = await response.json().catch(() => ({}));
+      if (response.ok && isRecord(parsed) && typeof parsed.access_token === "string" && parsed.access_token) {
+        tokenResult = parsed;
+        break;
+      }
+      if (![403, 404, 405].includes(response.status)) break;
+    }
+    if (!tokenResult) {
+      void lastStatus;
+      throw new HttpError(503, "O Bling não autorizou a renovação da conexão existente.");
+    }
+    const rotated = typeof tokenResult.refresh_token === "string" ? tokenResult.refresh_token.trim() : "";
+    if (rotated && rotated !== refreshToken) {
+      await sharedBlingRpc("set_bling_api_refresh_token_v1", { p_refresh_token: rotated });
+    }
+    return String(tokenResult.access_token);
+  } finally {
+    await sharedBlingRpc("release_bling_hub_oauth_lock_v2", { p_owner: owner }).catch(() => undefined);
+  }
+}
+
+async function sharedBlingRequest(path: string, method: "GET" | "POST", body?: unknown, accessToken?: string): Promise<{ status: number; data: unknown }> {
+  const endpoint = new URL(path.replace(/^\/+/, ""), `${BLING_API}/`);
+  if (endpoint.origin !== "https://api.bling.com.br" || !endpoint.pathname.startsWith("/Api/v3/")) {
+    throw new HttpError(400, "O caminho solicitado ao Bling não é permitido.");
+  }
+  const wait = await sharedBlingRpc<number>("reserve_bling_hub_rate_slot_v2");
+  if (Number(wait) > 0) await new Promise((resolve) => setTimeout(resolve, Math.min(Number(wait), 10_000)));
+  const token = accessToken ?? await getSharedBlingAccessToken();
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+        "enable-jwt": "1",
+        ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+      },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      signal: AbortSignal.timeout(method === "GET" ? 10_000 : 15_000),
+    });
+  } catch { throw new HttpError(502, "O Bling não respondeu à operação solicitada."); }
+  const raw = await response.text();
+  let data: unknown = {};
+  try { data = raw ? JSON.parse(raw) : {}; } catch { data = {}; }
+  return { status: response.status, data };
 }
 
 /** Read-only server-side client. Keep order writes behind their own preflight and idempotent job handlers. */
@@ -1658,17 +1925,6 @@ async function saveOrderBlingContact(orderId: string, operatorId: string, body: 
           and j.operation = 'create_sale' and j.status = 'blocked' and j.error_code = 'BLING_PREFLIGHT_REQUIRED'
         order by o.created_at, o.id
       `;
-      const previewBlockers = new Set([
-        "BLING_CUSTOMER_CONTACT_MAPPING_MISSING", "BLING_SALE_REFERENCE_OR_DATE_INVALID",
-        "BLING_SALE_ADDRESS_INCOMPLETE", "BLING_SALE_PAYMENT_METHOD_UNSUPPORTED",
-        "BLING_SALE_TOTALS_OR_ITEMS_INVALID", "BLING_SALE_ITEM_MAPPING_INVALID",
-        "BLING_PAYMENT_FORM_MAPPING_MISSING", "BLING_DUE_DATE_POLICY_MISSING",
-      ]);
-      const retainedBlockers = new Set([
-        "BLING_OAUTH_CREDENTIAL_MISSING", "BLING_TOTAL_RECONCILIATION_INVALID",
-        "BLING_CONNECTOR_DISABLED_IN_DEVELOPMENT", "BLING_BASKET_ADJUSTMENT_RULE_UNRESOLVED",
-        "BLING_SALE_CONTRACT_REVIEW_REQUIRED",
-      ]);
       for (const affectedOrder of affectedOrders) {
         const affectedItems = await tx<DbOrderItem>`
           select * from whatsapp_atendimento.order_items where order_id = ${affectedOrder.id} order by position
@@ -1688,13 +1944,7 @@ async function saveOrderBlingContact(orderId: string, operatorId: string, body: 
           await tx`update whatsapp_atendimento.orders set bling_sale_reference = ${reference} where id = ${affectedOrder.id}`;
         }
         const preview = await buildBlingSalePreview(affectedOrder, affectedItems, blingContactId, totals);
-        const previousBlockers = Array.isArray(affectedOrder.result_summary.blockers)
-          ? affectedOrder.result_summary.blockers.filter((value): value is string => typeof value === "string")
-          : [];
-        const blockers = [...new Set([
-          ...previousBlockers.filter((value) => retainedBlockers.has(value) && !previewBlockers.has(value)),
-          ...preview.blockers,
-        ])];
+        const blockers = [...new Set(preview.blockers)];
         const refreshedSummary = { blockers, commercialTotals: totals, salePreview: preview.summary };
         await tx`
           update whatsapp_atendimento.integration_jobs as current_job
@@ -1741,7 +1991,6 @@ async function finishSeparation(orderId: string, operatorId: string, body: Recor
           select customer_id, bling_contact_id, verified_at from whatsapp_atendimento.customer_bling_contacts where customer_id = ${customerId}
         `
       : [];
-    const credential = await tx<{ provider: string }>`select provider from whatsapp_atendimento.integration_credentials where provider = 'bling' and expires_at > now()`;
     const itemLineTotals = items.map((item) => Number(item.line_total_cents));
     const lineTotalCents = itemLineTotals.reduce((sum, value) => sum + value, 0);
     const acceptedTotalCents = Number(order.total_cents);
@@ -1757,21 +2006,414 @@ async function finishSeparation(orderId: string, operatorId: string, body: Recor
     );
     const blockers = [
       ...(!contactMapping.length || !Number.isSafeInteger(Number(contactMapping[0]?.bling_contact_id)) || !contactMapping[0]?.verified_at ? ["BLING_CUSTOMER_CONTACT_MAPPING_MISSING"] : []),
-      ...(!credential.length ? ["BLING_OAUTH_CREDENTIAL_MISSING"] : []),
       ...(!commercialTotals?.balances ? ["BLING_TOTAL_RECONCILIATION_INVALID"] : []),
       ...salePreview.blockers,
-      "BLING_SALE_CONTRACT_REVIEW_REQUIRED",
-      "BLING_CONNECTOR_DISABLED_IN_DEVELOPMENT",
     ];
-    await tx`update whatsapp_atendimento.orders set status = 'awaiting_invoice', separation_completed_at = now(), bling_sale_reference = ${saleReference}, revision = revision + 1, attention_code = 'bling_preflight_required', updated_at = now() where id = ${orderId}`;
+    const uniqueBlockers = [...new Set(blockers)];
+    const jobStatus = uniqueBlockers.length ? "blocked" : "pending";
+    const errorCode = uniqueBlockers.length ? "BLING_PREFLIGHT_REQUIRED" : null;
+    await tx`update whatsapp_atendimento.orders set status = 'awaiting_invoice', separation_completed_at = now(), bling_sale_reference = ${saleReference}, revision = revision + 1, attention_code = ${uniqueBlockers.length ? "bling_preflight_required" : "bling_sale_pending"}, updated_at = now() where id = ${orderId}`;
     await tx`
       insert into whatsapp_atendimento.integration_jobs (order_id, operation, idempotency_key, status, error_code, request_sha256, result_summary)
-      values (${orderId}, 'create_sale', ${`${orderId}:create_sale`}, 'blocked', 'BLING_PREFLIGHT_REQUIRED', ${salePreview.requestSha256}, ${tx.json({ blockers: [...new Set(blockers)], commercialTotals, salePreview: salePreview.summary })})
+      values (${orderId}, 'create_sale', ${`${orderId}:create_sale`}, ${jobStatus}, ${errorCode}, ${salePreview.requestSha256}, ${tx.json({ blockers: uniqueBlockers, commercialTotals, salePreview: salePreview.summary })})
       on conflict (order_id, operation) do nothing
     `;
-    await tx`insert into whatsapp_atendimento.order_events (order_id, event_key, event_type, event_data) values (${orderId}, ${`${orderId}:separation-complete:${order.revision + 1}`}, 'separation_completed', ${tx.json({ operatorId, integrationBlocked: true })}) on conflict (event_key) do nothing`;
+    await tx`insert into whatsapp_atendimento.order_events (order_id, event_key, event_type, event_data) values (${orderId}, ${`${orderId}:separation-complete:${order.revision + 1}`}, 'separation_completed', ${tx.json({ operatorId, integrationBlocked: uniqueBlockers.length > 0 })}) on conflict (event_key) do nothing`;
   });
+  await createBlingSaleForOrder(orderId);
   return orderDetail(orderId);
+}
+
+async function lookupSharedBlingSale(reference: string, token: string): Promise<BlingSaleReferenceLookup> {
+  if (!/^WA-[0-9a-f]{32}$/.test(reference)) return { complete: false, ids: [], detail: null };
+  const pageSize = 100;
+  const matches = new Set<number>();
+  let complete = false;
+  for (let page = 1; page <= 25; page += 1) {
+    const query = new URLSearchParams({ pagina: String(page), limite: String(pageSize) });
+    query.append("numerosLojas[]", reference);
+    let result: { status: number; data: unknown };
+    try { result = await sharedBlingRequest(`/pedidos/vendas?${query}`, "GET", undefined, token); }
+    catch { return { complete: false, ids: [...matches], detail: null }; }
+    if (result.status < 200 || result.status >= 300 || !isRecord(result.data) || !Array.isArray(result.data.data)) {
+      return { complete: false, ids: [...matches], detail: null };
+    }
+    for (const item of result.data.data) {
+      if (!isRecord(item) || item.numeroLoja !== reference) continue;
+      const id = Number(item.id);
+      if (!Number.isSafeInteger(id) || id <= 0) return { complete: false, ids: [...matches], detail: null };
+      matches.add(id);
+      if (matches.size > 1) return { complete: false, ids: [...matches], detail: null };
+    }
+    if (result.data.data.length < pageSize) { complete = true; break; }
+  }
+  const ids = [...matches];
+  if (!complete || ids.length !== 1) return { complete, ids, detail: null };
+  const detail = await sharedBlingRequest(`/pedidos/vendas/${ids[0]}`, "GET", undefined, token).catch(() => null);
+  if (!detail || detail.status < 200 || detail.status >= 300 || !isRecord(detail.data) || !isRecord(detail.data.data)
+    || detail.data.data.numeroLoja !== reference) return { complete: false, ids, detail: null };
+  return { complete: true, ids, detail: detail.data.data };
+}
+
+function sharedBlingSaleMatches(value: Record<string, unknown>, candidate: BlingSaleRequestPreview): boolean {
+  const remote = isRecord(value.data) ? value.data : value;
+  if (remote.numeroLoja !== candidate.numeroLoja || remote.data !== candidate.data) return false;
+  const contact = isRecord(remote.contato) ? Number(remote.contato.id) : NaN;
+  if (contact !== candidate.contato.id || moneyToCents(remote.total) !== moneyToCents(candidate.total)) return false;
+  if (moneyToCents(remote.totalProdutos) !== moneyToCents(candidate.totalProdutos)) return false;
+  const expectedItems = [...candidate.itens];
+  if (!Array.isArray(remote.itens) || remote.itens.length !== expectedItems.length) return false;
+  for (const item of remote.itens) {
+    if (!isRecord(item) || !isRecord(item.produto)) return false;
+    const product = item.produto;
+    if (!isRecord(product)) return false;
+    const index = expectedItems.findIndex((expected) => Number(product.id) === expected.produto.id
+      && String(item.codigo ?? "") === expected.codigo
+      && String(item.descricao ?? "") === expected.descricao
+      && Number(item.quantidade) === expected.quantidade
+      && moneyToCents(item.valor) === moneyToCents(expected.valor));
+    if (index < 0) return false;
+    expectedItems.splice(index, 1);
+  }
+  return expectedItems.length === 0;
+}
+
+async function finishBlingSaleJob(
+  orderId: string,
+  status: "succeeded" | "failed" | "unknown" | "blocked",
+  errorCode: string | null,
+  details: Record<string, unknown>,
+  externalId: string | null = null,
+) {
+  const db = ordersDb();
+  await db.begin(async (tx) => {
+    const rows = await tx<{ result_summary: Record<string, unknown> }>`select result_summary from whatsapp_atendimento.integration_jobs where order_id = ${orderId} and operation = 'create_sale' for update`;
+    if (!rows[0]) return;
+    await tx`update whatsapp_atendimento.integration_jobs
+      set status = ${status}, error_code = ${errorCode}, external_id = ${externalId},
+      result_summary = ${tx.json({ ...rows[0].result_summary, ...details, ...(status === "succeeded" ? { blockers: [] } : {}) })},
+        finished_at = ${new Date().toISOString()}, updated_at = now()
+      where order_id = ${orderId} and operation = 'create_sale'`;
+    if (status === "succeeded" && externalId && /^\d+$/.test(externalId)) {
+      await tx`update whatsapp_atendimento.orders
+        set bling_sale_id = ${Number(externalId)}, attention_code = 'bling_invoice_pending', updated_at = now()
+        where id = ${orderId} and status = 'awaiting_invoice'`;
+      await tx`insert into whatsapp_atendimento.integration_jobs (order_id, operation, idempotency_key, status, error_code, result_summary)
+        values (${orderId}, 'generate_invoice', ${`${orderId}:generate_invoice`}, 'blocked', 'BLING_NFE_HUMAN_CONFIRMATION_REQUIRED', ${tx.json({ externalReference: details.externalReference ?? null, saleId: Number(externalId) })})
+        on conflict (order_id, operation) do nothing`;
+    }
+  });
+}
+
+async function createBlingSaleForOrder(orderId: string) {
+  const db = ordersDb();
+  let candidate: BlingSaleRequestPreview | null = null;
+  let requestSha256 = "";
+  let reference = "";
+  try {
+    const { order, items } = await loadOrder(orderId);
+    if (order.status !== "awaiting_invoice" || !order.separation_completed_at || order.customer_acceptance_status === "pending") {
+      throw new HttpError(409, "A venda só pode ser enviada depois de concluir a separação e o aceite do cliente.");
+    }
+    if (items.some((item) => item.picked_quantity !== item.quantity || item.picking_status !== "separated")) {
+      throw new HttpError(409, "A separação contém itens que ainda não foram confirmados.");
+    }
+    const customer = isRecord(order.snapshot.customer) ? order.snapshot.customer : {};
+    const customerId = typeof customer.customerId === "string" ? customer.customerId : "";
+    const mappings = ORDER_ID.test(customerId)
+      ? await db<{ bling_contact_id: number; verified_at: string }>`select bling_contact_id, verified_at from whatsapp_atendimento.customer_bling_contacts where customer_id = ${customerId}`
+      : [];
+    const contactId = mappings[0]?.verified_at ? Number(mappings[0].bling_contact_id) : null;
+    const lineTotals = items.map((item) => Number(item.line_total_cents));
+    const lineTotalCents = lineTotals.reduce((sum, item) => sum + item, 0);
+    const totals = lineTotals.every((value) => Number.isSafeInteger(value) && value >= 0)
+      ? reconcileBlingCommercialTotals(lineTotalCents, Number(order.total_cents))
+      : null;
+    const preview = await buildBlingSalePreview(order, items, contactId, totals);
+    const blockers = [
+      ...(!mappings.length || !Number.isSafeInteger(contactId) || !mappings[0]?.verified_at ? ["BLING_CUSTOMER_CONTACT_MAPPING_MISSING"] : []),
+      ...(!totals?.balances ? ["BLING_TOTAL_RECONCILIATION_INVALID"] : []),
+      ...preview.blockers,
+    ];
+    reference = order.bling_sale_reference ?? stableBlingSaleReference(order.id) ?? "";
+    candidate = preview.candidate;
+    requestSha256 = preview.requestSha256 ?? "";
+    if (blockers.length || !candidate || !reference || !requestSha256) {
+      await finishBlingSaleJob(orderId, "blocked", "BLING_PREFLIGHT_REQUIRED", {
+        blockers: [...new Set(blockers)],
+        commercialTotals: totals,
+        salePreview: preview.summary,
+      });
+      return { ok: false, status: "blocked", blockers: [...new Set(blockers)] };
+    }
+
+    const job = await db.begin(async (tx) => {
+      const orderRows = await tx<DbOrder>`select * from whatsapp_atendimento.orders where id = ${orderId} for update`;
+      const current = orderRows[0];
+      if (!current || current.status !== "awaiting_invoice" || !current.separation_completed_at) throw new HttpError(409, "O pedido não está mais pronto para venda.");
+      const jobs = await tx<{ status: string; external_id: string | null; started_at: string | null; request_sha256: string | null; result_summary: Record<string, unknown> }>`
+        select status, external_id, started_at, request_sha256, result_summary from whatsapp_atendimento.integration_jobs where order_id = ${orderId} and operation = 'create_sale' for update
+      `;
+      const currentJob = jobs[0];
+      if (!currentJob) throw new HttpError(409, "A operação de venda ainda não foi preparada.");
+      if (currentJob.status === "succeeded" && currentJob.external_id) return { duplicate: true, externalId: currentJob.external_id };
+      if (currentJob.status === "running" && isRecentReconciliationLease(currentJob.started_at)) throw new HttpError(409, "A criação da venda ainda está em andamento.");
+      if (currentJob.request_sha256 && currentJob.request_sha256 !== requestSha256) throw new HttpError(409, "O pedido mudou desde a última prévia Bling. Atualize e revise.");
+      await tx`update whatsapp_atendimento.integration_jobs set status = 'running', error_code = null, attempts = attempts + 1, started_at = now(), finished_at = null, request_sha256 = ${requestSha256}, updated_at = now() where order_id = ${orderId} and operation = 'create_sale'`;
+      return { duplicate: false, externalId: null };
+    });
+    if (job.duplicate) return { ok: true, status: "succeeded", externalId: job.externalId, duplicate: true };
+
+    const token = await getSharedBlingAccessToken();
+    const existing = await lookupSharedBlingSale(reference, token);
+    if (existing.ids.length > 1) {
+      await finishBlingSaleJob(orderId, "unknown", "BLING_SALE_REFERENCE_AMBIGUOUS", { reconciliation: { outcome: "ambiguous", matchingIds: existing.ids } });
+      return { ok: false, status: "unknown", error: "BLING_SALE_REFERENCE_AMBIGUOUS" };
+    }
+    if (!existing.complete) {
+      await finishBlingSaleJob(orderId, "unknown", "BLING_SALE_RECONCILIATION_UNKNOWN", { reconciliation: { outcome: "unknown", matchingIds: existing.ids } });
+      return { ok: false, status: "unknown", error: "BLING_SALE_RECONCILIATION_UNKNOWN" };
+    }
+    if (existing.ids.length === 1 && existing.detail) {
+      if (!sharedBlingSaleMatches(existing.detail, candidate)) {
+        await finishBlingSaleJob(orderId, "unknown", "BLING_SALE_REFERENCE_MISMATCH", { reconciliation: { outcome: "unknown", matchingIds: existing.ids } });
+        return { ok: false, status: "unknown", error: "BLING_SALE_REFERENCE_MISMATCH" };
+      }
+      await finishBlingSaleJob(orderId, "succeeded", null, { externalReference: reference, reconciliation: { outcome: "matched" } }, String(existing.ids[0]));
+      return { ok: true, status: "succeeded", externalId: String(existing.ids[0]), reconciled: true };
+    }
+
+    const payload = {
+      contato: candidate.contato,
+      data: candidate.data,
+      numeroLoja: candidate.numeroLoja,
+      totalProdutos: candidate.totalProdutos,
+      total: candidate.total,
+      outrasDespesas: candidate.outrasDespesas,
+      desconto: candidate.desconto,
+      itens: candidate.itens.map(({ produto, codigo, descricao, quantidade, valor }) => ({ produto, codigo, descricao, quantidade, valor })),
+      transporte: candidate.transporte,
+      observacoes: candidate.observacoes,
+    };
+    let created: { status: number; data: unknown };
+    try { created = await sharedBlingRequest("/pedidos/vendas", "POST", payload, token); }
+    catch {
+      const recovery = await lookupSharedBlingSale(reference, token);
+      if (recovery.complete && recovery.ids.length === 1 && recovery.detail && sharedBlingSaleMatches(recovery.detail, candidate)) {
+        await finishBlingSaleJob(orderId, "succeeded", null, { externalReference: reference, reconciliation: { outcome: "matched_after_uncertain_create" } }, String(recovery.ids[0]));
+        return { ok: true, status: "succeeded", externalId: String(recovery.ids[0]), reconciled: true };
+      }
+      await finishBlingSaleJob(orderId, "unknown", "BLING_SALE_CREATE_UNCERTAIN", { reconciliation: { outcome: "unknown", matchingIds: recovery.ids } });
+      return { ok: false, status: "unknown", error: "BLING_SALE_CREATE_UNCERTAIN" };
+    }
+    const createdData = isRecord(created.data) && isRecord(created.data.data) ? created.data.data : isRecord(created.data) ? created.data : {};
+    const externalId = Number(createdData.id);
+    if (created.status < 200 || created.status >= 300 || !Number.isSafeInteger(externalId) || externalId <= 0) {
+      if (created.status >= 500) {
+        const recovery = await lookupSharedBlingSale(reference, token);
+        if (recovery.complete && recovery.ids.length === 1 && recovery.detail && sharedBlingSaleMatches(recovery.detail, candidate)) {
+          await finishBlingSaleJob(orderId, "succeeded", null, { externalReference: reference, reconciliation: { outcome: "matched_after_error" } }, String(recovery.ids[0]));
+          return { ok: true, status: "succeeded", externalId: String(recovery.ids[0]), reconciled: true };
+        }
+        await finishBlingSaleJob(orderId, "unknown", "BLING_SALE_CREATE_UNCERTAIN", { reconciliation: { outcome: "unknown", matchingIds: recovery.ids } });
+        return { ok: false, status: "unknown", error: "BLING_SALE_CREATE_UNCERTAIN" };
+      }
+      await finishBlingSaleJob(orderId, "failed", `BLING_SALE_CREATE_HTTP_${created.status}`, { reconciliation: { outcome: "absent" } });
+      return { ok: false, status: "failed", error: `BLING_SALE_CREATE_HTTP_${created.status}` };
+    }
+    const verified = await sharedBlingRequest(`/pedidos/vendas/${externalId}`, "GET", undefined, token).catch(() => null);
+    const verifiedRecord = verified && verified.status >= 200 && verified.status < 300 && isRecord(verified.data) && isRecord(verified.data.data)
+      ? verified.data.data : null;
+    if (!verifiedRecord || !sharedBlingSaleMatches(verifiedRecord, candidate)) {
+      await finishBlingSaleJob(orderId, "unknown", "BLING_SALE_POST_WRITE_VERIFY_FAILED", { externalReference: reference, reconciliation: { outcome: "unknown", matchingIds: [externalId] } });
+      return { ok: false, status: "unknown", error: "BLING_SALE_POST_WRITE_VERIFY_FAILED" };
+    }
+    await finishBlingSaleJob(orderId, "succeeded", null, { externalReference: reference, reconciliation: { outcome: "matched" } }, String(externalId));
+    return { ok: true, status: "succeeded", externalId: String(externalId) };
+  } catch (error) {
+    const status = error instanceof HttpError && error.status === 409 ? "blocked" : error instanceof HttpError && error.status >= 500 ? "blocked" : "failed";
+    const code = error instanceof HttpError ? `BLING_${error.status}_REQUEST_BLOCKED` : "BLING_REQUEST_FAILED";
+    await finishBlingSaleJob(orderId, status, code, { blockers: [code] }).catch(() => undefined);
+    return { ok: false, status, error: code };
+  }
+}
+
+function blingInvoiceSituation(invoice: Record<string, unknown>): { id: number | null; status: "authorized" | "pending" | "rejected" | "unknown" } {
+  const raw = invoice.situacao;
+  const value = isRecord(raw) ? raw.id ?? raw.codigo ?? raw.valor ?? raw.value ?? raw.situacao : raw;
+  const id = Number(value);
+  if (!Number.isSafeInteger(id) || id <= 0) return { id: null, status: "unknown" };
+  if ([5, 6, 7].includes(id)) return { id, status: "authorized" };
+  if ([1, 3, 8, 10].includes(id)) return { id, status: "pending" };
+  if ([2, 4, 9, 11].includes(id)) return { id, status: "rejected" };
+  return { id, status: "unknown" };
+}
+
+async function findSharedBlingInvoice(reference: string, token: string): Promise<{ complete: boolean; matches: Array<Record<string, unknown>> }> {
+  const pageSize = 100;
+  const matches = new Map<number, Record<string, unknown>>();
+  let complete = false;
+  for (let page = 1; page <= 20; page += 1) {
+    const query = new URLSearchParams({ pagina: String(page), limite: String(pageSize), numeroLoja: reference, tipo: "1" });
+    const response = await sharedBlingRequest(`/nfe?${query}`, "GET", undefined, token).catch(() => null);
+    if (!response || response.status < 200 || response.status >= 300 || !isRecord(response.data) || !Array.isArray(response.data.data)) {
+      return { complete: false, matches: [...matches.values()] };
+    }
+    for (const raw of response.data.data) {
+      if (!isRecord(raw) || raw.numeroLoja !== reference) continue;
+      const id = Number(raw.id ?? raw.idNotaFiscal);
+      if (!Number.isSafeInteger(id) || id <= 0) return { complete: false, matches: [...matches.values()] };
+      matches.set(id, raw);
+      if (matches.size > 1) return { complete: false, matches: [...matches.values()] };
+    }
+    if (response.data.data.length < pageSize) { complete = true; break; }
+  }
+  const entries = [...matches.entries()];
+  if (!complete || entries.length !== 1) return { complete, matches: entries.map(([, item]) => item) };
+  const detail = await sharedBlingRequest(`/nfe/${entries[0][0]}`, "GET", undefined, token).catch(() => null);
+  if (!detail || detail.status < 200 || detail.status >= 300) return { complete: false, matches: [] };
+  const invoice = isRecord(detail.data) && isRecord(detail.data.data) ? detail.data.data : isRecord(detail.data) ? detail.data : null;
+  if (!invoice || invoice.numeroLoja !== reference) return { complete: false, matches: [] };
+  return { complete: true, matches: [invoice] };
+}
+
+async function persistBlingInvoice(orderId: string, expectedRevision: number, invoice: Record<string, unknown>, lookup: "found" | "created") {
+  const id = Number(invoice.id ?? invoice.idNotaFiscal);
+  if (!Number.isSafeInteger(id) || id <= 0) throw new HttpError(502, "O Bling retornou um identificador fiscal inválido.");
+  const situation = blingInvoiceSituation(invoice);
+  const db = ordersDb();
+  await db.begin(async (tx) => {
+    const rows = await tx<DbOrder>`select * from whatsapp_atendimento.orders where id = ${orderId} for update`;
+    const order = rows[0];
+    if (!order) throw new HttpError(404, "Pedido não encontrado.");
+    const stateMatches = order.revision === expectedRevision && Number(order.bling_sale_id) > 0;
+    const previouslyAuthorized = order.invoice_status === "authorized" && Number(order.invoice_id) === id;
+    const resultStatus = previouslyAuthorized && situation.status === "unknown"
+      ? "authorized"
+      : stateMatches ? situation.status : previouslyAuthorized ? "authorized" : "unknown";
+    await tx`update whatsapp_atendimento.orders
+      set invoice_id = ${id}, invoice_status = ${resultStatus},
+        invoice_authorized_at = case when ${resultStatus} = 'authorized' then coalesce(invoice_authorized_at, now()) else invoice_authorized_at end,
+        status = case when ${resultStatus} = 'authorized' then 'invoice_authorized' else 'awaiting_invoice' end,
+        attention_code = case when ${resultStatus} = 'authorized' then 'bling_invoice_authorized' else 'bling_invoice_review' end,
+        updated_at = now()
+      where id = ${orderId}`;
+    const jobs = await tx<{ result_summary: Record<string, unknown> }>`select result_summary from whatsapp_atendimento.integration_jobs where order_id = ${orderId} and operation = 'generate_invoice' for update`;
+    const previous = jobs[0]?.result_summary ?? {};
+    await tx`update whatsapp_atendimento.integration_jobs
+      set status = ${resultStatus === "unknown" ? "unknown" : "succeeded"}, error_code = ${resultStatus === "rejected" ? "BLING_NFE_REJECTED" : resultStatus === "unknown" ? "BLING_NFE_STATUS_UNKNOWN" : null},
+        external_id = ${String(id)}, result_summary = ${tx.json({ ...previous, lookup, invoiceId: id, invoiceStatus: resultStatus, invoiceSituationId: situation.id, invoiceNumber: typeof invoice.numero === "string" ? invoice.numero.slice(0, 80) : null, danfeUrl: typeof invoice.linkDanfe === "string" && /^https:\/\/([a-z0-9-]+\.)*bling\.com\.br\//i.test(invoice.linkDanfe) ? invoice.linkDanfe : null })},
+        started_at = coalesce(started_at, now()), finished_at = now(), updated_at = now()
+      where order_id = ${orderId} and operation = 'generate_invoice'`;
+    if (!stateMatches) {
+      await tx`insert into whatsapp_atendimento.order_events (order_id, event_key, event_type, event_data)
+        values (${orderId}, ${`${orderId}:bling-invoice-state-changed:${id}`}, 'bling_invoice_reconciled_after_order_change', ${tx.json({ invoiceId: id, expectedRevision, actualRevision: order.revision })}) on conflict (event_key) do nothing`;
+    }
+  });
+}
+
+async function generateBlingInvoice(orderId: string, operatorId: string, body: Record<string, unknown>) {
+  if (body.confirmation !== "EMITIR_NFE") throw new HttpError(409, "Confirme explicitamente a emissão da NF-e.");
+  if (typeof body.revision !== "number" || !Number.isSafeInteger(body.revision)) throw new HttpError(400, "A revisão do pedido é obrigatória.");
+  const db = ordersDb();
+  const { order } = await loadOrder(orderId);
+  if (order.revision !== body.revision) throw new HttpError(409, "O pedido mudou. Atualize antes de emitir a NF-e.");
+  if (!order.separation_completed_at || order.customer_acceptance_status === "pending"
+    || !["awaiting_invoice", "invoice_authorized"].includes(order.status)) {
+    throw new HttpError(409, "A NF-e exige separação concluída e aceite do cliente resolvido.");
+  }
+  const saleJob = await db<{ status: string; external_id: string | null }>`select status, external_id from whatsapp_atendimento.integration_jobs where order_id = ${orderId} and operation = 'create_sale'`;
+  const saleId = Number(order.bling_sale_id ?? saleJob[0]?.external_id ?? 0);
+  if (saleJob[0]?.status !== "succeeded" || !Number.isSafeInteger(saleId) || saleId <= 0) {
+    throw new HttpError(409, "A venda precisa estar confirmada no Bling antes da emissão fiscal.");
+  }
+  await db.begin(async (tx) => {
+    const current = await tx<DbOrder>`select * from whatsapp_atendimento.orders where id = ${orderId} for update`;
+    if (!current[0] || current[0].revision !== body.revision) throw new HttpError(409, "O pedido mudou. Atualize antes de emitir a NF-e.");
+    if (current[0].invoice_status === "authorized" && current[0].invoice_id) throw new HttpError(409, "A NF-e já está autorizada.");
+    const jobs = await tx<{ status: string; started_at: string | null }>`select status, started_at from whatsapp_atendimento.integration_jobs where order_id = ${orderId} and operation = 'generate_invoice' for update`;
+    if (jobs[0]?.status === "running" && isRecentReconciliationLease(jobs[0].started_at)) throw new HttpError(409, "A emissão da NF-e já está em andamento.");
+    await tx`insert into whatsapp_atendimento.integration_jobs (order_id, operation, idempotency_key, status, error_code, result_summary, attempts, started_at)
+      values (${orderId}, 'generate_invoice', ${`${orderId}:generate_invoice`}, 'running', null, ${tx.json({ operatorId, explicitConfirmation: true })}, 1, now())
+      on conflict (order_id, operation) do update set status = 'running', error_code = null, attempts = whatsapp_atendimento.integration_jobs.attempts + 1, started_at = now(), finished_at = null, updated_at = now()`;
+    await tx`update whatsapp_atendimento.orders set invoice_status = 'pending', attention_code = 'bling_invoice_pending', updated_at = now() where id = ${orderId}`;
+  });
+
+  let token: string;
+  try { token = await getSharedBlingAccessToken(); }
+  catch (error) {
+    await finishInvoiceJob(orderId, "blocked", "BLING_SHARED_CREDENTIALS_UNAVAILABLE");
+    throw error;
+  }
+  const reference = order.bling_sale_reference ?? stableBlingSaleReference(orderId);
+  if (!reference) {
+    await finishInvoiceJob(orderId, "blocked", "BLING_SALE_REFERENCE_INVALID");
+    throw new HttpError(409, "A referência imutável da venda está inválida.");
+  }
+
+  const existingInvoiceId = Number(order.invoice_id ?? 0);
+  if (Number.isSafeInteger(existingInvoiceId) && existingInvoiceId > 0) {
+    const existing = await sharedBlingRequest(`/nfe/${existingInvoiceId}`, "GET", undefined, token).catch(() => null);
+    const existingData = existing && existing.status >= 200 && existing.status < 300 && isRecord(existing.data)
+      ? (isRecord(existing.data.data) ? existing.data.data : existing.data)
+      : null;
+    if (!existingData || existingData.numeroLoja !== reference) {
+      await finishInvoiceJob(orderId, "unknown", "BLING_NFE_EXISTING_READ_UNCERTAIN");
+      throw new HttpError(502, "A NF-e já registrada não pôde ser confirmada. Nenhuma nova foi solicitada.");
+    }
+    await persistBlingInvoice(orderId, body.revision, existingData, "found");
+    return orderDetail(orderId);
+  }
+
+  const before = await findSharedBlingInvoice(reference, token);
+  if (before.matches.length > 1 || !before.complete) {
+    await finishInvoiceJob(orderId, "unknown", "BLING_NFE_RECONCILIATION_UNKNOWN");
+    throw new HttpError(409, "A consulta da NF-e ficou inconclusiva; nenhuma nova emissão foi enviada.");
+  }
+  if (before.matches.length === 1) {
+    await persistBlingInvoice(orderId, body.revision, before.matches[0], "found");
+    return orderDetail(orderId);
+  }
+
+  let generated: { status: number; data: unknown };
+  try { generated = await sharedBlingRequest(`/pedidos/vendas/${saleId}/gerar-nfe`, "POST", undefined, token); }
+  catch {
+    const recovered = await findSharedBlingInvoice(reference, token);
+    if (recovered.complete && recovered.matches.length === 1) {
+      await persistBlingInvoice(orderId, body.revision, recovered.matches[0], "found");
+      return orderDetail(orderId);
+    }
+    await finishInvoiceJob(orderId, "unknown", "BLING_NFE_GENERATION_UNCERTAIN");
+    throw new HttpError(502, "A emissão pode ter sido processada. Confira a NF-e antes de tentar novamente.");
+  }
+  const generatedData = isRecord(generated.data) && isRecord(generated.data.data) ? generated.data.data : isRecord(generated.data) ? generated.data : {};
+  const generatedId = Number(generatedData.idNotaFiscal ?? generatedData.id);
+  if (generated.status < 200 || generated.status >= 300 || !Number.isSafeInteger(generatedId) || generatedId <= 0) {
+    const recovered = await findSharedBlingInvoice(reference, token);
+    if (recovered.complete && recovered.matches.length === 1) {
+      await persistBlingInvoice(orderId, body.revision, recovered.matches[0], "found");
+      return orderDetail(orderId);
+    }
+    const unknown = generated.status >= 500 || !recovered.complete;
+    await finishInvoiceJob(orderId, unknown ? "unknown" : "failed", unknown ? "BLING_NFE_GENERATION_UNCERTAIN" : `BLING_NFE_GENERATION_HTTP_${generated.status}`);
+    throw new HttpError(unknown ? 502 : 409, unknown ? "A emissão ficou incerta; confira a NF-e antes de uma nova tentativa." : `O Bling recusou a geração da NF-e (HTTP ${generated.status}).`);
+  }
+  const after = await sharedBlingRequest(`/nfe/${generatedId}`, "GET", undefined, token).catch(() => null);
+  const invoice = after && after.status >= 200 && after.status < 300 && isRecord(after.data)
+    ? (isRecord(after.data.data) ? after.data.data : after.data)
+    : null;
+  if (!invoice || invoice.numeroLoja !== reference) {
+    await finishInvoiceJob(orderId, "unknown", "BLING_NFE_POST_WRITE_VERIFY_FAILED");
+    throw new HttpError(502, "A NF-e foi solicitada, mas a leitura de verificação falhou. Confira o Bling antes de repetir.");
+  }
+  await persistBlingInvoice(orderId, body.revision, invoice, "created");
+  return orderDetail(orderId);
+}
+
+async function finishInvoiceJob(orderId: string, status: "failed" | "unknown" | "blocked", errorCode: string) {
+  await ordersDb()`update whatsapp_atendimento.integration_jobs
+    set status = ${status}, error_code = ${errorCode}, finished_at = now(), updated_at = now()
+    where order_id = ${orderId} and operation = 'generate_invoice'`;
 }
 
 interface CustomerAddressInput {
@@ -2411,6 +3053,48 @@ Deno.serve(async (request) => {
     const authorization = await authorize(request);
     headers = authorization.headers;
 
+    if (url.pathname.endsWith("/attendance/accounts") && request.method === "GET") {
+      const forwarded = await forwardSupabaseFunction(request, "admin-whatsapp-ops-v1", "GET", new URLSearchParams({ action: "accounts" }));
+      if (!isRecord(forwarded.payload) || !Array.isArray(forwarded.payload.items)) return jsonResponse(forwarded.payload, forwarded.status, headers);
+      const items = forwarded.payload.items.filter((item) => {
+        if (!isRecord(item) || typeof item.phone_e164 !== "string") return false;
+        const digits = item.phone_e164.replace(/\D/g, "");
+        return digits.endsWith("0975") || digits.endsWith("1018");
+      });
+      return jsonResponse({ ...forwarded.payload, items }, forwarded.status, headers);
+    }
+    if (url.pathname.endsWith("/attendance/queue") && request.method === "GET") {
+      const accountId = url.searchParams.get("accountId") ?? "";
+      if (!ORDER_ID.test(accountId)) throw new HttpError(400, "Selecione um canal WhatsApp válido.");
+      await requireSupportedAttendanceAccount(request, accountId);
+      const query = new URLSearchParams({ action: "queue", account_id: accountId, limit: "50" });
+      const search = (url.searchParams.get("q") ?? "").trim().slice(0, 80);
+      if (search) query.set("search", search);
+      const forwarded = await forwardSupabaseFunction(request, "admin-whatsapp-ops-v1", "GET", query);
+      return jsonResponse(forwarded.payload, forwarded.status, headers);
+    }
+    const attendanceConversation = url.pathname.match(/\/attendance\/conversations\/([0-9a-f-]{36})$/i);
+    if (attendanceConversation && request.method === "GET" && ORDER_ID.test(attendanceConversation[1])) {
+      const accountId = url.searchParams.get("accountId") ?? "";
+      if (!ORDER_ID.test(accountId)) throw new HttpError(400, "Selecione um canal WhatsApp válido.");
+      const forwarded = await requireSupportedAttendanceConversation(request, attendanceConversation[1], accountId);
+      return jsonResponse(forwarded.payload, forwarded.status, headers);
+    }
+    if (url.pathname.endsWith("/attendance/operations") && request.method === "POST") {
+      const body = await readJson(request);
+      const forwarded = await proxyAttendanceOperation(request, body);
+      return jsonResponse(forwarded.payload, forwarded.status, headers);
+    }
+    if (url.pathname.endsWith("/attendance/mode") && request.method === "POST") {
+      const body = await readJson(request);
+      return jsonResponse(await updateAttendanceMode(request, body), 200, headers);
+    }
+    if (url.pathname.endsWith("/attendance/ana") && request.method === "POST") {
+      const body = await readJson(request);
+      const forwarded = await proxyAnaAdmin(request, body);
+      return jsonResponse(forwarded.payload, forwarded.status, headers);
+    }
+
     const metaListMatch = url.pathname.match(/\/meta-flows\/(0975|1018)$/);
     if (metaListMatch && isFlowChannel(metaListMatch[1]) && request.method === "GET") {
       return jsonResponse(await readMetaFlowList(await metaChannelConfig(metaListMatch[1])), 200, headers);
@@ -2499,7 +3183,7 @@ Deno.serve(async (request) => {
     if (url.pathname.endsWith("/orders") && request.method === "GET") {
       return jsonResponse({ orders: await listOrders() }, 200, headers);
     }
-    const orderMatch = url.pathname.match(/\/orders\/([0-9a-f-]{36})(?:\/(picking|assign|separation\/complete|bling-contact|bling-sale\/reconcile))?$/i);
+    const orderMatch = url.pathname.match(/\/orders\/([0-9a-f-]{36})(?:\/(picking|assign|separation\/complete|bling-contact|bling-sale\/(?:reconcile|create)|bling-invoice\/generate))?$/i);
     if (orderMatch && ORDER_ID.test(orderMatch[1])) {
       const [, orderId, action] = orderMatch;
       if (!action && request.method === "GET") return jsonResponse(await orderDetail(orderId), 200, headers);
@@ -2516,6 +3200,20 @@ Deno.serve(async (request) => {
       }
       if (action === "bling-sale/reconcile" && request.method === "POST") {
         return jsonResponse(await reconcileOrderBlingSale(orderId, authorization.operator.id, await readJson(request)), 200, headers);
+      }
+      if (action === "bling-sale/create" && request.method === "POST") {
+        const body = await readJson(request);
+        if (body.confirmation !== "CRIAR_VENDA") throw new HttpError(409, "Confirme explicitamente a criação da venda no Bling.");
+        const { order } = await loadOrder(orderId);
+        if (typeof body.revision !== "number" || !Number.isSafeInteger(body.revision) || order.revision !== body.revision) {
+          throw new HttpError(409, "O pedido mudou. Atualize antes de criar a venda.");
+        }
+        if (order.status !== "awaiting_invoice") throw new HttpError(409, "A venda exige separação concluída.");
+        await createBlingSaleForOrder(orderId);
+        return jsonResponse(await orderDetail(orderId), 200, headers);
+      }
+      if (action === "bling-invoice/generate" && request.method === "POST") {
+        return jsonResponse(await generateBlingInvoice(orderId, authorization.operator.id, await readJson(request)), 200, headers);
       }
       if (action === "separation/complete" && request.method === "POST") {
         return jsonResponse(await finishSeparation(orderId, authorization.operator.id, await readJson(request)), 200, headers);

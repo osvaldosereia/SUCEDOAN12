@@ -60,10 +60,18 @@ export interface OrderDetailRecord extends OrderListEntry {
   customerAcceptanceStatus: "not_required" | "pending" | "accepted" | "rejected";
   invoiceStatus: "not_requested" | "pending" | "authorized" | "rejected" | "unknown";
   invoiceId: number | null;
+  blingSaleId: number | null;
   attentionCode: string | null;
   blingContactId: number | null;
   blingContactVerifiedAt: string | null;
   blingSaleReference: string | null;
+  invoiceJob: {
+    status: string;
+    errorCode: string | null;
+    invoiceNumber: string | null;
+    invoiceStatus: "authorized" | "pending" | "rejected" | "unknown" | null;
+    danfeUrl: string | null;
+  } | null;
   integrationJob: {
     operation: string;
     status: string;

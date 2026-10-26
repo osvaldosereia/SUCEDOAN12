@@ -4,7 +4,7 @@ Projeto: WhatsApp Atendimento GitHub — SUCEDOAN12
 Branch isolada: project/whatsapp-atendimento-github-20261025  
 Diretório do novo código: projetos/whatsapp-atendimento-github/  
 Execução prevista: Work Luna Max  
-Estado em 26/10/2026: Rodadas 0–6 e implementação local da Rodada 7. O catálogo usa `schemaVersion: 4` com estoque assinado em GitHub; o Flow consulta somente a revisão GitHub fixada, limita quantidades e a confirmação reduz o saldo uma vez por pedido. Admin de clientes e integração Meta independente para 0975/1018 também estão no código local. A migration privada de vínculo por canal e os segredos ainda não foram aplicados/configurados. Meta em aparelho, envio do novo sistema e Bling continuam pendentes; nenhuma NF-e foi emitida.
+Estado em 26/10/2026: Rodadas 0–7 implementadas localmente no branch de trabalho. O catálogo usa `schemaVersion: 4` com estoque assinado em GitHub; a confirmação reduz o saldo uma vez por pedido. O Admin de clientes, a Central ANA/humano para 0975/1018 e a integração server-side Bling (venda após separação, reconciliação, confirmação de NF-e e leitura de situação/DANFE) também estão no código. Migrations, secrets e funções não foram aplicados/configurados; Flow em aparelho, homologação real Bling e transição de envio continuam pendentes. Nenhum Flow novo foi publicado nem NF-e emitida.
 
 ## Decisão principal
 
@@ -13,6 +13,10 @@ O projeto será construído do zero. O Vitrine Admin e os serviços atuais são 
 Não copiar nem adaptar a UI, funções, tabelas, RPCs, máquina de estados, componentes ou estrutura antiga de pedidos. O novo projeto terá módulos, modelo de dados, endpoints e fluxo de operação próprios, organizados desde o início para cumprir apenas o escopo necessário.
 
 Podemos consultar no Vitrine e nos serviços atuais, somente para pesquisa, quais produtos estão nas cestas, as regras comerciais, os identificadores de integração e a configuração das contas Meta/Bling. O cadastro de clientes existente no Supabase pode ser consultado pelo servidor conforme orientação do usuário. A implementação de cada integração será nova e seguirá as APIs oficiais.
+
+### Decisão posterior sobre conexões existentes
+
+O usuário autorizou usar a conexão Bling e os secrets já ativos no Supabase/GitHub, e reaproveitar ANA para os dois números. O Admin, os contratos de pedido, o comparador/idempotência, a interface e a integração comercial continuam novos. Para conectar sem pedir uma nova autorização Bling nem ler/imprimir segredos, a Edge Function usa uma lista fixa de RPCs server-side da integração existente para credencial, lock de rotação do refresh token e rate limit; para a Central ANA, um adaptador autenticado conversa com os serviços existentes, que continuam responsáveis por autorização de operador, janela e gates de envio. Essa ponte não copia implementação, UI ou schema e não permite chamadas arbitrárias.
 
 ## Escopo
 
@@ -120,8 +124,19 @@ Como ponto de partida, testar uma miniatura WebP de 240×190 com limite de 27 KB
 | 3 — Configurador Meta Flow | Editor guiado, Flow JSON gerado, validação local, configuração por número e exportação | Cada número tem rascunho próprio; publicação permanece fora da etapa |
 | 4 — Runtime de atendimento | **Implementada localmente:** sessão/canal, seleção validada, imagens por commit, cotação, protocolo cifrado e busca mínima de cliente. Migration criada, não aplicada. | Endpoint local compila e falha fechado sem segredos/sessão; total calculado no servidor. A ligação do JSON Meta e revisão de telas dependem da Rodada 7. |
 | 5 — Confirmação e pedidos | Resumo no chat, botões, rascunho, confirmação idempotente e novo esquema operacional | Só o aceite explícito cria pedido e preserva snapshot |
-| 6 — Separação e Bling | **Concluída localmente:** fila, atribuição, separação/falta, aceite do total recalculado, preflight idempotente, vínculo manual revisado do contato, OAuth cifrado/desligado, rota autenticada de reconciliação GET-only com idempotência/lease e DTO administrativo mínimo. Criação da venda, NF-e e entrega continuam bloqueadas por contrato e homologação. | Separação usa revisão fixada; fila não expõe snapshot pessoal bruto; nenhuma escrita Bling fica habilitada; reconciliação permanece desligada por padrão |
+| 6 — Separação e Bling | **Implementada localmente:** fila, atribuição, separação/falta, aceite do total recalculado, preflight, vínculo manual revisado do contato, uso server-side da conexão Bling compartilhada, criação da venda após separação, reconciliação idempotente, confirmação digitada para NF-e e leitura de situação/número/DANFE. Não houve chamada externa. | Escrita protegida por sessão, revisão, preflight e confirmação; incerteza nunca causa repetição cega; homologação externa e autorização fiscal controlada continuam pendentes |
 | 7 — Flow local e homologação externa | **Implementada localmente:** Flow JSON 6.0/Data Exchange 3.0 ligado ao endpoint e webhook, saldo GitHub, baixa idempotente na confirmação, CRUD de clientes, worker da outbox desligado por padrão e descoberta/criação/envio/configuração/publicação/vínculo Flow por canal. Pendentes: aplicar migrations, configurar secrets/allowlist, validar imagens/JSON em aparelho nos dois números, habilitar envio somente em homologação autorizada e fechar venda/NF-e/saída com Bling. | Contrato local consistente; operação externa segue bloqueada até configuração deliberada, dados e homologação |
+
+## Fechamento operacional pendente
+
+1. Revisar e integrar o diff local no branch alvo; nenhum código ou dado de cliente do Vitrine foi copiado.
+2. Em janela de homologação autorizada, confirmar configuração do Supabase Auth/GitHub OAuth, allowlist, origens, GitHub App e secrets, apenas por presença e sem expor valores.
+3. Aplicar as migrations novas e implantar as Edge Functions novas; conferir RLS, funções e endpoints sem alterar tabelas/funções de produção do Vitrine.
+4. Entrar no Admin com operador autorizado e confirmar fila/histórico, ANA/humano, janela e controle de envio nos canais 0975 e 1018.
+5. Usar pedido de teste controlado para validar a baixa GitHub, a venda Bling, reconciliação, NF-e e estado autorizado/DANFE; conferir uma única criação após timeout simulado operacionalmente sem fazer retry cego.
+6. Validar JSON, endpoint, fotos e sequência de telas no Flow Builder e aparelhos dos dois canais; publicar e vincular apenas com autorização operacional específica.
+7. Confirmar recepção de mensagens e comportamento da outbox; manter o worker desligado até definir a janela e os destinatários de homologação.
+8. Completar despacho/entrega/pagamento no Admin antes de considerar o fluxo operacional encerrado. Esses estados ainda não foram implementados nesta rodada.
 
 Cada rodada deve produzir um diff pequeno e revisável, resumo das mudanças, como conferir o resultado e riscos remanescentes. Não implantar, publicar Flow ou enviar mensagem real durante desenvolvimento local.
 
