@@ -750,3 +750,11 @@ A autenticação continua sendo a sessão Supabase já existente porque as rotas
 - Captura enviada pelo operador após o deploy v8 mostra o canal 0975 com **“Endpoint pronto”** e o botão “Configurar endpoint” desabilitado. Isso confirma que a configuração da chave pública do 0975 foi gravada na Meta. O Flow exibido continua em DRAFT e sem vínculo; não foi publicado.
 - A URL contém `error_code=otp_expired` do link antigo de acesso por e-mail. Esse erro de autenticação não reverte a configuração Meta já persistida; não solicitar outro link enquanto a sessão ativa do Admin continuar válida.
 - O canal 1018 não aparece selecionado nessa captura, portanto seu estado após v8 não está confirmado. Próximo passo: selecionar 1018, repetir “Configurar endpoint”, confirmar e consultar status. Depois conferir ambos os canais. Não publicar Flow nem enviar conteúdo/mensagens.
+
+
+
+## Confirmação no Admin — endpoint do 1018 (26/10/2026)
+
+- Nova captura do canal 1018 mostra **“Conta Meta associada — Endpoint pronto”**. Com a confirmação visual anterior do 0975, ambos os números estão configurados para a chave pública Meta. O erro `otp_expired` continua sendo apenas do link de acesso antigo; não desfaz as configurações já persistidas.
+- O Flow selecionado para 1018 segue em `DRAFT`, aparece como Flow externo, informa `Endpoint: não configurado` no objeto do Flow e `Conteúdo deste Admin: não — envie o conteúdo para habilitar o vínculo`. O vínculo atual permanece nenhum. Isso é distinto da chave pública já pronta no número.
+- Próximo avanço: enviar o JSON do Admin ao rascunho escolhido (ou criar um rascunho próprio), validar o retorno da Meta, revisar o vínculo nos dois canais e só então decidir publicação. Nenhum conteúdo foi enviado à Meta nesta rodada; Flow continua sem publicação e sem vínculo.
