@@ -75,11 +75,11 @@ export async function readSupabaseBasketProducts(db: Sql, baskets: BasketsDocume
       select item.product_id, sum(item.quantity)::numeric as quantity
       from whatsapp_atendimento.order_items item
       join whatsapp_atendimento.orders customer_order on customer_order.id = item.order_id
-      where item.product_id = any(${db.array(ids, "text")})
+      where item.product_id = any(${db.array(ids)})
         and customer_order.status not in ('invoice_authorized', 'out_for_delivery', 'completed', 'cancelled')
       group by item.product_id
     ) reserved on reserved.product_id = p.id::text
-    where p.id::text = any(${db.array(ids, "text")})
+    where p.id::text = any(${db.array(ids)})
     order by p.id
   `;
   if (rows.length !== ids.length) {
