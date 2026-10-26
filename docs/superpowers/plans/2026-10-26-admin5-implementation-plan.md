@@ -26,6 +26,7 @@
 - Janela de serviço Meta fechada deve bloquear mensagem livre.
 - Produto inativo nunca deve aparecer na prévia de catálogo.
 - Preço, imagem, marca e categoria incompletos devem ficar visíveis como pendência.
+- País de origem deve ficar visível como pendência enquanto a origem não estiver cadastrada.
 - Variantes de cestas e os dois canais precisam ser reconciliados antes de sincronização remota.
 
 ---
@@ -66,9 +67,12 @@
 - [x] Consultar somente ativos em páginas de até 100 itens.
 - [x] Exibir prontidão de nome, preço, imagem e classificação.
 - [x] Criar classificação inicial para oito seções e permitir correção local.
+- [x] Auditar os 388 ativos: corrigir falsos positivos por “perfume” e “PET” de embalagem; nenhuma categoria ficou sem seção sugerida.
+- [x] Baixar CSV interno dos ativos com seção e pendências, sem formato de feed ou escrita na Meta.
 - [x] Mostrar cestas ativas para WhatsApp separadas do catálogo de produtos unitários.
 - [x] Manter desativados os controles de sincronização Meta nesta fase.
-- [ ] Corrigir os dados incompletos e persistir a classificação em fonte compartilhada.
+- [ ] Encontrar ou cadastrar país de origem; essa informação é obrigatória no catálogo WhatsApp e não há coluna dedicada no schema atual de `products`.
+- [ ] Corrigir preço, imagem, marca e descrição incompletos e persistir a classificação em fonte compartilhada.
 - [ ] Confirmar `catalog_id` e acesso Commerce para cada WABA.
 - [ ] Implementar sincronização server-side com prévia, lote pequeno, reconciliação e rollback.
 
@@ -79,7 +83,8 @@
 - [ ] Confirmar o payload real de ordem nativa recebido via webhook.
 - [ ] Mapear `product_retailer_id` estável para produto/cesta.
 - [ ] Gerar rascunho e recalcular preço/saldo no servidor antes de confirmar.
-- [ ] Usar Flow para endereço, entrega e forma de pagamento após o carrinho, mantendo confirmação humana.
+- [ ] Homologar o Flow de cesta já aprovado: tamanho/preço inicial, arroz primeiro, etapas por tipo com imagem/preço/quantidade, total dinâmico e resumo; confirmar quais padrões de quantidade e repetição o Flow Builder suporta.
+- [ ] Usar Flow para endereço, entrega e forma de pagamento após carrinho ou cesta, mantendo confirmação humana.
 - [ ] Rodar canário sem efeito fiscal e sem mensagem a cliente real antes de abrir para os canais.
 
 ## Rodadas sugeridas
@@ -95,4 +100,5 @@
 - Consulta somente leitura às tabelas, contas WhatsApp, cestas e contagens do projeto canônico.
 - Inspeção dos contratos atuais de `admin-whatsapp-ops-v1`, `admin-products-live-v1`, `admin-basket-configuration-v1` e `attendance-auth.js`.
 - Pesquisa na documentação oficial Meta sobre catálogos, mensagens interativas, pedidos e Flows.
+- Releitura somente dos produtos ativos para auditar a classificação: 182 Mercearia, 83 Limpeza, 94 Lavanderia, 26 Higiene, 3 Casa, 0 Beleza e 0 Pet; 5 cestas permanecem separadas.
 - Não houve alteração no Supabase nem envio de mensagens ou pedidos reais.
