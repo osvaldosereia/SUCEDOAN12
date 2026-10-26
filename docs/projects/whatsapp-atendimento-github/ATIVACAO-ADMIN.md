@@ -5,6 +5,7 @@ Atualizado em 26/10/2026. Este roteiro lista somente os bloqueios que impedem o 
 ## Estado verificado
 
 - O preview local abre em `http://127.0.0.1:5173/` e carrega o catálogo versionado no GitHub.
+- O Admin está publicado pelo GitHub em `https://donaantonia.com.br/whatsapp-admin/` (HTTP 200; Actions run `40331576769`, concluída com sucesso).
 - O botão de login retorna `Unsupported provider: provider is not enabled`.
 - O Dashboard do projeto `ssbesxgaijknwsjbsbcz` redireciona para `https://supabase.com/dashboard/sign-in`; esta sessão não tem login no Dashboard.
 - As quatro migrations próprias do projeto estão aplicadas. As cinco funções novas ainda não estão implantadas.
@@ -12,11 +13,9 @@ Atualizado em 26/10/2026. Este roteiro lista somente os bloqueios que impedem o 
 
 ## Onde o Admin fica
 
-A interface do novo Admin será publicada pelo GitHub a partir deste repositório. O Supabase não hospeda a interface: ele fornece login, dados de clientes e Edge Functions. O endereço `https://ssbesxgaijknwsjbsbcz.supabase.co/auth/v1/callback` é somente o retorno técnico do OAuth depois do login; não é o endereço do Admin.
+A interface do novo Admin está publicada pelo GitHub a partir deste repositório. O Supabase não hospeda a interface: ele fornece login, dados de clientes e Edge Functions. O endereço `https://ssbesxgaijknwsjbsbcz.supabase.co/auth/v1/callback` é somente o retorno técnico do OAuth depois do login; não é o endereço do Admin.
 
-A automação de publicação foi adicionada à branch do projeto; o endereço está definido, mas ainda não foi validado no ar. Não é necessário escolher hospedagem no Supabase.
-
-O repositório já publica caminhos isolados no domínio existente, sem substituir o site raiz. O novo Admin usará o mesmo mecanismo no caminho `https://donaantonia.com.br/whatsapp-admin/`; ele só será considerado publicado depois que a execução de GitHub Actions concluir com sucesso.
+O workflow concluiu com sucesso e a URL respondeu HTTP 200 com a tela do Admin. O novo Admin usa o caminho isolado `https://donaantonia.com.br/whatsapp-admin/`, sem substituir o site raiz ou os painéis existentes. Essa publicação entrega a interface estática; ainda não libera login nem atendimento ao cliente.
 
 ## Desbloqueio de autenticação
 
@@ -25,8 +24,8 @@ O repositório já publica caminhos isolados no domínio existente, sem substitu
 
    `https://ssbesxgaijknwsjbsbcz.supabase.co/auth/v1/callback`
 
-3. No GitHub, o OAuth App usa esse callback como **Authorization callback URL**. O **Homepage URL** do novo Admin será `https://donaantonia.com.br/whatsapp-admin/`, depois da primeira publicação bem-sucedida. Para acesso local, o app atual usa `http://127.0.0.1:5173/`.
-4. No Supabase, em **Authentication → URL Configuration**, permita a origem local `http://127.0.0.1:5173/**` e a URL exata `https://donaantonia.com.br/whatsapp-admin/` após sua publicação. Não use wildcard amplo em produção.
+3. No GitHub, o OAuth App usa esse callback como **Authorization callback URL**. O **Homepage URL** do novo Admin é `https://donaantonia.com.br/whatsapp-admin/`. Para acesso local, o app atual usa `http://127.0.0.1:5173/`.
+4. No Supabase, em **Authentication → URL Configuration**, permita a origem local `http://127.0.0.1:5173/**` e a URL exata `https://donaantonia.com.br/whatsapp-admin/`. Não use wildcard amplo em produção.
 5. Armazene o Client ID e Client Secret no provider do Supabase Auth. Eles não pertencem ao `.env.local`, às Edge Functions nem ao repositório.
 
 A documentação oficial descreve o cadastro do OAuth App e o callback de Supabase em [Sign in with GitHub](https://supabase.com/docs/guides/auth/social-sign-in/auth-github), e a allowlist de redirects em [Redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls).
@@ -35,7 +34,7 @@ A documentação oficial descreve o cadastro do OAuth App e o callback de Supaba
 
 O login sozinho não libera alterações. Para catálogo, clientes e baixa de estoque, o backend precisa de uma GitHub App instalada **somente** em `osvaldosereia/SUCEDOAN12`, com `Contents: Read and write` e `Metadata: Read-only`. A chave privada deve ser guardada como secret server-side; não salvar o arquivo da chave no checkout.
 
-Os secrets server-side esperados são `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_PRIVATE_KEY`, `ADMIN_ALLOWED_USER_IDS` e `ADMIN_ALLOWED_ORIGINS`. Depois do primeiro login, `ADMIN_ALLOWED_USER_IDS` deve conter o UUID do operador em `auth.users`; `ADMIN_ALLOWED_ORIGINS` deve listar a origem exata do Admin publicado e `http://127.0.0.1:5173` somente durante desenvolvimento.
+Os secrets server-side esperados são `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_PRIVATE_KEY`, `ADMIN_ALLOWED_USER_IDS` e `ADMIN_ALLOWED_ORIGINS`. Depois do primeiro login, `ADMIN_ALLOWED_USER_IDS` deve conter o UUID do operador em `auth.users`; `ADMIN_ALLOWED_ORIGINS` deve listar `https://donaantonia.com.br` e `http://127.0.0.1:5173` somente durante desenvolvimento. CORS recebe a origem, sem o caminho `/whatsapp-admin/`.
 
 O GitHub connector desta sessão não oferece criação de GitHub App nem gravação de secrets. O Dashboard não está autenticado. Por isso, não é possível concluir esses cadastros em nome do operador nesta sessão.
 

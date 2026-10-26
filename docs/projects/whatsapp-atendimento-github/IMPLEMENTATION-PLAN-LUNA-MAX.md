@@ -16,7 +16,7 @@ Podemos consultar no Vitrine e nos serviços atuais, somente para pesquisa, quai
 
 ### Hospedagem da interface
 
-A interface do novo Admin será publicada pelo GitHub, a partir do repositório e da pasta `projetos/whatsapp-atendimento-github/`. O Supabase não hospeda essa interface: fornece autenticação, dados de clientes e Edge Functions. O endereço `https://ssbesxgaijknwsjbsbcz.supabase.co/auth/v1/callback` é somente o callback técnico de OAuth. Seguindo o mecanismo existente de publicar caminhos isolados, o Admin ficará em `https://donaantonia.com.br/whatsapp-admin/`; a allowlist OAuth deve receber esse endereço exato depois do primeiro deploy confirmado. Não pedir ao usuário que escolha hospedagem no Supabase.
+A interface do novo Admin é publicada pelo GitHub, a partir do repositório e da pasta `projetos/whatsapp-atendimento-github/`. O Supabase não hospeda essa interface: fornece autenticação, dados de clientes e Edge Functions. O endereço `https://ssbesxgaijknwsjbsbcz.supabase.co/auth/v1/callback` é somente o callback técnico de OAuth. Seguindo o mecanismo existente de publicar caminhos isolados, o Admin está em `https://donaantonia.com.br/whatsapp-admin/` (GitHub Actions `40331576769`, concluída com sucesso). A allowlist OAuth ainda precisa receber o endereço exato. Esta publicação cobre a interface estática; não ativa login, Edge Functions nem atendimento. Não pedir ao usuário que escolha hospedagem no Supabase.
 
 ### Decisão posterior sobre conexões existentes
 
