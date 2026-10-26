@@ -6,6 +6,8 @@ export interface BasketSelection {
 }
 
 export type BasketSelections = Record<string, BasketSelection>;
+export type AvailableStockByProduct = ReadonlyMap<string, number>;
+export const FLOW_MAX_PRODUCT_QUANTITY = 6;
 
 export interface BasketQuote {
   totalCents: MoneyCents;
@@ -38,6 +40,7 @@ export function quoteBasket(
   basket: Basket,
   productList: Product[],
   selections: BasketSelections,
+  availableStockByProduct?: AvailableStockByProduct,
 ): BasketQuote {
   if (!basket.active || basket.groups.length === 0) throw new FlowSelectionError("Esta cesta não está disponível.");
   const products = new Map(productList.map((product) => [product.id, product]));
@@ -54,15 +57,20 @@ export function quoteBasket(
     if (!selection || typeof selection.productId !== "string" || !Number.isSafeInteger(selection.quantity)) {
       throw new FlowSelectionError("Complete a escolha de cada tipo de produto.");
     }
-    if (selection.quantity < group.minimumQuantity || selection.quantity > group.maximumQuantity) {
-      throw new FlowSelectionError("A quantidade está fora do limite permitido.");
-    }
-    if (selection.quantity === 0 && !group.removalAllowed) {
-      throw new FlowSelectionError("Este item não pode ser retirado da cesta.");
-    }
-
     const reference = referenceProduct(group, products);
     const selected = findGroupProduct(group, selection.productId, products);
+    if (selection.quantity !== 0) {
+      const available = availableStockByProduct?.get(selected.id);
+      if (availableStockByProduct && (!Number.isSafeInteger(available) || (available as number) < 0)) {
+        throw new FlowSelectionError("O estoque desta opção não pôde ser confirmado.");
+      }
+      const maximum = Math.min(FLOW_MAX_PRODUCT_QUANTITY, availableStockByProduct ? available as number : group.maximumQuantity);
+      if (selection.quantity < 1 || selection.quantity > maximum) {
+        throw new FlowSelectionError(availableStockByProduct
+          ? "A quantidade excede o estoque disponível para este produto."
+          : "A quantidade deve ser de 1 a 6 unidades.");
+      }
+    }
     referenceTotal += reference.unitPriceCents * group.initialQuantity;
     selectedTotal += selected.unitPriceCents * selection.quantity;
     if (!Number.isSafeInteger(referenceTotal) || !Number.isSafeInteger(selectedTotal)) {

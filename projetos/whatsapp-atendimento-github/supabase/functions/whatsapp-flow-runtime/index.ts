@@ -1,8 +1,9 @@
 import { validateCatalog, type Basket, type CatalogDocuments, type Product } from "../../../src/domain/catalog.ts";
 import {
-  defaultBasketSelections,
   FlowSelectionError,
+  FLOW_MAX_PRODUCT_QUANTITY,
   quoteBasket,
+  type AvailableStockByProduct,
   type BasketSelections,
 } from "../../../src/domain/flow-runtime.ts";
 
@@ -12,6 +13,8 @@ const CATALOG_COMMIT = /^[a-f0-9]{40}$/i;
 const CATALOG_REVISION = /^[a-f0-9]{40}:[a-f0-9]{40}$/i;
 const FLOW_TOKEN = /^[A-Za-z0-9_-]{32,128}$/;
 const BODY_LIMIT = 1024 * 1024;
+const PRODUCT_IMAGE_LIMIT = 27_000;
+const NO_PRODUCT_ID = "__skip_product__";
 const CHANNELS = ["0975", "1018"] as const;
 type FlowChannel = typeof CHANNELS[number];
 
@@ -61,6 +64,7 @@ class RuntimeError extends Error {
 }
 
 const catalogCache = new Map<string, Promise<CatalogSnapshot>>();
+const productImageCache = new Map<string, Promise<string | null>>();
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -322,6 +326,53 @@ async function loadCatalog(commit: string): Promise<CatalogSnapshot> {
   }
 }
 
+async function productImageBase64(product: Product, commit: string): Promise<string | null> {
+  if (!product.imagePath.startsWith("images/products/") || product.imagePath.includes("..")
+    || !/^[A-Za-z0-9._/-]+$/.test(product.imagePath)) return null;
+  const cacheKey = `${commit}:${product.imagePath}`;
+  const cached = productImageCache.get(cacheKey);
+  if (cached) return cached;
+  const pending = (async () => {
+    const path = product.imagePath.split("/").map(encodeURIComponent).join("/");
+    const response = await fetch(`https://raw.githubusercontent.com/${OWNER}/${REPOSITORY}/${commit}/projetos/whatsapp-atendimento-github/${path}`, {
+      redirect: "error",
+      signal: AbortSignal.timeout(2500),
+    });
+    if (!response.ok || !response.body) return null;
+    const reader = response.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+    while (true) {
+      const part = await reader.read();
+      if (part.done) break;
+      size += part.value.byteLength;
+      if (size > PRODUCT_IMAGE_LIMIT) {
+        await reader.cancel();
+        return null;
+      }
+      chunks.push(part.value);
+    }
+    if (size < 12) return null;
+    const bytes = new Uint8Array(size);
+    let offset = 0;
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    const signature = String.fromCharCode(...bytes.subarray(0, 4), ...bytes.subarray(8, 12));
+    if (signature !== "RIFFWEBP") return null;
+    return base64(bytes);
+  })();
+  productImageCache.set(cacheKey, pending);
+  if (productImageCache.size > 100) productImageCache.delete(productImageCache.keys().next().value as string);
+  try {
+    return await pending;
+  } catch {
+    productImageCache.delete(cacheKey);
+    return null;
+  }
+}
+
 function sessionHeaders(): Headers {
   const headers = serviceHeaders();
   headers.set("Accept", "application/json");
@@ -355,56 +406,121 @@ async function readSession(token: string): Promise<FlowSession> {
 }
 
 function asSelections(value: unknown): BasketSelections {
-  if (!isRecord(value)) throw new FlowSelectionError("Não foi possível validar as escolhas desta etapa.");
+  let parsed = value;
+  if (typeof parsed === "string") {
+    if (parsed.length > 16 * 1024) throw new FlowSelectionError("As escolhas desta cesta excedem o limite aceito.");
+    try { parsed = JSON.parse(parsed) as unknown; } catch { throw new FlowSelectionError("As escolhas desta etapa não são válidas."); }
+  }
+  if (!isRecord(parsed) || Object.keys(parsed).length > 50) {
+    throw new FlowSelectionError("Não foi possível validar as escolhas desta etapa.");
+  }
   const selections: BasketSelections = {};
-  for (const [groupId, raw] of Object.entries(value)) {
-    if (!isRecord(raw) || typeof raw.productId !== "string" || !Number.isSafeInteger(raw.quantity)) {
+  for (const [groupId, raw] of Object.entries(parsed)) {
+    const rawQuantity = isRecord(raw) ? raw.quantity : undefined;
+    const quantity = typeof rawQuantity === "number"
+      ? rawQuantity
+      : typeof rawQuantity === "string" && /^\d{1,2}$/.test(rawQuantity) ? Number(rawQuantity) : NaN;
+    if (!isRecord(raw) || typeof raw.productId !== "string" || !Number.isSafeInteger(quantity)) {
       throw new FlowSelectionError("Não foi possível validar as escolhas desta etapa.");
     }
-    selections[groupId] = { productId: raw.productId, quantity: raw.quantity as number };
+    selections[groupId] = { productId: raw.productId, quantity };
   }
   return selections;
 }
 
-function productOptions(group: Basket["groups"][number], products: Product[], commit: string) {
+function currency(cents: number): string {
+  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function stockAwareDefaults(
+  basket: Basket,
+  products: Product[],
+  stockByProduct: AvailableStockByProduct,
+): BasketSelections {
   const byId = new Map(products.map((product) => [product.id, product]));
-  return group.productIds.flatMap((id) => {
+  return Object.fromEntries(basket.groups.map((group) => {
+    const product = group.productIds
+      .map((id) => byId.get(id))
+      .find((candidate) => candidate?.active && (stockByProduct.get(candidate.id) ?? 0) > 0);
+    const fallback = group.productIds.map((id) => byId.get(id)).find((candidate) => candidate?.active);
+    const selected = product ?? fallback;
+    if (!selected) throw new FlowSelectionError("A composição desta cesta não tem uma opção de produto ativa.");
+    const stock = stockByProduct.get(selected.id) ?? 0;
+    const quantity = product
+      ? Math.max(1, Math.min(FLOW_MAX_PRODUCT_QUANTITY, stock, group.initialQuantity || 1))
+      : 0;
+    return [group.id, { productId: selected.id, quantity }];
+  }));
+}
+
+function productOptions(
+  group: Basket["groups"][number],
+  products: Product[],
+  stockByProduct: AvailableStockByProduct,
+) {
+  const byId = new Map(products.map((product) => [product.id, product]));
+  const options = group.productIds.flatMap((id) => {
     const product = byId.get(id);
     if (!product?.active) return [];
-    return [{
-      id: product.id,
-      label: product.name,
-      brand: product.brand,
-      presentation: product.presentation,
-      unitPriceCents: product.unitPriceCents,
-      imageUrl: `https://raw.githubusercontent.com/${OWNER}/${REPOSITORY}/${commit}/projetos/whatsapp-atendimento-github/${product.imagePath}`,
-    }];
+    const available = stockByProduct.get(product.id);
+    const price = currency(product.unitPriceCents);
+    const status = available === undefined
+      ? `${product.brand} · ${product.presentation} · ${price} · Estoque não informado`
+      : available > 0
+        ? `${product.brand} · ${product.presentation} · ${price} · até ${Math.min(FLOW_MAX_PRODUCT_QUANTITY, available)} un.`
+        : `${product.brand} · ${product.presentation} · ${price} · Sem estoque`;
+    return [{ id: product.id, title: product.name.slice(0, 30), description: status.slice(0, 300), enabled: available !== undefined && available > 0 }];
+  });
+  return [...options, { id: NO_PRODUCT_ID, title: "Não quero esse produto", description: "Retirar este tipo da cesta", enabled: true }];
+}
+
+function quantityOptions(maximum: number): Array<{ id: string; title: string; enabled: boolean }> {
+  const count = Math.max(1, Math.min(FLOW_MAX_PRODUCT_QUANTITY, maximum));
+  return Array.from({ length: count }, (_, index) => {
+    const quantity = index + 1;
+    return { id: String(quantity), title: String(quantity), enabled: quantity <= maximum };
   });
 }
 
-function groupScreen(
+async function groupScreen(
   basket: Basket,
   products: Product[],
   index: number,
-  selections: BasketSelections,
+  prior: BasketSelections,
+  current: BasketSelections[string],
   commit: string,
-): Record<string, unknown> {
+  stockByProduct: AvailableStockByProduct,
+  error = "",
+): Promise<Record<string, unknown>> {
   const group = basket.groups[index];
-  const defaults = defaultBasketSelections(basket);
-  const effective = { ...defaults, ...selections };
-  const quote = quoteBasket(basket, products, effective);
+  if (!group) throw new FlowSelectionError("Esta etapa não pertence à cesta selecionada.");
+  const defaults = stockAwareDefaults(basket, products, stockByProduct);
+  const effective = { ...defaults, ...prior, [group.id]: current };
+  const quote = quoteBasket(basket, products, effective, stockByProduct);
+  const product = products.find((candidate) => candidate.id === current.productId && candidate.active);
+  const selected = current.quantity > 0 && product && (stockByProduct.get(product.id) ?? 0) > 0;
+  const image = selected ? await productImageBase64(product, commit) : null;
+  const stock = selected ? stockByProduct.get(product.id) ?? 0 : 0;
+  const maximum = Math.min(FLOW_MAX_PRODUCT_QUANTITY, stock);
   return {
-    screen: `GROUP_${String(index + 1).padStart(2, "0")}`,
+    screen: "GROUP",
     data: {
-      groupId: group.id,
+      stepLabel: `Produto ${index + 1} de ${basket.groups.length}`,
+      basketName: basket.name,
       groupLabel: group.label,
-      minimumQuantity: group.minimumQuantity,
-      maximumQuantity: group.maximumQuantity,
-      removalAllowed: group.removalAllowed,
-      selection: effective[group.id],
-      options: productOptions(group, products, commit),
-      selections,
-      totalCents: quote.totalCents,
+      productOptions: productOptions(group, products, stockByProduct),
+      quantityOptions: quantityOptions(maximum),
+      selectedProductId: selected ? current.productId : NO_PRODUCT_ID,
+      selectedQuantity: String(selected ? current.quantity : 1),
+      selectedImage: image ?? "",
+      imageAvailable: Boolean(image),
+      imageUnavailable: Boolean(selected && !image),
+      imageFallback: "Foto indisponível neste momento.",
+      quantityVisible: Boolean(selected),
+      quantityLabel: selected ? `Quantidade (1 a ${maximum})` : "Quantidade",
+      totalDisplay: `Total atualizado: ${currency(quote.totalCents)}`,
+      selections_json: JSON.stringify(prior),
+      error,
     },
   };
 }
@@ -414,9 +530,76 @@ function validateFlowToken(value: unknown): string {
   return value;
 }
 
+function loadAvailableStock(products: Product[]): AvailableStockByProduct {
+  const entries: Array<[string, number]> = [];
+  for (const product of products) {
+    if (product.stockQuantity !== null) entries.push([product.id, product.stockQuantity]);
+  }
+  return new Map(entries);
+}
+
+function orderedPriorSelections(value: unknown, basket: Basket): BasketSelections {
+  const selections = asSelections(value);
+  const groupIds = Object.keys(selections);
+  if (groupIds.length > basket.groups.length) throw new FlowSelectionError("A seleção contém etapas que não pertencem a esta cesta.");
+  for (let index = 0; index < groupIds.length; index += 1) {
+    if (groupIds[index] !== basket.groups[index]?.id) throw new FlowSelectionError("Revise as etapas anteriores antes de continuar.");
+  }
+  return selections;
+}
+
+function parseChoiceQuantity(value: unknown, fallback: number): number {
+  if (value === undefined || value === null || value === "") return fallback;
+  const quantity = typeof value === "number" ? value
+    : typeof value === "string" && /^\d{1,2}$/.test(value) ? Number(value) : NaN;
+  if (!Number.isSafeInteger(quantity)) throw new FlowSelectionError("Selecione uma quantidade inteira.");
+  return quantity;
+}
+
+function selectionForAction(
+  group: Basket["groups"][number],
+  productIdValue: unknown,
+  quantityValue: unknown,
+  action: string,
+  fallback: BasketSelections[string],
+  products: Product[],
+  stockByProduct: AvailableStockByProduct,
+): BasketSelections[string] {
+  if (productIdValue === NO_PRODUCT_ID) {
+    const fallbackProductId = group.productIds.find((id) => products.some((product) => product.id === id && product.active));
+    if (!fallbackProductId) throw new FlowSelectionError("A composição padrão desta etapa está incompleta.");
+    return { productId: fallbackProductId, quantity: 0 };
+  }
+  const productId = typeof productIdValue === "string" && productIdValue ? productIdValue : fallback.productId;
+  if (!group.productIds.includes(productId)) throw new FlowSelectionError("Escolha um produto disponível neste tipo.");
+  const product = products.find((candidate) => candidate.id === productId && candidate.active);
+  if (!product) throw new FlowSelectionError("Esta opção não está disponível.");
+  const stock = stockByProduct.get(product.id);
+  if (!Number.isSafeInteger(stock) || (stock as number) < 1) throw new FlowSelectionError("Este produto está sem estoque.");
+  const maximum = Math.min(FLOW_MAX_PRODUCT_QUANTITY, stock as number);
+  let quantity = parseChoiceQuantity(quantityValue, product.id === fallback.productId && fallback.quantity > 0 ? fallback.quantity : 1);
+  if (action === "product_change") quantity = Math.max(1, Math.min(quantity, maximum));
+  if (quantity < 1 || quantity > maximum) throw new FlowSelectionError(`Escolha uma quantidade de 1 a ${maximum}.`);
+  return { productId, quantity };
+}
+
+function reviewAddressOptions(customer: CustomerMatch["customer"]): Array<Record<string, unknown>> {
+  return (customer?.addresses ?? []).map((address) => {
+    const street = `${address.street}, ${address.number}${address.complement ? ` ${address.complement}` : ""}`;
+    const location = `${address.neighborhood} · ${address.city}/${address.state} · CEP ${address.postal_code}`;
+    const reference = address.reference ? ` · Ref.: ${address.reference}` : "";
+    return {
+      id: address.id,
+      title: street.slice(0, 30),
+      description: `${location}${reference}`.slice(0, 300),
+      enabled: true,
+    };
+  });
+}
+
 async function handleDataExchange(request: DecryptedRequest, channel: FlowChannel): Promise<Record<string, unknown>> {
   if (request.action === "ping") return { version: "3.0", data: { status: "active" } };
-  if (request.action !== "INIT" && request.action !== "data_exchange") {
+  if (request.action !== "INIT" && request.action !== "data_exchange" && request.action !== "BACK") {
     throw new RuntimeError(400, "Ação de Flow não suportada.");
   }
   const flowToken = validateFlowToken(request.flow_token);
@@ -428,42 +611,93 @@ async function handleDataExchange(request: DecryptedRequest, channel: FlowChanne
   const basket = snapshot.documents.baskets.baskets.find((candidate) => candidate.id === session.basket_id && candidate.active);
   if (!basket) throw new RuntimeError(409, "A cesta desta sessão não está disponível na revisão fixada.");
   const products = snapshot.documents.products.products;
+  const stockByProduct = loadAvailableStock(products);
+  const defaults = stockAwareDefaults(basket, products, stockByProduct);
 
-  if (request.action === "INIT") return { version: "3.0", ...groupScreen(basket, products, 0, {}, session.catalog_commit) };
-  if (typeof request.screen !== "string" || !/^GROUP_\d{2}$/.test(request.screen) || !isRecord(request.data)) {
+  if (request.action === "INIT") {
+    return { version: "3.0", ...await groupScreen(basket, products, 0, {}, defaults[basket.groups[0].id], session.catalog_commit, stockByProduct) };
+  }
+  if (typeof request.screen !== "string" || !isRecord(request.data)) {
     throw new FlowSelectionError("Não foi possível identificar esta etapa do atendimento.");
   }
-  const groupIndex = Number(request.screen.slice("GROUP_".length)) - 1;
-  if (groupIndex < 0 || groupIndex >= basket.groups.length) throw new FlowSelectionError("Esta etapa não pertence à cesta selecionada.");
-  const group = basket.groups[groupIndex];
-  const prior = asSelections(request.data.selections ?? {});
-  for (const groupId of Object.keys(prior)) {
-    const index = basket.groups.findIndex((candidate) => candidate.id === groupId);
-    if (index < 0 || index >= groupIndex) throw new FlowSelectionError("A seleção contém uma etapa fora de ordem.");
+  if (request.action === "BACK") {
+    if (request.screen === "CUSTOMER_REVIEW") {
+      const all = orderedPriorSelections(request.data.selections_json, basket);
+      if (Object.keys(all).length !== basket.groups.length) throw new FlowSelectionError("A revisão não contém todas as etapas da cesta.");
+      const index = basket.groups.length - 1;
+      const group = basket.groups[index];
+      const prior = Object.fromEntries(basket.groups.slice(0, index).map((item) => [item.id, all[item.id]]));
+      return { version: "3.0", ...await groupScreen(basket, products, index, prior, all[group.id], session.catalog_commit, stockByProduct) };
+    }
+    if (request.screen !== "GROUP") throw new FlowSelectionError("Esta etapa não pertence à cesta selecionada.");
+    const prior = orderedPriorSelections(request.data.selections_json, basket);
+    const previousIndex = Math.max(0, Object.keys(prior).length - 1);
+    const group = basket.groups[previousIndex];
+    const groupSelection = prior[group.id] ?? defaults[group.id];
+    const previous = Object.fromEntries(basket.groups.slice(0, previousIndex).map((item) => [item.id, prior[item.id]]));
+    return { version: "3.0", ...await groupScreen(basket, products, previousIndex, previous, groupSelection, session.catalog_commit, stockByProduct) };
   }
-  for (let index = 0; index < groupIndex; index += 1) {
-    if (!prior[basket.groups[index].id]) throw new FlowSelectionError("Revise as etapas anteriores antes de continuar.");
-  }
-  const current = asSelections({ [group.id]: request.data.selection })[group.id];
-  const selections = { ...prior, [group.id]: current };
-  const effective = { ...defaultBasketSelections(basket), ...selections };
-  const quote = quoteBasket(basket, products, effective);
+  if (request.screen !== "GROUP") throw new FlowSelectionError("Esta etapa não pertence à cesta selecionada.");
 
+  const prior = orderedPriorSelections(request.data.selections_json, basket);
+  const groupIndex = Object.keys(prior).length;
+  if (groupIndex >= basket.groups.length) throw new FlowSelectionError("A seleção já passou pela última etapa.");
+  const group = basket.groups[groupIndex];
+  const currentFallback = defaults[group.id];
+  const action = typeof request.data.component_action === "string" ? request.data.component_action : "continue";
+  if (!["product_change", "quantity_change", "continue"].includes(action)) {
+    throw new FlowSelectionError("Esta ação de escolha não é válida.");
+  }
+  let current: BasketSelections[string];
+  try {
+    current = selectionForAction(group, request.data.product_id, request.data.quantity, action, currentFallback, products, stockByProduct);
+  } catch (error) {
+    if (!(error instanceof FlowSelectionError)) throw error;
+    return { version: "3.0", ...await groupScreen(basket, products, groupIndex, prior, currentFallback, session.catalog_commit, stockByProduct, error.message) };
+  }
+  if (action !== "continue") {
+    return { version: "3.0", ...await groupScreen(basket, products, groupIndex, prior, current, session.catalog_commit, stockByProduct) };
+  }
+
+  const selections = { ...prior, [group.id]: current };
+  const effective = { ...defaults, ...selections };
+  const quote = quoteBasket(basket, products, effective, stockByProduct);
   if (groupIndex + 1 < basket.groups.length) {
-    return { version: "3.0", ...groupScreen(basket, products, groupIndex + 1, selections, session.catalog_commit) };
+    const nextGroup = basket.groups[groupIndex + 1];
+    return { version: "3.0", ...await groupScreen(basket, products, groupIndex + 1, selections, defaults[nextGroup.id], session.catalog_commit, stockByProduct) };
+  }
+  if (!Object.values(quote.selections).some((selection) => selection.quantity > 0)) {
+    return { version: "3.0", ...await groupScreen(basket, products, groupIndex, prior, current, session.catalog_commit, stockByProduct, "Mantenha pelo menos um produto na cesta para continuar.") };
   }
   const customer = await findCustomer(session.phone_e164);
+  const productById = new Map(products.map((product) => [product.id, product]));
+  const selectionSummary = basket.groups.flatMap((item) => {
+    const selection = quote.selections[item.id];
+    if (selection.quantity === 0) return [];
+    const product = productById.get(selection.productId);
+    return product ? [`${selection.quantity} × ${product.name} (${product.brand})`] : [];
+  }).join("\n");
+  const savedAddresses = reviewAddressOptions(customer.customer);
+  const addresses = savedAddresses.length
+    ? savedAddresses
+    : [{ id: "__customer_action_required__", title: "Cadastro necessário", description: "Chame o atendimento para continuar.", enabled: false }];
+  const defaultAddress = customer.customer?.addresses.find((address) => address.is_default) ?? customer.customer?.addresses[0];
+  const reviewNote = customer.status === "matched"
+    ? "Confira o endereço e o pagamento. O resumo será enviado nesta conversa após concluir; o pedido só será confirmado com seu aceite."
+    : "Não encontramos um cadastro e endereço únicos para este telefone. Feche o Flow e chame o atendimento para continuar.";
   return {
     version: "3.0",
     screen: "CUSTOMER_REVIEW",
     data: {
       basketName: basket.name,
-      totalCents: quote.totalCents,
+      selectionSummary,
+      totalDisplay: currency(quote.totalCents),
       flow_token: flowToken,
-      customerStatus: customer.status,
       customerName: customer.customer?.name ?? "",
-      addresses: customer.customer?.addresses ?? [],
-      selections: quote.selections,
+      reviewNote,
+      addressOptions: addresses,
+      defaultAddressId: defaultAddress?.id ?? "__customer_action_required__",
+      selections_json: JSON.stringify(quote.selections),
     },
   };
 }
@@ -530,11 +764,47 @@ Deno.serve(async (httpRequest) => {
       });
     } catch (error) {
       if (error instanceof FlowSelectionError) {
-        const errorResponse = {
-          version: "3.0",
-          screen: decrypted.request.screen ?? "GROUP_01",
-          data: { error: error.message },
-        };
+        const requestData = isRecord(decrypted.request.data) ? decrypted.request.data : {};
+        const selectionsJson = typeof requestData.selections_json === "string" ? requestData.selections_json : "{}";
+        const isReview = decrypted.request.screen === "CUSTOMER_REVIEW";
+        const errorResponse = isReview
+          ? {
+            version: "3.0",
+            screen: "CUSTOMER_REVIEW",
+            data: {
+              basketName: "",
+              selectionSummary: "",
+              totalDisplay: "",
+              customerName: "",
+              reviewNote: error.message,
+              flow_token: typeof decrypted.request.flow_token === "string" ? decrypted.request.flow_token : "",
+              selections_json: selectionsJson,
+              defaultAddressId: "error-address",
+              addressOptions: [{ id: "error-address", title: "Reabra o atendimento", description: "Os dados da revisão precisam ser carregados novamente.", enabled: true }],
+            },
+          }
+          : {
+            version: "3.0",
+            screen: "GROUP",
+            data: {
+              stepLabel: "Revise sua escolha",
+              basketName: "",
+              groupLabel: "Produto",
+              productOptions: [{ id: NO_PRODUCT_ID, title: "Não quero esse produto", description: "Retirar este tipo da cesta", enabled: true }],
+              quantityOptions: [{ id: "1", title: "1", enabled: true }],
+              selectedProductId: NO_PRODUCT_ID,
+              selectedQuantity: "1",
+              selectedImage: "",
+              imageAvailable: false,
+              imageUnavailable: false,
+              imageFallback: "Foto indisponível neste momento.",
+              quantityVisible: false,
+              quantityLabel: "Quantidade",
+              totalDisplay: "",
+              selections_json: selectionsJson,
+              error: error.message,
+            },
+          };
         const encrypted = await encryptResponse(errorResponse, decrypted.aesKey, decrypted.iv);
         return new Response(encrypted, {
           status: 200,

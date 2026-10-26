@@ -1,6 +1,8 @@
 import type { Basket, Product } from "../domain/catalog";
 import {
   FLOW_CHANNELS,
+  FLOW_NO_PRODUCT_ID,
+  flowProductField,
   flowQuantityField,
   flowNameForBasket,
   generateBasketFlow,
@@ -22,6 +24,7 @@ export interface FlowsPanelModel {
   busy: boolean;
   notice: string;
   noticeType: "info" | "success" | "error";
+  productChoices: Map<string, string>;
   quantities: Map<string, number>;
 }
 
@@ -29,6 +32,10 @@ function escapeHtml(value: unknown): string {
   return String(value ?? "").replace(/[&<>"']/g, (character) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
   })[character] ?? character);
+}
+
+function money(cents: number): string {
+  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 export function renderFlowsPanel(model: FlowsPanelModel): string {
@@ -49,7 +56,7 @@ export function renderFlowsPanel(model: FlowsPanelModel): string {
   return `<section class="workspace-heading">
       <div><span class="eyebrow">Canais independentes · ${savedDrafts.length} Flow(s) salvo(s)</span><h1>Flows</h1><p>Gere e revise um rascunho de Flow por tamanho de cesta e canal.</p></div>
     </section>
-    <div class="flow-safety-note"><strong>Rascunho local, sem publicação</strong><span>Esta etapa não chama a Meta nem envia mensagens. A validação abaixo confere somente o JSON gerado pelo wizard; a validação Meta, imagens e o cálculo no endpoint continuam pendentes.</span></div>
+    <div class="flow-safety-note"><strong>Rascunho local, sem publicação</strong><span>O JSON e o endpoint estão ligados ao contrato local. Ainda faltam validação no Flow Builder e conferência em aparelho; esta tela não chama a Meta nem envia mensagens.</span></div>
     ${model.notice ? `<div class="notice notice-${model.noticeType}" role="status"><span>${escapeHtml(model.notice)}</span><button data-action="clear-notice" aria-label="Fechar">×</button></div>` : ""}
     <div class="flow-layout">
       <section class="flow-editor-card">
@@ -59,17 +66,33 @@ export function renderFlowsPanel(model: FlowsPanelModel): string {
           <label>Tamanho da cesta<select id="flow-basket">${model.baskets.filter((item) => item.active).map((item) => `<option value="${escapeHtml(item.id)}" ${item.id === model.basketId ? "selected" : ""}>${escapeHtml(item.name)}</option>`).join("")}</select></label>
           <label>Nome técnico do Flow<input id="flow-name" maxlength="60" pattern="[a-z0-9]+(-[a-z0-9]+)*" value="${escapeHtml(model.flowName || (basket ? flowNameForBasket(basket) : ""))}" placeholder="cesta-mini"></label>
         </div>
-        ${basket ? `<div class="flow-basket-summary"><div><span class="eyebrow">Cesta associada</span><strong>${escapeHtml(basket.name)} · ${optionCount} produtos possíveis</strong></div><span>${basket.groups.length} tipos</span></div><div class="flow-group-list">${basket.groups.map((group) => `<div><strong>${escapeHtml(group.label)}</strong><span>${group.minimumQuantity}–${group.maximumQuantity} unidades · ${new Set(group.productIds).size} opções</span></div>`).join("")}</div><section class="flow-simulator"><div class="flow-json-heading"><div><span class="eyebrow">Prévia controlada no navegador</span><h2>Escolhas do cliente</h2></div><span class="subtle">Sem WhatsApp ou rede</span></div><p>Informe quantidades para conferir os limites da cesta. O total final será calculado pelo servidor na Rodada 4.</p>${basket.groups.map((group, groupIndex) => {
-          const options = [...new Set(group.productIds)];
-          const total = options.reduce((sum, _id, productIndex) => sum + (model.quantities.get(`${basket.id}:${flowQuantityField(groupIndex, productIndex)}`) ?? 0), 0);
-          const inRange = total >= group.minimumQuantity && total <= group.maximumQuantity;
-          return `<fieldset class="flow-simulation-group"><legend>${escapeHtml(group.label)} · ${group.minimumQuantity}–${group.maximumQuantity}</legend>${options.map((productId, productIndex) => {
-            const product = productsById.get(productId);
-            if (!product) return "";
-            const field = flowQuantityField(groupIndex, productIndex);
-            const key = `${basket.id}:${field}`;
-            return `<label>${escapeHtml(product.name)} <small>${escapeHtml(product.brand)}</small><input id="flow-preview-${field}" data-flow-preview="${escapeHtml(key)}" type="number" min="0" max="${group.maximumQuantity}" value="${model.quantities.get(key) ?? ""}" inputmode="numeric" placeholder="0"></label>`;
-          }).join("")}<span class="flow-group-count ${inRange ? "is-valid" : "is-invalid"}" data-flow-group-count="${groupIndex}">Total escolhido: ${total} · ${inRange ? "dentro do limite" : `requer ${group.minimumQuantity}–${group.maximumQuantity}`}</span></fieldset>`;
+        ${basket ? `<div class="flow-basket-summary"><div><span class="eyebrow">Cesta associada</span><strong>${escapeHtml(basket.name)} · ${optionCount} produtos possíveis</strong></div><span>${basket.groups.length} tipos</span></div><div class="flow-group-list">${basket.groups.map((group) => `<div><strong>${escapeHtml(group.label)}</strong><span>1–6 unidades conforme estoque · ${new Set(group.productIds).size} opções + retirada</span></div>`).join("")}</div><section class="flow-simulator"><div class="flow-json-heading"><div><span class="eyebrow">Prévia controlada no navegador</span><h2>Uma escolha por tipo</h2></div><span class="subtle">Sem WhatsApp ou rede</span></div><p>Em cada etapa, escolha um produto e depois a quantidade. O preview respeita o saldo informado neste catálogo GitHub; sem saldo ou com saldo zero, o produto fica bloqueado.</p>${basket.groups.map((group, groupIndex) => {
+          const productKey = `${basket.id}:${flowProductField(groupIndex)}`;
+          const quantityKey = `${basket.id}:${flowQuantityField(groupIndex)}`;
+          const availableProducts = group.productIds.flatMap((id) => {
+            const product = productsById.get(id);
+            return product?.active ? [product] : [];
+          });
+          const requestedProductId = model.productChoices.get(productKey);
+          const defaultProduct = availableProducts.find((product) => product.stockQuantity !== null && product.stockQuantity > 0);
+          const requestedProduct = availableProducts.find((product) => product.id === requestedProductId && product.stockQuantity !== null && product.stockQuantity > 0);
+          const selectedProductId = requestedProductId === FLOW_NO_PRODUCT_ID
+            ? FLOW_NO_PRODUCT_ID
+            : requestedProduct?.id ?? defaultProduct?.id ?? FLOW_NO_PRODUCT_ID;
+          const selectedProduct = availableProducts.find((product) => product.id === selectedProductId);
+          const removed = selectedProductId === FLOW_NO_PRODUCT_ID;
+          const quantityLimit = selectedProduct?.stockQuantity ? Math.min(6, selectedProduct.stockQuantity) : 0;
+          const requestedQuantity = model.quantities.get(quantityKey) ?? Math.max(1, group.initialQuantity || 1);
+          const quantity = quantityLimit ? Math.min(quantityLimit, Math.max(1, requestedQuantity)) : 0;
+          const productOptions = availableProducts.map((product) => {
+            const unavailable = product.stockQuantity === null || product.stockQuantity === 0;
+            const stockLabel = product.stockQuantity === null ? " · estoque não informado" : product.stockQuantity === 0 ? " · sem estoque" : "";
+            const label = `${product.name} · ${product.brand} · ${money(product.unitPriceCents)}${stockLabel}`;
+            return `<option value="${escapeHtml(product.id)}" ${product.id === selectedProductId ? "selected" : ""} ${unavailable ? "disabled" : ""}>${escapeHtml(label)}</option>`;
+          }).join("");
+          const quantityOptions = Array.from({ length: quantityLimit }, (_, index) => index + 1)
+            .map((value) => `<option value="${value}" ${value === quantity ? "selected" : ""}>${value}</option>`).join("");
+          return `<fieldset class="flow-simulation-group"><legend>${escapeHtml(group.label)}</legend><label>Produto<select data-flow-product="${groupIndex}">${productOptions}<option value="${FLOW_NO_PRODUCT_ID}" ${removed ? "selected" : ""}>Não quero esse produto</option></select></label><label ${removed ? "hidden" : ""}>Quantidade<select data-flow-quantity="${groupIndex}">${quantityOptions}</select></label><span class="flow-group-count is-valid" data-flow-group-count="${groupIndex}">${removed ? "Este tipo será retirado da cesta." : `${quantity} unidade(s) · ${escapeHtml(selectedProduct?.name ?? "Produto selecionado")}`}</span></fieldset>`;
         }).join("")}</section>` : ""}
         <div class="flow-channel-status"><span class="status-pill is-inactive">${escapeHtml(status)}</span><span>Número e Flow ID Meta: não configurados</span></div>
         <div class="flow-actions"><button type="button" class="button button-soft" data-action="download-flow-json" ${!flowJson || validationErrors.length || model.busy ? "disabled" : ""}>Baixar JSON</button><button type="button" class="button button-primary" data-action="review-flow-save" ${!model.authorized || !model.catalogRevision || model.catalogDirty || !flowJson || validationErrors.length || model.busy ? "disabled title=Requer%20cat%C3%A1logo%20salvo%20e%20acesso%20autorizado" : ""}>Revisar e salvar rascunho</button></div>

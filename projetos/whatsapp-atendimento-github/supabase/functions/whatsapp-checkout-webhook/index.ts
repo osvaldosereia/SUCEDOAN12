@@ -315,16 +315,21 @@ async function queueFlowLaunch(tx: Sql, channel: Channel, phone: string, basket:
         flow_id: flowId,
         flow_cta: "Montar cesta",
         flow_action: "navigate",
-        flow_action_payload: { screen: "GROUP_01", data: { basketId: basket.id } },
+        flow_action_payload: { screen: "GROUP", data: { basketId: basket.id } },
       },
     },
   }));
 }
 
 function parseSelections(value: unknown): BasketSelections {
-  if (!isRecord(value) || Object.keys(value).length > 50) throw new WebhookError(422, "A seleção do Flow está ausente ou excede os limites.");
+  let parsed = value;
+  if (typeof parsed === "string") {
+    if (parsed.length > 16 * 1024) throw new WebhookError(413, "A seleção do Flow excede o limite aceito.");
+    try { parsed = JSON.parse(parsed) as unknown; } catch { throw new WebhookError(422, "A seleção do Flow não é JSON válido."); }
+  }
+  if (!isRecord(parsed) || Object.keys(parsed).length > 50) throw new WebhookError(422, "A seleção do Flow está ausente ou excede os limites.");
   const result: BasketSelections = {};
-  for (const [groupId, choice] of Object.entries(value)) {
+  for (const [groupId, choice] of Object.entries(parsed)) {
     if (!/^[A-Za-z0-9_-]{1,80}$/.test(groupId) || !isRecord(choice)
       || typeof choice.productId !== "string" || !Number.isSafeInteger(choice.quantity)) {
       throw new WebhookError(422, "A seleção do Flow contém campos inválidos.");
@@ -384,7 +389,11 @@ function buildOrderSnapshot(
   const basket = catalog.documents.baskets.baskets.find((candidate) => candidate.id === session.basket_id && candidate.active);
   if (!basket) throw new WebhookError(409, "A cesta da sessão não está ativa na revisão fixada.");
   const products = catalog.documents.products.products;
-  const quote = quoteBasket(basket, products, selections);
+  const stockEntries: Array<[string, number]> = [];
+  for (const product of products) {
+    if (product.stockQuantity !== null) stockEntries.push([product.id, product.stockQuantity]);
+  }
+  const quote = quoteBasket(basket, products, selections, new Map(stockEntries));
   const productById = new Map(products.map((product) => [product.id, product]));
   const items = basket.groups.flatMap((group) => {
     const selection = quote.selections[group.id];
@@ -405,6 +414,7 @@ function buildOrderSnapshot(
       lineTotalCents: product.unitPriceCents * selection.quantity,
     }];
   });
+  if (items.length === 0) throw new WebhookError(422, "Mantenha pelo menos um produto na cesta antes de concluir.");
   const snapshot = {
     catalogCommit: session.catalog_commit,
     catalogRevision: session.catalog_revision,

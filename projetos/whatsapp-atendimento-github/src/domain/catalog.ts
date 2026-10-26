@@ -9,6 +9,7 @@ export interface Product {
   brand: string;
   presentation: string;
   unitPriceCents: MoneyCents;
+  stockQuantity: number | null;
   imagePath: string;
   sku: string | null;
   gtin: string | null;
@@ -37,7 +38,7 @@ export interface Basket {
 }
 
 export interface ProductsDocument {
-  schemaVersion: 1;
+  schemaVersion: 2;
   products: Product[];
 }
 
@@ -54,7 +55,7 @@ export interface CatalogDocuments {
 const allowedKeys: Record<string, readonly string[]> = {
   catalog: ["products", "baskets"],
   productsDocument: ["schemaVersion", "products"],
-  product: ["id", "name", "brand", "presentation", "unitPriceCents", "imagePath", "sku", "gtin", "blingProductId", "active"],
+  product: ["id", "name", "brand", "presentation", "unitPriceCents", "stockQuantity", "imagePath", "sku", "gtin", "blingProductId", "active"],
   basketsDocument: ["schemaVersion", "baskets"],
   basket: ["id", "name", "active", "sortOrder", "basePriceCents", "groups"],
   group: ["id", "label", "category", "productIds", "minimumQuantity", "maximumQuantity", "initialQuantity", "removalAllowed"],
@@ -84,7 +85,7 @@ export function validateCatalog(value: unknown): string[] {
   else checkKeys(baskets, allowedKeys.basketsDocument, "baskets", errors);
   if (!isRecord(products) || !isRecord(baskets)) return errors;
 
-  if (products.schemaVersion !== 1) errors.push("products.schemaVersion must be 1");
+  if (products.schemaVersion !== 2) errors.push("products.schemaVersion must be 2");
   if (baskets.schemaVersion !== 1) errors.push("baskets.schemaVersion must be 1");
   if (!Array.isArray(products.products) || products.products.length === 0) {
     errors.push("products.products must contain at least one product");
@@ -121,6 +122,9 @@ export function validateCatalog(value: unknown): string[] {
     if (product.blingProductId !== null && !product.blingProductId.trim()) errors.push(`${at}.blingProductId must be null or non-empty`);
     if (!Number.isSafeInteger(product.unitPriceCents) || product.unitPriceCents < 0) {
       errors.push(`${at}.unitPriceCents must be a non-negative integer`);
+    }
+    if (product.stockQuantity !== null && (!Number.isSafeInteger(product.stockQuantity) || product.stockQuantity < 0)) {
+      errors.push(`${at}.stockQuantity must be null or a non-negative integer`);
     }
     if (!product.imagePath.startsWith("images/products/") || product.imagePath.includes("..")) {
       errors.push(`${at}.imagePath must point inside images/products`);
@@ -184,14 +188,14 @@ export function validateCatalog(value: unknown): string[] {
         errors.push(`${groupAt} quantities must be integers`);
         continue;
       }
-      if (group.minimumQuantity < 0 || group.maximumQuantity > 10 || group.minimumQuantity > group.maximumQuantity) {
-        errors.push(`${groupAt} quantity bounds must satisfy 0 <= minimum <= maximum <= 10`);
+      if (group.minimumQuantity !== 0 || group.maximumQuantity !== 6) {
+        errors.push(`${groupAt} must allow removal and use a maximum of 6`);
       }
       if (group.initialQuantity < group.minimumQuantity || group.initialQuantity > group.maximumQuantity) {
         errors.push(`${groupAt}.initialQuantity must be inside its bounds`);
       }
-      if (group.removalAllowed !== (group.minimumQuantity === 0)) {
-        errors.push(`${groupAt}.removalAllowed must agree with minimumQuantity`);
+      if (group.removalAllowed !== true) {
+        errors.push(`${groupAt}.removalAllowed must be true`);
       }
       if (typeof group.removalAllowed !== "boolean") errors.push(`${groupAt}.removalAllowed must be boolean`);
     }

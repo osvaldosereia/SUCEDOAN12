@@ -3,13 +3,23 @@ import type { Basket, BasketProductGroup, Product, BasketsDocument } from "./cat
 export const FLOW_CHANNELS = ["0975", "1018"] as const;
 export type FlowChannel = typeof FLOW_CHANNELS[number];
 
+const FLOW_VERSION = "6.0" as const;
+const DATA_API_VERSION = "3.0" as const;
+export const FLOW_NO_PRODUCT_ID = "__skip_product__";
+const SAMPLE_IMAGE = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/pOsAAAAASUVORK5CYII=";
+
 export interface BasketFlowJson {
-  version: "3.1";
+  version: typeof FLOW_VERSION;
+  data_api_version: typeof DATA_API_VERSION;
+  routing_model: {
+    GROUP: ["CUSTOMER_REVIEW"];
+    CUSTOMER_REVIEW: [];
+  };
   screens: Array<{
-    id: "BASKET_ORDER";
+    id: "GROUP" | "CUSTOMER_REVIEW";
     title: string;
-    terminal: true;
-    data: Record<string, never>;
+    terminal: boolean;
+    data: Record<string, unknown>;
     layout: {
       type: "SingleColumnLayout";
       children: Array<Record<string, unknown>>;
@@ -51,12 +61,37 @@ export function emptyChannelFlow(channel: FlowChannel): ChannelFlowDocument {
 function groupProducts(group: BasketProductGroup, products: Map<string, Product>): Product[] {
   return [...new Set(group.productIds)].flatMap((id) => {
     const product = products.get(id);
-    return product ? [product] : [];
+    return product?.active ? [product] : [];
   });
 }
 
-export function flowQuantityField(groupIndex: number, productIndex: number): string {
-  return `quantity_${String(groupIndex + 1).padStart(2, "0")}_${String(productIndex + 1).padStart(2, "0")}`;
+function formatMoney(cents: number): string {
+  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+export function flowProductField(groupIndex: number): string {
+  return `product_${String(groupIndex + 1).padStart(2, "0")}`;
+}
+
+export function flowQuantityField(groupIndex: number): string {
+  return `quantity_${String(groupIndex + 1).padStart(2, "0")}`;
+}
+
+function productOption(product: Product): Record<string, unknown> {
+  const details = [product.brand, product.presentation, formatMoney(product.unitPriceCents)].filter(Boolean).join(" · ");
+  return {
+    id: product.id,
+    title: product.name.slice(0, 30),
+    description: details.slice(0, 300),
+  };
+}
+
+function arrayField(items: Array<Record<string, unknown>>, properties: Record<string, unknown>): Record<string, unknown> {
+  return {
+    type: "array",
+    items: { type: "object", properties },
+    __example__: items,
+  };
 }
 
 export function flowNameForBasket(basket: Basket): string {
@@ -65,50 +100,208 @@ export function flowNameForBasket(basket: Basket): string {
   return `cesta-${id}`.slice(0, 60).replace(/-+$/g, "") || "cesta-atendimento";
 }
 
-/** Generates the local one-screen quantity draft; it is not Meta-validated. */
+/** Generates a local dynamic Flow draft; Meta Builder validation is still required. */
 export function generateBasketFlow(basket: Basket, productsList: Product[]): BasketFlowJson {
   const products = new Map(productsList.map((product) => [product.id, product]));
-  const children: Array<Record<string, unknown>> = [
-    { type: "TextHeading", text: `Monte sua cesta ${basket.name}` },
-    { type: "TextBody", text: "Informe a quantidade para cada produto. Deixe em branco para não incluir. O atendimento confirmará o total antes de concluir o pedido." },
+  const firstGroup = basket.groups[0];
+  const firstOptions = firstGroup ? groupProducts(firstGroup, products) : [];
+  if (productsList.some((product) => product.id === FLOW_NO_PRODUCT_ID)) {
+    throw new Error(`O ID reservado ${FLOW_NO_PRODUCT_ID} não pode ser usado por um produto.`);
+  }
+  const firstAvailableProduct = firstOptions.find((product) => product.stockQuantity !== null && product.stockQuantity > 0);
+  const exampleOptions = [
+    ...firstOptions.map((product) => ({ ...productOption(product), enabled: product.stockQuantity !== null && product.stockQuantity > 0 })),
+    { id: FLOW_NO_PRODUCT_ID, title: "Não quero esse produto", description: "Retirar este tipo da cesta", enabled: true },
   ];
-  const payload: Record<string, string> = { basket_id: basket.id };
+  const firstProductId = firstAvailableProduct?.id ?? FLOW_NO_PRODUCT_ID;
+  const firstQuantityLimit = firstAvailableProduct?.stockQuantity
+    ? Math.min(6, firstAvailableProduct.stockQuantity)
+    : 0;
+  const quantityOptions = Array.from({ length: Math.max(1, firstQuantityLimit) }, (_, index) => ({
+    id: String(index + 1),
+    title: String(index + 1),
+    enabled: index < firstQuantityLimit,
+  }));
 
-  basket.groups.forEach((group, groupIndex) => {
-    children.push({ type: "TextSubheading", text: group.label });
-    children.push({
-      type: "TextBody",
-      text: `Escolha entre ${group.minimumQuantity} e ${group.maximumQuantity} unidade(s) neste tipo. A quantidade inicial cadastrada é ${group.initialQuantity}.`,
-    });
-    const options = groupProducts(group, products);
-    options.forEach((product, productIndex) => {
-      const name = flowQuantityField(groupIndex, productIndex);
-      children.push({
-        type: "TextInput",
-        name,
-        label: `Quantidade — ${product.name} (${product.brand})`,
-        "input-type": "number",
-        required: false,
-      });
-      payload[name] = "${form." + name + "}";
-    });
-  });
+  const groupData = {
+    stepLabel: { type: "string", __example__: `Produto 1 de ${basket.groups.length}` },
+    basketName: { type: "string", __example__: basket.name },
+    groupLabel: { type: "string", __example__: firstGroup?.label ?? "Produto" },
+    productOptions: arrayField(exampleOptions, {
+      id: { type: "string" },
+      title: { type: "string" },
+      description: { type: "string" },
+      enabled: { type: "boolean" },
+    }),
+    quantityOptions: arrayField(quantityOptions, {
+      id: { type: "string" },
+      title: { type: "string" },
+      enabled: { type: "boolean" },
+    }),
+    selectedProductId: { type: "string", __example__: firstProductId },
+    selectedQuantity: { type: "string", __example__: String(firstAvailableProduct ? Math.min(firstQuantityLimit, Math.max(1, firstGroup?.initialQuantity || 1)) : 1) },
+    selectedImage: { type: "string", __example__: SAMPLE_IMAGE },
+    imageAvailable: { type: "boolean", __example__: true },
+    imageUnavailable: { type: "boolean", __example__: false },
+    imageFallback: { type: "string", __example__: "Foto indisponível neste momento." },
+    quantityVisible: { type: "boolean", __example__: Boolean(firstAvailableProduct) },
+    quantityLabel: { type: "string", __example__: "Quantidade" },
+    totalDisplay: { type: "string", __example__: `Total atualizado: ${formatMoney(basket.basePriceCents)}` },
+    selections_json: { type: "string", __example__: "{}" },
+    error: { type: "string", __example__: "" },
+  };
 
-  children.push({
-    type: "Footer",
-    label: "Enviar escolhas",
-    "on-click-action": { name: "complete", payload },
-  });
+  const productChangePayload = {
+    component_action: "product_change",
+    product_id: "${form.product_id}",
+    quantity: "${form.quantity}",
+    selections_json: "${data.selections_json}",
+  };
+  const quantityChangePayload = {
+    component_action: "quantity_change",
+    product_id: "${form.product_id}",
+    quantity: "${form.quantity}",
+    selections_json: "${data.selections_json}",
+  };
+
+  const groupChildren: Array<Record<string, unknown>> = [
+    { type: "TextHeading", text: "${data.stepLabel}" },
+    { type: "TextSubheading", text: "${data.groupLabel}" },
+    { type: "TextBody", text: "Escolha um produto. Para retirar este tipo da cesta, selecione a última opção." },
+    { type: "Image", src: "${data.selectedImage}", "scale-type": "contain", visible: "${data.imageAvailable}" },
+    { type: "TextBody", text: "${data.imageFallback}", visible: "${data.imageUnavailable}" },
+    {
+      type: "Dropdown",
+      name: "product_id",
+      label: "Produto",
+      "data-source": "${data.productOptions}",
+      required: true,
+      "on-select-action": { name: "data_exchange", payload: productChangePayload },
+    },
+    {
+      type: "Dropdown",
+      name: "quantity",
+      label: "${data.quantityLabel}",
+      "data-source": "${data.quantityOptions}",
+      required: "${data.quantityVisible}",
+      visible: "${data.quantityVisible}",
+      "on-select-action": { name: "data_exchange", payload: quantityChangePayload },
+    },
+    { type: "TextBody", text: "${data.totalDisplay}" },
+    { type: "TextBody", text: "${data.error}" },
+    {
+      type: "Footer",
+      label: "Continuar",
+      "on-click-action": {
+        name: "data_exchange",
+        payload: {
+          component_action: "continue",
+          product_id: "${form.product_id}",
+          quantity: "${form.quantity}",
+          selections_json: "${data.selections_json}",
+        },
+      },
+    },
+  ];
+
+  const addressExample = [{ id: "address-default", title: "Endereço cadastrado", description: "Endereço ativo confirmado", enabled: true }];
+  const reviewData = {
+    basketName: { type: "string", __example__: basket.name },
+    selectionSummary: { type: "string", __example__: "2 × Produto de exemplo\n1 × Outro produto" },
+    totalDisplay: { type: "string", __example__: formatMoney(basket.basePriceCents) },
+    customerName: { type: "string", __example__: "Cliente" },
+    reviewNote: { type: "string", __example__: "Confira o endereço e o pagamento antes de concluir." },
+    flow_token: { type: "string", __example__: "example-flow-token-00000000000000000000000000000000" },
+    selections_json: { type: "string", __example__: "{}" },
+    defaultAddressId: { type: "string", __example__: "address-default" },
+    addressOptions: arrayField(addressExample, {
+      id: { type: "string" },
+      title: { type: "string" },
+      description: { type: "string" },
+      enabled: { type: "boolean" },
+    }),
+  };
 
   return {
-    version: "3.1",
-    screens: [{
-      id: "BASKET_ORDER",
-      title: basket.name.slice(0, 30),
-      terminal: true,
-      data: {},
-      layout: { type: "SingleColumnLayout", children: [{ type: "Form", name: "basket", children }] },
-    }],
+    version: FLOW_VERSION,
+    data_api_version: DATA_API_VERSION,
+    routing_model: { GROUP: ["CUSTOMER_REVIEW"], CUSTOMER_REVIEW: [] },
+    screens: [
+      {
+        id: "GROUP",
+        title: "Monte sua cesta",
+        terminal: false,
+        data: groupData,
+        layout: {
+          type: "SingleColumnLayout",
+          children: [{
+            type: "Form",
+            name: "basket_group",
+            "init-values": {
+              product_id: "${data.selectedProductId}",
+              quantity: "${data.selectedQuantity}",
+            },
+            children: groupChildren,
+          }],
+        },
+      },
+      {
+        id: "CUSTOMER_REVIEW",
+        title: "Revisar pedido",
+        terminal: true,
+        data: reviewData,
+        layout: {
+          type: "SingleColumnLayout",
+          children: [{
+            type: "Form",
+            name: "checkout",
+            "init-values": { address_id: "${data.defaultAddressId}" },
+            children: [
+              { type: "TextHeading", text: "Revise sua cesta ${data.basketName}" },
+              { type: "TextBody", text: "${data.selectionSummary}" },
+              { type: "TextSubheading", text: "Total da cesta" },
+              { type: "TextBody", text: "${data.totalDisplay}" },
+              { type: "TextSubheading", text: "Cliente" },
+              { type: "TextBody", text: "${data.customerName}" },
+              { type: "TextBody", text: "${data.reviewNote}" },
+              {
+                type: "Dropdown",
+                name: "address_id",
+                label: "Endereço de entrega",
+                "data-source": "${data.addressOptions}",
+                required: true,
+              },
+              {
+                type: "Dropdown",
+                name: "payment_method",
+                label: "Pagamento",
+                "data-source": [
+                  { id: "pix", title: "Pix" },
+                  { id: "cash", title: "Dinheiro" },
+                  { id: "debit_card", title: "Cartão de débito" },
+                  { id: "credit_card", title: "Cartão de crédito" },
+                ],
+                required: true,
+              },
+              {
+                type: "Footer",
+                label: "Concluir e receber resumo",
+                "on-click-action": {
+                  name: "complete",
+                  payload: {
+                    contract_version: 1,
+                    flow_token: "${data.flow_token}",
+                    selections: "${data.selections_json}",
+                    address_id: "${form.address_id}",
+                    payment_method: "${form.payment_method}",
+                  },
+                },
+              },
+            ],
+          }],
+        },
+      },
+    ],
   };
 }
 
@@ -122,7 +315,9 @@ function hasOnlyKeys(value: Record<string, unknown>, keys: readonly string[]): b
 
 export function validateBasketFlow(basket: Basket, products: Product[], value: unknown): string[] {
   if (!isRecord(value)) return ["Flow JSON deve ser um objeto"];
-  if (!hasOnlyKeys(value, ["version", "screens"])) return ["Flow JSON contém campos não permitidos"];
+  if (!hasOnlyKeys(value, ["version", "data_api_version", "routing_model", "screens"])) {
+    return ["Flow JSON contém campos não permitidos"];
+  }
   const expected = generateBasketFlow(basket, products);
   if (JSON.stringify(value) !== JSON.stringify(expected)) {
     return ["O JSON diverge do rascunho gerado para esta cesta. Gere novamente antes de gravar."];
@@ -184,7 +379,7 @@ export function validateChannelFlowDocument(
       if (rawDraft.catalogRevision !== expectedCatalogRevision) errors.push(`${at} está associado a uma revisão antiga do catálogo`);
       if (!basket) continue;
       errors.push(...validateBasketFlow(basket, products, rawDraft.flowJson).map((error) => `${at}: ${error}`));
-    } else if (!isRecord(rawDraft.flowJson) || rawDraft.flowJson.version !== "3.1" || !Array.isArray(rawDraft.flowJson.screens)) {
+    } else if (!isRecord(rawDraft.flowJson) || rawDraft.flowJson.version !== FLOW_VERSION || !Array.isArray(rawDraft.flowJson.screens)) {
       errors.push(`${at}.flowJson não tem a estrutura mínima esperada`);
     }
   }

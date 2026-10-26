@@ -3,7 +3,7 @@
 Projeto: WhatsApp Atendimento GitHub — SUCEDOAN12  
 Atualizado: 25/10/2026 (America/Cuiaba)  
 Branch: project/whatsapp-atendimento-github-20261025  
-Estado: proposta documentada para orientar as próximas rodadas; validar os gates antes de programar. Nenhum código foi alterado, nenhum Flow foi publicado e nenhuma linha de cliente foi consultada.
+Estado: desenho inicial preservado como pesquisa. As decisões de UX e limites de implementação confirmados depois pelo usuário estão registrados na seção 10 e prevalecem quando houver conflito com a proposta original. Nenhum Flow foi publicado.
 
 ## 1. Decisão de arquitetura
 
@@ -195,3 +195,18 @@ Concluído: pesquisa documental Meta/Supabase, leitura apenas do schema de clien
 - [Pesquisa de cesta e preço no WhatsApp](BASKET-ORDER-RESEARCH.md)
 
 Pesquisa atualizada em 25/10/2026. O comportamento deve ser provado no Flow Builder e em número de teste antes de assumir publicação ou operação.
+
+## 10. Decisões confirmadas depois da proposta inicial
+
+O usuário fechou a seleção de produto e quantidade para o novo Flow:
+
+- Uma tela por tipo de produto, com **somente um produto selecionável naquela tela**.
+- Na mesma tela, as opções de produto aparecem primeiro e as quantidades aparecem logo abaixo.
+- A última opção do seletor de produto é sempre `Não quero esse produto`; ela permite retirar o tipo em qualquer cesta.
+- Quantidades disponíveis: de 1 a 6, limitadas ao saldo atual do produto quando o saldo for menor que seis.
+- Produto com saldo desconhecido ou zero fica indisponível para seleção.
+- Produtos, cestas, imagens compactadas e saldos são mantidos no catálogo novo do GitHub. O Supabase não é fonte de produto; serve somente à consulta server-side do cadastro/endereço do cliente.
+
+O rascunho local implementa uma tela lógica `GROUP` que o endpoint atualiza a cada tipo, seguida de `CUSTOMER_REVIEW`. O checkout local aceita somente cliente ativo, único e com endereço ativo cadastrado; não cria cadastro ou endereço novo. As modalidades presentes no JSON atual são Pix, dinheiro, débito e crédito. Depois de concluir, o webhook enfileira o resumo, mas ele não chega à conversa enquanto não existir um consumidor da outbox. O Flow não confirma o pedido: a confirmação futura continua sendo pelo botão explícito no resumo do chat.
+
+Os 61 saldos existentes no catálogo estão `null`, sem importação de tabela de produtos do Supabase; é preciso preencher os valores pelo Admin antes de oferecer itens em ambiente real. O saldo ainda não tem reserva/decremento automático. Flow Builder/Meta e aparelho não foram homologados. Nenhum Flow foi publicado, função implantada, migration aplicada, chamada Meta/Bling ou mensagem enviada nesta etapa.

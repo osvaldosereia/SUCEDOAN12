@@ -4,7 +4,7 @@ Projeto: WhatsApp Atendimento GitHub — SUCEDOAN12
 Branch isolada: project/whatsapp-atendimento-github-20261025  
 Diretório do novo código: projetos/whatsapp-atendimento-github/  
 Execução prevista: Work Luna Max  
-Estado: Rodadas 0–6 concluídas localmente. Rodada 7 em preflight local: manifesto de imagens corrigido e catálogo conferido; a ligação dos Flows e os gates de Bling continuam pendentes. A Rodada 6 entrega fila/separação, OAuth Bling desativado e rota autenticada de reconciliação GET-only com resultado persistido. Operação Bling permanece bloqueada até definir o contrato financeiro/fiscal e concluir homologação controlada.
+Estado: Rodadas 0–6 concluídas localmente. Na Rodada 7, preflight e ligação local do Flow ao runtime/webhook estão implementados: tela `GROUP` reutilizada por tipo, seleção única de produto, retirada sempre disponível e quantidade limitada por saldo do catálogo GitHub até seis. A Meta/Flow Builder ainda precisa validar a estrutura/imagens; os 61 saldos estão desconhecidos (`null`) e não foram importados. Bling segue bloqueado por decisões e homologação financeira/fiscal.
 
 ## Decisão principal
 
@@ -121,13 +121,17 @@ Como ponto de partida, testar uma miniatura WebP de 240×190 com limite de 27 KB
 | 4 — Runtime de atendimento | **Implementada localmente:** sessão/canal, seleção validada, imagens por commit, cotação, protocolo cifrado e busca mínima de cliente. Migration criada, não aplicada. | Endpoint local compila e falha fechado sem segredos/sessão; total calculado no servidor. A ligação do JSON Meta e revisão de telas dependem da Rodada 7. |
 | 5 — Confirmação e pedidos | Resumo no chat, botões, rascunho, confirmação idempotente e novo esquema operacional | Só o aceite explícito cria pedido e preserva snapshot |
 | 6 — Separação e Bling | **Concluída localmente:** fila, atribuição, separação/falta, aceite do total recalculado, preflight idempotente, vínculo manual revisado do contato, OAuth cifrado/desligado, rota autenticada de reconciliação GET-only com idempotência/lease e DTO administrativo mínimo. Criação da venda, NF-e e entrega continuam bloqueadas por contrato e homologação. | Separação usa revisão fixada; fila não expõe snapshot pessoal bruto; nenhuma escrita Bling fica habilitada; reconciliação permanece desligada por padrão |
-| 7 — Homologação e gates externos | Fechar política de datas/parcelas e mapeamento de pagamento Bling; validar criação/reconciliação de venda e etapas fiscais/saída em ambiente controlado; ligar e validar os dois Flows | Jornada completa comprovada em ambiente controlado antes de qualquer liberação operacional |
+| 7 — Flow local e homologação externa | **Implementada localmente:** Flow JSON 6.0/Data Exchange 3.0 ligado ao endpoint e webhook, opções/quantidade/saldo no catálogo GitHub e contrato de checkout v1. Pendentes: cadastrar saldos, validar imagens/JSON nos dois Flows em Flow Builder e homologar Bling, venda, fiscal e saída. | Contrato local consistente; operação externa segue bloqueada até dados e homologação |
 
 Cada rodada deve produzir um diff pequeno e revisável, resumo das mudanças, como conferir o resultado e riscos remanescentes. Não implantar, publicar Flow ou enviar mensagem real durante desenvolvimento local.
 
-### Ajuste de execução da Rodada 4
+### Decisões locais da Rodada 7
 
-O endpoint responde a telas lógicas `GROUP_nn` e `CUSTOMER_REVIEW`, mas os rascunhos JSON existentes seguem desconectados e `local-only`. As cestas possuem 13–25 grupos; gerar uma rota por grupo arrisca exceder os limites de roteamento do Flow. A implementação não inventa um layout Meta: agrupar campos e ligar o endpoint serão fechados contra o Flow Builder/documentação Meta na Rodada 7 antes de qualquer publicação. A Rodada 5 pode implementar o webhook e a emissão segura de sessão sem ligar canais reais.
+- Uma tela lógica `GROUP` é atualizada por Data Exchange para cada tipo de produto, e `CUSTOMER_REVIEW` é a tela terminal. Assim, uma cesta com 13–25 grupos não precisa declarar uma tela/rota diferente por grupo. A Meta tem um exemplo oficial de resposta Data Exchange que atualiza a mesma tela: [book-appointment `flow.js`](https://github.com/WhatsApp/WhatsApp-Flows-Tools/blob/main/examples/endpoint/nodejs/book-appointment/src/flow.js). Essa compatibilidade ainda precisa ser conferida no Flow Builder do canal.
+- Cada tipo tem uma única seleção de produto, seguida por uma quantidade. A lista mostra nome, marca/apresentação e preço unitário; a imagem atualiza com a opção. A última escolha sempre é `Não quero esse produto`; selecionar retirada oculta a quantidade.
+- O catálogo público de produtos passa para `schemaVersion: 2` e guarda `stockQuantity` (inteiro não negativo ou `null`). GitHub é fonte de produtos, saldo, cestas e imagens; o runtime usa a revisão fixada pela sessão e limita a `min(6, stockQuantity)`. Produto sem saldo informado ou zerado fica desabilitado.
+- O total é recalculado no servidor ao selecionar produto/quantidade. A conclusão envia o contrato checkout v1 com `selections` serializado; o webhook volta a conferir preço, composição e saldo daquela revisão. A experiência só aceita confirmar uma cesta com ao menos um item.
+- O saldo é manual e versionado; o projeto ainda não reserva/decrementa estoque automaticamente. Até os 61 valores serem cadastrados, Flow real não pode oferecer esses produtos. Cadastro novo de cliente/endereço, mensagens outbox, publicação Flow e operações Bling continuam fora desta execução local.
 
 ## Pronto para iniciar
 

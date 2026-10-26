@@ -14,7 +14,9 @@ import {
 } from "../domain/catalog";
 import {
   FLOW_CHANNELS,
+  FLOW_NO_PRODUCT_ID,
   flowNameForBasket,
+  flowProductField,
   flowQuantityField,
   generateBasketFlow,
   validateChannelFlowDocument,
@@ -72,6 +74,7 @@ const state = {
   flowChannel: "0975" as FlowChannel,
   flowBasketId: initialFlowBasket?.id ?? "",
   flowName: initialFlowBasket ? flowNameForBasket(initialFlowBasket) : "cesta-atendimento",
+  flowProductChoices: new Map<string, string>(),
   flowQuantities: new Map<string, number>(),
   flowReviewDocument: null as ChannelFlowDocument | null,
   pendingImages: new Map<string, PendingImage>(),
@@ -139,22 +142,6 @@ function isDirty(): boolean {
 
 function selectedFlowBasket(): Basket | undefined {
   return state.baskets.baskets.find((basket) => basket.id === state.flowBasketId && basket.active);
-}
-
-function updateFlowQuantitiesSummary(): void {
-  const basket = selectedFlowBasket();
-  if (!basket) return;
-  basket.groups.forEach((group, groupIndex) => {
-    const options = [...new Set(group.productIds)];
-    const total = options.reduce((sum, _id, productIndex) =>
-      sum + (state.flowQuantities.get(`${basket.id}:${flowQuantityField(groupIndex, productIndex)}`) ?? 0), 0);
-    const target = document.querySelector<HTMLElement>(`[data-flow-group-count="${groupIndex}"]`);
-    if (!target) return;
-    const inRange = total >= group.minimumQuantity && total <= group.maximumQuantity;
-    target.textContent = `Total escolhido: ${total} · ${inRange ? "dentro do limite" : `requer ${group.minimumQuantity}–${group.maximumQuantity}`}`;
-    target.classList.toggle("is-valid", inRange);
-    target.classList.toggle("is-invalid", !inRange);
-  });
 }
 
 function currentFlowDraft(): BasketFlowDraft | null {
@@ -255,6 +242,7 @@ function productCard(product: Product): string {
       <div class="card-title-row"><h3>${escapeHtml(product.name)}</h3><span class="status-pill ${product.active ? "is-active" : "is-inactive"}">${product.active ? "Ativo" : "Inativo"}</span></div>
       <p>${escapeHtml(product.brand)} · ${escapeHtml(product.presentation)}</p>
       <strong>${money(product.unitPriceCents)}</strong>
+      <small>${product.stockQuantity === null ? "Estoque não informado" : `Estoque no GitHub: ${product.stockQuantity}`}</small>
       <small>${escapeHtml(product.sku ?? "Sem SKU")} · ${escapeHtml(product.id.slice(0, 8))}</small>
       <div class="card-actions"><button class="button button-soft" data-action="edit-product" data-id="${escapeHtml(product.id)}">Editar</button><button class="icon-button" aria-label="Remover produto" title="Remover" data-action="delete-product" data-id="${escapeHtml(product.id)}">×</button></div>
     </div>
@@ -283,7 +271,7 @@ function basketPreview(basket: Basket): string {
   return `<div class="preview-card">
     <div class="preview-top"><div><span class="eyebrow">Prévia para o atendimento</span><h3>${escapeHtml(basket.name || "Nova cesta")}</h3></div><strong>${money(basket.basePriceCents || 0)}</strong></div>
     <p class="preview-caption">Preço base cadastrado · ${basket.active ? "disponível" : "inativa"}</p>
-    <div class="preview-groups">${basket.groups.map((group) => `<div class="preview-group"><div><strong>${escapeHtml(group.label)}</strong><span>${group.initialQuantity} un. · ${group.minimumQuantity}–${group.maximumQuantity}</span></div><p>${uniqueInOrder(group.productIds).map(productName).map(escapeHtml).join(" · ")}</p></div>`).join("") || `<p class="subtle">Adicione um tipo de produto para completar a prévia.</p>`}</div>
+    <div class="preview-groups">${basket.groups.map((group) => `<div class="preview-group"><div><strong>${escapeHtml(group.label)}</strong><span>${group.initialQuantity} un. na referência de preço</span></div><p>${uniqueInOrder(group.productIds).map(productName).map(escapeHtml).join(" · ")}</p></div>`).join("") || `<p class="subtle">Adicione um tipo de produto para completar a prévia.</p>`}</div>
   </div>`;
 }
 
@@ -293,7 +281,7 @@ function basketEditor(basket: Basket): string {
     return `<article class="group-card" data-group-index="${index}">
       <div class="group-card-heading"><div class="drag-order"><button class="icon-button compact" title="Mover para cima" aria-label="Mover tipo para cima" data-action="move-group" data-index="${index}" data-direction="-1" ${index === 0 ? "disabled" : ""}>↑</button><button class="icon-button compact" title="Mover para baixo" aria-label="Mover tipo para baixo" data-action="move-group" data-index="${index}" data-direction="1" ${index === basket.groups.length - 1 ? "disabled" : ""}>↓</button></div><div><span class="eyebrow">Tipo ${String(index + 1).padStart(2, "0")}</span><strong>${escapeHtml(group.label)}</strong></div><button class="icon-button" title="Remover tipo" aria-label="Remover tipo" data-action="delete-group" data-index="${index}">×</button></div>
       <div class="group-fields"><label>Nome do tipo<input name="group_label_${index}" value="${escapeHtml(group.label)}" required maxlength="80"></label><label>Categoria<input name="group_category_${index}" value="${escapeHtml(group.category)}" required maxlength="80"></label></div>
-      <div class="quantity-fields"><label>Mínimo<input name="group_min_${index}" type="number" min="0" max="10" value="${group.minimumQuantity}" required></label><label>Inicial<input name="group_initial_${index}" type="number" min="0" max="10" value="${group.initialQuantity}" required></label><label>Máximo<input name="group_max_${index}" type="number" min="0" max="10" value="${group.maximumQuantity}" required></label><span class="quantity-hint">${group.removalAllowed ? "O cliente pode remover este tipo." : "Este tipo é obrigatório."}</span></div>
+      <div class="quantity-fields"><label>Quantidade base da cesta<input name="group_initial_${index}" type="number" min="0" max="6" value="${group.initialQuantity}" required></label><span class="quantity-hint">No Flow, o cliente escolhe de 1 a 6 conforme o estoque e pode sempre retirar este tipo.</span></div>
       <div class="selected-options"><div><strong>Opções (${options.length})</strong><button type="button" class="text-button" data-action="edit-group-options" data-index="${index}">Editar opções</button></div><p>${options.map((id) => `<span class="option-chip">${escapeHtml(productName(id))}</span>`).join("") || `<span class="subtle">Nenhuma opção selecionada</span>`}</p></div>
     </article>`;
   }).join("");
@@ -454,6 +442,7 @@ function render(): void {
     busy: state.busy || state.access === "loading",
     notice: "",
     noticeType: "info",
+    productChoices: state.flowProductChoices,
     quantities: state.flowQuantities,
   });
   const identityLabel = state.session?.user.user_metadata?.user_name
@@ -501,7 +490,7 @@ function openProductEditor(productId?: string): void {
   const modal = openModal(`<form id="product-form" class="modal-card">
     <div class="modal-heading"><div><span class="eyebrow">${product ? "Editar cadastro" : "Novo cadastro"}</span><h2>${product ? "Produto" : "Adicionar produto"}</h2></div><button type="button" class="icon-button" data-action="close-modal" aria-label="Fechar">×</button></div>
     <input type="hidden" name="product_id" value="${escapeHtml(id)}">
-    <div class="product-form-layout"><div><label>Nome do produto<input name="name" required maxlength="160" value="${escapeHtml(product?.name ?? "")}"></label><div class="form-grid"><label>Marca<input name="brand" required maxlength="80" value="${escapeHtml(product?.brand ?? "")}"></label><label>Apresentação<input name="presentation" required maxlength="80" placeholder="Ex.: 500 g" value="${escapeHtml(product?.presentation ?? "")}"></label></div><div class="form-grid"><label>Preço unitário (R$)<input name="price" type="number" min="0" step="0.01" required value="${product ? priceInputValue(product.unitPriceCents) : "0.00"}"></label><label>SKU<input name="sku" maxlength="80" value="${escapeHtml(product?.sku ?? "")}"></label></div><div class="form-grid"><label>GTIN / EAN<input name="gtin" maxlength="32" value="${escapeHtml(product?.gtin ?? "")}"></label><label>ID do Bling<input name="bling" maxlength="80" value="${escapeHtml(product?.blingProductId ?? "")}"></label></div><label class="checkbox-label"><input name="active" type="checkbox" ${product?.active ?? true ? "checked" : ""}> Produto ativo</label></div>
+    <div class="product-form-layout"><div><label>Nome do produto<input name="name" required maxlength="160" value="${escapeHtml(product?.name ?? "")}"></label><div class="form-grid"><label>Marca<input name="brand" required maxlength="80" value="${escapeHtml(product?.brand ?? "")}"></label><label>Apresentação<input name="presentation" required maxlength="80" placeholder="Ex.: 500 g" value="${escapeHtml(product?.presentation ?? "")}"></label></div><div class="form-grid"><label>Preço unitário (R$)<input name="price" type="number" min="0" step="0.01" required value="${product ? priceInputValue(product.unitPriceCents) : "0.00"}"></label><label>Estoque disponível<input name="stockQuantity" type="number" min="0" step="1" value="${product?.stockQuantity ?? ""}" placeholder="Não informado"></label></div><small>Saldo versionado no GitHub. Produto sem saldo informado ou com saldo zero não será oferecido no Flow.</small><div class="form-grid"><label>SKU<input name="sku" maxlength="80" value="${escapeHtml(product?.sku ?? "")}"></label><label>GTIN / EAN<input name="gtin" maxlength="32" value="${escapeHtml(product?.gtin ?? "")}"></label></div><label>ID do Bling<input name="bling" maxlength="80" value="${escapeHtml(product?.blingProductId ?? "")}"></label><label class="checkbox-label"><input name="active" type="checkbox" ${product?.active ?? true ? "checked" : ""}> Produto ativo</label></div>
       <div class="image-editor"><div class="image-preview-box">${source ? `<img id="product-image-preview" src="${escapeHtml(source)}" alt="Prévia do produto">` : `<div class="image-empty" id="product-image-empty"><span>＋</span>Foto do produto</div>`}</div><label class="button button-soft upload-button">Escolher foto<input id="product-image-input" type="file" accept="image/*" hidden></label><small>Será convertida para WebP 240 × 190, até 27 KB.${product ? " A foto atual é mantida se você não selecionar outra." : " Selecione uma foto para cadastrar o produto."}</small><small id="image-feedback" role="status"></small></div></div>
     <div class="modal-actions"><button type="button" class="button button-soft" data-action="close-modal">Cancelar</button><button class="button button-primary" type="submit">Aplicar produto</button></div>
   </form>`, "product");
@@ -519,10 +508,10 @@ function syncBasketFormToState(form: HTMLFormElement): void {
     ...group,
     label: String(values.get(`group_label_${index}`) ?? group.label).trim(),
     category: String(values.get(`group_category_${index}`) ?? group.category).trim(),
-    minimumQuantity: Number(values.get(`group_min_${index}`)),
+    minimumQuantity: 0,
     initialQuantity: Number(values.get(`group_initial_${index}`)),
-    maximumQuantity: Number(values.get(`group_max_${index}`)),
-    removalAllowed: Number(values.get(`group_min_${index}`)) === 0,
+    maximumQuantity: 6,
+    removalAllowed: true,
   }));
 }
 
@@ -570,7 +559,7 @@ function newGroup(basket: Basket): BasketProductGroup {
   return {
     id: newGroupId(basket), label: "Novo tipo", category: "Alimentos",
     productIds: firstActive ? [firstActive] : [], minimumQuantity: 0,
-    maximumQuantity: 1, initialQuantity: 1, removalAllowed: true,
+    maximumQuantity: 6, initialQuantity: 1, removalAllowed: true,
   };
 }
 
@@ -627,6 +616,7 @@ async function reloadCatalog(session: Session): Promise<void> {
     const savedFlow = state.flowDocuments[state.flowChannel].drafts.find((draft) => draft.basketId === state.flowBasketId);
     const selectedFlowBasket = state.baskets.baskets.find((basket) => basket.id === state.flowBasketId);
     state.flowName = savedFlow?.flowName ?? (selectedFlowBasket ? flowNameForBasket(selectedFlowBasket) : "cesta-atendimento");
+    state.flowProductChoices.clear();
     state.flowQuantities.clear();
     render();
   } catch (error) {
@@ -665,6 +655,7 @@ async function initializeAuth(): Promise<void> {
       state.baskets = structuredClone(initialDocuments.baskets);
       state.baseline = JSON.stringify(initialDocuments);
       state.flowDocuments = structuredClone(initialFlowDocuments);
+      state.flowProductChoices.clear();
       state.flowQuantities.clear();
       state.flowReviewDocument = null;
       state.pendingImages.clear();
@@ -766,12 +757,6 @@ appRoot.addEventListener("input", (event) => {
   if (state.busy) return;
   const target = event.target;
   if (target instanceof HTMLInputElement && target.id === "flow-name") state.flowName = target.value;
-  if (target instanceof HTMLInputElement && target.dataset.flowPreview) {
-    const key = target.dataset.flowPreview;
-    if (target.value === "") state.flowQuantities.delete(key);
-    else state.flowQuantities.set(key, Number(target.value));
-    updateFlowQuantitiesSummary();
-  }
   if (target instanceof HTMLInputElement && target.id === "product-search") {
     state.search = target.value;
     const cursor = target.selectionStart;
@@ -792,11 +777,35 @@ appRoot.addEventListener("input", (event) => {
 appRoot.addEventListener("change", async (event) => {
   if (state.busy) return;
   const target = event.target;
+  if (target instanceof HTMLSelectElement && target.dataset.flowProduct !== undefined) {
+    const groupIndex = Number(target.dataset.flowProduct);
+    const basket = selectedFlowBasket();
+    const group = basket?.groups[groupIndex];
+    if (!basket || !group) return;
+    const productKey = `${basket.id}:${flowProductField(groupIndex)}`;
+    const quantityKey = `${basket.id}:${flowQuantityField(groupIndex)}`;
+    state.flowProductChoices.set(productKey, target.value);
+    state.flowQuantities.set(quantityKey, target.value === FLOW_NO_PRODUCT_ID
+      ? 0
+      : Math.min(6, Math.max(1, group.initialQuantity || 1)));
+    render();
+    return;
+  }
+  if (target instanceof HTMLSelectElement && target.dataset.flowQuantity !== undefined) {
+    const groupIndex = Number(target.dataset.flowQuantity);
+    const basket = selectedFlowBasket();
+    if (!basket?.groups[groupIndex]) return;
+    state.flowQuantities.set(`${basket.id}:${flowQuantityField(groupIndex)}`, Number(target.value));
+    render();
+    return;
+  }
   if (target instanceof HTMLSelectElement && target.id === "flow-basket") {
     state.flowBasketId = target.value;
     const saved = state.flowDocuments[state.flowChannel].drafts.find((draft) => draft.basketId === target.value);
     const selected = state.baskets.baskets.find((basket) => basket.id === target.value);
     state.flowName = saved?.flowName ?? (selected ? flowNameForBasket(selected) : "cesta-atendimento");
+    state.flowProductChoices.clear();
+    state.flowQuantities.clear();
     render();
     return;
   }
@@ -899,12 +908,19 @@ appRoot.addEventListener("submit", async (event) => {
       tell("Informe um preço válido em reais.", "error");
       return;
     }
+    const stockValue = String(values.get("stockQuantity") ?? "").trim();
+    const stockQuantity = stockValue === "" ? null : Number(stockValue);
+    if (stockQuantity !== null && (!Number.isSafeInteger(stockQuantity) || stockQuantity < 0)) {
+      tell("Informe um estoque inteiro igual ou maior que zero, ou deixe o campo vazio.", "error");
+      return;
+    }
     const product: Product = {
       id,
       name: String(values.get("name") ?? "").trim(),
       brand: String(values.get("brand") ?? "").trim(),
       presentation: String(values.get("presentation") ?? "").trim(),
       unitPriceCents: Math.round(price * 100),
+      stockQuantity,
       imagePath: `images/products/${id}.webp`,
       sku: String(values.get("sku") ?? "").trim() || null,
       gtin: String(values.get("gtin") ?? "").trim() || null,
@@ -1033,6 +1049,7 @@ appRoot.addEventListener("click", async (event) => {
     const saved = state.flowDocuments[state.flowChannel].drafts.find((draft) => draft.basketId === state.flowBasketId);
     const selected = state.baskets.baskets.find((basket) => basket.id === state.flowBasketId);
     state.flowName = saved?.flowName ?? (selected ? flowNameForBasket(selected) : "cesta-atendimento");
+    state.flowProductChoices.clear();
     state.flowQuantities.clear();
     state.notice = "";
     render();

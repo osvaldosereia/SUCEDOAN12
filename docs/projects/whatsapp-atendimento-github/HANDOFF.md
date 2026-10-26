@@ -240,3 +240,13 @@ O preflight não conclui a Rodada 7. Os rascunhos Flow ainda precisam ser ligado
 ### Contrato final do Flow — ajuste local
 
 A tela `CUSTOMER_REVIEW` agora devolve o `flow_token` já validado para que a conclusão possa preencher o payload `contract_version: 1`. O webhook permite omitir `customer_id`: a identidade é resolvida novamente por telefone da mensagem/sessão, exigindo correspondência única verificada; se o ID for fornecido, é validado contra essa identidade. Assim o UUID interno não precisa ser enviado ao cliente. Build e `git diff --check` passaram; nenhum teste foi criado ou executado. O JSON do Flow ainda não foi conectado, e nenhum banco, segredo, API, deploy ou canal Meta foi alterado.
+
+## Rodada 7 — Flow local ligado ao catálogo GitHub
+
+A decisão mais recente do usuário define uma tela por tipo de produto, reutilizada pelo endpoint como `GROUP`, com **uma escolha de produto por tela**. A lista de produtos fica acima do seletor de quantidade. A opção final é sempre `Não quero esse produto`; escolhê-la retira o tipo da cesta. A quantidade disponível é de 1 a `min(6, stockQuantity)`; a opção sem saldo conhecido ou com saldo zero fica desabilitada. O preview administrativo segue as mesmas regras e lê somente os valores versionados no catálogo do GitHub.
+
+O catálogo novo usa `schemaVersion: 2` e `stockQuantity`. Os 61 produtos permanecem com saldo `null`: não foram consultados nem importados de tabelas de produto do Supabase. O operador pode preencher e versionar saldos pelo Admin autenticado. O saldo não é reservado nem decrementado automaticamente; mudanças de disponibilidade e reconciliação operacional continuam pendentes.
+
+O Flow JSON local usa versão 6.0/Data Exchange 3.0 e o endpoint retorna a mesma tela `GROUP` para cada tipo antes de abrir `CUSTOMER_REVIEW`. O webhook valida a seleção contra a revisão do catálogo fixada pela sessão e enfileira a conclusão. A conclusão do Flow não confirma pedido. A mensagem posterior com Confirmar/Editar/Cancelar não é entregue nesta implementação porque ainda não há consumidor da outbox. Novo cadastro de cliente/endereço não é criado: a consulta Supabase exige cliente ativo, único e endereço ativo.
+
+O JSON e o endpoint estão conectados somente localmente. Continuam pendentes a validação do Flow Builder/Meta, renderização em aparelho, entrada manual dos saldos e o consumidor da outbox. Bling, venda, fiscal e saída permanecem bloqueados pelas decisões documentadas no plano. Não publicar Flow, implantar funções, aplicar migrations, enviar mensagens ou chamar Meta/Bling durante o desenvolvimento. Nenhum teste automatizado foi criado ou executado nesta rodada; build e `git diff --check` devem ser verificados no fechamento.

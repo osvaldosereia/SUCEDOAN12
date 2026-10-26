@@ -40,6 +40,8 @@ interface Product {
   presentation: string;
   /** Effective individual price: offer price when present, otherwise regular price. */
   unitPriceCents: MoneyCents;
+  /** Stock maintained in this public GitHub catalog; null means unknown and blocks Flow selection. */
+  stockQuantity: number | null;
   imagePath: string; // relativo a este projeto; sem Base64
   sku: string | null;
   gtin: string | null;
@@ -276,5 +278,15 @@ O app converte fotos escolhidas pelo operador para WebP 240×190 e até 27 KB; o
 - O callback responde apenas texto simples com cabeçalhos anti-cache/frame/referrer; erros do token endpoint não registram código, corpo ou credenciais. Um helper server-side renova access/refresh tokens sob lock advisory transacional e persiste os tokens rotacionados cifrados. O cliente API expõe somente GET e é chamado apenas pela rota autenticada de reconciliação quando as duas flags estão ligadas; flags desligadas e migration não aplicada impediram qualquer chamada ou refresh nesta rodada. Criação de venda, NF-e, saída e conclusão de entrega/pagamento continuam pendentes.
 - Não existe consumidor da outbox; não foram enviadas mensagens. Nenhuma chamada Bling foi feita.
 - Verificação: `pnpm build` compila TypeScript e Vite. `git diff --check` é executado no fechamento. Não foram adicionados nem executados testes, chamadas externas, deploy ou migrations.
+
+## 13. Rodada 7 — Flow dinâmico local
+
+- O documento de produtos passa a `schemaVersion: 2` e inclui `stockQuantity: number | null`. GitHub é a fonte versionada de produtos, imagens e saldo; Supabase continua restrito ao cadastro de clientes/endereço no servidor. `null` significa saldo desconhecido e desabilita a opção no Flow. O editor novo permite manter esse número no catálogo GitHub; nenhum saldo foi importado do banco Supabase.
+- O Flow JSON `6.0` usa Data Exchange `3.0`, uma única tela lógica `GROUP` reutilizada para cada tipo e uma tela terminal `CUSTOMER_REVIEW`; o routing model contém apenas `GROUP -> CUSTOMER_REVIEW`. Em `GROUP`, `Dropdown` oferece uma única escolha de produto por vez com preço/descrição e imagem da opção atual. A última opção é sempre `Não quero esse produto`. O seletor abaixo limita quantidades a `1..min(6, stockQuantity)` e some quando o cliente escolhe retirada.
+- Produto e quantidade recalculam o total no endpoint ao mudar o seletor. A resposta final guarda `contract_version: 1`, `flow_token`, `selections` como JSON serializado, `address_id` e `payment_method`; o webhook volta a validar os campos e o saldo da revisão fixada. É obrigatório manter pelo menos um item na cesta.
+- A saída da tela final apenas cria um rascunho/entrada na outbox. Confirmar, Editar e Cancelar continuam no resumo posterior da conversa; somente `Confirmar pedido` cria o pedido. Não existe consumidor da outbox nesta rodada.
+- A consulta a cliente aceita somente cadastro ativo e único com endereço ativo. A tela orienta procurar atendimento se não houver correspondência/endereço. Criar cadastro/endereço e editar dados manualmente no Flow exigem contrato de escrita separado e não são realizados por esta versão.
+- O estoque é um saldo público/manual versionado no GitHub, fixado ao commit da sessão; não é uma reserva e não é decrementado automaticamente ao concluir o Flow ou aceitar o pedido. Até preencher os 61 saldos atualmente desconhecidos, as alternativas ficam indisponíveis. Homologar a política de atualização do saldo continua necessário antes de operação.
+- A validação Meta/Flow Builder e a renderização em aparelho continuam pendentes porque não houve acesso a canal Meta. Nada foi publicado, implantado, enviado, aplicado ao Supabase, nem gravado em dados de produção. Nenhum teste automatizado foi criado ou executado.
 
 Dependências externas seguem versões fixas no `package.json` e lockfile pnpm. O provedor OAuth, allowlist, GitHub App e origens permitidas permanecem sem configuração confirmada. Nenhum secret foi criado/lido, nenhuma função foi implantada, nenhuma alteração Supabase foi feita, e não houve chamada Meta/Bling, publicação de Flow ou mensagem real.
