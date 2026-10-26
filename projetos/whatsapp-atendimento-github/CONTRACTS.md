@@ -206,6 +206,18 @@ Os nomes abaixo são referências para configuração; não contêm nem confirma
 - Não foi consultada nenhuma linha pessoal de cliente, pedido ou mensagem, nem valor de segredo. A listagem de metadados não permite confirmar que as credenciais exigidas estão configuradas.
 - Nenhuma chamada de API Meta/Bling, migration, deploy, publicação de Flow ou envio de mensagem foi feita.
 
+## 8. Rodada 5 — webhook, checkout e confirmação
+
+- `supabase/functions/whatsapp-checkout-webhook/index.ts` verifica o challenge GET e valida `X-Hub-Signature-256` sobre o corpo bruto do POST. `phone_number_id` só é aceito quando corresponde a `META_PHONE_NUMBER_ID_0975` ou `META_PHONE_NUMBER_ID_1018` configurado no servidor.
+- O evento recebido, a criação de sessão e a saída em outbox usam transações/índices idempotentes. A sessão é inserida em `public.whatsapp_flow_sessions` na mesma transação; só o hash SHA-256 do token entra nessa tabela.
+- A nova migration local `supabase/migrations/20261026004500_whatsapp_checkout.sql` cria o schema `whatsapp_atendimento` com `webhook_events`, `order_drafts`, `orders`, `order_items`, `order_events` e `message_outbox`. O schema não é exposto pela API pública, tem RLS sem policies e grants restritos a `service_role`. A migration não foi aplicada.
+- O token de Flow e o conteúdo de cada mensagem ficam cifrados em AES-GCM na outbox. A confirmação cria pedido e itens em transação somente para o botão `confirm:{draftId}:{revision}`, com deduplicação por mensagem e pedido por rascunho.
+- O formato de resposta de Flow aceito pelo handler é versionado como `contract_version: 1`, com `flow_token`, `selections`, `customer_id`, `address_id` e `payment_method`. A ligação do JSON gerado pela Rodada 3 e esse payload fica para a Rodada 7; payload divergente falha fechado.
+- SKU e ID Bling ausentes bloqueiam criação de rascunho, pois o snapshot operacional precisa preservar o vínculo fiscal futuro. A busca de cliente/endereço usa somente o backend e exige telefone único verificado e endereço ativo selecionado.
+- A fila ainda não tem consumidor. Nenhuma chamada Graph API é feita pelo handler; nada foi enviado. IDs oficiais de número/Flow e segredos continuam sem configuração confirmada.
+- Variáveis server-side esperadas: `SUPABASE_DB_URL`, `SUPABASE_URL`, credencial Supabase privilegiada para leitura de cliente, `META_APP_SECRET`, `META_WEBHOOK_VERIFY_TOKEN`, `META_PHONE_NUMBER_ID_0975`, `META_PHONE_NUMBER_ID_1018`, `META_FLOW_ID_0975`, `META_FLOW_ID_1018` e `META_OUTBOX_ENCRYPTION_KEY` (32 bytes em Base64). Nenhum valor foi configurado ou lido.
+- Verificação local: `pnpm build` e `git diff --check`; Deno CLI indisponível para `deno check`. Nenhum teste foi criado/executado e nenhuma migration foi aplicada.
+
 ## 8. Dependências antes de homologação
 
 1. Confirmar configuração do provedor GitHub no Supabase Auth e registrar o UUID do operador autorizado em mecanismo server-side.

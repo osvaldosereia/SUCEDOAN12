@@ -180,3 +180,12 @@ A branch `project/whatsapp-atendimento-github-20261025` contém a implementaçã
 Build verificado com `pnpm build`. Deno não está instalado, portanto não houve `deno check`. Não houve leitura de registros, alteração Supabase, configuração de segredo, deploy, chamada Meta/Bling, publicação ou mensagem.
 
 Limite para a continuação: os rascunhos JSON da Rodada 3 seguem `local-only` e não estão conectados ao endpoint. O runtime trabalha com telas lógicas por grupo; as cestas têm 13–25 grupos, então o layout/roteamento deve ser agrupado e validado no Flow Builder antes de ligar o endpoint. A sequência agora é Rodada 5 — webhook inbound, criação segura de sessão e confirmação/pedido idempotente, respeitando os gates da pesquisa e sem enviar mensagens reais.
+
+
+## Estado de execução — Rodada 5 concluída localmente
+
+A Rodada 5 adiciona `supabase/functions/whatsapp-checkout-webhook/`, a migration local `20261026004500_whatsapp_checkout.sql` e o plano `ROUND-5-CHECKOUT-PLAN.md`. O webhook valida o challenge e a assinatura Meta, restringe o canal por `phone_number_id`, registra entrada idempotente, emite sessão com token aleatório (somente hash na tabela de sessão) e grava payloads de saída cifrados numa outbox privada.
+
+O payload final do Flow precisa corresponder a `contract_version: 1`; a Rodada 7 ainda precisa conectar e validar os rascunhos da Rodada 3 com esse contrato. Somente a ação de botão `confirm` pode inserir pedido/itens, usando snapshot imutável GitHub e transação. O modelo novo permanece isolado no schema `whatsapp_atendimento`; nenhuma tabela antiga de pedidos é usada.
+
+`pnpm build` e `git diff --check` foram verificados. Deno CLI não está disponível. A migration não foi aplicada, o banco e os segredos não foram alterados, a outbox não tem consumidor e nenhuma mensagem, Flow ou chamada Meta foi enviada. Próxima rodada do plano: Rodada 6 — separação e integração Bling, precedida pela revisão do contrato fiscal do novo snapshot.
