@@ -1,5 +1,10 @@
 import postgres, { type Sql } from "npm:postgres@3.4.7";
-import { reconcileBlingCommercialTotals, type BlingCommercialTotals } from "../../../src/domain/bling.ts";
+import {
+  classifyBlingSaleReconciliation,
+  reconcileBlingCommercialTotals,
+  type BlingCommercialTotals,
+  type BlingSaleReconciliationOutcome,
+} from "../../../src/domain/bling.ts";
 import { validateCatalog, type Basket, type CatalogDocuments, type Product } from "../../../src/domain/catalog.ts";
 import { quoteBasket, type BasketSelections } from "../../../src/domain/flow-runtime.ts";
 import {
@@ -537,7 +542,9 @@ interface BlingSaleRequestPreview {
     descricao: string;
     quantidade: number;
     valor: number;
+    valorLista: number;
   }>;
+  parcelas: [];
   transporte: { etiqueta: {
     nome: string;
     endereco: string;
@@ -549,6 +556,13 @@ interface BlingSaleRequestPreview {
     cep: string;
   } };
   observacoes: string;
+}
+
+interface BlingSalePreviewBuild {
+  requestSha256: string | null;
+  summary: BlingSalePreviewSummary | null;
+  blockers: string[];
+  candidate: BlingSaleRequestPreview | null;
 }
 
 function stableBlingSaleReference(orderId: string): string | null {
@@ -585,16 +599,132 @@ async function hashBlingSaleRequest(request: BlingSaleRequestPreview): Promise<s
   return Array.from(digest, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+function moneyToCents(value: unknown): number | null {
+  const amount = typeof value === "number" || typeof value === "string" ? Number(value) : NaN;
+  if (!Number.isFinite(amount)) return null;
+  const cents = Math.round(amount * 100);
+  return Number.isSafeInteger(cents) ? cents : null;
+}
+
+function blingSaleMatchesCandidate(value: unknown, candidate: BlingSaleRequestPreview): boolean {
+  const remote = isRecord(value) && isRecord(value.data) ? value.data : value;
+  if (!isRecord(remote) || remote.numeroLoja !== candidate.numeroLoja || remote.data !== candidate.data) return false;
+  const remoteContact = isRecord(remote.contato) ? Number(remote.contato.id) : NaN;
+  if (remoteContact !== candidate.contato.id
+    || moneyToCents(remote.totalProdutos) !== moneyToCents(candidate.totalProdutos)
+    || moneyToCents(remote.total) !== moneyToCents(candidate.total)
+    || String(remote.observacoes ?? "") !== candidate.observacoes) return false;
+
+  const remoteExpenses = remote.outrasDespesas === undefined ? 0 : moneyToCents(remote.outrasDespesas);
+  if (remoteExpenses !== moneyToCents(candidate.outrasDespesas)) return false;
+  const remoteDiscount = isRecord(remote.desconto) ? remote.desconto : null;
+  const remoteDiscountCents = remoteDiscount
+    ? moneyToCents(remoteDiscount.valor)
+    : 0;
+  if (remoteDiscountCents !== moneyToCents(candidate.desconto.valor)
+    || (candidate.desconto.valor > 0 && remoteDiscount?.unidade !== "REAL")) return false;
+
+  if (!Array.isArray(remote.itens) || remote.itens.length !== candidate.itens.length) return false;
+  const unmatched = [...remote.itens];
+  for (const expected of candidate.itens) {
+    const index = unmatched.findIndex((value) => {
+      if (!isRecord(value) || !isRecord(value.produto)) return false;
+      return Number(value.produto.id) === expected.produto.id
+        && value.codigo === expected.codigo
+        && value.descricao === expected.descricao
+        && Number(value.quantidade) === expected.quantidade
+        && moneyToCents(value.valor) === moneyToCents(expected.valor)
+        && moneyToCents(value.valorLista) === moneyToCents(expected.valorLista);
+    });
+    if (index < 0) return false;
+    unmatched.splice(index, 1);
+  }
+
+  const remoteTransport = isRecord(remote.transporte) ? remote.transporte : null;
+  const remoteLabel = remoteTransport && isRecord(remoteTransport.etiqueta) ? remoteTransport.etiqueta : null;
+  if (!remoteLabel) return false;
+  const expectedLabel = candidate.transporte.etiqueta;
+  const equalText = (actual: unknown, expected: string | undefined) => String(actual ?? "").trim() === (expected ?? "");
+  return equalText(remoteLabel.nome, expectedLabel.nome)
+    && equalText(remoteLabel.endereco, expectedLabel.endereco)
+    && equalText(remoteLabel.numero, expectedLabel.numero)
+    && equalText(remoteLabel.complemento, expectedLabel.complemento)
+    && equalText(remoteLabel.bairro, expectedLabel.bairro)
+    && equalText(remoteLabel.municipio, expectedLabel.municipio)
+    && equalText(remoteLabel.uf, expectedLabel.uf)
+    && equalText(remoteLabel.cep, expectedLabel.cep);
+}
+
+interface BlingSaleReferenceLookup {
+  complete: boolean;
+  ids: number[];
+  detail: Record<string, unknown> | null;
+}
+
+/** Dormant read-only lookup; no HTTP route or worker invokes it in this development stage. */
+async function lookupBlingSaleReference(reference: string): Promise<BlingSaleReferenceLookup> {
+  if (!/^WA-[0-9a-f]{32}$/.test(reference)) return { complete: false, ids: [], detail: null };
+  const pageSize = 100;
+  const maximumPages = 25;
+  const matches = new Set<number>();
+  let complete = false;
+
+  for (let page = 1; page <= maximumPages; page += 1) {
+    const query = new URLSearchParams({ pagina: String(page), limite: String(pageSize) });
+    query.append("numerosLojas[]", reference);
+    let response: unknown;
+    try { response = await blingApiGet(`/pedidos/vendas?${query.toString()}`); }
+    catch { return { complete: false, ids: [...matches], detail: null }; }
+    if (!isRecord(response) || !Array.isArray(response.data)) return { complete: false, ids: [...matches], detail: null };
+
+    for (const row of response.data) {
+      if (!isRecord(row) || row.numeroLoja !== reference) continue;
+      const id = typeof row.id === "number" || typeof row.id === "string" ? Number(row.id) : NaN;
+      if (!Number.isSafeInteger(id) || id <= 0) return { complete: false, ids: [...matches], detail: null };
+      matches.add(id);
+      if (matches.size > 1) return { complete: false, ids: [...matches], detail: null };
+    }
+
+    if (response.data.length < pageSize) {
+      complete = true;
+      break;
+    }
+  }
+
+  const ids = [...matches];
+  if (!complete || ids.length !== 1) return { complete, ids, detail: null };
+  let detailResponse: unknown;
+  try { detailResponse = await blingApiGet(`/pedidos/vendas/${ids[0]}`); }
+  catch { return { complete: false, ids, detail: null }; }
+  if (!isRecord(detailResponse) || !isRecord(detailResponse.data)
+    || detailResponse.data.numeroLoja !== reference) return { complete: false, ids, detail: null };
+  return { complete: true, ids, detail: detailResponse.data };
+}
+
+/** GET-only reconciliation decision. It returns no remote PII and never writes to Bling or the database. */
+export async function reconcileBlingSaleByReference(
+  reference: string,
+  candidate: BlingSaleRequestPreview,
+): Promise<{ outcome: BlingSaleReconciliationOutcome; externalId: string | null }> {
+  if (candidate.numeroLoja !== reference) return { outcome: "unknown", externalId: null };
+  const lookup = await lookupBlingSaleReference(reference);
+  const matching = lookup.ids.length === 1 && lookup.detail !== null
+    ? blingSaleMatchesCandidate(lookup.detail, candidate)
+    : null;
+  const outcome = classifyBlingSaleReconciliation({
+    lookupComplete: lookup.complete,
+    matchingIds: lookup.ids,
+    candidateMatches: matching,
+  });
+  return { outcome, externalId: outcome === "matched" ? String(lookup.ids[0]) : null };
+}
+
 async function buildBlingSalePreview(
   order: DbOrder,
   items: DbOrderItem[],
   contactId: number | null,
   commercialTotals: BlingCommercialTotals | null,
-): Promise<{
-  requestSha256: string | null;
-  summary: BlingSalePreviewSummary | null;
-  blockers: string[];
-}> {
+): Promise<BlingSalePreviewBuild> {
   const blockers: string[] = [];
   const customer = isRecord(order.snapshot.customer) ? order.snapshot.customer : {};
   const address = isRecord(customer.address) ? customer.address : {};
@@ -640,7 +770,7 @@ async function buildBlingSalePreview(
     lineTotalCents += actualLineTotal;
     previewItems.push({
       produto: { id: productId }, codigo: sku, descricao: description,
-      quantidade: quantity, valor: unitPriceCents / 100,
+      quantidade: quantity, valor: unitPriceCents / 100, valorLista: unitPriceCents / 100,
     });
   }
   if (!Number.isSafeInteger(lineTotalCents) || lineTotalCents !== commercialTotals?.lineTotalCents
@@ -652,7 +782,7 @@ async function buildBlingSalePreview(
     externalReference, saleDate, itemCount: items.length, paymentObservation: `Pagamento: ${paymentLabel}`,
   } : null;
   if (blockers.length || !summary || !customerName || !street || !number || !neighborhood || !city || !state || !postalCode || !paymentLabel) {
-    return { requestSha256: null, summary, blockers: [...new Set(blockers)] };
+    return { requestSha256: null, summary, blockers: [...new Set(blockers)], candidate: null };
   }
 
   const request: BlingSaleRequestPreview = {
@@ -664,6 +794,7 @@ async function buildBlingSalePreview(
     outrasDespesas: commercialTotals!.otherExpensesCents / 100,
     desconto: { valor: commercialTotals!.discountCents / 100, unidade: "REAL" },
     itens: previewItems,
+    parcelas: [],
     transporte: { etiqueta: {
       nome: customerName, endereco: street, numero: number,
       ...(safeText(address.complement) ? { complemento: safeText(address.complement)! } : {}),
@@ -671,7 +802,7 @@ async function buildBlingSalePreview(
     } },
     observacoes: `Pagamento: ${paymentLabel}`,
   };
-  return { requestSha256: await hashBlingSaleRequest(request), summary, blockers: [] };
+  return { requestSha256: await hashBlingSaleRequest(request), summary, blockers: [], candidate: request };
 }
 
 function orderPresentation(order: DbOrder, items: DbOrderItem[] = []) {
@@ -969,7 +1100,7 @@ async function getBlingAccessToken(): Promise<string> {
 /** Read-only server-side client. Keep order writes behind their own preflight and idempotent job handlers. */
 export async function blingApiGet(path: string): Promise<unknown> {
   if (typeof path !== "string" || !path.startsWith("/")) throw new HttpError(400, "O caminho Bling precisa ser relativo à API v3.");
-  const endpoint = new URL(path, `${BLING_API}/`);
+  const endpoint = new URL(path.replace(/^\/+/, ""), `${BLING_API}/`);
   if (endpoint.origin !== "https://api.bling.com.br" || !endpoint.pathname.startsWith("/Api/v3/")) {
     throw new HttpError(400, "O caminho Bling solicitado não é permitido.");
   }
@@ -1226,6 +1357,7 @@ async function saveOrderBlingContact(orderId: string, operatorId: string, body: 
       const retainedBlockers = new Set([
         "BLING_OAUTH_CREDENTIAL_MISSING", "BLING_TOTAL_RECONCILIATION_INVALID",
         "BLING_CONNECTOR_DISABLED_IN_DEVELOPMENT", "BLING_BASKET_ADJUSTMENT_RULE_UNRESOLVED",
+        "BLING_SALE_CONTRACT_REVIEW_REQUIRED",
       ]);
       for (const affectedOrder of affectedOrders) {
         const affectedItems = await tx<DbOrderItem>`
@@ -1309,6 +1441,7 @@ async function finishSeparation(orderId: string, operatorId: string, body: Recor
       ...(!credential.length ? ["BLING_OAUTH_CREDENTIAL_MISSING"] : []),
       ...(!commercialTotals?.balances ? ["BLING_TOTAL_RECONCILIATION_INVALID"] : []),
       ...salePreview.blockers,
+      "BLING_SALE_CONTRACT_REVIEW_REQUIRED",
       "BLING_CONNECTOR_DISABLED_IN_DEVELOPMENT",
     ];
     await tx`update whatsapp_atendimento.orders set status = 'awaiting_invoice', separation_completed_at = now(), bling_sale_reference = ${saleReference}, revision = revision + 1, attention_code = 'bling_preflight_required', updated_at = now() where id = ${orderId}`;

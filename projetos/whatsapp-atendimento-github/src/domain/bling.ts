@@ -7,6 +7,24 @@ export interface BlingCommercialTotals {
   balances: boolean;
 }
 
+export type BlingSaleReconciliationOutcome = "absent" | "matched" | "ambiguous" | "unknown";
+
+export interface BlingSaleReconciliationEvidence {
+  lookupComplete: boolean;
+  matchingIds: number[];
+  candidateMatches: boolean | null;
+}
+
+/** Fail closed when the paginated lookup or detailed sale comparison is incomplete. */
+export function classifyBlingSaleReconciliation(
+  evidence: BlingSaleReconciliationEvidence,
+): BlingSaleReconciliationOutcome {
+  if (evidence.matchingIds.length > 1) return "ambiguous";
+  if (!evidence.lookupComplete) return "unknown";
+  if (evidence.matchingIds.length === 0) return "absent";
+  return evidence.candidateMatches === true ? "matched" : "unknown";
+}
+
 /** Represents a commercial total difference using the existing Bling order convention. */
 export function reconcileBlingCommercialTotals(
   lineTotalCents: number,

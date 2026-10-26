@@ -373,6 +373,7 @@ function integrationBlockerLabel(code: string): string {
     BLING_SALE_PAYMENT_METHOD_UNSUPPORTED: "Revisar a forma de pagamento registrada no pedido",
     BLING_SALE_TOTALS_OR_ITEMS_INVALID: "Revisar itens e totais da prévia da venda",
     BLING_SALE_ITEM_MAPPING_INVALID: "Revisar SKU e vínculo Bling de um ou mais itens",
+    BLING_SALE_CONTRACT_REVIEW_REQUIRED: "Confirmar o contrato de venda e parcelas em homologação",
     BLING_CONNECTOR_DISABLED_IN_DEVELOPMENT: "Conector desativado durante o desenvolvimento",
   } as Record<string, string>)[code] ?? code;
 }
