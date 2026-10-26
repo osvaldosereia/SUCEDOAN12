@@ -4,7 +4,7 @@ Projeto: WhatsApp Atendimento GitHub — SUCEDOAN12
 Branch isolada: project/whatsapp-atendimento-github-20261025  
 Diretório do novo código: projetos/whatsapp-atendimento-github/  
 Execução prevista: Work Luna Max  
-Estado: Rodadas 0, 0.5–0.7, 1, 2 e 3 concluídas; próxima é a Rodada 4.
+Estado: Rodadas 0, 0.5–0.7, 1, 2 e 3 concluídas; Rodada 4 implementada localmente; próxima é a Rodada 5.
 
 ## Decisão principal
 
@@ -118,12 +118,16 @@ Como ponto de partida, testar uma miniatura WebP de 240×190 com limite de 27 KB
 | 1 — Catálogo e imagens | Manifesto dos produtos/opções, importação dos 61 elegíveis, conversão/validação de fotos | IDs reconciliados; fotos leves e visualmente aprovadas |
 | 2 — Admin de produtos e cestas | CRUD GitHub, edição simples, opções, quantidades, preço e prévia | Um operador autorizado consegue editar e ver o histórico do commit |
 | 3 — Configurador Meta Flow | Editor guiado, Flow JSON gerado, validação local, configuração por número e exportação | Cada número tem rascunho próprio; publicação permanece fora da etapa |
-| 4 — Runtime de atendimento | Sessão/canal, seleção de cesta, imagem, marca, quantidade, cotação e busca de cliente | Total calculado no servidor; dados ausentes/ambíguos têm caminho claro |
+| 4 — Runtime de atendimento | **Implementada localmente:** sessão/canal, seleção validada, imagens por commit, cotação, protocolo cifrado e busca mínima de cliente. Migration criada, não aplicada. | Endpoint local compila e falha fechado sem segredos/sessão; total calculado no servidor. A ligação do JSON Meta e revisão de telas dependem da Rodada 7. |
 | 5 — Confirmação e pedidos | Resumo no chat, botões, rascunho, confirmação idempotente e novo esquema operacional | Só o aceite explícito cria pedido e preserva snapshot |
 | 6 — Separação e Bling | Fila, separação/falta, correção de total, criação da venda, solicitação/consulta NF-e, saída e conclusão | Pedido percorre todos os estados sem duplicar venda ou nota |
 | 7 — Homologação | Verificação de imagens, Flow nos dois números, pedido interno, erros, repetição de eventos e recuperação | Jornada completa comprovada em canal controlado antes de qualquer liberação |
 
 Cada rodada deve produzir um diff pequeno e revisável, resumo das mudanças, como conferir o resultado e riscos remanescentes. Não implantar, publicar Flow ou enviar mensagem real durante desenvolvimento local.
+
+### Ajuste de execução da Rodada 4
+
+O endpoint responde a telas lógicas `GROUP_nn` e `CUSTOMER_REVIEW`, mas os rascunhos JSON existentes seguem desconectados e `local-only`. As cestas possuem 13–25 grupos; gerar uma rota por grupo arrisca exceder os limites de roteamento do Flow. A implementação não inventa um layout Meta: agrupar campos e ligar o endpoint serão fechados contra o Flow Builder/documentação Meta na Rodada 7 antes de qualquer publicação. A Rodada 5 pode implementar o webhook e a emissão segura de sessão sem ligar canais reais.
 
 ## Pronto para iniciar
 

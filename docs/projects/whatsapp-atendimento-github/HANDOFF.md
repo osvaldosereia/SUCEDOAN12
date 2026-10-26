@@ -171,3 +171,12 @@ Rodadas 0, 0.5–0.7, 1, 2 e 3 foram concluídas na branch `project/whatsapp-ate
 Construir o produto greenfield. A pesquisa do Vitrine Admin é apenas fonte de requisitos e dados; não reutilizar código, UI, tabelas, RPCs, backend ou estados operacionais antigos. O novo Admin, os conectores Meta/Bling e o fluxo de pedidos terão implementação e modelo de dados próprios. Supabase será consultado para cadastro/endereço do cliente; pedidos ficarão em um esquema novo e isolado. GitHub continua como fonte dos produtos, cestas e imagens. O SUCEDOAN12 é público, então ajustes internos e segredos ficam exclusivamente no servidor.
 
 Esta decisão substitui qualquer texto anterior do handoff/roadmap que sugira reutilizar serviços ou o modelo de pedidos do Vitrine. O plano vigente é [IMPLEMENTATION-PLAN-LUNA-MAX.md](IMPLEMENTATION-PLAN-LUNA-MAX.md). Próxima ação: concluir a Rodada 3 do configurador e seguir para a Rodada 4 de runtime.
+
+
+## Estado de execução — Rodada 4 concluída localmente
+
+A branch `project/whatsapp-atendimento-github-20261025` contém a implementação local do runtime em `projetos/whatsapp-atendimento-github/`. A função verifica HMAC, decifra o protocolo Meta, fixa catálogo por commit, valida escolha e quantidade, calcula o total no servidor e prepara o lookup mínimo de cliente por telefone. O hash de sessão fica na tabela nova `public.whatsapp_flow_sessions`, protegida por RLS e grants restritos ao `service_role`; a migration foi criada mas não aplicada.
+
+Build verificado com `pnpm build`. Deno não está instalado, portanto não houve `deno check`. Não houve leitura de registros, alteração Supabase, configuração de segredo, deploy, chamada Meta/Bling, publicação ou mensagem.
+
+Limite para a continuação: os rascunhos JSON da Rodada 3 seguem `local-only` e não estão conectados ao endpoint. O runtime trabalha com telas lógicas por grupo; as cestas têm 13–25 grupos, então o layout/roteamento deve ser agrupado e validado no Flow Builder antes de ligar o endpoint. A sequência agora é Rodada 5 — webhook inbound, criação segura de sessão e confirmação/pedido idempotente, respeitando os gates da pesquisa e sem enviar mensagens reais.

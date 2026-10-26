@@ -8,7 +8,7 @@ Este é o único diretório de código do projeto novo: `projetos/whatsapp-atend
 
 ## Etapa atual
 
-Rodada 3: configurador novo de rascunhos Meta Flow por canal, conectado ao catálogo versionado das Rodadas 1 e 2. A tela gera e exporta o JSON localmente; gravação requer a autenticação autorizada da Admin API. O JSON ainda não foi validado pela Meta, e esta etapa não chama nem publica na Meta nem envia mensagens. Regras e tipos ficam em [src/domain/flows.ts](src/domain/flows.ts), com um documento independente em [flows/](flows/).
+Rodada 4: runtime local da Meta Flow com cotação server-side, protocolo criptografado, sessões com token em hash e busca mínima de cliente. A Edge Function e a migration ainda não foram implantadas/aplicadas; os rascunhos da Rodada 3 continuam locais e não estão ligados ao endpoint. Regras de seleção e preço ficam em [src/domain/flow-runtime.ts](src/domain/flow-runtime.ts), e o endpoint está em [supabase/functions/whatsapp-flow-runtime/index.ts](supabase/functions/whatsapp-flow-runtime/index.ts).
 
 ## Regras de segurança
 
@@ -52,6 +52,14 @@ Para habilitar gravações na homologação, configure **somente como segredos d
 Não coloque os segredos acima em `.env.local`, em variável `VITE_*` ou em commit. A função mantém `verify_jwt = true`, confere também o UUID e a identidade GitHub no Supabase Auth, e limita leitura/escrita aos documentos de `catalog/` e imagens em `images/products/`. Escritas usam revisão esperada do branch, validação do catálogo e commit atômico. A foto escolhida no editor é convertida no navegador para WebP 240×190 com limite de 27 KB.
 
 Esta entrega não configura OAuth/allowlist/GitHub App, não executa deploy, não publica Flow e não envia mensagens. Até homologação do servidor, a gravação administrativa permanece indisponível.
+
+## Runtime Flow local
+
+A função `whatsapp-flow-runtime` autentica a assinatura HMAC do corpo bruto, abre o payload com RSA-OAEP/SHA-256 e AES-128-GCM, valida a sessão e lê catálogo pelo commit fixado. Respostas Data Exchange são cifradas com o IV invertido. A cotação deriva no servidor o ajuste necessário para que a composição padrão reproduza o preço-base e devolve o total em centavos, sem enviar esse ajuste separadamente.
+
+Para uma implantação futura controlada, os segredos da função terão de incluir `META_APP_SECRET`, `META_FLOW_PRIVATE_KEY_0975`, `META_FLOW_PRIVATE_KEY_1018` e a credencial de serviço Supabase (`SUPABASE_SECRET_KEY`/`SUPABASE_SECRET_KEYS` ou `SUPABASE_SERVICE_ROLE_KEY`). Chaves RSA PEM sem passphrase são aceitas em PKCS#8 ou PKCS#1. Nenhum valor foi configurado nesta rodada. A função ainda não foi ligada aos rascunhos Flow, não consulta dados reais sem sessão válida e não cria sessões; o webhook autorizado que cria sessões pertence à Rodada 5.
+
+A migration `supabase/migrations/20261026002149_whatsapp_flow_sessions.sql` cria a tabela de sessão com RLS e acesso apenas do `service_role`. Ela foi gerada pelo Supabase CLI e **não foi aplicada** ao projeto. A integração Meta, a estrutura final das telas e a jornada de imagens permanecem sujeitas ao Flow Builder e aos testes controlados da Rodada 7.
 
 ## Catálogo inicial
 

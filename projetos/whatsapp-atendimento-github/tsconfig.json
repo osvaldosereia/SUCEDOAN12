@@ -17,5 +17,10 @@
     "noFallthroughCasesInSwitch": true,
     "types": ["vite/client"]
   },
-  "include": ["src", "supabase/functions/whatsapp-admin-api/index.ts", "vite.config.ts"]
+  "include": [
+    "src",
+    "supabase/functions/whatsapp-admin-api/index.ts",
+    "supabase/functions/whatsapp-flow-runtime/index.ts",
+    "vite.config.ts"
+  ]
 }

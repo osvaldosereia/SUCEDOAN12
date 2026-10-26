@@ -9,7 +9,7 @@ Estado: contratos técnicos registrados; nenhum endpoint, schema ou segredo foi 
 - Cliente/endereço: consulta server-side ao Supabase canônico por telefone E.164; retornar somente os campos necessários ao checkout.
 - Pedidos: modelo transacional novo no schema privado `whatsapp_atendimento`; não ler nem escrever `public.orders`, tabelas antigas de draft, RPCs ou APIs de pedido existentes.
 - Meta e Bling: conectores novos e server-side; nenhum endpoint existente será importado ou usado como dependência.
-- Ajuste interno da cesta, dados pessoais, pedidos, sessões e credenciais não entram em arquivos públicos nem no payload do Flow.
+- Ajuste interno da cesta, dados pessoais, pedidos, sessões e credenciais não entram em arquivos públicos, Flow JSON ou `flow_token`. Nome e endereços mínimos podem transitar somente na resposta Data Exchange criptografada após lookup server-side, para revisão do cliente; telefone, token e credenciais não são enviados à tela.
 
 Não copiar código, componentes, migrations, tabelas, RPCs ou estados do Vitrine Admin. O projeto `projetos/dona-antonia-v2/` e outras iniciativas do repositório também permanecem independentes.
 
@@ -224,6 +224,17 @@ Até esses itens serem verificados, não há login administrativo pronto para us
 - O configurador permite conferir limites por tipo no navegador e baixar o JSON. Ao salvar, outros rascunhos ativos do mesmo canal são regenerados para a revisão nova; cestas inativas são removidas desse conjunto.
 - `local-only` descreve somente a validação estrutural do gerador. Não significa validação Flow Builder/Meta, teste real, endpoint dinâmico configurado ou estado publicado. Imagens, cotação confiável, troca de dados e cálculo final do servidor permanecem para as próximas rodadas.
 - A etapa não chama a API Meta, não publica Flow e não envia mensagens. Sem OAuth/allowlist/GitHub App configurados, a interface permanece em prévia local e nenhuma escrita é aceita.
+
+## 11. Rodada 4 — runtime local de Flow
+
+- `src/domain/flow-runtime.ts` valida uma opção ativa por grupo, quantidade inteira dentro dos limites e remoção permitida. O cálculo deriva, no servidor, `basePriceCents - referência` e soma as escolhas. O total da composição inicial reproduz o preço-base por construção; o ajuste não é retornado como campo.
+- `supabase/functions/whatsapp-flow-runtime/index.ts` aceita apenas POST, limita o corpo, exige `X-Hub-Signature-256`, tenta a chave privada do canal correto via RSA-OAEP/SHA-256, abre AES-128-GCM e responde cifrado com IV invertido. A resposta Data Exchange inclui versão `3.0`. Erro de sessão inválida retorna o protocolo 427 cifrado; assinatura inválida retorna 432; chave/payload incompatível falha fechado.
+- A função lê produtos e cestas via GitHub Contents API no commit fixado pela sessão e confere os SHA dos dois blobs. Fotos retornam como URLs raw no mesmo commit, nunca no branch móvel.
+- O `flow_token` precisa ser aleatório e opaco (32–128 caracteres URL-safe). O endpoint calcula SHA-256 e consulta somente esse hash. A migration cria `public.whatsapp_flow_sessions` com RLS, sem policies e sem grants para `anon`/`authenticated`; apenas `service_role` recebe SELECT/INSERT/UPDATE. Ela não foi aplicada. O webhook que emitirá tokens e inserirá sessões segue na Rodada 5.
+- A consulta, quando o cliente chega à última etapa, usa `customers.primary_whatsapp_e164` exato ou `customer_phones.phone_e164` com `verified_at`; exige cadastro ativo e retorna só nome e endereços ativos para revisão. Resultados `not_found`, `ambiguous` e `missing_address` não selecionam cliente/endereço automaticamente. Nenhuma linha foi lida nesta implementação.
+- Segredos esperados no runtime: `META_APP_SECRET`, `META_FLOW_PRIVATE_KEY_0975`, `META_FLOW_PRIVATE_KEY_1018`, `SUPABASE_URL` e credencial privilegiada Supabase. Chave RSA PEM sem passphrase em PKCS#8 ou PKCS#1. Nenhum segredo foi configurado ou lido.
+- Os rascunhos de Flow da Rodada 3 continuam `local-only` e não chamam esta função. Como as cestas têm 13–25 grupos, uma tela por grupo pode exceder os limites de rota do Flow. O agrupamento final de telas e a ligação do endpoint ficam para validação estrutural na Rodada 7. Não há publicação, deploy, mensagem, pedido ou leitura de PII nesta rodada.
+- Verificação local: `pnpm build` passou; Deno CLI não está instalado para `deno check`; `git diff --check` não reportou erros de whitespace. Nenhum teste automatizado foi criado ou executado.
 
 ## 9. Rodada 2 — Admin de catálogo
 
