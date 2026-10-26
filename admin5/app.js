@@ -78,6 +78,14 @@ function productStock(product) {
   return value === null || value === undefined || value === '' || !Number.isFinite(Number(value)) ? '—' : Number(value);
 }
 
+function productDescription(product) {
+  return String(product?.short_description || product?.description_short || product?.description || product?.long_description || product?.description_long || '').trim();
+}
+
+function productOriginCountry(product) {
+  return String(product?.country_of_origin || product?.origin_country || product?.origin_country_code || '').trim();
+}
+
 function channelFromPhone(phone) {
   const digits = String(phone || '').replace(/\D/g, '');
   return CHANNELS.find(channel => digits.endsWith(channel)) || '';
@@ -483,15 +491,25 @@ function categoryGuess(product) {
   const name = normalize(product?.name);
   const sub = normalize(product?.customer_subcategory || product?.subcategory);
   const subsub = normalize(product?.customer_subsubcategory || product?.subsubcategory);
+  const customerCategory = normalize(product?.customer_category || product?.category);
   const tags = normalize(Array.isArray(product?.tags) ? product.tags.join(' ') : product?.tags);
   const text = `${name} ${sub} ${subsub} ${tags}`;
-  if (/\b(racao|pet|cachorro|cachorros|gato|gatos|areia higienica|coleira)\b/.test(text)) return 'PET';
-  if (/\b(shampoo|xampu|condicionador|creme de pentear|tinta de cabelo|esmalte|maquiagem|batom|perfume|mascara capilar|tratamento capilar)\b/.test(text) || /beleza|cosmet/.test(subsub)) return 'BELEZA';
-  if (/lavanderia|amaciante|sabao em po|sabao liquido|alvejante/.test(sub) || /amaciante|sabao em po|sabao liquido|alvejante/.test(text)) return 'LAVANDERIA';
+  const petUse = /\b(racao|cachorro|cachorros|cao|caes|gato|gatos|areia higienica|coleira|petisco|antipulgas)\b/.test(`${name} ${subsub} ${tags}`)
+    || sub === 'pet' || subsub === 'pet';
+  if (petUse) return 'PET';
+
+  const beautyContext = /higiene pessoal|higiene_beleza|beleza|cosmet/.test(`${sub} ${subsub} ${normalize(product?.whatsapp_category)}`);
+  const beautyProduct = /\b(shampoo|xampu|condicionador|creme de pentear|tinta de cabelo|esmalte|maquiagem|batom|mascara capilar|tratamento capilar|hidratante|protetor solar|facial|cosmetico|cosmeticos)\b/.test(name);
+  const bodyPerfume = /\b(perfume|colonia|deo colonia|eau de parfum)\b/.test(name)
+    && !/\b(sabonete|amaciante|limpador|desinfetante|roupas?)\b/.test(name);
+  if (beautyContext && (beautyProduct || bodyPerfume || /beleza|cosmet/.test(subsub))) return 'BELEZA';
+
+  // Prefer the maintained customer taxonomy over words that can describe scent or packaging.
+  if (/lavanderia/.test(sub) || /amaciante|sabao em po|sabao liquido|alvejante/.test(text)) return 'LAVANDERIA';
   if (/limpeza/.test(sub) || /detergente|desinfetante|agua sanitaria|esponja|bucha|pano de limpeza|limpa/.test(text)) return 'LIMPEZA';
-  if (/higiene pessoal/.test(sub) || /higiene bucal|sabonete|creme dental|pasta de dente|papel higienico|absorvente|fralda/.test(text)) return 'HIGIENE';
+  if (/higiene pessoal|higiene bucal/.test(sub) || /higiene bucal|sabonete|creme dental|pasta de dente|papel higienico|absorvente|fralda|desodorante/.test(text)) return 'HIGIENE';
   if (/casa e utilidades|cozinha/.test(sub) || /utilidades|cozinha|panela|prato|talher|copo/.test(text)) return 'CASA';
-  if (/mercearia|alimentos|bebidas/.test(sub) || /mercearia|alimentos|bebidas/.test(normalize(product?.customer_category || product?.category))) return 'MERCEARIA';
+  if (/mercearia|alimentos|bebidas/.test(sub) || /mercearia|alimentos|bebidas/.test(customerCategory)) return 'MERCEARIA';
   return '';
 }
 
@@ -516,6 +534,7 @@ function renderCatalog() {
       <div class="catalog-toolbar"><label>Canal de atendimento
         <select id="catalogChannel"><option value="1018">1018</option><option value="0975">0975</option></select></label>
         <button id="previewCatalog" class="button secondary" type="button" disabled>Ver prévia</button>
+        <button id="exportCatalog" class="button secondary" type="button" disabled>Baixar CSV de revisão</button>
         <button id="syncCatalog" class="button primary" type="button" disabled title="A sincronização direta será habilitada após homologar os catálogos das duas WABAs.">Atualizar na Meta</button>
       </div>
       <div class="readiness-note"><strong>Sincronização Meta ainda não ligada.</strong><span>Esta rodada não publica produtos. Primeiro confira categorias, preços, imagens e as variantes das cestas.</span></div>
@@ -524,6 +543,7 @@ function renderCatalog() {
       <div id="catalogRows" class="catalog-product-list"></div>
       <div class="list-footer"><span id="catalogCount"></span><button id="catalogMore" class="button secondary" type="button" hidden>Carregar mais</button></div>
       <div id="catalogPreviewResult" class="preview-result" hidden></div>
+      <p class="inline-note">O CSV é uma lista de revisão interna, só com produtos ativos; não é feed de importação e não altera o catálogo Meta.</p>
       <p class="inline-note">A classificação salva nesta versão fica neste navegador. O compartilhamento entre operadores entra na rodada de persistência do catálogo.</p>
     </section>`;
   $('#catalogChannel').value = state.catalogChannel;
@@ -547,6 +567,7 @@ function renderCatalog() {
     renderCatalogRows();
   });
   $('#previewCatalog').addEventListener('click', showCatalogPreview);
+  $('#exportCatalog').addEventListener('click', exportCatalogReview);
   if (state.catalogLoaded) paintCatalog();
 }
 
@@ -588,12 +609,13 @@ function paintCatalog() {
   renderCatalogCategoryBar();
   renderCatalogRows();
   $('#previewCatalog').disabled = !state.catalogProducts.length;
+  $('#exportCatalog').disabled = !state.catalogProducts.length;
 }
 
 function catalogMetrics() {
   const rows = state.catalogProducts.map(product => {
     const category = categoryFor(product);
-    const description = product.short_description || product.description_short || product.description || product.long_description || product.description_long;
+    const description = productDescription(product);
     return {
       product,
       category,
@@ -602,6 +624,7 @@ function catalogMetrics() {
       missingName: !String(product.name || '').trim(),
       missingDescription: !String(description || '').trim(),
       missingBrand: !String(product.brand || '').trim(),
+      missingOriginCountry: !productOriginCountry(product),
       missingCategory: !category
     };
   });
@@ -612,8 +635,9 @@ function catalogMetrics() {
     missingName: rows.filter(row => row.missingName).length,
     missingDescription: rows.filter(row => row.missingDescription).length,
     missingBrand: rows.filter(row => row.missingBrand).length,
+    missingOriginCountry: rows.filter(row => row.missingOriginCountry).length,
     missingCategory: rows.filter(row => row.missingCategory).length,
-    ready: rows.filter(row => !row.missingPrice && !row.missingImage && !row.missingName && !row.missingDescription && !row.missingBrand && !row.missingCategory).length
+    ready: rows.filter(row => !row.missingPrice && !row.missingImage && !row.missingName && !row.missingDescription && !row.missingBrand && !row.missingOriginCountry && !row.missingCategory).length
   };
 }
 
@@ -628,6 +652,7 @@ function renderCatalogSummary() {
     <div class="metric-card warning"><small>Sem imagem</small><strong>${metrics.missingImage}</strong></div>
     <div class="metric-card warning"><small>Sem descrição</small><strong>${metrics.missingDescription}</strong></div>
     <div class="metric-card warning"><small>Sem marca</small><strong>${metrics.missingBrand}</strong></div>
+    <div class="metric-card warning"><small>Sem país de origem</small><strong>${metrics.missingOriginCountry}</strong></div>
     <div class="metric-card warning"><small>Categoria para revisar</small><strong>${metrics.missingCategory}</strong></div>
     <div class="metric-card warning"><small>Cestas ativas para WhatsApp</small><strong>${state.catalogBaskets.length}</strong></div>`;
   const sync = $('#syncCatalog');
@@ -667,12 +692,12 @@ function renderCatalogRows() {
       const product = row.product;
       const id = product.id || product.product_id;
       const image = productImage(product);
-      const issue = row.missingName ? 'Sem nome' : row.missingPrice ? 'Sem preço' : row.missingImage ? 'Sem imagem' : row.missingDescription ? 'Sem descrição' : row.missingCategory ? 'Classificar' : row.missingBrand ? 'Sem marca' : 'Apto para revisão';
+      const issue = row.missingName ? 'Sem nome' : row.missingPrice ? 'Sem preço' : row.missingImage ? 'Sem imagem' : row.missingOriginCountry ? 'Sem país de origem' : row.missingDescription ? 'Sem descrição' : row.missingCategory ? 'Classificar' : row.missingBrand ? 'Sem marca' : 'Apto para revisão';
       return `<article class="catalog-item">
         ${image ? `<img class="product-thumb" src="${esc(image)}" alt="" loading="lazy">` : '<span class="product-thumb image-placeholder">□</span>'}
         <div class="catalog-item-main"><strong>${esc(product.name || 'Produto sem nome')}</strong><small>${esc(product.brand || product.sku || product.gtin || id || '')}</small><span class="product-stock">${esc(money(priceCents(product)))} · saldo (leitura) ${esc(productStock(product))}</span></div>
         <label class="category-editor">Seção<select data-product-category="${esc(id)}"><option value="">Revisar</option>${META_CATEGORIES.filter(category => category !== 'CESTAS BÁSICAS').map(category => `<option value="${esc(category)}" ${row.category === category ? 'selected' : ''}>${esc(category)}</option>`).join('')}</select></label>
-        <span class="status-pill ${row.missingPrice || row.missingImage || row.missingName || row.missingDescription || row.missingCategory || row.missingBrand ? 'warning' : 'ready'}">${esc(issue)}</span>
+        <span class="status-pill ${row.missingPrice || row.missingImage || row.missingName || row.missingDescription || row.missingOriginCountry || row.missingCategory || row.missingBrand ? 'warning' : 'ready'}">${esc(issue)}</span>
       </article>`;
     }).join('');
   }
@@ -686,8 +711,49 @@ function showCatalogPreview() {
   const basketBlockers = state.catalogBaskets.length;
   const preview = $('#catalogPreviewResult');
   preview.hidden = false;
-  preview.innerHTML = `<strong>Prévia local pronta · sem envio para a Meta</strong><p>${metrics.ready} de ${state.catalogProducts.length} produtos ativos têm nome, preço, imagem, descrição, marca e seção definidos. ${metrics.missingName + metrics.missingPrice + metrics.missingImage + metrics.missingDescription + metrics.missingBrand + metrics.missingCategory} pendências de dados precisam de revisão; os totais podem se sobrepor. ${basketBlockers} cestas aguardam confirmação das variantes e dos preços.</p><p>Os itens ativos incompletos ficam visíveis no resumo e não são removidos da base.</p>`;
+  preview.innerHTML = `<strong>Prévia local pronta · sem envio para a Meta</strong><p>${metrics.ready} de ${state.catalogProducts.length} produtos ativos têm nome, preço, imagem, país de origem, descrição, marca e seção definidos. ${metrics.missingName + metrics.missingPrice + metrics.missingImage + metrics.missingDescription + metrics.missingBrand + metrics.missingOriginCountry + metrics.missingCategory} pendências de dados precisam de revisão; os totais podem se sobrepor. ${basketBlockers} cestas aguardam confirmação das variantes e dos preços.</p><p>Os itens ativos incompletos ficam visíveis no resumo e não são removidos da base.</p>`;
   preview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function exportCatalogReview() {
+  if (!state.catalogLoaded || !state.catalogProducts.length) return;
+  const headers = ['id_produto', 'sku', 'ean', 'nome', 'marca', 'secao_sugerida', 'preco_brl', 'pais_origem', 'descricao', 'imagem_url', 'ativo', 'pendencias'];
+  const metrics = catalogMetrics();
+  const rows = metrics.rows.map(({ product, category, missingName, missingPrice, missingImage, missingDescription, missingBrand, missingOriginCountry, missingCategory }) => {
+    const missing = [
+      missingName && 'nome', missingPrice && 'preco', missingImage && 'imagem',
+      missingOriginCountry && 'pais_origem', missingDescription && 'descricao', missingBrand && 'marca', missingCategory && 'secao'
+    ].filter(Boolean).join('|');
+    return [
+      product.id || product.product_id,
+      product.sku,
+      product.gtin,
+      product.name,
+      product.brand,
+      category,
+      priceCents(product) > 0 ? (priceCents(product) / 100).toFixed(2).replace('.', ',') : '',
+      productOriginCountry(product),
+      productDescription(product),
+      productImage(product),
+      'sim',
+      missing
+    ];
+  });
+  const csvCell = value => {
+    let text = String(value ?? '');
+    if (/^[\t\r ]*[=+@-]/.test(text)) text = `'${text}`;
+    return `"${text.replace(/"/g, '""')}"`;
+  };
+  const csv = `\uFEFF${[headers, ...rows].map(row => row.map(csvCell).join(';')).join('\r\n')}`;
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `admin5-catalogo-meta-revisao-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast(`${rows.length} produtos ativos exportados para revisão.`, 'success');
 }
 
 function formatWhen(value) {
