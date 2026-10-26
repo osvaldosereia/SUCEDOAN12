@@ -1,3 +1,5 @@
+import type { WhatsAppChannel } from "./channels";
+
 export type OutboxStatus = "pending" | "sent" | "failed" | "cancelled";
 export type OutboxProviderStatus = "accepted" | "sent" | "delivered" | "read" | "failed";
 
@@ -10,7 +12,7 @@ export type OutboxMessageType =
 
 export interface OutboxMessageSummary {
   id: string;
-  channel: "0975" | "1018";
+  channel: WhatsAppChannel;
   messageType: OutboxMessageType;
   status: OutboxStatus;
   availableAt: string;

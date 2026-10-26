@@ -488,3 +488,11 @@ Orientação do usuário: Flow idêntico nos dois números e os mesmos recursos 
 O Admin precisa manter separado somente o que pertence à conta/canal: número/WABA, Flow Meta ID, status, chave de criptografia e vínculo publicado. A tela de Flows agora explica que o conteúdo é igual e que essas credenciais/vínculos são por número. Não reutilizar chave privada de um canal no outro por suposição. `DA_FLOW_1018_RSA_PKCS8` foi observado no runtime; uma chave correspondente ao 0975 ainda não foi confirmada. Isso bloqueia criptografar/publicar/homologar o canal 0975, mas não justifica remover recurso ou tela do Admin.
 
 Nenhum Flow foi criado, alterado ou publicado na Meta nesta etapa. A interface e o plano agora declaram a paridade do conteúdo entre 0975 e 1018. `pnpm build` (TypeScript e Vite) e `git diff --check` passaram; não foram criados ou executados testes automatizados. O commit `23a569d` foi enviado à branch do projeto. A rotina continua sem envio a clientes.
+
+## Registro central de canais — paridade 0975/1018 (26/10/2026)
+
+Para impedir que uma das linhas ganhe uma restrição funcional diferente, criei `src/domain/channels.ts` como fonte única da lista/tipo dos canais. Atendimento, Flow, pedidos, outbox, chaves Meta, filtro de contas, runtime e rotas do Admin/Edge Functions agora usam esse contrato. A derivação pelo telefone e pelo `whatsapp_accounts.slug` também é compartilhada; os handlers não mantêm mais listas TypeScript independentes de 0975/1018.
+
+A mudança mantém todo o conjunto de telas e regras disponível aos dois números. Ela não unifica credenciais: IDs Meta, WABA, chaves de Flow e vínculos de publicação continuam isolados por canal. Nenhuma tabela ou sistema externo foi alterado. O Flow 0975 ainda precisa de chave privada própria no runtime para ativar criptografia e publicação.
+
+Verificações locais: `pnpm build` passou (`tsc --noEmit` e Vite; alerta existente de bundle acima de 500 KB); `git diff --check` passou com avisos LF/CRLF. Não criei nem executei testes automatizados. O diff continua local neste ponto da rodada; nada foi implantado, publicado ou enviado a clientes.

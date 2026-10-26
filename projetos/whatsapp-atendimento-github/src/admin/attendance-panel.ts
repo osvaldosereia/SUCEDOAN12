@@ -7,6 +7,7 @@ import {
   type AttendanceMediaPreview,
   type AttendanceQueueItem,
 } from "../domain/attendance";
+import { WHATSAPP_CHANNELS } from "../domain/channels";
 
 function escapeHtml(value: unknown): string {
   return String(value ?? "").replace(/[&<>"']/g, (character) => ({
@@ -108,7 +109,7 @@ export function renderAttendancePanel(input: AttendancePanelInput): string {
   const humanMode = ["human", "human_copilot"].includes(mode);
   const cannotTakeOverOwnedConversation = mode === "human" && isAssignedToOtherOperator;
 
-  const channelButtons = (["0975", "1018"] as const).map((channel) => {
+  const channelButtons = WHATSAPP_CHANNELS.map((channel) => {
     const selected = input.channel === channel;
     const channelAccountValue = channelAccount(input.accounts, channel);
     const channelStatus = input.ana?.channels?.find((item) => item.id === channelAccountValue?.id);

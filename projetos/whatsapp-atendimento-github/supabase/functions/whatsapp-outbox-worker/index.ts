@@ -1,10 +1,11 @@
 import postgres, { type Sql } from "npm:postgres@3.4.7";
+import { WHATSAPP_CHANNELS, type WhatsAppChannel } from "../../../src/domain/channels.ts";
 import { wakeOutboxWorker } from "../_shared/outbox-dispatch.ts";
 import { lockOutboxProviderMessage, replayPendingProviderStatuses, validProviderMessageId } from "../_shared/outbox-status.ts";
 import { metaAccessToken, metaGraphVersion, type MetaChannel } from "../_shared/meta-config.ts";
 
-const CHANNELS = ["0975", "1018"] as const;
-type Channel = typeof CHANNELS[number];
+const CHANNELS = WHATSAPP_CHANNELS;
+type Channel = WhatsAppChannel;
 const BATCH_SIZE = 5;
 const MAX_DISPATCH_DEPTH = 19;
 const MAX_ENCRYPTED_BYTES = 64 * 1024;

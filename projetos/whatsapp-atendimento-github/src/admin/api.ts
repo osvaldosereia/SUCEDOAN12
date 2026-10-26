@@ -3,7 +3,7 @@ import type { BasketFlowJson, FlowChannel, FlowDraftSnapshot, SaveFlowDraftInput
 import type { OrderDetailRecord, OrderListEntry, OrderPickingInput } from "../domain/orders";
 import type { OutboxQueueSnapshot } from "../domain/outbox";
 import type { CustomerListItem, CustomerRecord } from "../domain/customers";
-import { attendanceQueueItems, type AnaAdminSnapshot, type AttendanceAccount, type AttendanceConversationSnapshot, type AttendanceMediaPreview, type AttendanceQueueItem } from "../domain/attendance";
+import { attendanceChannelFromPhone, attendanceQueueItems, type AnaAdminSnapshot, type AttendanceAccount, type AttendanceConversationSnapshot, type AttendanceMediaPreview, type AttendanceQueueItem } from "../domain/attendance";
 
 export interface CatalogSnapshot extends CatalogDocuments {
   commitSha: string;
@@ -147,8 +147,7 @@ export async function getAttendanceAccounts(accessToken: string): Promise<Attend
     if (!value || typeof value !== "object" || Array.isArray(value)) return [];
     const account = value as Record<string, unknown>;
     if (typeof account.id !== "string" || typeof account.phone_e164 !== "string") return [];
-    const digits = account.phone_e164.replace(/\D/g, "");
-    if (!digits.endsWith("0975") && !digits.endsWith("1018")) return [];
+    if (!attendanceChannelFromPhone(account.phone_e164)) return [];
     return [{
       id: account.id,
       display_name: typeof account.display_name === "string" ? account.display_name : "WhatsApp",

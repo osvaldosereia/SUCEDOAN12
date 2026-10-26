@@ -1,4 +1,5 @@
 import type { BlingCommercialTotals } from "./bling";
+import type { WhatsAppChannel } from "./channels";
 
 export type OrderStatus =
   | "received"
@@ -19,7 +20,7 @@ export interface OrderListEntry {
   basketName: string;
   customerName: string;
   city: string;
-  channel: "0975" | "1018";
+  channel: WhatsAppChannel;
   itemCount: number;
   revision: number;
   createdAt: string;

@@ -1,4 +1,5 @@
 import { hasBlingProductId, validateCatalog, type Basket, type CatalogDocuments, type Product } from "../../../src/domain/catalog.ts";
+import { WHATSAPP_CHANNELS, type WhatsAppChannel } from "../../../src/domain/channels.ts";
 import { flowPrivateKey, metaAppSecret } from "../_shared/meta-config.ts";
 import { supabaseSecretKey } from "../_shared/supabase-api-keys.ts";
 import {
@@ -17,8 +18,8 @@ const FLOW_TOKEN = /^[A-Za-z0-9_-]{32,128}$/;
 const BODY_LIMIT = 1024 * 1024;
 const PRODUCT_IMAGE_LIMIT = 27_000;
 const NO_PRODUCT_ID = "__skip_product__";
-const CHANNELS = ["0975", "1018"] as const;
-type FlowChannel = typeof CHANNELS[number];
+const CHANNELS = WHATSAPP_CHANNELS;
+type FlowChannel = WhatsAppChannel;
 
 interface FlowSession {
   channel: FlowChannel;

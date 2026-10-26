@@ -1,6 +1,7 @@
 import type { Sql } from "npm:postgres@3.4.7";
+import type { WhatsAppChannel } from "../../../src/domain/channels.ts";
 
-export type WhatsAppChannel = "0975" | "1018";
+export type { WhatsAppChannel } from "../../../src/domain/channels.ts";
 export type ProviderStatus = "accepted" | "sent" | "delivered" | "read" | "failed";
 export type ProviderDeliveryStatus = Exclude<ProviderStatus, "accepted">;
 

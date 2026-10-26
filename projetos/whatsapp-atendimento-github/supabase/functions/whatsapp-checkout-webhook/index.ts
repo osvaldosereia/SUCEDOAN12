@@ -3,6 +3,7 @@ import { recordProviderStatus, validProviderMessageId, type ProviderDeliveryStat
 import { metaAppSecret } from "../_shared/meta-config.ts";
 import { supabaseSecretKey } from "../_shared/supabase-api-keys.ts";
 import { validateCatalog, type Basket, type CatalogDocuments } from "../../../src/domain/catalog.ts";
+import { type WhatsAppChannel, whatsappChannelFromAccountSlug } from "../../../src/domain/channels.ts";
 import { FlowSelectionError, quoteBasket, type BasketSelections } from "../../../src/domain/flow-runtime.ts";
 import { wakeOutboxWorker } from "../_shared/outbox-dispatch.ts";
 import { decrementGitHubStockForConfirmation } from "../_shared/github-stock.ts";
@@ -13,8 +14,7 @@ const REPOSITORY = "SUCEDOAN12";
 const BRANCH = "project/whatsapp-atendimento-github-20261025";
 const CATALOG_PATH = "projetos/whatsapp-atendimento-github/catalog";
 const BODY_LIMIT = 1024 * 1024;
-const CHANNELS = ["0975", "1018"] as const;
-type Channel = typeof CHANNELS[number];
+type Channel = WhatsAppChannel;
 
 interface CatalogSnapshot {
   documents: CatalogDocuments;
@@ -134,11 +134,9 @@ async function channelForPhoneNumberId(value: unknown): Promise<Channel> {
   const rows = await getDatabase()<{ slug: string }>`
     select slug from public.whatsapp_accounts
     where phone_number_id = ${value} and is_active = true
-      and slug in ('dona-antonia-0975', 'dona-antonia-1018')
     limit 1
   `;
-  const channel = rows[0]?.slug === "dona-antonia-0975" ? "0975"
-    : rows[0]?.slug === "dona-antonia-1018" ? "1018" : null;
+  const channel = whatsappChannelFromAccountSlug(rows[0]?.slug);
   if (channel) return channel;
   throw new WebhookError(403, "O número Meta do evento não está vinculado a um canal configurado.");
 }

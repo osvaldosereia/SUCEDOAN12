@@ -9,6 +9,7 @@ import {
   type BlingSaleReconciliationOutcome,
 } from "../../../src/domain/bling.ts";
 import { validateCatalog, type Basket, type CatalogDocuments, type Product } from "../../../src/domain/catalog.ts";
+import { WHATSAPP_CHANNEL_PATTERN, whatsappChannelFromPhone, type WhatsAppChannel } from "../../../src/domain/channels.ts";
 import { quoteBasket, type BasketSelections } from "../../../src/domain/flow-runtime.ts";
 import type { OutboxMessageType, OutboxStatus } from "../../../src/domain/outbox.ts";
 import {
@@ -33,6 +34,7 @@ const MAX_PENDING_IMAGES = 61;
 const MAX_FLOW_DRAFT_BYTES = 150_000;
 const OUTBOX_RECENT_LIMIT = 50;
 const ORDER_ID = /^[0-9a-f-]{36}$/i;
+const CHANNEL_PATTERN = WHATSAPP_CHANNEL_PATTERN;
 const BLING_API = "https://api.bling.com.br/Api/v3";
 const BLING_AUTHORIZE_URL = "https://www.bling.com.br/Api/v3/oauth/authorize";
 const BLING_TOKEN_URL = `${BLING_API}/oauth/token`;
@@ -149,7 +151,7 @@ async function forwardSupabaseFunction(
   return { payload, status: response.status };
 }
 
-async function requireSupportedAttendanceAccount(request: Request, accountId: string): Promise<"0975" | "1018"> {
+async function requireSupportedAttendanceAccount(request: Request, accountId: string): Promise<WhatsAppChannel> {
   if (!ORDER_ID.test(accountId)) throw new HttpError(400, "Selecione um canal WhatsApp válido.");
   const { payload, status } = await forwardSupabaseFunction(request, "admin-whatsapp-ops-v1", "GET", new URLSearchParams({ action: "accounts" }));
   if (status < 200 || status >= 300 || !isRecord(payload) || !Array.isArray(payload.items)) {
@@ -157,9 +159,8 @@ async function requireSupportedAttendanceAccount(request: Request, accountId: st
   }
   const account = payload.items.find((item) => isRecord(item) && item.id === accountId);
   if (!isRecord(account) || typeof account.phone_e164 !== "string") throw new HttpError(404, "Canal WhatsApp não encontrado.");
-  const digits = account.phone_e164.replace(/\D/g, "");
-  if (digits.endsWith("0975")) return "0975";
-  if (digits.endsWith("1018")) return "1018";
+  const channel = whatsappChannelFromPhone(account.phone_e164);
+  if (channel) return channel;
   throw new HttpError(403, "A Central deste Admin atende somente os canais 0975 e 1018.");
 }
 
@@ -1404,7 +1405,7 @@ async function listOutboxMessages() {
   return {
     messages: messageRows.map((message) => ({
       id: message.id,
-      channel: message.channel as "0975" | "1018",
+      channel: message.channel as WhatsAppChannel,
       messageType: message.message_type as OutboxMessageType,
       status: message.status as OutboxStatus,
       availableAt: message.available_at,
@@ -3396,8 +3397,7 @@ Deno.serve(async (request) => {
       if (!isRecord(forwarded.payload) || !Array.isArray(forwarded.payload.items)) return jsonResponse(forwarded.payload, forwarded.status, headers);
       const items = forwarded.payload.items.filter((item) => {
         if (!isRecord(item) || typeof item.phone_e164 !== "string") return false;
-        const digits = item.phone_e164.replace(/\D/g, "");
-        return digits.endsWith("0975") || digits.endsWith("1018");
+        return whatsappChannelFromPhone(item.phone_e164) !== null;
       });
       return jsonResponse({ ...forwarded.payload, items }, forwarded.status, headers);
     }
@@ -3443,19 +3443,19 @@ Deno.serve(async (request) => {
       return jsonResponse(forwarded.payload, forwarded.status, headers);
     }
 
-    const metaListMatch = url.pathname.match(/\/meta-flows\/(0975|1018)$/);
+    const metaListMatch = url.pathname.match(new RegExp(`\\/meta-flows\\/(${CHANNEL_PATTERN})$`));
     if (metaListMatch && isFlowChannel(metaListMatch[1]) && request.method === "GET") {
       return jsonResponse(await readMetaFlowList(await metaChannelConfig(metaListMatch[1])), 200, headers);
     }
-    const metaCreateMatch = url.pathname.match(/\/meta-flows\/(0975|1018)\/create$/);
+    const metaCreateMatch = url.pathname.match(new RegExp(`\\/meta-flows\\/(${CHANNEL_PATTERN})\\/create$`));
     if (metaCreateMatch && isFlowChannel(metaCreateMatch[1]) && request.method === "POST") {
       return jsonResponse(await createMetaFlow(metaCreateMatch[1], await readJson(request)), 201, headers);
     }
-    const metaEncryptionMatch = url.pathname.match(/\/meta-flows\/(0975|1018)\/encryption$/);
+    const metaEncryptionMatch = url.pathname.match(new RegExp(`\\/meta-flows\\/(${CHANNEL_PATTERN})\\/encryption$`));
     if (metaEncryptionMatch && isFlowChannel(metaEncryptionMatch[1]) && request.method === "POST") {
       return jsonResponse(await configureMetaFlowEncryption(metaEncryptionMatch[1], await readJson(request)), 200, headers);
     }
-    const metaBindingMatch = url.pathname.match(/\/meta-flows\/(0975|1018)\/binding$/);
+    const metaBindingMatch = url.pathname.match(new RegExp(`\\/meta-flows\\/(${CHANNEL_PATTERN})\\/binding$`));
     if (metaBindingMatch && isFlowChannel(metaBindingMatch[1])) {
       if (request.method === "POST") {
         return jsonResponse(await bindPublishedMetaFlow(metaBindingMatch[1], await readJson(request), authorization.operator.id), 200, headers);
@@ -3464,7 +3464,7 @@ Deno.serve(async (request) => {
         return jsonResponse(await unbindMetaFlow(metaBindingMatch[1], await readJson(request)), 200, headers);
       }
     }
-    const metaFlowAction = url.pathname.match(/\/meta-flows\/(0975|1018)\/(\d{5,32})\/(upload|publish)$/);
+    const metaFlowAction = url.pathname.match(new RegExp(`\\/meta-flows\\/(${CHANNEL_PATTERN})\\/(\\d{5,32})\\/(upload|publish)$`));
     if (metaFlowAction && isFlowChannel(metaFlowAction[1])) {
       if (metaFlowAction[3] === "upload" && request.method === "POST") {
         const bodyText = await request.text();
@@ -3512,7 +3512,7 @@ Deno.serve(async (request) => {
       const token = await installationToken("write");
       return jsonResponse(await writeCatalog(input, token), 200, headers);
     }
-    const flowMatch = url.pathname.match(/\/flow-drafts\/(0975|1018)$/);
+    const flowMatch = url.pathname.match(new RegExp(`\\/flow-drafts\\/(${CHANNEL_PATTERN})$`));
     if (flowMatch && isFlowChannel(flowMatch[1]) && request.method === "GET") {
       const token = await installationToken("read");
       return jsonResponse(await readFlowDraft(flowMatch[1], token), 200, headers);

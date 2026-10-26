@@ -1,4 +1,6 @@
-export type MetaChannel = "0975" | "1018";
+import type { WhatsAppChannel } from "../../../src/domain/channels.ts";
+
+export type MetaChannel = WhatsAppChannel;
 
 function configured(name: string): string | null {
   const value = Deno.env.get(name)?.trim();

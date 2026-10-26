@@ -1,8 +1,9 @@
 import { hasBlingProductId, type Basket, type BasketProductGroup, type Product, type BasketsDocument } from "./catalog";
+import { WHATSAPP_CHANNELS, type WhatsAppChannel } from "./channels";
 import { FLOW_MAX_PRODUCT_QUANTITY } from "./flow-runtime";
 
-export const FLOW_CHANNELS = ["0975", "1018"] as const;
-export type FlowChannel = typeof FLOW_CHANNELS[number];
+export const FLOW_CHANNELS = WHATSAPP_CHANNELS;
+export type FlowChannel = WhatsAppChannel;
 
 const FLOW_VERSION = "7.3" as const;
 const DATA_API_VERSION = "4.0" as const;

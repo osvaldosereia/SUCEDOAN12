@@ -191,3 +191,5 @@ A função ativa `whatsapp-meta-webhook-v1` normaliza mensagens interativas para
 ### Decisão — paridade dos canais 0975 e 1018
 
 Os canais terão as mesmas telas e recursos do Admin, usando um único gerador de Flow, o mesmo catálogo GitHub e as mesmas regras de pedido. O JSON de cada Flow será semanticamente idêntico; identidade Meta, WABA, Flow ID, chave de criptografia, status e vínculo permanecem separados por número. A interface deixa essa diferença operacional explícita. A configuração do canal 0975 ainda depende da chave privada correspondente no runtime, sem reutilizar uma chave do 1018 por suposição.
+
+O contrato TypeScript dos dois canais fica centralizado em `src/domain/channels.ts`; Flow, atendimento, pedidos, outbox, resolução de contas e rotas server-side derivam desse registro. A associação ao WABA e os segredos criptográficos continuam separados por canal.

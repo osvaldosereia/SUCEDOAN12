@@ -1486,7 +1486,7 @@ appRoot.addEventListener("click", async (event) => {
     await loadAttendance();
   } else if (action === "attendance-channel") {
     const channel = target.dataset.channel;
-    if (channel === "0975" || channel === "1018") await selectAttendanceChannel(channel);
+    if (FLOW_CHANNELS.includes(channel as FlowChannel)) await selectAttendanceChannel(channel as AttendanceChannel);
   } else if (action === "attendance-open") {
     await openAttendanceConversation(id);
   } else if (action === "attendance-load-media" && state.session && state.attendanceConversation

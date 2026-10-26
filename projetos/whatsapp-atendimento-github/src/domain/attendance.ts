@@ -1,4 +1,6 @@
-export type AttendanceChannel = "0975" | "1018";
+import { whatsappChannelFromPhone, type WhatsAppChannel } from "./channels";
+
+export type AttendanceChannel = WhatsAppChannel;
 export type AttendanceMode = "ai" | "human" | "human_copilot" | "paused" | string;
 
 export interface AttendanceAccount {
@@ -46,10 +48,7 @@ export interface AnaAdminSnapshot {
 }
 
 export function attendanceChannelFromPhone(value: unknown): AttendanceChannel | null {
-  const digits = String(value ?? "").replace(/\D/g, "");
-  if (digits.endsWith("0975")) return "0975";
-  if (digits.endsWith("1018")) return "1018";
-  return null;
+  return whatsappChannelFromPhone(value);
 }
 
 export function attendanceQueueItems(value: unknown): AttendanceQueueItem[] {

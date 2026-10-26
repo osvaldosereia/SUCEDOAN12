@@ -1,5 +1,6 @@
 import postgres, { type Sql } from "npm:postgres@3.4.7";
 import { CHECKOUT_ACTION_PREFIX, CHECKOUT_BASKET_REPLY_PREFIX, isCheckoutStartText } from "../_shared/checkout-routing.ts";
+import { WHATSAPP_CHANNEL_PATTERN } from "../../../src/domain/channels.ts";
 import { metaAppSecret } from "../_shared/meta-config.ts";
 import { supabasePublishableKey } from "../_shared/supabase-api-keys.ts";
 
@@ -117,14 +118,10 @@ async function isProjectFlowReply(message: JsonRecord, phoneNumberId: unknown): 
       select 1
       from public.whatsapp_accounts account
       join public.whatsapp_flow_sessions session
-        on session.channel = case account.slug
-          when 'dona-antonia-0975' then '0975'
-          when 'dona-antonia-1018' then '1018'
-          else null
-        end
+        on session.channel = substring(account.slug from 14)
       where account.phone_number_id = ${phoneNumberId}
         and account.is_active = true
-        and account.slug in ('dona-antonia-0975', 'dona-antonia-1018')
+        and account.slug ~ ${`^dona-antonia-(${WHATSAPP_CHANNEL_PATTERN})$`}
         and session.token_hash = ${tokenHash}
         and session.phone_e164 = ${phone}
     ) as found
@@ -158,14 +155,10 @@ async function isNewOutboxStatus(phoneNumberId: unknown, status: unknown): Promi
       select 1
       from public.whatsapp_accounts account
       join whatsapp_atendimento.message_outbox outbox
-        on outbox.channel = case account.slug
-          when 'dona-antonia-0975' then '0975'
-          when 'dona-antonia-1018' then '1018'
-          else null
-        end
+        on outbox.channel = substring(account.slug from 14)
       where account.phone_number_id = ${phoneNumberId}
         and account.is_active = true
-        and account.slug in ('dona-antonia-0975', 'dona-antonia-1018')
+        and account.slug ~ ${`^dona-antonia-(${WHATSAPP_CHANNEL_PATTERN})$`}
         and outbox.provider_message_id = ${providerId}
     ) as found
   `;
