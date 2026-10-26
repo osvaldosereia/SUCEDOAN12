@@ -1662,31 +1662,6 @@ async function encryptBlingTokens(tokens: Record<string, unknown>): Promise<{ no
   return { nonce: base64(nonce), ciphertext: base64(new Uint8Array(encrypted)) };
 }
 
-async function decryptBlingTokens(ciphertext: string, nonce: string): Promise<Record<string, unknown>> {
-  let nonceBytes: Uint8Array;
-  let encryptedBytes: Uint8Array;
-  try {
-    nonceBytes = Uint8Array.from(atob(nonce), (char) => char.charCodeAt(0));
-    encryptedBytes = Uint8Array.from(atob(ciphertext), (char) => char.charCodeAt(0));
-  } catch { throw new HttpError(503, "As credenciais armazenadas do Bling não puderam ser lidas."); }
-  if (nonceBytes.byteLength !== 12) throw new HttpError(503, "As credenciais armazenadas do Bling não puderam ser lidas.");
-  let plaintext: ArrayBuffer;
-  try {
-    plaintext = await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv: asArrayBuffer(nonceBytes), additionalData: new TextEncoder().encode("whatsapp_atendimento:bling:v1") },
-      await blingEncryptionKey(),
-      asArrayBuffer(encryptedBytes),
-    );
-  } catch { throw new HttpError(503, "As credenciais armazenadas do Bling não puderam ser lidas."); }
-  let tokens: unknown;
-  try { tokens = JSON.parse(new TextDecoder().decode(plaintext)); } catch { throw new HttpError(503, "As credenciais armazenadas do Bling não puderam ser lidas."); }
-  if (!isRecord(tokens) || typeof tokens.access_token !== "string" || !tokens.access_token
-    || typeof tokens.refresh_token !== "string" || !tokens.refresh_token) {
-    throw new HttpError(503, "As credenciais armazenadas do Bling não puderam ser lidas.");
-  }
-  return tokens;
-}
-
 function blingTokenEndpointAuth(clientId: string, clientSecret: string): string {
   return `Basic ${base64(new TextEncoder().encode(`${clientId}:${clientSecret}`))}`;
 }
@@ -1710,51 +1685,6 @@ async function exchangeBlingAuthorizationCode(code: string, config: ReturnType<t
     throw new HttpError(502, "O Bling retornou credenciais incompletas.");
   }
   return tokens;
-}
-
-async function getBlingAccessToken(): Promise<string> {
-  const config = blingOAuthConfig();
-  return await ordersDb().begin(async (tx) => {
-    // Serialize token refresh across Edge Function instances because Bling rotates refresh tokens.
-    await tx`select pg_advisory_xact_lock(517520261025)`;
-    const rows = await tx<{ ciphertext: string; nonce: string; expires_at: Date; scopes: string[] }>`
-      select ciphertext, nonce, expires_at, scopes
-      from whatsapp_atendimento.integration_credentials
-      where provider = 'bling'
-      for update
-    `;
-    const stored = rows[0];
-    if (!stored) throw new HttpError(503, "A conta Bling ainda não foi conectada.");
-    const tokens = await decryptBlingTokens(stored.ciphertext, stored.nonce);
-    if (stored.expires_at.getTime() > Date.now() + 30_000) return String(tokens.access_token);
-
-    const response = await fetch(BLING_TOKEN_URL, {
-      method: "POST",
-      headers: {
-        Authorization: blingTokenEndpointAuth(config.clientId, config.clientSecret),
-        "Content-Type": "application/x-www-form-urlencoded",
-        Accept: "application/json",
-      },
-      body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: String(tokens.refresh_token) }),
-    });
-    if (!response.ok) throw new HttpError(503, "A sessão Bling expirou ou não pôde ser renovada. Reconecte a conta pelo Admin.");
-    let renewed: unknown;
-    try { renewed = await response.json(); } catch { throw new HttpError(503, "O Bling retornou uma renovação inválida."); }
-    if (!isRecord(renewed) || typeof renewed.access_token !== "string" || !renewed.access_token
-      || typeof renewed.refresh_token !== "string" || !renewed.refresh_token
-      || typeof renewed.expires_in !== "number" || !Number.isFinite(renewed.expires_in) || renewed.expires_in <= 0) {
-      throw new HttpError(503, "O Bling retornou credenciais incompletas na renovação.");
-    }
-    const encrypted = await encryptBlingTokens(renewed);
-    const scope = typeof renewed.scope === "string" ? renewed.scope.trim().split(/\s+/).filter(Boolean) : stored.scopes;
-    const expiresAt = new Date(Date.now() + Math.max(1, Math.floor(Number(renewed.expires_in)) - 60) * 1000).toISOString();
-    await tx`
-      update whatsapp_atendimento.integration_credentials
-      set ciphertext = ${encrypted.ciphertext}, nonce = ${encrypted.nonce}, expires_at = ${expiresAt}, scopes = ${scope}, updated_at = now()
-      where provider = 'bling'
-    `;
-    return renewed.access_token;
-  });
 }
 
 async function sharedBlingRpc<T = unknown>(name: string, args: Record<string, unknown> = {}): Promise<T> {
@@ -1858,24 +1788,12 @@ async function sharedBlingRequest(path: string, method: "GET" | "POST", body?: u
 /** Read-only server-side client. Keep order writes behind their own preflight and idempotent job handlers. */
 export async function blingApiGet(path: string): Promise<unknown> {
   if (typeof path !== "string" || !path.startsWith("/")) throw new HttpError(400, "O caminho Bling precisa ser relativo à API v3.");
-  const endpoint = new URL(path.replace(/^\/+/, ""), `${BLING_API}/`);
-  if (endpoint.origin !== "https://api.bling.com.br" || !endpoint.pathname.startsWith("/Api/v3/")) {
-    throw new HttpError(400, "O caminho Bling solicitado não é permitido.");
-  }
-  const accessToken = await getBlingAccessToken();
-  const response = await fetch(endpoint, {
-    method: "GET",
-    headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
-  });
-  if (!response.ok) throw new HttpError(502, "O Bling não concluiu a consulta solicitada.");
-  try { return await response.json(); } catch { throw new HttpError(502, "O Bling retornou uma resposta inválida."); }
+  const response = await sharedBlingRequest(path, "GET");
+  if (response.status < 200 || response.status >= 300) throw new HttpError(502, "O Bling não concluiu a consulta solicitada.");
+  return response.data;
 }
 
 async function lookupBlingProductByCatalogGtin(productId: string) {
-  if (Deno.env.get("BLING_PRODUCT_LOOKUP_ENABLED") !== "true"
-    || Deno.env.get("BLING_OAUTH_ENABLED") !== "true") {
-    throw new HttpError(503, "A consulta de produtos Bling está desabilitada neste ambiente.");
-  }
   if (!ORDER_ID.test(productId)) throw new HttpError(400, "O produto selecionado é inválido.");
 
   const catalog = await readCatalog(await publicCatalogReadToken());
