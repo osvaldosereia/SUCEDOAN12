@@ -532,3 +532,16 @@ Na continuação para ativar o projeto, o Admin local respondeu e carregou a lis
 Criei [ATIVACAO-ADMIN.md](ATIVACAO-ADMIN.md) com o callback GitHub verificado, allowlist local e os cadastros mínimos necessários. A documentação oficial consultada confirma que o OAuth App precisa do callback `https://<project-ref>.supabase.co/auth/v1/callback` e que a URL de retorno do Admin deve ser permitida em **Authentication → URL Configuration**. O endereço de produção do Admin ainda não foi escolhido/publicado, então não foi inventado um domínio para o OAuth.
 
 Esta sessão não possui conector para gravar provider OAuth/secrets, criar GitHub App ou configurar Meta. `pnpm build` não foi executado porque só houve atualização documental; `git diff --check` será executado antes do commit. Nenhuma migration, função ou Flow foi publicado; nenhuma mensagem ou escrita Bling/Meta foi feita. Próxima ação humana indispensável: entrar no Dashboard Supabase como operador autorizado; a criação de OAuth/GitHub App e chaves persistentes requer confirmação imediata no momento da ação pela política da skill `computer-use`.
+
+## Revisão pré-ativação — callbacks e roteamento (26/10/2026)
+
+Uma revisão estática da branch não encontrou problemas críticos e apontou três falhas importantes no caminho de ativação. Corrigi-as localmente:
+
+- `whatsapp-admin-api` agora desliga a verificação JWT do gateway para permitir o retorno OAuth do Bling, que vem de um redirecionamento externo sem JWT Supabase. O callback exige estado OAuth aleatório, de uso único e com expiração; todas as demais rotas continuam passando por `authorize()` e pela allowlist GitHub.
+- O roteador só desvia `nfm_reply` para o checkout quando a sessão pertence ao canal e telefone e ainda está válida e não revogada. Se a consulta privada falhar ou a sessão estiver vencida, a mensagem segue para ANA e o evento não fica preso em retentativas de 502.
+- O início do checkout exige uma frase explícita sobre comprar/montar uma cesta e um Flow publicado/vinculado ao número. Mensagens genéricas como “cesta”, “pedido” ou “quero comprar” continuam no histórico ANA; falha ao verificar o vínculo também deixa a mensagem na rota ANA.
+- Status Meta que cheguem enquanto há envio novo sem WAMID persistido são encaminhados ao checkout e à ANA. O checkout guarda o status temporariamente e o worker o reconcilia quando grava o WAMID. Durante essa janela, outros WAMIDs do mesmo canal também podem gerar registros pendentes; eles expiram em 30 minutos e não alteram pedidos sem correspondência.
+
+`pnpm build` passou (`tsc --noEmit` e Vite); permanece o aviso de bundle JavaScript de 618 KB. `git diff --check` passou, com os avisos locais de LF/CRLF do Windows. Não foi criado/executado teste automatizado. O roteamento ainda não foi implantado nem ligado ao callback Meta. As cinco funções novas continuam sem deploy; OAuth GitHub do Admin, GitHub App/allowlist/secrets e chave privada Flow 0975 seguem sem configuração confirmada. Não houve mensagem real, publicação de Flow, escrita Bling/Meta ou teste de venda/NF-e.
+
+Preflight Supabase somente para leitura nesta rodada: nenhuma das cinco funções novas aparece na lista ativa. O projeto registra as quatro migrations deste projeto (`20261026120040`, `20261026120043`, `20261026120046`, `20261026120049`).

@@ -10,6 +10,7 @@ const WEBHOOK_FUNCTIONS = {
   checkout: "whatsapp-checkout-webhook",
 } as const;
 type Destination = keyof typeof WEBHOOK_FUNCTIONS;
+type StatusRoute = "ana" | "checkout" | "both";
 
 type JsonRecord = Record<string, unknown>;
 type MetaValue = JsonRecord & {
@@ -113,20 +114,49 @@ async function isProjectFlowReply(message: JsonRecord, phoneNumberId: unknown): 
   const phone = senderE164(message.from);
   if (!phone || typeof phoneNumberId !== "string" || !phoneNumberId) return false;
   const tokenHash = await digestHex(response.flow_token);
-  const rows = await getDatabase()<{ found: boolean }>`
-    select exists (
-      select 1
-      from public.whatsapp_accounts account
-      join public.whatsapp_flow_sessions session
-        on session.channel = substring(account.slug from 14)
-      where account.phone_number_id = ${phoneNumberId}
-        and account.is_active = true
-        and account.slug ~ ${`^dona-antonia-(${WHATSAPP_CHANNEL_PATTERN})$`}
-        and session.token_hash = ${tokenHash}
-        and session.phone_e164 = ${phone}
-    ) as found
-  `;
-  return rows[0]?.found === true;
+  try {
+    const rows = await getDatabase()<{ found: boolean }>`
+      select exists (
+        select 1
+        from public.whatsapp_accounts account
+        join public.whatsapp_flow_sessions session
+          on session.channel = substring(account.slug from 14)
+        where account.phone_number_id = ${phoneNumberId}
+          and account.is_active = true
+          and account.slug ~ ${`^dona-antonia-(${WHATSAPP_CHANNEL_PATTERN})$`}
+          and session.token_hash = ${tokenHash}
+          and session.phone_e164 = ${phone}
+          and session.expires_at > now()
+          and session.revoked_at is null
+      ) as found
+    `;
+    return rows[0]?.found === true;
+  } catch {
+    // Unknown Flow events stay on ANA's webhook if private session lookup is unavailable.
+    return false;
+  }
+}
+
+async function hasPublishedFlow(phoneNumberId: unknown): Promise<boolean> {
+  if (typeof phoneNumberId !== "string" || !phoneNumberId) return false;
+  try {
+    const rows = await getDatabase()<{ found: boolean }>`
+      select exists (
+        select 1
+        from public.whatsapp_accounts account
+        join whatsapp_atendimento.channel_flow_bindings binding
+          on binding.whatsapp_account_id = account.id
+          and binding.channel = substring(account.slug from 14)
+        where account.phone_number_id = ${phoneNumberId}
+          and account.is_active = true
+          and account.slug ~ ${`^dona-antonia-(${WHATSAPP_CHANNEL_PATTERN})$`}
+      ) as found
+    `;
+    return rows[0]?.found === true;
+  } catch {
+    // Checkout classification fails open to the existing ANA conversation handler.
+    return false;
+  }
 }
 
 async function checkoutMessage(message: unknown, phoneNumberId: unknown): Promise<boolean> {
@@ -143,26 +173,48 @@ async function checkoutMessage(message: unknown, phoneNumberId: unknown): Promis
       && /^(?:confirm|edit|cancel|accept-adjustment|cancel-adjustment):[0-9a-f-]{36}:\d+$/i.test(buttonReply.slice(CHECKOUT_ACTION_PREFIX.length));
   }
   if (type !== "text" || !isRecord(message.text) || typeof message.text.body !== "string") return false;
-  return isCheckoutStartText(message.text.body);
+  return isCheckoutStartText(message.text.body) && await hasPublishedFlow(phoneNumberId);
 }
 
-async function isNewOutboxStatus(phoneNumberId: unknown, status: unknown): Promise<boolean> {
-  if (typeof phoneNumberId !== "string" || !phoneNumberId || !isRecord(status)) return false;
+async function routeOutboxStatus(phoneNumberId: unknown, status: unknown): Promise<StatusRoute> {
+  if (typeof phoneNumberId !== "string" || !phoneNumberId || !isRecord(status)) return "ana";
   const providerId = status.id;
-  if (typeof providerId !== "string" || !/^wamid\.[A-Za-z0-9._=-]{1,250}$/.test(providerId)) return false;
-  const rows = await getDatabase()<{ found: boolean }>`
-    select exists (
-      select 1
+  if (typeof providerId !== "string" || !/^wamid\.[A-Za-z0-9._=-]{1,250}$/.test(providerId)) return "ana";
+  try {
+    const rows = await getDatabase()<{
+      is_outbox_message: boolean;
+      has_unresolved_send: boolean;
+    }>`
+      select
+        exists (
+          select 1
+          from whatsapp_atendimento.message_outbox outbox
+          where outbox.channel = substring(account.slug from 14)
+            and outbox.provider_message_id = ${providerId}
+        ) as is_outbox_message,
+        exists (
+          select 1
+          from whatsapp_atendimento.message_outbox outbox
+          where outbox.channel = substring(account.slug from 14)
+            and outbox.provider_message_id is null
+            and outbox.status = 'failed'
+            and outbox.last_error_code = 'delivery_unknown'
+            and outbox.created_at > now() - interval '30 minutes'
+        ) as has_unresolved_send
       from public.whatsapp_accounts account
-      join whatsapp_atendimento.message_outbox outbox
-        on outbox.channel = substring(account.slug from 14)
       where account.phone_number_id = ${phoneNumberId}
         and account.is_active = true
         and account.slug ~ ${`^dona-antonia-(${WHATSAPP_CHANNEL_PATTERN})$`}
-        and outbox.provider_message_id = ${providerId}
-    ) as found
-  `;
-  return rows[0]?.found === true;
+      limit 1
+    `;
+    const result = rows[0];
+    if (result?.is_outbox_message) return "checkout";
+    if (result?.has_unresolved_send) return "both";
+    return "ana";
+  } catch {
+    // Keep ANA's status history flowing if private outbox correlation is unavailable.
+    return "ana";
+  }
 }
 
 function copyEntry(entry: JsonRecord, changes: JsonRecord[]): JsonRecord {
@@ -199,8 +251,9 @@ async function splitPayload(root: JsonRecord): Promise<Record<Destination, JsonR
       const anaStatuses: unknown[] = [];
       if (statuses) {
         for (const status of statuses) {
-          if (await isNewOutboxStatus(phoneNumberId, status)) checkoutStatuses.push(status);
-          else anaStatuses.push(status);
+          const destination = await routeOutboxStatus(phoneNumberId, status);
+          if (destination === "checkout" || destination === "both") checkoutStatuses.push(status);
+          if (destination === "ana" || destination === "both") anaStatuses.push(status);
         }
       }
 
