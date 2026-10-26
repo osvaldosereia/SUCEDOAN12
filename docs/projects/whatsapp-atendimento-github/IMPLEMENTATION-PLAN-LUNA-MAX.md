@@ -120,7 +120,7 @@ Como ponto de partida, testar uma miniatura WebP de 240×190 com limite de 27 KB
 | 3 — Configurador Meta Flow | Editor guiado, Flow JSON gerado, validação local, configuração por número e exportação | Cada número tem rascunho próprio; publicação permanece fora da etapa |
 | 4 — Runtime de atendimento | **Implementada localmente:** sessão/canal, seleção validada, imagens por commit, cotação, protocolo cifrado e busca mínima de cliente. Migration criada, não aplicada. | Endpoint local compila e falha fechado sem segredos/sessão; total calculado no servidor. A ligação do JSON Meta e revisão de telas dependem da Rodada 7. |
 | 5 — Confirmação e pedidos | Resumo no chat, botões, rascunho, confirmação idempotente e novo esquema operacional | Só o aceite explícito cria pedido e preserva snapshot |
-| 6 — Separação e Bling | Fila, separação/falta, correção de total, criação da venda, solicitação/consulta NF-e, saída e conclusão | Pedido percorre todos os estados sem duplicar venda ou nota |
+| 6 — Separação e Bling | **Implementação local parcial:** fila, atribuição, separação/falta, aceite do total recalculado e preflight idempotente. OAuth, criação de venda/NF-e e entrega aguardam contratos e homologação. | Separação opera com revisão fixada; nenhuma escrita Bling sem política fiscal, mapeamentos, credencial e reconciliação aprovados |
 | 7 — Homologação | Verificação de imagens, Flow nos dois números, pedido interno, erros, repetição de eventos e recuperação | Jornada completa comprovada em canal controlado antes de qualquer liberação |
 
 Cada rodada deve produzir um diff pequeno e revisável, resumo das mudanças, como conferir o resultado e riscos remanescentes. Não implantar, publicar Flow ou enviar mensagem real durante desenvolvimento local.

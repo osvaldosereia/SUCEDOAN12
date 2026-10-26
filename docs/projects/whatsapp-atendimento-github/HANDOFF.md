@@ -189,3 +189,14 @@ A Rodada 5 adiciona `supabase/functions/whatsapp-checkout-webhook/`, a migration
 O payload final do Flow precisa corresponder a `contract_version: 1`; a Rodada 7 ainda precisa conectar e validar os rascunhos da Rodada 3 com esse contrato. Somente a ação de botão `confirm` pode inserir pedido/itens, usando snapshot imutável GitHub e transação. O modelo novo permanece isolado no schema `whatsapp_atendimento`; nenhuma tabela antiga de pedidos é usada.
 
 `pnpm build` e `git diff --check` foram verificados. Deno CLI não está disponível. A migration não foi aplicada, o banco e os segredos não foram alterados, a outbox não tem consumidor e nenhuma mensagem, Flow ou chamada Meta foi enviada. Próxima rodada do plano: Rodada 6 — separação e integração Bling, precedida pela revisão do contrato fiscal do novo snapshot.
+
+
+## Estado de execução — Rodada 6 local parcial
+
+A branch `project/whatsapp-atendimento-github-20261025` agora contém fila autenticada de pedidos, detalhe por revisão, atribuição a operador, separação, substituto elegível no catálogo fixado e tratamento de falta com aceite/cancelamento inbound. Alterações usam revisão otimista e geram eventos de auditoria. A outbox continua cifrada e sem consumidor.
+
+Concluir a separação cria o estado `awaiting_invoice` e um `integration_jobs.create_sale` em `blocked`. O preflight registra ausência de OAuth, vínculo do cliente ao contato Bling, mapeamento de forma de pagamento/vencimento, regra para reconciliar o total comercial com as linhas e conector desabilitado em desenvolvimento. OAuth, criação de venda, NF-e, despacho e conclusão de entrega ainda não estão implementados/homologados; não houve chamada à API Bling.
+
+A migration `20261026005000_order_operations_bling.sql` foi criada pelo Supabase CLI e não aplicada. `SUPABASE_DB_URL` é lida somente pela Edge Function com prepared statements desabilitados. Não houve acesso a dados reais, mudança de schema Supabase, configuração de segredo, deploy, publicação Flow ou envio de mensagem. `pnpm build` passou; Deno CLI não está instalado e nenhum teste foi criado ou executado.
+
+Especificação: [ROUND-6-ORDERS-BLING-PLAN.md](ROUND-6-ORDERS-BLING-PLAN.md). Continuação: fechar regras fiscais e de vencimento; então implementar OAuth e reconciliação Bling idempotente, seguida por NF-e e gate de saída. Homologação Meta permanece na Rodada 7.

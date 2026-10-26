@@ -119,7 +119,7 @@ function getDatabase(): Sql {
   if (database) return database;
   const url = Deno.env.get("SUPABASE_DB_URL");
   if (!url) throw new WebhookError(503, "A conexão privada do banco não está configurada no servidor.");
-  database = postgres(url, { max: 2, idle_timeout: 10, connect_timeout: 5, ssl: "require" });
+  database = postgres(url, { max: 1, idle_timeout: 10, connect_timeout: 5, prepare: false, ssl: "require" });
   return database;
 }
 
@@ -392,6 +392,7 @@ function buildOrderSnapshot(
     const product = productById.get(selection.productId);
     if (!product?.sku || !product.blingProductId) throw new WebhookError(409, `A opção ${product?.name ?? selection.productId} ainda não possui SKU e vínculo Bling.`);
     return [{
+      groupId: group.id,
       productId: product.id,
       name: product.name,
       brand: product.brand,
@@ -410,6 +411,7 @@ function buildOrderSnapshot(
     basketId: basket.id,
     basketName: basket.name,
     channelId: session.channel,
+    selections: quote.selections,
     customer: {
       customerId: customer.id,
       name: customer.name,
@@ -517,8 +519,8 @@ async function confirmDraft(tx: Sql, channel: Channel, phone: string, draftId: s
   for (const [index, item] of items.entries()) {
     await tx`
       insert into whatsapp_atendimento.order_items
-        (order_id, position, product_id, quantity, unit_price_cents, line_total_cents, snapshot)
-      values (${orderId}, ${index + 1}, ${String(item.productId)}, ${Number(item.quantity)}, ${Number(item.unitPriceCents)}, ${Number(item.lineTotalCents)}, ${tx.json(item)})
+        (order_id, position, group_id, product_id, quantity, unit_price_cents, line_total_cents, snapshot)
+      values (${orderId}, ${index + 1}, ${String(item.groupId)}, ${String(item.productId)}, ${Number(item.quantity)}, ${Number(item.unitPriceCents)}, ${Number(item.lineTotalCents)}, ${tx.json(item)})
       on conflict (order_id, position) do nothing
     `;
   }
@@ -528,6 +530,66 @@ async function confirmDraft(tx: Sql, channel: Channel, phone: string, draftId: s
     on conflict (event_key) do nothing
   `;
   await tx`update whatsapp_atendimento.order_drafts set status = 'confirmed', confirmed_order_id = ${orderId}, updated_at = now() where id = ${draftId}`;
+}
+
+async function resolveOrderAdjustment(
+  tx: Sql,
+  channel: Channel,
+  phone: string,
+  orderId: string,
+  revision: number,
+  action: "accept-adjustment" | "cancel-adjustment",
+  eventId: string,
+): Promise<void> {
+  const rows = await tx<{
+    id: string; channel: string; status: string; revision: number; snapshot: Record<string, unknown>;
+    pending_customer_snapshot: Record<string, unknown> | null; customer_acceptance_status: string;
+  }>`
+    select id, channel, status, revision, snapshot, pending_customer_snapshot, customer_acceptance_status
+    from whatsapp_atendimento.orders where id = ${orderId} for update
+  `;
+  const order = rows[0];
+  if (!order || order.channel !== channel || order.status !== "attention" || order.revision !== revision
+    || order.customer_acceptance_status !== "pending" || !order.pending_customer_snapshot) return;
+  const customer = isRecord(order.snapshot.customer) ? order.snapshot.customer : {};
+  if (customer.phoneE164 !== phone) return;
+
+  if (action === "cancel-adjustment") {
+    await tx`
+      update whatsapp_atendimento.orders set status = 'cancelled', attention_code = null,
+        customer_acceptance_status = 'rejected', pending_customer_snapshot = null,
+        pending_customer_total_cents = null, revision = revision + 1, updated_at = now()
+      where id = ${orderId}
+    `;
+  } else {
+    const snapshot = order.pending_customer_snapshot;
+    const items = Array.isArray(snapshot.items) ? snapshot.items as Array<Record<string, unknown>> : [];
+    if (!Number.isSafeInteger(snapshot.totalCents) || !items.every((item) => typeof item.groupId === "string"
+      && typeof item.productId === "string" && Number.isSafeInteger(item.quantity)
+      && Number.isSafeInteger(item.unitPriceCents) && Number.isSafeInteger(item.lineTotalCents))) {
+      throw new WebhookError(409, "A alteração pendente do pedido está incompleta.");
+    }
+    await tx`delete from whatsapp_atendimento.order_items where order_id = ${orderId}`;
+    for (const [index, item] of items.entries()) {
+      await tx`
+        insert into whatsapp_atendimento.order_items
+          (order_id, position, group_id, product_id, quantity, unit_price_cents, line_total_cents, snapshot, picked_quantity, picking_status)
+        values (${orderId}, ${index + 1}, ${String(item.groupId)}, ${String(item.productId)}, ${Number(item.quantity)}, ${Number(item.unitPriceCents)}, ${Number(item.lineTotalCents)}, ${tx.json(item)}, 0, 'pending')
+      `;
+    }
+    await tx`
+      update whatsapp_atendimento.orders set status = 'packing', snapshot = ${tx.json(snapshot)},
+        total_cents = ${Number(snapshot.totalCents)}, attention_code = null, customer_acceptance_status = 'accepted',
+        pending_customer_snapshot = null, pending_customer_total_cents = null,
+        revision = revision + 1, updated_at = now()
+      where id = ${orderId}
+    `;
+  }
+  await tx`
+    insert into whatsapp_atendimento.order_events (order_id, event_key, event_type, event_data)
+    values (${orderId}, ${`${channel}:${eventId}:adjustment`}, ${action === "accept-adjustment" ? "customer_adjustment_accepted" : "customer_adjustment_rejected"}, ${tx.json({ revision, action })})
+    on conflict (event_key) do nothing
+  `;
 }
 
 async function cancelOrEditDraft(
@@ -592,6 +654,12 @@ async function processMessage(message: WebhookMessage, channel: Channel, rawBody
     }
 
     const buttonId = message.interactive?.button_reply?.id;
+    const adjustment = typeof buttonId === "string" ? buttonId.match(/^(accept-adjustment|cancel-adjustment):([0-9a-f-]{36}):(\d+)$/i) : null;
+    if (message.type === "interactive" && adjustment) {
+      const adjustmentAction = adjustment[1].toLowerCase() as "accept-adjustment" | "cancel-adjustment";
+      await resolveOrderAdjustment(tx, channel, phone, adjustment[2], Number(adjustment[3]), adjustmentAction, message.id);
+      return;
+    }
     const action = typeof buttonId === "string" ? buttonId.match(/^(confirm|edit|cancel):([0-9a-f-]{36}):(\d+)$/i) : null;
     if (message.type === "interactive" && action) {
       const [, actionName, draftId, revisionText] = action;

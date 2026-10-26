@@ -258,4 +258,14 @@ O backend cria um token temporário do GitHub App, solicitando `Contents: read` 
 
 O app converte fotos escolhidas pelo operador para WebP 240×190 e até 27 KB; o backend revalida Base64, estrutura RIFF/WebP, dimensões e tamanho. Não há exclusão automática de arquivos de imagem antigos. A prévia comercial mostra o `basePriceCents` já cadastrado e as opções por tipo; nenhum ajuste interno é armazenado ou calculado no navegador.
 
+## 12. Rodada 6 — fila, separação e preflight Bling
+
+- O snapshot do pedido preserva `selections` e `groupId` por item, além do commit de catálogo. A separação lê exatamente esse commit para validar um substituto dentro do mesmo tipo de cesta e recalcular o total no servidor.
+- A Admin API adiciona `GET /orders`, `GET /orders/{id}`, `POST /orders/{id}/assign`, `PATCH /orders/{id}/picking` e `POST /orders/{id}/separation/complete`. Exige a autenticação GitHub/allowlist existente e usa conexão Postgres somente server-side. Alterações recebem `revision` esperada e geram `order_events` idempotentes.
+- Quantidade faltante ou produto substituto cria `pending_customer_snapshot`, põe o pedido em `attention` e grava proposta cifrada em `message_outbox`. O webhook inbound aceita `accept-adjustment:{orderId}:{revision}` ou `cancel-adjustment:{orderId}:{revision}` somente quando telefone, canal, estado e revisão coincidem. No aceite, atualiza total/snapshot e reinicia a conferência das linhas.
+- Concluir separação muda o pedido para `awaiting_invoice` e registra `integration_jobs.create_sale` em `blocked` com códigos de preflight para OAuth, contato, forma de pagamento/vencimento, divergência entre linhas e preço comercial e conector desabilitado em desenvolvimento. O código não chama a API Bling.
+- A migration `20261026005000_order_operations_bling.sql` cria colunas e tabelas privadas com RLS e grants apenas a `service_role`; foi criada via Supabase CLI e não aplicada. `SUPABASE_DB_URL` é segredo da Edge Function. A conexão desabilita prepared statements para pooler transacional.
+- OAuth Bling, criação/reconciliação de venda, emissão/consulta/autorização de NF-e, saída e conclusão de entrega/pagamento continuam pendentes para homologação. Não existe consumidor da outbox; não foram enviadas mensagens.
+- Verificação: `pnpm build` compila TypeScript e Vite. `git diff --check` é executado no fechamento. Não foram adicionados nem executados testes, chamadas externas, deploy ou migrations.
+
 Dependências externas seguem versões fixas no `package.json` e lockfile pnpm. O provedor OAuth, allowlist, GitHub App e origens permitidas permanecem sem configuração confirmada. Nenhum secret foi criado/lido, nenhuma função foi implantada, nenhuma alteração Supabase foi feita, e não houve chamada Meta/Bling, publicação de Flow ou mensagem real.

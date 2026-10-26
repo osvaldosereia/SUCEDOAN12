@@ -1,5 +1,6 @@
 import type { CatalogDocuments } from "../domain/catalog";
 import type { FlowChannel, FlowDraftSnapshot, SaveFlowDraftInput } from "../domain/flows";
+import type { OrderDetailRecord, OrderListEntry, OrderPickingInput } from "../domain/orders";
 
 export interface CatalogSnapshot extends CatalogDocuments {
   commitSha: string;
@@ -72,5 +73,34 @@ export function saveFlowDraft(accessToken: string, channel: FlowChannel, input: 
   return apiRequest<FlowDraftSnapshot>(`/flow-drafts/${channel}`, accessToken, {
     method: "PUT",
     body: JSON.stringify(input),
+  });
+}
+
+export function getOrders(accessToken: string): Promise<{ orders: OrderListEntry[] }> {
+  return apiRequest<{ orders: OrderListEntry[] }>("/orders", accessToken);
+}
+
+export function getOrder(accessToken: string, orderId: string): Promise<OrderDetailRecord> {
+  return apiRequest<OrderDetailRecord>(`/orders/${encodeURIComponent(orderId)}`, accessToken);
+}
+
+export function assignOrder(accessToken: string, orderId: string, revision: number): Promise<OrderDetailRecord> {
+  return apiRequest<OrderDetailRecord>(`/orders/${encodeURIComponent(orderId)}/assign`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ revision }),
+  });
+}
+
+export function saveOrderPicking(accessToken: string, orderId: string, input: OrderPickingInput): Promise<OrderDetailRecord> {
+  return apiRequest<OrderDetailRecord>(`/orders/${encodeURIComponent(orderId)}/picking`, accessToken, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export function completeOrderSeparation(accessToken: string, orderId: string, revision: number): Promise<OrderDetailRecord> {
+  return apiRequest<OrderDetailRecord>(`/orders/${encodeURIComponent(orderId)}/separation/complete`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ revision }),
   });
 }

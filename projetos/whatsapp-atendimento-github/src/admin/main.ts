@@ -22,7 +22,8 @@ import {
   type ChannelFlowDocument,
   type FlowChannel,
 } from "../domain/flows";
-import { AdminApiError, getCatalog, getFlowDraft, saveCatalog, saveFlowDraft, type PendingImage } from "./api";
+import { AdminApiError, assignOrder, completeOrderSeparation, getCatalog, getFlowDraft, getOrder, getOrders, saveCatalog, saveFlowDraft, saveOrderPicking, type PendingImage } from "./api";
+import type { OrderDetailRecord, OrderListEntry } from "../domain/orders";
 import { renderFlowsPanel } from "./flows-panel";
 import "./styles.css";
 
@@ -64,7 +65,7 @@ const state = {
   access: "preview" as "preview" | "loading" | "authorized" | "denied",
   accessMessage: "Prévia local: alterações ficam apenas nesta sessão do navegador.",
   busy: false,
-  tab: "products" as "products" | "baskets" | "flows",
+  tab: "products" as "products" | "baskets" | "flows" | "orders",
   search: "",
   selectedBasketId: initialDocuments.baskets.baskets[0]?.id ?? "",
   flowDocuments: structuredClone(initialFlowDocuments),
@@ -81,6 +82,9 @@ const state = {
   modalKind: null as "product" | "options" | "review" | "flow-review" | null,
   notice: "",
   noticeType: "info" as "info" | "success" | "error",
+  orders: [] as OrderListEntry[],
+  selectedOrder: null as OrderDetailRecord | null,
+  ordersLoaded: false,
 };
 
 function escapeHtml(value: unknown): string {
@@ -313,6 +317,77 @@ function basketEditor(basket: Basket): string {
     </div>`;
 }
 
+async function loadOrders(): Promise<void> {
+  if (!state.session || state.access !== "authorized") {
+    tell("Entre com a conta GitHub autorizada para acessar os pedidos.", "error");
+    return;
+  }
+  state.busy = true;
+  render();
+  try {
+    const result = await getOrders(state.session.access_token);
+    state.orders = result.orders;
+    state.ordersLoaded = true;
+    state.selectedOrder = null;
+    state.notice = "Fila de pedidos atualizada.";
+    state.noticeType = "success";
+  } catch (error) {
+    state.notice = error instanceof AdminApiError ? error.message : "Não foi possível carregar os pedidos.";
+    state.noticeType = "error";
+  } finally {
+    state.busy = false;
+    render();
+  }
+}
+
+async function openOrder(orderId: string): Promise<void> {
+  if (!state.session) return;
+  state.busy = true;
+  render();
+  try {
+    state.selectedOrder = await getOrder(state.session.access_token, orderId);
+    state.notice = "";
+  } catch (error) {
+    state.notice = error instanceof AdminApiError ? error.message : "Não foi possível abrir o pedido.";
+    state.noticeType = "error";
+  } finally {
+    state.busy = false;
+    render();
+  }
+}
+
+function orderStatusLabel(status: string): string {
+  return ({ received: "Recebido", packing: "Em separação", attention: "Atenção", awaiting_invoice: "Pré-validação Bling", invoice_authorized: "NF-e autorizada", out_for_delivery: "Saiu para entrega", completed: "Concluído", cancelled: "Cancelado" } as Record<string, string>)[status] ?? status;
+}
+
+function integrationBlockerLabel(code: string): string {
+  return ({
+    BLING_CUSTOMER_CONTACT_MAPPING_MISSING: "Vincular o cliente ao contato do Bling",
+    BLING_PAYMENT_FORM_MAPPING_MISSING: "Mapear a forma de pagamento",
+    BLING_DUE_DATE_POLICY_MISSING: "Definir o vencimento da parcela",
+    BLING_OAUTH_CREDENTIAL_MISSING: "Conectar a conta Bling por OAuth",
+    BLING_BASKET_ADJUSTMENT_RULE_UNRESOLVED: "Definir o tratamento fiscal do ajuste da cesta",
+    BLING_CONNECTOR_DISABLED_IN_DEVELOPMENT: "Conector desativado durante o desenvolvimento",
+  } as Record<string, string>)[code] ?? code;
+}
+
+function ordersView(): string {
+  if (state.access !== "authorized") return `<section class="workspace-heading"><div><span class="eyebrow">Operação</span><h1>Pedidos</h1><p>A fila exige uma sessão GitHub autorizada pelo servidor.</p></div></section><div class="empty-state"><strong>Acesso administrativo necessário</strong><span>Entre com a conta GitHub autorizada para consultar os pedidos.</span></div>`;
+  const order = state.selectedOrder;
+  if (order) {
+    const pending = order.customerAcceptanceStatus === "pending";
+    return `<section class="workspace-heading"><div><span class="eyebrow">Pedido · ${escapeHtml(order.id.slice(0, 8))}</span><h1>${escapeHtml(order.customerName)}</h1><p>${escapeHtml(order.basketName)} · ${escapeHtml(order.city)} · recebido ${new Date(order.createdAt).toLocaleString("pt-BR")}</p></div><div class="order-heading-actions"><button class="button button-soft" data-action="orders-back">← Fila</button><button class="button button-soft" data-action="orders-refresh">Atualizar</button></div></section>
+      <div class="order-summary-grid"><article><span>Status</span><strong>${escapeHtml(orderStatusLabel(order.status))}</strong></article><article><span>Total confirmado</span><strong>${money(order.totalCents)}</strong></article><article><span>Canal / pagamento</span><strong>${escapeHtml(order.channel)} · ${escapeHtml(String(order.snapshot.paymentMethod ?? "—"))}</strong></article><article><span>Revisão</span><strong>${order.revision}</strong></article></div>
+      ${pending ? `<div class="flow-safety-note"><strong>Aguardando aceite do cliente</strong><span>Há falta ou substituição pendente. A separação e o Bling ficam bloqueados até a resposta chegar pelo webhook.</span></div>` : ""}
+      ${order.status === "awaiting_invoice" ? `<div class="flow-safety-note"><strong>Pré-validação Bling bloqueada</strong><span>Nenhuma venda ou NF-e foi criada. Resolva os bloqueios registrados:</span><ul>${(order.integrationJob?.blockers ?? []).map((code) => `<li>${escapeHtml(integrationBlockerLabel(code))}</li>`).join("") || `<li>Consulte o estado de integração no servidor.</li>`}</ul></div>` : ""}
+      <section class="order-items-card"><div class="section-title"><div><span class="eyebrow">Separação</span><h2>Itens do pedido</h2></div>${!pending && ["received", "packing", "attention"].includes(order.status) ? `<button class="button button-soft" data-action="order-assign" data-id="${escapeHtml(order.id)}" data-revision="${order.revision}">Assumir separação</button>` : ""}</div>
+      ${order.items.map((item) => `<form class="order-item-row" id="order-picking-item" data-item-id="${item.id}"><div class="order-item-main"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.brand)} · ${escapeHtml(item.presentation)} · ${item.quantity} pedida(s)</span><small>Separada(s): ${item.pickedQuantity} · ${escapeHtml(item.pickingStatus)}</small></div><label>Separar<input name="picked_quantity" type="number" min="0" max="${item.quantity}" step="1" value="${item.pickedQuantity}" required></label><label>Substituto<select name="replacement_product_id"><option value="">Sem substituição</option>${item.replacementOptions.filter((option) => option.id !== item.productId).map((option) => `<option value="${escapeHtml(option.id)}">${escapeHtml(option.name)} · ${escapeHtml(option.brand)}</option>`).join("")}</select></label><button class="button button-soft" type="submit" ${pending || !["received", "packing", "attention"].includes(order.status) ? "disabled" : ""}>Salvar linha</button></form>`).join("") || `<div class="empty-state"><strong>Sem itens para separar</strong></div>`}
+      <div class="order-footer-actions"><span>As faltas e substituições só alteram o total após o cliente aceitar.</span><button class="button button-primary" data-action="order-separation-complete" data-id="${escapeHtml(order.id)}" data-revision="${order.revision}" ${pending || !["received", "packing", "attention"].includes(order.status) ? "disabled" : ""}>Concluir separação e validar Bling</button></div></section>`;
+  }
+  return `<section class="workspace-heading"><div><span class="eyebrow">Operação · ${state.orders.length} em aberto</span><h1>Fila de pedidos</h1><p>Pedidos confirmados pelo cliente, organizados por chegada.</p></div><button class="button button-primary" data-action="orders-refresh">Atualizar fila</button></section>
+    ${!state.ordersLoaded ? `<div class="empty-state"><strong>Carregue a fila autorizada</strong><span>A consulta usa a conexão privada do servidor.</span><button class="button button-primary" data-action="orders-refresh">Carregar pedidos</button></div>` : state.orders.length ? `<div class="order-queue">${state.orders.map((entry) => `<button class="order-queue-row" data-action="order-open" data-id="${escapeHtml(entry.id)}"><span class="order-queue-status">${escapeHtml(orderStatusLabel(entry.status))}</span><span><strong>${escapeHtml(entry.customerName)}</strong><small>${escapeHtml(entry.basketName)} · ${escapeHtml(entry.city)} · ${entry.itemCount} itens</small></span><strong>${money(entry.totalCents)}</strong><time>${new Date(entry.createdAt).toLocaleString("pt-BR")}</time></button>`).join("")}</div>` : `<div class="empty-state"><strong>Nenhum pedido em aberto</strong><span>Novas confirmações aparecerão nesta fila.</span></div>`}`;
+}
+
 function modalMarkup(): string {
   return `<dialog id="modal" class="modal"></dialog>`;
 }
@@ -346,8 +421,8 @@ function render(): void {
       <div class="topbar-actions"><span class="access-status ${statusClass}"><i></i>${escapeHtml(accessLabel())}</span>${state.session ? `<span class="user-chip"><span class="user-avatar">${escapeHtml(String(identityLabel).slice(0, 1).toUpperCase())}</span>${escapeHtml(identityLabel)}</span><button class="button button-soft" data-action="sign-out">Sair</button>` : `<button class="button button-dark" data-action="sign-in" ${supabase ? "" : "disabled title=Configure%20Supabase%20em%20.env.local"}>Entrar com GitHub</button>`}</div>
     </header>
     <div class="security-banner ${state.access === "authorized" ? "is-ready" : ""}"><span class="security-icon">${state.access === "authorized" ? "✓" : "⌑"}</span><span><strong>${state.access === "authorized" ? "Acesso confirmado pelo servidor" : escapeHtml(state.accessMessage)}</strong><small>${state.access === "authorized" ? `Gravações ficam restritas ao branch project/whatsapp-atendimento-github-20261025${state.commitSha ? ` · revisão ${state.commitSha.slice(0, 7)}` : ""}.` : "Sem GitHub App, allowlist e origem configurados no servidor, nenhuma gravação será aceita."}</small></span>${state.commitUrl ? `<a class="text-link" href="${escapeHtml(state.commitUrl)}" target="_blank" rel="noreferrer">Ver commit ↗</a>` : ""}</div>
-    <div class="app-body"><aside class="main-nav"><div class="nav-label">CATÁLOGO</div><button class="nav-item ${state.tab === "products" ? "is-active" : ""}" data-action="tab" data-tab="products"><span class="nav-icon">▦</span> Produtos <span class="nav-count">${state.products.products.length}</span></button><button class="nav-item ${state.tab === "baskets" ? "is-active" : ""}" data-action="tab" data-tab="baskets"><span class="nav-icon">▤</span> Cestas <span class="nav-count">${state.baskets.baskets.length}</span></button><button class="nav-item ${state.tab === "flows" ? "is-active" : ""}" data-action="tab" data-tab="flows"><span class="nav-icon">⌁</span> Flows <span class="nav-count">${state.flowDocuments[state.flowChannel].drafts.length}</span></button><div class="nav-footer"><span class="nav-label">PRÓXIMAS ÁREAS</span><span class="nav-upcoming">Pedidos</span><small>Em rodadas seguintes</small></div></aside>
-      <main class="content"><div class="content-topline"><span>Administração</span><span class="breadcrumb-sep">/</span><strong>${state.tab === "products" ? "Produtos" : state.tab === "baskets" ? "Cestas" : "Flows"}</strong><span class="dirty-indicator ${isDirty() ? "is-dirty" : ""}">${isDirty() ? "Alterações pendentes" : "Tudo salvo"}</span></div>${state.notice ? `<div class="notice notice-${state.noticeType}" role="status"><span>${escapeHtml(state.notice)}</span>${state.conflict ? `<div class="conflict-actions"><button class="text-button" data-action="export-draft">Baixar meu rascunho</button><button class="text-button" data-action="reload-catalog">Descartar e recarregar</button></div>` : ""}<button data-action="clear-notice" aria-label="Fechar">×</button></div>` : ""}${state.tab === "products" ? productsView() : state.tab === "baskets" ? selectedBasket ? basketEditor(selectedBasket) : `<div class="empty-state"><strong>Nenhuma cesta cadastrada</strong><span>Crie a primeira cesta para começar.</span><button class="button button-primary" data-action="new-basket">＋ Nova cesta</button></div>` : flowsPanel}</main>
+    <div class="app-body"><aside class="main-nav"><div class="nav-label">CATÁLOGO</div><button class="nav-item ${state.tab === "products" ? "is-active" : ""}" data-action="tab" data-tab="products"><span class="nav-icon">▦</span> Produtos <span class="nav-count">${state.products.products.length}</span></button><button class="nav-item ${state.tab === "baskets" ? "is-active" : ""}" data-action="tab" data-tab="baskets"><span class="nav-icon">▤</span> Cestas <span class="nav-count">${state.baskets.baskets.length}</span></button><button class="nav-item ${state.tab === "flows" ? "is-active" : ""}" data-action="tab" data-tab="flows"><span class="nav-icon">⌁</span> Flows <span class="nav-count">${state.flowDocuments[state.flowChannel].drafts.length}</span></button><div class="nav-label nav-orders-label">OPERAÇÃO</div><button class="nav-item ${state.tab === "orders" ? "is-active" : ""}" data-action="tab" data-tab="orders"><span class="nav-icon">▣</span> Pedidos <span class="nav-count">${state.orders.length}</span></button></aside>
+      <main class="content"><div class="content-topline"><span>Administração</span><span class="breadcrumb-sep">/</span><strong>${state.tab === "products" ? "Produtos" : state.tab === "baskets" ? "Cestas" : state.tab === "flows" ? "Flows" : "Pedidos"}</strong><span class="dirty-indicator ${isDirty() && state.tab !== "orders" ? "is-dirty" : ""}">${isDirty() && state.tab !== "orders" ? "Alterações pendentes" : "Tudo salvo"}</span></div>${state.notice ? `<div class="notice notice-${state.noticeType}" role="status"><span>${escapeHtml(state.notice)}</span>${state.conflict ? `<div class="conflict-actions"><button class="text-button" data-action="export-draft">Baixar meu rascunho</button><button class="text-button" data-action="reload-catalog">Descartar e recarregar</button></div>` : ""}<button data-action="clear-notice" aria-label="Fechar">×</button></div>` : ""}${state.tab === "products" ? productsView() : state.tab === "baskets" ? selectedBasket ? basketEditor(selectedBasket) : `<div class="empty-state"><strong>Nenhuma cesta cadastrada</strong><span>Crie a primeira cesta para começar.</span><button class="button button-primary" data-action="new-basket">＋ Nova cesta</button></div>` : state.tab === "flows" ? flowsPanel : ordersView()}</main>
     </div>
     <footer class="page-footer"><span>Catálogo público versionado no GitHub</span><span>Dados pessoais e credenciais ficam fora deste projeto</span></footer>
     ${state.access === "authorized" && isDirty() ? `<button class="floating-save" data-action="review-save"><span>Revisar alterações</span><strong>Salvar no GitHub ↗</strong></button>` : ""}
@@ -698,10 +773,43 @@ appRoot.addEventListener("change", async (event) => {
   }
 });
 
-appRoot.addEventListener("submit", (event) => {
+appRoot.addEventListener("submit", async (event) => {
   if (state.busy) return;
   const target = event.target;
   if (!(target instanceof HTMLFormElement)) return;
+  if (target.id === "order-picking-item") {
+    event.preventDefault();
+    if (!state.session || !state.selectedOrder) return;
+    const values = new FormData(target);
+    const pickedQuantity = Number(values.get("picked_quantity"));
+    if (!Number.isSafeInteger(pickedQuantity) || pickedQuantity < 0) {
+      tell("Informe uma quantidade inteira separada.", "error");
+      return;
+    }
+    state.busy = true;
+    render();
+    try {
+      state.selectedOrder = await saveOrderPicking(state.session.access_token, state.selectedOrder.id, {
+        revision: state.selectedOrder.revision,
+        itemId: Number(target.dataset.itemId),
+        pickedQuantity,
+        ...(values.get("replacement_product_id") ? { replacementProductId: String(values.get("replacement_product_id")) } : {}),
+      });
+      const result = await getOrders(state.session.access_token);
+      state.orders = result.orders;
+      state.notice = state.selectedOrder.customerAcceptanceStatus === "pending"
+        ? "A proposta de alteração foi cifrada e entrou na outbox aguardando o cliente."
+        : "Separação da linha atualizada.";
+      state.noticeType = "success";
+    } catch (error) {
+      state.notice = error instanceof AdminApiError ? error.message : "Não foi possível salvar a separação.";
+      state.noticeType = "error";
+    } finally {
+      state.busy = false;
+      render();
+    }
+    return;
+  }
   if (target.id === "product-form") {
     event.preventDefault();
     const values = new FormData(target);
@@ -775,9 +883,49 @@ appRoot.addEventListener("click", async (event) => {
     if (isDirty() && !window.confirm("Sair descartará as alterações desta prévia. Deseja continuar?")) return;
     await supabase?.auth.signOut();
   } else if (action === "tab") {
-    state.tab = target.dataset.tab === "baskets" ? "baskets" : target.dataset.tab === "flows" ? "flows" : "products";
+    const nextTab = target.dataset.tab;
+    state.tab = nextTab === "baskets" || nextTab === "flows" || nextTab === "orders" ? nextTab : "products";
     state.notice = "";
     render();
+    if (state.tab === "orders" && !state.ordersLoaded && state.access === "authorized") await loadOrders();
+  } else if (action === "orders-refresh") {
+    await loadOrders();
+  } else if (action === "order-open") {
+    await openOrder(id);
+  } else if (action === "orders-back") {
+    state.selectedOrder = null;
+    state.notice = "";
+    render();
+  } else if (action === "order-assign" && state.session && state.selectedOrder) {
+    state.busy = true;
+    render();
+    try {
+      state.selectedOrder = await assignOrder(state.session.access_token, id, Number(target.dataset.revision));
+      state.notice = "Separação atribuída à sua sessão.";
+      state.noticeType = "success";
+    } catch (error) {
+      state.notice = error instanceof AdminApiError ? error.message : "Não foi possível assumir o pedido.";
+      state.noticeType = "error";
+    } finally {
+      state.busy = false;
+      render();
+    }
+  } else if (action === "order-separation-complete" && state.session && state.selectedOrder) {
+    state.busy = true;
+    render();
+    try {
+      state.selectedOrder = await completeOrderSeparation(state.session.access_token, id, Number(target.dataset.revision));
+      const result = await getOrders(state.session.access_token);
+      state.orders = result.orders;
+      state.notice = "Separação concluída. Pré-validação Bling bloqueada até configurar os vínculos e a regra fiscal.";
+      state.noticeType = "success";
+    } catch (error) {
+      state.notice = error instanceof AdminApiError ? error.message : "Não foi possível concluir a separação.";
+      state.noticeType = "error";
+    } finally {
+      state.busy = false;
+      render();
+    }
   } else if (action === "select-flow-channel") {
     const channel = target.dataset.channel;
     if (!FLOW_CHANNELS.includes(channel as FlowChannel)) return;

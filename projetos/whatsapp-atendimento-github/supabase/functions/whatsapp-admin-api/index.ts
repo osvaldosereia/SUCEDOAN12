@@ -1,4 +1,6 @@
-import { validateCatalog, type CatalogDocuments } from "../../../src/domain/catalog.ts";
+import postgres, { type Sql } from "npm:postgres@3.4.7";
+import { validateCatalog, type Basket, type CatalogDocuments, type Product } from "../../../src/domain/catalog.ts";
+import { quoteBasket, type BasketSelections } from "../../../src/domain/flow-runtime.ts";
 import {
   FLOW_CHANNELS,
   validateChannelFlowDocument,
@@ -18,6 +20,8 @@ const GITHUB_API_VERSION = "2022-11-28";
 const MAX_IMAGE_BYTES = 27 * 1024;
 const MAX_PENDING_IMAGES = 61;
 const MAX_FLOW_DRAFT_BYTES = 150_000;
+const ORDER_ID = /^[0-9a-f-]{36}$/i;
+let orderDatabase: Sql | null = null;
 
 interface Operator {
   id: string;
@@ -65,7 +69,7 @@ function corsHeaders(origin: string): Headers {
 
   return new Headers({
     "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Methods": "GET, PUT, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, PUT, PATCH, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Authorization, apikey, content-type",
     "Access-Control-Max-Age": "600",
     "Vary": "Origin",
@@ -474,6 +478,315 @@ async function writeCatalog(input: SaveInput, token: string) {
   };
 }
 
+function ordersDb(): Sql {
+  if (orderDatabase) return orderDatabase;
+  const connectionString = Deno.env.get("SUPABASE_DB_URL");
+  if (!connectionString) throw new HttpError(503, "A conexão privada do banco ainda não foi configurada.");
+  orderDatabase = postgres(connectionString, { max: 1, idle_timeout: 10, connect_timeout: 5, prepare: false, ssl: "require" });
+  return orderDatabase;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+async function readJson(request: Request): Promise<Record<string, unknown>> {
+  const text = await request.text();
+  if (new TextEncoder().encode(text).byteLength > 32_000) throw new HttpError(413, "A solicitação excede o limite permitido.");
+  let value: unknown;
+  try { value = JSON.parse(text); } catch { throw new HttpError(400, "O conteúdo enviado não é JSON válido."); }
+  if (!isRecord(value)) throw new HttpError(400, "A solicitação não tem o formato esperado.");
+  return value;
+}
+
+interface DbOrder {
+  id: string; status: string; total_cents: number; snapshot: Record<string, unknown>; channel: string;
+  revision: number; assigned_operator_id: string | null; customer_acceptance_status: string;
+  invoice_status: string; invoice_id: number | null; attention_code: string | null;
+  created_at: string; separation_completed_at: string | null;
+}
+
+interface DbOrderItem {
+  id: number; group_id: string; product_id: string; quantity: number; picked_quantity: number;
+  unit_price_cents: number; line_total_cents: number; picking_status: string; snapshot: Record<string, unknown>;
+  replacement_product_id: string | null;
+}
+
+function orderPresentation(order: DbOrder, items: DbOrderItem[] = []) {
+  const customer = isRecord(order.snapshot.customer) ? order.snapshot.customer : {};
+  const address = isRecord(customer.address) ? customer.address : {};
+  return {
+    id: order.id,
+    status: order.status,
+    totalCents: Number(order.total_cents),
+    basketName: String(order.snapshot.basketName ?? "Cesta"),
+    customerName: String(customer.name ?? "Cliente"),
+    city: String(address.city ?? ""),
+    channel: order.channel,
+    itemCount: items.length || (Array.isArray(order.snapshot.items) ? order.snapshot.items.length : 0),
+    revision: order.revision,
+    createdAt: order.created_at,
+    snapshot: order.snapshot,
+    items: items.map((item) => ({
+      id: item.id, groupId: item.group_id, productId: item.product_id,
+      name: String(item.snapshot.name ?? "Produto"), brand: String(item.snapshot.brand ?? ""),
+      presentation: String(item.snapshot.presentation ?? ""), sku: String(item.snapshot.sku ?? ""),
+      blingProductId: String(item.snapshot.blingProductId ?? ""), quantity: item.quantity,
+      pickedQuantity: item.picked_quantity, pickingStatus: item.picking_status,
+      replacementProductId: item.replacement_product_id,
+      replacementOptions: [] as Array<{ id: string; name: string; brand: string }>,
+    })),
+    assignedOperatorId: order.assigned_operator_id,
+    customerAcceptanceStatus: order.customer_acceptance_status,
+    invoiceStatus: order.invoice_status,
+    invoiceId: order.invoice_id,
+    attentionCode: order.attention_code,
+    separationCompletedAt: order.separation_completed_at,
+    integrationJob: null as { operation: string; status: string; errorCode: string | null; blockers: string[] } | null,
+  };
+}
+
+async function loadOrder(orderId: string): Promise<{ order: DbOrder; items: DbOrderItem[] }> {
+  const db = ordersDb();
+  const rows = await db<DbOrder>`select * from whatsapp_atendimento.orders where id = ${orderId}`;
+  const order = rows[0];
+  if (!order) throw new HttpError(404, "Pedido não encontrado.");
+  const items = await db<DbOrderItem>`select * from whatsapp_atendimento.order_items where order_id = ${orderId} order by position`;
+  return { order, items };
+}
+
+async function listOrders() {
+  const db = ordersDb();
+  const orders = await db<DbOrder>`
+    select * from whatsapp_atendimento.orders
+    where status not in ('completed', 'cancelled')
+    order by created_at asc limit 200
+  `;
+  return orders.map((order) => orderPresentation(order));
+}
+
+async function orderDetail(orderId: string) {
+  const { order, items } = await loadOrder(orderId);
+  const detail = orderPresentation(order, items);
+  const db = ordersDb();
+  const jobs = await db<{
+    operation: string; status: string; error_code: string | null; result_summary: Record<string, unknown>;
+  }>`select operation, status, error_code, result_summary from whatsapp_atendimento.integration_jobs where order_id = ${orderId} order by created_at desc limit 1`;
+  if (jobs[0]) {
+    const blockers = Array.isArray(jobs[0].result_summary.blockers)
+      ? jobs[0].result_summary.blockers.filter((value): value is string => typeof value === "string")
+      : [];
+    detail.integrationJob = { operation: jobs[0].operation, status: jobs[0].status, errorCode: jobs[0].error_code, blockers };
+  }
+  const catalog = await catalogAt(String(order.snapshot.catalogCommit ?? ""));
+  const basket = catalog.baskets.baskets.find((candidate) => candidate.id === order.snapshot.basketId);
+  const products = new Map(catalog.products.products.map((product) => [product.id, product]));
+  detail.items = detail.items.map((item) => ({
+    ...item,
+    replacementOptions: (basket?.groups.find((group) => group.id === item.groupId)?.productIds ?? [])
+      .map((id) => products.get(id)).filter((product): product is Product => Boolean(product?.active))
+      .map((product) => ({ id: product.id, name: product.name, brand: product.brand })),
+  }));
+  return detail;
+}
+
+async function catalogAt(commit: string): Promise<CatalogDocuments> {
+  if (!/^[0-9a-f]{40}$/i.test(commit)) throw new HttpError(409, "A revisão de catálogo do pedido é inválida.");
+  const token = await installationToken("read");
+  const ref = new URLSearchParams({ ref: commit });
+  const [productsFile, basketsFile] = await Promise.all([
+    githubJson<{ content: string }>(repositoryPath(`/contents/${PRODUCTS_PATH}?${ref}`), token),
+    githubJson<{ content: string }>(repositoryPath(`/contents/${BASKETS_PATH}?${ref}`), token),
+  ]);
+  let documents: CatalogDocuments;
+  try {
+    documents = { products: JSON.parse(decodeFileContent(productsFile.content)), baskets: JSON.parse(decodeFileContent(basketsFile.content)) };
+  } catch { throw new HttpError(502, "O catálogo fixado pelo pedido não pôde ser lido."); }
+  const errors = validateCatalog(documents);
+  if (errors.length) throw new HttpError(502, "O catálogo fixado pelo pedido não passou na validação.");
+  return documents;
+}
+
+async function encryptOutboxPayload(value: unknown): Promise<{ iv: string; ciphertext: string }> {
+  const configured = Deno.env.get("META_OUTBOX_ENCRYPTION_KEY");
+  if (!configured) throw new HttpError(503, "A chave privada da outbox não está configurada.");
+  let raw: Uint8Array;
+  try { raw = Uint8Array.from(atob(configured), (char) => char.charCodeAt(0)); } catch { throw new HttpError(503, "A chave da outbox tem formato inválido."); }
+  if (raw.byteLength !== 32) throw new HttpError(503, "A chave da outbox tem formato inválido.");
+  const key = await crypto.subtle.importKey("raw", asArrayBuffer(raw), "AES-GCM", false, ["encrypt"]);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv: asArrayBuffer(iv) }, key, asArrayBuffer(new TextEncoder().encode(JSON.stringify(value))));
+  return { iv: btoa(String.fromCharCode(...iv)), ciphertext: btoa(String.fromCharCode(...new Uint8Array(encrypted))) };
+}
+
+function adjustedSnapshot(snapshot: Record<string, unknown>, basket: Basket, products: Product[], selections: BasketSelections) {
+  const adjustmentBasket: Basket = {
+    ...basket,
+    groups: basket.groups.map((group) => ({ ...group, minimumQuantity: 0, removalAllowed: true })),
+  };
+  const quote = quoteBasket(adjustmentBasket, products, selections);
+  const productById = new Map(products.map((product) => [product.id, product]));
+  const items = basket.groups.flatMap((group) => {
+    const choice = quote.selections[group.id];
+    if (!choice.quantity) return [];
+    const product = productById.get(choice.productId);
+    if (!product?.sku || !product.blingProductId) throw new HttpError(409, `A opção ${product?.name ?? choice.productId} ainda não possui SKU e vínculo Bling.`);
+    return [{
+      groupId: group.id, productId: product.id, name: product.name, brand: product.brand,
+      presentation: product.presentation, sku: product.sku, gtin: product.gtin,
+      blingProductId: product.blingProductId, quantity: choice.quantity,
+      unitPriceCents: product.unitPriceCents, lineTotalCents: product.unitPriceCents * choice.quantity,
+    }];
+  });
+  return { ...snapshot, selections: quote.selections, items, totalCents: quote.totalCents };
+}
+
+async function savePicking(orderId: string, operatorId: string, body: Record<string, unknown>) {
+  const revision = body.revision;
+  const itemId = body.itemId;
+  const pickedQuantity = body.pickedQuantity;
+  const replacementProductId = body.replacementProductId;
+  if (replacementProductId !== undefined && typeof replacementProductId !== "string") {
+    throw new HttpError(400, "O produto substituto é inválido.");
+  }
+  if (typeof revision !== "number" || !Number.isSafeInteger(revision) || typeof itemId !== "number" || !Number.isSafeInteger(itemId)
+    || typeof pickedQuantity !== "number" || !Number.isSafeInteger(pickedQuantity)) {
+    throw new HttpError(400, "Revisão, item e quantidade separada são obrigatórios.");
+  }
+  const db = ordersDb();
+  await db.begin(async (tx) => {
+    const orders = await tx<DbOrder>`select * from whatsapp_atendimento.orders where id = ${orderId} for update`;
+    const order = orders[0];
+    if (!order) throw new HttpError(404, "Pedido não encontrado.");
+    if (order.revision !== revision) throw new HttpError(409, "O pedido foi atualizado por outro operador. Recarregue o detalhe.");
+    if (!['received', 'packing', 'attention'].includes(order.status) || order.customer_acceptance_status === 'pending') {
+      throw new HttpError(409, "Este pedido não está disponível para alteração de separação.");
+    }
+    const currentRows = await tx<DbOrderItem>`select * from whatsapp_atendimento.order_items where order_id = ${orderId} order by position for update`;
+    const target = currentRows.find((row) => row.id === itemId);
+    if (!target || pickedQuantity < 0 || pickedQuantity > target.quantity) throw new HttpError(422, "A quantidade separada precisa estar entre zero e a quantidade pedida.");
+    const snapshot = order.snapshot;
+    if (!isRecord(snapshot.selections)) throw new HttpError(409, "Este pedido não contém as seleções necessárias para recalcular uma falta.");
+    const catalog = await catalogAt(String(snapshot.catalogCommit ?? ""));
+    const basket = catalog.baskets.baskets.find((candidate) => candidate.id === snapshot.basketId && candidate.active);
+    if (!basket) throw new HttpError(409, "A cesta do pedido não existe mais na revisão fixada.");
+    const originalChoice = snapshot.selections[target.group_id];
+    if (!isRecord(originalChoice) || typeof originalChoice.productId !== "string" || !Number.isSafeInteger(originalChoice.quantity)) {
+      throw new HttpError(409, "A seleção desta linha está incompleta.");
+    }
+    const choiceProductId = typeof replacementProductId === "string" && replacementProductId ? replacementProductId : target.product_id;
+    const selectionQuantity = choiceProductId !== target.product_id ? target.quantity : pickedQuantity;
+    const selections: BasketSelections = structuredClone(snapshot.selections) as BasketSelections;
+    selections[target.group_id] = { productId: choiceProductId, quantity: selectionQuantity };
+    let nextSnapshot: Record<string, unknown>;
+    try { nextSnapshot = adjustedSnapshot(snapshot, basket, catalog.products.products, selections); }
+    catch (error) { throw new HttpError(422, error instanceof Error ? error.message : "A seleção não pode ser recalculada."); }
+
+    const changed = choiceProductId !== target.product_id || selectionQuantity !== target.quantity;
+    if (changed) {
+      const nextRevision = order.revision + 1;
+      const customer = isRecord(snapshot.customer) ? snapshot.customer : {};
+      const phone = String(customer.phoneE164 ?? "");
+      if (!/^\\+[1-9][0-9]{1,14}$/.test(phone)) throw new HttpError(409, "O telefone do pedido não está disponível para pedir aceite.");
+      const encrypted = await encryptOutboxPayload({
+        messaging_product: "whatsapp", recipient_type: "individual", to: phone, type: "interactive",
+          interactive: {
+          type: "button",
+          body: { text: `Ajuste na separação da cesta ${String(snapshot.basketName ?? "")}: ${String(target.snapshot.name ?? "Produto")} (${target.quantity} un.) → ${choiceProductId === target.product_id ? `${selectionQuantity} un.` : `${String((nextSnapshot.items as Array<Record<string, unknown>>).find((item) => item.groupId === target.group_id)?.name ?? "Substituto")} (${selectionQuantity} un.)`}. O total atualizado é ${(Number(nextSnapshot.totalCents) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}. Deseja aceitar?` },
+          action: { buttons: [
+            { type: "reply", reply: { id: `accept-adjustment:${orderId}:${nextRevision}`, title: "Aceitar alteração" } },
+            { type: "reply", reply: { id: `cancel-adjustment:${orderId}:${nextRevision}`, title: "Cancelar pedido" } },
+          ] },
+        },
+      });
+      await tx`
+        update whatsapp_atendimento.orders set status = 'attention', attention_code = 'customer_adjustment_pending',
+          pending_customer_snapshot = ${tx.json(nextSnapshot)}, pending_customer_total_cents = ${Number(nextSnapshot.totalCents)},
+          customer_acceptance_status = 'pending', assigned_operator_id = ${operatorId}, revision = ${nextRevision}, updated_at = now()
+        where id = ${orderId}
+      `;
+      await tx`
+        insert into whatsapp_atendimento.message_outbox (channel, event_key, message_type, payload_iv, payload_ciphertext)
+        values (${order.channel}, ${`${orderId}:adjustment:${nextRevision}`}, 'order_adjustment', ${encrypted.iv}, ${encrypted.ciphertext})
+        on conflict (event_key) do nothing
+      `;
+      await tx`
+        insert into whatsapp_atendimento.order_events (order_id, event_key, event_type, event_data)
+        values (${orderId}, ${`${orderId}:adjustment:${nextRevision}`}, 'customer_adjustment_requested', ${tx.json({ revision: nextRevision, itemId, previousTotalCents: Number(order.total_cents), nextTotalCents: Number(nextSnapshot.totalCents) })})
+        on conflict (event_key) do nothing
+      `;
+    } else {
+      await tx`update whatsapp_atendimento.order_items set picked_quantity = ${pickedQuantity}, picking_status = ${pickedQuantity === target.quantity ? 'separated' : pickedQuantity === 0 ? 'pending' : 'partial'} where id = ${itemId}`;
+      await tx`update whatsapp_atendimento.orders set status = 'packing', assigned_operator_id = ${operatorId}, revision = revision + 1, attention_code = null, updated_at = now() where id = ${orderId}`;
+      await tx`
+        insert into whatsapp_atendimento.order_events (order_id, event_key, event_type, event_data)
+        values (${orderId}, ${`${orderId}:pick:${order.revision + 1}`}, 'item_picked', ${tx.json({ itemId, pickedQuantity, operatorId })})
+        on conflict (event_key) do nothing
+      `;
+    }
+  });
+  return orderDetail(orderId);
+}
+
+async function assignOrder(orderId: string, operatorId: string, body: Record<string, unknown>) {
+  if (typeof body.revision !== "number" || !Number.isSafeInteger(body.revision)) throw new HttpError(400, "A revisão do pedido é obrigatória.");
+  const db = ordersDb();
+  await db.begin(async (tx) => {
+    const rows = await tx<DbOrder>`select * from whatsapp_atendimento.orders where id = ${orderId} for update`;
+    const order = rows[0];
+    if (!order) throw new HttpError(404, "Pedido não encontrado.");
+    if (order.revision !== body.revision) throw new HttpError(409, "O pedido mudou. Recarregue antes de assumir a separação.");
+    if (!['received', 'packing', 'attention'].includes(order.status) || order.customer_acceptance_status === 'pending') throw new HttpError(409, "Este pedido não pode ser assumido para separação.");
+    await tx`update whatsapp_atendimento.orders set assigned_operator_id = ${operatorId}, status = 'packing', revision = revision + 1, updated_at = now() where id = ${orderId}`;
+    await tx`insert into whatsapp_atendimento.order_events (order_id, event_key, event_type, event_data) values (${orderId}, ${`${orderId}:assigned:${order.revision + 1}`}, 'separation_assigned', ${tx.json({ operatorId })}) on conflict (event_key) do nothing`;
+  });
+  return orderDetail(orderId);
+}
+
+async function finishSeparation(orderId: string, operatorId: string, body: Record<string, unknown>) {
+  if (typeof body.revision !== "number" || !Number.isSafeInteger(body.revision)) throw new HttpError(400, "A revisão do pedido é obrigatória.");
+  const db = ordersDb();
+  await db.begin(async (tx) => {
+    const rows = await tx<DbOrder>`select * from whatsapp_atendimento.orders where id = ${orderId} for update`;
+    const order = rows[0];
+    if (!order) throw new HttpError(404, "Pedido não encontrado.");
+    if (order.revision !== body.revision) throw new HttpError(409, "O pedido mudou. Recarregue o detalhe.");
+    if (order.customer_acceptance_status === 'pending') throw new HttpError(409, "A alteração ainda aguarda resposta do cliente.");
+    if (order.status !== 'packing') throw new HttpError(409, "Somente um pedido em separação pode concluir esta etapa.");
+    const items = await tx<DbOrderItem>`select * from whatsapp_atendimento.order_items where order_id = ${orderId} order by position for update`;
+    if (!items.length || items.some((item) => item.picked_quantity !== item.quantity || item.picking_status !== 'separated')) {
+      throw new HttpError(409, "Separe todas as quantidades antes de concluir esta etapa.");
+    }
+    const customer = isRecord(order.snapshot.customer) ? order.snapshot.customer : {};
+    const customerId = typeof customer.customerId === "string" ? customer.customerId : "";
+    const paymentMethod = typeof order.snapshot.paymentMethod === "string" ? order.snapshot.paymentMethod : "";
+    const contactMapping = customerId
+      ? await tx<{ customer_id: string }>`select customer_id from whatsapp_atendimento.customer_bling_contacts where customer_id = ${customerId}`
+      : [];
+    const paymentMapping = paymentMethod
+      ? await tx<{ bling_payment_form_id: number; due_date_offset_days: number | null }>`select bling_payment_form_id, due_date_offset_days from whatsapp_atendimento.bling_payment_mappings where payment_method = ${paymentMethod}`
+      : [];
+    const credential = await tx<{ provider: string }>`select provider from whatsapp_atendimento.integration_credentials where provider = 'bling' and expires_at > now()`;
+    const lineTotalCents = items.reduce((sum, item) => sum + Number(item.line_total_cents), 0);
+    const blockers = [
+      ...(!contactMapping.length ? ["BLING_CUSTOMER_CONTACT_MAPPING_MISSING"] : []),
+      ...(!paymentMapping.length ? ["BLING_PAYMENT_FORM_MAPPING_MISSING"] : []),
+      ...(paymentMapping.length && paymentMapping[0].due_date_offset_days === null ? ["BLING_DUE_DATE_POLICY_MISSING"] : []),
+      ...(!credential.length ? ["BLING_OAUTH_CREDENTIAL_MISSING"] : []),
+      ...(lineTotalCents !== Number(order.total_cents) ? ["BLING_BASKET_ADJUSTMENT_RULE_UNRESOLVED"] : []),
+      "BLING_CONNECTOR_DISABLED_IN_DEVELOPMENT",
+    ];
+    await tx`update whatsapp_atendimento.orders set status = 'awaiting_invoice', separation_completed_at = now(), revision = revision + 1, attention_code = 'bling_preflight_required', updated_at = now() where id = ${orderId}`;
+    await tx`
+      insert into whatsapp_atendimento.integration_jobs (order_id, operation, idempotency_key, status, error_code, result_summary)
+      values (${orderId}, 'create_sale', ${`${orderId}:create_sale`}, 'blocked', 'BLING_PREFLIGHT_REQUIRED', ${tx.json({ blockers, lineTotalCents, acceptedTotalCents: Number(order.total_cents) })})
+      on conflict (order_id, operation) do nothing
+    `;
+    await tx`insert into whatsapp_atendimento.order_events (order_id, event_key, event_type, event_data) values (${orderId}, ${`${orderId}:separation-complete:${order.revision + 1}`}, 'separation_completed', ${tx.json({ operatorId, integrationBlocked: true })}) on conflict (event_key) do nothing`;
+  });
+  return orderDetail(orderId);
+}
+
 Deno.serve(async (request) => {
   let headers = new Headers();
   try {
@@ -517,6 +830,23 @@ Deno.serve(async (request) => {
       }
       const token = await installationToken("write");
       return jsonResponse(await writeFlowDraft(flowMatch[1], input, token), 200, headers);
+    }
+    if (url.pathname.endsWith("/orders") && request.method === "GET") {
+      return jsonResponse({ orders: await listOrders() }, 200, headers);
+    }
+    const orderMatch = url.pathname.match(/\/orders\/([0-9a-f-]{36})(?:\/(picking|assign|separation\/complete))?$/i);
+    if (orderMatch && ORDER_ID.test(orderMatch[1])) {
+      const [, orderId, action] = orderMatch;
+      if (!action && request.method === "GET") return jsonResponse(await orderDetail(orderId), 200, headers);
+      if (action === "picking" && request.method === "PATCH") {
+        return jsonResponse(await savePicking(orderId, authorization.operator.id, await readJson(request)), 200, headers);
+      }
+      if (action === "assign" && request.method === "POST") {
+        return jsonResponse(await assignOrder(orderId, authorization.operator.id, await readJson(request)), 200, headers);
+      }
+      if (action === "separation/complete" && request.method === "POST") {
+        return jsonResponse(await finishSeparation(orderId, authorization.operator.id, await readJson(request)), 200, headers);
+      }
     }
     throw new HttpError(404, "Rota administrativa não encontrada.");
   } catch (error) {

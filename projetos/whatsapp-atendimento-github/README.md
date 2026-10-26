@@ -8,7 +8,7 @@ Este é o único diretório de código do projeto novo: `projetos/whatsapp-atend
 
 ## Etapa atual
 
-Rodada 4: runtime local da Meta Flow com cotação server-side, protocolo criptografado, sessões com token em hash e busca mínima de cliente. A Edge Function e a migration ainda não foram implantadas/aplicadas; os rascunhos da Rodada 3 continuam locais e não estão ligados ao endpoint. Regras de seleção e preço ficam em [src/domain/flow-runtime.ts](src/domain/flow-runtime.ts), e o endpoint está em [supabase/functions/whatsapp-flow-runtime/index.ts](supabase/functions/whatsapp-flow-runtime/index.ts).
+Rodada 6: fila e separação de pedidos disponíveis no código local, com proposta cifrada para falta/substituição, novo aceite inbound e preflight Bling bloqueado. A migration e as funções não foram implantadas/aplicadas. OAuth Bling, venda/NF-e e entrega aguardam mapeamentos e regras fiscais aprovados. O runtime de cotação da Rodada 4 está em [src/domain/flow-runtime.ts](src/domain/flow-runtime.ts); a operação de pedidos está documentada em [docs/projects/whatsapp-atendimento-github/ROUND-6-ORDERS-BLING-PLAN.md](../../docs/projects/whatsapp-atendimento-github/ROUND-6-ORDERS-BLING-PLAN.md).
 
 ## Regras de segurança
 
@@ -48,6 +48,7 @@ Para habilitar gravações na homologação, configure **somente como segredos d
 - `ADMIN_ALLOWED_ORIGINS`: origens web explícitas permitidas, separadas por vírgula;
 - `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID` e `GITHUB_PRIVATE_KEY` do GitHub App instalado somente em `osvaldosereia/SUCEDOAN12`;
 - `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY` (ou `SUPABASE_ANON_KEY`) disponíveis no runtime da função.
+- `SUPABASE_DB_URL` somente como segredo server-side para a Admin API consultar e atualizar o schema privado de pedidos; use URL do pooler de transação com prepared statements desabilitados.
 
 Não coloque os segredos acima em `.env.local`, em variável `VITE_*` ou em commit. A função mantém `verify_jwt = true`, confere também o UUID e a identidade GitHub no Supabase Auth, e limita leitura/escrita aos documentos de `catalog/` e imagens em `images/products/`. Escritas usam revisão esperada do branch, validação do catálogo e commit atômico. A foto escolhida no editor é convertida no navegador para WebP 240×190 com limite de 27 KB.
 
