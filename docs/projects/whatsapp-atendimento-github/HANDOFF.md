@@ -212,3 +212,9 @@ Esse fluxo não foi iniciado e nenhuma conta foi conectada. O cliente API oferec
 A API administrativa da fila foi ajustada para consultar somente os campos resumidos usados na listagem; ela não carrega nem devolve o snapshot inteiro. O detalhe também deixou de devolver `snapshot`, telefone e ID interno do cliente: agora inclui somente forma de pagamento, endereço necessário à operação, itens e estados do pedido. O endereço é exibido apenas depois que um operador autorizado abre um pedido específico. A interface continua sem exibir telefone.
 
 Esta alteração é local na branch de desenvolvimento. O build e `git diff --check` são as verificações permitidas nesta rodada; nenhum teste foi criado ou executado. Não foram feitas chamadas Bling/Meta, nem aplicada migration, configurado segredo, feito deploy, publicada Flow ou enviada mensagem.
+
+## Revisão do contrato atual do Bling
+
+Consulta somente à referência/OpenAPI oficial em 25/10/2026 confirmou que `POST /pedidos/vendas` marca `contato`, `data`, `dataPrevista`, `dataSaida`, `itens` e `parcelas` como obrigatórios. O item exige `valorLista`, mas a propriedade não está definida no schema. Cada parcela exige vencimento, valor e `formaPagamento.id`; as datas têm descrições condicionais, sem indicar claramente como criar o pedido sem parcelas. A prévia local não contém datas previstas/saída nem um mapeamento entre pagamento WhatsApp e forma do Bling. O contrato permanece bloqueado até determinar a política e validar um payload em homologação controlada. Fonte: [referência oficial da API Bling](https://developer.bling.com.br/referencia).
+
+A consulta foi apenas à documentação pública; não houve chamada à API, OAuth, leitura de dados da conta, POST, migration, deploy ou emissão fiscal.
