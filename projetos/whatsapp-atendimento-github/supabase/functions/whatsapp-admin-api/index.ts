@@ -3266,14 +3266,22 @@ async function uploadMetaFlow(channel: FlowChannel, flowId: string, body: Record
 function metaPrivatePkcs8(value: string): Uint8Array {
   const pem = value.replace(/\\n/g, "\n").trim();
   const pkcs8 = pem.match(/-----BEGIN PRIVATE KEY-----([\s\S]+?)-----END PRIVATE KEY-----/);
-  if (pkcs8) return Uint8Array.from(atob(pkcs8[1].replace(/\s/g, "")), (character) => character.charCodeAt(0));
   const pkcs1 = pem.match(/-----BEGIN RSA PRIVATE KEY-----([\s\S]+?)-----END RSA PRIVATE KEY-----/);
-  if (!pkcs1) throw new HttpError(503, "A chave privada do endpoint Flow está em formato incompatível.");
-  const key = Uint8Array.from(atob(pkcs1[1].replace(/\s/g, "")), (character) => character.charCodeAt(0));
+  const encodedBody = (pkcs8?.[1] ?? pkcs1?.[1] ?? pem).replace(/\s/g, "");
+  if (encodedBody.length < 128 || encodedBody.length > 16384 || !/^[A-Za-z0-9+/]+={0,2}$/.test(encodedBody)) {
+    throw new HttpError(503, "A chave privada do endpoint Flow está em formato incompatível.");
+  }
+  let keyBytes: Uint8Array;
+  try {
+    keyBytes = Uint8Array.from(atob(encodedBody), (character) => character.charCodeAt(0));
+  } catch {
+    throw new HttpError(503, "A chave privada do endpoint Flow está em formato incompatível.");
+  }
+  if (pkcs8 || !pkcs1) return keyBytes;
   const algorithm = new Uint8Array([0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01, 0x05, 0x00]);
   const length = (size: number): Uint8Array => size < 128 ? new Uint8Array([size]) : new Uint8Array([0x82, size >> 8, size & 255]);
   const der = (tag: number, content: Uint8Array): Uint8Array => new Uint8Array([tag, ...length(content.length), ...content]);
-  const privateKey = der(0x04, key);
+  const privateKey = der(0x04, keyBytes);
   return der(0x30, new Uint8Array([0x02, 0x01, 0x00, ...algorithm, ...privateKey]));
 }
 
