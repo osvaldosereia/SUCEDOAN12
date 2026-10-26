@@ -43,7 +43,7 @@ interface Product {
   presentation: string;
   /** Effective individual price: offer price when present, otherwise regular price. */
   unitPriceCents: MoneyCents;
-  imagePath: string; // relativo a este projeto; sem Base64
+  imageUrl: string; // URL canônica de products.image_url no Supabase; sem Base64
   sku: string | null;
   gtin: string | null;
   blingProductId: string | null;
@@ -83,7 +83,7 @@ interface BasketsDocument {
 }
 ```
 
-O JSON público não recebe campo para o ajuste interno de preço. O servidor calcula o total a partir do commit do catálogo e de regra privada de preço. O saldo inteiro assinado é público em `products.json` porque o usuário escolheu o GitHub como cadastro e controle operacional do estoque; o Flow só oferece quantidade quando o saldo é positivo. Imagens usam caminho relativo validado, MIME permitido, checksum e tamanho limitado. `products.json` usa `schemaVersion: 4`; `baskets.json` usa `schemaVersion: 1`.
+O GitHub guarda a composição e os preços-base das cestas em `baskets.json`. Produtos elegíveis e respectivos metadados, imagens e disponibilidade são lidos server-side do Supabase, limitados aos IDs referenciados nas cestas. Estoque usa `ops2_loose_sellable_stock_v1.effective_sellable_stock` menos reservas ativas do schema novo; não há cópia de produtos ou imagens no GitHub. `ProductsDocument` é um objeto temporário de runtime, versão 5, nunca persistido em arquivo. Fotos WebP são validadas e salvas no bucket `product-images`.
 
 ## 3.1 Resultado da Rodada 1 — catálogo inicial
 
@@ -162,7 +162,7 @@ type OrderStatus =
   | "cancelled";
 ```
 
-O backend resolve o telefone da conversa e consulta `customers`, `customer_phones` e `customer_addresses` existentes; nunca aceita identidade/total enviados pelo navegador ou Flow como fonte de confiança. O Flow lê `stockQuantity` da revisão GitHub fixada; oferece de 1 a `min(6, max(0, stockQuantity))`, com retirada sempre disponível. Ao confirmar, o backend grava uma baixa GitHub idempotente por pedido; saldo negativo permitido não bloqueia a venda/NF-e no Bling.
+O backend resolve o telefone da conversa e consulta `customers`, `customer_phones` e `customer_addresses` existentes; nunca aceita identidade/total enviados pelo navegador ou Flow como fonte de confiança. A composição da cesta vem da revisão GitHub fixada; produtos e estoque vêm do Supabase ao vivo. O Flow oferece de 1 a `min(6, disponibilidade Supabase)`, com retirada sempre disponível. A confirmação cria atomicamente o pedido e suas linhas no schema novo, que reservam essa disponibilidade até o processamento fiscal; não atualiza `public.products.stock` nem qualquer arquivo GitHub. Saldo negativo do sistema de estoque não bloqueia a futura venda/NF-e no Bling.
 
 ### Persistência privada nova
 
@@ -197,7 +197,7 @@ Os nomes abaixo são referências para configuração; não contêm nem confirma
 
 - Supabase Edge Functions: variáveis nativas do projeto `SUPABASE_URL`, `SUPABASE_DB_URL` e chaves API no runtime do servidor; não cadastrá-las de novo como secrets.
 - Redirects do Auth: `https://donaantonia.com.br/whatsapp-admin/`, `http://127.0.0.1:5173/` e `http://localhost:5173/`. Foram adicionados sem alterar o Site URL global.
-- GitHub App: app ID, installation ID e private key para gravação de conteúdo e baixa de estoque somente neste repositório. Os nomes não estão presentes na lista atual de custom secrets.
+- GitHub App: app ID, installation ID e private key para gravação de cestas e rascunhos Flow somente neste repositório. Não participa da leitura nem atualização de produtos, imagens ou estoque.
 - Meta: app secret, access token, IDs verificados de WABA/número e chave privada por canal para o endpoint de Flow.
 - Bling: client ID, client secret e tokens OAuth renováveis guardados no servidor.
 - Autorização: operador ativo com papel `owner` em `public.admin_users`; a tabela já contém um proprietário ativo.
@@ -294,20 +294,20 @@ A referência OpenAPI oficial atual ainda marca aqueles campos como obrigatório
 
 ## 13. Rodada 7 — Flow dinâmico local
 
-- Decisão vigente do usuário: `products.json` usa `schemaVersion: 4` e mantém o estoque assinado junto ao cadastro de produtos no GitHub. A carga inicial usou um snapshot do saldo vendável Supabase; o runtime consulta apenas o commit GitHub fixado na sessão e não lê estoque Supabase.
+- Decisão vigente posterior do usuário (26/10/2026): não manter banco de produtos ou imagens no GitHub. O Admin/Flow lê do Supabase somente os produtos ligados às cestas, e a disponibilidade sempre parte do Supabase. Este acordo substitui a decisão histórica registrada anteriormente nesta seção.
 - O Flow JSON `6.0` usa Data Exchange `3.0`, uma única tela lógica `GROUP` reutilizada para cada tipo e uma tela terminal `CUSTOMER_REVIEW`; o routing model contém apenas `GROUP -> CUSTOMER_REVIEW`. Em `GROUP`, `Dropdown` oferece uma única escolha de produto por vez com preço/descrição e imagem da opção atual. A última opção é sempre `Não quero esse produto`. A quantidade é `1..min(6, max(0, stockQuantity))` da revisão GitHub fixada e some quando o cliente escolhe retirada.
 - Produto e quantidade recalculam o total no endpoint ao mudar o seletor. A resposta final guarda `contract_version: 1`, `flow_token`, `selections` como JSON serializado, `address_id` e `payment_method`; o webhook valida os campos e rejeita mudanças nos dados comerciais desde a sessão, mas permite movimento de estoque isolado e a baixa pode resultar em saldo negativo por decisão do usuário. É obrigatório manter pelo menos um item na cesta.
 - A saída da tela final apenas cria um rascunho/entrada na outbox. Confirmar, Editar e Cancelar continuam no resumo posterior da conversa; somente `Confirmar pedido` cria o pedido. O consumidor local está implementado e desligado por padrão; a conclusão do Flow não confirma nem envia sozinha uma mensagem durante o desenvolvimento.
 - A consulta a cliente aceita somente cadastro ativo e único com endereço ativo. A tela orienta procurar atendimento se não houver correspondência/endereço. Criar cadastro/endereço e editar dados manualmente no Flow exigem contrato de escrita separado e não são realizados por esta versão.
-- A quantidade oferecida é de 1 a `min(6, max(0, stockQuantity))`. Ao confirmar o pedido, o webhook grava uma baixa idempotente no GitHub; commits concorrentes são refeitos sobre a revisão mais recente e o saldo pode ficar negativo. Saldo negativo não impede a venda/NF-e no Bling.
+- A quantidade oferecida é de 1 a `min(6, max(0, stockQuantity))`, calculada com a view operacional Supabase e reservas do novo modelo. Ao confirmar, a criação de pedido/itens é idempotente no schema novo e reduz a disponibilidade reservada; o processamento fiscal opera com o estoque oficial do Supabase/Bling, sem bloquear saldo negativo.
 - A validação no Meta Flow Builder e a renderização em aparelho continuam pendentes. Um canário separado, pelo painel do Vitrine Admin, foi aceito pela Graph API em 26/10/2026; nenhum Flow foi publicado e o worker desta aplicação não foi usado. Nenhuma migration ou função desta aplicação foi implantada/aplicada. Nenhum teste automatizado foi criado ou executado.
 
 Dependências externas seguem versões fixas no `package.json` e lockfile pnpm. O provedor OAuth, allowlist, GitHub App e origens permitidas permanecem sem configuração confirmada. Nenhum secret foi criado/lido, nenhuma função foi implantada e nenhuma migration desta aplicação foi aplicada. A única chamada Meta foi o canário descrito no HANDOFF; não houve publicação Flow nem chamada Bling.
 
 ## 14. Atualização de estoque e vínculo por canal — 26/10/2026
 
-- Estoque é controlado em GitHub. O saldo inicial foi importado uma vez do saldo vendável Supabase; o runtime não consulta estoque Supabase. `stockQuantity` pode ser negativo, mas o Flow só oferece quantidades positivas até seis e limitadas ao saldo da revisão GitHub.
-- Confirmar o pedido cria um commit GitHub atômico de `products.json` e marcador opaco, deduplicado por UUID do rascunho. A baixa ocorre antes da transação final Supabase; se houver falha intermediária, a repetição encontra o marcador e conclui o pedido sem descontar novamente. Saldo negativo não bloqueia o pedido ou o caminho Bling.
+- Estoque de referência é sempre Supabase. `stockQuantity` é derivado ao vivo para o Flow e o Admin; o valor não é editável. Os pedidos confirmados no schema privado diminuem a disponibilidade enquanto aguardam a venda/NF-e, sem alterar as tabelas de estoque existentes do Vitrine.
+- A configuração das cestas e a criação do pedido têm armazenamentos próprios: cestas no GitHub; pedido, itens e reserva no schema privado Supabase. A confirmação é transacional e idempotente por evento/pedido. O estoque Supabase pode ficar negativo e isso não bloqueia o caminho Bling.
 - A tabela pública `ops2_meta_whatsapp_flow_bindings_v1` pertence a `registration_flow` e não é usada. A migration nova `20261026040544_whatsapp_atendimento_channel_flow_bindings.sql` cria o vínculo privado e exclusivo por canal/conta no projeto greenfield. O Admin exige Flow publicado do WABA correto, sem erro, endpoint correspondente e chave de criptografia verificada antes de vincular.
 - Webhook e outbox usam esse vínculo por canal, sem `META_FLOW_ID_*`. `META_OUTBOX_SENDER_ENABLED=false` permanece o gate global. Nenhuma migration foi aplicada, função implantada, Flow publicado ou mensagem enviada pelo novo projeto.
 - Seguem pendentes os segredos e a autorização do Admin, aplicação controlada das migrations, validação do Flow em aparelho, revisão da outbox e contratos de escrita de venda/NF-e/entrega no Bling.

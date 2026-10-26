@@ -7,12 +7,14 @@ Atualizado: 25/10/2026 (America/Cuiaba)
 
 > **Numeração histórica:** este roadmap foi escrito antes do plano greenfield atual e mantém nomes/ordem antigos em suas seções. Para execução, prevalecem `IMPLEMENTATION-PLAN-LUNA-MAX.md` e o estado registrado no `HANDOFF.md`: Admin de catálogo = Rodada 2; configurador de Flow = Rodada 3; runtime = Rodada 4; confirmação/pedidos = Rodada 5; separação/Bling = Rodada 6; homologação = Rodada 7.
 
+> **Decisão de dados mais recente do usuário (26/10/2026):** usar Supabase para produtos/imagens/estoque, somente os IDs presentes nas cestas; GitHub mantém as cestas e os rascunhos Flow. Estoque validado sempre pela view Supabase e não editável no novo Admin. Pedidos confirmados reservam saldo no schema privado novo. Isso supera as regras históricas do roadmap abaixo.
+
 ## Regras de execução
 
 - Cada rodada deve produzir um resultado pequeno, revisável e utilizável.
 - Todo trabalho de código futuro começa nesta branch e dentro de projetos/whatsapp-atendimento-github/. Documentação do projeto fica em docs/projects/whatsapp-atendimento-github/.
 - Não alterar main, o site público, Vitrine Admin, catálogo de produção, banco operacional ou configurações existentes.
-- Não usar Supabase como banco de produtos/cestas. O escopo atual permite consulta server-side ao cadastro de clientes/endereço; não gravar pedidos nem alterar schema de produção antes da revisão do contrato existente.
+- Supabase é fonte de produtos, imagens e disponibilidade de estoque. GitHub mantém somente as cestas e os rascunhos Flow. Pedidos/clientes usam o schema e as tabelas já definidos para este projeto sem alterar o atendimento existente do Vitrine.
 - Não criar senha própria para o admin.
 - Não publicar site/admin nem alterar Flow Meta enquanto isso não for uma etapa planejada e autorizada.
 - Nenhum segredo ou dado de cliente pode ser salvo em JSON versionado ou JavaScript entregue ao navegador.

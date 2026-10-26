@@ -1,7 +1,9 @@
+import postgres, { type Sql } from "npm:postgres@3.4.7";
 import { hasBlingProductId, validateCatalog, type Basket, type CatalogDocuments, type Product } from "../../../src/domain/catalog.ts";
 import { WHATSAPP_CHANNELS, type WhatsAppChannel } from "../../../src/domain/channels.ts";
 import { flowPrivateKey, metaAppSecret } from "../_shared/meta-config.ts";
 import { supabaseSecretKey } from "../_shared/supabase-api-keys.ts";
+import { catalogRevision, readSupabaseBasketProducts } from "../_shared/catalog-source.ts";
 import {
   FlowSelectionError,
   FLOW_MAX_PRODUCT_QUANTITY,
@@ -20,6 +22,7 @@ const PRODUCT_IMAGE_LIMIT = 27_000;
 const NO_PRODUCT_ID = "__skip_product__";
 const CHANNELS = WHATSAPP_CHANNELS;
 type FlowChannel = WhatsAppChannel;
+let catalogDatabase: Sql | null = null;
 
 interface FlowSession {
   channel: FlowChannel;
@@ -67,7 +70,6 @@ class RuntimeError extends Error {
   }
 }
 
-const catalogCache = new Map<string, Promise<CatalogSnapshot>>();
 const productImageCache = new Map<string, Promise<string | null>>();
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -334,51 +336,58 @@ async function findCustomer(phoneE164: string): Promise<CustomerMatch> {
   return { status: "matched", customer: { name: customer.name, addresses } };
 }
 
+function catalogDb(): Sql {
+  if (catalogDatabase) return catalogDatabase;
+  const connectionString = Deno.env.get("SUPABASE_DB_URL");
+  if (!connectionString) throw new RuntimeError(503, "A conexão segura ao catálogo Supabase não está configurada.");
+  catalogDatabase = postgres(connectionString, { max: 1, idle_timeout: 10, connect_timeout: 5, prepare: false, ssl: "require" });
+  return catalogDatabase;
+}
+
 async function loadCatalog(commit: string): Promise<CatalogSnapshot> {
   if (!CATALOG_COMMIT.test(commit)) throw new RuntimeError(400, "A revisão do catálogo da sessão é inválida.");
-  const cached = catalogCache.get(commit);
-  if (cached) return cached;
-  const pending = (async () => {
-    const root = `https://api.github.com/repos/${OWNER}/${REPOSITORY}/contents/projetos/whatsapp-atendimento-github/catalog`;
-    const headers = { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
-    const [productsResponse, basketsResponse] = await Promise.all([
-      fetch(`${root}/products.json?ref=${commit}`, { headers, signal: AbortSignal.timeout(2500) }),
-      fetch(`${root}/baskets.json?ref=${commit}`, { headers, signal: AbortSignal.timeout(2500) }),
-    ]);
-    if (!productsResponse.ok || !basketsResponse.ok) throw new RuntimeError(503, "A revisão fixada do catálogo não está disponível.");
-    const [productsFile, basketsFile] = await Promise.all([
-      productsResponse.json() as Promise<{ content: string; sha: string }>,
-      basketsResponse.json() as Promise<{ content: string; sha: string }>,
-    ]);
-    const [products, baskets] = [
-      JSON.parse(new TextDecoder().decode(bytesFromBase64(productsFile.content))),
-      JSON.parse(new TextDecoder().decode(bytesFromBase64(basketsFile.content))),
-    ];
-    const documents = { products, baskets } as CatalogDocuments;
-    const errors = validateCatalog(documents);
-    if (errors.length) throw new RuntimeError(503, "A revisão fixada do catálogo não passou pela validação do servidor.");
-    const revision = `${productsFile.sha}:${basketsFile.sha}`;
-    return { documents, revision };
-  })();
-  catalogCache.set(commit, pending);
-  if (catalogCache.size > 4) catalogCache.delete(catalogCache.keys().next().value as string);
-  try {
-    return await pending;
-  } catch (error) {
-    catalogCache.delete(commit);
-    throw error;
-  }
+  const url = `https://api.github.com/repos/${OWNER}/${REPOSITORY}/contents/projetos/whatsapp-atendimento-github/catalog/baskets.json?ref=${encodeURIComponent(commit)}`;
+  const response = await fetch(url, {
+    headers: { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" },
+    signal: AbortSignal.timeout(2500),
+  });
+  if (!response.ok) throw new RuntimeError(503, "A configuração de cestas fixada não está disponível.");
+  const basketsFile = await response.json() as { content: string; sha: string };
+  if (!/^[a-f0-9]{40}$/i.test(basketsFile.sha)) throw new RuntimeError(503, "A revisão da configuração de cestas é inválida.");
+  let baskets: CatalogDocuments["baskets"];
+  try { baskets = JSON.parse(new TextDecoder().decode(bytesFromBase64(basketsFile.content))); }
+  catch { throw new RuntimeError(503, "A configuração de cestas não contém JSON válido."); }
+  const products = await readSupabaseBasketProducts(catalogDb(), baskets);
+  const documents = { products, baskets } as CatalogDocuments;
+  const errors = validateCatalog(documents);
+  if (errors.length) throw new RuntimeError(503, "O catálogo Supabase não passou pela validação de servidor.");
+  return { documents, revision: await catalogRevision(products, basketsFile.sha) };
 }
 
 async function productImageBase64(product: Product, commit: string): Promise<string | null> {
-  if (!product.imagePath.startsWith("images/products/") || product.imagePath.includes("..")
-    || !/^[A-Za-z0-9._/-]+$/.test(product.imagePath)) return null;
-  const cacheKey = `${commit}:${product.imagePath}`;
+  const source = product.imageUrl;
+  if (!source) return null;
+  let imageUrl: URL;
+  try { imageUrl = new URL(source); } catch { return null; }
+  const isSupabaseImage = imageUrl.hostname === "ssbesxgaijknwsjbsbcz.supabase.co"
+    && imageUrl.pathname.startsWith("/storage/v1/object/public/product-images/");
+  const isKnownCatalogImage = imageUrl.hostname === "raw.githubusercontent.com"
+    && imageUrl.pathname.startsWith("/osvaldosereia/SUCEDOAN12/")
+    && imageUrl.pathname.includes("/site/img/");
+  if ((!isSupabaseImage && !isKnownCatalogImage) || imageUrl.username || imageUrl.password) return null;
+  if (isSupabaseImage) {
+    imageUrl.pathname = imageUrl.pathname.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/");
+    imageUrl.searchParams.set("width", "240");
+    imageUrl.searchParams.set("height", "190");
+    imageUrl.searchParams.set("resize", "contain");
+    imageUrl.searchParams.set("quality", "76");
+    imageUrl.searchParams.set("format", "webp");
+  }
+  const cacheKey = `${commit}:${imageUrl.href}`;
   const cached = productImageCache.get(cacheKey);
   if (cached) return cached;
   const pending = (async () => {
-    const path = product.imagePath.split("/").map(encodeURIComponent).join("/");
-    const response = await fetch(`https://raw.githubusercontent.com/${OWNER}/${REPOSITORY}/${commit}/projetos/whatsapp-atendimento-github/${path}`, {
+    const response = await fetch(imageUrl, {
       redirect: "error",
       signal: AbortSignal.timeout(2500),
     });

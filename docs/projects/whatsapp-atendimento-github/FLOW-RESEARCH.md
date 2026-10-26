@@ -5,6 +5,8 @@ Data da pesquisa: 25/10/2026
 Branch: `project/whatsapp-atendimento-github-20261025`  
 Status: pesquisa técnica registrada; nenhum código de integração ou operação Meta foi executado.
 
+> **Decisão de implementação mais recente (26/10/2026):** a composição de cestas e rascunhos Flow fica no GitHub; produtos, imagens e estoque são consultados do Supabase, só para os IDs usados nessas cestas. Estoque vem da view operacional Supabase e fica somente leitura; a confirmação cria reserva idempotente no schema novo. Esta decisão substitui qualquer recomendação histórica abaixo que apontava GitHub como banco de produtos/imagens/estoque.
+
 ## 1. Resumo executivo
 
 WhatsApp Flows permite conduzir jornadas estruturadas com telas, campos e navegação dentro da conversa. A documentação da Meta separa os Flows sem endpoint, usados para formulários mais estáticos, dos Flows dinâmicos, que trocam dados com um endpoint HTTPS. Uma cesta com catálogo, preço, quantidades e total calculado com segurança precisa de backend: a interface do Flow não pode ser a autoridade para preço nem disponibilidade.

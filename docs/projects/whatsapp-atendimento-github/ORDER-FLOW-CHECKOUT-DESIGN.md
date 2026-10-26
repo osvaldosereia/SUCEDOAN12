@@ -17,7 +17,7 @@ A proposta separa os dados por função:
 | Flow e integração Meta | Endpoint HTTPS privado, preferencialmente uma Edge Function nova e isolada no Supabase existente | Usar Supabase como runtime seguro e ponte para o cadastro, sem guardar o catálogo de produtos nele. Não alterar funções existentes nem publicar até revisão e teste. |
 | Pedido confirmado | Caminho canônico de pedidos já usado pela operação | Após revisão técnica, reaproveitar o serviço existente de pedido. Não criar um segundo formato de pedido nem inserir diretamente em tabelas sem passar pelas regras atuais. |
 
-Esta decisão revisa a proibição anterior de qualquer uso do Supabase: a orientação mais recente do usuário permite usar o cadastro de clientes existente. A fronteira aprovada agora é: produtos e cestas no GitHub; identidade/endereço do cliente e integração de pedido no backend existente. Nenhum dado de produto será mantido no Supabase como fonte do novo catálogo.
+Esta decisão revisa a proibição anterior de qualquer uso do Supabase: a orientação mais recente do usuário determina usar o banco de produtos Supabase existente, limitado aos produtos referenciados pelas cestas. Fonte vigente: produtos e `image_url` em `public.products`, estoque na view operacional `ops2_loose_sellable_stock_v1`, fotos no bucket `product-images`; cestas e rascunhos Flow no GitHub; clientes/endereço no Supabase. Pedidos, itens e reservas usam apenas o schema novo deste projeto, sem alterar tabelas/funções do Vitrine. Esta decisão substitui as passagens anteriores que limitavam o Supabase a clientes.
 
 A Edge Function é uma recomendação de arquitetura, não uma implantação. O Flow dinâmico precisa de um endpoint HTTPS que processe a troca criptografada de dados da Meta, faça o cálculo no servidor e responda rapidamente. O endpoint da Meta encerra a solicitação se não receber resposta em até 10 segundos; por isso deve usar catálogo versionado em cache, consultas de cliente objetivas e logs sem conteúdo pessoal.
 
@@ -119,7 +119,7 @@ O catálogo público do GitHub define os produtos e preços que o novo projeto o
 
 O total parte do preço-base da cesta e aplica as diferenças das marcas e quantidades escolhidas. A regra é validada no servidor na conclusão do Flow e novamente quando o cliente toca em Confirmar pedido. O navegador e o JSON submetido não são autoridade de preço.
 
-GitHub não é controle de estoque em tempo real. Implementação vigente: o endpoint consulta server-side o saldo vendável do Supabase ao montar cada etapa e o webhook revalida a disponibilidade antes de criar o rascunho. A leitura falha fechado quando não é possível confirmar o saldo. A aplicação não reserva nem decrementa estoque; a equipe ainda deve conferir falta durante a separação.
+O estoque oficial vem sempre do Supabase. Implementação vigente: o endpoint consulta server-side o saldo vendável operacional ao montar cada etapa e o webhook revalida antes de criar o rascunho e confirmar o pedido. A leitura falha fechado quando não é possível confirmar o saldo. Pedido confirmado registra itens no schema privado novo, que reduz a disponibilidade por reserva idempotente até o processamento fiscal; não atualiza `public.products.stock` nem o estoque do Vitrine.
 
 ## 5. Administração mínima do Flow
 

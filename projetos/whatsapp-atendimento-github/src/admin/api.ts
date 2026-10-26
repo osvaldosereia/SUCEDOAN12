@@ -9,6 +9,7 @@ export interface CatalogSnapshot extends CatalogDocuments {
   commitSha: string;
   commitUrl: string;
   catalogRevision: string;
+  basketsCommitCreated?: boolean;
 }
 
 export interface PendingImage {
@@ -30,6 +31,7 @@ export interface BlingProductLookupResult {
 
 export interface SaveCatalogInput {
   expectedCommit: string;
+  expectedRevision: string;
   products: CatalogDocuments["products"];
   baskets: CatalogDocuments["baskets"];
   images?: Array<Pick<PendingImage, "productId" | "contentBase64">>;

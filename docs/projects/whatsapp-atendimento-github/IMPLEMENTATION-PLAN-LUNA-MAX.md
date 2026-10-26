@@ -4,7 +4,9 @@ Projeto: WhatsApp Atendimento GitHub — SUCEDOAN12
 Branch isolada: project/whatsapp-atendimento-github-20261025  
 Diretório do novo código: projetos/whatsapp-atendimento-github/  
 Execução prevista: Work Luna Max  
-Estado em 26/10/2026: Rodadas 0–7 implementadas localmente no branch de trabalho. A interface estática do Admin foi publicada no GitHub em `https://donaantonia.com.br/whatsapp-admin/` (Actions run `40331576769`, success; página e bundle confirmados HTTP 200). O catálogo usa `schemaVersion: 4` com estoque assinado em GitHub; a confirmação reduz o saldo uma vez por pedido. O Admin de clientes, a Central ANA/humano para 0975/1018 e a integração server-side Bling (venda após separação, reconciliação, confirmação de NF-e e leitura de situação/DANFE) também estão no código. Quatro migrations já foram aplicadas ao projeto Supabase ativo; o preflight atual confirmou que as cinco Edge Functions novas deste projeto ainda não foram implantadas. O provider GitHub OAuth está desabilitado, e secrets operacionais/chave privada do Flow 0975 não foram confirmados. Flow em aparelho, homologação real Bling e transição de envio continuam pendentes. Nenhum Flow novo foi publicado nem NF-e emitida.
+Estado em 26/10/2026: Rodadas 0–7 implementadas no branch; o Admin estático publicado em `https://donaantonia.com.br/whatsapp-admin/`. Decisão mais recente do usuário: produtos, estoque e imagens têm fonte única no Supabase; o runtime consulta apenas os produtos que aparecem nas cestas configuradas. GitHub mantém composição de cestas e rascunhos Flow. O estoque usa a view operacional do Supabase mais reservas confirmadas do modelo novo. O editor não altera o saldo físico. As mudanças locais desta rodada retiram o catálogo de produtos/imagens do build e encaminham edições/fotos aos mesmos registros/bucket Supabase. A Central, o fluxo de pedidos e a integração Bling seguem greenfield. Duas funções estão implantadas; outras funções/Flow/checkout ainda aguardam ativação e preflight operacional. Nenhum Flow novo foi publicado nem NF-e emitida.
+
+> **Fonte de dados vigente — decisão do usuário em 26/10/2026.** Esta seção substitui qualquer referência histórica abaixo a `products.json`, imagens no GitHub, estoque GitHub ou baixa de estoque no GitHub. Leia `public.products` no Supabase somente para os IDs presentes em `catalog/baskets.json`; estoque válido é a view `public.ops2_loose_sellable_stock_v1.effective_sellable_stock`; imagens usam `products.image_url` / bucket `product-images`. Pedidos confirmados criam reserva idempotente no schema privado Supabase. O GitHub continua apenas com cestas e configurações/rascunhos Flow. Não criar novo cadastro de produto neste Admin: ele edita os produtos existentes ligados às cestas.
 
 ## Decisão principal
 
@@ -36,10 +38,10 @@ A configuração consultada no Vitrine aponta para cinco tamanhos ativos e 61 pr
 
 ## Limites de dados e segurança
 
-- GitHub será a fonte versionada de produtos, estoque, opções, cestas e imagens do novo atendimento. Não salvar catálogo de produtos em tabelas Supabase.
-- O Supabase existente será consultado server-side para localizar cliente/endereço. O saldo inicial foi importado uma vez do saldo vendável consultado no Supabase; execução e edição correntes do estoque ocorrem no catálogo GitHub. O novo sistema tem tabelas próprias para rascunhos, pedidos, itens, separação, vínculo Meta por canal e integração fiscal; não cria nem altera tabelas de produto/estoque do Vitrine.
+- GitHub guarda somente opções/composição das cestas e rascunhos Flow. Não versionar produto, imagem nem saldo no repositório.
+- Supabase é a fonte canônica de produtos, imagens e saldo. O backend filtra `public.products` pelos IDs encontrados nas cestas e lê `public.ops2_loose_sellable_stock_v1.effective_sellable_stock`. Fotos vêm do campo existente `products.image_url` e bucket `product-images`. O schema privado deste projeto reserva unidades de pedidos confirmados que ainda aguardam processamento fiscal; não altera `products.stock`, tabelas de estoque, funções ou atendimento do Vitrine.
 - O pedido guarda snapshots do nome, marca, SKU, GTIN, ID do Bling, quantidade, preço aceito e revisão do catálogo; alterações posteriores no catálogo não alteram pedidos antigos.
-- `stockQuantity` assinado fica junto ao cadastro do produto no GitHub. A quantidade oferecida é `1..min(6, max(0, stockQuantity))`; o saldo pode ficar negativo após confirmação e isso não bloqueia a futura venda/NF-e no Bling. Produtos sem saldo positivo não são oferecidos; durante a separação ainda podem ser registradas faltas.
+- A disponibilidade é recalculada no Supabase em cada leitura/seleção e no checkout. A quantidade oferecida é `1..min(6, max(0, saldo disponível))`; o saldo físico não é editável pelo Admin novo. Se o estoque confirmado cair abaixo de zero no ciclo de venda, isso não bloqueia a criação de venda/NF-e no Bling.
 - O SUCEDOAN12 é público. Produtos e fotos commitados ficam publicamente legíveis. Ajuste interno da cesta, tokens, chaves e dados pessoais ficam fora do GitHub e do JSON entregue ao cliente.
 - Não haverá senha própria. A gravação do catálogo e as ações operacionais exigem uma identidade autorizada, de preferência GitHub OAuth/SSO com lista de usuários permitidos. Não deixar escrita anônima nem credencial no navegador.
 - Usar poucos serviços: uma aplicação Admin leve e um backend modular com funções próprias para Admin, protocolo Meta e integração Bling. Sem microserviços, Firebase, Make ou serviços auxiliares que não atendam a uma necessidade demonstrada.
@@ -82,10 +84,10 @@ O modelo final será definido em uma migration própria após o fluxo ser aprova
 
 1. O cliente abre o Flow enviado pelo número correto.
 2. Seleciona o tamanho e, em cada tipo de produto, vê as opções com foto, escolhe marca e quantidade e remove o item se a cesta permitir.
-3. O backend calcula o valor com a revisão GitHub selecionada e com o ajuste interno obtido somente no servidor.
+3. O backend calcula o valor usando a composição da cesta na revisão GitHub selecionada e os produtos/preços consultados no Supabase.
 4. O backend usa o telefone recebido na conversa para buscar o cliente/endereço no Supabase. O cliente confirma ou corrige os dados.
 5. O cliente escolhe a forma de pagamento.
-6. O backend revalida composição, disponibilidade e total e grava um rascunho.
+6. O backend revalida composição, disponibilidade e total contra o Supabase e grava um rascunho.
 7. O WhatsApp recebe resumo com produtos e quantidades, sem preços unitários, total, pagamento, nome e endereço, com Confirmar, Editar e Cancelar.
 8. Somente Confirmar transforma o rascunho em pedido recebido. Repetição de evento não duplica pedido.
 9. Se uma falta durante a separação mudar o total, o cliente recebe o valor ajustado e precisa confirmar antes do pedido seguir para emissão fiscal.
@@ -108,36 +110,28 @@ A separação precisa permitir atribuir responsável, marcar cada linha como sep
 
 ## Imagens dos produtos
 
-A pesquisa encontrou 61 URLs WebP preenchidas, mas o conteúdo ainda não foi validado. A carga futura deverá:
-
-1. extrair somente os arquivos referenciados pelos 61 produtos elegíveis;
-2. baixar e validar o arquivo, MIME, assinatura, resolução e tamanho;
-3. comprimir e salvar no diretório de imagens do novo projeto;
-4. gerar uma folha de contato para revisão;
-5. testar leitura no Flow em WhatsApp real antes de fixar a resolução/qualidade.
-
-Como ponto de partida, testar uma miniatura WebP de 240×190 com limite de 27 KB para o Flow. Se perder nitidez, ajustar a saída após inspeção em aparelho. O JSON guarda apenas caminho relativo; nunca Base64.
+O Admin consulta `products.image_url` para cada produto referenciado em `catalog/baskets.json`. A imagem é entregue pela fonte existente no Supabase Storage (`product-images`) ou pela URL já cadastrada no próprio produto. Para WhatsApp Flow, o runtime pede uma transformação 240×190 WebP ao Storage, valida assinatura e aplica limite de 27 KB. Imagens alteradas no Admin são convertidas no navegador e enviadas ao mesmo bucket; não criar cópia sob `images/products/` nem guardar caminho relativo no cadastro novo.
 
 ## Rodadas de programação
 
 | Rodada | Entrega | Critério de saída |
 |---|---|---|
 | 0 — Contratos mínimos | Confirmar branch/diretório, autenticação, APIs Meta/Bling disponíveis, modelo novo de pedido e credenciais server-side | Arquitetura mínima aprovada; nenhum módulo antigo usado como dependência |
-| 1 — Catálogo e imagens | Manifesto dos produtos/opções, importação dos 61 elegíveis, conversão/validação de fotos | IDs reconciliados; fotos leves e visualmente aprovadas |
-| 2 — Admin de produtos e cestas | CRUD GitHub, edição simples, opções, quantidades, preço e prévia | Um operador autorizado consegue editar e ver o histórico do commit |
+| 1 — Catálogo e imagens | Consultar os produtos apenas pelos IDs referenciados nas cestas; usar `image_url`/bucket existentes e validar transformação do Flow | Recorte Supabase correto e imagem leve resolvida do mesmo bucket |
+| 2 — Admin de produtos e cestas | Edição de produtos existentes no Supabase; configuração/ordem/quantidades de cestas versionadas no GitHub; estoque somente leitura | Um operador autorizado altera cadastro/foto e cestas, com as fontes indicadas na interface |
 | 3 — Configurador Meta Flow | Editor guiado, Flow JSON gerado, validação local, configuração por número e exportação | Cada número tem rascunho próprio; publicação permanece fora da etapa |
-| 4 — Runtime de atendimento | **Implementada localmente:** sessão/canal, seleção validada, imagens por commit, cotação, protocolo cifrado e busca mínima de cliente. Migration criada, não aplicada. | Endpoint local compila e falha fechado sem segredos/sessão; total calculado no servidor. A ligação do JSON Meta e revisão de telas dependem da Rodada 7. |
+| 4 — Runtime de atendimento | **Implementada localmente:** sessão/canal, seleção validada, produto/estoque/imagem Supabase, cotação e protocolo cifrado. | Endpoint lê o recorte do Supabase em cada tela, aplica limite 1–6 e falha fechado se produto/estoque/imagem não validar |
 | 5 — Confirmação e pedidos | Resumo no chat, botões, rascunho, confirmação idempotente e novo esquema operacional | Só o aceite explícito cria pedido e preserva snapshot |
 | 6 — Separação e Bling | **Implementada localmente:** fila, atribuição, separação/falta, aceite do total recalculado, preflight, vínculo manual revisado do contato, uso server-side da conexão Bling compartilhada, criação da venda após separação, reconciliação idempotente, confirmação digitada para NF-e, leitura de situação/número/DANFE, despacho com releitura fiscal e conclusão idempotente da entrega/pagamento no modelo novo. Não houve chamada externa nesta rodada. | Escrita protegida por sessão, revisão, preflight e confirmação; incerteza nunca causa repetição cega; homologação externa da venda/NF-e/saída continua pendente |
-| 7 — Flow local e homologação externa | **Implementada localmente:** Flow JSON 7.3/Data Exchange 4.0 ligado ao endpoint e webhook, assinatura opcional de `flow_token` verificada quando fornecida, saldo GitHub, baixa idempotente na confirmação, CRUD de clientes, worker da outbox desligado por padrão, configuração/vínculo Flow por canal e recibos de status Meta (`sent`, `delivered`, `read`, `failed`) com timestamp. Pendentes externos: aplicar migrations, configurar secrets/allowlist, validar imagens/JSON em aparelho nos dois números, habilitar envio somente em homologação autorizada e fechar venda/NF-e/saída com Bling. | Contrato local consistente; operação externa segue bloqueada até configuração deliberada, dados e homologação |
+| 7 — Flow local e homologação externa | **Implementada localmente:** Flow JSON 7.3/Data Exchange 4.0, produtos/estoque/imagens Supabase ao vivo, reserva idempotente ao confirmar, CRUD de clientes, worker desligado por padrão e vínculo/recibo por canal. Pendentes externos: implantar funções que faltam, chave Flow 0975, validar Flow em aparelho, homologar venda/NF-e/saída com Bling e autorizar mensagens de operação. | Contrato local consistente; operação externa segue bloqueada até preflight e homologação |
 
 ## Fechamento operacional pendente
 
 1. Revisar e integrar o diff local no branch alvo; nenhum código ou dado de cliente do Vitrine foi copiado.
-2. Em janela de homologação autorizada, confirmar configuração do Supabase Auth/GitHub OAuth, allowlist, origens, GitHub App e secrets, apenas por presença e sem expor valores.
-3. Aplicar as migrations novas e implantar as Edge Functions novas; conferir RLS, funções e endpoints sem alterar tabelas/funções de produção do Vitrine.
+2. Confirmar login por link de e-mail Supabase e presence-only das chaves de runtime. GitHub OAuth não é requisito. GitHub App é necessário apenas para gravação de cestas/rascunhos Flow, não para produto/estoque/imagens.
+3. Implantar as Edge Functions ainda faltantes após preflight; conferir RLS e endpoints sem alterar tabelas/funções de produção do Vitrine.
 4. Entrar no Admin com operador autorizado e confirmar fila/histórico, ANA/humano, janela e controle de envio nos canais 0975 e 1018.
-5. Usar pedido de teste controlado para validar a baixa GitHub, a venda Bling, reconciliação, NF-e e estado autorizado/DANFE; conferir uma única criação após timeout simulado operacionalmente sem fazer retry cego.
+5. Usar pedido de teste controlado para validar a reserva idempotente no Supabase, a venda Bling, reconciliação, NF-e e estado autorizado/DANFE; conferir uma única criação após timeout simulado operacionalmente sem fazer retry cego.
 6. Validar JSON, endpoint, fotos e sequência de telas no Flow Builder e aparelhos dos dois canais; publicar e vincular apenas com autorização operacional específica.
 7. Confirmar recepção de mensagens e comportamento da outbox; manter o worker desligado até definir a janela e os destinatários de homologação.
 8. Depois de implantar migrations/funções em homologação autorizada, conferir a releitura da NF-e para liberar saída e testar a conclusão da entrega/pagamento com pedido controlado. Os marcos locais estão implementados; ainda não foram executados em produção/homologação. Sincronização da situação comercial ou de contas financeiras Bling permanece fora do escopo implementado.
@@ -148,9 +142,9 @@ Cada rodada deve produzir um diff pequeno e revisável, resumo das mudanças, co
 
 - Uma tela lógica `GROUP` é atualizada por Data Exchange para cada tipo de produto, e `CUSTOMER_REVIEW` é a tela terminal. Assim, uma cesta com 13–25 grupos não precisa declarar uma tela/rota diferente por grupo. A Meta tem um exemplo oficial de resposta Data Exchange que atualiza a mesma tela: [book-appointment `flow.js`](https://github.com/WhatsApp/WhatsApp-Flows-Tools/blob/main/examples/endpoint/nodejs/book-appointment/src/flow.js). Essa compatibilidade ainda precisa ser conferida no Flow Builder do canal.
 - Cada tipo tem uma única seleção de produto, seguida por uma quantidade. A lista mostra nome, marca/apresentação e preço unitário; a imagem atualiza com a opção. A última escolha sempre é `Não quero esse produto`; selecionar retirada oculta a quantidade.
-- O catálogo público de produtos usa `schemaVersion: 4` e guarda `stockQuantity` assinado. O saldo inicial foi importado uma vez do Supabase; GitHub é a fonte operacional de produtos, estoque, cestas e imagens. O runtime usa a revisão fixada pela sessão e oferece `1..min(6, max(0, stockQuantity))`.
+- Registro histórico superado em 26/10/2026: a decisão do usuário passou a usar o Supabase como fonte única de produtos, imagens e estoque. GitHub guarda somente a composição das cestas e rascunhos Flow. A disponibilidade é lida ao vivo, descontando reservas ativas do novo schema.
 - O total é recalculado no servidor ao selecionar produto/quantidade. A conclusão envia o contrato checkout v1 com `selections` serializado; o webhook volta a conferir preço, composição e saldo daquela revisão. A experiência só aceita confirmar uma cesta com ao menos um item.
-- Ao confirmar pedido, o webhook reduz o estoque no GitHub com marcador opaco idempotente, mesmo que o saldo fique negativo; Flow e confirmação não oferecem compra com saldo zero/negativo na revisão apresentada. Saldo negativo nunca bloqueia o caminho Bling. O Admin vincula por número apenas Flow publicado do WABA correto, com endpoint e criptografia conferidos. O worker da outbox só será ligado em homologação autorizada; falhas incertas não são repetidas automaticamente e exigem conferência manual. A única mensagem de teste real foi o canário histórico via Vitrine Admin, aceito pela Meta em 26/10/2026.
+- Ao confirmar, a transação cria pedido/itens e reserva disponibilidade no Supabase uma vez por evento; não escreve em GitHub nem na tabela de estoque existente do Vitrine. Saldo negativo na fonte Supabase nunca bloqueia venda/NF-e no Bling. O Admin vincula por número apenas Flow publicado do WABA correto, com endpoint e criptografia conferidos. O worker da outbox só será ligado em homologação autorizada; falhas incertas não são repetidas automaticamente e exigem conferência manual.
 - O worker guarda o ID retornado pela Graph somente no schema privado; o webhook usa o timestamp do provedor para projetar status, pois notificações podem chegar fora de ordem. A tela mostra estado e horário sem expor `wamid`, conteúdo, destinatário ou ciphertext. Callback apenas de status não dispara o worker.
 
 ## Pronto para iniciar

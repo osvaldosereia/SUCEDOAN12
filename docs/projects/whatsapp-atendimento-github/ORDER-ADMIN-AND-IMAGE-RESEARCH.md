@@ -5,6 +5,10 @@ Branch consultada: project/whatsapp-atendimento-github-20261025
 Data: 25/10/2026  
 Status: pesquisa concluída; nenhuma alteração de código, imagem, dado de cliente, Flow ou produção foi feita nesta rodada.
 
+## Decisão posterior do usuário — 26/10/2026
+
+Esta decisão substitui as hipóteses históricas deste documento que colocavam produtos, imagens ou estoque no GitHub. O Admin novo lê e edita somente os produtos associados às cestas atuais, diretamente no `public.products` Supabase. O estoque válido vem do Supabase (`ops2_loose_sellable_stock_v1.effective_sellable_stock`), com reserva dos pedidos confirmados no schema novo. Imagens seguem o `products.image_url` e o mesmo bucket `product-images` usado pelo Vitrine. O repositório GitHub guarda a configuração das cestas e rascunhos de Flow; não mantém banco de produtos, cópia de saldo nem arquivo de imagem do novo projeto. A implementação continua greenfield e não reutiliza código ou contratos do Vitrine.
+
 ## Resumo executivo
 
 A pesquisa confirma que o novo catálogo GitHub pode ser pequeno. A configuração ativa do Vitrine Admin contém cinco tamanhos de cesta ligados a produtos e **61 produtos distintos usados como opções**. Os 61 registros têm URL de imagem WebP: 59 apontam para Supabase Storage e 2 para imagens já hospedadas no GitHub. A URL existente ainda precisa ser baixada e validada; a consulta verificou preenchimento e extensão, não o conteúdo, tamanho ou qualidade visual dos arquivos.

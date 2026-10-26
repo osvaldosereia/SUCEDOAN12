@@ -1,5 +1,4 @@
 import { createClient, type Session } from "@supabase/supabase-js";
-import initialProducts from "../../catalog/products.json";
 import initialBaskets from "../../catalog/baskets.json";
 import initialFlow0975 from "../../flows/channel-0975.json";
 import initialFlow1018 from "../../flows/channel-1018.json";
@@ -38,15 +37,8 @@ const app = document.querySelector<HTMLDivElement>("#app");
 if (!app) throw new Error("Container da aplicação não encontrado.");
 const appRoot = app as HTMLDivElement;
 
-const imageFiles = import.meta.glob<string>("../../images/products/*.webp", {
-  eager: true,
-  query: "?url",
-  import: "default",
-});
-const imageUrls = new Map(Object.entries(imageFiles).map(([path, url]) => [path.split("/").pop() ?? "", url]));
-
 const initialDocuments: CatalogDocuments = {
-  products: initialProducts as ProductsDocument,
+  products: { schemaVersion: 5, products: [] } satisfies ProductsDocument,
   baskets: initialBaskets as BasketsDocument,
 };
 const initialFlowDocuments: Record<FlowChannel, ChannelFlowDocument> = {
@@ -154,12 +146,7 @@ function imageUrl(product: Product): string {
   if (state.editorImageProductId === product.id && state.editorImage?.previewUrl) return state.editorImage.previewUrl;
   const pending = state.pendingImages.get(product.id);
   if (pending?.previewUrl) return pending.previewUrl;
-  const filename = product.imagePath.split("/").pop() ?? "";
-  if (state.access === "authorized" && state.commitSha) {
-    return `https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/${state.commitSha}/projetos/whatsapp-atendimento-github/${product.imagePath}`;
-  }
-  return imageUrls.get(filename)
-    ?? `https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/project/whatsapp-atendimento-github-20261025/projetos/whatsapp-atendimento-github/${product.imagePath}`;
+  return product.imageUrl;
 }
 
 function tell(message: string, type: "info" | "success" | "error" = "info"): void {
@@ -304,9 +291,9 @@ function productCard(product: Product): string {
       <div class="card-title-row"><h3>${escapeHtml(product.name)}</h3><span class="status-pill ${product.active ? "is-active" : "is-inactive"}">${product.active ? "Ativo" : "Inativo"}</span></div>
       <p>${escapeHtml(product.brand)} · ${escapeHtml(product.presentation)}</p>
       <strong>${money(product.unitPriceCents)}</strong>
-      <small>Estoque no GitHub: ${product.stockQuantity.toLocaleString("pt-BR")} unidade(s)</small>
+      <small>Estoque Supabase: ${product.stockQuantity.toLocaleString("pt-BR")} unidade(s)</small>
       <small>${escapeHtml(product.sku ?? "Sem SKU")} · ${escapeHtml(product.id.slice(0, 8))}</small>
-      <div class="card-actions"><button class="button button-soft" data-action="edit-product" data-id="${escapeHtml(product.id)}">Editar</button><button class="icon-button" aria-label="Remover produto" title="Remover" data-action="delete-product" data-id="${escapeHtml(product.id)}">×</button></div>
+      <div class="card-actions"><button class="button button-soft" data-action="edit-product" data-id="${escapeHtml(product.id)}">Editar</button></div>
     </div>
   </article>`;
 }
@@ -318,7 +305,6 @@ function productsView(): string {
   );
   return `<section class="workspace-heading">
       <div><span class="eyebrow">Catálogo · ${state.products.products.length} produtos</span><h1>Produtos</h1><p>Cadastre e revise os itens usados nas cestas.</p></div>
-      <button class="button button-primary" data-action="new-product"><span>＋</span> Novo produto</button>
     </section>
     <div class="toolbar"><label class="search-field"><span>⌕</span><input id="product-search" type="search" value="${escapeHtml(state.search)}" placeholder="Buscar por nome, marca ou SKU"></label><span class="subtle">${filtered.length} resultado${filtered.length === 1 ? "" : "s"}</span></div>
     ${filtered.length ? `<div class="product-grid">${filtered.map(productCard).join("")}</div>` : `<div class="empty-state"><strong>Nenhum produto encontrado</strong><span>Experimente outro nome ou identificador.</span></div>`}`;
@@ -797,12 +783,12 @@ function render(): void {
     <header class="topbar"><a class="brand" href="#"><span class="brand-mark">DA</span><span><strong>Dona Antônia</strong><small>Atendimento WhatsApp</small></span></a>
       <div class="topbar-actions"><span class="access-status ${statusClass}"><i></i>${escapeHtml(accessLabel())}</span>${state.session ? `<span class="user-chip"><span class="user-avatar">${escapeHtml(String(identityLabel).slice(0, 1).toUpperCase())}</span>${escapeHtml(identityLabel)}</span><button class="button button-soft" data-action="sign-out">Sair</button>` : `<button class="button button-dark" data-action="sign-in" ${supabase ? "" : "disabled title=Configure%20Supabase%20em%20.env.local"}>Entrar</button>`}</div>
     </header>
-    <div class="security-banner ${state.access === "authorized" ? "is-ready" : ""}"><span class="security-icon">${state.access === "authorized" ? "✓" : "⌑"}</span><span><strong>${state.access === "authorized" ? "Acesso confirmado pelo servidor" : escapeHtml(state.accessMessage)}</strong><small>${state.access === "authorized" ? `Sessão Supabase validada. Salvamentos usam a branch project/whatsapp-atendimento-github-20261025 quando o GitHub App do servidor está configurado${state.commitSha ? ` · revisão ${state.commitSha.slice(0, 7)}` : ""}.` : supabase ? "O acesso usa a conta Supabase já cadastrada como administradora; não há senha própria nem login GitHub separado." : "Configure Supabase no .env.local para habilitar o login; sem autorização do servidor, nenhuma gravação será aceita."}</small></span>${state.commitUrl ? `<a class="text-link" href="${escapeHtml(state.commitUrl)}" target="_blank" rel="noreferrer">Ver commit ↗</a>` : ""}</div>
+    <div class="security-banner ${state.access === "authorized" ? "is-ready" : ""}"><span class="security-icon">${state.access === "authorized" ? "✓" : "⌑"}</span><span><strong>${state.access === "authorized" ? "Acesso confirmado pelo servidor" : escapeHtml(state.accessMessage)}</strong><small>${state.access === "authorized" ? `Sessão Supabase validada. Produtos, imagens e estoque usam o Supabase; cestas e rascunhos Flow usam a branch project/whatsapp-atendimento-github-20261025${state.commitSha ? ` · revisão ${state.commitSha.slice(0, 7)}` : ""}.` : supabase ? "O acesso usa a conta Supabase já cadastrada como administradora; não há senha própria nem login GitHub separado." : "Configure Supabase no .env.local para habilitar o login; sem autorização do servidor, nenhuma gravação será aceita."}</small></span>${state.commitUrl ? `<a class="text-link" href="${escapeHtml(state.commitUrl)}" target="_blank" rel="noreferrer">Ver commit ↗</a>` : ""}</div>
     <div class="app-body"><aside class="main-nav"><div class="nav-label">CATÁLOGO</div><button class="nav-item ${state.tab === "products" ? "is-active" : ""}" data-action="tab" data-tab="products"><span class="nav-icon">▦</span> Produtos <span class="nav-count">${state.products.products.length}</span></button><button class="nav-item ${state.tab === "baskets" ? "is-active" : ""}" data-action="tab" data-tab="baskets"><span class="nav-icon">▤</span> Cestas <span class="nav-count">${state.baskets.baskets.length}</span></button><button class="nav-item ${state.tab === "flows" ? "is-active" : ""}" data-action="tab" data-tab="flows"><span class="nav-icon">⌁</span> Flows <span class="nav-count">${state.flowDocuments[state.flowChannel].drafts.length}</span></button><div class="nav-label nav-orders-label">OPERAÇÃO</div><button class="nav-item ${state.tab === "attendance" ? "is-active" : ""}" data-action="tab" data-tab="attendance"><span class="nav-icon">☏</span> Atendimento</button><button class="nav-item ${state.tab === "customers" ? "is-active" : ""}" data-action="tab" data-tab="customers"><span class="nav-icon">♙</span> Clientes ${state.customersLoaded ? `<span class="nav-count">${state.customers.length}</span>` : ""}</button><button class="nav-item ${state.tab === "orders" ? "is-active" : ""}" data-action="tab" data-tab="orders"><span class="nav-icon">▣</span> Pedidos <span class="nav-count">${state.orders.length}</span></button><button class="nav-item ${state.tab === "outbox" ? "is-active" : ""}" data-action="tab" data-tab="outbox"><span class="nav-icon">↗</span> Mensagens ${state.outboxLoaded ? `<span class="nav-count">${state.outboxCounts.pending + state.outboxCounts.failed}</span>` : ""}</button></aside>
       <main class="content"><div class="content-topline"><span>Administração</span><span class="breadcrumb-sep">/</span><strong>${state.tab === "products" ? "Produtos" : state.tab === "baskets" ? "Cestas" : state.tab === "flows" ? "Flows" : state.tab === "orders" ? "Pedidos" : state.tab === "customers" ? "Clientes" : state.tab === "attendance" ? "Atendimento" : "Mensagens WhatsApp"}</strong><span class="dirty-indicator ${isDirty() && !["orders", "outbox", "customers", "attendance"].includes(state.tab) ? "is-dirty" : ""}">${isDirty() && !["orders", "outbox", "customers", "attendance"].includes(state.tab) ? "Alterações pendentes" : "Tudo salvo"}</span></div>${!state.session && supabase ? `<section class="auth-card"><div><span class="eyebrow">Acesso ao Admin</span><h2>Entrar sem senha</h2><p>Enviaremos um link ao e-mail de uma conta administrativa ativa no Supabase.</p></div><form id="auth-form"><label for="auth-email">E-mail da conta<input id="auth-email" name="email" type="email" autocomplete="email" required maxlength="254" value="${escapeHtml(state.authEmail)}" placeholder="voce@exemplo.com"></label><button class="button button-dark" type="submit" ${state.busy ? "disabled" : ""}>Enviar link de acesso</button></form>${state.authMessage ? `<small class="auth-feedback" role="status">${escapeHtml(state.authMessage)}</small>` : ""}</section>` : ""}${state.notice ? `<div class="notice notice-${state.noticeType}" role="status"><span>${escapeHtml(state.notice)}</span>${state.conflict ? `<div class="conflict-actions"><button class="text-button" data-action="export-draft">Baixar meu rascunho</button><button class="text-button" data-action="reload-catalog">Descartar e recarregar</button></div>` : ""}<button data-action="clear-notice" aria-label="Fechar">×</button></div>` : ""}${state.tab === "products" ? productsView() : state.tab === "baskets" ? selectedBasket ? basketEditor(selectedBasket) : `<div class="empty-state"><strong>Nenhuma cesta cadastrada</strong><span>Crie a primeira cesta para começar.</span><button class="button button-primary" data-action="new-basket">＋ Nova cesta</button></div>` : state.tab === "flows" ? flowsPanel : state.tab === "customers" ? customersPanel : state.tab === "outbox" ? outboxView() : state.tab === "attendance" ? attendancePanel : ordersView()}</main>
     </div>
-    <footer class="page-footer"><span>Catálogo público versionado no GitHub</span><span>Dados pessoais e credenciais ficam fora deste projeto</span></footer>
-    ${state.access === "authorized" && isDirty() && !["customers", "orders", "outbox", "attendance"].includes(state.tab) ? `<button class="floating-save" data-action="review-save"><span>Revisar alterações</span><strong>Salvar no GitHub ↗</strong></button>` : ""}
+    <footer class="page-footer"><span>Cestas e rascunhos Flow versionados no GitHub · produtos, fotos e estoque no Supabase</span><span>Dados pessoais e credenciais ficam fora deste projeto</span></footer>
+    ${state.access === "authorized" && isDirty() && !["customers", "orders", "outbox", "attendance"].includes(state.tab) ? `<button class="floating-save" data-action="review-save"><span>Revisar alterações</span><strong>Salvar alterações ↗</strong></button>` : ""}
     ${modalMarkup()}
   </div>`;
   const locked = state.busy || state.access === "loading";
@@ -823,17 +809,27 @@ function priceInputValue(cents: number): string {
   return (cents / 100).toFixed(2);
 }
 
-function openProductEditor(productId?: string): void {
-  const product = productId ? state.products.products.find((item) => item.id === productId) : undefined;
-  const id = product?.id ?? crypto.randomUUID();
+function openProductEditor(productId: string): void {
+  const product = state.products.products.find((item) => item.id === productId);
+  if (!product) return;
+  const id = product.id;
   state.editorImageProductId = id;
   state.editorImage = state.pendingImages.get(id) ?? null;
-  const source = product ? imageUrl(product) : "";
+  const source = imageUrl(product);
   const modal = openModal(`<form id="product-form" class="modal-card">
-    <div class="modal-heading"><div><span class="eyebrow">${product ? "Editar cadastro" : "Novo cadastro"}</span><h2>${product ? "Produto" : "Adicionar produto"}</h2></div><button type="button" class="icon-button" data-action="close-modal" aria-label="Fechar">×</button></div>
+    <div class="modal-heading"><div><span class="eyebrow">Editar cadastro Supabase</span><h2>Produto</h2></div><button type="button" class="icon-button" data-action="close-modal" aria-label="Fechar">×</button></div>
     <input type="hidden" name="product_id" value="${escapeHtml(id)}">
-    <div class="product-form-layout"><div><label>Nome do produto<input name="name" required maxlength="160" value="${escapeHtml(product?.name ?? "")}"></label><div class="form-grid"><label>Marca<input name="brand" required maxlength="80" value="${escapeHtml(product?.brand ?? "")}"></label><label>Apresentação<input name="presentation" required maxlength="80" placeholder="Ex.: 500 g" value="${escapeHtml(product?.presentation ?? "")}"></label></div><div class="form-grid"><label>Preço unitário (R$)<input name="price" type="number" min="0" step="0.01" required value="${product ? priceInputValue(product.unitPriceCents) : "0.00"}"></label><label>Estoque no GitHub<input name="stock_quantity" type="number" step="1" value="${product?.stockQuantity ?? 0}" required><small>Saldo pode ficar negativo após uma confirmação.</small></label></div><small>O catálogo GitHub mantém e controla o saldo. A baixa ocorre quando o cliente confirma o pedido.</small><div class="form-grid"><label>SKU<input name="sku" maxlength="80" value="${escapeHtml(product?.sku ?? "")}"></label><label>GTIN / EAN<input name="gtin" maxlength="32" value="${escapeHtml(product?.gtin ?? "")}"></label></div><label>ID do Bling<input name="bling" maxlength="80" value="${escapeHtml(product?.blingProductId ?? "")}"></label>${product && !product.blingProductId && state.access === "authorized" ? isDirty() ? `<small>Grave as alterações pendentes do catálogo antes de consultar o GTIN no Bling.</small>` : `<div class="bling-product-lookup"><button type="button" class="button button-soft" data-action="lookup-bling-product" data-id="${escapeHtml(product.id)}">Buscar no Bling pelo GTIN salvo</button><small>A consulta usa o GTIN do catálogo no GitHub. Confira o nome e o SKU antes de selecionar; o vínculo só será gravado na revisão do catálogo.</small><div id="bling-lookup-results" aria-live="polite"></div></div>` : ""}<label class="checkbox-label"><input name="active" type="checkbox" ${product?.active ?? true ? "checked" : ""}> Produto ativo</label></div>
-      <div class="image-editor"><div class="image-preview-box">${source ? `<img id="product-image-preview" src="${escapeHtml(source)}" alt="Prévia do produto">` : `<div class="image-empty" id="product-image-empty"><span>＋</span>Foto do produto</div>`}</div><label class="button button-soft upload-button">Escolher foto<input id="product-image-input" type="file" accept="image/*" hidden></label><small>Será convertida para WebP 240 × 190, até 27 KB.${product ? " A foto atual é mantida se você não selecionar outra." : " Selecione uma foto para cadastrar o produto."}</small><small id="image-feedback" role="status"></small></div></div>
+    <div class="product-form-layout"><div>
+      <label>Nome do produto<input name="name" required maxlength="160" value="${escapeHtml(product.name)}"></label>
+      <div class="form-grid"><label>Marca<input name="brand" required maxlength="80" value="${escapeHtml(product.brand)}"></label><label>Apresentação<input name="presentation" required maxlength="80" placeholder="Ex.: 500 g" value="${escapeHtml(product.presentation)}"></label></div>
+      <div class="form-grid"><label>Preço unitário (R$)<input name="price" type="number" min="0" step="0.01" required value="${priceInputValue(product.unitPriceCents)}"></label><label>Estoque Supabase<input name="stock_quantity" type="number" value="${product.stockQuantity}" readonly><small>Saldo somente leitura; atualizado pela operação de estoque do Supabase.</small></label></div>
+      <small>A confirmação do pedido reserva o saldo nesta operação. O estoque oficial continua vindo do Supabase.</small>
+      <div class="form-grid"><label>SKU<input name="sku" maxlength="80" value="${escapeHtml(product.sku ?? "")}"></label><label>GTIN / EAN<input name="gtin" maxlength="32" value="${escapeHtml(product.gtin ?? "")}"></label></div>
+      <label>ID do Bling<input name="bling" maxlength="80" value="${escapeHtml(product.blingProductId ?? "")}"></label>
+      ${!product.blingProductId && state.access === "authorized" ? isDirty() ? `<small>Grave as alterações pendentes antes de consultar o GTIN no Bling.</small>` : `<div class="bling-product-lookup"><button type="button" class="button button-soft" data-action="lookup-bling-product" data-id="${escapeHtml(product.id)}">Buscar no Bling pelo GTIN salvo</button><small>A consulta usa o GTIN do cadastro Supabase. Confira o nome e o SKU antes de selecionar; o vínculo será gravado junto às alterações do cadastro.</small><div id="bling-lookup-results" aria-live="polite"></div></div>` : ""}
+      <label class="checkbox-label"><input name="active" type="checkbox" ${product.active ? "checked" : ""}> Ativo no WhatsApp</label>
+    </div>
+      <div class="image-editor"><div class="image-preview-box"><img id="product-image-preview" src="${escapeHtml(source)}" alt="Prévia do produto"></div><label class="button button-soft upload-button">Escolher foto<input id="product-image-input" type="file" accept="image/*" hidden></label><small>Será convertida para WebP 240 × 190, até 27 KB e salva no bucket product-images do Supabase. A foto atual é mantida se você não selecionar outra.</small><small id="image-feedback" role="status"></small></div></div>
     <div class="modal-actions"><button type="button" class="button button-soft" data-action="close-modal">Cancelar</button><button class="button button-primary" type="submit">Aplicar produto</button></div>
   </form>`, "product");
   modal.addEventListener("cancel", () => { state.editorImage = null; state.editorImageProductId = ""; }, { once: true });
@@ -1030,7 +1026,7 @@ function openReviewModal(): void {
     tell(`Não é possível salvar: ${errors.slice(0, 3).join(" · ")}`, "error");
     return;
   }
-  openModal(`<div class="modal-card review-modal"><div class="modal-heading"><div><span class="eyebrow">Revisão antes do commit</span><h2>Salvar catálogo?</h2></div><button class="icon-button" data-action="close-modal" aria-label="Fechar">×</button></div><p>O GitHub criará um commit no branch do projeto. O histórico do catálogo ficará associado à revisão atual.</p>${reviewChanges()}<div class="review-target"><span>Destino</span><strong>osvaldosereia/SUCEDOAN12</strong><code>project/whatsapp-atendimento-github-20261025</code></div><div class="modal-actions"><button class="button button-soft" data-action="close-modal">Voltar à edição</button><button class="button button-primary" data-action="confirm-save">Confirmar e gravar</button></div></div>`, "review");
+  openModal(`<div class="modal-card review-modal"><div class="modal-heading"><div><span class="eyebrow">Revisão antes de salvar</span><h2>Salvar alterações?</h2></div><button class="icon-button" data-action="close-modal" aria-label="Fechar">×</button></div><p>Produtos e fotos serão atualizados no Supabase. Um commit GitHub só será criado se a configuração das cestas tiver mudado.</p>${reviewChanges()}<div class="review-target"><span>Produtos e fotos</span><strong>Supabase · cadastro atual</strong><code>estoque somente leitura</code></div><div class="review-target"><span>Cestas</span><strong>osvaldosereia/SUCEDOAN12</strong><code>project/whatsapp-atendimento-github-20261025</code></div><div class="modal-actions"><button class="button button-soft" data-action="close-modal">Voltar à edição</button><button class="button button-primary" data-action="confirm-save">Confirmar e gravar</button></div></div>`, "review");
 }
 
 async function performSave(): Promise<void> {
@@ -1048,6 +1044,7 @@ async function performSave(): Promise<void> {
   try {
     const snapshot = await saveCatalog(state.session.access_token, {
       expectedCommit: state.commitSha,
+      expectedRevision: state.catalogRevision,
       products: state.products,
       baskets: state.baskets,
       ...(state.pendingImages.size ? {
@@ -1064,7 +1061,9 @@ async function performSave(): Promise<void> {
     state.editorImage = null;
     state.editorImageProductId = "";
     state.conflict = false;
-    state.notice = `Catálogo gravado no commit ${snapshot.commitSha.slice(0, 7)}.`;
+    state.notice = snapshot.basketsCommitCreated
+      ? `Produtos e imagens atualizados no Supabase; cestas gravadas no commit ${snapshot.commitSha.slice(0, 7)} do GitHub.`
+      : "Produtos e imagens atualizados no Supabase. As cestas não mudaram e nenhum commit GitHub foi necessário.";
     state.noticeType = "success";
   } catch (error) {
     const message = error instanceof AdminApiError ? error.message : "Falha ao gravar o catálogo.";
@@ -1394,19 +1393,13 @@ appRoot.addEventListener("submit", async (event) => {
     const values = new FormData(target);
     const id = String(values.get("product_id"));
     const previous = state.products.products.find((product) => product.id === id);
-    if (!previous && state.pendingImages.get(id)?.productId !== id && state.editorImage?.productId !== id) {
-      const feedback = document.querySelector<HTMLElement>("#image-feedback");
-      if (feedback) feedback.textContent = "Escolha uma foto para cadastrar o produto.";
+    if (!previous) {
+      tell("O novo Admin edita os produtos já associados às cestas no Supabase.", "error");
       return;
     }
     const price = Number(values.get("price"));
-    const stockQuantity = Number(values.get("stock_quantity"));
     if (!Number.isFinite(price) || price < 0) {
       tell("Informe um preço válido em reais.", "error");
-      return;
-    }
-    if (!Number.isSafeInteger(stockQuantity)) {
-      tell("Informe um saldo inteiro seguro.", "error");
       return;
     }
     const product: Product = {
@@ -1415,8 +1408,8 @@ appRoot.addEventListener("submit", async (event) => {
       brand: String(values.get("brand") ?? "").trim(),
       presentation: String(values.get("presentation") ?? "").trim(),
       unitPriceCents: Math.round(price * 100),
-      stockQuantity,
-      imagePath: `images/products/${id}.webp`,
+      stockQuantity: previous.stockQuantity,
+      imageUrl: previous.imageUrl,
       sku: String(values.get("sku") ?? "").trim() || null,
       gtin: String(values.get("gtin") ?? "").trim() || null,
       blingProductId: String(values.get("bling") ?? "").trim() || null,
@@ -1882,8 +1875,6 @@ appRoot.addEventListener("click", async (event) => {
     target.setAttribute("disabled", "true");
     target.textContent = "Gravando rascunho…";
     await performFlowSave();
-  } else if (action === "new-product") {
-    openProductEditor();
   } else if (action === "edit-product") {
     openProductEditor(id);
   } else if (action === "lookup-bling-product") {
@@ -1892,14 +1883,14 @@ appRoot.addEventListener("click", async (event) => {
     if (!state.session || !form || !results) return;
     target.setAttribute("disabled", "true");
     target.textContent = "Consultando…";
-    results.textContent = "Consultando o catálogo Bling pelo GTIN salvo no GitHub…";
+    results.textContent = "Consultando o catálogo Bling pelo GTIN salvo no Supabase…";
     try {
       const lookup = await lookupBlingProductByCatalogGtin(state.session.access_token, id);
       const gtinField = form.elements.namedItem("gtin");
       const currentGtin = gtinField instanceof HTMLInputElement ? normalizeGtin(gtinField.value) : "";
       results.dataset.gtin = lookup.gtin;
       if (currentGtin !== lookup.gtin) {
-        results.innerHTML = `<small>O GTIN do formulário (${escapeHtml(currentGtin || "vazio")}) difere do catálogo salvo (${escapeHtml(lookup.gtin)}). Atualize ou salve o catálogo antes de associar um ID.</small>`;
+        results.innerHTML = `<small>O GTIN do formulário (${escapeHtml(currentGtin || "vazio")}) difere do cadastro Supabase (${escapeHtml(lookup.gtin)}). Atualize ou salve o cadastro antes de associar um ID.</small>`;
       } else if (!lookup.products.length) {
         results.innerHTML = `<small>Nenhum produto foi encontrado para o GTIN ${escapeHtml(lookup.gtin)}. O ID Bling continua sem vínculo.</small>`;
       } else {
@@ -1929,15 +1920,7 @@ appRoot.addEventListener("click", async (event) => {
     }
     if (!/^\d{1,20}$/.test(id) || !resultIds.includes(id)) return;
     idInput.value = id;
-    if (status) status.textContent = `ID ${id} preenchido. A associação será gravada somente ao salvar a revisão do catálogo.`;
-  } else if (action === "delete-product") {
-    const referenced = state.baskets.baskets.some((basket) => basket.groups.some((group) => group.productIds.includes(id)));
-    if (referenced) tell("Remova este produto das opções das cestas antes de excluí-lo.", "error");
-    else if (window.confirm("Remover este produto da prévia do catálogo?")) {
-      state.pendingImages.delete(id);
-      state.products = { ...state.products, products: state.products.products.filter((product) => product.id !== id) };
-      render();
-    }
+    if (status) status.textContent = `ID ${id} preenchido. A associação será gravada no cadastro Supabase ao salvar.`;
   } else if (action === "new-basket") {
     const base = slug("nova-cesta");
     let nextId = base;

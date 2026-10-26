@@ -10,7 +10,7 @@ export interface Product {
   presentation: string;
   unitPriceCents: MoneyCents;
   stockQuantity: number;
-  imagePath: string;
+  imageUrl: string;
   sku: string | null;
   gtin: string | null;
   blingProductId: string | null;
@@ -42,7 +42,7 @@ export interface Basket {
 }
 
 export interface ProductsDocument {
-  schemaVersion: 4;
+  schemaVersion: 5;
   products: Product[];
 }
 
@@ -59,7 +59,7 @@ export interface CatalogDocuments {
 const allowedKeys: Record<string, readonly string[]> = {
   catalog: ["products", "baskets"],
   productsDocument: ["schemaVersion", "products"],
-  product: ["id", "name", "brand", "presentation", "unitPriceCents", "stockQuantity", "imagePath", "sku", "gtin", "blingProductId", "active"],
+  product: ["id", "name", "brand", "presentation", "unitPriceCents", "stockQuantity", "imageUrl", "sku", "gtin", "blingProductId", "active"],
   basketsDocument: ["schemaVersion", "baskets"],
   basket: ["id", "name", "active", "sortOrder", "basePriceCents", "groups"],
   group: ["id", "label", "category", "productIds", "minimumQuantity", "maximumQuantity", "initialQuantity", "removalAllowed"],
@@ -89,7 +89,7 @@ export function validateCatalog(value: unknown): string[] {
   else checkKeys(baskets, allowedKeys.basketsDocument, "baskets", errors);
   if (!isRecord(products) || !isRecord(baskets)) return errors;
 
-  if (products.schemaVersion !== 4) errors.push("products.schemaVersion must be 4");
+  if (products.schemaVersion !== 5) errors.push("products.schemaVersion must be 5");
   if (baskets.schemaVersion !== 1) errors.push("baskets.schemaVersion must be 1");
   if (!Array.isArray(products.products) || products.products.length === 0) {
     errors.push("products.products must contain at least one product");
@@ -108,7 +108,7 @@ export function validateCatalog(value: unknown): string[] {
     checkKeys(rawProduct, allowedKeys.product, at, errors);
     const product = rawProduct as unknown as Product;
     if (typeof product.id !== "string" || typeof product.name !== "string" || typeof product.brand !== "string"
-      || typeof product.presentation !== "string" || typeof product.imagePath !== "string"
+      || typeof product.presentation !== "string" || typeof product.imageUrl !== "string"
       || (product.sku !== null && typeof product.sku !== "string")
       || (product.gtin !== null && typeof product.gtin !== "string")
       || (product.blingProductId !== null && typeof product.blingProductId !== "string")) {
@@ -124,13 +124,15 @@ export function validateCatalog(value: unknown): string[] {
     if (product.sku !== null && !product.sku.trim()) errors.push(`${at}.sku must be null or non-empty`);
     if (product.gtin !== null && !product.gtin.trim()) errors.push(`${at}.gtin must be null or non-empty`);
     if (product.blingProductId !== null && !product.blingProductId.trim()) errors.push(`${at}.blingProductId must be null or non-empty`);
+    if (product.blingProductId !== null && (!/^\d{1,19}$/.test(product.blingProductId)
+      || BigInt(product.blingProductId) <= 0n || BigInt(product.blingProductId) > 9_223_372_036_854_775_807n)) {
+      errors.push(`${at}.blingProductId must be a positive Supabase bigint`);
+    }
     if (!Number.isSafeInteger(product.unitPriceCents) || product.unitPriceCents < 0) {
       errors.push(`${at}.unitPriceCents must be a non-negative integer`);
     }
     if (!Number.isSafeInteger(product.stockQuantity)) errors.push(`${at}.stockQuantity must be an integer (negative balances are allowed)`);
-    if (!product.imagePath.startsWith("images/products/") || product.imagePath.includes("..")) {
-      errors.push(`${at}.imagePath must point inside images/products`);
-    }
+    if (product.imageUrl && !/^https:\/\//i.test(product.imageUrl)) errors.push(`${at}.imageUrl must be an HTTPS URL or empty`);
     if (typeof product.active !== "boolean") errors.push(`${at}.active must be boolean`);
   }
 

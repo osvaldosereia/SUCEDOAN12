@@ -5,6 +5,8 @@ Data: 25/10/2026
 Branch: project/whatsapp-atendimento-github-20261025  
 Estado: pesquisa e recomendação; nenhuma tela foi implementada nem operação Meta executada.
 
+> **Fonte de dados vigente por decisão do usuário (26/10/2026):** cesta/composição e rascunhos Flow ficam no GitHub. Produtos, estoque e imagens são lidos do Supabase, somente para os produtos que compõem as cestas; disponibilidade usa a view operacional Supabase mais reservas idempotentes dos pedidos do projeto. Esta regra substitui as sugestões históricas abaixo que pressupõem um catálogo GitHub.
+
 ## Resposta executiva
 
 A cesta descrita não é um carrinho livre. É uma composição comercial com 10 posições, quantidades padrão, alternativas de marca, remoção opcional e um preço inicial próprio. A ferramenta precisa recalcular o preço da cesta pelas regras do negócio, não apenas somar produtos do catálogo.

@@ -2,9 +2,11 @@
 
 Atualizado em 26/10/2026 (America/Cuiaba).
 
-## Estado vigente em 26/10/2026
+> **Decisão vigente mais recente (26/10/2026):** o usuário determinou que produtos, estoque e imagens venham do Supabase. O novo Admin/Flow consulta apenas produtos referenciados nas configurações de cestas; saldo oficial é `public.ops2_loose_sellable_stock_v1.effective_sellable_stock`; imagens vêm de `public.products.image_url` e do bucket `product-images`. Pedidos confirmados criam reserva idempotente no schema privado deste projeto. O Admin não altera o saldo físico nem cria uma cópia de catálogo. GitHub mantém as cestas e os rascunhos Flow. Esta decisão substitui todas as referências históricas neste HANDOFF a produtos/imagens/estoque/baixa no GitHub.
 
-As rodadas 0–7 e o Admin novo estão na branch própria. Quatro migrations do projeto estão aplicadas. O Admin está publicado; a autenticação usa link de e-mail Supabase sem senha, sem criação de conta e com validação do proprietário ativo. GitHub OAuth está desabilitado e não é necessário. Duas das cinco Edge Functions novas estão ativas (`whatsapp-admin-api` v1 e `whatsapp-flow-runtime` v1); três continuam pendentes. A leitura pública do catálogo funciona, mas não há credenciais GitHub App no runtime Supabase para gravar catálogo ou baixar estoque. Os nomes dos secrets Meta e a chave do Flow 1018 foram confirmados por presença; a chave do Flow 0975 não foi localizada. O callback Meta continua no serviço ANA existente, nenhum Flow novo está publicado e a outbox segue desligada. O projeto ainda não recebe pedidos reais pelo novo fluxo.
+## Estado verificado antes dos ajustes de fonte de dados
+
+As rodadas 0–7 e o Admin novo estão na branch própria. Quatro migrations do projeto estão aplicadas. O Admin está publicado; a autenticação usa link de e-mail Supabase sem senha, sem criação de conta e com validação do proprietário ativo. GitHub OAuth está desabilitado e não é necessário. Duas das cinco Edge Functions novas estão ativas (`whatsapp-admin-api` v1 e `whatsapp-flow-runtime` v1); três continuam pendentes. Sem credenciais GitHub App no runtime, cestas e rascunhos Flow ainda não podem ser gravados; produto, estoque e imagens não dependem dessas credenciais. Os nomes dos secrets Meta e a chave do Flow 1018 foram confirmados por presença; a chave do Flow 0975 não foi localizada. O callback Meta continua no serviço ANA existente, nenhum Flow novo está publicado e a outbox segue desligada. O projeto ainda não recebe pedidos reais pelo novo fluxo.
 
 ## Objetivo do projeto
 
@@ -15,7 +17,7 @@ A meta de produto é evoluir o atendimento para que o cliente escolha e personal
 ## Escopo autorizado e decisões atuais
 
 - O projeto fica separado dentro do repositório osvaldosereia/SUCEDOAN12, em diretório próprio, com branch própria.
-- Produtos e cestas deste projeto têm sua fonte versionada no GitHub; Supabase não será o banco de produtos. A orientação atual autoriza consultar o cadastro existente de clientes/endereço pelo backend. Não copiar dados pessoais para arquivos públicos e não alterar schema nem gravar pedidos em produção antes de revisar o contrato de integração.
+- Decisão vigente: produtos, imagens e estoque usam o Supabase existente; o Admin consulta apenas os produtos associados às cestas e imagens pelo campo/bucket existente. GitHub mantém as composições das cestas e rascunhos Flow. Clientes/endereço continuam no Supabase. Não copiar dados pessoais para arquivos públicos.
 - Importar somente os produtos que estiverem referenciados pelas composições de cestas existentes no Vitrine Admin. Não importar o catálogo inteiro.
 - O cadastro de produtos deve ser simples e servir ao configurador de cestas.
 - O configurador de cestas deve permitir tamanhos, tipos de produto, produtos disponíveis por tipo, quantidade por tamanho de cesta e ordem de apresentação.
@@ -638,3 +640,12 @@ Nesta rodada, alinhei também a consulta de produto por GTIN à conexão compart
 O Admin compila (`pnpm build`, incluindo `tsc --noEmit` e Vite); a advertência de bundle acima de 500 KB permanece. `git diff --check` passou; somente o aviso conhecido de LF/CRLF do Windows foi emitido. Nenhum teste automatizado foi criado/executado, nenhum pedido/NF-e foi enviado e nenhuma escrita Bling/Meta ocorreu. A função não foi implantada nesta rodada; o ajuste está apenas na branch após o commit. O único segredo Bling específico novo deixa de ser requisito. O bloqueio de gravação GitHub continua sendo credencial de escrita do repositório, distinta do acesso Supabase usado pelo Vitrine.
 
 O ajuste e esta correção foram enviados juntos à branch em `4ae058f61754afc73439c4de208a28b18c3510f9`. Não implantar `whatsapp-admin-api` até o preflight server-side de escrita GitHub; as operações de Bling usarão o provedor compartilhado já ativo.
+
+
+## Ajuste de fonte do catálogo pedido pelo usuário — 26/10/2026
+
+O usuário cancelou o banco de produtos GitHub e determinou que o estoque válido e as imagens sejam sempre consultados do Supabase, na mesma fonte do Vitrine Admin. O novo Admin/Flow consulta `public.products` apenas pelos UUIDs presentes em `catalog/baskets.json`, obtém disponibilidade em `public.ops2_loose_sellable_stock_v1.effective_sellable_stock` e URLs da coluna `image_url`/bucket `product-images`. Reservas de pedidos deste projeto reduzem a disponibilidade até a etapa fiscal; o código não atualiza `public.products.stock` nem tabelas/funções do Vitrine. O repositório mantém somente cestas e rascunhos Flow. A chave GitHub App, quando configurada, continua necessária para salvar esses arquivos, não para ler produto/estoque/foto.
+
+Na branch local desta rodada, o runtime Flow, checkout e API administrativa leem produtos/estoque por UUID diretamente do Supabase; produtos fora das cestas configuradas não entram no catálogo do novo Admin. As fotos existentes são lidas de `products.image_url`; as novas fotos são convertidas no navegador para WebP 240×190 até 27 KB e armazenadas em `product-images`. A revisão do catálogo inclui metadados do produto Supabase e hash da configuração GitHub, sem incluir o saldo dinâmico. O editor altera apenas produtos já associados às cestas e não grava estoque.
+
+Foram removidos do projeto os três JSON/manifests, o importador e as 61 miniaturas locais de produto, além do helper que baixava estoque via GitHub. Leitura de arquivos públicos do repositório agora é anônima; o GitHub App só é solicitado quando uma gravação muda as cestas ou os rascunhos Flow. O app estático passou em `pnpm build` (`tsc --noEmit` + Vite) e `git diff --check`; não havia `deno` nem Supabase CLI instalados para checagem isolada/deploy das Edge Functions. Nenhum teste automatizado foi criado ou executado. Esta rodada ainda não publicou o app atualizado nem implantou funções, não enviou mensagens, não publicou Flow, não escreveu no Bling/Meta e não mudou o callback ou os dados atuais do Vitrine. `supabase/.temp/` permanece fora do commit.

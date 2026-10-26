@@ -32,7 +32,7 @@ A documentação oficial descreve o cadastro do OAuth App e o callback de Supaba
 
 ## Desbloqueio de gravação no GitHub
 
-O login sozinho não libera alterações. Para catálogo, clientes e baixa de estoque, o backend precisa de uma GitHub App instalada **somente** em `osvaldosereia/SUCEDOAN12`, com `Contents: Read and write` e `Metadata: Read-only`. A chave privada deve ser guardada como secret server-side; não salvar o arquivo da chave no checkout.
+O login sozinho não libera alterações. Produtos, fotos e estoque são lidos/escritos no Supabase com as chaves padrão já fornecidas ao runtime; a disponibilidade de estoque é somente leitura para o Admin. Um GitHub App instalada **somente** em `osvaldosereia/SUCEDOAN12`, com `Contents: Read and write` e `Metadata: Read-only`, é necessária apenas se o operador alterar e salvar a composição de cestas ou os rascunhos Flow. A chave privada deve ser guardada como secret server-side; não salvar o arquivo da chave no checkout.
 
 Os secrets server-side esperados são `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_PRIVATE_KEY`, `ADMIN_ALLOWED_USER_IDS` e `ADMIN_ALLOWED_ORIGINS`. Depois do primeiro login, `ADMIN_ALLOWED_USER_IDS` deve conter o UUID do operador em `auth.users`; `ADMIN_ALLOWED_ORIGINS` deve listar `https://donaantonia.com.br` e `http://127.0.0.1:5173` somente durante desenvolvimento. CORS recebe a origem, sem o caminho `/whatsapp-admin/`.
 

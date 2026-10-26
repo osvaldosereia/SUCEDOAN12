@@ -2,17 +2,17 @@ import postgres, { type Sql } from "npm:postgres@3.4.7";
 import { recordProviderStatus, validProviderMessageId, type ProviderDeliveryStatus } from "../_shared/outbox-status.ts";
 import { metaAppSecret } from "../_shared/meta-config.ts";
 import { supabaseSecretKey } from "../_shared/supabase-api-keys.ts";
+import { catalogRevision, readSupabaseBasketProducts } from "../_shared/catalog-source.ts";
 import { validateCatalog, type Basket, type CatalogDocuments } from "../../../src/domain/catalog.ts";
 import { type WhatsAppChannel, whatsappChannelFromAccountSlug } from "../../../src/domain/channels.ts";
 import { FlowSelectionError, quoteBasket, type BasketSelections } from "../../../src/domain/flow-runtime.ts";
 import { wakeOutboxWorker } from "../_shared/outbox-dispatch.ts";
-import { decrementGitHubStockForConfirmation } from "../_shared/github-stock.ts";
 import { CHECKOUT_ACTION_PREFIX, CHECKOUT_BASKET_REPLY_PREFIX, isCheckoutStartText } from "../_shared/checkout-routing.ts";
 
 const OWNER = "osvaldosereia";
 const REPOSITORY = "SUCEDOAN12";
 const BRANCH = "project/whatsapp-atendimento-github-20261025";
-const CATALOG_PATH = "projetos/whatsapp-atendimento-github/catalog";
+const BASKETS_PATH = "projetos/whatsapp-atendimento-github/catalog/baskets.json";
 const BODY_LIMIT = 1024 * 1024;
 type Channel = WhatsAppChannel;
 
@@ -69,7 +69,6 @@ class WebhookError extends Error {
 }
 
 let database: Sql | null = null;
-const catalogCache = new Map<string, Promise<CatalogSnapshot>>();
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -150,40 +149,18 @@ function phoneE164(value: unknown): string {
 
 async function catalogAt(commit: string): Promise<CatalogSnapshot> {
   if (!/^[a-f0-9]{40}$/i.test(commit)) throw new WebhookError(409, "A revisão fixada do catálogo é inválida.");
-  const cached = catalogCache.get(commit);
-  if (cached) return cached;
-  const snapshot = (async () => {
-    const ref = encodeURIComponent(commit);
-    const root = `https://api.github.com/repos/${OWNER}/${REPOSITORY}/contents/${CATALOG_PATH}`;
-    const headers = { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
-    const [productsResponse, basketsResponse] = await Promise.all([
-      fetch(`${root}/products.json?ref=${ref}`, { headers, signal: AbortSignal.timeout(3000) }),
-      fetch(`${root}/baskets.json?ref=${ref}`, { headers, signal: AbortSignal.timeout(3000) }),
-    ]);
-    if (!productsResponse.ok || !basketsResponse.ok) throw new WebhookError(503, "O catálogo atual não está disponível.");
-    const [productsFile, basketsFile] = await Promise.all([
-      productsResponse.json() as Promise<{ content: string; sha: string; _links?: { git?: string } }>,
-      basketsResponse.json() as Promise<{ content: string; sha: string; _links?: { git?: string } }>,
-    ]);
-    if (!/^[a-f0-9]{40}$/i.test(productsFile.sha) || !/^[a-f0-9]{40}$/i.test(basketsFile.sha)) {
-      throw new WebhookError(503, "Os hashes dos documentos do catálogo são inválidos.");
-    }
-    const [products, baskets] = [
-      JSON.parse(new TextDecoder().decode(bytesFromBase64(productsFile.content))),
-      JSON.parse(new TextDecoder().decode(bytesFromBase64(basketsFile.content))),
-    ];
-    const documents = { products, baskets } as CatalogDocuments;
-    if (validateCatalog(documents).length) throw new WebhookError(503, "O catálogo não passou pela validação de servidor.");
-    return { documents, commit, revision: `${productsFile.sha}:${basketsFile.sha}` };
-  })();
-  catalogCache.set(commit, snapshot);
-  if (catalogCache.size > 4) catalogCache.delete(catalogCache.keys().next().value as string);
-  try {
-    return await snapshot;
-  } catch (error) {
-    catalogCache.delete(commit);
-    throw error;
-  }
+  const response = await fetch(`https://api.github.com/repos/${OWNER}/${REPOSITORY}/contents/${BASKETS_PATH}?ref=${encodeURIComponent(commit)}`, {
+    headers: { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" },
+    signal: AbortSignal.timeout(3000),
+  });
+  if (!response.ok) throw new WebhookError(503, "A configuração de cestas não está disponível.");
+  const basketsFile = await response.json() as { content: string; sha: string };
+  if (!/^[a-f0-9]{40}$/i.test(basketsFile.sha)) throw new WebhookError(503, "A revisão das cestas é inválida.");
+  const baskets = JSON.parse(new TextDecoder().decode(bytesFromBase64(basketsFile.content)));
+  const products = await readSupabaseBasketProducts(getDatabase(), baskets);
+  const documents = { products, baskets } as CatalogDocuments;
+  if (validateCatalog(documents).length) throw new WebhookError(503, "O catálogo Supabase não passou pela validação de servidor.");
+  return { documents, commit, revision: await catalogRevision(products, basketsFile.sha) };
 }
 
 async function currentCatalog(): Promise<CatalogSnapshot> {
@@ -554,11 +531,6 @@ async function confirmDraft(tx: Sql, channel: Channel, phone: string, draftId: s
   }) : [];
   if (!stockItems.length || stockItems.length !== (Array.isArray(snapshot.items) ? snapshot.items.length : 0)) {
     throw new WebhookError(409, "Os itens confirmados não correspondem ao contrato de estoque.");
-  }
-  try {
-    await decrementGitHubStockForConfirmation(draft.id, stockItems);
-  } catch {
-    throw new WebhookError(503, "O estoque GitHub não pôde ser atualizado agora. A confirmação será repetida com segurança.");
   }
   const total = Number(snapshot.totalCents);
   const created = await tx<{ id: string }>`

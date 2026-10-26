@@ -2,6 +2,7 @@ import postgres, { type Sql } from "npm:postgres@3.4.7";
 import { wakeOutboxWorker } from "../_shared/outbox-dispatch.ts";
 import { flowEndpointUri, flowPrivateKey, metaAccessToken, metaGraphVersion } from "../_shared/meta-config.ts";
 import { supabasePublishableKey, supabaseSecretKey } from "../_shared/supabase-api-keys.ts";
+import { catalogRevision, productIdsFromBaskets, readSupabaseBasketProducts } from "../_shared/catalog-source.ts";
 import {
   classifyBlingSaleReconciliation,
   reconcileBlingCommercialTotals,
@@ -23,9 +24,7 @@ import {
 const OWNER = "osvaldosereia";
 const REPOSITORY = "SUCEDOAN12";
 const BRANCH = "project/whatsapp-atendimento-github-20261025";
-const PRODUCTS_PATH = "projetos/whatsapp-atendimento-github/catalog/products.json";
 const BASKETS_PATH = "projetos/whatsapp-atendimento-github/catalog/baskets.json";
-const IMAGE_PREFIX = "projetos/whatsapp-atendimento-github/images/products/";
 const FLOWS_PATH = "projetos/whatsapp-atendimento-github/flows";
 const GITHUB_API = "https://api.github.com";
 const GITHUB_API_VERSION = "2022-11-28";
@@ -63,6 +62,7 @@ interface ImageInput {
 
 interface SaveInput {
   expectedCommit: string;
+  expectedRevision: string;
   products: CatalogDocuments["products"];
   baskets: CatalogDocuments["baskets"];
   images?: ImageInput[];
@@ -489,12 +489,9 @@ async function installationToken(permission: "read" | "write"): Promise<string> 
 }
 
 async function publicCatalogReadToken(): Promise<string> {
-  try {
-    return await installationToken("read");
-  } catch (error) {
-    if (error instanceof HttpError && error.status === 503) return "";
-    throw error;
-  }
+  // The project repository is public. Reads must not depend on GitHub App secrets;
+  // the App token is acquired only for basket or Flow writes.
+  return "";
 }
 
 async function githubJson<T>(path: string, token: string, init?: RequestInit): Promise<T> {
@@ -526,17 +523,14 @@ async function readCatalog(token: string, expectedHead?: string) {
     throw new HttpError(409, "O branch mudou desde que você abriu o catálogo. Recarregue para evitar sobrescrever outra edição.");
   }
   const ref = new URLSearchParams({ ref: commitSha }).toString();
-  const [productsFile, basketsFile] = await Promise.all([
-    githubJson<{ content: string; sha: string }>(repositoryPath(`/contents/${PRODUCTS_PATH}?${ref}`), token),
-    githubJson<{ content: string; sha: string }>(repositoryPath(`/contents/${BASKETS_PATH}?${ref}`), token),
-  ]);
-  const products = JSON.parse(decodeFileContent(productsFile.content));
+  const basketsFile = await githubJson<{ content: string; sha: string }>(repositoryPath(`/contents/${BASKETS_PATH}?${ref}`), token);
   const baskets = JSON.parse(decodeFileContent(basketsFile.content));
+  const products = await readSupabaseBasketProducts(ordersDb(), baskets);
   return {
     products,
     baskets,
     commitSha,
-    catalogRevision: `${productsFile.sha}:${basketsFile.sha}`,
+    catalogRevision: await catalogRevision(products, basketsFile.sha),
     commitUrl: `https://github.com/${OWNER}/${REPOSITORY}/commit/${commitSha}`,
   };
 }
@@ -700,7 +694,7 @@ function webpDimensions(bytes: Uint8Array): { width: number; height: number } {
   return dimensions;
 }
 
-function validateImage(image: ImageInput, documents: CatalogDocuments): { path: string; contentBase64: string } {
+function validateImage(image: ImageInput, documents: CatalogDocuments): { productId: string; contentBase64: string; bytes: Uint8Array } {
   if (!image || typeof image !== "object" || Array.isArray(image)
     || Object.keys(image).some((key) => !["productId", "contentBase64"].includes(key))
     || typeof image.productId !== "string" || typeof image.contentBase64 !== "string") {
@@ -708,8 +702,7 @@ function validateImage(image: ImageInput, documents: CatalogDocuments): { path: 
   }
   if (!/^[0-9a-f-]{36}$/i.test(image.productId)) throw new HttpError(400, "Identificador da foto inválido.");
   const product = documents.products.products.find((item) => item.id === image.productId);
-  const expectedPath = `images/products/${image.productId}.webp`;
-  if (!product || product.imagePath !== expectedPath) throw new HttpError(400, "A foto precisa pertencer a um produto do catálogo.");
+  if (!product) throw new HttpError(400, "A foto precisa pertencer a um produto do catálogo.");
   if (!/^[A-Za-z0-9+/]+={0,2}$/.test(image.contentBase64)) throw new HttpError(400, "A foto WebP não pôde ser lida.");
 
   let bytes: Uint8Array;
@@ -721,7 +714,7 @@ function validateImage(image: ImageInput, documents: CatalogDocuments): { path: 
   if (bytes.length < 16 || bytes.length > MAX_IMAGE_BYTES) throw new HttpError(400, "A foto deve ter até 27 KB.");
   const { width, height } = webpDimensions(bytes);
   if (width !== 240 || height !== 190) throw new HttpError(400, "A foto precisa ter exatamente 240 × 190 pixels.");
-  return { path: `${IMAGE_PREFIX}${image.productId}.webp`, contentBase64: image.contentBase64 };
+  return { productId: image.productId, contentBase64: image.contentBase64, bytes };
 }
 
 async function createBlob(contentBase64: string, token: string): Promise<string> {
@@ -739,6 +732,24 @@ function encodeBase64(text: string): string {
   return btoa(binary);
 }
 
+async function uploadProductImage(productId: string, bytes: Uint8Array): Promise<string> {
+  const base = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "");
+  const apiKey = supabaseSecretKey();
+  if (!base || !apiKey) throw new HttpError(503, "O armazenamento privado de imagens do Supabase não está configurado.");
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", asArrayBuffer(bytes)));
+  const sha = [...digest].map((value) => value.toString(16).padStart(2, "0")).join("");
+  const objectPath = `whatsapp-admin/${productId}/${sha}.webp`;
+  const encodedPath = objectPath.split("/").map(encodeURIComponent).join("/");
+  const response = await fetch(`${base}/storage/v1/object/product-images/${encodedPath}`, {
+    method: "POST",
+    headers: { apikey: apiKey, Authorization: `Bearer ${apiKey}`, "Content-Type": "image/webp", "x-upsert": "true" },
+    body: asArrayBuffer(bytes),
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!response.ok) throw new HttpError(502, "Não foi possível salvar a imagem no bucket product-images do Supabase.");
+  return `${base}/storage/v1/object/public/product-images/${encodedPath}`;
+}
+
 async function writeCatalog(input: SaveInput, token: string) {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
     throw new HttpError(400, "O catálogo enviado não tem o formato esperado.");
@@ -746,63 +757,112 @@ async function writeCatalog(input: SaveInput, token: string) {
   if (!input.expectedCommit || typeof input.expectedCommit !== "string") {
     throw new HttpError(400, "A revisão do catálogo é obrigatória para salvar.");
   }
-  if (Object.keys(input).some((key) => !["expectedCommit", "products", "baskets", "images"].includes(key))) {
+  if (Object.keys(input).some((key) => !["expectedCommit", "expectedRevision", "products", "baskets", "images"].includes(key))) {
     throw new HttpError(400, "A solicitação contém campos não permitidos.");
   }
-  if (!/^[0-9a-f]{40}$/i.test(input.expectedCommit)) throw new HttpError(400, "A revisão do catálogo é inválida.");
-  if (Object.keys(input).some((key) => !["expectedCommit", "products", "baskets", "images"].includes(key))) {
-    throw new HttpError(400, "A solicitação contém campos não permitidos.");
+  if (!/^[0-9a-f]{40}$/i.test(input.expectedCommit)
+    || typeof input.expectedRevision !== "string" || !/^[0-9a-f]{40}:[0-9a-f]{40}$/i.test(input.expectedRevision)) {
+    throw new HttpError(400, "A revisão do catálogo é inválida.");
   }
-  if (!/^[0-9a-f]{40}$/i.test(input.expectedCommit)) throw new HttpError(400, "A revisão do catálogo é inválida.");
   const documents: CatalogDocuments = { products: input.products, baskets: input.baskets };
   const validationErrors = validateCatalog(documents);
   if (validationErrors.length) throw new HttpError(422, `Revise o catálogo: ${validationErrors.slice(0, 5).join("; ")}`);
   const headSha = await branchHead(token);
   if (headSha !== input.expectedCommit) throw new HttpError(409, "O branch mudou desde que você abriu o catálogo. Recarregue antes de salvar.");
+  const current = await readCatalog(token, headSha);
+  if (current.catalogRevision !== input.expectedRevision) {
+    throw new HttpError(409, "Produtos ou cestas mudaram desde a abertura. Recarregue o catálogo antes de salvar.");
+  }
+  const basketsChanged = JSON.stringify(current.baskets) !== JSON.stringify(input.baskets);
+  const writeToken = basketsChanged ? await installationToken("write") : "";
 
   if (input.images !== undefined && (!Array.isArray(input.images) || input.images.length > MAX_PENDING_IMAGES)) {
     throw new HttpError(400, "A quantidade de fotos excede o limite permitido.");
   }
   const images = (input.images ?? []).map((image) => validateImage(image, documents));
-  if (new Set(images.map((image) => image.path)).size !== images.length) throw new HttpError(400, "Há fotos duplicadas nesta gravação.");
-  const files: Array<{ path: string; content: string }> = [
-    { path: PRODUCTS_PATH, content: `${JSON.stringify(input.products, null, 2)}\n` },
-    { path: BASKETS_PATH, content: `${JSON.stringify(input.baskets, null, 2)}\n` },
-  ];
-  files.push(...images.map((image) => ({ path: image.path, content: image.contentBase64 })));
+  if (new Set(images.map((image) => image.productId)).size !== images.length) throw new HttpError(400, "Há fotos duplicadas nesta gravação.");
+  const referencedProductIds = productIdsFromBaskets(input.baskets);
+  const currentProducts = new Map(current.products.products.map((product) => [product.id, product]));
+  const inputProducts = new Map(input.products.products.map((product) => [product.id, product]));
+  const referencedIds = new Set(referencedProductIds);
+  const uploadedImages = new Map<string, string>();
+  for (const image of images) {
+    if (!currentProducts.has(image.productId) || !referencedIds.has(image.productId)) {
+      throw new HttpError(400, "Só é possível trocar a foto de produtos do recorte atual das cestas.");
+    }
+    uploadedImages.set(image.productId, await uploadProductImage(image.productId, image.bytes));
+  }
 
-  const treeEntries = await Promise.all(files.map(async (file) => ({
-    path: file.path,
+  await ordersDb().begin(async (tx) => {
+    for (const id of referencedProductIds) {
+      const product = inputProducts.get(id);
+      const existing = currentProducts.get(id);
+      if (!product || !existing) {
+        throw new HttpError(400, "As cestas só podem usar produtos já cadastrados no recorte carregado do Supabase.");
+      }
+      const imageUrl = uploadedImages.get(id) ?? existing.imageUrl;
+      const changed = product.name.trim() !== existing.name
+        || product.brand.trim() !== existing.brand
+        || product.presentation.trim() !== existing.presentation
+        || product.unitPriceCents !== existing.unitPriceCents
+        || product.sku !== existing.sku
+        || product.gtin !== existing.gtin
+        || product.blingProductId !== existing.blingProductId
+        || product.active !== existing.active
+        || imageUrl !== existing.imageUrl;
+      if (!changed) continue;
+      const updated = await tx<{ id: string }>`
+        update public.products
+        set name = ${product.name.trim()},
+            brand = ${product.brand.trim()},
+            packaging = ${product.presentation.trim()},
+            price = ${(product.unitPriceCents / 100).toFixed(2)},
+            image_url = ${imageUrl || null},
+            sku = ${product.sku},
+            gtin = ${product.gtin},
+            bling_product_id = ${product.blingProductId}::bigint,
+            is_whatsapp_active = ${product.active},
+            updated_at = now()
+        where id = ${id}::uuid
+        returning id::text as id
+      `;
+      if (!updated.length) throw new HttpError(409, "Um produto deixou de existir no Supabase; o cadastro não foi removido.");
+    }
+  });
+
+  if (!basketsChanged) {
+    const refreshed = await readCatalog(token, headSha);
+    return { ...refreshed, commitUrl: `https://github.com/${OWNER}/${REPOSITORY}/commit/${headSha}`, basketsCommitCreated: false };
+  }
+
+  const basketsContent = `${JSON.stringify(input.baskets, null, 2)}\n`;
+  const treeEntries = [{
+    path: BASKETS_PATH,
     mode: "100644",
     type: "blob",
-    sha: await createBlob(file.path.startsWith(IMAGE_PREFIX) ? file.content : encodeBase64(file.content), token),
-  })));
+    sha: await createBlob(encodeBase64(basketsContent), writeToken),
+  }];
 
-  const parent = await githubJson<{ tree: { sha: string } }>(repositoryPath(`/git/commits/${headSha}`), token);
-  const tree = await githubJson<{ sha: string }>(repositoryPath("/git/trees"), token, {
+  const parent = await githubJson<{ tree: { sha: string } }>(repositoryPath(`/git/commits/${headSha}`), writeToken);
+  const tree = await githubJson<{ sha: string }>(repositoryPath("/git/trees"), writeToken, {
     method: "POST",
     body: JSON.stringify({ base_tree: parent.tree.sha, tree: treeEntries }),
   });
-  const commit = await githubJson<{ sha: string; html_url: string }>(repositoryPath("/git/commits"), token, {
+  const commit = await githubJson<{ sha: string; html_url: string }>(repositoryPath("/git/commits"), writeToken, {
     method: "POST",
     body: JSON.stringify({
-      message: "admin: atualizar catálogo de atendimento",
+      message: "admin: atualizar configuração das cestas de atendimento",
       tree: tree.sha,
       parents: [headSha],
     }),
   });
-  await githubJson(repositoryPath(`/git/refs/heads/${BRANCH}`), token, {
+  await githubJson(repositoryPath(`/git/refs/heads/${BRANCH}`), writeToken, {
     method: "PATCH",
     body: JSON.stringify({ sha: commit.sha, force: false }),
   });
 
-  return {
-    products: input.products,
-    baskets: input.baskets,
-    commitSha: commit.sha,
-    commitUrl: commit.html_url,
-    catalogRevision: `${treeEntries[0].sha}:${treeEntries[1].sha}`,
-  };
+  const refreshed = await readCatalog(writeToken, commit.sha);
+  return { ...refreshed, commitUrl: commit.html_url, basketsCommitCreated: true };
 }
 
 function ordersDb(): Sql {
@@ -1589,13 +1649,12 @@ async function catalogAt(commit: string): Promise<CatalogDocuments> {
   if (!/^[0-9a-f]{40}$/i.test(commit)) throw new HttpError(409, "A revisão de catálogo do pedido é inválida.");
   const token = await publicCatalogReadToken();
   const ref = new URLSearchParams({ ref: commit });
-  const [productsFile, basketsFile] = await Promise.all([
-    githubJson<{ content: string }>(repositoryPath(`/contents/${PRODUCTS_PATH}?${ref}`), token),
-    githubJson<{ content: string }>(repositoryPath(`/contents/${BASKETS_PATH}?${ref}`), token),
-  ]);
+  const basketsFile = await githubJson<{ content: string }>(repositoryPath(`/contents/${BASKETS_PATH}?${ref}`), token);
   let documents: CatalogDocuments;
   try {
-    documents = { products: JSON.parse(decodeFileContent(productsFile.content)), baskets: JSON.parse(decodeFileContent(basketsFile.content)) };
+    const baskets = JSON.parse(decodeFileContent(basketsFile.content));
+    const products = await readSupabaseBasketProducts(ordersDb(), baskets);
+    documents = { products, baskets };
   } catch { throw new HttpError(502, "O catálogo fixado pelo pedido não pôde ser lido."); }
   const errors = validateCatalog(documents);
   if (errors.length) throw new HttpError(502, "O catálogo fixado pelo pedido não passou na validação.");
@@ -3472,7 +3531,7 @@ Deno.serve(async (request) => {
       } catch {
         throw new HttpError(400, "O conteúdo enviado não é JSON válido.");
       }
-      const token = await installationToken("write");
+      const token = await publicCatalogReadToken();
       return jsonResponse(await writeCatalog(input, token), 200, headers);
     }
     const flowMatch = url.pathname.match(new RegExp(`\\/flow-drafts\\/(${CHANNEL_PATTERN})$`));
