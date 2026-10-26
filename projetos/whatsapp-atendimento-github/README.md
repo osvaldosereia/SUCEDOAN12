@@ -8,7 +8,7 @@ Este é o único diretório de código do projeto novo: `projetos/whatsapp-atend
 
 ## Etapa atual
 
-Rodada 1: catálogo e imagens iniciais em [catalog/](catalog/), com tipos e validação em [src/domain/catalog.ts](src/domain/catalog.ts). A origem e os limites da importação estão documentados em [CONTRACTS.md](CONTRACTS.md). Não há tela, runtime, migration, credencial configurada ou chamada de produção.
+Rodada 2: Admin novo para editar produtos e cestas, pré-visualizar alterações e registrar um único commit no branch do projeto. A base de dados inicial está em [catalog/](catalog/); tipos e validação ficam em [src/domain/catalog.ts](src/domain/catalog.ts). O app e a API foram escritos do zero.
 
 ## Regras de segurança
 
@@ -18,6 +18,8 @@ Rodada 1: catálogo e imagens iniciais em [catalog/](catalog/), com tipos e vali
 - Nenhum token de escrita do GitHub, chave Meta/Bling ou chave `service_role` pode aparecer no navegador.
 - As gravações de catálogo ficam limitadas à branch `project/whatsapp-atendimento-github-20261025`.
 - Não publicar Flow, enviar mensagem real, implantar função ou mudar produção durante desenvolvimento.
+- O acesso de gravação exige GitHub OAuth pelo Supabase Auth, UUID em allowlist server-side e GitHub App. Sem configuração completa, o app opera em prévia local e a API recusa ações.
+- A API valida a sessão a cada chamada, exige identidade GitHub e só emite tokens temporários do GitHub App para este repositório. O navegador nunca recebe essa credencial.
 
 ## Organização prevista
 
@@ -27,6 +29,28 @@ Rodada 1: catálogo e imagens iniciais em [catalog/](catalog/), com tipos e vali
 - `supabase/functions/`: funções novas deste projeto, isoladas das funções existentes.
 - `supabase/migrations/`: modelo transacional novo, somente depois de o contrato de checkout ser fechado.
 - `catalog/` e `images/`: catálogo público e imagens compactadas, a partir da Rodada 1.
+
+## Rodar a prévia local
+
+Requisitos: Node.js 22 ou mais recente e pnpm.
+
+```sh
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+Sem configuração, o app abre em prévia local com o catálogo versionado no checkout. Edições ficam somente na memória do navegador. Para login, copie os valores `VITE_*` de `.env.example` para `.env.local`, configure o provedor GitHub no Supabase Auth e permita o endereço local na lista de redirects do Supabase. A URL da Edge Function é derivada de `VITE_SUPABASE_URL`, impedindo que a sessão seja enviada a outro host por configuração acidental. Essas configurações externas não foram alteradas.
+
+Para habilitar gravações na homologação, configure **somente como segredos da Edge Function** `whatsapp-admin-api`:
+
+- `ADMIN_ALLOWED_USER_IDS`: UUIDs de `auth.users.id` autorizados, separados por vírgula;
+- `ADMIN_ALLOWED_ORIGINS`: origens web explícitas permitidas, separadas por vírgula;
+- `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID` e `GITHUB_PRIVATE_KEY` do GitHub App instalado somente em `osvaldosereia/SUCEDOAN12`;
+- `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY` (ou `SUPABASE_ANON_KEY`) disponíveis no runtime da função.
+
+Não coloque os segredos acima em `.env.local`, em variável `VITE_*` ou em commit. A função mantém `verify_jwt = true`, confere também o UUID e a identidade GitHub no Supabase Auth, e limita leitura/escrita aos documentos de `catalog/` e imagens em `images/products/`. Escritas usam revisão esperada do branch, validação do catálogo e commit atômico. A foto escolhida no editor é convertida no navegador para WebP 240×190 com limite de 27 KB.
+
+Esta entrega não configura OAuth/allowlist/GitHub App, não executa deploy, não publica Flow e não envia mensagens. Até homologação do servidor, a gravação administrativa permanece indisponível.
 
 ## Catálogo inicial
 

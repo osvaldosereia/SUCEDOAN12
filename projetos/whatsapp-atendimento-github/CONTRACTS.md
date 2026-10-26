@@ -215,3 +215,15 @@ Os nomes abaixo são referências para configuração; não contêm nem confirma
 5. Fechar o contrato de migration própria quando a jornada de checkout estiver pronta.
 
 Até esses itens serem verificados, não há login administrativo pronto para uso, integração live validada nem autorização para operar clientes.
+
+## 9. Rodada 2 — Admin de catálogo
+
+Implementação nova em `src/admin/` com Vite e TypeScript. O login usa GitHub OAuth pelo Supabase Auth (`signInWithOAuth`); não existe formulário ou senha própria. Sem variáveis públicas de Supabase, o app mostra os arquivos locais somente em prévia, mantendo as edições em memória.
+
+A Edge Function `supabase/functions/whatsapp-admin-api/` mantém `verify_jwt = true`. Em cada requisição, valida o token no endpoint de usuário do Supabase, exige uma identidade de provedor GitHub e compara o UUID autenticado com `ADMIN_ALLOWED_USER_IDS`. A allowlist vazia, origem ausente/não permitida ou configuração Supabase incompleta bloqueia a operação.
+
+O backend cria um token temporário do GitHub App, solicitando `Contents: read` para leitura e `Contents: write` apenas para gravação. O repositório, branch e diretórios são constantes do servidor. A leitura inclui os documentos e SHA atual do branch. A gravação valida o catálogo com chaves permitidas, exige `expectedCommit`, aceita as fotos WebP pendentes dos produtos editados e cria um commit que atualiza os JSONs e as fotos na mesma árvore. Se o branch divergir da revisão recebida, responde `409` sem atualizar a referência.
+
+O app converte fotos escolhidas pelo operador para WebP 240×190 e até 27 KB; o backend revalida Base64, estrutura RIFF/WebP, dimensões e tamanho. Não há exclusão automática de arquivos de imagem antigos. A prévia comercial mostra o `basePriceCents` já cadastrado e as opções por tipo; nenhum ajuste interno é armazenado ou calculado no navegador.
+
+Dependências externas seguem versões fixas no `package.json` e lockfile pnpm. O provedor OAuth, allowlist, GitHub App e origens permitidas permanecem sem configuração confirmada. Nenhum secret foi criado/lido, nenhuma função foi implantada, nenhuma alteração Supabase foi feita, e não houve chamada Meta/Bling, publicação de Flow ou mensagem real.
