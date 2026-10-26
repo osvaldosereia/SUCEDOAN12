@@ -695,3 +695,28 @@ O usuário determinou que o trabalho de código seja feito diretamente no GitHub
 Commits de código: `3dd5d552240d68a0a260e89f52706e5472e3e5ed` e `213ca599ab283451fd4354eb7e7e6dc38441d58e`. O workflow GitHub `Publish WhatsApp Atendimento Admin` executou os builds e publicou os dois commits com sucesso (runs `40372897964` e `40372917424`). O `whatsapp-admin/index.html` do `main` agora referencia `assets/index-x4meayBC.js`, e a leitura remota do asset confirmou as três mensagens atualizadas. Nenhum arquivo foi editado localmente, nenhum magic link novo foi enviado, nenhuma credencial foi lida e nenhuma operação Meta ocorreu.
 
 A autenticação continua sendo a sessão Supabase já existente porque as rotas administrativas protegem leituras e escritas; isso não exige novo login enquanto essa sessão permanece ativa. O projeto segue sem rodadas periódicas. Próxima ação técnica autorizada: usar no painel publicado a sessão existente para consultar/configurar a chave pública Meta individualmente nos dois números; não publicar Flow ou enviar mensagens.
+
+## Procedimento de execução acordado com o usuário — 26/10/2026
+
+### Ordem das fontes
+
+1. A decisão mais recente do usuário prevalece sobre texto histórico neste arquivo e nos planos; registrar a decisão nova antes de continuar.
+2. Para saber o que o código faz, consultar a branch atual, PR/Actions e o asset publicado; não concluir a partir de preview antigo ou de anotações sem conferir SHA/estado.
+3. Antes de declarar dependência Supabase, conferir funções implantadas/versões, migrations e objetos de schema relevantes. Conferir secrets somente por nomes/presença quando a ferramenta permitir; nunca pedir ou imprimir valores que já existem, ler PII, nem tratar acesso ao Dashboard como prova de falta de credenciais.
+4. Consultar a implementação Vitrine somente para identificar comportamento e aliases server-side existentes; usar documentação oficial atual para contratos Meta, Supabase, GitHub e Bling quando relevantes. Não copiar código, UI, schema, RPC ou contrato.
+
+### Ciclo de trabalho
+
+- Fazer alterações diretamente na branch/repositório GitHub e nas funções/migrations Supabase autorizadas; não desenvolver no checkout da máquina do usuário.
+- Antes de alegar bloqueio, buscar evidência atual nos conectores, no código e nos logs pertinentes; separar “não encontrei na consulta” de “não existe”. Apresentar uma dependência manual somente depois de esgotar a ação remota autorizada e descrever uma ação objetiva.
+- Cada avanço deve ser uma mudança completa e pequena. Verificar build/type-check e o workflow GitHub que publica o Admin; para Supabase, registrar versão/hash da função implantada e resultado do preflight. Não iniciar ciclos repetidos de teste sem mudança; testes automatizados seguem fora do escopo, e nenhuma mensagem/pedido real é teste.
+- Registrar no HANDOFF commit, execução de CI/publicação e o próximo passo operacional real. Não agendar rodadas periódicas; cada solicitação “continue” retoma diretamente desta anotação.
+- Não gerar novo magic link quando a sessão existente estiver ativa (email visível no topo e botão Sair). Não publicar Flow, enviar mensagens reais, trocar callback Meta, escrever no Bling ou emitir NF-e sem autorização operacional específica. A autorização já dada para registrar chave pública Meta limita-se a essa configuração por canal.
+
+### Estado remoto conferido nesta atualização
+
+- Branch `project/whatsapp-atendimento-github-20261025`: HEAD `2d3fd5dd02a7227b6dc5934285326c7ce6221946` antes deste registro.
+- As cinco funções do projeto estão ACTIVE: `whatsapp-admin-api` v3, `whatsapp-flow-runtime` v3 e checkout/router/outbox v1. Os cinco hashes ficam no registro de deploy acima.
+- Migrations próprias `whatsapp_flow_sessions`, `whatsapp_checkout`, `whatsapp_order_operations_bling` e `whatsapp_channel_flow_bindings` aparecem aplicadas no Supabase.
+- Build/publicação do texto atualizado do Admin terminou success nos runs `40372897964` e `40372917424`; asset ativo confirmado como `index-x4meayBC.js`.
+- Pendência real verificada: a configuração pública de criptografia ainda não foi executada para os dois canais. Os aliases Meta já aparecem no código Vitrine e no runtime novo; não pedir credencial Meta adicional. A chave pública ainda exige a operação Meta autenticada, sem publicar Flow.
