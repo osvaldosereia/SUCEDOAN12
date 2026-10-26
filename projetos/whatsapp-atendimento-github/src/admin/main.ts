@@ -1,6 +1,8 @@
 import { createClient, type Session } from "@supabase/supabase-js";
 import initialProducts from "../../catalog/products.json";
 import initialBaskets from "../../catalog/baskets.json";
+import initialFlow0975 from "../../flows/channel-0975.json";
+import initialFlow1018 from "../../flows/channel-1018.json";
 import {
   validateCatalog,
   type Basket,
@@ -10,7 +12,18 @@ import {
   type Product,
   type ProductsDocument,
 } from "../domain/catalog";
-import { AdminApiError, getCatalog, saveCatalog, type PendingImage } from "./api";
+import {
+  FLOW_CHANNELS,
+  flowNameForBasket,
+  flowQuantityField,
+  generateBasketFlow,
+  validateChannelFlowDocument,
+  type BasketFlowDraft,
+  type ChannelFlowDocument,
+  type FlowChannel,
+} from "../domain/flows";
+import { AdminApiError, getCatalog, getFlowDraft, saveCatalog, saveFlowDraft, type PendingImage } from "./api";
+import { renderFlowsPanel } from "./flows-panel";
 import "./styles.css";
 
 const app = document.querySelector<HTMLDivElement>("#app");
@@ -28,6 +41,11 @@ const initialDocuments: CatalogDocuments = {
   products: initialProducts as ProductsDocument,
   baskets: initialBaskets as BasketsDocument,
 };
+const initialFlowDocuments: Record<FlowChannel, ChannelFlowDocument> = {
+  "0975": initialFlow0975 as ChannelFlowDocument,
+  "1018": initialFlow1018 as ChannelFlowDocument,
+};
+const initialFlowBasket = initialDocuments.baskets.baskets.find((basket) => basket.active);
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -40,20 +58,27 @@ const state = {
   baskets: structuredClone(initialDocuments.baskets),
   baseline: JSON.stringify(initialDocuments),
   commitSha: "",
+  catalogRevision: "",
   commitUrl: "",
   session: null as Session | null,
   access: "preview" as "preview" | "loading" | "authorized" | "denied",
   accessMessage: "Prévia local: alterações ficam apenas nesta sessão do navegador.",
   busy: false,
-  tab: "products" as "products" | "baskets",
+  tab: "products" as "products" | "baskets" | "flows",
   search: "",
   selectedBasketId: initialDocuments.baskets.baskets[0]?.id ?? "",
+  flowDocuments: structuredClone(initialFlowDocuments),
+  flowChannel: "0975" as FlowChannel,
+  flowBasketId: initialFlowBasket?.id ?? "",
+  flowName: initialFlowBasket ? flowNameForBasket(initialFlowBasket) : "cesta-atendimento",
+  flowQuantities: new Map<string, number>(),
+  flowReviewDocument: null as ChannelFlowDocument | null,
   pendingImages: new Map<string, PendingImage>(),
   editorImage: null as PendingImage | null,
   editorImageProductId: "",
   conflict: false,
   optionEditor: null as { groupIndex: number; optionIds: string[]; search: string } | null,
-  modalKind: null as "product" | "options" | "review" | null,
+  modalKind: null as "product" | "options" | "review" | "flow-review" | null,
   notice: "",
   noticeType: "info" as "info" | "success" | "error",
 };
@@ -105,6 +130,109 @@ function currentDocuments(): CatalogDocuments {
 
 function isDirty(): boolean {
   return JSON.stringify(currentDocuments()) !== state.baseline || state.pendingImages.size > 0 || Boolean(state.editorImage);
+}
+
+function selectedFlowBasket(): Basket | undefined {
+  return state.baskets.baskets.find((basket) => basket.id === state.flowBasketId && basket.active);
+}
+
+function updateFlowQuantitiesSummary(): void {
+  const basket = selectedFlowBasket();
+  if (!basket) return;
+  basket.groups.forEach((group, groupIndex) => {
+    const options = [...new Set(group.productIds)];
+    const total = options.reduce((sum, _id, productIndex) =>
+      sum + (state.flowQuantities.get(`${basket.id}:${flowQuantityField(groupIndex, productIndex)}`) ?? 0), 0);
+    const target = document.querySelector<HTMLElement>(`[data-flow-group-count="${groupIndex}"]`);
+    if (!target) return;
+    const inRange = total >= group.minimumQuantity && total <= group.maximumQuantity;
+    target.textContent = `Total escolhido: ${total} · ${inRange ? "dentro do limite" : `requer ${group.minimumQuantity}–${group.maximumQuantity}`}`;
+    target.classList.toggle("is-valid", inRange);
+    target.classList.toggle("is-invalid", !inRange);
+  });
+}
+
+function currentFlowDraft(): BasketFlowDraft | null {
+  const basket = selectedFlowBasket();
+  if (!basket) return null;
+  return {
+    flowName: state.flowName.trim(),
+    basketId: basket.id,
+    catalogRevision: state.catalogRevision,
+    validationStatus: "local-only",
+    flowJson: generateBasketFlow(basket, state.products.products),
+  };
+}
+
+function flowDocumentWithDraft(): { document: ChannelFlowDocument | null; errors: string[]; refreshedCount: number } {
+  const draft = currentFlowDraft();
+  const basket = selectedFlowBasket();
+  if (!draft || !basket) return { document: null, errors: ["Escolha uma cesta ativa."], refreshedCount: 0 };
+  const existing = state.flowDocuments[state.flowChannel];
+  const activeBaskets = new Map(state.baskets.baskets.filter((item) => item.active).map((item) => [item.id, item]));
+  const drafts: BasketFlowDraft[] = existing.drafts.flatMap((saved) => {
+    if (saved.basketId === basket.id) return [];
+    const latestBasket = activeBaskets.get(saved.basketId);
+    if (!latestBasket) return [];
+    return [{
+      ...saved,
+      catalogRevision: state.catalogRevision,
+      validationStatus: "local-only",
+      flowJson: generateBasketFlow(latestBasket, state.products.products),
+    }];
+  });
+  drafts.push(draft);
+  const document: ChannelFlowDocument = { ...existing, drafts };
+  const errors = validateChannelFlowDocument(document, state.flowChannel, state.baskets.baskets, state.products.products, state.catalogRevision);
+  return { document, errors, refreshedCount: drafts.length - 1 };
+}
+
+function openFlowReview(): void {
+  if (isDirty()) {
+    tell("Grave primeiro as alterações de produtos e cestas para fixar a revisão usada pelo Flow.", "error");
+    return;
+  }
+  if (!state.catalogRevision || !state.commitSha) {
+    tell("Carregue a revisão atual do catálogo antes de salvar um rascunho Flow.", "error");
+    return;
+  }
+  const { document, errors, refreshedCount } = flowDocumentWithDraft();
+  const draft = currentFlowDraft();
+  const basket = selectedFlowBasket();
+  if (!document || !draft || !basket || errors.length) {
+    tell(`Revise o Flow: ${(errors.length ? errors : ["Configuração incompleta."]).slice(0, 4).join(" · ")}`, "error");
+    return;
+  }
+  state.flowReviewDocument = document;
+  openModal(`<div class="modal-card review-modal"><div class="modal-heading"><div><span class="eyebrow">Revisão antes do commit</span><h2>Salvar rascunho Flow?</h2></div><button class="icon-button" data-action="close-modal" aria-label="Fechar">×</button></div><p>O commit guardará o JSON para o canal final ${state.flowChannel}, associado à cesta ${escapeHtml(basket.name)} e à revisão de catálogo <code>${escapeHtml(state.catalogRevision.slice(0, 7))}</code>.</p>${refreshedCount ? `<p class="inline-note">${refreshedCount} outro(s) rascunho(s) deste canal será(ão) regenerado(s) para a mesma revisão do catálogo.</p>` : ""}<p class="flow-muted">A gravação não cria Flow na Meta, não publica e não envia mensagens. O status Meta permanece desconhecido.</p><div class="review-target"><span>Rascunho</span><strong>${escapeHtml(draft.flowName)}</strong><code>flows/channel-${state.flowChannel}.json</code></div><div class="modal-actions"><button class="button button-soft" data-action="close-modal">Voltar</button><button class="button button-primary" data-action="confirm-save-flow">Confirmar e gravar rascunho</button></div></div>`, "flow-review");
+}
+
+async function performFlowSave(): Promise<void> {
+  const document = state.flowReviewDocument;
+  if (state.access !== "authorized" || !state.session || !state.commitSha || !document) {
+    tell("A gravação exige sessão autorizada, revisão atual e um rascunho conferido.", "error");
+    return;
+  }
+  state.busy = true;
+  render();
+  try {
+    const snapshot = await saveFlowDraft(state.session.access_token, state.flowChannel, {
+      expectedCommit: state.commitSha,
+      document,
+    });
+    state.flowDocuments = { ...state.flowDocuments, [state.flowChannel]: snapshot.document };
+    state.commitSha = snapshot.commitSha;
+    state.commitUrl = snapshot.commitUrl;
+    state.notice = `Rascunho Flow ${state.flowChannel} gravado no commit ${snapshot.commitSha.slice(0, 7)}.`;
+    state.noticeType = "success";
+    state.flowReviewDocument = null;
+  } catch (error) {
+    state.notice = error instanceof AdminApiError ? error.message : "Falha ao gravar o rascunho Flow.";
+    state.noticeType = "error";
+  } finally {
+    state.busy = false;
+    render();
+  }
 }
 
 function accessLabel(): string {
@@ -192,6 +320,21 @@ function modalMarkup(): string {
 function render(): void {
   const selectedBasket = state.baskets.baskets.find((basket) => basket.id === state.selectedBasketId) ?? state.baskets.baskets[0];
   if (!selectedBasket && state.tab === "baskets") state.selectedBasketId = "";
+  const flowsPanel = renderFlowsPanel({
+    channel: state.flowChannel,
+    basketId: state.flowBasketId,
+    flowName: state.flowName,
+    baskets: state.baskets.baskets,
+    products: state.products.products,
+    documents: state.flowDocuments,
+    catalogRevision: state.catalogRevision,
+    catalogDirty: isDirty(),
+    authorized: state.access === "authorized",
+    busy: state.busy || state.access === "loading",
+    notice: "",
+    noticeType: "info",
+    quantities: state.flowQuantities,
+  });
   const identityLabel = state.session?.user.user_metadata?.user_name
     ?? state.session?.user.user_metadata?.preferred_username
     ?? state.session?.user.email
@@ -203,8 +346,8 @@ function render(): void {
       <div class="topbar-actions"><span class="access-status ${statusClass}"><i></i>${escapeHtml(accessLabel())}</span>${state.session ? `<span class="user-chip"><span class="user-avatar">${escapeHtml(String(identityLabel).slice(0, 1).toUpperCase())}</span>${escapeHtml(identityLabel)}</span><button class="button button-soft" data-action="sign-out">Sair</button>` : `<button class="button button-dark" data-action="sign-in" ${supabase ? "" : "disabled title=Configure%20Supabase%20em%20.env.local"}>Entrar com GitHub</button>`}</div>
     </header>
     <div class="security-banner ${state.access === "authorized" ? "is-ready" : ""}"><span class="security-icon">${state.access === "authorized" ? "✓" : "⌑"}</span><span><strong>${state.access === "authorized" ? "Acesso confirmado pelo servidor" : escapeHtml(state.accessMessage)}</strong><small>${state.access === "authorized" ? `Gravações ficam restritas ao branch project/whatsapp-atendimento-github-20261025${state.commitSha ? ` · revisão ${state.commitSha.slice(0, 7)}` : ""}.` : "Sem GitHub App, allowlist e origem configurados no servidor, nenhuma gravação será aceita."}</small></span>${state.commitUrl ? `<a class="text-link" href="${escapeHtml(state.commitUrl)}" target="_blank" rel="noreferrer">Ver commit ↗</a>` : ""}</div>
-    <div class="app-body"><aside class="main-nav"><div class="nav-label">CATÁLOGO</div><button class="nav-item ${state.tab === "products" ? "is-active" : ""}" data-action="tab" data-tab="products"><span class="nav-icon">▦</span> Produtos <span class="nav-count">${state.products.products.length}</span></button><button class="nav-item ${state.tab === "baskets" ? "is-active" : ""}" data-action="tab" data-tab="baskets"><span class="nav-icon">▤</span> Cestas <span class="nav-count">${state.baskets.baskets.length}</span></button><div class="nav-footer"><span class="nav-label">PRÓXIMAS ÁREAS</span><span class="nav-upcoming">Flows</span><span class="nav-upcoming">Pedidos</span><small>Em rodadas seguintes</small></div></aside>
-      <main class="content"><div class="content-topline"><span>Administração</span><span class="breadcrumb-sep">/</span><strong>${state.tab === "products" ? "Produtos" : "Cestas"}</strong><span class="dirty-indicator ${isDirty() ? "is-dirty" : ""}">${isDirty() ? "Alterações pendentes" : "Tudo salvo"}</span></div>${state.notice ? `<div class="notice notice-${state.noticeType}" role="status"><span>${escapeHtml(state.notice)}</span>${state.conflict ? `<div class="conflict-actions"><button class="text-button" data-action="export-draft">Baixar meu rascunho</button><button class="text-button" data-action="reload-catalog">Descartar e recarregar</button></div>` : ""}<button data-action="clear-notice" aria-label="Fechar">×</button></div>` : ""}${state.tab === "products" ? productsView() : selectedBasket ? basketEditor(selectedBasket) : `<div class="empty-state"><strong>Nenhuma cesta cadastrada</strong><span>Crie a primeira cesta para começar.</span><button class="button button-primary" data-action="new-basket">＋ Nova cesta</button></div>`}</main>
+    <div class="app-body"><aside class="main-nav"><div class="nav-label">CATÁLOGO</div><button class="nav-item ${state.tab === "products" ? "is-active" : ""}" data-action="tab" data-tab="products"><span class="nav-icon">▦</span> Produtos <span class="nav-count">${state.products.products.length}</span></button><button class="nav-item ${state.tab === "baskets" ? "is-active" : ""}" data-action="tab" data-tab="baskets"><span class="nav-icon">▤</span> Cestas <span class="nav-count">${state.baskets.baskets.length}</span></button><button class="nav-item ${state.tab === "flows" ? "is-active" : ""}" data-action="tab" data-tab="flows"><span class="nav-icon">⌁</span> Flows <span class="nav-count">${state.flowDocuments[state.flowChannel].drafts.length}</span></button><div class="nav-footer"><span class="nav-label">PRÓXIMAS ÁREAS</span><span class="nav-upcoming">Pedidos</span><small>Em rodadas seguintes</small></div></aside>
+      <main class="content"><div class="content-topline"><span>Administração</span><span class="breadcrumb-sep">/</span><strong>${state.tab === "products" ? "Produtos" : state.tab === "baskets" ? "Cestas" : "Flows"}</strong><span class="dirty-indicator ${isDirty() ? "is-dirty" : ""}">${isDirty() ? "Alterações pendentes" : "Tudo salvo"}</span></div>${state.notice ? `<div class="notice notice-${state.noticeType}" role="status"><span>${escapeHtml(state.notice)}</span>${state.conflict ? `<div class="conflict-actions"><button class="text-button" data-action="export-draft">Baixar meu rascunho</button><button class="text-button" data-action="reload-catalog">Descartar e recarregar</button></div>` : ""}<button data-action="clear-notice" aria-label="Fechar">×</button></div>` : ""}${state.tab === "products" ? productsView() : state.tab === "baskets" ? selectedBasket ? basketEditor(selectedBasket) : `<div class="empty-state"><strong>Nenhuma cesta cadastrada</strong><span>Crie a primeira cesta para começar.</span><button class="button button-primary" data-action="new-basket">＋ Nova cesta</button></div>` : flowsPanel}</main>
     </div>
     <footer class="page-footer"><span>Catálogo público versionado no GitHub</span><span>Dados pessoais e credenciais ficam fora deste projeto</span></footer>
     ${state.access === "authorized" && isDirty() ? `<button class="floating-save" data-action="review-save"><span>Revisar alterações</span><strong>Salvar no GitHub ↗</strong></button>` : ""}
@@ -215,7 +358,7 @@ function render(): void {
   appRoot.setAttribute("aria-busy", String(locked));
 }
 
-function openModal(content: string, kind: "product" | "options" | "review" | null = null): HTMLDialogElement {
+function openModal(content: string, kind: "product" | "options" | "review" | "flow-review" | null = null): HTMLDialogElement {
   const modal = document.querySelector<HTMLDialogElement>("#modal");
   if (!modal) throw new Error("Janela de edição não encontrada.");
   state.modalKind = kind;
@@ -339,11 +482,17 @@ async function reloadCatalog(session: Session): Promise<void> {
   state.accessMessage = "Validando sua identidade e a autorização do servidor.";
   render();
   try {
-    const snapshot = await getCatalog(session.access_token);
+    const [snapshot, flow0975, flow1018] = await Promise.all([
+      getCatalog(session.access_token),
+      getFlowDraft(session.access_token, "0975"),
+      getFlowDraft(session.access_token, "1018"),
+    ]);
     state.products = snapshot.products;
     state.baskets = snapshot.baskets;
     state.commitSha = snapshot.commitSha;
     state.commitUrl = snapshot.commitUrl;
+    state.catalogRevision = snapshot.catalogRevision;
+    state.flowDocuments = { "0975": flow0975.document, "1018": flow1018.document };
     state.baseline = JSON.stringify(currentDocuments());
     state.conflict = false;
     state.access = "authorized";
@@ -351,6 +500,13 @@ async function reloadCatalog(session: Session): Promise<void> {
     if (!state.baskets.baskets.some((basket) => basket.id === state.selectedBasketId)) {
       state.selectedBasketId = state.baskets.baskets[0]?.id ?? "";
     }
+    if (!state.baskets.baskets.some((basket) => basket.id === state.flowBasketId && basket.active)) {
+      state.flowBasketId = state.baskets.baskets.find((basket) => basket.active)?.id ?? "";
+    }
+    const savedFlow = state.flowDocuments[state.flowChannel].drafts.find((draft) => draft.basketId === state.flowBasketId);
+    const selectedFlowBasket = state.baskets.baskets.find((basket) => basket.id === state.flowBasketId);
+    state.flowName = savedFlow?.flowName ?? (selectedFlowBasket ? flowNameForBasket(selectedFlowBasket) : "cesta-atendimento");
+    state.flowQuantities.clear();
     render();
   } catch (error) {
     state.access = "denied";
@@ -382,10 +538,14 @@ async function initializeAuth(): Promise<void> {
       state.access = "preview";
       state.accessMessage = "Prévia local: alterações ficam apenas nesta sessão do navegador.";
       state.commitSha = "";
+      state.catalogRevision = "";
       state.commitUrl = "";
       state.products = structuredClone(initialDocuments.products);
       state.baskets = structuredClone(initialDocuments.baskets);
       state.baseline = JSON.stringify(initialDocuments);
+      state.flowDocuments = structuredClone(initialFlowDocuments);
+      state.flowQuantities.clear();
+      state.flowReviewDocument = null;
       state.pendingImages.clear();
       state.editorImage = null;
       state.editorImageProductId = "";
@@ -427,6 +587,7 @@ async function performSave(): Promise<void> {
     state.products = snapshot.products;
     state.baskets = snapshot.baskets;
     state.commitSha = snapshot.commitSha;
+    state.catalogRevision = snapshot.catalogRevision;
     state.commitUrl = snapshot.commitUrl;
     state.baseline = JSON.stringify(currentDocuments());
     state.pendingImages.clear();
@@ -483,6 +644,13 @@ async function convertImage(file: File): Promise<{ contentBase64: string; previe
 appRoot.addEventListener("input", (event) => {
   if (state.busy) return;
   const target = event.target;
+  if (target instanceof HTMLInputElement && target.id === "flow-name") state.flowName = target.value;
+  if (target instanceof HTMLInputElement && target.dataset.flowPreview) {
+    const key = target.dataset.flowPreview;
+    if (target.value === "") state.flowQuantities.delete(key);
+    else state.flowQuantities.set(key, Number(target.value));
+    updateFlowQuantitiesSummary();
+  }
   if (target instanceof HTMLInputElement && target.id === "product-search") {
     state.search = target.value;
     const cursor = target.selectionStart;
@@ -503,6 +671,14 @@ appRoot.addEventListener("input", (event) => {
 appRoot.addEventListener("change", async (event) => {
   if (state.busy) return;
   const target = event.target;
+  if (target instanceof HTMLSelectElement && target.id === "flow-basket") {
+    state.flowBasketId = target.value;
+    const saved = state.flowDocuments[state.flowChannel].drafts.find((draft) => draft.basketId === target.value);
+    const selected = state.baskets.baskets.find((basket) => basket.id === target.value);
+    state.flowName = saved?.flowName ?? (selected ? flowNameForBasket(selected) : "cesta-atendimento");
+    render();
+    return;
+  }
   if (!(target instanceof HTMLInputElement) || target.id !== "product-image-input") return;
   const file = target.files?.[0];
   const form = target.closest("#product-form");
@@ -599,9 +775,36 @@ appRoot.addEventListener("click", async (event) => {
     if (isDirty() && !window.confirm("Sair descartará as alterações desta prévia. Deseja continuar?")) return;
     await supabase?.auth.signOut();
   } else if (action === "tab") {
-    state.tab = target.dataset.tab === "baskets" ? "baskets" : "products";
+    state.tab = target.dataset.tab === "baskets" ? "baskets" : target.dataset.tab === "flows" ? "flows" : "products";
     state.notice = "";
     render();
+  } else if (action === "select-flow-channel") {
+    const channel = target.dataset.channel;
+    if (!FLOW_CHANNELS.includes(channel as FlowChannel)) return;
+    state.flowChannel = channel as FlowChannel;
+    const saved = state.flowDocuments[state.flowChannel].drafts.find((draft) => draft.basketId === state.flowBasketId);
+    const selected = state.baskets.baskets.find((basket) => basket.id === state.flowBasketId);
+    state.flowName = saved?.flowName ?? (selected ? flowNameForBasket(selected) : "cesta-atendimento");
+    state.flowQuantities.clear();
+    state.notice = "";
+    render();
+  } else if (action === "download-flow-json") {
+    const draft = currentFlowDraft();
+    if (!draft) return;
+    const blob = new Blob([JSON.stringify(draft.flowJson, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${draft.flowName || "flow-rascunho"}-${state.flowChannel}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  } else if (action === "review-flow-save") {
+    openFlowReview();
+  } else if (action === "confirm-save-flow") {
+    state.busy = true;
+    target.setAttribute("disabled", "true");
+    target.textContent = "Gravando rascunho…";
+    await performFlowSave();
   } else if (action === "new-product") {
     openProductEditor();
   } else if (action === "edit-product") {
@@ -694,6 +897,7 @@ appRoot.addEventListener("click", async (event) => {
       state.editorImage = null;
       state.editorImageProductId = "";
     }
+    if (state.modalKind === "flow-review") state.flowReviewDocument = null;
     document.querySelector<HTMLDialogElement>("#modal")?.close();
   } else if (action === "review-save") {
     openReviewModal();
@@ -734,6 +938,7 @@ appRoot.addEventListener("close", (event) => {
       state.editorImage = null;
       state.editorImageProductId = "";
     }
+    if (state.modalKind === "flow-review") state.flowReviewDocument = null;
     state.modalKind = null;
   }
 }, true);

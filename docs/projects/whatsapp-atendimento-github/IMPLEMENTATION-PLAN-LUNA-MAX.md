@@ -4,7 +4,7 @@ Projeto: WhatsApp Atendimento GitHub — SUCEDOAN12
 Branch isolada: project/whatsapp-atendimento-github-20261025  
 Diretório do novo código: projetos/whatsapp-atendimento-github/  
 Execução prevista: Work Luna Max  
-Estado: pesquisa concluída; programação ainda não iniciada.
+Estado: Rodadas 0, 0.5–0.7, 1 e 2 concluídas; Rodada 3 em implementação nesta branch.
 
 ## Decisão principal
 
@@ -117,7 +117,7 @@ Como ponto de partida, testar uma miniatura WebP de 240×190 com limite de 27 KB
 | 0 — Contratos mínimos | Confirmar branch/diretório, autenticação, APIs Meta/Bling disponíveis, modelo novo de pedido e credenciais server-side | Arquitetura mínima aprovada; nenhum módulo antigo usado como dependência |
 | 1 — Catálogo e imagens | Manifesto dos produtos/opções, importação dos 61 elegíveis, conversão/validação de fotos | IDs reconciliados; fotos leves e visualmente aprovadas |
 | 2 — Admin de produtos e cestas | CRUD GitHub, edição simples, opções, quantidades, preço e prévia | Um operador autorizado consegue editar e ver o histórico do commit |
-| 3 — Configurador Meta Flow | Editor guiado, Flow JSON gerado, validação, configuração por número, teste controlado | Cada número tem configuração própria e o sistema não publica automaticamente |
+| 3 — Configurador Meta Flow | Editor guiado, Flow JSON gerado, validação local, configuração por número e exportação | Cada número tem rascunho próprio; publicação permanece fora da etapa |
 | 4 — Runtime de atendimento | Sessão/canal, seleção de cesta, imagem, marca, quantidade, cotação e busca de cliente | Total calculado no servidor; dados ausentes/ambíguos têm caminho claro |
 | 5 — Confirmação e pedidos | Resumo no chat, botões, rascunho, confirmação idempotente e novo esquema operacional | Só o aceite explícito cria pedido e preserva snapshot |
 | 6 — Separação e Bling | Fila, separação/falta, correção de total, criação da venda, solicitação/consulta NF-e, saída e conclusão | Pedido percorre todos os estados sem duplicar venda ou nota |
@@ -127,7 +127,7 @@ Cada rodada deve produzir um diff pequeno e revisável, resumo das mudanças, co
 
 ## Pronto para iniciar
 
-A pesquisa anterior está em ORDER-ADMIN-AND-IMAGE-RESEARCH.md; a pesquisa Meta e de plataformas segue em FLOW-RESEARCH.md e BASKET-ORDER-RESEARCH.md. O primeiro trabalho com Work Luna Max é a Rodada 0 deste plano, não a construção de telas.
+A pesquisa anterior está em ORDER-ADMIN-AND-IMAGE-RESEARCH.md; a pesquisa Meta e de plataformas segue em FLOW-RESEARCH.md e BASKET-ORDER-RESEARCH.md. O handoff e o roadmap antigos têm numeração anterior: esta tabela é a sequência vigente (Admin de catálogo na Rodada 2, configurador Flow na Rodada 3). O estado corrente e os próximos passos estão no HANDOFF.md.
 
 ### Texto para iniciar no Work Luna Max
 

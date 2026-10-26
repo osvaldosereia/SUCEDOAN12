@@ -109,9 +109,9 @@ Ainda não feito:
 - Nenhuma operação de criação, validação, publicação ou envio foi feita na Meta.
 - Nenhuma mudança foi feita no main nem no deploy do site.
 
-## Próxima ação
+## Próxima ação histórica (substituída pelo plano greenfield)
 
-Continuar pela rodada 1 do roadmap: obter exportação estruturada das cestas e produtos referenciados pelo Vitrine Admin, sem consultar diretamente o banco para importar o catálogo. Depois, revisar o resolvedor de cliente e o caminho canônico de pedidos existentes; desenvolver o Flow dinâmico com endpoint isolado, marcas, quantidades, endereço, pagamento e resumo com confirmação no WhatsApp. O desenho está em ORDER-FLOW-CHECKOUT-DESIGN.md. Nenhuma integração, consulta a linhas de clientes, alteração de banco ou operação Meta foi feita.
+O texto desta seção registrava a recomendação anterior ao projeto greenfield. A execução atual segue a seção “Estado e próxima ação para Work Luna Max” ao final do arquivo e a tabela vigente em IMPLEMENTATION-PLAN-LUNA-MAX.md.
 
 ## Instrução para retomar em uma nova conversa
 
@@ -161,13 +161,13 @@ A documentação detalhada está em:
 - [Pesquisa de catálogo, imagens, pedidos e Bling](ORDER-ADMIN-AND-IMAGE-RESEARCH.md)
 - [Plano de implementação para Work Luna Max](IMPLEMENTATION-PLAN-LUNA-MAX.md)
 
-## Próxima ação para Work Luna Max
+## Estado e próxima ação para Work Luna Max — 25/10/2026
 
-Começar pela Rodada 0 do novo plano: confirmar branch e diretório isolados; mapear autenticação sem senha própria; provar os contratos de identidade/SKU/GTIN/estoque, criação de pedido, separação e fiscal. Código começa somente depois desse gate, em projetos/whatsapp-atendimento-github/. Não alterar main, site público, Vitrine Admin ou funções já implantadas. Nenhum Flow deve ser publicado e nenhuma mensagem deve ser enviada a clientes durante a preparação.
+Rodadas 0, 0.5–0.7, 1 e 2 foram concluídas na branch `project/whatsapp-atendimento-github-20261025`. A Rodada 3 (configurador local de rascunhos Flow por canal) está em implementação. A sequência vigente está em `IMPLEMENTATION-PLAN-LUNA-MAX.md`; o roadmap abaixo conserva números históricos. Próximo passo: concluir revisão, documentação e build da Rodada 3 e então avançar ao runtime da Rodada 4. O contrato do runtime ainda precisa fechar fluxo de dados Meta, cotação server-side e consulta de cliente antes de qualquer integração live. Permanecem as restrições: não alterar main, site, Vitrine ou funções existentes; não publicar Flow e não enviar mensagem a cliente.
 
 
 ## Decisão de arquitetura atualizada pelo usuário — 25/10/2026
 
 Construir o produto greenfield. A pesquisa do Vitrine Admin é apenas fonte de requisitos e dados; não reutilizar código, UI, tabelas, RPCs, backend ou estados operacionais antigos. O novo Admin, os conectores Meta/Bling e o fluxo de pedidos terão implementação e modelo de dados próprios. Supabase será consultado para cadastro/endereço do cliente; pedidos ficarão em um esquema novo e isolado. GitHub continua como fonte dos produtos, cestas e imagens. O SUCEDOAN12 é público, então ajustes internos e segredos ficam exclusivamente no servidor.
 
-Esta decisão substitui qualquer texto anterior do handoff/roadmap que sugira reutilizar serviços ou o modelo de pedidos do Vitrine. O plano vigente é [IMPLEMENTATION-PLAN-LUNA-MAX.md](IMPLEMENTATION-PLAN-LUNA-MAX.md). Próxima ação: Rodada 0 de contratos mínimos, seguida da programação por rodadas com Work Luna Max.
+Esta decisão substitui qualquer texto anterior do handoff/roadmap que sugira reutilizar serviços ou o modelo de pedidos do Vitrine. O plano vigente é [IMPLEMENTATION-PLAN-LUNA-MAX.md](IMPLEMENTATION-PLAN-LUNA-MAX.md). Próxima ação: concluir a Rodada 3 do configurador e seguir para a Rodada 4 de runtime.

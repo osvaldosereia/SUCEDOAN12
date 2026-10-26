@@ -1,4 +1,10 @@
 import { validateCatalog, type CatalogDocuments } from "../../../src/domain/catalog.ts";
+import {
+  FLOW_CHANNELS,
+  validateChannelFlowDocument,
+  type ChannelFlowDocument,
+  type FlowChannel,
+} from "../../../src/domain/flows.ts";
 
 const OWNER = "osvaldosereia";
 const REPOSITORY = "SUCEDOAN12";
@@ -6,10 +12,12 @@ const BRANCH = "project/whatsapp-atendimento-github-20261025";
 const PRODUCTS_PATH = "projetos/whatsapp-atendimento-github/catalog/products.json";
 const BASKETS_PATH = "projetos/whatsapp-atendimento-github/catalog/baskets.json";
 const IMAGE_PREFIX = "projetos/whatsapp-atendimento-github/images/products/";
+const FLOWS_PATH = "projetos/whatsapp-atendimento-github/flows";
 const GITHUB_API = "https://api.github.com";
 const GITHUB_API_VERSION = "2022-11-28";
 const MAX_IMAGE_BYTES = 27 * 1024;
 const MAX_PENDING_IMAGES = 61;
+const MAX_FLOW_DRAFT_BYTES = 150_000;
 
 interface Operator {
   id: string;
@@ -217,8 +225,8 @@ async function readCatalog(token: string, expectedHead?: string) {
   }
   const ref = new URLSearchParams({ ref: commitSha }).toString();
   const [productsFile, basketsFile] = await Promise.all([
-    githubJson<{ content: string }>(repositoryPath(`/contents/${PRODUCTS_PATH}?${ref}`), token),
-    githubJson<{ content: string }>(repositoryPath(`/contents/${BASKETS_PATH}?${ref}`), token),
+    githubJson<{ content: string; sha: string }>(repositoryPath(`/contents/${PRODUCTS_PATH}?${ref}`), token),
+    githubJson<{ content: string; sha: string }>(repositoryPath(`/contents/${BASKETS_PATH}?${ref}`), token),
   ]);
   const products = JSON.parse(decodeFileContent(productsFile.content));
   const baskets = JSON.parse(decodeFileContent(basketsFile.content));
@@ -226,7 +234,83 @@ async function readCatalog(token: string, expectedHead?: string) {
     products,
     baskets,
     commitSha,
+    catalogRevision: `${productsFile.sha}:${basketsFile.sha}`,
     commitUrl: `https://github.com/${OWNER}/${REPOSITORY}/commit/${commitSha}`,
+  };
+}
+
+function isFlowChannel(value: string): value is FlowChannel {
+  return FLOW_CHANNELS.includes(value as FlowChannel);
+}
+
+function flowPath(channel: FlowChannel): string {
+  return `${FLOWS_PATH}/channel-${channel}.json`;
+}
+
+async function readFlowDraft(channel: FlowChannel, token: string) {
+  const commitSha = await branchHead(token);
+  const catalog = await readCatalog(token, commitSha);
+  const file = await githubJson<{ content: string }>(
+    repositoryPath(`/contents/${flowPath(channel)}?${new URLSearchParams({ ref: commitSha })}`),
+    token,
+  );
+  let document: unknown;
+  try {
+    document = JSON.parse(decodeFileContent(file.content));
+  } catch {
+    throw new HttpError(502, "O rascunho deste canal no GitHub não contém JSON válido.");
+  }
+  const errors = validateChannelFlowDocument(document, channel, catalog.baskets.baskets, catalog.products.products);
+  if (errors.length) throw new HttpError(422, `Revise o rascunho do Flow: ${errors.slice(0, 5).join("; ")}`);
+  return {
+    document: document as ChannelFlowDocument,
+    commitSha,
+    commitUrl: `https://github.com/${OWNER}/${REPOSITORY}/commit/${commitSha}`,
+  };
+}
+
+async function writeFlowDraft(channel: FlowChannel, input: unknown, token: string) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    throw new HttpError(400, "A solicitação do rascunho não tem o formato esperado.");
+  }
+  const request = input as Record<string, unknown>;
+  if (Object.keys(request).some((key) => !["expectedCommit", "document"].includes(key))) {
+    throw new HttpError(400, "A solicitação do rascunho contém campos não permitidos.");
+  }
+  if (typeof request.expectedCommit !== "string" || !/^[0-9a-f]{40}$/i.test(request.expectedCommit)) {
+    throw new HttpError(400, "A revisão do catálogo é inválida.");
+  }
+  const headSha = await branchHead(token);
+  if (headSha !== request.expectedCommit) {
+    throw new HttpError(409, "O branch mudou desde que você abriu o catálogo. Recarregue antes de salvar o Flow.");
+  }
+  const catalog = await readCatalog(token, headSha);
+  const errors = validateChannelFlowDocument(request.document, channel, catalog.baskets.baskets, catalog.products.products, catalog.catalogRevision);
+  if (errors.length) throw new HttpError(422, `Revise o rascunho do Flow: ${errors.slice(0, 5).join("; ")}`);
+
+  const content = `${JSON.stringify(request.document, null, 2)}\n`;
+  if (new TextEncoder().encode(content).byteLength > MAX_FLOW_DRAFT_BYTES) throw new HttpError(413, "O rascunho do Flow excede o limite permitido.");
+  const blob = await createBlob(encodeBase64(content), token);
+  const parent = await githubJson<{ tree: { sha: string } }>(repositoryPath(`/git/commits/${headSha}`), token);
+  const tree = await githubJson<{ sha: string }>(repositoryPath("/git/trees"), token, {
+    method: "POST",
+    body: JSON.stringify({
+      base_tree: parent.tree.sha,
+      tree: [{ path: flowPath(channel), mode: "100644", type: "blob", sha: blob }],
+    }),
+  });
+  const commit = await githubJson<{ sha: string; html_url: string }>(repositoryPath("/git/commits"), token, {
+    method: "POST",
+    body: JSON.stringify({ message: `admin: salvar rascunho Flow ${channel}`, tree: tree.sha, parents: [headSha] }),
+  });
+  await githubJson(repositoryPath(`/git/refs/heads/${BRANCH}`), token, {
+    method: "PATCH",
+    body: JSON.stringify({ sha: commit.sha, force: false }),
+  });
+  return {
+    document: request.document as ChannelFlowDocument,
+    commitSha: commit.sha,
+    commitUrl: commit.html_url,
   };
 }
 
@@ -386,6 +470,7 @@ async function writeCatalog(input: SaveInput, token: string) {
     baskets: input.baskets,
     commitSha: commit.sha,
     commitUrl: commit.html_url,
+    catalogRevision: `${treeEntries[0].sha}:${treeEntries[1].sha}`,
   };
 }
 
@@ -415,6 +500,23 @@ Deno.serve(async (request) => {
       }
       const token = await installationToken("write");
       return jsonResponse(await writeCatalog(input, token), 200, headers);
+    }
+    const flowMatch = url.pathname.match(/\/flow-drafts\/(0975|1018)$/);
+    if (flowMatch && isFlowChannel(flowMatch[1]) && request.method === "GET") {
+      const token = await installationToken("read");
+      return jsonResponse(await readFlowDraft(flowMatch[1], token), 200, headers);
+    }
+    if (flowMatch && isFlowChannel(flowMatch[1]) && request.method === "PUT") {
+      const bodyText = await request.text();
+      if (new TextEncoder().encode(bodyText).byteLength > MAX_FLOW_DRAFT_BYTES) throw new HttpError(413, "O rascunho do Flow excede o limite permitido.");
+      let input: unknown;
+      try {
+        input = JSON.parse(bodyText);
+      } catch {
+        throw new HttpError(400, "O conteúdo enviado não é JSON válido.");
+      }
+      const token = await installationToken("write");
+      return jsonResponse(await writeFlowDraft(flowMatch[1], input, token), 200, headers);
     }
     throw new HttpError(404, "Rota administrativa não encontrada.");
   } catch (error) {

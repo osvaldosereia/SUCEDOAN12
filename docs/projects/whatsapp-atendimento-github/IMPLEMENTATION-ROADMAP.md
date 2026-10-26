@@ -5,6 +5,8 @@ Branch de trabalho: project/whatsapp-atendimento-github-20261025
 Base inicial: main em a9ae61f44321e93e99ef93e15a014253a202e35e
 Atualizado: 25/10/2026 (America/Cuiaba)
 
+> **Numeração histórica:** este roadmap foi escrito antes do plano greenfield atual e mantém nomes/ordem antigos em suas seções. Para execução, prevalecem `IMPLEMENTATION-PLAN-LUNA-MAX.md` e o estado registrado no `HANDOFF.md`: Admin de catálogo = Rodada 2; configurador de Flow = Rodada 3; runtime = Rodada 4; confirmação/pedidos = Rodada 5; separação/Bling = Rodada 6; homologação = Rodada 7.
+
 ## Regras de execução
 
 - Cada rodada deve produzir um resultado pequeno, revisável e utilizável.

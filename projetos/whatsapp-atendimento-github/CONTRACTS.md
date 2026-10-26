@@ -216,6 +216,15 @@ Os nomes abaixo são referências para configuração; não contêm nem confirma
 
 Até esses itens serem verificados, não há login administrativo pronto para uso, integração live validada nem autorização para operar clientes.
 
+## 10. Rodada 3 — rascunhos de Flow
+
+- `src/domain/flows.ts` define `ChannelFlowDocument` e `BasketFlowDraft`; os documentos `flows/channel-0975.json` e `flows/channel-1018.json` são separados e começam sem IDs Meta.
+- Cada rascunho registra nome técnico, cesta, fingerprints SHA dos documentos de catálogo e `validationStatus: "local-only"`. O JSON é gerado do catálogo para uma única tela com quantidades e conclusão.
+- A Admin API expõe `GET` e `PUT /flow-drafts/{0975|1018}`. O servidor deriva o caminho de uma enumeração fixa, exige a mesma sessão/allowlist/GitHub App, compara `expectedCommit` e valida o documento contra a revisão atual antes de criar um commit.
+- O configurador permite conferir limites por tipo no navegador e baixar o JSON. Ao salvar, outros rascunhos ativos do mesmo canal são regenerados para a revisão nova; cestas inativas são removidas desse conjunto.
+- `local-only` descreve somente a validação estrutural do gerador. Não significa validação Flow Builder/Meta, teste real, endpoint dinâmico configurado ou estado publicado. Imagens, cotação confiável, troca de dados e cálculo final do servidor permanecem para as próximas rodadas.
+- A etapa não chama a API Meta, não publica Flow e não envia mensagens. Sem OAuth/allowlist/GitHub App configurados, a interface permanece em prévia local e nenhuma escrita é aceita.
+
 ## 9. Rodada 2 — Admin de catálogo
 
 Implementação nova em `src/admin/` com Vite e TypeScript. O login usa GitHub OAuth pelo Supabase Auth (`signInWithOAuth`); não existe formulário ou senha própria. Sem variáveis públicas de Supabase, o app mostra os arquivos locais somente em prévia, mantendo as edições em memória.

@@ -1,8 +1,10 @@
 import type { CatalogDocuments } from "../domain/catalog";
+import type { FlowChannel, FlowDraftSnapshot, SaveFlowDraftInput } from "../domain/flows";
 
 export interface CatalogSnapshot extends CatalogDocuments {
   commitSha: string;
   commitUrl: string;
+  catalogRevision: string;
 }
 
 export interface PendingImage {
@@ -57,6 +59,17 @@ export function getCatalog(accessToken: string): Promise<CatalogSnapshot> {
 
 export function saveCatalog(accessToken: string, input: SaveCatalogInput): Promise<CatalogSnapshot> {
   return apiRequest<CatalogSnapshot>("/catalog", accessToken, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+}
+
+export function getFlowDraft(accessToken: string, channel: FlowChannel): Promise<FlowDraftSnapshot> {
+  return apiRequest<FlowDraftSnapshot>(`/flow-drafts/${channel}`, accessToken);
+}
+
+export function saveFlowDraft(accessToken: string, channel: FlowChannel, input: SaveFlowDraftInput): Promise<FlowDraftSnapshot> {
+  return apiRequest<FlowDraftSnapshot>(`/flow-drafts/${channel}`, accessToken, {
     method: "PUT",
     body: JSON.stringify(input),
   });

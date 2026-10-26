@@ -8,7 +8,7 @@ Este é o único diretório de código do projeto novo: `projetos/whatsapp-atend
 
 ## Etapa atual
 
-Rodada 2: Admin novo para editar produtos e cestas, pré-visualizar alterações e registrar um único commit no branch do projeto. A base de dados inicial está em [catalog/](catalog/); tipos e validação ficam em [src/domain/catalog.ts](src/domain/catalog.ts). O app e a API foram escritos do zero.
+Rodada 3: configurador novo de rascunhos Meta Flow por canal, conectado ao catálogo versionado das Rodadas 1 e 2. A tela gera e exporta o JSON localmente; gravação requer a autenticação autorizada da Admin API. O JSON ainda não foi validado pela Meta, e esta etapa não chama nem publica na Meta nem envia mensagens. Regras e tipos ficam em [src/domain/flows.ts](src/domain/flows.ts), com um documento independente em [flows/](flows/).
 
 ## Regras de segurança
 
@@ -29,6 +29,7 @@ Rodada 2: Admin novo para editar produtos e cestas, pré-visualizar alterações
 - `supabase/functions/`: funções novas deste projeto, isoladas das funções existentes.
 - `supabase/migrations/`: modelo transacional novo, somente depois de o contrato de checkout ser fechado.
 - `catalog/` e `images/`: catálogo público e imagens compactadas, a partir da Rodada 1.
+- `flows/`: rascunhos JSON por canal, associados à revisão de catálogo; IDs Meta ficam nulos até confirmação oficial.
 
 ## Rodar a prévia local
 
