@@ -1,5 +1,6 @@
 import postgres, { type Sql } from "npm:postgres@3.4.7";
 import { wakeOutboxWorker } from "../_shared/outbox-dispatch.ts";
+import { flowEndpointUri, flowPrivateKey, metaAccessToken, metaGraphVersion } from "../_shared/meta-config.ts";
 import { supabasePublishableKey, supabaseSecretKey } from "../_shared/supabase-api-keys.ts";
 import {
   classifyBlingSaleReconciliation,
@@ -2999,16 +3000,16 @@ async function metaChannelConfig(channel: FlowChannel): Promise<MetaChannelConfi
     id: string; display_name: string; waba_id: string | null; phone_number_id: string | null; is_active: boolean;
   }>`select id, display_name, waba_id, phone_number_id, is_active from public.whatsapp_accounts where slug = ${slug} limit 1`;
   const row = rows[0];
-  const accessToken = Deno.env.get(`META_ACCESS_TOKEN_${channel}`) || null;
-  const graphVersion = Deno.env.get("META_GRAPH_API_VERSION") || null;
-  const endpointUri = Deno.env.get("WHATSAPP_FLOW_ENDPOINT_URI") || null;
-  const privateKey = Deno.env.get(`META_FLOW_PRIVATE_KEY_${channel}`) || null;
+  const accessToken = metaAccessToken(channel);
+  const graphVersion = metaGraphVersion();
+  const endpointUri = flowEndpointUri();
+  const privateKey = flowPrivateKey(channel);
   const blockers: string[] = [];
   if (!row?.is_active) blockers.push("A conta WhatsApp deste canal não está ativa no registro privado.");
   if (!row?.waba_id) blockers.push("O WABA deste canal não está configurado no banco privado.");
   if (!row?.phone_number_id) blockers.push("O phone number ID deste canal não está configurado no banco privado.");
-  if (!accessToken) blockers.push(`Configure META_ACCESS_TOKEN_${channel} como segredo da Admin API.`);
-  if (!graphVersion || !/^v\d+\.\d+$/.test(graphVersion)) blockers.push("Configure META_GRAPH_API_VERSION no formato vNN.N.");
+  if (!accessToken) blockers.push("A conexão compartilhada META_WHATSAPP_ACCESS_TOKEN não está disponível no servidor.");
+  if (!graphVersion || !/^v\d+\.\d+$/.test(graphVersion)) blockers.push("A versão META_WHATSAPP_GRAPH_VERSION não está disponível no servidor.");
   if (!endpointUri) blockers.push("Configure WHATSAPP_FLOW_ENDPOINT_URI com a URL HTTPS pública do runtime.");
   else {
     try {
@@ -3016,7 +3017,7 @@ async function metaChannelConfig(channel: FlowChannel): Promise<MetaChannelConfi
       if (endpoint.protocol !== "https:" || endpoint.username || endpoint.password || endpoint.hash) blockers.push("A URL do endpoint Flow precisa ser HTTPS e não pode conter credenciais ou fragmento.");
     } catch { blockers.push("WHATSAPP_FLOW_ENDPOINT_URI não contém uma URL válida."); }
   }
-  if (!privateKey) blockers.push(`Configure META_FLOW_PRIVATE_KEY_${channel} no runtime antes de homologar o endpoint.`);
+  if (!privateKey) blockers.push(`A chave privada do Flow do canal ${channel} não está disponível no servidor.`);
   return {
     channel,
     accountId: row?.id ?? null,

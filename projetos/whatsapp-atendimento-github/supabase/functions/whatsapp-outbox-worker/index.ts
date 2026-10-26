@@ -1,6 +1,7 @@
 import postgres, { type Sql } from "npm:postgres@3.4.7";
 import { wakeOutboxWorker } from "../_shared/outbox-dispatch.ts";
 import { lockOutboxProviderMessage, replayPendingProviderStatuses, validProviderMessageId } from "../_shared/outbox-status.ts";
+import { metaAccessToken, metaGraphVersion, type MetaChannel } from "../_shared/meta-config.ts";
 
 const CHANNELS = ["0975", "1018"] as const;
 type Channel = typeof CHANNELS[number];
@@ -110,6 +111,22 @@ async function readChannelFlowBinding(db: Sql, channel: OutboxMessage["channel"]
     return rows[0] ?? null;
   } catch {
     throw new WorkerError("flow_binding_unavailable");
+  }
+}
+
+async function readChannelPhoneNumberId(db: Sql, channel: MetaChannel): Promise<string | null> {
+  const configured = Deno.env.get(`META_PHONE_NUMBER_ID_${channel}`)?.trim();
+  if (configured && /^[0-9]+$/.test(configured)) return configured;
+  try {
+    const rows = await db<{ phone_number_id: string }>`
+      select phone_number_id from public.whatsapp_accounts
+      where slug = ${`dona-antonia-${channel}`} and is_active = true
+      limit 1
+    `;
+    const value = rows[0]?.phone_number_id?.trim();
+    return value && /^[0-9]+$/.test(value) ? value : null;
+  } catch {
+    throw new WorkerError("channel_account_unavailable");
   }
 }
 
@@ -235,8 +252,8 @@ async function sendOne(db: Sql, message: OutboxMessage, key: CryptoKey, graphVer
     const payload = await decryptPayload(message, key);
     const flowBinding = message.message_type === "flow_launch" ? await readChannelFlowBinding(db, message.channel) : null;
     const providerPayload = buildProviderPayload(message, payload, flowBinding);
-    const phoneNumberId = Deno.env.get(`META_PHONE_NUMBER_ID_${message.channel}`);
-    const accessToken = Deno.env.get(`META_ACCESS_TOKEN_${message.channel}`);
+    const phoneNumberId = await readChannelPhoneNumberId(db, message.channel);
+    const accessToken = metaAccessToken(message.channel);
     if (!phoneNumberId || !/^[0-9]+$/.test(phoneNumberId) || !accessToken) {
       await updateFailure(db, message.id, "channel_credentials_missing");
       return false;
@@ -305,16 +322,15 @@ async function handle(request: Request): Promise<Response> {
   const dispatchDepth = Number(dispatchDepthHeader);
   if (!Number.isSafeInteger(dispatchDepth) || dispatchDepth > MAX_DISPATCH_DEPTH) return plain(400, "Dispatch depth is invalid");
 
-  const graphVersion = Deno.env.get("META_GRAPH_API_VERSION");
+  const graphVersion = metaGraphVersion();
   if (!graphVersion || !/^v[0-9]{1,3}\.[0-9]{1,2}$/.test(graphVersion)) return plain(503, "Graph API version is not configured");
-  const channelsConfigured = CHANNELS.every((channel) => {
-    const phoneNumberId = Deno.env.get(`META_PHONE_NUMBER_ID_${channel}`);
-    return !!Deno.env.get(`META_ACCESS_TOKEN_${channel}`) && !!phoneNumberId && /^[0-9]+$/.test(phoneNumberId);
-  });
-  if (!channelsConfigured) return plain(503, "WhatsApp channel credentials are not configured");
 
   try {
     const db = getDatabase();
+    const channelsConfigured = await Promise.all(CHANNELS.map(async (channel) =>
+      !!metaAccessToken(channel) && !!await readChannelPhoneNumberId(db, channel)
+    ));
+    if (!channelsConfigured.every(Boolean)) return plain(503, "WhatsApp channel credentials are not configured");
     const key = await getEncryptionKey();
     let claimed = 0;
     let sent = 0;

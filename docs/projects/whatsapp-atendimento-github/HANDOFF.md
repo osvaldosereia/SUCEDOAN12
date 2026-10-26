@@ -415,3 +415,41 @@ A pesquisa oficial desta rodada confirmou que a mudança do Supabase em 30/10/20
 O editor de produtos ganhou uma consulta server-side opcional por GTIN/EAN. A API aceita apenas UUID de produto existente, lê o GTIN da revisão atual no GitHub, recusa GTIN inválido ou produto já vinculado, chama somente `GET /produtos?gtins[]=...` e devolve ID, nome e SKU sanitizados. O operador precisa conferir o resultado e selecionar o candidato; isso apenas preenche a prévia local. A gravação do vínculo segue a revisão normal do catálogo GitHub com o conflito otimista existente. Nenhum ID é inferido do nome ou SKU.
 
 A referência oficial do Bling documenta `gtins[]` como filtro GTIN/EAN de `GET /produtos` desde 18/11/2025 ([changelog oficial](https://developer.bling.com.br/changelogs)). `BLING_PRODUCT_LOOKUP_ENABLED` e `BLING_OAUTH_ENABLED` permanecem `false` por padrão. A rota exige a sessão GitHub autorizada do Admin. A consulta real não foi chamada, pois as credenciais e a conta operacional não foram habilitadas nesta rodada; Personal 20 m e Superian 12 rolos continuam sem IDs verificados. Nenhuma migration, chamada Bling/Meta, deploy, mensagem ou publicação de Flow ocorreu. `pnpm build` e `git diff --check` passaram; não houve criação ou execução de testes automatizados.
+
+## Autorização para concluir e estado operacional — 26/10/2026
+
+O usuário autorizou prosseguir com as mudanças necessárias no GitHub e Supabase para colocar este Admin em funcionamento. Essa autorização substitui a antiga instrução de não implantar/aplicar migrations durante o desenvolvimento. Continua proibido expor valores secretos; publicar Flow ou enviar mensagens exige que a jornada esteja pronta e autorização operacional explícita. Nenhuma publicação ou mensagem foi feita nesta atualização.
+
+### Já aplicado no Supabase
+
+No projeto ativo `ssbesxgaijknwsjbsbcz`, foram aplicadas as migrations novas do diretório `projetos/whatsapp-atendimento-github/supabase/migrations/`:
+
+- `20261026002149_whatsapp_flow_sessions.sql`
+- `20261026004500_whatsapp_checkout.sql`
+- `20261026005000_order_operations_bling.sql`
+- `20261026040544_whatsapp_atendimento_channel_flow_bindings.sql`
+
+A conferência SQL identificou as 14 tabelas privadas em `whatsapp_atendimento` e `public.whatsapp_flow_sessions`. Todas têm RLS; `anon` e `authenticated` não têm SELECT, e `service_role` tem SELECT. O advisor de segurança lista “RLS enabled, no policy” para essas tabelas, consistente com o isolamento esperado: são tabelas privadas com acesso apenas do backend; não se deve abrir políticas públicas para remover esse aviso. O projeto já tem muitos avisos históricos de segurança não relacionados; não foram alterados.
+
+### Bloqueios de entrada em operação confirmados
+
+1. **Login do Admin:** o botão GitHub do preview recebeu `Unsupported provider: provider is not enabled` do Supabase Auth. A conta/conector Codex consegue consultar banco e repositório, mas isso não habilita OAuth de operadores. O Auth exige um GitHub OAuth App com Client ID/Secret e callback registrado, além de redirects autorizados. Nenhum conector disponível nesta sessão administra esse provider/redirect nem o cofre de secrets; o dashboard aberto estava sem sessão. O preview agora explica o bloqueio em linguagem direta.
+2. **Autorização de escrita no GitHub:** `whatsapp-admin-api` exige allowlist/origem e `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_PRIVATE_KEY`; o checkout exige a credencial GitHub App para reduzir estoque. Esses nomes não aparecem no runtime existente e não estão configurados pelo `.env.local` (que contém apenas URL/chave pública Supabase). Não usar PAT no navegador ou no chat.
+3. **Flow 0975:** o código aceita o segredo Meta existente `META_WHATSAPP_APP_SECRET`, token `META_WHATSAPP_ACCESS_TOKEN`, versão `META_WHATSAPP_GRAPH_VERSION` e IDs de canais resolvidos por `public.whatsapp_accounts`. A fonte ativa confirma `DA_FLOW_1018_RSA_PKCS8`; não há evidência de chave privada do Flow 0975 no runtime. Não se leram valores de secrets.
+4. **Entrega do pedido:** o webhook `whatsapp-checkout-webhook` trata callbacks Meta `nfm_reply`, mas o callback Meta atualmente configurado é `whatsapp-meta-webhook-v1`; não há ponte para o webhook novo. Sem essa integração, o cliente pode concluir o Flow sem que o pedido novo seja persistido.
+5. **Endpoints:** nenhuma das quatro Edge Functions novas (`whatsapp-admin-api`, `whatsapp-flow-runtime`, `whatsapp-checkout-webhook`, `whatsapp-outbox-worker`) está implantada. O worker de envio permanece desligado. Implantar endpoints sem os segredos e sem o roteamento acima deixaria uma jornada incompleta, então não foi feito nesta atualização.
+
+### Mudanças locais desta atualização
+
+`supabase/functions/_shared/meta-config.ts` centraliza os aliases dos nomes de Meta já existentes e a resolução dos canais 0975/1018; Admin API, Flow runtime, webhook e outbox usam esse adaptador. O preview diferencia o login GitHub do acesso do conector e explica o que falta para liberar escrita. `pnpm build` (TypeScript e Vite) e `git diff --check` passaram nesta atualização. Não foram executados testes automatizados.
+
+### Próximas ações, em ordem de bloqueio
+
+1. Criar/configurar GitHub OAuth App e ativá-lo em Supabase Auth, com callback e redirects corretos; colocar usuário autorizado na allowlist.
+2. Configurar GitHub App com permissões mínimas em `osvaldosereia/SUCEDOAN12` e carregar os três segredos somente no cofre server-side. Confirmar presença sem imprimir valores.
+3. Gerar/carregar chave PKCS#8 do Flow 0975; confirmar as duas chaves/canais e credenciais Meta no runtime.
+4. Implantar as quatro funções novas e verificar `/health`/contrato assinado sem enviar mensagens. Integrar o callback `nfm_reply` no caminho ativo da Meta sem substituir a operação ANA dos demais eventos.
+5. Fazer login real, validar fila dos dois canais e rodar um pedido controlado: confirmar baixa única no GitHub, venda após separação, reconciliação e NF-e no Bling. Manter estoque negativo permitido para venda fiscal e manter outbox desligada até validar canal e destinatário.
+6. Validar Flow JSON/imagens nos dois números e só então publicar/vincular cada Flow; verificar chegada do pedido no Admin e na conversa.
+
+O projeto ainda **não aceita pedidos reais**. O próximo avanço que não depende do operador é terminar a revisão/deploy isolado das Edge Functions, mas o fluxo de cliente continuará bloqueado até OAuth/GitHub App, chave 0975 e o roteamento do callback serem resolvidos.

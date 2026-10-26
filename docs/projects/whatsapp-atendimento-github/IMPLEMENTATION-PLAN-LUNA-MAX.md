@@ -156,3 +156,28 @@ A pesquisa anterior está em ORDER-ADMIN-AND-IMAGE-RESEARCH.md; a pesquisa Meta 
 ### Texto para iniciar no Work Luna Max
 
 Atue como programador sênior especialista em e-commerce e integrações WhatsApp. Leia HANDOFF.md, ORDER-ADMIN-AND-IMAGE-RESEARCH.md e este plano. O projeto é greenfield: não copie código, tabelas, RPCs ou arquitetura do Vitrine Admin; use o Vitrine apenas como referência de regras e dados. Comece pela Rodada 0, trabalhando somente na branch project/whatsapp-atendimento-github-20261025 e no diretório projetos/whatsapp-atendimento-github/. Produtos/cestas ficam no GitHub; clientes são consultados no Supabase; pedidos usam o novo modelo transacional; Meta e Bling recebem conectores novos. Não altere main, site público, Vitrine Admin ou funções existentes. Não publique Flow nem envie mensagens a clientes. Entregue o contrato técnico mínimo da Rodada 0 e então progrida rodada por rodada, mantendo o sistema pequeno, simples e verificável.
+
+## Fechamento operacional autorizado — 26/10/2026
+
+O usuário autorizou avançar nas mudanças de GitHub/Supabase para pôr o projeto em operação. Essa instrução atual substitui as frases históricas acima que limitavam migrations/deploy ao desenvolvimento local. A autorização não torna OAuth, segredos ou rotas Meta automaticamente disponíveis; não expor credenciais.
+
+### Estado conferido
+
+- As quatro migrations do projeto estão aplicadas no Supabase ativo `ssbesxgaijknwsjbsbcz`; RLS/grants foram verificados e as tabelas transacionais não são acessíveis por `anon`/`authenticated`.
+- O GitHub OAuth está desabilitado no Supabase Auth e o login respondeu `provider is not enabled`.
+- O projeto novo requer GitHub App ID/installation/private key e allowlist/origem em secrets do runtime. O conector de banco/repositório não configura esses itens; a sessão do Dashboard Supabase estava encerrada.
+- O runtime atual tem aliases server-side Meta para token/app secret/Graph API e chave Flow 1018. A chave Flow 0975 não foi localizada.
+- O callback atual da Meta segue em `whatsapp-meta-webhook-v1`; o novo `whatsapp-checkout-webhook` ainda não recebe `nfm_reply`.
+- Nenhuma das quatro Edge Functions novas está implantada, nenhum Flow foi publicado e o worker de mensagens está desligado.
+
+### Sequência de fechamento
+
+1. Obter configuração do GitHub OAuth e habilitar o provider no Supabase Auth; autorizar redirect local e domínio de produção.
+2. Provisionar GitHub App com permissões mínimas ao repositório e secrets server-side; cadastrar operador autorizado na allowlist.
+3. Confirmar as chaves privadas Flow de ambos os números (criar 0975 se ausente) e verificar os nomes Meta necessários por presença, sem ler valores.
+4. Implantar Admin API, Flow runtime, webhook e outbox worker; verificar endpoints autenticados/assinados e manter envio desativado.
+5. Integrar `nfm_reply` no caminho Meta em uso sem interromper o webhook/atendimento ANA atual.
+6. Executar pedido controlado para provar confirmação, baixa GitHub idempotente mesmo com saldo negativo, venda Bling após separação, NF-e e reconciliação.
+7. Validar os JSON/imagens no Flow Builder e nos canais 0975 e 1018, publicar/vincular os dois Flows e só então abrir pedidos aos clientes.
+
+Não declarar entrada em operação antes de os passos 1–6 passarem e a confirmação do pedido chegar ao Admin. Se o acesso do Dashboard e a configuração das credenciais seguirem indisponíveis pelos conectores, registrar o item exato que o operador precisa aplicar em vez de repetir a autorização.

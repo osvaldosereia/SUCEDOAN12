@@ -1,4 +1,5 @@
 import { hasBlingProductId, validateCatalog, type Basket, type CatalogDocuments, type Product } from "../../../src/domain/catalog.ts";
+import { flowPrivateKey, metaAppSecret } from "../_shared/meta-config.ts";
 import { supabaseSecretKey } from "../_shared/supabase-api-keys.ts";
 import {
   FlowSelectionError,
@@ -121,7 +122,7 @@ function privateKeyPkcs8(value: string): Uint8Array {
 }
 
 async function importFlowPrivateKey(channel: FlowChannel): Promise<CryptoKey | null> {
-  const value = Deno.env.get(`META_FLOW_PRIVATE_KEY_${channel}`);
+  const value = flowPrivateKey(channel);
   if (!value) return null;
   return crypto.subtle.importKey(
     "pkcs8",
@@ -147,7 +148,7 @@ async function decryptRequest(envelope: Record<string, unknown>): Promise<{
   const encryptedData = bytesFromBase64(envelope.encrypted_flow_data);
   const iv = bytesFromBase64(envelope.initial_vector);
   if (iv.byteLength !== 16 || encryptedData.byteLength < 17) throw new RuntimeError(400, "Envelope criptografado inválido.");
-  if (!CHANNELS.some((channel) => Deno.env.get(`META_FLOW_PRIVATE_KEY_${channel}`))) {
+  if (!CHANNELS.some((channel) => flowPrivateKey(channel))) {
     throw new RuntimeError(503, "As chaves privadas dos canais ainda não estão configuradas.");
   }
 
@@ -188,7 +189,7 @@ async function encryptResponse(value: unknown, aesKey: CryptoKey, requestIv: Uin
 }
 
 async function verifySignature(rawBody: string, signatureHeader: string | null): Promise<boolean> {
-  const secret = Deno.env.get("META_APP_SECRET");
+  const secret = metaAppSecret();
   if (!secret) throw new RuntimeError(503, "O segredo do aplicativo Meta ainda não está configurado.");
   if (!signatureHeader || !/^sha256=[a-f0-9]{64}$/i.test(signatureHeader)) return false;
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
@@ -237,7 +238,7 @@ async function verifyFlowTokenSignature(flowToken: string, value: unknown): Prom
   if (!isRecord(header) || header.alg !== "HS256" || !isRecord(payload)
     || payload.flow_token !== flowToken || !signature || signature.byteLength !== 32) return false;
 
-  const secret = Deno.env.get("META_APP_SECRET");
+  const secret = metaAppSecret();
   if (!secret) throw new RuntimeError(503, "O segredo do aplicativo Meta ainda não está configurado.");
   const key = await crypto.subtle.importKey(
     "raw",

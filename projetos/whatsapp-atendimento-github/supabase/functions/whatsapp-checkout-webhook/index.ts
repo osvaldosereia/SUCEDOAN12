@@ -1,5 +1,6 @@
 import postgres, { type Sql } from "npm:postgres@3.4.7";
 import { recordProviderStatus, validProviderMessageId, type ProviderDeliveryStatus } from "../_shared/outbox-status.ts";
+import { metaAppSecret } from "../_shared/meta-config.ts";
 import { supabaseSecretKey } from "../_shared/supabase-api-keys.ts";
 import { validateCatalog, type Basket, type CatalogDocuments } from "../../../src/domain/catalog.ts";
 import { FlowSelectionError, quoteBasket, type BasketSelections } from "../../../src/domain/flow-runtime.ts";
@@ -111,7 +112,7 @@ async function digestHex(value: string): Promise<string> {
 }
 
 async function verifySignature(rawBody: string, supplied: string | null): Promise<boolean> {
-  const secret = Deno.env.get("META_APP_SECRET");
+  const secret = metaAppSecret();
   if (!secret) throw new WebhookError(503, "O segredo do aplicativo Meta não está configurado no servidor.");
   if (!supplied || !/^sha256=[a-f0-9]{64}$/i.test(supplied)) return false;
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
@@ -127,12 +128,17 @@ function getDatabase(): Sql {
   return database;
 }
 
-function channelForPhoneNumberId(value: unknown): Channel {
+async function channelForPhoneNumberId(value: unknown): Promise<Channel> {
   if (typeof value !== "string" || !value) throw new WebhookError(400, "O evento não informa o número de destino.");
-  for (const channel of CHANNELS) {
-    const configured = Deno.env.get(`META_PHONE_NUMBER_ID_${channel}`);
-    if (configured && configured === value) return channel;
-  }
+  const rows = await getDatabase()<{ slug: string }>`
+    select slug from public.whatsapp_accounts
+    where phone_number_id = ${value} and is_active = true
+      and slug in ('dona-antonia-0975', 'dona-antonia-1018')
+    limit 1
+  `;
+  const channel = rows[0]?.slug === "dona-antonia-0975" ? "0975"
+    : rows[0]?.slug === "dona-antonia-1018" ? "1018" : null;
+  if (channel) return channel;
   throw new WebhookError(403, "O número Meta do evento não está vinculado a um canal configurado.");
 }
 
@@ -776,7 +782,7 @@ async function handleWebhook(rawBody: string): Promise<boolean> {
     if (!isRecord(entry) || !Array.isArray(entry.changes)) continue;
     for (const change of entry.changes) {
       if (!isRecord(change) || !isRecord(change.value) || !isRecord(change.value.metadata)) continue;
-      const channel = channelForPhoneNumberId(change.value.metadata.phone_number_id);
+      const channel = await channelForPhoneNumberId(change.value.metadata.phone_number_id);
       if (Array.isArray(change.value.statuses)) {
         for (const rawStatus of change.value.statuses) {
           if (isRecord(rawStatus)) await processProviderStatus(rawStatus, channel);
