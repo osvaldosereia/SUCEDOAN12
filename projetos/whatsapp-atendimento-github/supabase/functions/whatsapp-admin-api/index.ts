@@ -3602,7 +3602,12 @@ Deno.serve(async (request) => {
     throw new HttpError(404, "Rota administrativa não encontrada.");
   } catch (error) {
     if (error instanceof HttpError) return jsonResponse({ error: error.message }, error.status, headers);
-    console.error("whatsapp-admin-api request failed", error instanceof Error ? error.name : "unknown error");
+    const errorRecord = isRecord(error) ? error : {};
+    const errorCode = typeof errorRecord.code === "string" && /^[A-Z0-9]{5}$/.test(errorRecord.code) ? errorRecord.code : undefined;
+    console.error("whatsapp-admin-api request failed", JSON.stringify({
+      name: error instanceof Error ? error.name : "unknown error",
+      code: errorCode,
+    }));
     return jsonResponse({ error: "Não foi possível concluir a solicitação administrativa." }, 500, headers);
   }
 });
