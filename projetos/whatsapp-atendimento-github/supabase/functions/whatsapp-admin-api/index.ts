@@ -189,7 +189,19 @@ async function proxyAttendanceOperation(request: Request, body: Record<string, u
   if (!text || text.length > 4000 || !/^[A-Za-z0-9:_-]{8,160}$/.test(idempotencyKey)) {
     throw new HttpError(400, "Revise o texto e a chave da resposta.");
   }
-  await requireSupportedAttendanceConversation(request, conversationId, accountId);
+  const conversationSnapshot = await requireSupportedAttendanceConversation(request, conversationId, accountId);
+  const conversation = isRecord(conversationSnapshot.payload) && isRecord(conversationSnapshot.payload.conversation)
+    ? conversationSnapshot.payload.conversation
+    : {};
+  if (conversation.mode !== "human" && conversation.mode !== "human_copilot") {
+    throw new HttpError(409, "Assuma a conversa no atendimento humano antes de responder.");
+  }
+  const sendCapability = isRecord(conversationSnapshot.payload) && isRecord(conversationSnapshot.payload.send_capability)
+    ? conversationSnapshot.payload.send_capability
+    : {};
+  if (sendCapability.enabled !== true) {
+    throw new HttpError(409, "O canal não está liberado para envio humano neste momento.");
+  }
   const forwarded = await forwardSupabaseFunction(
     request,
     "admin-whatsapp-ops-v1",
