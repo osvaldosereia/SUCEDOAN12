@@ -119,7 +119,7 @@ export function renderAttendancePanel(input: AttendancePanelInput): string {
   }).join("");
 
   if (!input.authorized) {
-    return `<section class="workspace-heading"><div><span class="eyebrow">Operação · WhatsApp</span><h1>Atendimento</h1><p>Entre com a conta GitHub autorizada para abrir as conversas.</p></div></section><div class="empty-state"><strong>Autenticação necessária</strong><span>A fila e as mensagens só ficam disponíveis para uma conta autorizada no novo Admin e no Vitrine.</span></div>`;
+    return `<section class="workspace-heading"><div><span class="eyebrow">Operação · WhatsApp</span><h1>Atendimento</h1><p>Entre com o e-mail da conta administrativa ativa para abrir as conversas.</p></div></section><div class="empty-state"><strong>Autenticação necessária</strong><span>A fila e as mensagens ficam disponíveis após validar a sessão e o cadastro de operador no Supabase.</span></div>`;
   }
 
   const conversationHeader = current
