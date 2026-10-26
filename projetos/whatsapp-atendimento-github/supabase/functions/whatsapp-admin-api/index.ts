@@ -301,45 +301,35 @@ async function proxyAttendanceMedia(request: Request, conversationId: string, ac
   }
 
   const maxBytes = 32 * 1024 * 1024;
-  const declaredLength = Number(mediaResponse.headers.get("Content-Length"));
+  const contentLengthHeader = mediaResponse.headers.get("Content-Length");
+  const declaredLength = contentLengthHeader === null ? NaN : Number(contentLengthHeader);
   if (Number.isFinite(declaredLength) && declaredLength > maxBytes) {
     await mediaResponse.body.cancel();
     throw new HttpError(413, "O anexo excede o limite de 32 MB para prévia.");
   }
-  const reader = mediaResponse.body.getReader();
-  const chunks: Uint8Array[] = [];
   let totalBytes = 0;
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      totalBytes += value.byteLength;
+  const limitedBody = mediaResponse.body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
+    transform(chunk, controller) {
+      totalBytes += chunk.byteLength;
       if (totalBytes > maxBytes) {
-        await reader.cancel();
-        throw new HttpError(413, "O anexo excede o limite de 32 MB para prévia.");
+        controller.error(new HttpError(413, "O anexo excede o limite de 32 MB para prévia."));
+        return;
       }
-      chunks.push(value);
-    }
-  } finally {
-    reader.releaseLock();
-  }
-  if (totalBytes === 0) throw new HttpError(502, "O anexo está vazio.");
-  const bytes = new Uint8Array(totalBytes);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
+      controller.enqueue(chunk);
+    },
+    flush() {
+      if (totalBytes === 0) throw new HttpError(502, "O anexo está vazio.");
+    },
+  }));
 
   headers.set("Content-Type", responseMimeType);
-  headers.set("Content-Length", String(totalBytes));
   headers.set("Content-Disposition", `attachment; filename="${filename || "anexo-whatsapp"}"`);
   headers.set("Cache-Control", "no-store");
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("X-Attachment-Filename", filename || "Anexo do WhatsApp");
   headers.set("X-Attachment-Expires-At", expiresAt);
   headers.set("Access-Control-Expose-Headers", "Content-Type, Content-Disposition, X-Attachment-Filename, X-Attachment-Expires-At");
-  return new Response(bytes, { status: 200, headers });
+  return new Response(limitedBody, { status: 200, headers });
 }
 
 async function updateAttendanceMode(request: Request, body: Record<string, unknown>) {

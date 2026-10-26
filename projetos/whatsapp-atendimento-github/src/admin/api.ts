@@ -181,38 +181,28 @@ export async function getAttendanceMedia(
   }
 
   const maxBytes = 32 * 1024 * 1024;
-  const declaredLength = Number(response.headers.get("Content-Length"));
+  const contentLengthHeader = response.headers.get("Content-Length");
+  const declaredLength = contentLengthHeader === null ? NaN : Number(contentLengthHeader);
   if (Number.isFinite(declaredLength) && declaredLength > maxBytes) {
     await response.body?.cancel();
     throw new AdminApiError("O anexo excede o limite de 32 MB para prévia.");
   }
   if (!response.body) throw new AdminApiError("O serviço retornou um anexo vazio.");
-  const reader = response.body.getReader();
-  const chunks: Uint8Array[] = [];
   let totalBytes = 0;
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      totalBytes += value.byteLength;
+  const limitedBody = response.body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
+    transform(chunk, controller) {
+      totalBytes += chunk.byteLength;
       if (totalBytes > maxBytes) {
-        await reader.cancel();
-        throw new AdminApiError("O anexo excede o limite de 32 MB para prévia.");
+        controller.error(new AdminApiError("O anexo excede o limite de 32 MB para prévia."));
+        return;
       }
-      chunks.push(value);
-    }
-  } finally {
-    reader.releaseLock();
-  }
-  if (totalBytes === 0) throw new AdminApiError("O serviço retornou um anexo vazio.");
-  const buffer = new ArrayBuffer(totalBytes);
-  const bytes = new Uint8Array(buffer);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  const blob = new Blob([buffer], { type: mimeType });
+      controller.enqueue(chunk);
+    },
+    flush() {
+      if (totalBytes === 0) throw new AdminApiError("O serviço retornou um anexo vazio.");
+    },
+  }));
+  const blob = await new Response(limitedBody, { headers: { "Content-Type": mimeType } }).blob();
   return {
     url: URL.createObjectURL(blob),
     mime_type: mimeType,
