@@ -521,6 +521,19 @@ interface DbOrderItem {
   replacement_product_id: string | null;
 }
 
+interface DbOrderQueueRow {
+  id: string;
+  status: string;
+  total_cents: number;
+  basket_name: string | null;
+  customer_name: string | null;
+  city: string | null;
+  channel: string;
+  item_count: number;
+  revision: number;
+  created_at: string;
+}
+
 interface BlingSalePreviewSummary {
   externalReference: string;
   saleDate: string;
@@ -819,7 +832,6 @@ function orderPresentation(order: DbOrder, items: DbOrderItem[] = []) {
     itemCount: items.length || (Array.isArray(order.snapshot.items) ? order.snapshot.items.length : 0),
     revision: order.revision,
     createdAt: order.created_at,
-    snapshot: order.snapshot,
     items: items.map((item) => ({
       id: item.id, groupId: item.group_id, productId: item.product_id,
       name: String(item.snapshot.name ?? "Produto"), brand: String(item.snapshot.brand ?? ""),
@@ -857,19 +869,50 @@ async function loadOrder(orderId: string): Promise<{ order: DbOrder; items: DbOr
 
 async function listOrders() {
   const db = ordersDb();
-  const orders = await db<DbOrder>`
-    select * from whatsapp_atendimento.orders
+  const orders = await db<DbOrderQueueRow>`
+    select id, status, total_cents, channel, revision, created_at,
+      snapshot ->> 'basketName' as basket_name,
+      snapshot #>> '{customer,name}' as customer_name,
+      snapshot #>> '{customer,address,city}' as city,
+      case when jsonb_typeof(snapshot -> 'items') = 'array'
+        then jsonb_array_length(snapshot -> 'items') else 0 end as item_count
+    from whatsapp_atendimento.orders
     where status not in ('completed', 'cancelled')
     order by created_at asc limit 200
   `;
-  return orders.map((order) => orderPresentation(order));
+  return orders.map((order) => ({
+    id: order.id,
+    status: order.status,
+    totalCents: Number(order.total_cents),
+    basketName: order.basket_name ?? "Cesta",
+    customerName: order.customer_name ?? "Cliente",
+    city: order.city ?? "",
+    channel: order.channel,
+    itemCount: Number(order.item_count),
+    revision: order.revision,
+    createdAt: order.created_at,
+  }));
 }
 
 async function orderDetail(orderId: string) {
   const { order, items } = await loadOrder(orderId);
-  const detail = orderPresentation(order, items);
-  const db = ordersDb();
   const customer = isRecord(order.snapshot.customer) ? order.snapshot.customer : {};
+  const address = isRecord(customer.address) ? customer.address : {};
+  const detail = {
+    ...orderPresentation(order, items),
+    paymentMethod: safeText(order.snapshot.paymentMethod),
+    deliveryAddress: {
+      street: safeText(address.street),
+      number: safeText(address.number),
+      complement: safeText(address.complement),
+      neighborhood: safeText(address.neighborhood),
+      city: safeText(address.city),
+      state: safeText(address.state),
+      postalCode: safeText(address.postalCode),
+      reference: safeText(address.reference),
+    },
+  };
+  const db = ordersDb();
   const customerId = typeof customer.customerId === "string" ? customer.customerId : "";
   if (ORDER_ID.test(customerId)) {
     const contactMappings = await db<{ bling_contact_id: number; verified_at: string }>`

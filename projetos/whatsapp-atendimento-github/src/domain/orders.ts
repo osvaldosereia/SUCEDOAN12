@@ -41,8 +41,20 @@ export interface OrderItemRecord {
   replacementOptions: Array<{ id: string; name: string; brand: string }>;
 }
 
+export interface OrderDeliveryAddress {
+  street: string | null;
+  number: string | null;
+  complement: string | null;
+  neighborhood: string | null;
+  city: string | null;
+  state: string | null;
+  postalCode: string | null;
+  reference: string | null;
+}
+
 export interface OrderDetailRecord extends OrderListEntry {
-  snapshot: Record<string, unknown>;
+  paymentMethod: string | null;
+  deliveryAddress: OrderDeliveryAddress;
   items: OrderItemRecord[];
   assignedOperatorId: string | null;
   customerAcceptanceStatus: "not_required" | "pending" | "accepted" | "rejected";
