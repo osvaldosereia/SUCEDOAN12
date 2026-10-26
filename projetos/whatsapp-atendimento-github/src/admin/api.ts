@@ -1,5 +1,5 @@
 import type { CatalogDocuments } from "../domain/catalog";
-import type { BasketFlowJson, FlowChannel, FlowDraftSnapshot, SaveFlowDraftInput } from "../domain/flows";
+import type { BasketFlowJson, FlowChannel, FlowDraftSnapshot, FlowDraftWriteSnapshot, SaveFlowDraftInput } from "../domain/flows";
 import type { OrderDetailRecord, OrderListEntry, OrderPickingInput } from "../domain/orders";
 import type { OutboxQueueSnapshot } from "../domain/outbox";
 import type { CustomerListItem, CustomerRecord } from "../domain/customers";
@@ -126,8 +126,8 @@ export function getFlowDraft(accessToken: string, channel: FlowChannel): Promise
   return apiRequest<FlowDraftSnapshot>(`/flow-drafts/${channel}`, accessToken);
 }
 
-export function saveFlowDraft(accessToken: string, channel: FlowChannel, input: SaveFlowDraftInput): Promise<FlowDraftSnapshot> {
-  return apiRequest<FlowDraftSnapshot>(`/flow-drafts/${channel}`, accessToken, {
+export function saveFlowDraft(accessToken: string, channel: FlowChannel, input: SaveFlowDraftInput): Promise<FlowDraftWriteSnapshot> {
+  return apiRequest<FlowDraftWriteSnapshot>(`/flow-drafts/${channel}`, accessToken, {
     method: "PUT",
     body: JSON.stringify(input),
   });

@@ -51,6 +51,10 @@ export interface FlowDraftSnapshot {
   commitUrl: string;
 }
 
+export interface FlowDraftWriteSnapshot extends FlowDraftSnapshot {
+  documents: Record<FlowChannel, ChannelFlowDocument>;
+}
+
 export interface SaveFlowDraftInput {
   expectedCommit: string;
   document: ChannelFlowDocument;

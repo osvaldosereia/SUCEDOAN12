@@ -254,7 +254,7 @@ function openFlowReview(): void {
     return;
   }
   state.flowReviewDocument = document;
-  openModal(`<div class="modal-card review-modal"><div class="modal-heading"><div><span class="eyebrow">Revisão antes do commit</span><h2>Salvar rascunho Flow?</h2></div><button class="icon-button" data-action="close-modal" aria-label="Fechar">×</button></div><p>O commit guardará o JSON para o canal final ${state.flowChannel}, associado à cesta ${escapeHtml(basket.name)} e à revisão de catálogo <code>${escapeHtml(state.catalogRevision.slice(0, 7))}</code>.</p>${refreshedCount ? `<p class="inline-note">${refreshedCount} outro(s) rascunho(s) deste canal será(ão) regenerado(s) para a mesma revisão do catálogo.</p>` : ""}<p class="flow-muted">A gravação não cria Flow na Meta, não publica e não envia mensagens. O status Meta permanece desconhecido.</p><div class="review-target"><span>Rascunho</span><strong>${escapeHtml(draft.flowName)}</strong><code>flows/channel-${state.flowChannel}.json</code></div><div class="modal-actions"><button class="button button-soft" data-action="close-modal">Voltar</button><button class="button button-primary" data-action="confirm-save-flow">Confirmar e gravar rascunho</button></div></div>`, "flow-review");
+  openModal(`<div class="modal-card review-modal"><div class="modal-heading"><div><span class="eyebrow">Revisão antes do commit</span><h2>Salvar rascunho Flow?</h2></div><button class="icon-button" data-action="close-modal" aria-label="Fechar">×</button></div><p>O commit sincronizará o mesmo conteúdo para 0975 e 1018, associado à cesta ${escapeHtml(basket.name)} e à revisão de catálogo <code>${escapeHtml(state.catalogRevision.slice(0, 7))}</code>.</p>${refreshedCount ? `<p class="inline-note">${refreshedCount} outro(s) rascunho(s) também será(ão) regenerado(s) para a mesma revisão do catálogo nos dois canais.</p>` : ""}<p class="flow-muted">A gravação não cria Flow na Meta, não publica e não envia mensagens. O status Meta permanece desconhecido.</p><div class="review-target"><span>Rascunhos sincronizados</span><strong>${escapeHtml(draft.flowName)}</strong><code>flows/channel-0975.json · flows/channel-1018.json</code></div><div class="modal-actions"><button class="button button-soft" data-action="close-modal">Voltar</button><button class="button button-primary" data-action="confirm-save-flow">Confirmar e gravar rascunho</button></div></div>`, "flow-review");
 }
 
 async function performFlowSave(): Promise<void> {
@@ -270,10 +270,10 @@ async function performFlowSave(): Promise<void> {
       expectedCommit: state.commitSha,
       document,
     });
-    state.flowDocuments = { ...state.flowDocuments, [state.flowChannel]: snapshot.document };
+    state.flowDocuments = snapshot.documents;
     state.commitSha = snapshot.commitSha;
     state.commitUrl = snapshot.commitUrl;
-    state.notice = `Rascunho Flow ${state.flowChannel} gravado no commit ${snapshot.commitSha.slice(0, 7)}.`;
+    state.notice = `Rascunhos de Flow sincronizados para 0975 e 1018 no commit ${snapshot.commitSha.slice(0, 7)}.`;
     state.noticeType = "success";
     state.flowReviewDocument = null;
   } catch (error) {

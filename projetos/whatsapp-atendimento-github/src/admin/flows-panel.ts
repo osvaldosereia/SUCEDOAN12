@@ -152,7 +152,7 @@ export function renderFlowsPanel(model: FlowsPanelModel): string {
       </section>
       <section class="flow-json-card"><div class="flow-json-heading"><div><span class="eyebrow">Saída do wizard</span><h2>Flow JSON</h2></div><span class="subtle">Somente leitura</span></div><pre><code>${escapeHtml(flowText || "Selecione uma cesta ativa para gerar o JSON.")}</code></pre></section>
     </div>
-    <section class="saved-flow-list"><div class="section-title"><div><span class="eyebrow">Histórico por canal</span><h2>Rascunhos salvos · final ${model.channel}</h2></div></div>${savedDrafts.length ? `<div class="saved-flow-grid">${savedDrafts.map((draft) => {
+    <section class="saved-flow-list"><div class="section-title"><div><span class="eyebrow">Conteúdo compartilhado · revisão no GitHub</span><h2>Rascunhos disponíveis nos dois números</h2></div></div>${savedDrafts.length ? `<div class="saved-flow-grid">${savedDrafts.map((draft) => {
       const current = draft.catalogRevision === model.catalogRevision;
       const linkedBasket = model.baskets.find((item) => item.id === draft.basketId);
       return `<article><div><strong>${escapeHtml(linkedBasket?.name ?? draft.basketId)}</strong><span>${escapeHtml(draft.flowName)}</span></div><span class="flow-revision ${current ? "is-current" : ""}">${current ? "Revisão atual" : `Catálogo ${draft.catalogRevision.slice(0, 7)}`}</span></article>`;

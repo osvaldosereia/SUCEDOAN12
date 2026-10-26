@@ -533,9 +533,12 @@ function flowPath(channel: FlowChannel): string {
   return `${FLOWS_PATH}/channel-${channel}.json`;
 }
 
-async function readFlowDraft(channel: FlowChannel, token: string) {
-  const commitSha = await branchHead(token);
-  const catalog = await readCatalog(token, commitSha);
+async function readFlowDocumentAtCommit(
+  channel: FlowChannel,
+  commitSha: string,
+  token: string,
+  catalog: Awaited<ReturnType<typeof readCatalog>>,
+): Promise<ChannelFlowDocument> {
   const file = await githubJson<{ content: string }>(
     repositoryPath(`/contents/${flowPath(channel)}?${new URLSearchParams({ ref: commitSha })}`),
     token,
@@ -548,8 +551,15 @@ async function readFlowDraft(channel: FlowChannel, token: string) {
   }
   const errors = validateChannelFlowDocument(document, channel, catalog.baskets.baskets, catalog.products.products);
   if (errors.length) throw new HttpError(422, `Revise o rascunho do Flow: ${errors.slice(0, 5).join("; ")}`);
+  return document as ChannelFlowDocument;
+}
+
+async function readFlowDraft(channel: FlowChannel, token: string) {
+  const commitSha = await branchHead(token);
+  const catalog = await readCatalog(token, commitSha);
+  const document = await readFlowDocumentAtCommit(channel, commitSha, token, catalog);
   return {
-    document: document as ChannelFlowDocument,
+    document,
     commitSha,
     commitUrl: `https://github.com/${OWNER}/${REPOSITORY}/commit/${commitSha}`,
   };
@@ -573,28 +583,47 @@ async function writeFlowDraft(channel: FlowChannel, input: unknown, token: strin
   const catalog = await readCatalog(token, headSha);
   const errors = validateChannelFlowDocument(request.document, channel, catalog.baskets.baskets, catalog.products.products, catalog.catalogRevision);
   if (errors.length) throw new HttpError(422, `Revise o rascunho do Flow: ${errors.slice(0, 5).join("; ")}`);
+  const siblingChannel = FLOW_CHANNELS.find((candidate) => candidate !== channel);
+  if (!siblingChannel) throw new HttpError(500, "Os dois canais WhatsApp não estão configurados para compartilhar os rascunhos.");
+  const siblingDocument = await readFlowDocumentAtCommit(siblingChannel, headSha, token, catalog);
+  const sharedDrafts = (request.document as ChannelFlowDocument).drafts;
+  const documents = {} as Record<FlowChannel, ChannelFlowDocument>;
+  documents[channel] = request.document as ChannelFlowDocument;
+  documents[siblingChannel] = { ...siblingDocument, drafts: sharedDrafts };
+  for (const targetChannel of FLOW_CHANNELS) {
+    const documentErrors = validateChannelFlowDocument(
+      documents[targetChannel], targetChannel, catalog.baskets.baskets, catalog.products.products, catalog.catalogRevision,
+    );
+    if (documentErrors.length) throw new HttpError(422, `O rascunho compartilhado não é válido no canal ${targetChannel}: ${documentErrors.slice(0, 5).join("; ")}`);
+  }
 
-  const content = `${JSON.stringify(request.document, null, 2)}\n`;
-  if (new TextEncoder().encode(content).byteLength > MAX_FLOW_DRAFT_BYTES) throw new HttpError(413, "O rascunho do Flow excede o limite permitido.");
-  const blob = await createBlob(encodeBase64(content), token);
+  const treeEntries = await Promise.all(FLOW_CHANNELS.map(async (targetChannel) => {
+    const content = `${JSON.stringify(documents[targetChannel], null, 2)}\n`;
+    if (new TextEncoder().encode(content).byteLength > MAX_FLOW_DRAFT_BYTES) {
+      throw new HttpError(413, `O rascunho do Flow ${targetChannel} excede o limite permitido.`);
+    }
+    const blob = await createBlob(encodeBase64(content), token);
+    return { path: flowPath(targetChannel), mode: "100644", type: "blob", sha: blob };
+  }));
   const parent = await githubJson<{ tree: { sha: string } }>(repositoryPath(`/git/commits/${headSha}`), token);
   const tree = await githubJson<{ sha: string }>(repositoryPath("/git/trees"), token, {
     method: "POST",
     body: JSON.stringify({
       base_tree: parent.tree.sha,
-      tree: [{ path: flowPath(channel), mode: "100644", type: "blob", sha: blob }],
+      tree: treeEntries,
     }),
   });
   const commit = await githubJson<{ sha: string; html_url: string }>(repositoryPath("/git/commits"), token, {
     method: "POST",
-    body: JSON.stringify({ message: `admin: salvar rascunho Flow ${channel}`, tree: tree.sha, parents: [headSha] }),
+    body: JSON.stringify({ message: `admin: sincronizar rascunhos Flow ${FLOW_CHANNELS.join(" e ")}`, tree: tree.sha, parents: [headSha] }),
   });
   await githubJson(repositoryPath(`/git/refs/heads/${BRANCH}`), token, {
     method: "PATCH",
     body: JSON.stringify({ sha: commit.sha, force: false }),
   });
   return {
-    document: request.document as ChannelFlowDocument,
+    document: documents[channel],
+    documents,
     commitSha: commit.sha,
     commitUrl: commit.html_url,
   };
