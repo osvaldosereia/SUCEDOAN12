@@ -2,7 +2,7 @@
 
 Data: 25/10/2026
 Branch: `project/whatsapp-atendimento-github-20261025`
-Estado: fila, separação, preflight, OAuth local e prévia redigida da venda implementados; DTO da fila/detalhe minimizado; migration e credenciais externas não aplicadas. Conexão está desligada por padrão e escritas Bling seguem bloqueadas.
+Estado: Rodada 6 concluída localmente. Fila, separação, preflight, OAuth local e prévia redigida da venda implementados; DTO da fila/detalhe minimizado; migration e credenciais externas não aplicadas. Conexão está desligada por padrão e escritas Bling seguem bloqueadas até fechar o contrato comercial/fiscal e homologar em ambiente controlado.
 
 ## Decisão
 
@@ -43,6 +43,12 @@ Quando a falta altera o total, o pedido fica em `attention` aguardando novo acei
 - O servidor agora monta uma proposta local de venda a partir do snapshot fixado e dos itens separados, calcula a impressão digital SHA-256 sem armazenar o JSON e grava a referência determinística no pedido. A tela autenticada mostra referência, data, contagem de itens, observação de pagamento e se o hash foi calculado; o objeto `integrationJob` não inclui campos pessoais nem JSON da requisição. O endpoint de detalhe expõe somente os campos operacionais autorizados descritos acima, sem devolver o snapshot bruto.
 - A reconciliação busca por `numeroLoja` e persiste apenas o resultado redigido. Mesmo uma resposta única não pode ser marcada como compatível enquanto o candidato local não incluir datas previstas/saída e parcelas para comparação; portanto, um registro encontrado segue `unknown` e não é associado ao job. A rota tem flag independente e não foi chamada; nenhum POST foi adicionado e não houve requisição ao host da API Bling.
 - `integration_credentials` e `integration_oauth_states` são tabelas privadas. O início OAuth exige sessão administrativa e allowlist; o callback valida e consome uma única vez o hash de `state`, troca o código server-side e cifra tokens AES-GCM antes de gravá-los. Um helper server-side renova access/refresh tokens sob lock transacional e persiste o par rotacionado cifrado. `BLING_OAUTH_ENABLED` permanece `false`; não há credencial, conexão, consumidor outbox ou chamada externa ativos.
-- Para habilitar escrita futura, ainda faltam OAuth válido, worker de reconciliação idempotente da venda e as etapas de NF-e. A baixa/conta financeira exigirá contrato próprio caso seja adicionada. Existe um cliente Bling limitado a GET server-side, mas nenhuma rota o chama; o refresh não é acionado sem uma chamada futura a esse cliente.
+- Para habilitar escrita futura, ainda faltam OAuth válido, decisão do contrato da venda e worker de criação que use a reconciliação idempotente já implementada antes/depois do POST. Também faltam as etapas de NF-e. A baixa/conta financeira exigirá contrato próprio caso seja adicionada. O cliente Bling segue limitado a GET; com as flags desligadas, a rota de reconciliação não o chama e o refresh não é acionado.
 - Referência do fluxo Authorization Code e refresh token: [documentação oficial Bling](https://developer.bling.com.br/aplicativos).
 - Migration criada pelo Supabase CLI, ainda não aplicada. `pnpm build` é verificado; não executar testes nem deploy durante esta rodada.
+
+## Critério de encerramento local
+
+- Os fluxos administrativos de fila, atribuição, separação e ajuste trabalham com revisão otimista, catálogo fixado e eventos idempotentes; as respostas não expõem o snapshot pessoal bruto.
+- OAuth Bling e a rota de reconciliação existem no servidor e exigem sessão/allowlist; ambas as flags permanecem `false` por padrão. A reconciliação usa somente GET, registra resultado redigido com chave idempotente/lease e nunca libera `create_sale`.
+- O critério local da Rodada 6 está atendido. O projeto não está pronto para operação: falta decidir valores/datas de vencimento e o mapeamento da forma de pagamento, implementar e homologar a escrita da venda, fechar NF-e e despacho, e validar a ligação dos Flows. Esses itens passam como gates explícitos para a Rodada 7; nenhuma API real, conta ou migration foi acionada nesta rodada.

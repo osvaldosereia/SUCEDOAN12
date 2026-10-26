@@ -4,7 +4,7 @@ Projeto: WhatsApp Atendimento GitHub — SUCEDOAN12
 Branch isolada: project/whatsapp-atendimento-github-20261025  
 Diretório do novo código: projetos/whatsapp-atendimento-github/  
 Execução prevista: Work Luna Max  
-Estado: Rodadas 0–5 concluídas localmente; Rodada 6 em andamento, com fila/separação, prévia redigida de venda, OAuth Bling desligado e reconciliação GET-only sem chamador. Próximas entregas da Rodada 6: persistir o resultado de reconciliação com segurança, fechar o contrato da venda e só então definir NF-e e gate de saída.
+Estado: Rodadas 0–6 concluídas localmente. A Rodada 6 entrega fila/separação, OAuth Bling desativado e rota autenticada de reconciliação GET-only com resultado persistido. Operação Bling permanece bloqueada até definir o contrato financeiro/fiscal e concluir homologação controlada; a Rodada 7 concentra esses gates e a ligação dos Flows.
 
 ## Decisão principal
 
@@ -120,8 +120,8 @@ Como ponto de partida, testar uma miniatura WebP de 240×190 com limite de 27 KB
 | 3 — Configurador Meta Flow | Editor guiado, Flow JSON gerado, validação local, configuração por número e exportação | Cada número tem rascunho próprio; publicação permanece fora da etapa |
 | 4 — Runtime de atendimento | **Implementada localmente:** sessão/canal, seleção validada, imagens por commit, cotação, protocolo cifrado e busca mínima de cliente. Migration criada, não aplicada. | Endpoint local compila e falha fechado sem segredos/sessão; total calculado no servidor. A ligação do JSON Meta e revisão de telas dependem da Rodada 7. |
 | 5 — Confirmação e pedidos | Resumo no chat, botões, rascunho, confirmação idempotente e novo esquema operacional | Só o aceite explícito cria pedido e preserva snapshot |
-| 6 — Separação e Bling | **Implementação local parcial:** fila, atribuição, separação/falta, aceite do total recalculado, preflight idempotente, vínculo manual revisado do contato, OAuth cifrado/desligado, helper GET-only de reconciliação inerte e DTO administrativo com dados mínimos. Criação de venda/NF-e e entrega aguardam contratos e homologação. | Separação opera com revisão fixada; fila não recebe snapshot pessoal bruto; nenhuma escrita Bling sem OAuth e reconciliação idempotente aprovada |
-| 7 — Homologação | Verificação de imagens, Flow nos dois números, pedido interno, erros, repetição de eventos e recuperação | Jornada completa comprovada em canal controlado antes de qualquer liberação |
+| 6 — Separação e Bling | **Concluída localmente:** fila, atribuição, separação/falta, aceite do total recalculado, preflight idempotente, vínculo manual revisado do contato, OAuth cifrado/desligado, rota autenticada de reconciliação GET-only com idempotência/lease e DTO administrativo mínimo. Criação da venda, NF-e e entrega continuam bloqueadas por contrato e homologação. | Separação usa revisão fixada; fila não expõe snapshot pessoal bruto; nenhuma escrita Bling fica habilitada; reconciliação permanece desligada por padrão |
+| 7 — Homologação e gates externos | Fechar política de datas/parcelas e mapeamento de pagamento Bling; validar criação/reconciliação de venda e etapas fiscais/saída em ambiente controlado; ligar e validar os dois Flows | Jornada completa comprovada em ambiente controlado antes de qualquer liberação operacional |
 
 Cada rodada deve produzir um diff pequeno e revisável, resumo das mudanças, como conferir o resultado e riscos remanescentes. Não implantar, publicar Flow ou enviar mensagem real durante desenvolvimento local.
 
