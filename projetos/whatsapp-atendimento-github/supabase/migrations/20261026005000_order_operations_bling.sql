@@ -62,14 +62,7 @@ create index integration_jobs_queue_idx
 create table whatsapp_atendimento.customer_bling_contacts (
   customer_id uuid primary key,
   bling_contact_id bigint not null unique check (bling_contact_id > 0),
-  updated_by uuid,
-  updated_at timestamptz not null default now()
-);
-
-create table whatsapp_atendimento.bling_payment_mappings (
-  payment_method text primary key check (payment_method in ('pix', 'cash', 'debit_card', 'credit_card')),
-  bling_payment_form_id bigint not null check (bling_payment_form_id > 0),
-  due_date_offset_days integer check (due_date_offset_days is null or due_date_offset_days between 0 and 365),
+  verified_at timestamptz not null,
   updated_by uuid,
   updated_at timestamptz not null default now()
 );
@@ -93,7 +86,6 @@ create table whatsapp_atendimento.integration_oauth_states (
 
 alter table whatsapp_atendimento.integration_jobs enable row level security;
 alter table whatsapp_atendimento.customer_bling_contacts enable row level security;
-alter table whatsapp_atendimento.bling_payment_mappings enable row level security;
 alter table whatsapp_atendimento.integration_credentials enable row level security;
 alter table whatsapp_atendimento.integration_oauth_states enable row level security;
 

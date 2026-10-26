@@ -546,6 +546,8 @@ function orderPresentation(order: DbOrder, items: DbOrderItem[] = []) {
     invoiceId: order.invoice_id,
     attentionCode: order.attention_code,
     separationCompletedAt: order.separation_completed_at,
+    blingContactId: null as number | null,
+    blingContactVerifiedAt: null as string | null,
     integrationJob: null as { operation: string; status: string; errorCode: string | null; blockers: string[]; commercialTotals: BlingCommercialTotals | null } | null,
   };
 }
@@ -573,6 +575,17 @@ async function orderDetail(orderId: string) {
   const { order, items } = await loadOrder(orderId);
   const detail = orderPresentation(order, items);
   const db = ordersDb();
+  const customer = isRecord(order.snapshot.customer) ? order.snapshot.customer : {};
+  const customerId = typeof customer.customerId === "string" ? customer.customerId : "";
+  if (ORDER_ID.test(customerId)) {
+    const contactMappings = await db<{ bling_contact_id: number; verified_at: string }>`
+      select bling_contact_id, verified_at from whatsapp_atendimento.customer_bling_contacts where customer_id = ${customerId}
+    `;
+    if (contactMappings[0]) {
+      detail.blingContactId = Number(contactMappings[0].bling_contact_id);
+      detail.blingContactVerifiedAt = contactMappings[0].verified_at;
+    }
+  }
   const jobs = await db<{
     operation: string; status: string; error_code: string | null; result_summary: Record<string, unknown>;
   }>`select operation, status, error_code, result_summary from whatsapp_atendimento.integration_jobs where order_id = ${orderId} order by created_at desc limit 1`;
@@ -976,6 +989,71 @@ async function assignOrder(orderId: string, operatorId: string, body: Record<str
   return orderDetail(orderId);
 }
 
+async function saveOrderBlingContact(orderId: string, operatorId: string, body: Record<string, unknown>) {
+  if (typeof body.revision !== "number" || !Number.isSafeInteger(body.revision)) throw new HttpError(400, "A revisão do pedido é obrigatória.");
+  if (typeof body.blingContactId !== "number" || !Number.isSafeInteger(body.blingContactId) || body.blingContactId <= 0) {
+    throw new HttpError(400, "Informe um ID de contato Bling válido.");
+  }
+  if (body.customerMatchConfirmed !== true) throw new HttpError(400, "Confirme que verificou o contato no Bling.");
+  const db = ordersDb();
+  try {
+    await db.begin(async (tx) => {
+      const rows = await tx<DbOrder>`select * from whatsapp_atendimento.orders where id = ${orderId} for update`;
+      const order = rows[0];
+      if (!order) throw new HttpError(404, "Pedido não encontrado.");
+      if (order.revision !== body.revision) throw new HttpError(409, "O pedido mudou. Recarregue o detalhe.");
+      const customer = isRecord(order.snapshot.customer) ? order.snapshot.customer : {};
+      const customerId = typeof customer.customerId === "string" ? customer.customerId : "";
+      if (!ORDER_ID.test(customerId)) throw new HttpError(409, "Este pedido não tem um cliente cadastrado para vincular.");
+
+      const duplicate = await tx<{ customer_id: string }>`
+        select customer_id from whatsapp_atendimento.customer_bling_contacts
+        where bling_contact_id = ${body.blingContactId} and customer_id <> ${customerId}
+      `;
+      if (duplicate.length) throw new HttpError(409, "Este contato Bling já está vinculado a outro cliente.");
+      const current = await tx<{ bling_contact_id: number }>`
+        select bling_contact_id from whatsapp_atendimento.customer_bling_contacts where customer_id = ${customerId}
+      `;
+      if (!current[0] || Number(current[0].bling_contact_id) !== body.blingContactId) {
+        await tx`
+          insert into whatsapp_atendimento.customer_bling_contacts (customer_id, bling_contact_id, verified_at, updated_by)
+          values (${customerId}, ${body.blingContactId}, now(), ${operatorId})
+          on conflict (customer_id) do update
+          set bling_contact_id = excluded.bling_contact_id, verified_at = excluded.verified_at,
+              updated_by = excluded.updated_by, updated_at = now()
+        `;
+        await tx`update whatsapp_atendimento.orders set revision = revision + 1, updated_at = now() where id = ${orderId}`;
+        await tx`
+          insert into whatsapp_atendimento.order_events (order_id, event_key, event_type, event_data)
+          values (${orderId}, ${`${orderId}:bling-contact:${order.revision + 1}`}, 'bling_contact_linked',
+            ${tx.json({ operatorId, customerId, blingContactId: body.blingContactId })})
+          on conflict (event_key) do nothing
+        `;
+      }
+      await tx`
+        update whatsapp_atendimento.integration_jobs j
+        set result_summary = jsonb_set(
+          j.result_summary,
+          '{blockers}',
+          coalesce((
+            select jsonb_agg(blocker.value)
+            from jsonb_array_elements_text(coalesce(j.result_summary->'blockers', '[]'::jsonb)) as blocker(value)
+            where blocker.value not in ('BLING_CUSTOMER_CONTACT_MAPPING_MISSING', 'BLING_PAYMENT_FORM_MAPPING_MISSING', 'BLING_DUE_DATE_POLICY_MISSING')
+          ), '[]'::jsonb),
+          true
+        ), updated_at = now()
+        from whatsapp_atendimento.orders o
+        where j.order_id = o.id and o.snapshot #>> '{customer,customerId}' = ${customerId}
+          and j.operation = 'create_sale' and j.status = 'blocked' and j.error_code = 'BLING_PREFLIGHT_REQUIRED'
+      `;
+    });
+  } catch (error) {
+    if (isRecord(error) && error.code === "23505") throw new HttpError(409, "Este contato Bling já está vinculado a outro cliente.");
+    throw error;
+  }
+  return orderDetail(orderId);
+}
+
 async function finishSeparation(orderId: string, operatorId: string, body: Record<string, unknown>) {
   if (typeof body.revision !== "number" || !Number.isSafeInteger(body.revision)) throw new HttpError(400, "A revisão do pedido é obrigatória.");
   const db = ordersDb();
@@ -992,12 +1070,10 @@ async function finishSeparation(orderId: string, operatorId: string, body: Recor
     }
     const customer = isRecord(order.snapshot.customer) ? order.snapshot.customer : {};
     const customerId = typeof customer.customerId === "string" ? customer.customerId : "";
-    const paymentMethod = typeof order.snapshot.paymentMethod === "string" ? order.snapshot.paymentMethod : "";
     const contactMapping = customerId
-      ? await tx<{ customer_id: string }>`select customer_id from whatsapp_atendimento.customer_bling_contacts where customer_id = ${customerId}`
-      : [];
-    const paymentMapping = paymentMethod
-      ? await tx<{ bling_payment_form_id: number; due_date_offset_days: number | null }>`select bling_payment_form_id, due_date_offset_days from whatsapp_atendimento.bling_payment_mappings where payment_method = ${paymentMethod}`
+      ? await tx<{ customer_id: string; bling_contact_id: number; verified_at: string }>`
+          select customer_id, bling_contact_id, verified_at from whatsapp_atendimento.customer_bling_contacts where customer_id = ${customerId}
+        `
       : [];
     const credential = await tx<{ provider: string }>`select provider from whatsapp_atendimento.integration_credentials where provider = 'bling' and expires_at > now()`;
     const itemLineTotals = items.map((item) => Number(item.line_total_cents));
@@ -1007,9 +1083,7 @@ async function finishSeparation(orderId: string, operatorId: string, body: Recor
       ? reconcileBlingCommercialTotals(lineTotalCents, acceptedTotalCents)
       : null;
     const blockers = [
-      ...(!contactMapping.length ? ["BLING_CUSTOMER_CONTACT_MAPPING_MISSING"] : []),
-      ...(!paymentMapping.length ? ["BLING_PAYMENT_FORM_MAPPING_MISSING"] : []),
-      ...(paymentMapping.length && paymentMapping[0].due_date_offset_days === null ? ["BLING_DUE_DATE_POLICY_MISSING"] : []),
+      ...(!contactMapping.length || !Number.isSafeInteger(Number(contactMapping[0]?.bling_contact_id)) || !contactMapping[0]?.verified_at ? ["BLING_CUSTOMER_CONTACT_MAPPING_MISSING"] : []),
       ...(!credential.length ? ["BLING_OAUTH_CREDENTIAL_MISSING"] : []),
       ...(!commercialTotals?.balances ? ["BLING_TOTAL_RECONCILIATION_INVALID"] : []),
       "BLING_CONNECTOR_DISABLED_IN_DEVELOPMENT",
@@ -1078,7 +1152,7 @@ Deno.serve(async (request) => {
     if (url.pathname.endsWith("/orders") && request.method === "GET") {
       return jsonResponse({ orders: await listOrders() }, 200, headers);
     }
-    const orderMatch = url.pathname.match(/\/orders\/([0-9a-f-]{36})(?:\/(picking|assign|separation\/complete))?$/i);
+    const orderMatch = url.pathname.match(/\/orders\/([0-9a-f-]{36})(?:\/(picking|assign|separation\/complete|bling-contact))?$/i);
     if (orderMatch && ORDER_ID.test(orderMatch[1])) {
       const [, orderId, action] = orderMatch;
       if (!action && request.method === "GET") return jsonResponse(await orderDetail(orderId), 200, headers);
@@ -1087,6 +1161,9 @@ Deno.serve(async (request) => {
       }
       if (action === "assign" && request.method === "POST") {
         return jsonResponse(await assignOrder(orderId, authorization.operator.id, await readJson(request)), 200, headers);
+      }
+      if (action === "bling-contact" && request.method === "PUT") {
+        return jsonResponse(await saveOrderBlingContact(orderId, authorization.operator.id, await readJson(request)), 200, headers);
       }
       if (action === "separation/complete" && request.method === "POST") {
         return jsonResponse(await finishSeparation(orderId, authorization.operator.id, await readJson(request)), 200, headers);

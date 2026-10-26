@@ -91,6 +91,17 @@ export function assignOrder(accessToken: string, orderId: string, revision: numb
   });
 }
 
+export function saveOrderBlingContact(
+  accessToken: string,
+  orderId: string,
+  input: { revision: number; blingContactId: number; customerMatchConfirmed: true },
+): Promise<OrderDetailRecord> {
+  return apiRequest<OrderDetailRecord>(`/orders/${encodeURIComponent(orderId)}/bling-contact`, accessToken, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+}
+
 export function saveOrderPicking(accessToken: string, orderId: string, input: OrderPickingInput): Promise<OrderDetailRecord> {
   return apiRequest<OrderDetailRecord>(`/orders/${encodeURIComponent(orderId)}/picking`, accessToken, {
     method: "PATCH",

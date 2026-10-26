@@ -49,6 +49,8 @@ export interface OrderDetailRecord extends OrderListEntry {
   invoiceStatus: "not_requested" | "pending" | "authorized" | "rejected" | "unknown";
   invoiceId: number | null;
   attentionCode: string | null;
+  blingContactId: number | null;
+  blingContactVerifiedAt: string | null;
   integrationJob: {
     operation: string;
     status: string;

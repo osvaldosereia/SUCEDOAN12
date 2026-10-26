@@ -22,7 +22,7 @@ import {
   type ChannelFlowDocument,
   type FlowChannel,
 } from "../domain/flows";
-import { AdminApiError, assignOrder, completeOrderSeparation, getCatalog, getFlowDraft, getOrder, getOrders, saveCatalog, saveFlowDraft, saveOrderPicking, type PendingImage } from "./api";
+import { AdminApiError, assignOrder, completeOrderSeparation, getCatalog, getFlowDraft, getOrder, getOrders, saveCatalog, saveFlowDraft, saveOrderBlingContact, saveOrderPicking, type PendingImage } from "./api";
 import type { OrderDetailRecord, OrderListEntry } from "../domain/orders";
 import { renderFlowsPanel } from "./flows-panel";
 import "./styles.css";
@@ -387,6 +387,7 @@ function ordersView(): string {
     return `<section class="workspace-heading"><div><span class="eyebrow">Pedido · ${escapeHtml(order.id.slice(0, 8))}</span><h1>${escapeHtml(order.customerName)}</h1><p>${escapeHtml(order.basketName)} · ${escapeHtml(order.city)} · recebido ${new Date(order.createdAt).toLocaleString("pt-BR")}</p></div><div class="order-heading-actions"><button class="button button-soft" data-action="orders-back">← Fila</button><button class="button button-soft" data-action="orders-refresh">Atualizar</button></div></section>
       <div class="order-summary-grid"><article><span>Status</span><strong>${escapeHtml(orderStatusLabel(order.status))}</strong></article><article><span>Total confirmado</span><strong>${money(order.totalCents)}</strong></article><article><span>Canal / pagamento</span><strong>${escapeHtml(order.channel)} · ${escapeHtml(String(order.snapshot.paymentMethod ?? "—"))}</strong></article><article><span>Revisão</span><strong>${order.revision}</strong></article></div>
       ${pending ? `<div class="flow-safety-note"><strong>Aguardando aceite do cliente</strong><span>Há falta ou substituição pendente. A separação e o Bling ficam bloqueados até a resposta chegar pelo webhook.</span></div>` : ""}
+      <section class="order-items-card"><div class="section-title"><div><span class="eyebrow">Integração Bling</span><h2>Vínculo do contato</h2></div><strong>${order.blingContactId ? `ID ${order.blingContactId} · conferido manualmente` : "Sem vínculo"}</strong></div><p>Informe o ID do contato e confirme que conferiu a identidade no painel Bling. Esta tela não consulta o Bling; o ID será salvo no cadastro privado do cliente.</p><form id="order-bling-contact-form"><label>ID do contato Bling<input name="bling_contact_id" type="number" min="1" max="9007199254740991" step="1" value="${order.blingContactId ?? ""}" required></label><label class="checkbox-label"><input name="customer_match_confirmed" type="checkbox" required> Conferi que este contato pertence a ${escapeHtml(order.customerName)}</label><button class="button button-soft" type="submit">${order.blingContactId ? "Atualizar vínculo" : "Salvar vínculo"}</button></form>${order.blingContactVerifiedAt ? `<small>Conferido em ${new Date(order.blingContactVerifiedAt).toLocaleString("pt-BR")}</small>` : ""}</section>
       ${order.status === "awaiting_invoice" ? `<div class="flow-safety-note"><strong>Pré-validação Bling bloqueada</strong><span>Nenhuma venda ou NF-e foi criada. Resolva os bloqueios registrados:</span>${commercialPreview}<ul>${(order.integrationJob?.blockers ?? []).map((code) => `<li>${escapeHtml(integrationBlockerLabel(code))}</li>`).join("") || `<li>Consulte o estado de integração no servidor.</li>`}</ul></div>` : ""}
       <section class="order-items-card"><div class="section-title"><div><span class="eyebrow">Separação</span><h2>Itens do pedido</h2></div>${!pending && ["received", "packing", "attention"].includes(order.status) ? `<button class="button button-soft" data-action="order-assign" data-id="${escapeHtml(order.id)}" data-revision="${order.revision}">Assumir separação</button>` : ""}</div>
       ${order.items.map((item) => `<form class="order-item-row" id="order-picking-item" data-item-id="${item.id}"><div class="order-item-main"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.brand)} · ${escapeHtml(item.presentation)} · ${item.quantity} pedida(s)</span><small>Separada(s): ${item.pickedQuantity} · ${escapeHtml(item.pickingStatus)}</small></div><label>Separar<input name="picked_quantity" type="number" min="0" max="${item.quantity}" step="1" value="${item.pickedQuantity}" required></label><label>Substituto<select name="replacement_product_id"><option value="">Sem substituição</option>${item.replacementOptions.filter((option) => option.id !== item.productId).map((option) => `<option value="${escapeHtml(option.id)}">${escapeHtml(option.name)} · ${escapeHtml(option.brand)}</option>`).join("")}</select></label><button class="button button-soft" type="submit" ${pending || !["received", "packing", "attention"].includes(order.status) ? "disabled" : ""}>Salvar linha</button></form>`).join("") || `<div class="empty-state"><strong>Sem itens para separar</strong></div>`}
@@ -818,6 +819,34 @@ appRoot.addEventListener("submit", async (event) => {
     }
     return;
   }
+  if (target.id === "order-bling-contact-form") {
+    event.preventDefault();
+    if (!state.session || !state.selectedOrder) return;
+    const values = new FormData(target);
+    const blingContactId = Number(values.get("bling_contact_id"));
+    if (!Number.isSafeInteger(blingContactId) || blingContactId <= 0 || !values.has("customer_match_confirmed")) {
+      tell("Informe um ID válido e confirme que conferiu a identidade do contato.", "error");
+      return;
+    }
+    state.busy = true;
+    render();
+    try {
+      state.selectedOrder = await saveOrderBlingContact(state.session.access_token, state.selectedOrder.id, {
+        revision: state.selectedOrder.revision,
+        blingContactId,
+        customerMatchConfirmed: true,
+      });
+      state.notice = "Vínculo de contato salvo e conferido manualmente. Nenhuma chamada ao Bling foi feita.";
+      state.noticeType = "success";
+    } catch (error) {
+      state.notice = error instanceof AdminApiError ? error.message : "Não foi possível salvar o vínculo do contato.";
+      state.noticeType = "error";
+    } finally {
+      state.busy = false;
+      render();
+    }
+    return;
+  }
   if (target.id === "product-form") {
     event.preventDefault();
     const values = new FormData(target);
@@ -925,7 +954,7 @@ appRoot.addEventListener("click", async (event) => {
       state.selectedOrder = await completeOrderSeparation(state.session.access_token, id, Number(target.dataset.revision));
       const result = await getOrders(state.session.access_token);
       state.orders = result.orders;
-      state.notice = "Separação concluída. Pré-validação Bling bloqueada até configurar os vínculos e a regra fiscal.";
+      state.notice = "Separação concluída. A venda continua bloqueada durante o desenvolvimento.";
       state.noticeType = "success";
     } catch (error) {
       state.notice = error instanceof AdminApiError ? error.message : "Não foi possível concluir a separação.";
