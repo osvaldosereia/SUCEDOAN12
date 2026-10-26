@@ -4,7 +4,7 @@ Projeto: WhatsApp Atendimento GitHub — SUCEDOAN12
 Branch isolada: project/whatsapp-atendimento-github-20261025  
 Diretório do novo código: projetos/whatsapp-atendimento-github/  
 Execução prevista: Work Luna Max  
-Estado: Rodadas 0–6 concluídas localmente. A Rodada 6 entrega fila/separação, OAuth Bling desativado e rota autenticada de reconciliação GET-only com resultado persistido. Operação Bling permanece bloqueada até definir o contrato financeiro/fiscal e concluir homologação controlada; a Rodada 7 concentra esses gates e a ligação dos Flows.
+Estado: Rodadas 0–6 concluídas localmente. Rodada 7 em preflight local: manifesto de imagens corrigido e catálogo conferido; a ligação dos Flows e os gates de Bling continuam pendentes. A Rodada 6 entrega fila/separação, OAuth Bling desativado e rota autenticada de reconciliação GET-only com resultado persistido. Operação Bling permanece bloqueada até definir o contrato financeiro/fiscal e concluir homologação controlada.
 
 ## Decisão principal
 

@@ -230,3 +230,9 @@ Cada consulta usa uma chave idempotente persistida em `order_events`, além de u
 A entrega local prevista para fila, separação, preflight, OAuth server-side desativado, prévia segura da venda e reconciliação autenticada GET-only está implementada. A reconciliação tem chave idempotente, lease, persistência redigida e falha fechada; ela não habilita a escrita `create_sale`. O critério local da Rodada 6 está concluído.
 
 O sistema ainda não está pronto para operação. A referência/OpenAPI do Bling mantém dúvidas sobre datas, parcelas, `formaPagamento.id` e `valorLista`; ainda faltam decisão de negócio e homologação controlada para escrita da venda, além de NF-e, despacho e ligação dos Flows. Próximo passo: Rodada 7 para fechar esses gates. Até lá, flags ficam desligadas, migration não aplicada, sem conexão Bling, chamadas externas, deploy, Flow publicado ou mensagens enviadas. Nenhum teste foi criado ou executado, conforme a restrição do projeto.
+
+## Rodada 7 — preflight local
+
+A validação estática do catálogo encontrou um erro de formatação em `catalog/image-manifest.json`: os bytes finais continham a sequência literal `\n` depois do objeto JSON. O arquivo foi corrigido. A auditoria local confirmou 61 produtos, 61 entradas de manifesto, 61 referências distintas nas cestas ativas, cinco cestas com 13–25 grupos, e 9 arquivos JSON válidos no projeto. Os 61 arquivos de imagem existem dentro da pasta do projeto e correspondem ao caminho, SHA-256, tamanho declarado/limite, assinatura WebP e dimensões declaradas no manifesto.
+
+O preflight não conclui a Rodada 7. Os rascunhos Flow ainda precisam ser ligados e validados contra o contrato do runtime; o Bling segue bloqueado até decisão de datas, parcelas e forma de pagamento, além de homologação controlada para venda, NF-e e saída. Não houve acesso a APIs ou dados operacionais, aplicação de migration, configuração de segredos, deploy, publicação Flow ou envio de mensagens.
