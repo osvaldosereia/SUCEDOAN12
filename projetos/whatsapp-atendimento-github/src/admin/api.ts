@@ -1,7 +1,8 @@
 import type { CatalogDocuments } from "../domain/catalog";
-import type { FlowChannel, FlowDraftSnapshot, SaveFlowDraftInput } from "../domain/flows";
+import type { BasketFlowJson, FlowChannel, FlowDraftSnapshot, SaveFlowDraftInput } from "../domain/flows";
 import type { OrderDetailRecord, OrderListEntry, OrderPickingInput } from "../domain/orders";
 import type { OutboxQueueSnapshot } from "../domain/outbox";
+import type { CustomerListItem, CustomerRecord } from "../domain/customers";
 
 export interface CatalogSnapshot extends CatalogDocuments {
   commitSha: string;
@@ -20,6 +21,35 @@ export interface SaveCatalogInput {
   products: CatalogDocuments["products"];
   baskets: CatalogDocuments["baskets"];
   images?: Array<Pick<PendingImage, "productId" | "contentBase64">>;
+}
+
+export interface MetaFlowSummary {
+  id: string;
+  name: string;
+  status: string;
+  categories: string[];
+  validationErrors: string[];
+  endpointUri: string | null;
+  uploadedByAdmin: boolean;
+}
+
+export interface MetaChannelSnapshot {
+  channel: FlowChannel;
+  loaded: true;
+  configured: boolean;
+  accountName: string | null;
+  blockers: string[];
+  flows: MetaFlowSummary[];
+  encryptionConfigured: boolean;
+  endpointUri: string | null;
+  bindingStoreReady: boolean;
+  activeBinding: {
+    flowId: string;
+    flowMessageVersion: string;
+    flowCta: string;
+    flowAction: string;
+    firstScreen: string;
+  } | null;
 }
 
 export class AdminApiError extends Error {
@@ -130,5 +160,85 @@ export function reconcileOrderBlingSale(
   return apiRequest<OrderDetailRecord>(`/orders/${encodeURIComponent(orderId)}/bling-sale/reconcile`, accessToken, {
     method: "POST",
     body: JSON.stringify({ revision, idempotencyKey }),
+  });
+}
+
+export function getCustomers(accessToken: string, query = ""): Promise<{ customers: CustomerListItem[] }> {
+  const params = new URLSearchParams();
+  if (query.trim()) params.set("q", query.trim());
+  return apiRequest<{ customers: CustomerListItem[] }>(`/customers${params.size ? `?${params}` : ""}`, accessToken);
+}
+
+export function getCustomer(accessToken: string, customerId: string): Promise<CustomerRecord> {
+  return apiRequest<CustomerRecord>(`/customers/${encodeURIComponent(customerId)}`, accessToken);
+}
+
+export function saveCustomer(accessToken: string, customer: CustomerRecord): Promise<CustomerRecord> {
+  const id = customer.id;
+  return apiRequest<CustomerRecord>(id ? `/customers/${encodeURIComponent(id)}` : "/customers", accessToken, {
+    method: id ? "PUT" : "POST",
+    body: JSON.stringify(customer),
+  });
+}
+
+export function getMetaFlows(accessToken: string, channel: FlowChannel): Promise<MetaChannelSnapshot> {
+  return apiRequest<MetaChannelSnapshot>(`/meta-flows/${channel}`, accessToken);
+}
+
+export function createMetaFlow(accessToken: string, channel: FlowChannel, name: string): Promise<{ id: string; name: string }> {
+  return apiRequest(`/meta-flows/${channel}/create`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+}
+
+export function uploadMetaFlowJson(
+  accessToken: string,
+  channel: FlowChannel,
+  flowId: string,
+  flowJson: BasketFlowJson,
+  name: string,
+  basketId: string,
+): Promise<{ validationErrors: string[] }> {
+  return apiRequest(`/meta-flows/${channel}/${encodeURIComponent(flowId)}/upload`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ flowJson, name, basketId }),
+  });
+}
+
+export function setupMetaFlowEncryption(accessToken: string, channel: FlowChannel): Promise<{ configured: boolean }> {
+  return apiRequest(`/meta-flows/${channel}/encryption`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ confirmChannel: channel }),
+  });
+}
+
+export function publishMetaFlow(accessToken: string, channel: FlowChannel, flowId: string): Promise<{ success: true }> {
+  return apiRequest(`/meta-flows/${channel}/${encodeURIComponent(flowId)}/publish`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ confirmPublish: "PUBLISH_FLOW", confirmChannel: channel }),
+  });
+}
+
+export function bindPublishedMetaFlow(
+  accessToken: string,
+  channel: FlowChannel,
+  flowId: string,
+  expectedFlowId: string | null,
+): Promise<{ channel: FlowChannel; flowId: string }> {
+  return apiRequest(`/meta-flows/${channel}/binding`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ confirmChannel: channel, flowId, expectedFlowId }),
+  });
+}
+
+export function unbindMetaFlow(
+  accessToken: string,
+  channel: FlowChannel,
+  expectedFlowId: string,
+): Promise<{ channel: FlowChannel; flowId: string; removed: true }> {
+  return apiRequest(`/meta-flows/${channel}/binding`, accessToken, {
+    method: "DELETE",
+    body: JSON.stringify({ confirmChannel: channel, expectedFlowId }),
   });
 }

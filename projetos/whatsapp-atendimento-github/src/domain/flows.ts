@@ -109,16 +109,16 @@ export function generateBasketFlow(basket: Basket, productsList: Product[]): Bas
   if (productsList.some((product) => product.id === FLOW_NO_PRODUCT_ID)) {
     throw new Error(`O ID reservado ${FLOW_NO_PRODUCT_ID} não pode ser usado por um produto.`);
   }
-  const firstActiveProduct = firstOptions.find((product) => product.active);
+  const firstAvailableProduct = firstOptions.find((product) => product.active && product.stockQuantity > 0);
   const exampleOptions = [
-    ...firstOptions.map((product) => ({ ...productOption(product), enabled: product.active })),
+    ...firstOptions.map((product) => ({ ...productOption(product), enabled: product.active && product.stockQuantity > 0 })),
     { id: FLOW_NO_PRODUCT_ID, title: "Não quero esse produto", description: "Retirar este tipo da cesta", enabled: true },
   ];
-  const firstProductId = firstActiveProduct?.id ?? FLOW_NO_PRODUCT_ID;
+  const firstProductId = firstAvailableProduct?.id ?? FLOW_NO_PRODUCT_ID;
   const quantityOptions = Array.from({ length: FLOW_MAX_PRODUCT_QUANTITY }, (_, index) => ({
     id: String(index + 1),
     title: String(index + 1),
-    enabled: Boolean(firstActiveProduct),
+    enabled: Boolean(firstAvailableProduct),
   }));
 
   const groupData = {
@@ -137,12 +137,12 @@ export function generateBasketFlow(basket: Basket, productsList: Product[]): Bas
       enabled: { type: "boolean" },
     }),
     selectedProductId: { type: "string", __example__: firstProductId },
-    selectedQuantity: { type: "string", __example__: String(Math.min(FLOW_MAX_PRODUCT_QUANTITY, Math.max(1, firstGroup?.initialQuantity || 1))) },
+    selectedQuantity: { type: "string", __example__: String(Math.max(1, Math.min(FLOW_MAX_PRODUCT_QUANTITY, firstAvailableProduct?.stockQuantity ?? 1, firstGroup?.initialQuantity || 1))) },
     selectedImage: { type: "string", __example__: SAMPLE_IMAGE },
     imageAvailable: { type: "boolean", __example__: true },
     imageUnavailable: { type: "boolean", __example__: false },
     imageFallback: { type: "string", __example__: "Foto indisponível neste momento." },
-    quantityVisible: { type: "boolean", __example__: Boolean(firstActiveProduct) },
+    quantityVisible: { type: "boolean", __example__: Boolean(firstAvailableProduct) },
     quantityLabel: { type: "string", __example__: `Quantidade (1 a ${FLOW_MAX_PRODUCT_QUANTITY})` },
     totalDisplay: { type: "string", __example__: `Total atualizado: ${formatMoney(basket.basePriceCents)}` },
     selections_json: { type: "string", __example__: "{}" },

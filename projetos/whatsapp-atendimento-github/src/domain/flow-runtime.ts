@@ -61,10 +61,10 @@ export function quoteBasket(
     const selected = findGroupProduct(group, selection.productId, products);
     if (selection.quantity !== 0) {
       const available = availableStockByProduct?.get(selected.id);
-      if (availableStockByProduct && (!Number.isSafeInteger(available) || (available as number) < 0)) {
+      if (availableStockByProduct && !Number.isSafeInteger(available)) {
         throw new FlowSelectionError("O estoque desta opção não pôde ser confirmado.");
       }
-      const maximum = Math.min(FLOW_MAX_PRODUCT_QUANTITY, availableStockByProduct ? available as number : group.maximumQuantity);
+      const maximum = Math.max(0, Math.min(FLOW_MAX_PRODUCT_QUANTITY, availableStockByProduct ? available as number : group.maximumQuantity));
       if (selection.quantity < 1 || selection.quantity > maximum) {
         throw new FlowSelectionError(availableStockByProduct
           ? "A quantidade excede o estoque disponível para este produto."

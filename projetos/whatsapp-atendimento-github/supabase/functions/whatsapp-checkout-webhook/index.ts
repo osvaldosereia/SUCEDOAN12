@@ -2,7 +2,7 @@ import postgres, { type Sql } from "npm:postgres@3.4.7";
 import { validateCatalog, type Basket, type CatalogDocuments } from "../../../src/domain/catalog.ts";
 import { FlowSelectionError, quoteBasket, type BasketSelections } from "../../../src/domain/flow-runtime.ts";
 import { wakeOutboxWorker } from "../_shared/outbox-dispatch.ts";
-import { loadSellableStock } from "../_shared/sellable-stock.ts";
+import { decrementGitHubStockForConfirmation } from "../_shared/github-stock.ts";
 
 const OWNER = "osvaldosereia";
 const REPOSITORY = "SUCEDOAN12";
@@ -289,6 +289,13 @@ function graphMessage(to: string, type: string, interactive: unknown): Record<st
 }
 
 async function queueBasketMenu(tx: Sql, channel: Channel, phone: string, eventId: string): Promise<void> {
+  const binding = await tx<{ meta_flow_id: string }>`
+    select binding.meta_flow_id from whatsapp_atendimento.channel_flow_bindings as binding
+    join public.whatsapp_accounts as account on account.id = binding.whatsapp_account_id
+    where binding.channel = ${channel} and account.slug = ${`dona-antonia-${channel}`} and account.is_active = true
+    limit 1
+  `;
+  if (!binding.length) return;
   const catalog = await currentCatalog();
   const baskets = catalog.documents.baskets.baskets.filter((basket) => basket.active).sort((a, b) => a.sortOrder - b.sortOrder);
   if (!baskets.length) throw new WebhookError(503, "Não há cestas ativas para atendimento.");
@@ -305,19 +312,29 @@ async function queueBasketMenu(tx: Sql, channel: Channel, phone: string, eventId
 }
 
 async function queueFlowLaunch(tx: Sql, channel: Channel, phone: string, basket: Basket, token: string, eventKey: string): Promise<void> {
-  const flowId = Deno.env.get(`META_FLOW_ID_${channel}`) ?? null;
+  const bindings = await tx<{
+    meta_flow_id: string; flow_message_version: string; flow_cta: string; flow_action: string; first_screen: string;
+  }>`
+    select binding.meta_flow_id, binding.flow_message_version, binding.flow_cta, binding.flow_action, binding.first_screen
+    from whatsapp_atendimento.channel_flow_bindings as binding
+    join public.whatsapp_accounts as account on account.id = binding.whatsapp_account_id
+    where binding.channel = ${channel} and account.slug = ${`dona-antonia-${channel}`} and account.is_active = true
+    limit 1
+  `;
+  const binding = bindings[0];
+  if (!binding) throw new WebhookError(503, "Nenhum Flow publicado está vinculado a este canal.");
   await queueMessage(tx, channel, "flow_launch", eventKey, graphMessage(phone, "interactive", {
     type: "flow",
     body: { text: `Vamos montar sua cesta ${basket.name}.` },
     action: {
       name: "flow",
       parameters: {
-        flow_message_version: "3",
+        flow_message_version: binding.flow_message_version,
         flow_token: token,
-        flow_id: flowId,
-        flow_cta: "Montar cesta",
-        flow_action: "navigate",
-        flow_action_payload: { screen: "GROUP", data: { basketId: basket.id } },
+        flow_id: binding.meta_flow_id,
+        flow_cta: binding.flow_cta,
+        flow_action: binding.flow_action,
+        flow_action_payload: { screen: binding.first_screen, data: { basketId: basket.id } },
       },
     },
   }));
@@ -394,12 +411,9 @@ async function buildOrderSnapshot(
   const selectedProductIds = [...new Set(Object.values(selections)
     .filter((selection) => selection.quantity > 0)
     .map((selection) => selection.productId))];
-  let stockByProduct: Map<string, number>;
-  try {
-    stockByProduct = await loadSellableStock(selectedProductIds, restRows);
-  } catch {
-    throw new WebhookError(503, "Não foi possível confirmar o estoque atual; o pedido não foi criado.");
-  }
+  const stockByProduct = new Map(products
+    .filter((product) => selectedProductIds.includes(product.id))
+    .map((product) => [product.id, product.stockQuantity]));
   let quote: ReturnType<typeof quoteBasket>;
   try {
     quote = quoteBasket(basket, products, selections, stockByProduct);
@@ -483,6 +497,12 @@ async function createDraft(tx: Sql, message: WebhookMessage, channel: Channel, p
   if (catalog.revision !== session.catalog_revision) {
     throw new WebhookError(409, "A revisão de catálogo mudou; reabra o Flow antes de confirmar.");
   }
+  const latestCatalog = await currentCatalog();
+  const businessProducts = (documents: CatalogDocuments) => documents.products.products.map(({ stockQuantity: _stock, ...product }) => product);
+  if (JSON.stringify({ products: businessProducts(latestCatalog.documents), baskets: latestCatalog.documents.baskets })
+    !== JSON.stringify({ products: businessProducts(catalog.documents), baskets: catalog.documents.baskets })) {
+    throw new WebhookError(409, "Produtos ou composição da cesta mudaram; reabra o Flow antes de confirmar.");
+  }
   const customer = await findCustomer(phone, selectedCustomerId, response.address_id);
   const built = await buildOrderSnapshot(catalog, session, parseSelections(response.selections), customer, response.payment_method);
   const snapshotJson = JSON.stringify(built.snapshot);
@@ -531,6 +551,18 @@ async function confirmDraft(tx: Sql, channel: Channel, phone: string, draftId: s
   if (!draft || draft.channel !== channel || draft.status !== "awaiting_customer_confirmation" || draft.revision !== revision
     || draft.phone_e164 !== phone || new Date(draft.expires_at).getTime() <= Date.now()) return;
   const snapshot = draft.snapshot;
+  const stockItems = Array.isArray(snapshot.items) ? snapshot.items.flatMap((item) => {
+    if (!isRecord(item) || typeof item.productId !== "string" || !Number.isSafeInteger(item.quantity) || Number(item.quantity) < 1) return [];
+    return [{ productId: item.productId, quantity: Number(item.quantity) }];
+  }) : [];
+  if (!stockItems.length || stockItems.length !== (Array.isArray(snapshot.items) ? snapshot.items.length : 0)) {
+    throw new WebhookError(409, "Os itens confirmados não correspondem ao contrato de estoque.");
+  }
+  try {
+    await decrementGitHubStockForConfirmation(draft.id, stockItems);
+  } catch {
+    throw new WebhookError(503, "O estoque GitHub não pôde ser atualizado agora. A confirmação será repetida com segurança.");
+  }
   const total = Number(snapshot.totalCents);
   const created = await tx<{ id: string }>`
     insert into whatsapp_atendimento.orders

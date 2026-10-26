@@ -89,7 +89,34 @@ async function decryptPayload(message: OutboxMessage, key: CryptoKey): Promise<R
   return value;
 }
 
-function buildProviderPayload(message: OutboxMessage, payload: Record<string, unknown>): Record<string, unknown> {
+interface ChannelFlowBinding {
+  meta_flow_id: string;
+  flow_message_version: string;
+  flow_cta: string;
+  flow_action: string;
+  first_screen: string;
+}
+
+async function readChannelFlowBinding(db: Sql, channel: OutboxMessage["channel"]): Promise<ChannelFlowBinding | null> {
+  try {
+    const rows = await db<ChannelFlowBinding>`
+      select binding.meta_flow_id, binding.flow_message_version, binding.flow_cta, binding.flow_action, binding.first_screen
+      from whatsapp_atendimento.channel_flow_bindings as binding
+      join public.whatsapp_accounts as account on account.id = binding.whatsapp_account_id
+      where binding.channel = ${channel} and account.slug = ${`dona-antonia-${channel}`} and account.is_active = true
+      limit 1
+    `;
+    return rows[0] ?? null;
+  } catch {
+    throw new WorkerError("flow_binding_unavailable");
+  }
+}
+
+function buildProviderPayload(
+  message: OutboxMessage,
+  payload: Record<string, unknown>,
+  flowBinding: ChannelFlowBinding | null,
+): Record<string, unknown> {
   if (!MESSAGE_TYPES.has(message.message_type)) throw new WorkerError("message_type_unsupported");
   if (payload.messaging_product !== "whatsapp" || payload.recipient_type !== "individual"
     || typeof payload.to !== "string" || !/^\+?[1-9][0-9]{1,14}$/.test(payload.to)) {
@@ -122,8 +149,13 @@ function buildProviderPayload(message: OutboxMessage, payload: Record<string, un
   if (interactiveType === "flow") {
     const action = payload.interactive.action;
     const parameters = isRecord(action) && isRecord(action.parameters) ? action.parameters : null;
-    const configuredFlowId = Deno.env.get(`META_FLOW_ID_${message.channel}`);
-    if (!parameters || typeof parameters.flow_id !== "string" || !configuredFlowId || parameters.flow_id !== configuredFlowId) {
+    const actionPayload = parameters && isRecord(parameters.flow_action_payload) ? parameters.flow_action_payload : null;
+    if (!flowBinding || !parameters
+      || parameters.flow_id !== flowBinding.meta_flow_id
+      || parameters.flow_message_version !== flowBinding.flow_message_version
+      || parameters.flow_cta !== flowBinding.flow_cta
+      || parameters.flow_action !== flowBinding.flow_action
+      || actionPayload?.screen !== flowBinding.first_screen) {
       throw new WorkerError("flow_configuration_mismatch");
     }
   }
@@ -192,7 +224,8 @@ async function metaErrorCode(response: Response): Promise<string> {
 async function sendOne(db: Sql, message: OutboxMessage, key: CryptoKey, graphVersion: string): Promise<boolean> {
   try {
     const payload = await decryptPayload(message, key);
-    const providerPayload = buildProviderPayload(message, payload);
+    const flowBinding = message.message_type === "flow_launch" ? await readChannelFlowBinding(db, message.channel) : null;
+    const providerPayload = buildProviderPayload(message, payload, flowBinding);
     const phoneNumberId = Deno.env.get(`META_PHONE_NUMBER_ID_${message.channel}`);
     const accessToken = Deno.env.get(`META_ACCESS_TOKEN_${message.channel}`);
     if (!phoneNumberId || !/^[0-9]+$/.test(phoneNumberId) || !accessToken) {

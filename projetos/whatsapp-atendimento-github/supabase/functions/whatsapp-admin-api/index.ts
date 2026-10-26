@@ -11,6 +11,7 @@ import { quoteBasket, type BasketSelections } from "../../../src/domain/flow-run
 import type { OutboxMessageType, OutboxStatus } from "../../../src/domain/outbox.ts";
 import {
   FLOW_CHANNELS,
+  validateBasketFlow,
   validateChannelFlowDocument,
   type ChannelFlowDocument,
   type FlowChannel,
@@ -81,7 +82,7 @@ function corsHeaders(origin: string): Headers {
 
   return new Headers({
     "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Methods": "GET, PUT, PATCH, POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, PUT, PATCH, POST, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Authorization, apikey, content-type",
     "Access-Control-Max-Age": "600",
     "Vary": "Origin",
@@ -1773,6 +1774,629 @@ async function finishSeparation(orderId: string, operatorId: string, body: Recor
   return orderDetail(orderId);
 }
 
+interface CustomerAddressInput {
+  id?: string;
+  label: string | null;
+  street: string;
+  number: string;
+  complement: string | null;
+  neighborhood: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  reference: string | null;
+  isDefault: boolean;
+  isActive: boolean;
+}
+
+interface CustomerInput {
+  name: string;
+  cpfCnpj: string | null;
+  phoneE164: string;
+  preferredReply: "auto" | "text" | "audio";
+  isActive: boolean;
+  addresses: CustomerAddressInput[];
+}
+
+function customerPhone(value: unknown): string {
+  if (typeof value !== "string") throw new HttpError(400, "Informe o WhatsApp principal do cliente.");
+  const digits = value.replace(/\D/g, "");
+  const normalized = digits.startsWith("55") ? `+${digits}` : `+55${digits}`;
+  if (!/^\+[1-9][0-9]{9,14}$/.test(normalized)) throw new HttpError(422, "Informe um WhatsApp com DDD válido.");
+  return normalized;
+}
+
+function parseCustomerInput(body: Record<string, unknown>): CustomerInput {
+  if (typeof body.name !== "string" || body.name.trim().length < 2 || body.name.trim().length > 160) {
+    throw new HttpError(422, "O nome do cliente deve ter de 2 a 160 caracteres.");
+  }
+  const documentDigits = typeof body.cpfCnpj === "string" ? body.cpfCnpj.replace(/\D/g, "") : "";
+  if (documentDigits && documentDigits.length !== 11 && documentDigits.length !== 14) {
+    throw new HttpError(422, "Informe um CPF com 11 dígitos ou um CNPJ com 14 dígitos.");
+  }
+  const preferredReply = body.preferredReply;
+  if (preferredReply !== "auto" && preferredReply !== "text" && preferredReply !== "audio") {
+    throw new HttpError(422, "A preferência de resposta é inválida.");
+  }
+  if (!Array.isArray(body.addresses) || body.addresses.length > 20) throw new HttpError(422, "A lista de endereços excede o limite permitido.");
+  const addresses = body.addresses.map((raw): CustomerAddressInput => {
+    if (!isRecord(raw)) throw new HttpError(422, "Um endereço do cliente é inválido.");
+    const required = (key: string, label: string, maxLength: number): string => {
+      const value = typeof raw[key] === "string" ? raw[key].trim() : "";
+      if (!value || value.length > maxLength) throw new HttpError(422, `Revise o campo ${label} do endereço.`);
+      return value;
+    };
+    const optional = (key: string, maxLength: number): string | null => {
+      const value = typeof raw[key] === "string" ? raw[key].trim() : "";
+      if (value.length > maxLength) throw new HttpError(422, "Revise o complemento ou a referência do endereço.");
+      return value || null;
+    };
+    const id = raw.id;
+    if (id !== undefined && (typeof id !== "string" || !ORDER_ID.test(id))) throw new HttpError(422, "Um endereço contém um identificador inválido.");
+    const state = required("state", "UF", 2).toUpperCase();
+    const postalCode = required("postalCode", "CEP", 9).replace(/\D/g, "");
+    if (!/^[A-Z]{2}$/.test(state) || !/^\d{8}$/.test(postalCode)) throw new HttpError(422, "Informe uma UF e um CEP válidos.");
+    return {
+      ...(typeof id === "string" ? { id } : {}),
+      label: optional("label", 80),
+      street: required("street", "rua", 180),
+      number: required("number", "número", 40),
+      complement: optional("complement", 120),
+      neighborhood: required("neighborhood", "bairro", 120),
+      city: required("city", "cidade", 120),
+      state,
+      postalCode,
+      reference: optional("reference", 240),
+      isDefault: raw.isDefault === true,
+      isActive: raw.isActive === true,
+    };
+  });
+  const activeAddresses = addresses.filter((address) => address.isActive);
+  if (body.isActive !== false && activeAddresses.length === 0) throw new HttpError(422, "Mantenha ao menos um endereço ativo para clientes ativos.");
+  if (activeAddresses.filter((address) => address.isDefault).length > 1) throw new HttpError(422, "Selecione somente um endereço principal.");
+  if (activeAddresses.length && !activeAddresses.some((address) => address.isDefault)) activeAddresses[0].isDefault = true;
+  const ids = addresses.flatMap((address) => address.id ? [address.id] : []);
+  if (new Set(ids).size !== ids.length) throw new HttpError(422, "Um endereço foi enviado mais de uma vez.");
+  return {
+    name: body.name.trim(),
+    cpfCnpj: documentDigits || null,
+    phoneE164: customerPhone(body.phoneE164),
+    preferredReply,
+    isActive: body.isActive === true,
+    addresses,
+  };
+}
+
+function customerAddressFromDb(row: Record<string, unknown>) {
+  return {
+    id: row.id,
+    label: row.label,
+    street: row.street,
+    number: row.number,
+    complement: row.complement,
+    neighborhood: row.neighborhood,
+    city: row.city,
+    state: row.state,
+    postalCode: row.postal_code,
+    reference: row.reference,
+    isDefault: row.is_default,
+    isActive: row.is_active,
+  };
+}
+
+async function searchCustomers(query: string) {
+  const normalized = query.trim().slice(0, 120);
+  const pattern = `%${normalized}%`;
+  type Row = {
+    id: string; name: string | null; cpf_cnpj: string | null; primary_whatsapp_e164: string | null;
+    preferred_reply: "auto" | "text" | "audio"; is_active: boolean;
+  };
+  const rows = normalized
+    ? await ordersDb()<Row>`
+      select id, name, cpf_cnpj, primary_whatsapp_e164, preferred_reply, is_active
+      from public.customers
+      where name ilike ${pattern} or cpf_cnpj ilike ${pattern} or primary_whatsapp_e164 ilike ${pattern}
+      order by updated_at desc limit 50
+    `
+    : await ordersDb()<Row>`
+      select id, name, cpf_cnpj, primary_whatsapp_e164, preferred_reply, is_active
+      from public.customers order by updated_at desc limit 50
+    `;
+  return { customers: rows.map((row) => ({
+    id: row.id, name: row.name ?? "", cpfCnpj: row.cpf_cnpj, phoneE164: row.primary_whatsapp_e164 ?? "",
+    preferredReply: row.preferred_reply, isActive: row.is_active, addresses: [] as [],
+  })) };
+}
+
+async function customerDetail(customerId: string) {
+  const rows = await ordersDb()<{
+    id: string; name: string | null; cpf_cnpj: string | null; primary_whatsapp_e164: string | null;
+    preferred_reply: "auto" | "text" | "audio"; is_active: boolean;
+  }>`
+    select id, name, cpf_cnpj, primary_whatsapp_e164, preferred_reply, is_active
+    from public.customers where id = ${customerId}
+  `;
+  const customer = rows[0];
+  if (!customer) throw new HttpError(404, "Cliente não encontrado.");
+  const addresses = await ordersDb()<Record<string, unknown>>`
+    select id, label, street, number, complement, neighborhood, city, state, postal_code, reference, is_default, is_active
+    from public.customer_addresses where customer_id = ${customerId}
+    order by is_default desc, is_active desc, created_at asc
+  `;
+  return {
+    id: customer.id,
+    name: customer.name ?? "",
+    cpfCnpj: customer.cpf_cnpj,
+    phoneE164: customer.primary_whatsapp_e164 ?? "",
+    preferredReply: customer.preferred_reply,
+    isActive: customer.is_active,
+    addresses: addresses.map(customerAddressFromDb),
+  };
+}
+
+async function saveCustomer(customerId: string | null, body: Record<string, unknown>) {
+  if (customerId && !ORDER_ID.test(customerId)) throw new HttpError(400, "O identificador do cliente é inválido.");
+  const input = parseCustomerInput(body);
+  const db = ordersDb();
+  const savedId = await db.begin(async (tx) => {
+    let id = customerId;
+    if (id) {
+      const exists = await tx<{ id: string }>`select id from public.customers where id = ${id} for update`;
+      if (!exists.length) throw new HttpError(404, "Cliente não encontrado.");
+      await tx`
+        update public.customers set name = ${input.name}, cpf_cnpj = ${input.cpfCnpj},
+          primary_whatsapp_e164 = ${input.phoneE164}, preferred_reply = ${input.preferredReply},
+          is_active = ${input.isActive}, updated_at = now()
+        where id = ${id}
+      `;
+    } else {
+      const inserted = await tx<{ id: string }>`
+        insert into public.customers (name, cpf_cnpj, primary_whatsapp_e164, preferred_reply, is_active)
+        values (${input.name}, ${input.cpfCnpj}, ${input.phoneE164}, ${input.preferredReply}, ${input.isActive})
+        returning id
+      `;
+      id = inserted[0]?.id ?? null;
+      if (!id) throw new HttpError(503, "Não foi possível criar o cadastro.");
+    }
+
+    await tx`update public.customer_phones set is_primary = false where customer_id = ${id} and is_primary`;
+    const phone = await tx<{ id: string }>`
+      insert into public.customer_phones (customer_id, phone_e164, source, is_primary)
+      values (${id}, ${input.phoneE164}, 'manual', true)
+      on conflict (phone_e164) do update set is_primary = true
+      where public.customer_phones.customer_id = excluded.customer_id
+      returning id
+    `;
+    if (!phone.length) throw new HttpError(409, "Este WhatsApp já está associado a outro cliente.");
+
+    await tx`update public.customer_addresses set is_active = false, is_default = false, updated_at = now() where customer_id = ${id}`;
+    for (const address of input.addresses) {
+      const fields = [address.label, address.street, address.number, address.complement, address.neighborhood,
+        address.city, address.state, address.postalCode, address.reference, address.isDefault, address.isActive];
+      if (address.id) {
+        const updated = await tx<{ id: string }>`
+          update public.customer_addresses set
+            label = ${fields[0]}, street = ${fields[1]}, number = ${fields[2]}, complement = ${fields[3]},
+            neighborhood = ${fields[4]}, city = ${fields[5]}, state = ${fields[6]}, postal_code = ${fields[7]},
+            reference = ${fields[8]}, is_default = ${fields[9]}, is_active = ${fields[10]}, updated_at = now()
+          where id = ${address.id} and customer_id = ${id}
+          returning id
+        `;
+        if (!updated.length) throw new HttpError(409, "Um endereço enviado não pertence a este cadastro.");
+      } else {
+        await tx`
+          insert into public.customer_addresses
+            (customer_id, label, street, number, complement, neighborhood, city, state, postal_code, reference, is_default, is_active)
+          values (${id}, ${fields[0]}, ${fields[1]}, ${fields[2]}, ${fields[3]}, ${fields[4]}, ${fields[5]}, ${fields[6]}, ${fields[7]}, ${fields[8]}, ${fields[9]}, ${fields[10]})
+        `;
+      }
+    }
+    return id;
+  }).catch((error: unknown) => {
+    if (error instanceof HttpError) throw error;
+    if (isRecord(error) && error.code === "23505") throw new HttpError(409, "CPF/CNPJ ou WhatsApp já está vinculado a outro cliente.");
+    throw error;
+  });
+  return await customerDetail(savedId);
+}
+
+interface MetaChannelConfig {
+  channel: FlowChannel;
+  accountId: string | null;
+  accountActive: boolean;
+  accountName: string | null;
+  wabaId: string | null;
+  phoneNumberId: string | null;
+  accessToken: string | null;
+  graphVersion: string | null;
+  endpointUri: string | null;
+  privateKey: string | null;
+  blockers: string[];
+}
+
+async function metaChannelConfig(channel: FlowChannel): Promise<MetaChannelConfig> {
+  const slug = `dona-antonia-${channel}`;
+  const rows = await ordersDb()<{
+    id: string; display_name: string; waba_id: string | null; phone_number_id: string | null; is_active: boolean;
+  }>`select id, display_name, waba_id, phone_number_id, is_active from public.whatsapp_accounts where slug = ${slug} limit 1`;
+  const row = rows[0];
+  const accessToken = Deno.env.get(`META_ACCESS_TOKEN_${channel}`) || null;
+  const graphVersion = Deno.env.get("META_GRAPH_API_VERSION") || null;
+  const endpointUri = Deno.env.get("WHATSAPP_FLOW_ENDPOINT_URI") || null;
+  const privateKey = Deno.env.get(`META_FLOW_PRIVATE_KEY_${channel}`) || null;
+  const blockers: string[] = [];
+  if (!row?.is_active) blockers.push("A conta WhatsApp deste canal não está ativa no registro privado.");
+  if (!row?.waba_id) blockers.push("O WABA deste canal não está configurado no banco privado.");
+  if (!row?.phone_number_id) blockers.push("O phone number ID deste canal não está configurado no banco privado.");
+  if (!accessToken) blockers.push(`Configure META_ACCESS_TOKEN_${channel} como segredo da Admin API.`);
+  if (!graphVersion || !/^v\d+\.\d+$/.test(graphVersion)) blockers.push("Configure META_GRAPH_API_VERSION no formato vNN.N.");
+  if (!endpointUri) blockers.push("Configure WHATSAPP_FLOW_ENDPOINT_URI com a URL HTTPS pública do runtime.");
+  else {
+    try {
+      const endpoint = new URL(endpointUri);
+      if (endpoint.protocol !== "https:" || endpoint.username || endpoint.password || endpoint.hash) blockers.push("A URL do endpoint Flow precisa ser HTTPS e não pode conter credenciais ou fragmento.");
+    } catch { blockers.push("WHATSAPP_FLOW_ENDPOINT_URI não contém uma URL válida."); }
+  }
+  if (!privateKey) blockers.push(`Configure META_FLOW_PRIVATE_KEY_${channel} no runtime antes de homologar o endpoint.`);
+  return {
+    channel,
+    accountId: row?.id ?? null,
+    accountActive: row?.is_active === true,
+    accountName: row?.display_name ?? null,
+    wabaId: row?.waba_id ?? null,
+    phoneNumberId: row?.phone_number_id ?? null,
+    accessToken,
+    graphVersion,
+    endpointUri,
+    privateKey,
+    blockers,
+  };
+}
+
+interface MetaChannelFlowBinding {
+  meta_flow_id: string;
+  flow_message_version: string;
+  flow_cta: string;
+  flow_action: string;
+  first_screen: string;
+}
+
+async function readMetaChannelFlowBinding(channel: FlowChannel, accountId: string | null): Promise<{
+  ready: boolean;
+  binding: MetaChannelFlowBinding | null;
+}> {
+  if (!accountId) return { ready: false, binding: null };
+  try {
+    const rows = await ordersDb()<MetaChannelFlowBinding>`
+      select meta_flow_id, flow_message_version, flow_cta, flow_action, first_screen
+      from whatsapp_atendimento.channel_flow_bindings
+      where channel = ${channel} and whatsapp_account_id = ${accountId}
+      limit 1
+    `;
+    return { ready: true, binding: rows[0] ?? null };
+  } catch {
+    return { ready: false, binding: null };
+  }
+}
+
+interface MetaFlowUploadRecord {
+  meta_flow_id: string;
+  basket_id: string;
+  catalog_revision: string;
+  flow_json_sha256: string;
+}
+
+async function readMetaFlowUploads(channel: FlowChannel, accountId: string | null): Promise<{
+  ready: boolean;
+  uploads: MetaFlowUploadRecord[];
+}> {
+  if (!accountId) return { ready: false, uploads: [] };
+  try {
+    const uploads = await ordersDb()<MetaFlowUploadRecord>`
+      select meta_flow_id, basket_id, catalog_revision, flow_json_sha256
+      from whatsapp_atendimento.channel_flow_uploads
+      where channel = ${channel} and whatsapp_account_id = ${accountId}
+    `;
+    return { ready: true, uploads };
+  } catch {
+    return { ready: false, uploads: [] };
+  }
+}
+
+async function metaGraph(config: MetaChannelConfig, path: string, method: "GET" | "POST", body?: BodyInit): Promise<unknown> {
+  if (!config.accessToken || !config.graphVersion) throw new HttpError(503, `A conexão Meta do canal ${config.channel} não está configurada.`);
+  const response = await fetch(`https://graph.facebook.com/${config.graphVersion}${path}`, {
+    method,
+    headers: { Authorization: `Bearer ${config.accessToken}`, ...(body instanceof FormData ? {} : body ? { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" } : {}) },
+    ...(body ? { body } : {}),
+    signal: AbortSignal.timeout(12_000),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const code = isRecord(result) && isRecord(result.error) && typeof result.error.code === "number" ? result.error.code : null;
+    throw new HttpError(502, code === 190 ? "O token da Meta expirou ou não tem as permissões necessárias." : "A Meta não concluiu a operação solicitada para este canal.");
+  }
+  return result;
+}
+
+function metaValidationErrors(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (typeof item === "string") return [item.slice(0, 500)];
+    return isRecord(item) && typeof item.message === "string" ? [item.message.slice(0, 500)] : [];
+  }).slice(0, 30);
+}
+
+function metaFlowSummary(value: unknown) {
+  if (!isRecord(value) || typeof value.id !== "string" || !/^\d{5,32}$/.test(value.id)) return null;
+  return {
+    id: value.id,
+    name: typeof value.name === "string" ? value.name.slice(0, 120) : "Flow sem nome",
+    status: typeof value.status === "string" ? value.status : "UNKNOWN",
+    categories: Array.isArray(value.categories) ? value.categories.filter((item): item is string => typeof item === "string").slice(0, 10) : [],
+    validationErrors: metaValidationErrors(value.validation_errors),
+    endpointUri: typeof value.endpoint_uri === "string" ? value.endpoint_uri : typeof value.data_channel_uri === "string" ? value.data_channel_uri : null,
+  };
+}
+
+async function readMetaFlowList(config: MetaChannelConfig) {
+  if (!config.accountActive || !config.wabaId || !config.accessToken || !config.graphVersion || !config.phoneNumberId) {
+    return { channel: config.channel, loaded: true as const, configured: false, accountName: config.accountName,
+      blockers: config.blockers, flows: [], encryptionConfigured: false, endpointUri: config.endpointUri,
+      bindingStoreReady: false, activeBinding: null };
+  }
+  const query = new URLSearchParams({ fields: "id,name,status,categories,validation_errors,data_channel_uri", limit: "100" });
+  const result = await metaGraph(config, `/${encodeURIComponent(config.wabaId)}/flows?${query}`, "GET");
+  const rawFlows = isRecord(result) && Array.isArray(result.data) ? result.data : [];
+  const rawFlowsSummary = rawFlows.flatMap((raw) => {
+    const flow = metaFlowSummary(raw);
+    return flow ? [flow] : [];
+  });
+  let encryptionConfigured = false;
+  try {
+    const encryption = await metaGraph(config, `/${encodeURIComponent(config.phoneNumberId)}/whatsapp_business_encryption`, "GET");
+    if (isRecord(encryption)) {
+      const entries = Array.isArray(encryption.data) ? encryption.data : [encryption];
+      const expectedKey = config.privateKey ? await metaPublicKeyPem(config.privateKey) : null;
+      const normalizeKey = (value: string) => value.replace(/\s/g, "");
+      encryptionConfigured = Boolean(expectedKey) && entries.some((entry) => isRecord(entry)
+        && typeof entry.business_public_key === "string" && normalizeKey(entry.business_public_key) === normalizeKey(expectedKey!));
+    }
+  } catch { encryptionConfigured = false; }
+  const bindingState = await readMetaChannelFlowBinding(config.channel, config.accountId);
+  const uploadState = await readMetaFlowUploads(config.channel, config.accountId);
+  const uploadedIds = new Set(uploadState.uploads.map((upload) => upload.meta_flow_id));
+  const flows = rawFlowsSummary.map((flow) => ({ ...flow, uploadedByAdmin: uploadedIds.has(flow.id) }));
+  const bindingStoreReady = bindingState.ready && uploadState.ready;
+  return {
+    channel: config.channel,
+    loaded: true as const,
+    configured: true,
+    accountName: config.accountName,
+    blockers: bindingStoreReady
+      ? config.blockers
+      : [...config.blockers, "A migration local de vínculo dos Flows por canal ainda não está disponível no banco."],
+    flows,
+    encryptionConfigured,
+    endpointUri: config.endpointUri,
+    bindingStoreReady,
+    activeBinding: bindingState.binding ? {
+      flowId: bindingState.binding.meta_flow_id,
+      flowMessageVersion: bindingState.binding.flow_message_version,
+      flowCta: bindingState.binding.flow_cta,
+      flowAction: bindingState.binding.flow_action,
+      firstScreen: bindingState.binding.first_screen,
+    } : null,
+  };
+}
+
+async function getMetaFlow(config: MetaChannelConfig, flowId: string) {
+  if (!/^\d{5,32}$/.test(flowId)) throw new HttpError(400, "O ID do Flow Meta é inválido.");
+  const fields = "id,name,status,categories,validation_errors,data_channel_uri,whatsapp_business_account";
+  return await metaGraph(config, `/${encodeURIComponent(flowId)}?${new URLSearchParams({ fields })}`, "GET");
+}
+
+async function createMetaFlow(channel: FlowChannel, body: Record<string, unknown>) {
+  const name = body.name;
+  if (typeof name !== "string" || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name) || name.length > 60) {
+    throw new HttpError(422, "O nome do Flow deve usar minúsculas, números e hífen (até 60 caracteres).");
+  }
+  const config = await metaChannelConfig(channel);
+  if (!config.accountActive || !config.wabaId) throw new HttpError(503, `A conta Meta ativa do canal ${channel} não está configurada.`);
+  const form = new URLSearchParams({ name, categories: JSON.stringify(["CUSTOMER_SUPPORT"]) });
+  const result = await metaGraph(config, `/${encodeURIComponent(config.wabaId)}/flows`, "POST", form);
+  if (!isRecord(result) || typeof result.id !== "string" || !/^\d{5,32}$/.test(result.id)) throw new HttpError(502, "A Meta não retornou o identificador do Flow criado.");
+  return { id: result.id, name: typeof result.name === "string" ? result.name : name };
+}
+
+async function uploadMetaFlow(channel: FlowChannel, flowId: string, body: Record<string, unknown>, operatorId: string) {
+  const config = await metaChannelConfig(channel);
+  if (config.blockers.length) throw new HttpError(503, `Revise a configuração Meta: ${config.blockers.slice(0, 4).join(" ")}`);
+  const name = body.name;
+  if (typeof name !== "string" || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name) || name.length > 60) throw new HttpError(422, "O nome técnico do Flow é inválido.");
+  const basketId = body.basketId;
+  if (typeof basketId !== "string" || !/^[a-z0-9][a-z0-9-]{0,79}$/.test(basketId)) throw new HttpError(422, "Selecione a cesta associada a este rascunho.");
+  const catalog = await readCatalog(await installationToken("read"));
+  const basket = catalog.baskets.baskets.find((item: Basket) => item.id === basketId && item.active);
+  if (!basket || !isRecord(body.flowJson) || validateBasketFlow(basket, catalog.products.products, body.flowJson).length) {
+    throw new HttpError(422, "O JSON enviado não corresponde à cesta ativa selecionada nesta revisão do GitHub.");
+  }
+  const channelFlows = await readMetaFlowList(config);
+  if (!channelFlows.flows.some((entry) => entry.id === flowId)) throw new HttpError(403, "Este Flow não pertence à conta Meta vinculada ao canal selecionado.");
+  const bindingState = await readMetaChannelFlowBinding(channel, config.accountId);
+  const uploadState = await readMetaFlowUploads(channel, config.accountId);
+  if (!bindingState.ready || !uploadState.ready || !config.accountId) throw new HttpError(503, "A migration privada de gestão dos Flows precisa estar aplicada antes de enviar assets.");
+  if (bindingState.binding?.meta_flow_id === flowId) {
+    throw new HttpError(409, "Este Flow está ligado ao canal. Vincule outro Flow publicado ou remova o vínculo antes de substituir seus assets.");
+  }
+  const flow = await getMetaFlow(config, flowId);
+  if (!isRecord(flow) || flow.status !== "DRAFT") throw new HttpError(409, "Somente um Flow DRAFT desta conta pode receber atualizações.");
+  const file = new File([JSON.stringify(body.flowJson)], "flow.json", { type: "application/json" });
+  const upload = new FormData();
+  upload.set("file", file);
+  upload.set("name", "flow.json");
+  upload.set("asset_type", "FLOW_JSON");
+  const assetResult = await metaGraph(config, `/${encodeURIComponent(flowId)}/assets`, "POST", upload);
+  const validationErrors = isRecord(assetResult) ? metaValidationErrors(assetResult.validation_errors) : [];
+  const metadata = new URLSearchParams({ name, categories: JSON.stringify(["CUSTOMER_SUPPORT"]), endpoint_uri: config.endpointUri! });
+  await metaGraph(config, `/${encodeURIComponent(flowId)}`, "POST", metadata);
+  if (!validationErrors.length) {
+    const encodedJson = new TextEncoder().encode(JSON.stringify(body.flowJson));
+    const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", encodedJson));
+    const flowJsonSha256 = Array.from(digest, (byte) => byte.toString(16).padStart(2, "0")).join("");
+    await ordersDb()`
+      insert into whatsapp_atendimento.channel_flow_uploads
+        (channel, whatsapp_account_id, meta_flow_id, basket_id, catalog_revision, flow_json_sha256, uploaded_by, uploaded_at)
+      values (${channel}, ${config.accountId}, ${flowId}, ${basket.id}, ${catalog.catalogRevision}, ${flowJsonSha256}, ${operatorId}, now())
+      on conflict (channel, meta_flow_id) do update set
+        whatsapp_account_id = excluded.whatsapp_account_id,
+        basket_id = excluded.basket_id,
+        catalog_revision = excluded.catalog_revision,
+        flow_json_sha256 = excluded.flow_json_sha256,
+        uploaded_by = excluded.uploaded_by,
+        uploaded_at = now()
+    `;
+  }
+  return { validationErrors };
+}
+
+function metaPrivatePkcs8(value: string): Uint8Array {
+  const pem = value.replace(/\\n/g, "\n").trim();
+  const pkcs8 = pem.match(/-----BEGIN PRIVATE KEY-----([\s\S]+?)-----END PRIVATE KEY-----/);
+  if (pkcs8) return Uint8Array.from(atob(pkcs8[1].replace(/\s/g, "")), (character) => character.charCodeAt(0));
+  const pkcs1 = pem.match(/-----BEGIN RSA PRIVATE KEY-----([\s\S]+?)-----END RSA PRIVATE KEY-----/);
+  if (!pkcs1) throw new HttpError(503, "A chave privada do endpoint Flow está em formato incompatível.");
+  const key = Uint8Array.from(atob(pkcs1[1].replace(/\s/g, "")), (character) => character.charCodeAt(0));
+  const algorithm = new Uint8Array([0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01, 0x05, 0x00]);
+  const length = (size: number): Uint8Array => size < 128 ? new Uint8Array([size]) : new Uint8Array([0x82, size >> 8, size & 255]);
+  const der = (tag: number, content: Uint8Array): Uint8Array => new Uint8Array([tag, ...length(content.length), ...content]);
+  const privateKey = der(0x04, key);
+  return der(0x30, new Uint8Array([0x02, 0x01, 0x00, ...algorithm, ...privateKey]));
+}
+
+async function metaPublicKeyPem(privateKeyValue: string): Promise<string> {
+  const privateKey = await crypto.subtle.importKey("pkcs8", asArrayBuffer(metaPrivatePkcs8(privateKeyValue)), { name: "RSA-OAEP", hash: "SHA-256" }, true, ["decrypt"]);
+  const privateJwk = await crypto.subtle.exportKey("jwk", privateKey);
+  if (!privateJwk.n || !privateJwk.e) throw new HttpError(503, "Não foi possível obter a chave pública deste canal.");
+  const publicKey = await crypto.subtle.importKey("jwk", { kty: "RSA", n: privateJwk.n, e: privateJwk.e, alg: "RSA-OAEP-256", ext: true, key_ops: ["encrypt"] }, { name: "RSA-OAEP", hash: "SHA-256" }, true, ["encrypt"]);
+  const derBytes = new Uint8Array(await crypto.subtle.exportKey("spki", publicKey));
+  let binary = "";
+  for (const byte of derBytes) binary += String.fromCharCode(byte);
+  const encoded = btoa(binary).match(/.{1,64}/g)?.join("\n") ?? "";
+  return `-----BEGIN PUBLIC KEY-----\n${encoded}\n-----END PUBLIC KEY-----`;
+}
+
+async function configureMetaFlowEncryption(channel: FlowChannel, body: Record<string, unknown>) {
+  if (body.confirmChannel !== channel) throw new HttpError(400, "Confirme o canal selecionado antes de configurar a criptografia.");
+  const config = await metaChannelConfig(channel);
+  if (config.blockers.length) throw new HttpError(503, `Revise a configuração Meta: ${config.blockers.slice(0, 4).join(" ")}`);
+  if (!config.privateKey || !config.phoneNumberId) throw new HttpError(503, "A chave privada e o phone number ID deste canal são necessários.");
+  const pem = await metaPublicKeyPem(config.privateKey);
+  const form = new URLSearchParams({ business_public_key: pem });
+  await metaGraph(config, `/${encodeURIComponent(config.phoneNumberId)}/whatsapp_business_encryption`, "POST", form);
+  return { configured: true as const };
+}
+
+async function publishMetaFlow(channel: FlowChannel, flowId: string, body: Record<string, unknown>) {
+  if (body.confirmPublish !== "PUBLISH_FLOW" || body.confirmChannel !== channel) throw new HttpError(400, "A publicação precisa de confirmação explícita para este canal.");
+  const config = await metaChannelConfig(channel);
+  if (config.blockers.length) throw new HttpError(503, `Revise a configuração Meta: ${config.blockers.slice(0, 4).join(" ")}`);
+  const channelFlows = await readMetaFlowList(config);
+  if (!channelFlows.flows.some((entry) => entry.id === flowId)) throw new HttpError(403, "Este Flow não pertence à conta Meta vinculada ao canal selecionado.");
+  const flow = await getMetaFlow(config, flowId);
+  const summary = metaFlowSummary(flow);
+  if (!summary || summary.status !== "DRAFT") throw new HttpError(409, "Somente um Flow DRAFT desta conta pode ser publicado.");
+  if (summary.validationErrors.length) throw new HttpError(409, "A Meta ainda reporta erros de validação neste Flow.");
+  if (!summary.endpointUri || summary.endpointUri !== config.endpointUri) throw new HttpError(409, "O Flow precisa apontar para o endpoint configurado deste canal.");
+  const status = await readMetaFlowList(config);
+  if (!status.encryptionConfigured) throw new HttpError(409, "Configure e confirme a criptografia do endpoint deste phone number antes de publicar.");
+  const result = await metaGraph(config, `/${encodeURIComponent(flowId)}/publish`, "POST", new URLSearchParams());
+  if (!isRecord(result) || result.success !== true) throw new HttpError(502, "A Meta não confirmou a publicação do Flow.");
+  return { success: true as const };
+}
+
+async function bindPublishedMetaFlow(channel: FlowChannel, body: Record<string, unknown>, operatorId: string) {
+  const flowId = body.flowId;
+  const expectedFlowId = body.expectedFlowId;
+  if (body.confirmChannel !== channel || typeof flowId !== "string" || !/^\d{5,32}$/.test(flowId)
+    || !(expectedFlowId === null || (typeof expectedFlowId === "string" && /^\d{5,32}$/.test(expectedFlowId)))) {
+    throw new HttpError(400, "Confirme o número e envie o Flow e a revisão de vínculo esperados.");
+  }
+  const config = await metaChannelConfig(channel);
+  if (config.blockers.length) throw new HttpError(503, `Revise a configuração Meta: ${config.blockers.slice(0, 4).join(" ")}`);
+  if (!config.accountId || !config.wabaId) throw new HttpError(503, "A associação deste número à conta Meta não está completa.");
+  const status = await readMetaFlowList(config);
+  if (!status.bindingStoreReady) throw new HttpError(503, "A migration privada de vínculo dos Flows ainda não foi aplicada.");
+  if (!status.encryptionConfigured) throw new HttpError(409, "A chave criptográfica deste phone number ainda não foi confirmada pela Meta.");
+  if (!status.flows.some((item) => item.id === flowId)) throw new HttpError(403, "Este Flow não pertence ao WABA selecionado.");
+  const flow = await getMetaFlow(config, flowId);
+  const summary = metaFlowSummary(flow);
+  if (!summary || summary.status !== "PUBLISHED") throw new HttpError(409, "Somente um Flow publicado pode ser vinculado ao atendimento.");
+  if (summary.validationErrors.length) throw new HttpError(409, "A Meta ainda reporta erros de validação neste Flow.");
+  if (!summary.endpointUri || summary.endpointUri !== config.endpointUri) throw new HttpError(409, "O Flow publicado não aponta para o endpoint configurado deste canal.");
+
+  const uploads = await ordersDb()<MetaFlowUploadRecord>`
+    select meta_flow_id, basket_id, catalog_revision, flow_json_sha256
+    from whatsapp_atendimento.channel_flow_uploads
+    where channel = ${channel} and whatsapp_account_id = ${config.accountId} and meta_flow_id = ${flowId}
+    limit 1
+  `;
+  const upload = uploads[0];
+  if (!upload) throw new HttpError(409, "Este Flow não recebeu um JSON gerado e validado pelo Admin novo; faça o upload do rascunho greenfield antes de vincular.");
+  const currentCatalog = await readCatalog(await installationToken("read"));
+  if (upload.catalog_revision !== currentCatalog.catalogRevision
+    || !currentCatalog.baskets.baskets.some((basket: Basket) => basket.id === upload.basket_id && basket.active)) {
+    throw new HttpError(409, "O catálogo mudou após o upload do Flow. Gere e envie novamente o JSON desta cesta antes de vincular.");
+  }
+
+  try {
+    return await ordersDb().begin(async (tx) => {
+      await tx`select pg_advisory_xact_lock(hashtextextended(${`whatsapp-atendimento:flow-binding:${channel}`}, 0))`;
+      const current = await tx<{ meta_flow_id: string }>`
+        select meta_flow_id from whatsapp_atendimento.channel_flow_bindings
+        where channel = ${channel} and whatsapp_account_id = ${config.accountId}
+        for update
+      `;
+      const currentFlowId = current[0]?.meta_flow_id ?? null;
+      if (currentFlowId !== expectedFlowId) throw new HttpError(409, "O vínculo do canal mudou. Atualize o estado Meta antes de tentar novamente.");
+      const saved = await tx<{ meta_flow_id: string }>`
+        insert into whatsapp_atendimento.channel_flow_bindings
+          (channel, whatsapp_account_id, meta_flow_id, updated_by, updated_at)
+        values (${channel}, ${config.accountId}, ${flowId}, ${operatorId}, now())
+        on conflict (channel) do update set
+          whatsapp_account_id = excluded.whatsapp_account_id,
+          meta_flow_id = excluded.meta_flow_id,
+          updated_by = excluded.updated_by,
+          updated_at = now()
+        where whatsapp_atendimento.channel_flow_bindings.whatsapp_account_id = excluded.whatsapp_account_id
+        returning meta_flow_id
+      `;
+      if (!saved.length) throw new HttpError(409, "A conta vinculada ao canal mudou; atualize a página e confira os dois números.");
+      return { channel, flowId: saved[0].meta_flow_id };
+    });
+  } catch (error) {
+    if (error instanceof HttpError) throw error;
+    if (isRecord(error) && error.code === "23505") throw new HttpError(409, "Este Flow já está vinculado a outro número.");
+    throw error;
+  }
+}
+
+async function unbindMetaFlow(channel: FlowChannel, body: Record<string, unknown>) {
+  const expectedFlowId = body.expectedFlowId;
+  if (body.confirmChannel !== channel || typeof expectedFlowId !== "string" || !/^\d{5,32}$/.test(expectedFlowId)) {
+    throw new HttpError(400, "Confirme o número e o Flow atualmente vinculado.");
+  }
+  const config = await metaChannelConfig(channel);
+  if (!config.accountId) throw new HttpError(503, "A conta WhatsApp deste canal não está configurada.");
+  const removed = await ordersDb()<MetaChannelFlowBinding>`
+    delete from whatsapp_atendimento.channel_flow_bindings
+    where channel = ${channel} and whatsapp_account_id = ${config.accountId} and meta_flow_id = ${expectedFlowId}
+    returning meta_flow_id, flow_message_version, flow_cta, flow_action, first_screen
+  `;
+  if (!removed.length) throw new HttpError(409, "O Flow vinculado mudou. Atualize o estado do canal antes de tentar novamente.");
+  return { channel, flowId: expectedFlowId, removed: true as const };
+}
+
 Deno.serve(async (request) => {
   let headers = new Headers();
   try {
@@ -1787,6 +2411,52 @@ Deno.serve(async (request) => {
     const authorization = await authorize(request);
     headers = authorization.headers;
 
+    const metaListMatch = url.pathname.match(/\/meta-flows\/(0975|1018)$/);
+    if (metaListMatch && isFlowChannel(metaListMatch[1]) && request.method === "GET") {
+      return jsonResponse(await readMetaFlowList(await metaChannelConfig(metaListMatch[1])), 200, headers);
+    }
+    const metaCreateMatch = url.pathname.match(/\/meta-flows\/(0975|1018)\/create$/);
+    if (metaCreateMatch && isFlowChannel(metaCreateMatch[1]) && request.method === "POST") {
+      return jsonResponse(await createMetaFlow(metaCreateMatch[1], await readJson(request)), 201, headers);
+    }
+    const metaEncryptionMatch = url.pathname.match(/\/meta-flows\/(0975|1018)\/encryption$/);
+    if (metaEncryptionMatch && isFlowChannel(metaEncryptionMatch[1]) && request.method === "POST") {
+      return jsonResponse(await configureMetaFlowEncryption(metaEncryptionMatch[1], await readJson(request)), 200, headers);
+    }
+    const metaBindingMatch = url.pathname.match(/\/meta-flows\/(0975|1018)\/binding$/);
+    if (metaBindingMatch && isFlowChannel(metaBindingMatch[1])) {
+      if (request.method === "POST") {
+        return jsonResponse(await bindPublishedMetaFlow(metaBindingMatch[1], await readJson(request), authorization.operator.id), 200, headers);
+      }
+      if (request.method === "DELETE") {
+        return jsonResponse(await unbindMetaFlow(metaBindingMatch[1], await readJson(request)), 200, headers);
+      }
+    }
+    const metaFlowAction = url.pathname.match(/\/meta-flows\/(0975|1018)\/(\d{5,32})\/(upload|publish)$/);
+    if (metaFlowAction && isFlowChannel(metaFlowAction[1])) {
+      if (metaFlowAction[3] === "upload" && request.method === "POST") {
+        const bodyText = await request.text();
+        if (new TextEncoder().encode(bodyText).byteLength > MAX_FLOW_DRAFT_BYTES) throw new HttpError(413, "O JSON do Flow excede o limite permitido.");
+        let body: unknown;
+        try { body = JSON.parse(bodyText); } catch { throw new HttpError(400, "O JSON do Flow é inválido."); }
+        if (!isRecord(body)) throw new HttpError(400, "A solicitação de atualização do Flow é inválida.");
+        return jsonResponse(await uploadMetaFlow(metaFlowAction[1], metaFlowAction[2], body, authorization.operator.id), 200, headers);
+      }
+      if (metaFlowAction[3] === "publish" && request.method === "POST") {
+        return jsonResponse(await publishMetaFlow(metaFlowAction[1], metaFlowAction[2], await readJson(request)), 200, headers);
+      }
+    }
+    if (url.pathname.endsWith("/customers") && request.method === "GET") {
+      return jsonResponse(await searchCustomers(url.searchParams.get("q") ?? ""), 200, headers);
+    }
+    if (url.pathname.endsWith("/customers") && request.method === "POST") {
+      return jsonResponse(await saveCustomer(null, await readJson(request)), 201, headers);
+    }
+    const customerMatch = url.pathname.match(/\/customers\/([0-9a-f-]{36})$/i);
+    if (customerMatch && ORDER_ID.test(customerMatch[1])) {
+      if (request.method === "GET") return jsonResponse(await customerDetail(customerMatch[1]), 200, headers);
+      if (request.method === "PUT") return jsonResponse(await saveCustomer(customerMatch[1], await readJson(request)), 200, headers);
+    }
     if (url.pathname.endsWith("/integrations/bling/oauth/start") && request.method === "POST") {
       return jsonResponse(await startBlingOAuth(authorization.operator.id), 200, headers);
     }

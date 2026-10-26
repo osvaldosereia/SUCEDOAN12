@@ -174,6 +174,7 @@ def build(input_path: Path) -> None:
             "brand": str(source_product["brand"] or "Sem marca").strip(),
             "presentation": str(source_product["presentation"] or source_product["unit"] or "Unidade").strip(),
             "unitPriceCents": cents(selected_price),
+            "stockQuantity": 0,
             "imagePath": f"images/products/{product_id}.webp",
             "sku": str(source_product["sku"]).strip() if source_product["sku"] else None,
             "gtin": str(source_product["gtin"]).strip() if source_product["gtin"] else None,
@@ -206,7 +207,7 @@ def build(input_path: Path) -> None:
         )
 
     products.sort(key=lambda product: (product["name"].casefold(), product["id"]))
-    product_document = {"schemaVersion": 3, "products": products}
+    product_document = {"schemaVersion": 4, "products": products}
     baskets: list[dict] = []
     for source_basket in configuration["baskets"]:
         basket_id = slug(source_basket["name"])

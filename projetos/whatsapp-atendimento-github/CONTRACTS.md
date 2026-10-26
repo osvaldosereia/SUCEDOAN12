@@ -44,6 +44,7 @@ interface Product {
   sku: string | null;
   gtin: string | null;
   blingProductId: string | null;
+  stockQuantity: number; // inteiro assinado: GitHub é a fonte operacional do saldo
   active: boolean;
 }
 
@@ -69,7 +70,7 @@ interface Basket {
 }
 
 interface ProductsDocument {
-  schemaVersion: 3;
+  schemaVersion: 4;
   products: Product[];
 }
 
@@ -79,7 +80,7 @@ interface BasketsDocument {
 }
 ```
 
-O JSON público não recebe campo para o ajuste interno de preço nem informação de estoque. O servidor calcula o total a partir do commit do catálogo e de regra privada de preço. Imagens usam caminho relativo validado, MIME permitido, checksum e tamanho limitado. `products.json` usa `schemaVersion: 3`; `baskets.json` usa `schemaVersion: 1`.
+O JSON público não recebe campo para o ajuste interno de preço. O servidor calcula o total a partir do commit do catálogo e de regra privada de preço. O saldo inteiro assinado é público em `products.json` porque o usuário escolheu o GitHub como cadastro e controle operacional do estoque; o Flow só oferece quantidade quando o saldo é positivo. Imagens usam caminho relativo validado, MIME permitido, checksum e tamanho limitado. `products.json` usa `schemaVersion: 4`; `baskets.json` usa `schemaVersion: 1`.
 
 ## 3.1 Resultado da Rodada 1 — catálogo inicial
 
@@ -158,7 +159,7 @@ type OrderStatus =
   | "cancelled";
 ```
 
-O backend resolve o telefone da conversa e consulta `customers`, `customer_phones` e `customer_addresses` existentes; nunca aceita identidade/total enviados pelo navegador ou Flow como fonte de confiança. A primeira versão não consulta estoque automático: itens inativos não são oferecidos e a equipe registra falta durante a separação.
+O backend resolve o telefone da conversa e consulta `customers`, `customer_phones` e `customer_addresses` existentes; nunca aceita identidade/total enviados pelo navegador ou Flow como fonte de confiança. O Flow lê `stockQuantity` da revisão GitHub fixada; oferece de 1 a `min(6, max(0, stockQuantity))`, com retirada sempre disponível. Ao confirmar, o backend grava uma baixa GitHub idempotente por pedido; saldo negativo permitido não bloqueia a venda/NF-e no Bling.
 
 ### Persistência privada nova
 
@@ -216,7 +217,7 @@ Os nomes abaixo são referências para configuração; não contêm nem confirma
 - O formato de resposta de Flow aceito pelo handler é versionado como `contract_version: 1`, com `flow_token`, `selections`, `address_id` e `payment_method`. `customer_id` é opcional como confirmação adicional; sem ele, o servidor resolve o cadastro pela sessão/telefone, exige correspondência única verificada e confere endereço ativo. O runtime devolve o `flow_token` à tela final; o ID interno do cliente não é enviado ao Flow. A ligação do JSON gerado pela Rodada 3 e esse payload fica para a Rodada 7; payload inválido falha fechado.
 - SKU e ID Bling ausentes bloqueiam criação de rascunho, pois o snapshot operacional precisa preservar o vínculo fiscal futuro. A busca de cliente/endereço usa somente o backend e exige telefone único verificado e endereço ativo selecionado.
 - A fila ainda não tem consumidor. Nenhuma chamada Graph API é feita pelo handler; nada foi enviado. IDs oficiais de número/Flow e segredos continuam sem configuração confirmada.
-- Variáveis server-side esperadas: `SUPABASE_DB_URL`, `SUPABASE_URL`, credencial Supabase privilegiada para leitura de cliente, `META_APP_SECRET`, `META_WEBHOOK_VERIFY_TOKEN`, `META_PHONE_NUMBER_ID_0975`, `META_PHONE_NUMBER_ID_1018`, `META_FLOW_ID_0975`, `META_FLOW_ID_1018` e `META_OUTBOX_ENCRYPTION_KEY` (32 bytes em Base64). Nenhum valor foi configurado ou lido.
+- Variáveis server-side esperadas: `SUPABASE_DB_URL`, `SUPABASE_URL`, credencial Supabase privilegiada para leitura de cliente, `META_APP_SECRET`, `META_WEBHOOK_VERIFY_TOKEN`, `META_PHONE_NUMBER_ID_0975`, `META_PHONE_NUMBER_ID_1018` e `META_OUTBOX_ENCRYPTION_KEY` (32 bytes em Base64). O Flow publicado é vinculado por canal na tabela privada `whatsapp_atendimento.channel_flow_bindings`; `META_FLOW_ID_*` não é configuração ativa. Nenhum valor foi configurado ou lido.
 - Verificação local: `pnpm build` e `git diff --check`; Deno CLI indisponível para `deno check`. Nenhum teste foi criado/executado e nenhuma migration foi aplicada.
 
 ## 8. Dependências antes de homologação
@@ -275,7 +276,7 @@ O app converte fotos escolhidas pelo operador para WebP 240×190 e até 27 KB; o
 - OAuth Bling tem implementação local: início autenticado e limitado pela allowlist, `state` aleatório armazenado somente como SHA-256 e consumido uma vez, troca server-side pelo endpoint atual `api.bling.com.br`, e tokens cifrados com AES-GCM antes de persistir na tabela privada. `BLING_OAUTH_ENABLED` precisa ser exatamente `true`; `.env.example` mantém `false`, sem valores reais. O código não abre a URL nem executa o fluxo sozinho.
 - O callback responde apenas texto simples com cabeçalhos anti-cache/frame/referrer; erros do token endpoint não registram código, corpo ou credenciais. Um helper server-side renova access/refresh tokens sob lock advisory transacional e persiste os tokens rotacionados cifrados. O cliente API expõe somente GET e é chamado apenas pela rota autenticada de reconciliação quando as duas flags estão ligadas; flags desligadas e migration não aplicada impediram qualquer chamada ou refresh nesta rodada. Criação de venda, NF-e, saída e conclusão de entrega/pagamento continuam pendentes.
 - O consumidor local da outbox está em `supabase/functions/whatsapp-outbox-worker/`. O gateway não exige JWT Supabase (`verify_jwt=false`), mas a função exige `META_OUTBOX_DISPATCH_SECRET` de pelo menos 32 caracteres, compara o bearer em tempo constante e só executa com `META_OUTBOX_SENDER_ENABLED=true`. O `.env.example` mantém a flag `false`; tokens Meta ficam somente como segredos server-side.
-- O webhook e a separação podem acordar o worker com `EdgeRuntime.waitUntil`; o mesmo gate impede esse disparo por padrão. Cada lote tem até cinco registros e reivindica uma linha imediatamente antes de processá-la. Um disparo pode encadear no máximo vinte invocações (cem mensagens); além disso, as pendências aguardam o próximo evento. O worker decifra payloads apenas em memória, valida canal/tipo/destinatário e confere se o Flow ID corresponde ao canal configurado. O destinatário E.164 é convertido ao formato de dígitos esperado no campo `to` da Cloud API.
+- O webhook e a separação podem acordar o worker com `EdgeRuntime.waitUntil`; o mesmo gate impede esse disparo por padrão. Cada lote tem até cinco registros e reivindica uma linha imediatamente antes de processá-la. Um disparo pode encadear no máximo vinte invocações (cem mensagens); além disso, as pendências aguardam o próximo evento. O worker decifra payloads apenas em memória, valida canal/tipo/destinatário e confere Flow ID, ação e primeira tela contra o vínculo privado do canal e da conta WhatsApp. O destinatário E.164 é convertido ao formato de dígitos esperado no campo `to` da Cloud API.
 - Para impedir duplicidade, cada linha é marcada `failed/delivery_unknown` em uma transação antes da chamada externa; só uma resposta 2xx com `messages[0].id` a muda para `sent`. `sent` significa aceita pela Graph API, não necessariamente entregue ou lida; o webhook de status de entrega ainda não está implementado. Falha inequívoca fica `failed` com código curto; timeout, crash ou resposta ambígua nunca é repetido automaticamente e exige reconciliação manual. Isso fornece semântica de tentativa no máximo uma vez, com possível perda em crash antes do envio.
 - A área administrativa de mensagens usa `GET /outbox`, autenticada pela sessão GitHub/allowlist. Retorna contagens e até 50 metadados recentes (canal, tipo, estado, horários e código de erro); não seleciona payload cifrado, destinatário ou chave de evento. É somente leitura: não reenvia nem cancela mensagens.
 - Nenhum segredo do projeto novo foi configurado, a flag permaneceu desligada e o worker nunca foi invocado. O único canário real foi enviado pelo Vitrine Admin e aceito pela Meta em 26/10/2026, conforme o HANDOFF; não houve chamada Bling.
@@ -283,12 +284,20 @@ O app converte fotos escolhidas pelo operador para WebP 240×190 e até 27 KB; o
 
 ## 13. Rodada 7 — Flow dinâmico local
 
-- Por decisão atualizada do usuário, `products.json` usa `schemaVersion: 3` e não armazena estoque. O catálogo e as imagens continuam no GitHub; o runtime consulta somente leitura `storefront_ean_sellable_stock_v1` e `vitrine_stock_reservations` no Supabase, com a regra de saldo vendável do Vitrine Admin, e falha fechado se a consulta não responder. Estoque nunca é devolvido ao navegador administrativo nem gravado no catálogo público.
-- O Flow JSON `6.0` usa Data Exchange `3.0`, uma única tela lógica `GROUP` reutilizada para cada tipo e uma tela terminal `CUSTOMER_REVIEW`; o routing model contém apenas `GROUP -> CUSTOMER_REVIEW`. Em `GROUP`, `Dropdown` oferece uma única escolha de produto por vez com preço/descrição e imagem da opção atual. A última opção é sempre `Não quero esse produto`. A quantidade é `1..min(6, saldo vendável atual do Supabase)` e some quando o cliente escolhe retirada. O webhook revalida o saldo antes de criar rascunho.
-- Produto e quantidade recalculam o total no endpoint ao mudar o seletor. A resposta final guarda `contract_version: 1`, `flow_token`, `selections` como JSON serializado, `address_id` e `payment_method`; o webhook volta a validar os campos e o saldo da revisão fixada. É obrigatório manter pelo menos um item na cesta.
+- Decisão vigente do usuário: `products.json` usa `schemaVersion: 4` e mantém o estoque assinado junto ao cadastro de produtos no GitHub. A carga inicial usou um snapshot do saldo vendável Supabase; o runtime consulta apenas o commit GitHub fixado na sessão e não lê estoque Supabase.
+- O Flow JSON `6.0` usa Data Exchange `3.0`, uma única tela lógica `GROUP` reutilizada para cada tipo e uma tela terminal `CUSTOMER_REVIEW`; o routing model contém apenas `GROUP -> CUSTOMER_REVIEW`. Em `GROUP`, `Dropdown` oferece uma única escolha de produto por vez com preço/descrição e imagem da opção atual. A última opção é sempre `Não quero esse produto`. A quantidade é `1..min(6, max(0, stockQuantity))` da revisão GitHub fixada e some quando o cliente escolhe retirada.
+- Produto e quantidade recalculam o total no endpoint ao mudar o seletor. A resposta final guarda `contract_version: 1`, `flow_token`, `selections` como JSON serializado, `address_id` e `payment_method`; o webhook valida os campos e rejeita mudanças nos dados comerciais desde a sessão, mas permite movimento de estoque isolado e a baixa pode resultar em saldo negativo por decisão do usuário. É obrigatório manter pelo menos um item na cesta.
 - A saída da tela final apenas cria um rascunho/entrada na outbox. Confirmar, Editar e Cancelar continuam no resumo posterior da conversa; somente `Confirmar pedido` cria o pedido. O consumidor local está implementado e desligado por padrão; a conclusão do Flow não confirma nem envia sozinha uma mensagem durante o desenvolvimento.
 - A consulta a cliente aceita somente cadastro ativo e único com endereço ativo. A tela orienta procurar atendimento se não houver correspondência/endereço. Criar cadastro/endereço e editar dados manualmente no Flow exigem contrato de escrita separado e não são realizados por esta versão.
-- O saldo vendável atual é lido server-side do Supabase no Flow e revalidado pelo webhook ao criar o rascunho. A quantidade oferecida é de 1 a `min(6, saldo)`. Não existe reserva/decremento automático; a equipe precisa conferir faltas durante a separação.
+- A quantidade oferecida é de 1 a `min(6, max(0, stockQuantity))`. Ao confirmar o pedido, o webhook grava uma baixa idempotente no GitHub; commits concorrentes são refeitos sobre a revisão mais recente e o saldo pode ficar negativo. Saldo negativo não impede a venda/NF-e no Bling.
 - A validação no Meta Flow Builder e a renderização em aparelho continuam pendentes. Um canário separado, pelo painel do Vitrine Admin, foi aceito pela Graph API em 26/10/2026; nenhum Flow foi publicado e o worker desta aplicação não foi usado. Nenhuma migration ou função desta aplicação foi implantada/aplicada. Nenhum teste automatizado foi criado ou executado.
 
 Dependências externas seguem versões fixas no `package.json` e lockfile pnpm. O provedor OAuth, allowlist, GitHub App e origens permitidas permanecem sem configuração confirmada. Nenhum secret foi criado/lido, nenhuma função foi implantada e nenhuma migration desta aplicação foi aplicada. A única chamada Meta foi o canário descrito no HANDOFF; não houve publicação Flow nem chamada Bling.
+
+## 14. Atualização de estoque e vínculo por canal — 26/10/2026
+
+- Estoque é controlado em GitHub. O saldo inicial foi importado uma vez do saldo vendável Supabase; o runtime não consulta estoque Supabase. `stockQuantity` pode ser negativo, mas o Flow só oferece quantidades positivas até seis e limitadas ao saldo da revisão GitHub.
+- Confirmar o pedido cria um commit GitHub atômico de `products.json` e marcador opaco, deduplicado por UUID do rascunho. A baixa ocorre antes da transação final Supabase; se houver falha intermediária, a repetição encontra o marcador e conclui o pedido sem descontar novamente. Saldo negativo não bloqueia o pedido ou o caminho Bling.
+- A tabela pública `ops2_meta_whatsapp_flow_bindings_v1` pertence a `registration_flow` e não é usada. A migration nova `20261026040544_whatsapp_atendimento_channel_flow_bindings.sql` cria o vínculo privado e exclusivo por canal/conta no projeto greenfield. O Admin exige Flow publicado do WABA correto, sem erro, endpoint correspondente e chave de criptografia verificada antes de vincular.
+- Webhook e outbox usam esse vínculo por canal, sem `META_FLOW_ID_*`. `META_OUTBOX_SENDER_ENABLED=false` permanece o gate global. Nenhuma migration foi aplicada, função implantada, Flow publicado ou mensagem enviada pelo novo projeto.
+- Seguem pendentes os segredos e a autorização do Admin, aplicação controlada das migrations, validação do Flow em aparelho, revisão da outbox e contratos de escrita de venda/NF-e/entrega no Bling.

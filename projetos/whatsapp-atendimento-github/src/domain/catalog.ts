@@ -9,6 +9,7 @@ export interface Product {
   brand: string;
   presentation: string;
   unitPriceCents: MoneyCents;
+  stockQuantity: number;
   imagePath: string;
   sku: string | null;
   gtin: string | null;
@@ -37,7 +38,7 @@ export interface Basket {
 }
 
 export interface ProductsDocument {
-  schemaVersion: 3;
+  schemaVersion: 4;
   products: Product[];
 }
 
@@ -54,7 +55,7 @@ export interface CatalogDocuments {
 const allowedKeys: Record<string, readonly string[]> = {
   catalog: ["products", "baskets"],
   productsDocument: ["schemaVersion", "products"],
-  product: ["id", "name", "brand", "presentation", "unitPriceCents", "imagePath", "sku", "gtin", "blingProductId", "active"],
+  product: ["id", "name", "brand", "presentation", "unitPriceCents", "stockQuantity", "imagePath", "sku", "gtin", "blingProductId", "active"],
   basketsDocument: ["schemaVersion", "baskets"],
   basket: ["id", "name", "active", "sortOrder", "basePriceCents", "groups"],
   group: ["id", "label", "category", "productIds", "minimumQuantity", "maximumQuantity", "initialQuantity", "removalAllowed"],
@@ -84,7 +85,7 @@ export function validateCatalog(value: unknown): string[] {
   else checkKeys(baskets, allowedKeys.basketsDocument, "baskets", errors);
   if (!isRecord(products) || !isRecord(baskets)) return errors;
 
-  if (products.schemaVersion !== 3) errors.push("products.schemaVersion must be 3");
+  if (products.schemaVersion !== 4) errors.push("products.schemaVersion must be 4");
   if (baskets.schemaVersion !== 1) errors.push("baskets.schemaVersion must be 1");
   if (!Array.isArray(products.products) || products.products.length === 0) {
     errors.push("products.products must contain at least one product");
@@ -122,6 +123,7 @@ export function validateCatalog(value: unknown): string[] {
     if (!Number.isSafeInteger(product.unitPriceCents) || product.unitPriceCents < 0) {
       errors.push(`${at}.unitPriceCents must be a non-negative integer`);
     }
+    if (!Number.isSafeInteger(product.stockQuantity)) errors.push(`${at}.stockQuantity must be an integer (negative balances are allowed)`);
     if (!product.imagePath.startsWith("images/products/") || product.imagePath.includes("..")) {
       errors.push(`${at}.imagePath must point inside images/products`);
     }

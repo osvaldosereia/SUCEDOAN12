@@ -24,10 +24,12 @@ import {
   type ChannelFlowDocument,
   type FlowChannel,
 } from "../domain/flows";
-import { AdminApiError, assignOrder, completeOrderSeparation, getCatalog, getFlowDraft, getOrder, getOrders, getOutbox, reconcileOrderBlingSale, saveCatalog, saveFlowDraft, saveOrderBlingContact, saveOrderPicking, type PendingImage } from "./api";
+import { AdminApiError, assignOrder, bindPublishedMetaFlow, completeOrderSeparation, createMetaFlow, getCatalog, getCustomer, getCustomers, getFlowDraft, getMetaFlows, getOrder, getOrders, getOutbox, publishMetaFlow, reconcileOrderBlingSale, saveCatalog, saveCustomer, saveFlowDraft, saveOrderBlingContact, saveOrderPicking, setupMetaFlowEncryption, unbindMetaFlow, uploadMetaFlowJson, type MetaChannelSnapshot, type PendingImage } from "./api";
 import type { OrderDetailRecord, OrderListEntry } from "../domain/orders";
 import type { OutboxMessageSummary, OutboxQueueSnapshot, OutboxStatus } from "../domain/outbox";
+import { emptyCustomer, type CustomerListItem, type CustomerRecord } from "../domain/customers";
 import { renderFlowsPanel } from "./flows-panel";
+import { renderCustomerAddressEditor, renderCustomersPanel } from "./customers-panel";
 import "./styles.css";
 
 const app = document.querySelector<HTMLDivElement>("#app");
@@ -68,7 +70,7 @@ const state = {
   access: "preview" as "preview" | "loading" | "authorized" | "denied",
   accessMessage: "Prévia local: alterações ficam apenas nesta sessão do navegador.",
   busy: false,
-  tab: "products" as "products" | "baskets" | "flows" | "orders" | "outbox",
+  tab: "products" as "products" | "baskets" | "flows" | "orders" | "outbox" | "customers",
   search: "",
   selectedBasketId: initialDocuments.baskets.baskets[0]?.id ?? "",
   flowDocuments: structuredClone(initialFlowDocuments),
@@ -78,6 +80,8 @@ const state = {
   flowProductChoices: new Map<string, string>(),
   flowQuantities: new Map<string, number>(),
   flowReviewDocument: null as ChannelFlowDocument | null,
+  metaChannels: {} as Partial<Record<FlowChannel, MetaChannelSnapshot>>,
+  metaSelectedFlowIds: {} as Partial<Record<FlowChannel, string>>,
   pendingImages: new Map<string, PendingImage>(),
   editorImage: null as PendingImage | null,
   editorImageProductId: "",
@@ -89,6 +93,10 @@ const state = {
   orders: [] as OrderListEntry[],
   selectedOrder: null as OrderDetailRecord | null,
   ordersLoaded: false,
+  customers: [] as CustomerListItem[],
+  customersLoaded: false,
+  customerSearch: "",
+  customerEditor: null as CustomerRecord | null,
   outbox: [] as OutboxMessageSummary[],
   outboxCounts: { pending: 0, sent: 0, failed: 0, cancelled: 0 } as OutboxQueueSnapshot["counts"],
   outboxLimit: 50,
@@ -248,7 +256,7 @@ function productCard(product: Product): string {
       <div class="card-title-row"><h3>${escapeHtml(product.name)}</h3><span class="status-pill ${product.active ? "is-active" : "is-inactive"}">${product.active ? "Ativo" : "Inativo"}</span></div>
       <p>${escapeHtml(product.brand)} · ${escapeHtml(product.presentation)}</p>
       <strong>${money(product.unitPriceCents)}</strong>
-      <small>Saldo vendável consultado no Supabase durante o Flow</small>
+      <small>Estoque no GitHub: ${product.stockQuantity.toLocaleString("pt-BR")} unidade(s)</small>
       <small>${escapeHtml(product.sku ?? "Sem SKU")} · ${escapeHtml(product.id.slice(0, 8))}</small>
       <div class="card-actions"><button class="button button-soft" data-action="edit-product" data-id="${escapeHtml(product.id)}">Editar</button><button class="icon-button" aria-label="Remover produto" title="Remover" data-action="delete-product" data-id="${escapeHtml(product.id)}">×</button></div>
     </div>
@@ -328,6 +336,53 @@ async function loadOrders(): Promise<void> {
     state.noticeType = "success";
   } catch (error) {
     state.notice = error instanceof AdminApiError ? error.message : "Não foi possível carregar os pedidos.";
+    state.noticeType = "error";
+  } finally {
+    state.busy = false;
+    render();
+  }
+}
+
+async function loadCustomers(query = state.customerSearch): Promise<void> {
+  if (!state.session || state.access !== "authorized") return;
+  state.busy = true;
+  state.customerSearch = query;
+  render();
+  try {
+    const result = await getCustomers(state.session.access_token, query);
+    state.customers = result.customers;
+    state.customersLoaded = true;
+    state.notice = `${result.customers.length} cadastro(s) encontrado(s).`;
+    state.noticeType = "success";
+  } catch (error) {
+    state.notice = error instanceof AdminApiError ? error.message : "Não foi possível pesquisar os clientes.";
+    state.noticeType = "error";
+  } finally {
+    state.busy = false;
+    render();
+  }
+}
+
+async function refreshMetaFlows(channel = state.flowChannel): Promise<void> {
+  if (!state.session || state.access !== "authorized") return;
+  state.busy = true;
+  render();
+  try {
+    const snapshot = await getMetaFlows(state.session.access_token, channel);
+    state.metaChannels[channel] = snapshot;
+    const selected = state.metaSelectedFlowIds[channel];
+    if (!selected || !snapshot.flows.some((flow) => flow.id === selected)) {
+      state.metaSelectedFlowIds[channel] = snapshot.activeBinding?.flowId
+        ?? state.flowDocuments[channel].metaFlowId
+        ?? snapshot.flows.find((flow) => flow.status === "DRAFT")?.id
+        ?? "";
+    }
+    state.notice = snapshot.configured
+      ? `Status Meta do canal ${channel} atualizado (${snapshot.flows.length} Flow(s)).`
+      : `Canal ${channel} ainda tem configurações pendentes no servidor.`;
+    state.noticeType = snapshot.configured ? "success" : "info";
+  } catch (error) {
+    state.notice = error instanceof AdminApiError ? error.message : "Não foi possível consultar os Flows da Meta.";
     state.noticeType = "error";
   } finally {
     state.busy = false;
@@ -514,6 +569,19 @@ function render(): void {
     noticeType: "info",
     productChoices: state.flowProductChoices,
     quantities: state.flowQuantities,
+    metaChannel: state.metaChannels[state.flowChannel] ?? {
+      channel: state.flowChannel, loaded: false, configured: false, accountName: null, blockers: [], flows: [],
+      encryptionConfigured: false, endpointUri: null, bindingStoreReady: false, activeBinding: null,
+    },
+    selectedMetaFlowId: state.metaSelectedFlowIds[state.flowChannel] ?? "",
+  });
+  const customersPanel = renderCustomersPanel({
+    customers: state.customers,
+    loaded: state.customersLoaded,
+    busy: state.busy || state.access === "loading",
+    query: state.customerSearch,
+    editor: state.customerEditor,
+    authorized: state.access === "authorized",
   });
   const identityLabel = state.session?.user.user_metadata?.user_name
     ?? state.session?.user.user_metadata?.preferred_username
@@ -526,11 +594,11 @@ function render(): void {
       <div class="topbar-actions"><span class="access-status ${statusClass}"><i></i>${escapeHtml(accessLabel())}</span>${state.session ? `<span class="user-chip"><span class="user-avatar">${escapeHtml(String(identityLabel).slice(0, 1).toUpperCase())}</span>${escapeHtml(identityLabel)}</span><button class="button button-soft" data-action="sign-out">Sair</button>` : `<button class="button button-dark" data-action="sign-in" ${supabase ? "" : "disabled title=Configure%20Supabase%20em%20.env.local"}>Entrar com GitHub</button>`}</div>
     </header>
     <div class="security-banner ${state.access === "authorized" ? "is-ready" : ""}"><span class="security-icon">${state.access === "authorized" ? "✓" : "⌑"}</span><span><strong>${state.access === "authorized" ? "Acesso confirmado pelo servidor" : escapeHtml(state.accessMessage)}</strong><small>${state.access === "authorized" ? `Gravações ficam restritas ao branch project/whatsapp-atendimento-github-20261025${state.commitSha ? ` · revisão ${state.commitSha.slice(0, 7)}` : ""}.` : "Sem GitHub App, allowlist e origem configurados no servidor, nenhuma gravação será aceita."}</small></span>${state.commitUrl ? `<a class="text-link" href="${escapeHtml(state.commitUrl)}" target="_blank" rel="noreferrer">Ver commit ↗</a>` : ""}</div>
-    <div class="app-body"><aside class="main-nav"><div class="nav-label">CATÁLOGO</div><button class="nav-item ${state.tab === "products" ? "is-active" : ""}" data-action="tab" data-tab="products"><span class="nav-icon">▦</span> Produtos <span class="nav-count">${state.products.products.length}</span></button><button class="nav-item ${state.tab === "baskets" ? "is-active" : ""}" data-action="tab" data-tab="baskets"><span class="nav-icon">▤</span> Cestas <span class="nav-count">${state.baskets.baskets.length}</span></button><button class="nav-item ${state.tab === "flows" ? "is-active" : ""}" data-action="tab" data-tab="flows"><span class="nav-icon">⌁</span> Flows <span class="nav-count">${state.flowDocuments[state.flowChannel].drafts.length}</span></button><div class="nav-label nav-orders-label">OPERAÇÃO</div><button class="nav-item ${state.tab === "orders" ? "is-active" : ""}" data-action="tab" data-tab="orders"><span class="nav-icon">▣</span> Pedidos <span class="nav-count">${state.orders.length}</span></button><button class="nav-item ${state.tab === "outbox" ? "is-active" : ""}" data-action="tab" data-tab="outbox"><span class="nav-icon">↗</span> Mensagens ${state.outboxLoaded ? `<span class="nav-count">${state.outboxCounts.pending + state.outboxCounts.failed}</span>` : ""}</button></aside>
-      <main class="content"><div class="content-topline"><span>Administração</span><span class="breadcrumb-sep">/</span><strong>${state.tab === "products" ? "Produtos" : state.tab === "baskets" ? "Cestas" : state.tab === "flows" ? "Flows" : state.tab === "orders" ? "Pedidos" : "Mensagens WhatsApp"}</strong><span class="dirty-indicator ${isDirty() && state.tab !== "orders" && state.tab !== "outbox" ? "is-dirty" : ""}">${isDirty() && state.tab !== "orders" && state.tab !== "outbox" ? "Alterações pendentes" : "Tudo salvo"}</span></div>${state.notice ? `<div class="notice notice-${state.noticeType}" role="status"><span>${escapeHtml(state.notice)}</span>${state.conflict ? `<div class="conflict-actions"><button class="text-button" data-action="export-draft">Baixar meu rascunho</button><button class="text-button" data-action="reload-catalog">Descartar e recarregar</button></div>` : ""}<button data-action="clear-notice" aria-label="Fechar">×</button></div>` : ""}${state.tab === "products" ? productsView() : state.tab === "baskets" ? selectedBasket ? basketEditor(selectedBasket) : `<div class="empty-state"><strong>Nenhuma cesta cadastrada</strong><span>Crie a primeira cesta para começar.</span><button class="button button-primary" data-action="new-basket">＋ Nova cesta</button></div>` : state.tab === "flows" ? flowsPanel : state.tab === "outbox" ? outboxView() : ordersView()}</main>
+    <div class="app-body"><aside class="main-nav"><div class="nav-label">CATÁLOGO</div><button class="nav-item ${state.tab === "products" ? "is-active" : ""}" data-action="tab" data-tab="products"><span class="nav-icon">▦</span> Produtos <span class="nav-count">${state.products.products.length}</span></button><button class="nav-item ${state.tab === "baskets" ? "is-active" : ""}" data-action="tab" data-tab="baskets"><span class="nav-icon">▤</span> Cestas <span class="nav-count">${state.baskets.baskets.length}</span></button><button class="nav-item ${state.tab === "flows" ? "is-active" : ""}" data-action="tab" data-tab="flows"><span class="nav-icon">⌁</span> Flows <span class="nav-count">${state.flowDocuments[state.flowChannel].drafts.length}</span></button><div class="nav-label nav-orders-label">OPERAÇÃO</div><button class="nav-item ${state.tab === "customers" ? "is-active" : ""}" data-action="tab" data-tab="customers"><span class="nav-icon">♙</span> Clientes ${state.customersLoaded ? `<span class="nav-count">${state.customers.length}</span>` : ""}</button><button class="nav-item ${state.tab === "orders" ? "is-active" : ""}" data-action="tab" data-tab="orders"><span class="nav-icon">▣</span> Pedidos <span class="nav-count">${state.orders.length}</span></button><button class="nav-item ${state.tab === "outbox" ? "is-active" : ""}" data-action="tab" data-tab="outbox"><span class="nav-icon">↗</span> Mensagens ${state.outboxLoaded ? `<span class="nav-count">${state.outboxCounts.pending + state.outboxCounts.failed}</span>` : ""}</button></aside>
+      <main class="content"><div class="content-topline"><span>Administração</span><span class="breadcrumb-sep">/</span><strong>${state.tab === "products" ? "Produtos" : state.tab === "baskets" ? "Cestas" : state.tab === "flows" ? "Flows" : state.tab === "orders" ? "Pedidos" : state.tab === "customers" ? "Clientes" : "Mensagens WhatsApp"}</strong><span class="dirty-indicator ${isDirty() && !["orders", "outbox", "customers"].includes(state.tab) ? "is-dirty" : ""}">${isDirty() && !["orders", "outbox", "customers"].includes(state.tab) ? "Alterações pendentes" : "Tudo salvo"}</span></div>${state.notice ? `<div class="notice notice-${state.noticeType}" role="status"><span>${escapeHtml(state.notice)}</span>${state.conflict ? `<div class="conflict-actions"><button class="text-button" data-action="export-draft">Baixar meu rascunho</button><button class="text-button" data-action="reload-catalog">Descartar e recarregar</button></div>` : ""}<button data-action="clear-notice" aria-label="Fechar">×</button></div>` : ""}${state.tab === "products" ? productsView() : state.tab === "baskets" ? selectedBasket ? basketEditor(selectedBasket) : `<div class="empty-state"><strong>Nenhuma cesta cadastrada</strong><span>Crie a primeira cesta para começar.</span><button class="button button-primary" data-action="new-basket">＋ Nova cesta</button></div>` : state.tab === "flows" ? flowsPanel : state.tab === "customers" ? customersPanel : state.tab === "outbox" ? outboxView() : ordersView()}</main>
     </div>
     <footer class="page-footer"><span>Catálogo público versionado no GitHub</span><span>Dados pessoais e credenciais ficam fora deste projeto</span></footer>
-    ${state.access === "authorized" && isDirty() ? `<button class="floating-save" data-action="review-save"><span>Revisar alterações</span><strong>Salvar no GitHub ↗</strong></button>` : ""}
+    ${state.access === "authorized" && isDirty() && !["customers", "orders", "outbox"].includes(state.tab) ? `<button class="floating-save" data-action="review-save"><span>Revisar alterações</span><strong>Salvar no GitHub ↗</strong></button>` : ""}
     ${modalMarkup()}
   </div>`;
   const locked = state.busy || state.access === "loading";
@@ -560,7 +628,7 @@ function openProductEditor(productId?: string): void {
   const modal = openModal(`<form id="product-form" class="modal-card">
     <div class="modal-heading"><div><span class="eyebrow">${product ? "Editar cadastro" : "Novo cadastro"}</span><h2>${product ? "Produto" : "Adicionar produto"}</h2></div><button type="button" class="icon-button" data-action="close-modal" aria-label="Fechar">×</button></div>
     <input type="hidden" name="product_id" value="${escapeHtml(id)}">
-    <div class="product-form-layout"><div><label>Nome do produto<input name="name" required maxlength="160" value="${escapeHtml(product?.name ?? "")}"></label><div class="form-grid"><label>Marca<input name="brand" required maxlength="80" value="${escapeHtml(product?.brand ?? "")}"></label><label>Apresentação<input name="presentation" required maxlength="80" placeholder="Ex.: 500 g" value="${escapeHtml(product?.presentation ?? "")}"></label></div><div class="form-grid"><label>Preço unitário (R$)<input name="price" type="number" min="0" step="0.01" required value="${product ? priceInputValue(product.unitPriceCents) : "0.00"}"></label></div><small>O saldo vem da consulta protegida ao estoque vendável do Supabase; não é alterado neste cadastro público.</small><div class="form-grid"><label>SKU<input name="sku" maxlength="80" value="${escapeHtml(product?.sku ?? "")}"></label><label>GTIN / EAN<input name="gtin" maxlength="32" value="${escapeHtml(product?.gtin ?? "")}"></label></div><label>ID do Bling<input name="bling" maxlength="80" value="${escapeHtml(product?.blingProductId ?? "")}"></label><label class="checkbox-label"><input name="active" type="checkbox" ${product?.active ?? true ? "checked" : ""}> Produto ativo</label></div>
+    <div class="product-form-layout"><div><label>Nome do produto<input name="name" required maxlength="160" value="${escapeHtml(product?.name ?? "")}"></label><div class="form-grid"><label>Marca<input name="brand" required maxlength="80" value="${escapeHtml(product?.brand ?? "")}"></label><label>Apresentação<input name="presentation" required maxlength="80" placeholder="Ex.: 500 g" value="${escapeHtml(product?.presentation ?? "")}"></label></div><div class="form-grid"><label>Preço unitário (R$)<input name="price" type="number" min="0" step="0.01" required value="${product ? priceInputValue(product.unitPriceCents) : "0.00"}"></label><label>Estoque no GitHub<input name="stock_quantity" type="number" step="1" value="${product?.stockQuantity ?? 0}" required><small>Saldo pode ficar negativo após uma confirmação.</small></label></div><small>O catálogo GitHub mantém e controla o saldo. A baixa ocorre quando o cliente confirma o pedido.</small><div class="form-grid"><label>SKU<input name="sku" maxlength="80" value="${escapeHtml(product?.sku ?? "")}"></label><label>GTIN / EAN<input name="gtin" maxlength="32" value="${escapeHtml(product?.gtin ?? "")}"></label></div><label>ID do Bling<input name="bling" maxlength="80" value="${escapeHtml(product?.blingProductId ?? "")}"></label><label class="checkbox-label"><input name="active" type="checkbox" ${product?.active ?? true ? "checked" : ""}> Produto ativo</label></div>
       <div class="image-editor"><div class="image-preview-box">${source ? `<img id="product-image-preview" src="${escapeHtml(source)}" alt="Prévia do produto">` : `<div class="image-empty" id="product-image-empty"><span>＋</span>Foto do produto</div>`}</div><label class="button button-soft upload-button">Escolher foto<input id="product-image-input" type="file" accept="image/*" hidden></label><small>Será convertida para WebP 240 × 190, até 27 KB.${product ? " A foto atual é mantida se você não selecionar outra." : " Selecione uma foto para cadastrar o produto."}</small><small id="image-feedback" role="status"></small></div></div>
     <div class="modal-actions"><button type="button" class="button button-soft" data-action="close-modal">Cancelar</button><button class="button button-primary" type="submit">Aplicar produto</button></div>
   </form>`, "product");
@@ -879,6 +947,11 @@ appRoot.addEventListener("change", async (event) => {
     render();
     return;
   }
+  if (target instanceof HTMLSelectElement && target.id === "meta-flow-select") {
+    state.metaSelectedFlowIds[state.flowChannel] = target.value;
+    render();
+    return;
+  }
   if (target instanceof HTMLSelectElement && target.id === "flow-basket") {
     state.flowBasketId = target.value;
     const saved = state.flowDocuments[state.flowChannel].drafts.find((draft) => draft.basketId === target.value);
@@ -912,6 +985,60 @@ appRoot.addEventListener("submit", async (event) => {
   if (state.busy) return;
   const target = event.target;
   if (!(target instanceof HTMLFormElement)) return;
+  if (target.id === "customer-search-form") {
+    event.preventDefault();
+    await loadCustomers(String(new FormData(target).get("query") ?? ""));
+    return;
+  }
+  if (target.id === "customer-form") {
+    event.preventDefault();
+    if (!state.session) return;
+    const values = new FormData(target);
+    const addresses = [...target.querySelectorAll<HTMLElement>(".customer-address")].map((element) => {
+      const index = Number(element.dataset.index);
+      return {
+        ...(values.get(`address_id_${index}`) ? { id: String(values.get(`address_id_${index}`)) } : {}),
+        label: String(values.get(`address_label_${index}`) ?? "").trim() || null,
+        street: String(values.get(`address_street_${index}`) ?? "").trim(),
+        number: String(values.get(`address_number_${index}`) ?? "").trim(),
+        complement: String(values.get(`address_complement_${index}`) ?? "").trim() || null,
+        neighborhood: String(values.get(`address_neighborhood_${index}`) ?? "").trim(),
+        city: String(values.get(`address_city_${index}`) ?? "").trim(),
+        state: String(values.get(`address_state_${index}`) ?? "").trim().toUpperCase(),
+        postalCode: String(values.get(`address_postal_${index}`) ?? "").trim(),
+        reference: String(values.get(`address_reference_${index}`) ?? "").trim() || null,
+        isDefault: values.has(`address_default_${index}`),
+        isActive: values.has(`address_active_${index}`),
+      };
+    });
+    const customer: CustomerRecord = {
+      id: target.dataset.id || null,
+      name: String(values.get("customer_name") ?? "").trim(),
+      cpfCnpj: String(values.get("customer_document") ?? "").trim() || null,
+      phoneE164: String(values.get("customer_phone") ?? "").trim(),
+      preferredReply: String(values.get("customer_preferred_reply") ?? "auto") as CustomerRecord["preferredReply"],
+      isActive: values.has("customer_active"),
+      addresses,
+    };
+    state.busy = true;
+    render();
+    try {
+      const saved = await saveCustomer(state.session.access_token, customer);
+      const result = await getCustomers(state.session.access_token, state.customerSearch);
+      state.customerEditor = null;
+      state.customers = result.customers;
+      state.customersLoaded = true;
+      state.notice = `Cadastro ${saved.name} salvo no Supabase privado.`;
+      state.noticeType = "success";
+    } catch (error) {
+      state.notice = error instanceof AdminApiError ? error.message : "Não foi possível salvar o cadastro do cliente.";
+      state.noticeType = "error";
+    } finally {
+      state.busy = false;
+      render();
+    }
+    return;
+  }
   if (target.id === "order-picking-item") {
     event.preventDefault();
     if (!state.session || !state.selectedOrder) return;
@@ -984,8 +1111,13 @@ appRoot.addEventListener("submit", async (event) => {
       return;
     }
     const price = Number(values.get("price"));
+    const stockQuantity = Number(values.get("stock_quantity"));
     if (!Number.isFinite(price) || price < 0) {
       tell("Informe um preço válido em reais.", "error");
+      return;
+    }
+    if (!Number.isSafeInteger(stockQuantity)) {
+      tell("Informe um saldo inteiro seguro.", "error");
       return;
     }
     const product: Product = {
@@ -994,6 +1126,7 @@ appRoot.addEventListener("submit", async (event) => {
       brand: String(values.get("brand") ?? "").trim(),
       presentation: String(values.get("presentation") ?? "").trim(),
       unitPriceCents: Math.round(price * 100),
+      stockQuantity,
       imagePath: `images/products/${id}.webp`,
       sku: String(values.get("sku") ?? "").trim() || null,
       gtin: String(values.get("gtin") ?? "").trim() || null,
@@ -1047,11 +1180,47 @@ appRoot.addEventListener("click", async (event) => {
     await supabase?.auth.signOut();
   } else if (action === "tab") {
     const nextTab = target.dataset.tab;
-    state.tab = nextTab === "baskets" || nextTab === "flows" || nextTab === "orders" || nextTab === "outbox" ? nextTab : "products";
+    state.tab = nextTab === "baskets" || nextTab === "flows" || nextTab === "orders" || nextTab === "outbox" || nextTab === "customers" ? nextTab : "products";
     state.notice = "";
     render();
     if (state.tab === "orders" && !state.ordersLoaded && state.access === "authorized") await loadOrders();
     if (state.tab === "outbox" && !state.outboxLoaded && state.access === "authorized") await loadOutbox();
+    if (state.tab === "customers" && !state.customersLoaded && state.access === "authorized") await loadCustomers("");
+    if (state.tab === "flows" && !state.metaChannels[state.flowChannel] && state.access === "authorized") await refreshMetaFlows();
+  } else if (action === "customer-new") {
+    state.customerEditor = emptyCustomer();
+    state.notice = "";
+    render();
+  } else if (action === "customer-edit" && state.session) {
+    state.busy = true;
+    render();
+    try {
+      state.customerEditor = await getCustomer(state.session.access_token, id);
+      state.notice = "";
+    } catch (error) {
+      state.notice = error instanceof AdminApiError ? error.message : "Não foi possível abrir o cadastro.";
+      state.noticeType = "error";
+    } finally {
+      state.busy = false;
+      render();
+    }
+  } else if (action === "customer-cancel-edit") {
+    state.customerEditor = null;
+    render();
+  } else if (action === "customer-add-address") {
+    const list = document.querySelector<HTMLElement>("#customer-address-list");
+    if (!list) return;
+    const addresses = [...list.querySelectorAll<HTMLElement>(".customer-address")];
+    const index = Math.max(-1, ...addresses.map((item) => Number(item.dataset.index))) + 1;
+    const firstDefault = !addresses.some((item) => item.querySelector<HTMLInputElement>('input[name^="address_default_"]')?.checked);
+    const element = document.createElement("div");
+    element.innerHTML = renderCustomerAddressEditor({
+      label: "", street: "", number: "", complement: null, neighborhood: "", city: "", state: "", postalCode: "", reference: null,
+      isDefault: firstDefault, isActive: true,
+    }, index);
+    list.append(element.firstElementChild!);
+  } else if (action === "customer-remove-address") {
+    target.closest(".customer-address")?.remove();
   } else if (action === "orders-refresh") {
     await loadOrders();
   } else if (action === "outbox-refresh") {
@@ -1129,6 +1298,126 @@ appRoot.addEventListener("click", async (event) => {
     state.flowQuantities.clear();
     state.notice = "";
     render();
+    if (!state.metaChannels[state.flowChannel] && state.access === "authorized") await refreshMetaFlows(state.flowChannel);
+  } else if (action === "meta-refresh") {
+    await refreshMetaFlows();
+  } else if (action === "meta-create") {
+    if (!state.session) return;
+    const name = document.querySelector<HTMLInputElement>("#meta-flow-name")?.value.trim() || state.flowName;
+    state.busy = true;
+    render();
+    try {
+      const created = await createMetaFlow(state.session.access_token, state.flowChannel, name);
+      state.metaSelectedFlowIds[state.flowChannel] = created.id;
+      state.metaChannels[state.flowChannel] = await getMetaFlows(state.session.access_token, state.flowChannel);
+      state.notice = `Flow DRAFT ${created.id} criado na conta Meta do canal ${state.flowChannel}.`;
+      state.noticeType = "success";
+    } catch (error) {
+      state.notice = error instanceof AdminApiError ? error.message : "A Meta não criou o rascunho Flow.";
+      state.noticeType = "error";
+    } finally {
+      state.busy = false;
+      render();
+    }
+  } else if (action === "meta-upload") {
+    if (!state.session || !state.catalogRevision || isDirty()) {
+      tell("Salve o catálogo antes de enviar um Flow para a Meta.", "error");
+      return;
+    }
+    const flowId = state.metaSelectedFlowIds[state.flowChannel] ?? "";
+    const draft = currentFlowDraft();
+    if (!flowId || !draft) return;
+    state.busy = true;
+    render();
+    try {
+      const result = await uploadMetaFlowJson(state.session.access_token, state.flowChannel, flowId, draft.flowJson, draft.flowName, draft.basketId);
+      state.metaChannels[state.flowChannel] = await getMetaFlows(state.session.access_token, state.flowChannel);
+      state.notice = result.validationErrors.length
+        ? `JSON enviado ao Flow ${flowId}; a Meta retornou ${result.validationErrors.length} erro(s) de validação.`
+        : `JSON e endpoint enviados ao Flow ${flowId}. Confirme o preview e o status reportado pela Meta.`;
+      state.noticeType = result.validationErrors.length ? "error" : "success";
+    } catch (error) {
+      state.notice = error instanceof AdminApiError ? error.message : "Não foi possível atualizar o Flow na Meta.";
+      state.noticeType = "error";
+    } finally {
+      state.busy = false;
+      render();
+    }
+  } else if (action === "meta-encryption") {
+    if (!state.session || !window.confirm(`Configurar a chave pública da Meta para o phone number do canal ${state.flowChannel}?`)) return;
+    state.busy = true;
+    render();
+    try {
+      await setupMetaFlowEncryption(state.session.access_token, state.flowChannel);
+      state.metaChannels[state.flowChannel] = await getMetaFlows(state.session.access_token, state.flowChannel);
+      state.notice = state.metaChannels[state.flowChannel]?.encryptionConfigured
+        ? `Chave de endpoint configurada para o canal ${state.flowChannel}.`
+        : `A solicitação da chave foi enviada; confirme a configuração Meta do canal ${state.flowChannel}.`;
+      state.noticeType = state.metaChannels[state.flowChannel]?.encryptionConfigured ? "success" : "info";
+    } catch (error) {
+      state.notice = error instanceof AdminApiError ? error.message : "Não foi possível configurar a criptografia Meta.";
+      state.noticeType = "error";
+    } finally {
+      state.busy = false;
+      render();
+    }
+  } else if (action === "meta-publish") {
+    const flowId = state.metaSelectedFlowIds[state.flowChannel] ?? "";
+    const flow = state.metaChannels[state.flowChannel]?.flows.find((item) => item.id === flowId);
+    if (!state.session || !flow) return;
+    if (!window.confirm(`Publicar o Flow ${flow.name} (${flow.id}) no canal ${state.flowChannel}? A Meta torna os assets publicados imutáveis.`)) return;
+    state.busy = true;
+    render();
+    try {
+      await publishMetaFlow(state.session.access_token, state.flowChannel, flowId);
+      state.metaChannels[state.flowChannel] = await getMetaFlows(state.session.access_token, state.flowChannel);
+      state.notice = `A Meta confirmou a publicação do Flow ${flowId} para o canal ${state.flowChannel}.`;
+      state.noticeType = "success";
+    } catch (error) {
+      state.notice = error instanceof AdminApiError ? error.message : "A Meta não confirmou a publicação do Flow.";
+      state.noticeType = "error";
+    } finally {
+      state.busy = false;
+      render();
+    }
+  } else if (action === "meta-bind") {
+    const flowId = state.metaSelectedFlowIds[state.flowChannel] ?? "";
+    const flow = state.metaChannels[state.flowChannel]?.flows.find((item) => item.id === flowId);
+    const currentFlowId = state.metaChannels[state.flowChannel]?.activeBinding?.flowId ?? null;
+    if (!state.session || !flow || currentFlowId === flowId) return;
+    if (!window.confirm(`Vincular o Flow publicado ${flow.name} (${flow.id}) ao número final ${state.flowChannel}? Isso só atualiza a configuração do canal; não publica Flow nem envia mensagem.`)) return;
+    state.busy = true;
+    render();
+    try {
+      await bindPublishedMetaFlow(state.session.access_token, state.flowChannel, flowId, currentFlowId);
+      state.metaChannels[state.flowChannel] = await getMetaFlows(state.session.access_token, state.flowChannel);
+      state.notice = `Flow ${flowId} vinculado ao canal ${state.flowChannel}. O envio permanece desligado pelo controle global.`;
+      state.noticeType = "success";
+    } catch (error) {
+      state.notice = error instanceof AdminApiError ? error.message : "Não foi possível vincular o Flow ao canal.";
+      state.noticeType = "error";
+    } finally {
+      state.busy = false;
+      render();
+    }
+  } else if (action === "meta-unbind") {
+    const currentFlowId = state.metaChannels[state.flowChannel]?.activeBinding?.flowId;
+    if (!state.session || !currentFlowId) return;
+    if (!window.confirm(`Remover o vínculo do Flow ${currentFlowId} do número final ${state.flowChannel}? Nenhum Flow será publicado e nenhuma mensagem será enviada.`)) return;
+    state.busy = true;
+    render();
+    try {
+      await unbindMetaFlow(state.session.access_token, state.flowChannel, currentFlowId);
+      state.metaChannels[state.flowChannel] = await getMetaFlows(state.session.access_token, state.flowChannel);
+      state.notice = `Vínculo do Flow removido do canal ${state.flowChannel}.`;
+      state.noticeType = "success";
+    } catch (error) {
+      state.notice = error instanceof AdminApiError ? error.message : "Não foi possível remover o vínculo do Flow.";
+      state.noticeType = "error";
+    } finally {
+      state.busy = false;
+      render();
+    }
   } else if (action === "download-flow-json") {
     const draft = currentFlowDraft();
     if (!draft) return;
