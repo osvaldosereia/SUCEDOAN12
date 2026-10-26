@@ -559,3 +559,31 @@ Configurei `.github/workflows/whatsapp-atendimento-github-publish.yml` na branch
 Verificação local desta rodada: `pnpm build` passou (`tsc --noEmit` + Vite); persiste o alerta de chunk JavaScript acima de 500 KB. `git diff --cached --check` passou antes do commit de publicação `661f4b718`. A GitHub Action [40331576769](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/40331576769) terminou com `success` nos jobs de build e publish; confirmei HTTP 200 para a página e para o bundle JavaScript, o título do Admin e a meta `noindex,nofollow`. O preflight read-only atual listou 147 Edge Functions existentes e confirmou que nenhuma das cinco funções novas está implantada. Nenhum teste automatizado foi criado/executado. A interface está publicada, mas o Admin ainda não é operacional: OAuth GitHub do Supabase, Edge Functions novas, GitHub App/secrets/allowlist e chave própria do Flow 0975 continuam bloqueios concretos. O botão de login seguirá indisponível até habilitar o provider OAuth. Nenhum Flow ou mensagem foi enviado.
 
 O conector Supabase disponível nesta sessão tem operação para deploy de Edge Functions, mas não permite consultar/gravar o cofre de secrets nem configurar providers Auth. Os nomes de runtime necessários foram inventariados na fonte local; a presença no projeto não pode ser confirmada via ferramenta. Não implantei as funções sem esse preflight. A aba atual de OAuth retorna `Unsupported provider: provider is not enabled`, e a navegação ao Dashboard exige sessão do operador. A skill `computer-use` proíbe automatizar a autenticação; o bloqueio manual concreto é entrar no Dashboard Supabase, habilitar o provider GitHub e configurar as credenciais/URLs. Depois disso, continuo o deploy e a validação das funções sem pedir novamente autorização geral.
+
+## Diagnóstico do acesso e primeira função ativa — 26/10/2026
+
+A tela mostrada pelo usuário juntava três requisitos como se fossem um único login: OAuth GitHub, sessão do Admin e autorização de gravar no catálogo. Essa leitura estava errada para o novo projeto. O Vitrine usa sessão Supabase e valida `public.admin_users`; o login do Admin novo foi alinhado a isso. Não é necessário habilitar GitHub OAuth para entrar no Admin.
+
+O Supabase Auth agora aceita link de acesso por e-mail, sem senha própria e com `shouldCreateUser: false`. A autorização do servidor exige sessão Supabase válida e a conta vinculada a um proprietário ativo em `public.admin_users`. O provider Email está ativo e os redirects exatos de produção (`https://donaantonia.com.br/whatsapp-admin/`) e desenvolvimento (`http://127.0.0.1:5173/` e `http://localhost:5173/`) foram allowlisted; o Site URL global ficou intacto. Não lemos nem repetimos endereço de cliente.
+
+A mudança do login foi publicada pelo workflow [40335760933](https://github.com/osvaldosereia/SUCEDOAN12/actions/runs/40335760933), conclusão `success`, no commit `e6d8dcbb5821c692ce080eac9b72aa8d9f3c8bcc`. O site e o bundle responderam HTTP 200; o bundle publicado contém `signInWithOtp` e `shouldCreateUser: false`.
+
+A primeira tentativa de deploy da API nova foi recusada pelo empacotador Deno: imports locais sem `.ts` eram aceitos pelo build web, mas não resolvidos no runtime. Corrigi somente as extensões locais em `src/domain/flow-runtime.ts`, `flows.ts` e `outbox.ts`; `pnpm build` e `git diff --check` passaram. Não houve mudança de contrato ou regra comercial.
+
+Foi implantada somente a nova Edge Function `whatsapp-admin-api`, versão 1 (`verify_jwt=false` no gateway porque as rotas administrativas verificam a sessão e o proprietário dentro do handler; o retorno OAuth de Bling usa estado de uso único). A lista do projeto agora contém 148 funções e somente esta função nova do projeto. Um GET sem sessão para `/attendance/accounts`, com origem de produção permitida, retornou 401 “Entre com o e-mail da sua conta administrativa”, confirmando que o endpoint está ativo e protegido sem retornar dados. A função poderá servir catálogo público, validar o operador e encaminhar as ações da Central aos endpoints ANA existentes.
+
+### Estado de credenciais separado por finalidade
+
+- **Login:** GitHub OAuth do Supabase não é necessário. O usuário entra pelo link enviado ao e-mail já vinculado à conta proprietária ativa.
+- **Ler catálogo:** o repositório é público; a API pode fazer leitura sem credencial GitHub.
+- **Gravar catálogo/rascunho Flow e baixar estoque:** a lista de secrets do runtime Supabase não tem credenciais do GitHub App (`GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_PRIVATE_KEY`). O Vitrine não usa GitHub como banco de produto, por isso as credenciais de leitura/operação dele não fornecem por si só um GitHub App com escrita nesta branch. O código agora falha fechado até as credenciais server-side serem configuradas.
+- **Meta:** os nomes dos secrets Meta compartilhados e da chave 1018 estavam presentes no runtime; nenhum valor foi exibido. A chave do Flow 0975 não estava cadastrada. Isso é independente do login e do deploy da Admin API.
+
+### Próxima execução
+
+1. O operador usa “Entrar sem senha” em `https://donaantonia.com.br/whatsapp-admin/` e abre o link recebido no e-mail da conta Supabase já cadastrada; esse é o único passo imediato para validar a sessão real na tela.
+2. Para gravar o catálogo no GitHub, adicionar/instalar um GitHub App com permissão Contents mínima para esta branch e configurar seus três secrets no runtime Supabase. O token de uma sessão Codex/GitHub e a autorização do Vitrine não podem ser reaproveitados como segredo server-side.
+3. Implantar `whatsapp-flow-runtime`, `whatsapp-checkout-webhook` e `whatsapp-meta-order-router` após revisar suas dependências; manter o roteador fora do callback ativo até verificação isolada de preservação ANA. Implantar `whatsapp-outbox-worker` somente quando o envio controlado estiver autorizado e seus gates estiverem configurados.
+4. Conseguir a chave privada própria do Flow 0975, testar os dois canais com números controlados e só então preparar a ativação com autorização operacional.
+
+Nenhum Flow foi publicado, callback Meta foi alterado, mensagem foi enviada, pedido/NF-e foi criado ou escrita Bling executada. `supabase/.temp/` segue fora do staging.

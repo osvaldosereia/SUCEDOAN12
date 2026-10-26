@@ -1,6 +1,6 @@
-import { hasBlingProductId, type Basket, type BasketProductGroup, type Product, type BasketsDocument } from "./catalog";
-import { WHATSAPP_CHANNELS, type WhatsAppChannel } from "./channels";
-import { FLOW_MAX_PRODUCT_QUANTITY } from "./flow-runtime";
+import { hasBlingProductId, type Basket, type BasketProductGroup, type Product, type BasketsDocument } from "./catalog.ts";
+import { WHATSAPP_CHANNELS, type WhatsAppChannel } from "./channels.ts";
+import { FLOW_MAX_PRODUCT_QUANTITY } from "./flow-runtime.ts";
 
 export const FLOW_CHANNELS = WHATSAPP_CHANNELS;
 export type FlowChannel = WhatsAppChannel;

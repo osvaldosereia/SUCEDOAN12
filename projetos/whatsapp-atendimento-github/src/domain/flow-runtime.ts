@@ -1,4 +1,4 @@
-import { hasBlingProductId, type Basket, type BasketProductGroup, type MoneyCents, type Product } from "./catalog";
+import { hasBlingProductId, type Basket, type BasketProductGroup, type MoneyCents, type Product } from "./catalog.ts";
 
 export interface BasketSelection {
   productId: string;

@@ -1,4 +1,4 @@
-import type { WhatsAppChannel } from "./channels";
+import type { WhatsAppChannel } from "./channels.ts";
 
 export type OutboxStatus = "pending" | "sent" | "failed" | "cancelled";
 export type OutboxProviderStatus = "accepted" | "sent" | "delivered" | "read" | "failed";

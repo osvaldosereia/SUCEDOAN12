@@ -20,22 +20,22 @@ Foi encontrada e corrigida a confusão de autenticação: o Vitrine valida opera
 
 A lista de secrets do Supabase confirma as chaves Meta compartilhadas e a chave do Flow 1018. Não há secrets do GitHub App nem chave do Flow 0975. Os secrets padrão do Supabase (`SUPABASE_URL`, `SUPABASE_DB_URL` e chaves API) são fornecidos pelo runtime e não devem ser cadastrados novamente. O catálogo público pode ser lido sem GitHub App; gravações no GitHub e a baixa do estoque após confirmação ainda dependem do App instalado no repositório.
 
-As funções novas ainda não foram implantadas. O Admin API pode operar autenticação, leitura pública do catálogo e as rotas de atendimento após deploy; alterações de catálogo/Flow e baixa de estoque continuam bloqueadas sem o GitHub App. O roteador novo `whatsapp-meta-order-router` está somente no código local e aguarda preflight antes de qualquer troca de callback.
+`whatsapp-admin-api` foi implantada como função nova v1. Ela valida a sessão Supabase e o proprietário ativo no backend, lê o catálogo público e encaminha a Central para os serviços ANA existentes. O GitHub App ainda não foi encontrado no cofre de secrets do Supabase, então gravações do catálogo/Flow e a baixa de estoque continuam bloqueadas. As outras quatro funções novas ainda não foram implantadas; o roteador `whatsapp-meta-order-router` aguarda preflight e não está ligado ao callback ativo.
 
 O código novo agora aceita os nomes Meta existentes no runtime (`META_WHATSAPP_ACCESS_TOKEN`, `META_WHATSAPP_GRAPH_VERSION`, `META_WHATSAPP_APP_SECRET` e, para 1018, `DA_FLOW_1018_RSA_PKCS8`) sem imprimir seus valores. Os IDs de canal 0975/1018 são resolvidos pela tabela ativa `whatsapp_accounts`. Ainda não foi localizada a chave privada de Flow do canal 0975. O callback Meta segue apontado para `whatsapp-meta-webhook-v1`; o roteador novo, que encaminhará os eventos sem trocar o destino ANA, ainda não foi implantado nem configurado como callback. Portanto, não há como receber pedidos reais pelo projeto novo ainda.
 
-Nenhuma função nova foi implantada, Flow publicado, mensagem enviada ou escrita Bling executada. `pnpm build` e `git diff --check` passaram após a compatibilidade de nomes Meta; o worker de mensagens segue desligado. Veja o HANDOFF para os gates e próximos passos exatos. Este estado substitui as notas históricas abaixo que diziam que as migrations ainda não tinham sido aplicadas.
+Somente `whatsapp-admin-api` foi implantada; nenhuma Flow foi publicada, mensagem enviada ou escrita Bling executada. `pnpm build` e `git diff --check` passaram. O worker de mensagens segue desligado. Veja o HANDOFF para os próximos gates. Este estado substitui as notas históricas abaixo que diziam que as migrations ainda não tinham sido aplicadas e que o login dependia de GitHub OAuth.
 
 ## Regras de segurança
 
 - O repositório é público. Tudo que for commitado aqui, inclusive produtos e imagens, será público.
 - Não versionar credenciais, dados de clientes, pedidos, mensagens, sessão ou ajuste interno de preço.
-- Não criar senha própria. A autenticação do operador usará uma identidade GitHub autorizada; toda ação administrativa será validada no backend.
+- Não criar senha própria. O login do operador usa link Supabase por e-mail, sem criação automática de conta; toda ação administrativa é validada no backend.
 - Nenhum token de escrita do GitHub, chave Meta/Bling ou chave `service_role` pode aparecer no navegador.
 - As gravações de catálogo ficam limitadas à branch `project/whatsapp-atendimento-github-20261025`.
 - Não publicar Flow nem enviar mensagens reais sem autorização específica da operação. Deploys do projeto novo estão autorizados, após preflight de dependências e segredos; não alterar tabelas, funções ou atendimento existentes do Vitrine.
 - O acesso exige sessão Supabase por link de e-mail e correspondência com `public.admin_users` (`role = owner`, `is_active = true`). A API confere isso em cada ação no backend. O GitHub App é usado somente para gravações autenticadas no repositório e para a baixa do estoque.
-- A API valida a sessão a cada chamada, exige identidade GitHub e só emite tokens temporários do GitHub App para este repositório. O navegador nunca recebe essa credencial.
+- A API valida a sessão e a linha ativa do operador em `public.admin_users` a cada chamada. Quando configurado, o GitHub App só grava nesta branch e nunca entrega credenciais ao navegador.
 
 ## Organização prevista
 
