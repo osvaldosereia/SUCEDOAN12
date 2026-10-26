@@ -1,4 +1,5 @@
 import postgres, { type Sql } from "npm:postgres@3.4.7";
+import { wakeOutboxWorker } from "../_shared/outbox-dispatch.ts";
 import {
   classifyBlingSaleReconciliation,
   reconcileBlingCommercialTotals,
@@ -1781,7 +1782,9 @@ Deno.serve(async (request) => {
       const [, orderId, action] = orderMatch;
       if (!action && request.method === "GET") return jsonResponse(await orderDetail(orderId), 200, headers);
       if (action === "picking" && request.method === "PATCH") {
-        return jsonResponse(await savePicking(orderId, authorization.operator.id, await readJson(request)), 200, headers);
+        const result = await savePicking(orderId, authorization.operator.id, await readJson(request));
+        wakeOutboxWorker();
+        return jsonResponse(result, 200, headers);
       }
       if (action === "assign" && request.method === "POST") {
         return jsonResponse(await assignOrder(orderId, authorization.operator.id, await readJson(request)), 200, headers);

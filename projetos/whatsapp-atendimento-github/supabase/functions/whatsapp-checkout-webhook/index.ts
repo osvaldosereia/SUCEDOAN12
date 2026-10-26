@@ -1,6 +1,7 @@
 import postgres, { type Sql } from "npm:postgres@3.4.7";
 import { validateCatalog, type Basket, type CatalogDocuments } from "../../../src/domain/catalog.ts";
 import { quoteBasket, type BasketSelections } from "../../../src/domain/flow-runtime.ts";
+import { wakeOutboxWorker } from "../_shared/outbox-dispatch.ts";
 
 const OWNER = "osvaldosereia";
 const REPOSITORY = "SUCEDOAN12";
@@ -754,6 +755,7 @@ async function handle(request: Request): Promise<Response> {
   try {
     if (!await verifySignature(body, request.headers.get("X-Hub-Signature-256"))) return plain(432, "Invalid signature");
     await handleWebhook(body);
+    wakeOutboxWorker();
     return Response.json({ accepted: true });
   } catch (error) {
     if (error instanceof WebhookError) return plain(error.status, error.message);

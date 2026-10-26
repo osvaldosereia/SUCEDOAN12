@@ -1,0 +1,300 @@
+import postgres, { type Sql } from "npm:postgres@3.4.7";
+import { wakeOutboxWorker } from "../_shared/outbox-dispatch.ts";
+
+const CHANNELS = ["0975", "1018"] as const;
+type Channel = typeof CHANNELS[number];
+const BATCH_SIZE = 5;
+const MAX_DISPATCH_DEPTH = 19;
+const MAX_ENCRYPTED_BYTES = 64 * 1024;
+const MAX_PAYLOAD_BYTES = 32 * 1024;
+const MESSAGE_TYPES = new Set([
+  "basket_menu",
+  "flow_launch",
+  "order_summary",
+  "order_adjustment",
+  "order_cancelled",
+]);
+
+interface OutboxMessage {
+  id: string;
+  channel: Channel;
+  message_type: string;
+  payload_iv: string;
+  payload_ciphertext: string;
+}
+
+class WorkerError extends Error {
+  constructor(readonly code: string) {
+    super(code);
+  }
+}
+
+let database: Sql | null = null;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function constantTimeEqual(left: string, right: string): boolean {
+  let mismatch = left.length ^ right.length;
+  for (let index = 0; index < Math.max(left.length, right.length); index += 1) {
+    mismatch |= (left.charCodeAt(index) || 0) ^ (right.charCodeAt(index) || 0);
+  }
+  return mismatch === 0;
+}
+
+function decodeBase64(value: string): Uint8Array {
+  let binary: string;
+  try {
+    binary = atob(value.replace(/\s/g, ""));
+  } catch {
+    throw new WorkerError("encryption_key_invalid");
+  }
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+}
+
+function asArrayBuffer(value: Uint8Array): ArrayBuffer {
+  const buffer = new ArrayBuffer(value.byteLength);
+  new Uint8Array(buffer).set(value);
+  return buffer;
+}
+
+function getEncryptionKey(): Promise<CryptoKey> {
+  const configured = Deno.env.get("META_OUTBOX_ENCRYPTION_KEY");
+  if (!configured) throw new WorkerError("encryption_key_missing");
+  const raw = decodeBase64(configured);
+  if (raw.byteLength !== 32) throw new WorkerError("encryption_key_invalid");
+  return crypto.subtle.importKey("raw", asArrayBuffer(raw), "AES-GCM", false, ["decrypt"]);
+}
+
+async function decryptPayload(message: OutboxMessage, key: CryptoKey): Promise<Record<string, unknown>> {
+  const iv = decodeBase64(message.payload_iv);
+  const ciphertext = decodeBase64(message.payload_ciphertext);
+  if (iv.byteLength !== 12 || ciphertext.byteLength > MAX_ENCRYPTED_BYTES) throw new WorkerError("encrypted_payload_invalid");
+  let plaintext: ArrayBuffer;
+  try {
+    plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv: asArrayBuffer(iv) }, key, asArrayBuffer(ciphertext));
+  } catch {
+    throw new WorkerError("payload_decryption_failed");
+  }
+  let value: unknown;
+  try {
+    value = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(plaintext));
+  } catch {
+    throw new WorkerError("payload_json_invalid");
+  }
+  if (!isRecord(value) || new TextEncoder().encode(JSON.stringify(value)).byteLength > MAX_PAYLOAD_BYTES) {
+    throw new WorkerError("payload_shape_invalid");
+  }
+  return value;
+}
+
+function buildProviderPayload(message: OutboxMessage, payload: Record<string, unknown>): Record<string, unknown> {
+  if (!MESSAGE_TYPES.has(message.message_type)) throw new WorkerError("message_type_unsupported");
+  if (payload.messaging_product !== "whatsapp" || payload.recipient_type !== "individual"
+    || typeof payload.to !== "string" || !/^\+?[1-9][0-9]{1,14}$/.test(payload.to)) {
+    throw new WorkerError("recipient_invalid");
+  }
+
+  const providerPayload = structuredClone(payload);
+  providerPayload.to = payload.to.replace(/^\+/, "");
+  const type = payload.type;
+
+  if (message.message_type === "order_cancelled") {
+    if (type !== "text" || !isRecord(payload.text) || typeof payload.text.body !== "string" || !payload.text.body.length) {
+      throw new WorkerError("message_payload_invalid");
+    }
+    return providerPayload;
+  }
+
+  if (type !== "interactive" || !isRecord(payload.interactive) || typeof payload.interactive.type !== "string") {
+    throw new WorkerError("message_payload_invalid");
+  }
+
+  const interactiveType = payload.interactive.type;
+  const expectedType = message.message_type === "basket_menu"
+    ? "list"
+    : message.message_type === "flow_launch"
+    ? "flow"
+    : "button";
+  if (interactiveType !== expectedType) throw new WorkerError("message_payload_invalid");
+
+  if (interactiveType === "flow") {
+    const action = payload.interactive.action;
+    const parameters = isRecord(action) && isRecord(action.parameters) ? action.parameters : null;
+    const configuredFlowId = Deno.env.get(`META_FLOW_ID_${message.channel}`);
+    if (!parameters || typeof parameters.flow_id !== "string" || !configuredFlowId || parameters.flow_id !== configuredFlowId) {
+      throw new WorkerError("flow_configuration_mismatch");
+    }
+  }
+
+  return providerPayload;
+}
+
+function getDatabase(): Sql {
+  if (database) return database;
+  const url = Deno.env.get("SUPABASE_DB_URL");
+  if (!url) throw new WorkerError("database_configuration_missing");
+  database = postgres(url, { max: 1, idle_timeout: 10, connect_timeout: 5, prepare: false, ssl: "require" });
+  return database;
+}
+
+async function claimOne(db: Sql): Promise<OutboxMessage | null> {
+  const claimed = await db.begin(async (tx) => await tx<OutboxMessage>`
+    with candidate as (
+      select id
+      from whatsapp_atendimento.message_outbox
+      where status = 'pending' and available_at <= now()
+      order by available_at, created_at
+      limit 1
+      for update skip locked
+    )
+    update whatsapp_atendimento.message_outbox as outbox
+    set status = 'failed', last_error_code = 'delivery_unknown'
+    from candidate
+    where outbox.id = candidate.id and outbox.status = 'pending'
+    returning outbox.id, outbox.channel, outbox.message_type, outbox.payload_iv, outbox.payload_ciphertext
+  `);
+  return claimed[0] ?? null;
+}
+
+async function updateFailure(db: Sql, messageId: string, code: string): Promise<void> {
+  await db`
+    update whatsapp_atendimento.message_outbox
+    set status = 'failed', last_error_code = ${code.slice(0, 80)}
+    where id = ${messageId} and status = 'failed' and last_error_code = 'delivery_unknown'
+  `;
+}
+
+async function markSent(db: Sql, messageId: string): Promise<void> {
+  const updated = await db<{ id: string }>`
+    update whatsapp_atendimento.message_outbox
+    set status = 'sent', sent_at = now(), last_error_code = null
+    where id = ${messageId} and status = 'failed' and last_error_code = 'delivery_unknown'
+    returning id
+  `;
+  if (updated.length !== 1) throw new WorkerError("outbox_state_changed");
+}
+
+async function metaErrorCode(response: Response): Promise<string> {
+  let body: unknown;
+  try {
+    const text = await response.text();
+    body = text.length <= 4096 ? JSON.parse(text) as unknown : null;
+  } catch {
+    body = null;
+  }
+  const error = isRecord(body) && isRecord(body.error) ? body.error : null;
+  const code = error?.code;
+  return typeof code === "number" && Number.isSafeInteger(code) && code >= 0 ? String(code) : "unknown";
+}
+
+async function sendOne(db: Sql, message: OutboxMessage, key: CryptoKey, graphVersion: string): Promise<boolean> {
+  try {
+    const payload = await decryptPayload(message, key);
+    const providerPayload = buildProviderPayload(message, payload);
+    const phoneNumberId = Deno.env.get(`META_PHONE_NUMBER_ID_${message.channel}`);
+    const accessToken = Deno.env.get(`META_ACCESS_TOKEN_${message.channel}`);
+    if (!phoneNumberId || !/^[0-9]+$/.test(phoneNumberId) || !accessToken) {
+      await updateFailure(db, message.id, "channel_credentials_missing");
+      return false;
+    }
+
+    let response: Response;
+    try {
+      response = await fetch(`https://graph.facebook.com/${graphVersion}/${phoneNumberId}/messages`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify(providerPayload),
+        signal: AbortSignal.timeout(12_000),
+      });
+    } catch {
+      await updateFailure(db, message.id, "delivery_unknown");
+      return false;
+    }
+
+    if (!response.ok) {
+      const providerCode = await metaErrorCode(response);
+      await updateFailure(db, message.id, `meta_http_${response.status}_code_${providerCode}`);
+      return false;
+    }
+
+    let body: unknown;
+    try {
+      body = await response.json() as unknown;
+    } catch {
+      await updateFailure(db, message.id, "delivery_unknown");
+      return false;
+    }
+    const accepted = isRecord(body) && Array.isArray(body.messages) && isRecord(body.messages[0])
+      && typeof body.messages[0].id === "string" && body.messages[0].id.length > 0;
+    if (!accepted) {
+      await updateFailure(db, message.id, "delivery_unknown");
+      return false;
+    }
+    await markSent(db, message.id);
+    return true;
+  } catch (error) {
+    const code = error instanceof WorkerError ? error.code : "outbox_processing_failed";
+    await updateFailure(db, message.id, code);
+    return false;
+  }
+}
+
+function plain(status: number, message: string): Response {
+  return new Response(message, { status, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
+}
+
+async function handle(request: Request): Promise<Response> {
+  if (request.method !== "POST") return plain(405, "Method not allowed");
+  if (request.body) {
+    await request.body.cancel();
+    return plain(400, "Request body is not accepted");
+  }
+
+  const expected = Deno.env.get("META_OUTBOX_DISPATCH_SECRET");
+  if (!expected || expected.length < 32) return plain(503, "Outbox dispatch is not configured");
+  const authorization = request.headers.get("Authorization") ?? "";
+  const supplied = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
+  if (!supplied || !constantTimeEqual(supplied, expected)) return plain(401, "Unauthorized");
+  if (Deno.env.get("META_OUTBOX_SENDER_ENABLED") !== "true") return plain(503, "Outbox sender is disabled");
+  const dispatchDepthHeader = request.headers.get("X-WhatsApp-Outbox-Dispatch-Depth") ?? "0";
+  if (!/^(0|[1-9][0-9]{0,1})$/.test(dispatchDepthHeader)) return plain(400, "Dispatch depth is invalid");
+  const dispatchDepth = Number(dispatchDepthHeader);
+  if (!Number.isSafeInteger(dispatchDepth) || dispatchDepth > MAX_DISPATCH_DEPTH) return plain(400, "Dispatch depth is invalid");
+
+  const graphVersion = Deno.env.get("META_GRAPH_API_VERSION");
+  if (!graphVersion || !/^v[0-9]{1,3}\.[0-9]{1,2}$/.test(graphVersion)) return plain(503, "Graph API version is not configured");
+  const channelsConfigured = CHANNELS.every((channel) => {
+    const phoneNumberId = Deno.env.get(`META_PHONE_NUMBER_ID_${channel}`);
+    return !!Deno.env.get(`META_ACCESS_TOKEN_${channel}`) && !!phoneNumberId && /^[0-9]+$/.test(phoneNumberId);
+  });
+  if (!channelsConfigured) return plain(503, "WhatsApp channel credentials are not configured");
+
+  try {
+    const db = getDatabase();
+    const key = await getEncryptionKey();
+    let claimed = 0;
+    let sent = 0;
+    while (claimed < BATCH_SIZE) {
+      const message = await claimOne(db);
+      if (!message) break;
+      claimed += 1;
+      if (await sendOne(db, message, key, graphVersion)) sent += 1;
+    }
+    const continuationScheduled = claimed === BATCH_SIZE && dispatchDepth < MAX_DISPATCH_DEPTH;
+    if (continuationScheduled) wakeOutboxWorker(dispatchDepth + 1);
+    return Response.json({
+      claimed,
+      sent,
+      failed: claimed - sent,
+      continuationScheduled,
+      continuationLimitReached: claimed === BATCH_SIZE && !continuationScheduled,
+    });
+  } catch (error) {
+    console.error("WhatsApp outbox worker failed", error instanceof WorkerError ? error.code : "internal_error");
+    return plain(503, "Outbox dispatch failed");
+  }
+}
+
+Deno.serve(handle);
