@@ -4,7 +4,7 @@ Atualizado em 26/10/2026 (America/Cuiaba).
 
 ## Estado vigente em 26/10/2026
 
-As rodadas 0–7 e o Admin novo estão no branch próprio. Quatro migrations estão aplicadas no projeto Supabase ativo. A listagem read-only atual encontrou somente os endpoints antigos de Flow/webhook; cinco funções novas deste projeto ainda não foram implantadas. O login GitHub do Supabase retornou `provider is not enabled`; secrets de OAuth/GitHub App e a chave privada do Flow 0975 não estão confirmados. Flow nenhum foi publicado nesta etapa e o worker novo de envio permanece desligado. O catálogo GitHub guarda produtos, cestas, imagens e estoque; confirmar pedido reduz o saldo uma vez no GitHub, e saldo negativo não bloqueia o Bling. Para o fechamento atual e as verificações, veja as últimas seções deste HANDOFF.
+As rodadas 0–7 e o Admin novo estão na branch própria. Quatro migrations do projeto estão aplicadas. O Admin está publicado; a autenticação usa link de e-mail Supabase sem senha, sem criação de conta e com validação do proprietário ativo. GitHub OAuth está desabilitado e não é necessário. Duas das cinco Edge Functions novas estão ativas (`whatsapp-admin-api` v1 e `whatsapp-flow-runtime` v1); três continuam pendentes. A leitura pública do catálogo funciona, mas não há credenciais GitHub App no runtime Supabase para gravar catálogo ou baixar estoque. Os nomes dos secrets Meta e a chave do Flow 1018 foram confirmados por presença; a chave do Flow 0975 não foi localizada. O callback Meta continua no serviço ANA existente, nenhum Flow novo está publicado e a outbox segue desligada. O projeto ainda não recebe pedidos reais pelo novo fluxo.
 
 ## Objetivo do projeto
 
@@ -583,7 +583,7 @@ Foi implantada somente a nova Edge Function `whatsapp-admin-api`, versão 1 (`ve
 
 1. O operador usa “Entrar sem senha” em `https://donaantonia.com.br/whatsapp-admin/` e abre o link recebido no e-mail da conta Supabase já cadastrada; esse é o único passo imediato para validar a sessão real na tela.
 2. Para gravar o catálogo no GitHub, adicionar/instalar um GitHub App com permissão Contents mínima para esta branch e configurar seus três secrets no runtime Supabase. O token de uma sessão Codex/GitHub e a autorização do Vitrine não podem ser reaproveitados como segredo server-side.
-3. Implantar `whatsapp-flow-runtime`, `whatsapp-checkout-webhook` e `whatsapp-meta-order-router` após revisar suas dependências; manter o roteador fora do callback ativo até verificação isolada de preservação ANA. Implantar `whatsapp-outbox-worker` somente quando o envio controlado estiver autorizado e seus gates estiverem configurados.
+3. `whatsapp-flow-runtime` v1 está ativo e verifica HMAC/criptografia no próprio handler. Implantar `whatsapp-checkout-webhook` e `whatsapp-meta-order-router` após configurar GitHub App e revisar suas dependências; manter o roteador fora do callback ativo até verificar isoladamente a preservação ANA. `whatsapp-outbox-worker` permanece pendente e desligado até haver autorização operacional para mensagens controladas.
 4. Conseguir a chave privada própria do Flow 0975, testar os dois canais com números controlados e só então preparar a ativação com autorização operacional.
 
 Nenhum Flow foi publicado, callback Meta foi alterado, mensagem foi enviada, pedido/NF-e foi criado ou escrita Bling executada. `supabase/.temp/` segue fora do staging.
@@ -594,3 +594,14 @@ Nenhum Flow foi publicado, callback Meta foi alterado, mensagem foi enviada, ped
 A captura do usuário também revelou duas frases antigas na Central: “Entre com a conta GitHub” e o status vermelho “Sem permissão para gravar”. A primeira continuava em attendance-panel.ts; o segundo confundia login Supabase com a capacidade de gravar no GitHub. Atualizei o texto para informar a conta administrativa Supabase, o status para “Acesso não validado” quando a sessão não pode ser confirmada e o aviso para separar a sessão do requisito de GitHub App. O código da interface não exige GitHub OAuth.
 
 A alteração foi compilada com pnpm build e passou git diff --check; busca pontual não encontrou as frases antigas no código da interface. Commit c34d4f40a enviado à branch. A Action 40337143085 terminou com sucesso; a página e o bundle atualizados respondem HTTP 200. O bundle contém o login por e-mail e a validação de proprietário ativo, sem as mensagens antigas de GitHub OAuth ou “Sem permissão para gravar”.
+
+
+## Rodada — ativação isolada do Flow runtime (26/10/2026)
+
+Preflight somente leitura: `whatsapp-flow-runtime` não existia na lista de funções. A última conferência de nomes de secrets confirmou a app secret Meta compartilhada e a chave própria do canal 1018; a chave do 0975 permanece ausente. O runtime do Supabase fornece as variáveis padrão de URL, chave API e conexão PostgreSQL. A função verifica assinatura HMAC e decifra o protocolo Data Exchange no próprio handler. `verify_jwt=false` é necessário para a chamada assinada pela Meta; nenhuma tela ou webhook foi configurado para apontar para ela.
+
+A função nova foi implantada em `ssbesxgaijknwsjbsbcz` como `whatsapp-flow-runtime` versão 1, id `3dca2aea-eed0-42f9-803a-8e0a02a1a3ec`, bundle SHA-256 `20a626ce16e07401fb160e602889899e63ddbe1872cb7ff0afc568389cf1604c`. O deploy empacotou seis arquivos locais, sem valores secretos. A listagem pós-deploy retornou 149 funções no projeto, com `whatsapp-admin-api` v1 e `whatsapp-flow-runtime` v1 ativas. Não invoquei endpoint, publiquei Flow, alterei callback, enviei mensagem, li dados de cliente ou escrevi na Meta/Bling.
+
+`pnpm build` (`tsc --noEmit` e Vite) e `git diff --check` passaram. O alerta conhecido do bundle >500 KB permanece; nenhum teste automatizado foi criado ou executado. `README.md` e este HANDOFF agora refletem dois deploys novos, sem as afirmações antigas de que nenhum estava ativo. O código de origem já estava na branch; esta rodada altera somente documentação.
+
+Próximos bloqueios: obter credenciais GitHub App no runtime Supabase para gravação/baixa idempotente; implantar checkout e roteador após esse preflight; preservar ANA sem trocar callback até revisão específica; obter chave Flow do 0975; e validar a jornada controlada de pedido e NF-e. O worker de mensagens permanece desligado e nenhum Flow foi publicado.
