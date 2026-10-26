@@ -1,4 +1,5 @@
 import postgres, { type Sql } from "npm:postgres@3.4.7";
+import { reconcileBlingCommercialTotals, type BlingCommercialTotals } from "../../../src/domain/bling.ts";
 import { validateCatalog, type Basket, type CatalogDocuments, type Product } from "../../../src/domain/catalog.ts";
 import { quoteBasket, type BasketSelections } from "../../../src/domain/flow-runtime.ts";
 import {
@@ -545,7 +546,7 @@ function orderPresentation(order: DbOrder, items: DbOrderItem[] = []) {
     invoiceId: order.invoice_id,
     attentionCode: order.attention_code,
     separationCompletedAt: order.separation_completed_at,
-    integrationJob: null as { operation: string; status: string; errorCode: string | null; blockers: string[] } | null,
+    integrationJob: null as { operation: string; status: string; errorCode: string | null; blockers: string[]; commercialTotals: BlingCommercialTotals | null } | null,
   };
 }
 
@@ -579,7 +580,17 @@ async function orderDetail(orderId: string) {
     const blockers = Array.isArray(jobs[0].result_summary.blockers)
       ? jobs[0].result_summary.blockers.filter((value): value is string => typeof value === "string")
       : [];
-    detail.integrationJob = { operation: jobs[0].operation, status: jobs[0].status, errorCode: jobs[0].error_code, blockers };
+    const rawTotals = jobs[0].result_summary.commercialTotals;
+    const commercialTotals = isRecord(rawTotals)
+      && typeof rawTotals.lineTotalCents === "number" && Number.isSafeInteger(rawTotals.lineTotalCents)
+      && typeof rawTotals.acceptedTotalCents === "number" && Number.isSafeInteger(rawTotals.acceptedTotalCents)
+      && typeof rawTotals.commercialDeltaCents === "number" && Number.isSafeInteger(rawTotals.commercialDeltaCents)
+      && typeof rawTotals.otherExpensesCents === "number" && Number.isSafeInteger(rawTotals.otherExpensesCents)
+      && typeof rawTotals.discountCents === "number" && Number.isSafeInteger(rawTotals.discountCents)
+      && typeof rawTotals.balances === "boolean"
+      ? rawTotals as unknown as BlingCommercialTotals
+      : null;
+    detail.integrationJob = { operation: jobs[0].operation, status: jobs[0].status, errorCode: jobs[0].error_code, blockers, commercialTotals };
   }
   const catalog = await catalogAt(String(order.snapshot.catalogCommit ?? ""));
   const basket = catalog.baskets.baskets.find((candidate) => candidate.id === order.snapshot.basketId);
@@ -989,19 +1000,24 @@ async function finishSeparation(orderId: string, operatorId: string, body: Recor
       ? await tx<{ bling_payment_form_id: number; due_date_offset_days: number | null }>`select bling_payment_form_id, due_date_offset_days from whatsapp_atendimento.bling_payment_mappings where payment_method = ${paymentMethod}`
       : [];
     const credential = await tx<{ provider: string }>`select provider from whatsapp_atendimento.integration_credentials where provider = 'bling' and expires_at > now()`;
-    const lineTotalCents = items.reduce((sum, item) => sum + Number(item.line_total_cents), 0);
+    const itemLineTotals = items.map((item) => Number(item.line_total_cents));
+    const lineTotalCents = itemLineTotals.reduce((sum, value) => sum + value, 0);
+    const acceptedTotalCents = Number(order.total_cents);
+    const commercialTotals = itemLineTotals.every((value) => Number.isSafeInteger(value) && value >= 0)
+      ? reconcileBlingCommercialTotals(lineTotalCents, acceptedTotalCents)
+      : null;
     const blockers = [
       ...(!contactMapping.length ? ["BLING_CUSTOMER_CONTACT_MAPPING_MISSING"] : []),
       ...(!paymentMapping.length ? ["BLING_PAYMENT_FORM_MAPPING_MISSING"] : []),
       ...(paymentMapping.length && paymentMapping[0].due_date_offset_days === null ? ["BLING_DUE_DATE_POLICY_MISSING"] : []),
       ...(!credential.length ? ["BLING_OAUTH_CREDENTIAL_MISSING"] : []),
-      ...(lineTotalCents !== Number(order.total_cents) ? ["BLING_BASKET_ADJUSTMENT_RULE_UNRESOLVED"] : []),
+      ...(!commercialTotals?.balances ? ["BLING_TOTAL_RECONCILIATION_INVALID"] : []),
       "BLING_CONNECTOR_DISABLED_IN_DEVELOPMENT",
     ];
     await tx`update whatsapp_atendimento.orders set status = 'awaiting_invoice', separation_completed_at = now(), revision = revision + 1, attention_code = 'bling_preflight_required', updated_at = now() where id = ${orderId}`;
     await tx`
       insert into whatsapp_atendimento.integration_jobs (order_id, operation, idempotency_key, status, error_code, result_summary)
-      values (${orderId}, 'create_sale', ${`${orderId}:create_sale`}, 'blocked', 'BLING_PREFLIGHT_REQUIRED', ${tx.json({ blockers, lineTotalCents, acceptedTotalCents: Number(order.total_cents) })})
+      values (${orderId}, 'create_sale', ${`${orderId}:create_sale`}, 'blocked', 'BLING_PREFLIGHT_REQUIRED', ${tx.json({ blockers, commercialTotals })})
       on conflict (order_id, operation) do nothing
     `;
     await tx`insert into whatsapp_atendimento.order_events (order_id, event_key, event_type, event_data) values (${orderId}, ${`${orderId}:separation-complete:${order.revision + 1}`}, 'separation_completed', ${tx.json({ operatorId, integrationBlocked: true })}) on conflict (event_key) do nothing`;

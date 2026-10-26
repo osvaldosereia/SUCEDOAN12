@@ -367,6 +367,7 @@ function integrationBlockerLabel(code: string): string {
     BLING_DUE_DATE_POLICY_MISSING: "Definir o vencimento da parcela",
     BLING_OAUTH_CREDENTIAL_MISSING: "Conectar a conta Bling por OAuth",
     BLING_BASKET_ADJUSTMENT_RULE_UNRESOLVED: "Definir o tratamento fiscal do ajuste da cesta",
+    BLING_TOTAL_RECONCILIATION_INVALID: "Revisar a conciliação do total comercial com as linhas",
     BLING_CONNECTOR_DISABLED_IN_DEVELOPMENT: "Conector desativado durante o desenvolvimento",
   } as Record<string, string>)[code] ?? code;
 }
@@ -376,10 +377,17 @@ function ordersView(): string {
   const order = state.selectedOrder;
   if (order) {
     const pending = order.customerAcceptanceStatus === "pending";
+    const totals = order.integrationJob?.commercialTotals;
+    const adjustmentLabel = totals?.otherExpensesCents
+      ? `Outras despesas +${money(totals.otherExpensesCents)}`
+      : totals?.discountCents ? `Desconto −${money(totals.discountCents)}` : "Sem ajuste";
+    const commercialPreview = totals
+      ? `<span>Prévia de conciliação (sem envio): linhas ${money(totals.lineTotalCents)} · total aceito ${money(totals.acceptedTotalCents)} · ${escapeHtml(adjustmentLabel)}${totals.balances ? " · conciliado" : " · divergência"}</span>`
+      : "";
     return `<section class="workspace-heading"><div><span class="eyebrow">Pedido · ${escapeHtml(order.id.slice(0, 8))}</span><h1>${escapeHtml(order.customerName)}</h1><p>${escapeHtml(order.basketName)} · ${escapeHtml(order.city)} · recebido ${new Date(order.createdAt).toLocaleString("pt-BR")}</p></div><div class="order-heading-actions"><button class="button button-soft" data-action="orders-back">← Fila</button><button class="button button-soft" data-action="orders-refresh">Atualizar</button></div></section>
       <div class="order-summary-grid"><article><span>Status</span><strong>${escapeHtml(orderStatusLabel(order.status))}</strong></article><article><span>Total confirmado</span><strong>${money(order.totalCents)}</strong></article><article><span>Canal / pagamento</span><strong>${escapeHtml(order.channel)} · ${escapeHtml(String(order.snapshot.paymentMethod ?? "—"))}</strong></article><article><span>Revisão</span><strong>${order.revision}</strong></article></div>
       ${pending ? `<div class="flow-safety-note"><strong>Aguardando aceite do cliente</strong><span>Há falta ou substituição pendente. A separação e o Bling ficam bloqueados até a resposta chegar pelo webhook.</span></div>` : ""}
-      ${order.status === "awaiting_invoice" ? `<div class="flow-safety-note"><strong>Pré-validação Bling bloqueada</strong><span>Nenhuma venda ou NF-e foi criada. Resolva os bloqueios registrados:</span><ul>${(order.integrationJob?.blockers ?? []).map((code) => `<li>${escapeHtml(integrationBlockerLabel(code))}</li>`).join("") || `<li>Consulte o estado de integração no servidor.</li>`}</ul></div>` : ""}
+      ${order.status === "awaiting_invoice" ? `<div class="flow-safety-note"><strong>Pré-validação Bling bloqueada</strong><span>Nenhuma venda ou NF-e foi criada. Resolva os bloqueios registrados:</span>${commercialPreview}<ul>${(order.integrationJob?.blockers ?? []).map((code) => `<li>${escapeHtml(integrationBlockerLabel(code))}</li>`).join("") || `<li>Consulte o estado de integração no servidor.</li>`}</ul></div>` : ""}
       <section class="order-items-card"><div class="section-title"><div><span class="eyebrow">Separação</span><h2>Itens do pedido</h2></div>${!pending && ["received", "packing", "attention"].includes(order.status) ? `<button class="button button-soft" data-action="order-assign" data-id="${escapeHtml(order.id)}" data-revision="${order.revision}">Assumir separação</button>` : ""}</div>
       ${order.items.map((item) => `<form class="order-item-row" id="order-picking-item" data-item-id="${item.id}"><div class="order-item-main"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.brand)} · ${escapeHtml(item.presentation)} · ${item.quantity} pedida(s)</span><small>Separada(s): ${item.pickedQuantity} · ${escapeHtml(item.pickingStatus)}</small></div><label>Separar<input name="picked_quantity" type="number" min="0" max="${item.quantity}" step="1" value="${item.pickedQuantity}" required></label><label>Substituto<select name="replacement_product_id"><option value="">Sem substituição</option>${item.replacementOptions.filter((option) => option.id !== item.productId).map((option) => `<option value="${escapeHtml(option.id)}">${escapeHtml(option.name)} · ${escapeHtml(option.brand)}</option>`).join("")}</select></label><button class="button button-soft" type="submit" ${pending || !["received", "packing", "attention"].includes(order.status) ? "disabled" : ""}>Salvar linha</button></form>`).join("") || `<div class="empty-state"><strong>Sem itens para separar</strong></div>`}
       <div class="order-footer-actions"><span>As faltas e substituições só alteram o total após o cliente aceitar.</span><button class="button button-primary" data-action="order-separation-complete" data-id="${escapeHtml(order.id)}" data-revision="${order.revision}" ${pending || !["received", "packing", "attention"].includes(order.status) ? "disabled" : ""}>Concluir separação e validar Bling</button></div></section>`;

@@ -1,3 +1,5 @@
+import type { BlingCommercialTotals } from "./bling";
+
 export type OrderStatus =
   | "received"
   | "packing"
@@ -47,7 +49,13 @@ export interface OrderDetailRecord extends OrderListEntry {
   invoiceStatus: "not_requested" | "pending" | "authorized" | "rejected" | "unknown";
   invoiceId: number | null;
   attentionCode: string | null;
-  integrationJob: { operation: string; status: string; errorCode: string | null; blockers: string[] } | null;
+  integrationJob: {
+    operation: string;
+    status: string;
+    errorCode: string | null;
+    blockers: string[];
+    commercialTotals: BlingCommercialTotals | null;
+  } | null;
 }
 
 export interface OrderPickingInput {
