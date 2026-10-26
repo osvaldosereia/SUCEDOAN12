@@ -19,6 +19,11 @@
 - Flows dinâmicos usam endpoint de troca de dados com payload criptografado e par de chaves da empresa. O endpoint tem prazo curto; a documentação oficial alerta para timeout de 10 segundos.
 - A ordem recomendada é catálogo/carrinho → validar produto, preço e saldo no Supabase → Flow para entrega e pagamento → resumo → confirmação humana → pedido canônico. Um formulário Flow não substitui a checagem de estoque nem a confirmação do pedido.
 
+### Custos e janela de atendimento
+
+- A janela de atendimento continua determinando quando o atendente pode enviar mensagem livre; fora dela, a empresa precisa usar template aprovado.
+- A página de preços da Meta registra cobrança por mensagem para mensagens de serviço a partir de 1º de outubro de 2026. Portanto, o atendimento de texto pelo Admin5 não deve ser tratado como custo zero; confirmar a tabela vigente por mercado e a configuração de cada WABA antes de projetar volume.
+
 ### Catálogo por dois canais
 
 O banco tem dois números ativos (0975 e 1018), ligados a WABAs diferentes. Antes de sincronizar, consultar a associação de catálogo e testar leitura para cada WABA. O mesmo snapshot de produtos pode alimentar ambos, mas o vínculo e o estado de aprovação precisam ser verificados separadamente.
@@ -33,6 +38,7 @@ O banco tem dois números ativos (0975 e 1018), ligados a WABAs diferentes. Ante
 - [Meta — Share products with WhatsApp users](https://developers.facebook.com/documentation/business-messaging/whatsapp/catalogs/share-products)
 - [Meta — Flows endpoint implementation](https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/implementingyourflowendpoint)
 - [Meta — Flows best practices](https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/bestpractices)
+- [Meta — Pricing updates for service messages](https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing/non-template-messages)
 - [Meta — Product catalog data specifications](https://www.facebook.com/business/help/120325381656392)
 - [Meta — Product Catalog Items Batch](https://developers.facebook.com/documentation/ads-commerce/marketing-api/reference/product-catalog/items_batch)
 - [Meta — Catalog Batch API](https://developers.facebook.com/documentation/ads-commerce/catalog/guides/manage-catalog-items/catalog-batch-api)
