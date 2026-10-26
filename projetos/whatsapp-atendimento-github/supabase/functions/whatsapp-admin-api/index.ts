@@ -21,6 +21,9 @@ const MAX_IMAGE_BYTES = 27 * 1024;
 const MAX_PENDING_IMAGES = 61;
 const MAX_FLOW_DRAFT_BYTES = 150_000;
 const ORDER_ID = /^[0-9a-f-]{36}$/i;
+const BLING_API = "https://api.bling.com.br/Api/v3";
+const BLING_AUTHORIZE_URL = "https://www.bling.com.br/Api/v3/oauth/authorize";
+const BLING_TOKEN_URL = `${BLING_API}/oauth/token`;
 let orderDatabase: Sql | null = null;
 
 interface Operator {
@@ -619,6 +622,139 @@ async function encryptOutboxPayload(value: unknown): Promise<{ iv: string; ciphe
   return { iv: btoa(String.fromCharCode(...iv)), ciphertext: btoa(String.fromCharCode(...new Uint8Array(encrypted))) };
 }
 
+function blingOAuthConfig() {
+  const clientId = Deno.env.get("BLING_CLIENT_ID")?.trim();
+  const clientSecret = Deno.env.get("BLING_CLIENT_SECRET");
+  const redirectUri = Deno.env.get("BLING_REDIRECT_URI")?.trim();
+  const enabled = Deno.env.get("BLING_OAUTH_ENABLED") === "true";
+  if (!enabled) throw new HttpError(503, "A conexão Bling está desabilitada neste ambiente.");
+  if (!clientId || !clientSecret || !redirectUri) throw new HttpError(503, "A conexão Bling não está configurada no servidor.");
+  let callback: URL;
+  try { callback = new URL(redirectUri); } catch { throw new HttpError(503, "O endereço de retorno OAuth do Bling é inválido."); }
+  if (callback.protocol !== "https:" && callback.hostname !== "localhost") {
+    throw new HttpError(503, "O endereço de retorno OAuth do Bling precisa usar HTTPS.");
+  }
+  return { clientId, clientSecret, redirectUri };
+}
+
+function base64(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+
+function blingEncryptionKey(): Promise<CryptoKey> {
+  const encoded = Deno.env.get("BLING_TOKEN_ENCRYPTION_KEY");
+  if (!encoded) throw new HttpError(503, "A chave privada das credenciais Bling não está configurada.");
+  let raw: Uint8Array;
+  try { raw = Uint8Array.from(atob(encoded), (char) => char.charCodeAt(0)); }
+  catch { throw new HttpError(503, "A chave privada das credenciais Bling tem formato inválido."); }
+  if (raw.byteLength !== 32) throw new HttpError(503, "A chave privada das credenciais Bling tem formato inválido.");
+  return crypto.subtle.importKey("raw", asArrayBuffer(raw), "AES-GCM", false, ["encrypt", "decrypt"]);
+}
+
+async function oauthStateHash(state: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(state));
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function encryptBlingTokens(tokens: Record<string, unknown>): Promise<{ nonce: string; ciphertext: string }> {
+  const key = await blingEncryptionKey();
+  const nonce = crypto.getRandomValues(new Uint8Array(12));
+  const plaintext = new TextEncoder().encode(JSON.stringify(tokens));
+  const encrypted = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv: asArrayBuffer(nonce), additionalData: new TextEncoder().encode("whatsapp_atendimento:bling:v1") },
+    key,
+    asArrayBuffer(plaintext),
+  );
+  return { nonce: base64(nonce), ciphertext: base64(new Uint8Array(encrypted)) };
+}
+
+function blingTokenEndpointAuth(clientId: string, clientSecret: string): string {
+  return `Basic ${base64(new TextEncoder().encode(`${clientId}:${clientSecret}`))}`;
+}
+
+async function exchangeBlingAuthorizationCode(code: string, config: ReturnType<typeof blingOAuthConfig>) {
+  const response = await fetch(BLING_TOKEN_URL, {
+    method: "POST",
+    headers: {
+      Authorization: blingTokenEndpointAuth(config.clientId, config.clientSecret),
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json",
+    },
+    body: new URLSearchParams({ grant_type: "authorization_code", code, redirect_uri: config.redirectUri }),
+  });
+  if (!response.ok) throw new HttpError(502, "O Bling não concluiu a conexão. Inicie uma nova tentativa pelo Admin.");
+  let tokens: unknown;
+  try { tokens = await response.json(); } catch { throw new HttpError(502, "O Bling retornou uma resposta de conexão inválida."); }
+  if (!isRecord(tokens) || typeof tokens.access_token !== "string" || !tokens.access_token
+    || typeof tokens.refresh_token !== "string" || !tokens.refresh_token
+    || typeof tokens.expires_in !== "number" || !Number.isFinite(tokens.expires_in) || tokens.expires_in <= 0) {
+    throw new HttpError(502, "O Bling retornou credenciais incompletas.");
+  }
+  return tokens;
+}
+
+async function startBlingOAuth(operatorId: string) {
+  const config = blingOAuthConfig();
+  const state = base64Url(crypto.getRandomValues(new Uint8Array(32)));
+  const stateHash = await oauthStateHash(state);
+  await ordersDb()`
+    insert into whatsapp_atendimento.integration_oauth_states (state_hash, created_by, expires_at)
+    values (${stateHash}, ${operatorId}, now() + interval '5 minutes')
+  `;
+  const authorizeUrl = new URL(BLING_AUTHORIZE_URL);
+  authorizeUrl.search = new URLSearchParams({ response_type: "code", client_id: config.clientId, state }).toString();
+  return { authorizeUrl: authorizeUrl.toString(), expiresInSeconds: 300 };
+}
+
+async function blingOAuthCallback(url: URL): Promise<Response> {
+  const text = (message: string, status = 200) => new Response(message, {
+    status,
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-store",
+      "Referrer-Policy": "no-referrer",
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
+    },
+  });
+  try {
+    const config = blingOAuthConfig();
+    const state = url.searchParams.get("state") ?? "";
+    const code = url.searchParams.get("code") ?? "";
+    if (url.searchParams.has("error") || !/^[A-Za-z0-9_-]{43}$/.test(state) || !code || code.length > 2048) {
+      throw new HttpError(400, "A tentativa de conexão expirou ou foi recusada. Inicie outra pelo Admin.");
+    }
+    const stateHash = await oauthStateHash(state);
+    const consumed = await ordersDb()`
+      update whatsapp_atendimento.integration_oauth_states
+      set consumed_at = now()
+      where state_hash = ${stateHash} and consumed_at is null and expires_at > now()
+      returning created_by
+    `;
+    if (!consumed.length) throw new HttpError(400, "A tentativa de conexão expirou ou já foi utilizada. Inicie outra pelo Admin.");
+
+    const tokens = await exchangeBlingAuthorizationCode(code, config);
+    const encrypted = await encryptBlingTokens(tokens);
+    const scope = typeof tokens.scope === "string" ? tokens.scope.trim().split(/\s+/).filter(Boolean) : [];
+    const expiresIn = tokens.expires_in;
+    if (typeof expiresIn !== "number") throw new HttpError(502, "O Bling retornou credenciais incompletas.");
+    const expiresAt = new Date(Date.now() + Math.max(1, Math.floor(expiresIn) - 60) * 1000).toISOString();
+    await ordersDb()`
+      insert into whatsapp_atendimento.integration_credentials (provider, ciphertext, nonce, expires_at, scopes)
+      values ('bling', ${encrypted.ciphertext}, ${encrypted.nonce}, ${expiresAt}, ${scope})
+      on conflict (provider) do update set ciphertext = excluded.ciphertext, nonce = excluded.nonce,
+        expires_at = excluded.expires_at, scopes = excluded.scopes, updated_at = now()
+    `;
+    return text("Conta Bling conectada. Você pode voltar ao Admin.");
+  } catch (error) {
+    const status = error instanceof HttpError ? error.status : 500;
+    if (!(error instanceof HttpError)) console.error("Bling OAuth callback failed", error instanceof Error ? error.name : "unknown error");
+    return text(error instanceof HttpError ? error.message : "Não foi possível concluir a conexão Bling.", status);
+  }
+}
+
 function adjustedSnapshot(snapshot: Record<string, unknown>, basket: Basket, products: Product[], selections: BasketSelections) {
   const adjustmentBasket: Basket = {
     ...basket,
@@ -794,10 +930,16 @@ Deno.serve(async (request) => {
       headers = corsHeaders(request.headers.get("Origin") ?? "");
       return new Response(null, { status: 204, headers });
     }
+    const url = new URL(request.url);
+    if (url.pathname.endsWith("/integrations/bling/oauth/callback") && request.method === "GET") {
+      return await blingOAuthCallback(url);
+    }
     const authorization = await authorize(request);
     headers = authorization.headers;
 
-    const url = new URL(request.url);
+    if (url.pathname.endsWith("/integrations/bling/oauth/start") && request.method === "POST") {
+      return jsonResponse(await startBlingOAuth(authorization.operator.id), 200, headers);
+    }
     if (url.pathname.endsWith("/catalog") && request.method === "GET") {
       const token = await installationToken("read");
       return jsonResponse(await readCatalog(token), 200, headers);

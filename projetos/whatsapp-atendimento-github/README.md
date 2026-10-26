@@ -8,7 +8,7 @@ Este é o único diretório de código do projeto novo: `projetos/whatsapp-atend
 
 ## Etapa atual
 
-Rodada 6: fila e separação de pedidos disponíveis no código local, com proposta cifrada para falta/substituição, novo aceite inbound e preflight Bling bloqueado. A migration e as funções não foram implantadas/aplicadas. OAuth Bling, venda/NF-e e entrega aguardam mapeamentos e regras fiscais aprovados. O runtime de cotação da Rodada 4 está em [src/domain/flow-runtime.ts](src/domain/flow-runtime.ts); a operação de pedidos está documentada em [docs/projects/whatsapp-atendimento-github/ROUND-6-ORDERS-BLING-PLAN.md](../../docs/projects/whatsapp-atendimento-github/ROUND-6-ORDERS-BLING-PLAN.md).
+Rodada 6: fila e separação de pedidos disponíveis no código local, com proposta cifrada para falta/substituição, novo aceite inbound e preflight Bling bloqueado. O início/callback OAuth Bling foi implementado server-side, mas permanece desligado (`BLING_OAUTH_ENABLED=false`); a migration e as funções não foram implantadas/aplicadas. Renovação de token, venda/NF-e e entrega aguardam mapeamentos e regras fiscais aprovados. O runtime de cotação da Rodada 4 está em [src/domain/flow-runtime.ts](src/domain/flow-runtime.ts); a operação de pedidos está documentada em [docs/projects/whatsapp-atendimento-github/ROUND-6-ORDERS-BLING-PLAN.md](../../docs/projects/whatsapp-atendimento-github/ROUND-6-ORDERS-BLING-PLAN.md).
 
 ## Regras de segurança
 

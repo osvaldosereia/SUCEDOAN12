@@ -2,7 +2,7 @@
 
 Data: 25/10/2026
 Branch: `project/whatsapp-atendimento-github-20261025`
-Estado: fila, separação e preflight local implementados; migration e credenciais externas não aplicadas. Escritas Bling seguem bloqueadas.
+Estado: fila, separação, preflight e OAuth local implementados; migration e credenciais externas não aplicadas. Conexão está desligada por padrão e escritas Bling seguem bloqueadas.
 
 ## Decisão
 
@@ -18,7 +18,7 @@ Quando a falta altera o total, o pedido fica em `attention` aguardando novo acei
 2. Preservar no snapshot as seleções por grupo da cesta para recalcular pelo commit fixado.
 3. Criar rotas autenticadas para fila, detalhe, atribuição e separação; aceitar/cancelar ajuste pelo webhook inbound.
 4. Integrar fila e detalhe à navegação Admin, incluindo substituto elegível da revisão GitHub fixada.
-5. Registrar preflight idempotente com bloqueios explícitos para OAuth, contato, forma/vencimento e divergência fiscal. Cliente OAuth, venda, NF-e, despacho e conclusão aguardam homologação com esses contratos fechados.
+5. Registrar preflight idempotente com bloqueios explícitos para OAuth, contato, forma/vencimento e divergência fiscal. Implementar início/callback OAuth server-side, com `state` de uso único e tokens cifrados; venda, NF-e, despacho e conclusão aguardam homologação com esses contratos fechados.
 6. Atualizar handoff e contratos. Conferir `pnpm build` e `git diff --check`; sem testes nem chamadas externas.
 
 ## Gatilhos de segurança e negócio
@@ -34,6 +34,6 @@ Quando a falta altera o total, o pedido fica em `attention` aguardando novo acei
 - `whatsapp-admin-api` expõe GET de fila/detalhe, assumir separação, editar linha e concluir separação com revisão otimista e eventos de auditoria.
 - Falta/substituição é recalculada pelo catálogo no `catalogCommit` do pedido. O cliente precisa aceitar; linhas voltam a `pending` depois do aceite para nova conferência.
 - O pedido concluído entra em `awaiting_invoice`, mas a operação Bling `create_sale` é registrada `blocked`. O preflight guarda código dos bloqueios e compara soma das linhas com o total comercial.
-- `integration_credentials` e `integration_oauth_states` são apenas schema para uma fase posterior; não há credencial, cliente OAuth, consumidor outbox ou chamada externa ativos.
-- Para habilitar escrita futura, ainda falta aprovar a política para o ajuste fiscal, cadastrar vínculos cliente/contato e forma/vencimento, criar OAuth server-side e desenhar reconciliação e NF-e sem duplicação.
+- `integration_credentials` e `integration_oauth_states` são tabelas privadas. O início OAuth exige sessão administrativa e allowlist; o callback valida e consome uma única vez o hash de `state`, troca o código server-side e cifra tokens AES-GCM antes de gravá-los. `BLING_OAUTH_ENABLED` permanece `false`; não há credencial, conexão, consumidor outbox ou chamada externa ativos.
+- Para habilitar escrita futura, ainda falta aprovar a política para o ajuste fiscal, cadastrar vínculos cliente/contato e forma/vencimento, implementar renovação de token e desenhar reconciliação e NF-e sem duplicação.
 - Migration criada pelo Supabase CLI, ainda não aplicada. `pnpm build` é verificado; não executar testes nem deploy durante esta rodada.
