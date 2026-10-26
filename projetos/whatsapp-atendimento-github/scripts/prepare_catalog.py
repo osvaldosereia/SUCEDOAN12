@@ -206,7 +206,7 @@ def build(input_path: Path) -> None:
         )
 
     products.sort(key=lambda product: (product["name"].casefold(), product["id"]))
-    product_document = {"schemaVersion": 1, "products": products}
+    product_document = {"schemaVersion": 3, "products": products}
     baskets: list[dict] = []
     for source_basket in configuration["baskets"]:
         basket_id = slug(source_basket["name"])

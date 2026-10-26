@@ -119,7 +119,7 @@ O catálogo público do GitHub define os produtos e preços que o novo projeto o
 
 O total parte do preço-base da cesta e aplica as diferenças das marcas e quantidades escolhidas. A regra é validada no servidor na conclusão do Flow e novamente quando o cliente toca em Confirmar pedido. O navegador e o JSON submetido não são autoridade de preço.
 
-GitHub não é controle de estoque em tempo real. Antes da implementação, identificar qual fonte operacional valida estoque e disponibilidade. Se essa validação não puder ser feita automaticamente, o pedido deve ficar como solicitação pendente de conferência, com mensagem clara ao cliente, até a empresa confirmar disponibilidade.
+GitHub não é controle de estoque em tempo real. Implementação vigente: o endpoint consulta server-side o saldo vendável do Supabase ao montar cada etapa e o webhook revalida a disponibilidade antes de criar o rascunho. A leitura falha fechado quando não é possível confirmar o saldo. A aplicação não reserva nem decrementa estoque; a equipe ainda deve conferir falta durante a separação.
 
 ## 5. Administração mínima do Flow
 

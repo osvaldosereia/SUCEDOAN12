@@ -66,7 +66,7 @@ export function renderFlowsPanel(model: FlowsPanelModel): string {
           <label>Tamanho da cesta<select id="flow-basket">${model.baskets.filter((item) => item.active).map((item) => `<option value="${escapeHtml(item.id)}" ${item.id === model.basketId ? "selected" : ""}>${escapeHtml(item.name)}</option>`).join("")}</select></label>
           <label>Nome técnico do Flow<input id="flow-name" maxlength="60" pattern="[a-z0-9]+(-[a-z0-9]+)*" value="${escapeHtml(model.flowName || (basket ? flowNameForBasket(basket) : ""))}" placeholder="cesta-mini"></label>
         </div>
-        ${basket ? `<div class="flow-basket-summary"><div><span class="eyebrow">Cesta associada</span><strong>${escapeHtml(basket.name)} · ${optionCount} produtos possíveis</strong></div><span>${basket.groups.length} tipos</span></div><div class="flow-group-list">${basket.groups.map((group) => `<div><strong>${escapeHtml(group.label)}</strong><span>1–6 unidades conforme estoque · ${new Set(group.productIds).size} opções + retirada</span></div>`).join("")}</div><section class="flow-simulator"><div class="flow-json-heading"><div><span class="eyebrow">Prévia controlada no navegador</span><h2>Uma escolha por tipo</h2></div><span class="subtle">Sem WhatsApp ou rede</span></div><p>Em cada etapa, escolha um produto e depois a quantidade. O preview respeita o saldo informado neste catálogo GitHub; sem saldo ou com saldo zero, o produto fica bloqueado.</p>${basket.groups.map((group, groupIndex) => {
+        ${basket ? `<div class="flow-basket-summary"><div><span class="eyebrow">Cesta associada</span><strong>${escapeHtml(basket.name)} · ${optionCount} produtos possíveis</strong></div><span>${basket.groups.length} tipos</span></div><div class="flow-group-list">${basket.groups.map((group) => `<div><strong>${escapeHtml(group.label)}</strong><span>1–6 unidades conforme estoque · ${new Set(group.productIds).size} opções + retirada</span></div>`).join("")}</div><section class="flow-simulator"><div class="flow-json-heading"><div><span class="eyebrow">Prévia controlada no navegador</span><h2>Uma escolha por tipo</h2></div><span class="subtle">Sem WhatsApp ou rede</span></div><p>Esta prévia mostra produtos ativos e quantidades de exemplo. No Flow real, o servidor consulta o saldo vendável atual no Supabase em cada etapa e limita a escolha a 1–6 unidades.</p>${basket.groups.map((group, groupIndex) => {
           const productKey = `${basket.id}:${flowProductField(groupIndex)}`;
           const quantityKey = `${basket.id}:${flowQuantityField(groupIndex)}`;
           const availableProducts = group.productIds.flatMap((id) => {
@@ -74,21 +74,19 @@ export function renderFlowsPanel(model: FlowsPanelModel): string {
             return product?.active ? [product] : [];
           });
           const requestedProductId = model.productChoices.get(productKey);
-          const defaultProduct = availableProducts.find((product) => product.stockQuantity !== null && product.stockQuantity > 0);
-          const requestedProduct = availableProducts.find((product) => product.id === requestedProductId && product.stockQuantity !== null && product.stockQuantity > 0);
+          const defaultProduct = availableProducts[0];
+          const requestedProduct = availableProducts.find((product) => product.id === requestedProductId);
           const selectedProductId = requestedProductId === FLOW_NO_PRODUCT_ID
             ? FLOW_NO_PRODUCT_ID
             : requestedProduct?.id ?? defaultProduct?.id ?? FLOW_NO_PRODUCT_ID;
           const selectedProduct = availableProducts.find((product) => product.id === selectedProductId);
           const removed = selectedProductId === FLOW_NO_PRODUCT_ID;
-          const quantityLimit = selectedProduct?.stockQuantity ? Math.min(6, selectedProduct.stockQuantity) : 0;
+          const quantityLimit = selectedProduct ? Math.min(6, group.maximumQuantity) : 0;
           const requestedQuantity = model.quantities.get(quantityKey) ?? Math.max(1, group.initialQuantity || 1);
           const quantity = quantityLimit ? Math.min(quantityLimit, Math.max(1, requestedQuantity)) : 0;
           const productOptions = availableProducts.map((product) => {
-            const unavailable = product.stockQuantity === null || product.stockQuantity === 0;
-            const stockLabel = product.stockQuantity === null ? " · estoque não informado" : product.stockQuantity === 0 ? " · sem estoque" : "";
-            const label = `${product.name} · ${product.brand} · ${money(product.unitPriceCents)}${stockLabel}`;
-            return `<option value="${escapeHtml(product.id)}" ${product.id === selectedProductId ? "selected" : ""} ${unavailable ? "disabled" : ""}>${escapeHtml(label)}</option>`;
+            const label = `${product.name} · ${product.brand} · ${money(product.unitPriceCents)}`;
+            return `<option value="${escapeHtml(product.id)}" ${product.id === selectedProductId ? "selected" : ""}>${escapeHtml(label)}</option>`;
           }).join("");
           const quantityOptions = Array.from({ length: quantityLimit }, (_, index) => index + 1)
             .map((value) => `<option value="${value}" ${value === quantity ? "selected" : ""}>${value}</option>`).join("");

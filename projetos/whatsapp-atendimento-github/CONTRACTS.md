@@ -40,8 +40,6 @@ interface Product {
   presentation: string;
   /** Effective individual price: offer price when present, otherwise regular price. */
   unitPriceCents: MoneyCents;
-  /** Stock maintained in this public GitHub catalog; null means unknown and blocks Flow selection. */
-  stockQuantity: number | null;
   imagePath: string; // relativo a este projeto; sem Base64
   sku: string | null;
   gtin: string | null;
@@ -71,7 +69,7 @@ interface Basket {
 }
 
 interface ProductsDocument {
-  schemaVersion: 1;
+  schemaVersion: 3;
   products: Product[];
 }
 
@@ -81,7 +79,7 @@ interface BasketsDocument {
 }
 ```
 
-O JSON público não recebe campo para o ajuste interno de preço nem informação de estoque. O servidor calcula o total a partir do commit do catálogo e de regra privada de preço. Imagens usam caminho relativo validado, MIME permitido, checksum e tamanho limitado. `products.json` e `baskets.json` são documentos separados, ambos com `schemaVersion: 1`.
+O JSON público não recebe campo para o ajuste interno de preço nem informação de estoque. O servidor calcula o total a partir do commit do catálogo e de regra privada de preço. Imagens usam caminho relativo validado, MIME permitido, checksum e tamanho limitado. `products.json` usa `schemaVersion: 3`; `baskets.json` usa `schemaVersion: 1`.
 
 ## 3.1 Resultado da Rodada 1 — catálogo inicial
 
@@ -280,17 +278,17 @@ O app converte fotos escolhidas pelo operador para WebP 240×190 e até 27 KB; o
 - O webhook e a separação podem acordar o worker com `EdgeRuntime.waitUntil`; o mesmo gate impede esse disparo por padrão. Cada lote tem até cinco registros e reivindica uma linha imediatamente antes de processá-la. Um disparo pode encadear no máximo vinte invocações (cem mensagens); além disso, as pendências aguardam o próximo evento. O worker decifra payloads apenas em memória, valida canal/tipo/destinatário e confere se o Flow ID corresponde ao canal configurado. O destinatário E.164 é convertido ao formato de dígitos esperado no campo `to` da Cloud API.
 - Para impedir duplicidade, cada linha é marcada `failed/delivery_unknown` em uma transação antes da chamada externa; só uma resposta 2xx com `messages[0].id` a muda para `sent`. `sent` significa aceita pela Graph API, não necessariamente entregue ou lida; o webhook de status de entrega ainda não está implementado. Falha inequívoca fica `failed` com código curto; timeout, crash ou resposta ambígua nunca é repetido automaticamente e exige reconciliação manual. Isso fornece semântica de tentativa no máximo uma vez, com possível perda em crash antes do envio.
 - A área administrativa de mensagens usa `GET /outbox`, autenticada pela sessão GitHub/allowlist. Retorna contagens e até 50 metadados recentes (canal, tipo, estado, horários e código de erro); não seleciona payload cifrado, destinatário ou chave de evento. É somente leitura: não reenvia nem cancela mensagens.
-- Nenhum segredo foi configurado, a flag permaneceu desligada e o worker nunca foi invocado. Nenhuma mensagem foi enviada. Nenhuma chamada Bling foi feita.
-- Verificação: `pnpm build` compila TypeScript e Vite. `git diff --check` é executado no fechamento. Não foram adicionados nem executados testes, chamadas externas, deploy ou migrations.
+- Nenhum segredo do projeto novo foi configurado, a flag permaneceu desligada e o worker nunca foi invocado. O único canário real foi enviado pelo Vitrine Admin e aceito pela Meta em 26/10/2026, conforme o HANDOFF; não houve chamada Bling.
+- Verificação: `pnpm build` compila TypeScript e Vite. `git diff --check` é executado no fechamento. Não foram adicionados nem executados testes; não houve deploy ou migrations. A única chamada externa foi o canário Meta separado descrito no HANDOFF.
 
 ## 13. Rodada 7 — Flow dinâmico local
 
-- O documento de produtos passa a `schemaVersion: 2` e inclui `stockQuantity: number | null`. GitHub é a fonte versionada de produtos, imagens e saldo; Supabase continua restrito ao cadastro de clientes/endereço no servidor. `null` significa saldo desconhecido e desabilita a opção no Flow. O editor novo permite manter esse número no catálogo GitHub; nenhum saldo foi importado do banco Supabase.
-- O Flow JSON `6.0` usa Data Exchange `3.0`, uma única tela lógica `GROUP` reutilizada para cada tipo e uma tela terminal `CUSTOMER_REVIEW`; o routing model contém apenas `GROUP -> CUSTOMER_REVIEW`. Em `GROUP`, `Dropdown` oferece uma única escolha de produto por vez com preço/descrição e imagem da opção atual. A última opção é sempre `Não quero esse produto`. O seletor abaixo limita quantidades a `1..min(6, stockQuantity)` e some quando o cliente escolhe retirada.
+- Por decisão atualizada do usuário, `products.json` usa `schemaVersion: 3` e não armazena estoque. O catálogo e as imagens continuam no GitHub; o runtime consulta somente leitura `storefront_ean_sellable_stock_v1` e `vitrine_stock_reservations` no Supabase, com a regra de saldo vendável do Vitrine Admin, e falha fechado se a consulta não responder. Estoque nunca é devolvido ao navegador administrativo nem gravado no catálogo público.
+- O Flow JSON `6.0` usa Data Exchange `3.0`, uma única tela lógica `GROUP` reutilizada para cada tipo e uma tela terminal `CUSTOMER_REVIEW`; o routing model contém apenas `GROUP -> CUSTOMER_REVIEW`. Em `GROUP`, `Dropdown` oferece uma única escolha de produto por vez com preço/descrição e imagem da opção atual. A última opção é sempre `Não quero esse produto`. A quantidade é `1..min(6, saldo vendável atual do Supabase)` e some quando o cliente escolhe retirada. O webhook revalida o saldo antes de criar rascunho.
 - Produto e quantidade recalculam o total no endpoint ao mudar o seletor. A resposta final guarda `contract_version: 1`, `flow_token`, `selections` como JSON serializado, `address_id` e `payment_method`; o webhook volta a validar os campos e o saldo da revisão fixada. É obrigatório manter pelo menos um item na cesta.
 - A saída da tela final apenas cria um rascunho/entrada na outbox. Confirmar, Editar e Cancelar continuam no resumo posterior da conversa; somente `Confirmar pedido` cria o pedido. O consumidor local está implementado e desligado por padrão; a conclusão do Flow não confirma nem envia sozinha uma mensagem durante o desenvolvimento.
 - A consulta a cliente aceita somente cadastro ativo e único com endereço ativo. A tela orienta procurar atendimento se não houver correspondência/endereço. Criar cadastro/endereço e editar dados manualmente no Flow exigem contrato de escrita separado e não são realizados por esta versão.
-- O estoque é um saldo público/manual versionado no GitHub, fixado ao commit da sessão; não é uma reserva e não é decrementado automaticamente ao concluir o Flow ou aceitar o pedido. Até preencher os 61 saldos atualmente desconhecidos, as alternativas ficam indisponíveis. Homologar a política de atualização do saldo continua necessário antes de operação.
-- A validação Meta/Flow Builder e a renderização em aparelho continuam pendentes porque não houve acesso a canal Meta. Nada foi publicado, implantado, enviado, aplicado ao Supabase, nem gravado em dados de produção. Nenhum teste automatizado foi criado ou executado.
+- O saldo vendável atual é lido server-side do Supabase no Flow e revalidado pelo webhook ao criar o rascunho. A quantidade oferecida é de 1 a `min(6, saldo)`. Não existe reserva/decremento automático; a equipe precisa conferir faltas durante a separação.
+- A validação no Meta Flow Builder e a renderização em aparelho continuam pendentes. Um canário separado, pelo painel do Vitrine Admin, foi aceito pela Graph API em 26/10/2026; nenhum Flow foi publicado e o worker desta aplicação não foi usado. Nenhuma migration ou função desta aplicação foi implantada/aplicada. Nenhum teste automatizado foi criado ou executado.
 
-Dependências externas seguem versões fixas no `package.json` e lockfile pnpm. O provedor OAuth, allowlist, GitHub App e origens permitidas permanecem sem configuração confirmada. Nenhum secret foi criado/lido, nenhuma função foi implantada, nenhuma alteração Supabase foi feita, e não houve chamada Meta/Bling, publicação de Flow ou mensagem real.
+Dependências externas seguem versões fixas no `package.json` e lockfile pnpm. O provedor OAuth, allowlist, GitHub App e origens permitidas permanecem sem configuração confirmada. Nenhum secret foi criado/lido, nenhuma função foi implantada e nenhuma migration desta aplicação foi aplicada. A única chamada Meta foi o canário descrito no HANDOFF; não houve publicação Flow nem chamada Bling.

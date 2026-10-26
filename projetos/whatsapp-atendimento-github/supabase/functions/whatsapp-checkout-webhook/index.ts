@@ -1,7 +1,8 @@
 import postgres, { type Sql } from "npm:postgres@3.4.7";
 import { validateCatalog, type Basket, type CatalogDocuments } from "../../../src/domain/catalog.ts";
-import { quoteBasket, type BasketSelections } from "../../../src/domain/flow-runtime.ts";
+import { FlowSelectionError, quoteBasket, type BasketSelections } from "../../../src/domain/flow-runtime.ts";
 import { wakeOutboxWorker } from "../_shared/outbox-dispatch.ts";
+import { loadSellableStock } from "../_shared/sellable-stock.ts";
 
 const OWNER = "osvaldosereia";
 const REPOSITORY = "SUCEDOAN12";
@@ -380,7 +381,7 @@ async function findCustomer(phone: string, selectedCustomerId: unknown, addressI
   return { id: customer.id, name: customer.name, address };
 }
 
-function buildOrderSnapshot(
+async function buildOrderSnapshot(
   catalog: CatalogSnapshot,
   session: Session,
   selections: BasketSelections,
@@ -390,11 +391,22 @@ function buildOrderSnapshot(
   const basket = catalog.documents.baskets.baskets.find((candidate) => candidate.id === session.basket_id && candidate.active);
   if (!basket) throw new WebhookError(409, "A cesta da sessão não está ativa na revisão fixada.");
   const products = catalog.documents.products.products;
-  const stockEntries: Array<[string, number]> = [];
-  for (const product of products) {
-    if (product.stockQuantity !== null) stockEntries.push([product.id, product.stockQuantity]);
+  const selectedProductIds = [...new Set(Object.values(selections)
+    .filter((selection) => selection.quantity > 0)
+    .map((selection) => selection.productId))];
+  let stockByProduct: Map<string, number>;
+  try {
+    stockByProduct = await loadSellableStock(selectedProductIds, restRows);
+  } catch {
+    throw new WebhookError(503, "Não foi possível confirmar o estoque atual; o pedido não foi criado.");
   }
-  const quote = quoteBasket(basket, products, selections, new Map(stockEntries));
+  let quote: ReturnType<typeof quoteBasket>;
+  try {
+    quote = quoteBasket(basket, products, selections, stockByProduct);
+  } catch (error) {
+    if (error instanceof FlowSelectionError) throw new WebhookError(409, `${error.message} Reabra o Flow para atualizar a disponibilidade.`);
+    throw error;
+  }
   const productById = new Map(products.map((product) => [product.id, product]));
   const items = basket.groups.flatMap((group) => {
     const selection = quote.selections[group.id];
@@ -472,7 +484,7 @@ async function createDraft(tx: Sql, message: WebhookMessage, channel: Channel, p
     throw new WebhookError(409, "A revisão de catálogo mudou; reabra o Flow antes de confirmar.");
   }
   const customer = await findCustomer(phone, selectedCustomerId, response.address_id);
-  const built = buildOrderSnapshot(catalog, session, parseSelections(response.selections), customer, response.payment_method);
+  const built = await buildOrderSnapshot(catalog, session, parseSelections(response.selections), customer, response.payment_method);
   const snapshotJson = JSON.stringify(built.snapshot);
   const summaryHash = await digestHex(snapshotJson);
   const expiry = new Date(Date.now() + 15 * 60_000).toISOString();

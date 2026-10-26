@@ -31,3 +31,8 @@ Antes de uma homologação deliberada, ainda será necessário instalar as migra
 ## Limitação operacional
 
 A política no máximo uma vez evita reenvio cego, mas pode perder uma mensagem se o worker parar depois da marcação prévia e antes do `POST`. A outbox não possui tela de reconciliação/reenvio; qualquer recuperação precisa ser manual e confirmar primeiro o estado junto à Meta.
+
+## Atualização — saldo atual e canário autorizado (26/10/2026)
+
+- O catálogo GitHub deixa de carregar saldo (`products.json` schema 3). O Flow runtime consulta estoque vendável no Supabase server-side e desconta reservas válidas; o webhook revalida quantidades antes de criar o rascunho. As consultas são read-only; não há reserva ou decremento automático.
+- Foi executado o canário solicitado pelo usuário pelo painel existente, sem alterar o código do Vitrine: uma lista interativa de cinco tamanhos/preços enviada do 1018 para o final 8360. A Meta aceitou a mensagem às 03:27 UTC; aceite não confirma entrega/leitura. Não houve publicação de Flow, envio pelo worker novo ou chamada Bling.

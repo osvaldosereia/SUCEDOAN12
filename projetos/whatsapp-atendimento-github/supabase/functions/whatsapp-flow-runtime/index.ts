@@ -6,6 +6,7 @@ import {
   type AvailableStockByProduct,
   type BasketSelections,
 } from "../../../src/domain/flow-runtime.ts";
+import { loadSellableStock, SellableStockUnavailable } from "../_shared/sellable-stock.ts";
 
 const OWNER = "osvaldosereia";
 const REPOSITORY = "SUCEDOAN12";
@@ -530,12 +531,17 @@ function validateFlowToken(value: unknown): string {
   return value;
 }
 
-function loadAvailableStock(products: Product[]): AvailableStockByProduct {
-  const entries: Array<[string, number]> = [];
-  for (const product of products) {
-    if (product.stockQuantity !== null) entries.push([product.id, product.stockQuantity]);
+async function loadAvailableStock(basket: Basket): Promise<AvailableStockByProduct> {
+  const productIds = [...new Set(basket.groups.flatMap((group) => group.productIds))];
+  try {
+    return await loadSellableStock(productIds, restRows);
+  } catch (error) {
+    if (error instanceof RuntimeError) throw error;
+    if (error instanceof SellableStockUnavailable) {
+      throw new RuntimeError(503, "O saldo vendável não pôde ser confirmado neste momento. Tente novamente.");
+    }
+    throw new RuntimeError(503, "O saldo vendável não pôde ser confirmado neste momento. Tente novamente.");
   }
-  return new Map(entries);
 }
 
 function orderedPriorSelections(value: unknown, basket: Basket): BasketSelections {
@@ -611,7 +617,7 @@ async function handleDataExchange(request: DecryptedRequest, channel: FlowChanne
   const basket = snapshot.documents.baskets.baskets.find((candidate) => candidate.id === session.basket_id && candidate.active);
   if (!basket) throw new RuntimeError(409, "A cesta desta sessão não está disponível na revisão fixada.");
   const products = snapshot.documents.products.products;
-  const stockByProduct = loadAvailableStock(products);
+  const stockByProduct = await loadAvailableStock(basket);
   const defaults = stockAwareDefaults(basket, products, stockByProduct);
 
   if (request.action === "INIT") {

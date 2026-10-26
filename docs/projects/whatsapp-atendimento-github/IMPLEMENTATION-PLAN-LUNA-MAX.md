@@ -4,7 +4,7 @@ Projeto: WhatsApp Atendimento GitHub — SUCEDOAN12
 Branch isolada: project/whatsapp-atendimento-github-20261025  
 Diretório do novo código: projetos/whatsapp-atendimento-github/  
 Execução prevista: Work Luna Max  
-Estado: Rodadas 0–6 concluídas localmente. Na Rodada 7, Flow ligado localmente ao runtime/webhook, consumidor da outbox desligado por padrão e painel administrativo read-only de mensagens. Ainda precisam de validação em Meta/Flow Builder e aparelho; os 61 saldos estão desconhecidos (`null`) e não foram importados. Bling segue bloqueado por decisões e homologação financeira/fiscal. Nenhuma função está implantada e nenhuma mensagem foi enviada.
+Estado: Rodadas 0–6 concluídas localmente. A Rodada 7 liga o Flow ao runtime/webhook, mantém o consumidor da outbox desligado por padrão e inclui painel read-only de mensagens. O estoque vendável foi conectado por leitura server-side do Supabase; catálogo e imagens permanecem no GitHub. Em 26/10/2026, após preflight autorizado, a Meta aceitou uma única lista interativa de teste do 1018 para o 8360; nenhum Flow foi publicado e nenhuma NF-e foi emitida. A homologação do Flow em aparelho e o Bling continuam pendentes.
 
 ## Decisão principal
 
@@ -29,9 +29,9 @@ A configuração consultada no Vitrine aponta para cinco tamanhos ativos e 61 pr
 ## Limites de dados e segurança
 
 - GitHub será a fonte versionada de produtos, opções, cestas e imagens do novo atendimento. Não salvar catálogo de produtos em tabelas Supabase.
-- O Supabase existente será consultado somente para localizar cliente/endereço, como autorizado. O novo sistema terá tabelas próprias e mínimas para rascunhos, pedidos, itens, separação e integração fiscal.
+- O Supabase existente será consultado server-side para localizar cliente/endereço e ler o saldo vendável atual do estoque, como autorizado. O novo sistema terá tabelas próprias e mínimas para rascunhos, pedidos, itens, separação e integração fiscal; não cria nem altera tabelas de produto/estoque do Vitrine.
 - O pedido guarda snapshots do nome, marca, SKU, GTIN, ID do Bling, quantidade, preço aceito e revisão do catálogo; alterações posteriores no catálogo não alteram pedidos antigos.
-- O estoque não será cadastrado em GitHub. Para a primeira versão, produtos inativos não são oferecidos e a equipe confirma falta durante a separação. Consulta automática de estoque só entra se for necessária para o atendimento e comprovadamente simples.
+- O estoque não será cadastrado em GitHub. O runtime lê o saldo vendável do Supabase e as reservas válidas por produto; falha fechado quando a fonte atual não responde. Produtos inativos não são oferecidos e a equipe ainda confirma falta durante a separação. O fluxo não reserva nem decrementa estoque automaticamente.
 - O SUCEDOAN12 é público. Produtos e fotos commitados ficam publicamente legíveis. Ajuste interno da cesta, tokens, chaves e dados pessoais ficam fora do GitHub e do JSON entregue ao cliente.
 - Não haverá senha própria. A gravação do catálogo e as ações operacionais exigem uma identidade autorizada, de preferência GitHub OAuth/SSO com lista de usuários permitidos. Não deixar escrita anônima nem credencial no navegador.
 - Usar poucos serviços: uma aplicação Admin leve e um backend modular com funções próprias para Admin, protocolo Meta e integração Bling. Sem microserviços, Firebase, Make ou serviços auxiliares que não atendam a uma necessidade demonstrada.
@@ -129,9 +129,9 @@ Cada rodada deve produzir um diff pequeno e revisável, resumo das mudanças, co
 
 - Uma tela lógica `GROUP` é atualizada por Data Exchange para cada tipo de produto, e `CUSTOMER_REVIEW` é a tela terminal. Assim, uma cesta com 13–25 grupos não precisa declarar uma tela/rota diferente por grupo. A Meta tem um exemplo oficial de resposta Data Exchange que atualiza a mesma tela: [book-appointment `flow.js`](https://github.com/WhatsApp/WhatsApp-Flows-Tools/blob/main/examples/endpoint/nodejs/book-appointment/src/flow.js). Essa compatibilidade ainda precisa ser conferida no Flow Builder do canal.
 - Cada tipo tem uma única seleção de produto, seguida por uma quantidade. A lista mostra nome, marca/apresentação e preço unitário; a imagem atualiza com a opção. A última escolha sempre é `Não quero esse produto`; selecionar retirada oculta a quantidade.
-- O catálogo público de produtos passa para `schemaVersion: 2` e guarda `stockQuantity` (inteiro não negativo ou `null`). GitHub é fonte de produtos, saldo, cestas e imagens; o runtime usa a revisão fixada pela sessão e limita a `min(6, stockQuantity)`. Produto sem saldo informado ou zerado fica desabilitado.
+- O catálogo público de produtos passa para `schemaVersion: 3` e não guarda saldo. GitHub é fonte de produtos, cestas e imagens; o runtime usa a revisão fixada pela sessão e consulta o saldo vendável atual do Supabase a cada etapa, limitando a `min(6, saldo disponível)`.
 - O total é recalculado no servidor ao selecionar produto/quantidade. A conclusão envia o contrato checkout v1 com `selections` serializado; o webhook volta a conferir preço, composição e saldo daquela revisão. A experiência só aceita confirmar uma cesta com ao menos um item.
-- O saldo é manual e versionado; o projeto ainda não reserva/decrementa estoque automaticamente. Até os 61 valores serem cadastrados, Flow real não pode oferecer esses produtos. Cadastro novo de cliente/endereço, envio de mensagens, publicação Flow e operações Bling continuam fora desta execução local. O worker da outbox só será ligado numa homologação autorizada; falhas incertas não são repetidas automaticamente e ainda exigem conferência manual.
+- O saldo não é copiado para o catálogo público e o projeto ainda não reserva/decrementa estoque automaticamente. O webhook revalida antes de criar o rascunho e rejeita seleção que exceda a disponibilidade atual. Cadastro novo de cliente/endereço, publicação de Flow e operações Bling continuam fora desta execução local. O worker da outbox só será ligado numa homologação autorizada; falhas incertas não são repetidas automaticamente e ainda exigem conferência manual. A única exceção ao bloqueio de mensagens foi o canário solicitado pelo usuário, aceito pela Meta em 26/10/2026.
 
 ## Pronto para iniciar
 

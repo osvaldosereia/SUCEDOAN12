@@ -248,7 +248,7 @@ function productCard(product: Product): string {
       <div class="card-title-row"><h3>${escapeHtml(product.name)}</h3><span class="status-pill ${product.active ? "is-active" : "is-inactive"}">${product.active ? "Ativo" : "Inativo"}</span></div>
       <p>${escapeHtml(product.brand)} · ${escapeHtml(product.presentation)}</p>
       <strong>${money(product.unitPriceCents)}</strong>
-      <small>${product.stockQuantity === null ? "Estoque não informado" : `Estoque no GitHub: ${product.stockQuantity}`}</small>
+      <small>Saldo vendável consultado no Supabase durante o Flow</small>
       <small>${escapeHtml(product.sku ?? "Sem SKU")} · ${escapeHtml(product.id.slice(0, 8))}</small>
       <div class="card-actions"><button class="button button-soft" data-action="edit-product" data-id="${escapeHtml(product.id)}">Editar</button><button class="icon-button" aria-label="Remover produto" title="Remover" data-action="delete-product" data-id="${escapeHtml(product.id)}">×</button></div>
     </div>
@@ -560,7 +560,7 @@ function openProductEditor(productId?: string): void {
   const modal = openModal(`<form id="product-form" class="modal-card">
     <div class="modal-heading"><div><span class="eyebrow">${product ? "Editar cadastro" : "Novo cadastro"}</span><h2>${product ? "Produto" : "Adicionar produto"}</h2></div><button type="button" class="icon-button" data-action="close-modal" aria-label="Fechar">×</button></div>
     <input type="hidden" name="product_id" value="${escapeHtml(id)}">
-    <div class="product-form-layout"><div><label>Nome do produto<input name="name" required maxlength="160" value="${escapeHtml(product?.name ?? "")}"></label><div class="form-grid"><label>Marca<input name="brand" required maxlength="80" value="${escapeHtml(product?.brand ?? "")}"></label><label>Apresentação<input name="presentation" required maxlength="80" placeholder="Ex.: 500 g" value="${escapeHtml(product?.presentation ?? "")}"></label></div><div class="form-grid"><label>Preço unitário (R$)<input name="price" type="number" min="0" step="0.01" required value="${product ? priceInputValue(product.unitPriceCents) : "0.00"}"></label><label>Estoque disponível<input name="stockQuantity" type="number" min="0" step="1" value="${product?.stockQuantity ?? ""}" placeholder="Não informado"></label></div><small>Saldo versionado no GitHub. Produto sem saldo informado ou com saldo zero não será oferecido no Flow.</small><div class="form-grid"><label>SKU<input name="sku" maxlength="80" value="${escapeHtml(product?.sku ?? "")}"></label><label>GTIN / EAN<input name="gtin" maxlength="32" value="${escapeHtml(product?.gtin ?? "")}"></label></div><label>ID do Bling<input name="bling" maxlength="80" value="${escapeHtml(product?.blingProductId ?? "")}"></label><label class="checkbox-label"><input name="active" type="checkbox" ${product?.active ?? true ? "checked" : ""}> Produto ativo</label></div>
+    <div class="product-form-layout"><div><label>Nome do produto<input name="name" required maxlength="160" value="${escapeHtml(product?.name ?? "")}"></label><div class="form-grid"><label>Marca<input name="brand" required maxlength="80" value="${escapeHtml(product?.brand ?? "")}"></label><label>Apresentação<input name="presentation" required maxlength="80" placeholder="Ex.: 500 g" value="${escapeHtml(product?.presentation ?? "")}"></label></div><div class="form-grid"><label>Preço unitário (R$)<input name="price" type="number" min="0" step="0.01" required value="${product ? priceInputValue(product.unitPriceCents) : "0.00"}"></label></div><small>O saldo vem da consulta protegida ao estoque vendável do Supabase; não é alterado neste cadastro público.</small><div class="form-grid"><label>SKU<input name="sku" maxlength="80" value="${escapeHtml(product?.sku ?? "")}"></label><label>GTIN / EAN<input name="gtin" maxlength="32" value="${escapeHtml(product?.gtin ?? "")}"></label></div><label>ID do Bling<input name="bling" maxlength="80" value="${escapeHtml(product?.blingProductId ?? "")}"></label><label class="checkbox-label"><input name="active" type="checkbox" ${product?.active ?? true ? "checked" : ""}> Produto ativo</label></div>
       <div class="image-editor"><div class="image-preview-box">${source ? `<img id="product-image-preview" src="${escapeHtml(source)}" alt="Prévia do produto">` : `<div class="image-empty" id="product-image-empty"><span>＋</span>Foto do produto</div>`}</div><label class="button button-soft upload-button">Escolher foto<input id="product-image-input" type="file" accept="image/*" hidden></label><small>Será convertida para WebP 240 × 190, até 27 KB.${product ? " A foto atual é mantida se você não selecionar outra." : " Selecione uma foto para cadastrar o produto."}</small><small id="image-feedback" role="status"></small></div></div>
     <div class="modal-actions"><button type="button" class="button button-soft" data-action="close-modal">Cancelar</button><button class="button button-primary" type="submit">Aplicar produto</button></div>
   </form>`, "product");
@@ -988,19 +988,12 @@ appRoot.addEventListener("submit", async (event) => {
       tell("Informe um preço válido em reais.", "error");
       return;
     }
-    const stockValue = String(values.get("stockQuantity") ?? "").trim();
-    const stockQuantity = stockValue === "" ? null : Number(stockValue);
-    if (stockQuantity !== null && (!Number.isSafeInteger(stockQuantity) || stockQuantity < 0)) {
-      tell("Informe um estoque inteiro igual ou maior que zero, ou deixe o campo vazio.", "error");
-      return;
-    }
     const product: Product = {
       id,
       name: String(values.get("name") ?? "").trim(),
       brand: String(values.get("brand") ?? "").trim(),
       presentation: String(values.get("presentation") ?? "").trim(),
       unitPriceCents: Math.round(price * 100),
-      stockQuantity,
       imagePath: `images/products/${id}.webp`,
       sku: String(values.get("sku") ?? "").trim() || null,
       gtin: String(values.get("gtin") ?? "").trim() || null,

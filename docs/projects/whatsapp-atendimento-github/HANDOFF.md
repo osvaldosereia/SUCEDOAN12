@@ -243,9 +243,9 @@ A tela `CUSTOMER_REVIEW` agora devolve o `flow_token` já validado para que a co
 
 ## Rodada 7 — Flow local ligado ao catálogo GitHub
 
-A decisão mais recente do usuário define uma tela por tipo de produto, reutilizada pelo endpoint como `GROUP`, com **uma escolha de produto por tela**. A lista de produtos fica acima do seletor de quantidade. A opção final é sempre `Não quero esse produto`; escolhê-la retira o tipo da cesta. A quantidade disponível é de 1 a `min(6, stockQuantity)`; a opção sem saldo conhecido ou com saldo zero fica desabilitada. O preview administrativo segue as mesmas regras e lê somente os valores versionados no catálogo do GitHub.
+A decisão mais recente do usuário define uma tela por tipo de produto, reutilizada pelo endpoint como `GROUP`, com **uma escolha de produto por tela**. A lista de produtos fica acima do seletor de quantidade. A opção final é sempre `Não quero esse produto`; escolhê-la retira o tipo da cesta. A quantidade disponível é de 1 a `min(6, saldo vendável atual do Supabase)`; produtos sem saldo ficam indisponíveis. O preview administrativo mostra somente a estrutura e não lê estoque.
 
-O catálogo novo usa `schemaVersion: 2` e `stockQuantity`. Os 61 produtos permanecem com saldo `null`: não foram consultados nem importados de tabelas de produto do Supabase. O operador pode preencher e versionar saldos pelo Admin autenticado. O saldo não é reservado nem decrementado automaticamente; mudanças de disponibilidade e reconciliação operacional continuam pendentes.
+Atualização vigente: o catálogo usa `schemaVersion: 3` e não tem campo de saldo. O Flow runtime consulta a view de saldo vendável e as reservas válidas no Supabase; o webhook revalida a quantidade antes de gravar o rascunho. O saldo não é reservado nem decrementado automaticamente; disponibilidade é dinâmica.
 
 O Flow JSON local usa versão 6.0/Data Exchange 3.0 e o endpoint retorna a mesma tela `GROUP` para cada tipo antes de abrir `CUSTOMER_REVIEW`. O webhook valida a seleção contra a revisão do catálogo fixada pela sessão e enfileira a conclusão. A conclusão do Flow não confirma pedido. A mensagem posterior com Confirmar/Editar/Cancelar não é entregue nesta implementação porque ainda não há consumidor da outbox. Novo cadastro de cliente/endereço não é criado: a consulta Supabase exige cliente ativo, único e endereço ativo.
 
@@ -264,3 +264,13 @@ Build e `git diff --check` passaram. Nenhum teste foi criado ou executado, migra
 A área Operação ganhou a aba `Mensagens`. A `GET /outbox` usa a sessão GitHub/allowlist existente e devolve contagens e os 50 registros recentes com canal, tipo, estado, horários e código curto de erro. Payload cifrado, telefone e chave de evento não são consultados nem devolvidos. Não há botão de reenviar ou cancelar; falha incerta orienta conferência manual no WhatsApp Manager. O aviso mostra somente se a flag do worker está ligada, sem afirmar que as credenciais sejam válidas ou que a mensagem foi entregue.
 
 Não foi necessária migration. `pnpm build` e `git diff --check` passaram ao fechar. Nenhum teste foi criado/executado, nem houve consulta ao banco, configuração de segredo, deploy, chamada Meta, publicação Flow ou envio de mensagem.
+
+## Atualização vigente — saldo vendável Supabase e canário WhatsApp (26/10/2026)
+
+O usuário autorizou a leitura do estoque dos produtos das cestas no Supabase e um teste real WhatsApp do canal 1018 ao destinatário de homologação com final 8360. Os números completos não entram no repositório público. Os 61 IDs do catálogo GitHub correspondem aos 61 produtos do Vitrine. A fonte atual é a view `public.storefront_ean_sellable_stock_v1`, descontando reservas `reserved`/`allocated` ainda válidas de `public.vitrine_stock_reservations`, pela mesma precedência de saldo vendável observada no Vitrine. O código greenfield passa a consultar essa fonte somente server-side em cada tela e revalidar a seleção ao criar o rascunho. `products.json` usa `schemaVersion: 3` e não publica nem edita saldo. A consulta falha fechado; o fluxo não reserva nem decrementa estoque.
+
+No snapshot consultado durante a rodada, 5 produtos estavam zerados e 7 tinham de 1 a 6 unidades; a disponibilidade é dinâmica e deve ser relida no atendimento. Nenhum saldo foi copiado para o GitHub.
+
+O painel autenticado de canário confirmou canal 1018 homologado, modo humano e janela válida. Às 03:27 UTC de 26/10/2026, a Meta aceitou uma única lista interativa com cinco tamanhos/preços para o número final 8360. O registro confirmou `status=sent` e `provider_accepted=true`; isso comprova aceite da Graph API, não entrega/leitura no aparelho. A exceção foi limitada ao teste solicitado; nenhum Flow foi publicado e nenhuma NF-e foi emitida.
+
+Não houve deploy de código novo, aplicação de migration ou chamada Bling. Para operação ainda faltam conferir a chegada no aparelho, homologar Flow/JSON/imagens na Meta, implantar as funções/migration próprias e fechar com homologação controlada as decisões de venda/NF-e no Bling. O Vitrine permanece apenas como referência; nenhum código ou esquema dele foi copiado.
