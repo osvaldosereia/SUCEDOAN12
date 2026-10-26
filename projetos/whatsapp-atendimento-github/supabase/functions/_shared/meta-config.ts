@@ -7,6 +7,14 @@ function configured(name: string): string | null {
   return value || null;
 }
 
+function firstConfigured(...names: string[]): string | null {
+  for (const name of names) {
+    const value = configured(name);
+    if (value) return value;
+  }
+  return null;
+}
+
 export function metaAccessToken(channel: MetaChannel): string | null {
   return configured(`META_ACCESS_TOKEN_${channel}`) ?? configured("META_WHATSAPP_ACCESS_TOKEN");
 }
@@ -20,16 +28,22 @@ export function metaAppSecret(): string | null {
 }
 
 export function flowPrivateKey(channel: MetaChannel): string | null {
-  const channelKey = configured(`META_FLOW_PRIVATE_KEY_${channel}`)
-    ?? configured(`DA_FLOW_${channel}_RSA_PKCS8`);
+  const channelKey = firstConfigured(
+    `META_FLOW_PRIVATE_KEY_${channel}`,
+    `DA_FLOW_${channel}_RSA_PKCS8.pem`,
+    `DA_FLOW_${channel}_RSA_PKCS8`,
+  );
   if (channelKey || channel !== "0975") return channelKey;
 
   // The Graph API stores the public key against a phone number ID. Reuse the
   // existing pair for the second number when no 0975-specific secret is set;
   // its public key must still be registered separately for that phone number.
   // A channel-specific 0975 key always takes priority.
-  return configured("META_FLOW_PRIVATE_KEY_1018")
-    ?? configured("DA_FLOW_1018_RSA_PKCS8");
+  return firstConfigured(
+    "META_FLOW_PRIVATE_KEY_1018",
+    "DA_FLOW_1018_RSA_PKCS8.pem",
+    "DA_FLOW_1018_RSA_PKCS8",
+  );
 }
 
 export function flowEndpointUri(): string | null {
