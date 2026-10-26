@@ -1,0 +1,16 @@
+[functions.whatsapp-admin-api]
+# The OAuth redirect callback uses a single-use server-side state instead of a Supabase JWT.
+# Every other route validates the Supabase session and GitHub operator allowlist in authorize().
+verify_jwt = false
+
+[functions.whatsapp-flow-runtime]
+verify_jwt = false
+
+[functions.whatsapp-checkout-webhook]
+verify_jwt = false
+
+[functions.whatsapp-outbox-worker]
+verify_jwt = false
+
+[functions.whatsapp-meta-order-router]
+verify_jwt = false

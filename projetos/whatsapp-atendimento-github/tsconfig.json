@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "types": ["vite/client"]
+  },
+  "include": [
+    "src",
+    "supabase/functions/whatsapp-admin-api/index.ts",
+    "supabase/functions/whatsapp-flow-runtime/index.ts",
+    "supabase/functions/whatsapp-checkout-webhook/index.ts",
+    "supabase/functions/whatsapp-outbox-worker/index.ts",
+    "supabase/functions/whatsapp-meta-order-router/index.ts",
+    "supabase/functions/_shared/checkout-routing.ts",
+    "vite.config.ts"
+  ]
+}
