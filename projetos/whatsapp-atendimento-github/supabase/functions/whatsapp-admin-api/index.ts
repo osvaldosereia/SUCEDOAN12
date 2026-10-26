@@ -651,6 +651,7 @@ interface DbOrder {
   revision: number; assigned_operator_id: string | null; customer_acceptance_status: string;
   invoice_status: string; invoice_id: number | null; attention_code: string | null;
   created_at: string; separation_completed_at: string | null; bling_sale_reference: string | null; bling_sale_id: number | null;
+  dispatched_at: string | null; completed_at: string | null; received_payment_cents: number | string | null; received_payment_method: string | null;
 }
 
 interface DbOrderItem {
@@ -1207,6 +1208,12 @@ function orderPresentation(order: DbOrder, items: DbOrderItem[] = []) {
     blingSaleId: order.bling_sale_id === null ? null : Number(order.bling_sale_id),
     attentionCode: order.attention_code,
     separationCompletedAt: order.separation_completed_at,
+    dispatchedAt: order.dispatched_at,
+    completedAt: order.completed_at,
+    receivedPaymentCents: order.received_payment_cents === null ? null : Number(order.received_payment_cents),
+    receivedPaymentMethod: ["pix", "cash", "debit_card", "credit_card"].includes(String(order.received_payment_method))
+      ? order.received_payment_method as "pix" | "cash" | "debit_card" | "credit_card"
+      : null,
     blingContactId: null as number | null,
     blingContactVerifiedAt: null as string | null,
     blingSaleReference: order.bling_sale_reference,
@@ -1221,6 +1228,8 @@ function orderPresentation(order: DbOrder, items: DbOrderItem[] = []) {
       reconciliationEnabled: boolean;
       reconciliation: BlingSaleReconciliationSummary | null;
     } | null,
+    dispatchJob: null as { status: string; errorCode: string | null } | null,
+    deliveryJob: null as { status: string; errorCode: string | null } | null,
   };
 }
 
@@ -1327,9 +1336,13 @@ async function orderDetail(orderId: string) {
   }
   const jobs = await db<{
     operation: string; status: string; error_code: string | null; request_sha256: string | null; result_summary: Record<string, unknown>;
-  }>`select operation, status, error_code, request_sha256, result_summary from whatsapp_atendimento.integration_jobs where order_id = ${orderId} and operation in ('create_sale', 'generate_invoice') order by created_at desc`;
+  }>`select operation, status, error_code, request_sha256, result_summary from whatsapp_atendimento.integration_jobs where order_id = ${orderId} and operation in ('create_sale', 'generate_invoice', 'start_dispatch', 'complete_delivery') order by created_at desc`;
   const saleJob = jobs.find((job) => job.operation === "create_sale");
   const invoiceJob = jobs.find((job) => job.operation === "generate_invoice");
+  const dispatchJob = jobs.find((job) => job.operation === "start_dispatch");
+  const deliveryJob = jobs.find((job) => job.operation === "complete_delivery");
+  detail.dispatchJob = dispatchJob ? { status: dispatchJob.status, errorCode: dispatchJob.error_code } : null;
+  detail.deliveryJob = deliveryJob ? { status: deliveryJob.status, errorCode: deliveryJob.error_code } : null;
   if (invoiceJob) {
     const rawInvoiceStatus = invoiceJob.result_summary.invoiceStatus;
     detail.invoiceJob = {
@@ -2410,6 +2423,183 @@ async function generateBlingInvoice(orderId: string, operatorId: string, body: R
   return orderDetail(orderId);
 }
 
+const DELIVERY_PAYMENT_METHODS = ["pix", "cash", "debit_card", "credit_card"] as const;
+type DeliveryPaymentMethod = typeof DELIVERY_PAYMENT_METHODS[number];
+
+async function finishDispatchJob(
+  orderId: string,
+  operatorId: string,
+  status: "blocked" | "failed" | "unknown",
+  errorCode: string,
+  invoiceId: number | null,
+) {
+  await ordersDb()`
+    insert into whatsapp_atendimento.integration_jobs
+      (order_id, operation, idempotency_key, status, error_code, external_id, result_summary, attempts, started_at, finished_at)
+    values (${orderId}, 'start_dispatch', ${`${orderId}:start_dispatch`}, ${status}, ${errorCode}, ${invoiceId ? String(invoiceId) : null}, ${ordersDb().json({ operatorId, invoiceId })}, 1, now(), now())
+    on conflict (order_id, operation) do update set
+      status = excluded.status, error_code = excluded.error_code, external_id = excluded.external_id,
+      result_summary = whatsapp_atendimento.integration_jobs.result_summary || excluded.result_summary,
+      attempts = whatsapp_atendimento.integration_jobs.attempts + 1, started_at = now(), finished_at = now(), updated_at = now()
+  `;
+}
+
+async function persistLiveInvoiceReadback(
+  orderId: string,
+  expectedRevision: number,
+  invoice: Record<string, unknown>,
+  status: "pending" | "rejected" | "unknown",
+) {
+  const id = Number(invoice.id ?? invoice.idNotaFiscal);
+  const db = ordersDb();
+  await db.begin(async (tx) => {
+    const rows = await tx<DbOrder>`select * from whatsapp_atendimento.orders where id = ${orderId} for update`;
+    const order = rows[0];
+    if (!order) throw new HttpError(404, "Pedido não encontrado.");
+    if (order.revision !== expectedRevision || Number(order.invoice_id) !== id || order.status !== "invoice_authorized") {
+      throw new HttpError(409, "O pedido mudou durante a leitura fiscal. Atualize antes de registrar a saída.");
+    }
+    await tx`update whatsapp_atendimento.orders set invoice_status = ${status}, status = 'awaiting_invoice',
+      attention_code = ${status === "unknown" ? "bling_invoice_status_unverified" : status === "rejected" ? "bling_invoice_rejected" : "bling_invoice_pending"},
+      revision = revision + 1, updated_at = now() where id = ${orderId}`;
+    const jobs = await tx<{ result_summary: Record<string, unknown> }>`select result_summary from whatsapp_atendimento.integration_jobs
+      where order_id = ${orderId} and operation = 'generate_invoice' for update`;
+    const previous = jobs[0]?.result_summary ?? {};
+    await tx`update whatsapp_atendimento.integration_jobs set status = ${status === "unknown" ? "unknown" : "succeeded"},
+      error_code = ${status === "unknown" ? "BLING_NFE_STATUS_UNKNOWN" : status === "rejected" ? "BLING_NFE_REJECTED" : null},
+      result_summary = ${tx.json({ ...previous, lookup: "live_dispatch_gate", invoiceId: id, invoiceStatus: status,
+        invoiceSituationId: blingInvoiceSituation(invoice).id,
+        invoiceNumber: typeof invoice.numero === "string" ? invoice.numero.slice(0, 80) : null,
+        danfeUrl: typeof invoice.linkDanfe === "string" && /^https:\/\/([a-z0-9-]+\.)*bling\.com\.br\//i.test(invoice.linkDanfe) ? invoice.linkDanfe : null })},
+      finished_at = now(), updated_at = now() where order_id = ${orderId} and operation = 'generate_invoice'`;
+    await tx`insert into whatsapp_atendimento.order_events (order_id, event_key, event_type, event_data)
+      values (${orderId}, ${`${orderId}:invoice-live-state:${id}:${status}`}, 'bling_invoice_live_state_changed',
+        ${tx.json({ invoiceId: id, invoiceStatus: status })}) on conflict (event_key) do nothing`;
+  });
+}
+
+async function startOrderDispatch(orderId: string, operatorId: string, body: Record<string, unknown>) {
+  const { order, items } = await loadOrder(orderId);
+  if (body.confirmation !== "SAIR_PARA_ENTREGA") throw new HttpError(409, "Confirme explicitamente a saída para entrega.");
+  if (typeof body.revision !== "number" || !Number.isSafeInteger(body.revision)) throw new HttpError(400, "A revisão do pedido é inválida.");
+  if (order.status === "out_for_delivery" && order.dispatched_at) return orderDetail(orderId);
+  if (order.revision !== body.revision) {
+    throw new HttpError(409, "O pedido mudou. Atualize antes de registrar a saída.");
+  }
+  if (order.status !== "invoice_authorized" || order.invoice_status !== "authorized"
+    || !order.invoice_id || !order.bling_sale_id || !order.separation_completed_at
+    || order.customer_acceptance_status === "pending" || order.customer_acceptance_status === "rejected"
+    || !items.length || items.some((item) => item.picking_status !== "separated" || item.picked_quantity !== item.quantity)) {
+    throw new HttpError(409, "A saída exige separação completa, sem aceite pendente, venda vinculada e NF-e autorizada.");
+  }
+  const reference = order.bling_sale_reference ?? stableBlingSaleReference(orderId);
+  if (!reference || Number(order.invoice_id) <= 0) throw new HttpError(409, "O vínculo da NF-e com a venda não está completo.");
+
+  let response: { status: number; data: unknown };
+  try {
+    const token = await getSharedBlingAccessToken();
+    response = await sharedBlingRequest(`/nfe/${Number(order.invoice_id)}`, "GET", undefined, token);
+  } catch {
+    await finishDispatchJob(orderId, operatorId, "blocked", "BLING_NFE_LIVE_CHECK_UNAVAILABLE", Number(order.invoice_id));
+    throw new HttpError(503, "Não foi possível confirmar a autorização atual da NF-e. A saída não foi registrada.");
+  }
+  const invoice = response.status >= 200 && response.status < 300 && isRecord(response.data)
+    ? (isRecord(response.data.data) ? response.data.data : response.data)
+    : null;
+  const liveInvoiceId = invoice ? Number(invoice.id ?? invoice.idNotaFiscal) : 0;
+  if (!invoice || !Number.isSafeInteger(liveInvoiceId) || liveInvoiceId !== Number(order.invoice_id)
+    || invoice.numeroLoja !== reference) {
+    await finishDispatchJob(orderId, operatorId, "unknown", "BLING_NFE_LIVE_CHECK_MISMATCH", Number(order.invoice_id));
+    throw new HttpError(409, "A leitura atual da NF-e não corresponde à venda deste pedido. A saída não foi registrada.");
+  }
+  const liveSituation = blingInvoiceSituation(invoice);
+  if (liveSituation.status !== "authorized") {
+    await persistLiveInvoiceReadback(orderId, body.revision, invoice, liveSituation.status);
+    await finishDispatchJob(orderId, operatorId, "blocked", `BLING_NFE_NOT_AUTHORIZED_${liveSituation.status.toUpperCase()}`, Number(order.invoice_id));
+    return orderDetail(orderId);
+  }
+
+  const db = ordersDb();
+  await db.begin(async (tx) => {
+    const currentRows = await tx<DbOrder>`select * from whatsapp_atendimento.orders where id = ${orderId} for update`;
+    const current = currentRows[0];
+    if (!current) throw new HttpError(404, "Pedido não encontrado.");
+    if (current.status === "out_for_delivery" && current.dispatched_at) return;
+    if (current.revision !== body.revision) throw new HttpError(409, "O pedido mudou durante a conferência. Atualize antes de registrar a saída.");
+    if (current.status !== "invoice_authorized" || current.invoice_status !== "authorized"
+      || Number(current.invoice_id) !== liveInvoiceId || !current.bling_sale_id || !current.separation_completed_at
+      || ["pending", "rejected"].includes(current.customer_acceptance_status)) {
+      throw new HttpError(409, "O pedido ou a NF-e mudou durante a conferência. A saída não foi registrada.");
+    }
+    await tx`insert into whatsapp_atendimento.integration_jobs
+      (order_id, operation, idempotency_key, status, external_id, result_summary, attempts, started_at, finished_at)
+      values (${orderId}, 'start_dispatch', ${`${orderId}:start_dispatch`}, 'succeeded', ${String(liveInvoiceId)}, ${tx.json({ operatorId, invoiceStatus: "authorized", invoiceId: liveInvoiceId })}, 1, now(), now())
+      on conflict (order_id, operation) do update set status = 'succeeded', error_code = null,
+        external_id = excluded.external_id, result_summary = excluded.result_summary,
+        attempts = whatsapp_atendimento.integration_jobs.attempts + 1, started_at = now(), finished_at = now(), updated_at = now()`;
+    await tx`update whatsapp_atendimento.orders set status = 'out_for_delivery', dispatched_at = coalesce(dispatched_at, now()),
+      revision = revision + 1, attention_code = 'dispatch_started', updated_at = now() where id = ${orderId}`;
+    await tx`insert into whatsapp_atendimento.order_events (order_id, event_key, event_type, event_data)
+      values (${orderId}, ${`${orderId}:dispatch-started`}, 'dispatch_started', ${tx.json({ operatorId, invoiceId: liveInvoiceId })})
+      on conflict (event_key) do nothing`;
+  });
+  return orderDetail(orderId);
+}
+
+async function completeOrderDelivery(orderId: string, operatorId: string, body: Record<string, unknown>) {
+  const { order } = await loadOrder(orderId);
+  const paymentMethod = body.paymentMethod;
+  const amountCents = body.amountCents;
+  if (typeof paymentMethod !== "string" || !DELIVERY_PAYMENT_METHODS.includes(paymentMethod as DeliveryPaymentMethod)) {
+    throw new HttpError(400, "Selecione uma forma de pagamento válida.");
+  }
+  if (typeof amountCents !== "number" || !Number.isSafeInteger(amountCents) || amountCents !== Number(order.total_cents)) {
+    throw new HttpError(409, "O valor recebido precisa corresponder ao total confirmado do pedido.");
+  }
+  if (body.confirmation !== "CONFIRMAR_ENTREGA") throw new HttpError(409, "Confirme explicitamente a entrega e o recebimento.");
+  if (typeof body.revision !== "number" || !Number.isSafeInteger(body.revision)) throw new HttpError(400, "A revisão do pedido é inválida.");
+  if (order.status === "completed") {
+    if (Number(order.received_payment_cents) === amountCents && order.received_payment_method === paymentMethod) return orderDetail(orderId);
+    throw new HttpError(409, "A entrega já foi concluída com outro registro de pagamento.");
+  }
+  if (order.revision !== body.revision) {
+    throw new HttpError(409, "O pedido mudou. Atualize antes de confirmar a entrega.");
+  }
+  if (order.status !== "out_for_delivery" || !order.dispatched_at || order.invoice_status !== "authorized"
+    || !order.invoice_id || order.customer_acceptance_status === "pending" || order.customer_acceptance_status === "rejected") {
+    throw new HttpError(409, "A entrega só pode ser concluída depois da saída e com NF-e autorizada.");
+  }
+
+  const db = ordersDb();
+  await db.begin(async (tx) => {
+    const currentRows = await tx<DbOrder>`select * from whatsapp_atendimento.orders where id = ${orderId} for update`;
+    const current = currentRows[0];
+    if (!current) throw new HttpError(404, "Pedido não encontrado.");
+    if (current.status === "completed") {
+      if (Number(current.received_payment_cents) === amountCents && current.received_payment_method === paymentMethod) return;
+      throw new HttpError(409, "A entrega já foi concluída com outro registro de pagamento.");
+    }
+    if (current.revision !== body.revision || current.status !== "out_for_delivery" || !current.dispatched_at
+      || current.invoice_status !== "authorized" || !current.invoice_id
+      || ["pending", "rejected"].includes(current.customer_acceptance_status)) {
+      throw new HttpError(409, "O pedido mudou durante a confirmação. Atualize antes de continuar.");
+    }
+    await tx`insert into whatsapp_atendimento.integration_jobs
+      (order_id, operation, idempotency_key, status, result_summary, attempts, started_at, finished_at)
+      values (${orderId}, 'complete_delivery', ${`${orderId}:complete_delivery`}, 'succeeded', ${tx.json({ operatorId, paymentMethod, amountCents })}, 1, now(), now())
+      on conflict (order_id, operation) do update set status = 'succeeded', error_code = null,
+        result_summary = excluded.result_summary, attempts = whatsapp_atendimento.integration_jobs.attempts + 1,
+        started_at = now(), finished_at = now(), updated_at = now()`;
+    await tx`update whatsapp_atendimento.orders set status = 'completed', completed_at = coalesce(completed_at, now()),
+      received_payment_cents = ${amountCents}, received_payment_method = ${paymentMethod}, revision = revision + 1,
+      attention_code = null, updated_at = now() where id = ${orderId}`;
+    await tx`insert into whatsapp_atendimento.order_events (order_id, event_key, event_type, event_data)
+      values (${orderId}, ${`${orderId}:delivery-completed`}, 'delivery_payment_recorded', ${tx.json({ operatorId, paymentMethod, amountCents })})
+      on conflict (event_key) do nothing`;
+  });
+  return orderDetail(orderId);
+}
+
 async function finishInvoiceJob(orderId: string, status: "failed" | "unknown" | "blocked", errorCode: string) {
   await ordersDb()`update whatsapp_atendimento.integration_jobs
     set status = ${status}, error_code = ${errorCode}, finished_at = now(), updated_at = now()
@@ -3183,7 +3373,7 @@ Deno.serve(async (request) => {
     if (url.pathname.endsWith("/orders") && request.method === "GET") {
       return jsonResponse({ orders: await listOrders() }, 200, headers);
     }
-    const orderMatch = url.pathname.match(/\/orders\/([0-9a-f-]{36})(?:\/(picking|assign|separation\/complete|bling-contact|bling-sale\/(?:reconcile|create)|bling-invoice\/generate))?$/i);
+    const orderMatch = url.pathname.match(/\/orders\/([0-9a-f-]{36})(?:\/(picking|assign|separation\/complete|bling-contact|bling-sale\/(?:reconcile|create)|bling-invoice\/generate|dispatch\/start|delivery\/complete))?$/i);
     if (orderMatch && ORDER_ID.test(orderMatch[1])) {
       const [, orderId, action] = orderMatch;
       if (!action && request.method === "GET") return jsonResponse(await orderDetail(orderId), 200, headers);
@@ -3214,6 +3404,12 @@ Deno.serve(async (request) => {
       }
       if (action === "bling-invoice/generate" && request.method === "POST") {
         return jsonResponse(await generateBlingInvoice(orderId, authorization.operator.id, await readJson(request)), 200, headers);
+      }
+      if (action === "dispatch/start" && request.method === "POST") {
+        return jsonResponse(await startOrderDispatch(orderId, authorization.operator.id, await readJson(request)), 200, headers);
+      }
+      if (action === "delivery/complete" && request.method === "POST") {
+        return jsonResponse(await completeOrderDelivery(orderId, authorization.operator.id, await readJson(request)), 200, headers);
       }
       if (action === "separation/complete" && request.method === "POST") {
         return jsonResponse(await finishSeparation(orderId, authorization.operator.id, await readJson(request)), 200, headers);

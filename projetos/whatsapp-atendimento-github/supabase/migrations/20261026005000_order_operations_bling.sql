@@ -15,7 +15,7 @@ alter table whatsapp_atendimento.orders
   add column dispatched_at timestamptz,
   add column completed_at timestamptz,
   add column received_payment_cents bigint check (received_payment_cents is null or received_payment_cents >= 0),
-  add column received_payment_method text,
+  add column received_payment_method text check (received_payment_method is null or received_payment_method in ('pix', 'cash', 'debit_card', 'credit_card')),
   add column attention_code text;
 
 alter table whatsapp_atendimento.order_items
@@ -40,7 +40,7 @@ alter table whatsapp_atendimento.message_outbox
 create table whatsapp_atendimento.integration_jobs (
   id uuid primary key default gen_random_uuid(),
   order_id uuid not null references whatsapp_atendimento.orders(id) on delete cascade,
-  operation text not null check (operation in ('create_sale', 'generate_invoice', 'read_invoice', 'authorize_invoice', 'complete_delivery')),
+  operation text not null check (operation in ('create_sale', 'generate_invoice', 'read_invoice', 'authorize_invoice', 'start_dispatch', 'complete_delivery')),
   idempotency_key text not null unique,
   status text not null default 'pending' check (status in ('pending', 'running', 'succeeded', 'failed', 'unknown', 'blocked')),
   attempts integer not null default 0 check (attempts >= 0),

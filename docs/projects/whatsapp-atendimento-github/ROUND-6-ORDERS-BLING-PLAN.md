@@ -62,3 +62,11 @@ Após concluir a separação, `finishSeparation` tenta criar a venda. Primeiro c
 A solicitação de NF-e está disponível após venda confirmada e exige a confirmação literal `EMITIR_NFE`. A API procura documento existente antes do POST, associa ID/situação e apresenta número/DANFE; se um ID já estiver armazenado, o botão apenas lê esse documento. Autorização fiscal automática, envio de e-mail e operações de despacho/entrega não são executados. Esta rodada não chamou o Bling nem aplicou migration/deploy; homologação real da criação e da NF-e ainda é etapa operacional.
 
 Verificação local no código: `pnpm build` passou. `git diff --check` deve ser repetido após a revisão do diff; nenhum teste automatizado foi criado ou executado.
+
+## Fechamento local complementar — expedição e entrega (26/10/2026)
+
+- `POST /orders/{id}/dispatch/start` exige confirmação literal, revisão atual, separação integral e NF-e registrada como autorizada; antes de mudar o pedido, o servidor lê novamente a NF-e no Bling e confere ID, `numeroLoja` e situação. Divergência ou leitura incerta falha fechada; estado não autorizado é refletido no pedido e remove o gate de saída.
+- `POST /orders/{id}/delivery/complete` exige `out_for_delivery`, confirmação explícita, revisão atual, método permitido (`pix`, `cash`, `debit_card`, `credit_card`) e valor igual ao total aceito. A transação guarda saída/conclusão, recebimento, job único e evento auditável; repetição com o mesmo método/valor retorna o mesmo pedido.
+- A UI mostra o horário de saída e o comprovante local de valor/método recebidos. Não gera mensagem de entrega na outbox, não cria lançamento financeiro e não muda a situação do pedido de venda no Bling.
+- Ruling: situação do pedido Bling não será inferida nem codificada por ID fixo — o Bling documenta IDs de situação customizados por conta e a referência lida do Vitrine mantém `status_updates_enabled=false`; qualquer sincronização futura deve descobrir/configurar uma transição permitida e confirmar seu contrato antes de escrever. [Documentação oficial](https://developer.bling.com.br/mcp-server).
+- O migration de pedidos continua local e não aplicada. Verificação permitida nesta etapa: `pnpm build` e `git diff --check`; sem testes, chamada ao Bling, deploy ou mensagens.

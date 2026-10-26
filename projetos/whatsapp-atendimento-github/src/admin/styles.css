@@ -345,6 +345,12 @@ label small { color: #a09c92; font-size: 9px; font-weight: 400; }
 .order-item-row input, .order-item-row select { width: 100%; min-height: 36px; padding: 0 9px; border: 1px solid #dedbd3; border-radius: 7px; color: var(--ink); background: #fff; font-size: 11px; }
 .order-footer-actions { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 14px; padding-top: 15px; border-top: 1px solid var(--line); }
 .order-footer-actions span { max-width: 480px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.delivery-operation { display: grid; gap: 10px; }
+.delivery-operation > p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.delivery-operation > label { display: grid; max-width: 360px; gap: 5px; color: var(--muted); font-size: 10px; }
+.delivery-operation select { min-height: 38px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: #fff; font: inherit; }
+.delivery-operation .delivery-amount { color: var(--ink); }
+.delivery-operation-error { color: #8a4d3c; font-size: 10px; }
 .flow-safety-note ul { display: grid; gap: 3px; margin: 5px 0 0 18px; padding: 0; font-size: 11px; }
 @media (max-width: 900px) {
   .outbox-count-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

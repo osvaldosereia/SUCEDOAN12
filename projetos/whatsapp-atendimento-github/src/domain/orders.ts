@@ -54,6 +54,10 @@ export interface OrderDeliveryAddress {
 
 export interface OrderDetailRecord extends OrderListEntry {
   paymentMethod: string | null;
+  dispatchedAt: string | null;
+  completedAt: string | null;
+  receivedPaymentCents: number | null;
+  receivedPaymentMethod: "pix" | "cash" | "debit_card" | "credit_card" | null;
   deliveryAddress: OrderDeliveryAddress;
   items: OrderItemRecord[];
   assignedOperatorId: string | null;
@@ -71,6 +75,14 @@ export interface OrderDetailRecord extends OrderListEntry {
     invoiceNumber: string | null;
     invoiceStatus: "authorized" | "pending" | "rejected" | "unknown" | null;
     danfeUrl: string | null;
+  } | null;
+  dispatchJob: {
+    status: string;
+    errorCode: string | null;
+  } | null;
+  deliveryJob: {
+    status: string;
+    errorCode: string | null;
   } | null;
   integrationJob: {
     operation: string;

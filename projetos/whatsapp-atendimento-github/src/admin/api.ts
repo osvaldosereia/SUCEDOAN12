@@ -238,6 +238,24 @@ export function generateOrderBlingInvoice(accessToken: string, orderId: string, 
   });
 }
 
+export function startOrderDispatch(accessToken: string, orderId: string, revision: number): Promise<OrderDetailRecord> {
+  return apiRequest<OrderDetailRecord>(`/orders/${encodeURIComponent(orderId)}/dispatch/start`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ revision, confirmation: "SAIR_PARA_ENTREGA" }),
+  });
+}
+
+export function completeOrderDelivery(
+  accessToken: string,
+  orderId: string,
+  input: { revision: number; paymentMethod: "pix" | "cash" | "debit_card" | "credit_card"; amountCents: number },
+): Promise<OrderDetailRecord> {
+  return apiRequest<OrderDetailRecord>(`/orders/${encodeURIComponent(orderId)}/delivery/complete`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ ...input, confirmation: "CONFIRMAR_ENTREGA" }),
+  });
+}
+
 export function getCustomers(accessToken: string, query = ""): Promise<{ customers: CustomerListItem[] }> {
   const params = new URLSearchParams();
   if (query.trim()) params.set("q", query.trim());

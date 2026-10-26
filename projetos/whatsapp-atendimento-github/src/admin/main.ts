@@ -24,7 +24,7 @@ import {
   type ChannelFlowDocument,
   type FlowChannel,
 } from "../domain/flows";
-import { AdminApiError, assignOrder, bindPublishedMetaFlow, completeOrderSeparation, createMetaFlow, createOrderBlingSale, generateOrderBlingInvoice, getAnaAdmin, getAttendanceAccounts, getAttendanceConversation, getAttendanceQueue, getCatalog, getCustomer, getCustomers, getFlowDraft, getMetaFlows, getOrder, getOrders, getOutbox, publishMetaFlow, reconcileOrderBlingSale, saveCatalog, saveCustomer, saveFlowDraft, saveOrderBlingContact, saveOrderPicking, sendAttendanceText, setAnaChannel, setAttendanceMode, setupMetaFlowEncryption, unbindMetaFlow, uploadMetaFlowJson, type MetaChannelSnapshot, type PendingImage } from "./api";
+import { AdminApiError, assignOrder, bindPublishedMetaFlow, completeOrderDelivery, completeOrderSeparation, createMetaFlow, createOrderBlingSale, generateOrderBlingInvoice, getAnaAdmin, getAttendanceAccounts, getAttendanceConversation, getAttendanceQueue, getCatalog, getCustomer, getCustomers, getFlowDraft, getMetaFlows, getOrder, getOrders, getOutbox, publishMetaFlow, reconcileOrderBlingSale, saveCatalog, saveCustomer, saveFlowDraft, saveOrderBlingContact, saveOrderPicking, sendAttendanceText, setAnaChannel, setAttendanceMode, setupMetaFlowEncryption, startOrderDispatch, unbindMetaFlow, uploadMetaFlowJson, type MetaChannelSnapshot, type PendingImage } from "./api";
 import type { OrderDetailRecord, OrderListEntry } from "../domain/orders";
 import type { OutboxMessageSummary, OutboxQueueSnapshot, OutboxStatus } from "../domain/outbox";
 import { attendanceChannelFromPhone, type AnaAdminSnapshot, type AttendanceChannel, type AttendanceConversationSnapshot, type AttendanceQueueItem } from "../domain/attendance";
@@ -536,6 +536,10 @@ function orderStatusLabel(status: string): string {
   return ({ received: "Recebido", packing: "Em separação", attention: "Atenção", awaiting_invoice: "Pré-validação Bling", invoice_authorized: "NF-e autorizada", out_for_delivery: "Saiu para entrega", completed: "Concluído", cancelled: "Cancelado" } as Record<string, string>)[status] ?? status;
 }
 
+function paymentMethodLabel(method: string | null): string {
+  return ({ pix: "Pix", cash: "Dinheiro", debit_card: "Cartão de débito", credit_card: "Cartão de crédito" } as Record<string, string>)[method ?? ""] ?? "A confirmar";
+}
+
 function outboxStatusLabel(status: OutboxStatus): string {
   return ({ pending: "Na fila", sent: "Aceita pela Meta", failed: "Falha para conferir", cancelled: "Cancelada" })[status];
 }
@@ -649,12 +653,20 @@ function ordersView(): string {
     const invoiceMarkup = order.blingSaleId
       ? `<div class="bling-invoice-summary"><strong>Venda Bling ${order.blingSaleId}</strong><span>NF-e: ${escapeHtml(invoiceStatus)}${order.invoiceId ? ` · ID ${order.invoiceId}` : ""}${order.invoiceJob?.invoiceNumber ? ` · nº ${escapeHtml(order.invoiceJob.invoiceNumber)}` : ""}</span>${order.invoiceJob?.errorCode ? `<small>Estado técnico: ${escapeHtml(order.invoiceJob.errorCode)}</small>` : ""}${order.invoiceJob?.danfeUrl ? `<a href="${escapeHtml(order.invoiceJob.danfeUrl)}" target="_blank" rel="noopener noreferrer">Abrir DANFE no Bling</a>` : ""}<p>Solicitar a NF-e requer confirmação digitada. O Bling ainda controla a autorização fiscal.</p>${invoiceAction}</div>`
       : `<div class="bling-invoice-summary"><strong>NF-e aguardando venda</strong><span>A venda é criada após a separação, desde que o pedido e o contato estejam válidos no Bling.</span></div>`;
+    const dispatchMarkup = order.status === "invoice_authorized"
+      ? `<section class="order-items-card delivery-operation"><div class="section-title"><div><span class="eyebrow">Expedição</span><h2>Pronto para sair</h2></div></div><p>A autorização da NF-e será consultada novamente no Bling antes do registro da saída.</p>${order.dispatchJob?.errorCode ? `<small class="delivery-operation-error">A última conferência não liberou a saída. Tente consultar novamente após revisar a NF-e no Bling.</small>` : ""}<button class="button button-primary" data-action="order-dispatch" data-id="${escapeHtml(order.id)}" data-revision="${order.revision}">Registrar saída para entrega</button></section>`
+      : order.status === "out_for_delivery"
+        ? `<section class="order-items-card delivery-operation"><div class="section-title"><div><span class="eyebrow">Expedição</span><h2>Saiu para entrega</h2></div></div><p>Saída registrada${order.dispatchedAt ? ` em ${new Date(order.dispatchedAt).toLocaleString("pt-BR")}` : ""}. Confirme abaixo quando entregar e receber o pagamento.</p><label>Forma recebida<select id="delivery-payment-method">${(["pix", "cash", "debit_card", "credit_card"] as const).map((method) => `<option value="${method}" ${(order.paymentMethod === method ? "selected" : "")}>${paymentMethodLabel(method)}</option>`).join("")}</select></label><p class="delivery-amount">Valor a receber: <strong>${money(order.totalCents)}</strong></p>${order.deliveryJob?.errorCode ? `<small class="delivery-operation-error">A última confirmação precisa ser revisada antes de repetir.</small>` : ""}<button class="button button-primary" data-action="order-delivery-complete" data-id="${escapeHtml(order.id)}" data-revision="${order.revision}">Confirmar entrega e recebimento</button></section>`
+        : order.status === "completed"
+          ? `<section class="order-items-card delivery-operation"><div class="section-title"><div><span class="eyebrow">Concluído</span><h2>Entrega e pagamento registrados</h2></div></div><p>${order.completedAt ? `Concluído em ${new Date(order.completedAt).toLocaleString("pt-BR")}. ` : ""}Recebido ${money(order.receivedPaymentCents ?? order.totalCents)} via ${escapeHtml(paymentMethodLabel(order.receivedPaymentMethod))}.</p></section>`
+          : "";
     return `<section class="workspace-heading"><div><span class="eyebrow">Pedido · ${escapeHtml(order.id.slice(0, 8))}</span><h1>${escapeHtml(order.customerName)}</h1><p>${escapeHtml(order.basketName)} · ${escapeHtml(order.city)} · recebido ${new Date(order.createdAt).toLocaleString("pt-BR")}</p></div><div class="order-heading-actions"><button class="button button-soft" data-action="orders-back">← Fila</button><button class="button button-soft" data-action="orders-refresh">Atualizar</button></div></section>
       <div class="order-summary-grid"><article><span>Status</span><strong>${escapeHtml(orderStatusLabel(order.status))}</strong></article><article><span>Total confirmado</span><strong>${money(order.totalCents)}</strong></article><article><span>Canal / pagamento</span><strong>${escapeHtml(order.channel)} · ${escapeHtml(order.paymentMethod ?? "—")}</strong></article><article><span>Revisão</span><strong>${order.revision}</strong></article></div>
       <section class="order-items-card"><div class="section-title"><div><span class="eyebrow">Entrega</span><h2>Endereço confirmado</h2></div></div><p>${escapeHtml(addressLine || "Endereço não disponível")}</p>${address.reference ? `<small>Referência: ${escapeHtml(address.reference)}</small>` : ""}</section>
       ${pending ? `<div class="flow-safety-note"><strong>Aguardando aceite do cliente</strong><span>Há falta ou substituição pendente. A separação e o Bling ficam bloqueados até a resposta chegar pelo webhook.</span></div>` : ""}
       <section class="order-items-card"><div class="section-title"><div><span class="eyebrow">Integração Bling</span><h2>Vínculo do contato</h2></div><strong>${order.blingContactId ? `ID ${order.blingContactId} · conferido manualmente` : "Sem vínculo"}</strong></div><p>Informe o ID do contato e confirme que conferiu a identidade no painel Bling. Esta tela não consulta o Bling; o ID será salvo no cadastro privado do cliente.</p><form id="order-bling-contact-form"><label>ID do contato Bling<input name="bling_contact_id" type="number" min="1" max="9007199254740991" step="1" value="${order.blingContactId ?? ""}" required></label><label class="checkbox-label"><input name="customer_match_confirmed" type="checkbox" required> Conferi que este contato pertence a ${escapeHtml(order.customerName)}</label><button class="button button-soft" type="submit">${order.blingContactId ? "Atualizar vínculo" : "Salvar vínculo"}</button></form>${order.blingContactVerifiedAt ? `<small>Conferido em ${new Date(order.blingContactVerifiedAt).toLocaleString("pt-BR")}</small>` : ""}</section>
       ${["awaiting_invoice", "invoice_authorized"].includes(order.status) ? `<div class="flow-safety-note"><strong>Integração Bling · venda ${order.blingSaleId ? "confirmada" : escapeHtml(order.integrationJob?.status ?? "aguardando")}</strong><span>Ao concluir a separação, o servidor tenta criar a venda com a conexão Bling já usada pelo atendimento. O estoque negativo não bloqueia essa etapa. A NF-e só é solicitada mediante confirmação do operador.</span>${salePreviewMarkup}${commercialPreview}${reconciliationMarkup}${reconciliationAction}${saleRetryAction}<ul>${(order.integrationJob?.blockers ?? []).map((code) => `<li>${escapeHtml(integrationBlockerLabel(code))}</li>`).join("") || (!order.blingSaleId ? `<li>${order.integrationJob?.status === "unknown" ? "Reconcilie a referência no Bling antes de repetir." : canRetrySale ? "Revise os dados acima e confirme a tentativa manual." : "A venda aguarda o processamento no servidor."}</li>` : "")}</ul>${invoiceMarkup}</div>` : ""}
+      ${dispatchMarkup}
       <section class="order-items-card"><div class="section-title"><div><span class="eyebrow">Separação</span><h2>Itens do pedido</h2></div>${!pending && ["received", "packing", "attention"].includes(order.status) ? `<button class="button button-soft" data-action="order-assign" data-id="${escapeHtml(order.id)}" data-revision="${order.revision}">Assumir separação</button>` : ""}</div>
       ${order.items.map((item) => `<form class="order-item-row" id="order-picking-item" data-item-id="${item.id}"><div class="order-item-main"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.brand)} · ${escapeHtml(item.presentation)} · ${item.quantity} pedida(s)</span><small>Separada(s): ${item.pickedQuantity} · ${escapeHtml(item.pickingStatus)}</small></div><label>Separar<input name="picked_quantity" type="number" min="0" max="${item.quantity}" step="1" value="${item.pickedQuantity}" required></label><label>Substituto<select name="replacement_product_id"><option value="">Sem substituição</option>${item.replacementOptions.filter((option) => option.id !== item.productId).map((option) => `<option value="${escapeHtml(option.id)}">${escapeHtml(option.name)} · ${escapeHtml(option.brand)}</option>`).join("")}</select></label><button class="button button-soft" type="submit" ${pending || !["received", "packing", "attention"].includes(order.status) ? "disabled" : ""}>Salvar linha</button></form>`).join("") || `<div class="empty-state"><strong>Sem itens para separar</strong></div>`}
       <div class="order-footer-actions"><span>As faltas e substituições só alteram o total após o cliente aceitar.</span><button class="button button-primary" data-action="order-separation-complete" data-id="${escapeHtml(order.id)}" data-revision="${order.revision}" ${pending || !["received", "packing", "attention"].includes(order.status) ? "disabled" : ""}>Concluir separação e validar Bling</button></div></section>`;
@@ -1535,6 +1547,48 @@ appRoot.addEventListener("click", async (event) => {
       state.noticeType = state.selectedOrder.invoiceStatus === "authorized" ? "success" : "info";
     } catch (error) {
       state.notice = error instanceof AdminApiError ? error.message : "Não foi possível solicitar ou consultar a NF-e no Bling.";
+      state.noticeType = "error";
+    } finally {
+      state.busy = false;
+      render();
+    }
+  } else if (action === "order-dispatch" && state.session && state.selectedOrder) {
+    const confirmation = window.prompt("O pedido vai sair para entrega. Digite SAIR_PARA_ENTREGA para confirmar:");
+    if (confirmation !== "SAIR_PARA_ENTREGA") return;
+    state.busy = true;
+    render();
+    try {
+      state.selectedOrder = await startOrderDispatch(state.session.access_token, id, Number(target.dataset.revision));
+      state.orders = (await getOrders(state.session.access_token)).orders;
+      state.notice = state.selectedOrder.status === "out_for_delivery"
+        ? "Saída registrada após nova conferência da NF-e no Bling."
+        : `A NF-e está ${invoiceStatusLabel(state.selectedOrder.invoiceStatus).toLowerCase()}; a saída continua bloqueada.`;
+      state.noticeType = state.selectedOrder.status === "out_for_delivery" ? "success" : "error";
+    } catch (error) {
+      state.notice = error instanceof AdminApiError ? error.message : "Não foi possível conferir a NF-e e registrar a saída.";
+      state.noticeType = "error";
+    } finally {
+      state.busy = false;
+      render();
+    }
+  } else if (action === "order-delivery-complete" && state.session && state.selectedOrder) {
+    const selectedMethod = document.querySelector<HTMLSelectElement>("#delivery-payment-method")?.value ?? "";
+    if (!["pix", "cash", "debit_card", "credit_card"].includes(selectedMethod)) return;
+    const method = selectedMethod as "pix" | "cash" | "debit_card" | "credit_card";
+    if (!window.confirm(`Confirmar entrega e recebimento de ${money(state.selectedOrder.totalCents)} via ${paymentMethodLabel(method)}?`)) return;
+    state.busy = true;
+    render();
+    try {
+      state.selectedOrder = await completeOrderDelivery(state.session.access_token, id, {
+        revision: Number(target.dataset.revision),
+        paymentMethod: method,
+        amountCents: state.selectedOrder.totalCents,
+      });
+      state.orders = (await getOrders(state.session.access_token)).orders;
+      state.notice = "Entrega e recebimento registrados no novo Admin.";
+      state.noticeType = "success";
+    } catch (error) {
+      state.notice = error instanceof AdminApiError ? error.message : "Não foi possível concluir a entrega.";
       state.noticeType = "error";
     } finally {
       state.busy = false;
