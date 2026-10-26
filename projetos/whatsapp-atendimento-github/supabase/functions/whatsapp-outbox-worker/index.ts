@@ -2,6 +2,7 @@ import postgres, { type Sql } from "npm:postgres@3.4.7";
 import { WHATSAPP_CHANNELS, type WhatsAppChannel } from "../../../src/domain/channels.ts";
 import { wakeOutboxWorker } from "../_shared/outbox-dispatch.ts";
 import { lockOutboxProviderMessage, replayPendingProviderStatuses, validProviderMessageId } from "../_shared/outbox-status.ts";
+import { decodeOutboxBase64, outboxDispatchSecret, outboxIvVersion, outboxPayloadCryptoKey } from "../_shared/outbox-crypto.ts";
 import { metaAccessToken, metaGraphVersion, type MetaChannel } from "../_shared/meta-config.ts";
 
 const CHANNELS = WHATSAPP_CHANNELS;
@@ -46,36 +47,31 @@ function constantTimeEqual(left: string, right: string): boolean {
   return mismatch === 0;
 }
 
-function decodeBase64(value: string): Uint8Array {
-  let binary: string;
-  try {
-    binary = atob(value.replace(/\s/g, ""));
-  } catch {
-    throw new WorkerError("encryption_key_invalid");
-  }
-  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
-}
-
 function asArrayBuffer(value: Uint8Array): ArrayBuffer {
   const buffer = new ArrayBuffer(value.byteLength);
   new Uint8Array(buffer).set(value);
   return buffer;
 }
 
-function getEncryptionKey(): Promise<CryptoKey> {
-  const configured = Deno.env.get("META_OUTBOX_ENCRYPTION_KEY");
-  if (!configured) throw new WorkerError("encryption_key_missing");
-  const raw = decodeBase64(configured);
-  if (raw.byteLength !== 32) throw new WorkerError("encryption_key_invalid");
-  return crypto.subtle.importKey("raw", asArrayBuffer(raw), "AES-GCM", false, ["decrypt"]);
-}
-
-async function decryptPayload(message: OutboxMessage, key: CryptoKey): Promise<Record<string, unknown>> {
-  const iv = decodeBase64(message.payload_iv);
-  const ciphertext = decodeBase64(message.payload_ciphertext);
+async function decryptPayload(message: OutboxMessage): Promise<Record<string, unknown>> {
+  let envelope: ReturnType<typeof outboxIvVersion>;
+  try {
+    envelope = outboxIvVersion(message.payload_iv);
+  } catch {
+    throw new WorkerError("encrypted_payload_invalid");
+  }
+  let iv: Uint8Array;
+  let ciphertext: Uint8Array;
+  try {
+    iv = decodeOutboxBase64(envelope.encodedIv);
+    ciphertext = decodeOutboxBase64(message.payload_ciphertext);
+  } catch {
+    throw new WorkerError("encrypted_payload_invalid");
+  }
   if (iv.byteLength !== 12 || ciphertext.byteLength > MAX_ENCRYPTED_BYTES) throw new WorkerError("encrypted_payload_invalid");
   let plaintext: ArrayBuffer;
   try {
+    const key = await outboxPayloadCryptoKey("decrypt", envelope.version);
     plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv: asArrayBuffer(iv) }, key, asArrayBuffer(ciphertext));
   } catch {
     throw new WorkerError("payload_decryption_failed");
@@ -248,9 +244,9 @@ async function metaErrorCode(response: Response): Promise<string> {
   return typeof code === "number" && Number.isSafeInteger(code) && code >= 0 ? String(code) : "unknown";
 }
 
-async function sendOne(db: Sql, message: OutboxMessage, key: CryptoKey, graphVersion: string): Promise<boolean> {
+async function sendOne(db: Sql, message: OutboxMessage, graphVersion: string): Promise<boolean> {
   try {
-    const payload = await decryptPayload(message, key);
+    const payload = await decryptPayload(message);
     const flowBinding = message.message_type === "flow_launch" ? await readChannelFlowBinding(db, message.channel) : null;
     const providerPayload = buildProviderPayload(message, payload, flowBinding);
     const phoneNumberId = await readChannelPhoneNumberId(db, message.channel);
@@ -312,8 +308,8 @@ async function handle(request: Request): Promise<Response> {
     return plain(400, "Request body is not accepted");
   }
 
-  const expected = Deno.env.get("META_OUTBOX_DISPATCH_SECRET");
-  if (!expected || expected.length < 32) return plain(503, "Outbox dispatch is not configured");
+  const expected = await outboxDispatchSecret();
+  if (!expected) return plain(503, "Outbox dispatch is not configured");
   const authorization = request.headers.get("Authorization") ?? "";
   const supplied = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
   if (!supplied || !constantTimeEqual(supplied, expected)) return plain(401, "Unauthorized");
@@ -332,14 +328,16 @@ async function handle(request: Request): Promise<Response> {
       !!metaAccessToken(channel) && !!await readChannelPhoneNumberId(db, channel)
     ));
     if (!channelsConfigured.every(Boolean)) return plain(503, "WhatsApp channel credentials are not configured");
-    const key = await getEncryptionKey();
+    // Validate cryptographic configuration before claiming any queued messages.
+    const keyVersion = Deno.env.get("META_OUTBOX_ENCRYPTION_KEY")?.trim() ? "explicit-v1" as const : "derived-v1" as const;
+    await outboxPayloadCryptoKey("decrypt", keyVersion);
     let claimed = 0;
     let sent = 0;
     while (claimed < BATCH_SIZE) {
       const message = await claimOne(db);
       if (!message) break;
       claimed += 1;
-      if (await sendOne(db, message, key, graphVersion)) sent += 1;
+      if (await sendOne(db, message, graphVersion)) sent += 1;
     }
     const continuationScheduled = claimed === BATCH_SIZE && dispatchDepth < MAX_DISPATCH_DEPTH;
     if (continuationScheduled) wakeOutboxWorker(dispatchDepth + 1);

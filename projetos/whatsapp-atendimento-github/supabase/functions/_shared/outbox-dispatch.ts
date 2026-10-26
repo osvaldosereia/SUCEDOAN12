@@ -1,3 +1,5 @@
+import { outboxDispatchSecret } from "./outbox-crypto.ts";
+
 const WORKER_PATH = "/functions/v1/whatsapp-outbox-worker";
 
 /** Wake the private outbox worker only after the explicit server-side send gate is enabled. */
@@ -6,14 +8,18 @@ export function wakeOutboxWorker(dispatchDepth = 0): void {
   if (!Number.isSafeInteger(dispatchDepth) || dispatchDepth < 0 || dispatchDepth > 19) return;
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "");
-  const dispatchSecret = Deno.env.get("META_OUTBOX_DISPATCH_SECRET");
-  if (!supabaseUrl || !dispatchSecret || dispatchSecret.length < 32) {
+  if (!supabaseUrl) {
     console.error("WhatsApp outbox wake-up is not configured.");
     return;
   }
 
   const task = (async () => {
     try {
+      const dispatchSecret = await outboxDispatchSecret();
+      if (!dispatchSecret) {
+        console.error("WhatsApp outbox wake-up is not configured.");
+        return;
+      }
       const response = await fetch(`${supabaseUrl}${WORKER_PATH}`, {
         method: "POST",
         headers: {

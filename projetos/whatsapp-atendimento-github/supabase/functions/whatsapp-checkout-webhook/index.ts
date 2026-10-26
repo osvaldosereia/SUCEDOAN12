@@ -7,6 +7,7 @@ import { validateCatalog, type Basket, type CatalogDocuments } from "../../../sr
 import { type WhatsAppChannel, whatsappChannelFromAccountSlug } from "../../../src/domain/channels.ts";
 import { FlowSelectionError, quoteBasket, type BasketSelections } from "../../../src/domain/flow-runtime.ts";
 import { wakeOutboxWorker } from "../_shared/outbox-dispatch.ts";
+import { encryptOutboxPayload } from "../_shared/outbox-crypto.ts";
 import { CHECKOUT_ACTION_PREFIX, CHECKOUT_BASKET_REPLY_PREFIX, isCheckoutStartText } from "../_shared/checkout-routing.ts";
 
 const OWNER = "osvaldosereia";
@@ -87,12 +88,6 @@ function base64(value: Uint8Array): string {
 
 function hex(value: Uint8Array): string {
   return [...value].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-}
-
-function asArrayBuffer(value: Uint8Array): ArrayBuffer {
-  const buffer = new ArrayBuffer(value.byteLength);
-  new Uint8Array(buffer).set(value);
-  return buffer;
 }
 
 function base64Url(value: Uint8Array): string {
@@ -227,21 +222,6 @@ async function insertSession(tx: Sql, channel: Channel, basket: Basket, phone: s
   return token;
 }
 
-async function encryptPayload(value: unknown): Promise<{ iv: string; ciphertext: string }> {
-  const configured = Deno.env.get("META_OUTBOX_ENCRYPTION_KEY");
-  if (!configured) throw new WebhookError(503, "A chave de cifragem da fila não está configurada.");
-  const rawKey = bytesFromBase64(configured);
-  if (rawKey.byteLength !== 32) throw new WebhookError(503, "A chave de cifragem da fila tem formato inválido.");
-  const key = await crypto.subtle.importKey("raw", asArrayBuffer(rawKey), "AES-GCM", false, ["encrypt"]);
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ciphertext = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv: asArrayBuffer(iv) },
-    key,
-    asArrayBuffer(new TextEncoder().encode(JSON.stringify(value))),
-  );
-  return { iv: base64(iv), ciphertext: base64(new Uint8Array(ciphertext)) };
-}
-
 async function queueMessage(
   tx: Sql,
   channel: Channel,
@@ -249,7 +229,15 @@ async function queueMessage(
   eventKey: string,
   payload: unknown,
 ): Promise<void> {
-  const encrypted = await encryptPayload(payload);
+  let encrypted: { iv: string; ciphertext: string };
+  try {
+    encrypted = await encryptOutboxPayload(payload);
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith("outbox_")) {
+      throw new WebhookError(503, "A proteção criptográfica da fila não está disponível no servidor.");
+    }
+    throw error;
+  }
   await tx`
     insert into whatsapp_atendimento.message_outbox
       (channel, event_key, message_type, payload_iv, payload_ciphertext)

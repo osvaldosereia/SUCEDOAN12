@@ -3,11 +3,17 @@
 Projeto: WhatsApp Atendimento GitHub — SUCEDOAN12  
 Branch consultada: project/whatsapp-atendimento-github-20261025  
 Data: 25/10/2026  
-Status: pesquisa concluída; nenhuma alteração de código, imagem, dado de cliente, Flow ou produção foi feita nesta rodada.
+Status: pesquisa concluída. O anexo operacional de 26/10/2026 registra alterações greenfield subsequentes; nenhuma tabela, dado, função ANA ou callback do Vitrine foi alterado.
 
 ## Decisão posterior do usuário — 26/10/2026
 
 Esta decisão substitui as hipóteses históricas deste documento que colocavam produtos, imagens ou estoque no GitHub. O Admin novo lê e edita somente os produtos associados às cestas atuais, diretamente no `public.products` Supabase. O estoque válido vem do Supabase (`ops2_loose_sellable_stock_v1.effective_sellable_stock`), com reserva dos pedidos confirmados no schema novo. Imagens seguem o `products.image_url` e o mesmo bucket `product-images` usado pelo Vitrine. O repositório GitHub guarda a configuração das cestas e rascunhos de Flow; não mantém banco de produtos, cópia de saldo nem arquivo de imagem do novo projeto. A implementação continua greenfield e não reutiliza código ou contratos do Vitrine.
+
+### Complemento operacional — Edge Functions e chaves da outbox — 26/10/2026
+
+As funções greenfield de checkout, roteamento Meta e outbox foram implantadas após confirmar tabelas privadas e fila vazia. O callback externo Meta permaneceu inalterado. Para evitar novos secrets no caminho padrão, o sistema deriva chaves distintas via HKDF-SHA-256: AES-GCM para payload privado e bearer interno do worker. Secrets explícitos continuam aceitos e o campo de IV identifica a versão da chave usada. O worker só despacha com gate explícito habilitado. Referências primárias: [Supabase Edge Function secrets](https://supabase.com/docs/guides/functions/secrets) para variáveis padrão do runtime e [MDN Web Crypto `deriveKey`](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/deriveKey) para derivação HKDF/AES-GCM.
+
+A derivação usa o segredo Meta como raiz: uma rotação requer drenar a fila primeiro, ou manter uma chave explícita estável para itens pendentes.
 
 ## Resumo executivo
 
