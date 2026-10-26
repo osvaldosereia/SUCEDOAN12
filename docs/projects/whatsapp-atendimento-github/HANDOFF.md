@@ -667,3 +667,5 @@ Preflight somente leitura confirmou que o schema e as tabelas privadas de checko
 `pnpm build` passou (TypeScript e Vite; JavaScript 411,36 KB, gzip 96,84 KB). As implantações Supabase dos três endpoints novos concluíram sem erro de compilação. A fila retornou zero mensagens antes do deploy. Nenhuma Flow foi publicada, mensagem real enviada, venda/NF-e criada, escrita Bling/Meta, callback trocado, nem tabela/dado/função ANA do Vitrine alterada. O callback continua no ANA existente.
 
 Dependências para operar: secrets GitHub App para salvar cestas/rascunhos na branch; confirmar chave Flow do 0975; revisão/autorização separada para apontar callback Meta ao roteador; publicar e vincular Flows; homologar os dois números antes de abrir o gate de envio. Secrets dedicados de criptografia/dispatch da outbox não são mais pré-requisito do caminho padrão.
+
+Código e handoff desta rodada estão na branch em `15d21cf29953d48840141496c81d5cfde3e7d15d` (`feat(whatsapp): reuse server secret for outbox security`).
