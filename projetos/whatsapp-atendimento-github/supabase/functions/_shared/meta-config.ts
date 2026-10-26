@@ -28,21 +28,19 @@ export function metaAppSecret(): string | null {
 }
 
 export function flowPrivateKey(channel: MetaChannel): string | null {
+  // Prefer the exact secret used by the active Vitrine integration. Its 1018
+  // PKCS#8 key is also the fallback for 0975; Meta stores registration per phone.
   const channelKey = firstConfigured(
-    `META_FLOW_PRIVATE_KEY_${channel}`,
-    `DA_FLOW_${channel}_RSA_PKCS8.pem`,
     `DA_FLOW_${channel}_RSA_PKCS8`,
+    `DA_FLOW_${channel}_RSA_PKCS8.pem`,
+    `META_FLOW_PRIVATE_KEY_${channel}`,
   );
   if (channelKey || channel !== "0975") return channelKey;
 
-  // The Graph API stores the public key against a phone number ID. Reuse the
-  // existing pair for the second number when no 0975-specific secret is set;
-  // its public key must still be registered separately for that phone number.
-  // A channel-specific 0975 key always takes priority.
   return firstConfigured(
-    "META_FLOW_PRIVATE_KEY_1018",
-    "DA_FLOW_1018_RSA_PKCS8.pem",
     "DA_FLOW_1018_RSA_PKCS8",
+    "DA_FLOW_1018_RSA_PKCS8.pem",
+    "META_FLOW_PRIVATE_KEY_1018",
   );
 }
 
