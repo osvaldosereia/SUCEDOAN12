@@ -1,5 +1,6 @@
 import postgres, { type Sql } from "npm:postgres@3.4.7";
 import { wakeOutboxWorker } from "../_shared/outbox-dispatch.ts";
+import { supabasePublishableKey, supabaseSecretKey } from "../_shared/supabase-api-keys.ts";
 import {
   classifyBlingSaleReconciliation,
   reconcileBlingCommercialTotals,
@@ -93,7 +94,7 @@ async function authorize(request: Request): Promise<{ operator: Operator; header
   const headers = corsHeaders(request.headers.get("Origin") ?? "");
   const allowedUsers = configuredList("ADMIN_ALLOWED_USER_IDS");
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const publishableKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY");
+  const publishableKey = supabasePublishableKey();
   const accessToken = request.headers.get("Authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
 
   if (!allowedUsers.length || !supabaseUrl || !publishableKey) {
@@ -129,7 +130,7 @@ async function forwardSupabaseFunction(
   body?: unknown,
 ): Promise<{ payload: unknown; status: number }> {
   const accessToken = request.headers.get("Authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
-  const publishableKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY");
+  const publishableKey = supabasePublishableKey();
   if (!accessToken || !publishableKey) throw new HttpError(503, "O atendimento não está configurado no servidor.");
   const endpoint = supabaseFunctionUrl(slug);
   if (query) endpoint.search = query.toString();
@@ -209,7 +210,7 @@ async function updateAttendanceMode(request: Request, body: Record<string, unkno
   }
   await requireSupportedAttendanceConversation(request, conversationId, accountId);
   const accessToken = request.headers.get("Authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
-  const publishableKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY");
+  const publishableKey = supabasePublishableKey();
   const supabaseUrl = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "");
   if (!accessToken || !publishableKey || !supabaseUrl) throw new HttpError(503, "O controle de atendimento não está configurado.");
   const rpc = mode === "human" ? "ops2_admin_attendance_takeover_v1" : "ops2_admin_attendance_resume_ai_v1";
@@ -1604,13 +1605,15 @@ async function getBlingAccessToken(): Promise<string> {
 
 async function sharedBlingRpc<T = unknown>(name: string, args: Record<string, unknown> = {}): Promise<T> {
   const base = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const serviceKey = supabaseSecretKey();
   if (!base || !serviceKey || !/^(get_bling_api_credentials_v1|claim_bling_hub_oauth_lock_v2|release_bling_hub_oauth_lock_v2|set_bling_api_refresh_token_v1|reserve_bling_hub_rate_slot_v2)$/.test(name)) {
     throw new HttpError(503, "A conexão Bling compartilhada não está disponível no servidor.");
   }
+  const headers = new Headers({ apikey: serviceKey, "Content-Type": "application/json" });
+  if (!serviceKey.startsWith("sb_secret_")) headers.set("Authorization", `Bearer ${serviceKey}`);
   const response = await fetch(`${base}/rest/v1/rpc/${name}`, {
     method: "POST",
-    headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(args),
     signal: AbortSignal.timeout(12_000),
   });

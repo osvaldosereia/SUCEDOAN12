@@ -1,5 +1,6 @@
 import postgres, { type Sql } from "npm:postgres@3.4.7";
 import { recordProviderStatus, validProviderMessageId, type ProviderDeliveryStatus } from "../_shared/outbox-status.ts";
+import { supabaseSecretKey } from "../_shared/supabase-api-keys.ts";
 import { validateCatalog, type Basket, type CatalogDocuments } from "../../../src/domain/catalog.ts";
 import { FlowSelectionError, quoteBasket, type BasketSelections } from "../../../src/domain/flow-runtime.ts";
 import { wakeOutboxWorker } from "../_shared/outbox-dispatch.ts";
@@ -195,21 +196,11 @@ async function currentCatalog(): Promise<CatalogSnapshot> {
 
 function serviceHeaders(): Headers {
   const headers = new Headers({ "Content-Type": "application/json" });
-  const direct = Deno.env.get("SUPABASE_SECRET_KEY");
-  const legacy = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  let key = direct;
-  if (!key) {
-    try {
-      const keys = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") ?? "{}") as unknown;
-      if (isRecord(keys)) key = Object.values(keys).find((item) => typeof item === "string" && item.startsWith("sb_secret_")) as string | undefined;
-    } catch {
-      key = undefined;
-    }
-  }
+  const key = supabaseSecretKey();
   if (key?.startsWith("sb_secret_")) headers.set("apikey", key);
-  else if (legacy) {
-    headers.set("apikey", legacy);
-    headers.set("Authorization", `Bearer ${legacy}`);
+  else if (key) {
+    headers.set("apikey", key);
+    headers.set("Authorization", `Bearer ${key}`);
   } else throw new WebhookError(503, "A credencial protegida do Supabase não está configurada.");
   return headers;
 }

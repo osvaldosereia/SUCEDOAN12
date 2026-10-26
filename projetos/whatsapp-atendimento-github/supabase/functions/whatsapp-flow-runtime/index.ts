@@ -1,4 +1,5 @@
 import { validateCatalog, type Basket, type CatalogDocuments, type Product } from "../../../src/domain/catalog.ts";
+import { supabaseSecretKey } from "../_shared/supabase-api-keys.ts";
 import {
   FlowSelectionError,
   FLOW_MAX_PRODUCT_QUANTITY,
@@ -201,25 +202,12 @@ async function verifySignature(rawBody: string, signatureHeader: string | null):
 
 function serviceHeaders(): Headers {
   const headers = new Headers({ "Content-Type": "application/json" });
-  const directSecret = Deno.env.get("SUPABASE_SECRET_KEY");
-  const legacyServiceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  let secretKey = directSecret;
-  if (!secretKey) {
-    const rawKeys = Deno.env.get("SUPABASE_SECRET_KEYS");
-    if (rawKeys) {
-      try {
-        const parsed = JSON.parse(rawKeys) as unknown;
-        if (isRecord(parsed)) secretKey = Object.values(parsed).find((value) => typeof value === "string" && value.startsWith("sb_secret_")) as string | undefined;
-      } catch {
-        secretKey = undefined;
-      }
-    }
-  }
+  const secretKey = supabaseSecretKey();
   if (secretKey?.startsWith("sb_secret_")) {
     headers.set("apikey", secretKey);
-  } else if (legacyServiceRole) {
-    headers.set("apikey", legacyServiceRole);
-    headers.set("Authorization", `Bearer ${legacyServiceRole}`);
+  } else if (secretKey) {
+    headers.set("apikey", secretKey);
+    headers.set("Authorization", `Bearer ${secretKey}`);
   } else {
     throw new RuntimeError(503, "O acesso de serviço ao cadastro ainda não está configurado.");
   }

@@ -49,8 +49,7 @@ Para habilitar gravações na homologação, configure **somente como segredos d
 - `ADMIN_ALLOWED_USER_IDS`: UUIDs de `auth.users.id` autorizados, separados por vírgula;
 - `ADMIN_ALLOWED_ORIGINS`: origens web explícitas permitidas, separadas por vírgula;
 - `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID` e `GITHUB_PRIVATE_KEY` do GitHub App instalado somente em `osvaldosereia/SUCEDOAN12`;
-- `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY` (ou `SUPABASE_ANON_KEY`) disponíveis no runtime da função.
-- `SUPABASE_DB_URL` somente como segredo server-side para a Admin API acessar `customers`, `customer_phones`, `customer_addresses` e o schema privado de pedidos; use URL do pooler de transação com prepared statements desabilitados.
+- Supabase disponibiliza `SUPABASE_URL`, `SUPABASE_DB_URL` e os conjuntos `SUPABASE_PUBLISHABLE_KEYS`/`SUPABASE_SECRET_KEYS` no runtime; as funções também aceitam as chaves legadas `SUPABASE_ANON_KEY`/`SUPABASE_SERVICE_ROLE_KEY`. Não cadastre nomes `SUPABASE_*` como secrets próprios. A conexão Postgres privada usa o `SUPABASE_DB_URL` injetado pelo projeto.
 - A integração Bling usa o cofre/refresh-token compartilhado já mantido no Supabase por funções server-side autorizadas; não configure nem exponha credenciais Bling próprias no Admin novo.
 - Os segredos GitHub App também precisam estar disponíveis a `whatsapp-checkout-webhook`, com `Contents: write`, para registrar a baixa do estoque e o marcador opaco no mesmo commit GitHub.
 - Para os controles Meta do Admin e endpoint: `META_ACCESS_TOKEN_0975`, `META_ACCESS_TOKEN_1018`, `META_GRAPH_API_VERSION`, `WHATSAPP_FLOW_ENDPOINT_URI`, `META_FLOW_PRIVATE_KEY_0975` e `META_FLOW_PRIVATE_KEY_1018`. Os WABAs e phone number IDs são obtidos server-side de `public.whatsapp_accounts` pela associação fixa `dona-antonia-{canal}`; o Flow publicado escolhido é persistido por canal em `whatsapp_atendimento.channel_flow_bindings`.
