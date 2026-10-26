@@ -734,3 +734,11 @@ A autenticação continua sendo a sessão Supabase já existente porque as rotas
 - Nada foi publicado ou vinculado na Meta; nenhuma mensagem, pedido, operação Bling ou alteração em tabela/função/callback do Vitrine foi realizada.
 - Próximo passo objetivo após o clique no link: abrir o novo Admin, verificar se 1018 reconhece a chave já registrada, e configurar a chave pública em 0975 se o status continuar pendente. Depois validar e salvar os rascunhos compartilhados para os dois canais; publicação e envio continuam separados e não autorizados.
 
+## Correção Meta de chave pública — 26/10/2026
+
+- O Admin continuava mostrando “Endpoint pendente” depois dos cliques do operador. Logs da `whatsapp-admin-api` v7 registraram HTTP 503 nas tentativas autenticadas de configuração dos dois canais. A causa encontrada no código: o parser exigia marcadores PEM `BEGIN PRIVATE KEY` ou `BEGIN RSA PRIVATE KEY` e rejeitava uma chave PKCS#8 cujo secret contém somente o corpo Base64, formato aceito pelo parser da integração já existente. Nenhum valor da chave foi lido.
+- Corrigido `metaPrivatePkcs8` para aceitar PEM PKCS#8, PEM PKCS#1 (com conversão para PKCS#8) e corpo Base64 PKCS#8, com validação de formato/tamanho e erro sem expor conteúdo. Antes do deploy, os outros 10 arquivos da função implantada foram comparados à branch e estavam idênticos.
+- Commit GitHub na branch: `86b41a4ab2632eecdeaff2c48cd782c20cbf87d4`. Deploy direto no projeto Supabase `ssbesxgaijknwsjbsbcz`: `whatsapp-admin-api` ACTIVE v8, `verify_jwt=false`, SHA `d8b676e3fd78111ebbfbf97c25d8c78f474396552ee2c1ab54c08a1ff8be0409`. A releitura do pacote confirma o parser novo ativo.
+- CI pós-commit: {"statuses":[]}
+- Estado Meta ainda não confirmado, porque os pedidos anteriores falharam antes da chamada efetiva. Próximo passo: no Admin com a sessão aberta, recarregar a página, clicar “Configurar endpoint” em 0975 e confirmar; repetir em 1018; depois usar “Consultar status” em cada canal. A autorização existente cobre somente registrar a chave pública. Não clicar “Publicar Flow”, não enviar conteúdo, não vincular Flow nem enviar mensagens.
+- Nesta rodada não houve publicação de Flow, envio de mensagem, alteração no callback, gravação no Bling, alteração do Vitrine nem leitura de PII. Nenhum teste automatizado foi criado ou executado.
