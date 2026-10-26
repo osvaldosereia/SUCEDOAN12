@@ -52,6 +52,7 @@ const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 const supabase = supabaseUrl && publishableKey
   ? createClient(supabaseUrl, publishableKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } })
   : null;
+const VITRINE_SESSION_TOKEN_KEY = "da_finance_access_token_v1";
 
 const state = {
   products: structuredClone(initialDocuments.products),
@@ -61,6 +62,7 @@ const state = {
   catalogRevision: "",
   commitUrl: "",
   session: null as Session | null,
+  sessionSource: null as "supabase" | "vitrine" | null,
   access: "preview" as "preview" | "loading" | "authorized" | "denied",
   accessMessage: "Aguardando a sessão da conta administrativa já cadastrada no Supabase.",
   authEmail: "",
@@ -785,7 +787,7 @@ function render(): void {
     </header>
     <div class="security-banner ${state.access === "authorized" ? "is-ready" : ""}"><span class="security-icon">${state.access === "authorized" ? "✓" : "⌑"}</span><span><strong>${state.access === "authorized" ? "Acesso confirmado pelo servidor" : escapeHtml(state.accessMessage)}</strong><small>${state.access === "authorized" ? `Sessão Supabase validada. Produtos, imagens e estoque usam o Supabase; cestas e rascunhos Flow usam a branch project/whatsapp-atendimento-github-20261025${state.commitSha ? ` · revisão ${state.commitSha.slice(0, 7)}` : ""}.` : supabase ? "O acesso usa a conta Supabase já cadastrada como administradora; não há senha própria nem login GitHub separado." : "O Supabase não está configurado nesta instalação; o Admin não pode validar o acesso."}</small></span>${state.commitUrl ? `<a class="text-link" href="${escapeHtml(state.commitUrl)}" target="_blank" rel="noreferrer">Ver commit ↗</a>` : ""}</div>
     <div class="app-body"><aside class="main-nav"><div class="nav-label">CATÁLOGO</div><button class="nav-item ${state.tab === "products" ? "is-active" : ""}" data-action="tab" data-tab="products"><span class="nav-icon">▦</span> Produtos <span class="nav-count">${state.products.products.length}</span></button><button class="nav-item ${state.tab === "baskets" ? "is-active" : ""}" data-action="tab" data-tab="baskets"><span class="nav-icon">▤</span> Cestas <span class="nav-count">${state.baskets.baskets.length}</span></button><button class="nav-item ${state.tab === "flows" ? "is-active" : ""}" data-action="tab" data-tab="flows"><span class="nav-icon">⌁</span> Flows <span class="nav-count">${state.flowDocuments[state.flowChannel].drafts.length}</span></button><div class="nav-label nav-orders-label">OPERAÇÃO</div><button class="nav-item ${state.tab === "attendance" ? "is-active" : ""}" data-action="tab" data-tab="attendance"><span class="nav-icon">☏</span> Atendimento</button><button class="nav-item ${state.tab === "customers" ? "is-active" : ""}" data-action="tab" data-tab="customers"><span class="nav-icon">♙</span> Clientes ${state.customersLoaded ? `<span class="nav-count">${state.customers.length}</span>` : ""}</button><button class="nav-item ${state.tab === "orders" ? "is-active" : ""}" data-action="tab" data-tab="orders"><span class="nav-icon">▣</span> Pedidos <span class="nav-count">${state.orders.length}</span></button><button class="nav-item ${state.tab === "outbox" ? "is-active" : ""}" data-action="tab" data-tab="outbox"><span class="nav-icon">↗</span> Mensagens ${state.outboxLoaded ? `<span class="nav-count">${state.outboxCounts.pending + state.outboxCounts.failed}</span>` : ""}</button></aside>
-      <main class="content"><div class="content-topline"><span>Administração</span><span class="breadcrumb-sep">/</span><strong>${state.tab === "products" ? "Produtos" : state.tab === "baskets" ? "Cestas" : state.tab === "flows" ? "Flows" : state.tab === "orders" ? "Pedidos" : state.tab === "customers" ? "Clientes" : state.tab === "attendance" ? "Atendimento" : "Mensagens WhatsApp"}</strong><span class="dirty-indicator ${isDirty() && !["orders", "outbox", "customers", "attendance"].includes(state.tab) ? "is-dirty" : ""}">${isDirty() && !["orders", "outbox", "customers", "attendance"].includes(state.tab) ? "Alterações pendentes" : "Tudo salvo"}</span></div>${!state.session && supabase ? `<section class="auth-card"><div><span class="eyebrow">Acesso ao Admin</span><h2>Entrar sem senha</h2><p>Este Admin usa sua conta Supabase já cadastrada. O link sem senha só inicia uma sessão quando você ainda não está conectado.</p></div><form id="auth-form"><label for="auth-email">E-mail da conta<input id="auth-email" name="email" type="email" autocomplete="email" required maxlength="254" value="${escapeHtml(state.authEmail)}" placeholder="voce@exemplo.com"></label><button class="button button-dark" type="submit" ${state.busy ? "disabled" : ""}>Enviar link de acesso</button></form>${state.authMessage ? `<small class="auth-feedback" role="status">${escapeHtml(state.authMessage)}</small>` : ""}</section>` : ""}${state.notice ? `<div class="notice notice-${state.noticeType}" role="status"><span>${escapeHtml(state.notice)}</span>${state.conflict ? `<div class="conflict-actions"><button class="text-button" data-action="export-draft">Baixar meu rascunho</button><button class="text-button" data-action="reload-catalog">Descartar e recarregar</button></div>` : ""}<button data-action="clear-notice" aria-label="Fechar">×</button></div>` : ""}${state.tab === "products" ? productsView() : state.tab === "baskets" ? selectedBasket ? basketEditor(selectedBasket) : `<div class="empty-state"><strong>Nenhuma cesta cadastrada</strong><span>Crie a primeira cesta para começar.</span><button class="button button-primary" data-action="new-basket">＋ Nova cesta</button></div>` : state.tab === "flows" ? flowsPanel : state.tab === "customers" ? customersPanel : state.tab === "outbox" ? outboxView() : state.tab === "attendance" ? attendancePanel : ordersView()}</main>
+      <main class="content"><div class="content-topline"><span>Administração</span><span class="breadcrumb-sep">/</span><strong>${state.tab === "products" ? "Produtos" : state.tab === "baskets" ? "Cestas" : state.tab === "flows" ? "Flows" : state.tab === "orders" ? "Pedidos" : state.tab === "customers" ? "Clientes" : state.tab === "attendance" ? "Atendimento" : "Mensagens WhatsApp"}</strong><span class="dirty-indicator ${isDirty() && !["orders", "outbox", "customers", "attendance"].includes(state.tab) ? "is-dirty" : ""}">${isDirty() && !["orders", "outbox", "customers", "attendance"].includes(state.tab) ? "Alterações pendentes" : "Tudo salvo"}</span></div>${!state.session && supabase ? `<section class="auth-card"><div><span class="eyebrow">Acesso ao Admin</span><h2>Entrar sem senha</h2><p>O Admin valida uma sessão Supabase já ativa nesta aba (inclusive a do Vitrine). O link de e-mail só é necessário quando não há sessão válida.</p></div><form id="auth-form"><label for="auth-email">E-mail da conta<input id="auth-email" name="email" type="email" autocomplete="email" required maxlength="254" value="${escapeHtml(state.authEmail)}" placeholder="voce@exemplo.com"></label><button class="button button-dark" type="submit" ${state.busy ? "disabled" : ""}>Enviar link de acesso</button></form>${state.authMessage ? `<small class="auth-feedback" role="status">${escapeHtml(state.authMessage)}</small>` : ""}</section>` : ""}${state.notice ? `<div class="notice notice-${state.noticeType}" role="status"><span>${escapeHtml(state.notice)}</span>${state.conflict ? `<div class="conflict-actions"><button class="text-button" data-action="export-draft">Baixar meu rascunho</button><button class="text-button" data-action="reload-catalog">Descartar e recarregar</button></div>` : ""}<button data-action="clear-notice" aria-label="Fechar">×</button></div>` : ""}${state.tab === "products" ? productsView() : state.tab === "baskets" ? selectedBasket ? basketEditor(selectedBasket) : `<div class="empty-state"><strong>Nenhuma cesta cadastrada</strong><span>Crie a primeira cesta para começar.</span><button class="button button-primary" data-action="new-basket">＋ Nova cesta</button></div>` : state.tab === "flows" ? flowsPanel : state.tab === "customers" ? customersPanel : state.tab === "outbox" ? outboxView() : state.tab === "attendance" ? attendancePanel : ordersView()}</main>
     </div>
     <footer class="page-footer"><span>Cestas e rascunhos Flow versionados no GitHub · produtos, fotos e estoque no Supabase</span><span>Dados pessoais e credenciais ficam fora deste projeto</span></footer>
     ${state.access === "authorized" && isDirty() && !["customers", "orders", "outbox", "attendance"].includes(state.tab) ? `<button class="floating-save" data-action="review-save"><span>Revisar alterações</span><strong>Salvar alterações ↗</strong></button>` : ""}
@@ -949,7 +951,9 @@ async function reloadCatalog(session: Session): Promise<void> {
     state.baseline = JSON.stringify(currentDocuments());
     state.conflict = false;
     state.access = "authorized";
-    state.accessMessage = "Sua sessão Supabase foi validada como proprietário ativo.";
+    state.accessMessage = state.sessionSource === "vitrine"
+      ? "A sessão ativa do Vitrine foi validada pelo Supabase como proprietário."
+      : "Sua sessão Supabase foi validada como proprietário ativo.";
     if (!state.baskets.baskets.some((basket) => basket.id === state.selectedBasketId)) {
       state.selectedBasketId = state.baskets.baskets[0]?.id ?? "";
     }
@@ -969,6 +973,30 @@ async function reloadCatalog(session: Session): Promise<void> {
   }
 }
 
+async function reuseVitrineSession(): Promise<Session | null> {
+  if (!supabase) return null;
+  let accessToken = "";
+  try {
+    accessToken = sessionStorage.getItem(VITRINE_SESSION_TOKEN_KEY)?.trim() ?? "";
+  } catch {
+    return null;
+  }
+  if (!accessToken) return null;
+  try {
+    const { data, error } = await supabase.auth.getUser(accessToken);
+    if (error || !data.user) return null;
+    return {
+      access_token: accessToken,
+      token_type: "bearer",
+      expires_in: 0,
+      refresh_token: "",
+      user: data.user,
+    } as Session;
+  } catch {
+    return null;
+  }
+}
+
 async function initializeAuth(): Promise<void> {
   if (!supabase) {
     state.accessMessage = "Conexão com o Supabase indisponível nesta instalação.";
@@ -977,20 +1005,30 @@ async function initializeAuth(): Promise<void> {
   }
   const { data } = await supabase.auth.getSession();
   if (data.session) {
+    state.sessionSource = "supabase";
     state.session = data.session;
     await reloadCatalog(data.session);
   } else {
-    render();
+    const vitrineSession = await reuseVitrineSession();
+    if (vitrineSession) {
+      state.sessionSource = "vitrine";
+      state.session = vitrineSession;
+      await reloadCatalog(vitrineSession);
+    } else {
+      render();
+    }
   }
   supabase.auth.onAuthStateChange((event, session) => {
+    if (!session && state.sessionSource === "vitrine") return;
     const hadSession = Boolean(state.session);
+    state.sessionSource = session ? "supabase" : null;
     state.session = session;
     if (session) {
       if (event === "SIGNED_IN" && (!hadSession || state.access !== "authorized")) void reloadCatalog(session);
       return;
     } else {
       state.access = "preview";
-      state.accessMessage = "Aguardando a sessão da conta administrativa já cadastrada no Supabase.";
+      state.accessMessage = "Aguardando uma sessão Supabase válida nesta aba.";
       state.commitSha = "";
       state.catalogRevision = "";
       state.commitUrl = "";
@@ -1456,7 +1494,12 @@ appRoot.addEventListener("click", async (event) => {
     emailInput?.focus({ preventScroll: true });
   } else if (action === "sign-out") {
     if (isDirty() && !window.confirm("Sair descartará as alterações desta prévia. Deseja continuar?")) return;
-    await supabase?.auth.signOut();
+    if (state.sessionSource === "vitrine") {
+      try { sessionStorage.removeItem(VITRINE_SESSION_TOKEN_KEY); } catch { /* sessão atual continuará sem reuso */ }
+      window.location.reload();
+    } else {
+      await supabase?.auth.signOut({ scope: "local" });
+    }
   } else if (action === "tab") {
     const nextTab = target.dataset.tab;
     state.tab = nextTab === "baskets" || nextTab === "flows" || nextTab === "orders" || nextTab === "outbox" || nextTab === "customers" || nextTab === "attendance" ? nextTab : "products";
