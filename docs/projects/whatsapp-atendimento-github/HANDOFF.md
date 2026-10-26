@@ -587,3 +587,10 @@ Foi implantada somente a nova Edge Function `whatsapp-admin-api`, versão 1 (`ve
 4. Conseguir a chave privada própria do Flow 0975, testar os dois canais com números controlados e só então preparar a ativação com autorização operacional.
 
 Nenhum Flow foi publicado, callback Meta foi alterado, mensagem foi enviada, pedido/NF-e foi criado ou escrita Bling executada. `supabase/.temp/` segue fora do staging.
+
+
+## Limpeza final das mensagens de acesso — 26/10/2026
+
+A captura do usuário também revelou duas frases antigas na Central: “Entre com a conta GitHub” e o status vermelho “Sem permissão para gravar”. A primeira continuava em attendance-panel.ts; o segundo confundia login Supabase com a capacidade de gravar no GitHub. Atualizei o texto para informar a conta administrativa Supabase, o status para “Acesso não validado” quando a sessão não pode ser confirmada e o aviso para separar a sessão do requisito de GitHub App. O código da interface não exige GitHub OAuth.
+
+A alteração foi compilada com pnpm build e passou git diff --check; busca pontual não encontrou as frases antigas no código da interface. Commit c34d4f40a enviado à branch. A Action 40337143085 terminou com sucesso; a página e o bundle atualizados respondem HTTP 200. O bundle contém o login por e-mail e a validação de proprietário ativo, sem as mensagens antigas de GitHub OAuth ou “Sem permissão para gravar”.
