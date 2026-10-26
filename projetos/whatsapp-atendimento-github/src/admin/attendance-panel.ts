@@ -4,6 +4,7 @@ import {
   type AttendanceAccount,
   type AttendanceChannel,
   type AttendanceConversationSnapshot,
+  type AttendanceMediaPreview,
   type AttendanceQueueItem,
 } from "../domain/attendance";
 
@@ -55,6 +56,24 @@ function messageText(message: Record<string, unknown>): string {
   return text(message.text_body ?? message.text ?? message.caption, message.message_type === "text" ? "Mensagem sem texto" : "Mensagem de mídia");
 }
 
+function messageAttachment(message: Record<string, unknown>, input: AttendancePanelInput): string {
+  const messageType = text(message.message_type).toLowerCase();
+  if (!["image", "audio", "video", "document", "sticker"].includes(messageType)) return "";
+  const messageId = text(message.id);
+  if (!messageId) return `<small class="attendance-media-note">Anexo sem identificador disponível.</small>`;
+  const preview = input.mediaPreviews[messageId];
+  if (preview && Date.parse(preview.expires_at) > Date.now()) {
+    const url = escapeHtml(preview.url);
+    const filename = escapeHtml(preview.filename || "Anexo do WhatsApp");
+    if (preview.mime_type.startsWith("image/")) return `<div class="attendance-media-preview"><img src="${url}" alt="${filename}" loading="lazy" referrerpolicy="no-referrer"></div>`;
+    if (preview.mime_type.startsWith("audio/")) return `<div class="attendance-media-preview"><audio controls preload="metadata" src="${url}" aria-label="${filename}"></audio></div>`;
+    if (preview.mime_type.startsWith("video/")) return `<div class="attendance-media-preview"><video controls preload="metadata" src="${url}" aria-label="${filename}" referrerpolicy="no-referrer"></video></div>`;
+    return `<div class="attendance-media-preview"><a href="${url}" download="${filename}" rel="noopener noreferrer">Baixar ${filename}</a></div>`;
+  }
+  const loading = input.mediaLoadingMessageId === messageId;
+  return `<button class="button button-soft attendance-media-button" type="button" data-action="attendance-load-media" data-id="${escapeHtml(messageId)}" ${input.mediaLoadingMessageId ? "disabled" : ""}>${loading ? "Carregando anexo…" : "Ver anexo"}</button>`;
+}
+
 export interface AttendancePanelInput {
   authorized: boolean;
   busy: boolean;
@@ -64,6 +83,8 @@ export interface AttendancePanelInput {
   queue: AttendanceQueueItem[];
   selectedConversationId: string;
   conversation: AttendanceConversationSnapshot | null;
+  mediaPreviews: Record<string, AttendanceMediaPreview>;
+  mediaLoadingMessageId: string;
   search: string;
   ana: AnaAdminSnapshot | null;
   notice: string;
@@ -111,7 +132,7 @@ export function renderAttendancePanel(input: AttendancePanelInput): string {
       const message = record(raw);
       const direction = text(message.direction ?? message.flow, "inbound");
       const isOutbound = ["outbound", "out", "sent"].includes(direction);
-      return `<article class="attendance-message ${isOutbound ? "is-outbound" : "is-inbound"}"><p>${escapeHtml(messageText(message))}</p><small>${isOutbound ? "Atendimento" : "Cliente"}${dateLabel(message.message_at ?? message.created_at) ? ` · ${escapeHtml(dateLabel(message.message_at ?? message.created_at))}` : ""}</small></article>`;
+      return `<article class="attendance-message ${isOutbound ? "is-outbound" : "is-inbound"}"><p>${escapeHtml(messageText(message))}</p>${messageAttachment(message, input)}<small>${isOutbound ? "Atendimento" : "Cliente"}${dateLabel(message.message_at ?? message.created_at) ? ` · ${escapeHtml(dateLabel(message.message_at ?? message.created_at))}` : ""}</small></article>`;
     }).join("") : `<div class="attendance-empty"><strong>Sem mensagens carregadas</strong><span>Atualize a conversa para tentar novamente.</span></div>`}</div>
       <form id="attendance-send-form" class="attendance-composer">
         <label class="sr-only" for="attendance-message-text">Mensagem</label>

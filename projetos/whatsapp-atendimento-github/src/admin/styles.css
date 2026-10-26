@@ -499,6 +499,12 @@ label small { color: #a09c92; font-size: 9px; font-weight: 400; }
 .attendance-message { max-width: min(78%, 520px); padding: 9px 11px; border: 1px solid #e7e5dc; border-radius: 10px 10px 10px 2px; background: #fff; }
 .attendance-message.is-outbound { align-self: end; border-color: #d9e6d8; border-radius: 10px 10px 2px 10px; background: #edf6ea; }
 .attendance-message p { margin: 0; color: #35352e; font-size: 11px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.attendance-media-preview { max-width: min(100%, 440px); margin-top: 8px; }
+.attendance-media-preview img, .attendance-media-preview video { display: block; max-width: 100%; max-height: 320px; border-radius: 8px; object-fit: contain; }
+.attendance-media-preview audio { display: block; width: min(100%, 360px); }
+.attendance-media-preview a { color: var(--green-strong); font-size: 11px; font-weight: 650; overflow-wrap: anywhere; }
+.attendance-media-button { min-height: 30px; margin-top: 6px; font-size: 10px; }
+.attendance-media-note { display: block; margin-top: 6px; color: var(--muted); font-size: 9px; }
 .attendance-message small { display: block; margin-top: 5px; color: var(--muted); font-size: 8px; text-align: right; }
 .attendance-composer { display: grid; gap: 8px; padding: 11px; border-top: 1px solid var(--line); }
 .attendance-composer textarea { width: 100%; min-height: 70px; resize: vertical; padding: 9px 11px; border: 1px solid #dedbd3; border-radius: 8px; outline-color: #658c70; font: inherit; font-size: 11px; }

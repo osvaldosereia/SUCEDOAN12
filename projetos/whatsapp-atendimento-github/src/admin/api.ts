@@ -3,7 +3,7 @@ import type { BasketFlowJson, FlowChannel, FlowDraftSnapshot, SaveFlowDraftInput
 import type { OrderDetailRecord, OrderListEntry, OrderPickingInput } from "../domain/orders";
 import type { OutboxQueueSnapshot } from "../domain/outbox";
 import type { CustomerListItem, CustomerRecord } from "../domain/customers";
-import { attendanceQueueItems, type AnaAdminSnapshot, type AttendanceAccount, type AttendanceConversationSnapshot, type AttendanceQueueItem } from "../domain/attendance";
+import { attendanceQueueItems, type AnaAdminSnapshot, type AttendanceAccount, type AttendanceConversationSnapshot, type AttendanceMediaPreview, type AttendanceQueueItem } from "../domain/attendance";
 
 export interface CatalogSnapshot extends CatalogDocuments {
   commitSha: string;
@@ -62,6 +62,16 @@ export class AdminApiError extends Error {
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.replace(/\/$/, "");
 const apiBase = supabaseUrl ? `${supabaseUrl}/functions/v1/whatsapp-admin-api` : "";
 const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const attendanceMediaMimeTypes = new Set([
+  "image/jpeg", "image/png", "image/webp", "image/gif",
+  "audio/ogg", "audio/mpeg", "audio/mp4", "audio/aac", "audio/wav", "audio/x-wav",
+  "video/mp4",
+  "application/pdf", "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/zip", "application/octet-stream",
+]);
 
 async function apiRequest<T>(
   path: string,
@@ -143,6 +153,72 @@ export async function getAttendanceQueue(accessToken: string, accountId: string,
 export function getAttendanceConversation(accessToken: string, conversationId: string, accountId: string): Promise<AttendanceConversationSnapshot> {
   const query = new URLSearchParams({ accountId });
   return apiRequest<AttendanceConversationSnapshot>(`/attendance/conversations/${encodeURIComponent(conversationId)}?${query}`, accessToken);
+}
+
+export async function getAttendanceMedia(
+  accessToken: string,
+  conversationId: string,
+  accountId: string,
+  messageId: string,
+): Promise<AttendanceMediaPreview> {
+  if (!apiBase || !publishableKey) throw new AdminApiError("API administrativa não configurada.");
+  const query = new URLSearchParams({ accountId });
+  const headers = new Headers({ Authorization: `Bearer ${accessToken}`, apikey: publishableKey });
+  const response = await fetch(
+    `${apiBase}/attendance/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/media?${query}`,
+    { method: "GET", headers, cache: "no-store", redirect: "error" },
+  );
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({})) as { error?: string };
+    throw new AdminApiError(result.error ?? `Falha ao carregar o anexo (${response.status}).`, response.status);
+  }
+
+  const mimeType = (response.headers.get("Content-Type") ?? "").split(";", 1)[0].trim().toLowerCase();
+  const expiresAt = Date.parse(response.headers.get("X-Attachment-Expires-At") ?? "");
+  if (!attendanceMediaMimeTypes.has(mimeType) || !Number.isFinite(expiresAt) || expiresAt <= Date.now() || expiresAt > Date.now() + 20 * 60_000) {
+    await response.body?.cancel();
+    throw new AdminApiError("O anexo expirou ou não está disponível para prévia.");
+  }
+
+  const maxBytes = 32 * 1024 * 1024;
+  const declaredLength = Number(response.headers.get("Content-Length"));
+  if (Number.isFinite(declaredLength) && declaredLength > maxBytes) {
+    await response.body?.cancel();
+    throw new AdminApiError("O anexo excede o limite de 32 MB para prévia.");
+  }
+  if (!response.body) throw new AdminApiError("O serviço retornou um anexo vazio.");
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      if (totalBytes > maxBytes) {
+        await reader.cancel();
+        throw new AdminApiError("O anexo excede o limite de 32 MB para prévia.");
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  if (totalBytes === 0) throw new AdminApiError("O serviço retornou um anexo vazio.");
+  const buffer = new ArrayBuffer(totalBytes);
+  const bytes = new Uint8Array(buffer);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  const blob = new Blob([buffer], { type: mimeType });
+  return {
+    url: URL.createObjectURL(blob),
+    mime_type: mimeType,
+    filename: response.headers.get("X-Attachment-Filename"),
+    expires_at: new Date(expiresAt).toISOString(),
+  };
 }
 
 export function sendAttendanceText(

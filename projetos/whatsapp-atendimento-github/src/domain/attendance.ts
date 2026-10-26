@@ -14,6 +14,13 @@ export type AttendanceQueueItem = Record<string, unknown> & {
   mode?: AttendanceMode;
 };
 
+export interface AttendanceMediaPreview {
+  url: string;
+  mime_type: string;
+  filename: string | null;
+  expires_at: string;
+}
+
 export type AttendanceConversationSnapshot = Record<string, unknown> & {
   ok?: boolean;
   conversation?: Record<string, unknown>;

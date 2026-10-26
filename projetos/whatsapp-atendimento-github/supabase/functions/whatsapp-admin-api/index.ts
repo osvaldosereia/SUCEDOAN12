@@ -244,6 +244,104 @@ async function proxyAttendanceOperation(request: Request, body: Record<string, u
   return forwarded;
 }
 
+const ATTENDANCE_MEDIA_MIME_TYPES = new Set([
+  "image/jpeg", "image/png", "image/webp", "image/gif",
+  "audio/ogg", "audio/mpeg", "audio/mp4", "audio/aac", "audio/wav", "audio/x-wav",
+  "video/mp4",
+  "application/pdf", "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/zip", "application/octet-stream",
+]);
+
+async function proxyAttendanceMedia(request: Request, conversationId: string, accountId: string, messageId: string, headers: Headers): Promise<Response> {
+  const snapshot = await requireSupportedAttendanceConversation(request, conversationId, accountId);
+  const messages = isRecord(snapshot.payload) && Array.isArray(snapshot.payload.messages) ? snapshot.payload.messages : [];
+  if (!messages.some((message) => isRecord(message) && message.id === messageId)) {
+    throw new HttpError(404, "O anexo não pertence ao histórico desta conversa ou não está mais carregado.");
+  }
+
+  const forwarded = await forwardSupabaseFunction(
+    request,
+    "admin-whatsapp-ops-v1",
+    "GET",
+    new URLSearchParams({ action: "media", message_id: messageId }),
+  );
+  if (forwarded.status < 200 || forwarded.status >= 300 || !isRecord(forwarded.payload) || forwarded.payload.ok !== true) {
+    throw new HttpError(forwarded.status === 404 ? 404 : 502, "O anexo não pôde ser aberto pelo serviço de atendimento.");
+  }
+
+  const rawUrl = forwarded.payload.url;
+  const rawMimeType = typeof forwarded.payload.mime_type === "string" ? forwarded.payload.mime_type.split(";", 1)[0].trim().toLowerCase() : "";
+  const rawExpiresAt = forwarded.payload.expires_at;
+  const baseUrl = Deno.env.get("SUPABASE_URL");
+  let mediaUrl: URL;
+  try {
+    mediaUrl = new URL(typeof rawUrl === "string" ? rawUrl : "");
+    if (!baseUrl || mediaUrl.protocol !== "https:" || mediaUrl.origin !== new URL(baseUrl).origin
+      || !mediaUrl.pathname.startsWith("/storage/v1/object/sign/")) throw new Error("media_origin_invalid");
+  } catch {
+    throw new HttpError(502, "O serviço retornou um link de anexo inválido.");
+  }
+  const expiresAt = typeof rawExpiresAt === "string" && Number.isFinite(Date.parse(rawExpiresAt)) ? new Date(rawExpiresAt).toISOString() : "";
+  if (!expiresAt || Date.parse(expiresAt) <= Date.now() || Date.parse(expiresAt) > Date.now() + 20 * 60_000) {
+    throw new HttpError(502, "O link temporário do anexo expirou ou é inválido.");
+  }
+  if (!ATTENDANCE_MEDIA_MIME_TYPES.has(rawMimeType)) throw new HttpError(502, "O tipo deste anexo não é permitido para prévia.");
+  const filename = typeof forwarded.payload.filename === "string"
+    ? forwarded.payload.filename.replace(/[^\w .()_-]/g, "_").replace(/\s+/g, " ").trim().slice(0, 120)
+    : "";
+  const mediaResponse = await fetch(mediaUrl, { method: "GET", redirect: "error", signal: AbortSignal.timeout(15_000) });
+  if (!mediaResponse.ok || !mediaResponse.body) throw new HttpError(502, "O conteúdo do anexo não está disponível.");
+  const responseMimeType = (mediaResponse.headers.get("Content-Type") ?? "").split(";", 1)[0].trim().toLowerCase();
+  if (!ATTENDANCE_MEDIA_MIME_TYPES.has(responseMimeType) || responseMimeType !== rawMimeType) {
+    await mediaResponse.body.cancel();
+    throw new HttpError(502, "O tipo do conteúdo do anexo não corresponde ao tipo autorizado.");
+  }
+
+  const maxBytes = 32 * 1024 * 1024;
+  const declaredLength = Number(mediaResponse.headers.get("Content-Length"));
+  if (Number.isFinite(declaredLength) && declaredLength > maxBytes) {
+    await mediaResponse.body.cancel();
+    throw new HttpError(413, "O anexo excede o limite de 32 MB para prévia.");
+  }
+  const reader = mediaResponse.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      if (totalBytes > maxBytes) {
+        await reader.cancel();
+        throw new HttpError(413, "O anexo excede o limite de 32 MB para prévia.");
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  if (totalBytes === 0) throw new HttpError(502, "O anexo está vazio.");
+  const bytes = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  headers.set("Content-Type", responseMimeType);
+  headers.set("Content-Length", String(totalBytes));
+  headers.set("Content-Disposition", `attachment; filename="${filename || "anexo-whatsapp"}"`);
+  headers.set("Cache-Control", "no-store");
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("X-Attachment-Filename", filename || "Anexo do WhatsApp");
+  headers.set("X-Attachment-Expires-At", expiresAt);
+  headers.set("Access-Control-Expose-Headers", "Content-Type, Content-Disposition, X-Attachment-Filename, X-Attachment-Expires-At");
+  return new Response(bytes, { status: 200, headers });
+}
+
 async function updateAttendanceMode(request: Request, body: Record<string, unknown>) {
   const conversationId = body.conversationId;
   const mode = body.mode;
@@ -3276,6 +3374,12 @@ Deno.serve(async (request) => {
       if (search) query.set("search", search);
       const forwarded = await forwardSupabaseFunction(request, "admin-whatsapp-ops-v1", "GET", query);
       return jsonResponse(forwarded.payload, forwarded.status, headers);
+    }
+    const attendanceMedia = url.pathname.match(/\/attendance\/conversations\/([0-9a-f-]{36})\/messages\/([0-9a-f-]{36})\/media$/i);
+    if (attendanceMedia && request.method === "GET") {
+      const accountId = url.searchParams.get("accountId") ?? "";
+      if (!ORDER_ID.test(accountId)) throw new HttpError(400, "Selecione um canal WhatsApp válido.");
+      return await proxyAttendanceMedia(request, attendanceMedia[1], accountId, attendanceMedia[2], headers);
     }
     const attendanceConversation = url.pathname.match(/\/attendance\/conversations\/([0-9a-f-]{36})$/i);
     if (attendanceConversation && request.method === "GET" && ORDER_ID.test(attendanceConversation[1])) {

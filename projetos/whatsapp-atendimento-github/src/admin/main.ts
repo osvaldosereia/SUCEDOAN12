@@ -24,10 +24,10 @@ import {
   type ChannelFlowDocument,
   type FlowChannel,
 } from "../domain/flows";
-import { AdminApiError, assignOrder, bindPublishedMetaFlow, completeOrderDelivery, completeOrderSeparation, createMetaFlow, createOrderBlingSale, generateOrderBlingInvoice, getAnaAdmin, getAttendanceAccounts, getAttendanceConversation, getAttendanceQueue, getCatalog, getCustomer, getCustomers, getFlowDraft, getMetaFlows, getOrder, getOrders, getOutbox, publishMetaFlow, reconcileOrderBlingSale, saveCatalog, saveCustomer, saveFlowDraft, saveOrderBlingContact, saveOrderPicking, sendAttendanceText, setAnaChannel, setAttendanceMode, setupMetaFlowEncryption, startOrderDispatch, unbindMetaFlow, uploadMetaFlowJson, type MetaChannelSnapshot, type PendingImage } from "./api";
+import { AdminApiError, assignOrder, bindPublishedMetaFlow, completeOrderDelivery, completeOrderSeparation, createMetaFlow, createOrderBlingSale, generateOrderBlingInvoice, getAnaAdmin, getAttendanceAccounts, getAttendanceConversation, getAttendanceMedia, getAttendanceQueue, getCatalog, getCustomer, getCustomers, getFlowDraft, getMetaFlows, getOrder, getOrders, getOutbox, publishMetaFlow, reconcileOrderBlingSale, saveCatalog, saveCustomer, saveFlowDraft, saveOrderBlingContact, saveOrderPicking, sendAttendanceText, setAnaChannel, setAttendanceMode, setupMetaFlowEncryption, startOrderDispatch, unbindMetaFlow, uploadMetaFlowJson, type MetaChannelSnapshot, type PendingImage } from "./api";
 import type { OrderDetailRecord, OrderListEntry } from "../domain/orders";
 import type { OutboxMessageSummary, OutboxQueueSnapshot, OutboxStatus } from "../domain/outbox";
-import { attendanceChannelFromPhone, type AnaAdminSnapshot, type AttendanceChannel, type AttendanceConversationSnapshot, type AttendanceQueueItem } from "../domain/attendance";
+import { attendanceChannelFromPhone, type AnaAdminSnapshot, type AttendanceChannel, type AttendanceConversationSnapshot, type AttendanceMediaPreview, type AttendanceQueueItem } from "../domain/attendance";
 import { emptyCustomer, type CustomerListItem, type CustomerRecord } from "../domain/customers";
 import { renderFlowsPanel } from "./flows-panel";
 import { renderAttendancePanel } from "./attendance-panel";
@@ -111,6 +111,9 @@ const state = {
   attendanceQueueLoaded: false,
   attendanceSelectedConversationId: "",
   attendanceConversation: null as AttendanceConversationSnapshot | null,
+  attendanceMedia: new Map<string, AttendanceMediaPreview>(),
+  attendanceMediaExpiryTimers: new Map<string, number>(),
+  attendanceMediaLoadingId: "",
   attendanceSearch: "",
   attendanceAna: null as AnaAdminSnapshot | null,
   attendanceNotice: "",
@@ -156,6 +159,31 @@ function tell(message: string, type: "info" | "success" | "error" = "info"): voi
   state.notice = message;
   state.noticeType = type;
   render();
+}
+
+function revokeAttendanceMedia(messageId: string): void {
+  const timer = state.attendanceMediaExpiryTimers.get(messageId);
+  if (timer !== undefined) window.clearTimeout(timer);
+  state.attendanceMediaExpiryTimers.delete(messageId);
+  const preview = state.attendanceMedia.get(messageId);
+  if (preview?.url.startsWith("blob:")) URL.revokeObjectURL(preview.url);
+  state.attendanceMedia.delete(messageId);
+}
+
+function clearAttendanceMedia(): void {
+  for (const messageId of state.attendanceMedia.keys()) revokeAttendanceMedia(messageId);
+  state.attendanceMediaLoadingId = "";
+}
+
+function pruneAttendanceMedia(): void {
+  const messages = Array.isArray(state.attendanceConversation?.messages) ? state.attendanceConversation.messages : [];
+  const allowedIds = new Set(messages
+    .filter((message) => ["image", "audio", "video", "document", "sticker"].includes(String(message.message_type ?? "").toLowerCase()))
+    .map((message) => message.id)
+    .filter((id): id is string => typeof id === "string"));
+  for (const [messageId, preview] of state.attendanceMedia) {
+    if (!allowedIds.has(messageId) || Date.parse(preview.expires_at) <= Date.now()) revokeAttendanceMedia(messageId);
+  }
 }
 
 function currentDocuments(): CatalogDocuments {
@@ -451,6 +479,7 @@ async function loadAttendance(): Promise<void> {
       state.attendanceQueueLoaded = false;
       state.attendanceSelectedConversationId = "";
       state.attendanceConversation = null;
+      clearAttendanceMedia();
       state.attendanceNotice = `O número final ${state.attendanceChannel} não foi retornado pelo serviço autorizado.`;
       return;
     }
@@ -459,9 +488,11 @@ async function loadAttendance(): Promise<void> {
     if (!state.attendanceQueue.some((item) => String(item.conversation_id ?? item.id ?? "") === state.attendanceSelectedConversationId)) {
       state.attendanceSelectedConversationId = "";
       state.attendanceConversation = null;
+      clearAttendanceMedia();
     }
     if (state.attendanceSelectedConversationId) {
       state.attendanceConversation = await getAttendanceConversation(token, state.attendanceSelectedConversationId, account.id);
+      pruneAttendanceMedia();
     }
     state.attendanceNotice = anaResult.status === "rejected"
       ? "A fila carregou. A configuração global da ANA não pôde ser consultada pela permissão atual."
@@ -480,6 +511,7 @@ async function selectAttendanceChannel(channel: AttendanceChannel): Promise<void
   state.attendanceSearch = "";
   state.attendanceSelectedConversationId = "";
   state.attendanceConversation = null;
+  clearAttendanceMedia();
   state.attendanceQueue = [];
   state.attendanceQueueLoaded = false;
   await loadAttendance();
@@ -487,6 +519,7 @@ async function selectAttendanceChannel(channel: AttendanceChannel): Promise<void
 
 async function openAttendanceConversation(conversationId: string): Promise<void> {
   if (!state.session || !conversationId) return;
+  clearAttendanceMedia();
   state.busy = true;
   state.attendanceNotice = "Carregando conversa…";
   render();
@@ -495,6 +528,7 @@ async function openAttendanceConversation(conversationId: string): Promise<void>
     const account = state.attendanceAccounts.find((item) => attendanceChannelFromPhone(item.phone_e164) === state.attendanceChannel);
     if (!account) throw new AdminApiError("O canal selecionado não está disponível.");
     state.attendanceConversation = await getAttendanceConversation(state.session.access_token, conversationId, account.id);
+    pruneAttendanceMedia();
     state.attendanceNotice = "Conversa atualizada."
   } catch (error) {
     state.attendanceConversation = null;
@@ -511,6 +545,7 @@ async function refreshAttendanceConversation(): Promise<void> {
     const account = state.attendanceAccounts.find((item) => attendanceChannelFromPhone(item.phone_e164) === state.attendanceChannel);
     if (!account) throw new AdminApiError("O canal selecionado não está disponível.");
     state.attendanceConversation = await getAttendanceConversation(state.session.access_token, state.attendanceSelectedConversationId, account.id);
+    pruneAttendanceMedia();
   } catch (error) {
     state.attendanceNotice = error instanceof AdminApiError ? error.message : "Não foi possível atualizar o histórico.";
   }
@@ -737,6 +772,8 @@ function render(): void {
     queue: state.attendanceQueue,
     selectedConversationId: state.attendanceSelectedConversationId,
     conversation: state.attendanceConversation,
+    mediaPreviews: Object.fromEntries(state.attendanceMedia),
+    mediaLoadingMessageId: state.attendanceMediaLoadingId,
     search: state.attendanceSearch,
     ana: state.attendanceAna,
     notice: state.attendanceNotice,
@@ -967,6 +1004,12 @@ async function initializeAuth(): Promise<void> {
       state.outboxCounts = { pending: 0, sent: 0, failed: 0, cancelled: 0 };
       state.outboxLimit = 50;
       state.outboxSenderEnabled = false;
+      state.attendanceAccounts = [];
+      state.attendanceQueue = [];
+      state.attendanceQueueLoaded = false;
+      state.attendanceSelectedConversationId = "";
+      state.attendanceConversation = null;
+      clearAttendanceMedia();
       render();
     }
   });
@@ -1148,6 +1191,7 @@ appRoot.addEventListener("submit", async (event) => {
     state.attendanceSearch = String(new FormData(target).get("query") ?? "").trim().slice(0, 80);
     state.attendanceSelectedConversationId = "";
     state.attendanceConversation = null;
+    clearAttendanceMedia();
     await loadAttendance();
     return;
   }
@@ -1434,6 +1478,46 @@ appRoot.addEventListener("click", async (event) => {
     if (channel === "0975" || channel === "1018") await selectAttendanceChannel(channel);
   } else if (action === "attendance-open") {
     await openAttendanceConversation(id);
+  } else if (action === "attendance-load-media" && state.session && state.attendanceConversation
+    && state.attendanceSelectedConversationId && !state.attendanceMediaLoadingId) {
+    const conversationId = state.attendanceSelectedConversationId;
+    const channel = state.attendanceChannel;
+    const messageId = id;
+    const messages = Array.isArray(state.attendanceConversation.messages) ? state.attendanceConversation.messages : [];
+    const message = messages.find((item) => item.id === messageId);
+    if (!message || !["image", "audio", "video", "document", "sticker"].includes(String(message.message_type ?? "").toLowerCase())) return;
+    const account = state.attendanceAccounts.find((item) => attendanceChannelFromPhone(item.phone_e164) === channel);
+    if (!account) return;
+    const accessToken = state.session.access_token;
+    state.attendanceMediaLoadingId = messageId;
+    state.attendanceNotice = "Solicitando prévia temporária do anexo…";
+    render();
+    try {
+      const preview = await getAttendanceMedia(accessToken, conversationId, account.id, messageId);
+      if (state.attendanceSelectedConversationId !== conversationId || state.attendanceChannel !== channel) {
+        URL.revokeObjectURL(preview.url);
+        return;
+      }
+      const oldPreview = state.attendanceMedia.get(messageId);
+      if (oldPreview) revokeAttendanceMedia(messageId);
+      state.attendanceMedia.set(messageId, preview);
+      const expiryTimer = window.setTimeout(() => {
+        if (state.attendanceMedia.get(messageId) === preview) {
+          revokeAttendanceMedia(messageId);
+          render();
+        }
+      }, Math.max(0, Date.parse(preview.expires_at) - Date.now()));
+      state.attendanceMediaExpiryTimers.set(messageId, expiryTimer);
+      state.attendanceNotice = "Prévia do anexo disponível temporariamente.";
+    } catch (error) {
+      if (state.attendanceSelectedConversationId !== conversationId || state.attendanceChannel !== channel) return;
+      state.attendanceNotice = error instanceof AdminApiError ? error.message : "Não foi possível abrir este anexo.";
+    } finally {
+      if (state.attendanceMediaLoadingId === messageId) {
+        state.attendanceMediaLoadingId = "";
+        render();
+      }
+    }
   } else if ((action === "attendance-takeover" || action === "attendance-resume") && state.session) {
     const account = state.attendanceAccounts.find((item) => attendanceChannelFromPhone(item.phone_e164) === state.attendanceChannel);
     if (!account) return;
