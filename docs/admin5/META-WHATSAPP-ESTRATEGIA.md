@@ -10,14 +10,17 @@
 - O catálogo Commerce deve ser carregado por feed ou pela API Commerce e conectado à conta WhatsApp Business. A Meta descreve catálogo, mensagens de catálogo e mensagens de múltiplos produtos como partes complementares da experiência.
 - Uma mensagem de catálogo abre o catálogo completo. Uma mensagem de múltiplos produtos mostra até 30 produtos em seções; por isso ela funciona melhor para seleções por categoria e campanhas curadas do que como substituto de um catálogo com centenas de itens.
 - Mensagens interativas em lista aceitam até 10 linhas no total. As oito seções pedidas cabem no primeiro menu: Cestas Básicas, Mercearia, Limpeza, Lavanderia, Higiene, Beleza, Casa e Pet.
+- A Central de Ajuda do WhatsApp diz que cada item do catálogo precisa de título único, imagem e país de origem; link de site aparece como informação opcional nesse fluxo. O mapeamento do Commerce API/feed ainda deve ser confirmado separadamente antes de exportar ou sincronizar.
 - Ao tocar e enviar um carrinho do catálogo, o WhatsApp pode gerar um evento de pedido no webhook. O sistema deve cruzar cada `product_retailer_id` com o ID estável exportado pela Dona Antônia.
 - Fora da janela de atendimento ao cliente, mensagens iniciadas pela empresa exigem template aprovado. Mensagens livres, listas e interações devem respeitar a janela indicada pelo backend.
 
 ### WhatsApp Flows
 
-- Um Flow pode coletar dados estruturados dentro do WhatsApp depois que o cliente escolhe os produtos.
+- Há uma jornada de cesta personalizada já aprovada para prototipação: selecionar tamanho e preço inicial; escolher o arroz primeiro; depois percorrer um tipo de produto por etapa com foto, preço unitário e quantidade; atualizar o total e fechar com resumo. A solicitação deve virar rascunho sujeito à confirmação humana.
+- A Meta oferece componentes próprios de Flow e um componente de carrossel de imagens. O Flow não deve ser tratado como uma página web customizável; antes de fechar a interface, validar no Flow Builder se o desenho de múltiplas opções com quantidades por produto cabe nos componentes e limites vigentes. Se não couber com clareza, usar catálogo/carrinho nativo para escolher itens e Flow para endereço/entrega.
+- Para compra de produtos avulsos, o catálogo com carrinho nativo é o caminho principal: o cliente visualiza e escolhe produtos, e o Flow pode complementar com dados estruturados de entrega/pagamento.
 - Flows dinâmicos usam endpoint de troca de dados com payload criptografado e par de chaves da empresa. O endpoint tem prazo curto; a documentação oficial alerta para timeout de 10 segundos.
-- A ordem recomendada é catálogo/carrinho → validar produto, preço e saldo no Supabase → Flow para entrega e pagamento → resumo → confirmação humana → pedido canônico. Um formulário Flow não substitui a checagem de estoque nem a confirmação do pedido.
+- A ordem recomendada é menu/lista → catálogo/carrinho ou Flow de cesta → validar produto, preço e saldo no Supabase → Flow para dados de entrega/pagamento quando necessário → resumo → confirmação humana → pedido canônico. O Flow não substitui a checagem de estoque nem a confirmação do pedido.
 
 ### Custos e janela de atendimento
 
@@ -37,8 +40,11 @@ O banco tem dois números ativos (0975 e 1018), ligados a WABAs diferentes. Ante
 - [Meta — Order message webhook reference](https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/reference/messages/order)
 - [Meta — Share products with WhatsApp users](https://developers.facebook.com/documentation/business-messaging/whatsapp/catalogs/share-products)
 - [Meta — Flows endpoint implementation](https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/implementingyourflowendpoint)
+- [Meta — Flow components](https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/components)
+- [Meta — Flow components changelog](https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/changelogs)
 - [Meta — Flows best practices](https://developers.facebook.com/documentation/business-messaging/whatsapp/flows/guides/bestpractices)
 - [Meta — Pricing updates for service messages](https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing/non-template-messages)
+- [WhatsApp — About catalog](https://faq.whatsapp.com/405903568419894)
 - [Meta — Product catalog data specifications](https://www.facebook.com/business/help/120325381656392)
 - [Meta — Product Catalog Items Batch](https://developers.facebook.com/documentation/ads-commerce/marketing-api/reference/product-catalog/items_batch)
 - [Meta — Catalog Batch API](https://developers.facebook.com/documentation/ads-commerce/catalog/guides/manage-catalog-items/catalog-batch-api)
@@ -50,6 +56,7 @@ O banco tem dois números ativos (0975 e 1018), ligados a WABAs diferentes. Ante
 - Reutilizar o chat canônico e a sessão atual, com filas dos dois canais e somente texto no composer.
 - Reutilizar Produtos, Cestas e Pedidos existentes; limitar a tela de produtos a busca, status e preço.
 - Criar o painel de catálogo que lê só `products.is_active = true`, atribui uma das oito seções e mostra pendências.
+- Baixar um CSV interno para revisão dos produtos ativos, com seção sugerida e campos incompletos; o arquivo não é feed de importação Meta.
 - Manter qualquer chamada que altere catálogo da Meta desabilitada nesta rodada.
 
 ### Rodada 2 — saneamento e mapeamento
@@ -92,10 +99,23 @@ Consulta feita no banco canônico em 2026-10-26:
 | Sem GTIN | 2 |
 
 Os valores de falta se sobrepõem. Não devem ser somados para estimar o total pendente. Cinco ativos têm estoque bruto zero; para disponibilidade Meta, usar a fonte de saldo vendável oficial, não o campo bruto isolado.
+O schema de `products` não tem uma coluna dedicada a país de origem. Como a Central de Ajuda do WhatsApp pede país de origem por item, a prévia marca essa informação como pendente até localizar uma fonte confiável ou cadastrá-la; não vou presumir que todos os produtos sejam de origem brasileira.
 
 ### Classificação atual
 
-Os campos existentes não correspondem diretamente às oito seções solicitadas. A taxonomia agrupa Limpeza com Lavanderia, Higiene com Beleza e Casa com Pet; 23 ativos não têm `whatsapp_category`. O campo de subcategoria tem 94 itens em Lavanderia, 83 em Limpeza/Limpeza da Casa, 26 em Higiene Pessoal, 158 em Alimentos/Bebidas/Mercearia e poucos em Casa e Utilidades. O resto exige regra explícita ou revisão humana.
+Os campos existentes não correspondem diretamente às oito seções solicitadas. A taxonomia combina Limpeza/Lavanderia e Higiene/Beleza, e 23 ativos não têm `whatsapp_category`. A auditoria das subcategorias permite organizar os 388 produtos ativos sem deixar item sem seção; a distribuição calculada ficou assim:
+
+| Seção | Produtos ativos |
+| --- | ---: |
+| MERCEARIA | 182 |
+| LIMPEZA | 83 |
+| LAVANDERIA | 94 |
+| HIGIENE | 26 |
+| BELEZA | 0 |
+| CASA | 3 |
+| PET | 0 |
+
+As cinco cestas ativas para WhatsApp são listadas separadamente em CESTAS BÁSICAS. Beleza e Pet permanecem visíveis, mesmo vazias, para receber futuros ativos. A regra usa primeiro sinais de uso do produto e subcategorias mantidas no cadastro; depois separa os grupos combinados. Isso evita tratar “perfume” de amaciante/limpador como Beleza ou “PET” no material da embalagem de óleo como produto Pet. O operador ainda pode corrigir a seção na tela antes de qualquer publicação.
 
 Regras sugeridas para classificação inicial:
 
@@ -103,12 +123,14 @@ Regras sugeridas para classificação inicial:
 - **LIMPEZA:** Limpeza da Casa e Limpeza.
 - **LAVANDERIA:** Lavanderia, Amaciantes, Sabão em Pó e equivalentes.
 - **HIGIENE:** Higiene Pessoal, higiene bucal, sabonetes, papel e fraldas.
-- **BELEZA:** cabelo, maquiagem, esmaltes, perfumes e tratamento capilar; separar por nome/subcategoria.
+- **BELEZA:** cabelo, maquiagem, esmaltes, perfumes corporais, hidratantes e protetor solar; separar por nome e contexto da subcategoria, sem usar palavras ambíguas como “perfume” isoladamente.
 - **CASA:** Casa e Utilidades, Cozinha e utilidades domésticas.
 - **PET:** ração e produtos claramente identificados para cães/gatos.
 - **CESTAS BÁSICAS:** variantes comerciais das cestas, após confirmar produtos, preço e identificador de cada composição.
 
-Toda regra de texto é sugestão, não confirmação. O operador deve resolver itens ambíguos antes da primeira publicação.
+O snapshot atual recebeu uma seção sugerida para cada produto ativo. A classificação é editável e ainda precisa de revisão humana antes da primeira publicação.
+
+Na revisão desta rodada, a regra anterior desviava oito produtos de Limpeza/Lavanderia para Beleza por causa da palavra “perfume” e um óleo de soja para Pet por causa de “PET” na embalagem. A classificação agora usa o contexto da subcategoria e palavras de uso mais específicas. A nova auditoria dos 388 ativos resultou na distribuição acima, sem itens sem seção. Não houve alteração nos produtos no Supabase.
 
 ### Cestas
 
