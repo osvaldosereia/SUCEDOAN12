@@ -1,0 +1,107 @@
+name: Publish WhatsApp Atendimento Admin
+on:
+  push:
+    branches:
+      - project/whatsapp-atendimento-github-20261025
+    paths:
+      - 'projetos/whatsapp-atendimento-github/**'
+      - '.github/workflows/whatsapp-atendimento-github-publish.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: whatsapp-atendimento-admin-publish
+  cancel-in-progress: false
+
+env:
+  VITE_SUPABASE_URL: https://ssbesxgaijknwsjbsbcz.supabase.co
+  # Supabase publishable key: public client credential, intentionally included in the browser build.
+  VITE_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+          run_install: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: projetos/whatsapp-atendimento-github/pnpm-lock.yaml
+
+      - name: Install locked dependencies
+        working-directory: projetos/whatsapp-atendimento-github
+        run: pnpm install --frozen-lockfile
+
+      - name: Build static Admin
+        working-directory: projetos/whatsapp-atendimento-github
+        run: pnpm build
+
+      - name: Validate isolated static output
+        working-directory: projetos/whatsapp-atendimento-github
+        run: |
+          set -euo pipefail
+          test -f dist/index.html
+          test -d dist/assets
+          grep -q 'assets/' dist/index.html
+          touch dist/.nojekyll
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: whatsapp-admin-static
+          path: projetos/whatsapp-atendimento-github/dist/
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: true
+
+      - uses: actions/download-artifact@v5
+        with:
+          name: whatsapp-admin-static
+          path: ${{ runner.temp }}/whatsapp-admin-dist
+
+      - name: Publish only the WhatsApp Admin path
+        run: |
+          set -euo pipefail
+          source="$RUNNER_TEMP/whatsapp-admin-dist"
+          publish_dir="$RUNNER_TEMP/whatsapp-admin-publish"
+          touch "$source/.nojekyll"
+          git fetch origin main
+          git worktree add --detach "$publish_dir" FETCH_HEAD
+          mkdir -p "$publish_dir/whatsapp-admin"
+          rsync -a --delete "$source/" "$publish_dir/whatsapp-admin/"
+          test -f "$publish_dir/whatsapp-admin/index.html"
+          git -C "$publish_dir" diff --check -- whatsapp-admin
+          git -C "$publish_dir" config user.name "github-actions[bot]"
+          git -C "$publish_dir" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$publish_dir" add -A -- whatsapp-admin
+          if git -C "$publish_dir" diff --cached --quiet -- whatsapp-admin; then
+            echo "WhatsApp Admin static output is already current."
+          else
+            git -C "$publish_dir" commit -m "deploy(admin): publish WhatsApp Atendimento"
+            for attempt in 1 2 3; do
+              if git -C "$publish_dir" push origin HEAD:main; then
+                exit 0
+              fi
+              git fetch origin main
+              git -C "$publish_dir" rebase FETCH_HEAD
+            done
+            exit 1
+          fi

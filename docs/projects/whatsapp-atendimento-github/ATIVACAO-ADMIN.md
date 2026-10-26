@@ -14,7 +14,9 @@ Atualizado em 26/10/2026. Este roteiro lista somente os bloqueios que impedem o 
 
 A interface do novo Admin será publicada pelo GitHub a partir deste repositório. O Supabase não hospeda a interface: ele fornece login, dados de clientes e Edge Functions. O endereço `https://ssbesxgaijknwsjbsbcz.supabase.co/auth/v1/callback` é somente o retorno técnico do OAuth depois do login; não é o endereço do Admin.
 
-A publicação GitHub desta pasta ainda não está configurada, então o endereço público final ainda será definido pela configuração de publicação no GitHub. Esse endereço será adicionado ao redirect allowlist depois que existir. Não é necessário escolher hospedagem no Supabase.
+A automação de publicação foi adicionada à branch do projeto; o endereço está definido, mas ainda não foi validado no ar. Não é necessário escolher hospedagem no Supabase.
+
+O repositório já publica caminhos isolados no domínio existente, sem substituir o site raiz. O novo Admin usará o mesmo mecanismo no caminho `https://donaantonia.com.br/whatsapp-admin/`; ele só será considerado publicado depois que a execução de GitHub Actions concluir com sucesso.
 
 ## Desbloqueio de autenticação
 
@@ -23,8 +25,8 @@ A publicação GitHub desta pasta ainda não está configurada, então o endere�
 
    `https://ssbesxgaijknwsjbsbcz.supabase.co/auth/v1/callback`
 
-3. No GitHub, o OAuth App usa esse callback como **Authorization callback URL**. O **Homepage URL** deve ser a URL final do novo Admin; ela ainda precisa ser definida pela publicação isolada do Admin. Para acesso local, o app atual usa `http://127.0.0.1:5173/`.
-4. No Supabase, em **Authentication → URL Configuration**, permita a origem local `http://127.0.0.1:5173/**` e, depois que o endereço de produção do Admin for escolhido, permita somente esse endereço de produção. Não use wildcard amplo em produção.
+3. No GitHub, o OAuth App usa esse callback como **Authorization callback URL**. O **Homepage URL** do novo Admin será `https://donaantonia.com.br/whatsapp-admin/`, depois da primeira publicação bem-sucedida. Para acesso local, o app atual usa `http://127.0.0.1:5173/`.
+4. No Supabase, em **Authentication → URL Configuration**, permita a origem local `http://127.0.0.1:5173/**` e a URL exata `https://donaantonia.com.br/whatsapp-admin/` após sua publicação. Não use wildcard amplo em produção.
 5. Armazene o Client ID e Client Secret no provider do Supabase Auth. Eles não pertencem ao `.env.local`, às Edge Functions nem ao repositório.
 
 A documentação oficial descreve o cadastro do OAuth App e o callback de Supabase em [Sign in with GitHub](https://supabase.com/docs/guides/auth/social-sign-in/auth-github), e a allowlist de redirects em [Redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls).
