@@ -518,3 +518,9 @@ O host não tem CLI Supabase global e o conector não oferece listagem/configura
 A anotação intermediária de estoque em `ROUND-7-OUTBOX-PLAN.md` foi marcada como supersedida: a fonte operacional do saldo permanece `stockQuantity` no catálogo GitHub, e o webhook faz baixa idempotente ao confirmar. O runtime novo lê o saldo da revisão GitHub. Isso corrige a documentação para refletir a orientação mais recente do usuário.
 
 Uma checagem adicional de ferramenta `pnpm dlx deno --version` falhou no postinstall do pacote npm `deno` por falta do pacote opcional `@deno/win32-x64/package.json`. A última verificação válida de código segue sendo `pnpm build` (`tsc --noEmit` + Vite); não há ainda verificação própria do Deno Edge Runtime. Ativação continua dependente de provider OAuth/redirect, GitHub App e allowlist/secrets, chave do Flow 0975, roteamento Meta e homologação Bling. Nada foi publicado, enviado a clientes ou gravado em Meta/Bling.
+
+## Revisão local da baixa de estoque e venda Bling (26/10/2026)
+
+A leitura do código do checkout confirmou a baixa idempotente esperada: o saldo em `products.json` e um marcador opaco derivado do ID do rascunho entram na mesma árvore/commit GitHub. Repetição da confirmação encontra o marcador e não baixa novamente; conflito ao avançar o ref tenta reler o HEAD e recalcular. O pedido e o estado do rascunho são gravados na transação Supabase, então, se ela reverter depois do commit GitHub, a nova entrega retoma sem duplicar a baixa.
+
+A revisão do pré-flight Bling confirmou que a venda exige separação concluída, itens conferidos, contato vinculado e total reconciliado; não há bloqueio por saldo local positivo no caminho de criação da venda/NF-e. Isso conserva a regra do usuário para saldo negativo. Revisão estática apenas, sem testes automatizados, alteração de dados, deploy ou chamada a serviço externo.
