@@ -698,8 +698,6 @@ interface BlingSalePreviewSummary {
 interface BlingSaleRequestPreview {
   contato: { id: number };
   data: string;
-  dataPrevista?: string;
-  dataSaida?: string;
   numeroLoja: string;
   totalProdutos: number;
   total: number;
@@ -711,9 +709,7 @@ interface BlingSaleRequestPreview {
     descricao: string;
     quantidade: number;
     valor: number;
-    valorLista: number;
   }>;
-  parcelas: Array<Record<string, unknown>>;
   transporte: { etiqueta: {
     nome: string;
     endereco: string;
@@ -787,27 +783,6 @@ function moneyToCents(value: unknown): number | null {
 function blingSaleMatchesCandidate(value: unknown, candidate: BlingSaleRequestPreview): boolean {
   const remote = isRecord(value) && isRecord(value.data) ? value.data : value;
   if (!isRecord(remote) || remote.numeroLoja !== candidate.numeroLoja || remote.data !== candidate.data) return false;
-  // Keep matching disabled until the sale date and installment contract is fully represented locally.
-  if (!candidate.dataPrevista || !candidate.dataSaida || !candidate.parcelas.length
-    || remote.dataPrevista !== candidate.dataPrevista || remote.dataSaida !== candidate.dataSaida
-    || !Array.isArray(remote.parcelas) || remote.parcelas.length !== candidate.parcelas.length) return false;
-  const expectedInstallments = [...candidate.parcelas];
-  for (const installment of remote.parcelas) {
-    if (!isRecord(installment)) return false;
-    const actualPayment = installment.formaPagamento;
-    if (!isRecord(actualPayment)) return false;
-    const index = expectedInstallments.findIndex((expected) => {
-      if (!isRecord(expected)) return false;
-      const expectedPayment = expected.formaPagamento;
-      if (!isRecord(expectedPayment)) return false;
-      return installment.dataVencimento === expected.dataVencimento
-        && moneyToCents(installment.valor) === moneyToCents(expected.valor)
-        && Number(actualPayment.id) === Number(expectedPayment.id);
-    });
-    if (index < 0) return false;
-    expectedInstallments.splice(index, 1);
-  }
-  if (expectedInstallments.length) return false;
   const remoteContact = isRecord(remote.contato) ? Number(remote.contato.id) : NaN;
   if (remoteContact !== candidate.contato.id
     || moneyToCents(remote.totalProdutos) !== moneyToCents(candidate.totalProdutos)
@@ -832,8 +807,7 @@ function blingSaleMatchesCandidate(value: unknown, candidate: BlingSaleRequestPr
         && value.codigo === expected.codigo
         && value.descricao === expected.descricao
         && Number(value.quantidade) === expected.quantidade
-        && moneyToCents(value.valor) === moneyToCents(expected.valor)
-        && moneyToCents(value.valorLista) === moneyToCents(expected.valorLista);
+        && moneyToCents(value.valor) === moneyToCents(expected.valor);
     });
     if (index < 0) return false;
     unmatched.splice(index, 1);
@@ -1147,7 +1121,7 @@ async function buildBlingSalePreview(
     lineTotalCents += actualLineTotal;
     previewItems.push({
       produto: { id: productId }, codigo: sku, descricao: description,
-      quantidade: quantity, valor: unitPriceCents / 100, valorLista: unitPriceCents / 100,
+      quantidade: quantity, valor: unitPriceCents / 100,
     });
   }
   if (!Number.isSafeInteger(lineTotalCents) || lineTotalCents !== commercialTotals?.lineTotalCents
@@ -1162,6 +1136,8 @@ async function buildBlingSalePreview(
     return { requestSha256: null, summary, blockers: [...new Set(blockers)], candidate: null };
   }
 
+  // Match the active account's sale payload: payment is preserved in observations;
+  // do not invent installment due dates or payment IDs that the workflow does not send.
   const request: BlingSaleRequestPreview = {
     contato: { id: Number(contactId) },
     data: summary.saleDate,
@@ -1171,7 +1147,6 @@ async function buildBlingSalePreview(
     outrasDespesas: commercialTotals!.otherExpensesCents / 100,
     desconto: { valor: commercialTotals!.discountCents / 100, unidade: "REAL" },
     itens: previewItems,
-    parcelas: [],
     transporte: { etiqueta: {
       nome: customerName, endereco: street, numero: number,
       ...(safeText(address.complement) ? { complemento: safeText(address.complement)! } : {}),
@@ -2083,26 +2058,7 @@ async function lookupSharedBlingSale(reference: string, token: string): Promise<
 }
 
 function sharedBlingSaleMatches(value: Record<string, unknown>, candidate: BlingSaleRequestPreview): boolean {
-  const remote = isRecord(value.data) ? value.data : value;
-  if (remote.numeroLoja !== candidate.numeroLoja || remote.data !== candidate.data) return false;
-  const contact = isRecord(remote.contato) ? Number(remote.contato.id) : NaN;
-  if (contact !== candidate.contato.id || moneyToCents(remote.total) !== moneyToCents(candidate.total)) return false;
-  if (moneyToCents(remote.totalProdutos) !== moneyToCents(candidate.totalProdutos)) return false;
-  const expectedItems = [...candidate.itens];
-  if (!Array.isArray(remote.itens) || remote.itens.length !== expectedItems.length) return false;
-  for (const item of remote.itens) {
-    if (!isRecord(item) || !isRecord(item.produto)) return false;
-    const product = item.produto;
-    if (!isRecord(product)) return false;
-    const index = expectedItems.findIndex((expected) => Number(product.id) === expected.produto.id
-      && String(item.codigo ?? "") === expected.codigo
-      && String(item.descricao ?? "") === expected.descricao
-      && Number(item.quantidade) === expected.quantidade
-      && moneyToCents(item.valor) === moneyToCents(expected.valor));
-    if (index < 0) return false;
-    expectedItems.splice(index, 1);
-  }
-  return expectedItems.length === 0;
+  return blingSaleMatchesCandidate(value, candidate);
 }
 
 async function finishBlingSaleJob(
