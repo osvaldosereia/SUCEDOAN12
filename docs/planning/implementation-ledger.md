@@ -949,3 +949,10 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 - Cada etapa pendente também lista os produtos já associados, seus estados de atividade/WhatsApp e presença de foto, com atalho à ficha do produto para revisão e ajuste pelo fluxo autorizado do Admin.
 - Consulta agregada read-only atualizada no Supabase canônico: cinco cestas ativas no WhatsApp, 118 posições; 22 posições sem alternativa elegível para Flow (Econômica 3, Grande Completa 5, Média Completa 5, Mini Completa 4, Pequena Completa 5). Todas têm produto ativo associado, mas nenhuma opção ativa com `is_whatsapp_active=true`; entre as posições que têm opção ativa para WhatsApp, não há falta de preço positivo nem de URL HTTPS cadastrada. Isso não prova acessibilidade nem renderização das fotos pela Meta.
 - Verificação local: `pnpm typecheck`, Biome nos dois arquivos TypeScript alterados, formatação CSS e `git diff --check` passaram. Nenhum teste automatizado foi adicionado/executado; não houve alteração de produtos, cestas, Flow, cliente, pedido, Bling ou NF-e.
+
+## Habilitação de produto no WhatsApp dentro do editor da cesta (27/10/2026)
+
+- O editor da cesta oferece a ação explícita **Habilitar no WhatsApp** para uma alternativa que já esteja ativa, tenha foto HTTPS cadastrada e preço positivo. Ela reutiliza a Server Action autenticada e o gateway existente; a elegibilidade é validada novamente no backend e nenhuma alteração acontece ao apenas abrir a tela.
+- O aviso da ação esclarece que a disponibilidade é global: o produto poderá aparecer nos Flows de todas as cestas onde estiver associado. O link para editar cadastro continua visível; opções sem os pré-requisitos não recebem o atalho.
+- A action revalida a lista e as páginas de edição das cestas após sucesso ou conflito, evitando exibir situação antiga. Não houve escrita no Supabase durante a implementação, deploy, alteração Meta/Bling ou teste automatizado.
+- Verificação estática: `pnpm typecheck`, Biome focado nos três arquivos TypeScript, formatação CSS e `git diff --check` passaram.

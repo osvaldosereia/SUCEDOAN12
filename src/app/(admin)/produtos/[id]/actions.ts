@@ -174,12 +174,18 @@ export async function saveProductWhatsappAvailabilityAction(
 			unavailable:
 				"Não foi possível salvar agora. Confira o produto antes de tentar novamente.",
 		};
-		if (result.error === "conflict") revalidatePath(`/produtos/${productId}`);
+		if (result.error === "conflict") {
+			revalidatePath(`/produtos/${productId}`);
+			revalidatePath("/cestas");
+			revalidatePath("/cestas/[basketId]", "page");
+		}
 		return { kind: "error", message: messages[result.error] };
 	}
 
 	revalidatePath("/produtos");
 	revalidatePath(`/produtos/${productId}`);
+	revalidatePath("/cestas");
+	revalidatePath("/cestas/[basketId]", "page");
 	return {
 		kind: "success",
 		message: whatsappActive

@@ -24,6 +24,7 @@ import {
 	searchBasketMoldProductsAction,
 	validateBasketMoldProductAction,
 } from "../actions";
+import { BasketProductWhatsappEnableAction } from "./product-whatsapp-enable-action";
 
 type DraftOption = BasketMoldProductOption & { priceCents: number | null };
 type DraftPosition = Omit<BasketMoldEditor["positions"][number], "options"> & {
@@ -630,9 +631,19 @@ export function BasketMoldEditorClient({
 													className="basket-mold-product-link"
 													href={`/produtos/${option.productId}`}
 												>
-													Abrir produto para habilitar no Flow
+													Editar cadastro do produto
 												</Link>
 											)}
+											{option.active &&
+												option.whatsappActive === false &&
+												option.imageUrl !== null &&
+												option.priceCents !== null &&
+												option.priceCents > 0 && (
+													<BasketProductWhatsappEnableAction
+														productId={option.productId}
+														productName={option.name}
+													/>
+												)}
 										</div>
 										<button
 											aria-label={`Remover ${option.name} de ${position.label}`}
