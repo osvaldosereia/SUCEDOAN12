@@ -1,21 +1,45 @@
 "use client";
 
-import { Menu, X } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { type ReactNode, useState } from "react";
 import { navigationGroups, navigationItems } from "@/lib/admin-navigation";
+import type { StaffRole } from "@/lib/auth/roles";
+import { staffRoleLabels } from "@/lib/auth/roles";
+import { createClient } from "@/lib/supabase/client";
 
 type AdminFrameProps = {
 	children: ReactNode;
+	role: StaffRole;
 };
 
-export function AdminFrame({ children }: AdminFrameProps) {
+export function AdminFrame({ children, role }: AdminFrameProps) {
 	const pathname = usePathname();
+	const router = useRouter();
 	const [menuOpen, setMenuOpen] = useState(false);
+	const [signingOut, setSigningOut] = useState(false);
 	const currentPage =
 		navigationItems.find((item) => item.href === pathname)?.label ??
 		"Visão geral";
+
+	async function handleSignOut() {
+		setSigningOut(true);
+		try {
+			const supabase = createClient();
+			const { error } = await supabase.auth.signOut();
+
+			if (error) {
+				setSigningOut(false);
+				return;
+			}
+
+			router.replace("/login");
+			router.refresh();
+		} catch {
+			setSigningOut(false);
+		}
+	}
 
 	return (
 		<div className={`app-shell${menuOpen ? " nav-open" : ""}`}>
@@ -83,9 +107,19 @@ export function AdminFrame({ children }: AdminFrameProps) {
 					<span>
 						<span className="sidebar-footer__label">Equipe da loja</span>
 						<span className="sidebar-footer__caption">
-							Acesso administrativo
+							{staffRoleLabels[role]}
 						</span>
 					</span>
+					<button
+						aria-label="Sair do Admin"
+						className="sign-out-button"
+						disabled={signingOut}
+						onClick={handleSignOut}
+						title={signingOut ? "Saindo…" : "Sair"}
+						type="button"
+					>
+						<LogOut aria-hidden="true" size={16} />
+					</button>
 				</div>
 			</aside>
 
@@ -118,7 +152,7 @@ export function AdminFrame({ children }: AdminFrameProps) {
 							<span aria-hidden="true" className="account-avatar">
 								DA
 							</span>
-							<span>Equipe</span>
+							<span>{staffRoleLabels[role]}</span>
 						</div>
 					</div>
 				</header>

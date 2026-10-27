@@ -388,13 +388,16 @@ O projeto selecionado pela imagem e confirmado por leitura da conta Supabase é 
 | URL da API | https://wvpzudjujtmyspluwhvx.supabase.co |
 | Região / plano | São Paulo (sa-east-1) / Pro |
 | Estado / banco | ACTIVE_HEALTHY / PostgreSQL 17.11 |
-| Migrações | Uma: initial_dona_antonia_clean_schema |
+| Migrações | Duas: `initial_dona_antonia_clean_schema`, `stage_legacy_product_images_for_safe_copy` |
 | Edge Functions | Nenhuma |
-| Tabelas public | 14, todas com RLS habilitado |
-| Registros nas 14 tabelas | Zero na inspeção somente leitura; repetir a checagem imediatamente antes da primeira migração |
-| Políticas public | Apenas leitura do catálogo aprovado em products e product_images; os GRANTs atuais ainda não tornam as tabelas acessíveis a anon/authenticated pelo Data API |
+| Tabelas | 14 `public` + 5 `app_private` = 19; todas com RLS habilitado |
+| Dados de negócio | 1.928 produtos, 574 clientes, 578 contatos e 336 endereços; nenhum registro pessoal foi aberto |
+| Produtos/fotos | Todos os produtos estão inativos/`needs_review`; 0 `product_images`, 0 buckets e 1.798 imports de foto pendentes |
+| Atendimento/pedidos/equipe | 0 pedidos, cestas e perfis staff; Auth tem 0 usuários |
+| Policies/grants | Duas policies de SELECT apenas para catálogo aprovado; API roles sem GRANT nas tabelas. RLS dos demais objetos é fail-closed |
+| Integrações | 2 Meta + 1 Bling; todas desligadas, escrita externa desligada e `secret_reference` nula |
 
-**Complemento de prontidão verificado em 26/10/2026:** o schema interno `app_private` contém `integration_accounts`, `webhook_inbox`, `outbox_jobs` e `migration_xref`. As três entradas de `integration_accounts` são metadados seguros: duas Meta e uma Bling; nenhuma tem `secret_reference`, todas estão `enabled=false` e `external_writes_enabled=false`. Os dois metadados Meta apontam para WABAs diferentes e não têm `catalog_id` nem `flow_id` registrados. Não foram lidos valores de token/chave. A integração Bling também não tem referência de segredo. `webhook_inbox`, `outbox_jobs` e `migration_xref` estão vazias; `migration_xref` identifica o projeto antigo `ssbesxgaijknwsjbsbcz` como origem de migração, não como destino.
+**Complemento de prontidão verificado em 26/10/2026:** o schema interno `app_private` contém `integration_accounts`, `webhook_inbox`, `outbox_jobs`, `migration_xref` e `image_import_queue`. As três entradas de `integration_accounts` são metadados seguros: duas Meta e uma Bling; nenhuma tem `secret_reference`, todas estão `enabled=false` e `external_writes_enabled=false`. Os dois metadados Meta apontam para WABAs diferentes e não têm `catalog_id` nem `flow_id` registrados. Não foram lidos valores de token/chave. A integração Bling também não tem referência de segredo. `webhook_inbox`, `outbox_jobs` e `migration_xref` estão vazias; `migration_xref` identifica o projeto antigo `ssbesxgaijknwsjbsbcz` como origem de migração, não como destino. A fila separada de mídia contém 1.798 entradas `pending`.
 
 IDs Meta guardados em `safe_config` (identificadores, não credenciais; ainda precisam ser comparados com o WhatsApp Manager): `phone_number_id=1218939807961094` está na WABA `840102181903253`; `phone_number_id=945659128620084` está na WABA `1497253794754816`. Esse desenho em duas WABAs é a base operacional a validar; não consolidar os ativos por conveniência técnica.
 
@@ -406,11 +409,11 @@ Uma consulta somente leitura aos **nomes** em `vault.secrets` não encontrou nen
 
 Extensões disponíveis no projeto incluem `pg_cron` e `pg_net`, ainda não instaladas; o Vault (`supabase_vault`) já está instalado. Decisão de execução: Cron/pg_net chama o worker uma vez por minuto; somente `app_private.outbox_jobs` é fila durável, e a chamada HTTP é um sinal recuperável sem payload de cliente. O endpoint valida um segredo dedicado de despacho guardado no Vault e nos Edge Function Secrets; não enviar `service_role` pelo Cron nem colocá-lo no histórico SQL. As páginas oficiais classificam Cron como Beta e pg_net como Beta; documentar saúde, manter a outbox durável e permitir recuperação manual se o scheduler parar.
 
-O advisor de segurança apontou RLS habilitado sem policies em 12 tabelas `public` e nas 4 tabelas `app_private`; isso mantém o padrão de negação por padrão, mas precisa ser revisado junto com GRANTs e policies antes de expor o painel e os endpoints. `products` e `product_images` têm policies de leitura para o catálogo. O advisor de performance mostrou índices ainda sem uso, esperado em tabelas vazias, e uma configuração informativa de conexões do Auth; não é bloqueio para começar a base.
+O advisor de segurança apontou RLS habilitado sem policies em 12 tabelas `public` e nas 5 tabelas `app_private` (17 findings `INFO`); isso mantém a negação por padrão, mas impede o painel autenticado de operar até uma migração criar policies e GRANTs mínimos. `products` e `product_images` têm policies de leitura para o catálogo aprovado. O advisor de performance reportou 14 índices sem uso: o projeto ainda não tem workload do Admin, portanto não remover índices sem medir a carga real. Também registrou uma configuração informativa de conexões Auth (limite absoluto de 10).
 
 Checagem somente leitura de privilégios confirma que `anon` e `authenticated` atualmente não têm SELECT/INSERT/UPDATE nas tabelas `public` consultadas; só `service_role` tem esses privilégios. Em `app_private`, apenas `service_role` tem USAGE e os acessos consultados. Portanto, policy de leitura existente em catálogo não equivale a endpoint acessível. A primeira migração do Admin deve conceder somente os privilégios necessários às tabelas expostas e acompanhar cada GRANT com policy correta; schemas internos continuam fora do Data API.
 
-O GitHub confirmou que a `main` do repositório público `osvaldosereia/SUCEDOAN12` está vazia no commit `e324e3c095f90be6cbda8dcdd3a89b3cecab7463` (“Remove todos os arquivos”), e sem proteção de branch. O workspace desta preparação contém os documentos de planejamento, não um checkout de código. O histórico anterior permanece acessível em outras branches/commits, mas não será incorporado ao produto novo.
+O GitHub confirmou que a `main` do repositório público `osvaldosereia/SUCEDOAN12` está vazia no commit `e324e3c095f90be6cbda8dcdd3a89b3cecab7463` (“Remove todos os arquivos”), e sem proteção de branch. A implementação greenfield começou na branch `codex/whatsapp-admin-greenfield-20261026`; não incorpora código histórico. PR draft #1422 existe em outra branch e foi deixada intocada.
 
 Não é o projeto “Dona Antônia” antigo, nem “Dona Antônia V2”, nem “AME MAIS”. A URL e o ref acima são identificadores do projeto, não chaves secretas. O estado saudável é o observado pela conexão Supabase, não uma inferência do texto “Verificando...” que aparecia na captura.
 
@@ -426,7 +429,7 @@ Não é o projeto “Dona Antônia” antigo, nem “Dona Antônia V2”, nem �
 | customers | Cadastro que pode começar incompleto | Reutilizar; permitir nome nulo no lead inicial, removendo NOT NULL com migração revisada. A restrição de nome não vazio deve continuar para valores preenchidos. |
 | customer_contacts | E-mail e telefone verificado/compartilhado | Reutilizar para contato, nunca armazenar BSUID/wa_id como telefone. |
 | customer_addresses | Endereços reutilizáveis e escolhidos por pedido | Reutilizar; o endereço escolhido deve ser copiado para snapshot do pedido para não mudar vendas antigas. |
-| staff_profiles | Perfis internos atuais: owner, admin, catalog_manager e fulfillment | Reutilizar; acrescentar papel de atendimento/operator com regra explícita, sem confundir autenticação com autorização. |
+| staff_profiles | Estrutura de papéis owner, admin, catalog_manager e fulfillment, ainda sem usuários | Reutilizar os quatro papéis no MVP; owner/admin cobrem atendimento, catalog_manager gerencia catálogo/cestas e fulfillment opera pedidos/expedição. Atender com `admin`; deixar novo papel support para decisão posterior baseada na operação real. |
 | orders | Pedido canônico e valores | Reutilizar; atualizar estados e fórmula financeira após preflight de linhas/constraints. |
 | order_items | Snapshot de linhas e valores; hoje product_id é obrigatório | Manter `product_id` obrigatório: cada produto físico escolhido no Flow/Catálogo é uma linha com descrição/SKU/quantidade/preço snapshot. Não criar uma linha virtual de cesta que duplique total/estoque; guardar versão da cesta e componentes no snapshot do pedido. |
 | inventory_reservations | Reserva de produto/quantidade | Reutilizar para quantidades reais dos componentes; não reservar enquanto o rascunho está aberto sem limite de tempo; reservar atomicamente no aceite válido que entra em PRODUÇÃO e liberar ao cancelar antes da separação física. |
@@ -446,7 +449,7 @@ Não é o projeto “Dona Antônia” antigo, nem “Dona Antônia V2”, nem �
 
 ### Ordem de migração para a programação
 
-1. Gerar snapshot do schema vazio e revisar grants/policies; configurar Auth de funcionários e matriz de papéis.
+1. Capturar novamente o schema e dados atuais, obter baseline local seguro sem sobrescrever as 1.928 linhas de produtos/574 clientes, revisar grants/policies e configurar Auth de funcionários e matriz de papéis.
 2. Adaptar customers e adicionar identidade WhatsApp, contatos com proveniência e escopo de portfolio/canal.
 3. Completar catálogo e alternativas de cesta; publicar apenas produto validado e apto por preço/estoque.
 4. Criar conversas, mensagens e inbox de eventos Meta com deduplicação antes de ativar webhook.
@@ -458,12 +461,12 @@ Pré-condição de cada migração: confirmar project ref, ambiente, backup, est
 
 ### 14.1 Implicações da inspeção detalhada das colunas
 
-A leitura verbose do schema em 26/10/2026 confirmou que as tabelas estão vazias, mas também encontrou restrições que não correspondem ao produto pedido. As próximas migrações devem adaptar o DDL existente sem apagar a migração inicial nem criar cadastros duplicados.
+A leitura verbose do schema em 26/10/2026 confirmou que a tabela de produtos e cadastros de clientes já têm dados; os pedidos, cestas e perfis de staff estão vazios. Também encontrou restrições que não correspondem ao produto pedido. As próximas migrações devem adaptar o DDL existente sem apagar as migrações iniciais nem criar cadastros duplicados.
 
 | Estrutura existente | Divergência com o produto | Decisão de migração |
 |---|---|---|
 | `customers.full_name` é obrigatório | Um contato WhatsApp pode chegar sem nome/telefone confirmado | Permitir nome nulo para lead; exibir “Contato WhatsApp”; só exigir nome quando o pedido/logística precisar dele. Não inventar nome pelo perfil Meta. |
-| `staff_profiles.role` aceita `owner`, `admin`, `catalog_manager`, `fulfillment`, mas o desenho também prevê `operator` | O papel operacional seria rejeitado pela constraint atual | Atualizar a constraint e documentar permissões por ação. Sem cadastro público; funcionário desabilitado perde acesso imediatamente. |
+| `staff_profiles.role` aceita `owner`, `admin`, `catalog_manager`, `fulfillment`; ainda não há perfis | O rascunho anterior previa papéis `operator`/atendimento separados e exigiria alterar constraint | **MVP preserva os quatro papéis existentes.** `owner`/`admin` cobrem atendimento; `catalog_manager` cuida do catálogo/cestas; `fulfillment` cuida da separação/expedição. Só adicionar um papel `support` se a operação real provar necessidade; sem cadastro público, funcionário desabilitado perde acesso imediatamente. |
 | `products.cost_cents` está na mesma tabela de dados operacionais | RLS não oculta uma coluna de uma linha que o papel pode ler; GRANT amplo revelaria custo | Migrar custo para `app_private.product_financials`; manter preço de venda no registro operacional. Extra interno da cesta também fica privado. Somente RPC estreita, com checagem de papel, retorna dados financeiros para gerente autorizado. Quote/Flow/ANA recebem total e alternativas comerciais, nunca custo ou margem. |
 | `product_images` tem `storage_path`, `alt_text` opcional, `position` e `verified`, mas não variante otimizada para Flow | O produto precisa de foto legível dentro de cada alternativa do Flow e precisa de texto alternativo | Preservar a foto original; acrescentar `flow_thumbnail_path`, tornar `alt_text` obrigatório em foto aprovada e usar a imagem verificada de menor `position` como principal. A tela de upload gera a miniatura automaticamente; uma vez selecionada para Flow, sem miniatura aprovada o produto não pode ser publicado na cesta. |
 | `product_identifiers.kind` não contempla identificador de Catálogo Meta; `external_entity_links` não tem escopo de conta/catálogo | O mesmo produto pode ter retailer ID diferente em cada catálogo/WABA | Criar `meta_catalog_listings` com `waba_id`, `catalog_id`, `product_retailer_id`, produto interno, status de sincronização e restrição única por catálogo. Não reutilizar SKU/GTIN como retailer ID por suposição. |
@@ -480,7 +483,7 @@ A leitura verbose do schema em 26/10/2026 confirmou que as tabelas estão vazias
 
 ### 14.2 Fotos dos produtos dentro do Flow — inspeção e regra nova
 
-**Inspeção somente leitura em 26/10/2026 (retrato intermediário):** naquela consulta, `public.products` e `public.product_images` retornaram 0 linhas e não havia bucket de Storage cadastrado. O proprietário esclareceu que o Supabase ainda está sendo atualizado e que os produtos terão fotos. Portanto, esses números registram apenas o estado observado naquele horário; não significam que o catálogo final ficará sem produtos ou imagens. Reconsultar contagens, imagens, caminhos e buckets quando a carga terminar e antes de desenhar/aplicar migrações. `product_images` já tem campos de caminho, ordem, texto alternativo e verificação.
+**Inspeção somente leitura mais recente em 26/10/2026:** `public.products` tem 1.928 linhas, todas `active=false`/`needs_review`; `public.product_images` tem 0 linhas; nenhum bucket existe; 1.798 imagens esperam em `app_private.image_import_queue` no estado `pending`. A contagem anterior zero foi somente um retrato intermediário anterior à carga. O proprietário confirmou que fotos serão incluídas. Atualmente nenhuma alternativa está elegível para o Flow; após a carga, revisar cada opção e bloquear apenas os produtos sem foto verificada/miniatura aprovada. `product_images` tem campos de caminho, ordem, texto alternativo e verificação, mas a miniatura de Flow ainda será adicionada por migração.
 
 O Flow histórico consultado no GitHub mostrava uma foto compacta da cesta no topo e explicitava que não mostrava fotos individuais de cada um dos seus até 27 componentes. Esse desenho histórico não atende à regra atual do proprietário e não será copiado como requisito.
 
@@ -990,8 +993,8 @@ As integrações ficam em telas de estado operacional simples, separadas por ser
 
 - Usuário, e-mail/login, nome, ativo/inativo, papel, último acesso.
 - Convite, redefinição de acesso e revogação de sessão conforme Auth Supabase.
-- Papéis iniciais: owner, admin, catálogo, atendimento e expedição. Financeiro poderá ser papel combinado pelo owner, não precisa coluna própria no MVP.
-- owner/admin gerem configuração e conexões; catálogo edita produtos/cestas; atendimento conversa/clientes/rascunhos; expedição move pedido e confere Bling. Leitura e exportação sensível são concedidas separadamente.
+- Papéis iniciais disponíveis na constraint atual: `owner`, `admin`, `catalog_manager` e `fulfillment`. Owner/admin cobrem atendimento, clientes, configurações e conexões; catalog_manager edita catálogo/cestas sem custo/margem; fulfillment opera pedidos e separação/expedição com dados logísticos mínimos. Um papel `support`/`operator` fica fora do MVP até necessidade confirmada.
+- Financeiro não exige papel separado no MVP; somente owner/admin veem a parte financeira interna por ações server-side explícitas. Leitura e exportação sensível são concedidas separadamente.
 - Toda operação administrativa escreve trilha de auditoria.
 
 **WhatsApp / Meta**
@@ -1303,21 +1306,21 @@ Credenciais e ativos reais de Meta/Bling não devem ser inferidos de documentaç
 - Meta Cloud API direta, Supabase como fonte oficial, Bling v3 e ANA server-side com ferramentas restritas são o desenho recomendado.
 - Cada etapa do Flow trata um componente da cesta, com escolha de produto e quantidade de 0 a 6; pagamento, cadastro/endereço, recálculo no servidor e aceite explícito foram definidos.
 - Toda alternativa elegível no Flow precisa da foto individual aprovada, miniatura otimizada e alt text; o teste com a conta Meta é um gate anterior ao Flow comercial.
-- Fotos individuais são obrigatórias em todas as alternativas do Flow. Produtos e fotos estão sendo carregados no Supabase; a contagem vazia consultada em 26/10/2026 é somente um retrato intermediário. Revalidar o catálogo e o Storage depois da carga; só bloquear a publicação de uma alternativa específica se a respectiva foto aprovada/miniatura ainda não estiver pronta. A prova Meta por WABA continua sendo gate técnico antes da publicação comercial.
+- Fotos individuais são obrigatórias em todas as alternativas do Flow. A leitura mais recente encontrou 1.928 produtos (todos inativos/`needs_review`), nenhum registro em `product_images`, nenhum bucket e 1.798 imagens ainda pendentes na fila de importação. Hoje nenhuma alternativa pode ser publicada; depois da carga, revalidar o catálogo e bloquear apenas os produtos sem foto aprovada/miniatura. A prova Meta por WABA continua sendo gate técnico antes da publicação comercial.
 - Flow e Catálogo Meta sempre criam intenções e pedidos independentes, sem janela de tempo para agrupamento; cada pedido tem confirmação, venda e processo fiscal próprios.
 - Estados do pedido, gatilho de saída para Bling, idempotência, tratamento de falha e distinção entre expedição e autorização fiscal estão definidos.
-- O destino Supabase e as 14 tabelas públicas existentes foram confirmados em leitura somente. O código será novo; o histórico GitHub serve apenas como fonte de requisitos e pistas de configuração.
+- O destino Supabase e as 19 tabelas existentes foram confirmados em leitura somente. Produtos e cadastros de clientes já têm linhas; buckets/fotos ainda não. O código será novo; o histórico GitHub serve apenas como fonte de requisitos e pistas de configuração.
 
 ### Fatos atuais que mudam o plano de conexão
 
-1. `main` do GitHub está vazio e sem proteção de branch; o repositório é público. A preparação local atual não contém checkout do Admin. Ao começar, abrir branch de trabalho e usar revisão antes de integrar; recomendo habilitar proteção da `main`. Nunca gravar segredos, dados reais de cliente ou cópias de `.env` no repositório.
-2. O Supabase escolhido está `ACTIVE_HEALTHY`, PostgreSQL 17.11, com uma migração inicial. No retrato inicial de 26/10/2026, as 14 tabelas `public` estavam vazias; a carga de produtos e fotos está em andamento, conforme informado pelo usuário. Reconsultar antes de fechar o baseline. O schema `app_private` tem quatro tabelas e `integration_accounts` tem três registros de integração. Não tratar o banco todo como vazio nem sobrescrever essas estruturas.
-3. `app_private.integration_accounts` tem duas entradas Meta e uma Bling; todas estão `enabled=false`, `external_writes_enabled=false`, sem `secret_reference` e com `migration_status=credentials_pending`. Os IDs Meta coincidem com os registros da tabela `public.whatsapp_accounts` do projeto legado: `dona-antonia-0975` → WABA `1497253794754816`, telefone Meta `945659128620084`; `dona-antonia-1018` → WABA `840102181903253`, telefone Meta `1218939807961094`. São WABAs diferentes. Nenhum valor secreto foi lido.
+1. `main` do GitHub está vazia e sem proteção de branch; o repositório é público. A branch greenfield `codex/whatsapp-admin-greenfield-20261026` já foi publicada. Nunca gravar segredos, dados reais de cliente ou cópias de `.env` no repositório.
+2. O Supabase escolhido está `ACTIVE_HEALTHY`, PostgreSQL 17.11, com duas migrações registradas. A leitura mais recente contou 1.928 produtos (todos inativos/em revisão), 574 clientes, 578 contatos e 336 endereços; 14 tabelas `public` + 5 `app_private`. A fila de fotos ainda está pendente. Reconsultar após a carga e antes de migrações. Não tratar o banco todo como vazio nem sobrescrever essas estruturas.
+3. `app_private.integration_accounts` tem duas entradas Meta e uma Bling; todas estão `enabled=false`, `external_writes_enabled=false` e `secret_reference` nula. Os IDs Meta no `safe_config` coincidem com os registros da tabela `public.whatsapp_accounts` do projeto legado: `dona-antonia-0975` → WABA `1497253794754816`, telefone Meta `945659128620084`; `dona-antonia-1018` → WABA `840102181903253`, telefone Meta `1218939807961094`. São WABAs diferentes. Nenhum valor secreto foi lido.
 4. O projeto legado `ssbesxgaijknwsjbsbcz` (“Dona Antônia”) permanece `ACTIVE_HEALTHY`, com dados operacionais e Edge Functions ativas; o projeto de destino `wvpzudjujtmyspluwhvx` (“Dona Antônia - NOVO”) foi criado em 26/10/2026 e ainda não tem funções implantadas. No Vault legado existem referências com nomes para as credenciais OAuth do Bling, segredo da aplicação Meta, verificação de saúde do Flow e chave privada do Flow. O refresh token do Bling foi atualizado em 26/10/2026 e `last_oauth_ok_at` no runtime legado registra sucesso às 14:37:11 UTC no mesmo dia. Isso é evidência recente de OAuth funcionando no projeto antigo, não prova de autenticação no destino nem de permissões futuras.
 5. O Vault do projeto novo não tem segredos cadastrados. No projeto legado, `public.system_secrets` armazena nomes e hashes de chaves internas, não os valores OAuth da Meta/Bling. O inventário do Vault não mostrou um nome explícito de access token Meta; o código publicado consultado referencia `META_ACCESS_TOKEN`, mas a presença no ambiente de Edge Functions não pode ser lida pelo conector. Os metadados novos confirmam nomes requeridos (`META_WHATSAPP_ACCESS_TOKEN`, `META_WHATSAPP_APP_SECRET`, `META_WHATSAPP_VERIFY_TOKEN`) e presença ainda não verificada.
 6. As duas árvores históricas inspecionadas do GitHub (`admin-v3-chat-center-20260912` e `admin-v13-nfe-real-20260726`) não têm arquivos `.env`. Nos arquivos selecionados de configuração/integração foram encontrados apenas referências a secrets do GitHub Actions e configuração publicável do Supabase; não foram detectados padrões de tokens Meta, Bling, OpenAI ou service-role literal. O repositório é público e esta foi uma verificação direcionada, não uma varredura forense de todos os blobs de todo o histórico. Nunca assumir ausência global de vazamento com base nesse recorte; qualquer segredo literal encontrado em commit público deve ser revogado/rotacionado.
 7. O projeto novo não fornece ainda evidência de conexão autenticada. O connector de Supabase não permite consultar valores de secrets; health checks autenticados devem confirmar Meta por número e Bling sem imprimir ou devolver credenciais.
-8. O advisor de segurança mostra policies ausentes em tabelas com RLS. A checagem de privilégios confirmou `anon`/`authenticated` sem acesso às tabelas públicas consultadas e `service_role` como único papel com privilégios; a policy pública do catálogo não fica utilizável até GRANT explícito. O painel precisa receber GRANTs mínimos e policies explícitas por papel/endpoints. O advisor de performance aponta índices sem uso em tabelas ainda vazias e configuração informativa do Auth; não é razão para refazer o schema agora.
+8. O advisor de segurança mostra 17 tabelas com RLS sem policies (`INFO`, default deny); `anon`/`authenticated` ainda não têm GRANT nas tabelas da API. A policy pública do catálogo não fica utilizável até GRANT explícito. O painel precisa receber GRANTs mínimos e policies explícitas por papel/endpoints, sem SERVICE_ROLE no browser. O advisor de performance aponta 14 índices sem uso, em sua maioria por falta de tráfego/tabelas sem dados, e configuração informativa do Auth; não remover índice sem medir e não é razão para refazer o schema agora.
 
 ### Gate 0 — segurança para o primeiro checkout e migração local
 
@@ -1504,3 +1507,63 @@ No runtime `public.bling_hub_runtime_v2` do projeto legado, `mode=live` e hub/pr
 5. Habilitar `enabled` primeiro após health check; manter `external_writes_enabled=false` até aprovação de pedidos teste, venda/nota em homologação e gate contábil.
 
 Esse procedimento preserva conexões válidas sem transformar o histórico de código em cofre e reduz risco de token inválido, mistura de WABA ou refresh-token revogado.
+
+## Baseline read-only do Supabase destino — 26/10/2026
+
+Consultado o projeto **Dona Antônia - NOVO**, referência `wvpzudjujtmyspluwhvx`, região `sa-east-1`, estado `ACTIVE_HEALTHY`, Postgres 17.11.0.003. Foram listados schema/colunas/contagens, migrations, policies/grants, buckets, contagem de usuários Auth, agregados não identificáveis e apenas flags de integração. Nenhuma linha de cliente, endereço, produto, token ou `secret_reference` foi aberta; nenhuma escrita ocorreu.
+
+- Existem 19 tabelas entre `public` e `app_private`, todas com RLS ligada; migrations registradas: `initial_dona_antonia_clean_schema` e `stage_legacy_product_images_for_safe_copy`.
+- `public.products`: 1.928 linhas; todas `active=false` e `review_status=needs_review`. Nenhum produto está pronto para publicação ou venda. Não exibir custo (`cost_cents`) em nenhuma tela/canal.
+- Fotos ainda não chegaram ao storage do projeto: `public.product_images` tem 0 linhas, nenhum bucket foi encontrado e `app_private.image_import_queue` tem 1.798 linhas, todas `pending`. O requisito de foto em cada alternativa Flow permanece bloqueado por dados reais.
+- Cadastros atuais: 574 clientes, 578 contatos e 336 endereços; somente contagens foram lidas. Os dados precisam ser protegidos por sessão e RLS; não copiar/seedar essas linhas em fixtures.
+- Ainda não há equipe habilitada no destino: `auth.users` e `public.staff_profiles` têm 0 linhas. A tela de Admin não pode abrir como se estivesse autenticada até convite/criação explícita de funcionário e associação de papel.
+- Há 2 linhas de configuração Meta e 1 Bling; as três estão `enabled=false` e `external_writes_enabled=false`. Isso confirma flags de segurança, não validade de tokens ou health check. Os valores e referências de segredo não foram consultados.
+- RLS está ligada nas 19 tabelas. Existem somente duas policies: leitura pública de produtos aprovados e imagens de produtos públicos. Os outros 17 achados do Advisor são `INFO` “RLS Enabled No Policy”: o bloqueio é fail-closed, mas impede o painel autenticado de operar até que migrações locais definam políticas de staff/roles revisadas. O grants visível às APIs é somente `service_role`; não colocar essa chave no navegador.
+- Não abrir migração de produção agora. Antes de montar o baseline local, exportar/inspecionar definições atuais de funções, constraints, triggers, grants e conteúdo das migrations por método seguro; repetir as contagens após a fila de fotos ser processada. A UI pode avançar, mas leitura/admin real depende de Auth e policies funcionais.
+
+## Decisão de sessão e autorização inicial — 26/10/2026
+
+### Fluxo implementado no app greenfield
+
+1. `/login` oferece somente email/senha para funcionário; não existe cadastro público nem recuperação/convite automático. A tela fica desabilitada enquanto faltam `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+2. Browser e servidor criam clientes separados por `@supabase/ssr`; o navegador recebe apenas URL e chave publicável. A chave `service_role`, tokens Meta/Bling, OpenAI e chave privada Flow nunca entram em bundle ou cookie.
+3. Em cada requisição, `src/proxy.ts` usa `auth.getClaims()` pelo cliente SSR para validar/atualizar sessão e devolver cookies novos. O layout `(admin)` chama `requireStaff()` no servidor, obtém `sub` dos claims verificados e consulta `staff_profiles` por `user_id` usando a sessão do funcionário.
+4. O Admin só renderiza se consulta não falhou, perfil existe, `enabled=true` e `role` está na allowlist `owner | admin | catalog_manager | fulfillment`. Ausência de env, sessão, grants, policy ou perfil termina em redirect; a proteção fecha por padrão.
+5. O botão “Sair” chama `auth.signOut()`, redireciona para `/login` e atualiza a árvore. Nenhum convite, criação de usuário ou escrita foi feito no Auth do destino.
+
+O login não usa o parâmetro `searchParams` para mensagens diferenciadas. O primeiro smoke em desenvolvimento mostrou que essa leitura fora de Suspense gera erro de runtime com Cache Components; a interface foi simplificada para texto genérico e a tela passou a ser pré-renderizável. Isso também evita revelar se um email tem conta/perfil.
+
+### Matriz de acesso escolhida para migração local
+
+| Área/dado | owner | admin | catalog_manager | fulfillment |
+|---|---|---|---|---|
+| Visão geral | tudo operacional | tudo operacional | resumo de produtos/cestas | fila operacional de produção/expedição |
+| Atendimento, mensagens, notas e clientes | ler/escrever | ler/escrever | sem inbox nem lista de clientes | somente contato/endereço necessário ao pedido permitido |
+| Pedidos | ler/alterar todos | ler/alterar todos | sem acesso | ler todos os campos de separação/expedição necessários e avançar somente estados operacionais autorizados |
+| Produtos, fotos e cestas | administrar | administrar | administrar catálogo/cestas e fotos; sem custo/margem fora da função financeira autorizada | sem acesso de edição |
+| ANA | configurar e operar | configurar e operar | sem configuração | sem configuração |
+| Configurações e conexões | administrar integração/equipe; único papel que pode habilitar escrita externa | operar integrações sem revelar secrets; sem provisionar owner/elevar próprio papel | sem acesso | sem acesso |
+| Segredos, tokens, referência privada e margem | nenhuma leitura de valor de segredo; margem somente pela RPC autorizada | idem | somente margem se a RPC financeira atualizada permitir | sem acesso |
+
+Regras de enforcement:
+
+- Sidebar condicional melhora a navegação, mas **não autoriza**. Cada ação de servidor/RPC valida papel e ownership; Postgres GRANT+RLS é a barreira final para dados acessados com sessão de funcionário.
+- O papel `fulfillment` não ganha acesso à lista `customers`; dados de entrega podem ser projetados dentro do pedido sob policy/consulta estrita. Não exigir atribuição de pedido no MVP sem necessidade operacional.
+- `owner` é o único que provisiona/promove equipe e liga/desliga `external_writes_enabled`. `admin` faz operação e gerencia configuração sem ver segredo bruto ou promover usuário para owner.
+- `catalog_manager` altera nome, preço comercial, status, SKU/identificadores e fotos; custo e ajuste interno continuam privados e nunca chegam a Flow, ANA ou cliente.
+- Mudanças de status de pedido recebem policy específica de transição; não conceder UPDATE geral que permita fulfillment mudar aceite, pagamento, venda Bling ou estado fiscal.
+- `anon` só recebe leitura explicitamente limitada ao catálogo aprovado, se o contrato de exibição pública realmente usar o banco; canais WhatsApp/Flow acessam dados comerciais via funções de servidor privilegiadas com DTO de saída mínimo.
+- Toda tabela nova começa sem grants a `anon`/`authenticated`; a migração deve adicionar privilégios específicos, índices de `auth.uid()` e testes pgTAP de acesso permitido/negado. `app_private` nunca é schema de API.
+
+O destino atual tem 0 usuários e 0 perfis e não concede acesso de leitura/escrita às tabelas para `authenticated`; portanto `requireStaff()` já bloqueia operação real. O smoke local retornou HTTP 200 para `/login`; `pnpm lint`, `pnpm typecheck` e `pnpm build` passaram após atualizar os tipos de rota gerados pelo Next. Isso valida compilação/rota pública, não autenticação real, refresh, logout com usuário ou a matriz acima. Antes de habilitar dados: fechar policies/grants no Supabase local, executar pgTAP, fazer snapshot atualizado, provisionar owner manualmente com procedimento seguro e só então validar sessão real.
+
+Fontes de implementação: [Next.js Proxy](https://nextjs.org/docs/app/api-reference/file-conventions/proxy), [Next.js Cache Components e Suspense](https://nextjs.org/docs/app/getting-started/partial-prerendering), [Supabase SSR no Next.js](https://supabase.com/docs/guides/auth/server-side/creating-a-client?framework=nextjs), [Supabase: escolher pacote de Auth](https://supabase.com/docs/guides/auth/choosing-a-server-package). A documentação oficial direciona o uso do proxy e das claims verificadas; não substitui policies/grants Postgres.
+
+### Desenvolvimento Supabase local — 26/10/2026
+
+- Supabase CLI `2.122.0`, Docker Engine `29.9.2`; Postgres local `17.11.0.006`, enquanto o destino reportou `17.11.0.003`. O CLI local ainda não possui token do Management API; leituras remotas permanecem no conector MCP read-only.
+- `supabase/config.toml` mantém `api.auto_expose_new_tables=false`, expõe somente `public`, desliga signup por email e seeds, e usa major PostgreSQL 17. Não criar fixtures com registros reais; testes futuros usam dados sintéticos isolados em transação.
+- No Windows desta máquina, Vector tentava acessar a API do daemon Docker em TCP `2375`, que não está habilitada. O comando `pnpm supabase:start` exclui `logflare` e `vector`; Postgres, Auth, REST, Storage, Realtime, Studio e Edge Runtime permaneceram saudáveis. Não abrir acesso TCP ao Docker só para habilitar logs locais.
+- O changelog Supabase de outubro de 2026 registra desativação de parte dos ciphers TLS 1.2 em 10/11/2026 e observações no Postgres 17.11 para índices `ltree`/`btree_gist` e dados cifrados com ciphers legados. O destino não tem `ltree` nem `btree_gist`; possui `pgcrypto 1.3`. Inspecionar dependências e colunas que usem pgcrypto antes de concluir o impacto; não reindexar/recifrar por presunção.
+- O histórico da PR #1422 contém um antigo `db/001_schema.sql` marcado para não aplicar em produção, criando um schema experimental `da_next`; o patch consultado mostra o arquivo sendo removido. Ele não descreve o destino atual e não entra no baseline novo.
+- Ainda falta baseline integral e resetável das 19 tabelas do destino, incluindo tipos/defaults, índices, constraints, policies, grants, rotinas e triggers. As migrations remotas listadas são `20261026230047_initial_dona_antonia_clean_schema` e `20261027003330_stage_legacy_product_images_for_safe_copy`. Não criar migration parcial baseada apenas nos tipos TypeScript: isso não reproduziria o ambiente de acesso e poderia divergir do histórico de produção. Nenhum registro comercial foi importado no banco local.

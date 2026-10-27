@@ -718,6 +718,167 @@ h3 {
 	font-weight: 700;
 }
 
+.login-page {
+	display: grid;
+	min-height: 100vh;
+	place-content: center;
+	background:
+		radial-gradient(ellipse at 15% 8%, rgb(222 243 229 / 75%), transparent 36%),
+		var(--page);
+	padding: 28px 16px;
+}
+
+.login-card {
+	width: min(100%, 420px);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	background: var(--surface);
+	box-shadow: var(--shadow);
+	padding: 31px;
+}
+
+.login-brand-mark {
+	display: grid;
+	width: 42px;
+	height: 42px;
+	place-items: center;
+	border-radius: 13px;
+	background: var(--green);
+	color: white;
+	font-size: 12px;
+	font-weight: 800;
+	letter-spacing: -0.4px;
+}
+
+.login-card > .eyebrow {
+	margin-top: 21px;
+}
+
+.login-card h1 {
+	margin: 0;
+	font-size: 27px;
+	font-weight: 700;
+	letter-spacing: -0.9px;
+}
+
+.login-description {
+	margin: 8px 0 0;
+	color: var(--muted);
+	font-size: 12px;
+	line-height: 1.6;
+}
+
+.login-form {
+	display: grid;
+	gap: 15px;
+	margin-top: 24px;
+}
+
+.login-field {
+	display: grid;
+	gap: 7px;
+	color: #46544b;
+	font-size: 11px;
+	font-weight: 700;
+}
+
+.login-field input {
+	width: 100%;
+	min-height: 42px;
+	border: 1px solid #dbe3dd;
+	border-radius: 8px;
+	background: white;
+	color: var(--ink);
+	padding: 0 11px;
+	font-size: 13px;
+	font-weight: 400;
+}
+
+.login-field input::placeholder {
+	color: #9ba69f;
+}
+
+.login-field input:focus {
+	border-color: var(--green);
+	outline: 3px solid rgb(22 138 91 / 13%);
+}
+
+.login-field input:disabled {
+	background: #f5f7f5;
+	color: #8c9991;
+	cursor: not-allowed;
+}
+
+.login-submit {
+	width: 100%;
+	min-height: 43px;
+	margin-top: 2px;
+	border: 0;
+	cursor: pointer;
+}
+
+.login-submit:disabled {
+	background: #a7c8b5;
+	cursor: not-allowed;
+}
+
+.login-notice,
+.login-error {
+	margin: 0;
+	border-radius: 8px;
+	padding: 10px 11px;
+	font-size: 11px;
+	line-height: 1.5;
+}
+
+.login-notice {
+	background: #f1f6f2;
+	color: #64736a;
+}
+
+.login-error {
+	background: #fff1ee;
+	color: #9e4436;
+}
+
+.login-help {
+	margin: 0;
+	color: var(--muted);
+	font-size: 10px;
+	line-height: 1.5;
+	text-align: center;
+}
+
+.login-footer {
+	margin: 18px 0 0;
+	color: #8a9790;
+	font-size: 10px;
+	text-align: center;
+}
+
+.sign-out-button {
+	display: grid;
+	width: 32px;
+	height: 32px;
+	flex: 0 0 auto;
+	place-items: center;
+	border: 1px solid transparent;
+	border-radius: 8px;
+	background: transparent;
+	color: #7b8981;
+	cursor: pointer;
+}
+
+.sign-out-button:hover {
+	border-color: var(--line);
+	background: #f7f9f7;
+	color: var(--ink);
+}
+
+.sign-out-button:disabled {
+	cursor: wait;
+}
+
 .nav-backdrop {
 	display: none;
 }

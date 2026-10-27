@@ -11,7 +11,9 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Abra `http://localhost:3000`. As telas atuais são a estrutura visual inicial e não leem nem escrevem em serviços externos.
+Copie `.env.example` para `.env.local` e use a URL e a chave publicável do Supabase selecionado. Nunca coloque service role, chave secreta ou token nesse arquivo. Sem essas duas variáveis, o login fica desabilitado. A base atual ainda não tem funcionários cadastrados nem policies de staff; o painel mantém as rotas administrativas fechadas até a tarefa de acesso concluir.
+
+Abra `http://localhost:3000`. As telas administrativas não leem nem escrevem em serviços externos antes do login autorizado.
 
 ## Verificações focadas
 
@@ -19,7 +21,10 @@ Abra `http://localhost:3000`. As telas atuais são a estrutura visual inicial e 
 pnpm lint
 pnpm typecheck
 pnpm build
+pnpm supabase:start
 ```
+
+O Supabase local usa Postgres 17 e mantém signup e seeds desligados até as policies de acesso e fixtures sintéticas serem definidas. No Windows, o script omite apenas os serviços auxiliares `logflare` e `vector`, que dependem de expor a API Docker local em TCP; os serviços de dados, Auth, Storage, Edge Functions e Studio continuam disponíveis. Pare a stack com `pnpm supabase:stop`.
 
 ## Documentação do projeto
 

@@ -22,6 +22,17 @@
 - `flow_token` aleatório é correlator (hash persistido), não autenticação; validar echo no `nfm_reply` por WABA antes de fechar checkout.
 - Fotos em todas as alternativas do Flow continuam obrigatórias; versões/limites ficam sujeitos a documentação e validação atuais da Meta.
 - O painel não mostra métricas, produtos, pedidos ou clientes inventados. As conexões aparecem como pendentes até a validação real.
+- Supabase destino read-only conferido: ref correta `wvpzudjujtmyspluwhvx`, 19 tabelas, RLS ligado, 2 migrations. Produtos: 1.928, todos inativos/`needs_review`; 1.798 fotos pendentes, zero `product_images` e zero Storage buckets. Auth users e staff profiles ainda são zero. Snapshot detalhado e limitantes no fim de `caderno-tecnico.md`.
+- 17 findings do Advisor indicam RLS ligado sem policy (`INFO`, fail-closed); há somente duas políticas de leitura de catálogo aprovado. 3 integrações estão desligadas (2 Meta, 1 Bling) e escritas externas desligadas. Nenhum valor de secret/account reference foi lido.
+- Tipos TypeScript gerados read-only a partir das 14 tabelas `public` do destino e salvos em `src/lib/supabase/database.types.ts`; schema `app_private` não é exportado para o cliente. Regenerar depois de cada migração revisada.
+- Decisão de implementação de sessão: usar `@supabase/ssr` com clientes browser/server; `src/proxy.ts` chama `auth.getClaims()` para atualizar/validar claims e `requireStaff()` no layout protegido exige sessão e perfil `staff_profiles.enabled=true` com papel conhecido. O guard falha fechado em erro/RLS. O browser recebe só URL e chave publicável; sem signup, service role ou provisionamento automático.
+- Autorização atual ainda não é considerada pronta para operação: o destino não tem usuários/perfis e nega acesso às tabelas do painel por RLS/grants; policies/grants mínimos e matriz papel/ação são pré-requisito da próxima etapa antes de habilitar dados reais.
+- Corrigida leitura de `searchParams` no login: a tentativa inicial acionava runtime data fora de `<Suspense>` sob Cache Components. Como o login não precisa diferenciar mensagens de acesso, o fluxo ficou estático e usa mensagens genéricas; isso evita indicar a existência de usuário.
+- Supabase CLI fixado em `2.122.0` após conferir a versão estável do registry e consultar comandos com `--help`; Docker Engine `29.9.2` está disponível. `supabase/config.toml` usa Postgres 17, signup/seeds/exposição automática desligados e apenas schema `public` na API.
+- Stack local saudável: Postgres `17.11.0.006`, Auth, REST, Storage, Realtime, Studio e Edge Runtime. No Windows, `logflare` e `vector` ficam fora porque o Vector tentou acessar a API do daemon Docker em TCP `2375`, ausente nesta instalação; não habilitar listener TCP do Docker apenas para logs locais.
+- O CLI não está autenticado no Supabase Management API (`projects list` retornou `AccessTokenRequiredError`). O conector MCP permanece disponível para consultas read-only; não procurar, registrar ou copiar um PAT para a máquina. Não há migrations de negócio, fixtures ou dados reais no banco local.
+- Snapshot read-only complementar: extensões `pg_stat_statements 1.11`, `pgcrypto 1.3`, `plpgsql 1.0`, `supabase_vault 0.3.1` e `uuid-ossp 1.1`; `ltree` e `btree_gist` não estão instaladas. Não foram lidos corpos de funções, linhas comerciais ou secrets. Revisar uso de `pgcrypto` antes de concluir que atualização minor 17.11 não exige ação.
+- Migrações remotas confirmadas por consulta read-only: `20261026230047_initial_dona_antonia_clean_schema` e `20261027003330_stage_legacy_product_images_for_safe_copy`. O patch histórico da PR #1422 mostra um `db/001_schema.sql` experimental para schema `da_next` removido; não é base do projeto atual e não foi reaproveitado.
 
 ## Progresso
 
@@ -29,10 +40,12 @@
 - [x] Aplicação Next.js criada na raiz; oito rotas iniciais: Visão geral, Atendimento, Pedidos, Cestas, Produtos, Clientes, ANA e Configurações.
 - [x] Shell responsivo com navegação curta, estados de preparação claros e sem dados reais/mocks enganosos.
 - [x] Scripts pnpm configurados: `format`, `lint`, `typecheck`, `build`.
-- [x] Validação focada: `pnpm lint`, `pnpm typecheck` e `pnpm build` concluídos com sucesso; rotas do App Router renderizadas estaticamente.
+- [x] Login interno inicial, clientes Supabase SSR e proteção fail-closed do layout administrativo implementados; sem provisionar usuário ou alterar o Supabase remoto.
+- [x] Validação focada desta fatia: `pnpm lint`, `pnpm typecheck` e `pnpm build` concluídos com sucesso; `/login` respondeu 200 no servidor de desenvolvimento antes do ajuste de renderização e build passou após ele. Não se alegou login real, indisponível sem Auth user/policy no destino.
 - [x] Conferência visual no navegador local: layout mobile sem overflow horizontal; navegação e conteúdo inicial presentes.
 - [x] Commit `6ed4c3e` publicado na branch remota `codex/whatsapp-admin-greenfield-20261026`; PR será aberto quando houver uma entrega funcional apropriada para revisão, evitando duplicar a draft histórica existente.
-- [ ] Inicializar Supabase local com CLI após confirmar a disponibilidade do Docker e planejar a primeira migração a partir de um snapshot read-only atualizado.
-- **Próxima fatia:** login interno, autorização por papel e proteção do shell; integrar Supabase somente com ambiente local e credenciais públicas/seguras devidamente separadas.
+- [x] Inicializar CLI e stack Supabase local; validar health dos serviços necessários à aplicação.
+- [ ] Completar baseline local das 19 tabelas, defaults, constraints, índices, policies, grants, funções e triggers do destino antes de aplicar a migration de staff.
+- **Próxima fatia:** obter/reconstruir o schema sem registros e gerar migrations locais fiéis; então implementar grants/policies por papel e pgTAP. Não criar convite, usuário, policy, bucket nem alteração de schema em produção.
 
 Nenhum segredo foi lido, registrado ou transmitido. Nenhuma chamada de escrita foi feita em Supabase, Meta ou Bling.

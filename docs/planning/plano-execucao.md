@@ -31,8 +31,10 @@
 
 Por decisão do proprietário, a base local e a interface podem avançar agora em branch isolada, sem conectar credenciais nem alterar serviços. **Os itens abaixo bloqueiam migrações no projeto Supabase de destino, tráfego real, publicação de Flow e escrita no Bling; não bloqueiam UI, contratos puros ou adaptadores mockados.**
 
-- [ ] Atualizar o retrato read-only do Supabase de destino após a carga de produtos/fotos: schema, contagens, imagens aprovadas, buckets, identificadores e grants/RLS.
+- [x] Capturar snapshot read-only do Supabase de destino em 26/10/2026: projeto/versão, 19 tabelas, migrations, colunas, contagens, policies/grants, buckets e flags de integrações; detalhes em `caderno-tecnico.md`.
+- [ ] Repetir snapshot após concluir a fila de fotos e antes de preparar/importar o baseline local ou qualquer migração; conferir especificamente as 1.798 imagens pendentes e novo estado das policies.
 - [ ] Mapear as referências Meta do Vault legado às duas contas do destino; esclarecer a presença e o escopo do access token no runtime Edge; validar health check por WABA/`phone_number_id`; não revelar nem copiar valores secretos.
+- [x] Confirmar flags atuais de segurança: duas configurações Meta e uma Bling, todas `enabled=false` e `external_writes_enabled=false`; nenhum valor de segredo consultado.
 - [ ] Mapear a conexão OAuth Bling para o destino e validar chamada somente leitura; registrar um único dono para rotação do refresh token durante o cutover; manter escrita externa desligada.
 - [ ] Concluir prova/limites da Meta para Flow com imagem em cada alternativa, ida/volta, `nfm_reply`, carrinho nativo e pedido separado; documentar o resultado da validação nas duas WABAs.
 - [ ] Fazer auditoria de consistência nos três documentos e publicar o freeze final da especificação, incluindo política de segredos e limitações de qualquer auditoria GitHub.
@@ -100,12 +102,14 @@ Pages montam features; regras de negócio ficam em módulos puros ou serviços d
 
 - [x] Criar checkout do repo vazio `osvaldosereia/SUCEDOAN12` e branch de trabalho; proteger `main` e usar PR antes de integrar.
 - [x] Fixar Node 24.22.1 e pnpm 11.25.0. Adicionar Supabase CLI versionada quando a tarefa de banco local começar.
+- [x] Fixar Supabase CLI 2.122.0, inicializar `supabase/config.toml` e subir stack local Postgres 17.11; no Windows, omitir apenas os coletores locais de log que dependem do daemon Docker em TCP. Signup, seeds e exposição automática de tabelas ficam desligados.
 - [x] Gerar aplicação pelo CLI oficial com TypeScript, Biome, Tailwind, App Router, diretório `src/` e alias `@/*`; fixar dependências e lockfile.
-- [ ] Inicializar Supabase local com CLI. Importar o snapshot/migração inicial do projeto confirmado, sem conectar o ambiente local às escritas de produção.
+- [ ] Completar baseline de schema/migrations do projeto confirmado para que reset local reproduza as 19 tabelas e dependências sem copiar linhas reais; o CLI local ainda não está autenticado no Management API e o destino não será ligado até o procedimento de dump seguro estar definido.
 - [x] Definir scripts `lint`, `typecheck`, `format` e `build`.
 - [ ] Adicionar checks focados de CI com a primeira fatia funcional, sem suíte vazia.
 - [x] Verificar `pnpm lint`, `pnpm typecheck` e `pnpm build` no esqueleto. Os três passaram; não foi criada suíte vazia nem rodada bateria ampla.
-- [ ] Inicializar Supabase local com CLI após confirmar a disponibilidade do Docker e planejar a primeira migração a partir de snapshot read-only atualizado.
+- [x] Confirmar Docker Engine local e iniciar Supabase com CLI; validar health de Postgres/Auth/REST/Storage/Studio/Realtime/Edge Runtime.
+- [ ] Preparar baseline completo do schema do destino e conferir functions/triggers/grants antes da primeira migration executável.
 
 **Entrega:** app vazio inicia localmente, Supabase local sobe em Docker e CI executa sem qualquer segredo real.
 
@@ -113,15 +117,15 @@ Pages montam features; regras de negócio ficam em módulos puros ou serviços d
 
 **Arquivos:** `src/lib/supabase/{client,server}.ts`, `src/lib/auth/{permissions,require-staff}.ts`, `src/app/(auth)/login/page.tsx`, `src/app/(admin)/layout.tsx`, `supabase/migrations/*staff_access*`, `supabase/tests/database/staff_access_test.sql`.
 
-**Interface:** `requireStaff(): Promise<StaffContext>` retorna `userId`, `role` e permissões efetivas ou interrompe a requisição sem sessão/papel.
+**Interface:** `requireStaff(): Promise<StaffContext>` retorna `userId` e papel confirmado; a matriz de permissões por sessão/ação será aplicada na camada de domínio e reforçada por RLS antes de liberar dados. A função interrompe a requisição sem sessão/papel.
 
-- [ ] Criar login interno; sem cadastro público de funcionário.
-- [ ] Reutilizar `staff_profiles`; mapear `owner`, `admin`, `catalog_manager`, `fulfillment` e `operator` com matriz de leitura/escrita revisada.
-- [ ] A constraint atual de `staff_profiles.role` não contém `operator`; migrá-la explicitamente antes de inserir esse papel, sem alterar perfis existentes.
+- [x] Criar login interno com email/senha; sem cadastro público de funcionário. A tela permanece desabilitada se URL/chave publicável estiverem ausentes e mostra mensagem genérica para não revelar se a conta existe.
+- [x] Reutilizar `staff_profiles` e preservar os quatro papéis existentes: `owner`, `admin`, `catalog_manager`, `fulfillment`. A fundação valida papel conhecido e perfil habilitado; a matriz de permissões por rota/ação será fechada junto às policies RLS antes de conectar dados. Não incluir papel `operator`/`support` sem necessidade operacional confirmada.
+- [x] Confirmar que hoje não existem Auth users nem staff profiles. Não criar convites/contas no rollout de código; o provisionamento do primeiro owner segue como gate explícito de ativação.
 - [ ] Conceder GRANTs mínimos apenas às tabelas necessárias ao painel e criar policies RLS por papel. Não usar `TO authenticated` sozinho como autorização.
-- [ ] Preservar `app_private` sem exposição ao browser; verificar que `anon` e `authenticated` não ganham acesso às tabelas de integração.
+- [x] Preservar `app_private` sem exposição ao browser; o snapshot confirma ausência de GRANTs `anon`/`authenticated` às tabelas de integração. Repetir a checagem após a migração.
 - [ ] Criar teste pgTAP para leitura/escrita permitida e negada por papel, incluindo tentativa de atualização fora da responsabilidade.
-- [ ] Validar login, refresh e bloqueio de usuário não habilitado; sair do painel não deve invalidar trilha de auditoria.
+- [ ] Validar sessão, refresh e bloqueio real de usuário não habilitado quando Auth users e policies existirem; hoje só foram validados a resposta HTTP 200 da tela `/login`, o guard de código e o build. Sair deve limpar a sessão e, quando a auditoria for implementada, preservar seus eventos.
 
 **Verificação:** `supabase test db`, unit tests de autorização e navegação protegida no Playwright.
 
