@@ -158,20 +158,21 @@ async function productSave(input: any) {
   return { product: result.data };
 }
 
-async function basketList() {
-  const templates = await db.from("basket_templates")
+async function basketList(status = "active") {
+  const templateQuery = db.from("basket_templates")
     .select("id,name,description,image_url,is_active,sort_order,base_price,category_id,subcategory_id")
-    .eq("is_active", true)
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
+  if (status === "active") templateQuery.eq("is_active", true);
+  else if (status === "inactive") templateQuery.eq("is_active", false);
+  const templates = await templateQuery;
   if (templates.error) throw templates.error;
   const editors = await mapLimit(templates.data || [], 5, async (basket: any) => {
     const result = await db.rpc("basket_mold_editor_v1", { p_basket_id: basket.id });
-    if (result.error) return null;
-    return { basket, editor: result.data };
+    return { basket, editor: result.error ? null : result.data };
   });
   const valid = editors.filter(Boolean) as Array<{ basket: any; editor: any }>;
-  const ids = [...new Set(valid.flatMap(({ editor }) => (editor.positions || []).flatMap((position: any) => (position.options || []).map((option: any) => option.product_id))))];
+  const ids = [...new Set(valid.flatMap(({ editor }) => (editor?.positions || []).flatMap((position: any) => (position.options || []).map((option: any) => option.product_id))))];
   let productById = new Map<string, any>();
   if (ids.length) {
     const result = await db.from("products").select(PRODUCT_COLUMNS).in("id", ids);
@@ -179,7 +180,8 @@ async function basketList() {
     productById = new Map((result.data || []).map((product: any) => [String(product.id), product]));
   }
 
-  const baskets = valid.map(({ basket, editor }) => {
+  const baskets = valid.map(({ basket, editor: rawEditor }) => {
+    const editor = rawEditor || {};
     const positions = (editor.positions || []).slice().sort((a: any, b: any) => Number(a.sort_order || 0) - Number(b.sort_order || 0)).map((position: any) => ({
       id: position.position_id,
       label: position.label,
@@ -222,6 +224,21 @@ async function basketList() {
     };
   });
   return { baskets };
+}
+
+async function basketSetActive(input: any) {
+  const basketId = uuid(input.basket_id);
+  if (!basketId || typeof input.is_active !== "boolean") {
+    return { status: 400, error: "invalid_basket_status", message: "Cesta ou situação inválida." };
+  }
+  const result = await db.from("basket_templates")
+    .update({ is_active: input.is_active })
+    .eq("id", basketId)
+    .select("id,name,is_active")
+    .maybeSingle();
+  if (result.error) throw result.error;
+  if (!result.data) return { status: 404, error: "basket_not_found", message: "Cesta não encontrada." };
+  return { basket: result.data };
 }
 
 async function basketSave(input: any) {
@@ -305,10 +322,14 @@ Deno.serve(async (req: Request) => {
     const input = { ...Object.fromEntries(url.searchParams.entries()), ...body };
     const action = clean(input.action, 40);
     let result: any;
-    if (req.method === "GET" && action === "baskets") result = await basketList();
+    if (req.method === "GET" && action === "baskets") {
+      const status = ["active", "inactive", "all"].includes(input.status) ? input.status : "active";
+      result = await basketList(status);
+    }
     else if (req.method === "GET" && action === "products") result = await productSearch(input);
     else if (req.method === "POST" && action === "product_save") result = await productSave(input);
     else if (req.method === "POST" && action === "basket_save") result = await basketSave(input);
+    else if (req.method === "POST" && action === "basket_set_active") result = await basketSetActive(input);
     else return json(req, { ok: false, error: "action_invalid" }, 400);
 
     if (result?.error) return json(req, { ok: false, ...result }, Number(result.status || 400));
@@ -319,4 +340,3 @@ Deno.serve(async (req: Request) => {
     return json(req, { ok: false, ...response }, response.status);
   }
 });
-

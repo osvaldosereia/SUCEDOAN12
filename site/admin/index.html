@@ -6,10 +6,10 @@
   <meta name="theme-color" content="#7e3029">
   <meta name="robots" content="noindex, nofollow">
   <title>Admin · Dona Antônia</title>
-  <link rel="stylesheet" href="../styles.css?v=3">
-  <link rel="stylesheet" href="admin.css?v=3">
+  <link rel="stylesheet" href="../styles.css?v=4">
+  <link rel="stylesheet" href="admin.css?v=4">
   <script src="../config.js?v=3"></script>
-  <script src="catalog-admin.js?v=4" defer></script>
+  <script src="catalog-admin.js?v=5" defer></script>
   <script src="admin.js?v=3" defer></script>
 </head>
 <body class="admin-page">
@@ -91,7 +91,7 @@
       </section>
 
       <section class="admin-view" data-panel="baskets" hidden>
-        <div class="section-title"><div><h2>Cestas</h2><p>Defina o produto padrão, as variações, a quantidade e o valor inicial de cada composição.</p></div><button id="reload-baskets" class="button button-outline" type="button">Atualizar</button></div>
+        <div class="section-title"><div><h2>Cestas</h2><p>Defina o produto padrão, as variações, a quantidade e o valor inicial de cada composição.</p></div><div class="basket-admin-controls"><select id="basket-status" aria-label="Filtrar cestas"><option value="active">Ativas</option><option value="inactive">Inativas</option><option value="all">Todas</option></select><button id="reload-baskets" class="button button-outline" type="button">Atualizar</button></div></div>
         <div id="admin-baskets" class="admin-basket-list"><p class="admin-muted">Carregando…</p></div>
         <div class="edit-notice">
           <strong>Como o valor é calculado</strong>
@@ -185,4 +185,3 @@
   <div id="admin-toast" class="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
-

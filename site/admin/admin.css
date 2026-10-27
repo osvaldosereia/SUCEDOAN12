@@ -67,6 +67,9 @@
 .catalog-basket-card > img, .admin-product-card > img, .product-image-placeholder { width: 68px; height: 68px; border-radius: 10px; object-fit: cover; background: #f1e9df; }
 .product-image-placeholder { display: grid; place-items: center; color: var(--brand); font-weight: 800; }
 .catalog-basket-info, .admin-product-info { display: grid; min-width: 0; gap: 4px; }
+.basket-admin-controls { display: flex; align-items: center; gap: 8px; }
+.basket-admin-controls select { min-height: 42px; padding: 0 10px; border: 1px solid #d8cfc3; border-radius: 10px; background: #fff; color: var(--ink); }
+.danger-button { border-color: #dfb7ae; color: #96372e; }
 .catalog-basket-info h3 { margin: 0; font-size: .95rem; }
 .catalog-basket-info span, .admin-product-info span { color: var(--muted); font-size: .74rem; }
 .catalog-basket-info strong, .admin-product-info b { color: var(--brand); font-size: .88rem; }
@@ -129,6 +132,8 @@
   .product-flags { grid-template-columns: 1fr; }
   .position-heading { align-items: flex-start; flex-direction: column; }
   .position-heading .button { width: 100%; }
+  .basket-admin-controls { align-items: stretch; flex-direction: column; }
+  .basket-admin-controls select, .basket-admin-controls .button { width: 100%; }
 }
 @media (max-width: 500px) {
   .login-panel { padding: 20px; }
@@ -145,4 +150,3 @@
   .admin-position { padding: 8px; }
   .admin-position-main { align-items: flex-start; flex-direction: column; gap: 2px; }
 }
-

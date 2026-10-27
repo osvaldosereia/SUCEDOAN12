@@ -18,7 +18,7 @@
   const state = {
     baskets: [], basket: null, pickerIndex: -1, pickerQuery: "", pickerOffset: 0, pickerTotal: 0,
     pickerSelected: new Set(), productCache: new Map(), productsOffset: 0, productsTotal: 0,
-    productsQuery: "", productsStatus: "active", toastTimer: 0,
+    productsQuery: "", productsStatus: "active", basketsStatus: "active", toastTimer: 0,
   };
 
   async function request(action, options = {}) {
@@ -77,10 +77,19 @@
       const imageMarkup = image
         ? `<img src="${esc(image)}" alt="" width="76" height="76" loading="lazy" decoding="async">`
         : '<span class="product-image-placeholder">DA</span>';
+      const action = basket.is_active === false
+        ? `<button class="button button-outline" type="button" data-set-basket-active="true" data-basket-id="${esc(basket.id)}">Reativar</button>`
+        : positions.length
+          ? `<button class="button button-primary" type="button" data-edit-basket="${esc(basket.id)}">Editar</button>`
+          : `<button class="button button-outline danger-button" type="button" data-set-basket-active="false" data-basket-id="${esc(basket.id)}">Desativar kit</button>`;
+      const summary = positions.length
+        ? `${positions.length} itens · ${quantity} unidades · ${options} opções`
+        : "Sem composição cadastrada · não aparece na vitrine";
+      const price = positions.length ? money(currentBasketPrice(basket)) : "Sem composição";
       return `<article class="catalog-basket-card">
         ${imageMarkup}
-        <div class="catalog-basket-info"><h3>${esc(basket.name)}</h3><span>${positions.length} itens · ${quantity} unidades · ${options} opções</span><strong>${money(currentBasketPrice(basket))}</strong></div>
-        <button class="button button-primary" type="button" data-edit-basket="${esc(basket.id)}">Editar</button>
+        <div class="catalog-basket-info"><h3>${esc(basket.name)}</h3><span>${summary}</span><strong>${price}</strong></div>
+        ${action}
       </article>`;
     }).join("") || '<p class="admin-muted">Nenhuma cesta encontrada.</p>';
   }
@@ -90,8 +99,8 @@
     if (!host) return;
     host.innerHTML = '<p class="admin-muted">Carregando cestas…</p>';
     try {
-      const result = await request("baskets");
-      state.baskets = (result.baskets || []).filter((basket) => (basket.positions || []).length > 0);
+      const result = await request("baskets", { params: { status: state.basketsStatus } });
+      state.baskets = result.baskets || [];
       renderBaskets();
     } catch (error) {
       host.innerHTML = `<p class="admin-muted">${esc(error.message || "Não foi possível carregar as cestas.")}</p>`;
@@ -310,6 +319,14 @@
         if (basket) openBasket(basket);
       }
       if (target.dataset.editProduct) openProduct(state.productCache.get(String(target.dataset.editProduct)));
+      if (target.dataset.setBasketActive != null) {
+        const active = target.dataset.setBasketActive === "true";
+        target.disabled = true;
+        request("basket_set_active", { method: "POST", body: { basket_id: target.dataset.basketId, is_active: active } })
+          .then(() => { toast(active ? "Cesta reativada." : "Kit desativado; você pode reativá-lo no filtro Inativas."); return loadBaskets(); })
+          .catch((error) => toast(error.message || "Não foi possível alterar a situação da cesta."))
+          .finally(() => { target.disabled = false; });
+      }
       if (target.id === "new-product") openProduct();
       if (target.id === "add-basket-position") addPosition();
       if (target.dataset.pickProducts != null) openPicker(Number(target.dataset.pickProducts));
@@ -358,6 +375,10 @@
       loadProducts(true);
     });
     $("product-status").addEventListener("change", () => $("product-search").requestSubmit());
+    $("basket-status").addEventListener("change", () => {
+      state.basketsStatus = $("basket-status").value;
+      loadBaskets();
+    });
     $("picker-search").addEventListener("submit", (event) => {
       event.preventDefault();
       state.pickerQuery = $("picker-query").value.trim();
@@ -375,4 +396,3 @@
   bind();
   window.DonaCatalogAdmin = { loadBaskets, loadProducts };
 })();
-

@@ -91,6 +91,8 @@
       items: rawItems,
       totalCents: Number(basket.display_price_cents || 0),
       orderable: Number(basket.stock_quantity || 0) > 0,
+      detailLoaded: true,
+      detailPromise: null,
       optionsLoaded: false,
       optionsPromise: null
     };
@@ -188,19 +190,19 @@
 
   function renderCards() {
     const host = $("basket-grid");
-    host.innerHTML = state.cards.map((card) => {
+    host.innerHTML = state.cards.map((card, index) => {
       const sizeKey = card.size_key || keyOf(card.name);
       const title = plain(card.name || card.model_name || "Cesta básica");
       const data = state.baskets.get(sizeKey);
-      const ready = Boolean(data && !data.error);
-      const inStock = ready && Number(data.basket.stock_quantity || 0) > 0;
-      const price = ready && inStock ? money(data.totalCents) : ready ? "Sem estoque" : data && data.error ? "Indisponível" : "Carregando…";
-      const disabled = ready ? "" : " disabled";
+      const ready = data && data.summary.display_price_cents != null && Number.isFinite(Number(data.summary.display_price_cents));
+      const price = ready ? money(data.summary.display_price_cents) : "Preço indisponível";
+      const loading = index < 2 ? "eager" : "lazy";
+      const priority = index === 0 ? "high" : "low";
       return '<article class="basket-card">' +
-        '<img class="basket-photo" src="' + esc(imageForBasket(card, sizeKey)) + '" alt="Cesta ' + esc(title) + '" width="420" height="420" loading="lazy" decoding="async">' +
+        '<img class="basket-photo" src="' + esc(imageForBasket(card, sizeKey)) + '" alt="Cesta ' + esc(title) + '" width="420" height="420" loading="' + loading + '" fetchpriority="' + priority + '" decoding="async">' +
         '<div class="basket-body"><h3 class="basket-title">' + esc(title) + '</h3>' +
-        '<p class="basket-price"><small>' + (ready && !inStock ? "Disponibilidade" : "A partir de") + '</small>' + esc(price) + '</p>' +
-        '<button class="button button-primary card-button" type="button" data-open-basket="' + esc(sizeKey) + '"' + disabled + '>Ver Produtos</button></div></article>';
+        '<p class="basket-price"><small>A partir de</small>' + esc(price) + '</p>' +
+        '<button class="button button-primary card-button" type="button" data-open-basket="' + esc(sizeKey) + '">Ver Produtos</button></div></article>';
     }).join("");
     host.querySelectorAll("[data-open-basket]").forEach((button) => button.addEventListener("click", () => openDetail(button.dataset.openBasket)));
   }
@@ -216,17 +218,23 @@
     $("catalog-status").textContent = "Carregando cestas…";
     state.baskets.clear();
     try {
-      const result = await request("home_size_cards");
+      const result = await request("home_catalog_cards");
       state.cards = Array.isArray(result.baskets) ? result.baskets : [];
       if (!state.cards.length) throw new Error("Nenhuma cesta disponível no momento.");
-      renderCards();
-      $("catalog-status").textContent = "5 tamanhos";
-      await Promise.all(state.cards.map(async (card) => {
+      state.cards.forEach((card) => {
         const sizeKey = card.size_key || keyOf(card.name);
-        try { state.baskets.set(sizeKey, await basketForSize(sizeKey)); }
-        catch (_) { state.baskets.set(sizeKey, { error: true }); }
-        renderCards();
-      }));
+        state.baskets.set(sizeKey, {
+          summary: card,
+          basket: null,
+          items: [],
+          totalCents: Number(card.display_price_cents || 0),
+          orderable: Number(card.stock_quantity || 0) > 0,
+          detailLoaded: false,
+          detailPromise: null,
+          optionsLoaded: false,
+          optionsPromise: null,
+        });
+      });
       renderCards();
       $("catalog-status").textContent = state.cards.length + " tamanhos";
     } catch (error) {
@@ -262,13 +270,21 @@
   function renderDetail() {
     const data = state.baskets.get(state.activeKey);
     if (!data || data.error) {
-      $("detail-content").innerHTML = '<div class="empty-state">Não foi possível abrir esta cesta. Feche e tente novamente.</div>';
+      $("detail-content").innerHTML = '<div class="empty-state">Não foi possível carregar os produtos. Tente novamente.</div>';
       $("detail-total").textContent = "—";
       return;
     }
+    if (!data.detailLoaded) {
+      $("detail-title").textContent = data.summary?.name || "Produtos da cesta";
+      $("detail-total").textContent = money(data.totalCents);
+      $("detail-content").innerHTML = '<div class="empty-state" aria-live="polite">Carregando produtos da cesta…</div>';
+      $("order-button").disabled = true;
+      $("customize-button").disabled = true;
+      return;
+    }
     $("detail-title").textContent = data.basket.name || "Produtos da cesta";
-    $("detail-total").textContent = money(data.totalCents || data.basket.display_price_cents);
-    $("customize-button").textContent = state.customizing ? "Concluir personalização" : "Personalizar";
+    $("detail-total").textContent = money(data.totalCents ?? data.basket.display_price_cents);
+    $("customize-button").textContent = data.optionsLoading ? "Buscando opções…" : state.customizing ? "Concluir personalização" : "Personalizar";
     const rows = data.items.map((item) => {
       const alternatives = item._alternatives || [];
       const selected = alternatives.find((alt) => String(alt.product_id) === String(item.product_id));
@@ -281,12 +297,12 @@
         '<div><h3 class="product-name">' + esc(item.name || "Produto") + '</h3><p class="product-quantity">' + esc(item.quantity || item.base_quantity || 0) + " " + esc(item.packaging || "") + '</p></div>' +
         select + "</article>";
     }).join("");
-    const note = !data.optionsLoaded
-      ? '<p class="helper stock-note">Carregando produtos disponíveis…</p>'
-      : data.orderable ? "" : '<p class="helper stock-note">Esta composição está sem estoque disponível no momento.</p>';
+    const note = data.orderable ? data.optionsLoading
+      ? '<p class="helper stock-note">Buscando as marcas disponíveis…</p>'
+      : "" : '<p class="helper stock-note">Esta composição está sem estoque disponível no momento.</p>';
     $("detail-content").innerHTML = note + '<div class="product-list">' + rows + "</div>";
-    $("order-button").disabled = !data.orderable || !data.optionsLoaded;
-    $("customize-button").disabled = !data.orderable || !data.optionsLoaded;
+    $("order-button").disabled = !data.orderable;
+    $("customize-button").disabled = !data.orderable || Boolean(data.optionsLoading);
     $("detail-content").querySelectorAll("[data-position]").forEach((select) => select.addEventListener("change", () => changeProduct(select.dataset.position, select.value)));
     $("detail-content").querySelectorAll("img").forEach((image) => image.addEventListener("error", () => { image.src = "../img/logoantonia5.png"; }, { once: true }));
   }
@@ -302,7 +318,7 @@
     $("detail-content").setAttribute("aria-busy", "true");
     try {
       const quote = await quoteBasket(data.basket, selections, data.items);
-    state.baskets.set(state.activeKey, Object.assign(quote, { orderable: true, optionsLoaded: true }));
+      state.baskets.set(state.activeKey, Object.assign(data, quote, { orderable: true, optionsLoaded: true, detailLoaded: true }));
       renderDetail();
       renderCards();
     } catch (error) {
@@ -313,19 +329,49 @@
   }
 
   function openDetail(sizeKey) {
-    if (!state.baskets.has(sizeKey) || state.baskets.get(sizeKey).error) return;
+    const data = state.baskets.get(sizeKey);
+    if (!data) return;
     state.activeKey = sizeKey;
     state.customizing = false;
+    if (data.error) data.error = false;
     renderDetail();
     showSheet("detail-sheet");
-    loadBasketOptions(sizeKey).then(() => {
-      if (state.activeKey === sizeKey && !$('detail-sheet').hidden) renderDetail();
+    if (data.detailLoaded || data.detailPromise) return;
+    data.detailPromise = basketForSize(sizeKey).then((detail) => {
+      Object.assign(data, detail, { summary: data.summary, detailLoaded: true, error: false });
       renderCards();
     }).catch(() => {
-      const data = state.baskets.get(sizeKey);
-      if (data) data.optionsLoaded = true;
+      data.error = true;
+    }).finally(() => {
+      data.detailPromise = null;
       if (state.activeKey === sizeKey && !$('detail-sheet').hidden) renderDetail();
     });
+  }
+
+  async function toggleCustomization() {
+    const sizeKey = state.activeKey;
+    const data = state.baskets.get(sizeKey);
+    if (!data || !data.detailLoaded || !data.orderable) return;
+    if (state.customizing) {
+      state.customizing = false;
+      renderDetail();
+      return;
+    }
+    if (!data.optionsLoaded) {
+      data.optionsLoading = true;
+      renderDetail();
+      try {
+        await loadBasketOptions(sizeKey);
+      } catch (_) {
+        toast("Não foi possível carregar as marcas agora.");
+      } finally {
+        data.optionsLoading = false;
+      }
+    }
+    state.customizing = data.optionsLoaded && data.orderable;
+    if (!state.customizing && data.orderable) toast("As opções não estão disponíveis agora.");
+    renderDetail();
+    renderCards();
   }
 
   function addressLines(address) {
@@ -425,10 +471,7 @@
     showSheet("order-sheet");
     $("customer-phone").focus({ preventScroll: true });
   });
-  $("customize-button").addEventListener("click", () => {
-    state.customizing = !state.customizing;
-    renderDetail();
-  });
+  $("customize-button").addEventListener("click", toggleCustomization);
   $("lookup-button").addEventListener("click", lookupCustomer);
   $("customer-phone").addEventListener("keydown", (event) => { if (event.key === "Enter") lookupCustomer(); });
   $("payment-options").addEventListener("change", () => {
@@ -448,4 +491,3 @@
 
   loadCatalog();
 })();
-
