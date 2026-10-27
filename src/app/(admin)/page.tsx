@@ -86,6 +86,7 @@ export default async function Home() {
 					description:
 						"Não foi possível consultar os canais cadastrados agora.",
 					status: "Consulta indisponível",
+					href: "/configuracoes/fluxos",
 				}
 			: {
 					description: `${accountCount} ${accountCount === 1 ? "canal cadastrado" : "canais cadastrados"}. A saúde e o Flow devem ser validados por WABA.`,
@@ -93,6 +94,7 @@ export default async function Home() {
 						accountCount === 0
 							? "Nenhum canal cadastrado"
 							: `${accountCount} número(s) · validação pendente`,
+					href: accountCount === 0 ? "/configuracoes" : "/configuracoes/fluxos",
 				};
 
 	const blingStatus =
@@ -113,10 +115,12 @@ export default async function Home() {
 		},
 		{
 			number: "02",
-			title: "Validar os números WhatsApp",
+			title: "Preparar os Flows dos números WhatsApp",
 			description: channelSetup.description,
 			icon: MessageCircle,
 			status: channelSetup.status,
+			href: channelSetup.href,
+			actionLabel: "Configurar Flows de cesta",
 		},
 		{
 			number: "03",
@@ -216,7 +220,7 @@ export default async function Home() {
 									<p>{step.description}</p>
 									{step.href ? (
 										<Link className="setup-step__action" href={step.href}>
-											Abrir cestas básicas
+											{step.actionLabel ?? "Abrir cestas básicas"}
 											<ArrowRight aria-hidden="true" size={14} />
 										</Link>
 									) : null}
