@@ -86,6 +86,7 @@
 .product-active-toggle input:focus-visible + .product-switch { outline: 3px solid #bd806e; outline-offset: 2px; }
 .product-active-toggle input:disabled + .product-switch { opacity: .55; }
 .button-wide { width: 100%; }
+.button[hidden] { display: none !important; }
 .catalog-dialog { width: min(760px, calc(100vw - 20px)); max-width: none; max-height: min(92dvh, 900px); padding: 0; overflow: auto; border: 0; border-radius: 18px; background: var(--surface); color: var(--ink); box-shadow: 0 20px 70px rgba(20,12,8,.28); }
 .catalog-dialog::backdrop { background: rgba(27,20,17,.56); backdrop-filter: blur(2px); }
 .dialog-form { display: grid; gap: 14px; padding: 18px; }
