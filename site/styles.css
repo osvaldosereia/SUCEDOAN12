@@ -47,8 +47,7 @@ h1 { margin-bottom: 8px; font-size: clamp(1.7rem, 7vw, 2.3rem); line-height: 1.1
 .privacy-note { margin: 23px 4px 0; padding: 12px 14px; border-radius: 12px; background: #f1ebdf; color: var(--muted); font-size: .8rem; line-height: 1.45; }
 .site-footer { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 17px; color: var(--muted); font-size: .8rem; }
 .site-footer img { width: 94px; height: auto; opacity: .85; }
-.skeleton-card { min-height: 300px; border: 1px solid var(--line); border-radius: 17px; background: linear-gradient(100deg,#f1eadf 30%,#f8f3eb 45%,#f1eadf 60%); background-size: 200% 100%; animation: shimmer 1.2s infinite linear; }
-@keyframes shimmer { to { background-position-x: -200%; } }
+.catalog-placeholder .basket-price span { color: var(--muted); font-size: .78rem; font-weight: 600; }
 
 .sheet-backdrop { position: fixed; z-index: 20; inset: 0; display: flex; align-items: flex-end; justify-content: center; padding-top: 40px; background: rgba(31, 24, 19, .46); }
 .sheet-backdrop[hidden] { display: none; }
@@ -73,6 +72,15 @@ h1 { margin-bottom: 8px; font-size: clamp(1.7rem, 7vw, 2.3rem); line-height: 1.1
 .product-choice-copy strong { overflow: hidden; font-size: .77rem; line-height: 1.25; text-overflow: ellipsis; }
 .product-choice-copy small { color: var(--muted); font-size: .75rem; }
 .product-choice-check { color: var(--brand); font-weight: 800; }
+.variation-disclosure { display: grid; grid-column: 1 / -1; gap: 6px; min-width: 0; }
+.variation-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: #fcfaf7; color: var(--brand); font: inherit; font-size: .78rem; font-weight: 750; text-align: left; }
+.variation-toggle:disabled { cursor: wait; opacity: .7; }
+.variation-toggle:focus-visible { outline: 3px solid rgba(126,48,41,.24); outline-offset: 2px; }
+.variation-chevron { font-size: 1.1rem; line-height: 1; }
+.variation-panel { display: grid; gap: 6px; min-width: 0; }
+.variation-panel[hidden] { display: none; }
+.variation-status { margin: 0; padding: 9px 10px; border-radius: 9px; background: #f8f3eb; color: var(--muted); font-size: .77rem; line-height: 1.4; }
+
 .sheet-actions { padding-top: 12px; border-top: 1px solid var(--line); background: var(--cream); }
 .total-line { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; font-size: .9rem; }
 .total-line strong { color: var(--brand); font-size: 1.18rem; }

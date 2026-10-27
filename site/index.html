@@ -7,10 +7,11 @@
   <meta name="description" content="Escolha sua cesta básica Dona Antônia de forma rápida e simples.">
   <title>Cestas Dona Antônia</title>
   <link rel="preload" as="image" href="../img/logoantonia5.png">
+  <link rel="preload" as="image" href="assets/cestas/cesta-economica.jpg" fetchpriority="high">
   <link rel="preconnect" href="https://ssbesxgaijknwsjbsbcz.supabase.co" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=5">
+  <link rel="stylesheet" href="styles.css?v=6">
   <script src="config.js?v=2" defer></script>
-  <script src="app.js?v=5" defer></script>
+  <script src="app.js?v=6" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -29,13 +30,29 @@
     <section class="catalog" aria-label="Cestas disponíveis">
       <div class="section-heading">
         <h2>Nossas cestas</h2>
-        <span id="catalog-status" class="status" role="status">Carregando…</span>
+        <span id="catalog-status" class="status" role="status">Buscando preços…</span>
       </div>
-      <div id="basket-grid" class="basket-grid">
-        <div class="skeleton-card" aria-hidden="true"></div>
-        <div class="skeleton-card" aria-hidden="true"></div>
-        <div class="skeleton-card" aria-hidden="true"></div>
-        <div class="skeleton-card" aria-hidden="true"></div>
+      <div id="basket-grid" class="basket-grid" aria-busy="true">
+        <article class="basket-card catalog-placeholder">
+          <img class="basket-photo" src="assets/cestas/cesta-economica.jpg" alt="Cesta Econômica" width="420" height="420" loading="eager" fetchpriority="high" decoding="async">
+          <div class="basket-body"><h3 class="basket-title">Econômica</h3><p class="basket-price"><small>A partir de</small><span>Consultando valor…</span></p><button class="button button-primary card-button" type="button" disabled>Ver Produtos</button></div>
+        </article>
+        <article class="basket-card catalog-placeholder">
+          <img class="basket-photo" src="assets/cestas/cesta-mini.jpg" alt="Cesta Mini" width="420" height="420" loading="eager" fetchpriority="low" decoding="async">
+          <div class="basket-body"><h3 class="basket-title">Mini</h3><p class="basket-price"><small>A partir de</small><span>Consultando valor…</span></p><button class="button button-primary card-button" type="button" disabled>Ver Produtos</button></div>
+        </article>
+        <article class="basket-card catalog-placeholder">
+          <img class="basket-photo" src="assets/cestas/cesta-pequena.jpg" alt="Cesta Pequena" width="420" height="420" loading="lazy" fetchpriority="low" decoding="async">
+          <div class="basket-body"><h3 class="basket-title">Pequena</h3><p class="basket-price"><small>A partir de</small><span>Consultando valor…</span></p><button class="button button-primary card-button" type="button" disabled>Ver Produtos</button></div>
+        </article>
+        <article class="basket-card catalog-placeholder">
+          <img class="basket-photo" src="assets/cestas/cesta-media.jpg" alt="Cesta Média" width="420" height="420" loading="lazy" fetchpriority="low" decoding="async">
+          <div class="basket-body"><h3 class="basket-title">Média</h3><p class="basket-price"><small>A partir de</small><span>Consultando valor…</span></p><button class="button button-primary card-button" type="button" disabled>Ver Produtos</button></div>
+        </article>
+        <article class="basket-card catalog-placeholder">
+          <img class="basket-photo" src="assets/cestas/cesta-grande.jpg" alt="Cesta Grande" width="420" height="420" loading="lazy" fetchpriority="low" decoding="async">
+          <div class="basket-body"><h3 class="basket-title">Grande</h3><p class="basket-price"><small>A partir de</small><span>Consultando valor…</span></p><button class="button button-primary card-button" type="button" disabled>Ver Produtos</button></div>
+        </article>
       </div>
       <button id="retry-catalog" class="button button-outline retry-button" type="button" hidden>Tentar novamente</button>
     </section>
