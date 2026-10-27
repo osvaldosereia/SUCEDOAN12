@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#7e3029">
+  <meta name="description" content="Escolha sua cesta básica Dona Antônia de forma rápida e simples.">
+  <title>Cestas Dona Antônia</title>
+  <link rel="preload" as="image" href="../img/logoantonia5.png">
+  <link rel="stylesheet" href="styles.css?v=1">
+  <script src="config.js?v=1"></script>
+  <script src="app.js?v=1" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="Dona Antônia, início">
+      <img src="../img/logoantonia5.png" alt="Dona Antônia" width="176" height="64" fetchpriority="high">
+    </a>
+    <a class="admin-link" href="./admin/" aria-label="Acessar administração">Admin</a>
+  </header>
+
+  <main>
+    <section class="welcome" aria-labelledby="welcome-title">
+      <p class="eyebrow">Praticidade para sua casa</p>
+      <h1 id="welcome-title">Cestas básicas</h1>
+      <p>Escolha o tamanho ideal e veja os produtos que vão na sua cesta.</p>
+    </section>
+    <section class="catalog" aria-label="Cestas disponíveis">
+      <div class="section-heading">
+        <h2>Nossas cestas</h2>
+        <span id="catalog-status" class="status" role="status">Carregando…</span>
+      </div>
+      <div id="basket-grid" class="basket-grid">
+        <div class="skeleton-card" aria-hidden="true"></div>
+        <div class="skeleton-card" aria-hidden="true"></div>
+        <div class="skeleton-card" aria-hidden="true"></div>
+        <div class="skeleton-card" aria-hidden="true"></div>
+      </div>
+      <button id="retry-catalog" class="button button-outline retry-button" type="button" hidden>Tentar novamente</button>
+    </section>
+    <aside class="privacy-note">Seu pedido fica pronto para compartilhar pelo celular. Esta versão não envia mensagens automaticamente.</aside>
+  </main>
+
+  <footer class="site-footer">
+    <img src="../img/logoantonia5.png" alt="" width="118" height="43" loading="lazy" decoding="async">
+    <span>Feito com carinho para você.</span>
+  </footer>
+
+  <div id="detail-sheet" class="sheet-backdrop" hidden>
+    <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+      <div class="sheet-grabber" aria-hidden="true"></div>
+      <header class="sheet-header">
+        <div><p class="eyebrow">Sua escolha</p><h2 id="detail-title">Produtos da cesta</h2></div>
+        <button class="icon-button" type="button" data-close="detail" aria-label="Fechar">×</button>
+      </header>
+      <div id="detail-content" class="sheet-content"></div>
+      <div class="sheet-actions">
+        <div class="total-line"><span>Valor da cesta</span><strong id="detail-total">—</strong></div>
+        <div class="button-row">
+          <button id="order-button" class="button button-primary" type="button">Encomendar</button>
+          <button id="customize-button" class="button button-outline" type="button">Personalizar</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="order-sheet" class="sheet-backdrop" hidden>
+    <section class="sheet order-sheet" role="dialog" aria-modal="true" aria-labelledby="order-title">
+      <div class="sheet-grabber" aria-hidden="true"></div>
+      <header class="sheet-header">
+        <div><p class="eyebrow">Só mais um passo</p><h2 id="order-title">Encomendar cesta</h2></div>
+        <button class="icon-button" type="button" data-close="order" aria-label="Fechar">×</button>
+      </header>
+      <div class="sheet-content">
+        <label class="field-label" for="customer-phone">Telefone com DDD</label>
+        <div class="search-row">
+          <input id="customer-phone" inputmode="tel" autocomplete="tel" placeholder="(11) 99999-9999" maxlength="16">
+          <button id="lookup-button" class="button button-primary" type="button">Buscar</button>
+        </div>
+        <p id="lookup-message" class="helper" role="status">Buscaremos o cadastro e o endereço já registrado.</p>
+        <div id="customer-card" class="customer-card" hidden></div>
+        <fieldset id="payment-options" class="payment-options" disabled>
+          <legend>Forma de pagamento</legend>
+          <label><input type="radio" name="payment" value="Dinheiro"> <span>Dinheiro</span></label>
+          <label><input type="radio" name="payment" value="Cartão"> <span>Cartão</span></label>
+          <label><input type="radio" name="payment" value="Pix"> <span>Pix</span></label>
+        </fieldset>
+        <p id="order-note" class="helper">Ao confirmar, o celular abrirá o compartilhamento para você enviar o pedido. Ele não é gravado no sistema nesta versão.</p>
+      </div>
+      <div class="sheet-actions">
+        <button id="confirm-order" class="button button-primary button-wide" type="button" disabled>Confirmar pedido</button>
+      </div>
+    </section>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
+

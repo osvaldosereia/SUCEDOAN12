@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#7e3029">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Admin · Dona Antônia</title>
+  <link rel="stylesheet" href="../styles.css?v=1">
+  <link rel="stylesheet" href="admin.css?v=1">
+  <script src="../config.js?v=1"></script>
+  <script src="admin.js?v=1" defer></script>
+</head>
+<body class="admin-page">
+  <header class="topbar">
+    <a class="brand" href="../" aria-label="Voltar ao catálogo">
+      <img src="../../img/logoantonia5.png" alt="Dona Antônia" width="176" height="64">
+    </a>
+    <a class="admin-link" href="../">Voltar à loja</a>
+  </header>
+  <main class="admin-main">
+    <section id="login-view" class="login-panel">
+      <p class="eyebrow">Área restrita</p>
+      <h1>Administração</h1>
+      <p class="admin-muted">Entre com seu usuário de administração da loja.</p>
+      <form id="login-form">
+        <label for="login-email">E-mail</label>
+        <input id="login-email" type="email" autocomplete="username" required>
+        <label for="login-password">Senha</label>
+        <input id="login-password" type="password" autocomplete="current-password" required>
+        <button id="login-button" class="button button-primary button-wide" type="submit">Entrar</button>
+        <p id="login-message" class="form-message" role="status"></p>
+      </form>
+    </section>
+
+    <section id="admin-view" hidden>
+      <div class="admin-heading">
+        <div><p class="eyebrow">Dona Antônia</p><h1 id="page-title">Visão geral</h1></div>
+        <button id="logout-button" class="button button-outline" type="button">Sair</button>
+      </div>
+      <nav class="admin-nav" aria-label="Administração">
+        <button class="nav-tab active" type="button" data-view="overview">Início</button>
+        <button class="nav-tab" type="button" data-view="customers">Clientes</button>
+        <button class="nav-tab" type="button" data-view="baskets">Cestas</button>
+      </nav>
+
+      <section class="admin-view active" data-panel="overview">
+        <div class="welcome-admin">
+          <h2>Catálogo conectado</h2>
+          <p>Consulte as cestas publicadas e localize um cliente pelo telefone.</p>
+        </div>
+        <div class="admin-shortcuts">
+          <button class="shortcut-card" type="button" data-go="customers"><strong>Clientes</strong><span>Buscar cadastro e endereço</span></button>
+          <button class="shortcut-card" type="button" data-go="baskets"><strong>Cestas</strong><span>Ver conteúdo e valor atual</span></button>
+        </div>
+        <p id="admin-status" class="admin-muted" role="status">Acesso autorizado.</p>
+      </section>
+
+      <section class="admin-view" data-panel="customers" hidden>
+        <div class="section-title"><div><h2>Clientes</h2><p>Encontre um cadastro existente pelo telefone.</p></div></div>
+        <form id="customer-search" class="customer-search">
+          <label for="customer-phone">Telefone com DDD</label>
+          <div class="search-row">
+            <input id="customer-phone" inputmode="tel" autocomplete="tel" placeholder="(11) 99999-9999" maxlength="16" required>
+            <button id="customer-search-button" class="button button-primary" type="submit">Buscar</button>
+          </div>
+        </form>
+        <div id="customer-result" class="customer-result empty-result">Digite o telefone para consultar o cadastro.</div>
+        <div class="edit-notice">
+          <strong>Edição temporariamente pausada</strong>
+          <span>A função de gravação de clientes que existia no admin antigo foi aposentada. Nesta publicação, a consulta é somente leitura; nenhum dado será alterado no Supabase.</span>
+        </div>
+        <form id="customer-editor" class="customer-editor" hidden>
+          <div class="section-title"><div><h3>Dados do cadastro</h3><p>Consulte as informações localizadas.</p></div></div>
+          <div class="editor-grid">
+            <label>Nome<input name="name" readonly></label>
+            <label>Telefone<input name="phone" readonly></label>
+            <label>CPF/CNPJ<input name="document" readonly></label>
+            <label>Rua<input name="street" readonly></label>
+            <label>Número<input name="number" readonly></label>
+            <label>Complemento<input name="complement" readonly></label>
+            <label>Bairro<input name="neighborhood" readonly></label>
+            <label>Cidade<input name="city" readonly></label>
+            <label>Estado<input name="state" readonly></label>
+            <label>CEP<input name="postal_code" readonly></label>
+            <label class="full-width">Referência<input name="reference" readonly></label>
+          </div>
+          <button class="button button-primary button-wide" type="button" disabled>Salvar alterações</button>
+        </form>
+      </section>
+
+      <section class="admin-view" data-panel="baskets" hidden>
+        <div class="section-title"><div><h2>Cestas publicadas</h2><p>Conteúdo exibido ao cliente e valor atual da cesta.</p></div><button id="reload-baskets" class="button button-outline" type="button">Atualizar</button></div>
+        <div id="admin-baskets" class="admin-basket-list"><p class="admin-muted">Carregando…</p></div>
+        <div class="edit-notice">
+          <strong>Gerenciamento de conteúdo</strong>
+          <span>As cestas são lidas ao vivo do Supabase. A alteração de preços e produtos fica pausada nesta implantação, conforme solicitado.</span>
+        </div>
+      </section>
+    </section>
+  </main>
+  <div id="admin-toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
+
