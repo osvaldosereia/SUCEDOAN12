@@ -1,22 +1,21 @@
 # Catálogo Dona Antônia
 
-O catálogo está em /site/ e não altera a página raiz do repositório. Ele usa HTML, CSS e JavaScript nativos, consulta somente o Edge Function storefront-v2 existente e inclui as cinco fotos quadradas recuperadas do histórico do próprio GitHub.
+O catálogo público está em `/site/`; o painel administrativo fica em `/site/admin/`. A interface usa HTML, CSS e JavaScript nativos para reduzir dependências e carregar rapidamente em celulares. As cinco fotos quadradas recuperadas do histórico do GitHub ficam em `assets/cestas/`.
 
-## Operação atual
+## Catálogo público
 
-- A vitrine lê as cinco cestas básicas no Supabase e busca os produtos mais baratos quando uma cesta é aberta. A página inicial carrega apenas os cinco resumos leves.
-- O preço mostrado vem da cotação do molde da cesta; os preços individuais dos produtos não aparecem.
-- A seleção inicial usa o produto disponível de menor preço em cada posição.
-- A busca do checkout consulta o cadastro e o endereço existentes. O resumo do pedido é compartilhado pelo seletor nativo do celular ou copiado para a área de transferência.
-- Meta/WhatsApp API, Bling e gravação de pedidos não são chamados.
-- O admin abre com um código temporário e lista as composições e opções existentes no Supabase sob demanda. A consulta de clientes é somente leitura.
-- O código é validado no JavaScript do navegador como acesso provisório; não substitui autenticação no servidor.
-- Nenhuma tabela, configuração, cliente ou produto foi alterado no Supabase.
+- Carrega os resumos das cinco cestas e busca os produtos mais baratos quando uma cesta é aberta.
+- Exibe o preço configurado da cesta, sem mostrar valores individuais dos produtos.
+- Consulta clientes e endereços existentes para o pedido. O resumo pode ser compartilhado pelo seletor do celular ou copiado.
+- Não chama Meta/WhatsApp API, Bling nem grava pedidos.
 
-## Limite do admin de clientes
+## Administração
 
-O endpoint antigo que oferecia customers e save_customer (admin-v3-api / customer-intelligence-v1) responde como aposentado no projeto ativo. Como esta entrega foi limitada ao GitHub e não deve alterar o Supabase, a tela permite consultar o cliente pelo telefone, mas mantém o salvamento desativado. A edição persistente precisa de uma função administrativa ativa e autorizada; não há chave privilegiada no código do navegador.
+- O código temporário `Eomc2020` abre o painel. A validação também é feita pela Edge Function `site-admin-v1`.
+- Em **Cestas**, o administrador adiciona e remove posições, define quantidades, busca e marca marcas/opções, escolhe o produto padrão e informa o preço final. O valor acompanha os preços dos produtos padrão e as quantidades, preservando o ajuste cadastrado para a cesta.
+- Em **Produtos**, o administrador busca cadastros e edita campos comerciais, preços, estoque, categorias, descrições e flags. Produtos podem ser ativados e desativados; não são apagados fisicamente.
+- **Clientes** permanece em consulta somente leitura.
+- As alterações administrativas são gravadas no Supabase por uma função servidor. A chave privilegiada não é enviada ao navegador. Nenhuma migração nem alteração estrutural foi feita no banco.
 
-## Publicação
+O código de acesso é provisório e ficará visível no código do site enquanto a autenticação definitiva não for implantada. Meta e Bling permanecem desconectados.
 
-As imagens quadradas estão em `assets/cestas/`. Com a publicação estática do repositório, o caminho da loja é /site/ e o do admin é /site/admin/.

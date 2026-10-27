@@ -6,10 +6,11 @@
   <meta name="theme-color" content="#7e3029">
   <meta name="robots" content="noindex, nofollow">
   <title>Admin · Dona Antônia</title>
-  <link rel="stylesheet" href="../styles.css?v=2">
-  <link rel="stylesheet" href="admin.css?v=2">
-  <script src="../config.js?v=2"></script>
-  <script src="admin.js?v=2" defer></script>
+  <link rel="stylesheet" href="../styles.css?v=3">
+  <link rel="stylesheet" href="admin.css?v=3">
+  <script src="../config.js?v=3"></script>
+  <script src="catalog-admin.js?v=3" defer></script>
+  <script src="admin.js?v=3" defer></script>
 </head>
 <body class="admin-page">
   <header class="topbar">
@@ -40,6 +41,7 @@
         <button class="nav-tab active" type="button" data-view="overview">Início</button>
         <button class="nav-tab" type="button" data-view="customers">Clientes</button>
         <button class="nav-tab" type="button" data-view="baskets">Cestas</button>
+        <button class="nav-tab" type="button" data-view="products">Produtos</button>
       </nav>
 
       <section class="admin-view active" data-panel="overview">
@@ -48,8 +50,9 @@
           <p>Consulte as cestas publicadas e localize um cliente pelo telefone.</p>
         </div>
         <div class="admin-shortcuts">
+          <button class="shortcut-card" type="button" data-go="baskets"><strong>Cestas</strong><span>Editar produtos, marcas e valor padrão</span></button>
+          <button class="shortcut-card" type="button" data-go="products"><strong>Produtos</strong><span>Editar cadastro, estoque e ativação</span></button>
           <button class="shortcut-card" type="button" data-go="customers"><strong>Clientes</strong><span>Buscar cadastro e endereço</span></button>
-          <button class="shortcut-card" type="button" data-go="baskets"><strong>Cestas</strong><span>Ver conteúdo e valor atual</span></button>
         </div>
         <p id="admin-status" class="admin-muted" role="status">Acesso autorizado.</p>
       </section>
@@ -88,15 +91,98 @@
       </section>
 
       <section class="admin-view" data-panel="baskets" hidden>
-        <div class="section-title"><div><h2>Cestas publicadas</h2><p>Composições e opções cadastradas, com o valor fixo de cada cesta.</p></div><button id="reload-baskets" class="button button-outline" type="button">Atualizar</button></div>
+        <div class="section-title"><div><h2>Cestas</h2><p>Defina o produto padrão, as variações, a quantidade e o valor inicial de cada composição.</p></div><button id="reload-baskets" class="button button-outline" type="button">Atualizar</button></div>
         <div id="admin-baskets" class="admin-basket-list"><p class="admin-muted">Carregando…</p></div>
         <div class="edit-notice">
-          <strong>Gerenciamento de conteúdo</strong>
-          <span>As cestas são lidas ao vivo do Supabase. A alteração de preços e produtos fica pausada nesta implantação, conforme solicitado.</span>
+          <strong>Como o valor é calculado</strong>
+          <span>O valor padrão considera o preço do produto marcado como padrão, a quantidade e o ajuste da cesta. Trocar, adicionar ou remover itens atualiza o valor automaticamente.</span>
+        </div>
+      </section>
+
+      <section class="admin-view" data-panel="products" hidden>
+        <div class="section-title"><div><h2>Produtos</h2><p>Edite os campos do cadastro existente no Supabase.</p></div><button id="new-product" class="button button-primary" type="button">Novo produto</button></div>
+        <form id="product-search" class="customer-search">
+          <label for="product-query">Buscar por nome, marca, SKU ou GTIN</label>
+          <div class="product-search-controls">
+            <input id="product-query" type="search" placeholder="Ex.: arroz, marca ou código">
+            <select id="product-status" aria-label="Filtrar produtos">
+              <option value="active">Ativos</option>
+              <option value="inactive">Inativos</option>
+              <option value="all">Todos</option>
+            </select>
+            <button class="button button-primary" type="submit">Buscar</button>
+          </div>
+        </form>
+        <div id="products-result" class="admin-product-list"><p class="admin-muted">Carregando produtos…</p></div>
+        <button id="products-more" class="button button-outline button-wide" type="button" hidden>Carregar mais</button>
+        <div class="edit-notice">
+          <strong>Remoção de produtos</strong>
+          <span>Para tirar um produto da cesta, remova-o das variações. Para manter o histórico do banco, o cadastro de produto é desativado em vez de apagado.</span>
         </div>
       </section>
     </section>
   </main>
+
+  <dialog id="basket-dialog" class="catalog-dialog">
+    <form id="basket-form" class="dialog-form">
+      <header class="dialog-heading"><div><p class="eyebrow">Editar composição</p><h2 id="basket-dialog-title">Cesta</h2></div><button class="icon-button" type="button" data-dialog-close="basket-dialog" aria-label="Fechar">×</button></header>
+      <label class="dialog-field" for="basket-default-price">Valor padrão da cesta
+        <span class="price-input-row"><span>R$</span><input id="basket-default-price" type="number" min="0" max="1000000" step="0.01" inputmode="decimal" required></span>
+      </label>
+      <p id="basket-price-hint" class="dialog-hint">Ajustado automaticamente conforme o produto padrão e as quantidades.</p>
+      <div class="position-heading"><h3>Produtos da cesta</h3><button id="add-basket-position" class="button button-outline" type="button">Adicionar produto</button></div>
+      <div id="basket-position-editor" class="basket-position-editor"></div>
+      <p id="basket-save-message" class="form-message" role="status"></p>
+      <footer class="dialog-actions"><button class="button button-outline" type="button" data-dialog-close="basket-dialog">Cancelar</button><button id="save-basket" class="button button-primary" type="submit">Salvar cesta</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="product-dialog" class="catalog-dialog product-dialog">
+    <form id="product-form" class="dialog-form">
+      <header class="dialog-heading"><div><p class="eyebrow">Cadastro do Supabase</p><h2 id="product-dialog-title">Novo produto</h2></div><button class="icon-button" type="button" data-dialog-close="product-dialog" aria-label="Fechar">×</button></header>
+      <input id="product-id" type="hidden">
+      <div class="editor-grid product-fields">
+        <label class="full-width">Nome<input name="name" maxlength="240" required></label>
+        <label>Marca<input name="brand"></label><label>SKU<input name="sku"></label>
+        <label>GTIN<input name="gtin" inputmode="numeric"></label><label>NCM<input name="ncm"></label>
+        <label>Preço (R$)<input name="price" type="number" min="0" step="0.01"></label><label>Preço de oferta (R$)<input name="offer_price" type="number" min="0" step="0.01"></label>
+        <label>Custo (R$)<input name="cost" type="number" min="0" step="0.01"></label><label>Estoque<input name="stock" type="number" min="0" step="0.01"></label>
+        <label>Estoque mínimo<input name="min_stock" type="number" min="0" step="0.01"></label><label>Embalagem<input name="packaging"></label>
+        <label>Unidade<input name="unit"></label><label>Fornecedor<input name="supplier"></label>
+        <label>Categoria<input name="category"></label><label>Subcategoria<input name="subcategory"></label>
+        <label>Subcategoria detalhada<input name="subsubcategory"></label><label>Categoria da vitrine<input name="storefront_category"></label>
+        <label>Categoria de vendas<input name="sales_category"></label><label>Validade<input name="validity_date" type="date"></label>
+        <label>Gôndola<input name="gondola"></label><label>Prateleira<input name="shelf"></label>
+        <label>Ordem<input name="sort_order" type="number" min="0" step="1"></label><label>Tags (separadas por vírgula)<input name="tags"></label>
+        <label class="full-width">Imagem (URL)<input name="image_url" type="url"></label>
+        <label class="full-width">Descrição curta<input name="description_short"></label>
+        <label class="full-width">Descrição completa<textarea name="description_long" rows="3"></textarea></label>
+        <label>Categoria cliente<input name="customer_category"></label><label>Subcategoria cliente<input name="customer_subcategory"></label>
+        <label class="full-width">Subcategoria detalhada do cliente<input name="customer_subsubcategory"></label>
+      </div>
+      <div class="product-flags">
+        <label><input name="is_active" type="checkbox" checked> Ativo no catálogo</label>
+        <label><input name="is_offer" type="checkbox"> Usar preço de oferta</label>
+        <label><input name="is_whatsapp_active" type="checkbox" checked> Ativo no campo de WhatsApp</label>
+        <label><input name="is_upsell" type="checkbox"> Produto adicional</label>
+        <label><input name="storefront_featured" type="checkbox"> Destacar na vitrine</label>
+      </div>
+      <p id="product-save-message" class="form-message" role="status"></p>
+      <footer class="dialog-actions"><button class="button button-outline" type="button" data-dialog-close="product-dialog">Cancelar</button><button id="save-product" class="button button-primary" type="submit">Salvar produto</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="product-picker-dialog" class="catalog-dialog picker-dialog">
+    <div class="dialog-form">
+      <header class="dialog-heading"><div><p class="eyebrow">Buscar e marcar</p><h2>Produtos e variações</h2></div><button class="icon-button" type="button" data-dialog-close="product-picker-dialog" aria-label="Fechar">×</button></header>
+      <form id="picker-search" class="customer-search"><label for="picker-query">Nome, marca, SKU ou GTIN</label><div class="product-search-controls"><input id="picker-query" type="search" placeholder="Digite para buscar"><button class="button button-primary" type="submit">Buscar</button></div></form>
+      <p class="dialog-hint">Marque as opções que podem ocupar esta posição. Escolha o produto padrão na tela da cesta.</p>
+      <div id="picker-results" class="picker-results"><p class="admin-muted">Busque os produtos para começar.</p></div>
+      <button id="picker-more" class="button button-outline button-wide" type="button" hidden>Carregar mais resultados</button>
+      <footer class="dialog-actions"><button class="button button-outline" type="button" data-dialog-close="product-picker-dialog">Cancelar</button><button id="apply-picker-products" class="button button-primary" type="button">Aplicar seleção</button></footer>
+    </div>
+  </dialog>
   <div id="admin-toast" class="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
+
