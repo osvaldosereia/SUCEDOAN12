@@ -4,9 +4,6 @@
   const supabase = String(config.supabaseUrl || "").replace(/\/$/, "");
   const publishableKey = config.publishableKey || "";
   const storefront = String(config.storefrontFunction || "storefront-v2");
-  const accessCode = "Eomc2020";
-  const normalizeAccessCode = (value) => String(value == null ? "" : value).normalize("NFKC").replace(/[\u200B-\u200D\uFEFF]/g, "").trim().toLowerCase();
-  const accessKey = "dona_admin_access_v1";
   const $ = (id) => document.getElementById(id);
   const esc = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
   let toastTimer = 0;
@@ -27,44 +24,6 @@
     node.classList.add("show");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => node.classList.remove("show"), 3200);
-  }
-
-  function showAdmin() {
-    $("login-view").hidden = true;
-    $("admin-view").hidden = false;
-  }
-
-  function showLogin(message) {
-    $("admin-view").hidden = true;
-    $("login-view").hidden = false;
-    $("login-message").textContent = message || "";
-  }
-
-  function enterAdmin() {
-    showAdmin();
-    $("admin-status").textContent = "Acesso autorizado por código temporário.";
-  }
-
-  function login(event) {
-    event.preventDefault();
-    const button = $("login-button");
-    button.disabled = true;
-    button.textContent = "Verificando…";
-    $("login-message").textContent = "";
-    if (normalizeAccessCode($("login-code").value) === normalizeAccessCode(accessCode)) {
-      sessionStorage.setItem(accessKey, "1");
-      $("login-code").value = "";
-      enterAdmin();
-    } else {
-      $("login-message").textContent = "Código não reconhecido. Confira a digitação e tente novamente.";
-    }
-    button.disabled = false;
-    button.textContent = "Acessar admin";
-  }
-
-  function logout() {
-    sessionStorage.removeItem(accessKey);
-    showLogin("Você saiu da administração.");
   }
 
   function setView(name) {
@@ -140,11 +99,8 @@
     }
   }
 
-  $("login-form").addEventListener("submit", login);
-  $("logout-button").addEventListener("click", logout);
   $("customer-search").addEventListener("submit", searchCustomer);
   document.querySelectorAll(".nav-tab").forEach((button) => button.addEventListener("click", () => setView(button.dataset.view)));
   document.querySelectorAll("[data-go]").forEach((button) => button.addEventListener("click", () => setView(button.dataset.go)));
 
-  if (sessionStorage.getItem(accessKey) === "1") enterAdmin();
 })();

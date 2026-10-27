@@ -7,12 +7,12 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Admin · Dona Antônia</title>
   <link rel="stylesheet" href="../styles.css?v=5">
-  <link rel="stylesheet" href="admin.css?v=7">
+  <link rel="stylesheet" href="admin.css?v=8">
   <link rel="stylesheet" href="orders-admin.css?v=1">
   <script src="../config.js?v=3"></script>
   <script src="catalog-admin.js?v=8" defer></script>
   <script src="orders-admin.js?v=1" defer></script>
-  <script src="admin.js?v=6" defer></script>
+  <script src="admin.js?v=7" defer></script>
 </head>
 <body class="admin-page">
   <header class="topbar">
@@ -22,22 +22,9 @@
     <a class="admin-link" href="../">Voltar à loja</a>
   </header>
   <main class="admin-main">
-    <section id="login-view" class="login-panel">
-      <p class="eyebrow">Área restrita</p>
-      <h1>Administração</h1>
-      <p class="admin-muted">Digite o código de acesso para abrir o painel.</p>
-      <form id="login-form">
-        <label for="login-code">Código de acesso</label>
-        <input id="login-code" type="password" inputmode="text" autocomplete="off" autocapitalize="none" spellcheck="false" autocorrect="off" placeholder="Digite o código" required>
-        <button id="login-button" class="button button-primary button-wide" type="submit">Acessar admin</button>
-        <p id="login-message" class="form-message" role="status"></p>
-      </form>
-    </section>
-
-    <section id="admin-view" hidden>
+    <section id="admin-view">
       <div class="admin-heading">
         <div><p class="eyebrow">Dona Antônia</p><h1 id="page-title">Visão geral</h1></div>
-        <button id="logout-button" class="button button-outline" type="button">Sair</button>
       </div>
       <nav class="admin-nav" aria-label="Administração">
         <button class="nav-tab active" type="button" data-view="overview">Início</button>
@@ -58,7 +45,7 @@
           <button class="shortcut-card" type="button" data-go="customers"><strong>Clientes</strong><span>Buscar cadastro e endereço</span></button>
           <button class="shortcut-card" type="button" data-go="orders"><strong>Pedidos</strong><span>Confirmar, separar e acompanhar entregas</span></button>
         </div>
-        <p id="admin-status" class="admin-muted" role="status">Acesso autorizado.</p>
+        <p id="admin-status" class="admin-muted" role="status">Painel administrativo disponível.</p>
       </section>
 
       <section class="admin-view" data-panel="customers" hidden>
