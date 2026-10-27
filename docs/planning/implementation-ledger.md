@@ -952,7 +952,7 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 
 ## Habilitação de produto no WhatsApp dentro do editor da cesta (27/10/2026)
 
-- O editor da cesta oferece a ação explícita **Habilitar no WhatsApp** para uma alternativa que já esteja ativa, tenha foto HTTPS cadastrada e preço positivo. Ela reutiliza a Server Action autenticada e o gateway existente; a elegibilidade é validada novamente no backend e nenhuma alteração acontece ao apenas abrir a tela.
+- O editor da cesta oferece a ação explícita **Habilitar no WhatsApp** para uma alternativa ativa com foto HTTPS cadastrada. Ela reutiliza a Server Action autenticada e o gateway existente; preço, nome e demais critérios são validados novamente no backend e nenhuma alteração acontece ao apenas abrir a tela.
 - O aviso da ação esclarece que a disponibilidade é global: o produto poderá aparecer nos Flows de todas as cestas onde estiver associado. O link para editar cadastro continua visível; opções sem os pré-requisitos não recebem o atalho.
 - A action revalida a lista e as páginas de edição das cestas após sucesso ou conflito, evitando exibir situação antiga. Não houve escrita no Supabase durante a implementação, deploy, alteração Meta/Bling ou teste automatizado.
 - Verificação estática: `pnpm typecheck`, Biome focado nos três arquivos TypeScript, formatação CSS e `git diff --check` passaram.

@@ -636,9 +636,7 @@ export function BasketMoldEditorClient({
 											)}
 											{option.active &&
 												option.whatsappActive === false &&
-												option.imageUrl !== null &&
-												option.priceCents !== null &&
-												option.priceCents > 0 && (
+												option.imageUrl !== null && (
 													<BasketProductWhatsappEnableAction
 														productId={option.productId}
 														productName={option.name}
