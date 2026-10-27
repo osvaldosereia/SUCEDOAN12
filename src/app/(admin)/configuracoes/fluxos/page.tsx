@@ -2,6 +2,7 @@ import { ArrowLeft, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { FlowSetupPanel } from "@/app/(admin)/configuracoes/fluxos/flow-setup-panel";
 import { getAttendanceAccounts } from "@/lib/supabase/admin-attendance";
+import basketOrderFlow from "../../../../../supabase/flows/basket-order-v1.json";
 
 function maskedLastFour(phone: string): string {
 	const digits = phone.replace(/\D/gu, "");
@@ -25,7 +26,8 @@ export default async function WhatsAppFlowSettingsPage() {
 					<p className="eyebrow">SISTEMA · WHATSAPP</p>
 					<h1>Flows de cesta</h1>
 					<p className="page-description">
-						Confira a chave e conecte o Flow publicado de cada número.
+						Prepare e valide o Flow de cada número antes de ativá-lo no
+						atendimento.
 					</p>
 				</div>
 			</section>
@@ -68,6 +70,7 @@ export default async function WhatsAppFlowSettingsPage() {
 								key={account.id}
 								label={account.name}
 								phone={maskedLastFour(account.phone)}
+								flowJson={JSON.stringify(basketOrderFlow)}
 							/>
 						))}
 					</div>

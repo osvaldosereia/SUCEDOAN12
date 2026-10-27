@@ -18,6 +18,12 @@ type FlowView = {
 	dataApiVersion: string | null;
 	endpointMatches: boolean;
 	validationErrorCount: number;
+	validationErrors: Array<{
+		code: string | null;
+		message: string | null;
+		line: number | null;
+		column: number | null;
+	}>;
 	canBind: boolean;
 	bound: boolean;
 	sendEnabled: boolean;
@@ -75,6 +81,12 @@ const errors: Record<string, string> = {
 	local_private_key_invalid:
 		"A chave privada salva não está em um formato compatível.",
 	flow_key_not_ready: "Configure e verifique a chave deste número primeiro.",
+	flow_candidate_conflict:
+		"Já existe um rascunho com esse nome em estado diferente. Confira o Flow na Meta antes de continuar.",
+	flow_not_draft:
+		"A definição só pode ser enviada para o rascunho deste Admin.",
+	flow_template_invalid:
+		"A definição do Flow não corresponde à versão aprovada neste projeto.",
 	flow_not_published: "Publique o Flow no WhatsApp Manager e atualize a lista.",
 	flow_endpoint_mismatch:
 		"O Flow está apontando para outro endpoint. Revise o endpoint antes de vinculá-lo.",
@@ -134,10 +146,12 @@ export function FlowSetupPanel({
 	accountId,
 	label,
 	phone,
+	flowJson,
 }: {
 	accountId: string;
 	label: string;
 	phone: string;
+	flowJson: string;
 }) {
 	const supabase = useMemo(() => createClient(), []);
 	const [pending, startTransition] = useTransition();
@@ -198,10 +212,41 @@ export function FlowSetupPanel({
 		startTransition(async () => {
 			const result = await request("setup_key");
 			if (!result) return;
-			setNotice("Chave conferida com a Meta e salva no Vault.");
 			const refreshed = await request("inspect");
 			if (refreshed) setState(refreshed as unknown as SetupState);
 			setReadyAtLeastOnce(true);
+			setNotice("Chave conferida com a Meta e salva no Vault.");
+		});
+	}
+
+	function createDraft() {
+		startTransition(async () => {
+			const result = await request("create_draft");
+			if (!result) return;
+			const refreshed = await request("inspect");
+			if (refreshed) setState(refreshed as unknown as SetupState);
+			setReadyAtLeastOnce(true);
+			setNotice(
+				result.existing === true
+					? "O rascunho deste número já existe e pode receber o JSON."
+					: "Rascunho criado na Meta. Envie a definição para conferir a validação.",
+			);
+		});
+	}
+
+	function uploadFlowJson(flowId: string) {
+		startTransition(async () => {
+			const result = await request("upload_flow_json", { flowId, flowJson });
+			if (!result) return;
+			const count = Number(result.validationErrorCount ?? 0);
+			const refreshed = await request("inspect");
+			if (refreshed) setState(refreshed as unknown as SetupState);
+			setReadyAtLeastOnce(true);
+			setNotice(
+				count === 0
+					? "JSON enviado. A Meta não retornou erros de validação."
+					: `JSON enviado. A Meta retornou ${count} erro(s); confira os detalhes abaixo.`,
+			);
 		});
 	}
 
@@ -209,12 +254,12 @@ export function FlowSetupPanel({
 		startTransition(async () => {
 			const result = await request("bind_flow", { flowId });
 			if (!result) return;
-			setNotice(
-				"Flow vinculado. O envio continua desligado até você habilitá-lo.",
-			);
 			const refreshed = await request("inspect");
 			if (refreshed) setState(refreshed as unknown as SetupState);
 			setReadyAtLeastOnce(true);
+			setNotice(
+				"Flow vinculado. O envio continua desligado até você habilitá-lo.",
+			);
 		});
 	}
 
@@ -228,10 +273,10 @@ export function FlowSetupPanel({
 		startTransition(async () => {
 			const result = await request("enable_flow", { bindingId });
 			if (!result) return;
-			setNotice("Envio do Flow habilitado para este número.");
 			const refreshed = await request("inspect");
 			if (refreshed) setState(refreshed as unknown as SetupState);
 			setReadyAtLeastOnce(true);
+			setNotice("Envio do Flow habilitado para este número.");
 		});
 	}
 
@@ -239,10 +284,10 @@ export function FlowSetupPanel({
 		startTransition(async () => {
 			const result = await request("disable_flow", { bindingId });
 			if (!result) return;
-			setNotice("O envio deste Flow foi pausado.");
 			const refreshed = await request("inspect");
 			if (refreshed) setState(refreshed as unknown as SetupState);
 			setReadyAtLeastOnce(true);
+			setNotice("O envio deste Flow foi pausado.");
 		});
 	}
 
@@ -253,6 +298,9 @@ export function FlowSetupPanel({
 			state.key.metaSignatureStatus === "VALID",
 	);
 	const keyReady = state?.key.status === "ready" && localAndMetaMatch;
+	const candidateName = state
+		? `Cestas Dona Antônia - ${state.account.slug.slice(-4)}`
+		: "";
 
 	return (
 		<article className="flow-setup-card">
@@ -342,7 +390,7 @@ export function FlowSetupPanel({
 
 			{!state && (
 				<p className="flow-setup-inline-note">
-					Consulte a Meta para ver os Flows publicados deste número.
+					Consulte a Meta para ver os Flows deste número.
 				</p>
 			)}
 			{notice && (
@@ -370,19 +418,32 @@ export function FlowSetupPanel({
 						<div>
 							<h4>Flows da Meta</h4>
 							<p>
-								Somente Flows publicados, sem erros e apontados para este
-								projeto podem ser vinculados.
+								Crie o rascunho e envie o JSON para ver a validação da Meta. Só
+								Flows publicados, válidos e ligados a este projeto podem ser
+								vinculados.
 							</p>
 						</div>
+						<button
+							className="button button--secondary flow-setup-button"
+							disabled={pending || !keyReady}
+							onClick={createDraft}
+							type="button"
+						>
+							Criar rascunho na Meta
+						</button>
 					</div>
+					{!keyReady && (
+						<p className="flow-setup-inline-note">
+							Verifique a chave deste número antes de preparar o Flow.
+						</p>
+					)}
 					{state.flowListIssue ? (
 						<p className="flow-setup-inline-note">
 							Não foi possível consultar a lista de Flows. Atualize a Meta.
 						</p>
 					) : state.flows.length === 0 ? (
 						<p className="flow-setup-inline-note">
-							Nenhum Flow foi encontrado neste WABA. Crie e publique o Flow no
-							WhatsApp Manager.
+							Nenhum Flow foi encontrado neste WABA. Crie o rascunho por aqui.
 						</p>
 					) : (
 						<div className="flow-setup-flow-list">
@@ -390,6 +451,9 @@ export function FlowSetupPanel({
 								const binding = state.bindings.find(
 									(item) => item.meta_flow_id === flow.id,
 								);
+								const validationErrors = Array.isArray(flow.validationErrors)
+									? flow.validationErrors
+									: [];
 								return (
 									<div className="flow-setup-flow" key={flow.id}>
 										<div className="flow-setup-flow__main">
@@ -422,6 +486,29 @@ export function FlowSetupPanel({
 												{flow.validationErrorCount} erros de validação
 											</span>
 										</div>
+										{validationErrors.length > 0 && (
+											<ul className="flow-setup-validation-errors">
+												{validationErrors.slice(0, 5).map((issue) => (
+													<li
+														key={`${flow.id}-${issue.code ?? "erro"}-${issue.line ?? 0}-${issue.column ?? 0}-${issue.message ?? ""}`}
+													>
+														<strong>{issue.code ?? "Validação"}</strong>
+														{issue.line ? ` · linha ${issue.line}` : ""}
+														{issue.message ? ` — ${issue.message}` : ""}
+													</li>
+												))}
+											</ul>
+										)}
+										{flow.status === "DRAFT" && flow.name === candidateName && (
+											<button
+												className="button button--secondary flow-setup-button flow-setup-enable"
+												disabled={pending || !keyReady || !flow.endpointMatches}
+												onClick={() => uploadFlowJson(flow.id)}
+												type="button"
+											>
+												Enviar JSON e validar
+											</button>
+										)}
 										{binding?.is_verified ? (
 											binding.is_send_enabled ? (
 												<>

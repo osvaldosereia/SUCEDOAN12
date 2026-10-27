@@ -922,3 +922,9 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 - Consulta agregada read-only dos nove moldes atuais confirmou que nenhum acréscimo está fora desse limite; o maior valor encontrado foi `R$ 75,00`.
 - Como o writer recria os IDs das posições, um Flow já aberto deve ser reiniciado após salvar mudanças. Nenhum cadastro comercial, pedido existente, migration, Meta Flow, callback, mensagem, Bling ou NF-e foi alterado nesta fatia.
 - Verificação local: `pnpm typecheck`, Biome focalizado nos arquivos TypeScript/CSS e `git diff --check`. Nenhum teste automatizado foi criado ou executado. Esta alteração precisa ser implantada para aparecer na versão hospedada do Admin.
+## Preparação e validação de rascunhos do WhatsApp Flow (27/10/2026)
+
+- A tela `/configuracoes/fluxos` agora cria, de forma idempotente por número, um rascunho Meta com endpoint esperado e envia o JSON de cesta versionado deste repositório. O backend aceita upload somente para um Flow `DRAFT` do WABA selecionado, com nome/endereço esperados e chave de criptografia conferida; o SHA-256 do JSON bloqueia alterações feitas pelo navegador.
+- A resposta da Meta mostra no Admin até cinco erros sanitizados, com linha/coluna quando disponíveis. `admin-whatsapp-flow-setup-v1` está ativa no Supabase canônico `ssbesxgaijknwsjbsbcz`, versão 2, `verify_jwt=true`; não houve migration.
+- Verificações locais: `pnpm typecheck`, `pnpm build`, Biome nos arquivos alterados e `git diff --check` passaram. Nenhum teste automatizado foi adicionado ou executado.
+- Nenhum rascunho foi criado/uploadado/publicado na Meta e nenhuma mensagem, callback, pedido, dado de produto/cliente, escrita Bling ou NF-e foi alterada. A publicação continua manual e separada; ainda falta validar/renderizar as fotos em aparelho e completar as etapas de cesta sem alternativa elegível.

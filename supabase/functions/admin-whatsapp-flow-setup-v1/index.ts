@@ -6,7 +6,7 @@ import {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const GRAPH_ORIGIN = "https://graph.facebook.com";
-const BODY_LIMIT = 8_000;
+const BODY_LIMIT = 32_000;
 const GRAPH_BODY_LIMIT = 256_000;
 const TIMEOUT_MS = 12_000;
 const ALLOWED_ROLES = new Set(["owner", "admin", "catalog_manager"]);
@@ -26,6 +26,8 @@ const FLOW_ID = /^[0-9]{6,32}$/u;
 const FLOW_JSON_VERSION = "7.3";
 const DATA_API_VERSION = "3.0";
 const FLOW_MESSAGE_VERSION = "3";
+const FLOW_TEMPLATE_SHA256 =
+	"6d83f8c0c03f6b750386027675813c6990971a26c03da900b9090a9a2bac4528";
 
 type JsonRecord = Record<string, unknown>;
 type AuthResult =
@@ -74,9 +76,16 @@ type FlowView = {
 	dataApiVersion: string | null;
 	endpointMatches: boolean;
 	validationErrorCount: number;
+	validationErrors: FlowValidationIssue[];
 	canBind: boolean;
 	bound: boolean;
 	sendEnabled: boolean;
+};
+type FlowValidationIssue = {
+	code: string | null;
+	message: string | null;
+	line: number | null;
+	column: number | null;
 };
 type GraphResult =
 	| { ok: true; payload: JsonRecord }
@@ -97,6 +106,39 @@ function safeText(value: unknown, max: number): string | null {
 	const text = value.trim();
 	if (!text || text.length > max || containsControl(text, false)) return null;
 	return text;
+}
+
+function validationIssues(value: unknown): FlowValidationIssue[] {
+	const entries = Array.isArray(value)
+		? value
+		: isRecord(value)
+			? Object.values(value)
+			: [];
+	return entries.slice(0, 10).flatMap((entry) => {
+		if (!isRecord(entry)) return [];
+		const message =
+			typeof entry.message === "string"
+				? Array.from(entry.message)
+						.filter((character) => {
+							const code = character.codePointAt(0) ?? 0;
+							return code === 9 || (code >= 32 && code !== 127);
+						})
+						.join("")
+						.replace(/\s+/gu, " ")
+						.trim()
+						.slice(0, 400) || null
+				: null;
+		const line = Number(entry.line_start);
+		const column = Number(entry.column_start);
+		return [
+			{
+				code: safeText(entry.error, 80),
+				message,
+				line: Number.isSafeInteger(line) && line > 0 ? line : null,
+				column: Number.isSafeInteger(column) && column > 0 ? column : null,
+			},
+		];
+	});
 }
 
 function containsControl(value: string, allowLineBreaks: boolean): boolean {
@@ -281,7 +323,7 @@ async function graphRequest(
 	url: URL,
 	context: GraphContext,
 	method = "GET",
-	body?: URLSearchParams,
+	body?: URLSearchParams | FormData,
 ): Promise<GraphResult> {
 	url.searchParams.set("appsecret_proof", context.proof);
 	let response: Response;
@@ -291,7 +333,7 @@ async function graphRequest(
 			headers: {
 				Authorization: `Bearer ${context.token}`,
 				Accept: "application/json",
-				...(body
+				...(body instanceof URLSearchParams
 					? { "Content-Type": "application/x-www-form-urlencoded" }
 					: {}),
 			},
@@ -584,6 +626,7 @@ async function listFlows(
 				: isRecord(item.validation_errors)
 					? Object.keys(item.validation_errors).length
 					: 0;
+			const issues = validationIssues(item.validation_errors);
 			const binding = byFlow.get(id);
 			const endpointMatches = endpoint === expected;
 			const canBind =
@@ -602,6 +645,7 @@ async function listFlows(
 				dataApiVersion,
 				endpointMatches,
 				validationErrorCount,
+				validationErrors: issues,
 				canBind,
 				bound: binding?.is_verified === true,
 				sendEnabled: binding?.is_send_enabled === true,
@@ -818,6 +862,7 @@ async function readFlow(
 		dataApiVersion,
 		endpointMatches,
 		validationErrorCount,
+		validationErrors: validationIssues(item.validation_errors),
 		canBind:
 			status === "PUBLISHED" &&
 			validationErrorCount === 0 &&
@@ -828,6 +873,130 @@ async function readFlow(
 		sendEnabled: false,
 	};
 	return { ok: true, flow };
+}
+
+function candidateFlowName(channel: Channel): string {
+	return `Cestas Dona Antônia - ${channel.slug.slice(-4)}`;
+}
+
+async function createDraft(
+	context: GraphContext,
+	client: SupabaseClient,
+): Promise<JsonRecord> {
+	const endpoint = expectedEndpoint(context.channel);
+	if (!endpoint) return { ok: false, error: "endpoint_not_configured" };
+	const snapshot = await setupSnapshot(client, context.channel.id);
+	if (!snapshot) return { ok: false, error: "flow_setup_snapshot_unavailable" };
+	if (snapshot.key_status !== "ready")
+		return { ok: false, error: "flow_key_not_ready" };
+	const encryption = await metaEncryptionKey(context);
+	if (!encryption.ok) return { ok: false, error: encryption.error };
+	if (
+		encryption.signatureStatus !== "VALID" ||
+		encryption.fingerprint !== snapshot.meta_public_key_fingerprint
+	) {
+		return { ok: false, error: "meta_key_mismatch" };
+	}
+	const currentFlows = await listFlows(context, snapshot, true);
+	if (!Array.isArray(currentFlows))
+		return { ok: false, error: currentFlows.error };
+	const name = candidateFlowName(context.channel);
+	const sameName = currentFlows.filter((flow) => flow.name === name);
+	if (sameName.length > 1)
+		return { ok: false, error: "flow_candidate_conflict" };
+	const existing = sameName[0];
+	if (existing) {
+		if (existing.status !== "DRAFT" || !existing.endpointMatches)
+			return { ok: false, error: "flow_candidate_conflict" };
+		return { ok: true, flowId: existing.id, existing: true };
+	}
+
+	const form = new FormData();
+	form.set("name", name);
+	form.set("categories", JSON.stringify(["CUSTOMER_SUPPORT"]));
+	form.set("endpoint_uri", endpoint);
+	const url = new URL(
+		`/${context.version}/${context.channel.wabaId}/flows`,
+		GRAPH_ORIGIN,
+	);
+	const result = await graphRequest(url, context, "POST", form);
+	if (!result.ok) return { ok: false, error: result.error };
+	const flowId = safeText(result.payload.id, 32);
+	if (!flowId || !FLOW_ID.test(flowId))
+		return { ok: false, error: "provider_invalid_response" };
+	return { ok: true, flowId, existing: false };
+}
+
+async function uploadDraftAsset(
+	context: GraphContext,
+	client: SupabaseClient,
+	flowId: string,
+	flowJsonText: string,
+): Promise<JsonRecord> {
+	if (!FLOW_ID.test(flowId)) return { ok: false, error: "flow_id_invalid" };
+	if (flowJsonText.length > 22_000)
+		return { ok: false, error: "flow_template_invalid" };
+	let flowJson: unknown;
+	try {
+		flowJson = JSON.parse(flowJsonText) as unknown;
+	} catch {
+		return { ok: false, error: "flow_template_invalid" };
+	}
+	if (
+		!isRecord(flowJson) ||
+		flowJson.version !== FLOW_JSON_VERSION ||
+		flowJson.data_api_version !== DATA_API_VERSION ||
+		(await sha256(JSON.stringify(flowJson))) !== FLOW_TEMPLATE_SHA256
+	)
+		return { ok: false, error: "flow_template_invalid" };
+
+	const snapshot = await setupSnapshot(client, context.channel.id);
+	if (!snapshot) return { ok: false, error: "flow_setup_snapshot_unavailable" };
+	if (snapshot.key_status !== "ready")
+		return { ok: false, error: "flow_key_not_ready" };
+	const encryption = await metaEncryptionKey(context);
+	if (!encryption.ok) return { ok: false, error: encryption.error };
+	if (
+		encryption.signatureStatus !== "VALID" ||
+		encryption.fingerprint !== snapshot.meta_public_key_fingerprint
+	)
+		return { ok: false, error: "meta_key_mismatch" };
+
+	const flows = await listFlows(context, snapshot, true);
+	if (!Array.isArray(flows)) return { ok: false, error: flows.error };
+	const draft = flows.find((flow) => flow.id === flowId);
+	if (!draft) return { ok: false, error: "flow_account_mismatch" };
+	if (
+		draft.name !== candidateFlowName(context.channel) ||
+		draft.status !== "DRAFT" ||
+		!draft.endpointMatches
+	)
+		return { ok: false, error: "flow_not_draft" };
+
+	const form = new FormData();
+	form.set(
+		"file",
+		new Blob([JSON.stringify(flowJson)], { type: "application/json" }),
+		"flow.json",
+	);
+	form.set("name", "flow.json");
+	form.set("asset_type", "FLOW_JSON");
+	const url = new URL(`/${context.version}/${flowId}/assets`, GRAPH_ORIGIN);
+	const result = await graphRequest(url, context, "POST", form);
+	if (!result.ok) return { ok: false, error: result.error };
+	if (result.payload.success !== true)
+		return { ok: false, error: "provider_invalid_response" };
+	const issues = validationIssues(result.payload.validation_errors);
+	return {
+		ok: true,
+		flowId,
+		validationErrorCount: Array.isArray(result.payload.validation_errors)
+			? result.payload.validation_errors.length
+			: isRecord(result.payload.validation_errors)
+				? Object.keys(result.payload.validation_errors).length
+				: 0,
+		validationErrors: issues,
+	};
 }
 
 async function bindFlow(
@@ -996,6 +1165,16 @@ async function handle(request: Request): Promise<Response> {
 		return json(request, await inspect(context, auth.client));
 	if (body.action === "setup_key")
 		return json(request, await setupKey(context, auth.client));
+	if (body.action === "create_draft")
+		return json(request, await createDraft(context, auth.client));
+	if (body.action === "upload_flow_json") {
+		const flowId = safeText(body.flowId, 32) ?? "";
+		const flowJsonText = typeof body.flowJson === "string" ? body.flowJson : "";
+		return json(
+			request,
+			await uploadDraftAsset(context, auth.client, flowId, flowJsonText),
+		);
+	}
 	if (body.action === "bind_flow") {
 		const flowId = safeText(body.flowId, 32) ?? "";
 		return json(
