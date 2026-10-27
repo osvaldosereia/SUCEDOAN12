@@ -513,3 +513,11 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/whatsapp-flow-data-exchange-greenfield-v1/deno.json"
 entrypoint = "./functions/whatsapp-flow-data-exchange-greenfield-v1/index.ts"
+
+[functions.admin-whatsapp-flow-setup-v1]
+enabled = true
+# Staff-authenticated setup API; database RPCs are service_role-only and the
+# function independently checks the active Admin role before each operation.
+verify_jwt = true
+import_map = "./functions/admin-whatsapp-flow-setup-v1/deno.json"
+entrypoint = "./functions/admin-whatsapp-flow-setup-v1/index.ts"

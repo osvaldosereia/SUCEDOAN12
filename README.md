@@ -17,7 +17,7 @@ Abra `http://localhost:3000`. As telas administrativas não leem nem escrevem em
 
 ## Estado da liberação
 
-O checkout contém a implementação greenfield, mas ainda não está liberado para pedidos reais: as 6 migrations e as 13 Edge Functions locais não foram aplicadas/publicadas no Supabase canônico. O proprietário recusou criar staging; por isso, a validação de banco, Flow nos dois números, webhook, envio Meta e ciclo Bling permanece pendente. Não confundir `pnpm typecheck`/build local com homologação operacional. A sequência de liberação está em `docs/planning/staging-cutover.md`.
+O checkout contém a implementação greenfield e **ainda não está liberado para pedidos reais**. As 7 migrations e 14 Edge Functions estão aplicadas/publicadas no Supabase canônico `ssbesxgaijknwsjbsbcz`. O proprietário recusou criar staging; ainda faltam configurar e publicar os Flows nos dois números, preencher posições de cesta sem opção elegível, validar fotos no Flow e homologar pedido, webhook e Bling. O painel de configuração dos Flows está em `/configuracoes/fluxos`; sua implementação não publica Flow nem envia mensagens por conta própria. Não confundir `pnpm typecheck`/build local com homologação operacional. A sequência de liberação está em `docs/planning/staging-cutover.md`.
 
 ## Verificações focadas
 

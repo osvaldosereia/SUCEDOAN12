@@ -168,6 +168,13 @@ export default async function ConfiguracoesPage() {
 						Respostas rápidas
 						<ArrowUpRight aria-hidden="true" size={15} />
 					</Link>
+					<Link
+						className="settings-quick-replies-link"
+						href="/configuracoes/fluxos"
+					>
+						Configurar Flows de cesta
+						<ArrowUpRight aria-hidden="true" size={15} />
+					</Link>
 				</div>
 			</section>
 
