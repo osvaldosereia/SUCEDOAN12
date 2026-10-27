@@ -5,6 +5,7 @@
   const publishableKey = config.publishableKey || "";
   const storefront = String(config.storefrontFunction || "storefront-v2");
   const accessCode = "Eomc2020";
+  const normalizeAccessCode = (value) => String(value == null ? "" : value).normalize("NFKC").replace(/[\u200B-\u200D\uFEFF]/g, "").trim().toLowerCase();
   const accessKey = "dona_admin_access_v1";
   const $ = (id) => document.getElementById(id);
   const esc = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
@@ -50,12 +51,12 @@
     button.disabled = true;
     button.textContent = "Verificando…";
     $("login-message").textContent = "";
-    if ($("login-code").value.trim() === accessCode) {
+    if (normalizeAccessCode($("login-code").value) === normalizeAccessCode(accessCode)) {
       sessionStorage.setItem(accessKey, "1");
       $("login-code").value = "";
       enterAdmin();
     } else {
-      $("login-message").textContent = "Código inválido. Confira e tente novamente.";
+      $("login-message").textContent = "Código não reconhecido. Confira a digitação e tente novamente.";
     }
     button.disabled = false;
     button.textContent = "Acessar admin";

@@ -12,7 +12,7 @@
   <script src="../config.js?v=3"></script>
   <script src="catalog-admin.js?v=8" defer></script>
   <script src="orders-admin.js?v=1" defer></script>
-  <script src="admin.js?v=5" defer></script>
+  <script src="admin.js?v=6" defer></script>
 </head>
 <body class="admin-page">
   <header class="topbar">
@@ -28,7 +28,7 @@
       <p class="admin-muted">Digite o código de acesso para abrir o painel.</p>
       <form id="login-form">
         <label for="login-code">Código de acesso</label>
-        <input id="login-code" type="password" inputmode="text" autocomplete="current-password" placeholder="Digite o código" required>
+        <input id="login-code" type="password" inputmode="text" autocomplete="off" autocapitalize="none" spellcheck="false" autocorrect="off" placeholder="Digite o código" required>
         <button id="login-button" class="button button-primary button-wide" type="submit">Acessar admin</button>
         <p id="login-message" class="form-message" role="status"></p>
       </form>
