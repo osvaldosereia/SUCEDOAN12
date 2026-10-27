@@ -57,7 +57,7 @@ h1 { margin-bottom: 8px; font-size: clamp(1.7rem, 7vw, 2.3rem); line-height: 1.1
 .sheet-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-bottom: 13px; border-bottom: 1px solid var(--line); }
 .sheet-header h2 { margin: 0; font-size: 1.28rem; }
 .icon-button { width: 40px; height: 40px; flex: 0 0 auto; border: 0; border-radius: 50%; background: #efe7dc; color: var(--ink); font-size: 1.55rem; line-height: 1; }
-.sheet-content { min-height: 80px; flex: 1; padding: 13px 0; overflow: auto; overscroll-behavior: contain; }
+.sheet-content { min-height: 80px; flex: 1; padding: 13px 0; overflow: auto; overflow-anchor: none; overscroll-behavior: contain; }
 .product-list { display: grid; gap: 10px; }
 .product-row { display: grid; grid-template-columns: 58px minmax(0,1fr); align-items: center; gap: 11px; padding: 8px; border: 1px solid var(--line); border-radius: 13px; background: #fff; content-visibility: auto; contain-intrinsic-size: 76px; }
 .product-row img { width: 58px; height: 58px; border-radius: 9px; background: #f0e9de; object-fit: contain; }

@@ -124,19 +124,19 @@
 
     if (item._expanded) {
       item._expanded = false;
-      renderDetail();
+      renderDetailPreservingScroll(positionId);
       return;
     }
 
     item._expanded = true;
     item._optionsError = false;
     if (item._optionsLoaded) {
-      renderDetail();
+      renderDetailPreservingScroll(positionId);
       return;
     }
 
     item._optionsLoading = true;
-    renderDetail();
+    renderDetailPreservingScroll(positionId);
     try {
       const seed = Array.isArray(item.alternatives) ? item.alternatives.slice() : [];
       item._alternatives = await optionsForItem(data.basket, Object.assign({}, item, {
@@ -150,7 +150,7 @@
       toast("Não foi possível carregar as opções deste item. Tente novamente.");
     } finally {
       item._optionsLoading = false;
-      if (state.activeKey === sizeKey && !$("detail-sheet").hidden) renderDetail();
+      if (state.activeKey === sizeKey && !$("detail-sheet").hidden) renderDetailPreservingScroll(positionId);
     }
   }
 
@@ -250,7 +250,7 @@
       return;
     }
     $("detail-title").textContent = data.basket.name || "Produtos da cesta";
-    $("detail-total").textContent = money(data.totalCents ?? data.basket.display_price_cents);
+    $("detail-total").textContent = data.changing ? "Atualizando…" : money(data.totalCents ?? data.basket.display_price_cents);
     $("customize-button").textContent = state.customizing ? "Concluir personalização" : "Personalizar";
     const rows = data.items.map((item) => {
       const alternatives = item._alternatives || [];
@@ -258,6 +258,8 @@
       const image = selected && selected.image_url || item.image_url || "../img/cestas/cesta-mini.jpg";
       const expanded = state.customizing && item._expanded === true;
       const optionCount = Math.max(Number(item.alternative_count || 0), alternatives.length);
+      const changingThisItem = String(data.changingPosition || "") === String(item.position_id);
+      const changeStatus = changingThisItem ? '<p class="variation-status" role="status">Atualizando a cesta e o valor…</p>' : "";
       const choices = alternatives.map((alt) => {
         const selectedOption = String(alt.product_id) === String(item.product_id);
         const optionPrice = alt.price_cents == null ? "Preço indisponível" : money(alt.price_cents);
@@ -267,55 +269,110 @@
           (selectedOption ? '<span class="product-choice-check" aria-hidden="true">✓</span>' : '') +
           '</button>';
       }).join("");
+      const panelContent = expanded
+        ? changeStatus || (item._optionsLoading
+          ? '<p class="variation-status" role="status">Buscando somente as opções deste produto…</p>'
+          : alternatives.length > 1
+            ? '<div class="product-option-picker" role="group" aria-label="Opções para ' + esc(item.label || item.name) + '">' + choices + '</div>'
+            : '<p class="variation-status">Não há outras opções disponíveis para este produto.</p>')
+        : "";
       const optionPicker = state.customizing && optionCount > 1
         ? '<div class="variation-disclosure">' +
           '<button class="variation-toggle" type="button" data-toggle-position="' + esc(item.position_id) + '" aria-expanded="' + String(Boolean(expanded)) + '" aria-controls="item-options-' + esc(item.position_id) + '"' + (data.changing || item._optionsLoading ? ' disabled' : '') + '>' +
           '<span>' + (item._optionsLoading ? "Carregando opções…" : item._optionsError ? "Tentar novamente" : expanded ? "Ocultar opções" : "Escolher marca ou variação") + '</span>' +
           '<span class="variation-chevron" aria-hidden="true">' + (expanded ? "−" : "+") + '</span>' +
           '</button>' +
-          '<div class="variation-panel" id="item-options-' + esc(item.position_id) + '"' + (expanded ? "" : " hidden") + ' aria-busy="' + String(Boolean(item._optionsLoading)) + '">' +
-          (expanded ? item._optionsLoading
-            ? '<p class="variation-status" role="status">Buscando somente as opções deste produto…</p>'
-            : alternatives.length > 1
-              ? '<div class="product-option-picker" role="group" aria-label="Opções para ' + esc(item.label || item.name) + '">' + choices + '</div>'
-              : '<p class="variation-status">Não há outras opções disponíveis para este produto.</p>'
-            : '') +
+          '<div class="variation-panel" id="item-options-' + esc(item.position_id) + '"' + (expanded ? "" : " hidden") + ' aria-busy="' + String(Boolean(item._optionsLoading || changingThisItem)) + '">' +
+          panelContent +
           '</div></div>'
         : "";
-      return '<article class="product-row"><img src="' + esc(image) + '" alt="" width="58" height="58" loading="lazy" decoding="async">' +
+      return '<article class="product-row" data-product-row="' + esc(item.position_id) + '"><img src="' + esc(image) + '" alt="" width="58" height="58" loading="lazy" decoding="async">' +
         '<div><h3 class="product-name">' + esc(item.name || "Produto") + '</h3><p class="product-quantity">' + esc(item.quantity || item.base_quantity || 0) + " " + esc(item.packaging || "") + '</p></div>' +
         optionPicker + "</article>";
     }).join("");
     const note = data.orderable ? "" : '<p class="helper stock-note">Esta composição está sem estoque disponível no momento.</p>';
     $("detail-content").innerHTML = note + '<div class="product-list">' + rows + "</div>";
-    $("order-button").disabled = !data.orderable;
+    $("order-button").disabled = !data.orderable || Boolean(data.changing);
     $("customize-button").disabled = !data.orderable || Boolean(data.changing);
     $("detail-content").querySelectorAll("[data-toggle-position]").forEach((button) => button.addEventListener("click", () => toggleItemOptions(button.dataset.togglePosition)));
     $("detail-content").querySelectorAll("[data-select-position]").forEach((button) => button.addEventListener("click", () => changeProduct(button.dataset.selectPosition, button.dataset.selectProduct)));
     $("detail-content").querySelectorAll("img").forEach((image) => image.addEventListener("error", () => { image.src = "../img/logoantonia5.png"; }, { once: true }));
   }
 
+  function renderDetailPreservingScroll(positionId) {
+    const content = $("detail-content");
+    const scrollTop = content.scrollTop;
+    const viewport = content.getBoundingClientRect();
+    const rows = Array.from(content.querySelectorAll("[data-product-row]"));
+    const anchor = (positionId
+      ? rows.find((row) => row.dataset.productRow === String(positionId))
+      : null) || rows.find((row) => {
+        const rect = row.getBoundingClientRect();
+        return rect.bottom > viewport.top && rect.top < viewport.bottom;
+      }) || rows[0];
+    const anchorId = anchor && anchor.dataset.productRow;
+    const anchorOffset = anchor ? anchor.getBoundingClientRect().top - viewport.top : null;
+
+    renderDetail();
+
+    const nextAnchor = anchorId
+      ? Array.from(content.querySelectorAll("[data-product-row]")).find((row) => row.dataset.productRow === anchorId)
+      : null;
+    if (!nextAnchor || anchorOffset == null) {
+      content.scrollTop = scrollTop;
+      return;
+    }
+    const nextViewportTop = content.getBoundingClientRect().top;
+    const nextOffset = nextAnchor.getBoundingClientRect().top - nextViewportTop;
+    content.scrollTop += nextOffset - anchorOffset;
+  }
+
   async function changeProduct(positionId, productId) {
     const data = state.baskets.get(state.activeKey);
     if (!data || data.changing) return;
+
+    const item = data.items.find((row) => String(row.position_id) === String(positionId));
+    const choice = item && (item._alternatives || []).find((option) => String(option.product_id) === String(productId));
+    if (!item || !choice || String(item.product_id) === String(productId)) return;
+
+    const previousItems = data.items.map((row) => Object.assign({}, row));
     data.changing = true;
-    const selections = data.items.map((item) => ({
-      position_id: item.position_id,
-      product_id: String(item.position_id) === String(positionId) ? productId : item.product_id,
-      quantity: Number(item.quantity || item.base_quantity || 0)
+    data.changingPosition = String(positionId);
+    Object.assign(item, {
+      product_id: choice.product_id,
+      name: choice.name || item.name,
+      image_url: choice.image_url || item.image_url,
+      packaging: choice.packaging || item.packaging,
+      stock_quantity: choice.stock_quantity,
+      price_cents: choice.price_cents
+    });
+    const selections = data.items.map((row) => ({
+      position_id: row.position_id,
+      product_id: row.product_id,
+      quantity: Number(row.quantity || row.base_quantity || 0)
     }));
-    $("detail-content").setAttribute("aria-busy", "true");
+    const content = $("detail-content");
+    content.setAttribute("aria-busy", "true");
+    renderDetailPreservingScroll(positionId);
+
     try {
       const quote = await quoteBasket(data.basket, selections, data.items);
-      state.baskets.set(state.activeKey, Object.assign(data, quote, { orderable: true, detailLoaded: true }));
-      renderDetail();
+      Object.assign(data, quote, { orderable: true, detailLoaded: true });
       renderCards();
-    } catch (error) {
-      toast("Essa troca não está disponível agora.");
+    } catch (_) {
+      data.items = previousItems;
+      toast("Essa troca não está disponível agora. A escolha anterior foi mantida.");
     } finally {
       data.changing = false;
-      $("detail-content").removeAttribute("aria-busy");
-      renderDetail();
+      data.changingPosition = "";
+      content.removeAttribute("aria-busy");
+      renderDetailPreservingScroll(positionId);
+      const selectedButton = Array.from(content.querySelectorAll("[data-select-position]")).find((button) =>
+        button.dataset.selectPosition === String(positionId) && button.dataset.selectProduct === String(
+          data.items.find((row) => String(row.position_id) === String(positionId))?.product_id || ""
+        )
+      );
+      if (selectedButton) selectedButton.focus({ preventScroll: true });
     }
   }
 
@@ -324,6 +381,7 @@
     if (!data) return;
     state.activeKey = sizeKey;
     state.customizing = false;
+    $("detail-content").scrollTop = 0;
     if (data.detailLoaded) data.items.forEach((item) => { item._expanded = false; });
     if (data.error) data.error = false;
     renderDetail();
@@ -345,7 +403,7 @@
     if (!data || !data.detailLoaded || !data.orderable || data.changing) return;
     state.customizing = !state.customizing;
     if (!state.customizing) data.items.forEach((item) => { item._expanded = false; });
-    renderDetail();
+    renderDetailPreservingScroll();
   }
 
   function addressLines(address) {
