@@ -4,24 +4,13 @@
   const supabase = String(config.supabaseUrl || "").replace(/\/$/, "");
   const publishableKey = config.publishableKey || "";
   const storefront = String(config.storefrontFunction || "storefront-v2");
-  const basketAdmin = String(config.basketAdminFunction || "admin-basket-molds-v1");
-  const sessionKey = "dona_admin_session_v1";
+  const accessCode = "Eomc2020";
+  const accessKey = "dona_admin_access_v1";
   const $ = (id) => document.getElementById(id);
   const esc = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
   const plain = (value) => String(value == null ? "" : value).replace(/\s+/g, " ").trim();
   const money = (cents) => (Number(cents || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  let session = null;
   let toastTimer = 0;
-
-  function saveSession(value) {
-    session = value;
-    if (value) sessionStorage.setItem(sessionKey, JSON.stringify(value));
-    else sessionStorage.removeItem(sessionKey);
-  }
-
-  function readSession() {
-    try { return JSON.parse(sessionStorage.getItem(sessionKey) || "null"); } catch (_) { return null; }
-  }
 
   function toast(message) {
     const node = $("admin-toast");
@@ -31,45 +20,18 @@
     toastTimer = setTimeout(() => node.classList.remove("show"), 3200);
   }
 
-  async function authPost(path, body, token) {
-    const headers = { apikey: publishableKey, "Content-Type": "application/json" };
-    if (token) headers.Authorization = "Bearer " + token;
-    const response = await fetch(supabase + path, { method: "POST", headers, body: JSON.stringify(body || {}) });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.msg || data.message || data.error_description || data.error || "Falha na autenticação.");
-    return data;
-  }
-
-  async function refreshSession() {
-    if (!session || !session.refresh_token) throw new Error("Sessão expirada. Entre novamente.");
-    const updated = await authPost("/auth/v1/token?grant_type=refresh_token", { refresh_token: session.refresh_token });
-    saveSession(updated);
-    return updated;
-  }
-
-  async function functionRequest(name, action, body, retry) {
-    if (!session || !session.access_token) throw new Error("Entre novamente para continuar.");
-    const headers = { apikey: publishableKey, Authorization: "Bearer " + session.access_token, "Content-Type": "application/json" };
-    const response = await fetch(supabase + "/functions/v1/" + name, {
-      method: "POST", headers, body: JSON.stringify(Object.assign({ action }, body || {})), cache: "no-store"
-    });
-    const data = await response.json().catch(() => ({}));
-    if (response.status === 401 && retry !== false) {
-      await refreshSession();
-      return functionRequest(name, action, body, false);
-    }
-    if (!response.ok || data.ok === false) throw new Error(data.detail || data.error || "Erro " + response.status);
-    return data;
-  }
-
-  async function storefrontRequest(action, params) {
+  async function storefrontRequest(action, params, options) {
+    const opts = options || {};
     const url = new URL(supabase + "/functions/v1/" + storefront);
     url.searchParams.set("action", action);
     Object.keys(params || {}).forEach((name) => url.searchParams.set(name, String(params[name] == null ? "" : params[name])));
-    const response = await fetch(url.toString(), {
-      headers: { apikey: publishableKey, Authorization: "Bearer " + publishableKey },
-      cache: "no-store"
-    });
+    const headers = { apikey: publishableKey, Authorization: "Bearer " + publishableKey };
+    const init = { method: opts.method || "GET", headers, cache: "no-store" };
+    if (opts.body !== undefined) {
+      headers["Content-Type"] = "application/json";
+      init.body = JSON.stringify(opts.body);
+    }
+    const response = await fetch(url.toString(), init);
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data.ok === false) throw new Error(data.error || "Não foi possível consultar.");
     return data;
@@ -86,10 +48,9 @@
     $("login-message").textContent = message || "";
   }
 
-  async function validateAdmin() {
-    await functionRequest(basketAdmin, "list", {}, true);
+  async function enterAdmin() {
     showAdmin();
-    $("admin-status").textContent = "Acesso autorizado. Conectado como " + (session.user && session.user.email || "administrador") + ".";
+    $("admin-status").textContent = "Acesso autorizado por código temporário.";
     await loadBaskets();
   }
 
@@ -97,32 +58,21 @@
     event.preventDefault();
     const button = $("login-button");
     button.disabled = true;
-    button.textContent = "Entrando…";
+    button.textContent = "Verificando…";
     $("login-message").textContent = "";
-    try {
-      const auth = await authPost("/auth/v1/token?grant_type=password", {
-        email: $("login-email").value.trim(),
-        password: $("login-password").value
-      });
-      saveSession(auth);
-      await validateAdmin();
-    } catch (error) {
-      saveSession(null);
-      $("login-message").textContent = error.message === "Failed to fetch"
-        ? "Não foi possível conectar. Verifique sua internet e tente de novo."
-        : "Acesso não autorizado. Confira sua conta de administrador.";
-    } finally {
-      button.disabled = false;
-      button.textContent = "Entrar";
+    if ($("login-code").value.trim() === accessCode) {
+      sessionStorage.setItem(accessKey, "1");
+      $("login-code").value = "";
+      await enterAdmin();
+    } else {
+      $("login-message").textContent = "Código inválido. Confira e tente novamente.";
     }
+    button.disabled = false;
+    button.textContent = "Acessar admin";
   }
 
-  async function logout() {
-    const current = session;
-    saveSession(null);
-    if (current && current.access_token) {
-      try { await authPost("/auth/v1/logout", {}, current.access_token); } catch (_) {}
-    }
+  function logout() {
+    sessionStorage.removeItem(accessKey);
     showLogin("Você saiu da administração.");
   }
 
@@ -205,6 +155,78 @@
     }
   }
 
+  async function mapLimit(items, limit, task) {
+    const results = new Array(items.length);
+    let next = 0;
+    const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+      while (next < items.length) {
+        const index = next++;
+        results[index] = await task(items[index], index);
+      }
+    });
+    await Promise.all(workers);
+    return results;
+  }
+
+  async function optionsForPosition(basket, item) {
+    const alternatives = [];
+    let offset = 0;
+    let registeredAvailable = 0;
+    do {
+      const page = await storefrontRequest("basket_mold_options", {
+        basket_id: basket.id,
+        composition_number: basket.composition_number || 1,
+        position_id: item.position_id,
+        selected_product_id: item.product_id || "",
+        quantity: item.quantity || item.base_quantity || 0,
+        offset
+      });
+      alternatives.push(...(page.alternatives || []));
+      registeredAvailable = Number(page.alternative_count || alternatives.length);
+      if (page.next_offset == null || Number(page.next_offset) <= offset) break;
+      offset = Number(page.next_offset);
+    } while (offset < 100);
+    return { alternatives, availableCount: registeredAvailable };
+  }
+
+  async function loadComposition(details, row) {
+    if (!row.basket || details.dataset.loaded === "1" || details.dataset.loading === "1") return;
+    const host = details.querySelector(".admin-composition");
+    details.dataset.loading = "1";
+    host.innerHTML = '<p class="admin-muted">Carregando produtos e opções…</p>';
+    try {
+      const results = await mapLimit(row.items, 5, async (item) => {
+        try { return await optionsForPosition(row.basket, item); }
+        catch (_) { return { alternatives: [], availableCount: 0, failed: true }; }
+      });
+      host.innerHTML = '<p class="admin-composition-note">Composição e alternativas lidas do cadastro atual do Supabase. Os preços individuais não são exibidos.</p>' +
+        '<div class="admin-position-list">' + row.items.map((item, index) => {
+          const result = results[index] || { alternatives: [], availableCount: 0 };
+          const alternatives = result.alternatives || [];
+          const configured = Number(item.alternative_count || 0);
+          const available = Number(result.availableCount || alternatives.length);
+          const quantity = item.quantity || item.base_quantity || 0;
+          const productLabel = [quantity, item.packaging].filter(Boolean).join(" ");
+          let optionContent;
+          if (alternatives.length) {
+            const stockLabel = available + " disponível" + (available === 1 ? "" : "is") + " em estoque";
+            optionContent = '<small class="admin-option-count">' + esc(configured) + ' cadastrada' + (configured === 1 ? "" : "s") + ' · ' + esc(stockLabel) + '</small>' +
+              '<ul class="admin-options">' + alternatives.map((option) => '<li>' + esc(option.name || "Produto") + (option.packaging ? ' <span>· ' + esc(option.packaging) + '</span>' : "") + '</li>').join("") + '</ul>';
+          } else {
+            optionContent = '<small class="admin-option-count">' + (result.failed
+              ? "Opções cadastradas; estoque indisponível para consulta agora."
+              : esc(configured) + ' opção' + (configured === 1 ? "" : "ões") + ' cadastrada' + (configured === 1 ? "" : "s") + ' · sem opção em estoque agora.') + '</small>';
+          }
+          return '<article class="admin-position"><div class="admin-position-main"><strong>' + esc(item.name || "Produto") + '</strong><small>' + esc(productLabel) + '</small></div><div class="admin-position-options">' + optionContent + '</div></article>';
+        }).join("") + '</div>';
+      details.dataset.loaded = "1";
+    } catch (_) {
+      host.innerHTML = '<p class="admin-muted">Não foi possível carregar as opções agora. Feche e abra esta cesta para tentar novamente.</p>';
+    } finally {
+      details.dataset.loading = "0";
+    }
+  }
+
   async function loadBaskets() {
     const host = $("admin-baskets");
     host.innerHTML = '<p class="admin-muted">Carregando…</p>';
@@ -223,11 +245,22 @@
         const card = row.card;
         const basket = row.basket;
         const count = row.items.reduce((sum, item) => sum + Number(item.quantity || item.base_quantity || 0), 0);
-        const image = card.image_url || "../../img/cestas/cesta-" + (card.size_key || "mini") + ".jpg";
-        return '<article class="admin-basket-row"><img src="' + esc(image) + '" alt="" width="58" height="58" loading="lazy">' +
-          '<div><strong>' + esc(card.name || "Cesta") + '</strong><small>' + (basket ? esc(row.items.length) + " tipos de produto · " + esc(count) + " itens" : "Conteúdo indisponível") + '</small></div>' +
-          '<b>' + (basket ? esc(money(basket.display_price_cents)) : "—") + "</b></article>";
+        const optionCount = row.items.reduce((sum, item) => sum + Number(item.alternative_count || 0), 0);
+        const key = card.size_key || "mini";
+        const image = "../assets/cestas/cesta-" + key + ".jpg";
+        return '<details class="admin-basket-card" data-size-key="' + esc(key) + '"><summary>' +
+          '<img src="' + esc(image) + '" alt="" width="64" height="64" loading="lazy" decoding="async">' +
+          '<span class="admin-basket-summary"><strong>' + esc(card.name || "Cesta") + '</strong><small>' + (basket
+            ? esc(row.items.length) + " produtos · " + esc(count) + " unidades · " + esc(optionCount) + " opções cadastradas"
+            : "Conteúdo indisponível") + '</small></span>' +
+          '<b>' + (basket ? esc(money(basket.display_price_cents)) : "—") + '</b></summary>' +
+          '<div class="admin-composition">' + (basket
+            ? '<p class="admin-muted">Abra para consultar a composição e as alternativas cadastradas.</p>'
+            : '<p class="admin-muted">Não foi possível consultar esta cesta.</p>') + '</div></details>';
       }).join("") || '<p class="admin-muted">Nenhuma cesta encontrada.</p>';
+      host.querySelectorAll(".admin-basket-card").forEach((details, index) => {
+        details.addEventListener("toggle", () => { if (details.open) loadComposition(details, rows[index]); });
+      });
     } catch (error) {
       host.innerHTML = '<p class="admin-muted">Não foi possível carregar as cestas agora.</p>';
     }
@@ -240,9 +273,5 @@
   document.querySelectorAll(".nav-tab").forEach((button) => button.addEventListener("click", () => setView(button.dataset.view)));
   document.querySelectorAll("[data-go]").forEach((button) => button.addEventListener("click", () => setView(button.dataset.go)));
 
-  session = readSession();
-  if (session && session.access_token) {
-    validateAdmin().catch(() => { saveSession(null); showLogin("Sua sessão expirou. Entre novamente."); });
-  }
+  if (sessionStorage.getItem(accessKey) === "1") enterAdmin();
 })();
-

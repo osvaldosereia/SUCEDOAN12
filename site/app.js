@@ -30,9 +30,7 @@
   }
 
   function imageForBasket(card, keyName) {
-    const fallback = "../img/cestas/cesta-" + keyName + ".jpg";
-    const image = plain(card && card.image_url);
-    return image || fallback;
+    return "assets/cestas/cesta-" + keyName + ".jpg";
   }
 
   async function optionsForItem(basket, item) {
@@ -53,7 +51,7 @@
       alternatives = alternatives.concat(rows);
       offset = page.next_offset == null ? count : Number(page.next_offset);
     }
-    if (!alternatives.length && item.product_id) alternatives.push({
+    if (!alternatives.length && item.product_id && Number(item.stock_quantity || 0) > 0) alternatives.push({
       product_id: item.product_id, name: item.name, image_url: item.image_url,
       price_cents: item.price_cents, stock_quantity: item.stock_quantity
     });
@@ -85,22 +83,106 @@
   }
 
   async function basketForSize(sizeKey) {
-    const initial = await request("basket_by_size", { params: { size_key: sizeKey } });
+    const initial = await request("basket_by_size", { params: { size_key: sizeKey, lightweight: "1" } });
     const basket = initial.basket;
     const rawItems = Array.isArray(initial.items) ? initial.items : [];
-    const withOptions = await Promise.all(rawItems.map(async (item) => Object.assign({}, item, {
-      _alternatives: await optionsForItem(basket, item)
-    })));
-    const cheapest = withOptions.map((item) => {
-      const option = item._alternatives[0];
-      return {
-        position_id: item.position_id,
-        product_id: option ? option.product_id : item.product_id,
-        quantity: Number(item.quantity || item.base_quantity || 0)
-      };
+    return {
+      basket,
+      items: rawItems,
+      totalCents: Number(basket.display_price_cents || 0),
+      orderable: Number(basket.stock_quantity || 0) > 0,
+      optionsLoaded: false,
+      optionsPromise: null
+    };
+  }
+
+  async function mapLimit(items, limit, task) {
+    const results = new Array(items.length);
+    let next = 0;
+    const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+      while (next < items.length) {
+        const index = next++;
+        results[index] = await task(items[index], index);
+      }
     });
-    const quote = await quoteBasket(basket, cheapest, withOptions);
-    return { basket: quote.basket, items: quote.items, totalCents: quote.totalCents };
+    await Promise.all(workers);
+    return results;
+  }
+
+  function sortAlternatives(options) {
+    return (Array.isArray(options) ? options : []).slice().sort((a, b) =>
+      Number(a.price_cents || 0) - Number(b.price_cents || 0) ||
+      String(a.name || "").localeCompare(String(b.name || ""), "pt-BR")
+    );
+  }
+
+  async function loadBasketOptions(sizeKey) {
+    const data = state.baskets.get(sizeKey);
+    if (!data || data.error || data.optionsLoaded) return data;
+    if (data.optionsPromise) return data.optionsPromise;
+    data.optionsPromise = (async () => {
+      const basket = data.basket;
+      let optionRows = new Map();
+      if (Number(basket.stock_quantity || 0) > 0) {
+        try {
+          const batch = await request("basket_mold_options_batch", {
+            method: "POST",
+            body: {
+              basket_id: basket.id,
+              composition_number: basket.composition_number || 1,
+              positions: data.items.map((item) => ({
+                position_id: item.position_id,
+                selected_product_id: item.product_id || "",
+                quantity: Number(item.quantity || item.base_quantity || 0)
+              }))
+            }
+          });
+          (batch.positions || []).forEach((row) => optionRows.set(String(row.position_id), row));
+        } catch (_) {
+          // If the batch route cannot serve this basket, fall back to its read-only per-position route.
+        }
+      }
+
+      const items = await mapLimit(data.items, 6, async (item) => {
+        const batchRow = optionRows.get(String(item.position_id));
+        const batchOptions = sortAlternatives(batchRow && batchRow.alternatives);
+        const availableCount = Number(batchRow && batchRow.alternative_count || 0);
+        let alternatives = batchOptions;
+        if (!alternatives.length || availableCount > alternatives.length) {
+          try { alternatives = await optionsForItem(basket, item); } catch (_) { alternatives = batchOptions; }
+        }
+        alternatives = sortAlternatives(alternatives);
+        const cheapest = alternatives[0];
+        return Object.assign({}, item, cheapest ? {
+          product_id: cheapest.product_id,
+          name: cheapest.name || item.name,
+          image_url: cheapest.image_url || item.image_url,
+          packaging: cheapest.packaging || item.packaging,
+          stock_quantity: cheapest.stock_quantity,
+          _alternatives: alternatives
+        } : { _alternatives: [] });
+      });
+
+      const hasStock = Number(basket.stock_quantity || 0) > 0;
+      if (hasStock && items.every((item) => item._alternatives.length > 0)) {
+        const selections = items.map((item) => ({
+          position_id: item.position_id,
+          product_id: item.product_id,
+          quantity: Number(item.quantity || item.base_quantity || 0)
+        }));
+        try {
+          const quote = await quoteBasket(basket, selections, items);
+          Object.assign(data, quote, { orderable: true });
+        } catch (_) {
+          Object.assign(data, { items, orderable: false, totalCents: Number(basket.display_price_cents || 0) });
+        }
+      } else {
+        Object.assign(data, { items, orderable: false, totalCents: Number(basket.display_price_cents || 0) });
+      }
+      data.optionsLoaded = true;
+      return data;
+    })().finally(() => { data.optionsPromise = null; });
+    return data.optionsPromise;
   }
 
   function renderCards() {
@@ -110,12 +192,13 @@
       const title = plain(card.name || card.model_name || "Cesta básica");
       const data = state.baskets.get(sizeKey);
       const ready = Boolean(data && !data.error);
-      const price = ready ? money(data.totalCents) : data && data.error ? "Indisponível" : "Carregando…";
+      const inStock = ready && Number(data.basket.stock_quantity || 0) > 0;
+      const price = ready && inStock ? money(data.totalCents) : ready ? "Sem estoque" : data && data.error ? "Indisponível" : "Carregando…";
       const disabled = ready ? "" : " disabled";
       return '<article class="basket-card">' +
         '<img class="basket-photo" src="' + esc(imageForBasket(card, sizeKey)) + '" alt="Cesta ' + esc(title) + '" width="420" height="420" loading="lazy" decoding="async">' +
         '<div class="basket-body"><h3 class="basket-title">' + esc(title) + '</h3>' +
-        '<p class="basket-price"><small>A partir de</small>' + esc(price) + '</p>' +
+        '<p class="basket-price"><small>' + (ready && !inStock ? "Disponibilidade" : "A partir de") + '</small>' + esc(price) + '</p>' +
         '<button class="button button-primary card-button" type="button" data-open-basket="' + esc(sizeKey) + '"' + disabled + '>Ver Produtos</button></div></article>';
     }).join("");
     host.querySelectorAll("[data-open-basket]").forEach((button) => button.addEventListener("click", () => openDetail(button.dataset.openBasket)));
@@ -130,6 +213,7 @@
   async function loadCatalog() {
     $("retry-catalog").hidden = true;
     $("catalog-status").textContent = "Carregando cestas…";
+    state.baskets.clear();
     try {
       const result = await request("home_size_cards");
       state.cards = Array.isArray(result.baskets) ? result.baskets : [];
@@ -138,13 +222,11 @@
       $("catalog-status").textContent = "5 tamanhos";
       await Promise.all(state.cards.map(async (card) => {
         const sizeKey = card.size_key || keyOf(card.name);
-        try {
-          state.baskets.set(sizeKey, await basketForSize(sizeKey));
-        } catch (error) {
-          state.baskets.set(sizeKey, { error: true });
-        }
+        try { state.baskets.set(sizeKey, await basketForSize(sizeKey)); }
+        catch (_) { state.baskets.set(sizeKey, { error: true }); }
         renderCards();
       }));
+      renderCards();
       $("catalog-status").textContent = state.cards.length + " tamanhos";
     } catch (error) {
       showEmpty("Não foi possível carregar as cestas. Confira sua conexão e tente novamente.", true);
@@ -184,7 +266,7 @@
       return;
     }
     $("detail-title").textContent = data.basket.name || "Produtos da cesta";
-    $("detail-total").textContent = money(data.totalCents);
+    $("detail-total").textContent = money(data.totalCents || data.basket.display_price_cents);
     $("customize-button").textContent = state.customizing ? "Concluir personalização" : "Personalizar";
     const rows = data.items.map((item) => {
       const alternatives = item._alternatives || [];
@@ -198,7 +280,12 @@
         '<div><h3 class="product-name">' + esc(item.name || "Produto") + '</h3><p class="product-quantity">' + esc(item.quantity || item.base_quantity || 0) + " " + esc(item.packaging || "") + '</p></div>' +
         select + "</article>";
     }).join("");
-    $("detail-content").innerHTML = '<div class="product-list">' + rows + "</div>";
+    const note = !data.optionsLoaded
+      ? '<p class="helper stock-note">Carregando as opções mais baratas…</p>'
+      : data.orderable ? "" : '<p class="helper stock-note">Esta composição está sem estoque disponível no momento.</p>';
+    $("detail-content").innerHTML = note + '<div class="product-list">' + rows + "</div>";
+    $("order-button").disabled = !data.orderable || !data.optionsLoaded;
+    $("customize-button").disabled = !data.orderable || !data.optionsLoaded;
     $("detail-content").querySelectorAll("[data-position]").forEach((select) => select.addEventListener("change", () => changeProduct(select.dataset.position, select.value)));
     $("detail-content").querySelectorAll("img").forEach((image) => image.addEventListener("error", () => { image.src = "../img/logoantonia5.png"; }, { once: true }));
   }
@@ -214,7 +301,7 @@
     $("detail-content").setAttribute("aria-busy", "true");
     try {
       const quote = await quoteBasket(data.basket, selections, data.items);
-      state.baskets.set(state.activeKey, quote);
+    state.baskets.set(state.activeKey, Object.assign(quote, { orderable: true, optionsLoaded: true }));
       renderDetail();
       renderCards();
     } catch (error) {
@@ -230,6 +317,14 @@
     state.customizing = false;
     renderDetail();
     showSheet("detail-sheet");
+    loadBasketOptions(sizeKey).then(() => {
+      if (state.activeKey === sizeKey && !$('detail-sheet').hidden) renderDetail();
+      renderCards();
+    }).catch(() => {
+      const data = state.baskets.get(sizeKey);
+      if (data) data.optionsLoaded = true;
+      if (state.activeKey === sizeKey && !$('detail-sheet').hidden) renderDetail();
+    });
   }
 
   function addressLines(address) {
@@ -323,6 +418,8 @@
 
   $("retry-catalog").addEventListener("click", loadCatalog);
   $("order-button").addEventListener("click", () => {
+    const basket = state.baskets.get(state.activeKey);
+    if (!basket || !basket.orderable) return;
     closeSheet("detail-sheet");
     showSheet("order-sheet");
     $("customer-phone").focus({ preventScroll: true });
@@ -350,4 +447,3 @@
 
   loadCatalog();
 })();
-
