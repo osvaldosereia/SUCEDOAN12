@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
 import { AdminFrame } from "@/components/admin-frame";
-import { requireStaff } from "@/lib/auth/require-staff";
+import { requireAdminSession } from "@/lib/auth/require-admin-session";
 
 export default async function AdminLayout({
 	children,
 }: {
 	children: ReactNode;
 }) {
-	const staff = await requireStaff();
+	await requireAdminSession();
 
-	return <AdminFrame role={staff.role}>{children}</AdminFrame>;
+	return <AdminFrame>{children}</AdminFrame>;
 }

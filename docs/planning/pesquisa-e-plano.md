@@ -2,8 +2,8 @@
 
 **Data de referência:** 26 de outubro de 2026
 **Status:** pesquisa e planejamento encerrados para a primeira base; implementação greenfield em andamento na branch `codex/whatsapp-admin-greenfield-20261026`
-**Prontidão:** a programação greenfield começou em branch isolada, conforme a autorização mais recente do proprietário. A base local e a interface avançam sem escrever em Meta, Bling ou Supabase de produção. Antes de conectar cada serviço, concluir os gates correspondentes do [caderno técnico](caderno-tecnico.md): mapear referências sem expor segredos, reler produtos/fotos após a carga, validar Meta nas duas linhas, confirmar OAuth Bling em leitura e congelar os contratos finais.
-**Diretriz de implementação:** sistema novo, sem reaproveitar código histórico. O histórico do repositório serve apenas para recuperar decisões, requisitos e referências de conexão.
+**Prontidão:** a programação greenfield continua na branch isolada, sem escrever em Meta, Bling ou no Supabase original. O proprietário adotou o mapa `MAPA_DONA_ANTONIA_SUPABASE_E_GITHUB_2026-10-26.md`: o backend canônico é o Supabase original `ssbesxgaijknwsjbsbcz`; `wvpzudjujtmyspluwhvx` foi excluído pelo Dashboard em 27/10/2026, e a listagem confirmou que o projeto original continua ativo.
+**Diretriz de implementação:** interface e lógica do Admin são greenfield. As integrações e dados operacionais existentes serão acessados pelos gateways oficiais, após auditar cada contrato e autorização; não copiar código histórico nem criar tabelas, buckets ou gateways duplicados sem necessidade demonstrada.
 
 **Anotações detalhadas para a programação:** [Caderno técnico de fluxos, clientes, catálogo Meta e Bling](caderno-tecnico.md), incluindo inventário seguro do Vault, histórico GitHub, contratos de integração e casos de homologação.
 
@@ -21,19 +21,20 @@ O desenho recomendado é:
 - **IA ANA:** assistente com identidade e instruções da empresa, conectado a dados e ações restritas. Não treinar um modelo próprio do zero no MVP; isso aumentaria custo e manutenção sem ser necessário para atender ao caso.
 - **Produtos avulsos:** catálogo nativo do WhatsApp como vitrine e carrinho para itens padronizados; cada carrinho é um pedido independente da cesta, mesmo na mesma conversa.
 - **Cestas configuráveis:** WhatsApp Flow por componente, depois pagamento e confirmação/cadastro de cliente/endereço. Preço e disponibilidade são recalculados no servidor; a conversa mostra produtos/quantidades e total geral, sem preço individual por item.
-- **Pedidos e faturamento:** o painel controla NOVO, PRODUÇÃO — Separação, EXPEDIÇÃO e ENTREGUE. Pedido válido confirmado pelo cliente entra em Separação; ao mover de PRODUÇÃO para EXPEDIÇÃO, grava uma tarefa única e durável para integração com o Bling. Pedido, geração da NF-e, envio à SEFAZ e autorização fiscal são estados diferentes.
+- **Pedidos e faturamento:** o painel controla NOVO, PRODUÇÃO — Separação, EXPEDIÇÃO e ENTREGUE. Pedido válido confirmado pelo cliente entra em Separação; o pedido e o estoque são sincronizados com o Bling antes da etapa fiscal. Por decisão mais recente do proprietário (27/10/2026), emissão manual e automática de NF-e ficam para o último marco; emissão, envio à SEFAZ e autorização fiscal são estados diferentes.
 
 O produto deve ser pequeno no que o funcionário vê e rigoroso por trás: duplicidade de webhooks, repetição de pedidos, falhas de rede e erro fiscal precisam ser recuperáveis sem duplicar vendas ou notas.
 
 ## 2. O que já sabemos e o que a pesquisa conclui
 
 - Os **dois números já usam a API oficial da Meta**.
-- O banco correto é **Dona Antônia - NOVO**, ref `wvpzudjujtmyspluwhvx`, URL `https://wvpzudjujtmyspluwhvx.supabase.co`, região `sa-east-1` (São Paulo). A inspeção read-only mais recente confirmou Postgres 17.11, estado `ACTIVE_HEALTHY`, duas migrations e nenhuma Edge Function. Há 1.928 produtos (todos inativos/`needs_review`), 574 clientes, 578 contatos e 336 endereços. As fotos seguem em processamento: `product_images` está vazio, sem bucket, com 1.798 itens pendentes. Há 0 usuários Auth/perfis staff e 17 tabelas RLS sem policies (fail-closed); nenhuma integração Meta/Bling está ativada. Recontar fotos/policies antes de qualquer migração. Detalhes em `caderno-tecnico.md`.
-- A base já tem a **estrutura de tabelas** para produtos, identificadores/imagens, modelos/itens de cesta, clientes/contatos/endereços, equipe, pedidos/itens, reservas de estoque, vínculos externos e auditoria. Isso descreve schema, não afirma que todos os registros já foram carregados. O projeto deve evoluir essa base com migrações incrementais; não recriar esses cadastros em tabelas paralelas.
+- O backend correto é **Dona Antônia** (original), ref `ssbesxgaijknwsjbsbcz`, URL `https://ssbesxgaijknwsjbsbcz.supabase.co`, região São Paulo, PostgreSQL 17.6. A leitura somente de metadados encontrou 238 tabelas `public`, 14 `private`, 13 `whatsapp_atendimento`, 46 views públicas, 152 Edge Functions ativas, 1.928 produtos, 574 clientes, 260 pedidos e 17 buckets Storage. `admin-products-live-v1` é um gateway existente que exige JWT válido e associação ativa em `admin_users`; tabelas de negócio não concedem acesso direto a `authenticated`, então o app usa o gateway e não consulta essas tabelas pelo navegador. O mapa registra duas contas Meta ativas em WABAs distintas e runtime Bling ativo, com emissão fiscal desabilitada. Nenhum valor secreto foi consultado.
+- `Dona Antônia - NOVO` (`wvpzudjujtmyspluwhvx`) foi excluído após confirmação explícita. `Dona Antônia V2` (`hjudhofluihkxykwekir`) e AME MAIS foram confirmados na listagem posterior e permanecem intactos; nenhum deles é destino de implementação.
+- O backend original já mantém cadastros e operação em andamento. Os nomes de tabelas do projeto “NOVO” não são contrato para o original. Reutilizar as APIs existentes e só propor DDL depois de mapear funções, constraints e grants no projeto canônico; não recriar produtos, clientes, pedidos, fotos, outbox ou cestas em estruturas paralelas.
 - Contatos novos podem chegar sem telefone quando usam username. A Meta documenta BSUID no `user_id`, vinculado ao portfólio empresarial, e exige suporte por integrações diretas; a conversa continua separada por identidade do remetente + `phone_number_id`. Telefone E.164 é contato opcional quando compartilhado/verificado. Para ligar clientes entre os dois números, primeiro conferir se os WABAs pertencem ao mesmo portfólio e testar envio/retorno por BSUID na versão Graph ativa; não mesclar por nome ou suposição.
 - O repositório `osvaldosereia/SUCEDOAN12` foi limpo intencionalmente. O código das branches antigas não será usado nem copiado.
 - Foi feita auditoria comparativa do Flow legado contra materiais oficiais da Meta. Um bug histórico enviava `indice` sem declará-lo no schema da ação; outro commit derivava HMAC de sessão do App Secret. O plano novo corrige o primeiro com contratos/schema gerados juntos e descarta a derivação: usa token aleatório apenas como correlator e protocolo Meta RSA/AES-GCM. A página oficial de componentes ficou rate-limited nesta consulta, por isso suporte/limites de imagens e versão só serão congelados após validação do Flow nas duas WABAs; todas as alternativas continuam obrigadas a exibir foto. Detalhes, evidências e decisão: [comparação Meta x histórico no caderno técnico](caderno-tecnico.md#comparação-do-histórico-com-o-protocolo-oficial-da-meta--26102026).
-- O histórico tem requisitos e decisões úteis. Há, porém, uma regra fiscal antiga que dizia esperar entrega e pagamento antes da NF-e. Para este projeto, a instrução mais recente é que a ida para EXPEDIÇÃO dispare o processo do Bling; isso passa a ser a regra de desenho, sujeito à validação fiscal antes de ativar emissão real.
+- O histórico tem requisitos e decisões úteis, mas suas regras fiscais anteriores foram superadas. A decisão vigente do proprietário (27/10/2026) é deixar a emissão de NF-e por último. Antes disso, sincronizar pedido/estoque com o Bling mantendo emissão manual e automática desligadas; a expedição só começa após autorização da Sefaz, na etapa fiscal final.
 - A inspeção somente leitura dos metadados seguros no Supabase encontrou os dois `phone_number_id` em **WABAs diferentes**. Portanto, o Admin deve tratar cada linha como uma configuração de canal independente, com catálogo, Flow, templates, webhooks, permissões e health check próprios. Não planejar migração para uma WABA comum: isso não é requisito do produto e pode criar risco operacional.
 - A plataforma tem listas, botões de resposta, mídia, mensagens de produto único/múltiplos produtos e Flows. A disponibilidade de carrossel e os limites de itens variam conforme tipo de mensagem/conta/API; por isso, carrossel fica como formato complementar, não dependência do fluxo de compra.
 - O catálogo registra produtos e quantidade; a documentação consultada não mostra modificadores livres para montar uma cesta com substituições arbitrárias. A personalização precisa ser tratada pelo Flow ou por um fluxo guiado e validada pelo backend.
@@ -63,7 +64,7 @@ Usar o padrão de três áreas já compreendido por ferramentas de atendimento: 
 - Formulários em blocos curtos, com rótulos claros e exemplo do formato esperado.
 - Detalhe do pedido aberto ao clicar na linha: cliente, itens, quantidades, total, histórico e notas internas.
 - Mostrar os quatro estados pedidos como fluxo principal. Guardar cancelamento como ação separada com motivo; pagamento, sincronização Bling e situação fiscal aparecem como indicadores auxiliares, sem criar novas colunas no quadro principal.
-- Em cada transição, explicar o que acontecerá. A ida para EXPEDIÇÃO deve avisar que iniciará envio ao Bling e apresentar eventual problema de cadastro/fiscal.
+- Em cada transição, explicar o que acontecerá. Na fase final, a ida para EXPEDIÇÃO informa o envio ao Bling e eventual pendência fiscal; antes desse marco, emissão manual/automática fica desligada e não se libera a saída.
 
 ### Inspiração visual
 
@@ -88,7 +89,7 @@ flowchart LR
 
 ## 5. Modelagem funcional mínima
 
-Modelo conceitual adaptado à base real: reutilizar `staff_profiles`, `products`, `product_images`, `product_identifiers`, `basket_templates`, `customers`, `customer_contacts`, `customer_addresses`, `orders`, `order_items`, `inventory_reservations`, `external_entity_links` e `audit_events`. A composição antiga `basket_items` permanece apenas até o preflight e não será estrutura do Flow novo; a migration local já criou versões, slots e opções por cesta. Completar ainda identidade/conversas/mensagens, rascunhos, sessões Flow/lotes de catálogo, histórico de status, configurações versionadas da ANA e outbox. O caderno registra aderência e restrições por tabela; não apagar ou substituir dados remotos antes de revisar a base em execução.
+Modelo funcional, sem fixar DDL: o Admin precisa operar catálogo, imagens, cestas, clientes/endereço, pedidos, atendimento, configurações da ANA e auditoria. Os recursos físicos e regras de acesso devem ser obtidos dos contratos dos gateways do Supabase original; não usar nomes/campos inferidos do projeto “NOVO”. Completar lacunas apenas quando a auditoria provar que nenhum recurso existente atende e uma mudança aditiva for segura.
 
 Não criar arquitetura multiempresa no primeiro lançamento. Usuários são funcionários da única empresa; clientes do WhatsApp não precisam de login. RLS e permissões explícitas protegem o painel. Credenciais nunca entram no navegador, em prompts, em commits ou no conteúdo do histórico. Tokens de Meta/Bling ficam nos segredos do servidor.
 
@@ -119,8 +120,8 @@ A Meta cobra por mensagem entregue segundo categoria e mercado. A FAQ oficial in
 ## 8. Integração Supabase — escopo e segurança
 
 - Auth somente para funcionários e administradores. Criar convites/provisionamento controlado; impedir autoinscrição pública no painel.
-- Aplicar RLS a tabelas acessíveis pelo cliente web. A partir de 30/10/2026, projetos Supabase existentes deixam de expor automaticamente tabelas novas de `public` pela Data API; cada migração deve declarar GRANTs mínimos, RLS e políticas na mesma entrega. A regra oficial e a data foram reconfirmadas em 26/10/2026.
-- Na base selecionada, RLS está ligado nas 19 tabelas, mas há somente duas políticas de leitura para o catálogo aprovado (`products` e `product_images`); nenhuma API role recebeu GRANT nas tabelas. As outras 17 não têm policy. Isso mantém a base em negação por padrão, mas o painel ainda não pode consultar nem alterar dados até uma migração definir permissões explícitas. `authenticated` sozinho não significa administrador.
+- O painel não consulta tabelas comerciais diretamente pelo navegador. A leitura do projeto original mostrou ausência de GRANT direto às tabelas consultadas; o gateway `admin-products-live-v1` autentica Bearer via `auth.getUser()` e confere `admin_users.is_active`. Toda tela deve usar função existente com autorização equivalente, nunca service role no browser.
+- A mudança oficial de exposição/grants do Supabase continua relevante para qualquer DDL futuro, mas não cria justificativa para migrar o schema atual. Primeiro auditar funções/grants reais do projeto original; depois propor apenas mudança necessária e aditiva.
 - Supabase Pro, região São Paulo e Postgres 17.11 foram confirmados. Conferir changelog, limites, grants e políticas vigentes novamente antes da implementação.
 - Nunca distribuir `service_role`/secret key no navegador; essas chaves ignoram RLS. Funções Edge são a fronteira para chamadas Meta, Bling e IA.
 - Edge Function pública de webhook não usa JWT de usuário, mas valida a assinatura/autenticação do provedor no servidor, com corpo bruto quando requerido.
@@ -128,7 +129,7 @@ A Meta cobra por mensagem entregue segundo categoria e mercado. A FAQ oficial in
 - Reutilizar `app_private.outbox_jobs`, já existente no projeto, como única fila durável. Completar chave idempotente única, claim/lease atômico, backoff, erro seguro e estado de reconciliação; primeira tentativa é imediata e Cron recupera pendências. Não criar outra outbox nem tratar `pg_net` como fila.
 - Realtime para refrescar inbox/quadro. Após reconexão, consultar estado do banco, pois notificação em tempo real não substitui leitura persistente.
 - Storage público só para imagem que possa ser pública; mídia de conversa privada com regras de acesso e URL temporária. Backups de banco não cobrem automaticamente arquivos do Storage; prever cópia/exportação de mídia importante.
-- O projeto correto já está no plano Pro. Manter esse projeto como destino; rever cotas, retenção e backup do plano vigente antes do lançamento e configurar cópia do banco/Storage conforme criticidade dos dados.
+- O projeto canônico original está no plano Pro segundo o mapa. Rever cotas, retenção e backup antes do lançamento; não abrir projeto alternativo como banco do Admin.
 
 ## 9. Integração Bling — sincronização e validação fiscal
 
@@ -145,7 +146,7 @@ A base atual da API v3 é `https://api.bling.com.br/Api/v3`. OAuth Authorization
 
 Criar venda não é o mesmo que autorizar nota. Gerar NF-e e enviar à SEFAZ são chamadas diferentes. Se uma chamada expirar sem resposta, consultar Bling e reconciliar antes de repetir para evitar pedido/nota duplicada. Webhooks do Bling têm assinatura `X-Bling-Signature-256`, ID de evento, ordem potencialmente variável e janela de entrega/retry; validar assinatura, deduplicar e responder rápido.
 
-**Bloqueio profissional para emissão real:** antes de habilitar geração/envio automático, confirmar com contador e conta Bling: credenciamento SEFAZ, certificado, inscrição estadual, natureza de operação/CFOP, regime, NCM/tributação por item, dados mínimos do destinatário, frete e condições de pagamento. Na EXPEDIÇÃO, sincronizar a venda e preparar a etapa fiscal. A regra histórica dizia aguardar entrega e pagamento; a orientação atual pede iniciar Bling na expedição. Manter a política explícita e emissão real desativada até essa validação. Se faltar dado, deixar pedido em expedição com status fiscal “precisa de revisão”.
+**Bloqueio profissional para emissão real:** antes de habilitar geração/envio automático, confirmar com contador e conta Bling: credenciamento SEFAZ, certificado, inscrição estadual, natureza de operação/CFOP, regime, NCM/tributação por item, dados mínimos do destinatário, frete e condições de pagamento. Nos marcos anteriores, sincronizar pedido/estoque com o Bling sem gerar NF-e e exigir `issue_enabled=false` antes de concluir a separação. A emissão manual/automática e a liberação da expedição pertencem à última fase; se faltar dado, manter pendência recuperável e não liberar a saída.
 
 ## 10. ANA — assistente de atendimento
 
@@ -174,7 +175,7 @@ O valor total do combo, composição e quantidades devem estar claros antes de c
 - Verificar os dois `phone_number_id`, WABA, tipo de identificador recebido do cliente e possibilidade de resposta por BSUID; no Bling, verificar OAuth, conta e escopos. Registrar credenciais diretamente no cofre do servidor, nunca no navegador ou no repositório.
 - Conferir os dois números, WABA(s), webhook, catálogo, templates, templates/cobrança, Flow e elegibilidade de formatos.
 - Confirmar cadastro real de produtos, SKUs, unidade de venda e campos fiscais no Bling.
-- Revalidar snapshot/contagem/schema do Supabase imediatamente antes da primeira migração; desenvolver no Supabase local/branch e manter produção sem escrita manual.
+- Revalidar contrato/read-only e versão de cada gateway antes da tela dependente; manter produção sem escrita manual durante esta implementação.
 - Usar a especificação completa das oito áreas e o mapa/wireframe do caderno como base visual; revisar telas enquanto constrói o shell, sem exigir protótipo separado para começar a base.
 - Registrar dados de negócio ainda pendentes (SKUs, preços, cestas, pagamento, entrega, opt-in, cancelamento e retenção) como entrada de configuração/importação, não como decisão de arquitetura.
 - Confirmar com contador o gatilho e os campos fiscais antes de ativar Bling/NF-e real; testar primeiro com adaptador mock/sandbox.
@@ -220,14 +221,14 @@ O valor total do combo, composição e quantidades devem estar claros antes de c
 
 **Saída:** cliente conclui pedido e o funcionário acompanha o ciclo de ponta a ponta, ainda sem emissão automática.
 
-### Fase 5 — Bling e nota
+### Fase 5 — Bling operacional, sem nota fiscal
 
 - OAuth, leitura de contato/produto/estoque conforme necessidade e mapeamento de IDs.
-- Criar uma venda Bling própria para cada pedido Admin; cesta e carrinho têm venda/NF-e separadas.
+- Sincronizar cada pedido Admin separadamente com o Bling, sem misturar cesta e carrinho; manter emissão manual/automática desativada.
 - Webhooks assinados, consulta de reconciliação, retries e tela de falhas.
-- Simular rejeição, timeout e dados incompletos antes de produção; ativar emissão real só após aprovação contábil e conta validada.
+- Simular timeout e dados incompletos do pedido/estoque; ativar emissão somente no marco final.
 
-**Saída:** pedido não duplica no Bling; emissão mostra separadamente pendente, autorizada e rejeitada.
+**Saída:** pedidos e estoque sincronizam sem duplicidade no Bling; nenhuma NF-e é emitida nesta fase.
 
 ### Fase 6 — ANA controlada
 
@@ -237,6 +238,14 @@ O valor total do combo, composição e quantidades devem estar claros antes de c
 - Simulador e trilha de auditoria; ativação por número e/ou fila, inicialmente gradual.
 
 **Saída:** ANA faz atendimento dentro dos limites e deixa humano assumir sem disputa de respostas.
+
+### Fase 7 — Emissão fiscal e liberação da expedição
+
+- Conferir requisitos fiscais com contador e Bling; testar em sandbox fiscal com cadastro sintético.
+- Validar emissão manual/automática, idempotência, callbacks, rejeição, timeout e reconciliação.
+- Habilitar a emissão apenas após todos os gates anteriores; liberar expedição somente com autorização inequívoca da Sefaz.
+
+**Saída:** pedidos podem sair para entrega após nota autorizada; falhas e estados desconhecidos continuam bloqueados e recuperáveis.
 
 ### Fase 7 — Preparação e lançamento
 
@@ -272,7 +281,7 @@ O valor total do combo, composição e quantidades devem estar claros antes de c
 | Estado do negócio | Supabase Postgres | Preços, conversas, pedidos e status consistentes |
 | Cestas | Flow primeiro; listas/web como reserva | Catálogo não representa modificadores arbitrários de forma suficiente |
 | IA | ANA com ferramentas restritas e backend determinístico | Evita preço, estoque e ações fiscais inventados |
-| Faturamento | EXPEDIÇÃO sincroniza a venda; NF-e é operação separada até validação do contador | Atende o fluxo pedido sem confundir envio ao Bling com autorização SEFAZ |
+| Faturamento | Bling sincroniza pedidos antes; emissão de NF-e é o último marco e a expedição exige autorização | Atende a ordem definida pelo proprietário sem confundir venda, geração e autorização SEFAZ |
 | Carrossel | Formato opcional após validação | Recurso/limites podem variar; não bloqueia compra |
 | Valor interno oculto | Margem/ajuste interno entra no preço total claro | Não criar uma cobrança surpresa |
 | Custos Meta | Prever cobrança por mensagem e confirmar rate card atual | A documentação oficial consultada diverge sobre cobrança de atendimento em out/2026 |
@@ -298,6 +307,8 @@ Durante a implementação, manter uma matriz simples: requisito → fonte/decis�
 - [Meta — usernames e identificadores BSUID](https://developers.facebook.com/documentation/business-messaging/whatsapp/business-scoped-user-ids/)
 - [Meta — exemplo oficial de webhook de pedido do Catálogo](https://www.postman.com/meta/whatsapp-business-platform/documentation/wlk6lh4/whatsapp-cloud-api?entity=request-13382743-ba924e99-3d98-4954-b4e3-73a519939c33)
 - [Meta — envio de mensagem de vários produtos](https://www.postman.com/meta/whatsapp-business-platform/request/j1w5o6p/send-multi-product-message)
+- [Meta — envio de Flow publicado por ID](https://www.postman.com/meta/whatsapp-business-platform/request/1i6xpic/send-published-flow-by-id)
+- [Meta — exemplo oficial de envio de Flow](https://github.com/WhatsApp/WhatsApp-Flows-Tools/blob/main/articles/creating-surveys/main.py)
 - [Meta — configuração de catálogo/comércio](https://www.postman.com/meta/whatsapp-business-platform/request/30lrpw8/set-or-update-commerce-settings)
 - [Next.js — App Router e instalação](https://nextjs.org/docs/app/getting-started/installation)
 - [Next.js — opções de implantação](https://nextjs.org/docs/app/getting-started/deploying)
@@ -356,3 +367,37 @@ Durante a implementação, manter uma matriz simples: requisito → fonte/decis�
 - [Código de Defesa do Consumidor — Lei 8.078/1990, art. 31](https://planalto.gov.br/ccivil_03/leis/l8078compilado.htm)
 - [Decreto 7.962/2013 — comércio eletrônico, art. 2](https://planalto.gov.br/ccivil_03/_ato2011-2014/2013/decreto/d7962.htm)
 - [LGPD — Lei 13.709/2018](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm)
+
+
+## Pesquisa complementar — envio de mídia e respostas rápidas na inbox (27/10/2026)
+
+- Supabase canônico conferido diretamente, sem alteração: `ssbesxgaijknwsjbsbcz`. `admin-whatsapp-ops-v1` está ativa em v39 e aponta para `osvaldosereia/SUCEDOAN12@13d10dfcaa925340b0ce17011498cb6a502572fa`. O gateway allowlista `quick_replies`, `library_list`, `library_preview`, `library_upload_prepare`, `library_upload_complete`, `library_send` e `send_media`; as ações passam por autenticação administrativa.
+- O bucket `attendance-library-v1` está privado, limita objetos a 25 MiB e aceita JPEG/PNG, MP4/3GPP, áudios AAC/AMR/MPEG/MP4/OGG e documentos PDF/TXT/DOC/DOCX/XLS/XLSX/PPT/PPTX. A tabela da biblioteca tem 19 linhas; o gateway lista apenas itens ativos, prontos e não excluídos. A tabela de respostas rápidas tem 7 linhas; os conteúdos não foram lidos.
+- A reserva gera `items/<uuid>/asset.<ext>` e, para imagem, `items/<uuid>/thumb.jpg`. A finalização exige que a miniatura exista se `thumbnail_path` estiver preenchido. A UI gera JPEG local com até 512 px por lado e sobe miniatura e original com token assinado antes de finalizar. O token não vai a logs, query string ou armazenamento persistente do browser.
+- Supabase documenta `createSignedUploadUrl` e `uploadToSignedUrl`; o upload assinado vale duas horas. Os bytes passam do browser direto ao Storage, sem transitar no servidor Next.
+- O sender ativo limita este caminho a JPEG/PNG 5 MiB, áudio/vídeo 16 MiB e documentos 25 MiB. A UI replica essas regras; o sender e o Storage continuam validando. Esses valores são limites desta integração, não um máximo universal Meta.
+- A coleção oficial Meta confirma envio Cloud API de texto/mídia/templates por `/{Phone-Number-ID}/messages` e tem grupo Media para upload. A página oficial developers.facebook.com respondeu HTTP 429; a tabela detalhada MIME/tamanho fica como gate de homologação em cada WABA. Fontes: [Meta Cloud API — Messages](https://www.postman.com/meta/whatsapp-business-platform/folder/o48mro7/messages), [Supabase uploadToSignedUrl](https://supabase.com/docs/reference/javascript/file-buckets-uploadtosignedurl) e [Supabase createSignedUploadUrl](https://supabase.com/docs/reference/javascript/file-buckets-createsigneduploadurl).
+- Decisões: resposta rápida apenas preenche a caixa; upload concluído não envia até clique explícito em **Enviar mídia**; estado Meta incerto não aciona retry automático. Botões/listas/carrosséis arbitrários ficam fora pois o gateway ativo não tem ação genérica aprovada. Flows de cesta/confirmação preservam os próprios endpoints.
+
+
+## Contrato de respostas rápidas (27/10/2026)
+
+- Releitura do código no commit exato importado pelo Edge Function confirmou que quick_reply_save faz insert/update allowlisted de título, texto, favorito e ordem e sempre ativa o registro; título duplicado retorna quick_reply_title_conflict. quick_reply_deactivate pausa sem apagar.
+- GET quick_replies lista ativos; include_inactive=1 lista também pausados. A tabela de produção tem 7 registros e valida título 1–80 e texto 1–4.000 caracteres. Não li textos e não gravei nada.
+- A tela de gerenciamento fica em Configurações, edição recolhida por item, pausa reversível e salvamento de item pausado reativa. A seleção na inbox continua preenchendo texto e nunca envia sozinha.
+- Não é necessário migration/deploy. A escrita só será possível ao operar a tela com conta autorizada; as checagens desta implementação foram locais.
+
+
+## Respostas interativas na inbox (27/10/2026)
+
+- Reconsulta read-only ao Supabase canônico confirmou a RPC de conversa devolvendo metadata por mensagem. Em consulta estrutural, limitada a inbound dos últimos 30 dias, apareceram metadata.interactive.type=list_reply com id/title/description e type=nfm_reply com name/body/response_json. Não foram lidos valores/conteúdos desses campos.
+- O Edge ativo admin-whatsapp-ops-v1 v39 importa código fixado no commit 13d10dfcaa925340b0ce17011498cb6a502572fa. A allowlist não inclui envio interativo genérico. A coleção oficial Meta apresenta endpoints distintos para reply button, list, catálogo/produtos e Flow. Fontes: https://www.postman.com/meta/whatsapp-business-platform/folder/o48mro7/messages ; https://www.postman.com/meta/whatsapp-business-platform/request/ne00kt6/send-reply-button ; https://www.postman.com/meta/whatsapp-business-platform/request/r3ufenw/send-list-message ; https://www.postman.com/meta/whatsapp-business-platform/request/cgamr2u/send-flow-template-message .
+- Decisão: renderizar apenas list_reply.title higienizado e o texto fixo “Resposta do Flow recebida” para nfm_reply; ocultar JSON do Flow, ID e descrição da lista. Metadado ausente/desconhecido mantém o rótulo genérico. A área lateral permanece como fonte de origem/estado do pedido; Flow e Catálogo não se juntam.
+- Esta fatia não modifica o sender. Envio interativo continua dependente de ação allowlisted e contrato de webhook testado; não inferir suporte a carousel a partir de APIs Instagram ou intermediários. Nenhuma migration, deploy, mensagem ou escrita externa ocorreu.
+
+
+### Revisão de privacidade das prévias (27/10/2026)
+
+- A definição read-only da RPC ops2_admin_attendance_queue_v1 confirma lm.text_body AS last_message_text sem filtro. A prévia da fila local mostrava esse campo antes de consultar last_message_type; isso abria caminho independente para texto estruturado de Flow/Catálogo aparecer fora da bolha.
+- Corrigido localmente nos dois níveis: o adapter substitui o texto da fila por sentinel para interactive, button e order; a prévia mostra rótulo fixo antes de ler texto. A projeção da bolha também suprime text_body desses tipos. Detalhes de itens e valores seguem na intenção/pedido próprios.
+- A higienização do título de lista também remove Unicode Cc e Cf para impedir controles invisíveis/bidi, mantendo limite de 160 caracteres.

@@ -1,5 +1,7 @@
 # Catálogo e cestas — Implementation Plan
 
+> **Destino atual (reconfirmado pelo proprietário em 27/10/2026):** Supabase original Dona Antônia, projeto `ssbesxgaijknwsjbsbcz`. Este plano é histórico; qualquer referência ao projeto `wvpzudjujtmyspluwhvx` foi superada e não deve orientar conexões, migrations ou validações remotas.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:executing-plans` to implement this plan task-by-task.
 
 **Goal:** Preparar catálogo e cestas para Flow dinâmico com opções por componente, preço recalculável, fotos obrigatórias e dados financeiros isolados.
@@ -98,4 +100,4 @@
 - A operação futura “Nova versão” duplica a última publicada (slots, alternativas, preços e adicional interno) em draft; pedidos e sessões antigas permanecem associados à versão original.
 - Versões publicadas e retiradas, conteúdo dos slots/opções e adicional interno são imutáveis. Para deixar produto ou foto inelegível, primeiro é necessário retirar a versão da cesta.
 - Custo e adicional interno ficam em `app_private`; staff autorizado usa RPCs estreitas que validam perfil ativo. Nenhum grant direto dessas tabelas é dado a `authenticated`.
-- Migration local aplicada no banco resetável; Supabase destino `wvpzudjujtmyspluwhvx`, Meta e Bling permanecem sem escrita.
+- Registro histórico da fatia: migration aplicada somente no Postgres local resetável. O destino remoto citado na versão original deste plano (`wvpzudjujtmyspluwhvx`) foi superado; a fatia não aplicou migration remota. Para trabalho atual, usar `ssbesxgaijknwsjbsbcz` após os gates de baseline e cutover.

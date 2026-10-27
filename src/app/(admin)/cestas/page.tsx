@@ -1,16 +1,108 @@
-import { ShoppingBasket } from "lucide-react";
-import { SectionPage } from "@/components/section-page";
+import {
+	AlertCircle,
+	ArrowRight,
+	ImageOff,
+	ShoppingBasket,
+} from "lucide-react";
+import Link from "next/link";
+import { getAdminBasketMoldList } from "@/lib/supabase/admin-basket-molds";
 
-export default function CestasPage() {
+const errorCopy: Record<string, string> = {
+	not_configured: "O acesso ao Supabase ainda não está configurado.",
+	not_authenticated: "Entre novamente para consultar as cestas.",
+	not_authorized: "Esta conta não tem acesso às cestas.",
+	unavailable: "Não foi possível carregar as cestas agora. Tente novamente.",
+};
+
+export default async function CestasPage() {
+	const result = await getAdminBasketMoldList();
+
 	return (
-		<SectionPage
-			description="Monte cestas com opções de produtos, quantidades e valor calculado no servidor."
-			emptyDescription="Os modelos e as alternativas aparecem quando o catálogo atualizado estiver disponível. Cada opção enviada no Flow precisa ter foto aprovada."
-			emptyTitle="Prepare o catálogo para montar uma cesta"
-			eyebrow="CADASTROS"
-			icon={ShoppingBasket}
-			nextStep="Verificar produtos e conexões"
-			title="Cestas básicas"
-		/>
+		<div className="page-stack" id="admin-basket-molds-page">
+			<section className="page-heading">
+				<div>
+					<p className="eyebrow">CADASTROS</p>
+					<h1>Cestas básicas</h1>
+					<p className="page-description">
+						Organize os produtos que o cliente pode escolher em cada etapa do
+						Flow.
+					</p>
+				</div>
+			</section>
+
+			<div className="basket-mold-note" role="note">
+				<AlertCircle aria-hidden="true" size={18} />
+				<p>
+					As alterações atualizam o molde usado para montar o Flow. A publicação
+					e a validação nos dois números WhatsApp continuam sendo etapas
+					separadas.
+				</p>
+			</div>
+
+			{!result.ok ? (
+				<section className="catalog-message" role="status">
+					<AlertCircle aria-hidden="true" size={20} />
+					<strong>{errorCopy[result.error] ?? errorCopy.unavailable}</strong>
+				</section>
+			) : result.data.length === 0 ? (
+				<section className="basket-mold-empty">
+					<ShoppingBasket aria-hidden="true" size={24} />
+					<strong>Nenhuma cesta disponível</strong>
+					<p>Os modelos ativos aparecerão aqui quando estiverem cadastrados.</p>
+				</section>
+			) : (
+				<section aria-label="Modelos de cesta" className="basket-mold-list">
+					{result.data.map((basket) => (
+						<article className="basket-mold-card" key={basket.id}>
+							<div className="basket-mold-card__image">
+								{basket.imageUrl ? (
+									// biome-ignore lint/performance/noImgElement: Product images use user-managed HTTPS URLs from the catalog.
+									<img alt="" loading="lazy" src={basket.imageUrl} />
+								) : (
+									<ImageOff aria-hidden="true" size={20} />
+								)}
+							</div>
+							<div className="basket-mold-card__body">
+								<div className="basket-mold-card__title">
+									<strong>{basket.name}</strong>
+									<span
+										className={`basket-mold-status${basket.moldConfigured ? " basket-mold-status--ready" : ""}`}
+									>
+										{basket.moldConfigured
+											? "Molde configurado"
+											: "Molde pendente"}
+									</span>
+								</div>
+								<p>
+									{[basket.categoryName, basket.subcategoryName]
+										.filter(Boolean)
+										.join(" · ") || "Categoria não informada"}
+								</p>
+								<span className="basket-mold-card__detail">
+									{basket.publicCompositionCount} composição(ões) pública(s)
+									{basket.hiddenAdjustmentCents > 0
+										? ` · ajuste interno de ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(basket.hiddenAdjustmentCents / 100)}`
+										: ""}
+								</span>
+							</div>
+							{basket.moldConfigured ? (
+								<Link
+									aria-label={`Editar alternativas de ${basket.name}`}
+									className="basket-mold-edit-link"
+									href={`/cestas/${basket.id}`}
+								>
+									Editar alternativas{" "}
+									<ArrowRight aria-hidden="true" size={16} />
+								</Link>
+							) : (
+								<span className="basket-mold-disabled-link">
+									Configuração de etapas pendente
+								</span>
+							)}
+						</article>
+					))}
+				</section>
+			)}
+		</div>
 	);
 }

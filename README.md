@@ -11,9 +11,13 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Copie `.env.example` para `.env.local` e use a URL e a chave publicável do Supabase selecionado. Nunca coloque service role, chave secreta ou token nesse arquivo. Sem essas duas variáveis, o login fica desabilitado. A base atual ainda não tem funcionários cadastrados nem policies de staff; o painel mantém as rotas administrativas fechadas até a tarefa de acesso concluir.
+Copie `.env.example` para `.env.local`. O backend selecionado é **Dona Antônia (original)**, Supabase `ssbesxgaijknwsjbsbcz`; o arquivo de exemplo já aponta para esse projeto. Nunca coloque service role, chave secreta ou token nesse arquivo. Sem a URL e a chave publicável, o login fica desabilitado. A consulta read-only mais recente encontrou um vínculo ativo `owner` em `admin_users`, associado a uma conta do Supabase Auth. A tabela mantém RLS sem policies de acesso direto ao navegador; o painel valida a sessão e encaminha operações pelo gateway, que verifica novamente o vínculo e o papel. Não foi feita tentativa de login nem redefinição de senha.
 
 Abra `http://localhost:3000`. As telas administrativas não leem nem escrevem em serviços externos antes do login autorizado.
+
+## Estado da liberação
+
+O checkout contém a implementação greenfield, mas ainda não está liberado para pedidos reais: as 6 migrations e as 13 Edge Functions locais não foram aplicadas/publicadas no Supabase canônico. O proprietário recusou criar staging; por isso, a validação de banco, Flow nos dois números, webhook, envio Meta e ciclo Bling permanece pendente. Não confundir `pnpm typecheck`/build local com homologação operacional. A sequência de liberação está em `docs/planning/staging-cutover.md`.
 
 ## Verificações focadas
 

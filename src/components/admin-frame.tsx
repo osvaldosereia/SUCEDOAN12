@@ -5,22 +5,25 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { type ReactNode, useState } from "react";
 import { navigationGroups, navigationItems } from "@/lib/admin-navigation";
-import type { StaffRole } from "@/lib/auth/roles";
-import { staffRoleLabels } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/client";
 
 type AdminFrameProps = {
 	children: ReactNode;
-	role: StaffRole;
 };
 
-export function AdminFrame({ children, role }: AdminFrameProps) {
+export function AdminFrame({ children }: AdminFrameProps) {
 	const pathname = usePathname();
 	const router = useRouter();
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [signingOut, setSigningOut] = useState(false);
 	const currentPage =
-		navigationItems.find((item) => item.href === pathname)?.label ??
+		navigationItems
+			.filter(
+				(item) =>
+					pathname === item.href ||
+					(item.href !== "/" && pathname.startsWith(item.href)),
+			)
+			.sort((left, right) => right.href.length - left.href.length)[0]?.label ??
 		"Visão geral";
 
 	async function handleSignOut() {
@@ -106,9 +109,7 @@ export function AdminFrame({ children, role }: AdminFrameProps) {
 					</span>
 					<span>
 						<span className="sidebar-footer__label">Equipe da loja</span>
-						<span className="sidebar-footer__caption">
-							{staffRoleLabels[role]}
-						</span>
+						<span className="sidebar-footer__caption">Sessão autenticada</span>
 					</span>
 					<button
 						aria-label="Sair do Admin"
@@ -152,7 +153,7 @@ export function AdminFrame({ children, role }: AdminFrameProps) {
 							<span aria-hidden="true" className="account-avatar">
 								DA
 							</span>
-							<span>{staffRoleLabels[role]}</span>
+							<span>Sessão ativa</span>
 						</div>
 					</div>
 				</header>

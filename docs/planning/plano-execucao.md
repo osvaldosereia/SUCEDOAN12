@@ -1,286 +1,275 @@
-# Admin WhatsApp Sucedoan — Plano de Execução
-
-> **Para quem implementar:** usar o subskill `superpowers:executing-plans` e concluir as tarefas na ordem; cada checkbox é um ponto de revisão independente.
-
-**Objetivo:** construir um painel simples para operar dois números oficiais do WhatsApp, ANA, catálogo de produtos avulsos, cestas configuráveis, pedidos e integração Bling.
-
-**Arquitetura:** Next.js App Router fornece o painel interno. Supabase Postgres é a fonte de verdade; Auth/RLS controlam funcionários; Edge Functions recebem webhooks e fazem chamadas Meta, Bling e OpenAI. O Bling é acionado por outbox quando o pedido passa de PRODUÇÃO para EXPEDIÇÃO. Toda integração é idempotente e pode ser reprocessada.
-
-**Stack:** Next.js/React/TypeScript, Tailwind CSS v4 disponível para a camada visual, CSS de componentes simples e Lucide; usar componentes shadcn/ui somente quando reduzirem código e complexidade. pnpm com lockfile, Biome para lint/format, Supabase CLI e Edge Functions Deno, Vercel; validação focada com Deno test/pgTAP e poucos percursos Playwright quando uma jornada crítica estiver implementada. O scaffold usa Next.js 16.4.3/React 19.3.0 e Node 24.22.1 (mínimo oficial do Next: 20.9). O runtime não oferece npm/npx no PATH, mas traz pnpm 11.25.0. O CLI gerou ESLint 9.39.5 obsoleto; ESLint 10.13.0 conflitou com os peers dos plugins de Next. Decisão: Biome, opção suportada pelo create-next-app atual, para evitar começar com peers incompatíveis.
-
-**Especificação:** [Plano principal](pesquisa-e-plano.md) e [caderno técnico](caderno-tecnico.md), principalmente seções 14, 21–28.
-
-## Restrições globais
-
-- Começar em branch de trabalho; nunca gravar tokens, chaves, dados reais de cliente ou `.env` no Git. `main` está vazia, pública e sem proteção.
-- Destino de dados: Supabase `wvpzudjujtmyspluwhvx`; trabalhar localmente primeiro. Não fazer SQL manual na produção; todas as mudanças de schema entram por migração revisada.
-- As duas linhas Meta estão em WABAs distintas. Guardar configuração e health checks por linha/WABA; não pressupor catálogo, Flow, template ou token compartilhado.
-- Navegação principal tem oito áreas: Visão geral, Atendimento, Pedidos, Cestas, Produtos, Clientes, ANA e Configurações.
-- Cada tela de componente do Flow oferece uma alternativa de produto e quantidade 0–6; o backend valida e recalcula cada avanço. Opção/quantidade 0 só é aceita quando o slot permitir retirada.
-- Terminar Flow não confirma pedido. O servidor manda resumo com itens, quantidades, endereço, pagamento e total, sem preço individual; somente o botão de aceite associado à revisão cria o pedido.
-- Cada Flow e cada carrinho do Catálogo Meta é uma intenção/pedido independente, sem janela de tempo, mesmo se enviados na mesma conversa em sequência. Cada pedido recebe venda e processo fiscal próprios.
-- Rascunhos de compra não expiram por inatividade. Uma sessão técnica Meta pode expirar; a retomada recalcula preço/estoque antes do aceite.
-- Identificar cliente por identidade Meta no escopo correto (BSUID por portfólio empresarial); manter conversas separadas por `phone_number_id`. Telefone só entra quando compartilhado/verificado. Nunca mesclar por nome ou tratar sender ID como número de telefone.
-- Escolher forma de pagamento não marca pagamento como recebido. Produção/expedição e estado fiscal são dimensões independentes.
-- Aceite válido cria exatamente um pedido completo em PRODUÇÃO — Separação. Se preço, estoque, endereço ou identidade exigida mudar antes do aceite, não criar pedido: manter rascunho, corrigir e pedir novo aceite. NOVO fica para pedido manual/operacional ainda não liberado para separação. PRODUÇÃO → EXPEDIÇÃO cria trabalho idempotente do Bling. Não ativar emissão real de NF-e sem gate contábil.
-- Custo e componente interno de margem não aparecem ao cliente nem à ANA. O total cobrado deve ser claro antes do aceite.
-- IA não pode definir preço/estoque, aceitar pedido, alterar estado físico, criar venda ou emitir NF-e sem ações determinísticas autorizadas pelo servidor.
-- App web usa somente URL e chave publicável Supabase. Segredos Meta/Bling/OpenAI e chave de servidor Supabase ficam exclusivamente no runtime privado de Edge Functions.
-
-## Gates de segurança — obrigatórios antes de conectar serviços reais
-
-Por decisão do proprietário, a base local e a interface podem avançar agora em branch isolada, sem conectar credenciais nem alterar serviços. **Os itens abaixo bloqueiam migrações no projeto Supabase de destino, tráfego real, publicação de Flow e escrita no Bling; não bloqueiam UI, contratos puros ou adaptadores mockados.**
-
-- [x] Capturar snapshot read-only do Supabase de destino em 26/10/2026: projeto/versão, 19 tabelas, migrations, colunas, contagens, policies/grants, buckets e flags de integrações; detalhes em `caderno-tecnico.md`.
-- [ ] Repetir snapshot após concluir a fila de fotos e antes de preparar/importar o baseline local ou qualquer migração; conferir especificamente as 1.798 imagens pendentes e novo estado das policies.
-- [ ] Mapear as referências Meta do Vault legado às duas contas do destino; esclarecer a presença e o escopo do access token no runtime Edge; validar health check por WABA/`phone_number_id`; não revelar nem copiar valores secretos.
-- [x] Confirmar flags atuais de segurança: duas configurações Meta e uma Bling, todas `enabled=false` e `external_writes_enabled=false`; nenhum valor de segredo consultado.
-- [ ] Mapear a conexão OAuth Bling para o destino e validar chamada somente leitura; registrar um único dono para rotação do refresh token durante o cutover; manter escrita externa desligada.
-- [ ] Concluir prova/limites da Meta para Flow com imagem em cada alternativa, ida/volta, `nfm_reply`, carrinho nativo e pedido separado; documentar o resultado da validação nas duas WABAs.
-- [ ] Fazer auditoria de consistência nos três documentos e publicar o freeze final da especificação, incluindo política de segredos e limitações de qualquer auditoria GitHub.
-
-O código histórico e as credenciais existentes servem como fonte de requisitos e mapa de nomes. Nenhum frontend, função, workflow, dado real ou valor de segredo do sistema antigo será incorporado ao app novo. As verificações não concluídas ficam isoladas atrás de adaptadores e feature flags; produção não recebe escrita até cada gate passar.
-
-## Riscos a revisar em cada entrega
-
-1. Webhook repetido/fora de ordem não duplica nem regride mensagem ou pedido.
-2. Carrinho de Catálogo e cesta Flow coexistem na mesma conversa sem serem combinados.
-3. Cliente chega por username/BSUID sem telefone; respostas usam a identidade aceita pela versão ativa da Meta.
-4. Rascunho permanece aberto, mas preço, produto, estoque ou entrega mudaram antes do aceite; exigir revisão e novo aceite quando material.
-5. Meta/Bling responde com timeout após receber a operação; reconciliar antes de repetir para evitar envio, venda ou NF-e duplicada.
-
-Precisão operacional: idempotência garante uma única intenção/linha no banco, mas não transforma qualquer API externa em exactly-once. Se o provedor aceitar a chamada e a resposta se perder, marcar como reconciliação pendente, buscar pelo identificador/referência externa e nunca repetir no escuro. Para envio Meta sem consulta externa conclusiva, a UI apresenta resultado ambíguo e permite decisão auditada.
-
-## Estrutura de arquivos decidida
-
-```text
-src/
-  app/
-    (auth)/login/page.tsx
-    (admin)/layout.tsx
-    (admin)/visao-geral/page.tsx
-    (admin)/atendimento/page.tsx
-    (admin)/pedidos/page.tsx
-    (admin)/cestas/page.tsx
-    (admin)/produtos/page.tsx
-    (admin)/clientes/page.tsx
-    (admin)/ana/page.tsx
-    (admin)/configuracoes/page.tsx
-  components/
-    layout/{admin-shell,sidebar,topbar}.tsx
-    ui/                         # somente componentes usados
-  features/
-    auth/ inbox/ orders/ baskets/ products/ customers/ ana/ settings/
-  lib/
-    auth/{permissions,require-staff}.ts
-    supabase/{client,server}.ts
-    contracts/                  # schemas de requests/responses sem segredos
-    format/{currency,phone,date}.ts
-supabase/
-  config.toml
-  migrations/                   # arquivos gerados pelo Supabase CLI
-  tests/database/               # pgTAP: grants, RLS, constraints, transações
-  functions/
-    _shared/{http,meta,bling,auth,logging,basket-pricing}.ts
-    meta-webhook/index.ts
-    whatsapp-flow/index.ts
-    bling-webhook/index.ts
-    outbox-dispatch/index.ts
-    ana-reply/index.ts
-e2e/
-  login.spec.ts
-  inbox-and-orders.spec.ts
-```
-
-Pages montam features; regras de negócio ficam em módulos puros ou serviços de domínio, não dentro de componentes visuais. Webhooks persistem evento e retornam rápido; qualquer efeito externo durável passa pela outbox já na primeira fase de integração. O worker tenta enviar imediatamente após enfileirar e o Cron atua como recuperação. Funções privilegiadas ficam em `app_private` ou em RPCs públicas muito estreitas, com `EXECUTE` apenas para `service_role`, nomes totalmente qualificados, `search_path` fixo e `SECURITY DEFINER` só quando indispensável.
-
-## Tarefas
-
-### Tarefa 1 — Repositório, ambiente local e base visual
-
-**Arquivos:** `package.json`, `pnpm-lock.yaml`, `.nvmrc`, `.gitignore`, `.env.example`, `next.config.ts`, `biome.json`, `src/app/layout.tsx`, `src/app/globals.css`, `supabase/config.toml`, `.github/workflows/ci.yml`.
-
-- [x] Criar checkout do repo vazio `osvaldosereia/SUCEDOAN12` e branch de trabalho; proteger `main` e usar PR antes de integrar.
-- [x] Fixar Node 24.22.1 e pnpm 11.25.0. Adicionar Supabase CLI versionada quando a tarefa de banco local começar.
-- [x] Fixar Supabase CLI 2.122.0, inicializar `supabase/config.toml` e subir stack local Postgres 17.11; no Windows, omitir apenas os coletores locais de log que dependem do daemon Docker em TCP. Signup, seeds e exposição automática de tabelas ficam desligados.
-- [x] Gerar aplicação pelo CLI oficial com TypeScript, Biome, Tailwind, App Router, diretório `src/` e alias `@/*`; fixar dependências e lockfile.
-- [ ] Completar baseline de schema/migrations do projeto confirmado para que reset local reproduza as 19 tabelas e dependências sem copiar linhas reais; o CLI local ainda não está autenticado no Management API e o destino não será ligado até o procedimento de dump seguro estar definido.
-- [x] Definir scripts `lint`, `typecheck`, `format` e `build`.
-- [ ] Adicionar checks focados de CI com a primeira fatia funcional, sem suíte vazia.
-- [x] Verificar `pnpm lint`, `pnpm typecheck` e `pnpm build` no esqueleto. Os três passaram; não foi criada suíte vazia nem rodada bateria ampla.
-- [x] Confirmar Docker Engine local e iniciar Supabase com CLI; validar health de Postgres/Auth/REST/Storage/Studio/Realtime/Edge Runtime.
-- [ ] Preparar baseline completo do schema do destino e conferir functions/triggers/grants antes da primeira migration executável.
+# Plano de execução atualizado — Admin WhatsApp Dona Antônia
 
-**Entrega:** app vazio inicia localmente, Supabase local sobe em Docker e CI executa sem qualquer segredo real.
-
-### Tarefa 2 — Sessão de funcionário, papéis e acesso ao banco
-
-**Arquivos:** `src/lib/supabase/{client,server}.ts`, `src/lib/auth/{permissions,require-staff}.ts`, `src/app/(auth)/login/page.tsx`, `src/app/(admin)/layout.tsx`, `supabase/migrations/*staff_access*`, `supabase/tests/database/staff_access_test.sql`.
-
-**Interface:** `requireStaff(): Promise<StaffContext>` retorna `userId` e papel confirmado; a matriz de permissões por sessão/ação será aplicada na camada de domínio e reforçada por RLS antes de liberar dados. A função interrompe a requisição sem sessão/papel.
+**Atualizado:** 27/10/2026, após auditoria do ingresso de pedidos Meta.
+**Repositório:** `osvaldosereia/SUCEDOAN12`, branch `codex/whatsapp-admin-greenfield-20261026`.
+**Especificação funcional:** [pesquisa-e-plano.md](pesquisa-e-plano.md) e [caderno-tecnico.md](caderno-tecnico.md).
+**Plano anterior:** [arquivado](archive/plano-execucao-projeto-novo-superado.md); ele se baseava no projeto Supabase “NOVO” e não deve orientar trabalho atual.
 
-- [x] Criar login interno com email/senha; sem cadastro público de funcionário. A tela permanece desabilitada se URL/chave publicável estiverem ausentes e mostra mensagem genérica para não revelar se a conta existe.
-- [x] Reutilizar `staff_profiles` e preservar os quatro papéis existentes: `owner`, `admin`, `catalog_manager`, `fulfillment`. A fundação valida papel conhecido e perfil habilitado; a matriz de permissões por rota/ação será fechada junto às policies RLS antes de conectar dados. Não incluir papel `operator`/`support` sem necessidade operacional confirmada.
-- [x] Confirmar que hoje não existem Auth users nem staff profiles. Não criar convites/contas no rollout de código; o provisionamento do primeiro owner segue como gate explícito de ativação.
-- [ ] Conceder GRANTs mínimos apenas às tabelas necessárias ao painel e criar policies RLS por papel. Não usar `TO authenticated` sozinho como autorização.
-- [x] Preservar `app_private` sem exposição ao browser; o snapshot confirma ausência de GRANTs `anon`/`authenticated` às tabelas de integração. Repetir a checagem após a migração.
-- [ ] Criar teste pgTAP para leitura/escrita permitida e negada por papel, incluindo tentativa de atualização fora da responsabilidade.
-- [ ] Validar sessão, refresh e bloqueio real de usuário não habilitado quando Auth users e policies existirem; hoje só foram validados a resposta HTTP 200 da tela `/login`, o guard de código e o build. Sair deve limpar a sessão e, quando a auditoria for implementada, preservar seus eventos.
+## Estado atual do rollout — 27/10/2026
 
-**Verificação:** `supabase test db`, unit tests de autorização e navegação protegida no Playwright.
+O proprietário recusou staging com cobrança recorrente e autorizou prosseguir no Supabase original. Como avanço controlado, as seis migrations greenfield aditivas e as 13 Edge Functions deste projeto já foram aplicadas/publicadas no projeto `ssbesxgaijknwsjbsbcz`. Os endpoints antigos continuam intactos; o novo webhook e o novo Flow ainda não foram ligados/publicados nas contas Meta. Isso não significa liberação para pedidos reais: ainda faltam fechar a configuração, validar as cestas incompletas e homologar os caminhos Meta e Bling. O detalhe verificável está no [ledger de implementação](implementation-ledger.md).
 
-### Tarefa 3 — Shell e oito áreas do Admin
+## Decisões fixas
 
-**Arquivos:** `src/components/layout/{admin-shell,sidebar,topbar}.tsx`, `src/components/ui/*`, `src/app/(admin)/*/page.tsx`, `src/features/{overview,inbox,orders,baskets,products,customers,ana,settings}/*`.
+1. **Backend:** usar somente o Supabase original `ssbesxgaijknwsjbsbcz` ("Dona Antônia"). `wvpzudjujtmyspluwhvx` ("Dona Antônia - NOVO") foi excluído pelo Dashboard em 27/10/2026 após confirmação do proprietário; V2 e AME MAIS ficam intactos. A anotação antiga de “nenhum SQL/deploy” foi supersedida pelo rollout aditivo registrado no ledger; não houve envio de mensagem, alteração do callback Meta, escrita no Bling ou emissão fiscal.
+2. **Código:** aplicação e telas greenfield. Integrações operacionais já existentes são chamadas pelos gateways atuais após revisar autenticação, papéis, payloads, idempotência e efeitos. Nenhum arquivo de código antigo é copiado.
+3. **Segurança:** o browser usa somente URL e chave publishable. Todo dado comercial vem de Edge Function protegida por sessão e associação ativa em `admin_users`. Nunca consultar `public.products`, `admin_users`, Storage ou RPC privilegiada diretamente pelo browser quando o projeto não concede grants.
+4. **Migrations:** não criar um segundo conjunto de `products`, `customers`, `orders`, `product_images`, nem bucket. DDL só entra no plano se a auditoria provar lacuna real e a alteração for aditiva, não destrutiva e revisada.
+5. **Canais:** manter as duas contas Meta em WABAs distintas. `phone_number_id`, token, Flow, catálogo, templates e estado de conexão são associados a cada conta; não presumir credencial ou catálogo compartilhado.
+6. **Pedidos:** Flow e cada carrinho do Catálogo Meta sempre criam pedidos separados, sem janela de tempo para união. O Flow escolhe produto/quantidade por componente, inclui foto em cada opção, fecha pagamento/endereço e envia resumo sem preço individual. Concluir o Flow não confirma a compra; o aceite explícito cria o pedido em PRODUÇÃO. Separação e sincronização de pedidos/estoque com o Bling serão entregues antes da emissão fiscal.
+7. **Emissão fiscal por último:** emissão manual e automática de NF-e ficam fora de todas as fases anteriores. `order_separation_complete` pode iniciar integrações fiscais em segundo plano; por isso, enquanto a fase fiscal estiver desativada, o Admin só poderá concluir a separação quando o estado fiscal consultado comprovar `issue_enabled=false`. Se a consulta falhar ou o estado for desconhecido, bloquear a conclusão. Na última fase, validar o caminho fiscal no ambiente isolado e liberar emissão e expedição somente depois dos gates anteriores.
 
-- [ ] Implementar menu lateral curto, título/ação principal por página, cabeçalho com estado do sistema e responsividade.
-- [ ] Criar estados consistentes de carregamento, vazio, erro recuperável, sem permissão e integração pendente.
-- [ ] Construir primeiro esqueleto de Atendimento com três áreas, quadro de Pedidos por estado e editor de cesta com preview; seguir wireframe da seção 27 do caderno.
-- [ ] Manter pesquisa/filtros ao abrir e fechar detalhes; no celular empilhar painéis e manter ação primária visível.
-- [ ] Fazer smoke visual em desktop e largura móvel; confirmar acessibilidade por teclado e rótulos.
+## Contratos já conferidos
 
-**Entrega:** todas as oito rotas existem e têm navegação coerente, ainda sem tráfego real.
+| Área                     | Gateway existente                                                                                                                                                                | Uso planejado                                                                                                                                          | Limite conhecido                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Produtos                 | `admin-products-live-v1?action=products`                                                                                                                                         | GET paginado para catálogo do Admin                                                                                                                    | Internamente valida Bearer com `auth.getUser()` e `admin_users.is_active`; o payload mapeia `cost_cents`, portanto o app filtra campos no servidor antes de renderizar.                                                                                                                                                                                                                                                                         |
+| Clientes do atendimento  | Funções RPC autenticadas `ops2_admin_attendance_customer_*_browser_v1`                                                                                                           | Buscar, reconciliar, vincular, criar e editar via sessão Supabase do funcionário; não há Edge Function ativa chamada `admin-attendance-customer-v1`    | Os wrappers conferem `auth.uid()`, associação ativa e papel; `viewer` pode pesquisar/consultar, mas não gravar. Não consultar tabelas diretamente nem usar service role.                                                                                                                                                                                                                                                                        |
+| Inbox e pedidos WhatsApp | `admin-whatsapp-ops-v1`                                                                                                                                                          | Conversas, ações de atendimento e identidade do canal, após inspecionar contrato                                                                       | O código antigo tem aliases de versão; confirmar ação em execução antes de ligar UI.                                                                                                                                                                                                                                                                                                                                                            |
+| Flow e configuração Meta | `admin-basket-configuration-v1?action=flow_list`; runtimes `whatsapp-flow-runtime`, `whatsapp-1018-basket-flow-v1`, `whatsapp-flow-data-exchange-v1`, `whatsapp-meta-webhook-v1` | Ler a configuração pelo gateway e conferir etapa, alternativa, foto e quantidade                                                                       | `admin-whatsapp-flow-v1` está ativo no painel, mas sua implementação é stub aposentado (`retired_outside_site_vitrine_admin`); não chamar. `whatsapp-flow-runtime` v5 mostra imagem dinâmica após escolher o produto, mas os itens de seleção não levam `image`. `whatsapp-1018-basket-flow-v1` v7 embute imagem na opção, mas o código declara o endpoint como canário restrito. Não foi provado qual runtime atende cada um dos dois números. |
+| Cestas                   | `admin-basket-configuration-v1?action=list                                                                                                                                       | flow_list`; `admin-basket-guided-v1?action=model_editor`                                                                                               | Consultar modelos, tipos, opções, fotos e quantidades pela sessão                                                                                                                                                                                                                                                                                                                                                                               | `flow_list` entrega alternativas com `image_url`, preço comercial e ativo; isso prova URL cadastrada, não validação/renderização Meta. `admin-basket-guided-v1` também pode devolver custos no cartão de produto/receitas; nunca repassar resposta bruta ao navegador. Não duplicar tabelas nem endpoints. |
+| Pedidos e Bling          | `admin-products-live-v1?action=orders`, `action=order`; transições em `action=order_update` e operações canônicas separadas                                                      | Consultar quadro/ficha e usar somente as operações canônicas depois de revisar efeitos                                                                 | O GET de lista limita `limit` a 5. Busca por texto não combina com `tab`: ela pesquisa entre status. `order_update` reserva estoque ao confirmar; despacho/entrega têm bloqueios e ações próprias. O antigo `fiscal_enabled=false` não prova que o caminho humano esteja desligado: a configuração e a implementação atuais têm controles fiscais separados. Nunca usar transição genérica como atalho.                                         |
+| Imagens                  | `admin-product-images-v1` e `admin-product-image-editor-v1` estão aposentados (HTTP 410); `admin-product-image-v1` é implementação local nesta branch, ainda não implantada      | Upload pela ficha do produto, com token assinado criado no Edge Function autenticado; salva somente `products.image_url` e registra `admin_audit_logs` | Reutiliza `product-images` (leitura pública, JPEG/PNG/WebP até 500.000 bytes), sem política ampla de escrita nem nova tabela. O `image_url` alimenta a configuração do Flow, mas não comprova foto em cada opção ou publicação aprovada pela Meta.                                                                                                                                                                                              |
 
-### Tarefa 4 — Produtos, cestas e cálculo determinístico
+Os nomes acima vêm do inventário fornecido e histórico consultado. Cada operação de escrita exige leitura do handler atual e documentação oficial antes de entrar na tela. `health` de uma Edge Function não prova que seus outros caminhos estejam autorizados nem funcionais.
 
-**Arquivos:** `src/features/products/*`, `src/features/baskets/{validation,editor,preview}.*`, `src/lib/contracts/baskets.ts`, `supabase/functions/_shared/basket-pricing.ts`, `supabase/functions/quote-basket/index.ts`, `supabase/migrations/*basket_options*`, `supabase/tests/database/basket_rules_test.sql`.
+## Tarefas em sequência
 
-**Interface de domínio:** `calculateBasketPrice(input: BasketSelection, publishedVersion: BasketVersion): BasketQuote` fica em `_shared/basket-pricing.ts`, sem dependência de Next/Supabase, e retorna itens validados, snapshots e total; nunca aceita preço enviado pelo browser. Preview do Admin e Flow chamam a mesma regra via Edge Function.
+### 0. Fechar inventário seguro do backend
 
-- [x] Criar a fundação local: `basket_template_versions`, slots ordenados, alternativas com preço comercial versionado, adicional privado, publicação validada por produto/foto e regras de imutabilidade; custo movido para `app_private`; grants/RLS por papel.
-- [ ] Construir a tela de Produtos e Cestas sobre essa fundação; todos os slots exibem quantidades 0–6 sem pré-seleção, preço por opção dentro da cesta e exigem pelo menos um slot positivo no envio.
-- [ ] Registrar produto por SKU e retailer ID Meta; exibir status de sincronização sem criar SKU ou valor a partir de IA.
-- [ ] Criar bucket separado `product-media` (público para leitura, escrita só por funcionário autorizado). No upload, manter original e gerar no navegador a miniatura 320 × 320 JPEG/PNG de até 25 KB; guardar caminhos e `alt_text` em `product_images`. Mostrar estados “pendente”, “pronta para o Flow” e “não aprovada”; o alt text começa com nome/marca/variante e pode ser corrigido.
-- [ ] Bloquear elegibilidade em cesta publicada quando qualquer alternativa não tiver foto principal verificada e miniatura Flow. A foto da cesta não substitui a foto individual das alternativas.
-- [x] Mover `products.cost_cents` e ajuste interno da cesta para `app_private`; tabelas privadas não concedem acesso direto a `authenticated`. RPCs financeiras locais validam `auth.uid()`, perfil ativo e papel `owner`/`admin`/`catalog_manager`; a cotação futura nunca retorna custo/margem.
-- [x] Criar versão imutável publicada para que sessões futuras refiram a configuração exata de origem.
-- [ ] Testar slot obrigatório/opcional, quantidade 0, 1 e 6, quantidade fora do intervalo, alternativa inativa, preço alterado e arredondamento em centavos.
+- Registrar projeto, schemas, tabelas/views envolvidas, estado de Auth/RLS/grants, bucket e funções por fluxo.
+- Para cada gateway: anotar método, `action`, parâmetros, forma de resposta, papéis, erros, idempotência e efeitos externos.
+- Conferir no histórico GitHub os nomes de variáveis e consumidores; nunca mostrar nem copiar valores de tokens, senha, `service_role` ou Vault.
+- Marcar todo dado como **confirmado**, **a conferir em execução**, **histórico** ou **proibido para o MVP**.
 
-**Verificação:** `deno test supabase/functions/_shared/basket-pricing_test.ts` e `supabase test db` no Supabase local.
+**Saída:** contratos curtos em `caderno-tecnico.md`; chamadas de produção somente leitura.
 
-### Tarefa 5 — Clientes, identidades e inbox manual dos dois números
+### 1. Sessão e estrutura visual
 
-**Arquivos:** `src/features/{inbox,customers}/*`, `src/lib/contracts/meta.ts`, `supabase/migrations/*whatsapp_identity_outbox*`, `supabase/functions/meta-webhook/index.ts`, `supabase/functions/outbox-dispatch/index.ts`, `supabase/functions/_shared/{meta,outbox}.ts`, `supabase/tests/database/message_deduplication_test.sql`.
+- Manter Next.js App Router, React, TypeScript, `@supabase/ssr` e o estilo simples de Loja Integrada: navegação curta, tabelas legíveis, formulários em blocos, rótulos cotidianos e ação primária clara.
+- `/login` valida a sessão Supabase. O layout não consulta `staff_profiles` do projeto experimental.
+- Cada leitura/mutação passa pelo gateway que valida o usuário e seu papel real. Se a sessão não for autorizada, mostrar estado de acesso sem revelar detalhes internos.
+- Não exibir papel estimado no cabeçalho. Exibir somente estado de sessão até haver contrato seguro de “quem sou eu”.
+- A página `/` lê em paralelo os adapters autenticados existentes: contagens exatas de Pedidos (`new`, `separate`, `ready`), alternativas ativas com foto nas Cestas, contas Meta cadastradas e estado de configuração do gateway Bling. Cards de pedido abrem a etapa correspondente. Não calcular total de conversa a partir da fila limitada a 50; não tratar URL de imagem como renderização Flow, conta cadastrada como health Meta, nem timestamp de Bling como OAuth atual. Falha de leitura aparece como `—`/consulta indisponível, nunca como zero.
+
+**Aceite:** nenhuma página autenticada consulta tabela operacional pelo browser; acesso negado não retorna produto, cliente, pedido ou dados de custo.
+
+### 2. Produtos — primeira fatia de leitura implementada
+
+- Criar listagem server-side de `admin-products-live-v1?action=products` com busca por nome/SKU, filtro ativo/inativo e 50 linhas por página.
+- O servidor encaminha o JWT da sessão e a chave publishable; usa `cache: no-store`.
+- Validar o JSON recebido e retornar uma projeção pequena: ID, nome, SKU, categoria, ativo, preço de venda, estoque, unidade e URL HTTPS da imagem.
+- Descartar explicitamente custo, detalhes de lote, chaves, metadados operacionais e todos os campos desnecessários antes de serializar para a página.
+- Imagens e escrita ficam fora desta primeira fatia.
+
+**Aceite:** lista real lê pelo gateway; busca/filtros/paginação usam os parâmetros existentes; erros 401/403/rede aparecem com texto simples; custo nunca chega ao cliente.
+
+### 3. Edição de produtos, fotos e Catálogo Meta
+
+- Inspecionar ações `product_detail`, `product_save`, `product_quick_save`, `product_stock_set` e contratos de edição de imagem.
+- A listagem e a nova ficha de produto são somente leitura. A ficha usa `product_detail` do gateway `admin-products-live-v1` e projeta campos explícitos; `cost_cents`, cadastro fiscal, identificadores auxiliares e metadados internos são descartados no servidor.
+- As duas funções antigas de imagem estão aposentadas (HTTP 410); não fazer upload com elas nem tratar atualização de URL como processamento, miniatura ou aprovação Meta. Para Flow, a tela mostra imagem cadastrada, mas não indica “apta” enquanto não existir prova verificável do processamento/aprovação.
+- Implementar apenas os campos que a função permite e separar preço avulso, custo interno, preço por opção de cesta e dados fiscais.
+- Usar as funções de imagem e o bucket existente após confirmar RLS e contrato; nunca apagar Storage antes de a função confirmar remoção de vínculo.
+- Confirmar como listar/sincronizar vínculos `product_retailer_id`, por número/WABA e catálogo; exigir prévia antes de publicar.
+- Tornar imagem/miniatura Flow requisito de publicação de alternativa; não marcar foto pronta somente porque existe URL.
+
+**Aceite:** edição de produto, imagem ou catálogo usa endpoint autenticado, registra resultado e não mostra campos financeiros a papel sem permissão.
+
+### 4. Clientes e endereços
+
+- Usar `ops2_admin_attendance_customer_search_browser_v1` para busca (mínimo de dois caracteres, até 20 resultados, documento mascarado) e `..._editor_browser_v1` para carregar cadastro somente quando há uma conversa vinculada.
+- Mostrar o telefone da conversa como somente leitura. `..._reconcile_browser_v1` só é chamado após ação explícita “Verificar cadastro existente”; ele vincula automaticamente apenas quando a resolução canônica por telefone é inequívoca. Se houver mais de um candidato, exigir busca e vínculo manual explícito com `..._link_browser_v1`.
+- Para ficha não encontrada, criar nome, documento/email opcionais e endereço por `..._create_browser_v1`; a função deriva o telefone da conversa e cria o vínculo.
+- Se a conversa não tiver telefone E.164 (por exemplo, identidade somente BSUID/username), não oferecer criação de ficha por esta função; pedir o compartilhamento do número ou permitir o vínculo manual de cadastro já existente.
+- **Editor seguro — candidato local:** `20261027211734_customer_editor_safe_update_v1.sql` define projeção com CPF/CNPJ mascarado e até 20 endereços ativos, além de writer transacional ancorado à conversa. O writer recebe o `address_id` escolhido, verifica propriedade/atividade sob lock, compara revisões `updated_at`, atualiza somente nome e endereço permitido e registra auditoria sem valores pessoais. Telefone, CPF/CNPJ, email, status, consentimento e flags de endereço permanecem protegidos. A validação de UF rejeita valores que não sejam exatamente duas letras; a migração não foi aplicada.
+- **Compatibilidade enquanto a migração não existe:** a leitura tenta o novo RPC seguro; se ainda não estiver instalado, usa o RPC antigo somente no servidor, mascara o documento antes de serializar e deixa `canEdit=false`. O formulário de alteração só aparece quando a projeção segura está disponível. Isso evita que a ausência da migração quebre a consulta ou exponha o writer antigo.
+- Toda chamada RPC é feita no servidor com `createClient()` e cookies/JWT do funcionário; cada ação autentica novamente e o wrapper ainda valida vínculo e papel. Nunca enviar dados de formulário ao banco sem whitelist e validação local.
+- Manter nome de perfil, nome confirmado, telefone E.164 e BSUID como dados distintos. Não unir cadastros por semelhança.
+- A conversa pode existir sem ficha identificada; o endereço usado no pedido é confirmado e copiado como snapshot.
+
+**Aceite desta fatia:** busca geral mostra dados mínimos e documento mascarado; ficha/endereço vinculados à conversa aparecem em leitura; busca, reconciliação, vínculo escolhido e criação usam os wrappers existentes; não se consulta tabela operacional diretamente pelo browser. **Estado local:** UI, Server Action, repositório e migration candidata foram implementados e a checagem estática local passou. **Gate de gravação:** a migration ainda não foi validada semanticamente nem aplicada em base isolada. O banco local existente pertence ao schema experimental legado e não é baseline adequado; preparar uma cópia/branch canônica isolada, validar dependências, PL/pgSQL, grants e efeitos dos triggers, e então habilitar a migration antes de permitir edição real.
+
+### 5. Inbox para dois números
+
+- A leitura de `admin-whatsapp-ops-v1` e a tela `/atendimento` já estão implementadas para lista, contexto, mensagens e envio de texto autenticado.
+- A conversa mostra imagem, áudio, vídeo, documento e figurinha recebidos por ação explícita “Carregar mídia”. O servidor chama a ação `media` existente do gateway autenticado e valida origem, bucket privado, MIME e expiração da URL assinada. O carregamento não ocorre em lote; o gateway baixa/cacheia a mídia ao primeiro pedido e assina novamente em atualizações.
+- O histórico transforma tipos conhecidos (botão, interativa, localização, contato, reação e Catálogo) em rótulos claros sem tentar interpretar payload oculto. Não há transcrição de áudio/vídeo porque o gateway não fornece legendas.
+- Exibir canal `0975` ou `1018` com número, WABA e conversa separados; atribuição, leitura, filtros, transferência ANA/humano e janela da Meta ficam visíveis sem tela técnica.
+- Confirmar no fluxo de execução que a ingestão de webhook persiste de forma idempotente antes de qualquer resposta, valida assinatura e roteia por `phone_number_id`/WABA. Eventos duplicados não podem repetir resposta nem pedido.
+- Áudio, imagem e pedido de catálogo aparecem como eventos da conversa com estado de processamento compreensível.
+
+**Aceite:** falta validação real, autorizada e controlada de tráfego por número; sem isso, não declarar roteamento/isolamento operacional comprovado.
+
+### 6. Cestas e configuração de Flow
+
+- Auditar funções atuais de cestas antes de editar; inventariar modelos, slots e alternativas sem assumir que IDs/valores históricos ainda valem.
+- A leitura Flow confirmada é `GET /functions/v1/admin-basket-configuration-v1?action=flow_list`. O gateway encaminha o JWT do usuário à RPC `admin_basket_flow_configuration_v1()`, que requer usuário autenticado associado a `admin_users` ativo e papel diferente de `viewer`. A resposta contém `basket_types`, `product_types` com `options` e `quantities`.
+- Consulta agregada ao projeto canônico: 61 alternativas ativas dentro de etapas ativas; 61 têm URL HTTPS; 59 apontam para o Storage público `product-images` e 2 para o caminho do catálogo no GitHub, ambos admitidos pela allowlist do runtime geral. Nenhuma alternativa habilitada está sem URL de imagem.
+- A tela `/cestas` está implementada como conferência visual somente leitura: cada tipo de produto aparece como etapa ordenada; cada alternativa mostra foto cadastrada ou pendente, nome/embalagem, preço comercial e situação ativa. Mostrar valores de quantidade que vierem configurados para cada modelo/etapa. Exibir contagem de fotos ausentes; nunca afirmar que URL equivale a aprovação ou renderização pelo Flow.
+- `admin-whatsapp-flow-v1` (implantação ativa v24) retorna `retired_outside_site_vitrine_admin`; não usar. Separar configuração comercial do Flow que está publicado no runtime Meta; auditar `whatsapp-flow-runtime`, `whatsapp-flow-data-exchange-v1`, webhook e os dois números antes de gerar, testar ou publicar Flow.
+- Auditoria dos handlers: `whatsapp-flow-runtime` v5 devolve a foto do produto escolhido, mas seus objetos de opção só carregam título, descrição e disponibilidade; `whatsapp-1018-basket-flow-v1` v7 coloca imagem codificada em cada linha, mas está explicitamente restrito a canário. Para cumprir “foto em cada opção em ambos os números”, uniformizar o runtime oficial de cada canal e verificar a publicação/entrega nos dois números.
+- A rota `admin-basket-guided-v1?action=model_editor` retorna molde e categorias; a resposta adicional de kits/receitas contém custo e preço. Usar uma projeção explícita no servidor antes de qualquer exibição, inclusive para usuários operadores.
+- Para cada cesta, definir ordem dos componentes, alternativas de produto, preço da opção, quantidade permitida e extra interno oculto no total.
+- Um Flow step trata de um componente: opções com foto e preço, quantidade de 0 a 6 (zero significa retirar quando o slot permite) e botão **Próximo**. Não mostrar componentes em lote.
+- Preço/estoque vêm do servidor, que valida e calcula cada avanço. Seleção de cliente/endereço, forma de pagamento e resumo final vêm depois dos produtos.
+- O candidato local usa Flow JSON `7.3`, Data API `3.0` e Message Version `3`. Validar um rascunho independente em cada WABA: criar com `POST /{WABA-ID}/flows`, enviar `supabase/flows/basket-order-v1.json` via multipart em `POST /{FLOW-ID}/assets` (`name=flow.json`, `asset_type=FLOW_JSON`), corrigir até `validation_errors` ficar vazio e conferir `status`, versões, saúde e preview pela leitura de `GET /{FLOW-ID}`. Registrar o `flow_id` de cada WABA sem guardar token.
+- Validação de JSON e preview não provam que fotos aparecem em cada opção nem que o Data Exchange percorre a jornada. Homologar esses comportamentos separadamente em cada WABA. Publicar exige gate próprio: `POST /{FLOW-ID}/publish` é irreversível e torna Flow/asset imutáveis; não faz parte da validação de rascunho.
+
+**Aceite:** uma cesta de teste percorre todas as etapas, com fotos por opção, retorno/retomada segura e preço calculado no servidor.
+
+**Aceite intermediário do observatório:** implementação local permite conferir modelos/tipos/alternativas/quantidades e distinguir foto cadastrada de foto ausente; falta validar sessão real autorizada e renderização nos dois números. Nenhum custo, metadado cru, publicação ou estado de aprovação não comprovado chega à tela.
+
+**Pendente para fotos no Flow real:** URL HTTPS presente não prova que uma opção de escolha carrega imagem nem que a tela publicada de cada número a renderiza. O runtime geral atual não inclui imagem em cada opção; o endpoint que inclui é canário. Não liberar o requisito como concluído até validar os dois roteamentos Meta.
+
+### 7. Catálogo Meta e criação de pedido
+
+- **Estado auditado em 27/10:** o runtime `whatsapp-meta-webhook-v1` converte `order` em `unknown`; `whatsapp-meta-order-router` não roteia `type=order`; `whatsapp-checkout-webhook` só conclui cesta pelo Flow e grava em `whatsapp_atendimento.orders`; `admin-whatsapp-ops-v1` não expõe pedidos; `admin-products-live-v1` e `/pedidos` operam somente `public.orders`. Portanto carrinhos Meta ainda não viram pedidos e pedidos confirmados no checkout do Flow não aparecem no quadro atual.
+- Tratar `public.orders` como o sistema operacional único do Admin/Bling. Flow e Catálogo entram como origens distintas nesse pipeline; não mostrar uma segunda lista operacional nem escrever o mesmo pedido nos dois schemas.
+- Persistir rascunhos em uma entrada própria por evento/origem, identificada por conta Meta + ID da mensagem. Só após o botão de confirmação explícita deve existir um pedido operacional. Usar uma escrita transacional e idempotente que preserve as invariantes de cadastro, preço, estoque, status e fila Bling do gateway canônico.
+- O índice parcial único `public.orders_idempotency_key_uq` existe, mas o RPC atual `create_canonical_cart_order_v2` não recebe ID de evento. Criar uma camada idempotente que associe evento e pedido na mesma transação; não contar apenas com o dedupe do webhook nem com tentativa posterior de `UPDATE` do status.
+- Não usar `create_vitrine_cart_order_v3` como criação de rascunho: ele chama reserva de estoque imediatamente. Para o aceite do cliente, definir e validar transição canônica equivalente à confirmação operacional (`created → confirmed`) e à reserva única de estoque. O contrato atual `order_update` é um gateway de operador, não um endpoint público para webhook.
+- Para Catálogo, aceitar somente `product_retailer_id`, `quantity`, `currency`, `catalog_id` e mensagem/event ID como dados de referência. Resolver o produto pelo catálogo específico do número/WABA, recalcular o valor com preço e estoque correntes do Supabase e jamais confiar em `item_price` recebido como preço final. Produto sem vínculo, diferença de preço, moeda divergente ou estoque insuficiente ficam para novo resumo/aceite ou atendimento humano.
+- Flow usa `interactive.nfm_reply.response_json`; preservar seu próprio resumo, evento, aceite e pedido. Catálogo usa outro evento Meta e sempre produz pedido separado. Nenhuma janela temporal ou proximidade de mensagens une as duas intenções.
+- Antes de criar cada rascunho, vincular à conversa/cadastro somente por identidade confiável. Pagamento/endereço só são reutilizados quando pertencem ao cadastro ligado; qualquer alteração material exige novo aceite.
+- Exibir origem humanizada na fila: `WhatsApp · Flow`, `WhatsApp · catálogo`, `WhatsApp · atendimento`, `Loja`, `Recompra` ou `Origem não identificada`. A UI já mapeia esses rótulos; eventos ainda não chegam com Flow/Catálogo até a mudança do backend.
+- Não criar tabela em schema exposto sem RLS e grants explícitos. O changelog Supabase informa que a exposição automática de novas tabelas será desligada para todos os projetos em 30/10/2026. Preferir o ledger técnico em `private`, acessível somente ao runtime; o Admin continua usando o gateway autenticado atual.
+
+**Aceite:** evento duplicado não duplica rascunho/pedido; dois carrinhos, Flow+carrinho e novo Flow originam pedidos canônicos independentes visíveis em `/pedidos`, com origem correta e sem reserva dupla; nenhuma mutação atinge Bling até a etapa definida pelo fluxo operacional.
+
+### 8. Quadro de pedidos e Bling
+
+- Listagem por `admin-products-live-v1?action=orders`; ficha por `action=order&id=<uuid>`. O adapter projeta no servidor apenas campos de operação e exclui CPF, `metadata` bruto e campos fiscais/internos.
+- Filtros suportados pelo gateway: `new` = `created`/`storefront_received`; `separate` = `confirmed`/`processing`; `ready` = `ready`/`out_for_delivery`; `delivered` = `delivered`. Resultados de busca de texto são globais entre os status porque o handler não aplica `tab` quando `q` existe. `limit` é limitado a 5 e a contagem por etapa vem na primeira página.
+- A separação usa ações canônicas distintas: `order_separation_get`, `order_separation_assign`, `order_separation_item_set` e `order_separation_complete`. O backend valida JWT, papel, pedido, responsável, estado, revisão otimista (`order_updated_at`) e pré-condições; a UI não chama tabela de negócio diretamente.
+- Na etapa `confirmed`, marcar um item pode acionar sincronização/aprovação de estoque no Bling e mover o pedido a `processing`. A tela pede confirmação antes dessa tentativa e mostra a pendência retornada pelo gateway. O operador marca cada item como separado ou indisponível; concluir exige responsável, pelo menos um item e todos os itens separados, sem pendências/indisponibilidades, mais confirmação explícita.
+- `order_separation_complete` pode baixar estoque, mover o pedido para `ready`, avisar o cliente e iniciar integrações fiscais em segundo plano. Antes da fase fiscal final, a ação do Admin exige leitura fiscal válida com `issue_enabled=false`; leitura ausente, falha ou emissão automática habilitada bloqueiam a conclusão. Em staging, manter esse gate desligado durante todos os marcos anteriores. Falha no aviso ou integração deve permanecer visível e recuperável; a ação de conclusão não equivale a emissão de NF.
+- `order_update` continua fora da UI: `created → confirmed` reserva estoque; as demais transições genéricas não substituem operações de despacho/entrega. Não regravar enums/status nem editar tabelas operacionais pelo app.
+- Antes do despacho, `order_fiscal_status` fornece uma projeção de leitura. `order_dispatch_start_v4` só é oferecida quando o pedido está `ready`, o gateway confirma NF-e autorizada e `can_dispatch=true`; a UI usa idempotency key `dispatch-v4:<orderId>`. O gateway pode movimentar estoque físico no Bling quando ele for a autoridade. A confirmação explica esse efeito. O Admin não emite NF-e.
+- A entrega só pode ser concluída em `out_for_delivery`. Para pedido sem liquidação anterior, `order_delivery_complete_v3` exige método allowlisted e valor exato em centavos igual ao total; chave idempotente `delivery-v3:<orderId>`. O Admin só oferece captura quando o gateway reporta `payment_status=pending` e nenhuma `payment_source` anterior. Estado ausente, origem existente ou pagamento de outra origem bloqueiam captura.
+- Se já houver liquidação com origem `delivery` e estado `captured`, `synced` ou `needs_review`, usar `order_delivery_finalize_v4` sem lançar pagamento novo; o gateway confere origem/valor e tenta marcar o pedido como Atendido no Bling. Liquidação de outra origem exige revisão manual; não duplicar nem finalizar às cegas. Falha de sincronização fica para recuperação do gateway.
+- O gateway também contém `POST action=order_fiscal_recover_bling_v1` para recuperação manual depois de a separação física estar concluída. Ele exige pedido `ready`, conclusão de separação com `stock_applied=true`, itens sem pendência e integração habilitada; reconcilia `approved_separation`/`verified` e chama `fiscal_dispatch_reconcile`. Não chama diretamente a operação humana de emissão; o possível efeito indireto desse subcomando ainda precisa de homologação. A ação de interface fica atrás de `ADMIN_BLING_ORDER_RECOVERY_ENABLED=false` por padrão, exige confirmação e bloqueia quando não há leitura fiscal comprovando `issue_enabled=false`.
+- A interface projeta somente número/status fiscal e situação segura de pagamento; não renderiza resposta bruta do gateway. Server Actions revalidam sessão, pedido, estado, total e confirmação explícita; o backend permanece autoridade e repete as pré-condições.
+- Quadro visível: NOVO, PRODUÇÃO — Separação, EXPEDIÇÃO e ENTREGUE. Aceite válido entra em PRODUÇÃO; mudanças posteriores são auditadas.
+- A transição para EXPEDIÇÃO usa o gateway canônico e sua fila idempotente; erro fica como pendência recuperável sem apagar pedido.
+- Usar OAuth e filas já existentes; nenhuma credencial é chamada pelo browser. Um único processo renova refresh token.
+- Nota fiscal é o último marco do projeto. O snapshot antigo registrava `fiscal_enabled=false`, mas a leitura atual do gateway mostrou `dispatch_fiscal_human_issue_enabled=true` e gate `enforce`; o `admin-products-live-v1` também tenta a emissão automática após a separação quando o preflight e `issue_enabled` permitem. Até a fase final, a emissão manual do Admin permanece desativada e a separação exige `issue_enabled=false`; na fase fiscal, validar emissão manual/automática, reconciliação e recuperação no ambiente isolado. A saída continua bloqueada até autorização inequívoca da NF-e.
+
+**Aceite desta fase:** pedido de homologação é sincronizado no Bling sem duplicar venda; emissão manual e automática permanecem desligadas e nenhuma NF é emitida. O aceite fiscal é um gate separado e será executado por último.
+
+### 9. ANA configurável e transferência humana
+
+- Contrato remoto conferido em modo leitura: `admin-whatsapp-ana-preview-v1` v30 está ativo com `verify_jwt=true` e recebe `POST`. O gateway valida JWT, vínculo ativo em `admin_users` e papel; `viewer` consulta, `editor`/`admin` salvam rascunho e testam, e `owner` também publica, reverte versão e altera canal.
+- `admin_load` usa `ops2_ana_admin_load_v1()` e devolve configuração em rascunho, versão ativa, até 20 versões e até 20 resultados de teste. O Admin projeta esses dados no servidor; a configuração bruta não é enviada como propriedade de tela nem fica em campo oculto.
+- `/ana` já oferece edição de tom, concisão, emojis, uso do primeiro nome e conteúdo aprovado (título, texto, palavras-chave e situação). Novos itens começam em `draft`. Regras de gatilho e cenários continuam preservados no JSON original ao salvar e aparecem nesta fatia apenas como contagem.
+- Salvar usa `admin_save_draft` com revisão esperada; a RPC incrementa a revisão sob lock e rejeita conflito. A ação do servidor recarrega a configuração, aplica somente os campos permitidos e mantém gatilhos, cenários e chaves desconhecidas.
+- `admin_test` roda somente cenários cadastrados para a revisão corrente, registra o resultado em `whatsapp_ana_admin_test_runs_v1` e marca a saída como `dry_run_not_sendable`. A simulação pode chamar o provedor de IA; não envia mensagem Meta. O desenvolvimento não executou essa ação.
+- Publicação é exibida apenas para `owner`, exige confirmação e nota, e só é liberada quando um teste da revisão atual cobriu todos os `test_cases` na ordem exata, sem falhas. A RPC repete a validação antes de trocar a versão ativa.
+- Rollback é restrito ao `owner`, escolhe uma versão existente diferente da ativa, exige motivo e confirmação, e a RPC registra `rolled_back`. Nenhuma publicação ou reversão foi executada durante a implementação.
+- A tela mostra estado de entrada/saída/ANA e apenas os últimos quatro dígitos de cada canal. Não oferece ativação de canal até validar o roteamento real dos dois números e seus gates.
+- ANA consulta funções autorizadas para preço, estoque, cliente e pedido; não calcula dinheiro nem confirma pedido fora da ação explícita do cliente.
+- Se operador assumir conversa, interromper respostas automáticas até devolver a conversa à ANA.
 
-- [ ] Armazenar identidade por tipo e escopo correto: BSUID (`user_id`) é por portfólio empresarial; `phone_number_id`/WABA identificam a origem e isolam conversas; telefone só é contato após compartilhamento/verificação. Conferir se os dois WABAs pertencem ao mesmo portfólio antes de vincular as conversas à mesma ficha.
-- [ ] Criar conversas, mensagens, atribuição, nota interna, pausa ANA, estado de janela e recibos Meta.
-- [ ] Implementar validação de assinatura, normalização em eventos atômicos, cálculo de `dedupe_key` com escopo de conta e persistência antes de responder ao webhook. Inbound usa o ID da mensagem; status Meta distingue WAMID + status + timestamp para não descartar avanço legítimo; processar lote não significa inserir o payload inteiro como uma única mensagem.
-- [ ] Atualizar status por monotonicidade; evento antigo não regride entregue/lido.
-- [ ] Permitir atendimento manual nos dois números; exibir linha/WABA sem obrigar operador a saber termos técnicos.
-- [ ] Criar a infraestrutura genérica da outbox aqui: unicidade da chave idempotente, lease/claim atômico, `available_at`, resultado mascarado, dead-letter e estado `reconciliation_required`. Aplicar os estados e limites de retry do caderno §14.1. RPC de claim exposta apenas a `service_role`; chamadas do painel nunca alcançam `app_private`.
-- [ ] Enfileirar mensagens de saída na mesma transação que cria resumo/ação do Admin; tentar envio imediato e recuperar jobs pendentes no worker agendado.
-- [ ] O scheduler chama o worker com uma chave interna dedicada validada no próprio endpoint; usar `verify_jwt=false` somente para essa função interna protegida. Cron/pg_net não recebe payload de cliente e não guarda job; o tick pode se perder sem perder a outbox durável.
-- [ ] Testar mensagens duplicadas/fora de ordem, BSUID sem telefone, resposta enviada ao BSUID, os dois WABAs na mesma ficha quando o escopo permitir, portfólios diferentes sem mescla, remetente sem cliente e operadores concorrentes.
+**Aceite de configuração:** operador edita tom e base de conhecimento; rascunho usa revisão otimista; responsável executa cenários completos, publica com confirmação e reativa versão anterior com trilha de auditoria. Esta parte está implementada localmente; falta validar com conta real autorizada e verificar renderização/fluxo nos dois números.
 
-**Entrega:** a equipe atende manualmente em ambiente de teste, com trilha da mensagem e identidade correta.
+**Aceite de atendimento ainda pendente:** cenários de cesta, avulso, dúvida, cliente sem cadastro e transferência humana usam preço atual e não prometem ações não executadas.
 
-### Tarefa 6 — Rascunhos, Flow, Catálogo Meta e aceite
+### 10. Homologação focada e liberação
 
-**Arquivos:** `src/features/orders/{drafts,confirmation,summary}.*`, `src/lib/contracts/orders.ts`, `supabase/migrations/*order_drafts*`, `supabase/functions/whatsapp-flow/index.ts`, `supabase/functions/meta-webhook/index.ts`, `supabase/functions/_shared/flow-crypto.ts`, `supabase/tests/database/order_confirmation_test.sql`, `e2e/order-flow.spec.ts`.
+- Revisar por checklist de gateway, sessão/perfil, exposição de dados, idempotência, retry, valor do pedido e log sem PII/secrets.
+- Verificar documentação oficial Meta na versão real dos dois WABAs e validar Flow em cada um antes de liberar cliente.
+- Bling começa com leitura e criação controlada em homologação; provar idempotência. NF-e segue bloqueada até gate contábil.
+- `/configuracoes` mostra o gateway Bling e, para cada conta WhatsApp existente, as flags persistidas de entrada/envio manual/ANA e a presença de timestamp de homologação. Faz o vínculo pelo UUID de `whatsapp_accounts`, mascara o número e sinaliza quando não são exatamente dois canais. Esse cartão não prova OAuth/Graph, webhook recente ou Flow publicado. Ainda falta um leitor Meta server-side com versão Graph explícita e confirmação do phone-number ID na WABA correspondente.
+- Rodar somente lint, typecheck e checks direcionados da fatia em implementação; não criar suíte extensa sem uma jornada pronta.
+- Ativar canal/ação por etapas; saúde operacional mostra conexão, fila, último evento e próxima ação sem exibir credenciais.
 
-**Interface:** `confirmDraft(input: ConfirmDraftInput): Promise<ConfirmDraftResult>` recebe `{ confirmationToken, phoneNumberId, senderIdentityId, inboundMessageId }`. Retorna `{ status: 'confirmed' | 'already_confirmed' | 'needs_review' | 'stale_revision' | 'not_authorized', orderId?: string, currentRevision?: number }`. O token é aleatório/opaco; o banco guarda seu hash ligado ao rascunho e à revisão. RPC transacional acessível somente a `service_role` valida remetente, número, revisão, preço, estoque, endereço, aceite único e cria exatamente um pedido. Repetição retorna o mesmo `orderId`.
+## Registro de andamento
 
-- [ ] Modelar fontes distintas `basket_flow` e `catalog_cart`; não associar drafts por conversa/tempo.
-- [ ] Implementar Data Exchange criptografado e versionado; INIT, Próximo, Voltar e conclusão usam contratos separados e estado do servidor.
-- [ ] Gerar `flow_token` aleatório imprevisível por sessão, persistir somente seu hash e vinculá-lo ao rascunho, remetente, `phone_number_id`/WABA e versão da cesta. Token é correlator, nunca autenticação. Não derivar chave HMAC de sessão de `META_WHATSAPP_APP_SECRET`: essa foi uma escolha interna do código legado, não requisito demonstrado do protocolo Meta. Usar App Secret apenas para validar assinatura de webhook; implementar o Data Exchange conforme RSA-OAEP/AES-GCM da Meta, com chave privada somente no servidor e chave pública registrada para cada linha.
-- [ ] No spike, confirmar no payload real de `nfm_reply.response_json` que a Meta devolve o `flow_token` enviado, em cada WABA; conferir o JSON cru sanitizado, sem dados pessoais. Se não for devolvido de forma confiável, bloquear a decisão de correlação do checkout e pesquisar/validar outra associação antes de avançar.
-- [ ] Declarar cada campo do payload de ação no schema gerado do Flow e validar o JSON de ida/volta; se uma ação dinâmica enviar índice, versão ou chave de slot, o campo e o tipo têm de constar no contrato efetivo.
-- [ ] Fazer primeiro spike de Flow com duas alternativas fotografadas, quantidade e Próximo. Consultar a referência oficial de componentes para a versão usada e confirmar no Flow Validator da Meta, em cada WABA, que o `data-source` aceita imagem + `alt-text`; a página de componentes foi rate-limited (HTTP 429) nesta rodada de pesquisa, então limites por versão ainda não são constantes de implementação. Medir payload e conferir leitura em Android/iOS. Manter miniatura interna alvo ≤25 KB como meta de desempenho do projeto, não limite da Meta.
-- [ ] Implementar imagem/alt text por alternativa no `data-source` do Flow; o endpoint lê `flow_thumbnail_path`, codifica a imagem em formato aceito, valida tamanho/versão e recusa qualquer opção sem foto. Não publicar tela com alternativa sem foto.
-- [ ] Limitar o tempo gasto em consultas e leitura de imagem no Data Exchange; servir miniatura aprovada em cache e nunca esperar por mídia externa sem timeout.
-- [ ] Provar navegação de um slot por tela, retorno à mesma tela quando aplicável, limites efetivos de componentes/payload e tratamento de Flow inválido; manter fallback de perguntas sequenciais no chat com imagens anexadas quando necessário.
-- [ ] Processar carrinho do Catálogo pelo retailer ID, criando rascunho distinto até quando recebido imediatamente após Flow.
-- [ ] Migrar a constraint legada de `orders.status` para os estados operacionais definidos e adicionar origem, snapshots de endereço/aceite e estado financeiro/fiscal separados; antes, recontar linhas e mapear qualquer valor antigo.
-- [ ] Gerar resumo com itens/quantidades/endereço/pagamento/total sem preço unitário e botão de confirmação associado a revisão opaca.
-- [ ] Na transação de aceite, validar se a revisão ainda é válida; congelar snapshot de itens, endereço, pagamento, preço, origem, identidade e mensagem; reservar estoque no aceite e criar um único pedido diretamente em PRODUÇÃO. Rascunhos sem limite de tempo não seguram estoque.
-- [ ] Se preço/estoque/dados obrigatórios mudaram, não criar pedido nem colocar em NOVO: invalidar o botão antigo, manter rascunho, corrigir os dados e enviar nova revisão para aceite.
-- [ ] Usar NOVO apenas para pedidos criados manualmente ou retidos por decisão operacional da equipe antes de liberar separação; registrar responsável e motivo.
-- [ ] Implementar RPC pública sem dados sensíveis na assinatura; revogar `EXECUTE` de `PUBLIC`, `anon` e `authenticated`, conceder só a `service_role`, fixar `search_path` e qualificar objetos. Browser nunca chama RPC privilegiada.
-- [ ] Testar clique duplo, Flow repetido, carrinho repetido, dois tipos no mesmo chat, rascunho antigo, endereço trocado e confirmação após mudança de preço.
-
-**Gate externo:** antes de enviar mensagens de teste, conferir token/escopos, webhook e uma linha interna por WABA. Sem credenciais atuais confirmadas, manter adaptadores mockados e bloquear dispatch externo.
-
-### Tarefa 7 — Adaptador Bling sobre a outbox existente
-
-**Arquivos:** `src/features/orders/fulfillment.ts`, `src/features/settings/integrations.tsx`, `supabase/migrations/*outbox_bling*`, `supabase/functions/bling-webhook/index.ts`, `supabase/functions/outbox-dispatch/index.ts`, `supabase/functions/_shared/bling.ts`, `supabase/tests/database/bling_outbox_test.sql`.
-
-- [ ] Reutilizar a outbox e o worker genéricos criados na Tarefa 5; aqui adicionar apenas tipos de job e adaptador Bling, mantendo a mesma política de idempotência, retry e reconciliação.
-- [ ] Centralizar renovação OAuth Bling com uma coordenação por conta para evitar refresh token concorrente.
-- [ ] Em `invalid_grant`/refresh expirado, marcar Bling como desconectado e oferecer “Reconectar Bling”; preservar último estado confirmado de produtos/pedidos e parar jobs dependentes. Não limpar dados nem repetir renovação em loop.
-- [ ] Antes da integração real, confirmar cadastro de app público, autorização pela conta da empresa e exigências de homologação/teste do Bling; começar essa trilha externa em paralelo à base e continuar com adaptador mock enquanto aguarda.
-- [ ] Centralizar todas as chamadas Bling num limitador por conta (teto inicial de 2 req/s, documentado abaixo dos 3 req/s publicados), contabilizar limite diário e honrar `Retry-After` em 429; limitar também consultas de reconciliação.
-- [ ] Ao sair de PRODUÇÃO para EXPEDIÇÃO, criar uma única venda externa por pedido; pedidos Flow e Catálogo usam chaves externas distintas.
-- [ ] Depois do aceite contábil e do cadastro fiscal, a transição PRODUÇÃO → EXPEDIÇÃO inicia a criação de venda no Bling e o processo de NF-e do pedido; gravar IDs e estados de venda/NF-e separados. Até esse gate, integração só em sandbox/mock e escrita de produção desativada.
-- [ ] Reconciliar timeout consultando Bling por referência externa antes de repetir; se não for possível provar sucesso ou falha, parar em `reconciliation_required`, sem retry cego. Validar assinatura e deduplicar webhook recebido.
-- [ ] Separar status de venda, NF-e e operação física. Emissão real fica bloqueada até aprovação contábil e cadastro fiscal completo.
-- [ ] Testar rejeição, indisponibilidade, refresh, timeout pós-sucesso, retry e dois pedidos independentes do mesmo cliente.
-
-**Gate externo:** confirmar credenciais atuais no cofre, escopos, IDs SKU/contato e testar em modo não produtivo antes de habilitar escrita.
-
-### Tarefa 8 — ANA limitada e transferência para atendente
-
-**Arquivos:** `src/features/ana/{editor,simulator,versions}.*`, `supabase/migrations/*ana_versions*`, `supabase/functions/ana-reply/index.ts`, `supabase/functions/_shared/openai.ts`, `e2e/ana-handoff.spec.ts`.
-
-- [ ] Criar configuração pequena, mas editável, em rascunho/publicada: saudação/tom, políticas/conhecimento aprovado, linhas Meta habilitadas, ações permitidas, horários e gatilhos de transferência; versão publicada, simulador e reversão simples. Não expor prompt bruto ao operador.
-- [ ] Usar Responses API server-side, `store=false` e contexto mínimo; nenhuma chave ou endereço entra sem necessidade.
-- [ ] Expor ferramentas de leitura/cálculo/rastreamento com schemas estritos; backend valida tudo, IA não grava pedido confirmado nem altera status.
-- [ ] Pausar ANA quando humano assume, por conversa; retomar somente com ação explícita e sem respostas simultâneas.
-- [ ] Testar preço/estoque não inventado, pedido ambíguo, ferramenta rejeitada, handoff, pausa e retomada.
-
-### Tarefa 9 — Configuração, observabilidade e piloto
-
-**Arquivos:** `src/features/settings/*`, `src/features/orders/*`, `supabase/functions/_shared/logging.ts`, `.github/workflows/ci.yml`, `e2e/*`.
-
-- [ ] Criar página de integrações com health check seguro por WABA/Meta, Bling e ANA; mostrar resultado e próximo passo, nunca valor secreto.
-- [ ] Criar logs com correlação e redação de payload pessoal, métricas de falha e trilha de auditoria de ações humanas.
-- [ ] Definir retenção, opt-out, política de privacidade, backup/restore e rotina de reconciliação de outbox.
-- [ ] Rodar aceites completos em local/staging: produto, cesta, Flow, Catálogo, cliente sem telefone, duplicidade, mudança de preço, falha Bling e pausa humana.
-- [ ] Pilotar primeiro em uma linha Meta com equipe interna; só depois habilitar a segunda WABA. Confirmar com contador antes de qualquer NF-e real.
-
-## Ordem e execução
-
-1. Tarefas 1–3 constroem a base e a interface vazia.
-2. Tarefa 4 fecha cadastro/preço; Tarefa 5 fecha identidade e atendimento manual.
-3. Tarefa 6 depende de 4 e 5 e da prova técnica Meta/Flow por WABA.
-4. Tarefa 7 depende dos pedidos e do OAuth Bling; escrita real e NF-e ficam sob gates diferentes.
-5. Tarefa 8 depende da inbox/contratos e entra somente depois da jornada manual ser estável.
-6. Tarefa 9 encerra o piloto e o rollout.
-
-Execução escolhida: **nativa e sequencial**, com revisão ao fim de cada tarefa; os contratos entre banco, Edge Functions e Admin compartilham estado transacional e as integrações têm risco de duplicidade, portanto paralelizar aumentaria retrabalho.
-
-## Pesquisas antecipadas por tarefa
-
-Sim. Para reduzir interrupções e decisões durante a programação, perguntas sobre tecnologia e contratos de API ficam como pesquisa de entrada da tarefa correspondente; cada decisão deve ter resposta, fonte/data, decisão e caso de validação anotados. A pesquisa geral de produto, navegação e arquitetura já está fechada. As telas, contratos puros e adaptadores locais podem avançar. Cada gate externo precisa ser concluído antes da tarefa dependente: migrações só após conferir o Supabase atualizado; tráfego/Flow somente após validação por WABA; escrita no Bling somente após autorização e homologação fiscal.
-
-| Tarefa | Pesquisar/confirmar antes da parte dependente | Onde buscar e o que registrar | O que fica bloqueado enquanto não fechar |
-|---|---|---|---|
-| 1 — Base | Versão LTS de Node suportada pela versão estável do Next no dia do setup; comportamento do CLI e configuração recomendada | Instalação/deploy oficiais do Next; fixar versões em `.nvmrc` e lockfile | Só a escolha de versão/build; não o desenho do produto |
-| 2 — Acesso | Schema/contagem/grants atuais do Supabase; roles reais e política de funcionário desligado; mudança de GRANTs de 30/10/2026 | Branch/baseline local, docs oficiais Supabase e verificação da ref correta; registrar snapshot antes de cada migração | Qualquer migração, até conferir ambiente e backup |
-| 3 — Admin | Validar visualmente os wireframes funcionais já documentados; não reabrir comparação de plataformas sem evidência de problema | Caderno §15 e wireframes §27; inspeção em viewport desktop e mobile | Aprovação visual interna, não APIs |
-| 4 — Produtos/fotos | Requisitos de imagem do Meta Catálogo; bucket/leitura para imagens públicas; upload de original e derivado Flow; tamanho/formatos e compressão | Docs atuais do Catálogo/Storage; teste de upload e leitura em Storage local; requisito fechado neste caderno: nenhuma alternativa Flow sem foto | Publicar produto/cesta no Meta/Flow se foto, miniatura ou alt text estiverem ausentes |
-| 5 — Meta/inbox | Graph API version, permissões, webhook e identidade do cliente; mapear `entry.id` (WABA), `metadata.phone_number_id`, `messages[].id`, `contacts[].wa_id` e `user_id` (BSUID), sem presumir que todo identificador seja telefone. Confirmar se os dois WABAs pertencem ao mesmo portfólio | Postman e [referência oficial Meta de BSUID](https://developers.facebook.com/documentation/business-messaging/whatsapp/business-scoped-user-ids/); testar envio/retorno por BSUID em cada WABA; conversation mantém phone_number_id, BSUID fica escopado ao portfólio | Tráfego real ou mensagem de teste a cliente; mocks podem seguir |
-| 6 — Flow/carrinho | Confirmar na referência oficial atual a estrutura de imagem + `alt-text` em opções de seleção, a versão Flow JSON aceita, `data-source` dinâmico, limite do payload e contrato Data Exchange. Validar token correlator no `nfm_reply.response_json` por WABA. Processar carrinho pelo contrato oficial `type=order`, item retailer ID, quantidade, moeda e preço observado | Meta Flow JSON Components (acesso rate-limited nesta rodada), Postman oficial e exemplos oficiais `WhatsApp/WhatsApp-Flows-Tools`; consultar `validation_errors`/`health_status`, fazer spike fotográfico nas duas WABAs e ler em Android/iOS. Miniatura ≤25 KB é meta interna, nunca teto atribuído à Meta | Não publicar Flow comercial sem validação da conta, confirmação do token no webhook e leitura de foto por alternativa; não reabrir regra de agrupar pedidos |
-| 7 — Bling | Confirmar cadastro público/homologação, escopos, OAuth/JWT, criação de venda, relação venda→NF-e, endpoint/estados de autorização e como reconciliar POST ambíguo | Referência API v3/FAQ/webhooks e conta autorizada; documentar payload sanitizado, status IDs e prova de consulta antes de habilitar escrita. Iniciar já o processo de homologação em paralelo | Escrita real e NF-e; adaptador mock pode ser construído |
-| 8 — ANA | Confirmar modelo disponível, Responses API/function calling, custo/latência/limites e retenção vigentes; experimentar transferência para humano com ferramentas restritas | Docs OpenAI atuais, chave apenas no servidor e conversas sintéticas; registrar modelo/configuração por ambiente e ferramentas permitidas | Resposta da ANA em produção; configurações e simulador podem ser criados com mock |
-| 9 — Lançamento | Revalidar Vercel Local/Preview/Production, segredos, backups, restore, retenção/opt-out e processo contábil de NF-e | Docs oficiais da plataforma, teste de restore e aprovação do contador/negócio; checklist de health por WABA e Bling | Piloto externo e emissão fiscal; não a programação local |
-
-**Regra para decisão de pesquisa:** contrato público estável vira decisão com link e data; comportamento que depende da conta exige prova no validador/health check; dado de negócio ou fiscal exige configuração/validação com a empresa/contador. Se a prova de Flow não conseguir mostrar imagem em cada alternativa, não reduzir silenciosamente o requisito: parar o lançamento desse Flow e registrar a limitação antes de oferecer uma experiência diferente.
-
-**Agendamento outbox escolhido:** `pg_cron` + `pg_net` chama `outbox-dispatch` a cada minuto; a outbox PostgreSQL é a fila durável, e a chamada `pg_net` é somente um sinal recuperável (não guardar o job em `pg_net`). A requisição usa chave de serviço interna dedicada lida do Vault, nunca a chave `service_role`, e o endpoint compara essa chave antes de processar. O worker também tenta o envio logo após enfileirar; o tick serve para recuperação. Como Cron está em beta e `pg_net` usa fila de requisição não durável, este mecanismo não é a fonte de verdade: se Cron/Net ficar indisponível, a tela de Configurações mostra saúde ruim e o trabalho continua persistido, com fallback operacional de reprocessamento. Confirmar suporte/limites do projeto na implantação antes de ativar o cron.
-
-Detalhe de segurança do worker: configurar a Edge Function `outbox-dispatch` com verificação JWT do gateway desativada somente porque a chamada vem de Cron; a função exige e compara um segredo interno dedicado (`OUTBOX_DISPATCH_SECRET`) antes de ler jobs. Armazenar o mesmo segredo no Supabase Vault para Cron e em Edge Function Secrets para o worker. A chave publishable pode identificar o projeto, mas não autoriza o dispatch; nunca passar a chave `service_role` no header HTTP.
-
-## Referências de implementação consultadas
-
-- [Next.js — instalação/App Router](https://nextjs.org/docs/app/getting-started/installation)
-- [Next.js — implantação](https://nextjs.org/docs/app/getting-started/deploying)
-- [Vercel — Next.js e deploy](https://vercel.com/docs/frameworks/full-stack/nextjs)
-- [Vercel — ambientes Local, Preview e Production](https://vercel.com/docs/deployments/environments)
-- [Supabase — Edge Functions](https://supabase.com/docs/guides/functions)
-- [Supabase — segredos de Edge Functions](https://supabase.com/docs/guides/functions/secrets)
-- [Supabase — CLI e desenvolvimento local](https://supabase.com/docs/guides/local-development/cli/getting-started)
-- [Supabase — testes de banco e RLS com pgTAP](https://supabase.com/docs/guides/database/testing)
-- [Supabase — agendar Edge Functions com Cron e Vault](https://supabase.com/docs/guides/functions/schedule-functions)
-- [Supabase — pg_net e limites da fila assíncrona](https://supabase.com/docs/guides/database/extensions/pg_net)
-- [Supabase — estágio Beta do Cron](https://supabase.com/features/supabase-cron)
-- [shadcn/ui — instalação](https://ui.shadcn.com/docs/installation)
+- **Concluído antes do mapa:** shell visual greenfield e autenticação Supabase SSR; migrations locais e primeira tela de produtos foram iniciadas com base no projeto “NOVO”. Não foram enviadas ao Supabase remoto.
+- **Revisão exigida pelo mapa:** remover o acesso direto do browser ao schema experimental e os arquivos/migrations locais específicos desse projeto. Manter apenas o shell e construir leitura de produtos pelo gateway original.
+- **Implementado localmente:** catálogo e ficha de produtos; inbox e ANA configurável; clientes e pedidos; atendimento dos dois números; intake separado e idempotente de Flow e Catálogo; confirmação individual do cliente; conversão confirmada para pedido canônico independente; separação, expedição e entrega pelas operações existentes; configuração dos canais Meta sem alegação de saúde ao vivo; toggle explícito da disponibilidade WhatsApp do produto.
+- **Composer interativo local:** mensagens oficiais de reply buttons e list com tipos allowlisted, prévia, fila/auditoria e resposta recebida resumida. Catálogo/multi-produto e Flow seguem ações próprias. A busca oficial renovada em 27/10 não encontrou request de carrossel WhatsApp na coleção de mensagens; as páginas Meta relacionadas retornaram 429. Não reutilizar o carrossel genérico do Instagram nem payload de provedor; eventual template de carrossel continua condicionado a schema oficial, aprovação e renderização na WABA.
+- **Templates Meta aprovados — implementação local concluída:** a inbox consulta o cache da conta selecionada e mostra apenas modelos `UTILITY` `APPROVED`, `attendance.enabled=true` e componentes aceitos pelo sender; modelos `MARKETING` ficam no workflow dedicado de consentimento. A Server Action revalida a conta/modelo e chama a Edge Function existente `admin-whatsapp-templates-v1` (`action=send`), que usa as RPCs de enqueue/claim/accept e transporte oficial Meta. Campos são derivados das variáveis do corpo; não há editor JSON. O compositor fica acessível fora da janela de 24 horas, enquanto texto, interatividade e mídia seguem bloqueados. Não criar tabela/função/outbox paralelo. Gate: homologar lista/envio, parâmetros, status Meta, canário e falha incerta por WABA; nenhum envio real foi feito.
+- **Próximas fatias:** o proprietário recusou staging com custo recorrente; não repetir a solicitação nem aplicar migrations em produção sem homologação. O snapshot read-only atual tem 22 posições de Flow sem alternativa elegível (3 sem produto ativo, 19 com produto ativo mas WhatsApp desabilitado). Continuar auditoria/código local; depois de um baseline isolado, validar as fotos/Flow e callback nos dois WABAs e homologar o ciclo de pedido/Bling sem NF-e. A emissão fiscal permanece por último.
+- **Bloqueios documentados:** o projeto canônico tem somente `main` e o baseline das 1.266 versões não está no checkout; as 6 migrations e 13 Edge Functions greenfield não foram aplicadas/publicadas nem validadas integralmente contra a estrutura completa. As 48 opções atualmente elegíveis têm foto HTTPS sintaticamente válida, mas as URLs precisam passar no Flow Validator/preview real. Não houve deploy, callback, envio Meta, escrita Bling nem DDL remoto.
+
+## Atualização — ingresso Flow/Catálogo (27/10/2026)
+
+- A próxima fatia começa pelo parser puro `supabase/functions/_shared/meta-order-events.ts`. Ele identifica `messages[].type="order"`, respostas `interactive.nfm_reply` e respostas de botão; texto, mídia, status e demais eventos continuam com o roteador existente. Esta camada não grava, responde nem cria pedido.
+- Cada evento mantém separados `metaPhoneNumberId`, ID da mensagem, `senderPhoneE164` opcional e `senderProviderId` opaco. O parser não transforma um identificador opaco em telefone nem usa nome/perfil para identidade.
+- Catálogo preserva `catalog_id`, `product_retailer_id`, quantidade, moeda e preço informado apenas como evidência. Issues retornam códigos sem ecoar payload. A precificação final usa cadastro e estoque atuais no servidor.
+- Decisões fixas estão em [plano de intake Flow/Catálogo](../superpowers/plans/2026-10-27-whatsapp-order-intake.md): uma intent privada por evento, vínculo por conta + catálogo + retailer ID, confirmação individual, sem união temporal e sem expiração comercial.
+- O outbox atual requer E.164. Até confirmar e implementar o contrato Meta de envio por identidade opaca, pedidos sem telefone ficam em revisão e nunca usam BSUID em `to_phone_e164`.
+- A tabela de eventos já deduplica por conta + evento Meta. O evento deve estar persistido antes de responder HTTP; o vínculo evento–intent–pedido e a reserva precisam ser transacionais.
+- O writer mantém inicialmente `source='manual_whatsapp'` para respeitar os gatilhos existentes e grava `flow`/`catalog` num campo versionado de `checkout_snapshot` para a origem visual. Não ampliar `orders.source` sem auditoria completa.
+- O diretório local de migrations está vazio depois da limpeza, mas o projeto canônico tem histórico extenso aplicado. Recuperar um baseline local somente leitura antes de adicionar migration; não aplicar SQL nem reparar histórico remoto nesta etapa.
+- A página Meta para BSUID retorna HTTP 429 à consulta automatizada; o modelo fica agnóstico e envio sem telefone continua bloqueado até fonte oficial acessível.
+
+## Atualização — revisão de carrinho nativo no Atendimento (27/10/2026)
+
+- O painel da conversa passou a apresentar nomes e quantidades do carrinho Meta por intenção. A estimativa usa apenas preço atual do produto mapeado no Admin e some quando qualquer vínculo, produto ou preço não puder ser validado; preço enviado no webhook nunca é usado como total do pedido.
+- Flow e Catálogo continuam como intenções separadas, sem limite temporal para agrupamento e sem merge. O cartão do Catálogo deixa claro que não é pedido operacional enquanto cliente, endereço, pagamento e confirmação não estiverem resolvidos.
+- A amostra oficial da Meta confirma que o evento `order` inclui o ID do catálogo, os `product_retailer_id`, quantidades e preços reportados; ver a coleção [WhatsApp Cloud API da Meta](https://www.postman.com/meta/whatsapp-business-platform/documentation/wlk6lh4/whatsapp-cloud-api?entity=request-13382743-ba924e99-3d98-4954-b4e3-73a519939c33). O gateway de contas existente não consulta saúde Graph por número; verificação Meta individual segue pendente.
+- **Estado atualizado:** as fatias seguintes deste registro implementaram a coleta privada de cliente/endereço/pagamento, resumo individual, botão de confirmação e conversão idempotente para `public.orders`, com reserva única e fila de separação. O código e a migration continuam apenas no worktree; falta o baseline isolado e a homologação ponta a ponta.
+
+## Atualização — envio manual de Flow de cesta (27/10/2026)
+
+- `/atendimento` tem ação local de envio manual. A equipe escolhe a cesta; o backend valida equipe, canal, contato, janela, molde e alternativas antes de abrir snapshot e sessão. O binding precisa estar publicado e verificado no número correspondente.
+- WAMID confirmado marca `sent`; rejeição final marca `failed`; timeout/5xx/sem recibo marca `needs_review`, sem repetição automática. A ação abre o Flow e não cria pedido nem une Catálogo.
+- A migration e a Edge Function estão apenas no worktree. A consulta read-only encontrou 21 posições sem produto elegível; concluir o cadastro no Supabase canônico antes de liberar as cestas afetadas.
+- As fontes oficiais acessíveis demonstram tanto abertura `navigate` quanto `data_exchange`; a implementação local candidata usa `data_exchange`. Flow Validator no JSON/versões exatos e inspeção visual nos dois números são gates, junto da validação de fotos por alternativa.
+- Verificação local concluída: `pnpm typecheck`, Biome focado, `deno check --frozen` da Edge Function e parser PostgreSQL das 22 instruções externas passaram. O parser não compila PL/pgSQL nem valida o schema. Próximos gates: baseline canônico isolado; resolver posições vazias; confirmar publicação/endpoint/binding por WABA; Flow Validator e ensaio de staging; preparar depois uma mudança controlada. Nada foi aplicado, implantado ou enviado nesta fatia.
+
+## Atualização — contrato local do Flow de cesta (27/10/2026)
+
+- A página oficial de Flow JSON foi relida diretamente: o exemplo atual usa JSON 7.3/Data API 3.0 e descreve `3.0` como versão corrente. O changelog associa Data API 4.0 à assinatura opcional `flow_token_signature`; o candidato mantém 3.0 e essa melhoria fica isolada até o Validator confirmar o contrato de cada WABA.
+- O endpoint e o arquivo candidato estão alinhados para uma etapa dinâmica por posição: `RadioButtonsGroup` com Base64/`alt-text` em cada opção, preço na descrição, dropdown `0–6`, guarda do carrinho zerado e footer **Próximo**. O JSON local está em `supabase/flows/basket-order-v1.json`.
+- A sequência de cadastro declara screens separados para confirmar endereço salvo, registrar endereço novo, encaminhar inconsistência para revisão humana e revisar o pedido. O payload terminal envia itens/quantidades, cliente/endereço, pagamento, total em centavos e texto do endereço; não envia preço unitário nem ajuste oculto.
+- Checagem estática desta alteração: JSON parseado; Biome passou no endpoint/Flow; `git diff --check` sem erros. Não foi executado teste automatizado; Deno e Meta Flow Validator não foram usados nesta etapa.
+- Gates ainda necessários: Meta Validator para JSON/API 7.3/3.0, atualização do mesmo screen `BASKET_PRODUCT`, fotos visíveis, campos/rotas `complete` e recepção `nfm_reply`; inspeção em 0975 e 1018. Nenhum Flow foi publicado/enviado e nenhum DDL/deploy ou escrita Bling ocorreu.
+
+## Andamento de programação — editor das cestas (27/10/2026)
+
+- Concluída localmente a tela `/cestas` baseada nos moldes consultados pelo novo Flow, com edição de alternativas por posição e foto. A busca e o salvamento usam os gateways autenticados existentes. A página antiga baseada em `admin-basket-configuration-v1?action=flow_list` deixou de ser fonte de verdade para o Flow greenfield.
+- A tela preserva ordem, quantidades, categoria, ajuste extra/condicional e metadados no servidor. Confere ativo, WhatsApp ativo, HTTPS e preço ao adicionar, e recarrega a elegibilidade para as posições alteradas antes da gravação. Nenhuma migration nova foi criada.
+- A pesquisa read-only atual indica 21 posições sem alternativa elegível; isso impede liberar as cestas afetadas até cadastrar alternativa válida. Foto cadastrada continua diferente de foto aprovada/renderizada pela Meta.
+- Checagens estáticas locais: typecheck, Biome focado e diff whitespace passaram. Sem testes automatizados e sem deploy, DDL, envio de mensagem, publicação Meta ou escrita Bling.
+- Trabalho ainda necessário para concluir o produto: resolver o baseline/staging com migrations candidatas, ligar e homologar webhook/intake/Flow/Catálogo, corrigir posições sem opção, validar os dois números WhatsApp, confirmar operações Bling de separação/expedição, instalar a versão aprovada do schema/Edge e publicar o Admin. Emissão de nota fiscal continua como última fase, conforme instrução do proprietário.
+
+### Pré-condição staging: histórico Supabase versus checkout limpo (27/10/2026)
+
+Consulta somente leitura listou 1.266 migrations registradas no projeto canônico até `20261026120049`; o worktree contém apenas três migrations greenfield de 27/10, nenhuma já registrada remotamente. A história Git local tem somente quatro arquivos SQL únicos, insuficiente para replay integral. Isso confirma divergência, mas não atribui a causa exata do `MIGRATIONS_FAILED`. A branch temporária anterior foi removida e não deve ser recriada sem esclarecer o mecanismo de replay. Não falsificar `supabase_migrations.schema_migrations`, não reintroduzir o aplicativo antigo, não aplicar DDL na produção. Continuar desenvolvimento local e buscar baseline de schema isolado/sintético.
+
+## Status consolidado após retomada (27/10/2026)
+
+- **Admin local:** catálogo de produtos, fotos, cestas/molde, clientes, atendimento, ANA e quadro/ficha de pedidos estão implementados no worktree. `pnpm build` passou em Windows após reconstruir `node_modules` pelo lockfile; `pnpm lint` saiu com código 0 e 25 avisos CSS, sem erro. O build cobre 16 rotas; ainda não prova sessão autenticada com credenciais reais.
+- **Flow greenfield:** o Data Endpoint local foi isolado como `whatsapp-flow-data-exchange-greenfield-v1` para não substituir `whatsapp-flow-data-exchange-v1` remoto v76 (proxy canário). TOML e carregamento local confirmados; nenhuma função foi implantada.
+- **Supabase:** produção permanece read-only. O histórico canônico tem 1.266 migrations, enquanto o banco local conserva quatro registros órfãos experimentais e três migrations candidatas pendentes. A branch anterior falhou com `MIGRATIONS_FAILED`; não repetir branch/replay nem usar a base local como baseline. As migrations candidatas foram parseadas e os três corpos SQL críticos compilaram em PostgreSQL 17.6 com dependências sintéticas, ainda sem execução ponta a ponta sobre o schema canônico.
+- **Dados e homologação:** 21 posições de cesta ainda não têm alternativa elegível com foto/preço; isso impede liberar cestas afetadas. O Flow precisa passar no Validator vigente e renderizar todas as fotos em cada WABA, e webhook/intake/Catálogo devem ser confirmados em staging. Bling precisa de homologação de criação/separação/expedição sem emissão fiscal.
+- **Release:** nenhum deploy, mudança de callback, envio Meta, escrita Bling, aplicação remota de migration ou NF-e aconteceu. Emissão fiscal segue como última fase; não liberar o Admin para pedidos reais antes dos gates do roteiro de staging.
+
+
+### Atualização de execução — composer da inbox (27/10/2026)
+
+- Implementados localmente respostas rápidas, lista de mídias reutilizáveis e anexos pelo upload assinado Supabase. Imagens geram a miniatura JPEG exigida pela RPC remota; o envio só acontece após clique explícito.
+- Decisões e contratos estão em `docs/superpowers/specs/2026-10-27-attendance-compose-design.md` e `docs/planning/pesquisa-e-plano.md`.
+- Gate seguinte: testar com sessão autorizada em staging o upload de imagem/documento, finalização, envio homologado e webhook/status em cada número. A documentação oficial detalhada de tipo/tamanho retornou HTTP 429 e deve ser conferida antes da liberação.
+- Não houve envio real, upload Storage, migration, deploy, alteração Meta/Bling ou NF-e nesta fatia. Emissão fiscal continua por último.
+
+
+### Atualização — gerenciamento de respostas rápidas
+
+- Página de Configurações implementada para criar/editar texto, favorito e ordem, pausar e reativar item. Todos os comandos passam pelas ações allowlisted do gateway remoto com sessão autenticada.
+- Build gera 14 rotas; sem deploy/migration, envio de mensagem ou gravação remota nesta etapa. A validação de uso real de permissões permanece no gate de staging.
+
+
+### Atualização — resumo seguro de interações recebidas
+
+- O Atendimento agora pode apresentar o título de uma seleção por lista ou uma confirmação genérica de resposta Flow; payload estruturado não é renderizado.
+- A evidência veio de uma consulta estrutural ao Supabase, sem conteúdo de conversa: somente nomes de chaves JSON e tipos de evento agregados do período recente.
+- Nenhuma mensagem interativa genérica foi habilitada para envio. O gateway v39 não oferece essa ação; envio exige contrato backend/Meta próprio. Flow e Catálogo seguem como pedidos distintos.
+- Verificação desta fatia: pnpm typecheck, Biome focado e git diff --check; sem teste automatizado, DDL ou deploy.
+
+
+- Revisão read-only identificou que o RPC de fila retorna texto cru e que a lista o mostrava antes de olhar o tipo; corrigido no adapter/UI para interactive, button e order. A bolha também deixa de imprimir text_body desses eventos estruturados.
+- O título da resposta por lista remove controles bidi/formatação. pnpm typecheck e Biome focado passaram depois da revisão. Nenhum teste automatizado ou alteração remota foi executado.
