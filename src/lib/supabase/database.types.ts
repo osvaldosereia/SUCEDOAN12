@@ -1,4 +1,3 @@
-// Generated from the selected Supabase project on 2026-10-26. Regenerate after schema migrations.
 export type Json =
 	| string
 	| number
@@ -8,11 +7,6 @@ export type Json =
 	| Json[];
 
 export type Database = {
-	// Allows to automatically instantiate createClient with right options
-	// instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-	__InternalSupabase: {
-		PostgrestVersion: "14.18";
-	};
 	public: {
 		Tables: {
 			audit_events: {
@@ -20,16 +14,17 @@ export type Database = {
 					action: string;
 					actor_id: string | null;
 					created_at: string;
-					details_redacted: Json;
+					details_redacted: NonNullable<Json>;
 					entity_id: string | null;
 					entity_type: string;
 					id: number;
 				};
+				ComputedFields: never;
 				Insert: {
 					action: string;
 					actor_id?: string | null;
 					created_at?: string;
-					details_redacted?: Json;
+					details_redacted?: NonNullable<Json>;
 					entity_id?: string | null;
 					entity_type: string;
 					id?: never;
@@ -38,12 +33,100 @@ export type Database = {
 					action?: string;
 					actor_id?: string | null;
 					created_at?: string;
-					details_redacted?: Json;
+					details_redacted?: NonNullable<Json>;
 					entity_id?: string | null;
 					entity_type?: string;
 					id?: never;
 				};
 				Relationships: [];
+			};
+			basket_component_options: {
+				Row: {
+					component_id: string;
+					created_at: string;
+					id: string;
+					position: number;
+					price_cents: number;
+					product_id: string;
+				};
+				ComputedFields: never;
+				Insert: {
+					component_id: string;
+					created_at?: string;
+					id?: string;
+					position: number;
+					price_cents: number;
+					product_id: string;
+				};
+				Update: {
+					component_id?: string;
+					created_at?: string;
+					id?: string;
+					position?: number;
+					price_cents?: number;
+					product_id?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "basket_component_options_component_id_fkey";
+						columns: ["component_id"];
+						isOneToOne: false;
+						referencedRelation: "basket_components";
+						referencedColumns: ["id"];
+					},
+					{
+						foreignKeyName: "basket_component_options_product_id_fkey";
+						columns: ["product_id"];
+						isOneToOne: false;
+						referencedRelation: "products";
+						referencedColumns: ["id"];
+					},
+				];
+			};
+			basket_components: {
+				Row: {
+					component_key: string;
+					created_at: string;
+					id: string;
+					label: string;
+					maximum_quantity: number;
+					minimum_quantity: number;
+					position: number;
+					updated_at: string;
+					version_id: string;
+				};
+				ComputedFields: never;
+				Insert: {
+					component_key: string;
+					created_at?: string;
+					id?: string;
+					label: string;
+					maximum_quantity?: number;
+					minimum_quantity?: number;
+					position: number;
+					updated_at?: string;
+					version_id: string;
+				};
+				Update: {
+					component_key?: string;
+					created_at?: string;
+					id?: string;
+					label?: string;
+					maximum_quantity?: number;
+					minimum_quantity?: number;
+					position?: number;
+					updated_at?: string;
+					version_id?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "basket_components_version_id_fkey";
+						columns: ["version_id"];
+						isOneToOne: false;
+						referencedRelation: "basket_template_versions";
+						referencedColumns: ["id"];
+					},
+				];
 			};
 			basket_items: {
 				Row: {
@@ -52,6 +135,7 @@ export type Database = {
 					product_id: string;
 					quantity: number;
 				};
+				ComputedFields: never;
 				Insert: {
 					basket_id: string;
 					id?: string;
@@ -81,6 +165,68 @@ export type Database = {
 					},
 				];
 			};
+			basket_template_versions: {
+				Row: {
+					basket_template_id: string;
+					created_at: string;
+					created_by: string | null;
+					id: string;
+					minimum_selected_components: number;
+					published_at: string | null;
+					published_by: string | null;
+					status: string;
+					updated_at: string;
+					version_number: number;
+				};
+				ComputedFields: never;
+				Insert: {
+					basket_template_id: string;
+					created_at?: string;
+					created_by?: string | null;
+					id?: string;
+					minimum_selected_components?: number;
+					published_at?: string | null;
+					published_by?: string | null;
+					status?: string;
+					updated_at?: string;
+					version_number: number;
+				};
+				Update: {
+					basket_template_id?: string;
+					created_at?: string;
+					created_by?: string | null;
+					id?: string;
+					minimum_selected_components?: number;
+					published_at?: string | null;
+					published_by?: string | null;
+					status?: string;
+					updated_at?: string;
+					version_number?: number;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "basket_template_versions_basket_template_id_fkey";
+						columns: ["basket_template_id"];
+						isOneToOne: false;
+						referencedRelation: "basket_templates";
+						referencedColumns: ["id"];
+					},
+					{
+						foreignKeyName: "basket_template_versions_created_by_fkey";
+						columns: ["created_by"];
+						isOneToOne: false;
+						referencedRelation: "staff_profiles";
+						referencedColumns: ["user_id"];
+					},
+					{
+						foreignKeyName: "basket_template_versions_published_by_fkey";
+						columns: ["published_by"];
+						isOneToOne: false;
+						referencedRelation: "staff_profiles";
+						referencedColumns: ["user_id"];
+					},
+				];
+			};
 			basket_templates: {
 				Row: {
 					active: boolean;
@@ -91,6 +237,7 @@ export type Database = {
 					price_cents: number | null;
 					published_at: string | null;
 				};
+				ComputedFields: never;
 				Insert: {
 					active?: boolean;
 					code: string;
@@ -129,6 +276,7 @@ export type Database = {
 					street: string | null;
 					updated_at: string;
 				};
+				ComputedFields: never;
 				Insert: {
 					active?: boolean;
 					city?: string | null;
@@ -183,6 +331,7 @@ export type Database = {
 					value_normalized: string;
 					verified_at: string | null;
 				};
+				ComputedFields: never;
 				Insert: {
 					created_at?: string;
 					customer_id: string;
@@ -211,12 +360,75 @@ export type Database = {
 					},
 				];
 			};
+			customer_whatsapp_identities: {
+				Row: {
+					business_portfolio_id: string;
+					created_at: string;
+					customer_id: string | null;
+					first_seen_at: string;
+					id: string;
+					identity_source: string;
+					last_seen_at: string;
+					link_method: string | null;
+					linked_at: string | null;
+					linked_by: string | null;
+					origin_phone_number_id: string;
+					origin_waba_id: string;
+					sender_id: string;
+					sender_id_type: string;
+					updated_at: string;
+				};
+				ComputedFields: never;
+				Insert: {
+					business_portfolio_id: string;
+					created_at?: string;
+					customer_id?: string | null;
+					first_seen_at?: string;
+					id?: string;
+					identity_source?: string;
+					last_seen_at?: string;
+					link_method?: string | null;
+					linked_at?: string | null;
+					linked_by?: string | null;
+					origin_phone_number_id: string;
+					origin_waba_id: string;
+					sender_id: string;
+					sender_id_type: string;
+					updated_at?: string;
+				};
+				Update: {
+					business_portfolio_id?: string;
+					created_at?: string;
+					customer_id?: string | null;
+					first_seen_at?: string;
+					id?: string;
+					identity_source?: string;
+					last_seen_at?: string;
+					link_method?: string | null;
+					linked_at?: string | null;
+					linked_by?: string | null;
+					origin_phone_number_id?: string;
+					origin_waba_id?: string;
+					sender_id?: string;
+					sender_id_type?: string;
+					updated_at?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "customer_whatsapp_identities_customer_id_fkey";
+						columns: ["customer_id"];
+						isOneToOne: false;
+						referencedRelation: "customers";
+						referencedColumns: ["id"];
+					},
+				];
+			};
 			customers: {
 				Row: {
 					active: boolean;
 					bling_contact_id: number | null;
 					created_at: string;
-					full_name: string;
+					full_name: string | null;
 					id: string;
 					marketing_consent_updated_at: string | null;
 					marketing_consent_verified: boolean;
@@ -224,11 +436,12 @@ export type Database = {
 					tax_id: string | null;
 					updated_at: string;
 				};
+				ComputedFields: never;
 				Insert: {
 					active?: boolean;
 					bling_contact_id?: number | null;
 					created_at?: string;
-					full_name: string;
+					full_name?: string | null;
 					id?: string;
 					marketing_consent_updated_at?: string | null;
 					marketing_consent_verified?: boolean;
@@ -240,7 +453,7 @@ export type Database = {
 					active?: boolean;
 					bling_contact_id?: number | null;
 					created_at?: string;
-					full_name?: string;
+					full_name?: string | null;
 					id?: string;
 					marketing_consent_updated_at?: string | null;
 					marketing_consent_verified?: boolean;
@@ -260,6 +473,7 @@ export type Database = {
 					provider: string;
 					verified_at: string | null;
 				};
+				ComputedFields: never;
 				Insert: {
 					created_at?: string;
 					entity_type: string;
@@ -289,6 +503,7 @@ export type Database = {
 					quantity: number;
 					state: string;
 				};
+				ComputedFields: never;
 				Insert: {
 					created_at?: string;
 					id?: string;
@@ -322,6 +537,54 @@ export type Database = {
 					},
 				];
 			};
+			meta_catalog_listings: {
+				Row: {
+					catalog_id: string;
+					created_at: string;
+					id: string;
+					last_error_code: string | null;
+					product_id: string;
+					product_retailer_id: string;
+					sync_status: string;
+					synced_at: string | null;
+					updated_at: string;
+					waba_id: string;
+				};
+				ComputedFields: never;
+				Insert: {
+					catalog_id: string;
+					created_at?: string;
+					id?: string;
+					last_error_code?: string | null;
+					product_id: string;
+					product_retailer_id: string;
+					sync_status?: string;
+					synced_at?: string | null;
+					updated_at?: string;
+					waba_id: string;
+				};
+				Update: {
+					catalog_id?: string;
+					created_at?: string;
+					id?: string;
+					last_error_code?: string | null;
+					product_id?: string;
+					product_retailer_id?: string;
+					sync_status?: string;
+					synced_at?: string | null;
+					updated_at?: string;
+					waba_id?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "meta_catalog_listings_product_id_fkey";
+						columns: ["product_id"];
+						isOneToOne: false;
+						referencedRelation: "products";
+						referencedColumns: ["id"];
+					},
+				];
+			};
 			order_items: {
 				Row: {
 					created_at: string;
@@ -334,6 +597,7 @@ export type Database = {
 					sku_snapshot: string | null;
 					total_cents: number;
 				};
+				ComputedFields: never;
 				Insert: {
 					created_at?: string;
 					id?: string;
@@ -387,6 +651,7 @@ export type Database = {
 					total_cents: number;
 					updated_at: string;
 				};
+				ComputedFields: never;
 				Insert: {
 					created_at?: string;
 					customer_id?: string | null;
@@ -433,6 +698,7 @@ export type Database = {
 					product_id: string;
 					value: string;
 				};
+				ComputedFields: never;
 				Insert: {
 					conversion_factor?: number | null;
 					created_at?: string;
@@ -465,15 +731,18 @@ export type Database = {
 				Row: {
 					alt_text: string | null;
 					created_at: string;
+					flow_thumbnail_path: string | null;
 					id: string;
 					position: number;
 					product_id: string;
 					storage_path: string;
 					verified: boolean;
 				};
+				ComputedFields: never;
 				Insert: {
 					alt_text?: string | null;
 					created_at?: string;
+					flow_thumbnail_path?: string | null;
 					id?: string;
 					position?: number;
 					product_id: string;
@@ -483,6 +752,7 @@ export type Database = {
 				Update: {
 					alt_text?: string | null;
 					created_at?: string;
+					flow_thumbnail_path?: string | null;
 					id?: string;
 					position?: number;
 					product_id?: string;
@@ -505,7 +775,6 @@ export type Database = {
 					bling_product_id: number | null;
 					brand: string | null;
 					category: string | null;
-					cost_cents: number | null;
 					created_at: string;
 					description_short: string | null;
 					gtin: string | null;
@@ -520,12 +789,12 @@ export type Database = {
 					unit: string | null;
 					updated_at: string;
 				};
+				ComputedFields: never;
 				Insert: {
 					active?: boolean;
 					bling_product_id?: number | null;
 					brand?: string | null;
 					category?: string | null;
-					cost_cents?: number | null;
 					created_at?: string;
 					description_short?: string | null;
 					gtin?: string | null;
@@ -545,7 +814,6 @@ export type Database = {
 					bling_product_id?: number | null;
 					brand?: string | null;
 					category?: string | null;
-					cost_cents?: number | null;
 					created_at?: string;
 					description_short?: string | null;
 					gtin?: string | null;
@@ -569,6 +837,7 @@ export type Database = {
 					role: string;
 					user_id: string;
 				};
+				ComputedFields: never;
 				Insert: {
 					created_at?: string;
 					enabled?: boolean;
@@ -588,7 +857,22 @@ export type Database = {
 			[_ in never]: never;
 		};
 		Functions: {
-			[_ in never]: never;
+			admin_get_basket_internal_extra: {
+				Args: { p_version_id: string };
+				Returns: number;
+			};
+			admin_get_product_cost: {
+				Args: { p_product_id: string };
+				Returns: number;
+			};
+			admin_set_basket_internal_extra: {
+				Args: { p_extra_cents: number; p_version_id: string };
+				Returns: undefined;
+			};
+			admin_set_product_cost: {
+				Args: { p_cost_cents: number; p_product_id: string };
+				Returns: undefined;
+			};
 		};
 		Enums: {
 			[_ in never]: never;

@@ -240,7 +240,7 @@ Webhooks podem ser entregues mais de uma vez. Validar assinatura, normalizar cad
 
 ## 9. Precificação do combo e do extra interno
 
-**Regra de preço definida para cesta configurável:** cada alternativa permitida tem um valor comercial de componente dentro daquela cesta, e cada slot define sua quantidade padrão e produto padrão de referência. O preço-base publicado da cesta equivale à composição padrão mais o extra interno. Quando o cliente troca produto ou quantidade, o preço total muda pelo valor comercial das quantidades escolhidas. Quantidade 0 retira o componente e subtrai o valor de referência correspondente, salvo quando o componente estiver marcado como obrigatório.
+**Regra de preço definida para cesta configurável:** cada alternativa permitida tem um valor comercial por unidade dentro da versão da cesta. A cesta não pré-seleciona produto nem quantidade; cada tela apresenta o slot e a cliente escolhe alternativa e quantidade. Quantidade 0 retira aquele slot; quantidades positivas usam o preço da alternativa na versão. O preço avulso do produto não altera uma cesta publicada. O total é calculado novamente no servidor a cada etapa e usa o adicional interno uma única vez.
 
 Fórmula operacional em centavos:
 
@@ -250,14 +250,10 @@ Fórmula operacional em centavos:
 
 **total do pedido do Catálogo = soma de (preço atual de cada avulso × quantidade) + entrega informada − desconto autorizado**
 
-Equivalente para exibir diferença contra a cesta padrão:
-
-**preço-base publicado + soma por slot de [(quantidade escolhida × valor da alternativa escolhida) − (quantidade padrão × valor do produto padrão)]**
-
 - O extra interno é parâmetro de formação do preço e aparece uma única vez dentro do total da cesta; não é apresentado como linha misteriosa ou cobrança separada. O cliente sempre vê o total final antes do aceite.
 - Valor comercial do componente na cesta não é o custo de compra nem precisa coincidir com o preço avulso do catálogo. O Admin mantém campos separados para preço de venda, custo interno e valor comercial da cesta.
 - Cada alternativa mostra o nome e o valor aplicável; o Flow recalcula o total a cada avanço. Exemplo visual: “Arroz Tio Alvino — R$ 22,90 por unidade na cesta”. Quando o total muda, o Flow mostra o novo total em atualização dinâmica.
-- Quantidade aceita: inteiros 0, 1, 2, 3, 4, 5 e 6. 0 significa Retirar. Slot obrigatório não aceita 0. Slot opcional aceita 0 e retira sua contribuição de preço. O cliente não consegue confirmar uma cesta vazia ou abaixo do mínimo configurado.
+- Quantidade aceita em todo slot: inteiros 0, 1, 2, 3, 4, 5 e 6. 0 significa Retirar. Quantidade acima de 0 exige uma alternativa. A validação de conclusão exige pelo menos um slot positivo; o cliente não consegue confirmar uma cesta vazia.
 - O servidor recalcula tudo em centavos usando preço/regra ativa e snapshot de versão; não aceita total, preço ou delta enviados como autoridade pelo Flow.
 - Cada carrinho Meta tem pedido próprio com preços de venda vigentes do Admin, comparados aos preços observados no evento. Divergência exige novo resumo e aceite; avulsos nunca são somados ao pedido de cesta.
 - Qualquer taxa de entrega/desconto externo deve ser informada antes do aceite; custo, margem, fornecedor, extra interno e fórmula não aparecem para ANA/cliente.
@@ -317,7 +313,7 @@ Busca por nome, identidade WhatsApp e telefone quando disponível; ficha com end
 
 ### Cestas
 
-Nome, resumo, foto, preço-base, ativo/inativo; componentes por categoria, quantidade padrão, limites, alternativas e diferenças. Prévia do Flow; erros de configuração explicados. Salvar rascunho e publicar versão. Pedido antigo nunca muda.
+Nome, resumo e estado; versão draft/publicada/retirada; slots com nome/ordem, alternativas de produto e preço comercial por unidade na cesta; adicional interno editável apenas por ação autorizada. Prévia espelha uma tela por slot com foto, preço, quantidade 0–6 e Próximo. Salvar rascunho e publicar versão validada. Criar versão nova duplicando a publicada; nunca editar pedido ou sessão antigos.
 
 ### Produtos
 
@@ -422,10 +418,10 @@ Não é o projeto “Dona Antônia” antigo, nem “Dona Antônia V2”, nem �
 | Tabela existente | Uso previsto | Mudança aditiva necessária |
 |---|---|---|
 | products | Cadastro interno de SKU, venda, custo, estoque, vínculo Bling e publicação | Reutilizar; custos permanecem exclusivamente internos. Tratar cada produto/variação vendável com preço e disponibilidade próprios. |
-| product_images | Fotos para Admin/catálogo | Reutilizar; armazenar apenas imagens liberadas para publicação. |
+| product_images | Fotos originais e verificadas | Reutilizar `storage_path`; acrescentar `flow_thumbnail_path` pré-gerado e exigir `alt_text` + miniatura quando verificada para Flow. |
 | product_identifiers | GTIN, SKU, código fornecedor/embalagem | Reutilizar para resolução de IDs externos, sem pressupor que SKU, retailer ID e ID Bling sejam iguais. |
-| basket_templates | Modelo/combo e preço-base | Reutilizar; acrescentar configuração de versão, publicação e vínculo fiscal/ERP quando validado. |
-| basket_items | Composição padrão, atualmente produto + quantidade fixa | Reutilizar como slot/composição-base; criar alternativas permitidas, diferenças de preço, limites e ordem de exibição em tabela associativa. |
+| basket_templates | Nome/código do modelo antigo | Reutilizar como identidade do modelo; `price_cents` fixo é legado e não forma o total das novas cestas. |
+| basket_items | Composição fixa antiga | Preservar no preflight, sem usar como slot novo. Criar `basket_template_versions`, `basket_components` e `basket_component_options` com preço comercial por alternativa e versão imutável. Converter dados antigos somente após inspecionar e confirmar as linhas atuais. |
 | customers | Cadastro que pode começar incompleto | Reutilizar; permitir nome nulo no lead inicial, removendo NOT NULL com migração revisada. A restrição de nome não vazio deve continuar para valores preenchidos. |
 | customer_contacts | E-mail e telefone verificado/compartilhado | Reutilizar para contato, nunca armazenar BSUID/wa_id como telefone. |
 | customer_addresses | Endereços reutilizáveis e escolhidos por pedido | Reutilizar; o endereço escolhido deve ser copiado para snapshot do pedido para não mudar vendas antigas. |
@@ -439,7 +435,7 @@ Não é o projeto “Dona Antônia” antigo, nem “Dona Antônia V2”, nem �
 ### Constraints e migrações que precisam ser planejadas
 
 - customers exige full_name hoje; alterar para opcional e mostrar “Contato WhatsApp” até confirmar o nome.
-- customer_contacts.kind aceita apenas phone/email. Criar customer_whatsapp_identities com provider, business_scope/portfolio, sender_id, sender_id_type, customer_id, first_seen_at, last_seen_at e origem; não misturar ID de plataforma com telefone.
+- customer_contacts.kind aceita apenas phone/email. A migration local criou `customer_whatsapp_identities` com portfólio empresarial, sender ID e tipo, WABA/phone_number_id de origem, vínculo opcional/provado com customer, timestamps e método de vínculo; não mistura ID de plataforma com telefone.
 - orders está vazia e limita status a draft, placed, confirmed, preparing, delivered e cancelled. Revalidar contagem antes da migração; rascunho comercial fica em `order_drafts`, e `orders.status` passa a `new`, `production`, `shipping`, `delivered` ou `cancelled`. A UI traduz para NOVO, PRODUÇÃO, EXPEDIÇÃO, ENTREGUE e ação CANCELAR com motivo. Pagamento e estado fiscal ficam em colunas independentes.
 - A checagem atual exige total_cents = subtotal_cents + delivery_cents. Formalizar total = subtotal - desconto + entrega + outras cobranças explicitamente informadas; adicionar campos/constraints de desconto somente se o fluxo comercial usar desconto. A margem/extra interno é incorporado uma vez no preço da cesta, sem campo público separado.
 - order_items.product_id é obrigatório; preservar isso e criar uma linha por produto físico selecionado, com valor comercial alocado da cesta e snapshot. O ajuste interno da cesta não vira linha/fee visível; eventual alocação entre itens para o Bling depende de aprovação contábil antes da emissão real.
@@ -450,8 +446,8 @@ Não é o projeto “Dona Antônia” antigo, nem “Dona Antônia V2”, nem �
 ### Ordem de migração para a programação
 
 1. Capturar novamente o schema e dados atuais, obter baseline local seguro sem sobrescrever as 1.928 linhas de produtos/574 clientes, revisar grants/policies e configurar Auth de funcionários e matriz de papéis.
-2. Adaptar customers e adicionar identidade WhatsApp, contatos com proveniência e escopo de portfolio/canal.
-3. Completar catálogo e alternativas de cesta; publicar apenas produto validado e apto por preço/estoque.
+2. [x] Adaptar customers para leads sem nome e adicionar identidade WhatsApp com proveniência e escopo de portfólio/canal (migration local `20261027013421_customers_and_whatsapp_identities`).
+3. [x] Criar no local a base de catálogo/cestas versionadas com alternativas, preço comercial por opção, adicional privado, fotos e policies por papel. **Pendente:** telas de edição/upload, cotação server-side e homologação Flow por WABA; não publicar comercialmente enquanto esses itens não passarem.
 4. Criar conversas, mensagens e inbox de eventos Meta com deduplicação antes de ativar webhook.
 5. Criar order_drafts, sessão Flow sem TTL comercial, catalog_batches e vínculo explícito de mensagens outbound ↔ respostas.
 6. Completar orders/order_items, snapshots da cesta/endereço/preço, estados operacionais, estados de pagamento/fiscal, histórico e reservas; adaptar `app_private.outbox_jobs`, sem criar uma segunda outbox.
@@ -465,12 +461,12 @@ A leitura verbose do schema em 26/10/2026 confirmou que a tabela de produtos e c
 
 | Estrutura existente | Divergência com o produto | Decisão de migração |
 |---|---|---|
-| `customers.full_name` é obrigatório | Um contato WhatsApp pode chegar sem nome/telefone confirmado | Permitir nome nulo para lead; exibir “Contato WhatsApp”; só exigir nome quando o pedido/logística precisar dele. Não inventar nome pelo perfil Meta. |
+| `customers.full_name` era obrigatório no destino | Um contato WhatsApp pode chegar sem nome/telefone confirmado | A migration local permite nome nulo; exibir “Contato WhatsApp”; só exigir nome quando o pedido/logística precisar dele. Nenhum valor remoto foi alterado. |
 | `staff_profiles.role` aceita `owner`, `admin`, `catalog_manager`, `fulfillment`; ainda não há perfis | O rascunho anterior previa papéis `operator`/atendimento separados e exigiria alterar constraint | **MVP preserva os quatro papéis existentes.** `owner`/`admin` cobrem atendimento; `catalog_manager` cuida do catálogo/cestas; `fulfillment` cuida da separação/expedição. Só adicionar um papel `support` se a operação real provar necessidade; sem cadastro público, funcionário desabilitado perde acesso imediatamente. |
-| `products.cost_cents` está na mesma tabela de dados operacionais | RLS não oculta uma coluna de uma linha que o papel pode ler; GRANT amplo revelaria custo | Migrar custo para `app_private.product_financials`; manter preço de venda no registro operacional. Extra interno da cesta também fica privado. Somente RPC estreita, com checagem de papel, retorna dados financeiros para gerente autorizado. Quote/Flow/ANA recebem total e alternativas comerciais, nunca custo ou margem. |
-| `product_images` tem `storage_path`, `alt_text` opcional, `position` e `verified`, mas não variante otimizada para Flow | O produto precisa de foto legível dentro de cada alternativa do Flow e precisa de texto alternativo | Preservar a foto original; acrescentar `flow_thumbnail_path`, tornar `alt_text` obrigatório em foto aprovada e usar a imagem verificada de menor `position` como principal. A tela de upload gera a miniatura automaticamente; uma vez selecionada para Flow, sem miniatura aprovada o produto não pode ser publicado na cesta. |
+| `products.cost_cents` está na mesma tabela de dados operacionais | RLS não oculta uma coluna de uma linha que o papel pode ler; GRANT amplo revelaria custo | Migration local já copiou custo para `app_private.product_financials` antes de remover a coluna pública. O ajuste interno da cesta também fica privado; RPCs locais verificam papel ativo e falham fechado. Quote/Flow/ANA recebem total e alternativas comerciais, nunca custo ou margem. |
+| `product_images` tem `storage_path`, `alt_text` opcional, `position` e `verified`, mas não variante otimizada para Flow | O produto precisa de foto legível dentro de cada alternativa do Flow e precisa de texto alternativo | Migration local adiciona `flow_thumbnail_path` e `NOT VALID` exige miniatura + `alt_text` quando a imagem for verificada. A tela de upload ainda deve gerar a miniatura automaticamente; sem miniatura aprovada o produto não publica na cesta. |
 | `product_identifiers.kind` não contempla identificador de Catálogo Meta; `external_entity_links` não tem escopo de conta/catálogo | O mesmo produto pode ter retailer ID diferente em cada catálogo/WABA | Criar `meta_catalog_listings` com `waba_id`, `catalog_id`, `product_retailer_id`, produto interno, status de sincronização e restrição única por catálogo. Não reutilizar SKU/GTIN como retailer ID por suposição. |
-| `basket_templates` e `basket_items` representam só uma composição fixa | Não representam slots, alternativas por slot, quantidade removível, versões publicadas e preço variável | Preservar como base/histórico; adicionar versão publicada imutável, componentes/slots ordenados e alternativas com preço comercial por unidade e limite/obrigatoriedade. Sessões referenciam exatamente uma versão. |
+| `basket_templates` e `basket_items` representam só uma composição fixa | Não representam slots, alternativas por slot, quantidade removível, versões publicadas e preço variável | Modelo local já cria versão imutável, slots e alternativas com preço comercial por unidade na versão. `basket_items` antigo fica preservado até preflight, sem ser usado pelo novo Flow. Sessões futuras referenciam exatamente uma versão. |
 | `orders.status` aceita `draft`, `placed`, `confirmed`, `preparing`, `delivered`, `cancelled` | Não corresponde aos quatro estados operacionais exigidos e mistura conceitos antigos | Na migração, separar status operacional (`new`, `production`, `shipping`, `delivered`, `cancelled`), pagamento e fiscal em campos independentes. Converter valores legados por mapeamento explícito se a checagem pré-migração encontrar registros; não remover linhas para acomodar o desenho. |
 | `orders` não possui origem, snapshot de endereço nem revisão/aceite | Não prova qual intenção, endereço e revisão o cliente confirmou | Adicionar origem (`basket_flow`, `catalog_cart`, `manual`), vínculo ao rascunho/revisão, snapshot de endereço/pagamento/total, instante/identidade/mensagem de aceite e chaves idempotentes. Cada compra fica isolada. |
 | `app_private.webhook_inbox.external_event_id` não tem unicidade nem escopo de conta; status/retry são básicos | Eventos de status podem reutilizar o WAMID da mensagem; chave simples por ID perderia atualizações legítimas | Adicionar `account_ref`, tipo, timestamp e `dedupe_key` canônica. Para inbound, ID da mensagem; para status Meta, ID + estado + timestamp; para Bling, identidade do evento documentada. Uma entrada por evento normalizado, mesmo se o webhook contiver lote. |
@@ -549,6 +545,8 @@ Modelo recomendável:
 - Mensagens e catalog batches conservam o sender ID original e wamid para resposta/correlação, mesmo que o contato comercial seja editado depois.
 - A documentação Meta define a identidade BSUID no nível do portfólio empresarial. Verificar se os dois WABAs estão no mesmo portfólio antes de unificar fichas; se forem portfólios diferentes, manter identidades separadas salvo BSUID principal compartilhado documentado pela Meta, telefone compartilhado/verificado ou vinculação explícita pelo cliente/atendente. Não unir por nome, foto ou telefone presumido.
 - O pedido pode ter customer_id opcional até cadastro confiável; para entrega ou contato Bling, pedir informação faltante no momento em que se torna necessária.
+
+A implementação da identidade foi comparada à apresentação técnica oficial da [Meta sobre usernames e BSUID](https://developers.meta.com/resources/videos/whatsapp-usernames/), publicada em 16/06/2026: telefone não é identidade obrigatória, BSUID é escopado ao portfólio e a exposição do telefone depende das regras de visibilidade. O esquema mantém `sender_id` opaco e exige `business_portfolio_id` na chave de unicidade; o payload e a capacidade de enviar por BSUID ainda precisam ser homologados por WABA.
 
 **Definido pela documentação oficial Meta:** a partir de abril de 2026 há o campo `user_id` para BSUID; é necessário aceitar identificadores que não são telefone; a identidade padrão é única por usuário e portfólio empresarial; e o BSUID pode ser usado para enviar mensagens sem telefone. **Homologação que ainda falta:** confirmar em cada WABA os campos reais do webhook e do envio, testar destinatário por BSUID e por telefone compartilhado, verificar se os dois WABAs estão sob o mesmo portfólio/conta de BSUID principal e testar a solicitação de telefone/contato. Até isso passar, gravar os valores sem coerção e impedir fusão automática entre fichas.
 
@@ -1287,16 +1285,16 @@ Botão: **Confirmar pedido**. A mensagem contém apenas os produtos/quantidades,
 
 ### Parecer
 
-**Status: ainda estamos na preparação, sem programação iniciada.** A pesquisa, estrutura das oito áreas, Flow, pedidos separados, cliente, Bling e plano por tarefa estão documentados. A próxima etapa é fechar a verificação pré-código abaixo; ela serve para capturar dados que só existem nas contas e conferir consistência entre as anotações, antes de congelar a especificação.
+**Status atualizado em 26/10/2026: a especificação está em execução greenfield.** O shell administrativo, login inicial, base Supabase local, identidade WhatsApp e modelo de catálogo/cestas já foram implementados na branch nova. Meta/Flow em produção, pedidos reais, Bling, ANA e cadastro operacional ainda estão pendentes; os gates externos continuam bloqueando qualquer escrita em produção.
 
-### Próximos passos definidos antes da programação
+### Gates externos antes de ligar operação real
 
 1. **Fechar mapa seguro das credenciais:** usar o Vault do projeto legado apenas como fonte de nomes/referências; mapear cada credencial aos dois registros Meta e ao registro Bling no projeto novo. Confirmar no painel Supabase se o access token Meta está em Edge Function Secrets (o Vault legado não expõe um nome explícito para ele), obter health check autenticado separado por WABA e confirmar OAuth Bling em leitura. Criar as referências/segredos no destino por mecanismo seguro, nunca em Git/planilha/chat. Manter `enabled=false` e `external_writes_enabled=false`; garantir um único proprietário de renovação do refresh token Bling durante qualquer transição.
 2. **Atualização Supabase:** quando a carga de produtos e fotos terminar, repetir leitura somente leitura do projeto `wvpzudjujtmyspluwhvx`: schema/contagens, vínculo `products` ↔ `product_images`, estado de verificação, caminhos/miniaturas e buckets. Atualizar o retrato desta seção; só então fechar a migração de mídia e os identificadores SKU/Meta/Bling. Não escrever em produção durante a conferência.
 3. **Pré-homologação Meta, duas linhas:** confirmar Graph API version, portfólio empresarial dos dois WABAs, `phone_number_id`, permissões, webhook e destino de resposta; mapear campos `wa_id`/`user_id` nos eventos reais. No telefone interno, provar uma opção de Flow com foto + alt text por `data-source`, quantidade, Próximo/Voltar e conclusão `nfm_reply`; testar também um carrinho `type=order`. Registrar payload sem dados pessoais, distinção de pedido, dedupe e renderização em Android/iOS. Não publicar para clientes durante a prova.
 4. **Pré-homologação Bling:** confirmar app OAuth, homologação/escopos, cadastro de produto e compatibilidade do fluxo venda → gerar NF-e → enviar para SEFAZ → reconciliar status. Testar apenas no ambiente autorizado, com escrita de produção e emissão real desligadas; contador valida a política e os dados fiscais antes do gate de emissão.
 5. **Auditoria/freeze da especificação:** varrer contradições entre os três documentos; checar que cada jornada tem telas/campos, origem de evento, regra de estado/erro, fonte e critério de aceite. Registrar itens comerciais que são dados a importar (preços, cestas, endereço/entrega, pagamento) sem reabrir decisões de arquitetura.
-6. **Início da programação:** só depois dos passos 1–5, usar checkout novo do GitHub, branch isolada, baseline/backup local e começar a tarefa 1 do plano. Código será novo; o histórico continua sendo usado apenas como fonte de decisões e metadados de conexão.
+6. **Continuidade local:** avançar na branch greenfield e seguir o plano detalhado; o histórico GitHub continua sendo fonte de requisitos e pistas de conexão, não de código para reaproveitar.
 
 Credenciais e ativos reais de Meta/Bling não devem ser inferidos de documentação pública nem reutilizados a partir de código antigo. A auditoria somente leitura encontrou referências seguras no Vault do Supabase legado; os valores não foram lidos nem copiados para estas anotações. O projeto novo ainda não está conectado. A emissão real de NF-e continua com gate contábil separado.
 
@@ -1309,7 +1307,7 @@ Credenciais e ativos reais de Meta/Bling não devem ser inferidos de documentaç
 - Fotos individuais são obrigatórias em todas as alternativas do Flow. A leitura mais recente encontrou 1.928 produtos (todos inativos/`needs_review`), nenhum registro em `product_images`, nenhum bucket e 1.798 imagens ainda pendentes na fila de importação. Hoje nenhuma alternativa pode ser publicada; depois da carga, revalidar o catálogo e bloquear apenas os produtos sem foto aprovada/miniatura. A prova Meta por WABA continua sendo gate técnico antes da publicação comercial.
 - Flow e Catálogo Meta sempre criam intenções e pedidos independentes, sem janela de tempo para agrupamento; cada pedido tem confirmação, venda e processo fiscal próprios.
 - Estados do pedido, gatilho de saída para Bling, idempotência, tratamento de falha e distinção entre expedição e autorização fiscal estão definidos.
-- O destino Supabase e as 19 tabelas existentes foram confirmados em leitura somente. Produtos e cadastros de clientes já têm linhas; buckets/fotos ainda não. O código será novo; o histórico GitHub serve apenas como fonte de requisitos e pistas de configuração.
+- O destino Supabase e as 19 tabelas originais foram confirmados em leitura somente. Produtos e clientes já têm linhas; as fotos ainda estavam na fila no último baseline. O código greenfield não reaproveita código antigo; o histórico GitHub serve como fonte de requisitos e pistas de conexão.
 
 ### Fatos atuais que mudam o plano de conexão
 
@@ -1322,12 +1320,12 @@ Credenciais e ativos reais de Meta/Bling não devem ser inferidos de documentaç
 7. O projeto novo não fornece ainda evidência de conexão autenticada. O connector de Supabase não permite consultar valores de secrets; health checks autenticados devem confirmar Meta por número e Bling sem imprimir ou devolver credenciais.
 8. O advisor de segurança mostra 17 tabelas com RLS sem policies (`INFO`, default deny); `anon`/`authenticated` ainda não têm GRANT nas tabelas da API. A policy pública do catálogo não fica utilizável até GRANT explícito. O painel precisa receber GRANTs mínimos e policies explícitas por papel/endpoints, sem SERVICE_ROLE no browser. O advisor de performance aponta 14 índices sem uso, em sua maioria por falta de tráfego/tabelas sem dados, e configuração informativa do Auth; não remover índice sem medir e não é razão para refazer o schema agora.
 
-### Gate 0 — segurança para o primeiro checkout e migração local
+### Gate 0 — concluído para checkout e migração local
 
-1. **Checkout:** usar `osvaldosereia/SUCEDOAN12` para o código novo, criar branch de trabalho e habilitar proteção de `main`/PR se a conta permitir. O plano e as rotas já estão definidos; nunca commitar `.env`, credencial ou dado real.
-2. **Baseline local antes de alterar schema:** repetir contagem/schema da ref `wvpzudjujtmyspluwhvx`, conferir as três integrações seguras e criar snapshot/backup. Desenvolver migrações em Supabase local/branch; nenhuma alteração manual de produção.
+1. **Checkout:** concluído em `osvaldosereia/SUCEDOAN12`, branch `codex/whatsapp-admin-greenfield-20261026`. Nunca commitar `.env`, credencial ou dado real.
+2. **Baseline local antes de alterar schema:** leitura da ref `wvpzudjujtmyspluwhvx` concluída; snapshot local resetável e migrations de identidade/catálogo aplicadas apenas na stack local; nenhuma alteração manual de produção.
 3. **Base visual:** usar o mapa e wireframes funcionais da seção 27 como limite do MVP. A interface pode ser refinada por tela durante a tarefa 3, com revisão visual antes de ligar dados reais; não é preciso criar um protótipo separado para iniciar o shell.
-4. **Ferramentas:** usar Node 24.22.1 e pnpm 11.25.0, já fixados no checkout. Confirmar/iniciar Docker antes de configurar o Supabase local e instalar a versão da Supabase CLI junto da tarefa de banco. Manter lockfile e separar Local/Preview/Production; Preview não acessa credenciais nem dados de produção.
+4. **Ferramentas:** Node 24.22.1, pnpm 11.25.0, Supabase CLI 2.122.0 e Docker local estão configurados. Manter lockfile e separar Local/Preview/Production; Preview não acessa credenciais nem dados de produção.
 
 Catálogo/SKU/preço atual, alternativas das cestas, cobertura/taxa de entrega, pagamentos e cadastro fiscal são dados para preencher antes de ativar compras reais, não para decidir novamente a arquitetura. O plano de execução por tarefa e as interfaces foram acrescentados ao documento separado.
 
@@ -1450,7 +1448,7 @@ As duas entradas Meta do destino coincidem com a tabela histórica `public.whats
 
 Os números permanecem em WABAs diferentes. Todas as três conexões do destino (`meta/0975`, `meta/1018`, `bling/primary`) têm `enabled=false` e `external_writes_enabled=false`. Os IDs conferem com o projeto de origem, mas isso não autentica as conexões.
 
-No snapshot read-only mais recente desta auditoria, o destino ainda tinha 0 produtos, 0 imagens de produto, 0 modelos de cesta, 0 buckets e 0 objetos no Storage; o usuário informou que a carga de produtos/fotos continua. Tratar esses zeros apenas como retrato de 26/10/2026, não como estado final nem como ordem para importar dados antigos.
+Uma primeira leitura histórica registrou zero produtos enquanto a carga estava em andamento; essa contagem foi superada pela consulta de baseline read-only posterior, descrita abaixo, que encontrou 1.928 produtos. Usar sempre o baseline posterior datado e repetir contagens imediatamente antes de qualquer migração remota.
 
 ### Nomes encontrados no Vault legado
 
@@ -1557,7 +1555,7 @@ Regras de enforcement:
 - `anon` só recebe leitura explicitamente limitada ao catálogo aprovado, se o contrato de exibição pública realmente usar o banco; canais WhatsApp/Flow acessam dados comerciais via funções de servidor privilegiadas com DTO de saída mínimo.
 - Toda tabela nova começa sem grants a `anon`/`authenticated`; a migração deve adicionar privilégios específicos, índices de `auth.uid()` e testes pgTAP de acesso permitido/negado. `app_private` nunca é schema de API.
 
-O destino atual tem 0 usuários e 0 perfis; nenhuma escrita foi feita nele. No ambiente local, o snapshot reproduz a estrutura sem importar linhas comerciais e a policy própria permite somente a leitura do perfil autenticado. `supabase db reset` concluiu; a checagem local confirmou 19 tabelas com RLS, 82 constraints, 53 índices, 3 policies, leitura negada de `customers` e novos grants públicos fechados. Isso ainda não valida login com usuário real, refresh/logout autenticados ou toda a matriz de papéis. Antes de habilitar operação: criar policies/grants mínimos por papel, executar pgTAP, provisionar um owner local sintético e validar os fluxos de sessão.
+O destino atual tem 0 usuários e 0 perfis; nenhuma escrita foi feita nele. No ambiente local, o snapshot começou sem linhas comerciais; migrations locais de identidade e catálogo evoluíram o schema. O reset final confirmou 19 tabelas públicas + 7 privadas (26 com RLS), 132 constraints, 73 índices, 35 policies públicas e seis triggers de negócio. Custos não ficam em `public.products`, `authenticated` não lê tabela financeira diretamente, RPC financeira não executa como `anon`, e `service_role` conserva acesso de servidor. Isso ainda não valida login com funcionário real, Flow/Meta nem a jornada completa de dados.
 
 Fontes de implementação: [Next.js Proxy](https://nextjs.org/docs/app/api-reference/file-conventions/proxy), [Next.js Cache Components e Suspense](https://nextjs.org/docs/app/getting-started/partial-prerendering), [Supabase SSR no Next.js](https://supabase.com/docs/guides/auth/server-side/creating-a-client?framework=nextjs), [Supabase: escolher pacote de Auth](https://supabase.com/docs/guides/auth/choosing-a-server-package). A documentação oficial direciona o uso do proxy e das claims verificadas; não substitui policies/grants Postgres.
 
@@ -1568,6 +1566,33 @@ Fontes de implementação: [Next.js Proxy](https://nextjs.org/docs/app/api-refer
 - No Windows desta máquina, Vector tentava acessar a API do daemon Docker em TCP `2375`, que não está habilitada. O comando `pnpm supabase:start` exclui `logflare` e `vector`; Postgres, Auth, REST, Storage, Realtime, Studio e Edge Runtime permaneceram saudáveis. Não abrir acesso TCP ao Docker só para habilitar logs locais.
 - O changelog Supabase de outubro de 2026 registra desativação de parte dos ciphers TLS 1.2 em 10/11/2026 e observações no Postgres 17.11 para índices `ltree`/`btree_gist` e dados cifrados com ciphers legados. O destino não tem `ltree` nem `btree_gist`; possui `pgcrypto 1.3`. Inspecionar dependências e colunas que usem pgcrypto antes de concluir o impacto; não reindexar/recifrar por presunção.
 - O histórico da PR #1422 contém um antigo `db/001_schema.sql` marcado para não aplicar em produção, criando um schema experimental `da_next`; o patch consultado mostra o arquivo sendo removido. Ele não descreve o destino atual e não entra no baseline novo.
-- Snapshot local resetável reconstruído por consulta read-only ao catálogo: 19 tabelas, 157 colunas, 82 constraints, 53 índices (incluindo índices de constraints), 3 policies após adicionar leitura do próprio perfil, RLS nas 19 tabelas e nenhum trigger/função/view. As duas policies de catálogo e os grants existentes foram preservados; o snapshot não copia qualquer linha comercial nem valor de integração.
+- Snapshot local resetável começa com o catálogo read-only do destino (19 tabelas) e aplica migrations locais de staff, identidade e catálogo. Estado corrente: 19 tabelas `public`/169 colunas e 7 `app_private`/44 colunas; 26 tabelas com RLS; 132 constraints, 73 índices, 35 policies e seis triggers de negócio. Não há cópia de linha comercial ou valor de integração. Esse schema é somente para desenvolvimento local e não foi reconciliado/aplicado no destino.
 - Descoberta de segurança: no destino, defaults de objetos `public` concedem amplos privilégios a `anon`/`authenticated`, embora as tabelas atuais não deem esses privilégios. O snapshot local revoga esses defaults para objetos futuros criados por `postgres`; novos acessos devem conceder apenas permissões específicas com RLS.
 - As migrations remotas listadas são `20261026230047_initial_dona_antonia_clean_schema` e `20261027003330_stage_legacy_product_images_for_safe_copy`. O snapshot foi criado somente para desenvolvimento local após reset bem-sucedido; não substitui nem reconcilia essas versões e não deve ser enviado ao banco de produção. O CLI segue sem token do Management API; nenhuma migration, configuração, policy ou dado foi escrito remotamente.
+
+### Modelo local implementado de catálogo e cestas — 26/10/2026
+
+Esta seção registra o contrato de banco que a interface, o Flow e o cálculo de preço devem seguir; não autoriza aplicar as migrations no Supabase de destino.
+
+#### Produtos e imagens
+
+- `products.price_cents` é o preço avulso usado para o Catálogo nativo da Meta e para pedidos de itens avulsos. O custo de aquisição foi copiado para `app_private.product_financials.cost_cents` e removido de `public.products`; não pode voltar a ser consultado por `authenticated` nem aparecer em resposta ao cliente.
+- `product_images.storage_path` conserva o original. `flow_thumbnail_path` aponta para a variante pré-gerada que o servidor converte no formato aceito pelo Flow. Toda imagem marcada `verified=true` precisa de miniatura e `alt_text`; a constraint entra `NOT VALID` para não bloquear mídia preexistente, mas se aplica a novas gravações. A prova do Flow e a revisão das imagens continuam gates antes de publicar.
+- `meta_catalog_listings` mapeia produto local a `waba_id + catalog_id + product_retailer_id`, com status/erro de sincronização. A unicidade é por catálogo e WABA; SKU, GTIN e ID do Bling não são tratados como `product_retailer_id`.
+
+#### Cesta editável e publicação
+
+- `basket_templates` identifica a cesta. Seu `price_cents` permanece apenas para compatibilidade; telas, Flow e novos pedidos não usam esse valor fixo.
+- `basket_template_versions` registra número, estado `draft | published | retired`, mínimo de slots preenchidos e auditoria da publicação. Só pode existir uma versão publicada por modelo. Publicar valida opções, produto ativo/aprovado e imagem; publicar direto por INSERT é bloqueado. Para mudar composição ou preço depois da publicação, duplicar para nova draft.
+- `basket_components` é um slot e corresponde a uma tela do Flow: `component_key`, rótulo, ordem e quantidades inteiras 0–6. Todos os slots oferecem 0; a cesta como um todo exige ao menos um slot positivo. A quantidade começa sem seleção.
+- `basket_component_options` lista alternativas ordenadas para o slot e guarda `price_cents` comercial por unidade na versão. Se a quantidade for 1–6, o cliente também escolhe uma alternativa. A cesta usa esse preço versionado, não o preço avulso de `products`; por isso uma troca de preço de avulso não altera uma sessão ou versão de cesta já publicada.
+- `app_private.basket_version_financials.internal_extra_cents` é o ajuste interno somado uma vez ao total da cesta. Custo e ajuste ficam fora do schema acessível ao cliente. A equipe autorizada consulta/edita esses números por RPCs de Admin, validando papel ativo; não recebe grants diretos às tabelas privadas.
+- A fórmula do Flow é `extra interno da versão + Σ(quantidade × preço comercial da alternativa)`. Cada avanço recalcula no servidor. A submissão não aceita preço/total do telefone como autoridade. O resumo final enviado no WhatsApp contém nomes, quantidades, pagamento, endereço aplicável e total, sem preço individual; só o Flow apresenta o preço de cada alternativa, conforme a escolha indicada pelo proprietário.
+- Guardas impedem editar versões publicadas/retiradas e suas alternativas, alterar o ajuste interno, retirar a última foto Flow apta ou despublicar/rejeitar um produto usado por uma cesta publicada. Primeiro deve-se retirar a versão; depois criar uma versão nova. Mudança de produto ou foto nunca reescreve uma venda já aceita.
+
+#### Acesso e estado da execução
+
+- `app_private.current_staff_role()` retorna somente o papel do próprio usuário autenticado com perfil habilitado. CRUD das tabelas de catálogo recebe policies separadas para `owner`, `admin` e `catalog_manager`; `fulfillment`, usuário sem perfil e `anon` não ganham edição de catálogo.
+- `public.admin_get_product_cost`, `admin_set_product_cost`, `admin_get_basket_internal_extra` e `admin_set_basket_internal_extra` são RPCs de equipe com validação fail-closed. Chamada sem perfil ativo ou fora dos papéis permitidos é recusada. As tabelas privadas continuam acessíveis diretamente apenas a `service_role`.
+- Migration `20261027014008_catalog_basket_foundation.sql` aplica depois das migrations locais de snapshot e identidade. O reset local confirmou 19 tabelas públicas, 7 privadas, RLS nas 26, 35 policies públicas, seis triggers de negócio, sem coluna pública de custo, sem leitura direta de custo por `authenticated` e sem execução anônima da RPC financeira. O destino permanece sem escrita.
+- Ainda não há linhas locais de produtos/imagens ou cesta. A migration não valida que cada fotografia real esteja presente nem prova que a Meta renderiza o campo de imagem; só cria o contrato e bloqueia publicação incompleta. O teste Flow com foto segue pendente por WABA.

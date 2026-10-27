@@ -147,12 +147,13 @@ Pages montam features; regras de negócio ficam em módulos puros ou serviços d
 
 **Interface de domínio:** `calculateBasketPrice(input: BasketSelection, publishedVersion: BasketVersion): BasketQuote` fica em `_shared/basket-pricing.ts`, sem dependência de Next/Supabase, e retorna itens validados, snapshots e total; nunca aceita preço enviado pelo browser. Preview do Admin e Flow chamam a mesma regra via Edge Function.
 
-- [ ] Adicionar opções de slot, ordem, requisito/opcional, limite 0–6, diferença de preço, disponibilidade, versão e publicação de cesta.
+- [x] Criar a fundação local: `basket_template_versions`, slots ordenados, alternativas com preço comercial versionado, adicional privado, publicação validada por produto/foto e regras de imutabilidade; custo movido para `app_private`; grants/RLS por papel.
+- [ ] Construir a tela de Produtos e Cestas sobre essa fundação; todos os slots exibem quantidades 0–6 sem pré-seleção, preço por opção dentro da cesta e exigem pelo menos um slot positivo no envio.
 - [ ] Registrar produto por SKU e retailer ID Meta; exibir status de sincronização sem criar SKU ou valor a partir de IA.
 - [ ] Criar bucket separado `product-media` (público para leitura, escrita só por funcionário autorizado). No upload, manter original e gerar no navegador a miniatura 320 × 320 JPEG/PNG de até 25 KB; guardar caminhos e `alt_text` em `product_images`. Mostrar estados “pendente”, “pronta para o Flow” e “não aprovada”; o alt text começa com nome/marca/variante e pode ser corrigido.
 - [ ] Bloquear elegibilidade em cesta publicada quando qualquer alternativa não tiver foto principal verificada e miniatura Flow. A foto da cesta não substitui a foto individual das alternativas.
-- [ ] Incorporar componente interno de margem/ajuste uma vez no total. Como `products.cost_cents` está hoje numa tabela pública, não conceder SELECT amplo dessa tabela: migrar custo e ajuste interno para `app_private`. RPC financeira de leitura: `EXECUTE` apenas para `authenticated`, e a própria função valida `auth.uid()`, perfil ativo e papel `owner`/`admin`/`catalog_manager`. Cotação/Flow/ANA/cliente recebem total e alternativas comerciais, nunca custo ou margem.
-- [ ] Gravar versão imutável publicada para que sessões em andamento saibam qual configuração originou o rascunho.
+- [x] Mover `products.cost_cents` e ajuste interno da cesta para `app_private`; tabelas privadas não concedem acesso direto a `authenticated`. RPCs financeiras locais validam `auth.uid()`, perfil ativo e papel `owner`/`admin`/`catalog_manager`; a cotação futura nunca retorna custo/margem.
+- [x] Criar versão imutável publicada para que sessões futuras refiram a configuração exata de origem.
 - [ ] Testar slot obrigatório/opcional, quantidade 0, 1 e 6, quantidade fora do intervalo, alternativa inativa, preço alterado e arredondamento em centavos.
 
 **Verificação:** `deno test supabase/functions/_shared/basket-pricing_test.ts` e `supabase test db` no Supabase local.
