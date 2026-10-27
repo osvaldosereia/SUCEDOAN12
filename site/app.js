@@ -111,7 +111,8 @@
       totalCents: Number(basket.display_price_cents || 0),
       orderable: Number(basket.stock_quantity || 0) > 0,
       detailLoaded: true,
-      detailPromise: null
+      detailPromise: null,
+      changePromise: null
     };
   }
 
@@ -196,6 +197,7 @@
           orderable: false,
           detailLoaded: false,
           detailPromise: null,
+          changePromise: null,
         });
       });
       renderCards();
@@ -245,7 +247,7 @@
       return;
     }
     $("detail-title").textContent = data.basket.name || "Produtos da cesta";
-    $("detail-total").textContent = data.changing ? "Atualizando…" : money(data.totalCents ?? data.basket.display_price_cents);
+    $("detail-total").textContent = money(data.totalCents ?? data.basket.display_price_cents);
     const rows = data.items.map((item) => {
       const alternatives = item._alternatives || [];
       const selected = alternatives.find((alt) => String(alt.product_id) === String(item.product_id));
@@ -253,7 +255,7 @@
       const expanded = item._expanded === true;
       const optionCount = Math.max(Number(item.alternative_count || 0), alternatives.length);
       const changingThisItem = String(data.changingPosition || "") === String(item.position_id);
-      const changeStatus = changingThisItem ? '<p class="variation-status" role="status">Atualizando a cesta e o valor…</p>' : "";
+
       const choices = alternatives.map((alt) => {
         const selectedOption = String(alt.product_id) === String(item.product_id);
         const optionPrice = alt.price_cents == null ? "Preço indisponível" : money(alt.price_cents);
@@ -264,7 +266,7 @@
           '</button>';
       }).join("");
       const panelContent = expanded
-        ? changeStatus || (item._optionsLoading
+        ? (item._optionsLoading
           ? '<p class="variation-status" role="status">Buscando somente as opções deste produto…</p>'
           : alternatives.length > 1
             ? '<p class="variation-panel-label">Opções disponíveis</p><div class="product-option-picker" role="group" aria-label="Opções para ' + esc(item.label || item.name) + '">' + choices + '</div>'
@@ -286,7 +288,7 @@
     }).join("");
     const note = data.orderable ? "" : '<p class="helper stock-note">Esta composição está sem estoque disponível no momento.</p>';
     $("detail-content").innerHTML = note + '<div class="product-list">' + rows + "</div>";
-    $("order-button").disabled = !data.orderable || Boolean(data.changing);
+    $("order-button").disabled = !data.orderable;
     $("detail-content").querySelectorAll("[data-toggle-position]").forEach((button) => button.addEventListener("click", () => toggleItemOptions(button.dataset.togglePosition)));
     $("detail-content").querySelectorAll("[data-select-position]").forEach((button) => button.addEventListener("click", () => changeProduct(button.dataset.selectPosition, button.dataset.selectProduct)));
     $("detail-content").querySelectorAll("img").forEach((image) => image.addEventListener("error", () => { image.src = "../img/logoantonia5.png"; }, { once: true }));
@@ -353,53 +355,119 @@
     restorePickers();
   }
 
+  function setQuotePendingControls(sizeKey, positionId, pending) {
+    if (state.activeKey !== sizeKey || $("detail-sheet").hidden) return;
+    const data = state.baskets.get(sizeKey);
+    const content = $("detail-content");
+    content.querySelectorAll("[data-select-position], [data-toggle-position]").forEach((button) => {
+      const buttonPosition = button.dataset.selectPosition || button.dataset.togglePosition;
+      const item = data.items.find((row) => String(row.position_id) === String(buttonPosition));
+      button.disabled = Boolean(pending || item && item._optionsLoading);
+    });
+    content.querySelectorAll(".variation-panel").forEach((panel) => {
+      const row = panel.closest("[data-product-row]");
+      const item = row && data.items.find((entry) => String(entry.position_id) === row.dataset.productRow);
+      const changingThisItem = Boolean(pending && row && row.dataset.productRow === String(positionId));
+      if (changingThisItem || item && item._optionsLoading) panel.setAttribute("aria-busy", "true");
+      else panel.removeAttribute("aria-busy");
+    });
+  }
+
+  function updateSelectedProductInPlace(sizeKey, positionId) {
+    if (state.activeKey !== sizeKey || $("detail-sheet").hidden) return;
+    const data = state.baskets.get(sizeKey);
+    const item = data && data.items.find((row) => String(row.position_id) === String(positionId));
+    const content = $("detail-content");
+    const row = Array.from(content.querySelectorAll("[data-product-row]")).find((entry) => entry.dataset.productRow === String(positionId));
+    if (!data || !item || !row) return;
+
+    const image = row.querySelector(".product-row-main img");
+    const name = row.querySelector(".product-name");
+    const quantity = row.querySelector(".product-quantity");
+    if (image) image.src = item.image_url || "../img/cestas/cesta-mini.jpg";
+    if (name) name.textContent = item.name || "Produto";
+    if (quantity) quantity.textContent = String(item.quantity || item.base_quantity || 0) + " " + String(item.packaging || "");
+
+    row.querySelectorAll("[data-select-product]").forEach((button) => {
+      const selected = String(button.dataset.selectProduct) === String(item.product_id);
+      button.classList.toggle("is-selected", selected);
+      button.setAttribute("aria-pressed", String(selected));
+      let marker = button.querySelector(".product-choice-check");
+      if (selected && !marker) {
+        marker = document.createElement("span");
+        marker.className = "product-choice-check";
+        marker.setAttribute("aria-hidden", "true");
+        marker.textContent = "✓";
+        button.appendChild(marker);
+      } else if (!selected && marker) {
+        marker.remove();
+      }
+    });
+    $("detail-total").textContent = money(data.totalCents ?? data.basket.display_price_cents);
+  }
+
   async function changeProduct(positionId, productId) {
-    const data = state.baskets.get(state.activeKey);
+    const sizeKey = state.activeKey;
+    const data = state.baskets.get(sizeKey);
     if (!data || data.changing) return;
 
     const item = data.items.find((row) => String(row.position_id) === String(positionId));
     const choice = item && (item._alternatives || []).find((option) => String(option.product_id) === String(productId));
     if (!item || !choice || String(item.product_id) === String(productId)) return;
+    if (data.items.some((row) => row._optionsLoading)) {
+      toast("Aguarde o carregamento das opções antes de trocar outro produto.");
+      return;
+    }
 
-    const previousItems = data.items.map((row) => Object.assign({}, row));
-    data.changing = true;
-    data.changingPosition = String(positionId);
-    Object.assign(item, {
+    const selectedItems = data.items.map((row) => Object.assign({}, row));
+    const selectedItem = selectedItems.find((row) => String(row.position_id) === String(positionId));
+    Object.assign(selectedItem, {
       product_id: choice.product_id,
-      name: choice.name || item.name,
-      image_url: choice.image_url || item.image_url,
-      packaging: choice.packaging || item.packaging,
+      name: choice.name || selectedItem.name,
+      image_url: choice.image_url || selectedItem.image_url,
+      packaging: choice.packaging || selectedItem.packaging,
       stock_quantity: choice.stock_quantity,
       price_cents: choice.price_cents
     });
-    const selections = data.items.map((row) => ({
+    const selections = selectedItems.map((row) => ({
       position_id: row.position_id,
       product_id: row.product_id,
       quantity: Number(row.quantity || row.base_quantity || 0)
     }));
-    const content = $("detail-content");
-    content.setAttribute("aria-busy", "true");
-    renderDetailPreservingScroll(positionId);
 
-    try {
-      const quote = await quoteBasket(data.basket, selections, data.items);
-      Object.assign(data, quote, { orderable: true, detailLoaded: true });
-      renderCards();
-    } catch (_) {
-      data.items = previousItems;
-      toast("Essa troca não está disponível agora. A escolha anterior foi mantida.");
-    } finally {
-      data.changing = false;
-      data.changingPosition = "";
-      content.removeAttribute("aria-busy");
-      renderDetailPreservingScroll(positionId);
-      const selectedButton = Array.from(content.querySelectorAll("[data-select-position]")).find((button) =>
-        button.dataset.selectPosition === String(positionId) && button.dataset.selectProduct === String(
-          data.items.find((row) => String(row.position_id) === String(positionId))?.product_id || ""
-        )
-      );
-      if (selectedButton) selectedButton.focus({ preventScroll: true });
-    }
+    data.changing = true;
+    data.changingPosition = String(positionId);
+    setQuotePendingControls(sizeKey, positionId, true);
+
+    const update = (async () => {
+      try {
+        const quote = await quoteBasket(data.basket, selections, selectedItems);
+        const currentItems = new Map(data.items.map((row) => [String(row.position_id), row]));
+        quote.items = quote.items.map((row) => {
+          const current = currentItems.get(String(row.position_id));
+          return current ? Object.assign({}, row, {
+            _alternatives: current._alternatives || row._alternatives || [],
+            _optionsLoaded: current._optionsLoaded === true || row._optionsLoaded === true,
+            _optionsLoading: current._optionsLoading === true,
+            _optionsError: current._optionsError === true,
+            _expanded: current._expanded === true
+          }) : row;
+        });
+        Object.assign(data, quote, { orderable: true, detailLoaded: true });
+        updateSelectedProductInPlace(sizeKey, positionId);
+        return true;
+      } catch (_) {
+        toast("Essa troca não está disponível agora. A escolha anterior foi mantida.");
+        return false;
+      } finally {
+        data.changing = false;
+        data.changingPosition = "";
+        setQuotePendingControls(sizeKey, positionId, false);
+        if (data.changePromise === update) data.changePromise = null;
+      }
+    })();
+    data.changePromise = update;
+    await update;
   }
 
   function openDetail(sizeKey) {
@@ -557,9 +625,13 @@
   }
 
   $("retry-catalog").addEventListener("click", loadCatalog);
-  $("order-button").addEventListener("click", () => {
-    const basket = state.baskets.get(state.activeKey);
+  $("order-button").addEventListener("click", async () => {
+    const sizeKey = state.activeKey;
+    const basket = state.baskets.get(sizeKey);
     if (!basket || !basket.orderable) return;
+    const pendingChange = basket.changePromise;
+    if (pendingChange && !(await pendingChange)) return;
+    if (state.activeKey !== sizeKey || $("detail-sheet").hidden || !basket.orderable) return;
     closeSheet("detail-sheet");
     showSheet("order-sheet");
     $("customer-phone").focus({ preventScroll: true });
