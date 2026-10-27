@@ -4,12 +4,12 @@ O catálogo público está em `/site/`; o painel administrativo fica em `/site/a
 
 ## Catálogo público
 
-- Na abertura, carrega somente um resumo por cesta (nome, foto, preço e disponibilidade). Busca a composição dos produtos quando a pessoa toca em **Ver Produtos** e busca as marcas/opções somente ao tocar em **Personalizar**. As imagens usam carregamento assíncrono e lazy loading nas cestas abaixo da primeira linha e nos produtos.
+- Na abertura, carrega somente o nome e a foto de cada cesta. Busca preço, composição e disponibilidade quando a pessoa toca em **Ver Produtos** e busca as marcas/opções somente ao tocar em **Personalizar**. As imagens usam carregamento assíncrono e lazy loading nas cestas abaixo da primeira linha e nos produtos.
 - A opção padrão configurada no admin é selecionada primeiro; se não estiver disponível, a loja escolhe a alternativa disponível mais barata.
 - Exibe o preço configurado da cesta, sem mostrar valores individuais dos produtos.
 - Busca o telefone no cadastro de clientes do Supabase pelo fluxo `customer_lookup` / `lookup_customer_by_phone`, com fallback para um único telefone principal ativo quando o cadastro antigo também associa o mesmo número a outro cliente.
-- Ao confirmar, abre um link `wa.me` para o WhatsApp do cliente com nome, telefone, endereço, cesta, produtos, valor e forma de pagamento preenchidos. A pessoa precisa conferir e tocar em **Enviar**; o site não envia mensagens automaticamente nem grava pedidos nesta versão.
-- Não chama Meta/WhatsApp API, Bling nem grava pedidos.
+- Ao confirmar, o navegador envia o pedido ao fluxo `submit_order`. A função registra o pedido para o Admin, reserva o estoque e inicia o envio de WhatsApp pelo fluxo servidor.
+- A página não chama o Bling diretamente. O acesso privilegiado ao banco fica nas Edge Functions e não é enviado ao navegador.
 
 ## Administração
 

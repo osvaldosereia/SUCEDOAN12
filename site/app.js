@@ -269,7 +269,7 @@
         ? changeStatus || (item._optionsLoading
           ? '<p class="variation-status" role="status">Buscando somente as opções deste produto…</p>'
           : alternatives.length > 1
-            ? '<div class="product-option-picker" role="group" aria-label="Opções para ' + esc(item.label || item.name) + '">' + choices + '</div>'
+            ? '<p class="variation-panel-label">Opções disponíveis</p><div class="product-option-picker" role="group" aria-label="Opções para ' + esc(item.label || item.name) + '">' + choices + '</div>'
             : '<p class="variation-status">Não há outras opções disponíveis para este produto.</p>')
         : "";
       const optionPicker = state.customizing && optionCount > 1
@@ -282,8 +282,8 @@
           panelContent +
           '</div></div>'
         : "";
-      return '<article class="product-row" data-product-row="' + esc(item.position_id) + '"><img src="' + esc(image) + '" alt="" width="58" height="58" loading="lazy" decoding="async">' +
-        '<div><h3 class="product-name">' + esc(item.name || "Produto") + '</h3><p class="product-quantity">' + esc(item.quantity || item.base_quantity || 0) + " " + esc(item.packaging || "") + '</p></div>' +
+      return '<article class="product-row" data-product-row="' + esc(item.position_id) + '"><div class="product-row-main"><img src="' + esc(image) + '" alt="" width="58" height="58" loading="lazy" decoding="async">' +
+        '<div><h3 class="product-name">' + esc(item.name || "Produto") + '</h3><p class="product-quantity">' + esc(item.quantity || item.base_quantity || 0) + " " + esc(item.packaging || "") + '</p></div></div>' +
         optionPicker + "</article>";
     }).join("");
     const note = data.orderable ? "" : '<p class="helper stock-note">Esta composição está sem estoque disponível no momento.</p>';
@@ -308,19 +308,52 @@
       }) || rows[0];
     const anchorId = anchor && anchor.dataset.productRow;
     const anchorOffset = anchor ? anchor.getBoundingClientRect().top - viewport.top : null;
+    const pickerScroll = new Map();
+    content.querySelectorAll(".product-option-picker").forEach((picker) => {
+      const row = picker.closest("[data-product-row]");
+      if (row) pickerScroll.set(row.dataset.productRow, picker.scrollTop);
+    });
+    const active = document.activeElement;
+    const focusKind = active && content.contains(active)
+      ? active.matches("[data-select-position]") ? "choice"
+        : active.matches("[data-toggle-position]") ? "toggle"
+          : ""
+      : "";
+    const focusPosition = focusKind && (active.dataset.selectPosition || active.dataset.togglePosition);
+    const focusProduct = focusKind === "choice" ? active.dataset.selectProduct : "";
 
     renderDetail();
 
     const nextAnchor = anchorId
       ? Array.from(content.querySelectorAll("[data-product-row]")).find((row) => row.dataset.productRow === anchorId)
       : null;
-    if (!nextAnchor || anchorOffset == null) {
-      content.scrollTop = scrollTop;
-      return;
+    let targetScrollTop = scrollTop;
+    if (nextAnchor && anchorOffset != null) {
+      const nextViewportTop = content.getBoundingClientRect().top;
+      const nextOffset = nextAnchor.getBoundingClientRect().top - nextViewportTop;
+      targetScrollTop = Math.max(0, scrollTop + nextOffset - anchorOffset);
     }
-    const nextViewportTop = content.getBoundingClientRect().top;
-    const nextOffset = nextAnchor.getBoundingClientRect().top - nextViewportTop;
-    content.scrollTop += nextOffset - anchorOffset;
+    const restorePickers = () => {
+      content.querySelectorAll(".product-option-picker").forEach((picker) => {
+        const row = picker.closest("[data-product-row]");
+        if (row && pickerScroll.has(row.dataset.productRow)) {
+          picker.scrollTop = pickerScroll.get(row.dataset.productRow);
+        }
+      });
+    };
+    content.scrollTop = targetScrollTop;
+    restorePickers();
+
+    if (focusKind && focusPosition) {
+      const selector = focusKind === "choice" ? "[data-select-position]" : "[data-toggle-position]";
+      const focusTarget = Array.from(content.querySelectorAll(selector)).find((button) =>
+        (focusKind === "choice" ? button.dataset.selectPosition : button.dataset.togglePosition) === String(focusPosition) &&
+        (focusKind !== "choice" || button.dataset.selectProduct === String(focusProduct))
+      );
+      if (focusTarget) focusTarget.focus({ preventScroll: true });
+    }
+    content.scrollTop = targetScrollTop;
+    restorePickers();
   }
 
   async function changeProduct(positionId, productId) {
@@ -525,7 +558,8 @@
         delivery_details_required: "Complete o endereço de entrega antes de concluir o pedido.",
         customer_name_required: "O cadastro precisa ter o nome do cliente.",
         all_items_unavailable: "Os produtos ficaram sem estoque. Atualize a cesta e tente novamente.",
-        invalid_whatsapp_phone: "O telefone do cadastro não está em um formato válido."
+        invalid_whatsapp_phone: "O telefone do cadastro não está em um formato válido.",
+        invalid_payment: "A forma de pagamento não foi reconhecida. Selecione novamente e tente outra vez."
       };
       toast(messages[reason] || "Não foi possível registrar o pedido. Confira os dados e tente novamente.");
     } finally {
