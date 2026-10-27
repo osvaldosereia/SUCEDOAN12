@@ -88,6 +88,14 @@ export type BasketMoldPhotoAudit = {
 	unverifiedWhatsappOptions: number;
 	positionsWithoutActiveOption: number;
 	positionsWithoutActivePhoto: number;
+	baskets: Array<{
+		basketId: string;
+		positionCount: number;
+		activeOptionCount: number;
+		activeOptionsWithoutPhoto: number;
+		positionsWithoutActiveOption: number;
+		positionsWithoutActivePhoto: number;
+	}>;
 };
 
 export type BasketMoldResult<T> =
@@ -412,20 +420,58 @@ export async function getAdminBasketMoldList(): Promise<
 	};
 }
 
-export async function getAdminBasketMoldPhotoAudit(): Promise<
-	BasketMoldResult<BasketMoldPhotoAudit>
-> {
-	const list = await getAdminBasketMoldList();
-	if (!list.ok) return list;
-	const configured = list.data.filter((basket) => basket.moldConfigured);
+export async function getAdminBasketMoldPhotoAudit(
+	summaries?: readonly BasketMoldSummary[],
+): Promise<BasketMoldResult<BasketMoldPhotoAudit>> {
+	let currentSummaries = summaries;
+	if (!currentSummaries) {
+		const list = await getAdminBasketMoldList();
+		if (!list.ok) return list;
+		currentSummaries = list.data;
+	}
+	const configured = currentSummaries.filter((basket) => basket.moldConfigured);
 	const editors = await Promise.all(
-		configured.map((basket) => getRawEditor(basket.id, list.data)),
+		configured.map((basket) => getRawEditor(basket.id, currentSummaries)),
 	);
 	const failed = editors.find((result) => !result.ok);
 	if (failed && !failed.ok) return failed;
 	const positions = editors.flatMap((result) =>
 		result.ok ? result.data.editor.positions : [],
 	);
+	const baskets = editors.flatMap((result) => {
+		if (!result.ok) return [];
+		const currentPositions = result.data.editor.positions;
+		const activeOptions = currentPositions.flatMap((position) =>
+			position.options.filter(
+				(option) => option.active && option.whatsappActive === true,
+			),
+		);
+		return [
+			{
+				basketId: result.data.editor.basketId,
+				positionCount: currentPositions.length,
+				activeOptionCount: activeOptions.length,
+				activeOptionsWithoutPhoto: activeOptions.filter(
+					(option) => option.imageUrl === null,
+				).length,
+				positionsWithoutActiveOption: currentPositions.filter(
+					(position) =>
+						!position.options.some(
+							(option) => option.active && option.whatsappActive === true,
+						),
+				).length,
+				positionsWithoutActivePhoto: currentPositions.filter(
+					(position) =>
+						!position.options.some(
+							(option) =>
+								option.active &&
+								option.whatsappActive === true &&
+								option.imageUrl !== null,
+						),
+				).length,
+			},
+		];
+	});
 	const activeOptions = positions.flatMap((position) =>
 		position.options.filter((option) => option.active && option.whatsappActive),
 	);
@@ -438,7 +484,7 @@ export async function getAdminBasketMoldPhotoAudit(): Promise<
 	return {
 		ok: true,
 		data: {
-			basketCount: list.data.length,
+			basketCount: currentSummaries.length,
 			configuredBasketCount: configured.length,
 			positionCount: positions.length,
 			activeOptionsWithPhoto,
@@ -459,6 +505,7 @@ export async function getAdminBasketMoldPhotoAudit(): Promise<
 							option.imageUrl !== null,
 					),
 			).length,
+			baskets,
 		},
 	};
 }

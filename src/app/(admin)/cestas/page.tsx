@@ -5,7 +5,10 @@ import {
 	ShoppingBasket,
 } from "lucide-react";
 import Link from "next/link";
-import { getAdminBasketMoldList } from "@/lib/supabase/admin-basket-molds";
+import {
+	getAdminBasketMoldList,
+	getAdminBasketMoldPhotoAudit,
+} from "@/lib/supabase/admin-basket-molds";
 
 const errorCopy: Record<string, string> = {
 	not_configured: "O acesso ao Supabase ainda não está configurado.",
@@ -16,6 +19,10 @@ const errorCopy: Record<string, string> = {
 
 export default async function CestasPage() {
 	const result = await getAdminBasketMoldList();
+	const auditResult = result.ok
+		? await getAdminBasketMoldPhotoAudit(result.data)
+		: null;
+	const audit = auditResult?.ok ? auditResult.data : null;
 
 	return (
 		<div className="page-stack" id="admin-basket-molds-page">
@@ -39,6 +46,47 @@ export default async function CestasPage() {
 				</p>
 			</div>
 
+			{audit &&
+				(audit.positionsWithoutActiveOption > 0 ||
+					audit.positionsWithoutActivePhoto > 0) && (
+					<div
+						className="basket-mold-note basket-mold-note--warning"
+						role="status"
+					>
+						<AlertCircle aria-hidden="true" size={18} />
+						<p>
+							{audit.positionsWithoutActiveOption > 0 && (
+								<>
+									<strong>{audit.positionsWithoutActiveOption} etapa(s)</strong>{" "}
+									ainda precisam de uma alternativa ativa e habilitada para
+									WhatsApp.{" "}
+								</>
+							)}
+							{audit.positionsWithoutActivePhoto > 0 && (
+								<>
+									<strong>{audit.positionsWithoutActivePhoto} etapa(s)</strong>{" "}
+									precisam de uma opção habilitada com foto cadastrada.
+								</>
+							)}
+							Abra a cesta indicada e ajuste as alternativas antes de preparar o
+							Flow.
+						</p>
+					</div>
+				)}
+
+			{result.ok && auditResult && !auditResult.ok && (
+				<div
+					className="basket-mold-note basket-mold-note--warning"
+					role="status"
+				>
+					<AlertCircle aria-hidden="true" size={18} />
+					<p>
+						A lista carregou, mas não foi possível conferir a prontidão das
+						etapas. Atualize a página para tentar novamente.
+					</p>
+				</div>
+			)}
+
 			{!result.ok ? (
 				<section className="catalog-message" role="status">
 					<AlertCircle aria-hidden="true" size={20} />
@@ -52,55 +100,74 @@ export default async function CestasPage() {
 				</section>
 			) : (
 				<section aria-label="Modelos de cesta" className="basket-mold-list">
-					{result.data.map((basket) => (
-						<article className="basket-mold-card" key={basket.id}>
-							<div className="basket-mold-card__image">
-								{basket.imageUrl ? (
-									// biome-ignore lint/performance/noImgElement: Product images use user-managed HTTPS URLs from the catalog.
-									<img alt="" loading="lazy" src={basket.imageUrl} />
-								) : (
-									<ImageOff aria-hidden="true" size={20} />
-								)}
-							</div>
-							<div className="basket-mold-card__body">
-								<div className="basket-mold-card__title">
-									<strong>{basket.name}</strong>
-									<span
-										className={`basket-mold-status${basket.moldConfigured ? " basket-mold-status--ready" : ""}`}
-									>
-										{basket.moldConfigured
-											? "Molde configurado"
-											: "Molde pendente"}
+					{result.data.map((basket) => {
+						const readiness =
+							audit?.baskets.find((item) => item.basketId === basket.id) ??
+							null;
+						const hasPendingReadiness = Boolean(
+							readiness &&
+								(readiness.positionsWithoutActiveOption > 0 ||
+									readiness.positionsWithoutActivePhoto > 0),
+						);
+						const statusLabel = !basket.moldConfigured
+							? "Molde pendente"
+							: !readiness
+								? "Etapas não conferidas"
+								: hasPendingReadiness
+									? "Etapas pendentes"
+									: "Etapas cadastradas";
+
+						return (
+							<article className="basket-mold-card" key={basket.id}>
+								<div className="basket-mold-card__image">
+									{basket.imageUrl ? (
+										// biome-ignore lint/performance/noImgElement: Product images use user-managed HTTPS URLs from the catalog.
+										<img alt="" loading="lazy" src={basket.imageUrl} />
+									) : (
+										<ImageOff aria-hidden="true" size={20} />
+									)}
+								</div>
+								<div className="basket-mold-card__body">
+									<div className="basket-mold-card__title">
+										<strong>{basket.name}</strong>
+										<span
+											className={`basket-mold-status${basket.moldConfigured && readiness && !hasPendingReadiness ? " basket-mold-status--ready" : ""}${hasPendingReadiness ? " basket-mold-status--warning" : ""}`}
+										>
+											{statusLabel}
+										</span>
+									</div>
+									<p>
+										{[basket.categoryName, basket.subcategoryName]
+											.filter(Boolean)
+											.join(" · ") || "Categoria não informada"}
+									</p>
+									<span className="basket-mold-card__detail">
+										{basket.publicCompositionCount} composição(ões) pública(s)
+										{readiness
+											? ` · ${readiness.positionCount} etapas · ${readiness.activeOptionCount} opções habilitadas${readiness.positionsWithoutActiveOption > 0 ? ` · ${readiness.positionsWithoutActiveOption} sem opção` : ""}${readiness.positionsWithoutActivePhoto > 0 ? ` · ${readiness.positionsWithoutActivePhoto} sem foto` : ""}`
+											: ""}
+										{basket.hiddenAdjustmentCents > 0
+											? ` · ajuste interno de ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(basket.hiddenAdjustmentCents / 100)}`
+											: ""}
 									</span>
 								</div>
-								<p>
-									{[basket.categoryName, basket.subcategoryName]
-										.filter(Boolean)
-										.join(" · ") || "Categoria não informada"}
-								</p>
-								<span className="basket-mold-card__detail">
-									{basket.publicCompositionCount} composição(ões) pública(s)
-									{basket.hiddenAdjustmentCents > 0
-										? ` · ajuste interno de ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(basket.hiddenAdjustmentCents / 100)}`
-										: ""}
-								</span>
-							</div>
-							{basket.moldConfigured ? (
-								<Link
-									aria-label={`Editar alternativas de ${basket.name}`}
-									className="basket-mold-edit-link"
-									href={`/cestas/${basket.id}`}
-								>
-									Editar alternativas{" "}
-									<ArrowRight aria-hidden="true" size={16} />
-								</Link>
-							) : (
-								<span className="basket-mold-disabled-link">
-									Configuração de etapas pendente
-								</span>
-							)}
-						</article>
-					))}
+								{basket.moldConfigured ? (
+									<Link
+										aria-label={`Editar alternativas de ${basket.name}`}
+										className="basket-mold-edit-link"
+										href={`/cestas/${basket.id}`}
+									>
+										Editar alternativas{" "}
+										<ArrowRight aria-hidden="true" size={16} />
+									</Link>
+								) : (
+									<span className="basket-mold-disabled-link">
+										Configuração de etapas pendente
+									</span>
+								)}
+							</article>
+						);
+					})}
 				</section>
 			)}
 		</div>

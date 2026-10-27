@@ -928,3 +928,10 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 - A resposta da Meta mostra no Admin até cinco erros sanitizados, com linha/coluna quando disponíveis. `admin-whatsapp-flow-setup-v1` está ativa no Supabase canônico `ssbesxgaijknwsjbsbcz`, versão 2, `verify_jwt=true`; não houve migration.
 - Verificações locais: `pnpm typecheck`, `pnpm build`, Biome nos arquivos alterados e `git diff --check` passaram. Nenhum teste automatizado foi adicionado ou executado.
 - Nenhum rascunho foi criado/uploadado/publicado na Meta e nenhuma mensagem, callback, pedido, dado de produto/cliente, escrita Bling ou NF-e foi alterada. A publicação continua manual e separada; ainda falta validar/renderizar as fotos em aparelho e completar as etapas de cesta sem alternativa elegível.
+
+## Prontidão das cestas visível no Admin (27/10/2026)
+
+- `/cestas` agora mostra, por molde, quantas etapas existem, quantas alternativas estão ativas e habilitadas no WhatsApp, quantas etapas não têm opção e quantas não têm opção habilitada com foto cadastrada. Um aviso no topo resume as pendências e orienta abrir a cesta correspondente.
+- A leitura usa a sessão ativa e os RPCs existentes; não altera produtos, moldes, preços ou disponibilidade. A tela distingue cadastro de opção/foto da publicação e validação oficial do Flow.
+- Revalidação read-only no Supabase canônico: `whatsapp-flow-data-exchange-greenfield-v1` está ativa na versão 2 com `verify_jwt=false`; `admin-whatsapp-flow-setup-v1` está ativa na versão 2 com `verify_jwt=true`. O keyring mantém uma conta em `pending_key_provisioning` e outra em `pending_meta_verification`; não há binding de Flow cadastrado. Nenhuma chave ou valor de segredo foi lido.
+- Verificação desta alteração: `pnpm typecheck`, Biome nos arquivos TypeScript alterados e `git diff --check` passaram. Não foi executado teste automatizado nem build do Next no Windows.
