@@ -177,6 +177,31 @@ export default async function CestasPage() {
 													{position.issue === "no_whatsapp_option"
 														? "sem opção ativa habilitada no WhatsApp"
 														: "sem opção habilitada com foto"}
+													{position.options.length ? (
+														<ul>
+															{position.options.map((option) => (
+																<li key={option.productId}>
+																	<Link href={`/produtos/${option.productId}`}>
+																		{option.name}
+																	</Link>
+																	<span>
+																		· {option.active ? "ativo" : "inativo"} ·{" "}
+																		{option.whatsappActive === true
+																			? "WhatsApp ligado"
+																			: option.whatsappActive === false
+																				? "WhatsApp desligado"
+																				: "WhatsApp não conferido"}
+																		·{" "}
+																		{option.hasPhoto
+																			? "foto cadastrada"
+																			: "sem foto"}
+																	</span>
+																</li>
+															))}
+														</ul>
+													) : (
+														<p>Esta etapa ainda não tem produtos associados.</p>
+													)}
 												</li>
 											))}
 										</ul>

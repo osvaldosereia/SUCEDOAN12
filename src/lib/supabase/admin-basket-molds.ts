@@ -99,6 +99,13 @@ export type BasketMoldPhotoAudit = {
 			positionId: string;
 			label: string;
 			issue: "no_whatsapp_option" | "missing_photo";
+			options: Array<{
+				productId: string;
+				name: string;
+				active: boolean;
+				whatsappActive: boolean | null;
+				hasPhoto: boolean;
+			}>;
 		}>;
 	}>;
 };
@@ -456,6 +463,13 @@ export async function getAdminBasketMoldPhotoAudit(
 		);
 		const pendingPositions: BasketMoldPendingPosition[] =
 			currentPositions.flatMap((position): BasketMoldPendingPosition[] => {
+				const options = position.options.map((option) => ({
+					productId: option.productId,
+					name: option.name,
+					active: option.active,
+					whatsappActive: option.whatsappActive,
+					hasPhoto: option.imageUrl !== null,
+				}));
 				const whatsappOptions = position.options.filter(
 					(option) => option.active && option.whatsappActive === true,
 				);
@@ -465,6 +479,7 @@ export async function getAdminBasketMoldPhotoAudit(
 							positionId: position.id,
 							label: position.label,
 							issue: "no_whatsapp_option" as const,
+							options,
 						},
 					];
 				}
@@ -474,6 +489,7 @@ export async function getAdminBasketMoldPhotoAudit(
 							positionId: position.id,
 							label: position.label,
 							issue: "missing_photo" as const,
+							options,
 						},
 					];
 				}
