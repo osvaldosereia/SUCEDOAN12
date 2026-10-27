@@ -119,9 +119,20 @@
         <div class="position-options"><strong>Marcas/opções <small>Marque o padrão</small></strong>
           ${options.length ? options.map((option, optionIndex) => {
             const product = option.product || state.productCache.get(String(option.product_id)) || {};
-            return `<label class="basket-option-row"><input type="radio" name="basket-default-${index}" value="${esc(option.product_id)}" data-default-option="${index}" ${optionIndex === 0 ? "checked" : ""}>
-              <span>${esc(product.name || "Produto")}${product.brand ? ` · ${esc(product.brand)}` : ""}${product.is_active === false ? " · inativo" : ""}<small>${esc(product.sku || "Sem SKU")} · ${money(product.effective_price_cents || 0)}/un.</small></span>
-              <button class="text-button danger-text" type="button" data-remove-option="${index}" data-product-id="${esc(option.product_id)}" aria-label="Remover opção">×</button></label>`;
+            const status = product.is_active === true ? "Ativo" : product.is_active === false ? "Inativo" : "Status indisponível";
+            const statusClass = product.is_active === true ? "is-active" : product.is_active === false ? "is-inactive" : "is-unknown";
+            return `<div class="basket-option-row">
+              <label class="basket-option-choice">
+                <input type="radio" name="basket-default-${index}" value="${esc(option.product_id)}" data-default-option="${index}" ${optionIndex === 0 ? "checked" : ""}>
+                <span class="basket-option-copy"><strong>${esc(product.name || "Produto")}${product.brand ? ` · ${esc(product.brand)}` : ""}</strong>
+                  <small>${esc(product.sku || "Sem SKU")} · ${money(product.effective_price_cents || 0)}/un.</small>
+                  <small class="basket-option-status ${statusClass}">${status}</small></span>
+              </label>
+              <div class="basket-option-actions">
+                <button class="text-button product-edit-mini" type="button" data-edit-product="${esc(option.product_id)}">Editar</button>
+                <button class="text-button danger-text" type="button" data-remove-option="${index}" data-product-id="${esc(option.product_id)}" aria-label="Remover opção" title="Remover opção">×</button>
+              </div>
+            </div>`;
           }).join("") : '<p class="admin-muted">Nenhuma marca selecionada. Adicione produtos para esta posição.</p>'}
         </div>
         <button class="button button-outline button-wide" type="button" data-pick-products="${index}">Buscar e marcar produtos</button>
@@ -298,8 +309,21 @@
     $("product-save-message").textContent = "";
     try {
       const result = await request("product_save", { method: "POST", body: data });
-      state.productCache.set(String(result.product.id), result.product);
+      const product = Object.assign({}, result.product, { effective_price_cents: effectivePrice(result.product) });
+      state.productCache.set(String(product.id), product);
+      let basketChanged = false;
+      (state.basket?.positions || []).forEach((position) => (position.options || []).forEach((option) => {
+        if (String(option.product_id) !== String(product.id)) return;
+        option.product = product;
+        basketChanged = true;
+      }));
+      const basketDialog = $("basket-dialog");
+      const basketScrollTop = basketDialog.scrollTop;
       $("product-dialog").close();
+      if (basketChanged) {
+        renderPositions();
+        basketDialog.scrollTop = basketScrollTop;
+      }
       toast("Produto salvo.");
       await Promise.all([loadProducts(true), loadBaskets()]);
     } catch (error) {
