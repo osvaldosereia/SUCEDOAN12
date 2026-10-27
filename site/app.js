@@ -476,22 +476,66 @@
   }
 
   async function confirmOrder() {
-    if (!state.customer || !document.querySelector('input[name="payment"]:checked')) return;
-    const recipient = whatsappNumber(state.customer.phone || $("customer-phone").value);
+    const data = state.baskets.get(state.activeKey);
+    const customer = state.customer || {};
+    const payment = document.querySelector('input[name="payment"]:checked');
+    if (!data || !customer || !payment) return;
+    const recipient = whatsappNumber(customer.phone || $("customer-phone").value);
     if (!recipient) {
-      toast("O telefone cadastrado não está em um formato válido para WhatsApp.");
+      toast("O telefone cadastrado não está em um formato válido.");
       return;
     }
-    const message = buildOrderMessage();
-    const link = document.createElement("a");
-    link.href = "https://wa.me/" + recipient + "?text=" + encodeURIComponent(message);
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    link.hidden = true;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    toast("WhatsApp aberto com o pedido preenchido. Confira e toque em Enviar.");
+    const button = $("confirm-order");
+    button.disabled = true;
+    button.textContent = "Registrando…";
+    try {
+      const result = await request("submit_order", {
+        method: "POST",
+        body: {
+          whatsapp_phone: customer.phone || $("customer-phone").value,
+          payment_method: payment.value,
+          customer_details: {
+            name: customer.display_name || "",
+            address: {
+              street: customer.address && customer.address.street || "",
+              number: customer.address && customer.address.number || "",
+              district: customer.address && (customer.address.district || customer.address.neighborhood) || "",
+              city: customer.address && customer.address.city || "",
+              state: customer.address && customer.address.state || "",
+              postal_code: customer.address && customer.address.postal_code || "",
+              complement: customer.address && customer.address.complement || ""
+            }
+          },
+          items: [{
+            type: "basket_mold",
+            id: data.basket.id,
+            qty: 1,
+            composition_number: data.basket.composition_number || 1,
+            components: data.items.map((item) => ({
+              position_id: item.position_id,
+              product_id: item.product_id,
+              quantity: Number(item.quantity || item.base_quantity || 0)
+            })).filter((item) => item.quantity > 0)
+          }]
+        }
+      });
+      closeSheet("order-sheet");
+      toast(result.stock_adjustment
+        ? "Pedido " + (result.order_number || "") + " registrado no Admin com ajuste de estoque."
+        : "Pedido " + (result.order_number || "") + " registrado no Admin.");
+    } catch (error) {
+      const reason = String(error && error.message || "");
+      const messages = {
+        delivery_details_required: "Complete o endereço de entrega antes de concluir o pedido.",
+        customer_name_required: "O cadastro precisa ter o nome do cliente.",
+        all_items_unavailable: "Os produtos ficaram sem estoque. Atualize a cesta e tente novamente.",
+        invalid_whatsapp_phone: "O telefone do cadastro não está em um formato válido."
+      };
+      toast(messages[reason] || "Não foi possível registrar o pedido. Confira os dados e tente novamente.");
+    } finally {
+      button.textContent = "Confirmar pedido";
+      button.disabled = !state.customer || !document.querySelector('input[name="payment"]:checked');
+    }
   }
 
   $("retry-catalog").addEventListener("click", loadCatalog);

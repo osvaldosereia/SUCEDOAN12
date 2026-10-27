@@ -8,9 +8,11 @@
   <title>Admin · Dona Antônia</title>
   <link rel="stylesheet" href="../styles.css?v=5">
   <link rel="stylesheet" href="admin.css?v=7">
+  <link rel="stylesheet" href="orders-admin.css?v=1">
   <script src="../config.js?v=3"></script>
   <script src="catalog-admin.js?v=8" defer></script>
-  <script src="admin.js?v=4" defer></script>
+  <script src="orders-admin.js?v=1" defer></script>
+  <script src="admin.js?v=5" defer></script>
 </head>
 <body class="admin-page">
   <header class="topbar">
@@ -42,6 +44,7 @@
         <button class="nav-tab" type="button" data-view="customers">Clientes</button>
         <button class="nav-tab" type="button" data-view="baskets">Cestas</button>
         <button class="nav-tab" type="button" data-view="products">Produtos</button>
+        <button class="nav-tab" type="button" data-view="orders">Pedidos</button>
       </nav>
 
       <section class="admin-view active" data-panel="overview">
@@ -53,6 +56,7 @@
           <button class="shortcut-card" type="button" data-go="baskets"><strong>Cestas</strong><span>Editar produtos, marcas e valor padrão</span></button>
           <button class="shortcut-card" type="button" data-go="products"><strong>Produtos</strong><span>Editar cadastro, estoque e ativação</span></button>
           <button class="shortcut-card" type="button" data-go="customers"><strong>Clientes</strong><span>Buscar cadastro e endereço</span></button>
+          <button class="shortcut-card" type="button" data-go="orders"><strong>Pedidos</strong><span>Confirmar, separar e acompanhar entregas</span></button>
         </div>
         <p id="admin-status" class="admin-muted" role="status">Acesso autorizado.</p>
       </section>
@@ -120,8 +124,48 @@
           <span>Para tirar um produto da cesta, remova-o das variações. Para manter o histórico do banco, o cadastro de produto é desativado em vez de apagado.</span>
         </div>
       </section>
+
+      <section class="admin-view" data-panel="orders" hidden>
+        <div class="section-title orders-heading"><div><h2>Pedidos</h2><p>Confirme os novos pedidos, faça a separação e acompanhe a expedição.</p></div><button id="orders-reload" class="button button-outline" type="button">Atualizar</button></div>
+        <nav class="orders-tabs" aria-label="Etapas dos pedidos">
+          <button class="orders-tab active" type="button" data-order-stage="new">NOVO</button>
+          <button class="orders-tab" type="button" data-order-stage="separating">SEPARAR</button>
+          <button class="orders-tab" type="button" data-order-stage="expedition">EXPEDIÇÃO</button>
+        </nav>
+        <p id="orders-status" class="admin-muted" role="status">Carregando pedidos…</p>
+        <div id="orders-list" class="orders-list"></div>
+      </section>
     </section>
   </main>
+
+  <dialog id="order-detail-dialog" class="orders-dialog">
+    <section class="orders-dialog-body">
+      <header class="orders-dialog-heading"><div><p class="eyebrow">Detalhes do pedido</p><h2 id="order-detail-title">Pedido</h2></div><button class="icon-button" type="button" data-orders-close="order-detail-dialog" aria-label="Fechar">×</button></header>
+      <div id="order-detail-summary" class="order-detail-summary"></div>
+      <div id="order-detail-items" class="order-detail-items"></div>
+      <footer class="orders-dialog-actions"><button class="button button-outline" type="button" data-orders-close="order-detail-dialog">Fechar</button></footer>
+    </section>
+  </dialog>
+
+  <dialog id="order-separation-dialog" class="orders-dialog separation-sheet">
+    <section class="orders-dialog-body">
+      <header class="orders-dialog-heading"><div><p class="eyebrow">Separação do pedido</p><h2 id="separation-title">Pedido</h2></div><button class="icon-button" type="button" data-orders-close="order-separation-dialog" aria-label="Fechar">×</button></header>
+      <label class="separator-field" for="order-separator">Separador responsável
+        <select id="order-separator" required>
+          <option value="">Selecione o separador</option>
+          <option value="jose">José</option>
+          <option value="claudio">Cláudio</option>
+          <option value="jovenil">Jovenil</option>
+          <option value="kelly">Kelly</option>
+        </select>
+      </label>
+      <p id="separation-progress" class="separation-progress"></p>
+      <div id="separation-items" class="separation-items"></div>
+      <div class="separation-total"><span>Total atualizado</span><strong id="separation-total-value">—</strong></div>
+      <p id="separation-message" class="form-message" role="status"></p>
+      <footer class="orders-dialog-actions"><button class="button button-outline" type="button" data-orders-close="order-separation-dialog">Fechar</button><button id="confirm-separation" class="button button-primary" type="button" disabled>Confirmar separação</button></footer>
+    </section>
+  </dialog>
 
   <dialog id="basket-dialog" class="catalog-dialog">
     <form id="basket-form" class="dialog-form">

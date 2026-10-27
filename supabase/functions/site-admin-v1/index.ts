@@ -89,6 +89,12 @@ function errorResponse(error: any) {
   const code = String(error?.code || "");
   if (code === "23505") return { status: 409, error: "duplicate_product_identifier", message: "SKU ou GTIN já cadastrado em outro produto." };
   const detail = clean(error?.message || error, 400);
+  const lowerDetail = detail.toLowerCase();
+  if (lowerDetail.includes("separation_requires_bling_stock_authority") || lowerDetail.includes("stock authority")) return { status: 409, error: "separation_stock_authority", message: "O estoque precisa estar sob autoridade do Bling para concluir a separação." };
+  if (lowerDetail.includes("fiscal") || lowerDetail.includes("authorize document") || lowerDetail.includes("authorize_document")) return { status: 409, error: "delivery_fiscal_gate", message: "Entrega bloqueada: autorize o documento fiscal e o estoque físico antes de marcar como entregue." };
+  if (lowerDetail.includes("payment") || lowerDetail.includes("settlement") || lowerDetail.includes("captured")) return { status: 409, error: "delivery_payment_gate", message: "Entrega bloqueada: o pagamento precisa estar confirmado no sistema." };
+  if (lowerDetail.includes("separator")) return { status: 409, error: "separator_required", message: "Selecione o responsável pela separação para continuar." };
+  if (lowerDetail.includes("expected_order_updated_at") || lowerDetail.includes("concurrent") || lowerDetail.includes("updated_at_mismatch")) return { status: 409, error: "separation_changed", message: "A separação mudou em outra tela. Atualize e tente novamente." };
   if (detail.includes("basket_mold_basket_not_found")) return { status: 404, error: "basket_not_found", message: "Cesta não encontrada." };
   if (detail.includes("basket_mold_positions_required")) return { status: 400, error: "basket_positions_required", message: "A cesta precisa ter pelo menos um produto." };
   if (detail.includes("basket_mold_position_options_required")) return { status: 400, error: "basket_options_required", message: "Cada produto precisa ter ao menos uma opção." };
@@ -319,6 +325,170 @@ async function basketSave(input: any) {
   };
 }
 
+
+const ORDER_SOURCES = ["vitrine", "storefront_v2"];
+const SEPARATOR_KEYS = new Set(["jose", "claudio", "jovenil", "kelly"]);
+
+function supportedOrder(order: any) {
+  return Boolean(order && ORDER_SOURCES.includes(String(order.source || "")));
+}
+
+async function ordersList(input: any) {
+  const stage = ["new", "separating", "expedition"].includes(input.stage) ? input.stage : "new";
+  const statuses = stage === "new"
+    ? ["storefront_received", "received"]
+    : stage === "separating"
+      ? ["confirmed", "processing"]
+      : ["ready", "out_for_delivery", "delivered"];
+  const result = await db.from("orders")
+    .select("id,order_number,status,total,created_at,updated_at,phone_e164,customer_snapshot,source,payment_method")
+    .in("source", ORDER_SOURCES)
+    .in("status", statuses)
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (result.error) throw result.error;
+  return { orders: result.data || [], stage };
+}
+
+async function orderById(value: unknown): Promise<any> {
+  const id = uuid(value);
+  if (!id) return { error: "invalid_order_id", status: 400, message: "Pedido inválido." };
+  const result = await db.from("orders")
+    .select("id,order_number,status,total,created_at,updated_at,phone_e164,customer_snapshot,source,payment_method")
+    .eq("id", id)
+    .maybeSingle();
+  if (result.error) throw result.error;
+  if (!result.data || !supportedOrder(result.data)) return { error: "order_not_found", status: 404, message: "Pedido não encontrado." };
+  return { order: result.data };
+}
+
+async function orderDetail(input: any) {
+  const found = await orderById(input.order_id || input.id);
+  if (found.error) return found;
+  const order = found.order;
+  const result = await db.from("order_items")
+    .select("id,order_id,product_id,sku_snapshot,name_snapshot,quantity,unit_price,line_total,metadata")
+    .eq("order_id", order.id)
+    .order("created_at", { ascending: true });
+  if (result.error) throw result.error;
+  const allItems = result.data || [];
+  const hasComponents = allItems.some((item: any) => item.metadata?.history_kind === "basket_mold_component");
+  const items = allItems
+    .filter((item: any) => !(hasComponents && item.metadata?.history_kind === "basket_mold"))
+    .map((item: any) => ({
+      id: item.id,
+      name: item.name_snapshot || "Produto",
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      line_total: item.line_total,
+      image_url: item.metadata?.image_url || "",
+      sku: item.sku_snapshot || "",
+    }));
+  return { order, items };
+}
+
+async function confirmStorefrontOrder(input: any) {
+  const id = uuid(input.order_id || input.id);
+  if (!id) return { error: "invalid_order_id", status: 400, message: "Pedido inválido." };
+  const result = await db.from("orders")
+    .update({ status: "confirmed", confirmed_at: new Date().toISOString() })
+    .eq("id", id)
+    .in("source", ORDER_SOURCES)
+    .in("status", ["storefront_received", "received"])
+    .select("id,order_number,status,total,source")
+    .maybeSingle();
+  if (result.error) throw result.error;
+  if (!result.data) return { error: "order_not_confirmable", status: 409, message: "O pedido já foi confirmado ou não está aguardando confirmação." };
+  return { order: result.data };
+}
+
+async function orderSeparation(input: any) {
+  const found = await orderById(input.order_id || input.id);
+  if (found.error) return found;
+  if (!["confirmed", "processing"].includes(String(found.order.status))) {
+    return { error: "order_not_separable", status: 409, message: "Este pedido não está aguardando separação." };
+  }
+  const result = await db.rpc("ops2_get_order_separation_v2", { p_order_id: found.order.id });
+  if (result.error) throw result.error;
+  return { separation: result.data };
+}
+
+async function setOrderSeparator(input: any) {
+  const id = uuid(input.order_id || input.id);
+  const key = clean(input.separator_key, 40).toLowerCase();
+  if (!id || !SEPARATOR_KEYS.has(key)) return { error: "invalid_separator", status: 400, message: "Selecione um separador válido." };
+  const found = await orderById(id);
+  if (found.error) return found;
+  if (!["confirmed", "processing"].includes(String(found.order.status))) {
+    return { error: "order_not_separable", status: 409, message: "Este pedido não está aguardando separação." };
+  }
+  const result = await db.rpc("ops2_set_order_separator_v2", { p_order_id: id, p_separator_key: key });
+  if (result.error) throw result.error;
+  return { assignment: result.data, separator_key: key };
+}
+
+async function setOrderSeparationItem(input: any) {
+  const id = uuid(input.order_id);
+  const itemId = uuid(input.order_item_id);
+  const state = input.state === "missing" || input.state === "separated" ? input.state : "";
+  const separatorKey = clean(input.separator_key, 40).toLowerCase();
+  const expected = clean(input.expected_order_updated_at, 80);
+  if (!id || !itemId || !state || !expected || !SEPARATOR_KEYS.has(separatorKey)) {
+    return { error: "invalid_separation_update", status: 400, message: "Não foi possível conferir este produto. Atualize a separação." };
+  }
+  const result = await db.rpc("ops2_set_order_separation_item_v2", {
+    p_order_id: id,
+    p_order_item_id: itemId,
+    p_state: state,
+    p_expected_order_updated_at: expected,
+    p_separator_key: separatorKey,
+  });
+  if (result.error) throw result.error;
+  if (result.data?.ok === false || result.data?.error) return { error: String(result.data.error || "separation_update_failed"), status: 409, message: "A separação mudou em outra tela. Atualize e tente novamente." };
+  return { update: result.data };
+}
+
+async function completeOrderSeparation(input: any) {
+  const id = uuid(input.order_id);
+  const expected = clean(input.expected_order_updated_at, 80);
+  if (!id || !expected) return { error: "invalid_separation_completion", status: 400, message: "Atualize a separação antes de confirmar." };
+  const prepared = await db.rpc("ops2_prepare_order_separation_completion_v2", {
+    p_order_id: id,
+    p_expected_order_updated_at: expected,
+  });
+  if (prepared.error) throw prepared.error;
+  if (prepared.data?.ok === false || prepared.data?.error) return { error: String(prepared.data.error || "separation_incomplete"), status: 409, message: "Confira todos os produtos e selecione o separador antes de confirmar." };
+  const applied = await db.rpc("ops2_apply_order_separation_stock_v2", { p_order_id: id });
+  if (applied.error) throw applied.error;
+  if (applied.data?.ok === false || applied.data?.error) {
+    const code = String(applied.data.error || "separation_stock_update_failed");
+    if (code.includes("bling")) return { error: code, status: 409, message: "O estoque precisa estar sob autoridade do Bling para concluir a separação." };
+    return { error: code, status: 409, message: "Não foi possível concluir a separação e atualizar o estoque." };
+  }
+  return { prepared: prepared.data, applied: applied.data };
+}
+
+async function markOrderDelivered(input: any) {
+  const id = uuid(input.order_id || input.id);
+  if (!id) return { error: "invalid_order_id", status: 400, message: "Pedido inválido." };
+  const found = await orderById(id);
+  if (found.error) return found;
+  if (!["ready", "out_for_delivery"].includes(String(found.order.status))) {
+    if (found.order.status === "delivered") return { order: found.order, already_delivered: true };
+    return { error: "order_not_ready_for_delivery", status: 409, message: "O pedido ainda não está na etapa de expedição." };
+  }
+  const result = await db.from("orders")
+    .update({ status: "delivered", delivered_at: new Date().toISOString() })
+    .eq("id", id)
+    .in("status", ["ready", "out_for_delivery"])
+    .select("id,order_number,status,total,delivered_at")
+    .maybeSingle();
+  if (result.error) throw result.error;
+  if (!result.data) return { error: "order_delivery_changed", status: 409, message: "O status mudou em outra tela. Atualize os pedidos." };
+  return { order: result.data };
+}
+
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
   if (!["GET", "POST"].includes(req.method)) return json(req, { ok: false, error: "method_not_allowed" }, 405);
@@ -346,6 +516,14 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "product_set_active") result = await productSetActive(input);
     else if (req.method === "POST" && action === "basket_save") result = await basketSave(input);
     else if (req.method === "POST" && action === "basket_set_active") result = await basketSetActive(input);
+    else if (req.method === "GET" && action === "orders_list") result = await ordersList(input);
+    else if (req.method === "GET" && action === "order_detail") result = await orderDetail(input);
+    else if (req.method === "GET" && action === "order_separation") result = await orderSeparation(input);
+    else if (req.method === "POST" && action === "order_confirm") result = await confirmStorefrontOrder(input);
+    else if (req.method === "POST" && action === "order_set_separator") result = await setOrderSeparator(input);
+    else if (req.method === "POST" && action === "order_separation_item") result = await setOrderSeparationItem(input);
+    else if (req.method === "POST" && action === "order_complete_separation") result = await completeOrderSeparation(input);
+    else if (req.method === "POST" && action === "order_mark_delivered") result = await markOrderDelivered(input);
     else return json(req, { ok: false, error: "action_invalid" }, 400);
 
     if (result?.error) return json(req, { ok: false, ...result }, Number(result.status || 400));

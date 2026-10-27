@@ -73,9 +73,10 @@
       panel.hidden = !active;
       panel.classList.toggle("active", active);
     });
-    $("page-title").textContent = ({ customers: "Clientes", baskets: "Cestas", products: "Produtos", overview: "Visão geral" })[name] || "Visão geral";
+    $("page-title").textContent = ({ customers: "Clientes", baskets: "Cestas", products: "Produtos", orders: "Pedidos", overview: "Visão geral" })[name] || "Visão geral";
     if (name === "baskets") window.DonaCatalogAdmin?.loadBaskets();
     if (name === "products") window.DonaCatalogAdmin?.loadProducts();
+    if (name === "orders") window.DonaOrdersAdmin?.loadOrders();
   }
 
   function digits(value) { return String(value || "").replace(/\D/g, ""); }
