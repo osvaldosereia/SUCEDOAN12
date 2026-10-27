@@ -14,7 +14,7 @@
     const url = new URL(`${supabase}/functions/v1/${storefront}`);
     url.searchParams.set("action", action);
     Object.entries(params || {}).forEach(([name, value]) => url.searchParams.set(name, String(value ?? "")));
-    const response = await fetch(url.toString(), { headers: { apikey: publishableKey, Authorization: `Bearer ${publishableKey}` }, cache: "no-store" });
+    const response = await fetch(url.toString(), { headers: { apikey: publishableKey }, cache: "no-store" });
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data.ok === false) throw new Error(data.error || "Não foi possível consultar.");
     return data;
@@ -146,4 +146,3 @@
 
   if (sessionStorage.getItem(accessKey) === "1") enterAdmin();
 })();
-

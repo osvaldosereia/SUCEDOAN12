@@ -158,6 +158,21 @@ async function productSave(input: any) {
   return { product: result.data };
 }
 
+async function productSetActive(input: any) {
+  const id = uuid(input.id ?? input.product_id);
+  if (!id || typeof input.is_active !== "boolean") {
+    return { status: 400, error: "invalid_product_status", message: "Produto ou situação inválida." };
+  }
+  const result = await db.from("products")
+    .update({ is_active: input.is_active })
+    .eq("id", id)
+    .select("id,name,is_active")
+    .maybeSingle();
+  if (result.error) throw result.error;
+  if (!result.data) return { status: 404, error: "product_not_found", message: "Produto não encontrado." };
+  return { product: result.data };
+}
+
 async function basketList(status = "active") {
   const templateQuery = db.from("basket_templates")
     .select("id,name,description,image_url,is_active,sort_order,base_price,category_id,subcategory_id")
@@ -328,6 +343,7 @@ Deno.serve(async (req: Request) => {
     }
     else if (req.method === "GET" && action === "products") result = await productSearch(input);
     else if (req.method === "POST" && action === "product_save") result = await productSave(input);
+    else if (req.method === "POST" && action === "product_set_active") result = await productSetActive(input);
     else if (req.method === "POST" && action === "basket_save") result = await basketSave(input);
     else if (req.method === "POST" && action === "basket_set_active") result = await basketSetActive(input);
     else return json(req, { ok: false, error: "action_invalid" }, 400);

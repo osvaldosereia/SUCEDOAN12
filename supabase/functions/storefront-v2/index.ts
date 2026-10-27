@@ -970,7 +970,12 @@ async function recordOpsEvent(eventType:string,summary:string,orderId:any,payloa
 async function customerIdByPhone(v:any){
   const ph=phone(v);if(!ph)return null;
   const r=await db.rpc("lookup_customer_by_phone",{p_phone:ph});if(r.error)throw r.error;
-  return uid(r.data?.[0]?.customer_id)||null;
+  const matched=uid(r.data?.[0]?.customer_id);if(matched)return matched;
+  // Older imports can associate one phone with multiple customers. Prefer the
+  // unique active customer whose primary WhatsApp number exactly matches it.
+  const exact=await db.from("customers").select("id").eq("primary_whatsapp_e164",ph).eq("is_active",true).limit(2);
+  if(exact.error)throw exact.error;
+  return exact.data?.length===1?uid(exact.data[0].id)||null:null;
 }
 async function loadCustomerForCheckout(customerId:string){
   const id=uid(customerId);if(!id)return null;

@@ -11,13 +11,19 @@
   const money = (cents) => (Number(cents || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const keyOf = (value) => plain(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
   const phoneDigits = (value) => String(value || "").replace(/\D/g, "");
+  const whatsappNumber = (value) => {
+    let digits = phoneDigits(value);
+    if (digits.startsWith("00")) digits = digits.slice(2);
+    if (digits.startsWith("55")) return digits.length === 12 || digits.length === 13 ? digits : "";
+    return digits.length === 10 || digits.length === 11 ? "55" + digits : "";
+  };
 
   async function request(action, options) {
     const opts = options || {};
     const url = new URL(root);
     url.searchParams.set("action", action);
     Object.keys(opts.params || {}).forEach((name) => url.searchParams.set(name, String(opts.params[name] == null ? "" : opts.params[name])));
-    const headers = { apikey: key, Authorization: "Bearer " + key };
+    const headers = { apikey: key };
     const init = { method: opts.method || "GET", headers, cache: "default" };
     if (opts.body !== undefined) {
       headers["Content-Type"] = "application/json";
@@ -289,27 +295,36 @@
       const alternatives = item._alternatives || [];
       const selected = alternatives.find((alt) => String(alt.product_id) === String(item.product_id));
       const image = selected && selected.image_url || item.image_url || "../img/cestas/cesta-mini.jpg";
-      const select = state.customizing && alternatives.length > 1
-        ? '<select class="product-edit" data-position="' + esc(item.position_id) + '" aria-label="Trocar produto para ' + esc(item.label || item.name) + '">' +
-          alternatives.map((alt) => '<option value="' + esc(alt.product_id) + '"' + (String(alt.product_id) === String(item.product_id) ? " selected" : "") + '>' + esc(alt.name) + (alt.packaging ? " · " + esc(alt.packaging) : "") + "</option>").join("") +
-          "</select>" : "";
+      const optionPicker = state.customizing && alternatives.length > 1
+        ? '<div class="product-option-picker" role="group" aria-label="Opções para ' + esc(item.label || item.name) + '">' +
+          alternatives.map((alt) => {
+            const selectedOption = String(alt.product_id) === String(item.product_id);
+            const optionPrice = alt.price_cents == null ? "Preço indisponível" : money(alt.price_cents);
+            return '<button class="product-choice' + (selectedOption ? ' is-selected' : '') + '" type="button" data-select-position="' + esc(item.position_id) + '" data-select-product="' + esc(alt.product_id) + '" aria-pressed="' + String(selectedOption) + '"' + (data.changing ? ' disabled' : '') + '>' +
+              '<img src="' + esc(alt.image_url || "../img/logoantonia5.png") + '" alt="" width="44" height="44" loading="lazy" decoding="async">' +
+              '<span class="product-choice-copy"><strong>' + esc(alt.name || "Produto") + '</strong><small>' + esc(optionPrice) + '</small></span>' +
+              (selectedOption ? '<span class="product-choice-check" aria-hidden="true">✓</span>' : '') +
+              '</button>';
+          }).join("") +
+          "</div>" : "";
       return '<article class="product-row"><img src="' + esc(image) + '" alt="" width="58" height="58" loading="lazy" decoding="async">' +
         '<div><h3 class="product-name">' + esc(item.name || "Produto") + '</h3><p class="product-quantity">' + esc(item.quantity || item.base_quantity || 0) + " " + esc(item.packaging || "") + '</p></div>' +
-        select + "</article>";
+        optionPicker + "</article>";
     }).join("");
     const note = data.orderable ? data.optionsLoading
       ? '<p class="helper stock-note">Buscando as marcas disponíveis…</p>'
       : "" : '<p class="helper stock-note">Esta composição está sem estoque disponível no momento.</p>';
     $("detail-content").innerHTML = note + '<div class="product-list">' + rows + "</div>";
     $("order-button").disabled = !data.orderable;
-    $("customize-button").disabled = !data.orderable || Boolean(data.optionsLoading);
-    $("detail-content").querySelectorAll("[data-position]").forEach((select) => select.addEventListener("change", () => changeProduct(select.dataset.position, select.value)));
+    $("customize-button").disabled = !data.orderable || Boolean(data.optionsLoading) || Boolean(data.changing);
+    $("detail-content").querySelectorAll("[data-select-position]").forEach((button) => button.addEventListener("click", () => changeProduct(button.dataset.selectPosition, button.dataset.selectProduct)));
     $("detail-content").querySelectorAll("img").forEach((image) => image.addEventListener("error", () => { image.src = "../img/logoantonia5.png"; }, { once: true }));
   }
 
   async function changeProduct(positionId, productId) {
     const data = state.baskets.get(state.activeKey);
-    if (!data) return;
+    if (!data || data.changing) return;
+    data.changing = true;
     const selections = data.items.map((item) => ({
       position_id: item.position_id,
       product_id: String(item.position_id) === String(positionId) ? productId : item.product_id,
@@ -324,7 +339,9 @@
     } catch (error) {
       toast("Essa troca não está disponível agora.");
     } finally {
+      data.changing = false;
       $("detail-content").removeAttribute("aria-busy");
+      renderDetail();
     }
   }
 
@@ -424,43 +441,42 @@
     const data = state.baskets.get(state.activeKey);
     const customer = state.customer || {};
     const payment = document.querySelector('input[name="payment"]:checked');
+    const address = addressLines(customer.address);
     const lines = [
       "Pedido de cesta básica — Dona Antônia",
       "",
       "Cesta: " + (data.basket.name || "Cesta básica"),
-      ...data.items.map((item) => "• " + (item.quantity || item.base_quantity || 0) + " " + (item.packaging || "") + " — " + item.name),
+      "Produtos:",
+      ...data.items.map((item) => "• " + (item.quantity || item.base_quantity || 0) + " × " + item.name + (item.packaging ? " (" + item.packaging + ")" : "")),
       "",
-      "Total da cesta: " + money(data.totalCents),
-      "Pagamento: " + (payment ? payment.value : ""),
+      "Valor total: " + money(data.totalCents),
+      "Forma de pagamento: " + (payment ? payment.value : ""),
+      "",
       "Cliente: " + (customer.display_name || ""),
       "Telefone: " + (customer.phone || $("customer-phone").value),
-      "Endereço: " + addressLines(customer.address).join(", ")
+      "Endereço:",
+      ...(address.length ? address.map((line) => "  " + line) : ["  Endereço não informado"])
     ];
     return lines.join("\n");
   }
 
   async function confirmOrder() {
     if (!state.customer || !document.querySelector('input[name="payment"]:checked')) return;
-    const message = buildOrderMessage();
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: "Pedido Dona Antônia", text: message });
-        toast("Compartilhamento aberto. Envie o pedido pelo app escolhido.");
-      } else if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(message);
-        toast("Resumo copiado. Cole no WhatsApp para enviar.");
-      } else {
-        window.prompt("Copie o resumo do pedido:", message);
-      }
-    } catch (error) {
-      if (error && error.name === "AbortError") return;
-      try {
-        await navigator.clipboard.writeText(message);
-        toast("Resumo copiado. Cole no WhatsApp para enviar.");
-      } catch (_) {
-        window.prompt("Copie o resumo do pedido:", message);
-      }
+    const recipient = whatsappNumber(state.customer.phone || $("customer-phone").value);
+    if (!recipient) {
+      toast("O telefone cadastrado não está em um formato válido para WhatsApp.");
+      return;
     }
+    const message = buildOrderMessage();
+    const link = document.createElement("a");
+    link.href = "https://wa.me/" + recipient + "?text=" + encodeURIComponent(message);
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.hidden = true;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    toast("WhatsApp aberto com o pedido preenchido. Confira e toque em Enviar.");
   }
 
   $("retry-catalog").addEventListener("click", loadCatalog);

@@ -27,7 +27,7 @@
       url.searchParams.set("action", action);
       Object.entries(options.params || {}).forEach(([key, value]) => url.searchParams.set(key, String(value ?? "")));
     }
-    const headers = { apikey: publishableKey, Authorization: `Bearer ${publishableKey}`, "x-admin-code": adminCode };
+    const headers = { apikey: publishableKey, "x-admin-code": adminCode };
     const init = { method: options.method || "GET", headers, cache: "no-store" };
     if (options.method === "POST") {
       headers["Content-Type"] = "application/json";
@@ -213,8 +213,8 @@
     const host = $("products-result");
     const rows = products.map((product) => `<article class="admin-product-card">
       ${product.image_url ? `<img src="${esc(product.image_url)}" alt="" width="64" height="64" loading="lazy" decoding="async">` : '<span class="product-image-placeholder">DA</span>'}
-      <div class="admin-product-info"><strong>${esc(product.name)}</strong><span>${esc([product.brand, product.sku && `SKU ${product.sku}`, product.is_active ? "Ativo" : "Inativo"].filter(Boolean).join(" · "))}</span><b>${money(effectivePrice(product))}${product.is_offer ? " · oferta" : ""}</b></div>
-      <button class="button button-outline" type="button" data-edit-product="${esc(product.id)}">Editar</button>
+      <div class="admin-product-info"><strong>${esc(product.name)}</strong><span>${esc([product.brand, product.sku && `SKU ${product.sku}`].filter(Boolean).join(" · "))}</span><b>${money(effectivePrice(product))}${product.is_offer ? " · oferta" : ""}</b></div>
+      <div class="admin-product-actions"><label class="product-active-toggle"><input type="checkbox" data-toggle-product="${esc(product.id)}" aria-label="Ativar ${esc(product.name)} no catálogo" ${product.is_active === true ? "checked" : ""}><span class="product-switch" aria-hidden="true"></span><span>${product.is_active === true ? "Ativo" : "Inativo"}</span></label><button class="button button-outline" type="button" data-edit-product="${esc(product.id)}">Editar</button></div>
     </article>`).join("");
     if (!append) host.innerHTML = rows || '<p class="admin-muted">Nenhum produto encontrado.</p>';
     else host.insertAdjacentHTML("beforeend", rows);
@@ -235,6 +235,26 @@
       $("products-more").hidden = state.productsOffset >= state.productsTotal;
     } catch (error) {
       host.innerHTML = `<p class="admin-muted">${esc(error.message || "Não foi possível carregar produtos.")}</p>`;
+    }
+  }
+
+  async function setProductActive(event) {
+    const input = event.target;
+    if (!input.matches("[data-toggle-product]")) return;
+    const productId = String(input.dataset.toggleProduct);
+    const isActive = input.checked;
+    input.disabled = true;
+    try {
+      const result = await request("product_set_active", { method: "POST", body: { id: productId, is_active: isActive } });
+      const cached = state.productCache.get(productId) || {};
+      state.productCache.set(productId, Object.assign({}, cached, result.product || { is_active: isActive }));
+      toast(isActive ? "Produto ativado no catálogo." : "Produto desativado no catálogo.");
+      await loadProducts(true);
+    } catch (error) {
+      input.checked = !isActive;
+      toast(error.message || "Não foi possível alterar o produto.");
+    } finally {
+      input.disabled = false;
     }
   }
 
@@ -368,6 +388,7 @@
     });
     $("basket-form").addEventListener("submit", saveBasket);
     $("product-form").addEventListener("submit", saveProduct);
+    $("products-result").addEventListener("change", setProductActive);
     $("product-search").addEventListener("submit", (event) => {
       event.preventDefault();
       state.productsQuery = $("product-query").value.trim();

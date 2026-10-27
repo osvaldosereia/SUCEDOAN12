@@ -75,7 +75,16 @@
 .catalog-basket-info strong, .admin-product-info b { color: var(--brand); font-size: .88rem; }
 .admin-product-list { display: grid; gap: 8px; margin: 12px 0; }
 .admin-product-info strong { overflow: hidden; font-size: .86rem; text-overflow: ellipsis; white-space: nowrap; }
+.admin-product-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
 .admin-product-card .button { min-height: 38px; padding: 0 12px; }
+.product-active-toggle { position: relative; display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: .7rem; font-weight: 650; white-space: nowrap; cursor: pointer; }
+.product-active-toggle input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
+.product-switch { position: relative; width: 32px; height: 19px; flex: 0 0 auto; border-radius: 999px; background: #c8c0b5; transition: background .15s ease; }
+.product-switch::after { position: absolute; top: 3px; left: 3px; width: 13px; height: 13px; border-radius: 50%; background: #fff; content: ""; transition: transform .15s ease; }
+.product-active-toggle input:checked + .product-switch { background: var(--brand); }
+.product-active-toggle input:checked + .product-switch::after { transform: translateX(13px); }
+.product-active-toggle input:focus-visible + .product-switch { outline: 3px solid #bd806e; outline-offset: 2px; }
+.product-active-toggle input:disabled + .product-switch { opacity: .55; }
 .button-wide { width: 100%; }
 .catalog-dialog { width: min(760px, calc(100vw - 20px)); max-width: none; max-height: min(92dvh, 900px); padding: 0; overflow: auto; border: 0; border-radius: 18px; background: var(--surface); color: var(--ink); box-shadow: 0 20px 70px rgba(20,12,8,.28); }
 .catalog-dialog::backdrop { background: rgba(27,20,17,.56); backdrop-filter: blur(2px); }
@@ -123,7 +132,9 @@
   .product-search-controls select { grid-column: 1 / -1; grid-row: 2; }
   .catalog-basket-card, .admin-product-card { grid-template-columns: 54px minmax(0,1fr); gap: 9px; }
   .catalog-basket-card > img, .admin-product-card > img, .product-image-placeholder { width: 54px; height: 54px; }
-  .catalog-basket-card > .button, .admin-product-card > .button { grid-column: 2; justify-self: start; min-height: 36px; }
+  .catalog-basket-card > .button { grid-column: 2; justify-self: start; min-height: 36px; }
+  .admin-product-actions { grid-column: 2; justify-content: flex-start; }
+  .admin-product-actions .button { min-height: 36px; }
   .dialog-form { gap: 12px; padding: 14px; }
   .dialog-heading { top: -14px; margin: -14px -14px 0; padding: 13px 14px 10px; }
   .position-fields { grid-template-columns: minmax(0,1fr) 94px; }
