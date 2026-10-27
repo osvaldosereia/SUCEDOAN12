@@ -5443,6 +5443,28 @@ h3 {
 	color: #79501d;
 }
 
+.basket-mold-pending-list {
+	grid-column: 2 / -1;
+	border-top: 1px solid var(--basket-line);
+	color: var(--muted);
+	font-size: 10px;
+	line-height: 1.45;
+	padding-top: 8px;
+}
+
+.basket-mold-pending-list summary {
+	color: #79501d;
+	cursor: pointer;
+	font-weight: 650;
+}
+
+.basket-mold-pending-list ul {
+	display: grid;
+	gap: 4px;
+	margin: 7px 0 0;
+	padding-left: 17px;
+}
+
 .basket-mold-edit-link,
 .basket-mold-disabled-link {
 	display: inline-flex;

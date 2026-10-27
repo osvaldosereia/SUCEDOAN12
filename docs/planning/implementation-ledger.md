@@ -942,3 +942,9 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 - A confirmação informa que pode registrar uma chave e criar/atualizar o rascunho. Publicação, vínculo com envio ativo e mensagens permanecem em ações separadas. A ação de chave isolada continua disponível.
 - Nenhuma ação Meta foi executada pela implementação. A alteração é apenas de interface; nenhum DDL, segredo, produto, Flow, pedido, mensagem, Bling ou dado comercial foi alterado.
 - Verificação local: `pnpm typecheck`, Biome no componente e `git diff --check` passaram. Não foram adicionados ou executados testes automatizados; o build do Next não foi executado no Windows.
+
+## Diagnóstico acionável de etapas de cesta (27/10/2026)
+
+- `/cestas` agora permite expandir cada cesta e ver os rótulos exatos das etapas pendentes, distinguindo ausência de opção ativa habilitada para WhatsApp de opção habilitada sem foto. Isso direciona a equipe ao cadastro correto sem ativar produtos nem mudar a composição comercial.
+- Consulta agregada read-only atualizada no Supabase canônico: cinco cestas ativas no WhatsApp, 118 posições; 22 posições sem alternativa elegível para Flow (Econômica 3, Grande Completa 5, Média Completa 5, Mini Completa 4, Pequena Completa 5). Todas têm produto ativo associado, mas nenhuma opção ativa com `is_whatsapp_active=true`; entre as posições que têm opção ativa para WhatsApp, não há falta de preço positivo nem de URL HTTPS cadastrada. Isso não prova acessibilidade nem renderização das fotos pela Meta.
+- Verificação local: `pnpm typecheck`, Biome nos dois arquivos TypeScript alterados, formatação CSS e `git diff --check` passaram. Nenhum teste automatizado foi adicionado/executado; não houve alteração de produtos, cestas, Flow, cliente, pedido, Bling ou NF-e.

@@ -165,6 +165,23 @@ export default async function CestasPage() {
 										Configuração de etapas pendente
 									</span>
 								)}
+								{readiness?.pendingPositions.length ? (
+									<details className="basket-mold-pending-list">
+										<summary>
+											Ver etapas pendentes ({readiness.pendingPositions.length})
+										</summary>
+										<ul>
+											{readiness.pendingPositions.map((position) => (
+												<li key={position.positionId}>
+													<strong>{position.label}</strong>:{" "}
+													{position.issue === "no_whatsapp_option"
+														? "sem opção ativa habilitada no WhatsApp"
+														: "sem opção habilitada com foto"}
+												</li>
+											))}
+										</ul>
+									</details>
+								) : null}
 							</article>
 						);
 					})}

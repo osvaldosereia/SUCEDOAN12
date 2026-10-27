@@ -95,8 +95,16 @@ export type BasketMoldPhotoAudit = {
 		activeOptionsWithoutPhoto: number;
 		positionsWithoutActiveOption: number;
 		positionsWithoutActivePhoto: number;
+		pendingPositions: Array<{
+			positionId: string;
+			label: string;
+			issue: "no_whatsapp_option" | "missing_photo";
+		}>;
 	}>;
 };
+
+type BasketMoldPendingPosition =
+	BasketMoldPhotoAudit["baskets"][number]["pendingPositions"][number];
 
 export type BasketMoldResult<T> =
 	| { ok: true; data: T }
@@ -446,6 +454,31 @@ export async function getAdminBasketMoldPhotoAudit(
 				(option) => option.active && option.whatsappActive === true,
 			),
 		);
+		const pendingPositions: BasketMoldPendingPosition[] =
+			currentPositions.flatMap((position): BasketMoldPendingPosition[] => {
+				const whatsappOptions = position.options.filter(
+					(option) => option.active && option.whatsappActive === true,
+				);
+				if (whatsappOptions.length === 0) {
+					return [
+						{
+							positionId: position.id,
+							label: position.label,
+							issue: "no_whatsapp_option" as const,
+						},
+					];
+				}
+				if (!whatsappOptions.some((option) => option.imageUrl !== null)) {
+					return [
+						{
+							positionId: position.id,
+							label: position.label,
+							issue: "missing_photo" as const,
+						},
+					];
+				}
+				return [];
+			});
 		return [
 			{
 				basketId: result.data.editor.basketId,
@@ -469,6 +502,7 @@ export async function getAdminBasketMoldPhotoAudit(
 								option.imageUrl !== null,
 						),
 				).length,
+				pendingPositions,
 			},
 		];
 	});
