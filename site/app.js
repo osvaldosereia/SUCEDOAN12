@@ -160,15 +160,11 @@
     host.innerHTML = state.cards.map((card, index) => {
       const sizeKey = card.size_key || keyOf(card.name);
       const title = plain(card.name || card.model_name || "Cesta básica");
-      const data = state.baskets.get(sizeKey);
-      const ready = data && data.summary.display_price_cents != null && Number.isFinite(Number(data.summary.display_price_cents));
-      const price = ready ? money(data.summary.display_price_cents) : "Preço indisponível";
       const loading = index < 2 ? "eager" : "lazy";
       const priority = index === 0 ? "high" : "low";
       return '<article class="basket-card">' +
         '<img class="basket-photo" src="' + esc(imageForBasket(card, sizeKey)) + '" alt="Cesta ' + esc(title) + '" width="420" height="420" loading="' + loading + '" fetchpriority="' + priority + '" decoding="async">' +
         '<div class="basket-body"><h3 class="basket-title">' + esc(title) + '</h3>' +
-        '<p class="basket-price"><small>A partir de</small>' + esc(price) + '</p>' +
         '<button class="button button-primary card-button" type="button" data-open-basket="' + esc(sizeKey) + '">Ver Produtos</button></div></article>';
     }).join("");
     host.querySelectorAll("[data-open-basket]").forEach((button) => button.addEventListener("click", () => openDetail(button.dataset.openBasket)));
@@ -183,11 +179,11 @@
 
   async function loadCatalog() {
     $("retry-catalog").hidden = true;
-    $("catalog-status").textContent = "Buscando preços e disponibilidade…";
+    $("catalog-status").textContent = "Carregando cestas…";
     $("basket-grid").setAttribute("aria-busy", "true");
     state.baskets.clear();
     try {
-      const result = await request("home_catalog_cards");
+      const result = await request("home_size_cards");
       state.cards = Array.isArray(result.baskets) ? result.baskets : [];
       if (!state.cards.length) throw new Error("Nenhuma cesta disponível no momento.");
       state.cards.forEach((card) => {
@@ -196,8 +192,8 @@
           summary: card,
           basket: null,
           items: [],
-          totalCents: Number(card.display_price_cents || 0),
-          orderable: Number(card.stock_quantity || 0) > 0,
+          totalCents: null,
+          orderable: false,
           detailLoaded: false,
           detailPromise: null,
         });
@@ -243,7 +239,7 @@
     }
     if (!data.detailLoaded) {
       $("detail-title").textContent = data.summary?.name || "Produtos da cesta";
-      $("detail-total").textContent = money(data.totalCents);
+      $("detail-total").textContent = data.totalCents == null ? "—" : money(data.totalCents);
       $("detail-content").innerHTML = '<div class="empty-state" aria-live="polite">Carregando produtos da cesta…</div>';
       $("order-button").disabled = true;
       $("customize-button").disabled = true;
