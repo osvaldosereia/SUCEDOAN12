@@ -109,10 +109,18 @@
 .position-options { display: grid; gap: 6px; }
 .position-options > strong { justify-content: flex-start; font-size: .8rem; }
 .position-options > strong small { color: var(--muted); font-weight: 500; }
-.basket-option-row { display: grid; grid-template-columns: 20px minmax(0,1fr) auto; align-items: center; gap: 8px; padding: 8px; border: 1px solid #eee7dc; border-radius: 9px; background: #fcfaf7; }
-.basket-option-row input, .picker-product-row input, .product-flags input { accent-color: var(--brand); }
-.basket-option-row > span { min-width: 0; font-size: .78rem; font-weight: 650; }
-.basket-option-row > span small { display: block; margin-top: 3px; color: var(--muted); font-size: .69rem; font-weight: 400; }
+.basket-option-row { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 8px; padding: 8px; border: 1px solid #eee7dc; border-radius: 9px; background: #fcfaf7; }
+.basket-option-choice { display: flex; align-items: flex-start; gap: 8px; min-width: 0; cursor: pointer; }
+.basket-option-choice input, .picker-product-row input, .product-flags input { flex: 0 0 auto; accent-color: var(--brand); }
+.basket-option-copy { display: grid; min-width: 0; gap: 3px; }
+.basket-option-copy strong { font-size: .78rem; }
+.basket-option-copy small { color: var(--muted); font-size: .69rem; font-weight: 400; }
+.basket-option-status { width: max-content; margin-top: 2px; padding: 2px 7px; border-radius: 999px; font-size: .64rem !important; font-weight: 700 !important; }
+.basket-option-status.is-active { background: #e8f4eb; color: #286342; }
+.basket-option-status.is-inactive { background: #f7eae7; color: #8b392f; }
+.basket-option-status.is-unknown { background: #efede8; color: #635b50; }
+.basket-option-actions { display: flex; align-items: center; gap: 4px; }
+.product-edit-mini { min-height: 28px; padding: 4px 7px; border: 1px solid #dfcfc0; border-radius: 7px; color: var(--brand); font-size: .68rem; font-weight: 700; white-space: nowrap; }
 .text-button { padding: 5px; border: 0; background: transparent; font: inherit; font-size: .76rem; }
 .danger-text { color: #a13d32; }
 .product-flags { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
