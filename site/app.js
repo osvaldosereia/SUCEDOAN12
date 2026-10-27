@@ -152,13 +152,14 @@
           try { alternatives = await optionsForItem(basket, item); } catch (_) { alternatives = batchOptions; }
         }
         alternatives = sortAlternatives(alternatives);
-        const cheapest = alternatives[0];
-        return Object.assign({}, item, cheapest ? {
-          product_id: cheapest.product_id,
-          name: cheapest.name || item.name,
-          image_url: cheapest.image_url || item.image_url,
-          packaging: cheapest.packaging || item.packaging,
-          stock_quantity: cheapest.stock_quantity,
+        const configuredDefault = alternatives.find((option) => String(option.product_id) === String(item.product_id));
+        const defaultOption = configuredDefault || alternatives[0];
+        return Object.assign({}, item, defaultOption ? {
+          product_id: defaultOption.product_id,
+          name: defaultOption.name || item.name,
+          image_url: defaultOption.image_url || item.image_url,
+          packaging: defaultOption.packaging || item.packaging,
+          stock_quantity: defaultOption.stock_quantity,
           _alternatives: alternatives
         } : { _alternatives: [] });
       });
@@ -281,7 +282,7 @@
         select + "</article>";
     }).join("");
     const note = !data.optionsLoaded
-      ? '<p class="helper stock-note">Carregando as opções mais baratas…</p>'
+      ? '<p class="helper stock-note">Carregando produtos disponíveis…</p>'
       : data.orderable ? "" : '<p class="helper stock-note">Esta composição está sem estoque disponível no momento.</p>';
     $("detail-content").innerHTML = note + '<div class="product-list">' + rows + "</div>";
     $("order-button").disabled = !data.orderable || !data.optionsLoaded;
@@ -447,3 +448,4 @@
 
   loadCatalog();
 })();
+

@@ -4,7 +4,7 @@ O catálogo público está em `/site/`; o painel administrativo fica em `/site/a
 
 ## Catálogo público
 
-- Carrega os resumos das cinco cestas e busca os produtos mais baratos quando uma cesta é aberta.
+- Carrega os resumos das cestas e busca as opções disponíveis quando uma cesta é aberta. A opção padrão configurada no admin é selecionada primeiro; se não estiver disponível, a loja escolhe a alternativa disponível mais barata.
 - Exibe o preço configurado da cesta, sem mostrar valores individuais dos produtos.
 - Consulta clientes e endereços existentes para o pedido. O resumo pode ser compartilhado pelo seletor do celular ou copiado.
 - Não chama Meta/WhatsApp API, Bling nem grava pedidos.
