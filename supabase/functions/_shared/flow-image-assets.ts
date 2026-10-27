@@ -55,7 +55,7 @@ function isAllowedImageUrl(imageUrl: string, supabaseUrl: string): boolean {
 
 		return (
 			image.hostname === "raw.githubusercontent.com" &&
-			image.pathname.startsWith(LEGACY_CATALOG_PREFIX)
+			image.pathname.toLowerCase().startsWith(LEGACY_CATALOG_PREFIX)
 		);
 	} catch {
 		return false;
