@@ -142,6 +142,16 @@ function dateLabel(value: string | null): string {
 		: "Sem registro";
 }
 
+function isFlowKeyReady(state: SetupState | null): boolean {
+	return Boolean(
+		state?.key.status === "ready" &&
+			state.key.metaFingerprint &&
+			state.key.verifiedMetaFingerprint &&
+			state.key.metaFingerprint === state.key.verifiedMetaFingerprint &&
+			state.key.metaSignatureStatus === "VALID",
+	);
+}
+
 export function FlowSetupPanel({
 	accountId,
 	label,
@@ -219,33 +229,61 @@ export function FlowSetupPanel({
 		});
 	}
 
-	function createDraft() {
-		startTransition(async () => {
-			const result = await request("create_draft");
-			if (!result) return;
-			const refreshed = await request("inspect");
-			if (refreshed) setState(refreshed as unknown as SetupState);
-			setReadyAtLeastOnce(true);
-			setNotice(
-				result.existing === true
-					? "O rascunho deste número já existe e pode receber o JSON."
-					: "Rascunho criado na Meta. Envie a definição para conferir a validação.",
-			);
-		});
-	}
+	function prepareFlow() {
+		if (
+			!window.confirm(
+				"Esta ação verifica a chave deste número e, se preciso, registra uma nova chave na Meta. Depois cria ou atualiza o rascunho e envia o JSON para validação. Não publica o Flow nem envia mensagens. Continuar?",
+			)
+		)
+			return;
 
-	function uploadFlowJson(flowId: string) {
 		startTransition(async () => {
-			const result = await request("upload_flow_json", { flowId, flowJson });
-			if (!result) return;
-			const count = Number(result.validationErrorCount ?? 0);
+			let currentState = state;
+			if (!isFlowKeyReady(currentState)) {
+				const keyResult = await request("setup_key");
+				if (!keyResult) return;
+				const afterKey = await request("inspect");
+				if (!afterKey) return;
+				currentState = afterKey as unknown as SetupState;
+				setState(currentState);
+				setReadyAtLeastOnce(true);
+				if (!isFlowKeyReady(currentState)) {
+					setError(errorMessage("meta_key_not_verified"));
+					return;
+				}
+			}
+
+			const draft = await request("create_draft");
+			if (!draft) return;
+			const flowId =
+				typeof draft.flowId === "string" && /^[0-9]{6,32}$/.test(draft.flowId)
+					? draft.flowId
+					: null;
+			if (!flowId) {
+				setError(errorMessage("provider_invalid_response"));
+				return;
+			}
+
+			const uploaded = await request("upload_flow_json", { flowId, flowJson });
+			if (!uploaded) return;
+			const validationErrorCount = Number(uploaded.validationErrorCount ?? 0);
+			if (
+				!Number.isSafeInteger(validationErrorCount) ||
+				validationErrorCount < 0
+			) {
+				setError(errorMessage("provider_invalid_response"));
+				return;
+			}
 			const refreshed = await request("inspect");
-			if (refreshed) setState(refreshed as unknown as SetupState);
+			if (!refreshed) return;
+			setState(refreshed as unknown as SetupState);
 			setReadyAtLeastOnce(true);
 			setNotice(
-				count === 0
-					? "JSON enviado. A Meta não retornou erros de validação."
-					: `JSON enviado. A Meta retornou ${count} erro(s); confira os detalhes abaixo.`,
+				validationErrorCount === 0
+					? draft.existing === true
+						? "JSON enviado ao rascunho existente. A Meta não retornou erros de validação."
+						: "Rascunho criado e JSON enviado. A Meta não retornou erros de validação."
+					: `JSON enviado. A Meta retornou ${validationErrorCount} erro(s); confira os detalhes abaixo.`,
 			);
 		});
 	}
@@ -291,13 +329,8 @@ export function FlowSetupPanel({
 		});
 	}
 
-	const localAndMetaMatch = Boolean(
-		state?.key.metaFingerprint &&
-			state.key.verifiedMetaFingerprint &&
-			state.key.metaFingerprint === state.key.verifiedMetaFingerprint &&
-			state.key.metaSignatureStatus === "VALID",
-	);
-	const keyReady = state?.key.status === "ready" && localAndMetaMatch;
+	const localAndMetaMatch = isFlowKeyReady(state);
+	const keyReady = localAndMetaMatch;
 	const candidateName = state
 		? `Cestas Dona Antônia - ${state.account.slug.slice(-4)}`
 		: "";
@@ -425,16 +458,18 @@ export function FlowSetupPanel({
 						</div>
 						<button
 							className="button button--secondary flow-setup-button"
-							disabled={pending || !keyReady}
-							onClick={createDraft}
+							disabled={pending || state.flowListIssue !== null}
+							onClick={prepareFlow}
 							type="button"
 						>
-							Criar rascunho na Meta
+							Preparar Flow e validar
 						</button>
 					</div>
 					{!keyReady && (
 						<p className="flow-setup-inline-note">
-							Verifique a chave deste número antes de preparar o Flow.
+							Ao preparar, a chave deste número será verificada e só será criada
+							se ainda não existir. O processo para se a Meta não confirmar a
+							chave.
 						</p>
 					)}
 					{state.flowListIssue ? (
@@ -500,14 +535,10 @@ export function FlowSetupPanel({
 											</ul>
 										)}
 										{flow.status === "DRAFT" && flow.name === candidateName && (
-											<button
-												className="button button--secondary flow-setup-button flow-setup-enable"
-												disabled={pending || !keyReady || !flow.endpointMatches}
-												onClick={() => uploadFlowJson(flow.id)}
-												type="button"
-											>
-												Enviar JSON e validar
-											</button>
+											<p className="flow-setup-inline-note">
+												Use “Preparar Flow e validar” para atualizar o JSON
+												deste rascunho.
+											</p>
 										)}
 										{binding?.is_verified ? (
 											binding.is_send_enabled ? (

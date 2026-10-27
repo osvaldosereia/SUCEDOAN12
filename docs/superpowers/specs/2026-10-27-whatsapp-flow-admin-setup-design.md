@@ -20,9 +20,12 @@ Dar à equipe uma tela por número Meta para conferir a chave de criptografia, l
 
 1. A tela mostra os dois canais, status do keyring e bindings persistidos.
 2. **Atualizar Meta** lê chave e Flows publicados, sem mutação.
-3. **Configurar chave** reconcilia a chave existente ou, se ausente dos dois lados, cria Vault secret, registra a pública e verifica read-back.
-4. **Vincular Flow** reconsulta o Flow por ID na Meta, confere WABA, publicação, erros, endpoint, `json_version=7.3` e `data_api_version=3.0`; salva binding com envio desligado.
-5. **Ativar envio** habilita somente o binding selecionado depois de repetir os pré-requisitos no servidor.
+3. **Preparar Flow e validar** verifica a chave; se não houver chave em nenhum lado, cria o segredo no Vault, registra a pública e exige read-back válido. Depois cria ou reutiliza o rascunho esperado e envia o JSON aprovado para validação. Se a Meta não confirmar a chave, o processo para.
+4. A ação separada **Verificar/configurar chave** continua disponível para reconciliação isolada. Nenhuma operação substitui uma chave existente.
+5. **Vincular Flow** reconsulta o Flow por ID na Meta, confere WABA, publicação, erros, endpoint, `json_version=7.3` e `data_api_version=3.0`; salva binding com envio desligado.
+6. **Ativar envio** habilita somente o binding selecionado depois de repetir os pré-requisitos no servidor.
+
+A preparação não publica o Flow nem envia mensagens. A UI confirma antes de registrar chave ou alterar o rascunho.
 
 ## Contrato técnico
 

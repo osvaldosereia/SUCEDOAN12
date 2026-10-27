@@ -935,3 +935,10 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 - A leitura usa a sessão ativa e os RPCs existentes; não altera produtos, moldes, preços ou disponibilidade. A tela distingue cadastro de opção/foto da publicação e validação oficial do Flow.
 - Revalidação read-only no Supabase canônico: `whatsapp-flow-data-exchange-greenfield-v1` está ativa na versão 2 com `verify_jwt=false`; `admin-whatsapp-flow-setup-v1` está ativa na versão 2 com `verify_jwt=true`. O keyring mantém uma conta em `pending_key_provisioning` e outra em `pending_meta_verification`; não há binding de Flow cadastrado. Nenhuma chave ou valor de segredo foi lido.
 - Verificação desta alteração: `pnpm typecheck`, Biome nos arquivos TypeScript alterados e `git diff --check` passaram. Não foi executado teste automatizado nem build do Next no Windows.
+
+## Preparação de Flow em uma ação no Admin (27/10/2026)
+
+- `/configuracoes/fluxos` agora oferece **Preparar Flow e validar** por número: confere a chave e só a provisiona quando ausente; interrompe se a Meta não validar; cria ou reutiliza o rascunho esperado; envia o JSON fixado no projeto e atualiza erros de validação.
+- A confirmação informa que pode registrar uma chave e criar/atualizar o rascunho. Publicação, vínculo com envio ativo e mensagens permanecem em ações separadas. A ação de chave isolada continua disponível.
+- Nenhuma ação Meta foi executada pela implementação. A alteração é apenas de interface; nenhum DDL, segredo, produto, Flow, pedido, mensagem, Bling ou dado comercial foi alterado.
+- Verificação local: `pnpm typecheck`, Biome no componente e `git diff --check` passaram. Não foram adicionados ou executados testes automatizados; o build do Next não foi executado no Windows.
