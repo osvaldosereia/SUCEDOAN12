@@ -4,7 +4,7 @@
   const config = window.DONA_SITE_CONFIG || {};
   const root = String(config.supabaseUrl || "").replace(/\/$/, "") + "/functions/v1/" + (config.storefrontFunction || "storefront-v2");
   const key = config.publishableKey || "";
-  const state = { cards: [], baskets: new Map(), activeKey: "", customizing: false, customer: null, toastTimer: 0 };
+  const state = { cards: [], baskets: new Map(), activeKey: "", customer: null, toastTimer: 0 };
   const $ = (id) => document.getElementById(id);
   const esc = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
   const plain = (value) => String(value == null ? "" : value).replace(/\s+/g, " ").trim();
@@ -118,7 +118,7 @@
   async function toggleItemOptions(positionId) {
     const sizeKey = state.activeKey;
     const data = state.baskets.get(sizeKey);
-    if (!data || !state.customizing || data.changing) return;
+    if (!data || data.changing) return;
     const item = data.items.find((row) => String(row.position_id) === String(positionId));
     if (!item || item._optionsLoading) return;
 
@@ -242,17 +242,15 @@
       $("detail-total").textContent = data.totalCents == null ? "—" : money(data.totalCents);
       $("detail-content").innerHTML = '<div class="empty-state" aria-live="polite">Carregando produtos da cesta…</div>';
       $("order-button").disabled = true;
-      $("customize-button").disabled = true;
       return;
     }
     $("detail-title").textContent = data.basket.name || "Produtos da cesta";
     $("detail-total").textContent = data.changing ? "Atualizando…" : money(data.totalCents ?? data.basket.display_price_cents);
-    $("customize-button").textContent = state.customizing ? "Concluir personalização" : "Personalizar";
     const rows = data.items.map((item) => {
       const alternatives = item._alternatives || [];
       const selected = alternatives.find((alt) => String(alt.product_id) === String(item.product_id));
       const image = selected && selected.image_url || item.image_url || "../img/cestas/cesta-mini.jpg";
-      const expanded = state.customizing && item._expanded === true;
+      const expanded = item._expanded === true;
       const optionCount = Math.max(Number(item.alternative_count || 0), alternatives.length);
       const changingThisItem = String(data.changingPosition || "") === String(item.position_id);
       const changeStatus = changingThisItem ? '<p class="variation-status" role="status">Atualizando a cesta e o valor…</p>' : "";
@@ -272,10 +270,10 @@
             ? '<p class="variation-panel-label">Opções disponíveis</p><div class="product-option-picker" role="group" aria-label="Opções para ' + esc(item.label || item.name) + '">' + choices + '</div>'
             : '<p class="variation-status">Não há outras opções disponíveis para este produto.</p>')
         : "";
-      const optionPicker = state.customizing && optionCount > 1
+      const optionPicker = optionCount > 1
         ? '<div class="variation-disclosure">' +
           '<button class="variation-toggle" type="button" data-toggle-position="' + esc(item.position_id) + '" aria-expanded="' + String(Boolean(expanded)) + '" aria-controls="item-options-' + esc(item.position_id) + '"' + (data.changing || item._optionsLoading ? ' disabled' : '') + '>' +
-          '<span>' + (item._optionsLoading ? "Carregando opções…" : item._optionsError ? "Tentar novamente" : expanded ? "Ocultar opções" : "Escolher marca ou variação") + '</span>' +
+          '<span>' + (item._optionsLoading ? "Carregando opções…" : item._optionsError ? "Tentar novamente" : expanded ? "Ocultar opções" : "Trocar produto") + '</span>' +
           '<span class="variation-chevron" aria-hidden="true">' + (expanded ? "−" : "+") + '</span>' +
           '</button>' +
           '<div class="variation-panel" id="item-options-' + esc(item.position_id) + '"' + (expanded ? "" : " hidden") + ' aria-busy="' + String(Boolean(item._optionsLoading || changingThisItem)) + '">' +
@@ -289,7 +287,6 @@
     const note = data.orderable ? "" : '<p class="helper stock-note">Esta composição está sem estoque disponível no momento.</p>';
     $("detail-content").innerHTML = note + '<div class="product-list">' + rows + "</div>";
     $("order-button").disabled = !data.orderable || Boolean(data.changing);
-    $("customize-button").disabled = !data.orderable || Boolean(data.changing);
     $("detail-content").querySelectorAll("[data-toggle-position]").forEach((button) => button.addEventListener("click", () => toggleItemOptions(button.dataset.togglePosition)));
     $("detail-content").querySelectorAll("[data-select-position]").forEach((button) => button.addEventListener("click", () => changeProduct(button.dataset.selectPosition, button.dataset.selectProduct)));
     $("detail-content").querySelectorAll("img").forEach((image) => image.addEventListener("error", () => { image.src = "../img/logoantonia5.png"; }, { once: true }));
@@ -409,7 +406,6 @@
     const data = state.baskets.get(sizeKey);
     if (!data) return;
     state.activeKey = sizeKey;
-    state.customizing = false;
     $("detail-content").scrollTop = 0;
     if (data.detailLoaded) data.items.forEach((item) => { item._expanded = false; });
     if (data.error) data.error = false;
@@ -425,14 +421,6 @@
       data.detailPromise = null;
       if (state.activeKey === sizeKey && !$('detail-sheet').hidden) renderDetail();
     });
-  }
-
-  function toggleCustomization() {
-    const data = state.baskets.get(state.activeKey);
-    if (!data || !data.detailLoaded || !data.orderable || data.changing) return;
-    state.customizing = !state.customizing;
-    if (!state.customizing) data.items.forEach((item) => { item._expanded = false; });
-    renderDetailPreservingScroll();
   }
 
   function addressLines(address) {
@@ -576,7 +564,6 @@
     showSheet("order-sheet");
     $("customer-phone").focus({ preventScroll: true });
   });
-  $("customize-button").addEventListener("click", toggleCustomization);
   $("lookup-button").addEventListener("click", lookupCustomer);
   $("customer-phone").addEventListener("keydown", (event) => { if (event.key === "Enter") lookupCustomer(); });
   $("payment-options").addEventListener("change", () => {
