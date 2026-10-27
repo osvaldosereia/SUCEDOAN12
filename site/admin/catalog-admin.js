@@ -243,13 +243,28 @@
     if (!input.matches("[data-toggle-product]")) return;
     const productId = String(input.dataset.toggleProduct);
     const isActive = input.checked;
+    const card = input.closest(".admin-product-card");
     input.disabled = true;
     try {
       const result = await request("product_set_active", { method: "POST", body: { id: productId, is_active: isActive } });
       const cached = state.productCache.get(productId) || {};
-      state.productCache.set(productId, Object.assign({}, cached, result.product || { is_active: isActive }));
+      state.productCache.set(productId, Object.assign({}, cached, result.product || {}, { is_active: isActive }));
+      const statusLabel = input.closest(".product-active-toggle")?.querySelector("span:last-child");
+      if (statusLabel) statusLabel.textContent = isActive ? "Ativo" : "Inativo";
       toast(isActive ? "Produto ativado no catálogo." : "Produto desativado no catálogo.");
-      await loadProducts(true);
+
+      const leavesCurrentFilter =
+        (state.productsStatus === "active" && !isActive) ||
+        (state.productsStatus === "inactive" && isActive);
+      if (leavesCurrentFilter && card) {
+        card.remove();
+        state.productsTotal = Math.max(0, state.productsTotal - 1);
+        state.productsOffset = Math.max(0, state.productsOffset - 1);
+        $("products-more").hidden = state.productsOffset >= state.productsTotal;
+        if (!$("products-result").querySelector(".admin-product-card")) {
+          $("products-result").innerHTML = '<p class="admin-muted">Nenhum produto encontrado.</p>';
+        }
+      }
     } catch (error) {
       input.checked = !isActive;
       toast(error.message || "Não foi possível alterar o produto.");
