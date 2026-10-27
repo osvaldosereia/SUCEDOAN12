@@ -2,7 +2,9 @@
 
 import {
 	AlertCircle,
+	ArrowDown,
 	ArrowLeft,
+	ArrowUp,
 	Check,
 	ImageOff,
 	Plus,
@@ -33,13 +35,15 @@ const currency = new Intl.NumberFormat("pt-BR", {
 	currency: "BRL",
 });
 const MAX_FLOW_OPTIONS_PER_POSITION = 8;
+const MAX_FLOW_POSITIONS = 80;
+const MAX_HIDDEN_ADJUSTMENT_CENTS = 999_999_999;
 
 const errorCopy: Record<string, string> = {
 	not_configured: "O acesso ao Supabase ainda não está configurado.",
 	not_authenticated: "Sua sessão expirou. Entre novamente e tente de novo.",
 	not_authorized: "Sua conta não tem permissão para alterar as cestas.",
 	invalid_input:
-		"Revise as alternativas. Há produto repetido ou informação inválida.",
+		"Revise as etapas e alternativas. Há produto repetido ou informação inválida.",
 	conflict: "O molde mudou em outra sessão. Atualize a página antes de salvar.",
 	product_not_ready:
 		"Toda opção ativa do Flow precisa estar habilitada para WhatsApp e ter nome, foto HTTPS e preço válidos. Corrija o produto ou retire-o desta etapa.",
@@ -66,6 +70,34 @@ function errorMessage(error: string): string {
 	return errorCopy[error] ?? errorCopy.unavailable;
 }
 
+function formatCentsInput(cents: number): string {
+	const absolute = Math.abs(cents);
+	return (
+		(cents < 0 ? "-" : "") +
+		Math.floor(absolute / 100) +
+		"," +
+		String(absolute % 100).padStart(2, "0")
+	);
+}
+
+function parseCentsInput(value: string): number | null {
+	const cleaned = value.trim().replace(/\s/g, "");
+	let normalized = cleaned;
+	if (cleaned.includes(",")) {
+		if (!/^(?:\d+,\d{1,2}|\d{1,3}(?:\.\d{3})+,\d{1,2})$/.test(cleaned)) {
+			return null;
+		}
+		normalized = cleaned.replaceAll(".", "").replace(",", ".");
+	} else if (!/^\d+(?:\.\d{1,2})?$/.test(cleaned)) {
+		return null;
+	}
+	const [whole, fraction = ""] = normalized.split(".");
+	const cents = Number(whole) * 100 + Number(`${fraction}00`.slice(0, 2));
+	return Number.isSafeInteger(cents) && cents <= MAX_HIDDEN_ADJUSTMENT_CENTS
+		? cents
+		: null;
+}
+
 export function BasketMoldEditorClient({
 	initialEditor,
 	initialRevision,
@@ -75,6 +107,10 @@ export function BasketMoldEditorClient({
 }) {
 	const [editor, setEditor] = useState(initialEditor);
 	const [revision, setRevision] = useState(initialRevision);
+	const [basketName, setBasketName] = useState(initialEditor.name);
+	const [hiddenAdjustmentInput, setHiddenAdjustmentInput] = useState(() =>
+		formatCentsInput(initialEditor.hiddenAdjustmentCents),
+	);
 	const [positions, setPositions] = useState(() =>
 		draftFromEditor(initialEditor),
 	);
@@ -91,19 +127,96 @@ export function BasketMoldEditorClient({
 	const [addingId, setAddingId] = useState<string | null>(null);
 	const [saving, setSaving] = useState(false);
 
-	const changed = positions.some((position) => {
-		const original = editor.positions.find((item) => item.id === position.id);
-		return (
-			!original ||
-			JSON.stringify(position.options.map((option) => option.productId)) !==
-				JSON.stringify(original.options.map((option) => option.productId))
-		);
-	});
+	const hiddenAdjustmentCents = parseCentsInput(hiddenAdjustmentInput);
+	const changed =
+		basketName.trim() !== editor.name ||
+		hiddenAdjustmentCents !== editor.hiddenAdjustmentCents ||
+		JSON.stringify(
+			positions.map((position) => [
+				position.id,
+				position.label,
+				position.options.map((option) => option.productId),
+			]),
+		) !==
+			JSON.stringify(
+				editor.positions.map((position) => [
+					position.id,
+					position.label,
+					position.options.map((option) => option.productId),
+				]),
+			);
 	const canSave =
 		changed &&
+		basketName.trim().length > 0 &&
+		Array.from(basketName.trim()).length <= 180 &&
+		hiddenAdjustmentCents !== null &&
 		!searching &&
 		addingId === null &&
-		positions.every((position) => position.options.length > 0);
+		positions.every(
+			(position) =>
+				position.label.trim().length > 0 &&
+				Array.from(position.label.trim()).length <= 100 &&
+				position.options.length > 0,
+		);
+
+	function addPosition() {
+		const id = crypto.randomUUID();
+		setPositions((current) => [
+			...current,
+			{
+				id,
+				label: "Novo produto",
+				quantity: 1,
+				sortOrder: current.length,
+				options: [],
+			},
+		]);
+		setSearchPositionId(id);
+		setQuery("");
+		setCandidates([]);
+		setMessage(null);
+	}
+
+	function removePosition(positionId: string) {
+		setPositions((current) =>
+			current.filter((position) => position.id !== positionId),
+		);
+		if (searchPositionId === positionId) {
+			setSearchPositionId(null);
+			setCandidates([]);
+		}
+		setMessage(null);
+	}
+
+	function movePosition(index: number, offset: -1 | 1) {
+		setPositions((current) => {
+			const target = index + offset;
+			if (target < 0 || target >= current.length) return current;
+			const next = [...current];
+			[next[index], next[target]] = [next[target], next[index]];
+			return next;
+		});
+		setMessage(null);
+	}
+
+	function moveOption(positionId: string, productId: string, offset: -1 | 1) {
+		setPositions((current) =>
+			current.map((position) => {
+				if (position.id !== positionId) return position;
+				const index = position.options.findIndex(
+					(option) => option.productId === productId,
+				);
+				const target = index + offset;
+				if (index < 0 || target < 0 || target >= position.options.length) {
+					return position;
+				}
+				const options = [...position.options];
+				[options[index], options[target]] = [options[target], options[index]];
+				return { ...position, options };
+			}),
+		);
+		setMessage(null);
+	}
 
 	async function searchProducts(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
@@ -212,13 +325,23 @@ export function BasketMoldEditorClient({
 	}
 
 	async function save() {
+		if (!basketName.trim() || hiddenAdjustmentCents === null) {
+			setMessage({
+				kind: "error",
+				text: "Confira o nome da cesta e o acréscimo interno em reais.",
+			});
+			return;
+		}
 		setSaving(true);
 		setMessage(null);
 		const result = await saveBasketMoldOptionsAction({
 			basketId: editor.basketId,
 			revision,
+			name: basketName.trim(),
+			hiddenAdjustmentCents,
 			positions: positions.map((position) => ({
 				positionId: position.id,
+				label: position.label.trim(),
 				productIds: position.options.map((option) => option.productId),
 			})),
 		});
@@ -229,6 +352,10 @@ export function BasketMoldEditorClient({
 		}
 		setEditor(result.data.editor);
 		setRevision(result.data.revision);
+		setBasketName(result.data.editor.name);
+		setHiddenAdjustmentInput(
+			formatCentsInput(result.data.editor.hiddenAdjustmentCents),
+		);
 		setPositions(draftFromEditor(result.data.editor));
 		setSearchPositionId(null);
 		setCandidates([]);
@@ -244,10 +371,10 @@ export function BasketMoldEditorClient({
 			<section className="page-heading">
 				<div>
 					<p className="eyebrow">CADASTROS / CESTAS</p>
-					<h1>{editor.name}</h1>
+					<h1>{basketName.trim() || "Cesta sem nome"}</h1>
 					<p className="page-description">
-						Inclua ou retire as alternativas de cada etapa. A ordem atual é
-						mantida.
+						Ajuste o nome, as etapas e as alternativas que o cliente verá no
+						Flow.
 					</p>
 				</div>
 				<button
@@ -263,12 +390,35 @@ export function BasketMoldEditorClient({
 
 			<section
 				className="basket-mold-internal"
-				aria-label="Ajustes internos da cesta"
+				aria-label="Configuração da cesta"
 			>
-				<div>
-					<span>Ajuste interno da cesta</span>
-					<strong>{currency.format(editor.hiddenAdjustmentCents / 100)}</strong>
-				</div>
+				<label className="basket-mold-setting">
+					<span>Nome da cesta</span>
+					<input
+						maxLength={180}
+						value={basketName}
+						onChange={(event) => setBasketName(event.target.value)}
+					/>
+				</label>
+				<label className="basket-mold-setting">
+					<span>Acréscimo interno da cesta</span>
+					<div className="basket-mold-money-input">
+						<span aria-hidden="true">R$</span>
+						<input
+							aria-label="Acréscimo interno da cesta em reais"
+							inputMode="decimal"
+							maxLength={18}
+							placeholder="0,00"
+							value={hiddenAdjustmentInput}
+							onChange={(event) => setHiddenAdjustmentInput(event.target.value)}
+						/>
+					</div>
+					{hiddenAdjustmentCents === null && (
+						<small>
+							Informe um valor não negativo com até duas casas decimais.
+						</small>
+					)}
+				</label>
 				<div>
 					<span>Ajuste condicional</span>
 					<strong>
@@ -278,8 +428,10 @@ export function BasketMoldEditorClient({
 					</strong>
 				</div>
 				<p>
-					Valores internos da equipe. Não aparecem como itens separados na
-					confirmação do cliente.
+					O acréscimo é interno e não aparece separado na confirmação. O cliente
+					seleciona de 0 a 6 unidades de cada produto no Flow. Depois de alterar
+					a cesta, reinicie um Flow que já esteja aberto para usar as novas
+					opções.
 				</p>
 			</section>
 
@@ -287,8 +439,9 @@ export function BasketMoldEditorClient({
 				<AlertCircle aria-hidden="true" size={18} />
 				<p>
 					O Flow exige produtos ativos, habilitados para WhatsApp, com foto
-					HTTPS e preço válido. A publicação e a renderização ainda precisam ser
-					validadas pela Meta nos dois números.
+					HTTPS e preço válido. Preços e fotos vêm do cadastro do produto. A
+					publicação e a renderização ainda precisam ser validadas pela Meta nos
+					dois números.
 				</p>
 			</div>
 
@@ -316,17 +469,73 @@ export function BasketMoldEditorClient({
 			)}
 
 			<section aria-label="Etapas da cesta" className="basket-mold-positions">
+				<button
+					className="basket-mold-add basket-mold-add-step"
+					disabled={saving || positions.length >= MAX_FLOW_POSITIONS}
+					onClick={addPosition}
+					type="button"
+				>
+					<Plus aria-hidden="true" size={16} /> Adicionar etapa de produto
+				</button>
 				{positions.map((position, index) => (
 					<article className="basket-mold-position" key={position.id}>
 						<header className="basket-mold-position__header">
 							<span className="basket-mold-position__number">{index + 1}</span>
-							<div>
-								<h2>{position.label}</h2>
-								<p>Quantidade da composição: {position.quantity}</p>
+							<div className="basket-mold-step-label">
+								<label className="basket-mold-setting">
+									<span>Nome desta etapa do Flow</span>
+									<input
+										maxLength={100}
+										value={position.label}
+										onChange={(event) => {
+											const value = event.target.value;
+											setPositions((current) =>
+												current.map((item) =>
+													item.id === position.id
+														? { ...item, label: value }
+														: item,
+												),
+											);
+										}}
+									/>
+								</label>
+								<p>O cliente escolhe a quantidade de 0 a 6.</p>
 							</div>
 							<span className="basket-mold-count">
 								{position.options.length} alternativa(s)
 							</span>
+							<div className="basket-mold-order-actions">
+								<button
+									aria-label={`Mover etapa ${position.label} para cima`}
+									className="basket-mold-order-button"
+									disabled={saving || index === 0}
+									onClick={() => movePosition(index, -1)}
+									title="Mover etapa para cima"
+									type="button"
+								>
+									<ArrowUp aria-hidden="true" size={15} />
+								</button>
+								<button
+									aria-label={`Mover etapa ${position.label} para baixo`}
+									className="basket-mold-order-button"
+									disabled={saving || index === positions.length - 1}
+									onClick={() => movePosition(index, 1)}
+									title="Mover etapa para baixo"
+									type="button"
+								>
+									<ArrowDown aria-hidden="true" size={15} />
+								</button>
+								<button
+									aria-label={`Remover etapa ${position.label}`}
+									className="basket-mold-order-button basket-mold-remove-step"
+									disabled={saving || positions.length <= 1}
+									onClick={() => removePosition(position.id)}
+									title="Remover etapa"
+									type="button"
+								>
+									<Trash2 aria-hidden="true" size={14} />
+								</button>
+							</div>
 						</header>
 						{!position.options.some(
 							(option) =>
@@ -343,7 +552,7 @@ export function BasketMoldEditorClient({
 
 						{position.options.length ? (
 							<ul className="basket-mold-options">
-								{position.options.map((option) => (
+								{position.options.map((option, optionIndex) => (
 									<li className="basket-mold-option" key={option.productId}>
 										<div className="basket-mold-option__image">
 											{option.imageUrl ? (
@@ -355,6 +564,35 @@ export function BasketMoldEditorClient({
 										</div>
 										<div className="basket-mold-option__copy">
 											<strong>{option.name}</strong>
+											<div className="basket-mold-order-actions">
+												<button
+													aria-label={`Mover ${option.name} para cima`}
+													className="basket-mold-order-button"
+													disabled={saving || optionIndex === 0}
+													onClick={() =>
+														moveOption(position.id, option.productId, -1)
+													}
+													title="Mover alternativa para cima"
+													type="button"
+												>
+													<ArrowUp aria-hidden="true" size={15} />
+												</button>
+												<button
+													aria-label={`Mover ${option.name} para baixo`}
+													className="basket-mold-order-button"
+													disabled={
+														saving ||
+														optionIndex === position.options.length - 1
+													}
+													onClick={() =>
+														moveOption(position.id, option.productId, 1)
+													}
+													title="Mover alternativa para baixo"
+													type="button"
+												>
+													<ArrowDown aria-hidden="true" size={15} />
+												</button>
+											</div>
 											<span>
 												{option.sku ? `SKU ${option.sku}` : "SKU não informado"}
 												{option.priceCents !== null
@@ -387,6 +625,14 @@ export function BasketMoldEditorClient({
 														? "Habilitado no WhatsApp"
 														: "Desabilitado no WhatsApp"}
 											</span>
+											{option.whatsappActive !== true && (
+												<Link
+													className="basket-mold-product-link"
+													href={`/produtos/${option.productId}`}
+												>
+													Abrir produto para habilitar no Flow
+												</Link>
+											)}
 										</div>
 										<button
 											aria-label={`Remover ${option.name} de ${position.label}`}
@@ -514,9 +760,8 @@ export function BasketMoldEditorClient({
 
 			<div className="basket-mold-footer">
 				<p>
-					{positions.length} etapas · {editor.publicCompositionCount}{" "}
-					composição(ões) pública(s) · as fotos e os preços são confirmados no
-					cadastro do produto.
+					{positions.length} etapas · limite de 80. O cliente escolhe de 0 a 6
+					unidades por produto. Fotos e preços vêm do cadastro do produto.
 				</p>
 				<button
 					className="catalog-submit basket-mold-save"

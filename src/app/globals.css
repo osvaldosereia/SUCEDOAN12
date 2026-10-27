@@ -5732,6 +5732,16 @@ h3 {
 	background: #f6faf7;
 }
 
+.basket-mold-add-step {
+	justify-self: start;
+	margin-top: 0;
+}
+
+.basket-mold-remove-step {
+	border-color: #eee3e1;
+	color: #8d342d;
+}
+
 .basket-mold-search-panel {
 	margin-top: 11px;
 	border: 1px solid #e5ebe6;
@@ -6089,6 +6099,114 @@ h3 {
 	color: var(--muted);
 	font-size: 10px;
 	line-height: 1.55;
+}
+
+.basket-mold-setting {
+	display: grid;
+	gap: 5px;
+	min-width: 0;
+}
+
+.basket-mold-setting > span {
+	color: #777367;
+	font-size: 9px;
+}
+
+.basket-mold-setting > input,
+.basket-mold-money-input {
+	width: 100%;
+	min-height: 34px;
+	border: 1px solid #ded9ca;
+	border-radius: 6px;
+	background: #fff;
+	color: var(--ink);
+	font: inherit;
+	font-size: 10px;
+	padding: 7px 9px;
+}
+
+.basket-mold-money-input {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+}
+
+.basket-mold-money-input > span {
+	color: var(--muted);
+	font-size: 10px;
+}
+
+.basket-mold-money-input > input {
+	width: 100%;
+	min-width: 0;
+	border: 0;
+	outline: 0;
+	background: transparent;
+	color: var(--ink);
+	font: inherit;
+	font-size: 10px;
+}
+
+.basket-mold-setting > small {
+	color: #8d342d;
+	font-size: 9px;
+	line-height: 1.4;
+}
+
+.basket-mold-step-label {
+	flex: 1 1 240px;
+	min-width: 0;
+}
+
+.basket-mold-order-actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.basket-mold-order-button {
+	display: inline-grid;
+	place-items: center;
+	width: 26px;
+	height: 26px;
+	border: 1px solid #e3e6e2;
+	border-radius: 6px;
+	background: #fff;
+	color: #52645a;
+	cursor: pointer;
+	padding: 0;
+}
+
+.basket-mold-order-button:disabled {
+	cursor: not-allowed;
+	opacity: 0.4;
+}
+
+.basket-mold-product-link {
+	width: fit-content;
+	color: #356b46;
+	font-size: 9px;
+	font-weight: 650;
+	text-decoration: underline;
+}
+
+.basket-mold-option__copy > .basket-mold-order-actions {
+	margin: 1px 0;
+}
+
+@media (max-width: 720px) {
+	.basket-mold-position__header {
+		flex-wrap: wrap;
+		align-items: flex-start;
+	}
+
+	.basket-mold-step-label {
+		flex-basis: calc(100% - 40px);
+	}
+
+	.basket-mold-count {
+		margin-left: 38px;
+	}
 }
 
 @media (max-width: 720px) {

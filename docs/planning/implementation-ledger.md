@@ -762,7 +762,6 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 - A intenção/pedido continua na área lateral como registro independente por origem; nenhuma junção Flow/Catálogo e nenhuma capacidade de envio foi adicionada. Não houve DDL, deploy, envio Meta, escrita Bling ou NF-e.
 - Verificação estática concluída: `pnpm typecheck` passou, Biome nos dois arquivos passou e `git diff --check` retornou exit 0 (somente avisos LF/CRLF do checkout); nenhum teste automatizado foi adicionado/executado.
 
-
 - Revisão de código encontrou um segundo caminho de exposição: a RPC da fila retorna last_message_text sem máscara e a UI priorizava esse texto. Verificado o SQL da função; agora o adapter mascara os tipos interactive, button e order antes de serializar props, e a prévia decide pelo tipo. A bolha também oculta texto livre desses eventos.
 - O título list_reply agora remove caracteres de controle e formatação Unicode (Cc/Cf). Após os ajustes da revisão, pnpm typecheck e Biome nos dois arquivos passaram; nenhum teste automatizado foi executado.
 
@@ -913,3 +912,13 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 - O caminho é aditivo e não substitui funções/callbacks Meta existentes. Nenhuma chave foi gerada, registrada ou rotacionada; nenhum Flow foi vinculado, publicado ou ativado; nenhuma mensagem, escrita Bling, pedido comercial ou NF-e foi produzida nesta fatia.
 - Validação local: `pnpm typecheck`, Biome focalizado e `git diff --check` passaram. O CLI Deno não está disponível no checkout; a implantação da Edge Function foi aceita pelo Supabase. Nenhum teste automatizado foi criado/executado.
 - O painel reduz trabalho manual de configuração, mas não remove os bloqueios de lançamento: é preciso executar a configuração com sessão autorizada, publicar e validar um Flow com fotos em cada conta Meta, completar as opções indisponíveis das cestas e homologar o pedido completo em aparelho real. O Bling e a emissão fiscal permanecem em etapas posteriores, com NF-e por último.
+
+## Edição frequente da composição das cestas no Admin (27/10/2026)
+
+- A tela existente `/cestas/[basketId]` foi ampliada para permitir, no Admin, editar o nome da cesta, o acréscimo fixo oculto, os nomes e a ordem das etapas, adicionar/remover etapas, adicionar/remover alternativas e reordenar as opções. Cada opção continua apontando para o cadastro canônico do produto; foto e preço não são copiados para o molde.
+- A escolha de quantidade `0..6` permanece no Flow do cliente. A coluna legada `basket_mold_positions.quantity` é preservada e recebe `1` em uma etapa nova porque a RPC requer quantidade positiva; o Flow greenfield não usa esse campo para a seleção.
+- Validação read-only da função `admin_save_basket_mold_v3` e do writer `save_basket_mold_v1` no Supabase canônico confirmou gravação transacional com posições ordenadas dinâmicas e substituição das linhas de posição. O Flow limita a 100 posições; o Admin limita a 80. Etapas novas e etapas com opções alteradas são validadas no backend; cada etapa alterada precisa manter ao menos uma alternativa elegível, e produtos novos precisam estar ativos, disponíveis para WhatsApp, com imagem HTTPS e preço válido.
+- O acréscimo editável fica limitado a `R$ 9.999.999,99`, que corresponde ao limite em centavos aceito pelo parser do Flow atual. Categoria, subcategoria, regra de acréscimo condicional e metadados seguem lidos no servidor.
+- Consulta agregada read-only dos nove moldes atuais confirmou que nenhum acréscimo está fora desse limite; o maior valor encontrado foi `R$ 75,00`.
+- Como o writer recria os IDs das posições, um Flow já aberto deve ser reiniciado após salvar mudanças. Nenhum cadastro comercial, pedido existente, migration, Meta Flow, callback, mensagem, Bling ou NF-e foi alterado nesta fatia.
+- Verificação local: `pnpm typecheck`, Biome focalizado nos arquivos TypeScript/CSS e `git diff --check`. Nenhum teste automatizado foi criado ou executado. Esta alteração precisa ser implantada para aparecer na versão hospedada do Admin.

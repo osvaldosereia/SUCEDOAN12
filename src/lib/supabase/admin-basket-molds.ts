@@ -9,6 +9,7 @@ const UUID =
 const MAX_POSITIONS = 80;
 const MAX_OPTIONS_PER_POSITION = 40;
 const MAX_FLOW_OPTIONS_PER_POSITION = 8;
+const MAX_HIDDEN_ADJUSTMENT_CENTS = 999_999_999;
 
 type JsonRecord = Record<string, unknown>;
 type ErrorCode =
@@ -101,12 +102,15 @@ type RawEditor = JsonRecord & {
 
 type SavePositionInput = {
 	positionId: string;
+	label: string;
 	productIds: string[];
 };
 
 export type SaveBasketMoldInput = {
 	basketId: string;
 	revision: string;
+	name: string;
+	hiddenAdjustmentCents: number;
 	positions: SavePositionInput[];
 };
 
@@ -147,9 +151,9 @@ function integer(value: unknown, minimum = 0, maximum = 1_000_000): number {
 		: minimum;
 }
 
-function moneyCents(value: unknown): number {
+function moneyCents(value: unknown, maximumReais = 1_000_000): number {
 	const parsed = typeof value === "number" ? value : Number(value);
-	return Number.isFinite(parsed) && Math.abs(parsed) <= 1_000_000
+	return Number.isFinite(parsed) && Math.abs(parsed) <= maximumReais
 		? Math.round(parsed * 100)
 		: 0;
 }
@@ -280,7 +284,10 @@ function mapSummary(value: unknown): BasketMoldSummary | null {
 		subcategoryName: safeText(row.subcategory_name, 100),
 		moldConfigured: row.mold_configured === true,
 		publicCompositionCount: integer(row.public_composition_count, 1, 6),
-		hiddenAdjustmentCents: moneyCents(row.hidden_adjustment),
+		hiddenAdjustmentCents: moneyCents(
+			row.hidden_adjustment,
+			MAX_HIDDEN_ADJUSTMENT_CENTS / 100,
+		),
 	};
 }
 
@@ -349,7 +356,10 @@ function mapEditor(
 		categoryName: summary?.categoryName ?? null,
 		subcategoryName: summary?.subcategoryName ?? null,
 		publicCompositionCount: integer(raw.public_composition_count, 1, 6),
-		hiddenAdjustmentCents: moneyCents(raw.hidden_adjustment),
+		hiddenAdjustmentCents: moneyCents(
+			raw.hidden_adjustment,
+			MAX_HIDDEN_ADJUSTMENT_CENTS / 100,
+		),
 		conditionalHiddenEnabled: raw.conditional_hidden_enabled === true,
 		conditionalHiddenProductName: safeText(conditionalProduct?.name, 180),
 		conditionalHiddenAdjustmentCents: moneyCents(
@@ -564,6 +574,12 @@ function parseSaveInput(input: SaveBasketMoldInput): boolean {
 		!UUID.test(input.basketId) ||
 		typeof input.revision !== "string" ||
 		!/^[0-9a-f]{64}$/i.test(input.revision) ||
+		typeof input.name !== "string" ||
+		!safeText(input.name, 180) ||
+		Array.from(input.name).length > 180 ||
+		!Number.isSafeInteger(input.hiddenAdjustmentCents) ||
+		input.hiddenAdjustmentCents < 0 ||
+		input.hiddenAdjustmentCents > MAX_HIDDEN_ADJUSTMENT_CENTS ||
 		!Array.isArray(input.positions) ||
 		input.positions.length < 1 ||
 		input.positions.length > MAX_POSITIONS
@@ -577,6 +593,9 @@ function parseSaveInput(input: SaveBasketMoldInput): boolean {
 			typeof position.positionId !== "string" ||
 			!UUID.test(position.positionId) ||
 			seenPositions.has(position.positionId.toLowerCase()) ||
+			typeof position.label !== "string" ||
+			!safeText(position.label, 100) ||
+			Array.from(position.label).length > 100 ||
 			!Array.isArray(position.productIds) ||
 			position.productIds.length < 1 ||
 			position.productIds.length > MAX_OPTIONS_PER_POSITION
@@ -625,8 +644,7 @@ async function validateNewProducts(
 		newProductIds: Set<string>;
 	}> = [];
 	for (const position of positions) {
-		const existing = oldByPosition.get(position.positionId.toLowerCase());
-		if (!existing) return "invalid_input";
+		const existing = oldByPosition.get(position.positionId.toLowerCase()) ?? [];
 		const changed =
 			existing.length !== position.productIds.length ||
 			existing.some(
@@ -742,20 +760,9 @@ export async function saveAdminBasketMoldOptions(
 	if (!parseSaveInput(input)) return { ok: false, error: "invalid_input" };
 	const currentResult = await getRawEditor(input.basketId);
 	if (!currentResult.ok) return currentResult;
-	const { raw, editor, summary } = currentResult.data;
+	const { raw, summary } = currentResult.data;
 	if (revisionFor(raw) !== input.revision)
 		return { ok: false, error: "conflict" };
-
-	const submittedIds = new Set(
-		input.positions.map((position) => position.positionId.toLowerCase()),
-	);
-	const actualIds = new Set(editor.positions.map((position) => position.id));
-	if (
-		submittedIds.size !== actualIds.size ||
-		[...actualIds].some((positionId) => !submittedIds.has(positionId))
-	) {
-		return { ok: false, error: "invalid_input" };
-	}
 
 	const productError = await validateNewProducts(raw, input.positions);
 	if (productError) return { ok: false, error: productError };
@@ -769,17 +776,10 @@ export async function saveAdminBasketMoldOptions(
 			position,
 		]),
 	);
-	const submittedById = new Map(
-		input.positions.map((position) => [
-			position.positionId.toLowerCase(),
-			position,
-		]),
-	);
 	const positions: JsonRecord[] = [];
-	for (const position of editor.positions) {
-		const submitted = submittedById.get(position.id);
-		const old = rawById.get(position.id);
-		if (!submitted || !old) return { ok: false, error: "invalid_input" };
+	for (const submitted of input.positions) {
+		const positionId = submitted.positionId.toLowerCase();
+		const old = rawById.get(positionId);
 		const oldOptions = Array.isArray(old?.options) ? old.options : [];
 		const optionsByProduct = new Map<string, JsonRecord>();
 		for (const optionValue of oldOptions) {
@@ -789,8 +789,8 @@ export async function saveAdminBasketMoldOptions(
 			}
 		}
 		positions.push({
-			label: old?.label,
-			quantity: old?.quantity,
+			label: safeText(submitted.label, 100),
+			quantity: old?.quantity ?? 1,
 			metadata: old?.metadata ?? {},
 			options: submitted.productIds.map((productId) => {
 				const oldOption = optionsByProduct.get(productId.toLowerCase());
@@ -802,7 +802,9 @@ export async function saveAdminBasketMoldOptions(
 		});
 	}
 
-	const hiddenAdjustment = Number(raw.hidden_adjustment ?? 0);
+	const name = safeText(input.name, 180);
+	if (!name) return { ok: false, error: "invalid_input" };
+	const hiddenAdjustment = input.hiddenAdjustmentCents / 100;
 	const conditionalAdjustment = Number(raw.conditional_hidden_adjustment ?? 0);
 	if (
 		!Number.isFinite(hiddenAdjustment) ||
@@ -813,7 +815,7 @@ export async function saveAdminBasketMoldOptions(
 
 	const save = await gateway("POST", "save", {
 		basket_id: input.basketId,
-		name: raw.basket_name,
+		name,
 		hidden_adjustment: hiddenAdjustment,
 		public_composition_count: integer(raw.public_composition_count, 1, 6),
 		positions,
