@@ -74,8 +74,11 @@
       const normalizedName = String(basket.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
       const sizeKey = normalizedName.includes("econom") ? "economica" : normalizedName.includes("grande") ? "grande" : normalizedName.includes("media") ? "media" : normalizedName.includes("pequena") ? "pequena" : normalizedName.includes("mini") ? "mini" : "";
       const image = sizeKey ? `../assets/cestas/cesta-${sizeKey}.jpg` : basket.image_url;
+      const imageMarkup = image
+        ? `<img src="${esc(image)}" alt="" width="76" height="76" loading="lazy" decoding="async">`
+        : '<span class="product-image-placeholder">DA</span>';
       return `<article class="catalog-basket-card">
-        <img src="${esc(image)}" alt="" width="76" height="76" loading="lazy" decoding="async">
+        ${imageMarkup}
         <div class="catalog-basket-info"><h3>${esc(basket.name)}</h3><span>${positions.length} itens · ${quantity} unidades · ${options} opções</span><strong>${money(currentBasketPrice(basket))}</strong></div>
         <button class="button button-primary" type="button" data-edit-basket="${esc(basket.id)}">Editar</button>
       </article>`;
@@ -88,7 +91,7 @@
     host.innerHTML = '<p class="admin-muted">Carregando cestas…</p>';
     try {
       const result = await request("baskets");
-      state.baskets = result.baskets || [];
+      state.baskets = (result.baskets || []).filter((basket) => (basket.positions || []).length > 0);
       renderBaskets();
     } catch (error) {
       host.innerHTML = `<p class="admin-muted">${esc(error.message || "Não foi possível carregar as cestas.")}</p>`;
