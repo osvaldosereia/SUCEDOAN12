@@ -514,3 +514,18 @@
   .whatsapp-campaign-editor-actions p { margin:0; }
   .whatsapp-campaign-editor-actions .button { width:100%; }
 }
+
+
+.whatsapp-ana-admin-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.whatsapp-ana-rollback-list { display:flex; flex-wrap:wrap; align-items:center; gap:7px; margin-top:10px; }
+.whatsapp-ana-rollback-list > .admin-muted { flex:1 0 100%; font-size:.72rem; }
+.whatsapp-ana-rollback-button { min-height:34px; padding:6px 10px; font-size:.76rem; }
+.whatsapp-ana-test-results { display:grid; gap:7px; margin-top:14px; }
+.whatsapp-ana-test-results h4 { margin:0 0 2px; color:var(--ink); font-size:.85rem; }
+.whatsapp-ana-test-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:3px 10px; padding:9px 10px; border:1px solid var(--line); border-radius:9px; background:#faf9f7; color:var(--ink); font-size:.76rem; }
+.whatsapp-ana-test-row strong { font-size:.72rem; }
+.whatsapp-ana-test-row small { grid-column:1 / -1; color:var(--muted); font-size:.7rem; }
+.whatsapp-ana-test-row.is-pass strong { color:#27683b; }
+.whatsapp-ana-test-row.is-fail { border-color:#e4c4bf; background:#fff5f3; }
+.whatsapp-ana-test-row.is-fail strong { color:#9a3329; }
+@media (max-width:520px) { .whatsapp-ana-admin-actions > .button { flex:1 1 100%; } }
