@@ -248,13 +248,24 @@ async function productSearch(input: any) {
   const offset = integer(input.offset ?? 0, 0, 100000) || 0;
   const status = ["active", "inactive"].includes(input.status) ? input.status : "all";
   const queryText = clean(input.q, 80).replace(/[^\p{L}\p{N}\s._-]/gu, " ").replace(/\s+/g, " ").trim();
+  const allowedFilters = new Set(["no_photo", "zero_stock", "no_ean", "no_ncm"]);
+  const filters = new Set(clean(input.filters, 120).split(",").filter((filter) => allowedFilters.has(filter)));
+  const recent = input.recent === "recent";
+  const recentSince = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   let query = db.from("products").select(PRODUCT_COLUMNS, { count: "exact" });
   if (status === "active") query = query.eq("is_active", true);
   if (status === "inactive") query = query.eq("is_active", false);
+  const conditions: string[] = [];
   if (queryText) {
     const pattern = `*${queryText}*`;
-    query = query.or(`name.ilike.${pattern},sku.ilike.${pattern},brand.ilike.${pattern},gtin.ilike.${pattern}`);
+    conditions.push(`or(name.ilike.${pattern},sku.ilike.${pattern},brand.ilike.${pattern},gtin.ilike.${pattern})`);
   }
+  if (filters.has("no_photo")) conditions.push("or(image_url.is.null,image_url.eq.)");
+  if (filters.has("zero_stock")) conditions.push("stock.eq.0");
+  if (filters.has("no_ean")) conditions.push("or(gtin.is.null,gtin.eq.)");
+  if (filters.has("no_ncm")) conditions.push("or(ncm.is.null,ncm.eq.)");
+  if (recent) conditions.push(`or(created_at.gte.${recentSince},updated_at.gte.${recentSince})`);
+  if (conditions.length) query = query.or(`and(${conditions.join(",")})`);
   const result = await query.order("is_active", { ascending: false }).order("name", { ascending: true }).range(offset, offset + limit - 1);
   if (result.error) throw result.error;
   return { products: result.data || [], total: result.count || 0, offset, limit };
