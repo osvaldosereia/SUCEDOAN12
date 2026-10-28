@@ -1098,3 +1098,9 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 - Bloqueio operacional: revisar no Admin os 22 vínculos/flags e decidir quais produtos devem ficar disponíveis no WhatsApp; não ativar automaticamente porque isso muda o catálogo comercial. Completar/validar também fotos nos demais 48 produtos que deverão ser oferecidos no Flow. Depois, repetir apenas esta auditoria agregada e executar validação visual de acessibilidade das imagens antes de publicar o Flow.
 - Conferência do frontend confirmou que `/cestas` já exibe pendências por cesta e etapa, mostra o estado de cada produto (ativo, WhatsApp e foto) e oferece atalhos para editar a cesta ou abrir a ficha do produto. Não é necessária outra tela para localizar esta pendência; a resolução depende da revisão comercial no catálogo.
 - Nenhum Flow foi publicado, nenhuma mensagem foi enviada e não houve escrita no Bling, emissão de NF-e ou mutação de catálogo. Esta rodada não criou nem executou testes automatizados.
+
+## Preflight agregado dos canais WhatsApp (28/10/2026)
+
+- Consulta somente leitura às configurações dos canais no Supabase canônico `ssbesxgaijknwsjbsbcz`, em 28/10/2026 10:11 UTC, retornou apenas contagens: 2 canais cadastrados, 2 ativos, e ambos têm `phone_number_id` e `waba_id` preenchidos. Nenhum ID foi exposto ou alterado.
+- Isso confirma configuração local no banco, mas não valida tokens, permissões Graph, assinatura de webhook, número registrado ou alcance real em nenhum WABA. A validação online continua no painel `/configuracoes/fluxos` depois do login de operador, pela leitura de prontidão que já está implementada; não executar envio durante esse preflight.
+- Nenhum deploy ou chamada externa à Meta foi feito. Login com operador e verificação visual dos dois canais continuam como ação humana indispensável; não houve mutação de pedidos, mensagens, Bling ou NF-e.
