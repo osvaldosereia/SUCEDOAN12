@@ -52,7 +52,9 @@
 
   function campaignSnapshotLabel(item) {
     const snapshot = item.snapshot;
-    if (!snapshot) return "Sem snapshot congelado";
+    if (!snapshot) return item.snapshot_lookup_limited
+      ? "Não localizado entre os 2.000 snapshots recentes"
+      : "Sem snapshot congelado";
     const revision = snapshot.is_current_revision
       ? "Snapshot vigente"
       : "Snapshot da revisão " + (snapshot.campaign_revision || "anterior") + " · campanha na revisão " + (item.revision || "atual");
