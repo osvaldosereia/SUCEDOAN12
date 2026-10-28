@@ -35,11 +35,37 @@
       running: "Em andamento", processing: "Em processamento", sent: "Processada", skipped: "Ignorada",
       history: "Histórica", draft_saved: "Rascunho salvo", admin_save_draft: "Rascunho salvo",
       admin_publish: "Versão ativada", admin_rollback: "Versão restaurada", admin_set_channel: "Canal atualizado",
-      handoff: "Atendimento humano", allow: "Permitido", block: "Bloqueado", reply: "Resposta automática",
+      handoff: "Atendimento humano", suggest: "Resposta sugerida", no_reply: "Sem resposta",
+      human_review_required: "Revisão humana necessária", dynamic_data_requires_confirmation: "Dado dinâmico exige confirmação",
+      first_greeting_of_day: "Primeiro cumprimento do dia", admin_trigger_fixed_reply: "Gatilho configurado",
+      admin_trigger_handoff: "Gatilho de encaminhamento", human_takeover_during_generation: "Atendimento humano assumiu",
+      allow: "Permitido", block: "Bloqueado", reply: "Resposta automática",
       marketing: "Marketing", utility: "Utilidade", authentication: "Autenticação",
     };
     const raw = String(value || "").trim();
     return labels[raw.toLowerCase()] || raw.toLowerCase().replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) || "—";
+  }
+
+  function anaReasonLabel(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "Motivo não registrado";
+    const labels = {
+      first_greeting_of_day: "Primeiro cumprimento do dia",
+      admin_trigger_fixed_reply: "Gatilho configurado na ANA",
+      human_review_required: "Encaminhada para revisão humana",
+      dynamic_data_requires_confirmation: "Dado dinâmico precisa de confirmação",
+      human_takeover_during_generation: "Atendimento humano assumiu a conversa",
+      admin_trigger_handoff: "Gatilho configurado para atendimento humano",
+      timeouterror: "Tempo limite de geração excedido",
+      openai_http_error: "Falha na geração da resposta",
+      meta_accepted_persist_failed: "Confirmação da Meta pendente de persistência",
+    };
+    const known = labels[raw.toLowerCase()];
+    if (known) return known;
+    return raw
+      .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, "[e-mail]")
+      .replace(/\b(?:\+?\d[\d\s().-]{7,}\d)\b/g, "[telefone]")
+      .slice(0, 220);
   }
 
   function dateLabel(value) {
@@ -796,6 +822,7 @@
     const tests = Array.isArray(data.test_runs) ? data.test_runs : [];
     const events = Array.isArray(data.events) ? data.events : [];
     const differences = Array.isArray(data.configuration_diff) ? data.configuration_diff : [];
+    const decisions = Array.isArray(data.decisions) ? data.decisions : [];
     const latestTest = tests[0] || null;
     const draftAlreadyActive = Boolean(data.diff_available && differences.length && differences.every((item) => item.changed !== true));
     const publishableTest = Boolean(latestTest?.id && Number(latestTest.draft_revision) === Number(draft?.revision)
@@ -830,6 +857,16 @@
         + esc(item.label || human(item.key)) + '</span><strong>' + (item.changed ? "Alterado" : "Sem alteração") + "</strong></div>"
       ).join("") + "</div>"
       : emptyList("Comparação indisponível para esta versão.");
+    const decisionMarkup = data.decisions_available !== true
+      ? emptyList("Histórico de decisões indisponível.")
+      : decisions.length ? decisions.map((item) => recordRow(
+        human(item.decision || item.status),
+        [item.channel || "Canal não informado", human(item.status)].join(" · "),
+        item.status,
+        item.created_at,
+        anaReasonLabel(item.reason),
+      )).join("")
+      : emptyList("Sem decisões recentes da ANA.");
     $("whatsapp-ana-version-content").innerHTML = `
       <div class="whatsapp-record-summary">
         <article class="whatsapp-overview-card"><h3>Versão ativa</h3><strong class="whatsapp-metric">${active?.version ? "v" + esc(active.version) : "—"}</strong><p class="admin-muted">${active ? "Publicada em " + esc(dateLabel(active.created_at)) + (active.published_by ? " · por " + esc(active.published_by) : "") : "Nenhuma versão ativa"}</p></article>
@@ -841,6 +878,10 @@
         <section class="whatsapp-overview-card"><h3>Histórico de versões</h3><div class="whatsapp-record-list">${versionRows}</div>${rollbackButtons ? '<div class="whatsapp-ana-rollback-list"><span class="admin-muted">Restaurar configuração</span>' + rollbackButtons + '</div>' : ""}</section>
         <section class="whatsapp-overview-card"><h3>Atividade recente</h3><div class="whatsapp-record-list">${eventRows}</div></section>
       </div>`;
+    $("whatsapp-ana-decisions").innerHTML =
+      '<section class="whatsapp-overview-card"><h3>Decisões recentes da ANA</h3>'
+      + '<p class="admin-muted">Últimas decisões registradas; o motivo é exibido sem carregar o texto original da conversa.</p>'
+      + '<div class="whatsapp-record-list">' + decisionMarkup + '</div></section>';
     const channelMarkup = channels.length ? channels.map((channel) => `
       <article class="whatsapp-ana-channel">
         <div><h4>${esc(channel.name || "WhatsApp")}</h4><p class="admin-muted">${channel.phone_last4 ? "Número terminado em •••• " + esc(channel.phone_last4) : "Número não informado"}</p></div>
