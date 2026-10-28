@@ -40,3 +40,25 @@ O Supabase local usa Postgres 17 e mantém signup e seeds desligados até as pol
 - `docs/planning/implementation-ledger.md` — decisões e progresso desta branch.
 
 As credenciais nunca são registradas em Git. Integrações reais ficam desligadas até os gates documentados serem concluídos.
+
+# Publicar o Admin sem custo
+
+O código do Admin está neste diretório (`site2`). Para publicá-lo online sem criar um serviço pago, use Cloudflare Workers no plano Free. O Cloudflare conecta diretamente ao GitHub e publica novos commits da branch selecionada. O deploy usa o adaptador OpenNext para manter os recursos de servidor do Next.js.
+
+## Configuração no Cloudflare
+
+1. No painel Cloudflare, abra **Workers & Pages → Create application → GitHub** e autorize o repositório `osvaldosereia/SUCEDOAN12`.
+2. Selecione a branch `codex/whatsapp-admin-greenfield-20261026` e defina a raiz do projeto como `site2`.
+3. Use o nome `sucedoan12-admin`, o comando de build `pnpm run build:cloudflare` e o comando de deploy `pnpm run deploy:cloudflare`.
+4. Em **Build variables and secrets**, configure `NEXT_PUBLIC_SUPABASE_URL=https://ssbesxgaijknwsjbsbcz.supabase.co` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` usando o valor publicável do projeto original. O Next.js embute esses valores públicos no Worker durante a build. A chave publicável não é uma chave administrativa. Não coloque valores de secrets no GitHub, no `wrangler.jsonc` ou neste README.
+5. Selecione ou mantenha o plano **Workers Free**. O Worker usa o subdomínio gratuito `workers.dev`; o painel fornecerá o endereço depois que o primeiro deploy concluir.
+
+O arquivo `wrangler.jsonc` mantém emissão fiscal e recuperação avançada do Bling desligadas. O site usa as funções e secrets já configurados no Supabase; não copie tokens da Meta ou do Bling para o Cloudflare.
+
+O plano Free tem limites: até 100.000 requisições Worker por dia, 10 ms de CPU por chamada e 3.000 minutos mensais de build. O serviço pode falhar quando esses limites forem excedidos. Não é necessário ativar um plano pago.
+
+Fontes oficiais: [Next.js no Cloudflare Workers](https://developers.cloudflare.com/workers/framework-guides/web-apps/opennext/), [Deploys pelo GitHub](https://developers.cloudflare.com/workers/ci-cd/builds/git-integration/) e [limites do Free](https://developers.cloudflare.com/workers/platform/pricing/).
+
+## Desenvolvimento local
+
+Para desenvolvimento, execute `pnpm dev` neste diretório. Os comandos usuais `pnpm build` e `pnpm start` continuam disponíveis e não dependem do adaptador Cloudflare.
