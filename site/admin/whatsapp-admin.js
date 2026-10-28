@@ -719,6 +719,9 @@
     const tone = String(behavior.tone || "cordial");
     const conciseness = String(behavior.conciseness || "short");
     const emoji = String(behavior.emoji || "sparingly");
+    const firstGreetingEnabled = behavior.first_greeting_enabled !== false;
+    const firstGreetingLinkMode = String(behavior.first_greeting_link_mode || "personalized");
+    const firstGreetingMessage = String(behavior.first_greeting_message || "Olá{nome}! 😊 Que bom falar com você. Para ver o catálogo e fazer seu pedido, acesse: {link}\nSe preferir, posso te ajudar por aqui.");
     const rows = knowledge.length ? knowledge.map(anaKnowledgeRowMarkup).join("") : '<p class="admin-muted" data-ana-knowledge-empty>Adicione informações confiáveis para a ANA consultar.</p>';
     return '<section class="whatsapp-overview-card whatsapp-ana-editor-card"><div class="whatsapp-ana-editor-heading"><div><h3>Configuração básica da ANA</h3><p class="admin-muted">Edite o tom e as informações da loja. Isso salva apenas um rascunho.</p></div><span class="whatsapp-ana-draft-badge">Rascunho r' + esc(draft.revision || "—") + '</span></div>'
       + '<form data-ana-editor data-revision="' + esc(draft.revision || "") + '">'
@@ -727,6 +730,10 @@
       + '<label>Tamanho das respostas<select data-ana-conciseness><option value="short"' + (conciseness === "short" ? " selected" : "") + '>Curtas</option><option value="balanced"' + (conciseness === "balanced" ? " selected" : "") + '>Com mais contexto</option></select></label>'
       + '<label>Emojis<select data-ana-emoji><option value="sparingly"' + (emoji === "sparingly" ? " selected" : "") + '>Com moderação</option><option value="never"' + (emoji === "never" ? " selected" : "") + '>Não usar</option></select></label>'
       + '<label class="whatsapp-ana-first-name"><input type="checkbox" data-ana-first-name' + (behavior.use_known_first_name_on_first_greeting === true ? " checked" : "") + '> Usar o primeiro nome no primeiro cumprimento</label></div>'
+      + '<section class="whatsapp-ana-greeting-settings"><div><h4>Mensagem no início da conversa</h4><p class="admin-muted">Enviada no primeiro cumprimento do dia. O link personalizado associa o pedido ao cliente.</p></div><div class="whatsapp-ana-basic-grid">'
+      + '<label class="whatsapp-ana-first-greeting-toggle"><input type="checkbox" data-ana-first-greeting-enabled' + (firstGreetingEnabled ? " checked" : "") + '> Enviar o catálogo automaticamente</label>'
+      + '<label>Tipo de link<select data-ana-first-greeting-link-mode><option value="personalized"' + (firstGreetingLinkMode === "personalized" ? " selected" : "") + '>Personalizado, identifica o cliente</option><option value="normal"' + (firstGreetingLinkMode === "normal" ? " selected" : "") + '>Normal, abre o catálogo do site</option></select></label>'
+      + '<label class="whatsapp-ana-greeting-message">Texto da mensagem<textarea data-ana-first-greeting-message maxlength="1200" rows="4">' + esc(firstGreetingMessage) + '</textarea><span class="admin-muted">Use {nome} e {link}. O link é inserido automaticamente.</span></label></div></section>'
       + '<div class="whatsapp-ana-knowledge-heading"><div><h4>Informações da loja</h4><p class="admin-muted">A ANA usa apenas os fatos publicados quando a configuração é ativada.</p></div><button class="button button-outline" type="button" data-ana-knowledge-add>Adicionar informação</button></div>'
       + '<div class="whatsapp-ana-knowledge-list" data-ana-knowledge-list>' + rows + '</div>'
       + '<div class="whatsapp-ana-editor-footer"><p class="admin-muted" data-ana-editor-status role="status" aria-live="polite">Salvar não altera a ANA ativa. Teste e ativação ficam abaixo.</p><button class="button button-primary" type="submit">Salvar rascunho</button></div>'
@@ -758,6 +765,9 @@
       conciseness: form.querySelector("[data-ana-conciseness]")?.value || "short",
       emoji: form.querySelector("[data-ana-emoji]")?.value || "sparingly",
       use_known_first_name_on_first_greeting: form.querySelector("[data-ana-first-name]")?.checked === true,
+      first_greeting_enabled: form.querySelector("[data-ana-first-greeting-enabled]")?.checked === true,
+      first_greeting_link_mode: form.querySelector("[data-ana-first-greeting-link-mode]")?.value || "personalized",
+      first_greeting_message: form.querySelector("[data-ana-first-greeting-message]")?.value || "",
     });
     const knowledge = [];
     for (const item of Array.isArray(configuration.knowledge) ? configuration.knowledge : []) {

@@ -606,7 +606,14 @@
 .whatsapp-ana-draft-badge { padding:6px 10px; border-radius:999px; background:#f6eee5; color:#75543b; font-size:.75rem; font-weight:750; white-space:nowrap; }
 .whatsapp-ana-basic-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-top:14px; }
 .whatsapp-ana-basic-grid label,.whatsapp-ana-knowledge-row label,.whatsapp-template-admin-toolbar label,.whatsapp-template-editor-grid label { display:grid; gap:6px; min-width:0; font-size:.78rem; font-weight:700; color:var(--ink); }
-.whatsapp-ana-basic-grid select,.whatsapp-ana-knowledge-row input,.whatsapp-ana-knowledge-row textarea,.whatsapp-template-admin-toolbar select,.whatsapp-template-editor-grid input,.whatsapp-template-editor-grid select,.whatsapp-template-editor-grid textarea { width:100%; min-width:0; min-height:40px; padding:9px 11px; border:1px solid #d8cfc3; border-radius:9px; background:#fff; color:var(--ink); font:inherit; }
+.whatsapp-ana-basic-grid select,.whatsapp-ana-basic-grid textarea,.whatsapp-ana-knowledge-row input,.whatsapp-ana-knowledge-row textarea,.whatsapp-template-admin-toolbar select,.whatsapp-template-editor-grid input,.whatsapp-template-editor-grid select,.whatsapp-template-editor-grid textarea { width:100%; min-width:0; min-height:40px; padding:9px 11px; border:1px solid #d8cfc3; border-radius:9px; background:#fff; color:var(--ink); font:inherit; }
+.whatsapp-ana-greeting-settings { margin-top:16px; padding:14px; border:1px solid #e8dbcc; border-radius:11px; background:#fcfaf7; }
+.whatsapp-ana-greeting-settings h4 { margin:0 0 4px; }
+.whatsapp-ana-greeting-settings > .whatsapp-ana-basic-grid { margin-top:12px; }
+.whatsapp-ana-first-greeting-toggle { display:flex!important; align-items:center; align-self:end; min-height:40px; gap:8px!important; }
+.whatsapp-ana-first-greeting-toggle input { width:18px; min-height:18px; accent-color:#7e3029; }
+.whatsapp-ana-greeting-message { grid-column:1/-1; }
+.whatsapp-ana-greeting-message textarea { min-height:108px; resize:vertical; }
 .whatsapp-ana-first-name { display:flex!important; align-items:center; align-self:end; min-height:40px; gap:8px!important; }
 .whatsapp-ana-first-name input { width:18px; min-height:18px; accent-color:#7e3029; }
 .whatsapp-ana-knowledge-heading { margin-top:18px; }

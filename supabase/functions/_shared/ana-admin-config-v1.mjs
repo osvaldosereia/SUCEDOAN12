@@ -66,6 +66,14 @@ export function validateAnaConfiguration(configuration){
   else{
     for(const [key,choices] of Object.entries(behaviorEnums))if(!choices.has(behavior[key]))errors.push(`behavior_${key}_invalid`);
     if(typeof behavior.use_known_first_name_on_first_greeting!=='boolean')errors.push('behavior_first_name_flag_invalid');
+    if(behavior.first_greeting_enabled!==undefined&&typeof behavior.first_greeting_enabled!=='boolean')errors.push('behavior_first_greeting_enabled_invalid');
+    if(behavior.first_greeting_link_mode!==undefined&&!['personalized','normal'].includes(behavior.first_greeting_link_mode))errors.push('behavior_first_greeting_link_mode_invalid');
+    if(behavior.first_greeting_message!==undefined){
+      const message=typeof behavior.first_greeting_message==='string'?behavior.first_greeting_message:'';
+      const tokens=message.match(/\{[^{}]*\}/g)||[];
+      if(message.trim().length<1||message.length>1200||tokens.filter(token=>token==='{link}').length!==1
+        ||tokens.some(token=>token!=='{link}'&&token!=='{nome}')||/https?:\/\/|www\./i.test(message))errors.push('behavior_first_greeting_message_invalid');
+    }
   }
   for(const [field,max] of [['knowledge',30],['triggers',100],['test_cases',20]]){
     if(!Array.isArray(configuration[field])){errors.push(`${field}_array_required`);continue}

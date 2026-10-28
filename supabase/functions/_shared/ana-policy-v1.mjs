@@ -5,10 +5,18 @@ export function isSimpleAnaGreeting(value=''){
   return /^(oi+|ol[aá]+|bom dia|boa tarde|boa noite|tudo bem)$/.test(text);
 }
 
-export function buildAnaCatalogWelcome({firstName='',catalogPath=''}={}){
-  if(!/^\/catalogo_\d{4}$/.test(String(catalogPath)))return '';
+export const ANA_DEFAULT_FIRST_GREETING_MESSAGE='Olá{nome}! 😊 Que bom falar com você. Para ver o catálogo e fazer seu pedido, acesse: {link}\nSe preferir, posso te ajudar por aqui.';
+
+export function buildAnaCatalogWelcome({firstName='',catalogPath='',linkMode='personalized',messageTemplate=ANA_DEFAULT_FIRST_GREETING_MESSAGE}={}){
+  const mode=String(linkMode||'personalized');
+  const link=mode==='normal'?'https://www.donaantonia.com.br/site/'
+    :mode==='personalized'&&/^\/catalogo_\d{4}$/.test(String(catalogPath))?`https://www.donaantonia.com.br${catalogPath}`:'';
+  if(!link)return '';
   const safeName=/^[\p{L}][\p{L}'’-]{1,31}$/u.test(String(firstName))?` ${firstName}`:'';
-  return `Olá${safeName}! 😊 Que bom falar com você. Para ver o catálogo e fazer seu pedido, acesse: https://www.donaantonia.com.br${catalogPath}\nSe preferir, posso te ajudar por aqui.`;
+  const template=String(messageTemplate??ANA_DEFAULT_FIRST_GREETING_MESSAGE).replace(/\r\n/g,'\n').trim();
+  const tokens=template.match(/\{[^{}]*\}/g)||[];
+  if(template.length<1||template.length>1200||(tokens.filter(token=>token==='{link}').length!==1)||tokens.some(token=>token!=='{link}'&&token!=='{nome}')||/https?:\/\/|www\./i.test(template))return '';
+  return template.replaceAll('{nome}',safeName).replaceAll('{link}',link).slice(0,1200);
 }
 
 export const ANA_DRY_RUN_SCHEMA={
