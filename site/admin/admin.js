@@ -75,7 +75,8 @@
       const inner = document.querySelector("[data-whatsapp-tab][aria-selected=\"true\"]")?.dataset.whatsappTab || "confirmation";
       if (inner === "separation") window.DonaOrderSeparationMessageAdmin?.load();
       else window.DonaOrderMessageAdmin?.load();
-    } else window.DonaWhatsAppAdmin?.loadOverview();
+    } else if (selected === "ana") window.DonaWhatsAppAdmin?.loadAnaStatus();
+    else window.DonaWhatsAppAdmin?.loadOverview();
   }
 
   document.querySelectorAll("[data-whatsapp-section]").forEach((button) => {
