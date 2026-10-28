@@ -211,7 +211,12 @@
       if (state.selectedId === conversationId) {
         fileInput.value = "";
         captionInput.value = "";
-        setComposerStatus(data.duplicate ? "Anexo já registrado anteriormente." : "Anexo aceito pelo provedor; o histórico mostrará a confirmação.", "success");
+        const confirmation = data.duplicate
+          ? "Anexo já registrado anteriormente."
+          : data.media_cached === false
+            ? "Anexo aceito; o arquivo não ficou disponível no cache privado do histórico."
+            : "Anexo aceito pelo provedor; o histórico mostrará a confirmação.";
+        setComposerStatus(confirmation, "success");
         setStatus("Anexo aceito no canal oficial. Atualizando o histórico…");
       }
       state.mediaSending = false;
