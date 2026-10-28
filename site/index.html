@@ -9,12 +9,12 @@
   <link rel="preload" as="image" href="../img/logoantonia5.png">
   <link rel="preload" as="image" href="assets/cestas/cesta-economica.jpg" fetchpriority="high">
   <link rel="preconnect" href="https://ssbesxgaijknwsjbsbcz.supabase.co" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=14">
+  <link rel="stylesheet" href="styles.css?v=16">
   <script src="config.js?v=2" defer></script>
-  <script src="storefront/extras.js?v=3" defer></script>
+  <script src="storefront/extras.js?v=4" defer></script>
   <script src="storefront/basket.js?v=1" defer></script>
-  <script src="storefront/checkout.js?v=3" defer></script>
-  <script src="app.js?v=18" defer></script>
+  <script src="storefront/checkout.js?v=5" defer></script>
+  <script src="app.js?v=19" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -61,17 +61,17 @@
 
     <section id="home-extras" class="home-extras" aria-labelledby="home-extras-title">
       <div class="home-extras-heading">
-        <p class="eyebrow">Escolha mais itens</p>
-        <h2 id="home-extras-title">Produtos extras</h2>
-        <p>Adicione produtos de mercearia, limpeza, higiene, casa e pet. Eles entram no pedido junto com a cesta.</p>
+        <p class="eyebrow">Monte do seu jeito</p>
+        <h2 id="home-extras-title">Monte sua própria cesta</h2>
+        <p>Escolha produtos nas quatro categorias e finalize o pedido só com eles, sem selecionar uma cesta pronta. Pedido mínimo de R$ 75,00.</p>
       </div>
       <div id="home-extra-summary" class="home-extra-summary" hidden aria-live="polite">
         <div class="home-extra-summary-copy">
           <strong id="home-extra-summary-count"></strong>
           <span id="home-extra-summary-total"></span>
-          <span>Escolha uma cesta para levar estes produtos ao pedido.</span>
+          <span id="home-extra-summary-hint">Você pode concluir o pedido só com estes produtos.</span>
         </div>
-        <a class="button button-primary" href="#catalog">Escolher cesta</a>
+        <button id="home-extra-checkout" class="button button-primary" type="button">Finalizar pedido</button>
       </div>
       <div id="home-extra-categories" class="home-extra-categories"></div>
     </section>
@@ -107,13 +107,61 @@
         <button class="icon-button" type="button" data-close="order" aria-label="Fechar">×</button>
       </header>
       <div class="sheet-content">
-        <label class="field-label" for="customer-phone">Telefone com DDD</label>
+        <div id="custom-order-summary" class="custom-order-summary" hidden aria-live="polite">
+          <h3>Produtos escolhidos</h3>
+          <ul id="custom-order-items" class="custom-order-items"></ul>
+          <div class="custom-order-total"><span>Total dos produtos</span><strong id="custom-order-total">—</strong></div>
+          <p id="custom-order-minimum-message" class="helper" role="status" aria-live="polite"></p>
+        </div>
+        <label class="field-label" for="customer-phone">WhatsApp para contato</label>
         <div class="search-row">
-          <input id="customer-phone" inputmode="tel" autocomplete="tel" placeholder="(11) 99999-9999" maxlength="16">
+          <input id="customer-phone" inputmode="tel" autocomplete="tel" placeholder="+55 (65) 99999-9999" maxlength="22" aria-describedby="customer-phone-hint">
           <button id="lookup-button" class="button button-primary" type="button">Buscar</button>
         </div>
-        <p id="lookup-message" class="helper" role="status">Buscaremos o cadastro e o endereço já registrado.</p>
+        <p id="customer-phone-hint" class="helper">Digite com DDD. Se informar apenas os 8 ou 9 dígitos locais, usaremos o DDD 65; para outro DDD, digite o código junto.</p>
+        <p id="lookup-message" class="helper" role="status" aria-live="polite">Buscaremos seu cadastro e endereço. Se ainda não tiver cadastro, você poderá fazê-lo aqui.</p>
         <div id="customer-card" class="customer-card" hidden></div>
+        <form id="customer-registration" class="registration-panel" hidden>
+          <h3 id="registration-title">Cadastre seus dados para continuar</h3>
+          <p id="registration-message" class="helper" role="status" aria-live="polite">Preencha seus dados para registrar o pedido.</p>
+          <div class="registration-grid">
+            <label class="registration-field registration-field-wide" for="customer-name">Nome completo *
+              <input id="customer-name" name="name" autocomplete="name" maxlength="180" required>
+            </label>
+            <div id="customer-document-field" class="registration-field registration-field-wide">
+              <label for="customer-document">CPF ou CNPJ *</label>
+              <input id="customer-document" name="document" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="Somente para cadastro">
+            </div>
+            <p id="customer-document-note" class="registration-document-note registration-field-wide" hidden></p>
+            <label class="registration-field registration-field-wide" for="customer-street">Rua ou avenida *
+              <input id="customer-street" name="street" autocomplete="address-line1" maxlength="180" required>
+            </label>
+            <label class="registration-field" for="customer-number">Número *
+              <input id="customer-number" name="number" autocomplete="address-line2" maxlength="40" required>
+            </label>
+            <label class="registration-field" for="customer-neighborhood">Bairro *
+              <input id="customer-neighborhood" name="neighborhood" autocomplete="address-level3" maxlength="120" required>
+            </label>
+            <label class="registration-field" for="customer-city">Cidade *
+              <select id="customer-city" name="city" autocomplete="address-level2" required>
+                <option value="">Selecione</option>
+                <option value="Cuiabá">Cuiabá</option>
+                <option value="Várzea Grande">Várzea Grande</option>
+              </select>
+            </label>
+            <label class="registration-field" for="customer-postal-code">CEP
+              <input id="customer-postal-code" name="postal_code" inputmode="numeric" autocomplete="postal-code" maxlength="12" placeholder="Opcional">
+            </label>
+            <label class="registration-field registration-field-wide" for="customer-complement">Complemento
+              <input id="customer-complement" name="complement" autocomplete="address-line2" maxlength="180">
+            </label>
+            <label class="registration-field registration-field-wide" for="customer-reference">Referência para entrega
+              <input id="customer-reference" name="reference" maxlength="220" placeholder="Opcional">
+            </label>
+          </div>
+          <p class="helper registration-help">O endereço de entrega é obrigatório. Atendemos Cuiabá e Várzea Grande.</p>
+          <button id="register-customer-button" class="button button-primary button-wide" type="submit">Salvar cadastro e continuar</button>
+        </form>
         <div class="delivery-date-field">
           <label class="field-label" for="delivery-date">Data de entrega</label>
           <select id="delivery-date" class="field-select" disabled required>

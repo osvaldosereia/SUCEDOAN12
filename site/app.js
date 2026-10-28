@@ -287,7 +287,8 @@
     displayedTotalCents: extras.displayedTotalCents
   });
   const checkout = window.DonaStorefrontCheckout.create({
-    state, $, esc, phoneDigits, money, toast, request, whatsappNumber, quantityOf, closeSheet, showSheet
+    state, $, esc, phoneDigits, money, toast, request, whatsappNumber, quantityOf, closeSheet, showSheet,
+    onCustomOrderSubmitted: extras.clearHomeExtraSelections
   });
   const {
     displayedTotalCents, extraCategoriesFor, extraCategoriesMarkup,
