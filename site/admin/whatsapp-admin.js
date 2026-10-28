@@ -256,10 +256,40 @@
       + '<small class="whatsapp-campaign-snapshot">' + esc(campaignSnapshotLabel(item)) + "</small>"
       + campaignExclusionMarkup(item)
       + (item.id ? '<button class="button button-outline whatsapp-campaign-preview-button" type="button" data-campaign-preview="' + esc(item.id) + '" aria-expanded="false">Prévia do público</button><div class="whatsapp-campaign-preview" data-campaign-preview-result hidden role="status" aria-live="polite"></div>' : "")
+      + (item.id ? '<button class="button button-outline whatsapp-campaign-preview-button" type="button" data-campaign-content-preview="' + esc(item.id) + '" aria-expanded="false">Ver conteúdo do modelo</button><div class="whatsapp-campaign-preview whatsapp-campaign-content-preview" data-campaign-content-result hidden role="status" aria-live="polite"></div>' : "")
       + (item.status === "draft" && item.draft_editable ? '<button class="button button-outline whatsapp-campaign-edit-button" type="button" data-campaign-edit="' + esc(item.id) + '">Editar rascunho</button>' : "")
       + campaignActionsMarkup(item)
       + '</div><div class="whatsapp-record-side"><span class="whatsapp-record-status ' + statusClass(item.status) + '">'
       + esc(human(item.status)) + "</span><time>" + esc(dateLabel(when)) + "</time></div></article>";
+  }
+
+
+  async function loadCampaignContentPreview(button) {
+    const campaignId = String(button?.dataset?.campaignContentPreview || "");
+    const row = button?.closest(".whatsapp-campaign-row");
+    const panel = row?.querySelector("[data-campaign-content-result]");
+    if (!campaignId || !panel || button.disabled) return;
+    button.disabled = true;
+    button.setAttribute("aria-expanded", "true");
+    panel.hidden = false;
+    panel.textContent = "Carregando conteúdo aprovado do modelo…";
+    try {
+      const data = await campaignAdminRequest("whatsapp_campaign_content_preview", { campaign_id: campaignId });
+      const template = data.template || {};
+      const parts = Array.isArray(template.parts) ? template.parts : [];
+      const rendered = parts.map((part) =>
+        '<section class="whatsapp-campaign-content-part"><strong>' + esc(part.label || "Conteúdo") + '</strong><pre>' + esc(part.text || "") + "</pre></section>"
+      ).join("");
+      panel.innerHTML = '<div class="whatsapp-campaign-preview-counts"><strong>' + esc(template.name || "Modelo")
+        + '</strong><span>' + esc(template.language || "") + " · " + esc(human(template.category || "")) + "</span></div>"
+        + (rendered || '<p class="admin-muted">O modelo não possui texto disponível nesta prévia.</p>')
+        + '<p class="admin-muted whatsapp-campaign-content-note">Prévia do texto aprovado. ' + Math.max(0, Math.trunc(Number(template.variable_count) || 0))
+        + ' variável(is) aparecem como placeholders; valores personalizados, exemplos e destinos de links não são exibidos. Nada é enviado.</p>';
+    } catch (error) {
+      panel.textContent = error instanceof Error ? error.message : "Não foi possível carregar o conteúdo do modelo.";
+    } finally {
+      button.disabled = false;
+    }
   }
 
   async function loadCampaignPreview(button) {
@@ -862,9 +892,11 @@
   $("whatsapp-campaigns-content")?.addEventListener("click", (event) => {
     const target = event.target instanceof Element ? event.target : null;
     const actionButton = target?.closest("[data-campaign-action]");
+    const contentPreviewButton = target?.closest("[data-campaign-content-preview]");
     const editButton = target?.closest("[data-campaign-edit]");
     const previewButton = target?.closest("[data-campaign-preview]");
     if (actionButton) runCampaignAction(actionButton);
+    else if (contentPreviewButton) loadCampaignContentPreview(contentPreviewButton);
     else if (editButton) openCampaignDraftEditor(editButton.dataset.campaignEdit);
     else if (previewButton) loadCampaignPreview(previewButton);
   });
