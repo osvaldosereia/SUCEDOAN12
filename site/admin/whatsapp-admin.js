@@ -155,7 +155,7 @@
         <article class="whatsapp-overview-card"><h3>Registros</h3><strong class="whatsapp-metric">${esc(data.ana?.total || 0)}</strong><p class="admin-muted">fora de simulação</p></article>
         <article class="whatsapp-overview-card"><h3>Recentes</h3><strong class="whatsapp-metric">${esc(ana.length)}</strong><p class="admin-muted">decisões carregadas</p></article>
       </div>
-      <section class="whatsapp-overview-card"><h3>ANA por canal</h3><div class="whatsapp-channel-list">${channels.length ? channels.map((channel) => '<article class="whatsapp-channel"><div class="whatsapp-channel-head"><div><h3>' + esc(channel.name) + '</h3><p class="admin-muted">Entrada: ' + esc(human(channel.inbound_provider)) + ' · Saída: ' + esc(human(channel.outbound_provider)) + '</p></div></div><div class="whatsapp-channel-flags">' + flag("ANA", channel.ana_enabled) + flag("Captura", channel.capture_enabled) + '</div></article>').join("") : emptyList("Nenhum canal cadastrado.")}</div></section>
+      <section class="whatsapp-overview-card"><h3>ANA por canal</h3><div class="whatsapp-channel-list">${channels.length ? channels.map((channel) => '<article class="whatsapp-channel"><div class="whatsapp-channel-head"><div><h3>' + esc(channel.name) + '</h3><p class="admin-muted">' + (channel.phone_last4 ? "Número terminado em •••• " + esc(channel.phone_last4) + " · " : "") + 'Entrada: ' + esc(human(channel.inbound_provider)) + ' · Saída: ' + esc(human(channel.outbound_provider)) + '</p></div></div><div class="whatsapp-channel-flags">' + flag("Atendimento ANA", channel.ana_enabled) + flag("Captura", channel.capture_enabled) + '</div></article>').join("") : emptyList("Nenhum canal cadastrado.")}</div></section>
       <section class="whatsapp-overview-card"><h3>Decisões recentes</h3><div class="whatsapp-record-list">${anaMarkup || emptyList("Sem decisões recentes da ANA.")}</div></section>`;
 
     $("whatsapp-templates-content").innerHTML = `
@@ -213,32 +213,48 @@
     const versions = Array.isArray(data.versions) ? data.versions : [];
     const tests = Array.isArray(data.test_runs) ? data.test_runs : [];
     const events = Array.isArray(data.events) ? data.events : [];
+    const differences = Array.isArray(data.configuration_diff) ? data.configuration_diff : [];
     const latestTest = tests[0] || null;
     const versionRows = versions.length ? versions.map((item) => recordRow(
       "Versão " + (item.version || "—"),
-      item.is_active ? "Versão ativa" : "Versão anterior",
+      [
+        item.is_active ? "Versão ativa" : "Versão anterior",
+        item.published_by ? "Por " + item.published_by : "",
+        item.change_note || "",
+      ].filter(Boolean).join(" · "),
       item.is_active ? "active" : "history",
       item.created_at,
     )).join("") : emptyList("Nenhuma versão ativa ou anterior.");
     const eventRows = events.length ? events.map((item) => recordRow(
       human(item.action),
-      [item.channel_key, item.draft_revision ? "Rascunho " + item.draft_revision : "", item.version_id ? "Versão registrada" : ""].filter(Boolean).join(" · "),
+      [
+        item.channel_key ? "Canal " + item.channel_key : "",
+        item.draft_revision ? "Rascunho " + item.draft_revision : "",
+        item.actor ? "Por " + item.actor : "",
+        item.version_id ? "Versão registrada" : "",
+      ].filter(Boolean).join(" · "),
       item.action,
       item.created_at,
     )).join("") : emptyList("Nenhuma alteração registrada.");
+    const diffMarkup = data.diff_available && differences.length
+      ? '<div class="whatsapp-ana-diff-list">' + differences.map((item) =>
+        '<div class="whatsapp-ana-diff-row ' + (item.changed ? "changed" : "same") + '"><span>'
+        + esc(item.label || human(item.key)) + '</span><strong>' + (item.changed ? "Alterado" : "Sem alteração") + "</strong></div>"
+      ).join("") + "</div>"
+      : emptyList("Comparação indisponível para esta versão.");
     $("whatsapp-ana-version-content").innerHTML = `
       <div class="whatsapp-record-summary">
-        <article class="whatsapp-overview-card"><h3>Versão ativa</h3><strong class="whatsapp-metric">${active?.version ? "v" + esc(active.version) : "—"}</strong><p class="admin-muted">${active ? "Ativada em " + esc(dateLabel(active.created_at)) : "Nenhuma versão ativa"}</p></article>
-        <article class="whatsapp-overview-card"><h3>Rascunho</h3><strong class="whatsapp-metric">${draft?.revision ? "r" + esc(draft.revision) : "—"}</strong><p class="admin-muted">${draft ? "Atualizado em " + esc(dateLabel(draft.updated_at)) : "Nenhum rascunho encontrado"}</p></article>
+        <article class="whatsapp-overview-card"><h3>Versão ativa</h3><strong class="whatsapp-metric">${active?.version ? "v" + esc(active.version) : "—"}</strong><p class="admin-muted">${active ? "Publicada em " + esc(dateLabel(active.created_at)) + (active.published_by ? " · por " + esc(active.published_by) : "") : "Nenhuma versão ativa"}</p></article>
+        <article class="whatsapp-overview-card"><h3>Rascunho</h3><strong class="whatsapp-metric">${draft?.revision ? "r" + esc(draft.revision) : "—"}</strong><p class="admin-muted">${draft ? "Atualizado em " + esc(dateLabel(draft.updated_at)) + (draft.updated_by ? " · por " + esc(draft.updated_by) : "") : "Nenhum rascunho encontrado"}</p></article>
         <article class="whatsapp-overview-card"><h3>Último teste</h3><strong class="whatsapp-metric">${latestTest ? esc(latestTest.passed_count) + " / " + esc((latestTest.passed_count || 0) + (latestTest.failed_count || 0)) : "—"}</strong><p class="admin-muted">${latestTest ? esc(latestTest.failed_count || 0) + " falha(s) · " + esc(dateLabel(latestTest.created_at)) : "Nenhum teste registrado"}</p></article>
       </div>
+      <section class="whatsapp-overview-card"><h3>Rascunho e versão ativa</h3><p class="admin-muted">Diferenças por seção da configuração da ANA.</p>${diffMarkup}</section>
       <div class="whatsapp-overview-grid">
         <section class="whatsapp-overview-card"><h3>Histórico de versões</h3><div class="whatsapp-record-list">${versionRows}</div></section>
         <section class="whatsapp-overview-card"><h3>Atividade recente</h3><div class="whatsapp-record-list">${eventRows}</div></section>
       </div>`;
-    $("whatsapp-ana-status").textContent = "Versões e atividade consultadas em modo somente leitura.";
+    $("whatsapp-ana-status").textContent = "Versões, comparação, autores e atividade consultados em modo somente leitura.";
   }
-
   let anaLoaded = false;
   let anaLoading = false;
   async function loadAnaStatus(force) {
