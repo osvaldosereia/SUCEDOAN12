@@ -328,7 +328,7 @@
 .whatsapp-conversation-items { display:grid; align-content:start; gap:6px; max-height:620px; overflow:auto; }
 .whatsapp-conversation-card { display:grid; gap:5px; width:100%; padding:12px; border:1px solid transparent; border-radius:10px; background:#fff; color:var(--ink); text-align:left; cursor:pointer; }
 .whatsapp-conversation-card:hover { background:#f8f6f3; }
-.whatsapp-conversation-card[aria-current="true"] { border-color:#d9b7aa; background:#fbf2ee; }
+.whatsapp-conversation-card[aria-pressed="true"] { border-color:#d9b7aa; background:#fbf2ee; }
 .whatsapp-conversation-card strong { font-size:.86rem; }
 .whatsapp-conversation-card span,.whatsapp-conversation-card small { color:var(--muted); font-size:.76rem; }
 .whatsapp-conversation-detail { display:flex; min-width:0; flex-direction:column; padding:14px; }
