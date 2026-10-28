@@ -313,6 +313,8 @@
       const isFavorite = !wasFavorite;
       if (isFavorite) state.favoriteIds.add(conversationId);
       else state.favoriteIds.delete(conversationId);
+      const conversation = state.conversations.find((item) => item.id === conversationId);
+      if (conversation) conversation.is_favorite = isFavorite;
       button.setAttribute("aria-pressed", String(isFavorite));
       button.setAttribute("aria-label", isFavorite ? "Remover dos favoritos" : "Favoritar conversa");
       button.title = isFavorite ? "Remover dos favoritos" : "Favoritar conversa";

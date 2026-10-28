@@ -13,3 +13,7 @@ alter table public.whatsapp_conversation_order_overrides_v1 enable row level sec
 
 revoke all on table public.whatsapp_conversation_order_overrides_v1 from public, anon, authenticated;
 grant all on table public.whatsapp_conversation_order_overrides_v1 to service_role;
+
+create index whatsapp_messages_v1_inbound_created_conversation_idx
+  on public.whatsapp_messages_v1 (created_at desc, conversation_id)
+  where direction = 'inbound';
