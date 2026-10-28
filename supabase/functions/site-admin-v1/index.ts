@@ -814,7 +814,7 @@ async function whatsappConversationMessages(input: any) {
     db.from("whatsapp_accounts").select("id,slug,display_name,phone_e164").eq("id", conversation.whatsapp_account_id).maybeSingle(),
     (() => {
       let query = db.from("whatsapp_messages_v1")
-        .select("id,direction,message_type,text_body,received_at,sent_at,created_at")
+        .select("id,direction,message_type,text_body,status_current,received_at,sent_at,created_at")
         .eq("conversation_id", conversationId)
         .eq("whatsapp_account_id", conversation.whatsapp_account_id);
       if (beforeRaw && beforeId) {
@@ -851,6 +851,7 @@ async function whatsappConversationMessages(input: any) {
       direction: clean(row.direction, 20),
       message_type: clean(row.message_type, 30),
       text_body: String(row.text_body || "").replace(/\u0000/g, "").slice(0, 4000),
+      status_current: clean(row.status_current, 40),
       message_at: row.received_at || row.sent_at || row.created_at,
     })),
     next_before: hasMore && oldestRow ? { created_at: oldestRow.created_at, id: oldestRow.id } : null,
