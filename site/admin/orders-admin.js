@@ -4,7 +4,7 @@
   const supabase = String(config.supabaseUrl || "").replace(/\/$/, "");
   const adminFunction = String(config.adminFunction || "site-admin-v1");
   const publishableKey = config.publishableKey || "";
-  const accessCode = "Eomc2020";
+  const accessCode = () => window.DonaAdminAuth?.getCode?.() || "";
   const $ = (id) => document.getElementById(id);
   const esc = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
   const money = (value) => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -13,7 +13,7 @@
 
   async function api(method, action, payload) {
     const url = new URL(supabase + "/functions/v1/" + adminFunction);
-    const headers = { apikey: publishableKey, "x-admin-code": accessCode };
+    const headers = { apikey: publishableKey, "x-admin-code": accessCode() };
     const init = { method: method, headers: headers, cache: "no-store" };
     if (method === "GET") {
       url.searchParams.set("action", action);
@@ -48,7 +48,7 @@
   }
 
   function orderNumber(order) {
-    return order.order_number || String(order.id || "").slice(0, 8).toUpperCase();
+    return order.public_code || order.order_number || String(order.id || "").slice(0, 8).toUpperCase();
   }
 
   function renderList() {

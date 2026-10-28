@@ -10,18 +10,33 @@
   <link rel="stylesheet" href="admin.css?v=11">
   <link rel="stylesheet" href="orders-admin.css?v=1">
   <script src="../config.js?v=3"></script>
-  <script src="catalog-admin.js?v=8" defer></script>
-  <script src="orders-admin.js?v=1" defer></script>
-  <script src="order-message-admin.js?v=2" defer></script>
-  <script src="separation-message-admin.js?v=2" defer></script>
-  <script src="admin.js?v=10" defer></script>
+  <script src="admin-auth.js?v=1" defer></script>
+  <script src="catalog-admin.js?v=9" defer></script>
+  <script src="orders-admin.js?v=3" defer></script>
+  <script src="order-message-admin.js?v=3" defer></script>
+  <script src="separation-message-admin.js?v=3" defer></script>
+  <script src="admin.js?v=11" defer></script>
 </head>
 <body class="admin-page">
+  <main id="admin-login" class="admin-login-main">
+    <form id="admin-login-form" class="admin-login-card">
+      <p class="eyebrow">Área restrita</p>
+      <h1>Administração</h1>
+      <p>Digite o código de acesso para continuar.</p>
+      <label for="admin-access-code">Código de acesso</label>
+      <input id="admin-access-code" name="admin-access-code" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" minlength="32" maxlength="128" required>
+      <button id="admin-login-button" class="button button-primary button-wide" type="submit">Acessar admin</button>
+      <p id="admin-login-message" class="form-message" role="status" aria-live="polite"></p>
+      <a class="admin-link" href="../">Voltar à loja</a>
+    </form>
+  </main>
+  <div id="admin-app" hidden>
   <header class="topbar">
     <a class="brand" href="../" aria-label="Voltar ao catálogo">
       <img src="../../img/logoantonia5.png" alt="Dona Antônia" width="176" height="64">
     </a>
     <a class="admin-link" href="../">Voltar à loja</a>
+    <button id="admin-logout" class="admin-link admin-logout" type="button">Sair</button>
   </header>
   <main class="admin-main">
     <section id="admin-view">
@@ -63,25 +78,30 @@
         </form>
         <div id="customer-result" class="customer-result empty-result">Digite o telefone para consultar o cadastro.</div>
         <div class="edit-notice">
-          <strong>Edição temporariamente pausada</strong>
-          <span>A função de gravação de clientes que existia no admin antigo foi aposentada. Nesta publicação, a consulta é somente leitura; nenhum dado será alterado no Supabase.</span>
+          <strong>Edição segura do cadastro</strong>
+          <span>Edite o nome e o endereço do cliente. Telefone e CPF/CNPJ permanecem somente para consulta. As alterações são registradas no histórico administrativo.</span>
         </div>
         <form id="customer-editor" class="customer-editor" hidden>
-          <div class="section-title"><div><h3>Dados do cadastro</h3><p>Consulte as informações localizadas.</p></div></div>
+          <div class="section-title"><div><h3>Dados do cadastro</h3><p>Confira os campos antes de salvar.</p></div></div>
+          <input name="customer_id" type="hidden">
+          <input name="customer_updated_at" type="hidden">
+          <input name="address_id" type="hidden">
+          <input name="address_updated_at" type="hidden">
           <div class="editor-grid">
-            <label>Nome<input name="name" readonly></label>
+            <label>Nome<input name="name" maxlength="180" required></label>
             <label>Telefone<input name="phone" readonly></label>
             <label>CPF/CNPJ<input name="document" readonly></label>
-            <label>Rua<input name="street" readonly></label>
-            <label>Número<input name="number" readonly></label>
-            <label>Complemento<input name="complement" readonly></label>
-            <label>Bairro<input name="neighborhood" readonly></label>
-            <label>Cidade<input name="city" readonly></label>
-            <label>Estado<input name="state" readonly></label>
-            <label>CEP<input name="postal_code" readonly></label>
-            <label class="full-width">Referência<input name="reference" readonly></label>
+            <label>Rua<input name="street" maxlength="180"></label>
+            <label>Número<input name="number" maxlength="40"></label>
+            <label>Complemento<input name="complement" maxlength="140"></label>
+            <label>Bairro<input name="neighborhood" maxlength="140"></label>
+            <label>Cidade<input name="city" maxlength="120"></label>
+            <label>Estado<input name="state" maxlength="2"></label>
+            <label>CEP<input name="postal_code" maxlength="20"></label>
+            <label class="full-width">Referência<input name="reference" maxlength="220"></label>
           </div>
-          <button class="button button-primary button-wide" type="button" disabled>Salvar alterações</button>
+          <p id="customer-save-status" class="form-message" role="status" aria-live="polite"></p>
+          <button id="save-customer" class="button button-primary button-wide" type="submit">Salvar alterações</button>
         </form>
       </section>
 
@@ -129,23 +149,24 @@
 
       <section class="admin-view" data-panel="whatsapp" hidden>
         <nav class="whatsapp-tabs" aria-label="Mensagens do WhatsApp" role="tablist">
-          <button class="whatsapp-tab active" id="whatsapp-tab-confirmation" type="button" role="tab" aria-selected="true" aria-controls="whatsapp-panel-confirmation" data-whatsapp-tab="confirmation">Confirmação do pedido</button>
-          <button class="whatsapp-tab" id="whatsapp-tab-separation" type="button" role="tab" aria-selected="false" aria-controls="whatsapp-panel-separation" data-whatsapp-tab="separation">Pós-separação</button>
+          <button class="whatsapp-tab active" id="whatsapp-tab-confirmation" type="button" role="tab" aria-selected="true" aria-controls="whatsapp-panel-confirmation" data-whatsapp-tab="confirmation">Pedido recebido</button>
+          <button class="whatsapp-tab" id="whatsapp-tab-separation" type="button" role="tab" aria-selected="false" aria-controls="whatsapp-panel-separation" data-whatsapp-tab="separation">Após a separação</button>
         </nav>
 
         <div id="whatsapp-panel-confirmation" class="whatsapp-tab-panel active" role="tabpanel" aria-labelledby="whatsapp-tab-confirmation" data-whatsapp-panel="confirmation">
           <div class="section-title">
-            <div><h2>Mensagem de confirmação</h2><p>Edite o texto da confirmação e acompanhe os modelos de cada número.</p></div>
+            <div><h2>Mensagem enviada quando o pedido é criado</h2><p>Esta é a mensagem imediata que o cliente recebe ao finalizar a compra.</p></div>
             <button id="order-message-refresh" class="button button-outline" type="button">Consultar status na Meta</button>
           </div>
           <div class="message-editor">
+            <p class="message-help">Você está editando a mensagem do pedido recebido. A mensagem da aba “Após a separação” é um envio diferente.</p>
             <label for="order-message-body">Texto da mensagem</label>
             <textarea id="order-message-body" rows="14" maxlength="1024" spellcheck="false" aria-describedby="order-message-meta-status order-message-draft-state"></textarea>
             <p id="order-message-meta-status" class="admin-muted" role="status">Carregando a conexão com a Meta…</p>
             <p id="order-message-draft-state" class="message-draft-state" role="status"></p>
             <div class="message-actions">
-              <button id="order-message-save" class="button button-outline" type="button">Salvar texto</button>
-              <button id="order-message-submit" class="button button-primary" type="button">Enviar para aprovação na Meta</button>
+              <button id="order-message-save" class="button button-outline" type="button">Salvar rascunho</button>
+              <button id="order-message-submit" class="button button-primary" type="button">Enviar para análise da Meta</button>
             </div>
             <p class="message-help">Salvar texto guarda apenas um rascunho e não envia à Meta. Depois da aprovação, ative a nova versão para usá-la nos próximos pedidos. Até lá, o modelo indicado como “Em uso agora” continua sendo enviado.</p>
           </div>
@@ -155,7 +176,7 @@
 
         <div id="whatsapp-panel-separation" class="whatsapp-tab-panel" role="tabpanel" aria-labelledby="whatsapp-tab-separation" data-whatsapp-panel="separation" hidden>
           <div class="section-title">
-            <div><h2>Mensagens após separação</h2><p>Edite o aviso enviado quando os produtos do pedido são conferidos.</p></div>
+            <div><h2>Mensagem após conferência da separação</h2><p>Este aviso é enviado depois que a equipe confere os produtos do pedido.</p></div>
             <button id="separation-message-refresh" class="button button-outline" type="button">Consultar status na Meta</button>
           </div>
           <nav class="message-type-tabs" aria-label="Resultado da separação" role="tablist">
@@ -169,8 +190,8 @@
             <p id="separation-message-meta-status" class="admin-muted" role="status">Carregando a conexão com a Meta…</p>
             <p id="separation-message-draft-state" class="message-draft-state" role="status"></p>
             <div class="message-actions">
-              <button id="separation-message-save" class="button button-outline" type="button">Salvar texto</button>
-              <button id="separation-message-submit" class="button button-primary" type="button">Enviar para aprovação na Meta</button>
+              <button id="separation-message-save" class="button button-outline" type="button">Salvar rascunho</button>
+              <button id="separation-message-submit" class="button button-primary" type="button">Enviar para análise da Meta</button>
             </div>
             <p class="message-help">O cliente recebe o link da lista do pedido, com cada produto marcado como encontrado ou em falta. Quando há faltas, a mensagem também informa o abatimento e o novo total. Salvar texto guarda apenas um rascunho e não envia à Meta. Depois da aprovação, ative a nova versão para usá-la nos próximos pedidos. Até lá, o modelo indicado como “Em uso agora” continua sendo enviado.</p>
           </div>
@@ -270,5 +291,6 @@
     </div>
   </dialog>
   <div id="admin-toast" class="toast" role="status" aria-live="polite"></div>
+  </div>
 </body>
 </html>

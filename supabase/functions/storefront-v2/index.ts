@@ -1,4 +1,3 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { moldFirstAvailableOption, moldFirstConfiguredOption, moldProductIdsForRead } from "./basket-lightweight.js";
 
@@ -1151,13 +1150,23 @@ async function submit(req:Request,p:any){
     console.error("storefront_order_rejected",{error_code:e||"order_failed",stock_retry_attempted:stockRetryAttempted});
     return {error:e||"order_failed",status:ORDER_CONFLICT_CODES.has(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS,stock_adjustment:stockAdjustment,adjusted_items:adjustedItems}
   }
-  const orderId=created.data?.order_id;let papoaiLink:any=null;let publicOrderLink:any=null;
+  const orderId=created.data?.order_id;let papoaiLink:any=null;let publicOrderLink:any=null;let canonicalOrderNumber:any=created.data?.order_number||null;
   if(orderId&&ph){try{const linked=await db.rpc("ops2_link_storefront_order_from_identity_v1",{p_order_id:orderId});if(!linked.error)papoaiLink=linked.data||null}catch(e){console.error("papoai_identity_order_link",txt((e as any)?.message,180))}}
-  if(orderId){try{const publicLink=await db.rpc("ops2_order_public_link_v1",{p_order_id:orderId});if(!publicLink.error)publicOrderLink=publicLink.data||null}catch(e){console.error("order_public_link",txt((e as any)?.message,180))}}
+  if(orderId){
+    try{
+      const [publicLink,storedOrder]=await Promise.all([
+        db.rpc("ops2_order_public_link_v1",{p_order_id:orderId}),
+        db.from("orders").select("order_number").eq("id",orderId).maybeSingle()
+      ]);
+      if(!publicLink.error)publicOrderLink=publicLink.data||null;
+      if(!storedOrder.error&&storedOrder.data?.order_number)canonicalOrderNumber=storedOrder.data.order_number;
+    }catch(e){console.error("order_public_identity",txt((e as any)?.message,180))}
+  }
   if(orderId&&ph)kickWhatsappOrderOutbound(orderId);
   const customerStatus=customer?.registration_complete===true?"registered":"pending_registration";
   await recordOpsEvent("order.received","Pedido recebido pelo site e aguardando confirmação.",orderId,{source:"vitrine",customer_status:customerStatus,payment_method:pay||null,delivery_date:deliveryDate||null,stock_reserved:created.data?.stock_reserved===true,reservation_timing:created.data?.reservation_timing||null,reservation_status:created.data?.reservation_status||null,papoai_conversation_linked:Boolean(papoaiLink?.linked),stock_adjustment:stockAdjustment,adjusted_items:adjustedItems},"order-received:"+orderId);
-  return {...created.data,order_public_url:publicOrderLink?.public_url||null,order_public_code:publicOrderLink?.public_code||null,phone_attached:Boolean(ph),customer_status:customerStatus,registration_complete:customer?.registration_complete===true,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,customer:customer||null,history_synced:Boolean(customer),papoai_conversation_linked:Boolean(papoaiLink?.linked),stock_adjustment:stockAdjustment,adjusted_items:adjustedItems};
+  const orderCode=publicOrderLink?.public_code||canonicalOrderNumber||created.data?.order_number||null;
+  return {...created.data,order_number:orderCode,order_public_url:publicOrderLink?.public_url||null,order_public_code:orderCode,phone_attached:Boolean(ph),customer_status:customerStatus,registration_complete:customer?.registration_complete===true,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,customer:customer||null,history_synced:Boolean(customer),papoai_conversation_linked:Boolean(papoaiLink?.linked),stock_adjustment:stockAdjustment,adjusted_items:adjustedItems};
 }
 
 async function basketBySize(sizeKey:string,lightweight=false){
@@ -1220,7 +1229,27 @@ Deno.serve(async(req:Request)=>{
     if(req.method==="POST"&&action==="list_sections"){return json(req,{ok:true,sections:CATEGORIES.map(c=>({name:c.key,label:c.label}))})}
     if(req.method==="POST"&&action==="list_products"){const fake=new URL(req.url);if(body?.section)fake.searchParams.set("category",String(body.section));if(body?.q)fake.searchParams.set("q",String(body.q));fake.searchParams.set("limit",String(body?.limit||20));fake.searchParams.set("offset",String(Math.max(0,(Number(body?.page||1)-1)*Number(body?.limit||20))));const p=await productList(fake);return json(req,{ok:true,products:p.products.map((x:any)=>({id:x.id,name:x.name,price:Number(x.price_cents||0)/100,stock:x.stock_quantity,image_url:x.image_url,brand:x.brand,category:x.category,packaging:x.packaging,is_offer:x.regular_price_cents!=null})),page:Number(body?.page||1),limit:Number(body?.limit||20),total:null,has_more:p.next_offset!=null})}
     if(req.method==="POST"&&action==="lookup_customer_by_phone"){const ph=phone(body?.phone),rk=await sha(ph||ip(req)||"unknown"),gate=await db.rpc("consume_public_rate_limit",{p_rate_key:"storefront-v2:lookup:"+rk,p_bucket:"lookup_customer",p_limit:20,p_window_seconds:300});if(gate.error)return json(req,{ok:false,error:"rate_limit_unavailable"},503);if(gate.data!==true)return json(req,{ok:false,error:"rate_limited"},429);return json(req,await lookupCustomer(ph))}
-    if(req.method==="POST"&&action==="create_order"){let ph=phone(body?.phone);if(!ph)return json(req,{ok:false,error:"invalid_phone"},400);const rk=await sha(ph+"|"+(ip(req)||"unknown")),gate=await db.rpc("consume_public_rate_limit",{p_rate_key:"storefront-v2:create:"+rk,p_bucket:"create_order",p_limit:5,p_window_seconds:600});if(gate.error)return json(req,{ok:false,error:"rate_limit_unavailable"},503);if(gate.data!==true)return json(req,{ok:false,error:"rate_limited"},429);const r=await db.rpc("create_storefront_order_v2",{p_phone:ph,p_items:Array.isArray(body?.items)?body.items:[],p_basket:body?.basket&&typeof body.basket==="object"?body.basket:null});if(r.error)return json(req,{ok:false,error:txt(r.error.message,120).split("\n")[0]||"order_failed"},400);return json(req,{ok:true,order:{id:r.data?.order_id,number:r.data?.order_number,total:Number(r.data?.total||0),message:r.data?.message||"",customer_found:Boolean(r.data?.customer_id),status:"storefront_received"}})}
+    if(req.method==="POST"&&action==="create_order"){
+      let ph=phone(body?.phone);
+      if(!ph)return json(req,{ok:false,error:"invalid_phone"},400);
+      const rk=await sha(ph+"|"+(ip(req)||"unknown"));
+      const gate=await db.rpc("consume_public_rate_limit",{p_rate_key:"storefront-v2:create:"+rk,p_bucket:"create_order",p_limit:5,p_window_seconds:600});
+      if(gate.error)return json(req,{ok:false,error:"rate_limit_unavailable"},503);
+      if(gate.data!==true)return json(req,{ok:false,error:"rate_limited"},429);
+      const r=await db.rpc("create_storefront_order_v2",{p_phone:ph,p_items:Array.isArray(body?.items)?body.items:[],p_basket:body?.basket&&typeof body.basket==="object"?body.basket:null});
+      if(r.error)return json(req,{ok:false,error:txt(r.error.message,120).split("\n")[0]||"order_failed"},400);
+      const orderId=r.data?.order_id;
+      let number=r.data?.order_number||"";
+      if(orderId){
+        const [link,storedOrder]=await Promise.all([
+          db.rpc("ops2_order_public_link_v1",{p_order_id:orderId}),
+          db.from("orders").select("order_number").eq("id",orderId).maybeSingle()
+        ]);
+        if(!storedOrder.error&&storedOrder.data?.order_number)number=storedOrder.data.order_number;
+        if(!link.error&&link.data?.public_code)number=link.data.public_code;
+      }
+      return json(req,{ok:true,order:{id:orderId,number,total:Number(r.data?.total||0),message:r.data?.message||"",customer_found:Boolean(r.data?.customer_id),status:"storefront_received"}});
+    }
 
     return json(req,{ok:false,error:"unknown_action"},400);
   }catch(e){console.error("storefront-v2 canonical-vitrine",e);return json(req,{ok:false,error:"service_unavailable",detail:txt((e as any)?.message,180)},500,{"Cache-Control":"no-store"})}

@@ -4,7 +4,7 @@
   const config = window.DONA_SITE_CONFIG || {};
   const supabaseUrl = String(config.supabaseUrl || "").replace(/\/$/, "");
   const publishableKey = config.publishableKey || "";
-  const adminCode = "Eomc2020";
+  const adminCode = () => window.DonaAdminAuth?.getCode?.() || "";
   const $ = (id) => document.getElementById(id);
   const esc = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
   const cents = (value) => Math.round(Number(value || 0));
@@ -27,7 +27,7 @@
       url.searchParams.set("action", action);
       Object.entries(options.params || {}).forEach(([key, value]) => url.searchParams.set(key, String(value ?? "")));
     }
-    const headers = { apikey: publishableKey, "x-admin-code": adminCode };
+    const headers = { apikey: publishableKey, "x-admin-code": adminCode() };
     const init = { method: options.method || "GET", headers, cache: "no-store" };
     if (options.method === "POST") {
       headers["Content-Type"] = "application/json";

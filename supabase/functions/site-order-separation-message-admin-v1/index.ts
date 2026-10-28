@@ -5,6 +5,7 @@ import {
   listTemplatesViaMeta,
   MetaTemplatesError,
 } from "../_shared/whatsapp-meta-templates-v1.mjs";
+import { verifyAdminCode } from "../_shared/admin-code-v1.ts";
 
 type Channel = "0975" | "1018";
 type MessageKind = "prepared_ok" | "prepared_adjusted";
@@ -72,7 +73,7 @@ const cors = (req: Request) => {
   const origin = req.headers.get("origin") || "";
   return {
     "Access-Control-Allow-Origin": ORIGINS.has(origin) ? origin : "https://donaantonia.com.br",
-    "Access-Control-Allow-Headers": "apikey,content-type",
+    "Access-Control-Allow-Headers": "apikey,content-type,x-admin-code",
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
     "Cache-Control": "no-store",
     "Vary": "Origin",
@@ -431,6 +432,9 @@ async function handle(req: Request) {
   if (req.method !== "GET" && req.method !== "POST") return json(req, { ok: false, error: "method_not_allowed" }, 405);
   const origin = req.headers.get("origin") || "";
   if (origin && !ORIGINS.has(origin)) return json(req, { ok: false, error: "origin_not_allowed" }, 403);
+  const adminCodeStatus = verifyAdminCode(req.headers.get("x-admin-code"));
+  if (adminCodeStatus === "not_configured") return json(req, { ok: false, error: "admin_auth_not_configured" }, 503);
+  if (adminCodeStatus !== "valid") return json(req, { ok: false, error: "admin_code_invalid" }, 401);
   if (!SUPABASE_URL || !SERVICE_KEY) return json(req, { ok: false, error: "server_config" }, 503);
   const params = new URL(req.url).searchParams;
   const action = text(params.get("action"), 40).toLowerCase() || "read";

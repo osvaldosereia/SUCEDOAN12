@@ -3,16 +3,21 @@
   const config = window.DONA_SITE_CONFIG || {};
   const supabase = String(config.supabaseUrl || "").replace(/\/$/, "");
   const publishableKey = config.publishableKey || "";
-  const storefront = String(config.storefrontFunction || "storefront-v2");
   const $ = (id) => document.getElementById(id);
   const esc = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
   let toastTimer = 0;
 
-  async function storefrontRequest(action, params) {
-    const url = new URL(`${supabase}/functions/v1/${storefront}`);
-    url.searchParams.set("action", action);
-    Object.entries(params || {}).forEach(([name, value]) => url.searchParams.set(name, String(value ?? "")));
-    const response = await fetch(url.toString(), { headers: { apikey: publishableKey }, cache: "no-store" });
+  async function adminRequest(action, params) {
+    const response = await fetch(`${supabase}/functions/v1/site-admin-v1`, {
+      method: "POST",
+      headers: {
+        apikey: publishableKey,
+        "x-admin-code": window.DonaAdminAuth?.getCode?.() || "",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ action, ...(params || {}) }),
+      cache: "no-store",
+    });
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data.ok === false) throw new Error(data.error || "Não foi possível consultar.");
     return data;
@@ -77,6 +82,10 @@
     const address = customer.address || {};
     const form = $("customer-editor");
     const values = {
+      customer_id: customer.id || "",
+      customer_updated_at: customer.updated_at || "",
+      address_id: address.id || "",
+      address_updated_at: address.updated_at || "",
       name: customer.display_name || "", phone: customer.phone || "",
       document: customer.document_last4 ? `•••.•••.•••-${customer.document_last4}` : "—",
       street: address.street || "", number: address.number || "", complement: address.complement || "",
@@ -103,7 +112,7 @@
     result.className = "customer-result";
     result.textContent = "Consultando cadastro…";
     try {
-      const data = await storefrontRequest("customer_lookup", { phone });
+      const data = await adminRequest("customer_lookup", { phone });
       if (!data.found || !data.customer) {
         result.className = "customer-result empty-result";
         result.textContent = "Nenhum cliente encontrado para esse telefone.";
@@ -122,7 +131,53 @@
     }
   }
 
+
+  async function saveCustomer(event) {
+    event.preventDefault();
+    const form = $("customer-editor");
+    const button = $("save-customer");
+    const status = $("customer-save-status");
+    if (button.disabled) return;
+
+    button.disabled = true;
+    button.textContent = "Salvando…";
+    status.textContent = "Salvando as alterações com segurança…";
+    const value = (name) => form.elements[name].value.trim();
+    try {
+      await adminRequest("customer_save", {
+        customer_id: value("customer_id"),
+        customer_updated_at: value("customer_updated_at"),
+        address_id: value("address_id"),
+        address_updated_at: value("address_updated_at"),
+        name: value("name"),
+        address: {
+          street: value("street"),
+          number: value("number"),
+          complement: value("complement"),
+          neighborhood: value("neighborhood"),
+          city: value("city"),
+          state: value("state"),
+          postal_code: value("postal_code"),
+          reference: value("reference"),
+        },
+      });
+      const refreshed = await adminRequest("customer_lookup", { phone: digits(value("phone")) });
+      if (refreshed.found && refreshed.customer) fillCustomer(refreshed.customer);
+      status.textContent = "Cadastro atualizado.";
+      $("customer-result").textContent = "Cadastro atualizado com sucesso.";
+      toast("Cadastro do cliente atualizado.");
+    } catch (error) {
+      status.textContent = error.message === "customer_changed"
+        ? "Este cadastro mudou em outra sessão. Busque o cliente novamente antes de salvar."
+        : "Não foi possível salvar. Confira os dados e tente novamente.";
+    } finally {
+      button.disabled = false;
+      button.textContent = "Salvar alterações";
+    }
+  }
+
   $("customer-search").addEventListener("submit", searchCustomer);
+  $("customer-editor").addEventListener("submit", saveCustomer);
   document.querySelectorAll(".nav-tab").forEach((button) => button.addEventListener("click", () => setView(button.dataset.view)));
   document.querySelectorAll("[data-go]").forEach((button) => button.addEventListener("click", () => setView(button.dataset.go)));
 
