@@ -207,6 +207,8 @@ body.sheet-open { overflow: hidden; }
 .registration-panel[hidden], .registration-document-note[hidden] { display: none; }
 .registration-panel > h3 { margin: 0; color: var(--ink); font-size: 1rem; }
 .registration-panel > .helper { margin: 0; }
+.registration-message:empty { display: none; }
+.registration-message[data-tone="error"] { padding: 10px 12px; border: 1px solid #e3b3aa; border-left: 4px solid #96372e; border-radius: 10px; background: #fff0ed; color: #702b24; font-size: .85rem; font-weight: 750; line-height: 1.4; }
 .registration-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
 .registration-field { display: grid; align-content: start; gap: 6px; min-width: 0; color: var(--ink); font-size: .78rem; font-weight: 750; }
 .registration-field-wide { grid-column: 1 / -1; }
