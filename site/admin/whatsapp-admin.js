@@ -170,7 +170,7 @@
         + '<span>' + formatCount(preview.excluded_count) + ' excluídos de ' + formatCount(preview.found_count) + ' encontrados pelos filtros</span>'
         + '</div><div class="whatsapp-campaign-preview-reasons">' + reasons + '</div>'
         + '<small class="whatsapp-campaign-preview-template">' + esc(templateText) + '</small>'
-        + '<p>Prévia somente de contagens: não congela a lista nem envia mensagens. As flags atuais não substituem evidência individual; revise as origens antes de uma campanha ampla.</p>';
+        + '<p>Prévia somente de contagens: não congela a lista nem envia mensagens. Motivos podem se sobrepor. As flags atuais não substituem evidência individual; revise as origens antes de uma campanha ampla.</p>';
     } catch (error) {
       panel.textContent = error instanceof Error ? error.message : "Não foi possível calcular a prévia.";
     } finally {
