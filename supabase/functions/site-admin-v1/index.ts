@@ -915,6 +915,9 @@ async function whatsappConversationMedia(input: any) {
   const canonicalResult = await db.from("whatsapp_media_v1")
     .select("media_type,storage_bucket,storage_path,mime_type,file_size,metadata")
     .eq("message_id", messageId)
+    .eq("media_type", messageType)
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
   if (canonicalResult.error) throw canonicalResult.error;
   const canonical: any = canonicalResult.data || {};
