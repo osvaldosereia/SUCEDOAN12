@@ -9,8 +9,9 @@ export const ANA_DEFAULT_FIRST_GREETING_MESSAGE='Olá{nome}! 😊 Que bom falar 
 
 export function buildAnaCatalogWelcome({firstName='',catalogPath='',linkMode='personalized',messageTemplate=ANA_DEFAULT_FIRST_GREETING_MESSAGE}={}){
   const mode=String(linkMode||'personalized');
+  const code=mode==='personalized'?String(catalogPath).match(/^\/catalogo_(\d{4})$/)?.[1]||'':'';
   const link=mode==='normal'?'https://www.donaantonia.com.br/site/'
-    :mode==='personalized'&&/^\/catalogo_\d{4}$/.test(String(catalogPath))?`https://www.donaantonia.com.br${catalogPath}`:'';
+    :code?'https://www.donaantonia.com.br/site/?catalog_code='+code:'';
   if(!link)return '';
   const safeName=/^[\p{L}][\p{L}'’-]{1,31}$/u.test(String(firstName))?` ${firstName}`:'';
   const template=String(messageTemplate??ANA_DEFAULT_FIRST_GREETING_MESSAGE).replace(/\r\n/g,'\n').trim();
