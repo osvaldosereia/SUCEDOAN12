@@ -199,3 +199,7 @@
 .message-type-tab { border:1px solid var(--line); border-radius:999px; background:#fff; }
 .message-type-tab.active { border-color:#7e3029; background:#7e3029; color:#fff; }
 @media (max-width:540px) { .whatsapp-tab,.message-type-tab { font-size:.8rem; padding-inline:11px; } }
+
+.message-draft-state { margin:0; padding:9px 11px; border-radius:10px; background:#f7f2ea; color:var(--ink); font-size:.8rem; line-height:1.45; }
+.message-meta-check { margin:0; color:var(--muted); font-size:.74rem; line-height:1.4; }
+.order-message-status dd { overflow-wrap:anywhere; }

@@ -132,7 +132,7 @@ async function cachedTemplates(accountId: string, names: string[]) {
   const unique = [...new Set(names.filter(Boolean))];
   if (!unique.length) return [];
   const result = await db.from("whatsapp_templates_v1")
-    .select("name,status,category,components,metadata")
+    .select("name,status,category,components,metadata,last_synced_at")
     .eq("whatsapp_account_id", accountId)
     .eq("language", LANGUAGE)
     .in("name", unique);
@@ -205,6 +205,11 @@ async function readState() {
     const pending = templates.find((item: any) => item.name === setting.pending_template_name);
     const activeMetadata = active?.metadata && typeof active.metadata === "object" ? active.metadata : {};
     const pendingMetadata = pending?.metadata && typeof pending.metadata === "object" ? pending.metadata : {};
+    const activeComponents = Array.isArray(active?.components) ? active.components : [];
+    const pendingComponents = Array.isArray(pending?.components) ? pending.components : [];
+    const activeBody = activeComponents.find((item: any) => String(item.type || "").toUpperCase() === "BODY")?.text || "";
+    const pendingBody = pendingComponents.find((item: any) => String(item.type || "").toUpperCase() === "BODY")?.text || "";
+    const draftBody = String(setting.draft_body || "");
     return {
       channel,
       label: "WhatsApp final " + channel,
@@ -216,6 +221,9 @@ async function readState() {
       pending_rejection_reason: pendingMetadata.rejected_reason || null,
       pending_can_activate: pending?.status === "APPROVED" && shortTemplateShape(pending),
       active_rejection_reason: activeMetadata.rejected_reason || null,
+      draft_matches_active: Boolean(active) && activeBody === draftBody,
+      draft_matches_pending: Boolean(pending) && pendingBody === draftBody,
+      meta_checked_at: [active?.last_synced_at, pending?.last_synced_at].filter(Boolean).sort().pop() || null,
       updated_at: setting.updated_at,
       account_ready: Boolean(account && account.waba_id && account.phone_number_id),
     };
@@ -349,16 +357,18 @@ async function submitDraft() {
       });
       const name = String(draft.name);
       await updateSetting(channel, { pending_template_name: name });
-      let status = "PENDING";
+      let status = "UNKNOWN";
       let syncPending = false;
       try {
         const synced = await syncTemplates(account);
         const cached = await cachedTemplates(account.id, [name]);
-        status = cached[0]?.status || status;
+        status = cached[0]?.status || "UNKNOWN";
         syncPending = synced.some((item: any) => item.name === name) === false;
       } catch {
         syncPending = true;
+        status = "UNKNOWN";
       }
+      if (syncPending) status = "UNKNOWN";
       results.push({ channel, name, status, sync_pending: syncPending });
     } catch (error) {
       const code = error instanceof MetaTemplatesError
@@ -381,12 +391,14 @@ async function refreshStatus() {
       const items = await syncTemplates(account);
       results.push({
         channel,
+        checked_at: new Date().toISOString(),
         synced: items.filter((item: any) => String(item.name || "").startsWith(TEMPLATE_PREFIX + channel + "v")).length,
         ok: true,
       });
     } catch (error) {
       results.push({
         channel,
+        checked_at: new Date().toISOString(),
         ok: false,
         error: error instanceof MetaTemplatesError
           ? error.code
@@ -396,9 +408,8 @@ async function refreshStatus() {
       });
     }
   }
-  return { ok: true, results };
+  return { ok: true, checked_at: new Date().toISOString(), results };
 }
-
 async function activateApproved(channel: Channel) {
   const settings = await settingsRows();
   const setting: any = settings.find((row: any) => row.channel === channel);
