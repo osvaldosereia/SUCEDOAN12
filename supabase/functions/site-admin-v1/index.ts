@@ -1,8 +1,18 @@
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { verifyAdminCode } from "../_shared/admin-code-v1.ts";
+import { sendTextViaMeta, sendMediaViaMeta, MetaTransportError } from "../_shared/whatsapp-meta-transport-v1.mjs";
+import { canonicalOutboundMetaMime, outboundMetaMaxBytes, validateOutboundMetaMediaContent, uploadMetaMedia, MetaMediaError } from "../_shared/whatsapp-meta-media-v1.mjs";
+import { ANA_DRY_RUN_INSTRUCTIONS, ANA_DRY_RUN_SCHEMA, buildAnaDryRunInput, normalizeAnaDryRunResult, isSimpleAnaGreeting } from "../_shared/ana-policy-v1.mjs";
+import { validateAnaConfiguration, buildAnaRuntimeInstructions, routeAnaMessage } from "../_shared/ana-admin-config-v1.mjs";
+import { shouldSendAnaLiveReply } from "../_shared/ana-live-policy-v1.mjs";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+const META_WHATSAPP_ACCESS_TOKEN = (Deno.env.get("META_WHATSAPP_ACCESS_TOKEN") || "").trim();
+const META_WHATSAPP_GRAPH_VERSION = (Deno.env.get("META_WHATSAPP_GRAPH_VERSION") || "").trim();
+const OPENAI_API_KEY = (Deno.env.get("OPENAI_API_KEY") || "").trim();
+const ANA_MODEL = (Deno.env.get("ANA_OPENAI_MODEL") || "gpt-6-luna").trim();
+const attendanceMetaConfigReady = () => Boolean(META_WHATSAPP_ACCESS_TOKEN && /^v\d+\.\d+$/.test(META_WHATSAPP_GRAPH_VERSION));
 const ALLOWED_ORIGINS = new Set([
   "https://donaantonia.com.br",
   "https://www.donaantonia.com.br",
@@ -620,6 +630,2070 @@ async function markOrderDelivered(input: any) {
 }
 
 
+
+async function whatsappMarketingConsentSummary() {
+  const countQuery = () => db.from("marketing_customer_consent_current_v1")
+    .select("customer_id", { count: "exact", head: true });
+  const results = await Promise.all([
+    countQuery().eq("consent_state", "opt_in"),
+    countQuery().eq("consent_state", "opt_out"),
+    countQuery().eq("consent_state", "never_consented"),
+    countQuery().eq("consent_state", "opt_in").eq("latest_source", "merchant_owner_attestation"),
+    countQuery().eq("consent_state", "opt_in").eq("latest_source", "historical_merchant_attestation"),
+  ]);
+  if (results.some((result) => result.error || typeof result.count !== "number")) {
+    return { available: false };
+  }
+  const [optInCount, optOutCount, noConsentCount, ownerAttestationCount, historicalAttestationCount] =
+    results.map((result) => Math.max(0, Number(result.count) || 0));
+  return {
+    available: true,
+    total_count: optInCount + optOutCount + noConsentCount,
+    opt_in_count: optInCount,
+    opt_out_count: optOutCount,
+    no_consent_count: noConsentCount,
+    merchant_owner_attestation_count: ownerAttestationCount,
+    historical_merchant_attestation_count: historicalAttestationCount,
+    other_opt_in_source_count: Math.max(0, optInCount - ownerAttestationCount - historicalAttestationCount),
+  };
+}
+
+async function whatsappOverview() {
+  const [accountsResult, runtimeResult, campaignExecutionResult, templateCountResult, approvedCountResult, templateRowsResult, templateEventsResult, campaignsResult, anaResult, consentSummary] = await Promise.all([
+    db.from("whatsapp_accounts").select("id,slug,display_name,phone_e164,is_active").order("display_name"),
+    db.from("whatsapp_channel_runtime_v1").select("whatsapp_account_id,inbound_provider,outbound_provider,capture_enabled,send_enabled,ana_enabled,campaigns_enabled,human_send_enabled,homologated_at,updated_at"),
+    db.from("marketing_campaign_execution_runtime_v1").select("whatsapp_account_id,mode,max_batch_size"),
+    db.from("whatsapp_templates_v1").select("id", { count: "exact", head: true }),
+    db.from("whatsapp_templates_v1").select("id", { count: "exact", head: true }).eq("status", "approved"),
+    db.from("whatsapp_templates_v1")
+      .select("id,whatsapp_account_id,name,language,category,status,quality_rating,last_synced_at,updated_at")
+      .order("updated_at", { ascending: false }).limit(100),
+    db.from("whatsapp_template_events_v1")
+      .select("whatsapp_account_id,template_name,language,status,reason,occurred_at")
+      .ilike("status", "rejected")
+      .not("reason", "is", null)
+      .order("occurred_at", { ascending: false }).limit(200),
+    db.from("marketing_campaigns_v1")
+      .select("id,name,whatsapp_account_id,template_id,filters,status,revision,manual_batch_mode,scheduled_for,created_at,started_at,paused_at,completed_at,failed_at", { count: "exact" })
+      .order("created_at", { ascending: false }).limit(100),
+    db.from("whatsapp_ana_jobs_v1")
+      .select("id,whatsapp_account_id,status,decision,created_at", { count: "exact" })
+      .eq("dry_run", false).order("created_at", { ascending: false }).limit(50),
+    whatsappMarketingConsentSummary(),
+  ]);
+  for (const result of [accountsResult, runtimeResult, campaignExecutionResult, templateCountResult, approvedCountResult, templateRowsResult, templateEventsResult, campaignsResult, anaResult]) {
+    if (result.error) throw result.error;
+  }
+
+  const campaignIds = (campaignsResult.data || []).map((row: any) => row.id).filter(Boolean);
+  const campaignStatusById = new Map<string, any>();
+  let campaignDeliverySummaryAvailable = campaignIds.length === 0;
+  if (campaignIds.length) {
+    const campaignStatusResult = await db.rpc("site_admin_marketing_campaign_status_summary_v1", {
+      p_campaign_ids: campaignIds,
+    });
+    if (!campaignStatusResult.error && Array.isArray(campaignStatusResult.data)) {
+      for (const row of campaignStatusResult.data) {
+        const campaignId = String(row.campaign_id || "");
+        if (campaignId) campaignStatusById.set(campaignId, row);
+      }
+      campaignDeliverySummaryAvailable = campaignIds.every((campaignId: string) =>
+        campaignStatusById.has(String(campaignId))
+      );
+      if (!campaignDeliverySummaryAvailable) campaignStatusById.clear();
+    }
+  }
+  const latestCampaignSnapshot = new Map<string, any>();
+  const snapshotPageSize = 200;
+  const maxSnapshotRows = 2000;
+  let snapshotOffset = 0;
+  let snapshotLookupLimited = false;
+  while (campaignIds.length && latestCampaignSnapshot.size < campaignIds.length) {
+    const snapshotsResult = await db.from("marketing_campaign_snapshots_v1")
+      .select("id,campaign_id,campaign_revision,snapshot_version,template_name,template_language,template_category,found_count,eligible_count,excluded_count,created_at")
+      .in("campaign_id", campaignIds)
+      .order("created_at", { ascending: false })
+      .range(snapshotOffset, snapshotOffset + snapshotPageSize - 1);
+    if (snapshotsResult.error) throw snapshotsResult.error;
+    const rows = snapshotsResult.data || [];
+    for (const snapshot of rows) {
+      const campaignId = String(snapshot.campaign_id || "");
+      if (campaignId && !latestCampaignSnapshot.has(campaignId)) latestCampaignSnapshot.set(campaignId, snapshot);
+    }
+    snapshotOffset += rows.length;
+    if (rows.length < snapshotPageSize) break;
+    if (snapshotOffset >= maxSnapshotRows) {
+      snapshotLookupLimited = true;
+      break;
+    }
+  }
+
+  const accounts = accountsResult.data || [];
+  const runtimeByAccount = new Map((runtimeResult.data || []).map((row: any) => [row.whatsapp_account_id, row]));
+  const campaignExecutionByAccount = new Map((campaignExecutionResult.data || []).map((row: any) => [row.whatsapp_account_id, row]));
+  const accountById = new Map(accounts.map((row: any) => [row.id, row]));
+  const templateKey = (accountId: any, name: any, language: any) =>
+    [String(accountId || ""), clean(name, 160).toLowerCase(), clean(language, 24).toLowerCase()].join("|");
+  const latestRejectionByTemplate = new Map<string, string>();
+  for (const event of templateEventsResult.data || []) {
+    if (clean(event.status, 40).toLowerCase() !== "rejected") continue;
+    const key = templateKey(event.whatsapp_account_id, event.template_name, event.language);
+    if (!latestRejectionByTemplate.has(key)) latestRejectionByTemplate.set(key, clean(event.reason, 280));
+  }
+  const channels = accounts.map((account: any) => {
+    const runtime: any = runtimeByAccount.get(account.id) || {};
+    const digits = String(account.phone_e164 || "").replace(/\D/g, "");
+    return {
+      id: uuid(account.id),
+      is_active: account.is_active === true,
+      name: clean(account.display_name || account.slug || "Canal", 120),
+      phone_last4: digits.slice(-4),
+      inbound_provider: clean(runtime.inbound_provider, 40),
+      outbound_provider: clean(runtime.outbound_provider, 40),
+      capture_enabled: runtime.capture_enabled === true,
+      send_enabled: runtime.send_enabled === true,
+      ana_enabled: runtime.ana_enabled === true,
+      campaigns_enabled: runtime.campaigns_enabled === true,
+      human_send_enabled: runtime.human_send_enabled === true,
+      homologated_at: runtime.homologated_at || null,
+      updated_at: runtime.updated_at || null,
+    };
+  });
+  const templates = (templateRowsResult.data || []).map((row: any) => ({
+    id: uuid(row.id),
+    whatsapp_account_id: uuid(row.whatsapp_account_id),
+    name: clean(row.name || "Modelo sem nome", 160),
+    channel: clean(accountById.get(row.whatsapp_account_id)?.display_name || "", 120),
+    language: clean(row.language, 24),
+    category: clean(row.category, 40),
+    status: clean(row.status, 40),
+    quality_rating: clean(row.quality_rating, 40),
+    rejection_reason: clean(row.status, 40).toLowerCase() === "rejected"
+      ? latestRejectionByTemplate.get(templateKey(row.whatsapp_account_id, row.name, row.language)) || "Motivo não disponível nos 200 eventos consultados"
+      : "",
+    last_synced_at: row.last_synced_at || null,
+    updated_at: row.updated_at || null,
+  }));
+  const campaigns = (campaignsResult.data || []).map((row: any) => {
+    const campaignId = String(row.id);
+    const summary = campaignStatusById.get(campaignId) || {};
+    let snapshot = latestCampaignSnapshot.get(campaignId) || null;
+    if (campaignDeliverySummaryAvailable && summary.snapshot_available) {
+      snapshot = {
+        id: summary.snapshot_id || null,
+        campaign_revision: summary.snapshot_campaign_revision,
+        snapshot_version: summary.snapshot_version,
+        template_name: summary.snapshot_template_name,
+        template_language: summary.snapshot_template_language,
+        template_category: summary.snapshot_template_category,
+        found_count: summary.snapshot_found_count,
+        eligible_count: summary.snapshot_eligible_count,
+        excluded_count: summary.snapshot_excluded_count,
+        created_at: summary.snapshot_created_at,
+      };
+    }
+    const exclusionCountsAvailable = Boolean(
+      snapshot && campaignDeliverySummaryAvailable && summary.snapshot_available
+      && String(summary.snapshot_id || "") === String(snapshot.id || "")
+    );
+    return {
+      id: uuid(row.id),
+      whatsapp_account_id: uuid(row.whatsapp_account_id),
+      template_id: uuid(row.template_id),
+      draft_editable: String(row.status || "").toLowerCase() === "draft" && !normalizeCampaignDraftFilters(row.filters).error,
+      name: clean(row.name || "Campanha", 140),
+      channel: clean(accountById.get(row.whatsapp_account_id)?.display_name || "", 120),
+      status: clean(row.status, 40),
+      revision: Number(row.revision) || 0,
+      manual_batch_mode: row.manual_batch_mode === true,
+      execution_mode: clean((campaignExecutionByAccount.get(row.whatsapp_account_id) as any)?.mode || "off", 24),
+      campaigns_enabled: (runtimeByAccount.get(row.whatsapp_account_id) as any)?.campaigns_enabled === true,
+      send_enabled: (runtimeByAccount.get(row.whatsapp_account_id) as any)?.send_enabled === true,
+      scheduled_for: row.scheduled_for || null,
+      created_at: row.created_at || null,
+      started_at: row.started_at || null,
+      paused_at: row.paused_at || null,
+      completed_at: row.completed_at || null,
+      failed_at: row.failed_at || null,
+      delivery: campaignDeliverySummaryAvailable ? (() => {
+        const result = summary;
+        return {
+          available: true,
+          accepted_count: Number(result.accepted_count) || 0,
+          sent_count: Number(result.sent_count) || 0,
+          delivered_count: Number(result.delivered_count) || 0,
+          read_count: Number(result.read_count) || 0,
+          failed_count: Number(result.failed_count) || 0,
+          skipped_count: Number(result.skipped_count) || 0,
+          pending_count: Number(result.pending_count) || 0,
+          uncertain_count: Number(result.uncertain_count) || 0,
+        };
+      })() : { available: false },
+      snapshot_lookup_limited: !snapshot && snapshotLookupLimited,
+      snapshot: snapshot ? {
+        campaign_revision: Number(snapshot.campaign_revision) || 0,
+        snapshot_version: Number(snapshot.snapshot_version) || 0,
+        is_current_revision: Number(snapshot.campaign_revision) === Number(row.revision),
+        template_name: clean(snapshot.template_name, 160),
+        template_language: clean(snapshot.template_language, 24),
+        template_category: clean(snapshot.template_category, 40),
+        found_count: Number(snapshot.found_count) || 0,
+        eligible_count: Number(snapshot.eligible_count) || 0,
+        excluded_count: Number(snapshot.excluded_count) || 0,
+        currently_verified_consent_count: exclusionCountsAvailable ? Number(summary.currently_verified_consent_count) || 0 : null,
+        exclusion_counts: exclusionCountsAvailable ? {
+          available: true,
+          opted_out_count: Number(summary.excluded_opted_out_count) || 0,
+          consent_evidence_unverified_count: Number(summary.excluded_consent_evidence_unverified_count) || 0,
+          no_consent_count: Number(summary.excluded_no_consent_count) || 0,
+          inactive_customer_count: Number(summary.excluded_inactive_customer_count) || 0,
+          invalid_phone_count: Number(summary.excluded_invalid_phone_count) || 0,
+          duplicate_phone_count: Number(summary.excluded_duplicate_phone_count) || 0,
+        } : { available: false },
+        created_at: snapshot.created_at || null,
+      } : null,
+    };
+  });
+
+  const ana = (anaResult.data || []).map((row: any) => ({
+    channel: clean(accountById.get(row.whatsapp_account_id)?.display_name || "", 120),
+    status: clean(row.status, 40),
+    decision: clean(row.decision, 60),
+    created_at: row.created_at || null,
+  }));
+
+  return {
+    channels,
+    templates: {
+      total: templateCountResult.count || 0,
+      approved: approvedCountResult.count || 0,
+      items: templates,
+      loaded: templates.length,
+    },
+    campaigns: { total: campaignsResult.count || 0, recent: campaigns, loaded: campaigns.length },
+    ana: { total: anaResult.count || 0, recent: ana, loaded: ana.length },
+    consent_summary: consentSummary,
+    generated_at: new Date().toISOString(),
+  };
+}
+
+
+function isIsoCursorTimestamp(value: string) {
+  return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/.test(value)
+    && Number.isFinite(Date.parse(value));
+}
+
+async function adminFavoriteUserId() {
+  const result = await db.from("admin_users").select("user_id")
+    .eq("role", "owner").eq("is_active", true).limit(2);
+  if (result.error) throw result.error;
+  const owners = result.data || [];
+  return owners.length === 1 ? uuid(owners[0].user_id) : "";
+}
+
+async function conversationFavoriteIds(adminUserId: string) {
+  const ids: string[] = [];
+  const pageSize = 200;
+  let offset = 0;
+  while (true) {
+    const result = await db.from("whatsapp_conversation_favorites_v1")
+      .select("conversation_id")
+      .eq("admin_user_id", adminUserId)
+      .order("created_at", { ascending: false })
+      .order("conversation_id", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (result.error) throw result.error;
+    const rows = result.data || [];
+    ids.push(...rows.map((row: any) => uuid(row.conversation_id)).filter(Boolean));
+    if (rows.length < pageSize) break;
+    offset += rows.length;
+  }
+  return ids;
+}
+
+async function whatsappConversationFavorite(input: any) {
+  const mode = clean(input.mode, 12).toLowerCase();
+  if (!["add", "remove"].includes(mode)) return { error: "invalid_favorite_action", status: 400 };
+  const conversationId = uuid(input.conversation_id);
+  if (!conversationId) return { error: "invalid_conversation_id", status: 400 };
+  const adminUserId = await adminFavoriteUserId();
+  if (!adminUserId) {
+    return { error: "favorite_identity_unavailable", status: 409, message: "Não foi possível identificar o usuário administrador para salvar este favorito." };
+  }
+  const conversation = await db.from("conversations").select("id").eq("id", conversationId).maybeSingle();
+  if (conversation.error) throw conversation.error;
+  if (!conversation.data) return { error: "conversation_not_found", status: 404 };
+
+  if (mode === "add") {
+    const result = await db.from("whatsapp_conversation_favorites_v1")
+      .upsert({ admin_user_id: adminUserId, conversation_id: conversationId }, { onConflict: "admin_user_id,conversation_id" });
+    if (result.error) throw result.error;
+    return { conversation_id: conversationId, is_favorite: true };
+  }
+  const result = await db.from("whatsapp_conversation_favorites_v1")
+    .delete().eq("admin_user_id", adminUserId).eq("conversation_id", conversationId);
+  if (result.error) throw result.error;
+  return { conversation_id: conversationId, is_favorite: false };
+}
+
+async function whatsappConversationList(input: any) {
+  const pageSize = 30;
+  const cursorSupplied = Object.prototype.hasOwnProperty.call(input, "cursor") && input.cursor !== null;
+  if (cursorSupplied && (typeof input.cursor !== "object" || Array.isArray(input.cursor))) {
+    return { error: "invalid_conversation_cursor", status: 400 };
+  }
+  const cursor = cursorSupplied ? input.cursor : null;
+  const cursorDateRaw = cursor ? clean(cursor.updated_at, 64) : "";
+  const cursorIdRaw = cursor ? clean(cursor.id, 64) : "";
+  const cursorId = cursorIdRaw ? uuid(cursorIdRaw) : "";
+  if (cursor && (!isIsoCursorTimestamp(cursorDateRaw) || !cursorId)) {
+    return { error: "invalid_conversation_cursor", status: 400 };
+  }
+  const requestedAccount = clean(input.account_id, 64);
+  const accountId = requestedAccount ? uuid(requestedAccount) : "";
+  if (requestedAccount && !accountId) return { error: "invalid_account_id", status: 400 };
+  const search = clean(input.search, 80).replace(/\D/g, "");
+  const filter = clean(input.filter, 20).toLowerCase();
+  const onlyHuman = filter === "human";
+  const onlyFavorites = filter === "favorites";
+  let favoriteIds: string[] = [];
+  let favoritesAvailable = false;
+  try {
+    const adminUserId = await adminFavoriteUserId();
+    if (adminUserId) {
+      favoriteIds = await conversationFavoriteIds(adminUserId);
+      favoritesAvailable = true;
+    }
+  } catch {
+    favoritesAvailable = false;
+  }
+  if (onlyFavorites && !favoritesAvailable) {
+    return { error: "favorites_unavailable", status: 503, message: "Favoritos indisponíveis. Atualize o Admin depois de aplicar a migração necessária." };
+  }
+
+  let conversationQuery = db.from("conversations")
+    .select("id,whatsapp_account_id,wa_contact_e164,status,stage,human_required,mode,last_inbound_at,last_outbound_at,updated_at,created_at", { count: "exact" })
+    .order("updated_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(pageSize + 1);
+  if (cursorDateRaw && cursorId) {
+    conversationQuery = conversationQuery.or(
+      "updated_at.lt." + cursorDateRaw + ",and(updated_at.eq." + cursorDateRaw + ",id.lt." + cursorId + ")",
+    );
+  }
+  if (accountId) conversationQuery = conversationQuery.eq("whatsapp_account_id", accountId);
+  if (search.length >= 4) conversationQuery = conversationQuery.ilike("wa_contact_e164", "%" + search + "%");
+  if (onlyHuman) conversationQuery = conversationQuery.eq("human_required", true);
+  if (onlyFavorites) {
+    conversationQuery = favoriteIds.length
+      ? conversationQuery.in("id", favoriteIds)
+      : conversationQuery.eq("id", "00000000-0000-0000-0000-000000000000");
+  }
+
+  const [conversationResult, accountResult] = await Promise.all([
+    conversationQuery,
+    db.from("whatsapp_accounts").select("id,slug,display_name,phone_e164,is_active").order("display_name"),
+  ]);
+  if (conversationResult.error) throw conversationResult.error;
+  if (accountResult.error) throw accountResult.error;
+
+  const rows = conversationResult.data || [];
+  const hasMore = rows.length > pageSize;
+  const pageRows = rows.slice(0, pageSize);
+  const accounts = accountResult.data || [];
+  const accountById = new Map(accounts.map((row: any) => [row.id, row]));
+  const favoriteIdSet = new Set(favoriteIds);
+  const items = pageRows.map((row: any) => {
+    const account: any = accountById.get(row.whatsapp_account_id) || {};
+    const phoneDigits = String(row.wa_contact_e164 || "").replace(/\D/g, "");
+    const accountDigits = String(account.phone_e164 || "").replace(/\D/g, "");
+    const lastActivity = [row.last_inbound_at, row.last_outbound_at, row.updated_at, row.created_at]
+      .filter(Boolean).sort((a: string, b: string) => new Date(b).getTime() - new Date(a).getTime())[0] || null;
+    return {
+      id: row.id,
+      channel: clean(account.display_name || account.slug || "WhatsApp", 120),
+      channel_number: accountDigits.slice(-4),
+      phone_last4: phoneDigits.slice(-4),
+      status: clean(row.status, 40),
+      stage: clean(row.stage, 40),
+      mode: clean(row.mode, 40),
+      human_required: row.human_required === true,
+      is_favorite: favoriteIdSet.has(row.id),
+      last_activity_at: lastActivity,
+      updated_at: row.updated_at,
+    };
+  });
+  const lastRow: any = pageRows[pageRows.length - 1];
+  return {
+    items,
+    accounts: accounts.map((row: any) => ({
+      id: row.id,
+      name: clean(row.display_name || row.slug || "WhatsApp", 120),
+      number_last4: String(row.phone_e164 || "").replace(/\D/g, "").slice(-4),
+      active: row.is_active === true,
+    })),
+    total: conversationResult.count || 0,
+    has_more: hasMore,
+    next_cursor: hasMore && lastRow ? { updated_at: lastRow.updated_at, id: lastRow.id } : null,
+    favorites_available: favoritesAvailable,
+  };
+}
+
+function normalizeWhatsappLocation(value: any) {
+  const metadata = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const candidates = [metadata.location, metadata.coordinates, metadata];
+  const location = candidates.find((item: any) => item && typeof item === "object" && !Array.isArray(item)) || {};
+  const rawLatitude = location.latitude ?? location.lat;
+  const rawLongitude = location.longitude ?? location.lng ?? location.lon;
+  if (rawLatitude === undefined || rawLatitude === null || String(rawLatitude).trim() === ""
+    || rawLongitude === undefined || rawLongitude === null || String(rawLongitude).trim() === "") return null;
+  const latitude = Number(rawLatitude);
+  const longitude = Number(rawLongitude);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)
+    || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return null;
+  return {
+    latitude,
+    longitude,
+    name: clean(location.name || location.label || "", 120),
+    address: clean(location.address || "", 240),
+  };
+}
+
+async function whatsappConversationMessages(input: any) {
+  const conversationId = uuid(input.conversation_id);
+  if (!conversationId) return { error: "invalid_conversation_id", status: 400 };
+  if (clean(input.before, 64)) {
+    return { error: "legacy_before_cursor_unsupported", message: "Atualize a página para continuar carregando o histórico.", status: 409 };
+  }
+  const beforeRaw = clean(input.before_created_at, 64);
+  const beforeIdRaw = clean(input.before_id, 64);
+  const beforeId = beforeIdRaw ? uuid(beforeIdRaw) : "";
+  if (Boolean(beforeRaw) !== Boolean(beforeIdRaw)) return { error: "invalid_before_cursor", status: 400 };
+  if (beforeIdRaw && (!isIsoCursorTimestamp(beforeRaw) || !beforeId)) {
+    return { error: "invalid_before_cursor", status: 400 };
+  }
+
+  const conversationResult = await db.from("conversations")
+    .select("id,whatsapp_account_id,wa_contact_e164,status,stage,mode,human_required")
+    .eq("id", conversationId)
+    .maybeSingle();
+  if (conversationResult.error) throw conversationResult.error;
+  if (!conversationResult.data) return { error: "conversation_not_found", status: 404 };
+  const conversation = conversationResult.data;
+
+  const [accountResult, messageResult] = await Promise.all([
+    db.from("whatsapp_accounts").select("id,slug,display_name,phone_e164").eq("id", conversation.whatsapp_account_id).maybeSingle(),
+    (() => {
+      let query = db.from("whatsapp_messages_v1")
+        .select("id,direction,message_type,text_body,status_current,metadata,received_at,sent_at,created_at")
+        .eq("conversation_id", conversationId)
+        .eq("whatsapp_account_id", conversation.whatsapp_account_id);
+      if (beforeRaw && beforeId) {
+        query = query.or(
+          "created_at.lt." + beforeRaw + ",and(created_at.eq." + beforeRaw + ",id.lt." + beforeId + ")",
+        );
+      }
+      return query.order("created_at", { ascending: false }).order("id", { ascending: false }).limit(31);
+    })(),
+  ]);
+  if (accountResult.error) throw accountResult.error;
+  if (messageResult.error) throw messageResult.error;
+
+  const rows = messageResult.data || [];
+  const hasMore = rows.length > 30;
+  const pageRows = rows.slice(0, 30);
+  const oldestRow: any = pageRows[pageRows.length - 1];
+  const account: any = accountResult.data || {};
+  const phoneDigits = String(conversation.wa_contact_e164 || "").replace(/\D/g, "");
+  const accountDigits = String(account.phone_e164 || "").replace(/\D/g, "");
+  return {
+    conversation: {
+      id: conversation.id,
+      channel: clean(account.display_name || account.slug || "WhatsApp", 120),
+      channel_number: accountDigits.slice(-4),
+      phone_last4: phoneDigits.slice(-4),
+      status: clean(conversation.status, 40),
+      stage: clean(conversation.stage, 40),
+      mode: clean(conversation.mode, 40),
+      human_required: conversation.human_required === true,
+    },
+    messages: pageRows.reverse().map((row: any) => ({
+      id: row.id,
+      direction: clean(row.direction, 20),
+      message_type: clean(row.message_type, 30),
+      text_body: String(row.text_body || "").replace(/\u0000/g, "").slice(0, 4000),
+      media_filename: (() => {
+        const metadata = row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata) ? row.metadata : {};
+        const media = metadata.media && typeof metadata.media === "object" && !Array.isArray(metadata.media) ? metadata.media : metadata;
+        return ["image", "audio", "video", "document"].includes(clean(row.message_type, 30))
+          ? safeWhatsappFilename(media.filename || media.file_name || metadata.media_filename || "")
+          : "";
+      })(),
+      status_current: clean(row.status_current, 40),
+      location: row.message_type === "location" ? normalizeWhatsappLocation(row.metadata) : null,
+      message_at: row.received_at || row.sent_at || row.created_at,
+    })),
+    next_before: hasMore && oldestRow ? { created_at: oldestRow.created_at, id: oldestRow.id } : null,
+  };
+}
+
+async function whatsappConversationMessageStatuses(input: any) {
+  const conversationId = uuid(input.conversation_id);
+  const rawIds = input.message_ids;
+  if (!conversationId) return { error: "invalid_conversation_id", status: 400 };
+  if (!Array.isArray(rawIds) || rawIds.length < 1 || rawIds.length > 100) {
+    return { error: "invalid_message_ids", status: 400 };
+  }
+  const messageIds = Array.from(new Set(rawIds.map((value: any) => uuid(value)).filter(Boolean)));
+  if (!messageIds.length || messageIds.length !== rawIds.length) {
+    return { error: "invalid_message_ids", status: 400 };
+  }
+
+  const conversationResult = await db.from("conversations")
+    .select("id,whatsapp_account_id")
+    .eq("id", conversationId)
+    .maybeSingle();
+  if (conversationResult.error) throw conversationResult.error;
+  if (!conversationResult.data) return { error: "conversation_not_found", status: 404 };
+
+  const result = await db.from("whatsapp_messages_v1")
+    .select("id,status_current")
+    .eq("conversation_id", conversationId)
+    .eq("whatsapp_account_id", conversationResult.data.whatsapp_account_id)
+    .eq("direction", "outbound")
+    .in("id", messageIds)
+    .limit(100);
+  if (result.error) throw result.error;
+  return {
+    conversation_id: conversationId,
+    statuses: (result.data || []).map((row: any) => ({
+      id: uuid(row.id),
+      status_current: clean(row.status_current, 40),
+    })),
+  };
+}
+
+async function whatsappConversationMedia(input: any) {
+  const conversationId = uuid(input.conversation_id);
+  const messageId = uuid(input.message_id);
+  if (!conversationId || !messageId) return { error: "invalid_media_reference", status: 400 };
+
+  const messageResult = await db.from("whatsapp_messages_v1")
+    .select("id,message_type")
+    .eq("id", messageId)
+    .eq("conversation_id", conversationId)
+    .maybeSingle();
+  if (messageResult.error) throw messageResult.error;
+  if (!messageResult.data) return { error: "message_not_found", status: 404 };
+  const messageType = clean(messageResult.data.message_type, 30);
+  if (!["image", "audio", "video", "document"].includes(messageType)) {
+    return { error: "message_media_unsupported", status: 415 };
+  }
+
+  const allowedMimeTypes = new Set([
+    "image/jpeg", "image/png", "image/webp", "image/gif",
+    "audio/ogg", "audio/mpeg", "audio/mp4", "audio/aac", "audio/amr", "audio/wav", "audio/x-wav",
+    "video/mp4", "video/3gpp", "text/plain",
+    "application/pdf", "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/zip", "application/octet-stream",
+  ]);
+  let bucket = "";
+  let path = "";
+  let mimeType = "";
+  let filename = "";
+  let fileSize = 0;
+
+  const canonicalResult = await db.from("whatsapp_media_v1")
+    .select("media_type,storage_bucket,storage_path,mime_type,file_size,metadata")
+    .eq("message_id", messageId)
+    .eq("media_type", messageType)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (canonicalResult.error) throw canonicalResult.error;
+  const canonical: any = canonicalResult.data || {};
+  const canonicalPath = safeWhatsappStoragePath(canonical.storage_path);
+  if (canonical.media_type === messageType && canonical.storage_bucket === "attendance-media-v1" && canonicalPath) {
+    bucket = canonical.storage_bucket;
+    path = canonicalPath;
+    mimeType = String(canonical.mime_type || "").split(";", 1)[0].trim().toLowerCase();
+    fileSize = Number(canonical.file_size) || 0;
+    const metadata = canonical.metadata && typeof canonical.metadata === "object" ? canonical.metadata : {};
+    filename = safeWhatsappFilename(metadata.filename || metadata.file_name || "");
+  }
+
+  if (!path) {
+    const now = new Date().toISOString();
+    const cacheResult = await db.from("attendance_media_cache_v1")
+      .select("object_path,mime_type,filename,expires_at")
+      .eq("message_id", messageId)
+      .gt("expires_at", now)
+      .maybeSingle();
+    if (cacheResult.error) throw cacheResult.error;
+    const cached: any = cacheResult.data || {};
+    const cachedPath = safeWhatsappStoragePath(cached.object_path);
+    if (cachedPath) {
+      bucket = "attendance-media-v1";
+      path = cachedPath;
+      mimeType = String(cached.mime_type || "").split(";", 1)[0].trim().toLowerCase();
+      filename = safeWhatsappFilename(cached.filename || "");
+    }
+  }
+
+  if (!path) return { error: "media_not_cached", message: "Esta mídia ainda não está disponível no cache privado.", status: 404 };
+  // O bucket privado limita objetos do cache a 20 MB; attendance_media_cache_v1 não armazena file_size.
+  if (fileSize > 20 * 1024 * 1024) return { error: "media_too_large", status: 413 };
+  if (!allowedMimeTypes.has(mimeType)) return { error: "media_type_not_allowed", status: 415 };
+
+  const signed = await db.storage.from(bucket).createSignedUrl(path, 600, { download: messageType === "document" });
+  if (signed.error || !signed.data?.signedUrl) return { error: "media_sign_failed", status: 503 };
+  return {
+    url: signed.data.signedUrl,
+    mime_type: mimeType,
+    filename: filename || "arquivo",
+    expires_at: new Date(Date.now() + 600000).toISOString(),
+  };
+}
+
+function safeWhatsappStoragePath(value: any) {
+  const path = String(value || "").trim();
+  if (!path || path.length > 800 || path.startsWith("/") || path.includes("\\")
+    || path.split("/").some((segment) => !segment || segment === "." || segment === "..")) return "";
+  return path;
+}
+
+function safeWhatsappFilename(value: any) {
+  const leaf = String(value || "").replace(/\\/g, "/").split("/").pop() || "arquivo";
+  const safe = leaf.replace(/[\u0000-\u001f\u007f]/g, "")
+    .replace(/[^A-Za-z0-9._()\- ]/g, "_").slice(0, 180).trim();
+  return safe || "arquivo";
+}
+
+function stableAdminJson(value: any): string {
+  if (Array.isArray(value)) return "[" + value.map(stableAdminJson).join(",") + "]";
+  if (value && typeof value === "object") {
+    return "{" + Object.keys(value).sort().map((key) =>
+      JSON.stringify(key) + ":" + stableAdminJson(value[key])
+    ).join(",") + "}";
+  }
+  return JSON.stringify(value) ?? "undefined";
+}
+
+
+
+const CAMPAIGN_FILTER_TEXT_FIELDS = new Set(["city", "neighborhood", "brand", "category"]);
+const CAMPAIGN_FILTER_DATE_FIELDS = new Set(["last_purchase_before", "last_purchase_after"]);
+const CAMPAIGN_FILTER_NUMBER_FIELDS = new Set([
+  "inactive_days", "min_order_count", "max_order_count", "min_lifetime_value", "max_lifetime_value",
+]);
+const CAMPAIGN_FILTER_FIELDS = new Set([
+  ...CAMPAIGN_FILTER_TEXT_FIELDS,
+  ...CAMPAIGN_FILTER_DATE_FIELDS,
+  ...CAMPAIGN_FILTER_NUMBER_FIELDS,
+]);
+
+function normalizeCampaignDraftFilters(value: any): { error?: string; filters: Record<string, unknown> } {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return { error: "invalid_filters", filters: {} };
+  const filters: Record<string, unknown> = {};
+  for (const [key, raw] of Object.entries(value)) {
+    if (!CAMPAIGN_FILTER_FIELDS.has(key)) return { error: "unsupported_campaign_filter", filters: {} };
+    if (raw === null || raw === undefined || raw === "") continue;
+    if (CAMPAIGN_FILTER_TEXT_FIELDS.has(key)) {
+      if (typeof raw !== "string") return { error: "invalid_campaign_filter", filters: {} };
+      const text = clean(raw, 120);
+      if (text) filters[key] = text;
+      continue;
+    }
+    if (CAMPAIGN_FILTER_DATE_FIELDS.has(key)) {
+      if (typeof raw !== "string") return { error: "invalid_campaign_filter", filters: {} };
+      const date = raw.slice(0, 10);
+      const parsedDate = new Date(date + "T00:00:00.000Z");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== date) {
+        return { error: "invalid_campaign_filter", filters: {} };
+      }
+      filters[key] = date + "T00:00:00.000Z";
+      continue;
+    }
+    if (typeof raw !== "string" && typeof raw !== "number") return { error: "invalid_campaign_filter", filters: {} };
+    const number = Number(raw);
+    const integer = key === "inactive_days" || key === "min_order_count" || key === "max_order_count";
+    const maximum = key === "inactive_days" ? 3650
+      : integer ? 1000000 : 1000000000;
+    if (!Number.isFinite(number) || number < 0 || number > maximum || (integer && !Number.isInteger(number))) {
+      return { error: "invalid_campaign_filter", filters: {} };
+    }
+    filters[key] = number;
+  }
+  if (filters.min_order_count !== undefined && filters.max_order_count !== undefined
+      && Number(filters.min_order_count) > Number(filters.max_order_count)) {
+    return { error: "invalid_campaign_filter_range", filters: {} };
+  }
+  if (filters.min_lifetime_value !== undefined && filters.max_lifetime_value !== undefined
+      && Number(filters.min_lifetime_value) > Number(filters.max_lifetime_value)) {
+    return { error: "invalid_campaign_filter_range", filters: {} };
+  }
+  return { filters };
+}
+
+async function validateMarketingCampaignTemplate(accountId: string, templateId: string) {
+  const result = await db.from("whatsapp_templates_v1")
+    .select("id,whatsapp_account_id,category,status")
+    .eq("id", templateId)
+    .eq("whatsapp_account_id", accountId)
+    .maybeSingle();
+  if (result.error) throw result.error;
+  const row = result.data;
+  if (!row) return { error: "template_not_found", status: 404 };
+  if (String(row.category || "").toUpperCase() !== "MARKETING"
+      || String(row.status || "").toUpperCase() !== "APPROVED") {
+    return { error: "template_not_sendable", status: 409 };
+  }
+  return null;
+}
+
+async function marketingCampaignTemplateVariableIndices(accountId: string, templateId: string): Promise<{ error?: string; status?: number; indices?: number[] }> {
+  const result = await db.rpc("marketing_campaign_template_snapshot_v1", {
+    p_whatsapp_account_id: accountId,
+    p_template_id: templateId,
+  });
+  if (result.error) throw result.error;
+  const template: any = result.data || {};
+  if (template.ok !== true) return { error: clean(template.error || "template_not_sendable", 80), status: 409, indices: [] };
+  const text = (Array.isArray(template.components) ? template.components : [])
+    .filter((component: any) => {
+      const type = clean(component?.type, 24).toUpperCase();
+      return type === "BODY" || (type === "HEADER" && clean(component?.format, 24).toUpperCase() === "TEXT");
+    })
+    .map((component: any) => String(component?.text || ""))
+    .join(" ");
+  const indices = Array.from(new Set(Array.from(text.matchAll(/{{\s*(\d{1,3})\s*}}/g), (match: any) => Number(match[1]))))
+    .filter((index: number) => Number.isInteger(index) && index > 0 && index <= 999)
+    .sort((a: number, b: number) => a - b);
+  return { indices };
+}
+
+function normalizeCampaignTemplateVariables(input: any, indices: number[], requireAll = true): { error?: string; values?: Record<string, unknown> } {
+  const isObject = input && typeof input === "object" && !Array.isArray(input);
+  if (requireAll && !isObject) return { error: "invalid_campaign_variables" };
+  const source = isObject ? input : {};
+  const allowed = new Set(indices.map(String));
+  const values: Record<string, unknown> = {};
+  for (const [index, value] of Object.entries(source)) {
+    if (!allowed.has(index)) {
+      if (requireAll) return { error: "campaign_variable_not_in_template" };
+      continue;
+    }
+    if (typeof value === "string") {
+      const text = clean(value, 500);
+      if (text) values[index] = text;
+      else if (requireAll) return { error: "campaign_template_variable_required" };
+      continue;
+    }
+    if (value && typeof value === "object" && !Array.isArray(value)
+        && (value as any).source === "customer_first_name") {
+      values[index] = {
+        source: "customer_first_name",
+        fallback: clean((value as any).fallback, 100) || "Cliente",
+      };
+      continue;
+    }
+    if (requireAll) return { error: "invalid_campaign_variable" };
+  }
+  if (requireAll && indices.some((index) => !Object.prototype.hasOwnProperty.call(values, String(index)))) {
+    return { error: "campaign_template_variable_required" };
+  }
+  return { values };
+}
+
+async function whatsappCampaignDraftLoad(input: any) {
+  const campaignId = uuid(input.campaign_id);
+  if (!campaignId) return { error: "invalid_campaign_id", status: 400 };
+  const result = await db.from("marketing_campaigns_v1")
+    .select("id,name,status,revision,filters,variable_values,whatsapp_account_id,template_id")
+    .eq("id", campaignId)
+    .maybeSingle();
+  if (result.error) throw result.error;
+  if (!result.data) return { error: "campaign_not_found", status: 404 };
+  const campaign: any = result.data;
+  if (String(campaign.status || "").toLowerCase() !== "draft") {
+    return { error: "campaign_not_draft", status: 409 };
+  }
+  const normalized = normalizeCampaignDraftFilters(campaign.filters);
+  if (normalized.error) return { error: "campaign_filters_not_editable", status: 409 };
+  const variableIndices = await marketingCampaignTemplateVariableIndices(uuid(campaign.whatsapp_account_id), uuid(campaign.template_id));
+  if (variableIndices.error) return variableIndices;
+  const variableValues = normalizeCampaignTemplateVariables(campaign.variable_values, variableIndices.indices || [], false);
+  return {
+    campaign: {
+      id: uuid(campaign.id),
+      name: clean(campaign.name, 140),
+      revision: Number(campaign.revision) || 0,
+      whatsapp_account_id: uuid(campaign.whatsapp_account_id),
+      template_id: uuid(campaign.template_id),
+      variable_values: variableValues.values || {},
+      filters: normalized.filters,
+    },
+  };
+}
+
+async function whatsappCampaignDraftCreate(input: any) {
+  const name = clean(input.name, 140);
+  const accountId = uuid(input.whatsapp_account_id);
+  const templateId = uuid(input.template_id);
+  const idempotencyKey = uuid(input.idempotency_key);
+  if (!name) return { error: "invalid_name", status: 400 };
+  if (!accountId || !templateId) return { error: "invalid_campaign_channel_or_template", status: 400 };
+  if (!idempotencyKey) return { error: "invalid_idempotency_key", status: 400 };
+  const normalized = normalizeCampaignDraftFilters(input.filters);
+  if (normalized.error) return { error: normalized.error, status: 400 };
+  if (Object.keys(normalized.filters).length === 0) {
+    return { error: "campaign_filter_required", status: 400, message: "Informe ao menos um filtro de público para salvar o rascunho." };
+  }
+  const templateError = await validateMarketingCampaignTemplate(accountId, templateId);
+  if (templateError) return templateError;
+  const variableIndices = await marketingCampaignTemplateVariableIndices(accountId, templateId);
+  if (variableIndices.error) return variableIndices;
+  const variableValues = normalizeCampaignTemplateVariables(input.variable_values, variableIndices.indices || [], true);
+  if (variableValues.error) return { error: variableValues.error, status: 400, message: "Preencha todas as variáveis do modelo aprovado." };
+  const result = await db.rpc("marketing_create_campaign_v1", {
+    p_name: name,
+    p_whatsapp_account_id: accountId,
+    p_template_id: templateId,
+    p_filters: normalized.filters,
+    p_variable_values: variableValues.values || {},
+    p_deep_link: {},
+    p_idempotency_key: idempotencyKey,
+  });
+  if (result.error) throw result.error;
+  const saved = result.data || {};
+  if (saved.ok !== true) return { error: clean(saved.error || "campaign_create_failed", 100), status: 409 };
+  return {
+    campaign_id: uuid(saved.campaign_id),
+    revision: Number(saved.revision) || 0,
+    status: clean(saved.status || "draft", 40),
+    idempotent: saved.idempotent === true,
+  };
+}
+
+async function whatsappCampaignDraftUpdate(input: any) {
+  const campaignId = uuid(input.campaign_id);
+  const accountId = uuid(input.whatsapp_account_id);
+  const templateId = uuid(input.template_id);
+  const revision = Number(input.revision);
+  const name = clean(input.name, 140);
+  if (!campaignId || !accountId || !templateId || !Number.isInteger(revision) || revision < 0) {
+    return { error: "invalid_campaign_draft", status: 400 };
+  }
+  if (!name) return { error: "invalid_name", status: 400 };
+  const normalized = normalizeCampaignDraftFilters(input.filters);
+  if (normalized.error) return { error: normalized.error, status: 400 };
+  if (Object.keys(normalized.filters).length === 0) {
+    return { error: "campaign_filter_required", status: 400, message: "Informe ao menos um filtro de público para salvar o rascunho." };
+  }
+  const templateError = await validateMarketingCampaignTemplate(accountId, templateId);
+  if (templateError) return templateError;
+  const variableIndices = await marketingCampaignTemplateVariableIndices(accountId, templateId);
+  if (variableIndices.error) return variableIndices;
+  const variableValues = normalizeCampaignTemplateVariables(input.variable_values, variableIndices.indices || [], true);
+  if (variableValues.error) return { error: variableValues.error, status: 400, message: "Preencha todas as variáveis do modelo aprovado." };
+  const result = await db.rpc("marketing_update_campaign_draft_v1", {
+    p_campaign_id: campaignId,
+    p_expected_revision: revision,
+    p_patch: {
+      name,
+      whatsapp_account_id: accountId,
+      template_id: templateId,
+      filters: normalized.filters,
+      variable_values: variableValues.values || {},
+    },
+  });
+  if (result.error) throw result.error;
+  const saved = result.data || {};
+  if (saved.ok !== true) return { error: clean(saved.error || "campaign_update_failed", 100), status: 409 };
+  return {
+    campaign_id: campaignId,
+    revision: Number(saved.revision) || 0,
+    status: clean(saved.status || "draft", 40),
+    semantic_changed: saved.semantic_changed === true,
+  };
+}
+
+async function whatsappCampaignPreview(input: any) {
+  const campaignId = uuid(input.campaign_id);
+  if (!campaignId) return { error: "invalid_campaign_id", status: 400 };
+  const campaignResult = await db.from("marketing_campaigns_v1")
+    .select("id,name,status,revision,filters,whatsapp_account_id,template_id")
+    .eq("id", campaignId)
+    .maybeSingle();
+  if (campaignResult.error) throw campaignResult.error;
+  if (!campaignResult.data) return { error: "campaign_not_found", status: 404 };
+  const campaign: any = campaignResult.data;
+  if (!campaign.filters || typeof campaign.filters !== "object" || Array.isArray(campaign.filters)) {
+    return { error: "campaign_filters_unavailable", status: 409 };
+  }
+
+  const [previewResult, templateResult] = await Promise.all([
+    db.rpc("marketing_preview_audience_v1", {
+      p_filters: campaign.filters,
+      p_limit: 1,
+      p_offset: 0,
+    }),
+    db.rpc("marketing_campaign_template_snapshot_v1", {
+      p_whatsapp_account_id: campaign.whatsapp_account_id,
+      p_template_id: campaign.template_id,
+    }),
+  ]);
+  if (previewResult.error) throw previewResult.error;
+  const preview = previewResult.data || {};
+  if (preview.ok !== true) {
+    return { error: clean(preview.error || "audience_preview_unavailable", 100), status: 409 };
+  }
+
+  const exclusions = preview.exclusion_reasons && typeof preview.exclusion_reasons === "object"
+    && !Array.isArray(preview.exclusion_reasons) ? preview.exclusion_reasons : {};
+  const count = (value: any) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : 0;
+  };
+  const template: any = !templateResult.error && templateResult.data && typeof templateResult.data === "object"
+    ? templateResult.data
+    : {};
+  return {
+    campaign: {
+      id: campaignId,
+      name: clean(campaign.name, 140),
+      status: clean(campaign.status, 40),
+      revision: Number(campaign.revision) || 0,
+    },
+    preview: {
+      found_count: count(preview.found_count),
+      eligible_count: count(preview.eligible_count),
+      excluded_count: count(preview.excluded_count),
+      exclusion_counts: {
+        available: true,
+        opted_out_count: count(exclusions.opted_out),
+        consent_evidence_unverified_count: count(exclusions.consent_evidence_unverified),
+        no_consent_count: count(exclusions.no_consent),
+        inactive_customer_count: count(exclusions.inactive_customer),
+        invalid_phone_count: count(exclusions.invalid_phone),
+        duplicate_phone_count: count(exclusions.duplicate_phone),
+      },
+    },
+    template: {
+      available: !templateResult.error,
+      sendable: template.ok === true,
+      error: template.ok === true ? "" : clean(template.error || "template_status_unavailable", 80),
+      name: template.ok === true ? clean(template.name, 160) : "",
+      language: template.ok === true ? clean(template.language, 24) : "",
+      category: template.ok === true ? clean(template.category, 40) : "",
+    },
+  };
+}
+
+
+
+
+async function whatsappCampaignContentPreview(input: any) {
+  const campaignId = uuid(input.campaign_id);
+  let campaign: any;
+  if (campaignId) {
+    const campaignResult = await db.from("marketing_campaigns_v1")
+      .select("id,name,revision,whatsapp_account_id,template_id")
+      .eq("id", campaignId)
+      .maybeSingle();
+    if (campaignResult.error) throw campaignResult.error;
+    if (!campaignResult.data) return { error: "campaign_not_found", message: "Campanha não encontrada.", status: 404 };
+    campaign = campaignResult.data;
+  } else {
+    const accountId = uuid(input.whatsapp_account_id);
+    const templateId = uuid(input.template_id);
+    if (!accountId || !templateId) return { error: "invalid_campaign_template", message: "Selecione o canal e o modelo aprovado.", status: 400 };
+    const templateError = await validateMarketingCampaignTemplate(accountId, templateId);
+    if (templateError) return templateError;
+    campaign = { id: "", name: "", revision: 0, whatsapp_account_id: accountId, template_id: templateId };
+  }
+  const templateResult = await db.rpc("marketing_campaign_template_snapshot_v1", {
+    p_whatsapp_account_id: campaign.whatsapp_account_id,
+    p_template_id: campaign.template_id,
+  });
+  if (templateResult.error) throw templateResult.error;
+  const template: any = templateResult.data || {};
+  if (template.ok !== true) {
+    return { error: clean(template.error || "template_not_sendable", 80), message: "O conteúdo do modelo aprovado não está disponível.", status: 409 };
+  }
+
+  const parts: any[] = [];
+  for (const component of Array.isArray(template.components) ? template.components.slice(0, 8) : []) {
+    const type = clean(component?.type, 24).toUpperCase();
+    const format = clean(component?.format, 24).toUpperCase();
+    if (type === "HEADER") {
+      if (format === "TEXT") parts.push({ label: "Cabeçalho", text: clean(component?.text, 3000) });
+      else parts.push({ label: "Cabeçalho", text: format ? "Conteúdo de mídia (" + format.toLowerCase() + "); o arquivo não é exibido nesta prévia." : "Conteúdo de mídia; o arquivo não é exibido nesta prévia." });
+    } else if (type === "BODY") {
+      parts.push({ label: "Mensagem", text: clean(component?.text, 6000) });
+    } else if (type === "FOOTER") {
+      parts.push({ label: "Rodapé", text: clean(component?.text, 1000) });
+    } else if (type === "BUTTONS") {
+      const buttons = Array.isArray(component?.buttons) ? component.buttons.slice(0, 10) : [];
+      const labels = buttons.map((button: any) => {
+        const label = clean(button?.text, 160);
+        const buttonType = clean(button?.type, 24).toUpperCase();
+        return [buttonType, label].filter(Boolean).join(": ");
+      }).filter(Boolean);
+      if (labels.length) parts.push({ label: "Botões", text: labels.join("\n") });
+    }
+  }
+  const variableText = (Array.isArray(template.components) ? template.components : [])
+    .filter((component: any) => {
+      const type = clean(component?.type, 24).toUpperCase();
+      return type === "BODY" || (type === "HEADER" && clean(component?.format, 24).toUpperCase() === "TEXT");
+    })
+    .map((component: any) => String(component?.text || ""))
+    .join(" ");
+  const variableIndices = Array.from(new Set(Array.from(variableText.matchAll(/{{\s*(\d{1,3})\s*}}/g), (match: any) => Number(match[1]))))
+    .filter((index: number) => Number.isInteger(index) && index > 0 && index <= 999)
+    .sort((a: number, b: number) => a - b);
+  return {
+    campaign: {
+      id: campaignId || "",
+      name: clean(campaign.name, 140),
+      revision: Number(campaign.revision) || 0,
+    },
+    template: {
+      name: clean(template.name, 160),
+      language: clean(template.language, 24),
+      category: clean(template.category, 40),
+      parts,
+      variable_count: variableIndices.length,
+      variable_indices: variableIndices,
+    },
+  };
+}
+
+function campaignAdminCount(value: any) {
+  const count = Number(value);
+  return Number.isFinite(count) ? Math.max(0, Math.trunc(count)) : 0;
+}
+
+async function campaignAdminRpc(functionName: string, args: Record<string, unknown>, fallback: string) {
+  const result = await db.rpc(functionName, args);
+  if (result.error) throw result.error;
+  const saved: any = result.data || {};
+  if (saved.ok !== true) {
+    const error = clean(saved.error || fallback, 100);
+    const messages: Record<string, string> = {
+      campaign_not_found: "Campanha não encontrada.",
+      revision_conflict: "A campanha mudou em outra sessão. Atualize a lista e tente novamente.",
+      snapshot_stale: "O snapshot não corresponde à revisão atual da campanha.",
+      template_not_sendable: "O modelo deixou de estar aprovado ou disponível neste canal.",
+      campaigns_disabled: "O envio de campanhas está desativado para este canal.",
+      campaign_invalid_transition: "O status atual não permite esta ação.",
+      invalid_idempotency_key: "Não foi possível identificar esta operação.",
+      manual_batch_already_active: "Já existe um lote manual ativo para esta campanha.",
+      manual_campaign_requires_explicit_batch: "Esta campanha exige a execução controlada em lote.",
+    };
+    return { error, message: messages[error] || "A operação não foi concluída.", status: 409 };
+  }
+  return saved;
+}
+
+async function whatsappCampaignSnapshot(input: any) {
+  const campaignId = uuid(input.campaign_id);
+  const revision = Number(input.revision);
+  const idempotencyKey = uuid(input.idempotency_key);
+  if (!campaignId || !Number.isInteger(revision) || revision < 0 || !idempotencyKey) {
+    return { error: "invalid_campaign_snapshot", message: "Dados inválidos para congelar a audiência.", status: 400 };
+  }
+  const saved: any = await campaignAdminRpc("marketing_create_campaign_snapshot_v1", {
+    p_campaign_id: campaignId,
+    p_expected_revision: revision,
+    p_idempotency_key: idempotencyKey,
+  }, "campaign_snapshot_failed");
+  if (saved.error) return saved;
+  return {
+    campaign_id: campaignId,
+    revision: campaignAdminCount(saved.revision),
+    snapshot_version: campaignAdminCount(saved.snapshot_version),
+    found_count: campaignAdminCount(saved.found_count),
+    eligible_count: campaignAdminCount(saved.eligible_count),
+    excluded_count: campaignAdminCount(saved.excluded_count),
+  };
+}
+
+async function whatsappCampaignTransition(input: any) {
+  const campaignId = uuid(input.campaign_id);
+  const revision = Number(input.revision);
+  const toStatus = clean(input.to_status, 32).toLowerCase();
+  const reasonByStatus: Record<string, string> = {
+    ready_for_review: "Revisão solicitada pelo Admin",
+    approved: "Audiência aprovada pelo Admin",
+    draft: "Retornado a rascunho pelo Admin",
+    cancelled: "Cancelado pelo Admin",
+  };
+  if (!campaignId || !Number.isInteger(revision) || revision < 0 || !reasonByStatus[toStatus]) {
+    return { error: "invalid_campaign_transition", message: "Transição de campanha inválida.", status: 400 };
+  }
+  const saved: any = await campaignAdminRpc("marketing_transition_campaign_v1", {
+    p_campaign_id: campaignId,
+    p_expected_revision: revision,
+    p_to_status: toStatus,
+    p_reason: reasonByStatus[toStatus],
+  }, "campaign_transition_failed");
+  if (saved.error) return saved;
+  return { campaign_id: campaignId, revision: campaignAdminCount(saved.revision), status: clean(saved.status, 32) };
+}
+
+async function whatsappCampaignSchedule(input: any) {
+  const campaignId = uuid(input.campaign_id);
+  const revision = Number(input.revision);
+  const scheduledFor = clean(input.scheduled_for, 80);
+  const scheduledAt = Date.parse(scheduledFor);
+  if (!campaignId || !Number.isInteger(revision) || revision < 0 || !isIsoCursorTimestamp(scheduledFor)) {
+    return { error: "invalid_campaign_schedule", message: "Informe data e horário válidos para o agendamento.", status: 400 };
+  }
+  if (!Number.isFinite(scheduledAt) || scheduledAt < Date.now() + 5 * 60 * 1000) {
+    return { error: "campaign_schedule_too_soon", message: "Agende com pelo menos cinco minutos de antecedência.", status: 400 };
+  }
+  const saved: any = await campaignAdminRpc("marketing_schedule_campaign_v1", {
+    p_campaign_id: campaignId,
+    p_expected_revision: revision,
+    p_scheduled_for: new Date(scheduledAt).toISOString(),
+  }, "campaign_schedule_failed");
+  if (saved.error) return saved;
+  return {
+    campaign_id: campaignId,
+    revision: campaignAdminCount(saved.revision),
+    status: clean(saved.status, 32),
+    scheduled_for: saved.scheduled_for || null,
+    mode: clean(saved.mode, 24),
+  };
+}
+
+async function whatsappCampaignPause(input: any) {
+  const campaignId = uuid(input.campaign_id);
+  const revision = Number(input.revision);
+  if (!campaignId || !Number.isInteger(revision) || revision < 0) {
+    return { error: "invalid_campaign_pause", message: "Dados inválidos para pausar a campanha.", status: 400 };
+  }
+  const current = await db.from("marketing_campaigns_v1").select("revision,status").eq("id", campaignId).maybeSingle();
+  if (current.error) throw current.error;
+  if (!current.data) return { error: "campaign_not_found", message: "Campanha não encontrada.", status: 404 };
+  if (Number(current.data.revision) !== revision) {
+    return { error: "revision_conflict", message: "A campanha mudou em outra sessão. Atualize a lista e tente novamente.", status: 409 };
+  }
+  const saved: any = await campaignAdminRpc("marketing_pause_campaign_v1", {
+    p_campaign_id: campaignId,
+    p_reason: "Pausada pelo Admin",
+  }, "campaign_pause_failed");
+  if (saved.error) return saved;
+  return { campaign_id: campaignId, status: clean(saved.status, 32) };
+}
+
+async function whatsappCampaignCancel(input: any) {
+  const campaignId = uuid(input.campaign_id);
+  const revision = Number(input.revision);
+  if (!campaignId || !Number.isInteger(revision) || revision < 0) {
+    return { error: "invalid_campaign_cancel", message: "Dados inválidos para cancelar a campanha.", status: 400 };
+  }
+  const current = await db.from("marketing_campaigns_v1").select("revision,status").eq("id", campaignId).maybeSingle();
+  if (current.error) throw current.error;
+  if (!current.data) return { error: "campaign_not_found", message: "Campanha não encontrada.", status: 404 };
+  if (Number(current.data.revision) !== revision) {
+    return { error: "revision_conflict", message: "A campanha mudou em outra sessão. Atualize a lista e tente novamente.", status: 409 };
+  }
+  const status = clean(current.data.status, 32).toLowerCase();
+  const activeStatuses = new Set(["scheduled", "running", "paused"]);
+  const saved: any = activeStatuses.has(status)
+    ? await campaignAdminRpc("marketing_cancel_campaign_execution_v1", {
+      p_campaign_id: campaignId,
+      p_reason: "Cancelada pelo Admin",
+    }, "campaign_cancel_failed")
+    : await campaignAdminRpc("marketing_transition_campaign_v1", {
+      p_campaign_id: campaignId,
+      p_expected_revision: revision,
+      p_to_status: "cancelled",
+      p_reason: "Cancelada pelo Admin",
+    }, "campaign_cancel_failed");
+  if (saved.error) return saved;
+  return {
+    campaign_id: campaignId,
+    status: clean(saved.status, 32),
+    skipped_dispatches: campaignAdminCount(saved.skipped_dispatches),
+    cancelled_outboxes: campaignAdminCount(saved.cancelled_outboxes),
+  };
+}
+
+
+async function whatsappCampaignManualBatch(input: any) {
+  const campaignId = uuid(input.campaign_id);
+  const revision = Number(input.revision);
+  const idempotencyKey = uuid(input.idempotency_key);
+  if (!campaignId || !Number.isInteger(revision) || revision < 0 || !idempotencyKey) {
+    return { error: "invalid_manual_batch", message: "Dados inválidos para iniciar o lote.", status: 400 };
+  }
+  const current = await db.from("marketing_campaigns_v1")
+    .select("revision,status,manual_batch_mode")
+    .eq("id", campaignId)
+    .maybeSingle();
+  if (current.error) throw current.error;
+  if (!current.data) return { error: "campaign_not_found", message: "Campanha não encontrada.", status: 404 };
+  if (Number(current.data.revision) !== revision) {
+    return { error: "revision_conflict", message: "A campanha mudou em outra sessão. Atualize a lista e tente novamente.", status: 409 };
+  }
+  const status = clean(current.data.status, 32).toLowerCase();
+  const allowed = status === "approved" || (status === "paused" && current.data.manual_batch_mode === true);
+  if (!allowed) {
+    return { error: "campaign_invalid_transition", message: "O lote manual exige campanha aprovada ou lote pausado.", status: 409 };
+  }
+
+  const begun: any = await campaignAdminRpc("marketing_begin_manual_campaign_batch_v1", {
+    p_campaign_id: campaignId,
+    p_expected_revision: revision,
+    p_idempotency_key: idempotencyKey,
+    p_limit: 10,
+  }, "manual_batch_start_failed");
+  if (begun.error) return begun;
+  const batchId = uuid(begun.batch_id);
+  if (!batchId) return { error: "manual_batch_start_failed", message: "Não foi possível identificar o lote iniciado.", status: 409 };
+  if (begun.status === "no_work") {
+    return { campaign_id: campaignId, status: "no_work", claimed_count: 0, accepted_count: 0, mode: clean(begun.mode, 24) };
+  }
+  if (begun.worker_started_at) {
+    if (begun.replayed && ["completed", "no_work"].includes(clean(begun.status, 24))) {
+      return { campaign_id: campaignId, status: clean(begun.status, 24), already_processed: true, claimed_count: campaignAdminCount(begun.claimed_count), accepted_count: 0 };
+    }
+    return { error: "manual_batch_result_uncertain", message: "Este lote já foi adquirido pelo worker. Confira o resultado no histórico antes de tentar outro.", status: 409 };
+  }
+
+  const workerKeyResult = await db.rpc("marketing_campaign_worker_internal_key_v1");
+  if (workerKeyResult.error) throw workerKeyResult.error;
+  const workerKey = typeof workerKeyResult.data === "string" ? workerKeyResult.data : "";
+  if (!workerKey) {
+    return { error: "manual_batch_worker_unavailable", message: "O worker de campanhas não está disponível.", status: 503 };
+  }
+
+  let workerResponse: Response;
+  try {
+    workerResponse = await fetch(SUPABASE_URL.replace(/\/+$/, "") + "/functions/v1/whatsapp-marketing-worker-v1", {
+      method: "POST",
+      headers: {
+        apikey: SERVICE_ROLE_KEY,
+        "x-dona-antonia-marketing-worker-key": workerKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ manual_batch_id: batchId }),
+      signal: AbortSignal.timeout(130000),
+    });
+  } catch {
+    return { error: "manual_batch_result_uncertain", message: "O worker não confirmou o resultado do lote. Confira o histórico antes de tentar novamente.", status: 409 };
+  }
+
+  const workerData: any = await workerResponse.json().catch(() => ({}));
+  if (!workerResponse.ok || workerData?.ok !== true) {
+    return { error: "manual_batch_result_uncertain", message: "O worker não confirmou o resultado do lote. Confira o histórico antes de tentar novamente.", status: 409 };
+  }
+  const results = Array.isArray(workerData.results) ? workerData.results : [];
+  const countOutcome = (outcome: string) => results.filter((item: any) => item?.status === outcome).length;
+  return {
+    campaign_id: campaignId,
+    status: clean(workerData.campaign_status || workerData.status || "processed", 32),
+    mode: clean(workerData.mode, 24),
+    claimed_count: campaignAdminCount(workerData.claimed),
+    processed_count: campaignAdminCount(workerData.processed),
+    accepted_count: countOutcome("accepted"),
+    failed_count: countOutcome("failed"),
+    retry_count: countOutcome("retry"),
+    uncertain_count: countOutcome("uncertain"),
+    skipped_count: countOutcome("skipped"),
+  };
+}
+
+function anaOutputText(data: any) {
+  return (Array.isArray(data?.output) ? data.output : [])
+    .flatMap((item: any) => Array.isArray(item?.content) ? item.content : [])
+    .filter((item: any) => item?.type === "output_text")
+    .map((item: any) => String(item?.text || ""))
+    .join("")
+    .trim();
+}
+
+async function anaOpenAiKey() {
+  if (OPENAI_API_KEY) return OPENAI_API_KEY;
+  if (!SERVICE_ROLE_KEY) return "";
+  try {
+    const result = await db.rpc("get_conversation_worker_provider_secret_v1");
+    return !result.error && typeof result.data === "string" ? result.data.trim() : "";
+  } catch {
+    return "";
+  }
+}
+
+function anaOperationalContext() {
+  return {
+    catalog_ordering: "Para consultar produtos e fazer pedido, direcione o cliente ao catálogo/site oficial. O atendimento pode orientar e oferecer atendimento humano, mas esta prévia não cria pedido.",
+    human_support: "Atendimento humano está disponível quando o cliente pedir ajuda, quando faltar contexto confiável ou quando houver exceção operacional.",
+    never_collect_in_chat: ["CPF/CNPJ", "endereço completo"],
+    dynamic_data_rule: "Preço, estoque, total, composição de cesta, prazo/entrega, pagamento e dados do pedido são dinâmicos. Só afirme esses dados quando vierem explicitamente no contexto; caso contrário, encaminhe para humano ou para o catálogo/site oficial.",
+    known_customer_first_name: "",
+  };
+}
+
+async function generateAnaDryRunSuggestion(inboundText: string, instructions = ANA_DRY_RUN_INSTRUCTIONS) {
+  const apiKey = await anaOpenAiKey();
+  if (!apiKey) return { ok: false as const, error: "openai_not_configured", latency_ms: 0 };
+  const input = buildAnaDryRunInput({ inboundText, history: [], operationalContext: anaOperationalContext() });
+  const started = Date.now();
+  try {
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: ANA_MODEL,
+        store: false,
+        max_output_tokens: 500,
+        reasoning: { effort: "low" },
+        instructions,
+        input: [{ role: "user", content: [{ type: "input_text", text: JSON.stringify(input) }] }],
+        text: { format: { type: "json_schema", name: "ana_dry_run_suggestion", strict: true, schema: ANA_DRY_RUN_SCHEMA } },
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return { ok: false as const, error: "openai_http_error", latency_ms: Date.now() - started };
+    let parsed: any = {};
+    try { parsed = JSON.parse(anaOutputText(data) || "{}"); }
+    catch { return { ok: false as const, error: "openai_parse_error", latency_ms: Date.now() - started }; }
+    return { ok: true as const, result: normalizeAnaDryRunResult(parsed), latency_ms: Date.now() - started };
+  } catch (error: any) {
+    return { ok: false as const, error: clean(error?.name || "openai_request_error", 120), latency_ms: Date.now() - started };
+  }
+}
+
+async function whatsappAnaAdminTest(input: any) {
+  const actorId = await adminFavoriteUserId();
+  if (!actorId) return { error: "admin_identity_unavailable", status: 403 };
+  const loaded = await db.rpc("ops2_ana_admin_load_v1");
+  if (loaded.error) throw loaded.error;
+  const draft = loaded.data?.draft;
+  const validation = validateAnaConfiguration(draft?.configuration);
+  if (!validation.ok) return { error: "configuration_invalid", status: 409 };
+  const revision = Number(draft?.revision);
+  if (!Number.isSafeInteger(revision) || Number(input.expected_revision) !== revision) {
+    return { error: "revision_conflict", status: 409, message: "O rascunho mudou. Atualize a tela antes de testar." };
+  }
+  const suite = Array.isArray(draft.configuration.test_cases) ? draft.configuration.test_cases.slice(0, 20) : [];
+  if (!suite.length) return { error: "required_test_cases_missing", status: 409 };
+
+  const began = Date.now();
+  let passed = 0;
+  let failed = 0;
+  const safeReasons: string[] = [];
+  const scenarioResults: any[] = [];
+  const simulate = async (message: string, channel: string, context: any = {}, options: any = {}) => {
+    const trace: any[] = [];
+    if (options?.deterministicGreeting === true && isSimpleAnaGreeting(message)) {
+      trace.push({ step: "suite_guard", type: "simple_greeting" });
+      return { outcome: "reply", reason: "required_suite_simple_greeting", response_text: "Olá! Como posso ajudar?", latency_ms: 0, trace };
+    }
+    if (context?.humanMode === true) {
+      trace.push({ step: "gate", type: "human_mode" });
+      return { outcome: "handoff", reason: "human_mode_gate", response_text: "", latency_ms: 0, trace };
+    }
+    const route = routeAnaMessage(draft.configuration, message, channel, context);
+    if (route.triggerKey) trace.push({ step: "automation", trigger_key: route.triggerKey });
+    if (route.path === "actions") {
+      let responseText = "";
+      let outcome = "no_reply";
+      let continueAi = false;
+      for (const action of route.actions || []) {
+        if (action.type === "label") { trace.push({ step: "action", type: "label", label_id: action.labelId }); outcome = "label"; }
+        if (action.type === "remove_label") { trace.push({ step: "action", type: "remove_label", label_id: action.labelId }); outcome = "label"; }
+        if (action.type === "fixed_reply") { trace.push({ step: "action", type: "fixed_reply", response_text: action.responseText }); responseText = action.responseText; outcome = "reply"; }
+        if (action.type === "handoff") { trace.push({ step: "action", type: "handoff" }); return { outcome: "handoff", reason: "trigger_actions_handoff", response_text: "", latency_ms: 0, trace }; }
+        if (action.type === "continue_ai") { trace.push({ step: "action", type: "continue_ai" }); continueAi = true; }
+      }
+      if (responseText) return { outcome: "reply", reason: "trigger_actions_reply", response_text: responseText, latency_ms: 0, trace };
+      if (!continueAi) return { outcome, reason: "trigger_actions_completed", response_text: "", latency_ms: 0, trace };
+      trace.push({ step: "ai", type: "would_call_ai" });
+    }
+    if (route.path === "fixed_reply") return { outcome: "reply", reason: "fixed_reply_trigger", response_text: route.responseText, latency_ms: 0, trace };
+    if (route.path === "handoff") return { outcome: "handoff", reason: route.reason || "trigger_handoff", response_text: "", latency_ms: 0, trace };
+    if (route.path === "label") return { outcome: "label", reason: "trigger_label", response_text: "", latency_ms: 0, trace };
+    if (route.path === "remove_label") return { outcome: "label", reason: "trigger_label_remove", response_text: "", latency_ms: 0, trace };
+    const generated = await generateAnaDryRunSuggestion(message, buildAnaRuntimeInstructions(draft.configuration));
+    if (!generated.ok) return { outcome: "handoff", reason: "ai_fallback_handoff", response_text: "", latency_ms: Number(generated.latency_ms) || 0, trace };
+    const result = generated.result;
+    if (result.decision === "no_reply") return { outcome: "no_reply", reason: "ai_no_reply", response_text: "", latency_ms: Number(generated.latency_ms) || 0, trace };
+    if (!shouldSendAnaLiveReply({ decision: result.decision, confidence: result.confidence, responseText: result.response_text })) {
+      return { outcome: "handoff", reason: "ai_low_confidence_handoff", response_text: "", latency_ms: Number(generated.latency_ms) || 0, trace };
+    }
+    trace.push({ step: "ai", type: "reply_eligible", confidence: result.confidence });
+    return { outcome: "reply", reason: "ai_reply_eligible", response_text: result.response_text, latency_ms: Number(generated.latency_ms) || 0, trace };
+  };
+
+  for (const scenario of suite) {
+    const result = await simulate(String(scenario.input || ""), String(scenario.channel || "0975"), {}, { deterministicGreeting: true });
+    const ok = result.outcome === scenario.expected;
+    if (ok) passed++; else failed++;
+    safeReasons.push(ok ? "scenario_pass" : "scenario_failed");
+    scenarioResults.push({
+      key: clean(scenario.key, 40),
+      expected: clean(scenario.expected, 40),
+      actual: clean(result.outcome, 40),
+      passed: ok,
+      reason: clean(result.reason, 80),
+    });
+  }
+
+  const recorded = await db.rpc("ops2_ana_admin_record_test_run_v1", {
+    p_draft_revision: revision,
+    p_scenario_keys: suite.map((scenario: any) => String(scenario.key)),
+    p_passed_count: passed,
+    p_failed_count: failed,
+    p_safe_reasons: safeReasons,
+    p_latency_ms: Math.max(0, Date.now() - began),
+    p_actor_id: actorId,
+  });
+  if (recorded.error) throw recorded.error;
+  const saved = recorded.data || { ok: false, error: "test_run_record_failed" };
+  if (saved.ok !== true) return { error: clean(saved.error || "test_run_record_failed", 80), status: 409 };
+  return {
+    dry_run: true,
+    dry_run_not_sendable: true,
+    test_run: {
+      id: uuid(saved.id),
+      draft_revision: revision,
+      passed_count: passed,
+      failed_count: failed,
+    },
+    results: scenarioResults,
+  };
+}
+
+async function whatsappAnaAdminPublish(input: any) {
+  const testRunId = uuid(input.test_run_id);
+  if (!testRunId) return { error: "test_run_required", status: 400 };
+  const actorId = await adminFavoriteUserId();
+  if (!actorId) return { error: "admin_identity_unavailable", status: 403 };
+  const current = await db.rpc("ops2_ana_admin_load_v1");
+  if (current.error) throw current.error;
+  const configuration = current.data?.draft?.configuration;
+  const validation = validateAnaConfiguration(configuration);
+  if (!validation.ok) return { error: "configuration_invalid", status: 409 };
+  if (current.data?.active?.configuration && stableAdminJson(current.data.active.configuration) === stableAdminJson(configuration)) {
+    return { error: "draft_already_active", status: 409 };
+  }
+  const labelIds = [...new Set(configuration.triggers.flatMap((trigger: any) =>
+    Array.isArray(trigger.actions) ? trigger.actions : [{ type: trigger.action, label_id: trigger.label_id }]
+  ).filter((action: any) => ["label", "remove_label"].includes(action.type)).map((action: any) => String(action.label_id)))];
+  if (labelIds.length) {
+    const activeLabels = await db.from("attendance_labels_v1").select("id").eq("is_active", true).in("id", labelIds);
+    if (activeLabels.error) throw activeLabels.error;
+    const found = new Set((activeLabels.data || []).map((label: any) => label.id));
+    if (labelIds.some((id: string) => !found.has(id))) return { error: "trigger_label_not_active", status: 409 };
+  }
+  const result = await db.rpc("ops2_ana_admin_publish_v1", {
+    p_test_run_id: testRunId,
+    p_note: clean(input.note || "Ativação confirmada no Admin", 240),
+    p_actor_id: actorId,
+  });
+  if (result.error) throw result.error;
+  const saved = result.data || { ok: false, error: "ana_publish_failed" };
+  if (saved.ok !== true) return { error: clean(saved.error || "ana_publish_failed", 100), status: 409 };
+  return { version: Number(saved.version) || 0, version_id: Number(saved.version_id) || 0, draft_revision: Number(saved.draft_revision) || 0 };
+}
+
+async function whatsappAnaAdminRollback(input: any) {
+  const versionId = Number(input.version_id);
+  if (!Number.isSafeInteger(versionId) || versionId < 1) return { error: "version_invalid", status: 400 };
+  const actorId = await adminFavoriteUserId();
+  if (!actorId) return { error: "admin_identity_unavailable", status: 403 };
+  const current = await db.rpc("ops2_ana_admin_load_v1");
+  if (current.error) throw current.error;
+  const versions = Array.isArray(current.data?.versions) ? current.data.versions : [];
+  const version = versions.find((item: any) => Number(item.id) === versionId);
+  if (!version) return { error: "version_not_found", status: 404 };
+  if (Number(current.data?.active?.id) === versionId) return { error: "version_already_active", status: 409 };
+  const result = await db.rpc("ops2_ana_admin_rollback_v1", {
+    p_version_id: versionId,
+    p_note: clean(input.note || "Restauração confirmada no Admin", 240),
+    p_actor_id: actorId,
+  });
+  if (result.error) throw result.error;
+  const saved = result.data || { ok: false, error: "ana_rollback_failed" };
+  if (saved.ok !== true) return { error: clean(saved.error || "ana_rollback_failed", 100), status: 409 };
+  return { version: Number(saved.version) || 0, version_id: Number(saved.version_id) || 0 };
+}
+
+async function whatsappAnaPauseChannel(input: any) {
+  const accountId = uuid(input.whatsapp_account_id);
+  if (!accountId) return { error: "invalid_whatsapp_account_id", status: 400 };
+  const current = await db.from("whatsapp_channel_runtime_v1")
+    .select("ana_enabled")
+    .eq("whatsapp_account_id", accountId)
+    .maybeSingle();
+  if (current.error) throw current.error;
+  if (!current.data) return { error: "channel_not_found", status: 404 };
+  if (current.data.ana_enabled !== true) return { already_paused: true, ana_enabled: false };
+
+  const actorId = await adminFavoriteUserId();
+  if (!actorId) return { error: "admin_identity_unavailable", status: 403 };
+  const result = await db.rpc("ops2_ana_admin_set_channel_v1", {
+    p_whatsapp_account_id: accountId,
+    p_enabled: false,
+    p_actor_id: actorId,
+  });
+  if (result.error) throw result.error;
+  const saved = result.data || { ok: false, error: "ana_pause_failed" };
+  if (saved.ok !== true) return { error: clean(saved.error || "ana_pause_failed", 80), status: 409 };
+  return {
+    ana_enabled: false,
+    channel_key: clean(saved.channel_key, 8),
+  };
+}
+
+async function whatsappAnaAdminStatus() {
+  const anaDeliverySampleLimit = 200;
+  const [result, runtimeResult, anaDeliveryResult, anaJobsResult] = await Promise.all([
+    db.rpc("ops2_ana_admin_load_v1"),
+    db.from("whatsapp_channel_runtime_v1")
+      .select("whatsapp_account_id,ana_enabled,capture_enabled,send_enabled,outbound_provider,homologated_at")
+      .order("updated_at", { ascending: false }),
+    db.from("whatsapp_messages_v1")
+      .select("whatsapp_account_id,status_current,sent_at,created_at")
+      .eq("direction", "outbound")
+      .eq("sender_kind", "ana_ai")
+      .eq("provider", "meta")
+      .order("created_at", { ascending: false })
+      .limit(anaDeliverySampleLimit),
+    db.from("whatsapp_ana_jobs_v1")
+      .select("whatsapp_account_id,status,decision,reason,created_at")
+      .eq("dry_run", false)
+      .order("created_at", { ascending: false })
+      .limit(20),
+  ]);
+  if (result.error) throw result.error;
+  if (runtimeResult.error) throw runtimeResult.error;
+  const runtimeRows = runtimeResult.data || [];
+  const accountIds = runtimeRows.map((row: any) => uuid(row.whatsapp_account_id)).filter(Boolean);
+  const accountsResult = accountIds.length
+    ? await db.from("whatsapp_accounts").select("id,phone_e164,display_name,slug").in("id", accountIds).limit(30)
+    : { data: [], error: null };
+  if (accountsResult.error) throw accountsResult.error;
+  const accountById = new Map((accountsResult.data || []).map((row: any) => [row.id, row]));
+  const channels = runtimeRows.map((row: any) => {
+    const account: any = accountById.get(row.whatsapp_account_id) || {};
+    return {
+      id: uuid(row.whatsapp_account_id),
+      name: clean(account.display_name || account.slug || "WhatsApp", 120),
+      phone_last4: String(account.phone_e164 || "").replace(/\D/g, "").slice(-4),
+      ana_enabled: row.ana_enabled === true,
+      can_pause: row.ana_enabled === true,
+      can_enable: row.capture_enabled === true && row.send_enabled === true
+        && row.outbound_provider === "meta" && Boolean(row.homologated_at),
+    };
+  });
+  const deliveryByAccount = new Map<string, { message_count: number; status_counts: Map<string, number>; last_message_at: string | null }>();
+  for (const row of anaDeliveryResult.data || []) {
+    const accountId = uuid(row.whatsapp_account_id);
+    if (!accountId) continue;
+    const aggregate = deliveryByAccount.get(accountId) || {
+      message_count: 0,
+      status_counts: new Map<string, number>(),
+      last_message_at: null,
+    };
+    const status = clean(row.status_current, 40).toLowerCase() || "pending";
+    aggregate.message_count += 1;
+    aggregate.status_counts.set(status, (aggregate.status_counts.get(status) || 0) + 1);
+    const messageAt = row.sent_at || row.created_at || null;
+    if (messageAt && (!aggregate.last_message_at || Date.parse(String(messageAt)) > Date.parse(aggregate.last_message_at))) {
+      aggregate.last_message_at = String(messageAt);
+    }
+    deliveryByAccount.set(accountId, aggregate);
+  }
+  const snapshot = result.data || {};
+  if (snapshot.ok !== true) return { error: "ana_admin_status_unavailable", status: 503 };
+
+  const active = snapshot.active || {};
+  const draft = snapshot.draft || {};
+  const versions = Array.isArray(snapshot.versions) ? snapshot.versions : [];
+  const tests = Array.isArray(snapshot.test_runs) ? snapshot.test_runs : [];
+  const events = Array.isArray(snapshot.events) ? snapshot.events : [];
+  const activeVersion = versions.find((item: any) => active.id && item.id === active.id) || {};
+  const draftEvent = events.find((item: any) =>
+    ["admin_save_draft", "draft_saved"].includes(clean(item.action, 60).toLowerCase())
+    && Number(item.draft_revision) === Number(draft.revision)
+  );
+  const actorIds = Array.from(new Set([
+    ...versions.map((item: any) => uuid(item.actor_id)),
+    ...events.map((item: any) => uuid(item.actor_id)),
+    uuid(draft.updated_by),
+  ].filter(Boolean)));
+  const actorNames = new Map<string, string>();
+  if (actorIds.length) {
+    const namesResult = await db.from("admin_users").select("user_id,display_name")
+      .in("user_id", actorIds).limit(30);
+    if (!namesResult.error) {
+      for (const item of namesResult.data || []) {
+        const userId = uuid(item.user_id);
+        const displayName = clean(item.display_name, 80);
+        if (userId && displayName) actorNames.set(userId, displayName);
+      }
+    }
+  }
+  const actorName = (value: any) => {
+    const actorId = uuid(value);
+    return actorId ? actorNames.get(actorId) || "Admin sem nome cadastrado" : "Autor não identificado";
+  };
+  const configSections = [
+    { key: "behavior", label: "Comportamento" },
+    { key: "knowledge", label: "Conhecimento" },
+    { key: "triggers", label: "Gatilhos" },
+    { key: "test_cases", label: "Casos de teste" },
+  ];
+  const diffAvailable = Boolean(active.configuration && draft.configuration);
+  return {
+    channels,
+    decisions_available: !anaJobsResult.error,
+    decisions: (anaJobsResult.data || []).map((row: any) => ({
+      channel: clean(accountById.get(row.whatsapp_account_id)?.display_name || "", 120),
+      status: clean(row.status, 40),
+      decision: clean(row.decision, 60),
+      reason: clean(row.reason, 240),
+      created_at: row.created_at || null,
+    })),
+    delivery: {
+      available: !anaDeliveryResult.error,
+      sample_limit: anaDeliverySampleLimit,
+      channels: channels.map((channel: any) => {
+        const aggregate = deliveryByAccount.get(channel.id);
+        return {
+          id: channel.id,
+          name: channel.name,
+          phone_last4: channel.phone_last4,
+          message_count: aggregate?.message_count || 0,
+          status_counts: aggregate ? Object.fromEntries(aggregate.status_counts) : {},
+          last_message_at: aggregate?.last_message_at || null,
+        };
+      }),
+    },
+    active: active.version ? {
+      version: Number(active.version),
+      created_at: active.created_at || null,
+      published_by: actorName(activeVersion.actor_id),
+      change_note: clean(activeVersion.change_note, 240),
+    } : null,
+    draft: Number.isSafeInteger(Number(draft.revision)) ? {
+      revision: Number(draft.revision),
+      updated_at: draft.updated_at || null,
+      updated_by: actorName(draftEvent?.actor_id || draft.updated_by),
+    } : null,
+    diff_available: diffAvailable,
+    configuration_diff: diffAvailable ? configSections.map((section) => ({
+      key: section.key,
+      label: section.label,
+      changed: stableAdminJson(active.configuration?.[section.key]) !== stableAdminJson(draft.configuration?.[section.key]),
+    })) : [],
+    versions: versions.slice(0, 10).map((item: any) => ({
+      id: Number(item.id) || 0,
+      version: Number(item.version) || 0,
+      is_active: Boolean(active.id && item.id === active.id),
+      published_by: actorName(item.actor_id),
+      change_note: clean(item.change_note, 240),
+      created_at: item.created_at || null,
+    })),
+    test_runs: tests.slice(0, 5).map((item: any) => ({
+      id: uuid(item.id),
+      draft_revision: Number(item.draft_revision) || 0,
+      passed_count: Number(item.passed_count) || 0,
+      failed_count: Number(item.failed_count) || 0,
+      created_at: item.created_at || null,
+    })),
+    events: events.slice(0, 10).map((item: any) => ({
+      action: clean(item.action, 60),
+      actor: actorName(item.actor_id),
+      version_id: item.version_id || null,
+      draft_revision: Number(item.draft_revision) || null,
+      channel_key: clean(item.channel_key, 40),
+      created_at: item.created_at || null,
+    })),
+  };
+}
+
+function attendanceSendHttpStatus(error: string) {
+  if (error === "rate_limited") return 429;
+  if (["service_window_closed", "human_send_not_homologated", "meta_transport_not_configured", "meta_send_uncertain", "meta_canary_destination_blocked", "duplicate_not_dispatchable"].includes(error)) return 409;
+  if (error.startsWith("meta_")) return 502;
+  if (error === "server_config") return 503;
+  return 400;
+}
+
+async function markAttendanceClaimFailed(claim: any, errorCode: string) {
+  const now = new Date().toISOString();
+  const updated = await db.from("whatsapp_outbox_v1")
+    .update({ status: "failed", last_error: clean(errorCode, 180) || "transport_error", updated_at: now })
+    .eq("id", claim?.outbox_id).eq("status", "claimed");
+  if (updated.error) throw updated.error;
+}
+
+async function markAttendanceMetaUncertain(claim: any, errorCode: string) {
+  const now = new Date().toISOString();
+  const code = "meta_send_uncertain:" + (clean(errorCode, 120) || "unknown");
+  const updated = await db.from("whatsapp_outbox_v1")
+    .update({ last_error: code, updated_at: now })
+    .eq("id", claim?.outbox_id).eq("status", "claimed");
+  if (updated.error) throw updated.error;
+  return { ok: false, error: "meta_send_uncertain", uncertain: true, retryable: false, outbox_id: claim?.outbox_id };
+}
+
+async function attendanceProviderUrl(channel: string | null) {
+  if (!channel) return null;
+  const result = await db.rpc("ops2_papoai_attendance_provider_url_v1", { p_channel: channel });
+  if (result.error) throw result.error;
+  return clean(result.data, 2048) || null;
+}
+
+function attendanceChannelFromPhone(value: unknown) {
+  const digits = String(value ?? "").replace(/\D+/g, "");
+  if (digits.endsWith("0975")) return "0975";
+  if (digits.endsWith("1018")) return "1018";
+  return null;
+}
+
+async function dispatchAttendancePapoAi(claim: any) {
+  const channel = attendanceChannelFromPhone(claim.account_phone_e164);
+  const webhookUrl = await attendanceProviderUrl(channel);
+  if (!channel || !webhookUrl) {
+    await markAttendanceClaimFailed(claim, "transport_config_missing");
+    return { ok: false, error: "transport_config_missing", provider: "papoai" };
+  }
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone_e164: claim.to_phone_e164,
+        message_text: claim.text,
+        event_id: claim.idempotency_key,
+        conversation_id: claim.conversation_id,
+        source: "vitrine_admin_attendance",
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!response.ok) throw new Error("papoai_http_" + response.status);
+    const acceptedAt = new Date().toISOString();
+    const updated = await db.from("whatsapp_outbox_v1")
+      .update({ status: "sent", sent_at: acceptedAt, last_error: null, updated_at: acceptedAt })
+      .eq("id", claim.outbox_id).eq("status", "claimed");
+    if (updated.error) throw updated.error;
+    return { ok: true, status: "accepted", outbox_status: "sent", channel, provider: "papoai" };
+  } catch (error) {
+    await markAttendanceClaimFailed(claim, clean(error instanceof Error ? error.message : error, 180) || "papoai_transport_failed");
+    return { ok: false, error: "papoai_transport_failed", provider: "papoai" };
+  }
+}
+
+async function dispatchAttendanceMeta(claim: any) {
+  if (!attendanceMetaConfigReady() || !/^\d{5,30}$/.test(String(claim?.phone_number_id || ""))) {
+    await markAttendanceClaimFailed(claim, "meta_transport_not_configured");
+    return { ok: false, error: "meta_transport_not_configured", provider: "meta" };
+  }
+  try {
+    const result = await sendTextViaMeta({
+      accessToken: META_WHATSAPP_ACCESS_TOKEN,
+      phoneNumberId: claim.phone_number_id,
+      toE164: claim.to_phone_e164,
+      text: claim.text,
+      graphVersion: META_WHATSAPP_GRAPH_VERSION,
+      timeoutMs: 15000,
+    });
+    const acceptedAt = new Date().toISOString();
+    const accepted = await db.rpc("ops2_admin_attendance_accept_meta_outbound_v1", {
+      p_outbox_id: claim.outbox_id,
+      p_provider_message_id: result.providerMessageId,
+      p_accepted_at: acceptedAt,
+    });
+    if (accepted.error || accepted.data?.ok !== true) {
+      return await markAttendanceMetaUncertain(claim, accepted.error?.message || accepted.data?.error || "canonical_persist_failed");
+    }
+    return {
+      ok: true,
+      status: "accepted",
+      outbox_status: "sent",
+      provider: "meta",
+      provider_message_id: result.providerMessageId,
+      message_id: accepted.data?.message_id || null,
+      status_current: accepted.data?.status_current || "accepted",
+    };
+  } catch (error) {
+    if (error instanceof MetaTransportError) {
+      if (error.uncertain) return await markAttendanceMetaUncertain(claim, error.code);
+      await markAttendanceClaimFailed(claim, error.code);
+      return { ok: false, error: error.code, provider: "meta", retryable: error.retryable === true, uncertain: false, http_status: error.httpStatus };
+    }
+    return await markAttendanceMetaUncertain(claim, "unexpected_transport_error");
+  }
+}
+
+async function dispatchAttendanceOutbox(outboxId: unknown) {
+  const id = uuid(outboxId);
+  if (!id) return { ok: false, error: "invalid_outbox_id" };
+  const claimedResult = await db.rpc("ops2_admin_attendance_claim_outbox_v3", { p_outbox_id: id });
+  if (claimedResult.error) throw claimedResult.error;
+  const claim = claimedResult.data || { ok: false, error: "outbox_claim_failed" };
+  if (claim.already_sent === true) return { ok: true, status: "accepted", outbox_status: "sent", duplicate: true, provider: claim.provider || null };
+  if (claim.ok !== true) return claim;
+  if (claim.provider === "meta") return await dispatchAttendanceMeta(claim);
+  if (claim.provider === "papoai") return await dispatchAttendancePapoAi(claim);
+  await markAttendanceClaimFailed(claim, "outbound_provider_unavailable");
+  return { ok: false, error: "outbound_provider_unavailable", provider: claim.provider || null };
+}
+
+async function whatsappConversationSendText(input: any) {
+  const conversationId = uuid(input.conversation_id);
+  if (!conversationId) return { error: "invalid_conversation_id", status: 400 };
+  if (input.to_phone_e164 !== undefined || input.whatsapp_account_id !== undefined || input.account_id !== undefined || input.customer_id !== undefined) {
+    return { error: "destination_fields_not_allowed", status: 400 };
+  }
+  const text = String(input.text ?? "").replace(/\r\n?/g, "\n").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").trim();
+  if (!text) return { error: "message_empty", status: 400 };
+  if (text.length > 4000) return { error: "message_too_long", status: 400 };
+  const idempotencyKey = clean(input.idempotency_key, 120);
+  if (!/^[A-Za-z0-9._:-]{8,120}$/.test(idempotencyKey)) return { error: "invalid_idempotency_key", status: 400 };
+
+  const queuedResult = await db.rpc("ops2_admin_attendance_enqueue_text_v3", {
+    p_conversation_id: conversationId,
+    p_text: text,
+    p_idempotency_key: idempotencyKey,
+  });
+  if (queuedResult.error) throw queuedResult.error;
+  const queued = queuedResult.data || { ok: false, error: "enqueue_failed" };
+  if (queued.ok !== true) {
+    const error = String(queued.error || "enqueue_failed");
+    return { ...queued, status: attendanceSendHttpStatus(error) };
+  }
+  if (queued.duplicate === true && queued.status === "sent") {
+    return { ok: true, status: "accepted", duplicate: true, outbox_id: queued.outbox_id, provider: queued.provider || null };
+  }
+  if (queued.duplicate === true && queued.status !== "queued") {
+    return { error: "duplicate_not_dispatchable", status: 409, outbox_id: queued.outbox_id, outbox_status: queued.status, provider: queued.provider || null };
+  }
+
+  const sent = await dispatchAttendanceOutbox(queued.outbox_id);
+  if (sent?.ok !== true) {
+    const error = String(sent?.error || "send_failed");
+    return { ...sent, status: attendanceSendHttpStatus(error) };
+  }
+  return sent;
+}
+
+
+function outboundMediaMime(file: any, filename: string) {
+  const extension = filename.toLowerCase().match(/(\.[a-z0-9]{1,8})$/)?.[1] || "";
+  const byExtension: Record<string, string> = {
+    ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
+    ".aac": "audio/aac", ".amr": "audio/amr", ".mp3": "audio/mpeg", ".m4a": "audio/mp4", ".ogg": "audio/ogg",
+    ".mp4": "video/mp4", ".3gp": "video/3gpp",
+    ".pdf": "application/pdf", ".txt": "text/plain", ".doc": "application/msword",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".xls": "application/vnd.ms-excel",
+    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ".ppt": "application/vnd.ms-powerpoint",
+    ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  };
+  return canonicalOutboundMetaMime(file?.type, filename)
+    || canonicalOutboundMetaMime(byExtension[extension] || "", filename);
+}
+
+async function sha256Hex(bytes: Uint8Array) {
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function cacheAttendanceOutboundMedia(messageId: string, filename: string, mimeType: string, bytes: Uint8Array) {
+  if (bytes.byteLength > 20 * 1024 * 1024) return false;
+  const safeFilename = safeWhatsappFilename(filename);
+  const objectPath = "outbound/" + messageId + "/" + safeFilename;
+  const storage = db.storage.from("attendance-media-v1");
+  const upload = await storage.upload(objectPath, new Blob([bytes], { type: mimeType }), {
+    contentType: mimeType,
+    upsert: true,
+  });
+  if (upload.error) throw upload.error;
+
+  const cached = await db.from("attendance_media_cache_v1").insert({
+    message_id: messageId,
+    object_path: objectPath,
+    mime_type: mimeType,
+    filename: safeFilename,
+    expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  });
+  if (cached.error) {
+    await storage.remove([objectPath]);
+    throw cached.error;
+  }
+  return true;
+}
+
+async function whatsappConversationSendMedia(input: any) {
+  const conversationId = uuid(input.conversation_id);
+  if (!conversationId) return { error: "invalid_conversation_id", status: 400 };
+  if (input.to_phone_e164 !== undefined || input.whatsapp_account_id !== undefined || input.account_id !== undefined || input.customer_id !== undefined) {
+    return { error: "destination_fields_not_allowed", status: 400 };
+  }
+
+  const file: any = input.file;
+  if (!file || typeof file.arrayBuffer !== "function" || typeof file.name !== "string") {
+    return { error: "media_file_required", status: 400 };
+  }
+  let filename = clean(file.name, 240)
+    .replace(/[\\/]+/g, "_")
+    .replace(/[^\p{L}\p{N}._() -]+/gu, "_")
+    .trim()
+    .slice(0, 240);
+  if (!filename || filename === "." || filename === "..") return { error: "meta_media_filename_invalid", status: 400 };
+
+  const mimeType = outboundMediaMime(file, filename);
+  const maxBytes = mimeType ? outboundMetaMaxBytes(mimeType) : 0;
+  if (!mimeType || maxBytes <= 0) return { error: "meta_media_type_not_allowed", status: 415 };
+  if (!Number.isFinite(Number(file.size)) || Number(file.size) <= 0) return { error: "media_file_empty", status: 400 };
+  if (Number(file.size) > maxBytes) return { error: "media_file_too_large", status: 413 };
+
+  const caption = String(input.caption ?? "")
+    .replace(/\r\n?/g, "\n")
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+    .trim();
+  if (caption.length > 1024) return { error: "media_caption_too_long", status: 400 };
+  const mediaType = mimeType.startsWith("image/") ? "image"
+    : mimeType.startsWith("audio/") ? "audio"
+    : mimeType.startsWith("video/") ? "video"
+    : "document";
+  const safeCaption = mediaType === "audio" ? "" : caption;
+  const idempotencyKey = clean(input.idempotency_key, 120);
+  if (!/^[A-Za-z0-9._:-]{8,120}$/.test(idempotencyKey)) return { error: "invalid_idempotency_key", status: 400 };
+
+  let bytes: Uint8Array;
+  try { bytes = new Uint8Array(await file.arrayBuffer()); }
+  catch { return { error: "media_file_read_failed", status: 400 }; }
+  if (bytes.byteLength !== Number(file.size)) return { error: "media_file_read_failed", status: 400 };
+  if (bytes.byteLength > maxBytes) return { error: "media_file_too_large", status: 413 };
+  try {
+    validateOutboundMetaMediaContent(mimeType, bytes);
+  } catch (error) {
+    const code = error instanceof MetaMediaError ? error.code : "meta_media_content_invalid";
+    return { error: code, status: code === "meta_media_type_not_allowed" ? 415 : 400 };
+  }
+  const sha256 = await sha256Hex(bytes);
+
+  const queuedResult = await db.rpc("ops2_admin_attendance_enqueue_media_v1", {
+    p_conversation_id: conversationId,
+    p_media_type: mediaType,
+    p_mime_type: mimeType,
+    p_filename: filename,
+    p_size_bytes: bytes.byteLength,
+    p_sha256: sha256,
+    p_caption: safeCaption || null,
+    p_idempotency_key: idempotencyKey,
+  });
+  if (queuedResult.error) throw queuedResult.error;
+  const queued = queuedResult.data || { ok: false, error: "enqueue_failed" };
+  if (queued.ok !== true) {
+    const error = String(queued.error || "enqueue_failed");
+    return { ...queued, status: attendanceSendHttpStatus(error) };
+  }
+  if (queued.duplicate === true && queued.status === "sent") {
+    return { ok: true, status: "accepted", duplicate: true, outbox_id: queued.outbox_id, provider: queued.provider || "meta" };
+  }
+  if (queued.duplicate === true && queued.status !== "queued") {
+    return { error: "duplicate_not_dispatchable", status: 409, outbox_id: queued.outbox_id, outbox_status: queued.status, provider: queued.provider || "meta" };
+  }
+
+  const claimedResult = await db.rpc("ops2_admin_attendance_claim_media_outbox_v1", { p_outbox_id: queued.outbox_id });
+  if (claimedResult.error) throw claimedResult.error;
+  const claim = claimedResult.data || { ok: false, error: "outbox_claim_failed" };
+  if (claim.already_sent === true) {
+    return { ok: true, status: "accepted", duplicate: true, outbox_id: claim.outbox_id || queued.outbox_id, provider: "meta" };
+  }
+  if (claim.ok !== true) {
+    const error = String(claim.error || "outbox_claim_failed");
+    return { ...claim, status: attendanceSendHttpStatus(error) };
+  }
+  if (!attendanceMetaConfigReady() || !/^\d{5,30}$/.test(String(claim.phone_number_id || ""))) {
+    await markAttendanceClaimFailed(claim, "meta_transport_not_configured");
+    return { error: "meta_transport_not_configured", status: 409, provider: "meta" };
+  }
+
+  let uploaded: any;
+  try {
+    uploaded = await uploadMetaMedia({
+      accessToken: META_WHATSAPP_ACCESS_TOKEN,
+      graphVersion: META_WHATSAPP_GRAPH_VERSION,
+      phoneNumberId: claim.phone_number_id,
+      mimeType,
+      filename,
+      bytes,
+      timeoutMs: 20000,
+    });
+  } catch (error) {
+    const code = error instanceof MetaMediaError ? error.code : "meta_media_upload_failed";
+    await markAttendanceClaimFailed(claim, code);
+    return { error: code, status: 502, provider: "meta", uncertain: false };
+  }
+
+  try {
+    const sent = await sendMediaViaMeta({
+      accessToken: META_WHATSAPP_ACCESS_TOKEN,
+      phoneNumberId: claim.phone_number_id,
+      toE164: claim.to_phone_e164,
+      mediaType,
+      mediaId: uploaded.mediaId,
+      caption: safeCaption,
+      filename,
+      graphVersion: META_WHATSAPP_GRAPH_VERSION,
+      timeoutMs: 15000,
+    });
+    const acceptedAt = new Date().toISOString();
+    const accepted = await db.rpc("ops2_admin_attendance_accept_meta_media_outbound_v1", {
+      p_outbox_id: claim.outbox_id,
+      p_provider_message_id: sent.providerMessageId,
+      p_provider_media_id: uploaded.mediaId,
+      p_accepted_at: acceptedAt,
+    });
+    if (accepted.error || accepted.data?.ok !== true) {
+      return await markAttendanceMetaUncertain(claim, accepted.error?.message || accepted.data?.error || "canonical_persist_failed");
+    }
+
+    const messageId = uuid(accepted.data?.message_id);
+    let mediaCached = false;
+    if (messageId) {
+      try {
+        mediaCached = await cacheAttendanceOutboundMedia(messageId, filename, mimeType, bytes);
+      } catch {
+        console.warn("site-admin-v1 outbound media cache unavailable", messageId);
+      }
+    }
+    return {
+      ok: true,
+      status: "accepted",
+      outbox_status: "sent",
+      provider: "meta",
+      message_id: messageId || null,
+      status_current: accepted.data?.status_current || "accepted",
+      media_cached: mediaCached,
+    };
+  } catch (error) {
+    if (error instanceof MetaTransportError) {
+      if (error.uncertain) return await markAttendanceMetaUncertain(claim, error.code);
+      await markAttendanceClaimFailed(claim, error.code);
+      return { ok: false, error: error.code, status: attendanceSendHttpStatus(error.code), provider: "meta", retryable: error.retryable === true, uncertain: false, http_status: error.httpStatus };
+    }
+    return await markAttendanceMetaUncertain(claim, "unexpected_media_transport_error");
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
   if (!["GET", "POST"].includes(req.method)) return json(req, { ok: false, error: "method_not_allowed" }, 405);
@@ -632,15 +2706,55 @@ Deno.serve(async (req: Request) => {
 
   try {
     const url = new URL(req.url);
+    const urlAction = clean(url.searchParams.get("action"), 40);
     let body: any = {};
-    if (req.method === "POST") {
+    if (req.method === "POST" && urlAction === "whatsapp_conversation_send_media") {
+      const contentLength = Number(req.headers.get("content-length") || 0);
+      if (Number.isFinite(contentLength) && contentLength > 26 * 1024 * 1024) {
+        return json(req, { ok: false, error: "media_file_too_large" }, 413);
+      }
+      let form: FormData;
+      try { form = await req.formData(); }
+      catch { return json(req, { ok: false, error: "invalid_multipart" }, 400); }
+      body = {
+        action: urlAction,
+        conversation_id: form.get("conversation_id"),
+        idempotency_key: form.get("idempotency_key"),
+        caption: form.get("caption"),
+        file: form.get("file"),
+      };
+    } else if (req.method === "POST") {
       try { body = await req.json(); }
       catch { return json(req, { ok: false, error: "invalid_json" }, 400); }
     }
     const input = { ...Object.fromEntries(url.searchParams.entries()), ...body };
     const action = clean(input.action, 40);
     let result: any;
-    if (req.method === "POST" && action === "customer_lookup") result = await customerLookup(input);
+    if (req.method === "POST" && action === "whatsapp_overview") result = await whatsappOverview();
+    else if (req.method === "POST" && action === "whatsapp_conversation_list") result = await whatsappConversationList(input);
+    else if (req.method === "POST" && action === "whatsapp_conversation_messages") result = await whatsappConversationMessages(input);
+    else if (req.method === "POST" && action === "whatsapp_conversation_message_statuses") result = await whatsappConversationMessageStatuses(input);
+    else if (req.method === "POST" && action === "whatsapp_conversation_send_text") result = await whatsappConversationSendText(input);
+    else if (req.method === "POST" && action === "whatsapp_conversation_send_media") result = await whatsappConversationSendMedia(input);
+    else if (req.method === "POST" && action === "whatsapp_conversation_media") result = await whatsappConversationMedia(input);
+    else if (req.method === "POST" && action === "whatsapp_conversation_favorite") result = await whatsappConversationFavorite(input);
+    else if (req.method === "POST" && action === "whatsapp_campaign_draft_load") result = await whatsappCampaignDraftLoad(input);
+    else if (req.method === "POST" && action === "whatsapp_campaign_draft_create") result = await whatsappCampaignDraftCreate(input);
+    else if (req.method === "POST" && action === "whatsapp_campaign_draft_update") result = await whatsappCampaignDraftUpdate(input);
+    else if (req.method === "POST" && action === "whatsapp_campaign_preview") result = await whatsappCampaignPreview(input);
+    else if (req.method === "POST" && action === "whatsapp_campaign_content_preview") result = await whatsappCampaignContentPreview(input);
+    else if (req.method === "POST" && action === "whatsapp_campaign_snapshot") result = await whatsappCampaignSnapshot(input);
+    else if (req.method === "POST" && action === "whatsapp_campaign_transition") result = await whatsappCampaignTransition(input);
+    else if (req.method === "POST" && action === "whatsapp_campaign_schedule") result = await whatsappCampaignSchedule(input);
+    else if (req.method === "POST" && action === "whatsapp_campaign_pause") result = await whatsappCampaignPause(input);
+    else if (req.method === "POST" && action === "whatsapp_campaign_cancel") result = await whatsappCampaignCancel(input);
+    else if (req.method === "POST" && action === "whatsapp_campaign_manual_batch") result = await whatsappCampaignManualBatch(input);
+    else if (req.method === "POST" && action === "whatsapp_ana_admin_test") result = await whatsappAnaAdminTest(input);
+    else if (req.method === "POST" && action === "whatsapp_ana_admin_publish") result = await whatsappAnaAdminPublish(input);
+    else if (req.method === "POST" && action === "whatsapp_ana_admin_rollback") result = await whatsappAnaAdminRollback(input);
+    else if (req.method === "POST" && action === "whatsapp_ana_pause_channel") result = await whatsappAnaPauseChannel(input);
+    else if (req.method === "POST" && action === "whatsapp_ana_admin_status") result = await whatsappAnaAdminStatus();
+    else if (req.method === "POST" && action === "customer_lookup") result = await customerLookup(input);
     else if (req.method === "POST" && action === "customer_save") result = await customerSave(input);
     else if (req.method === "GET" && action === "baskets") {
       const status = ["active", "inactive", "all"].includes(input.status) ? input.status : "active";

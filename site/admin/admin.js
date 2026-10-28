@@ -32,7 +32,12 @@
   }
 
   function setView(name) {
-    document.querySelectorAll(".nav-tab").forEach((button) => button.classList.toggle("active", button.dataset.view === name));
+    document.querySelectorAll(".nav-tab").forEach((button) => {
+      const active = button.dataset.view === name;
+      button.classList.toggle("active", active);
+      if (active) button.setAttribute("aria-current", "page");
+      else button.removeAttribute("aria-current");
+    });
     document.querySelectorAll("[data-panel]").forEach((panel) => {
       const active = panel.dataset.panel === name;
       panel.hidden = !active;
@@ -42,11 +47,7 @@
     if (name === "baskets") window.DonaCatalogAdmin?.loadBaskets();
     if (name === "products") window.DonaCatalogAdmin?.loadProducts();
     if (name === "orders") window.DonaOrdersAdmin?.loadOrders();
-    if (name === "whatsapp") {
-      const activeTab = document.querySelector("[data-whatsapp-tab][aria-selected=\"true\"]")?.dataset.whatsappTab || "confirmation";
-      if (activeTab === "separation") window.DonaOrderSeparationMessageAdmin?.load();
-      else window.DonaOrderMessageAdmin?.load();
-    }
+    if (name === "whatsapp") loadWhatsAppSection();
   }
 
   document.querySelectorAll("[data-whatsapp-tab]").forEach((button) => {
@@ -64,6 +65,34 @@
       });
       if (name === "separation") window.DonaOrderSeparationMessageAdmin?.load();
       else window.DonaOrderMessageAdmin?.load();
+    });
+  });
+
+  function loadWhatsAppSection() {
+    const selected = document.querySelector("[data-whatsapp-section][aria-selected=\"true\"]")?.dataset.whatsappSection || "overview";
+    if (selected === "conversations") window.DonaWhatsAppConversations?.load();
+    else if (selected === "messages") {
+      const inner = document.querySelector("[data-whatsapp-tab][aria-selected=\"true\"]")?.dataset.whatsappTab || "confirmation";
+      if (inner === "separation") window.DonaOrderSeparationMessageAdmin?.load();
+      else window.DonaOrderMessageAdmin?.load();
+    } else if (selected === "ana") window.DonaWhatsAppAdmin?.loadAnaStatus();
+    else window.DonaWhatsAppAdmin?.loadOverview();
+  }
+
+  document.querySelectorAll("[data-whatsapp-section]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const name = button.dataset.whatsappSection;
+      document.querySelectorAll("[data-whatsapp-section]").forEach((tab) => {
+        const active = tab === button;
+        tab.classList.toggle("active", active);
+        tab.setAttribute("aria-selected", String(active));
+      });
+      document.querySelectorAll("[data-whatsapp-section-panel]").forEach((panel) => {
+        const active = panel.dataset.whatsappSectionPanel === name;
+        panel.hidden = !active;
+        panel.classList.toggle("active", active);
+      });
+      loadWhatsAppSection();
     });
   });
 

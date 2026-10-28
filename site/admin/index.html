@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Admin · Dona Antônia</title>
   <link rel="stylesheet" href="../styles.css?v=5">
-  <link rel="stylesheet" href="admin.css?v=11">
+  <link rel="stylesheet" href="admin.css?v=35">
   <link rel="stylesheet" href="orders-admin.css?v=1">
   <script src="../config.js?v=3"></script>
   <script src="admin-auth.js?v=1" defer></script>
@@ -15,7 +15,9 @@
   <script src="orders-admin.js?v=3" defer></script>
   <script src="order-message-admin.js?v=3" defer></script>
   <script src="separation-message-admin.js?v=3" defer></script>
-  <script src="admin.js?v=11" defer></script>
+  <script src="whatsapp-admin.js?v=25" defer></script>
+  <script src="whatsapp-conversations.js?v=10" defer></script>
+  <script src="admin.js?v=15" defer></script>
 </head>
 <body class="admin-page">
   <main id="admin-login" class="admin-login-main">
@@ -38,20 +40,55 @@
     <a class="admin-link" href="../">Voltar à loja</a>
     <button id="admin-logout" class="admin-link admin-logout" type="button">Sair</button>
   </header>
-  <main class="admin-main">
-    <section id="admin-view">
-      <div class="admin-heading">
-        <div><p class="eyebrow">Dona Antônia</p><h1 id="page-title">Visão geral</h1></div>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Navegação do painel">
+      <div class="admin-sidebar-heading">
+        <p class="sidebar-kicker">PAINEL ADMINISTRATIVO</p>
+        <strong>Dona Antônia</strong>
+        <small>Gestão da loja</small>
       </div>
       <nav class="admin-nav" aria-label="Administração">
-        <button class="nav-tab active" type="button" data-view="overview">Início</button>
-        <button class="nav-tab" type="button" data-view="customers">Clientes</button>
-        <button class="nav-tab" type="button" data-view="baskets">Cestas</button>
-        <button class="nav-tab" type="button" data-view="products">Produtos</button>
-        <button class="nav-tab" type="button" data-view="orders">Pedidos</button>
-        <button class="nav-tab" type="button" data-view="whatsapp">WhatsApp</button>
+        <div class="nav-group">
+          <p class="nav-group-label">Geral</p>
+          <button class="nav-tab active" type="button" aria-current="page" data-view="overview">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7"/><path d="M5 9v12h14V9M9 21v-7h6v7"/></svg></span><span>Visão geral</span>
+          </button>
+        </div>
+        <div class="nav-group">
+          <p class="nav-group-label">Operação</p>
+          <button class="nav-tab" type="button" data-view="orders">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M8 10h8M8 14h8M8 18h4"/></svg></span><span>Pedidos</span>
+          </button>
+          <button class="nav-tab" type="button" data-view="customers">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20v-1.5a6.5 6.5 0 0 1 13 0V20M16 5.2a3.5 3.5 0 0 1 0 6.6M18 14a4.5 4.5 0 0 1 3.5 4.4V20"/></svg></span><span>Clientes</span>
+          </button>
+        </div>
+        <div class="nav-group">
+          <p class="nav-group-label">Catálogo</p>
+          <button class="nav-tab" type="button" data-view="baskets">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10h18l-2 10H5L3 10Z"/><path d="m7 10 5-7 5 7M8 13v4M12 13v4M16 13v4"/></svg></span><span>Cestas</span>
+          </button>
+          <button class="nav-tab" type="button" data-view="products">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 9 4.5v9L12 21l-9-4.5v-9L12 3Z"/><path d="m3.5 7.7 8.5 4.5 8.5-4.5M12 12.2V21M7.5 5.3l9 4.5"/></svg></span><span>Produtos</span>
+          </button>
+        </div>
+        <div class="nav-group">
+          <p class="nav-group-label">Comunicação</p>
+          <button class="nav-tab" type="button" data-view="whatsapp">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20.5 11.5a8.5 8.5 0 0 1-12.8 7.3L3 20l1.2-4.4A8.5 8.5 0 1 1 20.5 11.5Z"/><path d="M8.2 8.5c.4 2.4 2.3 4.3 4.7 4.7l1.4-1.3 2 .9c-.2 1.1-1.1 1.8-2.2 1.7-3.5-.4-6.2-3.1-6.6-6.6-.1-1.1.6-2 1.7-2.2l.9 2-1.9.8Z"/></svg></span><span>WhatsApp</span>
+          </button>
+        </div>
       </nav>
-
+      <div class="admin-sidebar-footer">
+        <span class="sidebar-footer-mark" aria-hidden="true">DA</span>
+        <span><strong>Área administrativa</strong><small>Loja Dona Antônia</small></span>
+      </div>
+    </aside>
+    <main class="admin-main">
+    <section id="admin-view">
+      <div class="admin-heading">
+        <div><p class="eyebrow">Gestão da loja</p><h1 id="page-title">Visão geral</h1></div>
+      </div>
       <section class="admin-view active" data-panel="overview">
         <div class="welcome-admin">
           <h2>Catálogo conectado</h2>
@@ -148,6 +185,85 @@
       </section>
 
       <section class="admin-view" data-panel="whatsapp" hidden>
+        <nav class="whatsapp-section-tabs" aria-label="Seções do WhatsApp" role="tablist">
+          <button class="whatsapp-section-tab active" id="whatsapp-section-tab-overview" type="button" role="tab" aria-selected="true" aria-controls="whatsapp-section-overview" data-whatsapp-section="overview">Resumo</button>
+          <button class="whatsapp-section-tab" id="whatsapp-section-tab-conversations" type="button" role="tab" aria-selected="false" aria-controls="whatsapp-section-conversations" data-whatsapp-section="conversations">Conversas</button>
+          <button class="whatsapp-section-tab" id="whatsapp-section-tab-ana" type="button" role="tab" aria-selected="false" aria-controls="whatsapp-section-ana" data-whatsapp-section="ana">ANA</button>
+          <button class="whatsapp-section-tab" id="whatsapp-section-tab-templates" type="button" role="tab" aria-selected="false" aria-controls="whatsapp-section-templates" data-whatsapp-section="templates">Modelos</button>
+          <button class="whatsapp-section-tab" id="whatsapp-section-tab-campaigns" type="button" role="tab" aria-selected="false" aria-controls="whatsapp-section-campaigns" data-whatsapp-section="campaigns">Campanhas</button>
+          <button class="whatsapp-section-tab" id="whatsapp-section-tab-messages" type="button" role="tab" aria-selected="false" aria-controls="whatsapp-section-messages" data-whatsapp-section="messages">Mensagens de pedido</button>
+        </nav>
+        <section id="whatsapp-section-overview" class="whatsapp-section-panel" role="tabpanel" aria-labelledby="whatsapp-section-tab-overview" data-whatsapp-section-panel="overview">
+          <div class="section-title">
+            <div><h2>Operação do WhatsApp</h2><p>Canais, modelos aprovados, campanhas e decisões recentes da ANA.</p></div>
+            <button id="whatsapp-overview-refresh" class="button button-outline" type="button" data-whatsapp-overview-refresh>Atualizar resumo</button>
+          </div>
+          <p id="whatsapp-overview-status" class="admin-muted" role="status" aria-live="polite" data-whatsapp-overview-status>Carregando dados do WhatsApp…</p>
+          <div id="whatsapp-overview" class="whatsapp-overview" aria-live="polite"></div>
+        </section>
+        <section id="whatsapp-section-ana" class="whatsapp-section-panel" role="tabpanel" aria-labelledby="whatsapp-section-tab-ana" data-whatsapp-section-panel="ana" hidden>
+          <div class="section-title"><div><h2>ANA</h2><p>Versão ativa, rascunho, estado de cada número e histórico de decisões.</p></div><button id="whatsapp-ana-refresh" class="button button-outline" type="button">Atualizar</button></div>
+          <p id="whatsapp-ana-status" class="admin-muted" role="status" aria-live="polite" data-whatsapp-overview-status>Carregando dados da ANA…</p>
+          <div id="whatsapp-ana-version-content" class="whatsapp-overview"></div>
+          <div id="whatsapp-ana-decisions" class="whatsapp-overview"></div>
+          <div id="whatsapp-ana-content" class="whatsapp-overview"></div>
+        </section>
+        <section id="whatsapp-section-templates" class="whatsapp-section-panel" role="tabpanel" aria-labelledby="whatsapp-section-tab-templates" data-whatsapp-section-panel="templates" hidden>
+          <div class="section-title"><div><h2>Modelos do WhatsApp</h2><p>Consulte os modelos cadastrados e o status sincronizado com a Meta.</p></div><button class="button button-outline" type="button" data-whatsapp-overview-refresh>Atualizar</button></div>
+          <p id="whatsapp-templates-status" class="admin-muted" role="status" aria-live="polite" data-whatsapp-overview-status>Carregando modelos…</p>
+          <div id="whatsapp-templates-content" class="whatsapp-overview"></div>
+        </section>
+        <section id="whatsapp-section-campaigns" class="whatsapp-section-panel" role="tabpanel" aria-labelledby="whatsapp-section-tab-campaigns" data-whatsapp-section-panel="campaigns" hidden>
+          <div class="section-title"><div><h2>Campanhas</h2><p>Revise elegibilidade e acompanhe os estados da Meta; crie e edite rascunhos.</p></div><div class="whatsapp-campaign-header-actions"><button id="whatsapp-campaign-new" class="button button-primary" type="button" disabled>Novo rascunho</button><button class="button button-outline" type="button" data-whatsapp-overview-refresh>Atualizar</button></div></div>
+          <p id="whatsapp-campaigns-status" class="admin-muted" role="status" aria-live="polite" data-whatsapp-overview-status>Carregando campanhas…</p>
+          <div id="whatsapp-campaign-editor" class="whatsapp-overview" hidden></div>
+          <div id="whatsapp-campaigns-content" class="whatsapp-overview"></div>
+        </section>
+        <section id="whatsapp-section-conversations" class="whatsapp-section-panel" role="tabpanel" aria-labelledby="whatsapp-section-tab-conversations" data-whatsapp-section-panel="conversations" hidden>
+          <div class="section-title">
+            <div><h2>Conversas do WhatsApp</h2><p>Consulte o histórico e responda com texto ou anexo pelo canal oficial.</p></div>
+            <button id="whatsapp-conversations-refresh" class="button button-outline" type="button">Atualizar</button>
+          </div>
+          <div class="whatsapp-conversation-filters">
+            <label>Canal<select id="whatsapp-conversation-account"><option value="">Todos os canais</option></select></label>
+            <label>Telefone<input id="whatsapp-conversation-search" type="search" inputmode="numeric" placeholder="Buscar pelos últimos dígitos" autocomplete="off"></label>
+            <label>Fila<select id="whatsapp-conversation-filter"><option value="all">Todas</option><option value="human">Precisa de atendimento humano</option><option value="favorites">Favoritas</option></select></label>
+            <button id="whatsapp-conversation-search-button" class="button button-primary" type="button">Buscar</button>
+          </div>
+          <p id="whatsapp-conversations-status" class="admin-muted" role="status" aria-live="polite">Carregando conversas…</p>
+          <div class="whatsapp-conversation-browser">
+            <aside class="whatsapp-conversation-list" aria-label="Lista de conversas">
+              <div id="whatsapp-conversation-items" class="whatsapp-conversation-items"></div>
+              <button id="whatsapp-conversation-more" class="button button-outline button-wide" type="button" hidden>Carregar mais conversas</button>
+            </aside>
+            <section class="whatsapp-conversation-detail" aria-label="Histórico da conversa">
+              <header id="whatsapp-conversation-header" class="whatsapp-conversation-header" hidden>
+                <div><strong id="whatsapp-conversation-title"></strong><p id="whatsapp-conversation-subtitle" class="admin-muted"></p></div>
+              </header>
+              <div id="whatsapp-conversation-empty" class="whatsapp-conversation-empty"><strong>Selecione uma conversa</strong><span>O histórico aparecerá aqui.</span></div>
+              <button id="whatsapp-conversation-older" class="button button-outline" type="button" hidden>Carregar mensagens anteriores</button>
+              <div id="whatsapp-conversation-messages" class="whatsapp-conversation-messages" aria-live="polite"></div>
+              <form id="whatsapp-conversation-compose" class="whatsapp-conversation-compose" hidden>
+                <label class="whatsapp-compose-field" for="whatsapp-conversation-draft">
+                  <span>Responder ou adicionar legenda</span>
+                  <textarea id="whatsapp-conversation-draft" rows="3" maxlength="4000" placeholder="Escreva uma mensagem…" autocomplete="off"></textarea>
+                </label>
+                <div class="whatsapp-compose-attachment">
+                  <label class="button button-outline whatsapp-compose-attach" for="whatsapp-conversation-file">Adicionar anexo</label>
+                  <input id="whatsapp-conversation-file" class="whatsapp-compose-file-input" type="file" accept="image/jpeg,image/png,audio/aac,audio/amr,audio/mpeg,audio/mp4,audio/ogg,video/mp4,video/3gpp,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,.jpg,.jpeg,.png,.aac,.amr,.mp3,.m4a,.ogg,.mp4,.3gp,.pdf,.txt,.doc,.docx,.xls,.xlsx,.ppt,.pptx">
+                  <span id="whatsapp-conversation-file-name" class="whatsapp-compose-file-name">Nenhum arquivo selecionado</span>
+                  <button id="whatsapp-conversation-remove-file" class="button button-outline whatsapp-compose-remove" type="button" hidden>Remover</button>
+                  <button id="whatsapp-conversation-send-media" class="button button-outline" type="button" disabled>Enviar anexo</button>
+                </div>
+                <div class="whatsapp-compose-footer">
+                  <p id="whatsapp-conversation-compose-status" data-tone="neutral" role="status" aria-live="polite">Texto e anexos permitidos quando a janela de atendimento está aberta.</p>
+                  <div><small id="whatsapp-conversation-compose-count">0 / 4000</small><button id="whatsapp-conversation-send" class="button button-primary" type="submit" disabled>Enviar texto</button></div>
+                </div>
+              </form>
+            </section>
+          </div>
+        </section>
+        <section id="whatsapp-section-messages" class="whatsapp-section-panel" role="tabpanel" aria-labelledby="whatsapp-section-tab-messages" data-whatsapp-section-panel="messages" hidden>
         <nav class="whatsapp-tabs" aria-label="Mensagens do WhatsApp" role="tablist">
           <button class="whatsapp-tab active" id="whatsapp-tab-confirmation" type="button" role="tab" aria-selected="true" aria-controls="whatsapp-panel-confirmation" data-whatsapp-tab="confirmation">Pedido recebido</button>
           <button class="whatsapp-tab" id="whatsapp-tab-separation" type="button" role="tab" aria-selected="false" aria-controls="whatsapp-panel-separation" data-whatsapp-tab="separation">Após a separação</button>
@@ -198,9 +314,11 @@
           <div id="separation-message-channels" class="order-message-channels" aria-live="polite"></div>
           <p id="separation-message-status" class="admin-muted" role="status" aria-live="polite"></p>
         </div>
+        </section>
       </section>
     </section>
-  </main>
+    </main>
+  </div>
 
   <dialog id="order-detail-dialog" class="orders-dialog">
     <section class="orders-dialog-body">
