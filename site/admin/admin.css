@@ -166,3 +166,27 @@
   .admin-position { padding: 8px; }
   .admin-position-main { align-items: flex-start; flex-direction: column; gap: 2px; }
 }
+
+.admin-nav { overflow-x: auto; }
+.nav-tab { flex: 0 0 auto; min-width: 76px; padding: 0 12px; white-space: nowrap; }
+.message-editor { display: grid; gap: 10px; margin: 16px 0 21px; padding: 15px; border: 1px solid var(--line); border-radius: 14px; background: #fbf8f2; }
+.message-editor > label { font-size: .86rem; font-weight: 750; }
+.message-editor textarea { width: 100%; min-height: 250px; resize: vertical; padding: 12px; border: 1px solid #d8cfc3; border-radius: 11px; background: #fff; color: var(--ink); font: .88rem/1.55 ui-monospace, SFMono-Regular, Consolas, monospace; }
+.message-editor textarea:focus { outline: 2px solid rgba(126,48,41,.23); outline-offset: 1px; }
+.message-editor .admin-muted, .message-help { margin: 0; font-size: .8rem; }
+.message-actions { display: flex; flex-wrap: wrap; gap: 9px; }
+.message-help { color: var(--muted); line-height: 1.45; }
+.order-message-channels { display: grid; gap: 12px; }
+.order-message-channel { display: grid; gap: 14px; padding: 15px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+.order-message-channel > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.order-message-channel h3 { margin: 0 0 4px; font-size: 1rem; }
+.order-message-channel header p { margin: 0; font-size: .8rem; font-weight: 750; }
+.message-switch-state.is-live { color: #3f7045; }
+.message-switch-state.is-paused { color: #9a4b32; }
+.order-message-status { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin: 0; }
+.order-message-status > div { min-width: 0; padding: 10px; border-radius: 10px; background: #f7f2ea; }
+.order-message-status dt { color: var(--muted); font-size: .73rem; }
+.order-message-status dd { margin: 4px 0; overflow-wrap: anywhere; color: var(--ink); font-size: .85rem; font-weight: 750; }
+.order-message-status small { color: var(--muted); font-size: .76rem; }
+.message-rejection { margin: 0; padding: 10px; border-radius: 9px; background: #fff1ed; color: #7d3329; font-size: .8rem; line-height: 1.45; }
+@media (max-width: 540px) { .message-actions > button { width: 100%; } .order-message-status { grid-template-columns: 1fr; } .order-message-channel > header { align-items: flex-start; flex-direction: column; } }

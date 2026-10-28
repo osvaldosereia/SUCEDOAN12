@@ -7,12 +7,13 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Admin · Dona Antônia</title>
   <link rel="stylesheet" href="../styles.css?v=5">
-  <link rel="stylesheet" href="admin.css?v=8">
+  <link rel="stylesheet" href="admin.css?v=9">
   <link rel="stylesheet" href="orders-admin.css?v=1">
   <script src="../config.js?v=3"></script>
   <script src="catalog-admin.js?v=8" defer></script>
   <script src="orders-admin.js?v=1" defer></script>
-  <script src="admin.js?v=7" defer></script>
+  <script src="order-message-admin.js?v=1" defer></script>
+  <script src="admin.js?v=8" defer></script>
 </head>
 <body class="admin-page">
   <header class="topbar">
@@ -32,6 +33,7 @@
         <button class="nav-tab" type="button" data-view="baskets">Cestas</button>
         <button class="nav-tab" type="button" data-view="products">Produtos</button>
         <button class="nav-tab" type="button" data-view="orders">Pedidos</button>
+        <button class="nav-tab" type="button" data-view="whatsapp">WhatsApp</button>
       </nav>
 
       <section class="admin-view active" data-panel="overview">
@@ -44,6 +46,7 @@
           <button class="shortcut-card" type="button" data-go="products"><strong>Produtos</strong><span>Editar cadastro, estoque e ativação</span></button>
           <button class="shortcut-card" type="button" data-go="customers"><strong>Clientes</strong><span>Buscar cadastro e endereço</span></button>
           <button class="shortcut-card" type="button" data-go="orders"><strong>Pedidos</strong><span>Confirmar, separar e acompanhar entregas</span></button>
+          <button class="shortcut-card" type="button" data-go="whatsapp"><strong>WhatsApp</strong><span>Editar a mensagem de confirmação e acompanhar a aprovação</span></button>
         </div>
         <p id="admin-status" class="admin-muted" role="status">Painel administrativo disponível.</p>
       </section>
@@ -121,6 +124,25 @@
         </nav>
         <p id="orders-status" class="admin-muted" role="status">Carregando pedidos…</p>
         <div id="orders-list" class="orders-list"></div>
+      </section>
+
+      <section class="admin-view" data-panel="whatsapp" hidden>
+        <div class="section-title">
+          <div><h2>Mensagem de confirmação</h2><p>Edite o texto da confirmação e acompanhe os modelos de cada número.</p></div>
+          <button id="order-message-refresh" class="button button-outline" type="button">Atualizar status</button>
+        </div>
+        <div class="message-editor">
+          <label for="order-message-body">Texto da mensagem</label>
+          <textarea id="order-message-body" rows="14" maxlength="1024" spellcheck="false" aria-describedby="order-message-meta-status"></textarea>
+          <p id="order-message-meta-status" class="admin-muted" role="status">Carregando a conexão com a Meta…</p>
+          <div class="message-actions">
+            <button id="order-message-save" class="button button-outline" type="button">Salvar texto</button>
+            <button id="order-message-submit" class="button button-primary" type="button">Enviar para aprovação na Meta</button>
+          </div>
+          <p class="message-help">O novo texto só será enviado depois que a Meta aprovar o modelo e ele for ativado aqui. A versão atual continua em uso até essa ativação.</p>
+        </div>
+        <div id="order-message-channels" class="order-message-channels" aria-live="polite"></div>
+        <p id="order-message-status" class="admin-muted" role="status" aria-live="polite"></p>
       </section>
     </section>
   </main>

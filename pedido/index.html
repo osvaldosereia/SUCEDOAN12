@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#7e3029">
+  <title>Meu pedido · Dona Antônia</title>
+  <link rel="stylesheet" href="../site/pedido.css?v=1">
+  <script src="../site/config.js?v=3" defer></script>
+  <script src="../site/pedido.js?v=1" defer></script>
+</head>
+<body>
+  <main class="order-page">
+    <a class="order-brand" href="../site/" aria-label="Voltar à loja Dona Antônia">
+      <img src="../img/logoantonia5.png" alt="Dona Antônia">
+    </a>
+    <section id="order-loading" class="order-card order-message" role="status">Carregando os detalhes do seu pedido…</section>
+    <section id="order-error" class="order-card order-message order-error" hidden>
+      Este link não está disponível. Abra novamente o botão “Ver meu Pedido” na conversa da loja.
+    </section>
+    <section id="order-result" class="order-card" hidden>
+      <header class="order-heading">
+        <p class="eyebrow">Detalhes do pedido</p>
+        <h1 id="order-code">Seu pedido</h1>
+        <p id="order-status" class="order-status"></p>
+      </header>
+      <p id="order-delivery" class="order-delivery"></p>
+      <div id="order-items" class="order-items"></div>
+      <div class="order-total"><span>Total</span><strong id="order-total">—</strong></div>
+    </section>
+    <a class="back-to-store" href="../site/">Voltar à loja</a>
+  </main>
+</body>
+</html>
