@@ -34,22 +34,61 @@ as $function$
   with requested as (
     select distinct unnest(coalesce(p_campaign_ids, array[]::uuid[])) as campaign_id
   ),
-  delivery_summary as (
+  campaign_messages as (
     select
       d.campaign_id,
-      count(distinct d.id) filter (where d.status = 'accepted') as accepted_count,
-      count(distinct m.id) filter (where m.status_current = 'sent') as sent_count,
-      count(distinct m.id) filter (where m.status_current = 'delivered') as delivered_count,
-      count(distinct m.id) filter (where m.status_current = 'read') as read_count,
-      count(distinct d.id) filter (where d.status = 'failed' or m.status_current = 'failed') as failed_count,
-      count(distinct d.id) filter (where d.status = 'skipped') as skipped_count,
-      count(distinct d.id) filter (where d.status in ('pending', 'claimed', 'retry')) as pending_count,
-      count(distinct d.id) filter (where d.status = 'uncertain') as uncertain_count
+      d.id as dispatch_id,
+      d.status as dispatch_status,
+      o.message_id
     from public.marketing_campaign_dispatches_v1 d
     left join public.whatsapp_outbox_v1 o on o.id = d.outbox_id
-    left join public.whatsapp_messages_v1 m on m.id = o.message_id
     where d.campaign_id = any(coalesce(p_campaign_ids, array[]::uuid[]))
-    group by d.campaign_id
+  ),
+  latest_meta_status as (
+    select distinct on (e.message_id)
+      e.message_id,
+      e.status
+    from public.whatsapp_message_status_events_v1 e
+    join (
+      select distinct message_id
+      from campaign_messages
+      where message_id is not null
+    ) campaign_message_ids on campaign_message_ids.message_id = e.message_id
+    where e.provider = 'meta'
+    order by
+      e.message_id,
+      e.occurred_at desc nulls last,
+      case e.status
+        when 'read' then 60
+        when 'delivered' then 50
+        when 'sent' then 40
+        when 'failed' then 35
+        when 'accepted' then 30
+        when 'sending' then 20
+        when 'queued' then 10
+        else 0
+      end desc,
+      e.received_at desc nulls last,
+      e.id desc
+  ),
+  delivery_summary as (
+    select
+      campaign_messages.campaign_id,
+      count(distinct campaign_messages.dispatch_id) filter (where campaign_messages.dispatch_status = 'accepted') as accepted_count,
+      count(distinct campaign_messages.message_id) filter (where coalesce(latest_meta_status.status, messages.status_current) = 'sent') as sent_count,
+      count(distinct campaign_messages.message_id) filter (where coalesce(latest_meta_status.status, messages.status_current) = 'delivered') as delivered_count,
+      count(distinct campaign_messages.message_id) filter (where coalesce(latest_meta_status.status, messages.status_current) = 'read') as read_count,
+      count(distinct campaign_messages.dispatch_id) filter (
+        where campaign_messages.dispatch_status = 'failed'
+          or coalesce(latest_meta_status.status, messages.status_current) = 'failed'
+      ) as failed_count,
+      count(distinct campaign_messages.dispatch_id) filter (where campaign_messages.dispatch_status = 'skipped') as skipped_count,
+      count(distinct campaign_messages.dispatch_id) filter (where campaign_messages.dispatch_status in ('pending', 'claimed', 'retry')) as pending_count,
+      count(distinct campaign_messages.dispatch_id) filter (where campaign_messages.dispatch_status = 'uncertain') as uncertain_count
+    from campaign_messages
+    left join public.whatsapp_messages_v1 messages on messages.id = campaign_messages.message_id
+    left join latest_meta_status on latest_meta_status.message_id = campaign_messages.message_id
+    group by campaign_messages.campaign_id
   ),
   latest_snapshots as (
     select distinct on (s.campaign_id)
