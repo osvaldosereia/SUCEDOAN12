@@ -142,6 +142,7 @@
 @media (max-width: 560px) {
   .product-search-controls { grid-template-columns: minmax(0,1fr) auto; }
   .product-search-controls select { grid-column: 1 / -1; grid-row: auto; }
+  .product-search-controls button { grid-column: 2; grid-row: 1; }
   .catalog-basket-card, .admin-product-card { grid-template-columns: 54px minmax(0,1fr); gap: 9px; }
   .catalog-basket-card > img, .admin-product-card > img, .product-image-placeholder { width: 54px; height: 54px; }
   .catalog-basket-card > .button { grid-column: 2; justify-self: start; min-height: 36px; }
