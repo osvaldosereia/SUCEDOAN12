@@ -768,6 +768,48 @@ function isIsoCursorTimestamp(value: string) {
     && Number.isFinite(Date.parse(value));
 }
 
+async function adminFavoriteUserId() {
+  const result = await db.from("admin_users").select("user_id")
+    .eq("role", "owner").eq("is_active", true).limit(2);
+  if (result.error) throw result.error;
+  const owners = result.data || [];
+  return owners.length === 1 ? uuid(owners[0].user_id) : "";
+}
+
+async function conversationFavoriteIds(adminUserId: string) {
+  const result = await db.from("whatsapp_conversation_favorites_v1")
+    .select("conversation_id")
+    .eq("admin_user_id", adminUserId)
+    .order("created_at", { ascending: false }).limit(1000);
+  if (result.error) throw result.error;
+  return (result.data || []).map((row: any) => uuid(row.conversation_id)).filter(Boolean);
+}
+
+async function whatsappConversationFavorite(input: any) {
+  const mode = clean(input.mode, 12).toLowerCase();
+  if (!["add", "remove"].includes(mode)) return { error: "invalid_favorite_action", status: 400 };
+  const conversationId = uuid(input.conversation_id);
+  if (!conversationId) return { error: "invalid_conversation_id", status: 400 };
+  const adminUserId = await adminFavoriteUserId();
+  if (!adminUserId) {
+    return { error: "favorite_identity_unavailable", status: 409, message: "Não foi possível identificar o usuário administrador para salvar este favorito." };
+  }
+  const conversation = await db.from("conversations").select("id").eq("id", conversationId).maybeSingle();
+  if (conversation.error) throw conversation.error;
+  if (!conversation.data) return { error: "conversation_not_found", status: 404 };
+
+  if (mode === "add") {
+    const result = await db.from("whatsapp_conversation_favorites_v1")
+      .upsert({ admin_user_id: adminUserId, conversation_id: conversationId }, { onConflict: "admin_user_id,conversation_id" });
+    if (result.error) throw result.error;
+    return { conversation_id: conversationId, is_favorite: true };
+  }
+  const result = await db.from("whatsapp_conversation_favorites_v1")
+    .delete().eq("admin_user_id", adminUserId).eq("conversation_id", conversationId);
+  if (result.error) throw result.error;
+  return { conversation_id: conversationId, is_favorite: false };
+}
+
 async function whatsappConversationList(input: any) {
   const pageSize = 30;
   const cursorSupplied = Object.prototype.hasOwnProperty.call(input, "cursor") && input.cursor !== null;
@@ -785,7 +827,23 @@ async function whatsappConversationList(input: any) {
   const accountId = requestedAccount ? uuid(requestedAccount) : "";
   if (requestedAccount && !accountId) return { error: "invalid_account_id", status: 400 };
   const search = clean(input.search, 80).replace(/\D/g, "");
-  const onlyHuman = clean(input.filter, 20) === "human";
+  const filter = clean(input.filter, 20).toLowerCase();
+  const onlyHuman = filter === "human";
+  const onlyFavorites = filter === "favorites";
+  let favoriteIds: string[] = [];
+  let favoritesAvailable = false;
+  try {
+    const adminUserId = await adminFavoriteUserId();
+    if (adminUserId) {
+      favoriteIds = await conversationFavoriteIds(adminUserId);
+      favoritesAvailable = true;
+    }
+  } catch {
+    favoritesAvailable = false;
+  }
+  if (onlyFavorites && !favoritesAvailable) {
+    return { error: "favorites_unavailable", status: 503, message: "Favoritos indisponíveis. Atualize o Admin depois de aplicar a migração necessária." };
+  }
 
   let conversationQuery = db.from("conversations")
     .select("id,whatsapp_account_id,wa_contact_e164,status,stage,human_required,mode,last_inbound_at,last_outbound_at,updated_at,created_at", { count: "exact" })
@@ -800,6 +858,11 @@ async function whatsappConversationList(input: any) {
   if (accountId) conversationQuery = conversationQuery.eq("whatsapp_account_id", accountId);
   if (search.length >= 4) conversationQuery = conversationQuery.ilike("wa_contact_e164", "%" + search + "%");
   if (onlyHuman) conversationQuery = conversationQuery.eq("human_required", true);
+  if (onlyFavorites) {
+    conversationQuery = favoriteIds.length
+      ? conversationQuery.in("id", favoriteIds)
+      : conversationQuery.eq("id", "00000000-0000-0000-0000-000000000000");
+  }
 
   const [conversationResult, accountResult] = await Promise.all([
     conversationQuery,
@@ -813,6 +876,7 @@ async function whatsappConversationList(input: any) {
   const pageRows = rows.slice(0, pageSize);
   const accounts = accountResult.data || [];
   const accountById = new Map(accounts.map((row: any) => [row.id, row]));
+  const favoriteIdSet = new Set(favoriteIds);
   const items = pageRows.map((row: any) => {
     const account: any = accountById.get(row.whatsapp_account_id) || {};
     const phoneDigits = String(row.wa_contact_e164 || "").replace(/\D/g, "");
@@ -828,6 +892,7 @@ async function whatsappConversationList(input: any) {
       stage: clean(row.stage, 40),
       mode: clean(row.mode, 40),
       human_required: row.human_required === true,
+      is_favorite: favoriteIdSet.has(row.id),
       last_activity_at: lastActivity,
       updated_at: row.updated_at,
     };
@@ -844,6 +909,7 @@ async function whatsappConversationList(input: any) {
     total: conversationResult.count || 0,
     has_more: hasMore,
     next_cursor: hasMore && lastRow ? { updated_at: lastRow.updated_at, id: lastRow.id } : null,
+    favorites_available: favoritesAvailable,
   };
 }
 
@@ -1101,6 +1167,7 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "whatsapp_conversation_list") result = await whatsappConversationList(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_messages") result = await whatsappConversationMessages(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_media") result = await whatsappConversationMedia(input);
+    else if (req.method === "POST" && action === "whatsapp_conversation_favorite") result = await whatsappConversationFavorite(input);
     else if (req.method === "POST" && action === "whatsapp_ana_admin_status") result = await whatsappAnaAdminStatus();
     else if (req.method === "POST" && action === "customer_lookup") result = await customerLookup(input);
     else if (req.method === "POST" && action === "customer_save") result = await customerSave(input);
