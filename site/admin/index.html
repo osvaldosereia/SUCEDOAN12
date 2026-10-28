@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Admin · Dona Antônia</title>
   <link rel="stylesheet" href="../styles.css?v=5">
-  <link rel="stylesheet" href="admin.css?v=42">
+  <link rel="stylesheet" href="admin.css?v=43">
   <link rel="stylesheet" href="orders-admin.css?v=5">
   <link rel="stylesheet" href="quick-balance-admin.css?v=4">
   <script src="../config.js?v=3"></script>
@@ -19,7 +19,7 @@
   <script src="whatsapp-admin.js?v=28" defer></script>
   <script src="whatsapp-conversations.js?v=12" defer></script>
   <script src="quick-balance-admin.js?v=7" defer></script>
-  <script src="admin.js?v=16" defer></script>
+  <script src="admin.js?v=17" defer></script>
 </head>
 <body class="admin-page">
   <main id="admin-login" class="admin-login-main">
@@ -108,6 +108,13 @@
           <button class="shortcut-card" type="button" data-go="orders"><strong>Pedidos</strong><span>Confirmar, separar e acompanhar entregas</span></button>
           <button class="shortcut-card" type="button" data-go="quick-balance"><strong>Balanço rápido</strong><span>Contar estoque, validade e gôndola pelo EAN</span></button>
           <button class="shortcut-card" type="button" data-go="whatsapp"><strong>WhatsApp</strong><span>Editar a mensagem de confirmação e acompanhar a aprovação</span></button>
+        </div>
+        <div class="edit-notice bling-reauthorize">
+          <div class="bling-reauthorize-copy">
+            <strong>Conexão com o Bling</strong>
+            <span>Depois de liberar a permissão de gravação de pedidos na aplicação Bling, reautorize aqui. Você voltará automaticamente a este Admin.</span>
+          </div>
+          <button id="bling-reauthorize" class="button button-outline" type="button">Reautorizar Bling</button>
         </div>
         <p id="admin-status" class="admin-muted" role="status">Painel administrativo disponível.</p>
       </section>
