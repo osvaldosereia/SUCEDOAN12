@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { verifyAdminCode } from "../_shared/admin-code-v1.ts";
 import { sendTextViaMeta, sendMediaViaMeta, MetaTransportError } from "../_shared/whatsapp-meta-transport-v1.mjs";
-import { canonicalOutboundMetaMime, outboundMetaMaxBytes, validateOutboundMetaMediaContent, uploadMetaMedia, MetaMediaError } from "../_shared/whatsapp-meta-media-v1.mjs";
+import { canonicalOutboundMetaMime, outboundMetaMaxBytes, validateOutboundMetaMediaContent, uploadMetaMedia, fetchMetaMediaInfo, fetchMetaMediaResponse, MetaMediaError } from "../_shared/whatsapp-meta-media-v1.mjs";
 import { ANA_DRY_RUN_INSTRUCTIONS, ANA_DRY_RUN_SCHEMA, buildAnaDryRunInput, normalizeAnaDryRunResult, isSimpleAnaGreeting } from "../_shared/ana-policy-v1.mjs";
 import { validateAnaConfiguration, buildAnaRuntimeInstructions, routeAnaMessage } from "../_shared/ana-admin-config-v1.mjs";
 import { shouldSendAnaLiveReply } from "../_shared/ana-live-policy-v1.mjs";
@@ -1300,13 +1300,94 @@ async function whatsappConversationMessageStatuses(input: any) {
   };
 }
 
+async function cacheInboundWhatsappMetaMedia(message: any, messageType: string, allowedMimeTypes: Set<string>) {
+  const metadata = message?.metadata && typeof message.metadata === "object" ? message.metadata : {};
+  const media = metadata.media && typeof metadata.media === "object" ? metadata.media : {};
+  const source = clean(metadata.source || media.source, 30).toLowerCase();
+  const mediaId = clean(media.provider_media_id || metadata.provider_media_id, 240);
+  if (message?.direction !== "inbound" || source !== "meta" || !mediaId) return null;
+  if (!attendanceMetaConfigReady()) {
+    return { error: "media_retrieval_failed", message: "Não foi possível recuperar esta mídia do WhatsApp.", status: 503 };
+  }
+
+  const maxBytes = 20 * 1024 * 1024;
+  try {
+    const info = await fetchMetaMediaInfo({
+      accessToken: META_WHATSAPP_ACCESS_TOKEN,
+      graphVersion: META_WHATSAPP_GRAPH_VERSION,
+      mediaId,
+    });
+    const infoMime = String(info.mimeType || media.mime_type || "").split(";", 1)[0].trim().toLowerCase();
+    const expectedSize = Number(info.fileSize ?? media.size_bytes ?? 0);
+    if (Number.isFinite(expectedSize) && expectedSize > maxBytes) return { error: "media_too_large", status: 413 };
+
+    const response = await fetchMetaMediaResponse({ accessToken: META_WHATSAPP_ACCESS_TOKEN, url: info.url });
+    const responseMime = String(response.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
+    const mimeType = allowedMimeTypes.has(infoMime) ? infoMime : responseMime;
+    if (!allowedMimeTypes.has(mimeType)) return { error: "media_type_not_allowed", status: 415 };
+    if (responseMime && !allowedMimeTypes.has(responseMime)) return { error: "media_type_not_allowed", status: 415 };
+
+    let bytes: Uint8Array;
+    if (response.body) {
+      const reader = response.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let total = 0;
+      try {
+        while (true) {
+          const part = await reader.read();
+          if (part.done) break;
+          total += part.value.byteLength;
+          if (total > maxBytes) {
+            await reader.cancel();
+            return { error: "media_too_large", status: 413 };
+          }
+          chunks.push(part.value);
+        }
+      } finally {
+        reader.releaseLock();
+      }
+      bytes = new Uint8Array(total);
+      let offset = 0;
+      for (const chunk of chunks) {
+        bytes.set(chunk, offset);
+        offset += chunk.byteLength;
+      }
+    } else {
+      bytes = new Uint8Array(await response.arrayBuffer());
+      if (bytes.byteLength > maxBytes) return { error: "media_too_large", status: 413 };
+    }
+    if (!bytes.byteLength) return { error: "media_empty", status: 422 };
+
+    const filename = safeWhatsappFilename(media.filename || media.file_name || `whatsapp-${messageType}-${message.id}`);
+    const objectPath = `inbound/${message.id}/${filename}`;
+    const storage = db.storage.from("attendance-media-v1");
+    const upload = await storage.upload(objectPath, new Blob([bytes], { type: mimeType }), {
+      contentType: mimeType,
+      upsert: true,
+    });
+    if (upload.error) throw upload.error;
+
+    const cached = await db.from("attendance_media_cache_v1").upsert({
+      message_id: message.id,
+      object_path: objectPath,
+      mime_type: mimeType,
+      filename,
+      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    }, { onConflict: "message_id" });
+    if (cached.error) throw cached.error;
+    return { path: objectPath, mimeType, filename, fileSize: bytes.byteLength };
+  } catch (_) {
+    return { error: "media_retrieval_failed", message: "Não foi possível recuperar esta mídia do WhatsApp. Tente novamente.", status: 503 };
+  }
+}
+
 async function whatsappConversationMedia(input: any) {
   const conversationId = uuid(input.conversation_id);
   const messageId = uuid(input.message_id);
   if (!conversationId || !messageId) return { error: "invalid_media_reference", status: 400 };
 
   const messageResult = await db.from("whatsapp_messages_v1")
-    .select("id,message_type")
+    .select("id,message_type,direction,metadata")
     .eq("id", messageId)
     .eq("conversation_id", conversationId)
     .maybeSingle();
@@ -1367,6 +1448,18 @@ async function whatsappConversationMedia(input: any) {
       path = cachedPath;
       mimeType = String(cached.mime_type || "").split(";", 1)[0].trim().toLowerCase();
       filename = safeWhatsappFilename(cached.filename || "");
+    }
+  }
+
+  if (!path) {
+    const recovered = await cacheInboundWhatsappMetaMedia(messageResult.data, messageType, allowedMimeTypes);
+    if (recovered?.error) return recovered;
+    if (recovered) {
+      bucket = "attendance-media-v1";
+      path = recovered.path;
+      mimeType = recovered.mimeType;
+      filename = recovered.filename;
+      fileSize = recovered.fileSize;
     }
   }
 
