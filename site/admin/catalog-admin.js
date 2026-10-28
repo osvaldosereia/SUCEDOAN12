@@ -258,11 +258,16 @@
     input.disabled = true;
     try {
       const result = await request("product_set_active", { method: "POST", body: { id: productId, is_active: isActive } });
+      if (result?.product?.is_active !== isActive) {
+        throw new Error("O servidor não confirmou a alteração do produto. Tente novamente.");
+      }
+      const confirmedActive = result.product.is_active;
       const cached = state.productCache.get(productId) || {};
-      state.productCache.set(productId, Object.assign({}, cached, result.product || {}, { is_active: isActive }));
+      state.productCache.set(productId, Object.assign({}, cached, result.product, { is_active: confirmedActive }));
+      input.checked = confirmedActive;
       const statusLabel = input.closest(".product-active-toggle")?.querySelector("span:last-child");
-      if (statusLabel) statusLabel.textContent = isActive ? "Ativo" : "Inativo";
-      toast(isActive ? "Produto ativado no catálogo." : "Produto desativado no catálogo.");
+      if (statusLabel) statusLabel.textContent = confirmedActive ? "Ativo" : "Inativo";
+      toast(confirmedActive ? "Produto ativado no catálogo." : "Produto desativado no catálogo.");
 
       const leavesCurrentFilter =
         (state.productsStatus === "active" && !isActive) ||

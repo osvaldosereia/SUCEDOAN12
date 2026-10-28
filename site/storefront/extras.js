@@ -31,7 +31,6 @@
       return { query: "", products: [], nextOffset: null, hasMore: false, loading: false, pending: false, error: false, sequence: 0, timer: 0, lastOffset: 0 };
     }
 
-    const homeProductSearchState = createProductSearchState();
     const homeExtrasSearchState = createProductSearchState();
     let productSearchBound = false;
 
@@ -40,7 +39,6 @@
     }
 
     function productSearchStateFor(scope, data) {
-      if (scope === "home") return homeProductSearchState;
       if (scope === "home-extras") return homeExtrasSearchState;
       const current = data || state.baskets.get(state.activeKey);
       if (!current) return null;
@@ -49,7 +47,6 @@
     }
 
     function productSearchRootFor(scope, data) {
-      if (scope === "home") return $("home-product-search");
       if (scope === "home-extras") return $("home-extra-product-search");
       if (scope === "basket-extras") {
         if (data && state.baskets.get(state.activeKey) !== data) return null;
@@ -139,7 +136,6 @@
       renderProductSearch(scope, data);
       try {
         const params = { q: search.query, limit: 12, offset };
-        if (scope !== "home") params.categories = EXTRA_CATEGORIES.map((category) => category.key).join(",");
         const result = await request("products", { params });
         if (search.sequence !== sequence || (scope === "basket-extras" && state.baskets.get(state.activeKey) !== data)) return;
         const fetched = Array.isArray(result.products) ? result.products : [];
@@ -236,7 +232,6 @@
 
     function bindProductSearch() {
       if (productSearchBound) return;
-      bindProductSearchEvents($("home-product-search"));
       bindProductSearchEvents($("home-extra-product-search"));
       bindProductSearchEvents($("detail-content"));
       productSearchBound = true;
@@ -625,7 +620,7 @@
       const id = String(productId);
       const selection = state.homeExtraSelections.get(id);
       const quantity = Number(selection && selection.quantity || 0);
-      const hosts = ["home-extra-categories", "home-product-search-results", "home-extra-product-search-results"]
+      const hosts = ["home-extra-categories", "home-extra-product-search-results"]
         .map((hostId) => $(hostId)).filter(Boolean);
       hosts.forEach((host) => host.querySelectorAll("[data-home-extra-product]").forEach((card) => {
         if (card.dataset.homeExtraProduct !== id) return;

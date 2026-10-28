@@ -9,9 +9,9 @@
   <link rel="preload" as="image" href="../img/logoantonia5.png">
   <link rel="preload" as="image" href="assets/cestas/cesta-economica.jpg" fetchpriority="high">
   <link rel="preconnect" href="https://ssbesxgaijknwsjbsbcz.supabase.co" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=20">
+  <link rel="stylesheet" href="styles.css?v=21">
   <script src="config.js?v=2" defer></script>
-  <script src="storefront/extras.js?v=8" defer></script>
+  <script src="storefront/extras.js?v=9" defer></script>
   <script src="storefront/basket.js?v=2" defer></script>
   <script src="storefront/checkout.js?v=6" defer></script>
   <script src="app.js?v=22" defer></script>
@@ -28,15 +28,6 @@
       <p class="eyebrow">Praticidade para sua casa</p>
       <h1 id="welcome-title">Cestas básicas</h1>
       <p>Escolha o tamanho ideal e veja os produtos que vão na sua cesta.</p>
-    </section>
-    <section id="home-product-search" class="product-search product-search-home" data-product-search-root="home" aria-label="Busca de produtos">
-      <label class="product-search-label" for="home-product-search-input">Encontre um produto</label>
-      <div class="product-search-control">
-        <input id="home-product-search-input" data-product-search-input="home" type="search" autocomplete="off" enterkeyhint="search" placeholder="Digite nome, marca ou código" aria-describedby="home-product-search-status">
-        <button class="product-search-clear" type="button" data-product-search-clear="home" aria-label="Limpar busca" hidden>×</button>
-      </div>
-      <p id="home-product-search-status" class="product-search-status" data-product-search-status="home" role="status" aria-live="polite">Pesquise por nome, marca ou código do produto.</p>
-      <div id="home-product-search-results" class="product-search-results" data-product-search-results="home" hidden></div>
     </section>
       <div id="home-extra-summary" class="home-extra-summary" hidden aria-live="polite">
         <div class="home-extra-summary-copy">
@@ -87,7 +78,7 @@
         <label class="product-search-label" for="home-extra-product-search-input">Buscar nos produtos para montar sua cesta</label>
         <div class="product-search-control">
           <input id="home-extra-product-search-input" data-product-search-input="home-extras" type="search" autocomplete="off" enterkeyhint="search" placeholder="Ex.: arroz, óleo ou sabão" aria-describedby="home-extra-product-search-status">
-          <button class="product-search-clear" type="button" data-product-search-clear="home-extras" aria-label="Limpar busca" hidden>Limpar</button>
+          <button class="product-search-clear" type="button" data-product-search-clear="home-extras" aria-label="Limpar busca" hidden>×</button>
         </div>
         <p id="home-extra-product-search-status" class="product-search-status" data-product-search-status="home-extras" role="status" aria-live="polite"></p>
         <div id="home-extra-product-search-results" class="product-search-results" data-product-search-results="home-extras" hidden></div>
