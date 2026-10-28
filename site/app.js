@@ -123,6 +123,8 @@
     }
   }
 
+  let basket = null;
+
   function renderDetail() {
     const data = state.baskets.get(state.activeKey);
     if (!data || data.error) {
@@ -139,6 +141,7 @@
     }
     $("detail-title").textContent = data.basket.name || "Produtos da cesta";
     $("detail-total").textContent = money(displayedTotalCents(data));
+    const optionsBusy = data.items.some((row) => row._optionsLoading);
     const rows = data.items.map((item) => {
       const alternatives = item._alternatives || [];
       const selected = alternatives.find((alt) => String(alt.product_id) === String(item.product_id));
@@ -150,23 +153,25 @@
       const choices = alternatives.map((alt) => {
         const selectedOption = String(alt.product_id) === String(item.product_id);
         const optionPrice = alt.price_cents == null ? "Preço indisponível" : money(alt.price_cents);
-        return '<button class="product-choice' + (selectedOption ? ' is-selected' : '') + '" type="button" data-select-position="' + esc(item.position_id) + '" data-select-product="' + esc(alt.product_id) + '" aria-pressed="' + String(selectedOption) + '"' + (data.changing ? ' disabled' : '') + '>' +
+        return '<button class="product-choice' + (selectedOption ? ' is-selected' : '') + '" type="button" data-select-position="' + esc(item.position_id) + '" data-select-product="' + esc(alt.product_id) + '" aria-pressed="' + String(selectedOption) + '"' + (data.changing || optionsBusy ? ' disabled' : '') + '>' +
           '<img src="' + esc(alt.image_url || "../img/logoantonia5.png") + '" alt="" width="44" height="44" loading="lazy" decoding="async">' +
           '<span class="product-choice-copy"><strong>' + esc(alt.name || "Produto") + '</strong><small>' + esc(optionPrice) + '</small></span>' +
           (selectedOption ? '<span class="product-choice-check" aria-hidden="true">✓</span>' : '') +
           '</button>';
       }).join("");
       const panelContent = expanded
-        ? (item._optionsLoading
-          ? '<p class="variation-status" role="status">Buscando somente as opções deste produto…</p>'
-          : alternatives.length > 1
-            ? '<p class="variation-panel-label">Opções disponíveis</p><div class="product-option-picker" role="group" aria-label="Opções para ' + esc(item.label || item.name) + '">' + choices + '</div>'
-            : '<p class="variation-status">Não há outras opções disponíveis para este produto.</p>')
+        ? (item._optionsError
+          ? '<p class="variation-panel-label">Escolha uma marca</p><p class="variation-status" role="alert">Não foi possível carregar as opções. Toque em “Tentar novamente”.</p>'
+          : item._optionsLoading || !item._optionsLoaded
+            ? '<p class="variation-panel-label">Escolha uma marca</p><p class="variation-status" role="status">Carregando opções disponíveis…</p>'
+            : alternatives.length > 1
+              ? '<p class="variation-panel-label">Escolha uma marca</p><div class="product-option-picker" role="group" aria-label="Opções para ' + esc(item.label || item.name) + '">' + choices + '</div>'
+              : '<p class="variation-panel-label">Escolha uma marca</p><p class="variation-status">Só há esta opção disponível no momento.</p>')
         : "";
       const optionPicker = optionCount > 1
         ? '<div class="variation-disclosure">' +
-          '<button class="variation-toggle" type="button" data-toggle-position="' + esc(item.position_id) + '" aria-expanded="' + String(Boolean(expanded)) + '" aria-controls="item-options-' + esc(item.position_id) + '"' + (data.changing || item._optionsLoading ? ' disabled' : '') + '>' +
-          '<span>' + (item._optionsLoading ? "Carregando opções…" : item._optionsError ? "Tentar novamente" : expanded ? "Ocultar opções" : "Trocar Marca") + '</span>' +
+          '<button class="variation-toggle" type="button" data-toggle-position="' + esc(item.position_id) + '" aria-expanded="' + String(Boolean(expanded)) + '" aria-controls="item-options-' + esc(item.position_id) + '"' + (data.changing || optionsBusy || item._optionsLoading ? ' disabled' : '') + '>' +
+          '<span>' + (item._optionsError ? "Tentar novamente" : expanded ? "Ocultar opções" : "Escolher uma marca") + '</span>' +
           '<span class="variation-chevron" aria-hidden="true">' + (expanded ? "−" : "+") + '</span>' +
           '</button>' +
           '<div class="variation-panel" id="item-options-' + esc(item.position_id) + '"' + (expanded ? "" : " hidden") + ' aria-busy="' + String(Boolean(item._optionsLoading || changingThisItem)) + '">' +
@@ -176,9 +181,9 @@
       const itemQuantity = quantityOf(item);
       return '<article class="product-row" data-product-row="' + esc(item.position_id) + '"><div class="product-row-main"><img src="' + esc(image) + '" alt="" width="58" height="58" loading="lazy" decoding="async">' +
         '<div class="product-row-copy"><h3 class="product-name">' + esc(item.name || "Produto") + '</h3><div class="product-quantity-line"><strong>Quantidade:</strong><div class="quantity-stepper">' +
-        '<button class="quantity-button" type="button" data-adjust-position="' + esc(item.position_id) + '" data-delta="-1" aria-label="Diminuir quantidade de ' + esc(item.name || "produto") + '"' + (itemQuantity <= 0 || data.changing ? " disabled" : "") + '>−</button>' +
+        '<button class="quantity-button" type="button" data-adjust-position="' + esc(item.position_id) + '" data-delta="-1" aria-label="Diminuir quantidade de ' + esc(item.name || "produto") + '"' + (itemQuantity <= 0 || data.changing || optionsBusy ? " disabled" : "") + '>−</button>' +
         '<output class="quantity-value" data-quantity-value="' + esc(item.position_id) + '" aria-live="polite">' + itemQuantity + '</output>' +
-        '<button class="quantity-button" type="button" data-adjust-position="' + esc(item.position_id) + '" data-delta="1" aria-label="Aumentar quantidade de ' + esc(item.name || "produto") + '"' + (data.changing ? " disabled" : "") + '>+</button></div></div></div></div>' +
+        '<button class="quantity-button" type="button" data-adjust-position="' + esc(item.position_id) + '" data-delta="1" aria-label="Aumentar quantidade de ' + esc(item.name || "produto") + '"' + (data.changing || optionsBusy ? " disabled" : "") + '>+</button></div></div></div></div>' +
         optionPicker + "</article>";
     }).join("");
     const note = data.orderable ? "" : '<p class="helper stock-note">Esta composição está sem estoque disponível no momento.</p>';
@@ -195,6 +200,7 @@
     bindExtraProductControls($("detail-content"));
     bindHomeSelectionControls($("detail-content"), data);
     $("detail-content").querySelectorAll("img").forEach((image) => image.addEventListener("error", () => { image.src = "../img/logoantonia5.png"; }, { once: true }));
+    if (basket) basket.queueVisibleOptions();
   }
 
   function renderDetailPreservingScroll(positionId) {
@@ -263,7 +269,6 @@
     if (!data) return;
     state.activeKey = sizeKey;
     $("detail-content").scrollTop = 0;
-    if (data.detailLoaded) data.items.forEach((item) => { item._expanded = false; });
     if (data.error) data.error = false;
     attachHomeSelections(data);
     renderDetail();
@@ -282,7 +287,7 @@
   }
 
   const extras = window.DonaStorefrontExtras.create({ state, $, esc, money, request, toast });
-  const basket = window.DonaStorefrontBasket.create({
+  basket = window.DonaStorefrontBasket.create({
     state, $, request, toast, renderDetailPreservingScroll, quantityOf, money,
     displayedTotalCents: extras.displayedTotalCents
   });
