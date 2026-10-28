@@ -1,7 +1,9 @@
 (() => {
   "use strict";
 
-  function create({ state, $, esc, phoneDigits, money, toast, request, whatsappNumber, quantityOf, closeSheet, showSheet }) {
+  function create({ state, $, esc, phoneDigits, money, toast, request, whatsappNumber, quantityOf, closeSheet, showSheet, onCustomOrderSubmitted }) {
+    const customOrderKey = "__custom_products__";
+    const minimumOrderCents = 7500;
     function addressLines(address) {
       if (!address) return [];
       const first = [address.street, address.number, address.complement].filter(Boolean).join(", ");
@@ -110,8 +112,14 @@
     function updateConfirmOrderAvailability() {
       const select = $("delivery-date");
       const payment = document.querySelector('input[name="payment"]:checked');
+      const data = state.baskets.get(state.activeKey);
+      const orderItemsAvailable = data && (data.customOrder
+        ? selectedExtraEntries(data).length > 0
+        : data.orderable === true);
+      const minimumSatisfied = !data || !data.customOrder || customOrderSubtotalCents(data) >= minimumOrderCents;
       const selectedDateIsAvailable = select && !select.disabled && state.deliveryOptions.some((option) => option.date === select.value);
-      $("confirm-order").disabled = state.submittingOrder || !customerHasCheckoutAddress(state.customer) || !payment || !selectedDateIsAvailable;
+      $("confirm-order").disabled = state.submittingOrder || !orderItemsAvailable ||
+        !minimumSatisfied || !customerHasCheckoutAddress(state.customer) || !payment || !selectedDateIsAvailable;
     }
   
     function loadDeliveryOptions() {
@@ -156,6 +164,108 @@
       return state.deliveryPromise;
     }
   
+    function selectedExtraEntries(data) {
+      if (!data || !(data.extraSelections instanceof Map)) return [];
+      return Array.from(data.extraSelections.values()).filter((item) =>
+        item && String(item.id || "") && Math.max(0, Math.trunc(Number(item.quantity || 0))) > 0);
+    }
+
+    function customOrderSubtotalCents(data) {
+      return selectedExtraEntries(data).reduce((sum, item) =>
+        sum + Math.max(0, Number(item.price_cents || 0)) * Math.max(0, Math.trunc(Number(item.quantity || 0))), 0);
+    }
+
+    function renderCustomOrderSummary(data) {
+      const summary = $("custom-order-summary");
+      summary.hidden = !data || data.customOrder !== true;
+      if (summary.hidden) return;
+      const entries = selectedExtraEntries(data);
+      $("custom-order-items").innerHTML = entries.map((item) => {
+        const quantity = Math.max(0, Math.trunc(Number(item.quantity || 0)));
+        const lineTotal = Math.max(0, Number(item.price_cents || 0)) * quantity;
+        return '<li class="custom-order-item"><div><strong>' + esc(item.name || "Produto") +
+          '</strong><span>Quantidade: ' + quantity + '</span></div><b>' + esc(money(lineTotal)) + '</b></li>';
+      }).join("");
+      const subtotal = customOrderSubtotalCents(data);
+      $("custom-order-total").textContent = money(subtotal);
+      $("custom-order-minimum-message").textContent = subtotal < minimumOrderCents
+        ? "Pedido mínimo de " + money(minimumOrderCents) + ". Acrescente " + money(minimumOrderCents - subtotal) + " em produtos para continuar."
+        : "Pedido mínimo atingido.";
+    }
+
+    async function openOrderSheet(isCustomOrder) {
+      const data = state.baskets.get(state.activeKey);
+      if (isCustomOrder && (!data || data.customOrder !== true)) return;
+      $("order-title").textContent = isCustomOrder ? "Pedido personalizado" : "Encomendar cesta";
+      $("custom-order-summary").hidden = !isCustomOrder;
+      if (isCustomOrder) renderCustomOrderSummary(data);
+      showSheet("order-sheet");
+      loadDeliveryOptions();
+      if (state.catalogCode && !state.identityLookupStarted) {
+        state.identityLookupStarted = true;
+        $("lookup-message").textContent = "Identificando seu cadastro…";
+        try {
+          const identity = await request("resolve_identity_code", { params: { code: state.catalogCode } });
+          const phone = phoneDigits(identity.phone_e164);
+          if (!normalizeCheckoutPhone(phone).phone) throw new Error("invalid_identity_phone");
+          $("customer-phone").value = phone;
+          state.catalogCode = "";
+          const currentUrl = new URL(window.location.href);
+          currentUrl.searchParams.delete("catalog_code");
+          window.history.replaceState({}, "", currentUrl.pathname + currentUrl.search + currentUrl.hash);
+          await lookupCustomer();
+        } catch (_) {
+          $("lookup-message").textContent = "Não foi possível identificar pelo link. Digite seu telefone para continuar.";
+          $("customer-phone").focus({ preventScroll: true });
+        }
+      } else {
+        $("customer-phone").focus({ preventScroll: true });
+      }
+    }
+
+    function startCustomOrder() {
+      const selections = state.homeExtraSelections instanceof Map ? Array.from(state.homeExtraSelections.values()) : [];
+      const extraSelections = new Map();
+      selections.forEach((item) => {
+        const id = String(item && item.id || "");
+        const quantity = Math.max(0, Math.trunc(Number(item && item.quantity || 0)));
+        if (id && quantity > 0) extraSelections.set(id, Object.assign({}, item, { id, quantity }));
+      });
+      if (!extraSelections.size) {
+        toast("Escolha pelo menos um produto para montar seu pedido.");
+        return;
+      }
+      state.baskets.set(customOrderKey, {
+        customOrder: true,
+        summary: { name: "Pedido personalizado" },
+        basket: null,
+        items: [],
+        totalCents: 0,
+        orderable: true,
+        extraSelections
+      });
+      state.activeKey = customOrderKey;
+      return openOrderSheet(true);
+    }
+
+    function itemsForOrder(data) {
+      const products = selectedExtraEntries(data).map((item) => ({
+        type: "product", id: item.id, qty: Math.max(0, Math.trunc(Number(item.quantity || 0)))
+      }));
+      if (data.customOrder) return products;
+      return [{
+        type: "basket_mold",
+        id: data.basket.id,
+        qty: 1,
+        composition_number: data.basket.composition_number || 1,
+        components: data.items.map((item) => ({
+          position_id: item.position_id,
+          product_id: item.product_id,
+          quantity: quantityOf(item)
+        }))
+      }, ...products];
+    }
+
     async function lookupCustomer() {
       resetCustomerState("");
       const requestId = ++lookupSequence;
@@ -268,6 +378,10 @@
       const deliveryDate = $("delivery-date").value;
       const dateIsAvailable = state.deliveryOptions.some((option) => option.date === deliveryDate);
       if (!data || !customerHasCheckoutAddress(customer) || !payment || !dateIsAvailable) return;
+      if (data.customOrder && customOrderSubtotalCents(data) < minimumOrderCents) {
+        toast("O pedido personalizado precisa atingir o mínimo de " + money(minimumOrderCents) + ".");
+        return;
+      }
       const recipient = whatsappNumber(customer.phone || $("customer-phone").value);
       if (!recipient) {
         toast("O telefone cadastrado não está em um formato válido.");
@@ -296,22 +410,11 @@
                 complement: customer.address && customer.address.complement || ""
               }
             },
-            items: [{
-              type: "basket_mold",
-              id: data.basket.id,
-              qty: 1,
-              composition_number: data.basket.composition_number || 1,
-              components: data.items.map((item) => ({
-                position_id: item.position_id,
-                product_id: item.product_id,
-                quantity: quantityOf(item)
-              }))
-            }, ...Array.from(data.extraSelections.values()).filter((item) => Number(item.quantity || 0) > 0).map((item) => ({
-              type: "product", id: item.id, qty: Number(item.quantity)
-            }))]
+            items: itemsForOrder(data)
           }
         });
         closeSheet("order-sheet");
+        if (data.customOrder && typeof onCustomOrderSubmitted === "function") onCustomOrderSubmitted();
         toast(result.stock_adjustment
           ? "Pedido " + (result.order_number || "") + " registrado no Admin com ajuste de estoque."
           : "Pedido " + (result.order_number || "") + " registrado no Admin.");
@@ -322,6 +425,7 @@
           required_checkout_data: "A data de entrega é obrigatória. Reabra o checkout para carregar as datas disponíveis e tente novamente.",
           customer_name_required: "O cadastro precisa ter o nome do cliente.",
           all_items_unavailable: "Os produtos ficaram sem estoque. Atualize a cesta e tente novamente.",
+          minimum_order: "O pedido mínimo é R$ 75,00. Acrescente produtos e tente novamente.",
           invalid_whatsapp_phone: "O telefone do cadastro não está em um formato válido.",
           invalid_payment: "A forma de pagamento não foi reconhecida. Selecione novamente e tente outra vez."
         };
@@ -342,29 +446,9 @@
         if (pendingChange) await pendingChange;
         if (state.activeKey !== sizeKey || $("detail-sheet").hidden || !basket.orderable) return;
         closeSheet("detail-sheet");
-        showSheet("order-sheet");
-        loadDeliveryOptions();
-        if (state.catalogCode && !state.identityLookupStarted) {
-          state.identityLookupStarted = true;
-          $("lookup-message").textContent = "Identificando seu cadastro…";
-          try {
-            const identity = await request("resolve_identity_code", { params: { code: state.catalogCode } });
-            const phone = phoneDigits(identity.phone_e164);
-            if (!normalizeCheckoutPhone(phone).phone) throw new Error("invalid_identity_phone");
-            $("customer-phone").value = phone;
-            state.catalogCode = "";
-            const currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.delete("catalog_code");
-            window.history.replaceState({}, "", currentUrl.pathname + currentUrl.search + currentUrl.hash);
-            await lookupCustomer();
-          } catch (_) {
-            $("lookup-message").textContent = "Não foi possível identificar pelo link. Digite seu telefone para continuar.";
-            $("customer-phone").focus({ preventScroll: true });
-          }
-        } else {
-          $("customer-phone").focus({ preventScroll: true });
-        }
+        await openOrderSheet(false);
       });
+      $("home-extra-checkout").addEventListener("click", startCustomOrder);
       $("lookup-button").addEventListener("click", lookupCustomer);
       $("customer-phone").addEventListener("input", () => {
         resetCustomerState($("customer-phone").value.trim()
@@ -388,7 +472,7 @@
       });
     }
 
-    return { init, loadDeliveryOptions, lookupCustomer, confirmOrder };
+    return { init, loadDeliveryOptions, lookupCustomer, confirmOrder, startCustomOrder };
   }
 
   window.DonaStorefrontCheckout = { create };
