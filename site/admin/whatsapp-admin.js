@@ -50,6 +50,22 @@
     return '<p class="whatsapp-overview-empty">' + esc(message) + "</p>";
   }
 
+  function campaignSnapshotLabel(item) {
+    const snapshot = item.snapshot;
+    if (!snapshot) return "Sem snapshot congelado";
+    const revision = snapshot.is_current_revision
+      ? "Snapshot vigente"
+      : "Snapshot da revisão " + (snapshot.campaign_revision || "anterior") + " · campanha na revisão " + (item.revision || "atual");
+    const template = [snapshot.template_name, snapshot.template_language, human(snapshot.template_category)].filter(Boolean).join(" · ");
+    return [
+      revision,
+      (snapshot.eligible_count || 0) + " elegíveis de " + (snapshot.found_count || 0) + " encontrados",
+      (snapshot.excluded_count || 0) + " excluídos",
+      template ? "Modelo: " + template : "",
+      "Congelado em " + dateLabel(snapshot.created_at),
+    ].filter(Boolean).join(" · ");
+  }
+
   function render(data) {
     const channels = Array.isArray(data.channels) ? data.channels : [];
     const templateItems = Array.isArray(data.templates?.items) ? data.templates.items : [];
@@ -83,7 +99,7 @@
       (item.channel || "Canal não informado") + (item.scheduled_for ? " · Agendada para " + dateLabel(item.scheduled_for) : ""),
       item.status,
       item.scheduled_for || item.started_at || item.created_at,
-      item.started_at ? "Início: " + dateLabel(item.started_at) : "Criada: " + dateLabel(item.created_at),
+      campaignSnapshotLabel(item),
     )).join("") : emptyList("Nenhuma campanha cadastrada.");
     const anaMarkup = ana.length ? ana.map((item) => recordRow(
       human(item.decision || item.status),
