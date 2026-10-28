@@ -536,7 +536,7 @@
       return '<div class="whatsapp-campaign-variable-row" data-campaign-variable-row data-variable-index="' + index + '"><strong>Variável {{' + index + '}}</strong>'
         + '<label class="whatsapp-campaign-field"><span>Preencher com</span><select data-campaign-variable-mode><option value="text"' + (!personalized ? " selected" : "") + '>Texto fixo</option><option value="customer_first_name"' + (personalized ? " selected" : "") + '>Primeiro nome do cliente</option></select></label>'
         + '<label class="whatsapp-campaign-field" data-campaign-variable-fixed' + (personalized ? " hidden" : "") + '><span>Texto fixo</span><input type="text" maxlength="500" data-campaign-variable-value value="' + esc(fixedValue) + '" placeholder="Digite o conteúdo da variável"></label>'
-        + '<label class="whatsapp-campaign-field" data-campaign-variable-first-name' + (!personalized ? " hidden" : "") + '><span>Fallback se o primeiro nome não estiver disponível</span><input type="text" maxlength="100" data-campaign-variable-fallback value="' + esc(fallback) + '" required></label></div>';
+        + '<label class="whatsapp-campaign-field" data-campaign-variable-first-name' + (!personalized ? " hidden" : "") + '><span>Fallback se o primeiro nome não estiver disponível</span><input type="text" maxlength="100" data-campaign-variable-fallback value="' + esc(fallback) + '"></label></div>';
     }).join("");
     editor._campaignTemplate = template;
     if (status) status.textContent = indices.length
