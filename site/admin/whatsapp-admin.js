@@ -908,6 +908,7 @@
         meta_template_mutation_uncertain: "A Meta pode ter recebido a alteração. Sincronize o catálogo antes de tentar de novo.",
         meta_template_name_invalid: "Use o nome em minúsculas, sem espaços ou acentos.",
         meta_template_examples_required: "Preencha um exemplo para cada variável {{n}}.",
+        meta_template_buttons_invalid: "Revise os botões. Links dinâmicos devem usar o endereço oficial de pedido ou ofertas com a variável {{1}} no final.",
         meta_template_body_required: "Informe o texto principal do modelo.",
       };
       throw new Error(messages[data.error] || data.message || data.error || "Não foi possível carregar os modelos.");
@@ -972,12 +973,56 @@
       });
   }
 
+  const TEMPLATE_BUTTON_EXAMPLE = "0123456789abcdef".repeat(4);
+
+  function templateButtonMarkup(button = {}) {
+    const type = String(button?.type || "QUICK_REPLY").toUpperCase();
+    const dynamicUrl = String(button?.url || "").endsWith("{{1}}");
+    const example = Array.isArray(button?.example) && /^[a-f0-9]{64}$/i.test(String(button.example[0] || ""))
+      ? String(button.example[0])
+      : TEMPLATE_BUTTON_EXAMPLE;
+    return '<div class="whatsapp-template-button-row" data-template-button-row>'
+      + '<label>Tipo<select data-template-button-type><option value="QUICK_REPLY"' + (type === "QUICK_REPLY" ? " selected" : "") + '>Resposta rápida</option><option value="URL"' + (type === "URL" ? " selected" : "") + '>Link</option><option value="CATALOG"' + (type === "CATALOG" ? " selected" : "") + '>Catálogo</option></select></label>'
+      + '<label>Texto do botão<input data-template-button-text maxlength="25" value="' + esc(button?.text || "") + '" placeholder="Ex.: Ver pedido"></label>'
+      + '<label data-template-button-url-label' + (type === "URL" ? "" : " hidden") + '>Endereço do link<input data-template-button-url maxlength="2000" value="' + esc(button?.url || "") + '" placeholder="https://donaantonia.com.br/pedido/?c={{1}}"></label>'
+      + '<input type="hidden" data-template-button-example value="' + esc(example) + '">'
+      + '<button class="button button-outline" type="button" data-template-button-remove aria-label="Remover botão">Remover</button>'
+      + '</div>';
+  }
+
+  function syncTemplateButtonRow(row) {
+    if (!row) return;
+    const type = row.querySelector("[data-template-button-type]")?.value || "QUICK_REPLY";
+    const text = row.querySelector("[data-template-button-text]");
+    const urlLabel = row.querySelector("[data-template-button-url-label]");
+    const url = row.querySelector("[data-template-button-url]")?.value || "";
+    if (text) {
+      text.required = type !== "CATALOG";
+      text.placeholder = type === "CATALOG" ? "Opcional" : "Ex.: Ver pedido";
+    }
+    if (urlLabel) urlLabel.hidden = type !== "URL";
+    const example = row.querySelector("[data-template-button-example]");
+    if (example && type === "URL" && url.endsWith("{{1}}") && !/^[a-f0-9]{64}$/i.test(example.value)) {
+      example.value = TEMPLATE_BUTTON_EXAMPLE;
+    }
+  }
+
+  function syncTemplateButtonControls(host) {
+    const list = host?.querySelector("[data-template-button-list]");
+    const add = host?.querySelector("[data-template-button-add]");
+    if (!list || !add) return;
+    const rows = Array.from(list.querySelectorAll("[data-template-button-row]"));
+    rows.forEach(syncTemplateButtonRow);
+    add.disabled = rows.length >= 10;
+  }
+
   function templateEditorMarkup(item) {
     const editing = Boolean(item?.id);
     const components = Array.isArray(item?.components) ? item.components : [];
     const header = templateComponent(components, "HEADER");
     const body = templateComponent(components, "BODY");
     const footer = templateComponent(components, "FOOTER");
+    const buttons = templateComponent(components, "BUTTONS")?.buttons || [];
     const headerText = header && String(header.format || "").toUpperCase() === "TEXT" ? header.text || "" : "";
     const headerExample = Array.isArray(header?.example?.header_text) ? header.example.header_text.join(" | ") : "";
     const bodyExampleRows = Array.isArray(body?.example?.body_text) ? body.example.body_text : [];
@@ -985,7 +1030,7 @@
     const category = String(item?.category || "").toUpperCase();
     const editable = !editing || (["UTILITY", "MARKETING"].includes(category) && templateComponentsEditable(components));
     const editWarning = !editable
-      ? '<p class="whatsapp-template-editor-warning">A edição simples não suporta esta categoria, mídia ou botões. O conteúdo permanece no catálogo.</p>'
+      ? '<p class="whatsapp-template-editor-warning">A edição simples não suporta esta categoria ou cabeçalho de mídia. O conteúdo permanece no catálogo.</p>'
       : editing && bodyExampleRows.length > 1
         ? '<p class="whatsapp-template-editor-warning">Este modelo tem vários exemplos de variáveis. A edição simples enviará somente o primeiro conjunto à Meta.</p>'
         : "";
@@ -1000,7 +1045,10 @@
       + '<label class="whatsapp-template-editor-wide">Exemplo do cabeçalho<textarea name="header_examples" rows="2" placeholder="Maria | amanhã">' + esc(headerExample) + '</textarea><small>Use somente se o cabeçalho tiver variáveis.</small></label>'
       + '<label class="whatsapp-template-editor-wide">Texto principal<textarea name="body" data-template-body rows="5" maxlength="1024" required>' + esc(body?.text || "") + '</textarea></label>'
       + '<label class="whatsapp-template-editor-wide">Exemplos das variáveis<textarea name="body_examples" rows="2" placeholder="Maria | amanhã">' + esc(bodyExample) + '</textarea><small>Use um exemplo para cada variável {{1}}, {{2}} e assim por diante, separados por |.</small></label>'
-      + '<label class="whatsapp-template-editor-wide">Rodapé opcional<input name="footer" maxlength="60" value="' + esc(footer?.text || "") + '"></label></div>'
+      + '<label class="whatsapp-template-editor-wide">Rodapé opcional<input name="footer" maxlength="60" value="' + esc(footer?.text || "") + '"></label>'
+      + '<div class="whatsapp-template-editor-wide"><div class="whatsapp-template-button-heading"><strong>Botões opcionais</strong><button class="button button-outline" type="button" data-template-button-add' + (buttons.length >= 10 ? " disabled" : "") + '>Adicionar botão</button></div>'
+      + '<div class="whatsapp-template-button-list" data-template-button-list>' + buttons.map((button) => templateButtonMarkup(button)).join("") + '</div>'
+      + '<small class="admin-muted">Respostas rápidas, links ou botão de catálogo. A Meta fará a validação final.</small></div></div>'
       + editWarning
       + '<p class="admin-muted" data-template-editor-status role="status" aria-live="polite"></p><div class="whatsapp-template-editor-actions"><button class="button button-primary" type="submit"' + (!editable ? " disabled" : "") + '>' + (editing ? "Enviar alteração à Meta" : "Enviar para análise da Meta") + '</button></div></form></section>';
   }
@@ -1011,6 +1059,7 @@
     if (!root || !host || !templateAdminAccountId) return;
     if (!templateId) {
       host.innerHTML = templateEditorMarkup(null);
+      syncTemplateButtonControls(host);
       root.querySelector('[data-template-editor-form] [name="category"]')?.focus();
       return;
     }
@@ -1025,6 +1074,7 @@
       return;
     }
     host.innerHTML = templateEditorMarkup(item);
+    syncTemplateButtonControls(host);
     host.querySelector('[data-template-editor-form] [data-template-body]')?.focus();
   }
 
@@ -1035,6 +1085,26 @@
     const bodyValue = form.querySelector("[data-template-body]")?.value.trim() || "";
     const footerValue = form.querySelector('[name="footer"]')?.value.trim() || "";
     const examplesRaw = form.querySelector('[name="body_examples"]')?.value || "";
+    const buttonRows = Array.from(form.querySelectorAll("[data-template-button-row]"));
+    if (buttonRows.length > 10) throw new Error("A Meta permite até 10 botões por modelo.");
+    const buttons = buttonRows.map((row) => {
+      const type = String(row.querySelector("[data-template-button-type]")?.value || "QUICK_REPLY").toUpperCase();
+      const text = row.querySelector("[data-template-button-text]")?.value.trim() || "";
+      if (!["QUICK_REPLY", "URL", "CATALOG"].includes(type)) throw new Error("Selecione um tipo válido para cada botão.");
+      if (type !== "CATALOG" && !text) throw new Error("Informe o texto de cada botão.");
+      if (text.length > 25) throw new Error("O texto do botão pode ter até 25 caracteres.");
+      if (type === "CATALOG") return text ? { type, text } : { type };
+      if (type === "QUICK_REPLY") return { type, text };
+      const url = row.querySelector("[data-template-button-url]")?.value.trim() || "";
+      if (!url) throw new Error("Informe o endereço do botão de link.");
+      if (/\{\{\d+\}\}/.test(url) && !url.endsWith("{{1}}")) throw new Error("O link dinâmico deve terminar com {{1}}.");
+      if (url.endsWith("{{1}}")) {
+        const example = row.querySelector("[data-template-button-example]")?.value || TEMPLATE_BUTTON_EXAMPLE;
+        if (!/^[a-f0-9]{64}$/i.test(example)) throw new Error("Exemplo de link inválido. Sincronize os modelos e tente novamente.");
+        return { type, text, url, example: [example] };
+      }
+      return { type, text, url };
+    });
     const buildExample = (text, raw, type) => {
       const matches = Array.from(String(text || "").matchAll(/\{\{(\d+)\}\}/g));
       if (!matches.length) return null;
@@ -1083,6 +1153,12 @@
       components.push(bodyComponent);
       if (footerValue) components.push({ type: "FOOTER", text: footerValue });
     }
+    const buttonsIndex = components.findIndex((item) => String(item?.type || "").toUpperCase() === "BUTTONS");
+    if (buttons.length) {
+      const buttonComponent = { type: "BUTTONS", buttons };
+      if (buttonsIndex >= 0) components[buttonsIndex] = buttonComponent;
+      else components.push(buttonComponent);
+    } else if (buttonsIndex >= 0) components.splice(buttonsIndex, 1);
     const category = existing ? existing.category : form.querySelector('[name="category"]')?.value;
     return {
       name: existing ? existing.name : form.querySelector('[name="name"]')?.value.trim(),
@@ -1628,6 +1704,11 @@
   });
   const templateRoot = $("whatsapp-templates-content");
   templateRoot?.addEventListener("change", (event) => {
+    const buttonType = event.target instanceof HTMLSelectElement ? event.target.closest("[data-template-button-type]") : null;
+    if (buttonType) {
+      syncTemplateButtonRow(buttonType.closest("[data-template-button-row]"));
+      return;
+    }
     const select = event.target instanceof HTMLSelectElement ? event.target.closest("[data-template-account]") : null;
     if (!select) return;
     templateAdminAccountId = select.value;
@@ -1643,6 +1724,18 @@
     if (target?.closest("[data-template-load]")) loadTemplateAdminCatalog(false);
     else if (target?.closest("[data-template-sync]")) loadTemplateAdminCatalog(true);
     else if (target?.closest("[data-template-new]")) openTemplateEditor("");
+    else if (target?.closest("[data-template-button-add]")) {
+      const host = target.closest("[data-template-editor-host]");
+      const list = host?.querySelector("[data-template-button-list]");
+      if (list && list.querySelectorAll("[data-template-button-row]").length < 10) {
+        list.insertAdjacentHTML("beforeend", templateButtonMarkup());
+        syncTemplateButtonControls(host);
+      }
+    } else if (target?.closest("[data-template-button-remove]")) {
+      const host = target.closest("[data-template-editor-host]");
+      target.closest("[data-template-button-row]")?.remove();
+      syncTemplateButtonControls(host);
+    }
     else if (target?.closest("[data-template-editor-close]")) {
       const editor = templateRoot.querySelector("[data-template-editor-host]");
       if (editor) editor.innerHTML = "";
