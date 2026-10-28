@@ -133,20 +133,26 @@
             }
           });
           const byPosition = new Map((response.positions || []).map((row) => [String(row.position_id), row]));
+          const loadedOptions = [];
           for (const item of targets) {
             const result = byPosition.get(String(item.position_id));
             if (!result) throw new Error("Missing basket options result.");
-            item._alternatives = Array.isArray(result.alternatives) ? result.alternatives : [];
-            item.alternative_count = Number(result.alternative_count || 0);
-            if (item.alternative_count > item._alternatives.length && item.alternative_count <= 100) {
-              item._alternatives = await optionsForItem(data.basket, Object.assign({}, item, {
-                alternatives: item._alternatives,
-                alternative_count: item.alternative_count
+            const alternativeCount = Number(result.alternative_count || 0);
+            let alternatives = Array.isArray(result.alternatives) ? result.alternatives : [];
+            if (alternativeCount > alternatives.length) {
+              alternatives = await optionsForItem(data.basket, Object.assign({}, item, {
+                alternatives,
+                alternative_count: alternativeCount
               }));
             }
+            loadedOptions.push({ item, alternatives, alternativeCount });
+          }
+          loadedOptions.forEach(({ item, alternatives, alternativeCount }) => {
+            item._alternatives = alternatives;
+            item.alternative_count = alternativeCount;
             item._optionsLoaded = true;
             item._optionsError = false;
-          }
+          });
         } catch (_) {
           targets.forEach((item) => { item._optionsError = true; });
         } finally {
