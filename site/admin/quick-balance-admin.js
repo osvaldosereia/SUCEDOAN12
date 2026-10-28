@@ -25,11 +25,29 @@
   let quantityValue = "";
   let keypadDraft = "";
   let scanTimer = 0;
+  let scanBurstStartedAt = 0;
+  let scanBurstLastAt = 0;
+  let scanBurstLastLength = 0;
+  let scanBurstDigitCount = 0;
   let lookupSequence = 0;
+  let lookupBusy = false;
   let savedCurrent = false;
   let saving = false;
 
   function digits(value) { return String(value || "").replace(/\D/g, ""); }
+  function resetScanBurst() {
+    scanBurstStartedAt = 0;
+    scanBurstLastAt = 0;
+    scanBurstLastLength = 0;
+    scanBurstDigitCount = 0;
+  }
+  function completeScan() {
+    if (lookupBusy) return;
+    window.clearTimeout(scanTimer);
+    scanTimer = 0;
+    resetScanBurst();
+    lookup(scanInput.value);
+  }
   function quantityNumber(value) {
     const text = String(value || "").trim().replace(",", ".");
     if (!text || text === ".") return null;
@@ -121,7 +139,6 @@
       stock_ready: Number.isFinite(currentStock),
       is_active: product.is_active === true,
     };
-    currentEan = digits(scanInput.value);
     quantityValue = currentProduct.stock_ready ? String(currentProduct.current_stock).replace(".", ",") : "";
     savedCurrent = false;
     saving = false;
@@ -157,13 +174,18 @@
     updateSaveButton();
   }
   async function lookup(value) {
+    if (lookupBusy) return;
     if (currentProduct && !savedCurrent) {
       scanInput.value = "";
-      scanInput.disabled = true;
-      searchButton.disabled = true;
-      setStatus("quick-balance-scan-status", "Salve este balanço antes de ler o próximo produto.", "error");
+      scanInput.disabled = false;
+      searchButton.disabled = false;
+      setStatus("quick-balance-scan-status", "Salve este balanço antes de ler outro produto.", "error");
+      scanInput.focus({ preventScroll: true });
       return;
     }
+    window.clearTimeout(scanTimer);
+    scanTimer = 0;
+    resetScanBurst();
     const ean = digits(value);
     if (ean.length < 8 || ean.length > 14) {
       scanInput.value = "";
@@ -174,13 +196,14 @@
       return;
     }
     const requestId = ++lookupSequence;
+    lookupBusy = true;
     currentProduct = null;
     currentEan = ean;
     productCard.hidden = true;
     saveButton.disabled = true;
     nextButton.hidden = true;
     scanInput.value = "";
-    scanInput.disabled = true;
+    scanInput.disabled = false;
     setStatus("quick-balance-scan-status", "Buscando produto…", "neutral");
     searchButton.disabled = true;
     try {
@@ -188,19 +211,22 @@
       if (requestId !== lookupSequence) return;
       if (!data.found || !data.product) {
         setStatus("quick-balance-scan-status", data.message || "Produto não encontrado para este EAN.", "error");
-        scanInput.disabled = false;
-        searchButton.disabled = false;
         scanInput.focus({ preventScroll: true });
         return;
       }
       renderProduct(data);
       setStatus("quick-balance-scan-status", "Produto localizado. Confira e salve a contagem.", "success");
+      scanInput.focus({ preventScroll: true });
     } catch (error) {
       if (requestId === lookupSequence) {
         setStatus("quick-balance-scan-status", error.message || "Não foi possível buscar o produto.", "error");
+        scanInput.focus({ preventScroll: true });
+      }
+    } finally {
+      if (requestId === lookupSequence) {
+        lookupBusy = false;
         scanInput.disabled = false;
         searchButton.disabled = false;
-        scanInput.focus({ preventScroll: true });
       }
     }
   }
@@ -278,14 +304,39 @@
 
   scanForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    window.clearTimeout(scanTimer);
-    lookup(scanInput.value);
+    completeScan();
   });
-  scanInput.addEventListener("input", () => {
+  scanInput.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && !(event.key === "Tab" && digits(scanInput.value).length >= 8)) return;
+    event.preventDefault();
+    completeScan();
+  });
+  scanInput.addEventListener("input", (event) => {
+    if (lookupBusy) return;
+    const now = Date.now();
+    const length = digits(scanInput.value).length;
+    const inputType = String(event.inputType || "");
+    const addedDigits = Math.max(0, length - scanBurstLastLength);
+    const pastedValue = inputType.startsWith("insertFromPaste") || inputType.startsWith("insertFromDrop") || addedDigits >= 8;
+
+    if (now - scanBurstLastAt > 750) {
+      scanBurstStartedAt = now;
+      scanBurstDigitCount = 0;
+    }
+    scanBurstDigitCount += addedDigits;
+    scanBurstLastAt = now;
+    scanBurstLastLength = length;
+
+    const rapidReaderInput = scanBurstDigitCount >= 8 && now - scanBurstStartedAt <= 2500;
+    if (length < 8 || length > 14 || (!pastedValue && !rapidReaderInput)) return;
+
     window.clearTimeout(scanTimer);
-    const ean = digits(scanInput.value);
-    if (ean.length < 8 || ean.length > 14) return;
-    scanTimer = window.setTimeout(() => lookup(scanInput.value), 520);
+    scanTimer = window.setTimeout(() => {
+      const ean = digits(scanInput.value);
+      scanTimer = 0;
+      resetScanBurst();
+      if (ean.length >= 8 && ean.length <= 14) lookup(ean);
+    }, pastedValue ? 160 : 450);
   });
   view.querySelectorAll("[data-count-step]").forEach((button) => {
     button.addEventListener("click", () => adjustQuantity(Number(button.dataset.countStep) || 0));

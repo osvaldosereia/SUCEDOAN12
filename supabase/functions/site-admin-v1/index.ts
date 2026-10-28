@@ -41,6 +41,11 @@ const EDITABLE_TEXT_FIELDS = [
 ];
 const EDITABLE_NUMBER_FIELDS = ["price", "offer_price", "cost", "stock", "min_stock"];
 const EDITABLE_BOOLEAN_FIELDS = ["is_active", "is_offer", "is_whatsapp_active", "is_upsell", "storefront_featured"];
+const MOST_SOLD_TAG = "mais-vendidos";
+function isMostSoldTag(value: unknown) {
+  return String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLocaleLowerCase("pt-BR")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") === MOST_SOLD_TAG;
+}
 
 function corsHeaders(req: Request) {
   const origin = req.headers.get("origin") || "";
@@ -451,9 +456,15 @@ async function productSave(input: any) {
   const sortOrder = integer(input.sort_order ?? 0, 0, 2147483647);
   if (sortOrder === null) return { status: 400, error: "invalid_sort_order", message: "Ordem inválida." };
   payload.sort_order = sortOrder;
-  payload.tags = Array.isArray(input.tags)
+  const inputTags = Array.isArray(input.tags)
     ? input.tags.map((tag: unknown) => clean(tag, 60)).filter(Boolean).slice(0, 40)
     : clean(input.tags, 1000).split(",").map((tag) => clean(tag, 60)).filter(Boolean).slice(0, 40);
+  const showInMostSold = payload.storefront_featured === true || inputTags.some(isMostSoldTag);
+  const regularTags = inputTags.filter((tag) => !isMostSoldTag(tag)).slice(0, 40);
+  payload.storefront_featured = showInMostSold;
+  payload.tags = showInMostSold && regularTags.length < 40
+    ? [...regularTags, MOST_SOLD_TAG]
+    : regularTags;
 
   if (id) {
     const metadata = await adminProductMetadataForEdit(id);
@@ -468,6 +479,33 @@ async function productSave(input: any) {
     : db.from("products").insert({ ...payload, is_active: input.is_active !== false });
   const result = await query.select(PRODUCT_COLUMNS).single();
   if (result.error) throw result.error;
+  return { product: result.data };
+}
+
+async function productSetMostSold(input: any) {
+  const id = uuid(input.id ?? input.product_id);
+  const isMostSold = input.is_most_sold;
+  if (!id || typeof isMostSold !== "boolean") {
+    return { status: 400, error: "invalid_most_sold_status", message: "Produto ou situação inválida." };
+  }
+
+  const current = await db.from("products").select("id,name,tags").eq("id", id).maybeSingle();
+  if (current.error) throw current.error;
+  if (!current.data) return { status: 404, error: "product_not_found", message: "Produto não encontrado." };
+
+  const tags = (Array.isArray(current.data.tags) ? current.data.tags : [])
+    .map((tag: unknown) => clean(tag, 60)).filter(Boolean).filter((tag: string) => !isMostSoldTag(tag)).slice(0, 40);
+  if (isMostSold && tags.length < 40) tags.push(MOST_SOLD_TAG);
+  const metadata = await adminProductMetadataForEdit(id);
+  if (!metadata) return { status: 404, error: "product_not_found", message: "Produto não encontrado." };
+
+  const result = await db.from("products")
+    .update({ storefront_featured: isMostSold, tags, metadata })
+    .eq("id", id)
+    .select("id,name,storefront_featured,tags")
+    .maybeSingle();
+  if (result.error) throw result.error;
+  if (!result.data) return { status: 404, error: "product_not_found", message: "Produto não encontrado." };
   return { product: result.data };
 }
 
@@ -3204,6 +3242,7 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "GET" && action === "products") result = await productSearch(input);
     else if (req.method === "POST" && action === "product_save") result = await productSave(input);
     else if (req.method === "POST" && action === "product_set_active") result = await productSetActive(input);
+    else if (req.method === "POST" && action === "product_set_most_sold") result = await productSetMostSold(input);
     else if (req.method === "POST" && action === "basket_save") result = await basketSave(input);
     else if (req.method === "POST" && action === "basket_set_active") result = await basketSetActive(input);
     else if (req.method === "GET" && action === "orders_list") result = await ordersList(input);

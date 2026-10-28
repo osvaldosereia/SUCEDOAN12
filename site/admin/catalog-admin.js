@@ -220,12 +220,22 @@
     return Object.fromEntries(new FormData(form).entries());
   }
 
+  const MOST_SOLD_TAG = "mais-vendidos";
+  function isMostSoldTag(value) {
+    return String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLocaleLowerCase("pt-BR")
+      .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") === MOST_SOLD_TAG;
+  }
+  function isMostSoldProduct(product) {
+    const tags = Array.isArray(product?.tags) ? product.tags : [];
+    return product?.storefront_featured === true || tags.some(isMostSoldTag);
+  }
+
   function renderProducts(products, append) {
     const host = $("products-result");
     const rows = products.map((product) => `<article class="admin-product-card">
       ${product.image_url ? `<img src="${esc(product.image_url)}" alt="" width="64" height="64" loading="lazy" decoding="async">` : '<span class="product-image-placeholder">DA</span>'}
       <div class="admin-product-info"><strong>${esc(product.name)}</strong><span>${esc([product.brand, product.sku && `SKU ${product.sku}`].filter(Boolean).join(" · "))}</span><b>${money(effectivePrice(product))}${product.is_offer ? " · oferta" : ""}</b></div>
-      <div class="admin-product-actions"><label class="product-active-toggle"><input type="checkbox" data-toggle-product="${esc(product.id)}" aria-label="Ativar ${esc(product.name)} no catálogo" ${product.is_active === true ? "checked" : ""}><span class="product-switch" aria-hidden="true"></span><span>${product.is_active === true ? "Ativo" : "Inativo"}</span></label><button class="button button-outline" type="button" data-edit-product="${esc(product.id)}">Editar</button></div>
+      <div class="admin-product-actions"><label class="product-active-toggle"><input type="checkbox" data-toggle-product="${esc(product.id)}" aria-label="Ativar ${esc(product.name)} no catálogo" ${product.is_active === true ? "checked" : ""}><span class="product-switch" aria-hidden="true"></span><span>${product.is_active === true ? "Ativo" : "Inativo"}</span></label><label class="product-active-toggle product-most-sold-toggle"><input type="checkbox" data-toggle-most-sold="${esc(product.id)}" aria-label="Exibir ${esc(product.name)} em Mais Vendidos" ${isMostSoldProduct(product) ? "checked" : ""}><span class="product-switch" aria-hidden="true"></span><span>Mais Vendidos</span></label><button class="button button-outline" type="button" data-edit-product="${esc(product.id)}">Editar</button></div>
     </article>`).join("");
     if (!append) host.innerHTML = rows || '<p class="admin-muted">Nenhum produto encontrado.</p>';
     else host.insertAdjacentHTML("beforeend", rows);
@@ -289,6 +299,32 @@
     }
   }
 
+  async function setProductMostSold(event) {
+    const input = event.target;
+    if (!input.matches("[data-toggle-most-sold]")) return;
+    const productId = String(input.dataset.toggleMostSold);
+    const isMostSold = input.checked;
+    input.disabled = true;
+    try {
+      const result = await request("product_set_most_sold", {
+        method: "POST",
+        body: { id: productId, is_most_sold: isMostSold }
+      });
+      if (result?.product?.storefront_featured !== isMostSold) {
+        throw new Error("O servidor não confirmou a alteração de Mais Vendidos. Tente novamente.");
+      }
+      const cached = state.productCache.get(productId) || {};
+      state.productCache.set(productId, Object.assign({}, cached, result.product));
+      input.checked = result.product.storefront_featured;
+      toast(isMostSold ? "Produto incluído em Mais Vendidos." : "Produto removido de Mais Vendidos.");
+    } catch (error) {
+      input.checked = !isMostSold;
+      toast(error.message || "Não foi possível alterar Mais Vendidos.");
+    } finally {
+      input.disabled = false;
+    }
+  }
+
   function openProduct(product = null) {
     const form = $("product-form");
     form.reset();
@@ -298,8 +334,10 @@
     const textFields = ["name", "brand", "sku", "gtin", "ncm", "packaging", "unit", "supplier", "category", "subcategory", "subsubcategory", "storefront_category", "sales_category", "validity_date", "gondola", "shelf", "sort_order", "image_url", "description_short", "description_long", "customer_category", "customer_subcategory", "customer_subsubcategory"];
     textFields.forEach((name) => { form.elements[name].value = product?.[name] ?? (name === "sort_order" ? 0 : ""); });
     ["price", "offer_price", "cost", "stock", "min_stock"].forEach((name) => { form.elements[name].value = product?.[name] ?? ""; });
-    form.elements.tags.value = Array.isArray(product?.tags) ? product.tags.join(", ") : product?.tags || "";
-    ["is_active", "is_offer", "is_whatsapp_active", "is_upsell", "storefront_featured"].forEach((name) => { form.elements[name].checked = product ? product[name] === true : ["is_active", "is_whatsapp_active"].includes(name); });
+    const productTags = Array.isArray(product?.tags) ? product.tags : String(product?.tags || "").split(",");
+    form.elements.tags.value = productTags.filter((tag) => !isMostSoldTag(tag)).join(", ");
+    ["is_active", "is_offer", "is_whatsapp_active", "is_upsell"].forEach((name) => { form.elements[name].checked = product ? product[name] === true : ["is_active", "is_whatsapp_active"].includes(name); });
+    form.elements.storefront_featured.checked = product ? isMostSoldProduct(product) : false;
     $("product-dialog").showModal();
   }
 
@@ -309,6 +347,10 @@
     const data = syncProductSearchForm(event.currentTarget);
     data.id = $("product-id").value || null;
     ["is_active", "is_offer", "is_whatsapp_active", "is_upsell", "storefront_featured"].forEach((name) => { data[name] = event.currentTarget.elements[name].checked; });
+    const productTags = String(data.tags || "").split(",").map((tag) => tag.trim()).filter(Boolean);
+    data.storefront_featured = data.storefront_featured === true || productTags.some(isMostSoldTag);
+    data.tags = productTags.filter((tag) => !isMostSoldTag(tag));
+    if (data.storefront_featured) data.tags.push(MOST_SOLD_TAG);
     button.disabled = true;
     button.textContent = "Salvando…";
     $("product-save-message").textContent = "";
@@ -433,6 +475,7 @@
     $("basket-form").addEventListener("submit", saveBasket);
     $("product-form").addEventListener("submit", saveProduct);
     $("products-result").addEventListener("change", setProductActive);
+    $("products-result").addEventListener("change", setProductMostSold);
     $("product-search").addEventListener("submit", (event) => {
       event.preventDefault();
       state.productsQuery = $("product-query").value.trim();

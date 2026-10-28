@@ -18,7 +18,7 @@
   <script src="separation-message-admin.js?v=3" defer></script>
   <script src="whatsapp-admin.js?v=28" defer></script>
   <script src="whatsapp-conversations.js?v=12" defer></script>
-  <script src="quick-balance-admin.js?v=1" defer></script>
+  <script src="quick-balance-admin.js?v=3" defer></script>
   <script src="admin.js?v=16" defer></script>
 </head>
 <body class="admin-page">
@@ -202,7 +202,7 @@
               <button id="quick-balance-search" class="button button-primary" type="submit">Buscar</button>
             </div>
           </form>
-          <p id="quick-balance-scan-status" class="quick-balance-status" role="status" aria-live="polite">Aproxime o leitor e pressione Enter.</p>
+          <p id="quick-balance-scan-status" class="quick-balance-status" role="status" aria-live="polite">Leia o EAN. O produto será buscado automaticamente.</p>
           <article id="quick-balance-product" class="quick-balance-product" hidden>
             <div class="quick-balance-product-summary">
               <img id="quick-balance-image" alt="" width="76" height="76" hidden>
@@ -457,7 +457,8 @@
         <label><input name="is_offer" type="checkbox"> Usar preço de oferta</label>
         <label><input name="is_whatsapp_active" type="checkbox" checked> Ativo no campo de WhatsApp</label>
         <label><input name="is_upsell" type="checkbox"> Produto adicional</label>
-        <label><input name="storefront_featured" type="checkbox"> Destacar na vitrine</label>
+        <label><input name="storefront_featured" type="checkbox"> Exibir em Mais Vendidos</label>
+        <small class="product-featured-help">Este seletor aplica a palavra-chave reservada “mais-vendidos”.</small>
       </div>
       <p id="product-save-message" class="form-message" role="status"></p>
       <footer class="dialog-actions"><button class="button button-outline" type="button" data-dialog-close="product-dialog">Cancelar</button><button id="save-product" class="button button-primary" type="submit">Salvar produto</button></footer>

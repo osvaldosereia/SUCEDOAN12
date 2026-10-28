@@ -865,31 +865,30 @@ async function subcats(url:URL){
 }
 async function productList(url:URL){
   const c=txt(url.searchParams.get("category"),48),sc=txt(url.searchParams.get("subcategory"),100),rawQuery=safeQ(url.searchParams.get("q")),limit=Math.floor(clamp(url.searchParams.get("limit")||24,1,36)),offset=Math.floor(clamp(url.searchParams.get("offset")||0,0,5000));
-  const fold=(value:any)=>String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("pt-BR").replace(/[^a-z0-9]+/g," ").trim();
-  const queryText=fold(rawQuery),terms=queryText.split(/\s+/).filter(Boolean).slice(0,4);
+  const fold=(value:any)=>String(value||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLocaleLowerCase("pt-BR").replace(/[^a-z0-9]+/g," ").trim();
+  const isMostSoldCategory=fold(c)==="mais vendidos";
+  const queryText=fold(rawQuery),terms=queryText.split(/\\s+/).filter(Boolean).slice(0,4);
   const requestedCategories=String(url.searchParams.get("categories")||"").split(",").slice(0,16).map(value=>txt(value,48).toLocaleLowerCase("pt-BR")).filter(Boolean),allowedCategories=new Set(CATEGORIES.map(category=>category.key)),categories=Array.from(new Set(requestedCategories.filter(category=>allowedCategories.has(category)))).slice(0,4);
   if(!c&&requestedCategories.length&&!categories.length)return {ok:true,products:[],next_offset:null};
   const eanIds=await eanCaptureProductIds();if(!eanIds.length)return {ok:true,products:[],next_offset:null};
-  const data=await queryRowsByIds("products","id",eanIds,"id,sku,gtin,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit,is_active,is_whatsapp_active,sales_category",query=>{
-    if(c)query=query.eq("sales_category",c);else if(categories.length)query=query.in("sales_category",categories);
+  const data=await queryRowsByIds("products","id",eanIds,"id,sku,gtin,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit,is_active,is_whatsapp_active,sales_category,storefront_featured,tags,sort_order",query=>{
+    if(!isMostSoldCategory&&c)query=query.eq("sales_category",c);else if(!isMostSoldCategory&&categories.length)query=query.in("sales_category",categories);
     if(sc)query=query.eq("customer_subsubcategory",sc);
     return query.limit(10000);
   });
+  const isMostSoldProduct=(p:any)=>p?.storefront_featured===true||(Array.isArray(p?.tags)&&p.tags.some((tag:any)=>fold(tag)==="mais vendidos"));
   const matches=(p:any)=>{
+    if(isMostSoldCategory&&!isMostSoldProduct(p))return false;
     if(!terms.length)return true;
     const fields=[p.name,p.brand,p.gtin,p.sku,p.packaging].map(fold);
     return terms.every(token=>fields.some(field=>field.includes(token)));
   };
   const byId=new Map(data.filter(matches).map((p:any)=>[String(p.id),p]));
   const ordered=eanIds.filter(id=>byId.has(id));
-  if(terms.length){
-    const rank=(id:string)=>{
-      const p:any=byId.get(id),name=fold(p?.name),brand=fold(p?.brand),code=fold((p?.gtin||"")+" "+(p?.sku||""));
-      if(name===queryText)return 0;
-      if(name.startsWith(queryText))return 1;
-      if(name.includes(queryText))return 2;
-      return 10+terms.reduce((score,token)=>score+(name.startsWith(token)?0:name.includes(token)?1:brand.includes(token)?2:code.includes(token)?3:4),0);
-    };
+  if(isMostSoldCategory&&!terms.length){
+    ordered.sort((a,b)=>Number(byId.get(a)?.sort_order||0)-Number(byId.get(b)?.sort_order||0)||String(byId.get(a)?.name||"").localeCompare(String(byId.get(b)?.name||""),"pt-BR"));
+  }else if(terms.length){
+    const rank=(id:string)=>{const p:any=byId.get(id),name=fold(p?.name),brand=fold(p?.brand),code=fold((p?.gtin||"")+" "+(p?.sku||""));if(name===queryText)return 0;if(name.startsWith(queryText))return 1;if(name.includes(queryText))return 2;return 10+terms.reduce((score,token)=>score+(name.startsWith(token)?0:name.includes(token)?1:brand.includes(token)?2:code.includes(token)?3:4),0)};
     ordered.sort((a,b)=>rank(a)-rank(b)||String(byId.get(a)?.name||"").localeCompare(String(byId.get(b)?.name||""),"pt-BR"));
   }
   // Paginate BUYABLE items only; retain relevance for searches and never create unavailable cards.

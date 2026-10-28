@@ -5,6 +5,7 @@
   const HOME_EXTRA_PREFETCH_MARGIN = "140px 0px";
 
   const EXTRA_CATEGORIES = [
+    { key: "mais_vendidos", label: "Mais Vendidos", special: true },
     { key: "mercearia", label: "Mercearia" },
     { key: "limpeza_lavanderia", label: "Limpeza e lavanderia" },
     { key: "higiene_beleza", label: "Higiene e beleza" },
