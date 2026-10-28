@@ -16,7 +16,8 @@ export function buildAnaCatalogWelcome({firstName='',catalogPath='',linkMode='pe
   const template=String(messageTemplate??ANA_DEFAULT_FIRST_GREETING_MESSAGE).replace(/\r\n/g,'\n').trim();
   const tokens=template.match(/\{[^{}]*\}/g)||[];
   if(template.length<1||template.length>1200||(tokens.filter(token=>token==='{link}').length!==1)||tokens.some(token=>token!=='{link}'&&token!=='{nome}')||/https?:\/\/|www\./i.test(template))return '';
-  return template.replaceAll('{nome}',safeName).replaceAll('{link}',link).slice(0,1200);
+  const message=template.replaceAll('{nome}',safeName).replaceAll('{link}',link);
+  return message.length<=1200?message:'';
 }
 
 export const ANA_DRY_RUN_SCHEMA={
