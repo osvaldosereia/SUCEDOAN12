@@ -659,9 +659,10 @@ async function whatsappMarketingConsentSummary() {
 }
 
 async function whatsappOverview() {
-  const [accountsResult, runtimeResult, templateCountResult, approvedCountResult, templateRowsResult, templateEventsResult, campaignsResult, anaResult, consentSummary] = await Promise.all([
+  const [accountsResult, runtimeResult, campaignExecutionResult, templateCountResult, approvedCountResult, templateRowsResult, templateEventsResult, campaignsResult, anaResult, consentSummary] = await Promise.all([
     db.from("whatsapp_accounts").select("id,slug,display_name,phone_e164,is_active").order("display_name"),
     db.from("whatsapp_channel_runtime_v1").select("whatsapp_account_id,inbound_provider,outbound_provider,capture_enabled,send_enabled,ana_enabled,campaigns_enabled,human_send_enabled,homologated_at,updated_at"),
+    db.from("marketing_campaign_execution_runtime_v1").select("whatsapp_account_id,mode,max_batch_size"),
     db.from("whatsapp_templates_v1").select("id", { count: "exact", head: true }),
     db.from("whatsapp_templates_v1").select("id", { count: "exact", head: true }).eq("status", "approved"),
     db.from("whatsapp_templates_v1")
@@ -673,14 +674,14 @@ async function whatsappOverview() {
       .not("reason", "is", null)
       .order("occurred_at", { ascending: false }).limit(200),
     db.from("marketing_campaigns_v1")
-      .select("id,name,whatsapp_account_id,template_id,filters,status,revision,scheduled_for,created_at,started_at,paused_at,completed_at,failed_at", { count: "exact" })
+      .select("id,name,whatsapp_account_id,template_id,filters,status,revision,manual_batch_mode,scheduled_for,created_at,started_at,paused_at,completed_at,failed_at", { count: "exact" })
       .order("created_at", { ascending: false }).limit(100),
     db.from("whatsapp_ana_jobs_v1")
       .select("id,whatsapp_account_id,status,decision,created_at", { count: "exact" })
       .eq("dry_run", false).order("created_at", { ascending: false }).limit(50),
     whatsappMarketingConsentSummary(),
   ]);
-  for (const result of [accountsResult, runtimeResult, templateCountResult, approvedCountResult, templateRowsResult, templateEventsResult, campaignsResult, anaResult]) {
+  for (const result of [accountsResult, runtimeResult, campaignExecutionResult, templateCountResult, approvedCountResult, templateRowsResult, templateEventsResult, campaignsResult, anaResult]) {
     if (result.error) throw result.error;
   }
 
@@ -729,6 +730,7 @@ async function whatsappOverview() {
 
   const accounts = accountsResult.data || [];
   const runtimeByAccount = new Map((runtimeResult.data || []).map((row: any) => [row.whatsapp_account_id, row]));
+  const campaignExecutionByAccount = new Map((campaignExecutionResult.data || []).map((row: any) => [row.whatsapp_account_id, row]));
   const accountById = new Map(accounts.map((row: any) => [row.id, row]));
   const templateKey = (accountId: any, name: any, language: any) =>
     [String(accountId || ""), clean(name, 160).toLowerCase(), clean(language, 24).toLowerCase()].join("|");
@@ -803,6 +805,10 @@ async function whatsappOverview() {
       channel: clean(accountById.get(row.whatsapp_account_id)?.display_name || "", 120),
       status: clean(row.status, 40),
       revision: Number(row.revision) || 0,
+      manual_batch_mode: row.manual_batch_mode === true,
+      execution_mode: clean((campaignExecutionByAccount.get(row.whatsapp_account_id) as any)?.mode || "off", 24),
+      campaigns_enabled: (runtimeByAccount.get(row.whatsapp_account_id) as any)?.campaigns_enabled === true,
+      send_enabled: (runtimeByAccount.get(row.whatsapp_account_id) as any)?.send_enabled === true,
       scheduled_for: row.scheduled_for || null,
       created_at: row.created_at || null,
       started_at: row.started_at || null,
@@ -1502,6 +1508,8 @@ async function campaignAdminRpc(functionName: string, args: Record<string, unkno
       campaigns_disabled: "O envio de campanhas está desativado para este canal.",
       campaign_invalid_transition: "O status atual não permite esta ação.",
       invalid_idempotency_key: "Não foi possível identificar esta operação.",
+      manual_batch_already_active: "Já existe um lote manual ativo para esta campanha.",
+      manual_campaign_requires_explicit_batch: "Esta campanha exige a execução controlada em lote.",
     };
     return { error, message: messages[error] || "A operação não foi concluída.", status: 409 };
   }
@@ -1631,6 +1639,91 @@ async function whatsappCampaignCancel(input: any) {
     status: clean(saved.status, 32),
     skipped_dispatches: campaignAdminCount(saved.skipped_dispatches),
     cancelled_outboxes: campaignAdminCount(saved.cancelled_outboxes),
+  };
+}
+
+
+async function whatsappCampaignManualBatch(input: any) {
+  const campaignId = uuid(input.campaign_id);
+  const revision = Number(input.revision);
+  const idempotencyKey = uuid(input.idempotency_key);
+  if (!campaignId || !Number.isInteger(revision) || revision < 0 || !idempotencyKey) {
+    return { error: "invalid_manual_batch", message: "Dados inválidos para iniciar o lote.", status: 400 };
+  }
+  const current = await db.from("marketing_campaigns_v1")
+    .select("revision,status,manual_batch_mode")
+    .eq("id", campaignId)
+    .maybeSingle();
+  if (current.error) throw current.error;
+  if (!current.data) return { error: "campaign_not_found", message: "Campanha não encontrada.", status: 404 };
+  if (Number(current.data.revision) !== revision) {
+    return { error: "revision_conflict", message: "A campanha mudou em outra sessão. Atualize a lista e tente novamente.", status: 409 };
+  }
+  const status = clean(current.data.status, 32).toLowerCase();
+  const allowed = status === "approved" || (status === "paused" && current.data.manual_batch_mode === true);
+  if (!allowed) {
+    return { error: "campaign_invalid_transition", message: "O lote manual exige campanha aprovada ou lote pausado.", status: 409 };
+  }
+
+  const begun: any = await campaignAdminRpc("marketing_begin_manual_campaign_batch_v1", {
+    p_campaign_id: campaignId,
+    p_expected_revision: revision,
+    p_idempotency_key: idempotencyKey,
+    p_limit: 10,
+  }, "manual_batch_start_failed");
+  if (begun.error) return begun;
+  const batchId = uuid(begun.batch_id);
+  if (!batchId) return { error: "manual_batch_start_failed", message: "Não foi possível identificar o lote iniciado.", status: 409 };
+  if (begun.status === "no_work") {
+    return { campaign_id: campaignId, status: "no_work", claimed_count: 0, accepted_count: 0, mode: clean(begun.mode, 24) };
+  }
+  if (begun.worker_started_at) {
+    if (begun.replayed && ["completed", "no_work"].includes(clean(begun.status, 24))) {
+      return { campaign_id: campaignId, status: clean(begun.status, 24), already_processed: true, claimed_count: campaignAdminCount(begun.claimed_count), accepted_count: 0 };
+    }
+    return { error: "manual_batch_result_uncertain", message: "Este lote já foi adquirido pelo worker. Confira o resultado no histórico antes de tentar outro.", status: 409 };
+  }
+
+  const workerKeyResult = await db.rpc("marketing_campaign_worker_internal_key_v1");
+  if (workerKeyResult.error) throw workerKeyResult.error;
+  const workerKey = typeof workerKeyResult.data === "string" ? workerKeyResult.data : "";
+  if (!workerKey) {
+    return { error: "manual_batch_worker_unavailable", message: "O worker de campanhas não está disponível.", status: 503 };
+  }
+
+  let workerResponse: Response;
+  try {
+    workerResponse = await fetch(SUPABASE_URL.replace(/\/+$/, "") + "/functions/v1/whatsapp-marketing-worker-v1", {
+      method: "POST",
+      headers: {
+        apikey: SERVICE_ROLE_KEY,
+        "x-dona-antonia-marketing-worker-key": workerKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ manual_batch_id: batchId }),
+      signal: AbortSignal.timeout(130000),
+    });
+  } catch {
+    return { error: "manual_batch_result_uncertain", message: "O worker não confirmou o resultado do lote. Confira o histórico antes de tentar novamente.", status: 409 };
+  }
+
+  const workerData: any = await workerResponse.json().catch(() => ({}));
+  if (!workerResponse.ok || workerData?.ok !== true) {
+    return { error: "manual_batch_result_uncertain", message: "O worker não confirmou o resultado do lote. Confira o histórico antes de tentar novamente.", status: 409 };
+  }
+  const results = Array.isArray(workerData.results) ? workerData.results : [];
+  const countOutcome = (outcome: string) => results.filter((item: any) => item?.status === outcome).length;
+  return {
+    campaign_id: campaignId,
+    status: clean(workerData.campaign_status || workerData.status || "processed", 32),
+    mode: clean(workerData.mode, 24),
+    claimed_count: campaignAdminCount(workerData.claimed),
+    processed_count: campaignAdminCount(workerData.processed),
+    accepted_count: countOutcome("accepted"),
+    failed_count: countOutcome("failed"),
+    retry_count: countOutcome("retry"),
+    uncertain_count: countOutcome("uncertain"),
+    skipped_count: countOutcome("skipped"),
   };
 }
 
@@ -2415,6 +2508,7 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "whatsapp_campaign_schedule") result = await whatsappCampaignSchedule(input);
     else if (req.method === "POST" && action === "whatsapp_campaign_pause") result = await whatsappCampaignPause(input);
     else if (req.method === "POST" && action === "whatsapp_campaign_cancel") result = await whatsappCampaignCancel(input);
+    else if (req.method === "POST" && action === "whatsapp_campaign_manual_batch") result = await whatsappCampaignManualBatch(input);
     else if (req.method === "POST" && action === "whatsapp_ana_admin_test") result = await whatsappAnaAdminTest(input);
     else if (req.method === "POST" && action === "whatsapp_ana_admin_publish") result = await whatsappAnaAdminPublish(input);
     else if (req.method === "POST" && action === "whatsapp_ana_admin_rollback") result = await whatsappAnaAdminRollback(input);
