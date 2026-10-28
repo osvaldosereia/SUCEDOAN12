@@ -632,7 +632,7 @@ async function whatsappOverview() {
       .order("updated_at", { ascending: false }).limit(100),
     db.from("whatsapp_template_events_v1")
       .select("whatsapp_account_id,template_name,language,status,reason,occurred_at")
-      .eq("status", "rejected")
+      .ilike("status", "rejected")
       .not("reason", "is", null)
       .order("occurred_at", { ascending: false }).limit(200),
     db.from("marketing_campaigns_v1")
