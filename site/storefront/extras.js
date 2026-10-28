@@ -2,6 +2,8 @@
   "use strict";
 
   const HOME_EXTRA_PAGE_SIZE = 4;
+  const BASKET_EXTRA_INITIAL_PAGE_SIZE = 3;
+  const BASKET_EXTRA_MORE_PAGE_SIZE = 15;
   const HOME_EXTRA_PREFETCH_MARGIN = "140px 0px";
 
   const EXTRA_CATEGORIES = [
@@ -351,7 +353,9 @@
         let pages = 0;
         do {
           const result = await request("products", { params: {
-            category: category.key, limit: 3, offset: category.nextOffset
+            category: category.key,
+            limit: category.loaded ? BASKET_EXTRA_MORE_PAGE_SIZE : BASKET_EXTRA_INITIAL_PAGE_SIZE,
+            offset: category.nextOffset
           } });
           fetched = Array.isArray(result.products) ? result.products : [];
           category.nextOffset = result.next_offset == null ? category.nextOffset : Number(result.next_offset);
