@@ -205,7 +205,7 @@ export function OrdersBoard() {
 					{result.orders.map((order) => (
 						<Link
 							className="order-list-card"
-							href={`/pedidos/${encodeURIComponent(order.id)}`}
+							href={`/pedidos/detalhe?id=${encodeURIComponent(order.id)}`}
 							key={order.id}
 						>
 							<div className="order-list-main">

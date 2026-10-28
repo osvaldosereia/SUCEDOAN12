@@ -29,6 +29,10 @@ const statusNames: Record<string, string> = {
 	cancelled: "Cancelado",
 };
 
+export function generateStaticParams() {
+	return [];
+}
+
 function date(value: string | null): string {
 	if (!value) return "Não informada";
 	const parsed = new Date(value);

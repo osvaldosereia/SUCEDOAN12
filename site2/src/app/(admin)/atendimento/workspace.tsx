@@ -734,7 +734,7 @@ function CustomerContext({
 							{intent.orderId && (
 								<Link
 									className="inbox-context-intent-link"
-									href={`/pedidos/${encodeURIComponent(intent.orderId)}`}
+									href={`/pedidos/detalhe?id=${encodeURIComponent(intent.orderId)}`}
 								>
 									Abrir pedido
 									<ArrowUpRight aria-hidden="true" size={13} />

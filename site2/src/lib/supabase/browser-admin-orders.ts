@@ -1,7 +1,16 @@
+import { isOrderSeparatorKey } from "@/lib/orders/separators";
 import type {
+	AdminOrderDetail,
 	OrderBoardResult,
+	OrderDetailResult,
+	OrderFiscalStatus,
+	OrderGatewayError,
 	OrderLane,
 	OrderListItem,
+	OrderMutationError,
+	OrderMutationResult,
+	OrderSeparation,
+	OrderSeparationItem,
 } from "@/lib/supabase/admin-orders";
 import { createClient } from "@/lib/supabase/client";
 import { supabasePublishableKey, supabaseUrl } from "@/lib/supabase/config";
@@ -33,6 +42,21 @@ function safeInteger(value: unknown): number | null {
 	return typeof value === "number" && Number.isFinite(value)
 		? Math.round(value)
 		: null;
+}
+
+function safeQuantity(value: unknown): number {
+	const parsed = typeof value === "number" ? value : Number(value);
+	return Number.isFinite(parsed) ? Math.max(0, Math.min(1_000_000, parsed)) : 0;
+}
+
+function safeHttpsUrl(value: unknown): string | null {
+	if (typeof value !== "string" || value.length > 2048) return null;
+	try {
+		const url = new URL(value);
+		return url.protocol === "https:" ? url.toString() : null;
+	} catch {
+		return null;
+	}
 }
 
 function laneForStatus(status: string): OrderLane | null {
@@ -147,6 +171,448 @@ async function orderOrigins(
 		return result;
 	}
 	return result;
+}
+
+type BrowserGatewayResult =
+	| { ok: true; payload: JsonRecord }
+	| { ok: false; error: OrderGatewayError };
+
+type BrowserAccessError = Exclude<OrderGatewayError, "not_found">;
+
+async function browserAccessToken(): Promise<
+	{ ok: true; token: string } | { ok: false; error: BrowserAccessError }
+> {
+	if (!supabaseUrl || !supabasePublishableKey) {
+		return { ok: false, error: "not_configured" };
+	}
+	try {
+		const supabase = createClient();
+		const { data, error } = await supabase.auth.getSession();
+		const token = data.session?.access_token;
+		return error || !token
+			? { ok: false, error: "not_authenticated" }
+			: { ok: true, token };
+	} catch {
+		return { ok: false, error: "unavailable" };
+	}
+}
+
+async function browserGatewayGet(
+	token: string,
+	action: "order" | "order_separation_get",
+	orderId: string,
+): Promise<BrowserGatewayResult> {
+	if (!supabaseUrl || !supabasePublishableKey) {
+		return { ok: false, error: "not_configured" };
+	}
+	const endpoint = new URL("/functions/v1/admin-products-live-v1", supabaseUrl);
+	endpoint.searchParams.set("action", action);
+	endpoint.searchParams.set("id", orderId);
+	let response: Response;
+	try {
+		response = await fetch(endpoint, {
+			method: "GET",
+			headers: {
+				apikey: supabasePublishableKey,
+				Authorization: `Bearer ${token}`,
+				Accept: "application/json",
+			},
+			cache: "no-store",
+		});
+	} catch {
+		return { ok: false, error: "unavailable" };
+	}
+	if (response.status === 401) return { ok: false, error: "not_authenticated" };
+	if (response.status === 403) return { ok: false, error: "not_authorized" };
+	if (response.status === 404) return { ok: false, error: "not_found" };
+	if (!response.ok) return { ok: false, error: "unavailable" };
+	try {
+		const payload = record(await response.json());
+		return payload?.ok === true
+			? { ok: true, payload }
+			: { ok: false, error: "unavailable" };
+	} catch {
+		return { ok: false, error: "unavailable" };
+	}
+}
+
+type BrowserGatewayPostResult =
+	| { ok: true; payload: JsonRecord }
+	| { ok: false; error: OrderMutationError };
+
+async function browserGatewayPost(
+	token: string,
+	action:
+		| "order_separation_assign"
+		| "order_separation_item_set"
+		| "order_separation_complete"
+		| "order_fiscal_status",
+	body: JsonRecord,
+): Promise<BrowserGatewayPostResult> {
+	if (!supabaseUrl || !supabasePublishableKey) {
+		return { ok: false, error: "not_configured" };
+	}
+	const endpoint = new URL("/functions/v1/admin-products-live-v1", supabaseUrl);
+	endpoint.searchParams.set("action", action);
+	let response: Response;
+	try {
+		response = await fetch(endpoint, {
+			method: "POST",
+			headers: {
+				apikey: supabasePublishableKey,
+				Authorization: `Bearer ${token}`,
+				Accept: "application/json",
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(body),
+			cache: "no-store",
+		});
+	} catch {
+		return { ok: false, error: "unavailable" };
+	}
+	if (response.status === 401) return { ok: false, error: "not_authenticated" };
+	if (response.status === 403) return { ok: false, error: "not_authorized" };
+	if (response.status === 409) return { ok: false, error: "conflict" };
+	if (response.status === 404) return { ok: false, error: "unavailable" };
+	if (!response.ok) return { ok: false, error: "unavailable" };
+	try {
+		const payload = record(await response.json());
+		return payload?.ok === true
+			? { ok: true, payload }
+			: { ok: false, error: "unavailable" };
+	} catch {
+		return { ok: false, error: "unavailable" };
+	}
+}
+
+function mapAddress(value: unknown): AdminOrderDetail["address"] {
+	const row = record(value);
+	return {
+		street: safeString(row?.street, 180) ?? "",
+		number: safeString(row?.number, 40) ?? "",
+		complement: safeString(row?.complement, 140) ?? "",
+		district: safeString(row?.district ?? row?.neighborhood, 140) ?? "",
+		city: safeString(row?.city, 120) ?? "",
+		state: safeString(row?.state, 30) ?? "",
+		postalCode: safeString(row?.postal_code, 20) ?? "",
+		reference: safeString(row?.reference ?? row?.raw_text, 300) ?? "",
+	};
+}
+
+function mapOrderDetail(
+	value: unknown,
+	origin?: WhatsAppOrigin,
+): AdminOrderDetail | null {
+	const root = record(value);
+	const order = record(root?.order);
+	if (!order) return null;
+	const customer = record(root?.customer);
+	const payment = record(order.payment_method_snapshot);
+	const bling = record(root?.bling_link);
+	const listItem = mapOrder(
+		{
+			id: order.id,
+			order_number: order.order_number,
+			public_code: order.public_code,
+			status: order.status,
+			customer_name: customer?.display_name,
+			whatsapp_phone_e164: customer?.phone ?? order.whatsapp_phone_e164,
+			total_cents: order.total_cents,
+			created_at: order.created_at,
+			registration_complete: order.registration_complete,
+			source: order.source,
+			checkout_snapshot: order.checkout_snapshot,
+		},
+		origin,
+	);
+	if (!listItem) return null;
+	const rawItems = Array.isArray(root?.items) ? root.items : [];
+	const items = rawItems
+		.map((value) => {
+			const item = record(value);
+			if (!item || typeof item.id !== "string") return null;
+			const components = Array.isArray(item.components)
+				? item.components
+						.map((value) => {
+							const component = record(value);
+							return !component || typeof component.id !== "string"
+								? null
+								: {
+										id: component.id,
+										name: safeString(component.name_snapshot, 180) ?? "Produto",
+										quantity: safeQuantity(component.quantity),
+									};
+						})
+						.filter(
+							(value): value is NonNullable<typeof value> => value !== null,
+						)
+				: [];
+			return {
+				id: item.id,
+				name: safeString(item.name_snapshot, 220) ?? "Item do pedido",
+				quantity: safeQuantity(item.quantity),
+				totalCents: safeInteger(item.total_cents),
+				components,
+			};
+		})
+		.filter((item): item is NonNullable<typeof item> => item !== null);
+
+	return {
+		...listItem,
+		customerId: safeString(order.customer_id, 80),
+		address: mapAddress(order.delivery_address_snapshot ?? customer?.address),
+		paymentMethod:
+			safeString(payment?.planned_method, 80) ??
+			safeString(order.payment_method, 80) ??
+			"A confirmar",
+		items,
+		blingState: safeString(bling?.status, 60),
+		blingOrderId: safeString(bling?.bling_order_id, 80),
+		separation: null,
+		fiscalStatus: null,
+		fiscalError: null,
+	};
+}
+
+function mapSeparation(value: unknown): OrderSeparation | null {
+	const root = record(value);
+	const row = record(root?.separation);
+	if (row?.ok !== true) return null;
+	const assignment = record(row.assignment);
+	const completion = record(row.completion);
+	const counts = record(row.counts);
+	const rawItems = Array.isArray(row.items) ? row.items : [];
+	const items = rawItems
+		.map((value) => {
+			const item = record(value);
+			const id = safeString(item?.id, 80);
+			const orderItemId = safeString(item?.order_item_id, 80);
+			if (!item || !id || !orderItemId) return null;
+			const state: OrderSeparationItem["state"] =
+				item.state === "separated" || item.state === "missing"
+					? item.state
+					: "pending";
+			return {
+				id,
+				orderItemId,
+				productId: safeString(item.product_id, 80),
+				state,
+				name: safeString(item.name, 220) ?? "Produto",
+				sku: safeString(item.sku, 80),
+				quantity: safeQuantity(item.quantity),
+				imageUrl: safeHttpsUrl(item.image_url),
+			};
+		})
+		.filter((item): item is NonNullable<typeof item> => item !== null);
+	return {
+		orderUpdatedAt: safeString(row.order_updated_at, 80),
+		status: safeString(row.status, 40) ?? "unknown",
+		assignment: assignment
+			? {
+					separatorKey: safeString(assignment.separator_key, 40),
+					separatorLabel: safeString(assignment.separator_label, 120),
+					assignedAt: safeString(assignment.assigned_at, 80),
+				}
+			: null,
+		completion: completion
+			? {
+					phase: safeString(completion.phase, 40),
+					completedAt: safeString(completion.completed_at, 80),
+				}
+			: null,
+		counts: {
+			pending: Math.max(0, safeInteger(counts?.pending) ?? 0),
+			separated: Math.max(0, safeInteger(counts?.separated) ?? 0),
+			missing: Math.max(0, safeInteger(counts?.missing) ?? 0),
+			total: Math.max(0, safeInteger(counts?.total) ?? items.length),
+		},
+		items,
+	};
+}
+
+export async function getBrowserAdminOrderDetail(
+	orderId: string,
+): Promise<OrderDetailResult> {
+	if (!UUID.test(orderId)) return { order: null, error: "not_found" };
+	const access = await browserAccessToken();
+	if (!access.ok) return { order: null, error: access.error };
+	const [orderResult, separationResult, origins] = await Promise.all([
+		browserGatewayGet(access.token, "order", orderId),
+		browserGatewayGet(access.token, "order_separation_get", orderId),
+		orderOrigins([orderId]),
+	]);
+	if (!orderResult.ok) return { order: null, error: orderResult.error };
+	const order = mapOrderDetail(
+		orderResult.payload,
+		origins.get(orderId.toLowerCase()),
+	);
+	if (!order) return { order: null, error: "unavailable" };
+	order.separation = separationResult.ok
+		? mapSeparation(separationResult.payload)
+		: null;
+	return { order, error: null };
+}
+
+export async function getBrowserOrderFiscalStatus(orderId: string): Promise<{
+	status: OrderFiscalStatus | null;
+	error: OrderMutationError | null;
+}> {
+	if (!UUID.test(orderId)) return { status: null, error: "invalid_input" };
+	const access = await browserAccessToken();
+	if (!access.ok) return { status: null, error: access.error };
+	const result = await browserGatewayPost(access.token, "order_fiscal_status", {
+		id: orderId,
+	});
+	if (!result.ok) return { status: null, error: result.error };
+	const blockers = Array.isArray(result.payload.blockers)
+		? result.payload.blockers
+				.map((value) => safeString(value, 180))
+				.filter((value): value is string => value !== null)
+				.slice(0, 8)
+		: [];
+	return {
+		status: {
+			stage: safeString(result.payload.stage, 40) ?? "blocked",
+			authorized: result.payload.authorized === true,
+			canDispatch: result.payload.can_dispatch === true,
+			canIssue: result.payload.can_issue === true,
+			issueEnabled: result.payload.issue_enabled === true,
+			invoiceNumber: safeString(result.payload.bling_invoice_number, 80),
+			sefazStatus: safeString(result.payload.sefaz_status, 80),
+			paymentStatus: safeString(result.payload.payment_status, 40) ?? "unknown",
+			paymentSource: safeString(result.payload.payment_source, 40),
+			blockers,
+		},
+		error: null,
+	};
+}
+
+export async function assignBrowserOrderSeparator(input: {
+	orderId: string;
+	separatorKey: string;
+}): Promise<OrderMutationResult> {
+	if (!UUID.test(input.orderId) || !isOrderSeparatorKey(input.separatorKey)) {
+		return { ok: false, error: "invalid_input" };
+	}
+	const access = await browserAccessToken();
+	if (!access.ok) return { ok: false, error: access.error };
+	const result = await browserGatewayPost(
+		access.token,
+		"order_separation_assign",
+		{ id: input.orderId, separator_key: input.separatorKey },
+	);
+	return result.ok
+		? {
+				ok: true,
+				warning: null,
+				customerNotified: null,
+				integrationsQueued: null,
+			}
+		: result;
+}
+
+export async function setBrowserOrderSeparationItem(input: {
+	orderId: string;
+	orderItemId: string;
+	state: "separated" | "missing";
+	expectedOrderUpdatedAt: string;
+	separatorKey: string;
+}): Promise<OrderMutationResult> {
+	if (
+		!UUID.test(input.orderId) ||
+		!UUID.test(input.orderItemId) ||
+		!Number.isFinite(Date.parse(input.expectedOrderUpdatedAt)) ||
+		!isOrderSeparatorKey(input.separatorKey)
+	) {
+		return { ok: false, error: "invalid_input" };
+	}
+	const access = await browserAccessToken();
+	if (!access.ok) return { ok: false, error: access.error };
+	const result = await browserGatewayPost(
+		access.token,
+		"order_separation_item_set",
+		{
+			id: input.orderId,
+			order_item_id: input.orderItemId,
+			state: input.state,
+			expected_order_updated_at: input.expectedOrderUpdatedAt,
+			separator_key: input.separatorKey,
+		},
+	);
+	if (!result.ok) return result;
+	return {
+		ok: true,
+		warning:
+			result.payload.warning === "bling_approval_pending"
+				? "bling_approval_pending"
+				: null,
+		customerNotified: null,
+		integrationsQueued: null,
+	};
+}
+
+export async function completeBrowserOrderSeparation(input: {
+	orderId: string;
+	expectedOrderUpdatedAt: string;
+}): Promise<OrderMutationResult> {
+	if (
+		!UUID.test(input.orderId) ||
+		!Number.isFinite(Date.parse(input.expectedOrderUpdatedAt))
+	) {
+		return { ok: false, error: "invalid_input" };
+	}
+	const current = await getBrowserAdminOrderDetail(input.orderId);
+	const separation = current.order?.separation;
+	if (!current.order) {
+		return {
+			ok: false,
+			error:
+				current.error === "not_found"
+					? "unavailable"
+					: (current.error ?? "unavailable"),
+		};
+	}
+	if (
+		!separation ||
+		separation.orderUpdatedAt !== input.expectedOrderUpdatedAt
+	) {
+		return { ok: false, error: "conflict" };
+	}
+	if (
+		!separation.assignment?.separatorKey ||
+		separation.items.length === 0 ||
+		separation.counts.pending > 0 ||
+		separation.counts.missing > 0 ||
+		separation.items.some((item) => item.state !== "separated")
+	) {
+		return { ok: false, error: "invalid_input" };
+	}
+	const fiscal = await getBrowserOrderFiscalStatus(input.orderId);
+	if (!fiscal.status || fiscal.status.issueEnabled) {
+		return { ok: false, error: "fiscal_blocked" };
+	}
+	const access = await browserAccessToken();
+	if (!access.ok) return { ok: false, error: access.error };
+	const result = await browserGatewayPost(
+		access.token,
+		"order_separation_complete",
+		{
+			id: input.orderId,
+			expected_order_updated_at: input.expectedOrderUpdatedAt,
+		},
+	);
+	if (!result.ok) return result;
+	const notification = record(result.payload.customer_notification);
+	return {
+		ok: true,
+		warning: null,
+		customerNotified:
+			typeof notification?.ok === "boolean" ? notification.ok : null,
+		integrationsQueued:
+			typeof result.payload.integrations_queued === "boolean"
+				? result.payload.integrations_queued
+				: null,
+	};
 }
 
 export async function getBrowserAdminOrderBoard(input: {
