@@ -823,6 +823,47 @@ async function whatsappConversationMessages(input: any) {
   };
 }
 
+
+async function whatsappAnaAdminStatus() {
+  const result = await db.rpc("ops2_ana_admin_load_v1");
+  if (result.error) throw result.error;
+  const snapshot = result.data || {};
+  if (snapshot.ok !== true) return { error: "ana_admin_status_unavailable", status: 503 };
+
+  const active = snapshot.active || {};
+  const draft = snapshot.draft || {};
+  const versions = Array.isArray(snapshot.versions) ? snapshot.versions : [];
+  const tests = Array.isArray(snapshot.test_runs) ? snapshot.test_runs : [];
+  const events = Array.isArray(snapshot.events) ? snapshot.events : [];
+  return {
+    active: active.version ? {
+      version: Number(active.version),
+      created_at: active.created_at || null,
+    } : null,
+    draft: Number.isSafeInteger(Number(draft.revision)) ? {
+      revision: Number(draft.revision),
+      updated_at: draft.updated_at || null,
+    } : null,
+    versions: versions.slice(0, 10).map((item: any) => ({
+      version: Number(item.version) || 0,
+      is_active: Boolean(active.id && item.id === active.id),
+      created_at: item.created_at || null,
+    })),
+    test_runs: tests.slice(0, 5).map((item: any) => ({
+      passed_count: Number(item.passed_count) || 0,
+      failed_count: Number(item.failed_count) || 0,
+      created_at: item.created_at || null,
+    })),
+    events: events.slice(0, 10).map((item: any) => ({
+      action: clean(item.action, 60),
+      version_id: item.version_id || null,
+      draft_revision: Number(item.draft_revision) || null,
+      channel_key: clean(item.channel_key, 40),
+      created_at: item.created_at || null,
+    })),
+  };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
   if (!["GET", "POST"].includes(req.method)) return json(req, { ok: false, error: "method_not_allowed" }, 405);
@@ -846,6 +887,7 @@ Deno.serve(async (req: Request) => {
     if (req.method === "POST" && action === "whatsapp_overview") result = await whatsappOverview();
     else if (req.method === "POST" && action === "whatsapp_conversation_list") result = await whatsappConversationList(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_messages") result = await whatsappConversationMessages(input);
+    else if (req.method === "POST" && action === "whatsapp_ana_admin_status") result = await whatsappAnaAdminStatus();
     else if (req.method === "POST" && action === "customer_lookup") result = await customerLookup(input);
     else if (req.method === "POST" && action === "customer_save") result = await customerSave(input);
     else if (req.method === "GET" && action === "baskets") {
