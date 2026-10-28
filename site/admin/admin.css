@@ -29,6 +29,9 @@
 .customer-result span { color: var(--muted); }
 .empty-result { color: var(--muted); }
 .edit-notice { display: grid; gap: 4px; margin: 16px 0; padding: 12px 14px; border-left: 3px solid #ba8151; border-radius: 8px; background: #fff7e9; color: #71512e; font-size: .8rem; line-height: 1.45; }
+.bling-reauthorize { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.bling-reauthorize-copy { display: grid; gap: 4px; min-width: 0; }
+.bling-reauthorize > .button { flex: 0 0 auto; }
 .edit-notice strong { font-size: .83rem; }
 .customer-editor { margin-top: 22px; }
 .editor-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px 12px; margin-bottom: 16px; }
@@ -676,4 +679,9 @@
   .whatsapp-template-editor-grid label,.whatsapp-template-editor-grid .whatsapp-template-readonly { grid-column:1; }
   .whatsapp-template-button-row { grid-template-columns:1fr; }
   .whatsapp-template-button-row > button { width:100%; }
+}
+
+@media (max-width:520px) {
+  .bling-reauthorize { align-items: stretch; flex-direction: column; }
+  .bling-reauthorize > .button { width: 100%; }
 }
