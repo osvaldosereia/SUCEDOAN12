@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Admin · Dona Antônia</title>
   <link rel="stylesheet" href="../styles.css?v=5">
-  <link rel="stylesheet" href="admin.css?v=24">
+  <link rel="stylesheet" href="admin.css?v=25">
   <link rel="stylesheet" href="orders-admin.css?v=1">
   <script src="../config.js?v=3"></script>
   <script src="admin-auth.js?v=1" defer></script>
@@ -16,7 +16,7 @@
   <script src="order-message-admin.js?v=3" defer></script>
   <script src="separation-message-admin.js?v=3" defer></script>
   <script src="whatsapp-admin.js?v=11" defer></script>
-  <script src="whatsapp-conversations.js?v=7" defer></script>
+  <script src="whatsapp-conversations.js?v=8" defer></script>
   <script src="admin.js?v=15" defer></script>
 </head>
 <body class="admin-page">
@@ -243,12 +243,19 @@
               <div id="whatsapp-conversation-messages" class="whatsapp-conversation-messages" aria-live="polite"></div>
               <form id="whatsapp-conversation-compose" class="whatsapp-conversation-compose" hidden>
                 <label class="whatsapp-compose-field" for="whatsapp-conversation-draft">
-                  <span>Responder ao cliente</span>
+                  <span>Responder ou adicionar legenda</span>
                   <textarea id="whatsapp-conversation-draft" rows="3" maxlength="4000" placeholder="Escreva uma mensagem…" autocomplete="off"></textarea>
                 </label>
+                <div class="whatsapp-compose-attachment">
+                  <label class="button button-outline whatsapp-compose-attach" for="whatsapp-conversation-file">Adicionar anexo</label>
+                  <input id="whatsapp-conversation-file" class="whatsapp-compose-file-input" type="file" accept="image/jpeg,image/png,audio/aac,audio/amr,audio/mpeg,audio/mp4,audio/ogg,video/mp4,video/3gpp,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,.jpg,.jpeg,.png,.aac,.amr,.mp3,.m4a,.ogg,.mp4,.3gp,.pdf,.txt,.doc,.docx,.xls,.xlsx,.ppt,.pptx">
+                  <span id="whatsapp-conversation-file-name" class="whatsapp-compose-file-name">Nenhum arquivo selecionado</span>
+                  <button id="whatsapp-conversation-remove-file" class="button button-outline whatsapp-compose-remove" type="button" hidden>Remover</button>
+                  <button id="whatsapp-conversation-send-media" class="button button-outline" type="button" disabled>Enviar anexo</button>
+                </div>
                 <div class="whatsapp-compose-footer">
-                  <p id="whatsapp-conversation-compose-status" data-tone="neutral" role="status" aria-live="polite">Texto permitido quando a janela de atendimento está aberta.</p>
-                  <div><small id="whatsapp-conversation-compose-count">0 / 4000</small><button id="whatsapp-conversation-send" class="button button-primary" type="submit" disabled>Enviar</button></div>
+                  <p id="whatsapp-conversation-compose-status" data-tone="neutral" role="status" aria-live="polite">Texto e anexos permitidos quando a janela de atendimento está aberta.</p>
+                  <div><small id="whatsapp-conversation-compose-count">0 / 4000</small><button id="whatsapp-conversation-send" class="button button-primary" type="submit" disabled>Enviar texto</button></div>
                 </div>
               </form>
             </section>
