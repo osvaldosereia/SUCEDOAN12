@@ -287,8 +287,12 @@
       summary.hidden = quantity === 0;
       const count = $("home-extra-summary-count");
       const total = $("home-extra-summary-total");
-      if (count) count.textContent = quantity + (quantity === 1 ? " produto extra escolhido" : " produtos extras escolhidos");
-      if (total) total.textContent = "Subtotal dos extras: " + money(subtotal);
+      const hint = $("home-extra-summary-hint");
+      if (count) count.textContent = quantity + (quantity === 1 ? " produto escolhido" : " produtos escolhidos");
+      if (total) total.textContent = "Subtotal dos produtos: " + money(subtotal);
+      if (hint) hint.textContent = subtotal < 7500
+        ? "Pedido mínimo de R$ 75,00; faltam " + money(7500 - subtotal) + "."
+        : "Você pode concluir o pedido só com estes produtos.";
     }
 
     function updateHomeExtraCard(productId) {
@@ -492,6 +496,23 @@
       }
     }
 
+    function clearHomeExtraSelections() {
+      homeCategoriesFor();
+      const selectedIds = new Set(Array.from(state.homeExtraSelections.keys()).map(String));
+      state.homeExtraSelections.clear();
+      state.baskets.forEach((data) => {
+        if (!(data.homeExtraProductIds instanceof Set) || !(data.extraSelections instanceof Map)) return;
+        selectedIds.forEach((id) => {
+          if (!data.homeExtraProductIds.has(id)) return;
+          data.extraSelections.delete(id);
+          data.homeExtraProductIds.delete(id);
+        });
+        refreshHomeSelectionReview(data);
+        if (isActiveVisibleBasket(data)) $("detail-total").textContent = money(displayedTotalCents(data));
+      });
+      renderHomeExtras();
+    }
+
     function initHomeExtras() {
       const host = $("home-extra-categories");
       if (!host) return;
@@ -549,6 +570,7 @@
       toggleExtraCategory,
       loadMoreExtraProducts,
       initHomeExtras,
+      clearHomeExtraSelections,
       homeSelectionReviewMarkup,
       bindHomeSelectionControls,
       attachHomeSelections
