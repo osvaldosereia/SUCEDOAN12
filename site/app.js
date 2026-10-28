@@ -298,7 +298,7 @@
   const { basketForSize, toggleItemOptions, changeBasketItemQuantity, changeProduct } = basket;
 
   checkout.init();
-  initHomeExtras();
   $("retry-catalog").addEventListener("click", loadCatalog);
   loadCatalog();
+  initHomeExtras();
 })();
