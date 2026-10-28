@@ -7,6 +7,7 @@
   const esc = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
   let loaded = false;
   let loading = false;
+  let lastOverview = null;
 
   function human(value) {
     const labels = {
@@ -125,6 +126,7 @@
       + '<small class="whatsapp-campaign-snapshot">' + esc(campaignSnapshotLabel(item)) + "</small>"
       + campaignExclusionMarkup(item)
       + (item.id ? '<button class="button button-outline whatsapp-campaign-preview-button" type="button" data-campaign-preview="' + esc(item.id) + '" aria-expanded="false">Prévia do público</button><div class="whatsapp-campaign-preview" data-campaign-preview-result hidden role="status" aria-live="polite"></div>' : "")
+      + (item.status === "draft" && item.draft_editable ? '<button class="button button-outline whatsapp-campaign-edit-button" type="button" data-campaign-edit="' + esc(item.id) + '">Editar rascunho</button>' : "")
       + '</div><div class="whatsapp-record-side"><span class="whatsapp-record-status ' + statusClass(item.status) + '">'
       + esc(human(item.status)) + "</span><time>" + esc(dateLabel(when)) + "</time></div></article>";
   }
@@ -178,7 +180,189 @@
     }
   }
 
+
+  async function campaignAdminRequest(action, payload) {
+    const response = await fetch(supabase + "/functions/v1/site-admin-v1", {
+      method: "POST",
+      headers: {
+        apikey: publishableKey,
+        "x-admin-code": window.DonaAdminAuth?.getCode?.() || "",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(Object.assign({ action }, payload || {})),
+      cache: "no-store",
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.ok === false) {
+      const messages = {
+        campaign_filter_required: "Informe ao menos um filtro de público.",
+        campaign_filters_not_editable: "Este rascunho usa filtros avançados que ainda não podem ser editados nesta tela.",
+        revision_conflict: "O rascunho mudou em outra sessão. Atualize os dados antes de salvar.",
+        template_not_sendable: "Selecione um modelo de marketing aprovado.",
+      };
+      throw new Error(messages[data.error] || data.message || data.error || "Não foi possível salvar o rascunho.");
+    }
+    return data;
+  }
+
+  function campaignFilterFields() {
+    return [
+      { key: "city", label: "Cidade", type: "text" },
+      { key: "neighborhood", label: "Bairro", type: "text" },
+      { key: "brand", label: "Marca comprada", type: "text" },
+      { key: "category", label: "Categoria comprada", type: "text" },
+      { key: "inactive_days", label: "Sem compra há pelo menos (dias)", type: "number", step: "1" },
+      { key: "min_order_count", label: "Pedidos mínimos", type: "number", step: "1" },
+      { key: "max_order_count", label: "Pedidos máximos", type: "number", step: "1" },
+      { key: "min_lifetime_value", label: "Valor acumulado mínimo (R$)", type: "number", step: "0.01" },
+      { key: "max_lifetime_value", label: "Valor acumulado máximo (R$)", type: "number", step: "0.01" },
+      { key: "last_purchase_after", label: "Última compra a partir de", type: "date" },
+      { key: "last_purchase_before", label: "Última compra antes de", type: "date" },
+    ];
+  }
+
+  function campaignFilterInputMarkup(field, filters) {
+    const value = filters?.[field.key] == null ? "" : String(filters[field.key]).slice(0, 10);
+    const step = field.step ? ' step="' + esc(field.step) + '"' : "";
+    const min = field.type === "number" ? ' min="0"' : "";
+    return '<label class="whatsapp-campaign-field"><span>' + esc(field.label) + '</span><input type="' + field.type + '" name="' + esc(field.key) + '" value="' + esc(value) + '"' + step + min + '></label>';
+  }
+
+  function campaignDraftIdempotencyKey() {
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (ch) => {
+      const value = Math.random() * 16 | 0;
+      return (ch === "x" ? value : value & 0x3 | 0x8).toString(16);
+    });
+  }
+
+  async function openCampaignDraftEditor(campaignId) {
+    const host = $("whatsapp-campaign-editor");
+    const current = lastOverview || {};
+    if (!host) return;
+    let campaign = null;
+    host.hidden = false;
+    host.innerHTML = '<p class="admin-muted">Preparando rascunho…</p>';
+    if (campaignId) {
+      try {
+        const result = await campaignAdminRequest("whatsapp_campaign_draft_load", { campaign_id: campaignId });
+        campaign = result.campaign || null;
+      } catch (error) {
+        host.innerHTML = '<p class="form-message is-error" role="alert">' + esc(error instanceof Error ? error.message : "Não foi possível abrir o rascunho.") + '</p><button class="button button-outline" type="button" data-campaign-editor-close>Fechar</button>';
+        return;
+      }
+    }
+    const channels = (Array.isArray(current.channels) ? current.channels : []).filter((channel) => channel.id && channel.is_active !== false);
+    const templates = (Array.isArray(current.templates?.items) ? current.templates.items : []).filter((item) =>
+      item.id && item.whatsapp_account_id && String(item.status || "").toUpperCase() === "APPROVED"
+      && String(item.category || "").toUpperCase() === "MARKETING"
+    );
+    if (!channels.length || !templates.length) {
+      host.innerHTML = '<p class="form-message is-error" role="alert">Não há canal ativo e modelo de marketing aprovado disponível para criar o rascunho.</p><button class="button button-outline" type="button" data-campaign-editor-close>Fechar</button>';
+      return;
+    }
+    const selectedAccount = campaign?.whatsapp_account_id || channels[0].id;
+    const channelOptions = channels.map((channel) =>
+      '<option value="' + esc(channel.id) + '"' + (channel.id === selectedAccount ? " selected" : "") + '>'
+      + esc(channel.name || "WhatsApp") + (channel.phone_last4 ? " · final " + esc(channel.phone_last4) : "") + "</option>"
+    ).join("");
+    const templateOptions = templates.map((item) =>
+      '<option value="' + esc(item.id) + '" data-account-id="' + esc(item.whatsapp_account_id) + '"'
+      + (item.id === campaign?.template_id ? " selected" : "") + '>'
+      + esc(item.name) + " · " + esc(item.language || "") + "</option>"
+    ).join("");
+    const filters = campaign?.filters || {};
+    const filterInputs = campaignFilterFields().map((field) => campaignFilterInputMarkup(field, filters)).join("");
+    const editing = Boolean(campaign?.id);
+    host.innerHTML = '<section class="whatsapp-campaign-editor-card" aria-labelledby="whatsapp-campaign-editor-title">'
+      + '<div class="whatsapp-campaign-editor-head"><div><h3 id="whatsapp-campaign-editor-title">' + (editing ? "Editar rascunho" : "Novo rascunho") + '</h3>'
+      + '<p class="admin-muted">Salva a configuração como rascunho. Não congela a audiência, agenda nem envia mensagens.</p></div>'
+      + '<button class="button button-outline" type="button" data-campaign-editor-close>Fechar</button></div>'
+      + '<form data-campaign-draft-form data-mode="' + (editing ? "edit" : "create") + '" data-campaign-id="' + esc(campaign?.id || "") + '" data-revision="' + esc(campaign?.revision || 0) + '" data-idempotency-key="' + esc(campaignDraftIdempotencyKey()) + '">'
+      + '<div class="whatsapp-campaign-form-grid">'
+      + '<label class="whatsapp-campaign-field"><span>Nome da campanha</span><input type="text" name="name" maxlength="140" required value="' + esc(campaign?.name || "") + '"></label>'
+      + '<label class="whatsapp-campaign-field"><span>Número de envio</span><select name="whatsapp_account_id" required>' + channelOptions + '</select></label>'
+      + '<label class="whatsapp-campaign-field whatsapp-campaign-field-wide"><span>Modelo Meta aprovado · Marketing</span><select name="template_id" required><option value="">Selecione o modelo</option>' + templateOptions + '</select></label>'
+      + '<div class="whatsapp-campaign-field-wide"><h4>Filtros da audiência</h4><p class="admin-muted">Use pelo menos um filtro. Opt-outs, sem consentimento, cadastros inativos e telefones inválidos continuam excluídos pelo motor existente.</p></div>'
+      + filterInputs
+      + '</div><p class="whatsapp-campaign-editor-note">Antes de qualquer campanha ampla, confira a evidência individual de consentimento. Este formulário só salva rascunhos.</p>'
+      + '<div class="whatsapp-campaign-editor-actions"><p data-campaign-draft-status class="admin-muted" role="status" aria-live="polite"></p>'
+      + '<button class="button button-primary" type="submit">' + (editing ? "Salvar rascunho" : "Criar rascunho") + '</button></div></form></section>';
+    host.hidden = false;
+    syncCampaignTemplateOptions(host);
+    host.querySelector('[name="name"]')?.focus();
+  }
+
+  function syncCampaignTemplateOptions(root) {
+    const account = root.querySelector('[name="whatsapp_account_id"]');
+    const templates = root.querySelector('[name="template_id"]');
+    if (!account || !templates) return;
+    let firstAvailable = "";
+    for (const option of templates.options) {
+      const available = !option.value || option.dataset.accountId === account.value;
+      option.hidden = !available;
+      if (available && option.value && !firstAvailable) firstAvailable = option.value;
+    }
+    const selected = templates.selectedOptions[0];
+    if (selected?.value && selected.dataset.accountId !== account.value) templates.value = firstAvailable;
+    if (!templates.value && firstAvailable) templates.value = firstAvailable;
+  }
+
+  async function submitCampaignDraft(form) {
+    if (!form || form.dataset.saving === "true") return;
+    const status = form.querySelector("[data-campaign-draft-status]");
+    const submit = form.querySelector('button[type="submit"]');
+    const filters = {};
+    for (const field of campaignFilterFields()) {
+      const input = form.elements.namedItem(field.key);
+      const value = String(input?.value || "").trim();
+      if (value) filters[field.key] = value;
+    }
+    if (!Object.keys(filters).length) {
+      if (status) status.textContent = "Informe ao menos um filtro de público.";
+      return;
+    }
+    const account = form.elements.namedItem("whatsapp_account_id");
+    const template = form.elements.namedItem("template_id");
+    const name = form.elements.namedItem("name");
+    const isEdit = form.dataset.mode === "edit";
+    const payload = {
+      name: String(name?.value || "").trim(),
+      whatsapp_account_id: String(account?.value || ""),
+      template_id: String(template?.value || ""),
+      filters,
+    };
+    if (isEdit) {
+      payload.campaign_id = form.dataset.campaignId || "";
+      payload.revision = Number(form.dataset.revision) || 0;
+    } else {
+      payload.idempotency_key = form.dataset.idempotencyKey || campaignDraftIdempotencyKey();
+    }
+    form.dataset.saving = "true";
+    if (submit) submit.disabled = true;
+    if (status) status.textContent = "Salvando rascunho…";
+    try {
+      await campaignAdminRequest(isEdit ? "whatsapp_campaign_draft_update" : "whatsapp_campaign_draft_create", payload);
+      if (status) status.textContent = "Rascunho salvo.";
+      const host = $("whatsapp-campaign-editor");
+      if (host) { host.hidden = true; host.innerHTML = ""; }
+      await loadOverview(true);
+    } catch (error) {
+      if (status) status.textContent = error instanceof Error ? error.message : "Não foi possível salvar o rascunho.";
+    } finally {
+      form.dataset.saving = "false";
+      if (submit?.isConnected) submit.disabled = false;
+    }
+  }
+
   function render(data) {
+    lastOverview = data;
+    const createCampaignButton = $("whatsapp-campaign-new");
+    if (createCampaignButton) {
+      const hasChannel = (data.channels || []).some((channel) => channel.id && channel.is_active !== false);
+      const hasMarketingTemplate = (data.templates?.items || []).some((item) => item.id && item.whatsapp_account_id && String(item.status || "").toUpperCase() === "APPROVED" && String(item.category || "").toUpperCase() === "MARKETING");
+      createCampaignButton.disabled = !hasChannel || !hasMarketingTemplate;
+    }
     const channels = Array.isArray(data.channels) ? data.channels : [];
     const templateItems = Array.isArray(data.templates?.items) ? data.templates.items : [];
     const campaigns = Array.isArray(data.campaigns?.recent) ? data.campaigns.recent : [];
@@ -432,8 +616,25 @@
   }
 
   $("whatsapp-campaigns-content")?.addEventListener("click", (event) => {
-    const button = event.target instanceof Element ? event.target.closest("[data-campaign-preview]") : null;
-    if (button) loadCampaignPreview(button);
+    const target = event.target instanceof Element ? event.target : null;
+    const editButton = target?.closest("[data-campaign-edit]");
+    const previewButton = target?.closest("[data-campaign-preview]");
+    if (editButton) openCampaignDraftEditor(editButton.dataset.campaignEdit);
+    else if (previewButton) loadCampaignPreview(previewButton);
+  });
+  $("whatsapp-campaign-new")?.addEventListener("click", () => openCampaignDraftEditor("")); 
+  $("whatsapp-campaign-editor")?.addEventListener("click", (event) => {
+    const closeButton = event.target instanceof Element ? event.target.closest("[data-campaign-editor-close]") : null;
+    if (closeButton) { const host = $("whatsapp-campaign-editor"); if (host) { host.hidden = true; host.innerHTML = ""; } }
+  });
+  $("whatsapp-campaign-editor")?.addEventListener("change", (event) => {
+    if (event.target instanceof HTMLSelectElement && event.target.name === "whatsapp_account_id") syncCampaignTemplateOptions($("whatsapp-campaign-editor"));
+  });
+  $("whatsapp-campaign-editor")?.addEventListener("submit", (event) => {
+    const form = event.target instanceof HTMLFormElement ? event.target.closest("[data-campaign-draft-form]") : null;
+    if (!form) return;
+    event.preventDefault();
+    submitCampaignDraft(form);
   });
   document.querySelectorAll("[data-whatsapp-overview-refresh]").forEach((button) => button.addEventListener("click", () => loadOverview(true)));
   $("whatsapp-ana-content")?.addEventListener("click", (event) => {
