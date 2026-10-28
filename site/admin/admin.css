@@ -459,3 +459,14 @@
 .whatsapp-compose-file-name { flex:1 1 180px; min-width:0; overflow:hidden; color:var(--muted); font-size:.75rem; text-overflow:ellipsis; white-space:nowrap; }
 .whatsapp-compose-remove { min-height:36px; padding:6px 10px; }
 @media (max-width:520px) { .whatsapp-compose-attachment > button { flex:1 1 auto; } .whatsapp-compose-file-name { flex-basis:100%; order:1; } }
+
+.whatsapp-campaign-preview-button { margin-top:10px; }
+.whatsapp-campaign-preview { display:grid; gap:9px; width:100%; margin-top:10px; padding:12px; border:1px solid var(--line); border-radius:12px; background:#faf8f5; }
+.whatsapp-campaign-preview[hidden] { display:none; }
+.whatsapp-campaign-preview-counts { display:flex; flex-wrap:wrap; justify-content:space-between; gap:6px 14px; color:var(--ink); font-size:.8rem; }
+.whatsapp-campaign-preview-counts strong { color:#2d6a43; font-size:.9rem; }
+.whatsapp-campaign-preview-counts span, .whatsapp-campaign-preview-template { color:var(--muted); }
+.whatsapp-campaign-preview-reasons { display:flex; flex-wrap:wrap; gap:6px; }
+.whatsapp-campaign-preview-chip { padding:4px 8px; border-radius:999px; background:#f0ece6; color:var(--ink); font-size:.7rem; }
+.whatsapp-campaign-preview-chip:first-child { background:#f8e8e5; color:#87382f; }
+.whatsapp-campaign-preview p { margin:0; color:var(--muted); font-size:.72rem; line-height:1.45; }
