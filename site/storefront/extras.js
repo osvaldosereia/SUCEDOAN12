@@ -192,18 +192,51 @@
       const loadMore = category.error
         ? '<button class="button button-outline home-extra-more" type="button" data-home-extra-retry="' + esc(category.key) + '">Tentar novamente</button>'
         : category.hasMore && category.products.length
-          ? '<button class="button button-outline home-extra-more" type="button" data-home-extra-more="' + esc(category.key) + '"' + (category.loading ? " disabled" : "") + '>Carregar mais produtos</button>'
+          ? '<button class="button button-outline home-extra-more" type="button" data-home-extra-more="' + esc(category.key) + '">' + (category.loading ? "Carregando produtos…" : "Carregar mais produtos") + '</button>'
           : "";
-      return '<section class="home-extra-category" aria-labelledby="' + esc(panelId) + '-title">' +
-        '<div class="home-extra-category-heading"><h3 id="' + esc(panelId) + '-title">' + esc(category.label) + '</h3></div>' +
+      return '<section class="home-extra-category" data-home-extra-section="' + esc(category.key) + '" aria-labelledby="' + esc(panelId) + '-title">' +
+        '<div class="home-extra-category-heading"><h3 id="' + esc(panelId) + '-title" tabindex="-1">' + esc(category.label) + '</h3></div>' +
         '<div class="home-extra-rail" data-home-extra-rail="' + esc(category.key) + '" role="list" aria-label="Produtos de ' + esc(category.label) + '">' +
         category.products.map(homeExtraProductMarkup).join("") + '</div>' +
         (status ? '<p class="home-extra-status" role="status">' + esc(status) + '</p>' : '') + loadMore + '</section>';
     }
 
+    function homeFocusSnapshot(host) {
+      const active = document.activeElement;
+      if (!active || !host.contains(active)) return null;
+      if (active.matches("[data-home-extra-adjust]")) {
+        return { kind: "adjust", key: active.closest("[data-home-extra-section]")?.dataset.homeExtraSection || "", id: active.dataset.homeExtraAdjust, delta: active.dataset.delta };
+      }
+      if (active.matches("[data-home-extra-more]")) return { kind: "more", key: active.dataset.homeExtraMore };
+      if (active.matches("[data-home-extra-retry]")) return { kind: "retry", key: active.dataset.homeExtraRetry };
+      return null;
+    }
+
+    function restoreHomeFocus(host, focus) {
+      if (!focus) return;
+      const section = Array.from(host.querySelectorAll("[data-home-extra-section]"))
+        .find((entry) => entry.dataset.homeExtraSection === focus.key);
+      if (!section) return;
+      const controls = Array.from(section.querySelectorAll("[data-home-extra-adjust]"));
+      let target = focus.kind === "more"
+        ? section.querySelector("[data-home-extra-more]")
+        : focus.kind === "retry"
+          ? section.querySelector("[data-home-extra-retry]")
+          : controls.find((button) => button.dataset.homeExtraAdjust === focus.id && button.dataset.delta === focus.delta);
+      if (!target || target.disabled) {
+        if (focus.kind === "adjust") {
+          target = controls.find((button) => button.dataset.homeExtraAdjust === focus.id && !button.disabled) ||
+            controls.find((button) => !button.disabled);
+        }
+        if (!target || target.disabled) target = section.querySelector(".home-extra-category-heading h3");
+      }
+      if (target) target.focus({ preventScroll: true });
+    }
+
     function renderHomeExtras() {
       const host = $("home-extra-categories");
       if (!host) return;
+      const focus = homeFocusSnapshot(host);
       host.querySelectorAll("[data-home-extra-rail]").forEach((rail) => {
         const category = homeCategoriesFor().find((entry) => entry.key === rail.dataset.homeExtraRail);
         if (category) category.scrollLeft = rail.scrollLeft;
@@ -239,6 +272,7 @@
       host.querySelectorAll("img").forEach((image) => image.addEventListener("error", () => {
         image.src = "../img/logoantonia5.png";
       }, { once: true }));
+      restoreHomeFocus(host, focus);
       renderHomeExtraSummary();
     }
 
@@ -298,12 +332,46 @@
         }).join("") + '</section>';
     }
 
+    function isActiveVisibleBasket(data) {
+      return !!data && state.baskets.get(state.activeKey) === data && !$("detail-sheet").hidden;
+    }
+
+    function updateBasketExtraCards(productId, quantity, stockQuantity) {
+      const content = $("detail-content");
+      if (!content) return;
+      const id = String(productId);
+      const stock = Math.max(0, Number(stockQuantity || 0));
+      content.querySelectorAll("[data-extra-product]").forEach((card) => {
+        if (card.dataset.extraProduct !== id) return;
+        const output = card.querySelector('[data-extra-quantity="' + id + '"]');
+        const minus = card.querySelector('[data-extra-adjust][data-delta="-1"]');
+        const plus = card.querySelector('[data-extra-adjust][data-delta="1"]');
+        if (output) output.textContent = String(quantity);
+        if (minus) minus.disabled = quantity <= 0;
+        if (plus) plus.disabled = quantity >= stock;
+      });
+    }
+
     function refreshHomeSelectionReview(data) {
       const content = $("detail-content");
       const mount = content && content.querySelector("[data-home-extra-review-mount]");
-      if (!mount) return;
+      if (!mount || !isActiveVisibleBasket(data)) return;
+      const active = document.activeElement;
+      const focused = mount.contains(active) && active.matches("[data-home-review-adjust]")
+        ? { id: active.dataset.homeReviewAdjust, delta: active.dataset.delta }
+        : null;
       mount.innerHTML = homeSelectionReviewMarkup(data);
       bindHomeSelectionControls(mount, data);
+      if (focused) {
+        const controls = Array.from(mount.querySelectorAll("[data-home-review-adjust]"));
+        let target = controls.find((button) => button.dataset.homeReviewAdjust === focused.id && button.dataset.delta === focused.delta);
+        if (!target || target.disabled) target = controls.find((button) => !button.disabled);
+        if (target) target.focus({ preventScroll: true });
+        else {
+          const nextCategory = content.querySelector("[data-extra-category]");
+          if (nextCategory) nextCategory.focus({ preventScroll: true });
+        }
+      }
     }
 
     function bindHomeSelectionControls(container, data) {
@@ -327,7 +395,7 @@
       else data.extraSelections.set(id, homeProductSelection(product, quantity));
       if (state.homeExtraProducts.has(id)) syncHomeSelectionFromBasket(product, quantity, data);
       else {
-        $("detail-total").textContent = money(displayedTotalCents(data));
+        if (isActiveVisibleBasket(data)) $("detail-total").textContent = money(displayedTotalCents(data));
         refreshHomeSelectionReview(data);
       }
     }
@@ -344,10 +412,11 @@
         else data.extraSelections.delete(id);
         if (!(data.homeExtraProductIds instanceof Set)) data.homeExtraProductIds = new Set();
         data.homeExtraProductIds.add(id);
-        $("detail-total").textContent = money(displayedTotalCents(data));
+        if (isActiveVisibleBasket(data)) $("detail-total").textContent = money(displayedTotalCents(data));
         refreshHomeSelectionReview(data);
       }
       updateHomeExtraCard(id);
+      updateBasketExtraCards(id, quantity, product.stock_quantity);
       renderHomeExtraSummary();
     }
 
