@@ -67,13 +67,153 @@
     }
   }
 
+  function mediaPlaceholder(message) {
+    const labels = {
+      image: ["▧", "Abrir imagem"],
+      audio: ["▶", "Ouvir áudio"],
+      video: ["▶", "Assistir vídeo"],
+      document: ["↓", "Baixar documento"],
+    };
+    const [icon, label] = labels[message.message_type] || ["↓", "Abrir arquivo"];
+    const host = document.createElement("div");
+    host.className = "whatsapp-media-content";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "whatsapp-media-load";
+    const symbol = document.createElement("span");
+    symbol.className = "whatsapp-media-icon";
+    symbol.textContent = icon;
+    const copy = document.createElement("span");
+    copy.className = "whatsapp-media-copy";
+    const title = document.createElement("strong");
+    title.textContent = label;
+    const hint = document.createElement("small");
+    hint.textContent = "Arquivo privado · link temporário";
+    copy.append(title, hint);
+    button.append(symbol, copy);
+    button.addEventListener("click", async () => {
+      const conversationId = state.selectedId;
+      if (!conversationId) return;
+      button.disabled = true;
+      title.textContent = "Carregando…";
+      try {
+        const data = await request("whatsapp_conversation_media", {
+          conversation_id: conversationId,
+          message_id: message.id,
+        });
+        const signedUrl = new URL(data.url);
+        if (signedUrl.protocol !== "https:" || signedUrl.origin !== new URL(base).origin) {
+          throw new Error("invalid_media_url");
+        }
+        if (host.isConnected && state.selectedId === conversationId) {
+          renderResolvedMedia(host, message, Object.assign({}, data, { url: signedUrl.href }));
+        }
+      } catch (error) {
+        if (!host.isConnected) return;
+        button.disabled = false;
+        const code = error instanceof Error ? error.message : "";
+        title.textContent = code === "media_not_cached" ? "Mídia indisponível" : "Tentar novamente";
+        hint.textContent = code === "media_not_cached"
+          ? "O arquivo ainda não está no cache privado."
+          : "Não foi possível carregar. Tente novamente.";
+      }
+    });
+    host.append(button);
+    if (message.text_body && message.message_type !== "audio") {
+      const caption = document.createElement("p");
+      caption.className = "whatsapp-media-caption";
+      caption.textContent = message.text_body;
+      host.append(caption);
+    }
+    return host;
+  }
+
+  function renderResolvedMedia(host, message, data) {
+    host.replaceChildren();
+    if (message.message_type === "image") {
+      const image = document.createElement("img");
+      image.className = "whatsapp-media-image";
+      image.src = data.url;
+      image.alt = message.text_body || "Imagem recebida";
+      image.loading = "lazy";
+      host.append(image);
+    } else if (message.message_type === "audio") {
+      const audio = document.createElement("audio");
+      audio.className = "whatsapp-media-audio";
+      audio.controls = true;
+      audio.preload = "metadata";
+      audio.src = data.url;
+      host.append(audio);
+    } else if (message.message_type === "video") {
+      const video = document.createElement("video");
+      video.className = "whatsapp-media-video";
+      video.controls = true;
+      video.preload = "metadata";
+      video.playsInline = true;
+      video.src = data.url;
+      host.append(video);
+    } else {
+      const link = document.createElement("a");
+      link.className = "whatsapp-media-file";
+      link.href = data.url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "Baixar " + String(data.filename || "arquivo").slice(0, 180);
+      host.append(link);
+    }
+    if (message.text_body && message.message_type !== "audio") {
+      const caption = document.createElement("p");
+      caption.className = "whatsapp-media-caption";
+      caption.textContent = message.text_body;
+      host.append(caption);
+    }
+  }
+
+  function locationCard(location, fallbackText) {
+    const card = document.createElement("div");
+    card.className = "whatsapp-location-card";
+    const title = document.createElement("strong");
+    title.textContent = location?.name || "Localização recebida";
+    card.append(title);
+    const address = String(location?.address || fallbackText || "").trim();
+    if (address) {
+      const detail = document.createElement("span");
+      detail.textContent = address;
+      card.append(detail);
+    }
+    const latitude = Number(location?.latitude);
+    const longitude = Number(location?.longitude);
+    if (Number.isFinite(latitude) && Number.isFinite(longitude)
+      && latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180) {
+      const link = document.createElement("a");
+      link.className = "whatsapp-location-link";
+      link.href = "https://maps.google.com/?q=" + encodeURIComponent(latitude + "," + longitude);
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "Abrir no mapa";
+      card.append(link);
+    } else if (!address) {
+      const hint = document.createElement("span");
+      hint.textContent = "Coordenadas indisponíveis.";
+      card.append(hint);
+    }
+    return card;
+  }
+
   function makeBubble(message) {
     const bubble = document.createElement("article");
     bubble.className = "whatsapp-message " + (message.direction === "outbound" ? "outbound" : "inbound");
-    const body = document.createElement("p");
+    const messageType = String(message.message_type || "").toLowerCase();
     const text = String(message.text_body || "").trim();
-    const types = { image: "Imagem (prévia indisponível)", audio: "Áudio (prévia indisponível)", video: "Vídeo (prévia indisponível)", document: "Arquivo (prévia indisponível)", sticker: "Figurinha" };
-    body.textContent = text || types[message.message_type] || "Conteúdo não disponível";
+    const mediaTypes = ["image", "audio", "video", "document"];
+    if (mediaTypes.includes(messageType)) bubble.append(mediaPlaceholder(message));
+    else if (messageType === "location") bubble.append(locationCard(message.location, text));
+    else {
+      const body = document.createElement("p");
+      const types = { sticker: "Figurinha", interactive: "Mensagem interativa", button: "Botão", reaction: "Reação" };
+      body.textContent = text || types[messageType] || "Conteúdo não disponível";
+      bubble.append(body);
+    }
     const time = document.createElement("time");
     time.dateTime = message.message_at || "";
     time.textContent = dateLabel(message.message_at);
@@ -83,8 +223,8 @@
       const status = document.createElement("small");
       status.className = "whatsapp-message-status";
       status.textContent = "Envio: " + (labels[statusCode] || statusCode.replace(/[_-]+/g, " "));
-      bubble.append(body, time, status);
-    } else bubble.append(body, time);
+      bubble.append(time, status);
+    } else bubble.append(time);
     return bubble;
   }
 
