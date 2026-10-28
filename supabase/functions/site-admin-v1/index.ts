@@ -777,12 +777,23 @@ async function adminFavoriteUserId() {
 }
 
 async function conversationFavoriteIds(adminUserId: string) {
-  const result = await db.from("whatsapp_conversation_favorites_v1")
-    .select("conversation_id")
-    .eq("admin_user_id", adminUserId)
-    .order("created_at", { ascending: false }).limit(1000);
-  if (result.error) throw result.error;
-  return (result.data || []).map((row: any) => uuid(row.conversation_id)).filter(Boolean);
+  const ids: string[] = [];
+  const pageSize = 200;
+  let offset = 0;
+  while (true) {
+    const result = await db.from("whatsapp_conversation_favorites_v1")
+      .select("conversation_id")
+      .eq("admin_user_id", adminUserId)
+      .order("created_at", { ascending: false })
+      .order("conversation_id", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (result.error) throw result.error;
+    const rows = result.data || [];
+    ids.push(...rows.map((row: any) => uuid(row.conversation_id)).filter(Boolean));
+    if (rows.length < pageSize) break;
+    offset += rows.length;
+  }
+  return ids;
 }
 
 async function whatsappConversationFavorite(input: any) {
