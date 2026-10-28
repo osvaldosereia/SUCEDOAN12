@@ -58,7 +58,13 @@
 .admin-options li span { color: var(--muted); }
 
 /* Catalog editor */
-.product-search-controls { display: grid; grid-template-columns: minmax(0,1fr) auto auto; gap: 8px; margin-top: 7px; }
+.product-search-controls { display: grid; grid-template-columns: minmax(0,1fr) auto auto auto; gap: 8px; margin-top: 7px; }
+.product-quality-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0 4px; padding: 8px 10px 10px; border: 1px solid var(--line); border-radius: 12px; }
+.product-quality-filters legend { padding: 0 5px; color: var(--muted); font-size: .74rem; font-weight: 700; }
+.product-quality-filter { min-height: 36px; padding: 0 11px; border: 1px solid #d8cfc3; border-radius: 999px; background: #fff; color: var(--ink); font: inherit; font-size: .74rem; font-weight: 650; cursor: pointer; transition: background .15s ease, border-color .15s ease, color .15s ease; }
+.product-quality-filter:hover { border-color: var(--brand); }
+.product-quality-filter:focus-visible { outline: 2px solid #bd806e; outline-offset: 2px; }
+.product-quality-filter[aria-pressed="true"] { border-color: var(--brand); background: var(--brand); color: #fff; }
 .product-search-controls select, .product-search-controls input { min-height: 46px; padding: 0 11px; border: 1px solid #d8cfc3; border-radius: 10px; background: #fff; color: var(--ink); }
 .catalog-basket-card, .admin-product-card { display: grid; grid-template-columns: 68px minmax(0,1fr) auto; align-items: center; gap: 12px; padding: 10px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
 .catalog-basket-card > img, .admin-product-card > img, .product-image-placeholder { width: 68px; height: 68px; border-radius: 10px; object-fit: cover; background: #f1e9df; }
@@ -135,7 +141,7 @@
 .catalog-dialog .product-search-controls { grid-template-columns: minmax(0,1fr) auto; }
 @media (max-width: 560px) {
   .product-search-controls { grid-template-columns: minmax(0,1fr) auto; }
-  .product-search-controls select { grid-column: 1 / -1; grid-row: 2; }
+  .product-search-controls select { grid-column: 1 / -1; grid-row: auto; }
   .catalog-basket-card, .admin-product-card { grid-template-columns: 54px minmax(0,1fr); gap: 9px; }
   .catalog-basket-card > img, .admin-product-card > img, .product-image-placeholder { width: 54px; height: 54px; }
   .catalog-basket-card > .button { grid-column: 2; justify-self: start; min-height: 36px; }
