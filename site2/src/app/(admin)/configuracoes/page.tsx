@@ -1,3 +1,5 @@
+"use client";
+
 import {
 	ArrowUpRight,
 	Blocks,
@@ -7,14 +9,15 @@ import {
 	Store,
 } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
-import { loadAnaAdmin } from "@/lib/supabase/admin-ana";
-import { getAttendanceAccounts } from "@/lib/supabase/admin-attendance";
+import { loadAnaAdmin } from "@/lib/supabase/browser-admin-ana";
+import { getAttendanceAccounts } from "@/lib/supabase/browser-admin-attendance";
 import {
 	getBlingIntegrationReadiness,
 	getMetaAccountReadiness,
-	type MetaAccountReadinessResult,
-} from "@/lib/supabase/admin-integrations";
+} from "@/lib/supabase/browser-admin-integrations";
+import type { MetaAccountReadinessResult } from "@/lib/supabase/integration-types";
 
 function maskedLastFour(phone: string): string {
 	const digits = phone.replace(/\D/g, "");
@@ -48,8 +51,9 @@ function blingErrorMessage(error: string): string {
 
 function metaCheckMessage(
 	result: MetaAccountReadinessResult | undefined,
+	loading: boolean,
 ): string {
-	if (!result) return "Consulta não disponível";
+	if (!result) return loading ? "Consultando…" : "Consulta não disponível";
 	if (!result.ok) {
 		if (result.error === "not_authenticated")
 			return "Entre novamente para consultar";
@@ -93,43 +97,91 @@ function metaQualityLabel(
 	return "Não informada";
 }
 
-export default async function ConfiguracoesPage() {
-	const [blingResult, accountsResult, anaResult] = await Promise.all([
-		getBlingIntegrationReadiness().catch(() => null),
-		getAttendanceAccounts().catch(() => null),
-		loadAnaAdmin().catch(() => null),
-	]);
+type SettingsSnapshot = {
+	blingResult: Awaited<ReturnType<typeof getBlingIntegrationReadiness>> | null;
+	accountsResult: Awaited<ReturnType<typeof getAttendanceAccounts>> | null;
+	anaResult: Awaited<ReturnType<typeof loadAnaAdmin>> | null;
+	metaChecks: MetaAccountReadinessResult[];
+};
+
+export default function ConfiguracoesPage() {
+	const [snapshot, setSnapshot] = useState<SettingsSnapshot>({
+		blingResult: null,
+		accountsResult: null,
+		anaResult: null,
+		metaChecks: [],
+	});
+	const [loading, setLoading] = useState(true);
+	const [metaLoading, setMetaLoading] = useState(false);
+
+	useEffect(() => {
+		let active = true;
+
+		async function loadSettings() {
+			const [blingResult, accountsResult, anaResult] = await Promise.all([
+				getBlingIntegrationReadiness().catch(() => null),
+				getAttendanceAccounts().catch(() => null),
+				loadAnaAdmin().catch(() => null),
+			]);
+			if (!active) return;
+
+			setSnapshot({
+				blingResult,
+				accountsResult,
+				anaResult,
+				metaChecks: [],
+			});
+			setLoading(false);
+
+			if (!accountsResult?.ok || accountsResult.data.length === 0) return;
+			setMetaLoading(true);
+			const metaChecks = await Promise.all(
+				accountsResult.data.map((account) =>
+					getMetaAccountReadiness(account.id).catch(() => ({
+						ok: false as const,
+						error: "unavailable" as const,
+					})),
+				),
+			);
+			if (!active) return;
+			setSnapshot((current) => ({ ...current, metaChecks }));
+			setMetaLoading(false);
+		}
+
+		void loadSettings();
+		return () => {
+			active = false;
+		};
+	}, []);
+
+	const { blingResult, accountsResult, anaResult, metaChecks } = snapshot;
 	const bling = blingResult?.ok ? blingResult.readiness : null;
 	const blingError = blingResult?.ok
 		? null
 		: blingResult
 			? blingErrorMessage(blingResult.error)
-			: "Não foi possível consultar o status do Bling agora.";
+			: loading
+				? "Consultando…"
+				: "Não foi possível consultar o status do Bling agora.";
 	const blingStatus = !blingResult?.ok
-		? "Consulta indisponível"
+		? loading
+			? "Consultando…"
+			: "Consulta indisponível"
 		: blingResult.readiness.hubEnabled === true
 			? "Gateway habilitado"
 			: blingResult.readiness.hubEnabled === false
 				? "Gateway pausado"
 				: "Situação não informada";
 	const accounts = accountsResult?.ok === true ? accountsResult.data : null;
-	const metaChecks = accounts
-		? await Promise.all(
-				accounts.map((account) =>
-					getMetaAccountReadiness(account.id).catch(() => ({
-						ok: false as const,
-						error: "unavailable" as const,
-					})),
-				),
-			)
-		: [];
 	const metaByAccountId = new Map(
 		(accounts ?? []).map((account, index) => [account.id, metaChecks[index]]),
 	);
 	const anaChannels = anaResult?.ok === true ? anaResult.view.channels : null;
 	const metaStatus =
 		accounts === null
-			? "Consulta indisponível"
+			? loading
+				? "Consultando…"
+				: "Consulta indisponível"
 			: accounts.length === 0
 				? "Nenhum número cadastrado"
 				: accounts.length === 2
@@ -142,7 +194,9 @@ export default async function ConfiguracoesPage() {
 				: accountsResult.error === "not_authenticated"
 					? "Entre novamente para consultar os números."
 					: "Não foi possível consultar os números cadastrados."
-			: "Não foi possível consultar os números cadastrados.";
+			: loading
+				? "Consultando…"
+				: "Não foi possível consultar os números cadastrados.";
 	const anaError =
 		anaResult && !anaResult.ok
 			? anaResult.error === "not_authorized"
@@ -150,7 +204,9 @@ export default async function ConfiguracoesPage() {
 				: anaResult.error === "not_authenticated"
 					? "Entre novamente para consultar a configuração da ANA."
 					: "Não foi possível consultar a configuração por número."
-			: "Não foi possível consultar a configuração por número.";
+			: loading
+				? "Consultando…"
+				: "Não foi possível consultar a configuração por número.";
 
 	return (
 		<div className="page-stack">
@@ -297,7 +353,7 @@ export default async function ConfiguracoesPage() {
 																: undefined
 														}
 													>
-														{metaCheckMessage(metaCheck)}
+														{metaCheckMessage(metaCheck, metaLoading)}
 													</dd>
 												</div>
 												<div>

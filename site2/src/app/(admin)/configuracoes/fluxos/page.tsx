@@ -1,7 +1,10 @@
+"use client";
+
 import { ArrowLeft, MessageCircle } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { FlowSetupPanel } from "@/app/(admin)/configuracoes/fluxos/flow-setup-panel";
-import { getAttendanceAccounts } from "@/lib/supabase/admin-attendance";
+import { getAttendanceAccounts } from "@/lib/supabase/browser-admin-attendance";
 import basketOrderFlow from "../../../../../supabase/flows/basket-order-v1.json";
 
 function maskedLastFour(phone: string): string {
@@ -11,9 +14,31 @@ function maskedLastFour(phone: string): string {
 		: "Número não identificado";
 }
 
-export default async function WhatsAppFlowSettingsPage() {
-	const result = await getAttendanceAccounts().catch(() => null);
+export default function WhatsAppFlowSettingsPage() {
+	const [result, setResult] = useState<Awaited<
+		ReturnType<typeof getAttendanceAccounts>
+	> | null>(null);
+	const [loading, setLoading] = useState(true);
 	const accounts = result?.ok ? result.data : null;
+
+	useEffect(() => {
+		let active = true;
+
+		void getAttendanceAccounts()
+			.then((accountsResult) => {
+				if (active) setResult(accountsResult);
+			})
+			.catch(() => {
+				if (active) setResult(null);
+			})
+			.finally(() => {
+				if (active) setLoading(false);
+			});
+
+		return () => {
+			active = false;
+		};
+	}, []);
 
 	return (
 		<div className="page-stack">
@@ -43,7 +68,17 @@ export default async function WhatsAppFlowSettingsPage() {
 					</div>
 				</div>
 
-				{accounts === null ? (
+				{loading ? (
+					<article className="empty-panel">
+						<div className="empty-panel__content">
+							<div className="empty-panel__icon" aria-hidden="true">
+								<MessageCircle size={21} />
+							</div>
+							<h2>Consultando os números cadastrados</h2>
+							<p>Os dados aparecem depois da conferência da sessão.</p>
+						</div>
+					</article>
+				) : accounts === null ? (
 					<article className="empty-panel">
 						<div className="empty-panel__content">
 							<div className="empty-panel__icon" aria-hidden="true">

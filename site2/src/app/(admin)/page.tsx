@@ -1,3 +1,5 @@
+"use client";
+
 import {
 	ArrowRight,
 	Check,
@@ -9,10 +11,11 @@ import {
 	Truck,
 } from "lucide-react";
 import Link from "next/link";
-import { getAttendanceAccounts } from "@/lib/supabase/admin-attendance";
-import { getAdminBasketMoldPhotoAudit } from "@/lib/supabase/admin-basket-molds";
-import { getBlingIntegrationReadiness } from "@/lib/supabase/admin-integrations";
-import { getAdminOrderBoard } from "@/lib/supabase/admin-orders";
+import { useEffect, useState } from "react";
+import { getAttendanceAccounts } from "@/lib/supabase/browser-admin-attendance";
+import { getBrowserAdminBasketMoldPhotoAudit } from "@/lib/supabase/browser-admin-basket-molds";
+import { getBlingIntegrationReadiness } from "@/lib/supabase/browser-admin-integrations";
+import { getBrowserAdminOrderBoard } from "@/lib/supabase/browser-admin-orders";
 
 function countText(value: number | null | undefined): string {
 	return typeof value === "number"
@@ -20,16 +23,52 @@ function countText(value: number | null | undefined): string {
 		: "—";
 }
 
-export default async function Home() {
-	const [orderResult, photoAuditResult, accountResult, blingResult] =
-		await Promise.all([
-			getAdminOrderBoard({ lane: "new", query: "", offset: 0 }).catch(
+type HomeSnapshot = {
+	orderResult: Awaited<ReturnType<typeof getBrowserAdminOrderBoard>> | null;
+	photoAuditResult: Awaited<
+		ReturnType<typeof getBrowserAdminBasketMoldPhotoAudit>
+	> | null;
+	accountResult: Awaited<ReturnType<typeof getAttendanceAccounts>> | null;
+	blingResult: Awaited<ReturnType<typeof getBlingIntegrationReadiness>> | null;
+};
+
+export default function Home() {
+	const [snapshot, setSnapshot] = useState<HomeSnapshot>({
+		orderResult: null,
+		photoAuditResult: null,
+		accountResult: null,
+		blingResult: null,
+	});
+	const [loading, setLoading] = useState(true);
+
+	useEffect(() => {
+		let active = true;
+
+		void Promise.all([
+			getBrowserAdminOrderBoard({ lane: "new", query: "", offset: 0 }).catch(
 				() => null,
 			),
-			getAdminBasketMoldPhotoAudit().catch(() => null),
+			getBrowserAdminBasketMoldPhotoAudit().catch(() => null),
 			getAttendanceAccounts().catch(() => null),
 			getBlingIntegrationReadiness().catch(() => null),
-		]);
+		]).then(([orderResult, photoAuditResult, accountResult, blingResult]) => {
+			if (!active) return;
+			setSnapshot({
+				orderResult,
+				photoAuditResult,
+				accountResult,
+				blingResult,
+			});
+			setLoading(false);
+		});
+
+		return () => {
+			active = false;
+		};
+	}, []);
+
+	const { orderResult, photoAuditResult, accountResult, blingResult } =
+		snapshot;
 
 	const orderCounts = orderResult?.counts ?? null;
 	const photoAudit =
@@ -41,8 +80,10 @@ export default async function Home() {
 
 	const photoSetup = !photoAudit
 		? {
-				description: "Não foi possível consultar as fotos das cestas agora.",
-				status: "Consulta indisponível",
+				description: loading
+					? "Conferindo as fotos das cestas…"
+					: "Não foi possível consultar as fotos das cestas agora.",
+				status: loading ? "Consultando…" : "Consulta indisponível",
 				href: null,
 			}
 		: photoAudit.configuredBasketCount === 0 || photoAudit.positionCount === 0
@@ -83,9 +124,10 @@ export default async function Home() {
 	const channelSetup =
 		accountCount === null
 			? {
-					description:
-						"Não foi possível consultar os canais cadastrados agora.",
-					status: "Consulta indisponível",
+					description: loading
+						? "Consultando os canais cadastrados…"
+						: "Não foi possível consultar os canais cadastrados agora.",
+					status: loading ? "Consultando…" : "Consulta indisponível",
 					href: "/configuracoes/fluxos",
 				}
 			: {
@@ -97,8 +139,9 @@ export default async function Home() {
 					href: accountCount === 0 ? "/configuracoes" : "/configuracoes/fluxos",
 				};
 
-	const blingStatus =
-		blingReadiness?.hubEnabled === true
+	const blingStatus = loading
+		? "Consultando…"
+		: blingReadiness?.hubEnabled === true
 			? "Gateway habilitado"
 			: blingReadiness?.hubEnabled === false
 				? "Gateway pausado"
