@@ -653,7 +653,7 @@ async function whatsappOverview() {
     const campaignStatusResult = await db.rpc("site_admin_marketing_campaign_status_summary_v1", {
       p_campaign_ids: campaignIds,
     });
-    if (!campaignStatusResult.error) {
+    if (!campaignStatusResult.error && Array.isArray(campaignStatusResult.data)) {
       campaignDeliverySummaryAvailable = true;
       for (const row of campaignStatusResult.data || []) {
         const campaignId = String(row.campaign_id || "");
