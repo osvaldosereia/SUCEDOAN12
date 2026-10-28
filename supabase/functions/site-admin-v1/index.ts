@@ -1316,11 +1316,65 @@ async function validateMarketingCampaignTemplate(accountId: string, templateId: 
   return null;
 }
 
+async function marketingCampaignTemplateVariableIndices(accountId: string, templateId: string) {
+  const result = await db.rpc("marketing_campaign_template_snapshot_v1", {
+    p_whatsapp_account_id: accountId,
+    p_template_id: templateId,
+  });
+  if (result.error) throw result.error;
+  const template: any = result.data || {};
+  if (template.ok !== true) return { error: clean(template.error || "template_not_sendable", 80), status: 409 };
+  const text = (Array.isArray(template.components) ? template.components : [])
+    .filter((component: any) => {
+      const type = clean(component?.type, 24).toUpperCase();
+      return type === "BODY" || (type === "HEADER" && clean(component?.format, 24).toUpperCase() === "TEXT");
+    })
+    .map((component: any) => String(component?.text || ""))
+    .join(" ");
+  const indices = Array.from(new Set(Array.from(text.matchAll(/{{\s*(\d{1,3})\s*}}/g), (match: any) => Number(match[1]))))
+    .filter((index: number) => Number.isInteger(index) && index > 0 && index <= 999)
+    .sort((a: number, b: number) => a - b);
+  return { indices };
+}
+
+function normalizeCampaignTemplateVariables(input: any, indices: number[], requireAll = true) {
+  const isObject = input && typeof input === "object" && !Array.isArray(input);
+  if (requireAll && !isObject) return { error: "invalid_campaign_variables" };
+  const source = isObject ? input : {};
+  const allowed = new Set(indices.map(String));
+  const values: Record<string, unknown> = {};
+  for (const [index, value] of Object.entries(source)) {
+    if (!allowed.has(index)) {
+      if (requireAll) return { error: "campaign_variable_not_in_template" };
+      continue;
+    }
+    if (typeof value === "string") {
+      const text = clean(value, 500);
+      if (text) values[index] = text;
+      else if (requireAll) return { error: "campaign_template_variable_required" };
+      continue;
+    }
+    if (value && typeof value === "object" && !Array.isArray(value)
+        && (value as any).source === "customer_first_name") {
+      values[index] = {
+        source: "customer_first_name",
+        fallback: clean((value as any).fallback, 100) || "Cliente",
+      };
+      continue;
+    }
+    if (requireAll) return { error: "invalid_campaign_variable" };
+  }
+  if (requireAll && indices.some((index) => !Object.prototype.hasOwnProperty.call(values, String(index)))) {
+    return { error: "campaign_template_variable_required" };
+  }
+  return { values };
+}
+
 async function whatsappCampaignDraftLoad(input: any) {
   const campaignId = uuid(input.campaign_id);
   if (!campaignId) return { error: "invalid_campaign_id", status: 400 };
   const result = await db.from("marketing_campaigns_v1")
-    .select("id,name,status,revision,filters,whatsapp_account_id,template_id")
+    .select("id,name,status,revision,filters,variable_values,whatsapp_account_id,template_id")
     .eq("id", campaignId)
     .maybeSingle();
   if (result.error) throw result.error;
@@ -1331,6 +1385,9 @@ async function whatsappCampaignDraftLoad(input: any) {
   }
   const normalized = normalizeCampaignDraftFilters(campaign.filters);
   if (normalized.error) return { error: "campaign_filters_not_editable", status: 409 };
+  const variableIndices = await marketingCampaignTemplateVariableIndices(uuid(campaign.whatsapp_account_id), uuid(campaign.template_id));
+  if (variableIndices.error) return variableIndices;
+  const variableValues = normalizeCampaignTemplateVariables(campaign.variable_values, variableIndices.indices, false);
   return {
     campaign: {
       id: uuid(campaign.id),
@@ -1338,6 +1395,7 @@ async function whatsappCampaignDraftLoad(input: any) {
       revision: Number(campaign.revision) || 0,
       whatsapp_account_id: uuid(campaign.whatsapp_account_id),
       template_id: uuid(campaign.template_id),
+      variable_values: variableValues.values || {},
       filters: normalized.filters,
     },
   };
@@ -1358,12 +1416,16 @@ async function whatsappCampaignDraftCreate(input: any) {
   }
   const templateError = await validateMarketingCampaignTemplate(accountId, templateId);
   if (templateError) return templateError;
+  const variableIndices = await marketingCampaignTemplateVariableIndices(accountId, templateId);
+  if (variableIndices.error) return variableIndices;
+  const variableValues = normalizeCampaignTemplateVariables(input.variable_values, variableIndices.indices, true);
+  if (variableValues.error) return { error: variableValues.error, status: 400, message: "Preencha todas as variáveis do modelo aprovado." };
   const result = await db.rpc("marketing_create_campaign_v1", {
     p_name: name,
     p_whatsapp_account_id: accountId,
     p_template_id: templateId,
     p_filters: normalized.filters,
-    p_variable_values: {},
+    p_variable_values: variableValues.values,
     p_deep_link: {},
     p_idempotency_key: idempotencyKey,
   });
@@ -1395,6 +1457,10 @@ async function whatsappCampaignDraftUpdate(input: any) {
   }
   const templateError = await validateMarketingCampaignTemplate(accountId, templateId);
   if (templateError) return templateError;
+  const variableIndices = await marketingCampaignTemplateVariableIndices(accountId, templateId);
+  if (variableIndices.error) return variableIndices;
+  const variableValues = normalizeCampaignTemplateVariables(input.variable_values, variableIndices.indices, true);
+  if (variableValues.error) return { error: variableValues.error, status: 400, message: "Preencha todas as variáveis do modelo aprovado." };
   const result = await db.rpc("marketing_update_campaign_draft_v1", {
     p_campaign_id: campaignId,
     p_expected_revision: revision,
@@ -1403,6 +1469,7 @@ async function whatsappCampaignDraftUpdate(input: any) {
       whatsapp_account_id: accountId,
       template_id: templateId,
       filters: normalized.filters,
+      variable_values: variableValues.values,
     },
   });
   if (result.error) throw result.error;
@@ -1492,14 +1559,23 @@ async function whatsappCampaignPreview(input: any) {
 
 async function whatsappCampaignContentPreview(input: any) {
   const campaignId = uuid(input.campaign_id);
-  if (!campaignId) return { error: "invalid_campaign_id", message: "Campanha inválida.", status: 400 };
-  const campaignResult = await db.from("marketing_campaigns_v1")
-    .select("id,name,revision,whatsapp_account_id,template_id")
-    .eq("id", campaignId)
-    .maybeSingle();
-  if (campaignResult.error) throw campaignResult.error;
-  if (!campaignResult.data) return { error: "campaign_not_found", message: "Campanha não encontrada.", status: 404 };
-  const campaign: any = campaignResult.data;
+  let campaign: any;
+  if (campaignId) {
+    const campaignResult = await db.from("marketing_campaigns_v1")
+      .select("id,name,revision,whatsapp_account_id,template_id")
+      .eq("id", campaignId)
+      .maybeSingle();
+    if (campaignResult.error) throw campaignResult.error;
+    if (!campaignResult.data) return { error: "campaign_not_found", message: "Campanha não encontrada.", status: 404 };
+    campaign = campaignResult.data;
+  } else {
+    const accountId = uuid(input.whatsapp_account_id);
+    const templateId = uuid(input.template_id);
+    if (!accountId || !templateId) return { error: "invalid_campaign_template", message: "Selecione o canal e o modelo aprovado.", status: 400 };
+    const templateError = await validateMarketingCampaignTemplate(accountId, templateId);
+    if (templateError) return templateError;
+    campaign = { id: "", name: "", revision: 0, whatsapp_account_id: accountId, template_id: templateId };
+  }
   const templateResult = await db.rpc("marketing_campaign_template_snapshot_v1", {
     p_whatsapp_account_id: campaign.whatsapp_account_id,
     p_template_id: campaign.template_id,
@@ -1532,10 +1608,12 @@ async function whatsappCampaignContentPreview(input: any) {
     }
   }
   const text = parts.map((part) => String(part.text || "")).join(" ");
-  const variableCount = (text.match(/{{\s*\d+\s*}}/g) || []).length;
+  const variableIndices = Array.from(new Set(Array.from(text.matchAll(/{{\s*(\d{1,3})\s*}}/g), (match: any) => Number(match[1]))))
+    .filter((index: number) => Number.isInteger(index) && index > 0 && index <= 999)
+    .sort((a: number, b: number) => a - b);
   return {
     campaign: {
-      id: campaignId,
+      id: campaignId || "",
       name: clean(campaign.name, 140),
       revision: Number(campaign.revision) || 0,
     },
@@ -1544,7 +1622,8 @@ async function whatsappCampaignContentPreview(input: any) {
       language: clean(template.language, 24),
       category: clean(template.category, 40),
       parts,
-      variable_count: variableCount,
+      variable_count: variableIndices.length,
+      variable_indices: variableIndices,
     },
   };
 }
