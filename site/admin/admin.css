@@ -342,6 +342,7 @@
 .whatsapp-message.outbound { align-self:flex-end; border-color:#d7e8d7; background:#eef7ee; }
 .whatsapp-message p { margin:0; color:var(--ink); font-size:.86rem; white-space:pre-wrap; overflow-wrap:anywhere; }
 .whatsapp-message time { display:block; margin-top:6px; color:var(--muted); font-size:.68rem; }
+.whatsapp-message-status { display:block; margin-top:2px; color:var(--muted); font-size:.68rem; font-weight:650; }
 #whatsapp-conversation-older { align-self:center; margin-top:10px; }
 @media (max-width:760px) {
   .whatsapp-conversation-filters { grid-template-columns:1fr 1fr; }
