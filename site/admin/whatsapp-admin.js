@@ -307,6 +307,7 @@
   }
 
   function renderAnaAdmin(data) {
+    const channels = Array.isArray(data.channels) ? data.channels : [];
     const active = data.active || null;
     const draft = data.draft || null;
     const versions = Array.isArray(data.versions) ? data.versions : [];
@@ -352,8 +353,53 @@
         <section class="whatsapp-overview-card"><h3>Histórico de versões</h3><div class="whatsapp-record-list">${versionRows}</div></section>
         <section class="whatsapp-overview-card"><h3>Atividade recente</h3><div class="whatsapp-record-list">${eventRows}</div></section>
       </div>`;
-    $("whatsapp-ana-status").textContent = "Versões, comparação, autores e atividade consultados em modo somente leitura.";
+    const channelMarkup = channels.length ? channels.map((channel) => `
+      <article class="whatsapp-ana-channel">
+        <div><h4>${esc(channel.name || "WhatsApp")}</h4><p class="admin-muted">${channel.phone_last4 ? "Número terminado em •••• " + esc(channel.phone_last4) : "Número não informado"}</p></div>
+        <span class="whatsapp-ana-channel-state ${channel.ana_enabled ? "is-active" : "is-paused"}">${channel.ana_enabled ? "ANA ativa" : "ANA pausada"}</span>
+        ${channel.ana_enabled && channel.id ? '<button class="button button-outline" type="button" data-ana-pause="' + esc(channel.id) + '" data-channel-name="' + esc(channel.name || "WhatsApp") + '" data-channel-last4="' + esc(channel.phone_last4 || "") + '">Pausar ANA</button>' : '<small class="admin-muted">Para reativar, revise a configuração ativa antes.</small>'}
+      </article>`).join("") : emptyList("Nenhum canal WhatsApp cadastrado.");
+    $("whatsapp-ana-content").innerHTML = `
+      <section class="whatsapp-overview-card"><h3>Estado por número</h3>
+        <p class="admin-muted">A pausa impede novas respostas automáticas nesse número; captura e atendimento humano permanecem ativos.</p>
+        <div class="whatsapp-ana-channels">${channelMarkup}</div>
+      </section>`;
+    $("whatsapp-ana-status").textContent = "Versões, comparação e histórico consultados. Pausar exige confirmação.";
+
   }
+  async function pauseAnaChannel(button) {
+    const accountId = String(button?.dataset?.anaPause || "");
+    if (!accountId || button.disabled) return;
+    const channelName = String(button.dataset.channelName || "este canal");
+    const last4 = String(button.dataset.channelLast4 || "");
+    const channelLabel = channelName + (last4 ? " · final " + last4 : "");
+    if (!window.confirm("Pausar a ANA em " + channelLabel + "? A captura e o atendimento humano permanecem ativos.")) return;
+
+    button.disabled = true;
+    const status = $("whatsapp-ana-status");
+    if (status) status.textContent = "Pausando ANA em " + channelLabel + "…";
+    try {
+      const response = await fetch(`${supabase}/functions/v1/site-admin-v1`, {
+        method: "POST",
+        headers: {
+          apikey: publishableKey,
+          "x-admin-code": window.DonaAdminAuth?.getCode?.() || "",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ action: "whatsapp_ana_pause_channel", whatsapp_account_id: accountId }),
+        cache: "no-store",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok === false) throw new Error(data.message || data.error || "Não foi possível pausar a ANA.");
+      if (status) status.textContent = "ANA pausada em " + channelLabel + ".";
+      await loadAnaStatus(true);
+    } catch (error) {
+      if (status) status.textContent = error instanceof Error ? error.message : "Não foi possível pausar a ANA.";
+    } finally {
+      if (button.isConnected) button.disabled = false;
+    }
+  }
+
   let anaLoaded = false;
   let anaLoading = false;
   async function loadAnaStatus(force) {
@@ -390,6 +436,10 @@
     if (button) loadCampaignPreview(button);
   });
   document.querySelectorAll("[data-whatsapp-overview-refresh]").forEach((button) => button.addEventListener("click", () => loadOverview(true)));
+  $("whatsapp-ana-content")?.addEventListener("click", (event) => {
+    const button = event.target instanceof Element ? event.target.closest("[data-ana-pause]") : null;
+    if (button) pauseAnaChannel(button);
+  });
   $("whatsapp-ana-refresh")?.addEventListener("click", () => loadAnaStatus(true));
   window.DonaWhatsAppAdmin = { loadOverview, loadAnaStatus };
 })();
