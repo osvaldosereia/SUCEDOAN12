@@ -1142,6 +1142,16 @@ function safeWhatsappFilename(value: any) {
   return safe || "arquivo";
 }
 
+function stableAdminJson(value: any): string {
+  if (Array.isArray(value)) return "[" + value.map(stableAdminJson).join(",") + "]";
+  if (value && typeof value === "object") {
+    return "{" + Object.keys(value).sort().map((key) =>
+      JSON.stringify(key) + ":" + stableAdminJson(value[key])
+    ).join(",") + "}";
+  }
+  return JSON.stringify(value) ?? "undefined";
+}
+
 async function whatsappAnaAdminStatus() {
   const result = await db.rpc("ops2_ana_admin_load_v1");
   if (result.error) throw result.error;
@@ -1153,18 +1163,62 @@ async function whatsappAnaAdminStatus() {
   const versions = Array.isArray(snapshot.versions) ? snapshot.versions : [];
   const tests = Array.isArray(snapshot.test_runs) ? snapshot.test_runs : [];
   const events = Array.isArray(snapshot.events) ? snapshot.events : [];
+  const activeVersion = versions.find((item: any) => active.id && item.id === active.id) || {};
+  const draftEvent = events.find((item: any) =>
+    ["admin_save_draft", "draft_saved"].includes(clean(item.action, 60).toLowerCase())
+    && Number(item.draft_revision) === Number(draft.revision)
+  );
+  const actorIds = Array.from(new Set([
+    ...versions.map((item: any) => uuid(item.actor_id)),
+    ...events.map((item: any) => uuid(item.actor_id)),
+    uuid(draft.updated_by),
+  ].filter(Boolean)));
+  const actorNames = new Map<string, string>();
+  if (actorIds.length) {
+    const namesResult = await db.from("admin_users").select("user_id,display_name")
+      .in("user_id", actorIds).limit(30);
+    if (!namesResult.error) {
+      for (const item of namesResult.data || []) {
+        const userId = uuid(item.user_id);
+        const displayName = clean(item.display_name, 80);
+        if (userId && displayName) actorNames.set(userId, displayName);
+      }
+    }
+  }
+  const actorName = (value: any) => {
+    const actorId = uuid(value);
+    return actorId ? actorNames.get(actorId) || "Admin sem nome cadastrado" : "Autor não identificado";
+  };
+  const configSections = [
+    { key: "behavior", label: "Comportamento" },
+    { key: "knowledge", label: "Conhecimento" },
+    { key: "triggers", label: "Gatilhos" },
+    { key: "test_cases", label: "Casos de teste" },
+  ];
+  const diffAvailable = Boolean(active.configuration && draft.configuration);
   return {
     active: active.version ? {
       version: Number(active.version),
       created_at: active.created_at || null,
+      published_by: actorName(activeVersion.actor_id),
+      change_note: clean(activeVersion.change_note, 240),
     } : null,
     draft: Number.isSafeInteger(Number(draft.revision)) ? {
       revision: Number(draft.revision),
       updated_at: draft.updated_at || null,
+      updated_by: actorName(draftEvent?.actor_id || draft.updated_by),
     } : null,
+    diff_available: diffAvailable,
+    configuration_diff: diffAvailable ? configSections.map((section) => ({
+      key: section.key,
+      label: section.label,
+      changed: stableAdminJson(active.configuration?.[section.key]) !== stableAdminJson(draft.configuration?.[section.key]),
+    })) : [],
     versions: versions.slice(0, 10).map((item: any) => ({
       version: Number(item.version) || 0,
       is_active: Boolean(active.id && item.id === active.id),
+      published_by: actorName(item.actor_id),
+      change_note: clean(item.change_note, 240),
       created_at: item.created_at || null,
     })),
     test_runs: tests.slice(0, 5).map((item: any) => ({
@@ -1174,6 +1228,7 @@ async function whatsappAnaAdminStatus() {
     })),
     events: events.slice(0, 10).map((item: any) => ({
       action: clean(item.action, 60),
+      actor: actorName(item.actor_id),
       version_id: item.version_id || null,
       draft_revision: Number(item.draft_revision) || null,
       channel_key: clean(item.channel_key, 40),
