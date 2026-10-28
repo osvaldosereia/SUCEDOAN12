@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { verifyAdminCode } from "../_shared/admin-code-v1.ts";
-import { sendTextViaMeta, MetaTransportError } from "../_shared/whatsapp-meta-transport-v1.mjs";
+import { sendTextViaMeta, sendMediaViaMeta, MetaTransportError } from "../_shared/whatsapp-meta-transport-v1.mjs";
+import { canonicalOutboundMetaMime, outboundMetaMaxBytes, validateOutboundMetaMediaContent, uploadMetaMedia, MetaMediaError } from "../_shared/whatsapp-meta-media-v1.mjs";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
@@ -1100,6 +1101,13 @@ async function whatsappConversationMessages(input: any) {
       direction: clean(row.direction, 20),
       message_type: clean(row.message_type, 30),
       text_body: String(row.text_body || "").replace(/\u0000/g, "").slice(0, 4000),
+      media_filename: (() => {
+        const metadata = row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata) ? row.metadata : {};
+        const media = metadata.media && typeof metadata.media === "object" && !Array.isArray(metadata.media) ? metadata.media : metadata;
+        return ["image", "audio", "video", "document"].includes(clean(row.message_type, 30))
+          ? safeWhatsappFilename(media.filename || media.file_name || metadata.media_filename || "")
+          : "";
+      })(),
       status_current: clean(row.status_current, 40),
       location: row.message_type === "location" ? normalizeWhatsappLocation(row.metadata) : null,
       message_at: row.received_at || row.sent_at || row.created_at,
@@ -1127,8 +1135,8 @@ async function whatsappConversationMedia(input: any) {
 
   const allowedMimeTypes = new Set([
     "image/jpeg", "image/png", "image/webp", "image/gif",
-    "audio/ogg", "audio/mpeg", "audio/mp4", "audio/aac", "audio/wav", "audio/x-wav",
-    "video/mp4",
+    "audio/ogg", "audio/mpeg", "audio/mp4", "audio/aac", "audio/amr", "audio/wav", "audio/x-wav",
+    "video/mp4", "video/3gpp", "text/plain",
     "application/pdf", "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -1469,6 +1477,210 @@ async function whatsappConversationSendText(input: any) {
   return sent;
 }
 
+
+function outboundMediaMime(file: any, filename: string) {
+  const extension = filename.toLowerCase().match(/(\.[a-z0-9]{1,8})$/)?.[1] || "";
+  const byExtension: Record<string, string> = {
+    ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
+    ".aac": "audio/aac", ".amr": "audio/amr", ".mp3": "audio/mpeg", ".m4a": "audio/mp4", ".ogg": "audio/ogg",
+    ".mp4": "video/mp4", ".3gp": "video/3gpp",
+    ".pdf": "application/pdf", ".txt": "text/plain", ".doc": "application/msword",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".xls": "application/vnd.ms-excel",
+    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ".ppt": "application/vnd.ms-powerpoint",
+    ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  };
+  return canonicalOutboundMetaMime(file?.type, filename)
+    || canonicalOutboundMetaMime(byExtension[extension] || "", filename);
+}
+
+async function sha256Hex(bytes: Uint8Array) {
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function cacheAttendanceOutboundMedia(messageId: string, filename: string, mimeType: string, bytes: Uint8Array) {
+  if (bytes.byteLength > 20 * 1024 * 1024) return false;
+  const safeFilename = safeWhatsappFilename(filename);
+  const objectPath = "outbound/" + messageId + "/" + safeFilename;
+  const storage = db.storage.from("attendance-media-v1");
+  const upload = await storage.upload(objectPath, new Blob([bytes], { type: mimeType }), {
+    contentType: mimeType,
+    upsert: true,
+  });
+  if (upload.error) throw upload.error;
+
+  const cached = await db.from("attendance_media_cache_v1").insert({
+    message_id: messageId,
+    object_path: objectPath,
+    mime_type: mimeType,
+    filename: safeFilename,
+    expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  });
+  if (cached.error) {
+    await storage.remove([objectPath]);
+    throw cached.error;
+  }
+  return true;
+}
+
+async function whatsappConversationSendMedia(input: any) {
+  const conversationId = uuid(input.conversation_id);
+  if (!conversationId) return { error: "invalid_conversation_id", status: 400 };
+  if (input.to_phone_e164 !== undefined || input.whatsapp_account_id !== undefined || input.account_id !== undefined || input.customer_id !== undefined) {
+    return { error: "destination_fields_not_allowed", status: 400 };
+  }
+
+  const file: any = input.file;
+  if (!file || typeof file.arrayBuffer !== "function" || typeof file.name !== "string") {
+    return { error: "media_file_required", status: 400 };
+  }
+  let filename = clean(file.name, 240)
+    .replace(/[\\/]+/g, "_")
+    .replace(/[^\p{L}\p{N}._() -]+/gu, "_")
+    .trim()
+    .slice(0, 240);
+  if (!filename || filename === "." || filename === "..") return { error: "meta_media_filename_invalid", status: 400 };
+
+  const mimeType = outboundMediaMime(file, filename);
+  const maxBytes = mimeType ? outboundMetaMaxBytes(mimeType) : 0;
+  if (!mimeType || maxBytes <= 0) return { error: "meta_media_type_not_allowed", status: 415 };
+  if (!Number.isFinite(Number(file.size)) || Number(file.size) <= 0) return { error: "media_file_empty", status: 400 };
+  if (Number(file.size) > maxBytes) return { error: "media_file_too_large", status: 413 };
+
+  const caption = String(input.caption ?? "")
+    .replace(/\r\n?/g, "\n")
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+    .trim();
+  if (caption.length > 1024) return { error: "media_caption_too_long", status: 400 };
+  const mediaType = mimeType.startsWith("image/") ? "image"
+    : mimeType.startsWith("audio/") ? "audio"
+    : mimeType.startsWith("video/") ? "video"
+    : "document";
+  const safeCaption = mediaType === "audio" ? "" : caption;
+  const idempotencyKey = clean(input.idempotency_key, 120);
+  if (!/^[A-Za-z0-9._:-]{8,120}$/.test(idempotencyKey)) return { error: "invalid_idempotency_key", status: 400 };
+
+  let bytes: Uint8Array;
+  try { bytes = new Uint8Array(await file.arrayBuffer()); }
+  catch { return { error: "media_file_read_failed", status: 400 }; }
+  if (bytes.byteLength !== Number(file.size)) return { error: "media_file_read_failed", status: 400 };
+  if (bytes.byteLength > maxBytes) return { error: "media_file_too_large", status: 413 };
+  try {
+    validateOutboundMetaMediaContent(mimeType, bytes);
+  } catch (error) {
+    const code = error instanceof MetaMediaError ? error.code : "meta_media_content_invalid";
+    return { error: code, status: code === "meta_media_type_not_allowed" ? 415 : 400 };
+  }
+  const sha256 = await sha256Hex(bytes);
+
+  const queuedResult = await db.rpc("ops2_admin_attendance_enqueue_media_v1", {
+    p_conversation_id: conversationId,
+    p_media_type: mediaType,
+    p_mime_type: mimeType,
+    p_filename: filename,
+    p_size_bytes: bytes.byteLength,
+    p_sha256: sha256,
+    p_caption: safeCaption || null,
+    p_idempotency_key: idempotencyKey,
+  });
+  if (queuedResult.error) throw queuedResult.error;
+  const queued = queuedResult.data || { ok: false, error: "enqueue_failed" };
+  if (queued.ok !== true) {
+    const error = String(queued.error || "enqueue_failed");
+    return { ...queued, status: attendanceSendHttpStatus(error) };
+  }
+  if (queued.duplicate === true && queued.status === "sent") {
+    return { ok: true, status: "accepted", duplicate: true, outbox_id: queued.outbox_id, provider: queued.provider || "meta" };
+  }
+  if (queued.duplicate === true && queued.status !== "queued") {
+    return { error: "duplicate_not_dispatchable", status: 409, outbox_id: queued.outbox_id, outbox_status: queued.status, provider: queued.provider || "meta" };
+  }
+
+  const claimedResult = await db.rpc("ops2_admin_attendance_claim_media_outbox_v1", { p_outbox_id: queued.outbox_id });
+  if (claimedResult.error) throw claimedResult.error;
+  const claim = claimedResult.data || { ok: false, error: "outbox_claim_failed" };
+  if (claim.already_sent === true) {
+    return { ok: true, status: "accepted", duplicate: true, outbox_id: claim.outbox_id || queued.outbox_id, provider: "meta" };
+  }
+  if (claim.ok !== true) {
+    const error = String(claim.error || "outbox_claim_failed");
+    return { ...claim, status: attendanceSendHttpStatus(error) };
+  }
+  if (!attendanceMetaConfigReady() || !/^\d{5,30}$/.test(String(claim.phone_number_id || ""))) {
+    await markAttendanceClaimFailed(claim, "meta_transport_not_configured");
+    return { error: "meta_transport_not_configured", status: 409, provider: "meta" };
+  }
+
+  let uploaded: any;
+  try {
+    uploaded = await uploadMetaMedia({
+      accessToken: META_WHATSAPP_ACCESS_TOKEN,
+      graphVersion: META_WHATSAPP_GRAPH_VERSION,
+      phoneNumberId: claim.phone_number_id,
+      mimeType,
+      filename,
+      bytes,
+      timeoutMs: 20000,
+    });
+  } catch (error) {
+    const code = error instanceof MetaMediaError ? error.code : "meta_media_upload_failed";
+    await markAttendanceClaimFailed(claim, code);
+    return { error: code, status: 502, provider: "meta", uncertain: false };
+  }
+
+  try {
+    const sent = await sendMediaViaMeta({
+      accessToken: META_WHATSAPP_ACCESS_TOKEN,
+      phoneNumberId: claim.phone_number_id,
+      toE164: claim.to_phone_e164,
+      mediaType,
+      mediaId: uploaded.mediaId,
+      caption: safeCaption,
+      filename,
+      graphVersion: META_WHATSAPP_GRAPH_VERSION,
+      timeoutMs: 15000,
+    });
+    const acceptedAt = new Date().toISOString();
+    const accepted = await db.rpc("ops2_admin_attendance_accept_meta_media_outbound_v1", {
+      p_outbox_id: claim.outbox_id,
+      p_provider_message_id: sent.providerMessageId,
+      p_provider_media_id: uploaded.mediaId,
+      p_accepted_at: acceptedAt,
+    });
+    if (accepted.error || accepted.data?.ok !== true) {
+      return await markAttendanceMetaUncertain(claim, accepted.error?.message || accepted.data?.error || "canonical_persist_failed");
+    }
+
+    const messageId = uuid(accepted.data?.message_id);
+    let mediaCached = false;
+    if (messageId) {
+      try {
+        mediaCached = await cacheAttendanceOutboundMedia(messageId, filename, mimeType, bytes);
+      } catch {
+        console.warn("site-admin-v1 outbound media cache unavailable", messageId);
+      }
+    }
+    return {
+      ok: true,
+      status: "accepted",
+      outbox_status: "sent",
+      provider: "meta",
+      message_id: messageId || null,
+      status_current: accepted.data?.status_current || "accepted",
+      media_cached: mediaCached,
+    };
+  } catch (error) {
+    if (error instanceof MetaTransportError) {
+      if (error.uncertain) return await markAttendanceMetaUncertain(claim, error.code);
+      await markAttendanceClaimFailed(claim, error.code);
+      return { ok: false, error: error.code, status: attendanceSendHttpStatus(error.code), provider: "meta", retryable: error.retryable === true, uncertain: false, http_status: error.httpStatus };
+    }
+    return await markAttendanceMetaUncertain(claim, "unexpected_media_transport_error");
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
   if (!["GET", "POST"].includes(req.method)) return json(req, { ok: false, error: "method_not_allowed" }, 405);
@@ -1481,8 +1693,24 @@ Deno.serve(async (req: Request) => {
 
   try {
     const url = new URL(req.url);
+    const urlAction = clean(url.searchParams.get("action"), 40);
     let body: any = {};
-    if (req.method === "POST") {
+    if (req.method === "POST" && urlAction === "whatsapp_conversation_send_media") {
+      const contentLength = Number(req.headers.get("content-length") || 0);
+      if (Number.isFinite(contentLength) && contentLength > 26 * 1024 * 1024) {
+        return json(req, { ok: false, error: "media_file_too_large" }, 413);
+      }
+      let form: FormData;
+      try { form = await req.formData(); }
+      catch { return json(req, { ok: false, error: "invalid_multipart" }, 400); }
+      body = {
+        action: urlAction,
+        conversation_id: form.get("conversation_id"),
+        idempotency_key: form.get("idempotency_key"),
+        caption: form.get("caption"),
+        file: form.get("file"),
+      };
+    } else if (req.method === "POST") {
       try { body = await req.json(); }
       catch { return json(req, { ok: false, error: "invalid_json" }, 400); }
     }
@@ -1493,6 +1721,7 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "whatsapp_conversation_list") result = await whatsappConversationList(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_messages") result = await whatsappConversationMessages(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_send_text") result = await whatsappConversationSendText(input);
+    else if (req.method === "POST" && action === "whatsapp_conversation_send_media") result = await whatsappConversationSendMedia(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_media") result = await whatsappConversationMedia(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_favorite") result = await whatsappConversationFavorite(input);
     else if (req.method === "POST" && action === "whatsapp_ana_admin_status") result = await whatsappAnaAdminStatus();
