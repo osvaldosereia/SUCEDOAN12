@@ -561,3 +561,18 @@
 @media (max-width:760px) {
   .whatsapp-campaign-variable-row { grid-template-columns:minmax(0,1fr); }
 }
+
+.whatsapp-ana-delivery-list { display:grid; gap:9px; margin-top:12px; }
+.whatsapp-ana-delivery-row { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:12px; padding:11px 12px; border:1px solid var(--line); border-radius:10px; background:#fbfaf8; }
+.whatsapp-ana-delivery-row > div:first-child { display:grid; gap:4px; min-width:0; }
+.whatsapp-ana-delivery-row strong { color:var(--ink); font-size:.82rem; }
+.whatsapp-ana-delivery-row small { color:var(--muted); font-size:.72rem; }
+.whatsapp-ana-status-counts { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:6px; }
+.whatsapp-ana-delivery-chip { display:inline-flex; align-items:center; min-height:25px; padding:4px 8px; border-radius:999px; background:#f0ece6; color:#63594e; font-size:.69rem; font-weight:750; white-space:nowrap; }
+.whatsapp-ana-delivery-chip.is-confirmed { background:#e5f3e8; color:#27683b; }
+.whatsapp-ana-delivery-chip.is-pending { background:#fff4e5; color:#8b5a25; }
+.whatsapp-ana-delivery-chip.is-error { background:#fff0ed; color:#9a3329; }
+@media (max-width:640px) {
+  .whatsapp-ana-delivery-row { grid-template-columns:minmax(0,1fr); }
+  .whatsapp-ana-status-counts { justify-content:flex-start; }
+}
