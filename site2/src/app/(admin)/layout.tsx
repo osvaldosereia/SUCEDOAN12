@@ -1,13 +1,10 @@
 import type { ReactNode } from "react";
-import { AdminFrame } from "@/components/admin-frame";
-import { requireAdminSession } from "@/lib/auth/require-admin-session";
+import { AdminSessionGate } from "@/components/admin-session-gate";
 
-export default async function AdminLayout({
+export default function AdminLayout({
 	children,
 }: {
 	children: ReactNode;
 }) {
-	await requireAdminSession();
-
-	return <AdminFrame>{children}</AdminFrame>;
+	return <AdminSessionGate>{children}</AdminSessionGate>;
 }
