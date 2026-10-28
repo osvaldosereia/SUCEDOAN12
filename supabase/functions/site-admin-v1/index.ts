@@ -705,10 +705,14 @@ async function whatsappOverview() {
 
 
 async function whatsappConversationList(input: any) {
-  const parsedPage = Number.parseInt(String(input.page ?? "0"), 10);
-  const page = Number.isFinite(parsedPage) ? Math.min(200, Math.max(0, parsedPage)) : 0;
   const pageSize = 30;
-  const offset = page * pageSize;
+  const cursor = input.cursor && typeof input.cursor === "object" ? input.cursor : null;
+  const cursorDateRaw = cursor ? clean(cursor.updated_at, 64) : "";
+  const cursorId = cursor ? uuid(cursor.id) : "";
+  const cursorDate = cursorDateRaw ? new Date(cursorDateRaw) : null;
+  if (cursor && ((!cursorDate || Number.isNaN(cursorDate.getTime())) || !cursorId)) {
+    return { error: "invalid_conversation_cursor", status: 400 };
+  }
   const requestedAccount = clean(input.account_id, 64);
   const accountId = requestedAccount ? uuid(requestedAccount) : "";
   if (requestedAccount && !accountId) return { error: "invalid_account_id", status: 400 };
@@ -718,7 +722,14 @@ async function whatsappConversationList(input: any) {
   let conversationQuery = db.from("conversations")
     .select("id,whatsapp_account_id,wa_contact_e164,status,stage,human_required,mode,last_inbound_at,last_outbound_at,updated_at,created_at", { count: "exact" })
     .order("updated_at", { ascending: false })
-    .range(offset, offset + pageSize - 1);
+    .order("id", { ascending: false })
+    .limit(pageSize + 1);
+  if (cursorDate && cursorId) {
+    const timestamp = cursorDate.toISOString();
+    conversationQuery = conversationQuery.or(
+      "updated_at.lt." + timestamp + ",and(updated_at.eq." + timestamp + ",id.lt." + cursorId + ")",
+    );
+  }
   if (accountId) conversationQuery = conversationQuery.eq("whatsapp_account_id", accountId);
   if (search.length >= 4) conversationQuery = conversationQuery.ilike("wa_contact_e164", "%" + search + "%");
   if (onlyHuman) conversationQuery = conversationQuery.eq("human_required", true);
@@ -730,9 +741,12 @@ async function whatsappConversationList(input: any) {
   if (conversationResult.error) throw conversationResult.error;
   if (accountResult.error) throw accountResult.error;
 
+  const rows = conversationResult.data || [];
+  const hasMore = rows.length > pageSize;
+  const pageRows = rows.slice(0, pageSize);
   const accounts = accountResult.data || [];
   const accountById = new Map(accounts.map((row: any) => [row.id, row]));
-  const items = (conversationResult.data || []).map((row: any) => {
+  const items = pageRows.map((row: any) => {
     const account: any = accountById.get(row.whatsapp_account_id) || {};
     const phoneDigits = String(row.wa_contact_e164 || "").replace(/\D/g, "");
     const accountDigits = String(account.phone_e164 || "").replace(/\D/g, "");
@@ -748,8 +762,10 @@ async function whatsappConversationList(input: any) {
       mode: clean(row.mode, 40),
       human_required: row.human_required === true,
       last_activity_at: lastActivity,
+      updated_at: row.updated_at,
     };
   });
+  const lastRow: any = pageRows[pageRows.length - 1];
   return {
     items,
     accounts: accounts.map((row: any) => ({
@@ -758,19 +774,22 @@ async function whatsappConversationList(input: any) {
       number_last4: String(row.phone_e164 || "").replace(/\D/g, "").slice(-4),
       active: row.is_active === true,
     })),
-    page,
-    page_size: pageSize,
     total: conversationResult.count || 0,
-    has_more: offset + items.length < (conversationResult.count || 0),
+    has_more: hasMore,
+    next_cursor: hasMore && lastRow ? { updated_at: lastRow.updated_at, id: lastRow.id } : null,
   };
 }
 
 async function whatsappConversationMessages(input: any) {
   const conversationId = uuid(input.conversation_id);
   if (!conversationId) return { error: "invalid_conversation_id", status: 400 };
-  const beforeRaw = clean(input.before, 64);
+  const beforeRaw = clean(input.before_created_at || input.before, 64);
+  const beforeIdRaw = clean(input.before_id, 64);
   const before = beforeRaw ? new Date(beforeRaw) : null;
+  const beforeId = beforeIdRaw ? uuid(beforeIdRaw) : "";
   if (beforeRaw && (!before || Number.isNaN(before.getTime()))) return { error: "invalid_before", status: 400 };
+  if (beforeIdRaw && !beforeId) return { error: "invalid_before_id", status: 400 };
+  if (beforeId && !before) return { error: "invalid_before_cursor", status: 400 };
 
   const conversationResult = await db.from("conversations")
     .select("id,whatsapp_account_id,wa_contact_e164,status,stage,mode,human_required")
@@ -787,8 +806,13 @@ async function whatsappConversationMessages(input: any) {
         .select("id,direction,message_type,text_body,received_at,sent_at,created_at")
         .eq("conversation_id", conversationId)
         .eq("whatsapp_account_id", conversation.whatsapp_account_id);
-      if (before) query = query.lt("created_at", before.toISOString());
-      return query.order("created_at", { ascending: false }).limit(31);
+      if (before && beforeId) {
+        const timestamp = before.toISOString();
+        query = query.or(
+          "created_at.lt." + timestamp + ",and(created_at.eq." + timestamp + ",id.lt." + beforeId + ")",
+        );
+      } else if (before) query = query.lt("created_at", before.toISOString());
+      return query.order("created_at", { ascending: false }).order("id", { ascending: false }).limit(31);
     })(),
   ]);
   if (accountResult.error) throw accountResult.error;
@@ -797,7 +821,7 @@ async function whatsappConversationMessages(input: any) {
   const rows = messageResult.data || [];
   const hasMore = rows.length > 30;
   const pageRows = rows.slice(0, 30);
-  const oldestTimestamp = pageRows.length ? pageRows[pageRows.length - 1].created_at : null;
+  const oldestRow: any = pageRows[pageRows.length - 1];
   const account: any = accountResult.data || {};
   const phoneDigits = String(conversation.wa_contact_e164 || "").replace(/\D/g, "");
   const accountDigits = String(account.phone_e164 || "").replace(/\D/g, "");
@@ -819,10 +843,9 @@ async function whatsappConversationMessages(input: any) {
       text_body: String(row.text_body || "").replace(/\u0000/g, "").slice(0, 4000),
       message_at: row.received_at || row.sent_at || row.created_at,
     })),
-    next_before: hasMore ? oldestTimestamp : null,
+    next_before: hasMore && oldestRow ? { created_at: oldestRow.created_at, id: oldestRow.id } : null,
   };
 }
-
 
 async function whatsappAnaAdminStatus() {
   const result = await db.rpc("ops2_ana_admin_load_v1");
