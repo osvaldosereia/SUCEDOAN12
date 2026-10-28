@@ -54,7 +54,7 @@
       button.type = "button";
       button.className = "whatsapp-conversation-card";
       button.dataset.conversationId = item.id;
-      button.setAttribute("aria-current", String(item.id === state.selectedId));
+      button.setAttribute("aria-pressed", String(item.id === state.selectedId));
       const title = document.createElement("strong");
       title.textContent = item.phone_last4 ? "Contato · •••• " + item.phone_last4 : "Contato";
       const meta = document.createElement("span");
@@ -94,7 +94,8 @@
     }
     if (prepend) host.scrollTop = oldTop + (host.scrollHeight - oldHeight);
     const empty = $("whatsapp-conversation-empty");
-    if (!(messages || []).length) {
+    const hasMessages = host.childElementCount > 0;
+    if (!hasMessages) {
       empty.replaceChildren();
       const title = document.createElement("strong");
       title.textContent = "Sem mensagens nesta conversa";
@@ -102,7 +103,7 @@
       hint.textContent = "Não há mensagens para exibir.";
       empty.append(title, hint);
     }
-    empty.hidden = Boolean((messages || []).length);
+    empty.hidden = hasMessages;
   }
 
   function renderHeader(conversation) {
@@ -117,6 +118,12 @@
   async function loadConversations({ append = false } = {}) {
     if (state.busy) return;
     if (!base || !publishableKey) return;
+    const rawSearch = $("whatsapp-conversation-search").value.trim();
+    const searchDigits = rawSearch.replace(/\D/g, "");
+    if (rawSearch && searchDigits.length < 4) {
+      setStatus("Digite pelo menos quatro dígitos do telefone.");
+      return;
+    }
     state.busy = true;
     let selectFirst = "";
     const host = $("whatsapp-conversation-items");
@@ -168,7 +175,7 @@
       $("whatsapp-conversation-empty").hidden = false;
       $("whatsapp-conversation-messages").replaceChildren();
       for (const button of document.querySelectorAll(".whatsapp-conversation-card")) {
-        button.setAttribute("aria-current", String(button.dataset.conversationId === id));
+        button.setAttribute("aria-pressed", String(button.dataset.conversationId === id));
       }
     }
     try {
