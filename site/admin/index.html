@@ -15,9 +15,9 @@
   <script src="orders-admin.js?v=3" defer></script>
   <script src="order-message-admin.js?v=3" defer></script>
   <script src="separation-message-admin.js?v=3" defer></script>
-  <script src="whatsapp-admin.js?v=2" defer></script>
+  <script src="whatsapp-admin.js?v=3" defer></script>
   <script src="whatsapp-conversations.js?v=1" defer></script>
-  <script src="admin.js?v=14" defer></script>
+  <script src="admin.js?v=15" defer></script>
 </head>
 <body class="admin-page">
   <main id="admin-login" class="admin-login-main">
@@ -202,8 +202,9 @@
           <div id="whatsapp-overview" class="whatsapp-overview" aria-live="polite"></div>
         </section>
         <section id="whatsapp-section-ana" class="whatsapp-section-panel" role="tabpanel" aria-labelledby="whatsapp-section-tab-ana" data-whatsapp-section-panel="ana" hidden>
-          <div class="section-title"><div><h2>ANA</h2><p>Estado dos canais e decisões recentes registradas pelo atendimento automático.</p></div><button class="button button-outline" type="button" data-whatsapp-overview-refresh>Atualizar</button></div>
+          <div class="section-title"><div><h2>ANA</h2><p>Versão ativa, rascunho e histórico de decisões por canal.</p></div><button id="whatsapp-ana-refresh" class="button button-outline" type="button">Atualizar</button></div>
           <p id="whatsapp-ana-status" class="admin-muted" role="status" aria-live="polite" data-whatsapp-overview-status>Carregando dados da ANA…</p>
+          <div id="whatsapp-ana-version-content" class="whatsapp-overview"></div>
           <div id="whatsapp-ana-content" class="whatsapp-overview"></div>
         </section>
         <section id="whatsapp-section-templates" class="whatsapp-section-panel" role="tabpanel" aria-labelledby="whatsapp-section-tab-templates" data-whatsapp-section-panel="templates" hidden>
