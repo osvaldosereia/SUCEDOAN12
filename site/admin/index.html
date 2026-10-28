@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Admin · Dona Antônia</title>
   <link rel="stylesheet" href="../styles.css?v=5">
-  <link rel="stylesheet" href="admin.css?v=12">
+  <link rel="stylesheet" href="admin.css?v=13">
   <link rel="stylesheet" href="orders-admin.css?v=1">
   <script src="../config.js?v=3"></script>
   <script src="admin-auth.js?v=1" defer></script>
@@ -15,7 +15,8 @@
   <script src="orders-admin.js?v=3" defer></script>
   <script src="order-message-admin.js?v=3" defer></script>
   <script src="separation-message-admin.js?v=3" defer></script>
-  <script src="admin.js?v=12" defer></script>
+  <script src="whatsapp-admin.js?v=1" defer></script>
+  <script src="admin.js?v=13" defer></script>
 </head>
 <body class="admin-page">
   <main id="admin-login" class="admin-login-main">
@@ -183,6 +184,19 @@
       </section>
 
       <section class="admin-view" data-panel="whatsapp" hidden>
+        <nav class="whatsapp-section-tabs" aria-label="Seções do WhatsApp" role="tablist">
+          <button class="whatsapp-section-tab active" id="whatsapp-section-tab-overview" type="button" role="tab" aria-selected="true" aria-controls="whatsapp-section-overview" data-whatsapp-section="overview">Resumo</button>
+          <button class="whatsapp-section-tab" id="whatsapp-section-tab-messages" type="button" role="tab" aria-selected="false" aria-controls="whatsapp-section-messages" data-whatsapp-section="messages">Mensagens de pedido</button>
+        </nav>
+        <section id="whatsapp-section-overview" class="whatsapp-section-panel" role="tabpanel" aria-labelledby="whatsapp-section-tab-overview" data-whatsapp-section-panel="overview">
+          <div class="section-title">
+            <div><h2>Operação do WhatsApp</h2><p>Canais, modelos aprovados, campanhas e decisões recentes da ANA.</p></div>
+            <button id="whatsapp-overview-refresh" class="button button-outline" type="button">Atualizar resumo</button>
+          </div>
+          <p id="whatsapp-overview-status" class="admin-muted" role="status" aria-live="polite">Carregando dados do WhatsApp…</p>
+          <div id="whatsapp-overview" class="whatsapp-overview" aria-live="polite"></div>
+        </section>
+        <section id="whatsapp-section-messages" class="whatsapp-section-panel" role="tabpanel" aria-labelledby="whatsapp-section-tab-messages" data-whatsapp-section-panel="messages" hidden>
         <nav class="whatsapp-tabs" aria-label="Mensagens do WhatsApp" role="tablist">
           <button class="whatsapp-tab active" id="whatsapp-tab-confirmation" type="button" role="tab" aria-selected="true" aria-controls="whatsapp-panel-confirmation" data-whatsapp-tab="confirmation">Pedido recebido</button>
           <button class="whatsapp-tab" id="whatsapp-tab-separation" type="button" role="tab" aria-selected="false" aria-controls="whatsapp-panel-separation" data-whatsapp-tab="separation">Após a separação</button>
@@ -233,6 +247,7 @@
           <div id="separation-message-channels" class="order-message-channels" aria-live="polite"></div>
           <p id="separation-message-status" class="admin-muted" role="status" aria-live="polite"></p>
         </div>
+        </section>
       </section>
     </section>
     </main>
