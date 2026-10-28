@@ -5,7 +5,7 @@
   const endpoint = base + "/functions/v1/site-admin-v1";
   const publishableKey = config.publishableKey || "";
   const $ = (id) => document.getElementById(id);
-  const state = { cursor: null, total: 0, selectedId: "", before: null, busy: false, accountsLoaded: false, favoriteIds: new Set(), favoritesAvailable: false, favoriteBusyIds: new Set(), textSending: false, pendingTextKey: "", pendingTextValue: "", pendingTextConversationId: "", uncertainConversationIds: new Set() };
+  const state = { cursor: null, total: 0, selectedId: "", before: null, busy: false, accountsLoaded: false, favoriteIds: new Set(), favoritesAvailable: false, favoriteBusyIds: new Set(), textSending: false, mediaSending: false, pendingTextKey: "", pendingTextValue: "", pendingTextConversationId: "", pendingMediaKey: "", pendingMediaFingerprint: "", uncertainConversationIds: new Set() };
   const dateLabel = (value) => {
     if (!value) return "Sem atividade";
     const date = new Date(value);
@@ -46,13 +46,26 @@
   function syncComposer() {
     const input = $("whatsapp-conversation-draft");
     const button = $("whatsapp-conversation-send");
+    const fileInput = $("whatsapp-conversation-file");
+    const mediaButton = $("whatsapp-conversation-send-media");
+    const removeButton = $("whatsapp-conversation-remove-file");
+    const fileLabel = $("whatsapp-conversation-file-name");
     const count = $("whatsapp-conversation-compose-count");
     if (!input || !button) return;
     const text = input.value.trim();
+    const file = fileInput?.files?.[0] || null;
     const locked = state.uncertainConversationIds.has(state.selectedId);
-    input.disabled = state.busy || state.textSending || !state.selectedId || locked;
-    button.disabled = state.busy || state.textSending || !state.selectedId || !text || text.length > 4000 || locked;
-    if (count) count.textContent = input.value.length + " / 4000";
+    const sending = state.textSending || state.mediaSending;
+    input.maxLength = file ? 1024 : 4000;
+    input.disabled = state.busy || sending || !state.selectedId || locked;
+    button.disabled = state.busy || sending || !state.selectedId || !text || text.length > 4000 || Boolean(file) || locked;
+    if (fileInput) fileInput.disabled = state.busy || sending || !state.selectedId || locked;
+    if (mediaButton) mediaButton.disabled = state.busy || sending || !state.selectedId || !file || text.length > 1024 || locked;
+    if (removeButton) removeButton.hidden = !file || sending;
+    if (fileLabel) fileLabel.textContent = file
+      ? file.name + " · " + (file.size >= 1024 * 1024 ? (file.size / (1024 * 1024)).toFixed(1) + " MB" : Math.max(1, Math.round(file.size / 1024)) + " KB")
+      : "Nenhum arquivo selecionado";
+    if (count) count.textContent = input.value.length + " / " + (file ? 1024 : 4000);
     if (locked) setComposerStatus("Envio com resultado incerto. Confira o histórico antes de enviar outra mensagem.", "error");
   }
 
@@ -71,6 +84,10 @@
     if (code === "meta_canary_destination_blocked") return "Este contato não está liberado pelo controle de envio do canal.";
     if (code === "rate_limited") return "Limite de mensagens atingido. Aguarde antes de tentar novamente.";
     if (code === "meta_send_uncertain" || code === "duplicate_not_dispatchable") return "Resultado do envio incerto. Confira o histórico antes de reenviar.";
+    if (code === "media_file_too_large") return "O arquivo excede o limite permitido para este formato.";
+    if (code === "meta_media_type_not_allowed") return "Este formato de arquivo não é aceito pelo WhatsApp.";
+    if (code.startsWith("meta_media_") || code === "meta_media_content_invalid") return "O arquivo não passou pela validação de formato.";
+    if (code === "media_caption_too_long") return "A legenda excede 1.024 caracteres.";
     return error instanceof Error ? error.message : "Não foi possível enviar a mensagem.";
   }
 
@@ -79,7 +96,7 @@
     const conversationId = state.selectedId;
     const input = $("whatsapp-conversation-draft");
     const text = input ? input.value.trim() : "";
-    if (!conversationId || !text || state.textSending || state.uncertainConversationIds.has(conversationId)) return;
+    if (!conversationId || !text || state.textSending || state.mediaSending || $("whatsapp-conversation-file")?.files?.length || state.uncertainConversationIds.has(conversationId)) return;
     if (text.length > 4000) {
       setComposerStatus("A mensagem excede o limite de 4.000 caracteres.", "error");
       return;
@@ -129,6 +146,94 @@
       syncComposer();
     }
   }
+  function makeMediaIdempotencyKey() {
+    const id = window.crypto && typeof window.crypto.randomUUID === "function"
+      ? window.crypto.randomUUID()
+      : Date.now() + ":" + Math.random().toString(36).slice(2, 14);
+    return "admin-media:" + id;
+  }
+
+  function clearSelectedMedia() {
+    const fileInput = $("whatsapp-conversation-file");
+    if (fileInput) fileInput.value = "";
+    state.pendingMediaKey = "";
+    state.pendingMediaFingerprint = "";
+    syncComposer();
+  }
+
+  async function sendConversationMedia() {
+    const conversationId = state.selectedId;
+    const fileInput = $("whatsapp-conversation-file");
+    const file = fileInput?.files?.[0] || null;
+    const captionInput = $("whatsapp-conversation-draft");
+    const caption = captionInput ? captionInput.value.trim() : "";
+    if (!conversationId || !file || state.textSending || state.mediaSending || state.uncertainConversationIds.has(conversationId)) return;
+    if (caption.length > 1024) {
+      setComposerStatus("A legenda excede o limite de 1.024 caracteres.", "error");
+      return;
+    }
+
+    const fingerprint = [conversationId, file.name, file.size, file.lastModified, caption].join("|");
+    if (!state.pendingMediaKey || state.pendingMediaFingerprint !== fingerprint) {
+      state.pendingMediaKey = makeMediaIdempotencyKey();
+      state.pendingMediaFingerprint = fingerprint;
+    }
+    const idempotencyKey = state.pendingMediaKey;
+    state.mediaSending = true;
+    setComposerStatus("Enviando anexo pelo canal oficial…", "neutral");
+    syncComposer();
+    try {
+      const form = new FormData();
+      form.set("conversation_id", conversationId);
+      form.set("idempotency_key", idempotencyKey);
+      form.set("caption", caption);
+      form.set("file", file, file.name);
+      const response = await fetch(endpoint + "?action=whatsapp_conversation_send_media", {
+        method: "POST",
+        headers: {
+          apikey: publishableKey,
+          "x-admin-code": window.DonaAdminAuth?.getCode?.() || "",
+        },
+        body: form,
+        cache: "no-store",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok === false) {
+        const error = new Error(data.message || data.error || "Não foi possível enviar o anexo.");
+        error.code = data.error || "";
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      state.pendingMediaKey = "";
+      state.pendingMediaFingerprint = "";
+      if (state.selectedId === conversationId) {
+        fileInput.value = "";
+        captionInput.value = "";
+        setComposerStatus(data.duplicate ? "Anexo já registrado anteriormente." : "Anexo aceito pelo provedor; o histórico mostrará a confirmação.", "success");
+        setStatus("Anexo aceito no canal oficial. Atualizando o histórico…");
+      }
+      state.mediaSending = false;
+      syncComposer();
+      if (state.selectedId === conversationId) await loadConversation(conversationId);
+    } catch (error) {
+      const uncertain = error?.data?.uncertain === true
+        || error?.code === "meta_send_uncertain"
+        || error?.code === "duplicate_not_dispatchable"
+        || (!error?.status)
+        || (error?.status >= 500 && error?.data?.uncertain !== false);
+      if (uncertain) state.uncertainConversationIds.add(conversationId);
+      else if (state.pendingMediaKey === idempotencyKey) {
+        state.pendingMediaKey = "";
+        state.pendingMediaFingerprint = "";
+      }
+      if (state.selectedId === conversationId) setComposerStatus(sendErrorLabel(error), "error");
+      state.mediaSending = false;
+      syncComposer();
+    }
+  }
+
   function addOption(select, value, label) {
     const option = document.createElement("option");
     option.value = value;
@@ -241,7 +346,9 @@
     const title = document.createElement("strong");
     title.textContent = label;
     const hint = document.createElement("small");
-    hint.textContent = "Arquivo privado · link temporário";
+    hint.textContent = message.media_filename
+      ? String(message.media_filename).slice(0, 180) + " · link temporário"
+      : "Arquivo privado · link temporário";
     copy.append(title, hint);
     button.append(symbol, copy);
     button.addEventListener("click", async () => {
@@ -481,6 +588,7 @@
       $("whatsapp-conversation-header").hidden = true;
       $("whatsapp-conversation-compose").hidden = true;
       $("whatsapp-conversation-draft").value = "";
+      clearSelectedMedia();
       state.pendingTextKey = "";
       state.pendingTextValue = "";
       state.pendingTextConversationId = "";
@@ -514,12 +622,25 @@
   }
 
   $("whatsapp-conversation-compose")?.addEventListener("submit", sendConversationText);
+  $("whatsapp-conversation-send-media")?.addEventListener("click", sendConversationMedia);
+  $("whatsapp-conversation-file")?.addEventListener("change", () => {
+    state.pendingMediaKey = "";
+    state.pendingMediaFingerprint = "";
+    syncComposer();
+    const file = $("whatsapp-conversation-file")?.files?.[0];
+    if (file && (/^audio\//i.test(file.type) || /\.(aac|amr|mp3|m4a|ogg)$/i.test(file.name))) setComposerStatus("O WhatsApp envia áudio sem legenda.", "neutral");
+    else if (file) setComposerStatus("A legenda será enviada junto com o anexo.", "neutral");
+  });
+  $("whatsapp-conversation-remove-file")?.addEventListener("click", clearSelectedMedia);
   $("whatsapp-conversation-draft")?.addEventListener("input", () => {
     const text = $("whatsapp-conversation-draft").value.trim();
     if (state.pendingTextValue !== text || state.pendingTextConversationId !== state.selectedId) {
       state.pendingTextKey = "";
       state.pendingTextValue = text;
       state.pendingTextConversationId = state.selectedId;
+    }
+    if ($("whatsapp-conversation-file")?.files?.length && text.length > 1024) {
+      setComposerStatus("A legenda pode ter até 1.024 caracteres.", "error");
     }
     syncComposer();
   });
