@@ -89,9 +89,10 @@
         ? '<small class="whatsapp-campaign-exclusion-muted">Snapshot registra exclusões sem motivo detalhado.</small>'
         : '<small class="whatsapp-campaign-exclusion-muted">Nenhuma exclusão neste snapshot.</small>';
     }
-    const chips = reasons.map(([label, value]) =>
-      '<span class="whatsapp-campaign-exclusion-chip">' + esc(label) + ": " + count(value) + "</span>"
-    ).join("");
+    const chips = reasons.map(([label, value]) => {
+      const suppressed = label === "Opt-out" && Number(value) > 0;
+      return '<span class="whatsapp-campaign-exclusion-chip' + (suppressed ? " is-suppressed" : "") + '">' + esc(label) + ": " + count(value) + "</span>";
+    }).join("");
     return '<div class="whatsapp-campaign-exclusions" aria-label="Motivos de exclusão">' + chips + '</div><small class="whatsapp-campaign-exclusion-muted">Os motivos podem se sobrepor.</small>';
   }
 
