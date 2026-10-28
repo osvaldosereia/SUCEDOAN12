@@ -9,12 +9,12 @@
   <link rel="preload" as="image" href="../img/logoantonia5.png">
   <link rel="preload" as="image" href="assets/cestas/cesta-economica.jpg" fetchpriority="high">
   <link rel="preconnect" href="https://ssbesxgaijknwsjbsbcz.supabase.co" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=17">
+  <link rel="stylesheet" href="styles.css?v=18">
   <script src="config.js?v=2" defer></script>
-  <script src="storefront/extras.js?v=4" defer></script>
+  <script src="storefront/extras.js?v=5" defer></script>
   <script src="storefront/basket.js?v=1" defer></script>
   <script src="storefront/checkout.js?v=6" defer></script>
-  <script src="app.js?v=19" defer></script>
+  <script src="app.js?v=20" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -75,6 +75,32 @@
       </div>
       <div id="home-extra-categories" class="home-extra-categories"></div>
     </section>
+
+    <dialog id="home-extra-product-dialog" class="home-extra-product-dialog" aria-labelledby="home-extra-product-title">
+      <header class="home-extra-product-dialog-header">
+        <p class="eyebrow">Detalhes do produto</p>
+        <button id="home-extra-product-close" class="icon-button" type="button" data-home-extra-dialog-close aria-label="Fechar detalhes do produto">×</button>
+      </header>
+      <div class="home-extra-product-detail">
+        <img id="home-extra-product-image" alt="" width="240" height="240" decoding="async" fetchpriority="high">
+        <div class="home-extra-product-copy">
+          <h2 id="home-extra-product-title">Produto</h2>
+          <p id="home-extra-product-meta" hidden></p>
+          <strong id="home-extra-product-price"></strong>
+        </div>
+      </div>
+      <p id="home-extra-product-description" class="home-extra-product-description" hidden></p>
+      <p id="home-extra-product-stock" class="home-extra-product-stock" role="status" hidden></p>
+      <div class="home-extra-product-selection">
+        <span>Quantidade no pedido</span>
+        <div class="home-extra-stepper">
+          <button id="home-extra-product-decrease" class="quantity-button" type="button" data-home-extra-dialog-adjust data-delta="-1" aria-label="Diminuir quantidade" disabled>−</button>
+          <output id="home-extra-product-quantity" class="quantity-value" aria-live="polite">0</output>
+          <button id="home-extra-product-increase" class="quantity-button" type="button" data-home-extra-dialog-adjust data-delta="1" aria-label="Adicionar produto">+</button>
+        </div>
+      </div>
+      <button class="button button-primary button-wide home-extra-product-done" type="button" data-home-extra-dialog-close>Continuar escolhendo</button>
+    </dialog>
 
     <aside class="privacy-note">Seu pedido será registrado para a equipe da Dona Antônia. A loja dará sequência ao atendimento.</aside>
   </main>
