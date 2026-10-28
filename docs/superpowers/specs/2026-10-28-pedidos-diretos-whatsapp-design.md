@@ -1,37 +1,38 @@
-# Design: pedidos combinados no WhatsApp
+# Design: triagem automática de pedidos e interesses no WhatsApp
 
-**Status:** proposta curta aguardando aprovação  
+**Status:** aprovado pelo usuário; escopo ampliado a pedido do usuário  
 **Data:** 2026-10-28
 
 ## Intenção
 
-A aba **Pedidos · 28h** deve encontrar tanto pedidos originados no site quanto compras combinadas diretamente no WhatsApp, sem tratar uma simples consulta como venda.
+Ajudar o atendimento a priorizar conversas recentes, mostrando interesses e pedidos diretos sem exigir classificação precisa nem criar registros comerciais automaticamente.
 
 ## Estado atual
 
-Pedidos do site são associados à conversa pelo vínculo direto, telefone ou cliente. Para pedidos sem registro no site, o filtro ainda depende de poucas palavras na mensagem. O botão **+ / −** permite inclusão e exclusão manual por conversa.
+A aba **Pedidos · 28h** considera pedidos do site ligados por conversa, telefone ou cliente e sinais textuais limitados. Há controles **+ / −** para incluir ou excluir uma conversa manualmente.
 
-## Objetivos e limites
+## Objetivos
 
-- Identificar automaticamente pedidos diretos com sinais claros de compra e exibir a origem como **Pedido pelo WhatsApp**.
-- Manter dúvidas sobre preço, estoque e disponibilidade fora da classificação automática.
-- Preservar a inclusão e exclusão manual existentes para casos que a regra não reconheça.
-- A classificação não cria pedido no cadastro, não envia mensagem e não cria nota no Bling.
+- Manter **Pedidos · 28h** para pedidos do site e pedidos combinados no WhatsApp.
+- Criar **Interessados · 48h** para conversas recentes com sinais de interesse em produto, preço, disponibilidade, variantes, entrega/retirada ou intenção de compra.
+- Considerar pedido como categoria prioritária: quando a conversa atingir sinais de compra direta, ela sai de **Interessados** e aparece em **Pedidos**.
+- Mostrar a origem do pedido (site ou WhatsApp) e manter os controles manuais existentes.
+- Recalcular as categorias ao trocar/atualizar a aba e automaticamente a cada 60 segundos enquanto a página estiver visível em uma das abas de CRM.
+
+## Regra proposta
+
+Uma regra determinística no servidor classifica interesse com alta cobertura, aceitando algum falso positivo para ajudar o atendimento. Pedido direto exige confirmação explícita de compra junto com detalhe de transação, como produto/quantidade, pagamento ou entrega/retirada. Pedido real recente do site também tem precedência. Dúvidas ambíguas podem ser ajustadas pelos controles manuais.
+
+## Limites
+
+A classificação é uma fila de atendimento, não um registro de venda. Não cria pedido, não envia mensagem, não cria nota no Bling, não usa modelo externo e não guarda cópia do texto das mensagens. As marcações automáticas são recalculadas a partir das mensagens recentes.
 
 ## Abordagens consideradas
 
 | Caminho | Vantagem | Limite |
 | --- | --- | --- |
-| Ampliar palavras-chave | Rápido de ajustar | Pode confundir perguntas com vendas |
-| Regra conservadora com contexto | Automatiza sinais claros e reduz falsos positivos | Pode deixar uma venda implícita para revisão |
-| Confirmação manual em toda conversa | Mais controle | Depende de alguém marcar cada conversa |
+| Ampliar palavras-chave igualmente para interesses e pedidos | Implementação rápida | Pode tratar pergunta como venda |
+| Alta cobertura para interesse e regra mais estrita para pedido | Ajuda a encontrar leads e preserva precedência de pedidos | A aba de interesse terá falsos positivos |
+| Confirmar tudo manualmente | Controle preciso | Não funciona como CRM automático |
 
-## Proposta de critério
-
-Usar uma regra determinística no servidor. Marcar como pedido direto quando houver uma confirmação explícita de compra e algum detalhe da transação — produto/quantidade, pagamento ou combinação de entrega/retirada — dentro da conversa recente. Uma pergunta isolada de preço ou disponibilidade não basta. Casos ambíguos continuam disponíveis para inclusão manual.
-
-A aba reúne pedidos do site e pedidos diretos, mantendo uma indicação visual de origem. O período segue as últimas 28 horas.
-
-## Aprovação pendente
-
-O critério acima é a recomendação padrão desta análise; ainda não foi confirmado pelo usuário. Depois da aprovação, preparar o plano de implementação antes de alterar o código.
+A abordagem escolhida é a segunda, conforme a aprovação do usuário e a preferência explícita por uma ferramenta de apoio sem exigir alta precisão.
