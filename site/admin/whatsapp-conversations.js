@@ -24,7 +24,11 @@
       cache: "no-store",
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok || data.ok === false) throw new Error(data.message || data.error || "Não foi possível consultar as conversas.");
+    if (!response.ok || data.ok === false) {
+      const error = new Error(data.message || data.error || "Não foi possível consultar as conversas.");
+      error.code = data.error || "";
+      throw error;
+    }
     return data;
   }
 
