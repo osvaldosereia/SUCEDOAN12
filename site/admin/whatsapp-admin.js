@@ -11,6 +11,21 @@
   let latestAnaDryRunDetails = null;
   let campaignVariablePreviewRequest = 0;
 
+  function anaDeliveryStatusLabel(value) {
+    const raw = String(value || "").trim().toLowerCase();
+    const labels = {
+      accepted: "Aceita pela API",
+      sent: "Enviada pela Meta",
+      delivered: "Entregue",
+      read: "Lida",
+      failed: "Falhou",
+      rejected: "Rejeitada",
+      pending: "Pendente",
+      queued: "Na fila",
+    };
+    return labels[raw] || human(value);
+  }
+
   function human(value) {
     const labels = {
       approved: "Aprovado", approved_by_meta: "Aprovado", meta_approved: "Aprovado",
@@ -832,6 +847,33 @@
         <span class="whatsapp-ana-channel-state ${channel.ana_enabled ? "is-active" : "is-paused"}">${channel.ana_enabled ? "ANA ativa" : "ANA pausada"}</span>
         ${channel.ana_enabled && channel.id ? '<button class="button button-outline" type="button" data-ana-pause="' + esc(channel.id) + '" data-channel-name="' + esc(channel.name || "WhatsApp") + '" data-channel-last4="' + esc(channel.phone_last4 || "") + '">Pausar ANA</button>' : '<small class="admin-muted">Para reativar, revise a configuração ativa antes.</small>'}
       </article>`).join("") : emptyList("Nenhum canal WhatsApp cadastrado.");
+    const delivery = data.delivery && typeof data.delivery === "object" ? data.delivery : {};
+    const deliveryChannels = Array.isArray(delivery.channels) ? delivery.channels : [];
+    const deliveryMarkup = delivery.available !== true
+      ? emptyList("Não foi possível consultar os status atuais da Meta.")
+      : deliveryChannels.length
+        ? deliveryChannels.map((channel) => {
+          const total = Math.max(0, Math.trunc(Number(channel.message_count) || 0));
+          const counts = channel.status_counts && typeof channel.status_counts === "object" ? channel.status_counts : {};
+          const statusMarkup = Object.entries(counts)
+            .filter(([, count]) => Number(count) > 0)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([status, count]) => {
+              const normalized = String(status).toLowerCase();
+              const tone = ["delivered", "read"].includes(normalized)
+                ? "is-confirmed"
+                : ["failed", "rejected"].includes(normalized) ? "is-error" : "is-pending";
+              return '<span class="whatsapp-ana-delivery-chip ' + tone + '">' + esc(anaDeliveryStatusLabel(status)) + ': ' + esc(Math.max(0, Math.trunc(Number(count) || 0))) + '</span>';
+            }).join("");
+          const latest = total
+            ? total + " mensagem(ns) · mais recente em " + dateLabel(channel.last_message_at)
+            : "Sem envios recentes da ANA";
+          return '<article class="whatsapp-ana-delivery-row"><div><strong>' + esc(channel.name || "WhatsApp")
+            + '</strong><small>' + (channel.phone_last4 ? "•••• " + esc(channel.phone_last4) + " · " : "")
+            + esc(latest) + '</small></div><div class="whatsapp-ana-status-counts">'
+            + (statusMarkup || '<span class="admin-muted">Sem status registrado</span>') + '</div></article>';
+        }).join("")
+        : emptyList("Nenhum canal WhatsApp cadastrado.");
     const testDetails = Array.isArray(latestAnaDryRunDetails?.results) ? latestAnaDryRunDetails.results : [];
     const testDetailsMarkup = testDetails.length
       ? '<div class="whatsapp-ana-test-results"><h4>Resultado do teste seco · ' + esc(latestAnaDryRunDetails.test_run?.passed_count || 0) + ' aprovados, ' + esc(latestAnaDryRunDetails.test_run?.failed_count || 0) + ' falhas</h4>'
@@ -846,6 +888,10 @@
         <p class="admin-muted">A pausa impede novas respostas automáticas nesse número; captura e atendimento humano permanecem ativos.</p>
         <div class="whatsapp-ana-channels">${channelMarkup}</div>
       </section>
+      <section class="whatsapp-overview-card"><h3>Status dos envios da ANA via Meta</h3>
+        <p class="admin-muted">Status atual das mensagens nos até ${esc(delivery.sample_limit || 200)} envios mais recentes. Aceitação da API não conta como entrega.</p>
+        <div class="whatsapp-ana-delivery-list">${deliveryMarkup}</div>
+      </section>
       <section class="whatsapp-overview-card"><h3>Teste seco e ativação interna</h3>
         <p class="admin-muted">O teste avalia os cenários do rascunho e registra o resultado. Ativar altera a configuração usada pela ANA; isso não publica modelos Meta nem envia mensagens.</p>
         <div class="whatsapp-ana-admin-actions">
@@ -854,7 +900,7 @@
         </div>
         ${testDetailsMarkup}
       </section>`;
-    $("whatsapp-ana-status").textContent = "Versões, comparação e histórico consultados. Testes, ativação interna e pausa exigem confirmação.";
+    $("whatsapp-ana-status").textContent = "Versões, comparação e histórico consultados. " + (delivery.available === true ? "Status Meta atual consultado." : "Status Meta indisponível.") + " Testes, ativação interna e pausa exigem confirmação.";
 
   }
 
