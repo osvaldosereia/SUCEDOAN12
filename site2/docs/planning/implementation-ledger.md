@@ -1062,3 +1062,9 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 - Verificações estáticas: Biome nos 15 arquivos da fatia, `pnpm typecheck`, `git diff --check` e `NEXT_OUTPUT_EXPORT=1 NEXT_PUBLIC_BASE_PATH=/site2 pnpm build` passaram. O export gerou 19 rotas e 117 arquivos (~1,76 MiB), incluindo login, atendimento, cestas, clientes, pedidos e produtos; os caminhos usam o prefixo `/site2`.
 - O build estático informa que Next middleware não é publicado no modo export. A proteção da interface é client-side e as funções/RPCs ainda devem validar a sessão e o papel do operador no backend. A build não valida login real, redirect allowlist de Auth, os dois WABAs ou uma jornada de pedido; isso continua como gate de operação.
 - Esta mudança só gera o artefato local. Publicação no GitHub Pages em `/site2` e verificação HTTP pública ainda estão pendentes. Não houve leitura/escrita de dados comerciais, chamadas de ação à Meta, envio de mensagens, publicação de Flow, escrita no Bling ou emissão de NF-e; nenhum teste automatizado foi criado/executado.
+
+## Publicação inicial do Admin em donaantonia.com.br/site2 (28/10/2026)
+
+- O artefato estático compilado foi publicado como `site2/` na raiz do `main` em `osvaldosereia/SUCEDOAN12`, commit `48b30271137ac796ae46d6fc7bddb1f848a8e120`. Os arquivos existentes de `/site/admin` e da raiz foram preservados.
+- O workflow `pages build and deployment` para esse commit terminou com `success`. Verificações HTTP sem autenticação retornaram 200 para `/site2/`, `/site2/login/`, `/site/admin/`, além do CSS e JavaScript principais do novo Admin.
+- O Admin agora é alcançável em `https://donaantonia.com.br/site2/login/`. A publicação confirma que GitHub Pages serve os arquivos, mas não confirma login real, autorização final, acesso de operadores, conexão dos dois WABAs ou criação/atendimento de um pedido. Esses passos operacionais continuam pendentes; não foi enviada mensagem nem criado pedido real.
