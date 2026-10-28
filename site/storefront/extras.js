@@ -1,6 +1,9 @@
 (() => {
   "use strict";
 
+  const HOME_EXTRA_PAGE_SIZE = 4;
+  const HOME_EXTRA_PREFETCH_MARGIN = "140px 0px";
+
   const EXTRA_CATEGORIES = [
     { key: "mercearia", label: "Mercearia" },
     { key: "limpeza_lavanderia", label: "Limpeza e lavanderia" },
@@ -9,6 +12,11 @@
   ];
 
   function create({ state, $, esc, money, request, toast }) {
+    let homeExtraObserver = null;
+    let activeHomeExtraProductId = "";
+    let homeExtraProductTrigger = null;
+    let homeExtraProductDialogBound = false;
+    let homeExtraLoadQueue = Promise.resolve();
     function extraTotalCents(data) {
       const selections = data && data.extraSelections instanceof Map ? data.extraSelections : new Map();
       return Array.from(selections.values()).reduce((total, item) =>
@@ -144,7 +152,7 @@
       if (!Array.isArray(state.homeExtraCategories)) {
         state.homeExtraCategories = EXTRA_CATEGORIES.map((category) => ({
           key: category.key, label: category.label, products: [], loaded: false,
-          loading: false, error: false, nextOffset: 0, hasMore: true, scrollLeft: 0
+          loading: false, error: false, nextOffset: 0, hasMore: true
         }));
       }
       if (!(state.homeExtraSelections instanceof Map)) state.homeExtraSelections = new Map();
@@ -171,14 +179,108 @@
       const stock = Math.max(0, Number(product.stock_quantity || 0));
       const detail = product.brand || product.packaging || "";
       return '<article class="home-extra-card" role="listitem" data-home-extra-product="' + esc(id) + '">' +
-        '<img class="home-extra-photo" src="' + esc(product.image_url || "../img/logoantonia5.png") + '" alt="" width="72" height="72" loading="lazy" decoding="async">' +
-        '<div class="home-extra-copy"><strong>' + esc(name) + '</strong>' +
+        '<button class="home-extra-open" type="button" data-home-extra-open="' + esc(id) + '" aria-label="Ver detalhes de ' + esc(name) + '">' +
+        '<img class="home-extra-photo" src="' + esc(product.image_url || "../img/logoantonia5.png") + '" alt="" width="64" height="64" loading="lazy" fetchpriority="low" decoding="async">' +
+        '<span class="home-extra-copy"><strong>' + esc(name) + '</strong>' +
         (detail ? '<span>' + esc(detail) + '</span>' : '') +
-        '<b>' + esc(money(product.price_cents)) + '</b></div>' +
-        '<div class="home-extra-controls"><span>Quantidade</span><div class="home-extra-stepper">' +
+        '<b>' + esc(money(product.price_cents)) + '</b></span></button>' +
+        '<div class="home-extra-controls"><span class="home-extra-controls-label">Qtd.</span><div class="home-extra-stepper">' +
         '<button class="quantity-button" type="button" data-home-extra-adjust="' + esc(id) + '" data-delta="-1" aria-label="Diminuir ' + esc(name) + '"' + (quantity <= 0 ? " disabled" : "") + '>−</button>' +
         '<output class="quantity-value" data-home-extra-quantity="' + esc(id) + '" aria-live="polite">' + quantity + '</output>' +
         '<button class="quantity-button" type="button" data-home-extra-adjust="' + esc(id) + '" data-delta="1" aria-label="Adicionar ' + esc(name) + '"' + (quantity >= stock ? " disabled" : "") + '>+</button></div></div></article>';
+    }
+
+    function updateHomeExtraProductDialog(productId) {
+      if (!activeHomeExtraProductId || (productId != null && String(productId) !== activeHomeExtraProductId)) return;
+      const product = state.homeExtraProducts.get(activeHomeExtraProductId);
+      if (!product) return;
+      const selection = state.homeExtraSelections.get(activeHomeExtraProductId);
+      const quantity = Math.max(0, Math.trunc(Number(selection && selection.quantity || 0)));
+      const stock = Math.max(0, Number(product.stock_quantity || 0));
+      const output = $("home-extra-product-quantity");
+      const minus = $("home-extra-product-decrease");
+      const plus = $("home-extra-product-increase");
+      const stockNote = $("home-extra-product-stock");
+      const name = product.name || "Produto";
+      if (output) output.textContent = String(quantity);
+      if (minus) {
+        minus.disabled = quantity <= 0;
+        minus.setAttribute("aria-label", "Diminuir quantidade de " + name);
+      }
+      if (plus) {
+        plus.disabled = quantity >= stock;
+        plus.setAttribute("aria-label", "Adicionar " + name);
+      }
+      if (stockNote) {
+        stockNote.hidden = stock > 0;
+        stockNote.textContent = stock > 0 ? "" : "Indisponível no momento.";
+      }
+    }
+
+    function openHomeExtraProductDialog(productId, trigger) {
+      const id = String(productId || "");
+      const product = state.homeExtraProducts.get(id);
+      const dialog = $("home-extra-product-dialog");
+      if (!product || !dialog || typeof dialog.showModal !== "function") return;
+      activeHomeExtraProductId = id;
+      homeExtraProductTrigger = trigger || null;
+      const name = product.name || "Produto";
+      const image = $("home-extra-product-image");
+      const meta = $("home-extra-product-meta");
+      const description = $("home-extra-product-description");
+      $("home-extra-product-title").textContent = name;
+      $("home-extra-product-price").textContent = money(product.price_cents);
+      if (image) {
+        image.alt = name;
+        image.src = product.image_url || "../img/logoantonia5.png";
+      }
+      if (meta) {
+        const detail = [product.brand, product.packaging].filter(Boolean).join(" · ");
+        meta.textContent = detail;
+        meta.hidden = !detail;
+      }
+      if (description) {
+        const copy = String(product.description_short || product.description_long || product.description || "").trim();
+        description.textContent = copy;
+        description.hidden = !copy;
+        if (copy) $("home-extra-product-dialog").setAttribute("aria-describedby", "home-extra-product-description");
+        else $("home-extra-product-dialog").removeAttribute("aria-describedby");
+      }
+      updateHomeExtraProductDialog(id);
+      if (!dialog.open) dialog.showModal();
+      document.body.classList.add("home-extra-dialog-open");
+      $("home-extra-product-close").focus({ preventScroll: true });
+    }
+
+    function bindHomeExtraProductDialog() {
+      if (homeExtraProductDialogBound) return;
+      const dialog = $("home-extra-product-dialog");
+      if (!dialog) return;
+      dialog.querySelectorAll("[data-home-extra-dialog-close]").forEach((button) => {
+        button.addEventListener("click", () => dialog.close());
+      });
+      dialog.querySelectorAll("[data-home-extra-dialog-adjust]").forEach((button) => {
+        button.addEventListener("click", () => changeHomeExtraQuantity(activeHomeExtraProductId, Number(button.dataset.delta || 0)));
+      });
+      dialog.addEventListener("click", (event) => {
+        if (event.target === dialog) dialog.close();
+      });
+      dialog.addEventListener("close", () => {
+        document.body.classList.remove("home-extra-dialog-open");
+        const trigger = homeExtraProductTrigger;
+        const id = activeHomeExtraProductId;
+        homeExtraProductTrigger = null;
+        activeHomeExtraProductId = "";
+        if (trigger && trigger.isConnected) trigger.focus({ preventScroll: true });
+        else if (id) {
+          const opener = Array.from($("home-extra-categories").querySelectorAll("[data-home-extra-open]"))
+            .find((button) => button.dataset.homeExtraOpen === id);
+          if (opener) opener.focus({ preventScroll: true });
+        }
+      });
+      const image = $("home-extra-product-image");
+      if (image) image.addEventListener("error", () => { image.src = "../img/logoantonia5.png"; }, { once: true });
+      homeExtraProductDialogBound = true;
     }
 
     function homeExtraCategoryMarkup(category) {
@@ -187,17 +289,19 @@
         ? category.products.length ? "Carregando mais produtos…" : "Carregando produtos…"
         : category.error ? "Não foi possível carregar os produtos."
           : category.loaded && !category.products.length ? "Nenhum produto disponível nesta categoria."
-            : category.hasMore ? "Arraste ou deslize a faixa para ver mais produtos."
-              : "";
+            : "";
+      const placeholders = !category.loaded && !category.error
+        ? Array.from({ length: HOME_EXTRA_PAGE_SIZE }, () => '<div class="home-extra-skeleton" aria-hidden="true"><span></span><i></i><b></b></div>').join("")
+        : "";
       const loadMore = category.error
         ? '<button class="button button-outline home-extra-more" type="button" data-home-extra-retry="' + esc(category.key) + '">Tentar novamente</button>'
-        : category.hasMore && category.products.length
-          ? '<button class="button button-outline home-extra-more" type="button" data-home-extra-more="' + esc(category.key) + '">' + (category.loading ? "Carregando produtos…" : "Carregar mais produtos") + '</button>'
+        : category.loaded && category.hasMore
+          ? '<button class="button button-outline home-extra-more" type="button" data-home-extra-more="' + esc(category.key) + '"' + (category.loading ? " disabled" : "") + '>' + (category.loading ? "Carregando produtos…" : category.products.length ? "Carregar mais produtos" : "Carregar produtos") + '</button>'
           : "";
       return '<section class="home-extra-category" data-home-extra-section="' + esc(category.key) + '" aria-labelledby="' + esc(panelId) + '-title">' +
-        '<div class="home-extra-category-heading"><h3 id="' + esc(panelId) + '-title" tabindex="-1">' + esc(category.label) + '</h3></div>' +
-        '<div class="home-extra-rail" data-home-extra-rail="' + esc(category.key) + '" role="list" aria-label="Produtos de ' + esc(category.label) + '">' +
-        category.products.map(homeExtraProductMarkup).join("") + '</div>' +
+        '<div class="home-extra-category-heading"><h3 id="' + esc(panelId) + '-title">' + esc(category.label) + '</h3></div>' +
+        '<div class="home-extra-grid" data-home-extra-grid="' + esc(category.key) + '" role="list" aria-label="Produtos de ' + esc(category.label) + '">' +
+        (category.products.length ? category.products.map(homeExtraProductMarkup).join("") : placeholders) + '</div>' +
         (status ? '<p class="home-extra-status" role="status">' + esc(status) + '</p>' : '') + loadMore + '</section>';
     }
 
@@ -206,6 +310,9 @@
       if (!active || !host.contains(active)) return null;
       if (active.matches("[data-home-extra-adjust]")) {
         return { kind: "adjust", key: active.closest("[data-home-extra-section]")?.dataset.homeExtraSection || "", id: active.dataset.homeExtraAdjust, delta: active.dataset.delta };
+      }
+      if (active.matches("[data-home-extra-open]")) {
+        return { kind: "product", key: active.closest("[data-home-extra-section]")?.dataset.homeExtraSection || "", id: active.dataset.homeExtraOpen };
       }
       if (active.matches("[data-home-extra-more]")) return { kind: "more", key: active.dataset.homeExtraMore };
       if (active.matches("[data-home-extra-retry]")) return { kind: "retry", key: active.dataset.homeExtraRetry };
@@ -218,11 +325,13 @@
         .find((entry) => entry.dataset.homeExtraSection === focus.key);
       if (!section) return;
       const controls = Array.from(section.querySelectorAll("[data-home-extra-adjust]"));
-      let target = focus.kind === "more"
-        ? section.querySelector("[data-home-extra-more]")
-        : focus.kind === "retry"
-          ? section.querySelector("[data-home-extra-retry]")
-          : controls.find((button) => button.dataset.homeExtraAdjust === focus.id && button.dataset.delta === focus.delta);
+      let target = focus.kind === "product"
+        ? Array.from(section.querySelectorAll("[data-home-extra-open]")).find((button) => button.dataset.homeExtraOpen === focus.id)
+        : focus.kind === "more"
+          ? section.querySelector("[data-home-extra-more]")
+          : focus.kind === "retry"
+            ? section.querySelector("[data-home-extra-retry]")
+            : controls.find((button) => button.dataset.homeExtraAdjust === focus.id && button.dataset.delta === focus.delta);
       if (!target || target.disabled) {
         if (focus.kind === "adjust") {
           target = controls.find((button) => button.dataset.homeExtraAdjust === focus.id && !button.disabled) ||
@@ -238,22 +347,11 @@
       const host = $("home-extra-categories");
       if (!host) return;
       const focus = homeFocusSnapshot(host);
-      host.querySelectorAll("[data-home-extra-rail]").forEach((rail) => {
-        const category = homeCategoriesFor().find((entry) => entry.key === rail.dataset.homeExtraRail);
-        if (category) category.scrollLeft = rail.scrollLeft;
-      });
+      if (homeExtraObserver) homeExtraObserver.disconnect();
       const categories = homeCategoriesFor();
       host.innerHTML = categories.map(homeExtraCategoryMarkup).join("");
-      host.querySelectorAll("[data-home-extra-rail]").forEach((rail) => {
-        const category = categories.find((entry) => entry.key === rail.dataset.homeExtraRail);
-        if (category) rail.scrollLeft = category.scrollLeft;
-        rail.addEventListener("scroll", () => {
-          if (category) category.scrollLeft = rail.scrollLeft;
-          if (category && category.hasMore && !category.loading &&
-              rail.scrollWidth - rail.scrollLeft - rail.clientWidth < 100) {
-            loadHomeExtraCategory(category);
-          }
-        }, { passive: true });
+      host.querySelectorAll("[data-home-extra-open]").forEach((button) => {
+        button.addEventListener("click", () => openHomeExtraProductDialog(button.dataset.homeExtraOpen, button));
       });
       host.querySelectorAll("[data-home-extra-adjust]").forEach((button) => {
         button.addEventListener("click", () => changeHomeExtraQuantity(button.dataset.homeExtraAdjust, Number(button.dataset.delta || 0)));
@@ -275,6 +373,12 @@
       }, { once: true }));
       restoreHomeFocus(host, focus);
       renderHomeExtraSummary();
+      if (homeExtraObserver) {
+        host.querySelectorAll("[data-home-extra-section]").forEach((section) => {
+          const category = categories.find((entry) => entry.key === section.dataset.homeExtraSection);
+          if (category && !category.loaded && !category.loading && !category.error) homeExtraObserver.observe(section);
+        });
+      }
     }
 
     function renderHomeExtraSummary() {
@@ -321,6 +425,7 @@
           if (target && !target.disabled) target.focus({ preventScroll: true });
         }
       });
+      updateHomeExtraProductDialog(id);
     }
 
     function homeSelectionReviewMarkup(data) {
@@ -460,40 +565,45 @@
       setHomeExtraQuantity(product, quantity, state.baskets.get(state.activeKey));
     }
 
-    async function loadHomeExtraCategory(category) {
-      if (!category || category.loading || !category.hasMore) return;
+    function loadHomeExtraCategory(category) {
+      if (!category || category.loading || !category.hasMore) return Promise.resolve();
       category.loading = true;
       category.error = false;
       renderHomeExtras();
-      try {
-        const result = await request("products", { params: {
-          category: category.key, limit: 6, offset: category.nextOffset
-        } });
-        const fetched = Array.isArray(result.products) ? result.products : [];
-        category.nextOffset = result.next_offset == null ? category.nextOffset : Number(result.next_offset);
-        category.hasMore = result.next_offset != null;
-        category.products = category.products.concat(fetched);
-        category.loaded = true;
-        fetched.forEach((product) => {
-          const id = String(product.id || "");
-          if (!id) return;
-          state.homeExtraProducts.set(id, product);
-          const active = state.baskets.get(state.activeKey);
-          const existing = active && active.extraSelections instanceof Map ? active.extraSelections.get(id) : null;
-          if (existing && !state.homeExtraSelections.has(id)) {
-            if (!(active.homeExtraProductIds instanceof Set)) active.homeExtraProductIds = new Set();
-            active.homeExtraProductIds.add(id);
-            setHomeExtraQuantity(product, Number(existing.quantity || 0), active);
-          } else {
-            updateHomeExtraCard(id);
-          }
-        });
-      } catch (_) {
-        category.error = true;
-      } finally {
-        category.loading = false;
-        renderHomeExtras();
-      }
+      const load = async () => {
+        try {
+          const result = await request("products", { params: {
+            category: category.key, limit: HOME_EXTRA_PAGE_SIZE, offset: category.nextOffset
+          } });
+          const fetched = Array.isArray(result.products) ? result.products : [];
+          category.nextOffset = result.next_offset == null ? category.nextOffset : Number(result.next_offset);
+          category.hasMore = result.next_offset != null;
+          category.products = category.products.concat(fetched);
+          category.loaded = true;
+          fetched.forEach((product) => {
+            const id = String(product.id || "");
+            if (!id) return;
+            state.homeExtraProducts.set(id, product);
+            const active = state.baskets.get(state.activeKey);
+            const existing = active && active.extraSelections instanceof Map ? active.extraSelections.get(id) : null;
+            if (existing && !state.homeExtraSelections.has(id)) {
+              if (!(active.homeExtraProductIds instanceof Set)) active.homeExtraProductIds = new Set();
+              active.homeExtraProductIds.add(id);
+              setHomeExtraQuantity(product, Number(existing.quantity || 0), active);
+            } else {
+              updateHomeExtraCard(id);
+            }
+          });
+        } catch (_) {
+          category.error = true;
+        } finally {
+          category.loading = false;
+          renderHomeExtras();
+        }
+      };
+      const pending = homeExtraLoadQueue.then(load, load);
+      homeExtraLoadQueue = pending.catch(() => {});
+      return pending;
     }
 
     function clearHomeExtraSelections() {
@@ -515,12 +625,25 @@
 
     function initHomeExtras() {
       const host = $("home-extra-categories");
-      if (!host) return;
+      if (!host || state.homeExtraStarted) return;
       const categories = homeCategoriesFor();
-      renderHomeExtras();
-      if (state.homeExtraStarted) return;
       state.homeExtraStarted = true;
-      Promise.all(categories.map((category) => loadHomeExtraCategory(category)));
+      bindHomeExtraProductDialog();
+      if (typeof window.IntersectionObserver === "function") {
+        homeExtraObserver = new IntersectionObserver((entries) => {
+          entries.filter((entry) => entry.isIntersecting)
+            .sort((first, second) => first.boundingClientRect.top - second.boundingClientRect.top)
+            .forEach((entry) => {
+              const category = categories.find((item) => item.key === entry.target.dataset.homeExtraSection);
+              homeExtraObserver.unobserve(entry.target);
+              if (category && !category.loaded && !category.loading && !category.error) loadHomeExtraCategory(category);
+            });
+        }, { rootMargin: HOME_EXTRA_PREFETCH_MARGIN });
+      }
+      renderHomeExtras();
+      if (!homeExtraObserver) {
+        categories.reduce((queue, category) => queue.then(() => loadHomeExtraCategory(category)), Promise.resolve());
+      }
     }
 
     function attachHomeSelections(data) {
