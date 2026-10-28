@@ -78,8 +78,8 @@
 - Atualizar o ledger `site2/docs/planning/implementation-ledger.md`.
 - Publicar somente a saída estática nova sob `site2/` no `main`, preservando a raiz e o site `/site` existente.
 
-- [ ] Executar build estático com `NEXT_OUTPUT_EXPORT=1`, `NEXT_PUBLIC_BASE_PATH=/site2` e `pnpm build`.
-- [ ] Inspecionar de forma estática o HTML inicial de dashboard/configurações/Flows para garantir que os erros do build não continuam congelados; não ler ou expor secrets.
+- [x] Executar build estático com `NEXT_OUTPUT_EXPORT=1`, `NEXT_PUBLIC_BASE_PATH=/site2` e `pnpm build`.
+- [x] Inspecionar de forma estática o HTML inicial de dashboard/configurações/Flows para garantir que os erros do build não continuam congelados; não ler ou expor secrets.
 - [ ] Conferir se a árvore nova contém apenas `site2/`, sem excluir arquivos de `/site` ou da raiz.
 - [ ] Commitar e enviar as mudanças de código/docs à branch de trabalho.
 - [ ] Atualizar o artefato `site2/` no `main`; conferir sucesso do Pages e HTTP 200 para login, dashboard, configurações e assets.
