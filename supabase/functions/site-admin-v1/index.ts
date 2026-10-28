@@ -708,7 +708,7 @@ async function whatsappOverview() {
     status: clean(row.status, 40),
     quality_rating: clean(row.quality_rating, 40),
     rejection_reason: clean(row.status, 40).toLowerCase() === "rejected"
-      ? latestRejectionByTemplate.get(templateKey(row.whatsapp_account_id, row.name, row.language)) || "Motivo não informado pela Meta"
+      ? latestRejectionByTemplate.get(templateKey(row.whatsapp_account_id, row.name, row.language)) || "Motivo não disponível nos 200 eventos consultados"
       : "",
     last_synced_at: row.last_synced_at || null,
     updated_at: row.updated_at || null,
