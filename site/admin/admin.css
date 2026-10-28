@@ -541,3 +541,7 @@
   .whatsapp-campaign-action-buttons { align-items:stretch; flex-direction:column; }
   .whatsapp-campaign-action-buttons .button, .whatsapp-campaign-schedule { width:100%; }
 }
+.whatsapp-campaign-content-preview-part { display:grid; gap:4px; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+.whatsapp-campaign-content-preview-part strong { color:var(--ink); font-size:.75rem; }
+.whatsapp-campaign-content-preview-part pre { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; color:var(--ink); font:inherit; font-size:.8rem; line-height:1.5; }
+.whatsapp-campaign-content-note { margin:0; font-size:.72rem; line-height:1.45; }
