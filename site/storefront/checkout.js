@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  function create({ state, $, money, toast, request, whatsappNumber, quantityOf, closeSheet, showSheet }) {
+  function create({ state, $, esc, phoneDigits, money, toast, request, whatsappNumber, quantityOf, closeSheet, showSheet }) {
     function addressLines(address) {
       if (!address) return [];
       const first = [address.street, address.number, address.complement].filter(Boolean).join(", ");
