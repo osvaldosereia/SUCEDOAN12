@@ -681,8 +681,10 @@
   $("whatsapp-conversation-more")?.addEventListener("click", () => loadConversations({ append: true }));
   $("whatsapp-conversation-older")?.addEventListener("click", () => state.selectedId && loadConversation(state.selectedId, { older: true }));
   window.setInterval(() => {
+    const app = $("admin-app");
     const panel = $("whatsapp-section-conversations");
-    if (!panel || document.hidden || panel.hidden || panel.closest(".admin-view")?.hidden || state.busy) return;
+    if (!app || app.hidden || !window.DonaAdminAuth?.getCode?.()
+        || !panel || document.hidden || panel.hidden || panel.closest(".admin-view")?.hidden || state.busy) return;
     void loadConversations({ silent: true });
   }, 15000);
   window.DonaWhatsAppConversations = { load: () => loadConversations() };
