@@ -1,15 +1,13 @@
-"use server";
+"use client";
 
-import { redirect } from "next/navigation";
-import { requireAdminSession } from "@/lib/auth/require-admin-session";
-import type { AdminCustomerSearchItem } from "@/lib/supabase/admin-customers";
+import type { AdminCustomerSearchItem } from "@/lib/supabase/browser-admin-customers";
 import {
 	createAdminCustomer,
 	linkAdminCustomer,
 	reconcileAdminCustomer,
 	searchAdminCustomers,
 	updateAdminCustomer,
-} from "@/lib/supabase/admin-customers";
+} from "@/lib/supabase/browser-admin-customers";
 
 const UUID =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -25,6 +23,16 @@ function customerHref(conversationId: string, notice: string): string {
 		notice,
 	});
 	return `/clientes?${params.toString()}`;
+}
+
+function navigateCustomer(conversationId: string, notice: string): void {
+	window.location.assign(
+		`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}${customerHref(conversationId, notice)}`,
+	);
+}
+
+function navigate(path: string): void {
+	window.location.assign(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}${path}`);
 }
 
 function textField(
@@ -129,7 +137,6 @@ export async function searchAdminCustomersAction(
 	_previous: CustomerActionState,
 	formData: FormData,
 ): Promise<CustomerActionState> {
-	await requireAdminSession();
 	const query = formData.get("query");
 	if (typeof query !== "string" || query.trim().length < 2) {
 		return {
@@ -165,72 +172,78 @@ export async function searchAdminCustomersAction(
 export async function reconcileCustomerWithConversation(
 	formData: FormData,
 ): Promise<void> {
-	await requireAdminSession();
 	const conversationId = String(formData.get("conversation_id") ?? "");
-	if (!UUID.test(conversationId))
-		redirect("/clientes?notice=invalid_conversation");
+	if (!UUID.test(conversationId)) {
+		navigate("/clientes?notice=invalid_conversation");
+		return;
+	}
 
 	const result = await reconcileAdminCustomer(conversationId);
 	if (!result.ok) {
-		redirect(customerHref(conversationId, actionNotice(result.error)));
+		navigateCustomer(conversationId, actionNotice(result.error));
+		return;
 	}
 	if (result.data.linked || result.data.matchStatus === "matched") {
-		redirect(customerHref(conversationId, "linked"));
+		navigateCustomer(conversationId, "linked");
+		return;
 	}
 	if (result.data.matchStatus === "none") {
-		redirect(customerHref(conversationId, "not_found"));
+		navigateCustomer(conversationId, "not_found");
+		return;
 	}
 	if (result.data.matchStatus === "ambiguous") {
-		redirect(customerHref(conversationId, "ambiguous"));
+		navigateCustomer(conversationId, "ambiguous");
+		return;
 	}
-	redirect(customerHref(conversationId, "unavailable"));
+	navigateCustomer(conversationId, "unavailable");
 }
 
 export async function linkCustomerToConversation(
 	formData: FormData,
 ): Promise<void> {
-	await requireAdminSession();
 	const conversationId = String(formData.get("conversation_id") ?? "");
 	const customerId = String(formData.get("customer_id") ?? "");
 	if (!UUID.test(conversationId) || !UUID.test(customerId)) {
-		redirect("/clientes?notice=invalid_conversation");
+		navigate("/clientes?notice=invalid_conversation");
+		return;
 	}
 
 	const result = await linkAdminCustomer(conversationId, customerId);
-	redirect(
-		customerHref(
-			conversationId,
-			result.ok ? "linked" : actionNotice(result.error),
-		),
+	navigateCustomer(
+		conversationId,
+		result.ok ? "linked" : actionNotice(result.error),
 	);
 }
 
 export async function createCustomerForConversation(
 	formData: FormData,
 ): Promise<void> {
-	await requireAdminSession();
 	const conversationId = String(formData.get("conversation_id") ?? "");
-	if (!UUID.test(conversationId))
-		redirect("/clientes?notice=invalid_conversation");
+	if (!UUID.test(conversationId)) {
+		navigate("/clientes?notice=invalid_conversation");
+		return;
+	}
 	const parsed = customerPayload(formData);
-	if (!parsed.ok) redirect(customerHref(conversationId, "invalid_form"));
+	if (!parsed.ok) {
+		navigateCustomer(conversationId, "invalid_form");
+		return;
+	}
 
 	const result = await createAdminCustomer(conversationId, parsed.value);
-	redirect(
-		customerHref(
-			conversationId,
-			result.ok ? "created" : actionNotice(result.error),
-		),
+	navigateCustomer(
+		conversationId,
+		result.ok ? "created" : actionNotice(result.error),
 	);
 }
 
 export async function updateCustomerForConversation(
 	formData: FormData,
 ): Promise<void> {
-	await requireAdminSession();
 	const conversationId = String(formData.get("conversation_id") ?? "");
-	if (!UUID.test(conversationId))
-		redirect("/clientes?notice=invalid_conversation");
+	if (!UUID.test(conversationId)) {
+		navigate("/clientes?notice=invalid_conversation");
+		return;
+	}
 
 	const name = textField(formData, "display_name", 180);
 	const expectedCustomerUpdatedAt = timestampField(
@@ -248,7 +261,8 @@ export async function updateCustomerForConversation(
 		!expectedCustomerUpdatedAt ||
 		(addressId !== null && (!UUID.test(addressId) || !expectedAddressUpdatedAt))
 	) {
-		redirect(customerHref(conversationId, "invalid_form"));
+		navigateCustomer(conversationId, "invalid_form");
+		return;
 	}
 
 	let address: {
@@ -280,7 +294,8 @@ export async function updateCustomerForConversation(
 			postalCode === null ||
 			reference === null
 		) {
-			redirect(customerHref(conversationId, "invalid_form"));
+			navigateCustomer(conversationId, "invalid_form");
+			return;
 		}
 		const postalDigits = postalCode.replace(/\D/g, "");
 		if (
@@ -289,7 +304,8 @@ export async function updateCustomerForConversation(
 			postalDigits.length > 8 ||
 			(state && !/^[a-z]{2}$/i.test(state))
 		) {
-			redirect(customerHref(conversationId, "invalid_form"));
+			navigateCustomer(conversationId, "invalid_form");
+			return;
 		}
 		address = {
 			street,
@@ -323,7 +339,8 @@ export async function updateCustomerForConversation(
 			: null,
 	});
 	if (result.ok) {
-		redirect(customerHref(conversationId, "updated"));
+		navigateCustomer(conversationId, "updated");
+		return;
 	}
 	const notice =
 		result.error === "stale_customer" || result.error === "stale_address"
@@ -332,5 +349,5 @@ export async function updateCustomerForConversation(
 					result.error === "invalid_address"
 				? "invalid_form"
 				: actionNotice(result.error);
-	redirect(customerHref(conversationId, notice));
+	navigateCustomer(conversationId, notice);
 }

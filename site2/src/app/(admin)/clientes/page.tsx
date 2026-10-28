@@ -1,11 +1,15 @@
+"use client";
+
 import { AlertCircle, ArrowLeft, Users } from "lucide-react";
 import Link from "next/link";
-import { requireAdminSession } from "@/lib/auth/require-admin-session";
-import { getAttendanceContext } from "@/lib/supabase/admin-attendance";
+import { useEffect, useState } from "react";
 import {
 	type AdminCustomerEditor,
+	type BrowserCustomerConversationContext,
+	type CustomerRpcResult,
 	getAdminCustomerEditor,
-} from "@/lib/supabase/admin-customers";
+	getBrowserCustomerConversationContext,
+} from "@/lib/supabase/browser-admin-customers";
 import {
 	createCustomerForConversation,
 	reconcileCustomerWithConversation,
@@ -13,14 +17,8 @@ import {
 } from "./actions";
 import { CustomerSearch } from "./customer-search";
 
-type SearchParams = Promise<Record<string, string | string[] | undefined>>;
-
 const UUID =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-function one(value: string | string[] | undefined): string {
-	return Array.isArray(value) ? (value[0] ?? "") : (value ?? "");
-}
 
 function noticeMessage(notice: string): string | null {
 	const messages: Record<string, string> = {
@@ -433,30 +431,63 @@ function CustomerCreateForm({
 	);
 }
 
-export default async function ClientesPage({
-	searchParams,
-}: {
-	searchParams: SearchParams;
-}) {
-	await requireAdminSession();
-	const params = await searchParams;
-	const rawConversationId = one(params.conversation_id);
-	const conversationId = UUID.test(rawConversationId)
-		? rawConversationId
-		: null;
-	const rawAddressId = one(params.address_id);
-	const addressId = UUID.test(rawAddressId) ? rawAddressId : null;
-	const noticeKey = one(params.notice);
+export default function ClientesPage() {
+	const [conversationId, setConversationId] = useState<string | null>(null);
+	const [noticeKey, setNoticeKey] = useState("");
+	const [contextResult, setContextResult] =
+		useState<CustomerRpcResult<BrowserCustomerConversationContext> | null>(
+			null,
+		);
+	const [editorResult, setEditorResult] =
+		useState<CustomerRpcResult<AdminCustomerEditor> | null>(null);
+	const [loaded, setLoaded] = useState(false);
+	useEffect(() => {
+		const params = new URLSearchParams(window.location.search);
+		const rawConversationId = params.get("conversation_id") ?? "";
+		const nextConversationId = UUID.test(rawConversationId)
+			? rawConversationId
+			: null;
+		const rawAddressId = params.get("address_id") ?? "";
+		const addressId = UUID.test(rawAddressId) ? rawAddressId : null;
+		setConversationId(nextConversationId);
+		setNoticeKey(params.get("notice") ?? "");
+		if (!nextConversationId) {
+			setLoaded(true);
+			return;
+		}
+		void (async () => {
+			try {
+				const context =
+					await getBrowserCustomerConversationContext(nextConversationId);
+				setContextResult(context);
+				if (context.ok && context.data.conversation?.customerId) {
+					setEditorResult(
+						await getAdminCustomerEditor(nextConversationId, addressId),
+					);
+				}
+			} catch {
+				setContextResult({ ok: false, error: "unavailable" });
+			} finally {
+				setLoaded(true);
+			}
+		})();
+	}, []);
+	if (!loaded) {
+		return (
+			<div className="page-stack" aria-busy="true">
+				<div className="page-heading">
+					<div>
+						<p className="eyebrow">CADASTROS</p>
+						<h1>Clientes</h1>
+					</div>
+				</div>
+				<p role="status">Carregando cadastro do cliente…</p>
+			</div>
+		);
+	}
 	const notice = noticeMessage(noticeKey);
-	const contextResult = conversationId
-		? await getAttendanceContext(conversationId)
-		: null;
 	const context = contextResult?.ok ? contextResult.data : null;
 	const conversation = context?.conversation ?? null;
-	const editorResult =
-		conversationId && conversation?.customerId
-			? await getAdminCustomerEditor(conversationId, addressId)
-			: null;
 	const editor = editorResult?.ok ? editorResult.data : null;
 	const missingConversation = Boolean(
 		conversationId && contextResult?.ok && !conversation,
