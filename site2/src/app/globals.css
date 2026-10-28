@@ -6284,6 +6284,60 @@ h3 {
 	line-height: 1.4;
 }
 
+.basket-mold-quick-enable__confirmation {
+	display: grid;
+	gap: 7px;
+	max-width: 360px;
+	min-width: 0;
+	margin: 0;
+	padding: 8px;
+	border: 1px solid #e9d8a8;
+	border-radius: 6px;
+	background: #fffaf0;
+}
+
+.basket-mold-quick-enable__confirmation legend {
+	padding: 0 3px;
+	color: #6b5422;
+	font-size: 10px;
+	font-weight: 700;
+}
+
+.basket-mold-quick-enable__confirmation > p {
+	margin: 0;
+	color: #6b5422;
+	font-size: 10px;
+	line-height: 1.45;
+}
+
+.basket-mold-quick-enable__confirmation-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.basket-mold-quick-enable__confirmation-actions button {
+	border: 1px solid #d8d9d3;
+	border-radius: 5px;
+	background: #fff;
+	color: var(--ink);
+	cursor: pointer;
+	font-size: 9px;
+	font-weight: 700;
+	padding: 5px 8px;
+}
+
+.basket-mold-quick-enable__confirmation-actions button:last-child {
+	border-color: #b9d8c1;
+	background: #f0f8f1;
+	color: #27603a;
+}
+
+.basket-mold-quick-enable__confirmation-actions button:disabled {
+	cursor: wait;
+	opacity: 0.65;
+}
+
 .basket-mold-quick-enable__message {
 	font-size: 9px;
 	font-weight: 650;

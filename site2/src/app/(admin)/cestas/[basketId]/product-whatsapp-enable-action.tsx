@@ -30,17 +30,19 @@ export function BasketProductWhatsappEnableAction({
 	productName: string;
 }) {
 	const [pending, setPending] = useState(false);
+	const [confirming, setConfirming] = useState(false);
 	const [message, setMessage] = useState("");
 	const [success, setSuccess] = useState(false);
 
 	async function enable() {
-		if (pending) return;
+		if (pending || !confirming) return;
 		setPending(true);
 		setMessage("");
 		setSuccess(false);
 		const result = await enableBrowserProductForWhatsapp(productId);
 		setPending(false);
 		setSuccess(result.ok);
+		if (result.ok) setConfirming(false);
 		setMessage(
 			result.ok
 				? "Produto habilitado para uso no WhatsApp. Atualize a cesta para conferir."
@@ -50,13 +52,51 @@ export function BasketProductWhatsappEnableAction({
 
 	return (
 		<div className="basket-mold-quick-enable">
-			<button disabled={pending} onClick={enable} type="button">
-				{pending ? "Habilitando…" : "Habilitar no WhatsApp"}
-			</button>
-			<p>
-				Ao habilitar {productName}, ele poderá aparecer nas opções de Flow de
-				todas as cestas onde está associado.
-			</p>
+			{!confirming && !success && (
+				<>
+					<button
+						disabled={pending}
+						onClick={() => {
+							setMessage("");
+							setConfirming(true);
+						}}
+						type="button"
+					>
+						Habilitar no WhatsApp
+					</button>
+					<p>
+						{productName} poderá aparecer nas opções de Flow de todas as cestas
+						onde está associado.
+					</p>
+				</>
+			)}
+			{confirming && (
+				<fieldset
+					aria-live="polite"
+					className="basket-mold-quick-enable__confirmation"
+					disabled={pending}
+				>
+					<legend>Confirme a disponibilidade do produto</legend>
+					<p>
+						Habilitar {productName} pode disponibilizá-lo em todas as cestas
+						onde já está associado. Deseja continuar?
+					</p>
+					<div className="basket-mold-quick-enable__confirmation-actions">
+						<button
+							onClick={() => {
+								setConfirming(false);
+								setMessage("");
+							}}
+							type="button"
+						>
+							Cancelar
+						</button>
+						<button onClick={enable} type="button">
+							{pending ? "Habilitando…" : "Habilitar produto"}
+						</button>
+					</div>
+				</fieldset>
+			)}
 			{message && (
 				<span
 					aria-live="polite"
