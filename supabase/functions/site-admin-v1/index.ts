@@ -247,17 +247,45 @@ async function productSearch(input: any) {
   const limit = integer(input.limit ?? 24, 1, 50) || 24;
   const offset = integer(input.offset ?? 0, 0, 100000) || 0;
   const status = ["active", "inactive"].includes(input.status) ? input.status : "all";
+  const segment = ["no_photo", "zero_stock", "recently_edited", "recently_added", "no_ean", "no_ncm"].includes(input.segment)
+    ? input.segment
+    : "all";
   const queryText = clean(input.q, 80).replace(/[^\p{L}\p{N}\s._-]/gu, " ").replace(/\s+/g, " ").trim();
   let query = db.from("products").select(PRODUCT_COLUMNS, { count: "exact" });
   if (status === "active") query = query.eq("is_active", true);
   if (status === "inactive") query = query.eq("is_active", false);
+
+  const logicGroups: string[] = [];
   if (queryText) {
     const pattern = `*${queryText}*`;
-    query = query.or(`name.ilike.${pattern},sku.ilike.${pattern},brand.ilike.${pattern},gtin.ilike.${pattern}`);
+    logicGroups.push(`or(name.ilike.${pattern},sku.ilike.${pattern},brand.ilike.${pattern},gtin.ilike.${pattern})`);
   }
-  const result = await query.order("is_active", { ascending: false }).order("name", { ascending: true }).range(offset, offset + limit - 1);
+  if (segment === "no_photo") logicGroups.push('or(image_url.is.null,image_url.eq."")');
+  if (segment === "no_ean") logicGroups.push('or(gtin.is.null,gtin.eq."")');
+  if (segment === "no_ncm") logicGroups.push('or(ncm.is.null,ncm.eq."")');
+  if (logicGroups.length === 1) query = query.or(logicGroups[0].slice(3, -1));
+  else if (logicGroups.length > 1) query = query.or(`and(${logicGroups.join(",")})`);
+
+  const recentAfter = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  if (segment === "zero_stock") query = query.eq("stock", 0);
+  if (segment === "recently_added") query = query.gte("created_at", recentAfter);
+  if (segment === "recently_edited") query = query.gte("metadata->>admin_last_edited_at", recentAfter);
+
+  if (segment === "recently_added") query = query.order("created_at", { ascending: false });
+  else if (segment === "recently_edited") query = query.order("metadata->>admin_last_edited_at", { ascending: false });
+  else query = query.order("is_active", { ascending: false }).order("name", { ascending: true });
+  const result = await query.range(offset, offset + limit - 1);
   if (result.error) throw result.error;
   return { products: result.data || [], total: result.count || 0, offset, limit };
+}
+async function adminProductMetadataForEdit(productId: string) {
+  const result = await db.from("products").select("metadata").eq("id", productId).maybeSingle();
+  if (result.error) throw result.error;
+  if (!result.data) return null;
+  const existing = result.data.metadata && typeof result.data.metadata === "object" && !Array.isArray(result.data.metadata)
+    ? result.data.metadata
+    : {};
+  return { ...existing, admin_last_edited_at: new Date().toISOString() };
 }
 
 async function productSave(input: any) {
@@ -283,6 +311,14 @@ async function productSave(input: any) {
     ? input.tags.map((tag: unknown) => clean(tag, 60)).filter(Boolean).slice(0, 40)
     : clean(input.tags, 1000).split(",").map((tag) => clean(tag, 60)).filter(Boolean).slice(0, 40);
 
+  if (id) {
+    const metadata = await adminProductMetadataForEdit(id);
+    if (!metadata) return { status: 404, error: "product_not_found", message: "Produto não encontrado." };
+    payload.metadata = metadata;
+  } else {
+    payload.metadata = { admin_last_edited_at: new Date().toISOString() };
+  }
+
   const query = id
     ? db.from("products").update(payload).eq("id", id)
     : db.from("products").insert({ ...payload, is_active: input.is_active !== false });
@@ -296,8 +332,10 @@ async function productSetActive(input: any) {
   if (!id || typeof input.is_active !== "boolean") {
     return { status: 400, error: "invalid_product_status", message: "Produto ou situação inválida." };
   }
+  const metadata = await adminProductMetadataForEdit(id);
+  if (!metadata) return { status: 404, error: "product_not_found", message: "Produto não encontrado." };
   const result = await db.from("products")
-    .update({ is_active: input.is_active })
+    .update({ is_active: input.is_active, metadata })
     .eq("id", id)
     .select("id,name,is_active")
     .maybeSingle();
