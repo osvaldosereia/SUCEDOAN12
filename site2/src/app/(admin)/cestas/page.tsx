@@ -208,7 +208,9 @@ export default function CestasPage() {
 														<ul>
 															{position.options.map((option) => (
 																<li key={option.productId}>
-																	<Link href={`/produtos/${option.productId}`}>
+																	<Link
+																		href={`/produtos/detalhe?id=${encodeURIComponent(option.productId)}`}
+																	>
 																		{option.name}
 																	</Link>
 																	<span>

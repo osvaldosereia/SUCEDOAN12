@@ -629,7 +629,7 @@ export function BasketMoldEditorClient({
 											{option.whatsappActive !== true && (
 												<Link
 													className="basket-mold-product-link"
-													href={`/produtos/${option.productId}`}
+													href={`/produtos/detalhe?id=${encodeURIComponent(option.productId)}`}
 												>
 													Editar cadastro do produto
 												</Link>

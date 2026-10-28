@@ -45,9 +45,11 @@ As credenciais nunca são registradas em Git. Integrações reais ficam desligad
 
 A publicação desejada é no GitHub Pages já usado pelo domínio, em `https://donaantonia.com.br/site2/`. Não há mudança de DNS nem serviço de hospedagem adicional planejados. O site atual e o Admin legado em `/site/admin/` devem permanecer intactos.
 
-**O código ainda não está pronto para upload no GitHub Pages.** O Admin atual usa recursos de servidor do Next.js (sessão em cookies, páginas renderizadas no servidor e Server Actions). GitHub Pages hospeda arquivos estáticos e não executa esses recursos. Enviar a pasta-fonte `site2` ou a pasta `.next` não publica uma aplicação funcional.
+**O código ainda não está pronto para upload no GitHub Pages.** GitHub Pages hospeda arquivos estáticos e não executa SSR, cookies de servidor nem Server Actions. Enviar a pasta-fonte `site2` ou a pasta `.next` não publica uma aplicação funcional. A listagem e a ficha de produto já usam sessão do navegador e as Edge Functions autenticadas; o restante da migração segue em andamento.
 
 Antes de publicar, será necessário gerar uma exportação estática do Next.js e adaptar as telas para usar o cliente Supabase no navegador com a chave publicável e as Edge Functions/RPCs autenticadas já existentes. IDs de telas de detalhe deverão funcionar em rotas estáticas. Nenhuma chave `service_role`, token Meta, token Bling ou outro secret pode entrar no bundle.
+
+Para gerar a exportação quando todas as rotas estiverem migradas, defina `NEXT_OUTPUT_EXPORT=1` e `NEXT_PUBLIC_BASE_PATH=/site2` antes de executar `pnpm build`. A configuração em `next.config.ts` habilita `output: export`, `trailingSlash` e imagens sem otimizador remoto apenas nesse modo. A exportação atual ainda para na rota antiga `/produtos/catalogo/[id]`; não publique o diretório `out/` até esse e os demais bloqueios serem removidos.
 
 Quando a exportação estiver pronta, apenas o conteúdo gerado para `site2/` deverá ser acrescentado à branch publicada pelo GitHub Pages. Não mesclar esta branch inteira sobre `main`: ela também contém código de desenvolvimento e está divergente da branch do site. Consulte `docs/superpowers/plans/2026-10-28-github-pages-static-admin.md` antes da publicação.
 

@@ -365,7 +365,7 @@ export function ProductListBrowser() {
 														<span className="catalog-product-copy">
 															<strong>
 																<Link
-																	href={`/produtos/${encodeURIComponent(product.id)}`}
+																	href={`/produtos/detalhe?id=${encodeURIComponent(product.id)}`}
 																>
 																	{product.name}
 																</Link>
