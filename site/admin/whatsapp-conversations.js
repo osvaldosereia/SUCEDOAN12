@@ -5,7 +5,7 @@
   const endpoint = base + "/functions/v1/site-admin-v1";
   const publishableKey = config.publishableKey || "";
   const $ = (id) => document.getElementById(id);
-  const state = { cursor: null, total: 0, conversations: [], selectedId: "", selectedConversation: null, before: null, listLoading: false, listRequestId: 0, conversationLoading: false, conversationRequestId: 0, olderLoading: false, quickFilter: "all", favoriteIds: new Set(), favoritesAvailable: false, ordersAvailable: false, favoriteBusyIds: new Set(), orderBusyIds: new Set(), textSending: false, mediaSending: false, pendingTextKey: "", pendingTextValue: "", pendingTextConversationId: "", pendingMediaKey: "", pendingMediaFingerprint: "", uncertainConversationIds: new Set(), statusRefreshing: false };
+  const state = { cursor: null, total: 0, conversations: [], selectedId: "", selectedConversation: null, before: null, listLoading: false, listRequestId: 0, conversationLoading: false, conversationRequestId: 0, olderLoading: false, quickFilter: "all", favoriteIds: new Set(), favoritesAvailable: false, ordersAvailable: false, favoriteBusyIds: new Set(), orderBusyIds: new Set(), sendingTextIds: new Set(), sendingMediaIds: new Set(), pendingTextByConversation: new Map(), pendingMediaKey: "", pendingMediaFingerprint: "", uncertainSends: new Map(), statusCheckingIds: new Set(), drafts: new Map(), statusRefreshing: false };
   const dateLabel = (value) => {
     if (!value) return "Sem atividade";
     const date = new Date(value);
@@ -22,6 +22,7 @@
       },
       body: JSON.stringify(Object.assign({ action }, values || {})),
       cache: "no-store",
+      signal: AbortSignal.timeout(30000),
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data.ok === false) {
@@ -51,22 +52,27 @@
     const removeButton = $("whatsapp-conversation-remove-file");
     const fileLabel = $("whatsapp-conversation-file-name");
     const count = $("whatsapp-conversation-compose-count");
+    const checkButton = $("whatsapp-conversation-check-send");
     if (!input || !button) return;
     const text = input.value.trim();
     const file = fileInput?.files?.[0] || null;
-    const locked = state.uncertainConversationIds.has(state.selectedId);
-    const sending = state.textSending || state.mediaSending;
+    const locked = state.uncertainSends.has(state.selectedId);
+    const sending = state.sendingTextIds.has(state.selectedId) || state.sendingMediaIds.has(state.selectedId);
     input.maxLength = file ? 1024 : 4000;
-    input.disabled = state.conversationLoading || sending || !state.selectedId || locked;
+    input.disabled = !state.selectedId;
     button.disabled = state.conversationLoading || sending || !state.selectedId || !text || text.length > 4000 || Boolean(file) || locked;
-    if (fileInput) fileInput.disabled = state.conversationLoading || sending || !state.selectedId || locked;
+    if (fileInput) fileInput.disabled = sending || !state.selectedId || locked;
     if (mediaButton) mediaButton.disabled = state.conversationLoading || sending || !state.selectedId || !file || text.length > 1024 || locked;
     if (removeButton) removeButton.hidden = !file || sending;
+    if (checkButton) {
+      checkButton.hidden = !locked;
+      checkButton.disabled = state.statusCheckingIds.has(state.selectedId);
+    }
     if (fileLabel) fileLabel.textContent = file
       ? file.name + " · " + (file.size >= 1024 * 1024 ? (file.size / (1024 * 1024)).toFixed(1) + " MB" : Math.max(1, Math.round(file.size / 1024)) + " KB")
       : "Nenhum arquivo selecionado";
     if (count) count.textContent = input.value.length + " / " + (file ? 1024 : 4000);
-    if (locked) setComposerStatus("Envio com resultado incerto. Confira o histórico antes de enviar outra mensagem.", "error");
+    if (locked && !state.statusCheckingIds.has(state.selectedId)) setComposerStatus("Envio com resultado incerto. Verifique o status antes de reenviar.", "error");
   }
 
   function makeTextIdempotencyKey() {
@@ -96,18 +102,18 @@
     const conversationId = state.selectedId;
     const input = $("whatsapp-conversation-draft");
     const text = input ? input.value.trim() : "";
-    if (!conversationId || !text || state.textSending || state.mediaSending || $("whatsapp-conversation-file")?.files?.length || state.uncertainConversationIds.has(conversationId)) return;
+    if (!conversationId || !text || state.sendingTextIds.has(conversationId) || state.sendingMediaIds.has(conversationId) || $("whatsapp-conversation-file")?.files?.length || state.uncertainSends.has(conversationId)) return;
     if (text.length > 4000) {
       setComposerStatus("A mensagem excede o limite de 4.000 caracteres.", "error");
       return;
     }
-    if (!state.pendingTextKey || state.pendingTextValue !== text || state.pendingTextConversationId !== conversationId) {
-      state.pendingTextKey = makeTextIdempotencyKey();
-      state.pendingTextValue = text;
-      state.pendingTextConversationId = conversationId;
+    let pending = state.pendingTextByConversation.get(conversationId);
+    if (!pending || pending.text !== text) {
+      pending = { key: makeTextIdempotencyKey(), text };
+      state.pendingTextByConversation.set(conversationId, pending);
     }
-    const idempotencyKey = state.pendingTextKey;
-    state.textSending = true;
+    const idempotencyKey = pending.key;
+    state.sendingTextIds.add(conversationId);
     setComposerStatus("Enviando pelo canal oficial…", "neutral");
     syncComposer();
     try {
@@ -116,17 +122,15 @@
         text,
         idempotency_key: idempotencyKey,
       });
-      if (state.pendingTextKey === idempotencyKey) {
-        state.pendingTextKey = "";
-        state.pendingTextValue = "";
-        state.pendingTextConversationId = "";
-      }
+      if (state.pendingTextByConversation.get(conversationId)?.key === idempotencyKey) state.pendingTextByConversation.delete(conversationId);
+      if (state.drafts.get(conversationId)?.trim() === text) state.drafts.set(conversationId, "");
       if (state.selectedId === conversationId) {
-        input.value = "";
+        if (input.value.trim() === text) input.value = "";
+        state.drafts.set(conversationId, input.value);
         setComposerStatus(result.duplicate ? "Mensagem já registrada anteriormente." : "Mensagem aceita pelo provedor; o histórico mostrará a confirmação.", "success");
         setStatus("Mensagem aceita no canal oficial. Atualizando o histórico…");
       }
-      state.textSending = false;
+      state.sendingTextIds.delete(conversationId);
       syncComposer();
       if (state.selectedId === conversationId) await loadConversation(conversationId);
     } catch (error) {
@@ -135,14 +139,10 @@
         || error?.code === "duplicate_not_dispatchable"
         || (!error?.status)
         || (error?.status >= 500 && error?.data?.uncertain !== false);
-      if (uncertain) state.uncertainConversationIds.add(conversationId);
-      else if (state.pendingTextKey === idempotencyKey) {
-        state.pendingTextKey = "";
-        state.pendingTextValue = "";
-        state.pendingTextConversationId = "";
-      }
+      if (uncertain) state.uncertainSends.set(conversationId, { key: idempotencyKey, type: "text", text });
+      else if (state.pendingTextByConversation.get(conversationId)?.key === idempotencyKey) state.pendingTextByConversation.delete(conversationId);
       if (state.selectedId === conversationId) setComposerStatus(sendErrorLabel(error), "error");
-      state.textSending = false;
+      state.sendingTextIds.delete(conversationId);
       syncComposer();
     }
   }
@@ -167,7 +167,7 @@
     const file = fileInput?.files?.[0] || null;
     const captionInput = $("whatsapp-conversation-draft");
     const caption = captionInput ? captionInput.value.trim() : "";
-    if (!conversationId || !file || state.textSending || state.mediaSending || state.uncertainConversationIds.has(conversationId)) return;
+    if (!conversationId || !file || state.sendingTextIds.has(conversationId) || state.sendingMediaIds.has(conversationId) || state.uncertainSends.has(conversationId)) return;
     if (caption.length > 1024) {
       setComposerStatus("A legenda excede o limite de 1.024 caracteres.", "error");
       return;
@@ -179,7 +179,7 @@
       state.pendingMediaFingerprint = fingerprint;
     }
     const idempotencyKey = state.pendingMediaKey;
-    state.mediaSending = true;
+    state.sendingMediaIds.add(conversationId);
     setComposerStatus("Enviando anexo pelo canal oficial…", "neutral");
     syncComposer();
     try {
@@ -196,6 +196,7 @@
         },
         body: form,
         cache: "no-store",
+        signal: AbortSignal.timeout(30000),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || data.ok === false) {
@@ -206,11 +207,15 @@
         throw error;
       }
 
-      state.pendingMediaKey = "";
-      state.pendingMediaFingerprint = "";
+      if (state.pendingMediaKey === idempotencyKey) {
+        state.pendingMediaKey = "";
+        state.pendingMediaFingerprint = "";
+      }
+      if (state.drafts.get(conversationId)?.trim() === caption) state.drafts.set(conversationId, "");
       if (state.selectedId === conversationId) {
-        fileInput.value = "";
-        captionInput.value = "";
+        if (fileInput.files?.[0] === file) fileInput.value = "";
+        if (captionInput.value.trim() === caption) captionInput.value = "";
+        state.drafts.set(conversationId, captionInput.value);
         const confirmation = data.duplicate
           ? "Anexo já registrado anteriormente."
           : data.media_cached === false
@@ -219,7 +224,7 @@
         setComposerStatus(confirmation, "success");
         setStatus("Anexo aceito no canal oficial. Atualizando o histórico…");
       }
-      state.mediaSending = false;
+      state.sendingMediaIds.delete(conversationId);
       syncComposer();
       if (state.selectedId === conversationId) await loadConversation(conversationId);
     } catch (error) {
@@ -228,13 +233,13 @@
         || error?.code === "duplicate_not_dispatchable"
         || (!error?.status)
         || (error?.status >= 500 && error?.data?.uncertain !== false);
-      if (uncertain) state.uncertainConversationIds.add(conversationId);
+      if (uncertain) state.uncertainSends.set(conversationId, { key: idempotencyKey, type: "media", text: caption, fingerprint });
       else if (state.pendingMediaKey === idempotencyKey) {
         state.pendingMediaKey = "";
         state.pendingMediaFingerprint = "";
       }
       if (state.selectedId === conversationId) setComposerStatus(sendErrorLabel(error), "error");
-      state.mediaSending = false;
+      state.sendingMediaIds.delete(conversationId);
       syncComposer();
     }
   }
@@ -255,11 +260,12 @@
       button.dataset.conversationId = item.id;
       button.setAttribute("aria-pressed", String(item.id === state.selectedId));
       const title = document.createElement("strong");
-      title.textContent = item.customer_name
-        ? item.customer_name + (item.phone_last4 ? " · •••• " + item.phone_last4 : "")
+      const displayName = item.customer_name || item.whatsapp_profile_name || "";
+      title.textContent = displayName
+        ? displayName + (!item.customer_name && item.whatsapp_profile_name ? " · WhatsApp" : "") + (item.phone_last4 ? " · •••• " + item.phone_last4 : "")
         : item.phone_last4 ? "Contato · •••• " + item.phone_last4 : "Contato";
       const meta = document.createElement("span");
-      meta.textContent = (item.channel || "WhatsApp")
+      meta.textContent = (item.whatsapp_profile_name && !item.customer_name ? "Nome exibido pelo WhatsApp · " : "") + (item.channel || "WhatsApp")
         + (item.channel_number ? " · Canal " + item.channel_number : "")
         + " · " + (item.human_required ? "Atendimento humano" : item.mode || item.status || "Conversa");
       const date = document.createElement("small");
@@ -415,8 +421,10 @@
         if (!host.isConnected) return;
         button.disabled = false;
         const code = error instanceof Error ? (error.code || error.message) : "";
-        title.textContent = code === "media_not_cached" ? "Mídia indisponível" : "Tentar novamente";
-        hint.textContent = code === "media_not_cached"
+        title.textContent = code === "media_not_cached" || code === "media_not_available" ? "Mídia indisponível" : "Tentar novamente";
+        hint.textContent = code === "media_not_available" && error instanceof Error
+          ? error.message
+          : code === "media_not_cached"
           ? "O arquivo ainda não está no cache privado."
           : "Não foi possível carregar. Tente novamente.";
       }
@@ -619,10 +627,11 @@
   function renderHeader(conversation) {
     const selected = state.selectedConversation || {};
     const phoneLast4 = conversation.phone_last4 || selected.phone_last4 || "";
-    const customerName = conversation.customer_name || selected.customer_name || "";
+    const customerName = conversation.customer_name || selected.customer_name || conversation.whatsapp_profile_name || selected.whatsapp_profile_name || "";
     const channelName = conversation.channel || selected.channel || "WhatsApp";
     const channelNumber = conversation.channel_number || selected.channel_number || "";
-    $("whatsapp-conversation-title").textContent = (customerName || "Contato") + (phoneLast4 ? " · •••• " + phoneLast4 : "");
+    const profileNameOnly = !conversation.customer_name && !selected.customer_name && Boolean(conversation.whatsapp_profile_name || selected.whatsapp_profile_name);
+    $("whatsapp-conversation-title").textContent = (customerName || "Contato") + (profileNameOnly ? " · WhatsApp" : "") + (phoneLast4 ? " · •••• " + phoneLast4 : "");
     const stateLabel = conversation.human_required ? "Precisa de atendimento humano" : [conversation.mode, conversation.status, conversation.stage].filter(Boolean).join(" · ");
     const channel = channelName + (channelNumber ? " · Canal " + channelNumber : "");
     $("whatsapp-conversation-subtitle").textContent = channel + " · " + (stateLabel || "Conversa");
@@ -713,16 +722,14 @@
     const requestId = older ? state.conversationRequestId : ++state.conversationRequestId;
     const targetBefore = older ? state.before : null;
     if (!older) {
+      if (state.selectedId) state.drafts.set(state.selectedId, $("whatsapp-conversation-draft").value);
       state.selectedId = id;
       state.selectedConversation = state.conversations.find((item) => item.id === id) || null;
       state.conversationLoading = true;
       $("whatsapp-conversation-header").hidden = true;
-      $("whatsapp-conversation-compose").hidden = true;
-      $("whatsapp-conversation-draft").value = "";
+      $("whatsapp-conversation-compose").hidden = false;
+      $("whatsapp-conversation-draft").value = state.drafts.get(id) || "";
       clearSelectedMedia();
-      state.pendingTextKey = "";
-      state.pendingTextValue = "";
-      state.pendingTextConversationId = "";
       $("whatsapp-conversation-empty").hidden = false;
       $("whatsapp-conversation-empty").innerHTML = "<strong>Carregando conversa…</strong><span>As mensagens serão abertas quando você selecionar uma conversa.</span>";
       $("whatsapp-conversation-messages").replaceChildren();
@@ -767,8 +774,62 @@
     }
   }
 
+  async function checkPendingSend() {
+    const conversationId = state.selectedId;
+    const pending = state.uncertainSends.get(conversationId);
+    if (!conversationId || !pending || state.statusCheckingIds.has(conversationId)) return;
+    state.statusCheckingIds.add(conversationId);
+    syncComposer();
+    setComposerStatus("Conferindo o status do envio…", "neutral");
+    try {
+      const result = await request("whatsapp_conversation_send_status", {
+        conversation_id: conversationId,
+        idempotency_key: pending.key,
+      });
+      const status = String(result.status || "unknown").toLowerCase();
+      if (status === "sent" || status === "delivered" || status === "read") {
+        const matchingMedia = state.pendingMediaFingerprint === pending.fingerprint;
+        state.uncertainSends.delete(conversationId);
+        if (state.pendingTextByConversation.get(conversationId)?.key === pending.key) state.pendingTextByConversation.delete(conversationId);
+        if (state.pendingMediaKey === pending.key) {
+          state.pendingMediaKey = "";
+          state.pendingMediaFingerprint = "";
+        }
+        if (state.drafts.get(conversationId)?.trim() === pending.text) state.drafts.set(conversationId, "");
+        if (state.selectedId === conversationId) {
+          const draft = $("whatsapp-conversation-draft");
+          if (draft.value.trim() === pending.text) draft.value = "";
+          if (pending.type === "media" && matchingMedia) clearSelectedMedia();
+          state.drafts.set(conversationId, draft.value);
+          setComposerStatus("Envio confirmado. O histórico será atualizado.", "success");
+          setStatus("Envio confirmado. Atualizando o histórico…");
+          syncComposer();
+          await loadConversation(conversationId);
+        }
+      } else if (status === "failed" || status === "rejected") {
+        state.uncertainSends.delete(conversationId);
+        if (state.pendingTextByConversation.get(conversationId)?.key === pending.key) state.pendingTextByConversation.delete(conversationId);
+        if (state.pendingMediaKey === pending.key) {
+          state.pendingMediaKey = "";
+          state.pendingMediaFingerprint = "";
+        }
+        if (state.selectedId === conversationId) setComposerStatus("O envio falhou e não foi confirmado. Revise e tente novamente.", "error");
+      } else if (state.selectedId === conversationId) {
+        setComposerStatus(status === "not_found"
+          ? "Ainda não foi possível localizar o envio. Mantenha esta conversa aberta e confira novamente."
+          : "O envio continua em processamento. Confira novamente em instantes.", "error");
+      }
+    } catch (error) {
+      if (state.selectedId === conversationId) setComposerStatus(error instanceof Error ? error.message : "Não foi possível verificar o envio.", "error");
+    } finally {
+      state.statusCheckingIds.delete(conversationId);
+      syncComposer();
+    }
+  }
+
   $("whatsapp-conversation-compose")?.addEventListener("submit", sendConversationText);
   $("whatsapp-conversation-send-media")?.addEventListener("click", sendConversationMedia);
+  $("whatsapp-conversation-check-send")?.addEventListener("click", checkPendingSend);
   $("whatsapp-conversation-file")?.addEventListener("change", () => {
     state.pendingMediaKey = "";
     state.pendingMediaFingerprint = "";
@@ -780,10 +841,10 @@
   $("whatsapp-conversation-remove-file")?.addEventListener("click", clearSelectedMedia);
   $("whatsapp-conversation-draft")?.addEventListener("input", () => {
     const text = $("whatsapp-conversation-draft").value.trim();
-    if (state.pendingTextValue !== text || state.pendingTextConversationId !== state.selectedId) {
-      state.pendingTextKey = "";
-      state.pendingTextValue = text;
-      state.pendingTextConversationId = state.selectedId;
+    if (state.selectedId) state.drafts.set(state.selectedId, $("whatsapp-conversation-draft").value);
+    const pending = state.pendingTextByConversation.get(state.selectedId);
+    if (pending && pending.text !== text && !state.sendingTextIds.has(state.selectedId) && !state.uncertainSends.has(state.selectedId)) {
+      state.pendingTextByConversation.delete(state.selectedId);
     }
     if ($("whatsapp-conversation-file")?.files?.length && text.length > 1024) {
       setComposerStatus("A legenda pode ter até 1.024 caracteres.", "error");

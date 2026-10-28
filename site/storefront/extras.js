@@ -75,8 +75,12 @@
   
   
     function bindExtraProductControls(container) {
-      container.querySelectorAll("[data-extra-adjust]").forEach((button) => {
-        button.addEventListener("click", () => changeExtraQuantity(button.dataset.extraAdjust, Number(button.dataset.delta || 0)));
+      if (!container || container.closest?.("[data-extra-controls-bound='true']")) return;
+      container.dataset.extraControlsBound = "true";
+      container.addEventListener("click", (event) => {
+        const button = event.target?.closest?.("[data-extra-adjust]");
+        if (!button || !container.contains(button) || button.disabled) return;
+        changeExtraQuantity(button.dataset.extraAdjust, Number(button.dataset.delta || 0));
       });
     }
   

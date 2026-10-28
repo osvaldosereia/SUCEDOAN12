@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { verifyAdminCode } from "../_shared/admin-code-v1.ts";
 import { sendTextViaMeta, sendMediaViaMeta, MetaTransportError } from "../_shared/whatsapp-meta-transport-v1.mjs";
 import { canonicalOutboundMetaMime, outboundMetaMaxBytes, validateOutboundMetaMediaContent, uploadMetaMedia, fetchMetaMediaInfo, fetchMetaMediaResponse, MetaMediaError } from "../_shared/whatsapp-meta-media-v1.mjs";
+import { cacheInboundMetaMedia } from "../_shared/whatsapp-inbound-media-cache-v1.mjs";
 import { ANA_DRY_RUN_INSTRUCTIONS, ANA_DRY_RUN_SCHEMA, buildAnaDryRunInput, normalizeAnaDryRunResult, isSimpleAnaGreeting } from "../_shared/ana-policy-v1.mjs";
 import { validateAnaConfiguration, buildAnaRuntimeInstructions, routeAnaMessage } from "../_shared/ana-admin-config-v1.mjs";
 import { shouldSendAnaLiveReply } from "../_shared/ana-live-policy-v1.mjs";
@@ -702,7 +703,7 @@ async function whatsappOverview() {
     db.from("whatsapp_channel_runtime_v1").select("whatsapp_account_id,inbound_provider,outbound_provider,capture_enabled,send_enabled,ana_enabled,campaigns_enabled,human_send_enabled,homologated_at,updated_at"),
     db.from("marketing_campaign_execution_runtime_v1").select("whatsapp_account_id,mode,max_batch_size"),
     db.from("whatsapp_templates_v1").select("id", { count: "exact", head: true }),
-    db.from("whatsapp_templates_v1").select("id", { count: "exact", head: true }).eq("status", "approved"),
+    db.from("whatsapp_templates_v1").select("id", { count: "exact", head: true }).eq("status", "APPROVED"),
     db.from("whatsapp_templates_v1")
       .select("id,whatsapp_account_id,name,language,category,status,quality_rating,last_synced_at,updated_at")
       .order("updated_at", { ascending: false }).limit(100),
@@ -1145,15 +1146,46 @@ async function whatsappConversationList(input: any) {
     ? db.from("customers").select("id,name,primary_whatsapp_e164").in("primary_whatsapp_e164", contactPhones)
     : Promise.resolve({ data: [], error: null });
   const pageIds = pageRows.map((row: any) => uuid(row.id)).filter(Boolean);
+  const customerPhonesQuery = contactPhones.length
+    ? db.from("customer_phones").select("customer_id,phone_e164,is_primary,verified_at").in("phone_e164", contactPhones)
+      .order("is_primary", { ascending: false }).order("verified_at", { ascending: false })
+    : Promise.resolve({ data: [], error: null });
+  const profileNamesQuery = pageIds.length
+    ? db.from("whatsapp_messages_v1").select("conversation_id,metadata,created_at")
+      .in("conversation_id", pageIds).eq("direction", "inbound")
+      .order("created_at", { ascending: false }).limit(Math.min(pageIds.length * 8, 240))
+    : Promise.resolve({ data: [], error: null });
   const recentForPageQuery = onlyOrders
     ? Promise.resolve({ data: Array.from(orderKeywordIds).filter((id) => pageIds.includes(id)).map((id) => ({ conversation_id: id })), error: null })
     : recentOrderConversationIds(pageIds).then((ids) => ({ data: Array.from(ids).map((id) => ({ conversation_id: id })), error: null }));
-  const [byIdResult, byPhoneResult, recentForPageResult] = await Promise.all([byIdQuery, byPhoneQuery, recentForPageQuery]);
+  const [byIdResult, byPhoneResult, recentForPageResult, customerPhonesResult, profileNamesResult] = await Promise.all([
+    byIdQuery, byPhoneQuery, recentForPageQuery, customerPhonesQuery, profileNamesQuery,
+  ]);
   if (byIdResult.error) throw byIdResult.error;
   if (byPhoneResult.error) throw byPhoneResult.error;
   if (recentForPageResult.error) throw recentForPageResult.error;
-  const customerById = new Map((byIdResult.data || []).map((row: any) => [uuid(row.id), row]));
+  const phoneRows = customerPhonesResult.error ? [] : customerPhonesResult.data || [];
+  const phoneCustomerIds = Array.from(new Set(phoneRows.map((row: any) => uuid(row.customer_id)).filter(Boolean)));
+  const knownCustomerIds = new Set([...(byIdResult.data || []), ...(byPhoneResult.data || [])].map((row: any) => uuid(row.id)).filter(Boolean));
+  const missingPhoneCustomerIds = phoneCustomerIds.filter((id) => !knownCustomerIds.has(id));
+  const secondaryCustomersResult = missingPhoneCustomerIds.length
+    ? await db.from("customers").select("id,name,primary_whatsapp_e164").in("id", missingPhoneCustomerIds)
+    : { data: [], error: null };
+  const customerRows = [...(byIdResult.data || []), ...(byPhoneResult.data || []), ...(secondaryCustomersResult.data || [])];
+  const customerById = new Map(customerRows.map((row: any) => [uuid(row.id), row]));
   const customerByPhone = new Map((byPhoneResult.data || []).map((row: any) => [String(row.primary_whatsapp_e164 || ""), row]));
+  const customerIdByPhone = new Map<string, string>();
+  for (const row of phoneRows) {
+    const phone = String(row.phone_e164 || "");
+    if (phone && !customerIdByPhone.has(phone)) customerIdByPhone.set(phone, uuid(row.customer_id));
+  }
+  const profileNameByConversation = new Map<string, string>();
+  for (const row of profileNamesResult.error ? [] : profileNamesResult.data || []) {
+    const conversationId = uuid(row.conversation_id);
+    const metadata = row.metadata && typeof row.metadata === "object" ? row.metadata : {};
+    const name = clean(metadata.contact_name || metadata.profile_name || "", 180);
+    if (conversationId && name && !profileNameByConversation.has(conversationId)) profileNameByConversation.set(conversationId, name);
+  }
   const recentOrderSet = new Set((recentForPageResult.data || []).map((row: any) => uuid(row.conversation_id)).filter(Boolean));
   const accountById = new Map(accounts.map((row: any) => [row.id, row]));
   const favoriteIdSet = new Set(favoriteIds);
@@ -1165,13 +1197,16 @@ async function whatsappConversationList(input: any) {
       .filter(Boolean).sort((a: string, b: string) => new Date(b).getTime() - new Date(a).getTime())[0] || null;
     const linkedCustomer: any = customerById.get(uuid(row.customer_id))
       || customerByPhone.get(String(row.wa_contact_e164 || ""))
+      || customerById.get(customerIdByPhone.get(String(row.wa_contact_e164 || "")) || "")
       || {};
+    const whatsappProfileName = profileNameByConversation.get(row.id) || "";
     const hasRecentOrderKeyword = recentOrderSet.has(row.id);
     const orderOverride = orderOverrides.get(row.id) || "";
     const isInOrders = orderOverride === "include" || (orderOverride !== "exclude" && hasRecentOrderKeyword);
     return {
       id: row.id,
       customer_name: clean(linkedCustomer.name || "", 180),
+      whatsapp_profile_name: clean(whatsappProfileName, 180),
       channel: clean(account.display_name || account.slug || "WhatsApp", 120),
       channel_number: accountDigits.slice(-4),
       phone_last4: phoneDigits.slice(-4),
@@ -1341,82 +1376,24 @@ async function whatsappConversationMessageStatuses(input: any) {
 async function cacheInboundWhatsappMetaMedia(message: any, messageType: string, allowedMimeTypes: Set<string>) {
   const metadata = message?.metadata && typeof message.metadata === "object" ? message.metadata : {};
   const media = metadata.media && typeof metadata.media === "object" ? metadata.media : {};
-  const source = clean(metadata.source || media.source, 30).toLowerCase();
   const mediaId = clean(media.provider_media_id || metadata.provider_media_id, 240);
-  if (message?.direction !== "inbound" || source !== "meta" || !mediaId) return null;
+  if (message?.direction !== "inbound" || clean(metadata.source || media.source, 30).toLowerCase() !== "meta" || !mediaId) return null;
   if (!attendanceMetaConfigReady()) {
     return { error: "media_retrieval_failed", message: "Não foi possível recuperar esta mídia do WhatsApp.", status: 503 };
   }
-
-  const maxBytes = 20 * 1024 * 1024;
-  try {
-    const info = await fetchMetaMediaInfo({
-      accessToken: META_WHATSAPP_ACCESS_TOKEN,
-      graphVersion: META_WHATSAPP_GRAPH_VERSION,
-      mediaId,
-    });
-    const infoMime = String(info.mimeType || media.mime_type || "").split(";", 1)[0].trim().toLowerCase();
-    const expectedSize = Number(info.fileSize ?? media.size_bytes ?? 0);
-    if (Number.isFinite(expectedSize) && expectedSize > maxBytes) return { error: "media_too_large", status: 413 };
-
-    const response = await fetchMetaMediaResponse({ accessToken: META_WHATSAPP_ACCESS_TOKEN, url: info.url });
-    const responseMime = String(response.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
-    const mimeType = allowedMimeTypes.has(infoMime) ? infoMime : responseMime;
-    if (!allowedMimeTypes.has(mimeType)) return { error: "media_type_not_allowed", status: 415 };
-    if (responseMime && !allowedMimeTypes.has(responseMime)) return { error: "media_type_not_allowed", status: 415 };
-
-    let bytes: Uint8Array;
-    if (response.body) {
-      const reader = response.body.getReader();
-      const chunks: Uint8Array[] = [];
-      let total = 0;
-      try {
-        while (true) {
-          const part = await reader.read();
-          if (part.done) break;
-          total += part.value.byteLength;
-          if (total > maxBytes) {
-            await reader.cancel();
-            return { error: "media_too_large", status: 413 };
-          }
-          chunks.push(part.value);
-        }
-      } finally {
-        reader.releaseLock();
-      }
-      bytes = new Uint8Array(total);
-      let offset = 0;
-      for (const chunk of chunks) {
-        bytes.set(chunk, offset);
-        offset += chunk.byteLength;
-      }
-    } else {
-      bytes = new Uint8Array(await response.arrayBuffer());
-      if (bytes.byteLength > maxBytes) return { error: "media_too_large", status: 413 };
-    }
-    if (!bytes.byteLength) return { error: "media_empty", status: 422 };
-
-    const filename = safeWhatsappFilename(media.filename || media.file_name || `whatsapp-${messageType}-${message.id}`);
-    const objectPath = `inbound/${message.id}/${filename}`;
-    const storage = db.storage.from("attendance-media-v1");
-    const upload = await storage.upload(objectPath, new Blob([bytes], { type: mimeType }), {
-      contentType: mimeType,
-      upsert: true,
-    });
-    if (upload.error) throw upload.error;
-
-    const cached = await db.from("attendance_media_cache_v1").upsert({
-      message_id: message.id,
-      object_path: objectPath,
-      mime_type: mimeType,
-      filename,
-      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    }, { onConflict: "message_id" });
-    if (cached.error) throw cached.error;
-    return { path: objectPath, mimeType, filename, fileSize: bytes.byteLength };
-  } catch (_) {
-    return { error: "media_retrieval_failed", message: "Não foi possível recuperar esta mídia do WhatsApp. Tente novamente.", status: 503 };
+  const result = await cacheInboundMetaMedia({
+    db,
+    message: Object.assign({}, message, { message_type: messageType }),
+    accessToken: META_WHATSAPP_ACCESS_TOKEN,
+    graphVersion: META_WHATSAPP_GRAPH_VERSION,
+    fetchMediaInfo,
+    fetchMediaResponse,
+    allowedMimeTypes,
+  });
+  if (result?.error === "media_retrieval_failed") {
+    return { ...result, message: "Não foi possível recuperar esta mídia do WhatsApp. Tente novamente." };
   }
+  return result;
 }
 
 async function whatsappConversationMedia(input: any) {
@@ -1501,7 +1478,16 @@ async function whatsappConversationMedia(input: any) {
     }
   }
 
-  if (!path) return { error: "media_not_cached", message: "Esta mídia ainda não está disponível no cache privado.", status: 404 };
+  if (!path) {
+    const metadata = messageResult.data.metadata && typeof messageResult.data.metadata === "object" ? messageResult.data.metadata : {};
+    const media = metadata.media && typeof metadata.media === "object" ? metadata.media : {};
+    const source = clean(metadata.source || media.source, 30).toLowerCase();
+    const hasMetaMediaId = Boolean(clean(media.provider_media_id || metadata.provider_media_id, 240));
+    if (messageResult.data.direction === "inbound" && (source !== "meta" || !hasMetaMediaId)) {
+      return { error: "media_not_available", message: "Este arquivo chegou sem um identificador recuperável. Novas mídias recebidas pelo WhatsApp oficial serão guardadas automaticamente.", status: 404 };
+    }
+    return { error: "media_not_cached", message: "Esta mídia ainda não está disponível no cache privado.", status: 404 };
+  }
   // O bucket privado limita objetos do cache a 20 MB; attendance_media_cache_v1 não armazena file_size.
   if (fileSize > 20 * 1024 * 1024) return { error: "media_too_large", status: 413 };
   if (!allowedMimeTypes.has(mimeType)) return { error: "media_type_not_allowed", status: 415 };
@@ -2738,6 +2724,27 @@ async function dispatchAttendanceOutbox(outboxId: unknown) {
   return { ok: false, error: "outbound_provider_unavailable", provider: claim.provider || null };
 }
 
+async function whatsappConversationSendStatus(input: any) {
+  const conversationId = uuid(input.conversation_id);
+  const idempotencyKey = clean(input.idempotency_key, 120);
+  if (!conversationId || !/^(admin-text|admin-media):[A-Za-z0-9._:-]{1,100}$/.test(idempotencyKey)) {
+    return { error: "invalid_send_reference", status: 400 };
+  }
+  const result = await db.from("whatsapp_outbox_v1")
+    .select("status,message_type,updated_at")
+    .eq("conversation_id", conversationId)
+    .eq("idempotency_key", idempotencyKey)
+    .eq("purpose", "human_attendance")
+    .maybeSingle();
+  if (result.error) throw result.error;
+  if (!result.data) return { status: "not_found" };
+  return {
+    status: clean(result.data.status, 40).toLowerCase(),
+    message_type: clean(result.data.message_type, 30).toLowerCase(),
+    updated_at: result.data.updated_at || null,
+  };
+}
+
 async function whatsappConversationSendText(input: any) {
   const conversationId = uuid(input.conversation_id);
   if (!conversationId) return { error: "invalid_conversation_id", status: 400 };
@@ -3020,6 +3027,7 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "whatsapp_conversation_list") result = await whatsappConversationList(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_messages") result = await whatsappConversationMessages(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_message_statuses") result = await whatsappConversationMessageStatuses(input);
+    else if (req.method === "POST" && action === "whatsapp_conversation_send_status") result = await whatsappConversationSendStatus(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_send_text") result = await whatsappConversationSendText(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_send_media") result = await whatsappConversationSendMedia(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_media") result = await whatsappConversationMedia(input);
