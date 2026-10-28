@@ -622,19 +622,22 @@ async function markOrderDelivered(input: any) {
 
 
 async function whatsappOverview() {
-  const [accountsResult, runtimeResult, templateCountResult, approvedCountResult, campaignsResult, anaResult] = await Promise.all([
+  const [accountsResult, runtimeResult, templateCountResult, approvedCountResult, templateRowsResult, campaignsResult, anaResult] = await Promise.all([
     db.from("whatsapp_accounts").select("id,slug,display_name,phone_e164").order("display_name"),
     db.from("whatsapp_channel_runtime_v1").select("whatsapp_account_id,inbound_provider,outbound_provider,capture_enabled,send_enabled,ana_enabled,campaigns_enabled,human_send_enabled,homologated_at,updated_at"),
     db.from("whatsapp_templates_v1").select("id", { count: "exact", head: true }),
     db.from("whatsapp_templates_v1").select("id", { count: "exact", head: true }).eq("status", "approved"),
+    db.from("whatsapp_templates_v1")
+      .select("id,whatsapp_account_id,name,language,category,status,quality_rating,last_synced_at,updated_at")
+      .order("updated_at", { ascending: false }).limit(100),
     db.from("marketing_campaigns_v1")
-      .select("id,name,whatsapp_account_id,status,scheduled_for,created_at", { count: "exact" })
-      .order("created_at", { ascending: false }).limit(6),
+      .select("id,name,whatsapp_account_id,status,scheduled_for,created_at,started_at,paused_at,completed_at,failed_at", { count: "exact" })
+      .order("created_at", { ascending: false }).limit(100),
     db.from("whatsapp_ana_jobs_v1")
-      .select("id,whatsapp_account_id,status,decision,created_at")
-      .eq("dry_run", false).order("created_at", { ascending: false }).limit(6),
+      .select("id,whatsapp_account_id,status,decision,created_at", { count: "exact" })
+      .eq("dry_run", false).order("created_at", { ascending: false }).limit(50),
   ]);
-  for (const result of [accountsResult, runtimeResult, templateCountResult, approvedCountResult, campaignsResult, anaResult]) {
+  for (const result of [accountsResult, runtimeResult, templateCountResult, approvedCountResult, templateRowsResult, campaignsResult, anaResult]) {
     if (result.error) throw result.error;
   }
 
@@ -658,12 +661,26 @@ async function whatsappOverview() {
       updated_at: runtime.updated_at || null,
     };
   });
+  const templates = (templateRowsResult.data || []).map((row: any) => ({
+    name: clean(row.name || "Modelo sem nome", 160),
+    channel: clean(accountById.get(row.whatsapp_account_id)?.display_name || "", 120),
+    language: clean(row.language, 24),
+    category: clean(row.category, 40),
+    status: clean(row.status, 40),
+    quality_rating: clean(row.quality_rating, 40),
+    last_synced_at: row.last_synced_at || null,
+    updated_at: row.updated_at || null,
+  }));
   const campaigns = (campaignsResult.data || []).map((row: any) => ({
     name: clean(row.name || "Campanha", 140),
     channel: clean(accountById.get(row.whatsapp_account_id)?.display_name || "", 120),
     status: clean(row.status, 40),
     scheduled_for: row.scheduled_for || null,
     created_at: row.created_at || null,
+    started_at: row.started_at || null,
+    paused_at: row.paused_at || null,
+    completed_at: row.completed_at || null,
+    failed_at: row.failed_at || null,
   }));
   const ana = (anaResult.data || []).map((row: any) => ({
     channel: clean(accountById.get(row.whatsapp_account_id)?.display_name || "", 120),
@@ -677,9 +694,11 @@ async function whatsappOverview() {
     templates: {
       total: templateCountResult.count || 0,
       approved: approvedCountResult.count || 0,
+      items: templates,
+      loaded: templates.length,
     },
-    campaigns: { total: campaignsResult.count || 0, recent: campaigns },
-    ana: { recent: ana },
+    campaigns: { total: campaignsResult.count || 0, recent: campaigns, loaded: campaigns.length },
+    ana: { total: anaResult.count || 0, recent: ana, loaded: ana.length },
     generated_at: new Date().toISOString(),
   };
 }
