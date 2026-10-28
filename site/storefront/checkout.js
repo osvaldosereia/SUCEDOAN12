@@ -90,9 +90,8 @@
       $("registration-title").textContent = customer
         ? "Complete seu endereço de entrega"
         : "Cadastre seus dados para continuar";
-      $("registration-message").textContent = customer
-        ? "Encontramos seu cadastro, mas faltam dados para a entrega. Complete os campos abaixo."
-        : "Não encontramos cadastro para esse telefone. Preencha seus dados para registrar o pedido.";
+      $("registration-message").dataset.tone = "neutral";
+      $("registration-message").textContent = "";
       $("customer-registration").hidden = false;
     }
 
@@ -287,19 +286,19 @@
         if (!result.found || !customer) {
           showRegistrationForm(null);
           $("lookup-message").textContent = normalized.assumedLocalDdd
-            ? "Não encontramos cadastro. Usamos o DDD 65 para este número; se seu DDD for outro, informe o telefone completo. Faça seu cadastro abaixo."
-            : "Não encontramos cadastro para esse telefone. Faça seu cadastro abaixo.";
+            ? "Cadastro não encontrado. Usamos o DDD 65; informe o DDD correto antes de cadastrar, se necessário."
+            : "Cadastro não encontrado. Preencha os dados abaixo.";
           return;
         }
         if (!customerHasCheckoutAddress(customer)) {
           showRegistrationForm(customer);
-          $("lookup-message").textContent = "Cadastro encontrado, mas precisamos completar os dados de entrega.";
+          $("lookup-message").textContent = "Cadastro encontrado. Complete o endereço abaixo.";
           return;
         }
         setConfirmedCustomer(customer, normalized.phone);
         $("lookup-message").textContent = normalized.assumedLocalDdd
-          ? "Cadastro encontrado. Usamos o DDD 65 porque o número foi informado sem DDD."
-          : "Cadastro e endereço encontrados. Escolha a data de entrega e a forma de pagamento.";
+          ? "Cadastro localizado com DDD 65. Confira os dados e escolha a entrega."
+          : "Cadastro e endereço encontrados. Escolha a data e o pagamento.";
       } catch (error) {
         if (requestId !== lookupSequence) return;
         $("lookup-message").textContent = error.message === "rate_limited"
@@ -324,7 +323,8 @@
       submitButton.disabled = true;
       phoneInput.disabled = true;
       lookupButton.disabled = true;
-      $("registration-message").textContent = "Salvando seu cadastro…";
+      $("registration-message").dataset.tone = "pending";
+      $("registration-message").textContent = "Salvando cadastro…";
       try {
         const result = await request("customer_register", {
           method: "POST",
@@ -347,23 +347,24 @@
           throw new Error("registration_incomplete");
         }
         setConfirmedCustomer(result.customer, phone);
-        $("lookup-message").textContent = "Cadastro salvo. Escolha a data de entrega e a forma de pagamento.";
+        $("lookup-message").textContent = "Cadastro salvo. Escolha a data e o pagamento.";
       } catch (error) {
         const reason = String(error && error.message || "");
         const messages = {
-          invalid_document: "CPF/CNPJ inválido. Confira os números e tente novamente.",
-          document_already_in_use: "Este CPF/CNPJ já está ligado a outro cadastro. Confira o telefone completo com DDD.",
-          document_mismatch: "O CPF/CNPJ pertence a outro cadastro. Confira o telefone completo com DDD e os dados informados.",
-          identity_mismatch: "O nome não corresponde ao cadastro deste telefone. Confira o nome ou informe o telefone completo com DDD.",
-          ambiguous_phone: "Há mais de um cadastro possível. Informe o telefone completo com DDD e confirme o CPF/CNPJ.",
-          invalid_phone: "Telefone inválido. Informe o DDD junto ao número e tente novamente.",
-          rate_limited: "Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.",
-          rate_limit_unavailable: "Não foi possível validar seu cadastro agora. Tente novamente em instantes.",
-          registration_unavailable: "O cadastro está temporariamente indisponível. Seus dados continuam no formulário; tente novamente.",
-          registration_incomplete: "Não conseguimos confirmar o endereço salvo. Confira os campos e tente salvar novamente."
+          invalid_document: "CPF/CNPJ inválido. Confira os números.",
+          document_already_in_use: "CPF/CNPJ já está em outro cadastro. Confira o telefone com DDD e toque em Buscar.",
+          document_mismatch: "CPF/CNPJ não confere com este telefone. Confira os dados e o DDD.",
+          identity_mismatch: "Nome diferente do cadastro. Confira o nome ou o telefone com DDD.",
+          ambiguous_phone: "Mais de um cadastro encontrado. Informe o telefone com DDD.",
+          invalid_phone: "Telefone inválido. Informe o DDD junto ao número.",
+          rate_limited: "Muitas tentativas. Aguarde alguns minutos.",
+          rate_limit_unavailable: "Não foi possível validar agora. Tente novamente em instantes.",
+          registration_unavailable: "Cadastro indisponível. Seus dados continuam no formulário; tente novamente.",
+          registration_incomplete: "Endereço não confirmado. Confira os campos e tente novamente."
         };
+        $("registration-message").dataset.tone = "error";
         $("registration-message").textContent = messages[reason] ||
-          "Não foi possível salvar o cadastro. Confira os dados e, se necessário, informe o telefone completo com DDD.";
+          "Não foi possível salvar. Confira os dados e tente novamente.";
       } finally {
         phoneInput.disabled = false;
         lookupButton.disabled = false;
