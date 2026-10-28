@@ -704,13 +704,22 @@ async function whatsappOverview() {
 }
 
 
+function isIsoCursorTimestamp(value: string) {
+  return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/.test(value)
+    && Number.isFinite(Date.parse(value));
+}
+
 async function whatsappConversationList(input: any) {
   const pageSize = 30;
-  const cursor = input.cursor && typeof input.cursor === "object" ? input.cursor : null;
+  const cursorSupplied = Object.prototype.hasOwnProperty.call(input, "cursor") && input.cursor !== null;
+  if (cursorSupplied && (typeof input.cursor !== "object" || Array.isArray(input.cursor))) {
+    return { error: "invalid_conversation_cursor", status: 400 };
+  }
+  const cursor = cursorSupplied ? input.cursor : null;
   const cursorDateRaw = cursor ? clean(cursor.updated_at, 64) : "";
-  const cursorId = cursor ? uuid(cursor.id) : "";
-  const cursorDate = cursorDateRaw ? new Date(cursorDateRaw) : null;
-  if (cursor && ((!cursorDate || Number.isNaN(cursorDate.getTime())) || !cursorId)) {
+  const cursorIdRaw = cursor ? clean(cursor.id, 64) : "";
+  const cursorId = cursorIdRaw ? uuid(cursorIdRaw) : "";
+  if (cursor && (!isIsoCursorTimestamp(cursorDateRaw) || !cursorId)) {
     return { error: "invalid_conversation_cursor", status: 400 };
   }
   const requestedAccount = clean(input.account_id, 64);
@@ -724,10 +733,9 @@ async function whatsappConversationList(input: any) {
     .order("updated_at", { ascending: false })
     .order("id", { ascending: false })
     .limit(pageSize + 1);
-  if (cursorDate && cursorId) {
-    const timestamp = cursorDate.toISOString();
+  if (cursorDateRaw && cursorId) {
     conversationQuery = conversationQuery.or(
-      "updated_at.lt." + timestamp + ",and(updated_at.eq." + timestamp + ",id.lt." + cursorId + ")",
+      "updated_at.lt." + cursorDateRaw + ",and(updated_at.eq." + cursorDateRaw + ",id.lt." + cursorId + ")",
     );
   }
   if (accountId) conversationQuery = conversationQuery.eq("whatsapp_account_id", accountId);
@@ -783,13 +791,13 @@ async function whatsappConversationList(input: any) {
 async function whatsappConversationMessages(input: any) {
   const conversationId = uuid(input.conversation_id);
   if (!conversationId) return { error: "invalid_conversation_id", status: 400 };
-  const beforeRaw = clean(input.before_created_at || input.before, 64);
+  const beforeRaw = clean(input.before_created_at, 64);
   const beforeIdRaw = clean(input.before_id, 64);
-  const before = beforeRaw ? new Date(beforeRaw) : null;
   const beforeId = beforeIdRaw ? uuid(beforeIdRaw) : "";
-  if (beforeRaw && (!before || Number.isNaN(before.getTime()))) return { error: "invalid_before", status: 400 };
-  if (beforeIdRaw && !beforeId) return { error: "invalid_before_id", status: 400 };
-  if (beforeId && !before) return { error: "invalid_before_cursor", status: 400 };
+  if (Boolean(beforeRaw) !== Boolean(beforeIdRaw)) return { error: "invalid_before_cursor", status: 400 };
+  if (beforeIdRaw && (!isIsoCursorTimestamp(beforeRaw) || !beforeId)) {
+    return { error: "invalid_before_cursor", status: 400 };
+  }
 
   const conversationResult = await db.from("conversations")
     .select("id,whatsapp_account_id,wa_contact_e164,status,stage,mode,human_required")
@@ -806,12 +814,11 @@ async function whatsappConversationMessages(input: any) {
         .select("id,direction,message_type,text_body,received_at,sent_at,created_at")
         .eq("conversation_id", conversationId)
         .eq("whatsapp_account_id", conversation.whatsapp_account_id);
-      if (before && beforeId) {
-        const timestamp = before.toISOString();
+      if (beforeRaw && beforeId) {
         query = query.or(
-          "created_at.lt." + timestamp + ",and(created_at.eq." + timestamp + ",id.lt." + beforeId + ")",
+          "created_at.lt." + beforeRaw + ",and(created_at.eq." + beforeRaw + ",id.lt." + beforeId + ")",
         );
-      } else if (before) query = query.lt("created_at", before.toISOString());
+      }
       return query.order("created_at", { ascending: false }).order("id", { ascending: false }).limit(31);
     })(),
   ]);
