@@ -7,11 +7,11 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Admin · Dona Antônia</title>
   <link rel="stylesheet" href="../styles.css?v=5">
-  <link rel="stylesheet" href="admin.css?v=35">
+  <link rel="stylesheet" href="admin.css?v=36">
   <link rel="stylesheet" href="orders-admin.css?v=1">
   <script src="../config.js?v=3"></script>
   <script src="admin-auth.js?v=1" defer></script>
-  <script src="catalog-admin.js?v=9" defer></script>
+  <script src="catalog-admin.js?v=10" defer></script>
   <script src="orders-admin.js?v=3" defer></script>
   <script src="order-message-admin.js?v=3" defer></script>
   <script src="separation-message-admin.js?v=3" defer></script>
@@ -154,16 +154,27 @@
       <section class="admin-view" data-panel="products" hidden>
         <div class="section-title"><div><h2>Produtos</h2><p>Edite os campos do cadastro existente no Supabase.</p></div><button id="new-product" class="button button-primary" type="button">Novo produto</button></div>
         <form id="product-search" class="customer-search">
-          <label for="product-query">Buscar por nome, marca, SKU ou GTIN</label>
+          <label for="product-query">Buscar por nome, marca, SKU ou EAN</label>
           <div class="product-search-controls">
-            <input id="product-query" type="search" placeholder="Ex.: arroz, marca ou código">
-            <select id="product-status" aria-label="Filtrar produtos">
+            <input id="product-query" type="search" placeholder="Ex.: arroz, leite ou código">
+            <select id="product-status" aria-label="Filtrar produtos por situação">
               <option value="active">Ativos</option>
               <option value="inactive">Inativos</option>
               <option value="all">Todos</option>
             </select>
+            <select id="product-recent" aria-label="Filtrar produtos recentes">
+              <option value="all">Qualquer período</option>
+              <option value="recent">Adicionados ou editados nos últimos 30 dias</option>
+            </select>
             <button class="button button-primary" type="submit">Buscar</button>
           </div>
+          <fieldset id="product-quality-filters" class="product-quality-filters">
+            <legend>Segmentar por cadastro</legend>
+            <button class="product-quality-filter" type="button" data-product-quality="no_photo" aria-pressed="false">Sem foto</button>
+            <button class="product-quality-filter" type="button" data-product-quality="zero_stock" aria-pressed="false">Estoque 0</button>
+            <button class="product-quality-filter" type="button" data-product-quality="no_ean" aria-pressed="false">Sem EAN</button>
+            <button class="product-quality-filter" type="button" data-product-quality="no_ncm" aria-pressed="false">Sem NCM</button>
+          </fieldset>
         </form>
         <div id="products-result" class="admin-product-list"><p class="admin-muted">Carregando produtos…</p></div>
         <button id="products-more" class="button button-outline button-wide" type="button" hidden>Carregar mais</button>
