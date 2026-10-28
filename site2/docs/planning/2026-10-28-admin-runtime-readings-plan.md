@@ -80,7 +80,7 @@
 
 - [x] Executar build estático com `NEXT_OUTPUT_EXPORT=1`, `NEXT_PUBLIC_BASE_PATH=/site2` e `pnpm build`.
 - [x] Inspecionar de forma estática o HTML inicial de dashboard/configurações/Flows para garantir que os erros do build não continuam congelados; não ler ou expor secrets.
-- [ ] Conferir se a árvore nova contém apenas `site2/`, sem excluir arquivos de `/site` ou da raiz.
-- [ ] Commitar e enviar as mudanças de código/docs à branch de trabalho.
-- [ ] Atualizar o artefato `site2/` no `main`; conferir sucesso do Pages e HTTP 200 para login, dashboard, configurações e assets.
-- [ ] Registrar explicitamente que login com senha, autorização de operador e pedido real continuam sem validação enquanto não houver sessão operacional; não marcar o MVP completo por causa de uma build.
+- [x] Conferir se a árvore nova contém apenas `site2/`, sem excluir arquivos de `/site` ou da raiz.
+- [x] Commitar e enviar as mudanças de código/docs à branch de trabalho.
+- [x] Atualizar o artefato `site2/` no `main`; conferir sucesso do Pages e HTTP 200 para login, dashboard, configurações e assets.
+- [x] Registrar explicitamente que login com senha, autorização de operador e pedido real continuam sem validação enquanto não houver sessão operacional; não marcar o MVP completo por causa de uma build.
