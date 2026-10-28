@@ -436,3 +436,19 @@
 .whatsapp-campaign-exclusion-chip { display:inline-flex; min-height:23px; align-items:center; padding:3px 7px; border:1px solid #e7e3dc; border-radius:999px; background:#faf9f6; color:#5c626a; font-size:.68rem; font-weight:700; }
 .whatsapp-campaign-exclusion-chip.is-suppressed { border-color:#efd2cd; background:#fff7f5; color:#963a32; }
 .whatsapp-campaign-exclusion-muted { color:var(--muted); font-size:.68rem; line-height:1.4; }
+
+
+/* Resposta humana dentro do histórico da conversa */
+.whatsapp-conversation-compose { display:grid; gap:9px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line); }
+.whatsapp-conversation-compose[hidden] { display:none; }
+.whatsapp-compose-field { display:grid; gap:6px; color:var(--ink); font-size:.78rem; font-weight:750; }
+.whatsapp-compose-field textarea { width:100%; min-height:78px; resize:vertical; padding:10px 12px; border:1px solid #d8cfc3; border-radius:10px; background:#fff; color:var(--ink); font:inherit; font-weight:450; line-height:1.5; }
+.whatsapp-compose-field textarea:focus { outline:3px solid rgb(126 48 41 / 16%); border-color:#9f5a50; }
+.whatsapp-compose-field textarea:disabled { background:#f6f4f1; color:var(--muted); }
+.whatsapp-compose-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.whatsapp-compose-footer p { margin:0; color:var(--muted); font-size:.72rem; line-height:1.4; }
+.whatsapp-compose-footer p[data-tone="success"] { color:#2d6a43; }
+.whatsapp-compose-footer p[data-tone="error"] { color:#963a32; }
+.whatsapp-compose-footer > div { display:flex; flex:0 0 auto; align-items:center; gap:10px; }
+.whatsapp-compose-footer small { color:var(--muted); font-size:.68rem; }
+@media (max-width:520px) { .whatsapp-compose-footer { align-items:stretch; flex-direction:column; } .whatsapp-compose-footer > div { justify-content:space-between; } }
