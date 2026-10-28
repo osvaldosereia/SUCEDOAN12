@@ -7,13 +7,14 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Admin · Dona Antônia</title>
   <link rel="stylesheet" href="../styles.css?v=5">
-  <link rel="stylesheet" href="admin.css?v=9">
+  <link rel="stylesheet" href="admin.css?v=10">
   <link rel="stylesheet" href="orders-admin.css?v=1">
   <script src="../config.js?v=3"></script>
   <script src="catalog-admin.js?v=8" defer></script>
   <script src="orders-admin.js?v=1" defer></script>
   <script src="order-message-admin.js?v=1" defer></script>
-  <script src="admin.js?v=8" defer></script>
+  <script src="separation-message-admin.js?v=1" defer></script>
+  <script src="admin.js?v=9" defer></script>
 </head>
 <body class="admin-page">
   <header class="topbar">
@@ -127,22 +128,53 @@
       </section>
 
       <section class="admin-view" data-panel="whatsapp" hidden>
-        <div class="section-title">
-          <div><h2>Mensagem de confirmação</h2><p>Edite o texto da confirmação e acompanhe os modelos de cada número.</p></div>
-          <button id="order-message-refresh" class="button button-outline" type="button">Atualizar status</button>
-        </div>
-        <div class="message-editor">
-          <label for="order-message-body">Texto da mensagem</label>
-          <textarea id="order-message-body" rows="14" maxlength="1024" spellcheck="false" aria-describedby="order-message-meta-status"></textarea>
-          <p id="order-message-meta-status" class="admin-muted" role="status">Carregando a conexão com a Meta…</p>
-          <div class="message-actions">
-            <button id="order-message-save" class="button button-outline" type="button">Salvar texto</button>
-            <button id="order-message-submit" class="button button-primary" type="button">Enviar para aprovação na Meta</button>
+        <nav class="whatsapp-tabs" aria-label="Mensagens do WhatsApp" role="tablist">
+          <button class="whatsapp-tab active" id="whatsapp-tab-confirmation" type="button" role="tab" aria-selected="true" aria-controls="whatsapp-panel-confirmation" data-whatsapp-tab="confirmation">Confirmação do pedido</button>
+          <button class="whatsapp-tab" id="whatsapp-tab-separation" type="button" role="tab" aria-selected="false" aria-controls="whatsapp-panel-separation" data-whatsapp-tab="separation">Pós-separação</button>
+        </nav>
+
+        <div id="whatsapp-panel-confirmation" class="whatsapp-tab-panel active" role="tabpanel" aria-labelledby="whatsapp-tab-confirmation" data-whatsapp-panel="confirmation">
+          <div class="section-title">
+            <div><h2>Mensagem de confirmação</h2><p>Edite o texto da confirmação e acompanhe os modelos de cada número.</p></div>
+            <button id="order-message-refresh" class="button button-outline" type="button">Atualizar status</button>
           </div>
-          <p class="message-help">O novo texto só será enviado depois que a Meta aprovar o modelo e ele for ativado aqui. A versão atual continua em uso até essa ativação.</p>
+          <div class="message-editor">
+            <label for="order-message-body">Texto da mensagem</label>
+            <textarea id="order-message-body" rows="14" maxlength="1024" spellcheck="false" aria-describedby="order-message-meta-status"></textarea>
+            <p id="order-message-meta-status" class="admin-muted" role="status">Carregando a conexão com a Meta…</p>
+            <div class="message-actions">
+              <button id="order-message-save" class="button button-outline" type="button">Salvar texto</button>
+              <button id="order-message-submit" class="button button-primary" type="button">Enviar para aprovação na Meta</button>
+            </div>
+            <p class="message-help">O novo texto só será enviado depois que a Meta aprovar o modelo e ele for ativado aqui. A versão atual continua em uso até essa ativação.</p>
+          </div>
+          <div id="order-message-channels" class="order-message-channels" aria-live="polite"></div>
+          <p id="order-message-status" class="admin-muted" role="status" aria-live="polite"></p>
         </div>
-        <div id="order-message-channels" class="order-message-channels" aria-live="polite"></div>
-        <p id="order-message-status" class="admin-muted" role="status" aria-live="polite"></p>
+
+        <div id="whatsapp-panel-separation" class="whatsapp-tab-panel" role="tabpanel" aria-labelledby="whatsapp-tab-separation" data-whatsapp-panel="separation" hidden>
+          <div class="section-title">
+            <div><h2>Mensagens após separação</h2><p>Edite o aviso enviado quando os produtos do pedido são conferidos.</p></div>
+            <button id="separation-message-refresh" class="button button-outline" type="button">Atualizar status</button>
+          </div>
+          <nav class="message-type-tabs" aria-label="Resultado da separação" role="tablist">
+            <button class="message-type-tab active" type="button" role="tab" aria-selected="true" data-separation-kind="prepared_ok">Todos os produtos encontrados</button>
+            <button class="message-type-tab" type="button" role="tab" aria-selected="false" data-separation-kind="prepared_adjusted">Com produtos em falta</button>
+          </nav>
+          <div class="message-editor">
+            <label for="separation-message-body">Texto da mensagem</label>
+            <textarea id="separation-message-body" rows="14" maxlength="1024" spellcheck="false" aria-describedby="separation-message-variables separation-message-meta-status"></textarea>
+            <p id="separation-message-variables" class="message-help"></p>
+            <p id="separation-message-meta-status" class="admin-muted" role="status">Carregando a conexão com a Meta…</p>
+            <div class="message-actions">
+              <button id="separation-message-save" class="button button-outline" type="button">Salvar texto</button>
+              <button id="separation-message-submit" class="button button-primary" type="button">Enviar para aprovação na Meta</button>
+            </div>
+            <p class="message-help">O cliente recebe o link da lista do pedido, com cada produto marcado como encontrado ou em falta. Quando há faltas, a mensagem também informa o abatimento e o novo total. A versão atual continua em uso até a aprovação e ativação do novo modelo.</p>
+          </div>
+          <div id="separation-message-channels" class="order-message-channels" aria-live="polite"></div>
+          <p id="separation-message-status" class="admin-muted" role="status" aria-live="polite"></p>
+        </div>
       </section>
     </section>
   </main>
