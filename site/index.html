@@ -9,12 +9,12 @@
   <link rel="preload" as="image" href="../img/logoantonia5.png">
   <link rel="preload" as="image" href="assets/cestas/cesta-economica.jpg" fetchpriority="high">
   <link rel="preconnect" href="https://ssbesxgaijknwsjbsbcz.supabase.co" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=13">
+  <link rel="stylesheet" href="styles.css?v=14">
   <script src="config.js?v=2" defer></script>
-  <script src="storefront/extras.js?v=1" defer></script>
+  <script src="storefront/extras.js?v=2" defer></script>
   <script src="storefront/basket.js?v=1" defer></script>
   <script src="storefront/checkout.js?v=2" defer></script>
-  <script src="app.js?v=16" defer></script>
+  <script src="app.js?v=17" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -29,7 +29,7 @@
       <h1 id="welcome-title">Cestas básicas</h1>
       <p>Escolha o tamanho ideal e veja os produtos que vão na sua cesta.</p>
     </section>
-    <section class="catalog" aria-label="Cestas disponíveis">
+    <section id="catalog" class="catalog" aria-label="Cestas disponíveis">
       <div class="section-heading">
         <h2>Nossas cestas</h2>
         <span id="catalog-status" class="status" role="status">Carregando cestas…</span>
@@ -58,6 +58,24 @@
       </div>
       <button id="retry-catalog" class="button button-outline retry-button" type="button" hidden>Tentar novamente</button>
     </section>
+
+    <section id="home-extras" class="home-extras" aria-labelledby="home-extras-title">
+      <div class="home-extras-heading">
+        <p class="eyebrow">Escolha mais itens</p>
+        <h2 id="home-extras-title">Produtos extras</h2>
+        <p>Adicione produtos de mercearia, limpeza, higiene, casa e pet. Eles entram no pedido junto com a cesta.</p>
+      </div>
+      <div id="home-extra-summary" class="home-extra-summary" hidden aria-live="polite">
+        <div class="home-extra-summary-copy">
+          <strong id="home-extra-summary-count"></strong>
+          <span id="home-extra-summary-total"></span>
+          <span>Escolha uma cesta para levar estes produtos ao pedido.</span>
+        </div>
+        <a class="button button-primary" href="#catalog">Escolher cesta</a>
+      </div>
+      <div id="home-extra-categories" class="home-extra-categories"></div>
+    </section>
+
     <aside class="privacy-note">Seu pedido será registrado para a equipe da Dona Antônia. A loja dará sequência ao atendimento.</aside>
   </main>
 
