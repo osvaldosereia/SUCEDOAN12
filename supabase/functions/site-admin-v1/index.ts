@@ -1316,14 +1316,14 @@ async function validateMarketingCampaignTemplate(accountId: string, templateId: 
   return null;
 }
 
-async function marketingCampaignTemplateVariableIndices(accountId: string, templateId: string) {
+async function marketingCampaignTemplateVariableIndices(accountId: string, templateId: string): Promise<{ error?: string; status?: number; indices?: number[] }> {
   const result = await db.rpc("marketing_campaign_template_snapshot_v1", {
     p_whatsapp_account_id: accountId,
     p_template_id: templateId,
   });
   if (result.error) throw result.error;
   const template: any = result.data || {};
-  if (template.ok !== true) return { error: clean(template.error || "template_not_sendable", 80), status: 409 };
+  if (template.ok !== true) return { error: clean(template.error || "template_not_sendable", 80), status: 409, indices: [] };
   const text = (Array.isArray(template.components) ? template.components : [])
     .filter((component: any) => {
       const type = clean(component?.type, 24).toUpperCase();
@@ -1337,7 +1337,7 @@ async function marketingCampaignTemplateVariableIndices(accountId: string, templ
   return { indices };
 }
 
-function normalizeCampaignTemplateVariables(input: any, indices: number[], requireAll = true) {
+function normalizeCampaignTemplateVariables(input: any, indices: number[], requireAll = true): { error?: string; values?: Record<string, unknown> } {
   const isObject = input && typeof input === "object" && !Array.isArray(input);
   if (requireAll && !isObject) return { error: "invalid_campaign_variables" };
   const source = isObject ? input : {};
@@ -1387,7 +1387,7 @@ async function whatsappCampaignDraftLoad(input: any) {
   if (normalized.error) return { error: "campaign_filters_not_editable", status: 409 };
   const variableIndices = await marketingCampaignTemplateVariableIndices(uuid(campaign.whatsapp_account_id), uuid(campaign.template_id));
   if (variableIndices.error) return variableIndices;
-  const variableValues = normalizeCampaignTemplateVariables(campaign.variable_values, variableIndices.indices, false);
+  const variableValues = normalizeCampaignTemplateVariables(campaign.variable_values, variableIndices.indices || [], false);
   return {
     campaign: {
       id: uuid(campaign.id),
@@ -1418,14 +1418,14 @@ async function whatsappCampaignDraftCreate(input: any) {
   if (templateError) return templateError;
   const variableIndices = await marketingCampaignTemplateVariableIndices(accountId, templateId);
   if (variableIndices.error) return variableIndices;
-  const variableValues = normalizeCampaignTemplateVariables(input.variable_values, variableIndices.indices, true);
+  const variableValues = normalizeCampaignTemplateVariables(input.variable_values, variableIndices.indices || [], true);
   if (variableValues.error) return { error: variableValues.error, status: 400, message: "Preencha todas as variáveis do modelo aprovado." };
   const result = await db.rpc("marketing_create_campaign_v1", {
     p_name: name,
     p_whatsapp_account_id: accountId,
     p_template_id: templateId,
     p_filters: normalized.filters,
-    p_variable_values: variableValues.values,
+    p_variable_values: variableValues.values || {},
     p_deep_link: {},
     p_idempotency_key: idempotencyKey,
   });
@@ -1459,7 +1459,7 @@ async function whatsappCampaignDraftUpdate(input: any) {
   if (templateError) return templateError;
   const variableIndices = await marketingCampaignTemplateVariableIndices(accountId, templateId);
   if (variableIndices.error) return variableIndices;
-  const variableValues = normalizeCampaignTemplateVariables(input.variable_values, variableIndices.indices, true);
+  const variableValues = normalizeCampaignTemplateVariables(input.variable_values, variableIndices.indices || [], true);
   if (variableValues.error) return { error: variableValues.error, status: 400, message: "Preencha todas as variáveis do modelo aprovado." };
   const result = await db.rpc("marketing_update_campaign_draft_v1", {
     p_campaign_id: campaignId,
@@ -1469,7 +1469,7 @@ async function whatsappCampaignDraftUpdate(input: any) {
       whatsapp_account_id: accountId,
       template_id: templateId,
       filters: normalized.filters,
-      variable_values: variableValues.values,
+      variable_values: variableValues.values || {},
     },
   });
   if (result.error) throw result.error;
