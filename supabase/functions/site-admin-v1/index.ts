@@ -1607,8 +1607,14 @@ async function whatsappCampaignContentPreview(input: any) {
       if (labels.length) parts.push({ label: "Botões", text: labels.join("\n") });
     }
   }
-  const text = parts.map((part) => String(part.text || "")).join(" ");
-  const variableIndices = Array.from(new Set(Array.from(text.matchAll(/{{\s*(\d{1,3})\s*}}/g), (match: any) => Number(match[1]))))
+  const variableText = (Array.isArray(template.components) ? template.components : [])
+    .filter((component: any) => {
+      const type = clean(component?.type, 24).toUpperCase();
+      return type === "BODY" || (type === "HEADER" && clean(component?.format, 24).toUpperCase() === "TEXT");
+    })
+    .map((component: any) => String(component?.text || ""))
+    .join(" ");
+  const variableIndices = Array.from(new Set(Array.from(variableText.matchAll(/{{\s*(\d{1,3})\s*}}/g), (match: any) => Number(match[1]))))
     .filter((index: number) => Number.isInteger(index) && index > 0 && index <= 999)
     .sort((a: number, b: number) => a - b);
   return {
