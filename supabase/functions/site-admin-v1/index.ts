@@ -647,6 +647,20 @@ async function whatsappOverview() {
   }
 
   const campaignIds = (campaignsResult.data || []).map((row: any) => row.id).filter(Boolean);
+  const campaignStatusById = new Map<string, any>();
+  let campaignDeliverySummaryAvailable = campaignIds.length === 0;
+  if (campaignIds.length) {
+    const campaignStatusResult = await db.rpc("site_admin_marketing_campaign_status_summary_v1", {
+      p_campaign_ids: campaignIds,
+    });
+    if (!campaignStatusResult.error) {
+      campaignDeliverySummaryAvailable = true;
+      for (const row of campaignStatusResult.data || []) {
+        const campaignId = String(row.campaign_id || "");
+        if (campaignId) campaignStatusById.set(campaignId, row);
+      }
+    }
+  }
   const latestCampaignSnapshot = new Map<string, any>();
   const snapshotPageSize = 200;
   const maxSnapshotRows = 2000;
@@ -726,6 +740,20 @@ async function whatsappOverview() {
       paused_at: row.paused_at || null,
       completed_at: row.completed_at || null,
       failed_at: row.failed_at || null,
+      delivery: campaignDeliverySummaryAvailable ? (() => {
+        const result = campaignStatusById.get(String(row.id)) || {};
+        return {
+          available: true,
+          accepted_count: Number(result.accepted_count) || 0,
+          sent_count: Number(result.sent_count) || 0,
+          delivered_count: Number(result.delivered_count) || 0,
+          read_count: Number(result.read_count) || 0,
+          failed_count: Number(result.failed_count) || 0,
+          skipped_count: Number(result.skipped_count) || 0,
+          pending_count: Number(result.pending_count) || 0,
+          uncertain_count: Number(result.uncertain_count) || 0,
+        };
+      })() : { available: false },
       snapshot_lookup_limited: !snapshot && snapshotLookupLimited,
       snapshot: snapshot ? {
         campaign_revision: Number(snapshot.campaign_revision) || 0,
