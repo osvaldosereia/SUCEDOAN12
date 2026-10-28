@@ -12,7 +12,6 @@
   const productCard = $("quick-balance-product");
   const searchButton = $("quick-balance-search");
   const saveButton = $("quick-balance-save");
-  const nextButton = $("quick-balance-next");
   const quantityDisplay = $("quick-balance-count-value");
   const validityInput = $("quick-balance-validity");
   const gondolaSelect = $("quick-balance-gondola");
@@ -69,12 +68,10 @@
     view.querySelectorAll("[data-count-step], [data-key], [data-keypad-action]").forEach((button) => { button.disabled = busy; });
     validityInput.disabled = busy;
     gondolaSelect.disabled = busy;
-    nextButton.disabled = busy;
   }
   function markDirty() {
     if (saving) return;
     savedCurrent = false;
-    nextButton.hidden = true;
     if (saveStatus.dataset.tone === "success") setStatus("quick-balance-save-status", "Alterações ainda não salvas.", "neutral");
     updateSaveButton();
   }
@@ -162,7 +159,6 @@
     validityInput.value = currentProduct.validity_date || "";
     renderGondolas(data.gondolas, currentProduct.gondola);
     setStatus("quick-balance-save-status", "", "neutral");
-    nextButton.hidden = true;
     productCard.hidden = false;
     updateSaveButton();
   }
@@ -194,7 +190,6 @@
     currentEan = ean;
     productCard.hidden = true;
     saveButton.disabled = true;
-    nextButton.hidden = true;
     scanInput.value = "";
     scanInput.disabled = false;
     setStatus("quick-balance-scan-status", "Buscando produto…", "neutral");
@@ -298,12 +293,21 @@
       currentProduct.validity_date = validityInput.value || null;
       currentProduct.gondola = gondolaSelect.value || null;
       $("quick-balance-current-stock").textContent = formatQuantity(currentProduct.current_stock);
-      savedCurrent = true;
       setStatus("quick-balance-save-status", "Salvo.", "success");
-      nextButton.hidden = false;
+      currentProduct = null;
+      currentEan = "";
+      quantityValue = "";
+      quantityEntryStarted = false;
+      savedCurrent = false;
+      productCard.hidden = true;
+      validityInput.value = "";
+      gondolaSelect.value = "";
+      scanInput.value = "";
       scanInput.disabled = false;
       searchButton.disabled = false;
-      scanInput.value = "";
+      saveButton.disabled = true;
+      setStatus("quick-balance-save-status", "", "neutral");
+      setStatus("quick-balance-scan-status", "Salvo. Leia o próximo EAN.", "success");
       window.setTimeout(() => scanInput.focus({ preventScroll: true }), 120);
     } catch (error) {
       setStatus("quick-balance-save-status", error.message || "Não foi possível salvar. Tente novamente.", "error");
@@ -357,23 +361,6 @@
   validityInput.addEventListener("change", markDirty);
   gondolaSelect.addEventListener("change", markDirty);
   saveButton.addEventListener("click", saveCurrentCount);
-  nextButton.addEventListener("click", () => {
-    lookupSequence++;
-    currentProduct = null;
-    currentEan = "";
-    quantityValue = "";
-    quantityEntryStarted = false;
-    savedCurrent = false;
-    productCard.hidden = true;
-    scanInput.value = "";
-    scanInput.disabled = false;
-    searchButton.disabled = false;
-    saveButton.disabled = true;
-    nextButton.hidden = true;
-    setStatus("quick-balance-save-status", "", "neutral");
-    setStatus("quick-balance-scan-status", "Pronto para o próximo EAN.", "neutral");
-    scanInput.focus({ preventScroll: true });
-  });
   view.querySelector(".quick-balance-keypad-grid").addEventListener("click", handleQuantityKeypad);
 
   window.DonaQuickBalanceAdmin = {
