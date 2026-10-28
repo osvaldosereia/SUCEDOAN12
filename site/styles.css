@@ -220,3 +220,21 @@ body.sheet-open { overflow: hidden; }
   .registration-grid { grid-template-columns: minmax(0, 1fr); }
   .registration-field-wide { grid-column: auto; }
 }
+
+
+/* Custom product-only order review in checkout. */
+.custom-order-summary { display: grid; gap: 9px; margin: 0 0 13px; padding: 13px; border: 1px solid #dfd2c1; border-radius: 14px; background: #fff; }
+.custom-order-summary[hidden] { display: none; }
+.custom-order-summary > h3 { margin: 0; font-size: .98rem; }
+.custom-order-items { display: grid; gap: 7px; max-height: min(26dvh, 190px); margin: 0; padding: 0; overflow: auto; list-style: none; }
+.custom-order-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.custom-order-item > div { display: grid; gap: 3px; min-width: 0; }
+.custom-order-item strong { overflow: hidden; font-size: .82rem; line-height: 1.3; text-overflow: ellipsis; }
+.custom-order-item span { color: var(--muted); font-size: .75rem; }
+.custom-order-item > b { flex: 0 0 auto; color: var(--brand); font-size: .82rem; }
+.custom-order-total { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 2px; font-size: .86rem; }
+.custom-order-total strong { color: var(--brand); font-size: 1rem; }
+#custom-order-minimum-message { margin: 0; }
+@media (max-width: 639px) {
+  .home-extra-summary-copy span:last-child { display: block; font-size: .72rem; }
+}
