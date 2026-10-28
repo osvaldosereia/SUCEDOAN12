@@ -2154,7 +2154,7 @@ async function whatsappAnaPauseChannel(input: any) {
 
 async function whatsappAnaAdminStatus() {
   const anaDeliverySampleLimit = 200;
-  const [result, runtimeResult, anaDeliveryResult] = await Promise.all([
+  const [result, runtimeResult, anaDeliveryResult, anaJobsResult] = await Promise.all([
     db.rpc("ops2_ana_admin_load_v1"),
     db.from("whatsapp_channel_runtime_v1")
       .select("whatsapp_account_id,ana_enabled,capture_enabled,send_enabled,outbound_provider,homologated_at")
@@ -2166,6 +2166,11 @@ async function whatsappAnaAdminStatus() {
       .eq("provider", "meta")
       .order("created_at", { ascending: false })
       .limit(anaDeliverySampleLimit),
+    db.from("whatsapp_ana_jobs_v1")
+      .select("whatsapp_account_id,status,decision,reason,created_at")
+      .eq("dry_run", false)
+      .order("created_at", { ascending: false })
+      .limit(20),
   ]);
   if (result.error) throw result.error;
   if (runtimeResult.error) throw runtimeResult.error;
@@ -2249,6 +2254,14 @@ async function whatsappAnaAdminStatus() {
   const diffAvailable = Boolean(active.configuration && draft.configuration);
   return {
     channels,
+    decisions_available: !anaJobsResult.error,
+    decisions: (anaJobsResult.data || []).map((row: any) => ({
+      channel: clean(accountById.get(row.whatsapp_account_id)?.display_name || "", 120),
+      status: clean(row.status, 40),
+      decision: clean(row.decision, 60),
+      reason: clean(row.reason, 240),
+      created_at: row.created_at || null,
+    })),
     delivery: {
       available: !anaDeliveryResult.error,
       sample_limit: anaDeliverySampleLimit,
