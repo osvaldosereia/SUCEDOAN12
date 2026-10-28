@@ -181,7 +181,8 @@
         optionPicker + "</article>";
     }).join("");
     const note = data.orderable ? "" : '<p class="helper stock-note">Esta composição está sem estoque disponível no momento.</p>';
-    $("detail-content").innerHTML = note + '<div class="product-list">' + rows + "</div>" + extraCategoriesMarkup(data);
+    $("detail-content").innerHTML = note + '<div class="product-list">' + rows + "</div>" +
+      '<div data-home-extra-review-mount>' + homeSelectionReviewMarkup(data) + "</div>" + extraCategoriesMarkup(data);
     $("order-button").disabled = !data.orderable;
     $("detail-content").querySelectorAll("[data-toggle-position]").forEach((button) => button.addEventListener("click", () => toggleItemOptions(button.dataset.togglePosition)));
     $("detail-content").querySelectorAll("[data-select-position]").forEach((button) => button.addEventListener("click", () => changeProduct(button.dataset.selectPosition, button.dataset.selectProduct)));
@@ -191,6 +192,7 @@
       if (scrollElement.scrollTop + scrollElement.clientHeight >= scrollElement.scrollHeight - 56) loadMoreExtraProducts(scrollElement.dataset.extraScroll, scrollElement);
     }, { passive: true }));
     bindExtraProductControls($("detail-content"));
+    bindHomeSelectionControls($("detail-content"), data);
     $("detail-content").querySelectorAll("img").forEach((image) => image.addEventListener("error", () => { image.src = "../img/logoantonia5.png"; }, { once: true }));
   }
 
@@ -262,11 +264,13 @@
     $("detail-content").scrollTop = 0;
     if (data.detailLoaded) data.items.forEach((item) => { item._expanded = false; });
     if (data.error) data.error = false;
+    attachHomeSelections(data);
     renderDetail();
     showSheet("detail-sheet");
     if (data.detailLoaded || data.detailPromise) return;
     data.detailPromise = basketForSize(sizeKey).then((detail) => {
       Object.assign(data, detail, { summary: data.summary, detailLoaded: true, error: false });
+      attachHomeSelections(data);
       renderCards();
     }).catch(() => {
       data.error = true;
@@ -286,11 +290,13 @@
   });
   const {
     displayedTotalCents, extraCategoriesFor, extraCategoriesMarkup,
-    bindExtraProductControls, toggleExtraCategory, loadMoreExtraProducts
+    bindExtraProductControls, toggleExtraCategory, loadMoreExtraProducts,
+    initHomeExtras, homeSelectionReviewMarkup, bindHomeSelectionControls, attachHomeSelections
   } = extras;
   const { basketForSize, toggleItemOptions, changeBasketItemQuantity, changeProduct } = basket;
 
   checkout.init();
+  initHomeExtras();
   $("retry-catalog").addEventListener("click", loadCatalog);
   loadCatalog();
 })();
