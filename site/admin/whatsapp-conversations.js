@@ -524,9 +524,7 @@
     const latest = new Map();
     for (const message of messages || []) {
       const id = String(message.id || "");
-      if (id && message.direction === "outbound") {
-        latest.set(id, String(message.status_current || "").trim().toLowerCase().slice(0, 40));
-      }
+      if (id) latest.set(id, String(message.status_current || "").trim().toLowerCase().slice(0, 40));
     }
     const labels = { accepted: "Aceita pela API", queued: "Na fila", pending: "Pendente", sent: "Enviada", delivered: "Entregue", read: "Lida", failed: "Falhou", rejected: "Rejeitada" };
     for (const bubble of host.querySelectorAll(".whatsapp-message.outbound[data-message-id]")) {
@@ -549,12 +547,23 @@
 
   async function refreshSelectedMessageStatuses() {
     const conversationId = state.selectedId;
-    if (!conversationId || state.statusRefreshing || state.busy) return false;
+    const host = $("whatsapp-conversation-messages");
+    if (!conversationId || !host || state.statusRefreshing || state.busy) return false;
+    const messageIds = Array.from(new Set(
+      Array.from(host.querySelectorAll(".whatsapp-message.outbound[data-message-id]"))
+        .map((bubble) => String(bubble.dataset.messageId || ""))
+        .filter(Boolean)
+    ));
     state.statusRefreshing = true;
     try {
-      const data = await request("whatsapp_conversation_messages", { conversation_id: conversationId, before_created_at: "", before_id: "" });
-      if (state.selectedId !== conversationId) return false;
-      refreshRenderedMessageStatuses(data.messages || []);
+      for (let offset = 0; offset < messageIds.length; offset += 100) {
+        const data = await request("whatsapp_conversation_message_statuses", {
+          conversation_id: conversationId,
+          message_ids: messageIds.slice(offset, offset + 100),
+        });
+        if (state.selectedId !== conversationId) return false;
+        refreshRenderedMessageStatuses(data.statuses || []);
+      }
       return true;
     } catch {
       return false;
