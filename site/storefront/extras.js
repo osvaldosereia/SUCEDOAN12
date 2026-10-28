@@ -68,7 +68,7 @@
   
     function bindExtraProductControls(container) {
       container.querySelectorAll("[data-extra-adjust]").forEach((button) => {
-        button.addEventListener("click", () => changeExtraQuantity(button.dataset.extraAdjust, Number(button.dataset.delta || 0), button));
+        button.addEventListener("click", () => changeExtraQuantity(button.dataset.extraAdjust, Number(button.dataset.delta || 0)));
       });
     }
   
@@ -228,7 +228,8 @@
           target = controls.find((button) => button.dataset.homeExtraAdjust === focus.id && !button.disabled) ||
             controls.find((button) => !button.disabled);
         }
-        if (!target || target.disabled) target = section.querySelector(".home-extra-category-heading h3");
+        if (!target || target.disabled) target = controls.find((button) => !button.disabled);
+        if (!target) target = section.querySelector(".home-extra-category-heading h3");
       }
       if (target) target.focus({ preventScroll: true });
     }
@@ -518,7 +519,7 @@
       return data;
     }
 
-    function changeExtraQuantity(productId, delta, button) {
+    function changeExtraQuantity(productId, delta) {
       const data = state.baskets.get(state.activeKey);
       if (!data || !productId || !delta) return;
       const category = extraCategoriesFor(data).find((entry) => entry.products.some((product) => String(product.id) === String(productId)));
