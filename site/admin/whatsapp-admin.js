@@ -117,6 +117,110 @@
     return '<div class="whatsapp-campaign-statuses" aria-label="Resultados de envio">' + badges + '</div><small class="whatsapp-campaign-delivery-extra">' + esc(pending) + "</small>";
   }
 
+
+  function campaignLocalDateTimeValue(timestamp) {
+    const date = new Date(timestamp);
+    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+    return date.toISOString().slice(0, 16);
+  }
+
+  function campaignActionButton(item, action, label, style = "button-outline") {
+    return '<button class="button ' + style + '" type="button" data-campaign-action="' + esc(action) + '" data-campaign-id="' + esc(item.id) + '" data-campaign-revision="' + esc(Math.max(0, Math.trunc(Number(item.revision) || 0))) + '">' + esc(label) + "</button>";
+  }
+
+  function campaignActionsMarkup(item) {
+    const status = String(item.status || "").toLowerCase();
+    const revision = Math.max(0, Math.trunc(Number(item.revision) || 0));
+    const currentSnapshot = item.snapshot?.is_current_revision === true;
+    const actions = [];
+    if (["draft", "ready_for_review"].includes(status) && !currentSnapshot) {
+      actions.push(campaignActionButton(item, "snapshot", item.snapshot ? "Atualizar snapshot" : "Congelar audiência"));
+    }
+    if (status === "draft" && currentSnapshot) actions.push(campaignActionButton(item, "review", "Enviar para revisão", "button-primary"));
+    if (status === "ready_for_review" && currentSnapshot) {
+      actions.push(campaignActionButton(item, "approve", "Aprovar audiência", "button-primary"));
+      actions.push(campaignActionButton(item, "draft", "Voltar ao rascunho"));
+    }
+    if (status === "approved" && currentSnapshot) {
+      const min = campaignLocalDateTimeValue(Date.now() + 5 * 60 * 1000);
+      actions.push(
+        '<label class="whatsapp-campaign-schedule"><span>Agendar a partir de</span><input type="datetime-local" data-campaign-schedule-time data-campaign-id="' + esc(item.id) + '" data-campaign-revision="' + esc(revision) + '" min="' + esc(min) + '"></label>'
+        + campaignActionButton(item, "schedule", "Agendar campanha", "button-primary")
+      );
+    }
+    if (["scheduled", "running"].includes(status)) actions.push(campaignActionButton(item, "pause", "Pausar"));
+    if (["draft", "ready_for_review", "approved", "scheduled", "running", "paused"].includes(status)) {
+      actions.push(campaignActionButton(item, "cancel", "Cancelar campanha"));
+    }
+    if (!actions.length) return "";
+    return '<div class="whatsapp-campaign-actions"><div class="whatsapp-campaign-action-buttons">' + actions.join("") + '</div><p class="admin-muted whatsapp-campaign-action-status" data-campaign-action-status role="status" aria-live="polite"></p></div>';
+  }
+
+  async function runCampaignAction(button) {
+    if (!button || button.disabled || button.dataset.running === "true") return;
+    const action = String(button.dataset.campaignAction || "");
+    const campaignId = String(button.dataset.campaignId || "");
+    const revision = Number(button.dataset.campaignRevision);
+    const row = button.closest(".whatsapp-campaign-row");
+    const status = row?.querySelector("[data-campaign-action-status]");
+    if (!campaignId || !Number.isInteger(revision) || revision < 0 || !row) return;
+
+    let requestAction = "";
+    const payload = { campaign_id: campaignId, revision };
+    let confirmation = "";
+    if (action === "snapshot") {
+      requestAction = "whatsapp_campaign_snapshot";
+      payload.idempotency_key = campaignDraftIdempotencyKey();
+      confirmation = "Isso congela os filtros atuais e grava a lista e as referências dos destinatários no banco de campanhas. Não envia mensagens. Continue somente depois de revisar a prévia e a evidência de consentimento.";
+    } else if (action === "review") {
+      requestAction = "whatsapp_campaign_transition";
+      payload.to_status = "ready_for_review";
+      confirmation = "Enviar esta revisão e o snapshot congelado para revisão? Isso não agenda nem envia mensagens.";
+    } else if (action === "approve") {
+      requestAction = "whatsapp_campaign_transition";
+      payload.to_status = "approved";
+      confirmation = "Aprovar esta audiência congelada para que possa ser agendada depois? Esta aprovação não agenda nem envia mensagens.";
+    } else if (action === "draft") {
+      requestAction = "whatsapp_campaign_transition";
+      payload.to_status = "draft";
+      confirmation = "Retornar esta campanha ao rascunho? O snapshot atual ficará associado à revisão salva.";
+    } else if (action === "schedule") {
+      requestAction = "whatsapp_campaign_schedule";
+      const input = row.querySelector("[data-campaign-schedule-time]");
+      const scheduledAt = Date.parse(String(input?.value || ""));
+      if (!Number.isFinite(scheduledAt) || scheduledAt < Date.now() + 5 * 60 * 1000) {
+        if (status) status.textContent = "Escolha um horário com pelo menos cinco minutos de antecedência.";
+        return;
+      }
+      payload.scheduled_for = new Date(scheduledAt).toISOString();
+      const campaign = (lastOverview?.campaigns?.recent || []).find((item) => item.id === campaignId) || {};
+      const eligible = Math.max(0, Math.trunc(Number(campaign.snapshot?.eligible_count) || 0)).toLocaleString("pt-BR");
+      confirmation = "Agendar " + (campaign.name || "esta campanha") + " para " + new Date(scheduledAt).toLocaleString("pt-BR") + " no canal " + (campaign.channel || "selecionado") + ". O snapshot tem " + eligible + " destinatários aptos. A execução poderá enviar mensagens reais pelo WhatsApp no horário escolhido. Revise o consentimento, o modelo Meta e o lote antes de confirmar.";
+    } else if (action === "pause") {
+      requestAction = "whatsapp_campaign_pause";
+      confirmation = "Pausar a campanha? Isso interrompe os próximos despachos; mensagens já aceitas pela Meta não podem ser recolhidas.";
+    } else if (action === "cancel") {
+      requestAction = "whatsapp_campaign_cancel";
+      confirmation = "Cancelar a campanha? Despachos ainda pendentes serão cancelados quando possível; mensagens já aceitas pela Meta não podem ser recolhidas.";
+    } else {
+      return;
+    }
+    if (!window.confirm(confirmation)) return;
+
+    button.dataset.running = "true";
+    row.querySelectorAll("[data-campaign-action], [data-campaign-schedule-time]").forEach((control) => { control.disabled = true; });
+    if (status) status.textContent = "Atualizando campanha…";
+    try {
+      await campaignAdminRequest(requestAction, payload);
+      await loadOverview(true);
+    } catch (error) {
+      if (status) status.textContent = error instanceof Error ? error.message : "Não foi possível atualizar a campanha.";
+    } finally {
+      if (button.isConnected) button.dataset.running = "false";
+      row.querySelectorAll("[data-campaign-action], [data-campaign-schedule-time]").forEach((control) => { control.disabled = false; });
+    }
+  }
+
   function campaignRecordRow(item) {
     const subtitle = (item.channel || "Canal não informado")
       + (item.scheduled_for ? " · Agendada para " + dateLabel(item.scheduled_for) : "");
@@ -128,6 +232,7 @@
       + campaignExclusionMarkup(item)
       + (item.id ? '<button class="button button-outline whatsapp-campaign-preview-button" type="button" data-campaign-preview="' + esc(item.id) + '" aria-expanded="false">Prévia do público</button><div class="whatsapp-campaign-preview" data-campaign-preview-result hidden role="status" aria-live="polite"></div>' : "")
       + (item.status === "draft" && item.draft_editable ? '<button class="button button-outline whatsapp-campaign-edit-button" type="button" data-campaign-edit="' + esc(item.id) + '">Editar rascunho</button>' : "")
+      + campaignActionsMarkup(item)
       + '</div><div class="whatsapp-record-side"><span class="whatsapp-record-status ' + statusClass(item.status) + '">'
       + esc(human(item.status)) + "</span><time>" + esc(dateLabel(when)) + "</time></div></article>";
   }
@@ -198,7 +303,11 @@
       const messages = {
         campaign_filter_required: "Informe ao menos um filtro de público.",
         campaign_filters_not_editable: "Este rascunho usa filtros avançados que ainda não podem ser editados nesta tela.",
-        revision_conflict: "O rascunho mudou em outra sessão. Atualize os dados antes de salvar.",
+        revision_conflict: "A campanha mudou em outra sessão. Atualize os dados antes de tentar novamente.",
+        snapshot_stale: "O snapshot não corresponde à revisão atual da campanha.",
+        campaign_schedule_too_soon: "Agende com pelo menos cinco minutos de antecedência.",
+        campaigns_disabled: "O envio de campanhas está desativado para este canal.",
+        campaign_invalid_transition: "O status atual não permite esta ação.",
         template_not_sendable: "Selecione um modelo de marketing aprovado.",
       };
       throw new Error(messages[data.error] || data.message || data.error || "Não foi possível salvar o rascunho.");
@@ -727,9 +836,11 @@
 
   $("whatsapp-campaigns-content")?.addEventListener("click", (event) => {
     const target = event.target instanceof Element ? event.target : null;
+    const actionButton = target?.closest("[data-campaign-action]");
     const editButton = target?.closest("[data-campaign-edit]");
     const previewButton = target?.closest("[data-campaign-preview]");
-    if (editButton) openCampaignDraftEditor(editButton.dataset.campaignEdit);
+    if (actionButton) runCampaignAction(actionButton);
+    else if (editButton) openCampaignDraftEditor(editButton.dataset.campaignEdit);
     else if (previewButton) loadCampaignPreview(previewButton);
   });
   $("whatsapp-campaign-new")?.addEventListener("click", () => openCampaignDraftEditor("")); 
