@@ -298,6 +298,10 @@
       const quantity = Number(selection && selection.quantity || 0);
       host.querySelectorAll("[data-home-extra-product]").forEach((card) => {
         if (card.dataset.homeExtraProduct !== id) return;
+        const active = document.activeElement;
+        const focusedDelta = active && card.contains(active) && active.matches("[data-home-extra-adjust]")
+          ? active.dataset.delta
+          : "";
         const product = state.homeExtraProducts.get(id);
         const stock = Math.max(0, Number(product && product.stock_quantity || selection && selection.stock_quantity || 0));
         const output = card.querySelector("[data-home-extra-quantity]");
@@ -306,6 +310,11 @@
         if (output) output.textContent = String(quantity);
         if (minus) minus.disabled = quantity <= 0;
         if (plus) plus.disabled = quantity >= stock;
+        if (focusedDelta) {
+          let target = focusedDelta === "1" ? plus : minus;
+          if (target && target.disabled) target = focusedDelta === "1" ? minus : plus;
+          if (target && !target.disabled) target.focus({ preventScroll: true });
+        }
       });
     }
 
@@ -343,12 +352,21 @@
       const stock = Math.max(0, Number(stockQuantity || 0));
       content.querySelectorAll("[data-extra-product]").forEach((card) => {
         if (card.dataset.extraProduct !== id) return;
+        const active = document.activeElement;
+        const focusedDelta = active && card.contains(active) && active.matches("[data-extra-adjust]")
+          ? active.dataset.delta
+          : "";
         const output = card.querySelector('[data-extra-quantity="' + id + '"]');
         const minus = card.querySelector('[data-extra-adjust][data-delta="-1"]');
         const plus = card.querySelector('[data-extra-adjust][data-delta="1"]');
         if (output) output.textContent = String(quantity);
         if (minus) minus.disabled = quantity <= 0;
         if (plus) plus.disabled = quantity >= stock;
+        if (focusedDelta) {
+          let target = focusedDelta === "1" ? plus : minus;
+          if (target && target.disabled) target = focusedDelta === "1" ? minus : plus;
+          if (target && !target.disabled) target.focus({ preventScroll: true });
+        }
       });
     }
 
@@ -517,15 +535,7 @@
         price_cents: Number(product.price_cents || 0), stock_quantity: Number(product.stock_quantity || 0), quantity
       });
       if (state.homeExtraProducts.has(String(productId))) syncHomeSelectionFromBasket(product, quantity, data);
-      const card = button && button.closest("[data-extra-product]");
-      if (card) {
-        const output = card.querySelector('[data-extra-quantity="' + productId + '"]');
-        const minus = card.querySelector('[data-delta="-1"]');
-        const plus = card.querySelector('[data-delta="1"]');
-        if (output) output.textContent = String(quantity);
-        if (minus) minus.disabled = quantity <= 0;
-        if (plus) plus.disabled = quantity >= Number(product.stock_quantity || 0);
-      }
+      updateBasketExtraCards(productId, quantity, product.stock_quantity);
       $("detail-total").textContent = money(displayedTotalCents(data));
     }
 
