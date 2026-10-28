@@ -841,6 +841,50 @@ async function separationFiscalHubCall(subaction: string, extra: any = {}) {
   }
 }
 
+async function openSeparationNotificationAttention(orderId: string, evidence: any = {}) {
+  try {
+    await db.rpc("ops_open_attention_v1", {
+      p_type: "order_separation_notification_pending",
+      p_summary: "Separação concluída; a confirmação ao cliente precisa ser conferida.",
+      p_entity_type: "order", p_entity_id: orderId, p_correlation_id: orderId,
+      p_priority: "high", p_owner_role: "supervisor",
+      p_recommended_action: "Confira o status da mensagem de separação antes de tentar reenviar.",
+      p_evidence: evidence || {}, p_source_system: "whatsapp",
+      p_idempotency_key: "order-separation-whatsapp-auto-v1:" + orderId, p_due_at: null,
+    });
+  } catch {}
+}
+
+async function runSeparationCustomerNotification(orderId: string) {
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) throw new Error("whatsapp_internal_key_unavailable");
+  const response = await fetch(
+    SUPABASE_URL.replace(/\/+$/, "") + "/functions/v1/order-separation-notify-v1",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-internal-key": SERVICE_ROLE_KEY },
+      body: JSON.stringify({ order_id: orderId }),
+      signal: AbortSignal.timeout(30000),
+    },
+  );
+  const result = await response.json().catch(() => ({ ok: false, error: "invalid_notification_response" }));
+  if (!response.ok || result?.ok !== true) {
+    throw new Error(String(result?.error || "separation_notification_failed"));
+  }
+
+  const status = clean(result.status, 40).toLowerCase() || "unknown";
+  const saved = {
+    attempted: true, status, meta_accepted: status === "accepted",
+    notification_id: uuid(result.notification_id) || null,
+    template_name: clean(result.template_name, 160) || null,
+    provider_message_id: clean(result.provider_message_id, 160) || null,
+    reason: clean(result.reason, 120) || null,
+    updated_at: new Date().toISOString(),
+  };
+  await markSeparationFiscalMetadata(orderId, { customer_notification: saved });
+  if (status === "pending") await openSeparationNotificationAttention(orderId, saved);
+  return saved;
+}
+
 function separationFiscalObject(value: any) {
   return value && typeof value === "object" && !Array.isArray(value) ? value : {};
 }
@@ -1108,19 +1152,31 @@ async function completeOrderSeparation(input: any) {
 
   const fiscalTask = runSeparationFiscalIntegration(id).catch(async (error) => {
     const reason = clean((error as Error)?.message || error, 300);
-    await openSeparationFiscalAttention(orderId, "order_post_separation_integration_pending",
+    await openSeparationFiscalAttention(id, "order_post_separation_integration_pending",
       "A separação terminou; a integração fiscal precisa de revisão.",
       "Revise a sincronização do pedido no Bling e a emissão da NF-e. Não refaça a separação.", { error: reason });
-    return null;
+    return { attempted: true, ok: false, error: reason };
   });
+  const notificationTask = runSeparationCustomerNotification(id).catch(async (error) => {
+    const reason = clean((error as Error)?.message || error, 300);
+    const failure = { attempted: true, status: "failed", error: reason, updated_at: new Date().toISOString() };
+    try { await markSeparationFiscalMetadata(id, { customer_notification: failure }); } catch {}
+    await openSeparationNotificationAttention(id, failure);
+    return failure;
+  });
+  const integrationsTask = Promise.all([fiscalTask, notificationTask]).then(([fiscalIntegration, customerNotification]) => ({
+    fiscal_integration: fiscalIntegration, customer_notification: customerNotification,
+  }));
   const edgeRuntime = (globalThis as any).EdgeRuntime;
   const integrationsQueued = Boolean(edgeRuntime && typeof edgeRuntime.waitUntil === "function");
-  if (integrationsQueued) edgeRuntime.waitUntil(fiscalTask);
-  const integrationResult = integrationsQueued ? null : await fiscalTask;
+  if (integrationsQueued) edgeRuntime.waitUntil(integrationsTask);
+  const integrationsResult = integrationsQueued ? null : await integrationsTask;
 
   return {
     prepared: prepared.data, applied: applied.data, completion: completed.data,
-    integrations_queued: integrationsQueued, fiscal_integration: integrationResult,
+    integrations_queued: integrationsQueued,
+    fiscal_integration: integrationsResult?.fiscal_integration || null,
+    customer_notification: integrationsResult?.customer_notification || null,
   };
 }
 
