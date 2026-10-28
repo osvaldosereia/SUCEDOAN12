@@ -9,6 +9,7 @@
   let loading = false;
   let lastOverview = null;
   let latestAnaDryRunDetails = null;
+  let campaignVariablePreviewRequest = 0;
 
   function human(value) {
     const labels = {
@@ -448,6 +449,7 @@
       + '<label class="whatsapp-campaign-field"><span>Nome da campanha</span><input type="text" name="name" maxlength="140" required value="' + esc(campaign?.name || "") + '"></label>'
       + '<label class="whatsapp-campaign-field"><span>Número de envio</span><select name="whatsapp_account_id" required>' + channelOptions + '</select></label>'
       + '<label class="whatsapp-campaign-field whatsapp-campaign-field-wide"><span>Modelo Meta aprovado · Marketing</span><select name="template_id" required><option value="">Selecione o modelo</option>' + templateOptions + '</select></label>'
+      + '<section class="whatsapp-campaign-variable-editor whatsapp-campaign-field-wide" data-campaign-variable-editor data-state="loading"><h4>Personalização do modelo</h4><p data-campaign-variable-status class="admin-muted" role="status" aria-live="polite">Carregando variáveis do modelo aprovado…</p><div data-campaign-variable-fields></div><div data-campaign-template-example></div></section>'
       + '<div class="whatsapp-campaign-field-wide"><h4>Filtros da audiência</h4><p class="admin-muted">Use pelo menos um filtro. Opt-outs, sem consentimento, cadastros inativos e telefones inválidos continuam excluídos pelo motor existente.</p></div>'
       + filterInputs
       + '</div><p class="whatsapp-campaign-editor-note">Antes de qualquer campanha ampla, confira a evidência individual de consentimento. Este formulário só salva rascunhos.</p>'
@@ -455,6 +457,7 @@
       + '<button class="button button-primary" type="submit">' + (editing ? "Salvar rascunho" : "Criar rascunho") + '</button></div></form></section>';
     host.hidden = false;
     syncCampaignTemplateOptions(host);
+    void refreshCampaignTemplateVariables(host, campaign?.variable_values || {});
     host.querySelector('[name="name"]')?.focus();
   }
 
@@ -471,6 +474,108 @@
     const selected = templates.selectedOptions[0];
     if (selected?.value && selected.dataset.accountId !== account.value) templates.value = firstAvailable;
     if (!templates.value && firstAvailable) templates.value = firstAvailable;
+  }
+
+  function campaignVariableValuesFromForm(form, requireComplete = true) {
+    const values = {};
+    const editor = form?.querySelector("[data-campaign-variable-editor]");
+    for (const row of editor?.querySelectorAll("[data-campaign-variable-row]") || []) {
+      const index = String(row.dataset.variableIndex || "");
+      const mode = row.querySelector("[data-campaign-variable-mode]")?.value || "text";
+      if (!/^\d{1,3}$/.test(index)) continue;
+      if (mode === "customer_first_name") {
+        const fallback = String(row.querySelector("[data-campaign-variable-fallback]")?.value || "").trim();
+        if (requireComplete && !fallback) throw new Error("Informe o fallback para cada variável de primeiro nome.");
+        values[index] = { source: "customer_first_name", fallback: fallback || "Cliente" };
+      } else {
+        const value = String(row.querySelector("[data-campaign-variable-value]")?.value || "").trim();
+        if (requireComplete && !value) throw new Error("Preencha cada variável do modelo ou escolha primeiro nome do cliente.");
+        if (value) values[index] = value;
+      }
+    }
+    return values;
+  }
+
+  function renderCampaignTemplateExample(form) {
+    const editor = form?.querySelector("[data-campaign-variable-editor]");
+    const preview = editor?.querySelector("[data-campaign-template-example]");
+    const template = editor?._campaignTemplate;
+    if (!editor || !preview || !template) return;
+    const values = campaignVariableValuesFromForm(form, false);
+    const replaceVariables = (text) => String(text || "").replace(/{{\s*(\d{1,3})\s*}}/g, (token, rawIndex) => {
+      const value = values[String(rawIndex)];
+      if (typeof value === "string" && value) return value;
+      if (value && typeof value === "object" && value.source === "customer_first_name") return "Maria";
+      return token;
+    });
+    const parts = Array.isArray(template.parts) ? template.parts : [];
+    preview.innerHTML = '<div class="whatsapp-campaign-template-example"><strong>Exemplo fictício</strong>'
+      + parts.map((part) => '<section><small>' + esc(part.label || "Conteúdo") + '</small><pre>' + esc(replaceVariables(part.text)) + '</pre></section>').join("")
+      + '<p class="admin-muted">Usa o nome fictício “Maria”; não consulta destinatários nem envia mensagens.</p></div>';
+  }
+
+  function updateCampaignVariableMode(row) {
+    const mode = row?.querySelector("[data-campaign-variable-mode]")?.value;
+    const fixed = row?.querySelector("[data-campaign-variable-fixed]");
+    const firstName = row?.querySelector("[data-campaign-variable-first-name]");
+    if (fixed) fixed.hidden = mode === "customer_first_name";
+    if (firstName) firstName.hidden = mode !== "customer_first_name";
+  }
+
+  function renderCampaignTemplateVariables(editor, template, initialValues, form) {
+    const indices = Array.from(new Set((Array.isArray(template.variable_indices) ? template.variable_indices : [])
+      .map((value) => Number(value)).filter((value) => Number.isInteger(value) && value > 0 && value <= 999))).sort((a, b) => a - b);
+    const fields = editor.querySelector("[data-campaign-variable-fields]");
+    const status = editor.querySelector("[data-campaign-variable-status]");
+    const saved = initialValues && typeof initialValues === "object" && !Array.isArray(initialValues) ? initialValues : {};
+    fields.innerHTML = indices.map((index) => {
+      const value = saved[String(index)];
+      const personalized = Boolean(value && typeof value === "object" && value.source === "customer_first_name");
+      const fixedValue = typeof value === "string" ? value : "";
+      const fallback = personalized ? String(value.fallback || "Cliente") : "Cliente";
+      return '<div class="whatsapp-campaign-variable-row" data-campaign-variable-row data-variable-index="' + index + '"><strong>Variável {{' + index + '}}</strong>'
+        + '<label class="whatsapp-campaign-field"><span>Preencher com</span><select data-campaign-variable-mode><option value="text"' + (!personalized ? " selected" : "") + '>Texto fixo</option><option value="customer_first_name"' + (personalized ? " selected" : "") + '>Primeiro nome do cliente</option></select></label>'
+        + '<label class="whatsapp-campaign-field" data-campaign-variable-fixed' + (personalized ? " hidden" : "") + '><span>Texto fixo</span><input type="text" maxlength="500" data-campaign-variable-value value="' + esc(fixedValue) + '" placeholder="Digite o conteúdo da variável"></label>'
+        + '<label class="whatsapp-campaign-field" data-campaign-variable-first-name' + (!personalized ? " hidden" : "") + '><span>Fallback se o primeiro nome não estiver disponível</span><input type="text" maxlength="100" data-campaign-variable-fallback value="' + esc(fallback) + '" required></label></div>';
+    }).join("");
+    editor._campaignTemplate = template;
+    if (status) status.textContent = indices.length
+      ? "Configure cada variável do modelo. O primeiro nome usa fallback quando não houver nome disponível."
+      : "Este modelo não possui variáveis para preencher.";
+    for (const row of fields.querySelectorAll("[data-campaign-variable-row]")) updateCampaignVariableMode(row);
+    renderCampaignTemplateExample(form);
+  }
+
+  async function refreshCampaignTemplateVariables(root, initialValues = {}) {
+    const form = root?.querySelector("[data-campaign-draft-form]");
+    const editor = form?.querySelector("[data-campaign-variable-editor]");
+    const account = form?.elements.namedItem("whatsapp_account_id");
+    const template = form?.elements.namedItem("template_id");
+    if (!form || !editor || !account || !template) return;
+    const accountId = String(account.value || "");
+    const templateId = String(template.value || "");
+    if (!accountId || !templateId) {
+      editor.dataset.state = "ready";
+      editor._campaignTemplate = { parts: [], variable_indices: [] };
+      editor.querySelector("[data-campaign-variable-status]").textContent = "Selecione um modelo aprovado.";
+      editor.querySelector("[data-campaign-variable-fields]").innerHTML = "";
+      return;
+    }
+    const requestId = String(++campaignVariablePreviewRequest);
+    editor.dataset.requestId = requestId;
+    editor.dataset.state = "loading";
+    editor.innerHTML = '<h4>Personalização do modelo</h4><p class="admin-muted" data-campaign-variable-status role="status">Carregando variáveis do modelo aprovado…</p><div data-campaign-variable-fields></div><div data-campaign-template-example></div>';
+    try {
+      const data = await campaignAdminRequest("whatsapp_campaign_content_preview", { whatsapp_account_id: accountId, template_id: templateId });
+      if (editor.dataset.requestId !== requestId) return;
+      if (String(account.value || "") !== accountId || String(template.value || "") !== templateId) return;
+      renderCampaignTemplateVariables(editor, data.template || {}, initialValues, form);
+      editor.dataset.state = "ready";
+    } catch (error) {
+      if (editor.dataset.requestId !== requestId) return;
+      editor.dataset.state = "error";
+      editor.innerHTML = '<h4>Personalização do modelo</h4><p class="form-message is-error" role="alert">' + esc(error instanceof Error ? error.message : "Não foi possível carregar as variáveis.") + '</p>';
+    }
   }
 
   async function submitCampaignDraft(form) {
@@ -491,11 +596,24 @@
     const template = form.elements.namedItem("template_id");
     const name = form.elements.namedItem("name");
     const isEdit = form.dataset.mode === "edit";
+    const variableEditor = form.querySelector("[data-campaign-variable-editor]");
+    if (variableEditor && variableEditor.dataset.state !== "ready") {
+      if (status) status.textContent = "Aguarde o carregamento das variáveis do modelo aprovado.";
+      return;
+    }
+    let variableValues;
+    try {
+      variableValues = campaignVariableValuesFromForm(form, true);
+    } catch (error) {
+      if (status) status.textContent = error instanceof Error ? error.message : "Preencha as variáveis do modelo.";
+      return;
+    }
     const payload = {
       name: String(name?.value || "").trim(),
       whatsapp_account_id: String(account?.value || ""),
       template_id: String(template?.value || ""),
       filters,
+      variable_values: variableValues,
     };
     if (isEdit) {
       payload.campaign_id = form.dataset.campaignId || "";
@@ -906,7 +1024,22 @@
     if (closeButton) { const host = $("whatsapp-campaign-editor"); if (host) { host.hidden = true; host.innerHTML = ""; } }
   });
   $("whatsapp-campaign-editor")?.addEventListener("change", (event) => {
-    if (event.target instanceof HTMLSelectElement && event.target.name === "whatsapp_account_id") syncCampaignTemplateOptions($("whatsapp-campaign-editor"));
+    const root = $("whatsapp-campaign-editor");
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    if (!root || !target) return;
+    if (target instanceof HTMLSelectElement && target.name === "whatsapp_account_id") {
+      syncCampaignTemplateOptions(root);
+      void refreshCampaignTemplateVariables(root, {});
+    } else if (target instanceof HTMLSelectElement && target.name === "template_id") {
+      void refreshCampaignTemplateVariables(root, {});
+    } else if (target.matches("[data-campaign-variable-mode]")) {
+      updateCampaignVariableMode(target.closest("[data-campaign-variable-row]"));
+      renderCampaignTemplateExample(root.querySelector("[data-campaign-draft-form]"));
+    }
+  });
+  $("whatsapp-campaign-editor")?.addEventListener("input", (event) => {
+    if (!(event.target instanceof HTMLElement) || !event.target.matches("[data-campaign-variable-value], [data-campaign-variable-fallback]")) return;
+    renderCampaignTemplateExample($("whatsapp-campaign-editor")?.querySelector("[data-campaign-draft-form]"));
   });
   $("whatsapp-campaign-editor")?.addEventListener("submit", (event) => {
     const form = event.target instanceof HTMLFormElement ? event.target.closest("[data-campaign-draft-form]") : null;
