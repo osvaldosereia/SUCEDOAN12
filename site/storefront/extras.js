@@ -179,15 +179,15 @@
       const stock = Math.max(0, Number(product.stock_quantity || 0));
       const detail = product.brand || product.packaging || "";
       return '<article class="home-extra-card" role="listitem" data-home-extra-product="' + esc(id) + '">' +
-        '<button class="home-extra-open" type="button" data-home-extra-open="' + esc(id) + '" aria-label="Ver detalhes de ' + esc(name) + '">' +
-        '<img class="home-extra-photo" src="' + esc(product.image_url || "../img/logoantonia5.png") + '" alt="" width="64" height="64" loading="lazy" fetchpriority="low" decoding="async">' +
+        '<button class="home-extra-open" type="button" data-home-extra-open="' + esc(id) + '" aria-label="Ver detalhes de ' + esc(name) + '" title="' + esc(name) + '">' +
+        '<span class="home-extra-photo-wrap"><img class="home-extra-photo" src="' + esc(product.image_url || "../img/logoantonia5.png") + '" alt="" width="88" height="88" loading="lazy" fetchpriority="low" decoding="async"></span>' +
         '<span class="home-extra-copy"><strong>' + esc(name) + '</strong>' +
         (detail ? '<span>' + esc(detail) + '</span>' : '') +
         '<b>' + esc(money(product.price_cents)) + '</b></span></button>' +
-        '<div class="home-extra-controls"><span class="home-extra-controls-label">Qtd.</span><div class="home-extra-stepper">' +
+        '<div class="home-extra-controls" role="group" aria-label="Quantidade de ' + esc(name) + '"><div class="home-extra-stepper">' +
         '<button class="quantity-button" type="button" data-home-extra-adjust="' + esc(id) + '" data-delta="-1" aria-label="Diminuir ' + esc(name) + '"' + (quantity <= 0 ? " disabled" : "") + '>−</button>' +
         '<output class="quantity-value" data-home-extra-quantity="' + esc(id) + '" aria-live="polite">' + quantity + '</output>' +
-        '<button class="quantity-button" type="button" data-home-extra-adjust="' + esc(id) + '" data-delta="1" aria-label="Adicionar ' + esc(name) + '"' + (quantity >= stock ? " disabled" : "") + '>+</button></div></div></article>';
+        '<button class="quantity-button home-extra-add-button" type="button" data-home-extra-adjust="' + esc(id) + '" data-delta="1" aria-label="Adicionar ' + esc(name) + '"' + (quantity >= stock ? " disabled" : "") + '>+</button></div></div></article>';
     }
 
     function updateHomeExtraProductDialog(productId) {
@@ -291,7 +291,7 @@
           : category.loaded && !category.products.length ? "Nenhum produto disponível nesta categoria."
             : "";
       const placeholders = !category.loaded && !category.error
-        ? Array.from({ length: HOME_EXTRA_PAGE_SIZE }, () => '<div class="home-extra-skeleton" aria-hidden="true"><span></span><i></i><b></b></div>').join("")
+        ? Array.from({ length: HOME_EXTRA_PAGE_SIZE }, () => '<div class="home-extra-skeleton" aria-hidden="true"><span></span><i></i><small></small><b></b><em></em></div>').join("")
         : "";
       const loadMore = category.error
         ? '<button class="button button-outline home-extra-more" type="button" data-home-extra-retry="' + esc(category.key) + '">Tentar novamente</button>'
