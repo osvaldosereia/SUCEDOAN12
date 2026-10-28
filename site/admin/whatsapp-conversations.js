@@ -551,8 +551,10 @@
         $("whatsapp-conversation-empty").hidden = false;
         setStatus("Buscando conversas…");
       }
-      state.favoriteIds.clear();
-      state.favoritesAvailable = false;
+      if (!silent) {
+        state.favoriteIds.clear();
+        state.favoritesAvailable = false;
+      }
     } else setStatus("Carregando mais conversas…");
     try {
       const data = await request("whatsapp_conversation_list", {
@@ -662,7 +664,7 @@
   $("whatsapp-conversation-older")?.addEventListener("click", () => state.selectedId && loadConversation(state.selectedId, { older: true }));
   window.setInterval(() => {
     const panel = $("whatsapp-section-conversations");
-    if (document.hidden || !panel || panel.hidden || state.busy) return;
+    if (!panel || document.hidden || panel.hidden || panel.closest(".admin-view")?.hidden || state.busy) return;
     void loadConversations({ silent: true });
   }, 15000);
   window.DonaWhatsAppConversations = { load: () => loadConversations() };
