@@ -529,3 +529,15 @@
 .whatsapp-ana-test-row.is-fail { border-color:#e4c4bf; background:#fff5f3; }
 .whatsapp-ana-test-row.is-fail strong { color:#9a3329; }
 @media (max-width:520px) { .whatsapp-ana-admin-actions > .button { flex:1 1 100%; } }
+
+
+.whatsapp-campaign-actions { display:grid; gap:6px; margin-top:12px; }
+.whatsapp-campaign-action-buttons { display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px; }
+.whatsapp-campaign-action-buttons .button { margin:0; }
+.whatsapp-campaign-schedule { display:grid; gap:4px; min-width:min(100%,240px); color:var(--muted); font-size:.72rem; font-weight:650; }
+.whatsapp-campaign-schedule input { width:100%; min-height:38px; padding:7px 9px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink); font:inherit; }
+.whatsapp-campaign-action-status { margin:0; font-size:.75rem; }
+@media (max-width:520px) {
+  .whatsapp-campaign-action-buttons { align-items:stretch; flex-direction:column; }
+  .whatsapp-campaign-action-buttons .button, .whatsapp-campaign-schedule { width:100%; }
+}
