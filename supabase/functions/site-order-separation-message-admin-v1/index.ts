@@ -353,16 +353,18 @@ async function submitDraft(kind: MessageKind) {
       });
       const name = String(draft.name);
       await updateSetting(kind, channel, { pending_template_name: name });
-      let status = "PENDING";
+      let status = "UNKNOWN";
       let syncPending = false;
       try {
         const synced = await syncTemplates(account);
         const cached = await cachedTemplates(account.id, [name]);
-        status = cached[0]?.status || status;
+        status = cached[0]?.status || "UNKNOWN";
         syncPending = !synced.some((item: any) => item.name === name);
       } catch {
         syncPending = true;
+        status = "UNKNOWN";
       }
+      if (syncPending) status = "UNKNOWN";
       results.push({ channel, name, status, sync_pending: syncPending });
     } catch (error) {
       const code = error instanceof MetaTemplatesError
