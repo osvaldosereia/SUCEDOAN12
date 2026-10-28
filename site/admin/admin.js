@@ -70,13 +70,12 @@
 
   function loadWhatsAppSection() {
     const selected = document.querySelector("[data-whatsapp-section][aria-selected=\"true\"]")?.dataset.whatsappSection || "overview";
-    if (selected === "overview") window.DonaWhatsAppAdmin?.loadOverview();
-    else if (selected === "conversations") window.DonaWhatsAppConversations?.load();
-    else {
+    if (selected === "conversations") window.DonaWhatsAppConversations?.load();
+    else if (selected === "messages") {
       const inner = document.querySelector("[data-whatsapp-tab][aria-selected=\"true\"]")?.dataset.whatsappTab || "confirmation";
       if (inner === "separation") window.DonaOrderSeparationMessageAdmin?.load();
       else window.DonaOrderMessageAdmin?.load();
-    }
+    } else window.DonaWhatsAppAdmin?.loadOverview();
   }
 
   document.querySelectorAll("[data-whatsapp-section]").forEach((button) => {
