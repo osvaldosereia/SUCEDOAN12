@@ -549,7 +549,7 @@
 
   async function refreshSelectedMessageStatuses() {
     const conversationId = state.selectedId;
-    if (!conversationId || state.statusRefreshing) return false;
+    if (!conversationId || state.statusRefreshing || state.busy) return false;
     state.statusRefreshing = true;
     try {
       const data = await request("whatsapp_conversation_messages", { conversation_id: conversationId, before_created_at: "", before_id: "" });
