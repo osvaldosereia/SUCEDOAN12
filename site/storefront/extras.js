@@ -408,7 +408,7 @@
       if (!product) return;
       const currentQuantity = Number(current && current.quantity || 0);
       const stock = Math.max(0, Number(product.stock_quantity || current && current.stock_quantity || 0));
-      const quantity = Math.max(0, Math.min(stock, currentQuantity + delta));
+      const quantity = Math.max(0, Math.min(stock, currentQuantity + (Number(delta) > 0 ? 1 : -1)));
       if (quantity === currentQuantity) return;
       if (quantity === 0) data.extraSelections.delete(id);
       else data.extraSelections.set(id, homeProductSelection(product, quantity));
@@ -451,7 +451,7 @@
       const current = state.homeExtraSelections.get(id);
       const currentQuantity = Number(current && current.quantity || 0);
       const stock = Math.max(0, Number(product.stock_quantity || 0));
-      const quantity = Math.max(0, Math.min(stock, currentQuantity + delta));
+      const quantity = Math.max(0, Math.min(stock, currentQuantity + (Number(delta) > 0 ? 1 : -1)));
       if (quantity === currentQuantity) return;
       setHomeExtraQuantity(product, quantity, state.baskets.get(state.activeKey));
     }
@@ -528,7 +528,7 @@
       if (!product) return;
       const current = data.extraSelections.get(String(productId));
       const currentQuantity = Number(current && current.quantity || 0);
-      const quantity = Math.max(0, Math.min(Number(product.stock_quantity || 0), currentQuantity + delta));
+      const quantity = Math.max(0, Math.min(Number(product.stock_quantity || 0), currentQuantity + (Number(delta) > 0 ? 1 : -1)));
       if (quantity === currentQuantity) return;
       if (quantity === 0) data.extraSelections.delete(String(productId));
       else data.extraSelections.set(String(productId), {
