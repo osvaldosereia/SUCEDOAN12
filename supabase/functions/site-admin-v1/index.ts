@@ -1,9 +1,8 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
+import { verifyAdminCode } from "../_shared/admin-code-v1.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-const ADMIN_CODE = Deno.env.get("DONA_ADMIN_CODE") || "Eomc2020";
 const ALLOWED_ORIGINS = new Set([
   "https://donaantonia.com.br",
   "https://www.donaantonia.com.br",
@@ -60,6 +59,124 @@ function clean(value: unknown, max = 500) {
 function uuid(value: unknown) {
   const text = clean(value, 64);
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(text) ? text : "";
+}
+
+function normalizeBrazilPhone(value: unknown) {
+  let digits = clean(value, 30).replace(/\D/g, "");
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  let local = "";
+  if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) local = digits.slice(2);
+  else if (digits.length === 10 || digits.length === 11) local = digits;
+  else return "";
+  if (local.length === 10 && /[6-9]/.test(local.charAt(2))) local = local.slice(0, 2) + "9" + local.slice(2);
+  return "+55" + local;
+}
+
+async function customerLookup(input: any) {
+  const phone = normalizeBrazilPhone(input.phone);
+  if (!phone) return { found: false };
+
+  const match = await db.rpc("lookup_customer_by_phone", { p_phone: phone });
+  if (match.error) throw match.error;
+  let customerId = uuid(match.data?.[0]?.customer_id);
+
+  if (!customerId) {
+    const exact = await db.from("customers").select("id")
+      .eq("primary_whatsapp_e164", phone).eq("is_active", true).limit(2);
+    if (exact.error) throw exact.error;
+    if (exact.data?.length === 1) customerId = uuid(exact.data[0].id);
+  }
+  if (!customerId) return { found: false };
+
+  const [customerResult, addressResult] = await Promise.all([
+    db.from("customers").select("id,name,cpf_cnpj,primary_whatsapp_e164,updated_at")
+      .eq("id", customerId).maybeSingle(),
+    db.from("customer_addresses")
+      .select("id,street,number,complement,neighborhood,city,state,postal_code,reference,updated_at")
+      .eq("customer_id", customerId).eq("is_active", true)
+      .order("is_default", { ascending: false }).order("updated_at", { ascending: false })
+      .limit(1).maybeSingle(),
+  ]);
+  if (customerResult.error) throw customerResult.error;
+  if (addressResult.error) throw addressResult.error;
+  if (!customerResult.data) return { found: false };
+
+  const document = String(customerResult.data.cpf_cnpj || "").replace(/\D+/g, "");
+  const address = addressResult.data ? {
+    id: addressResult.data.id,
+    updated_at: addressResult.data.updated_at,
+    street: addressResult.data.street || "",
+    number: addressResult.data.number || "",
+    complement: addressResult.data.complement || "",
+    neighborhood: addressResult.data.neighborhood || "",
+    city: addressResult.data.city || "",
+    state: addressResult.data.state || "MT",
+    postal_code: addressResult.data.postal_code || "",
+    reference: addressResult.data.reference || "",
+  } : null;
+
+  return {
+    found: true,
+    customer: {
+      id: customerResult.data.id,
+      updated_at: customerResult.data.updated_at,
+      display_name: customerResult.data.name || "",
+      phone: customerResult.data.primary_whatsapp_e164 || phone,
+      document_last4: document ? document.slice(-4) : "",
+      address,
+    },
+  };
+}
+
+
+async function customerSave(input: any) {
+  const customerId = uuid(input.customer_id);
+  const expectedCustomerUpdatedAt = clean(input.customer_updated_at, 80);
+  const name = clean(input.name, 180);
+  if (!customerId || !expectedCustomerUpdatedAt || Number.isNaN(Date.parse(expectedCustomerUpdatedAt))) {
+    return { error: "invalid_customer_snapshot", status: 400 };
+  }
+  if (name.length < 2) return { error: "customer_name_required", status: 400 };
+
+  const addressId = uuid(input.address_id);
+  const expectedAddressUpdatedAt = clean(input.address_updated_at, 80);
+  if (addressId && (!expectedAddressUpdatedAt || Number.isNaN(Date.parse(expectedAddressUpdatedAt)))) {
+    return { error: "invalid_address_snapshot", status: 400 };
+  }
+
+  const rawAddress = input.address && typeof input.address === "object" ? input.address : {};
+  const address = {
+    street: clean(rawAddress.street, 180),
+    number: clean(rawAddress.number, 40),
+    complement: clean(rawAddress.complement, 140),
+    neighborhood: clean(rawAddress.neighborhood, 140),
+    city: clean(rawAddress.city, 120),
+    state: clean(rawAddress.state, 2).toUpperCase(),
+    postal_code: clean(rawAddress.postal_code, 20),
+    reference: clean(rawAddress.reference, 220),
+  };
+  const updated = await db.rpc("ops2_site_admin_customer_update_v1", {
+    p_customer_id: customerId,
+    p_expected_customer_updated_at: expectedCustomerUpdatedAt,
+    p_name: name,
+    p_address_id: addressId || null,
+    p_expected_address_updated_at: addressId ? expectedAddressUpdatedAt : null,
+    p_address: address,
+  });
+  if (updated.error) throw updated.error;
+  if (updated.data?.ok !== true) {
+    const code = clean(updated.data?.error, 60) || "customer_save_failed";
+    const status = code === "customer_not_found" || code === "customer_address_not_found" ? 404
+      : code === "customer_changed" ? 409 : 400;
+    return { error: code, status };
+  }
+  return {
+    saved: true,
+    customer_id: customerId,
+    customer_updated_at: updated.data.customer_updated_at,
+    address_id: updated.data.address_id || null,
+    address_updated_at: updated.data.address_updated_at || null,
+  };
 }
 
 function integer(value: unknown, min: number, max: number) {
@@ -333,6 +450,19 @@ function supportedOrder(order: any) {
   return Boolean(order && ORDER_SOURCES.includes(String(order.source || "")));
 }
 
+
+async function attachPublicOrderCodes(orders: any[]) {
+  if (!orders.length) return orders;
+  const ids = orders.map((order) => uuid(order.id)).filter(Boolean);
+  if (!ids.length) return orders;
+  const result = await db.from("order_public_snapshots_v1")
+    .select("order_id,public_code")
+    .in("order_id", ids);
+  if (result.error) throw result.error;
+  const codes = new Map((result.data || []).map((row: any) => [String(row.order_id), row.public_code]));
+  return orders.map((order) => ({ ...order, public_code: codes.get(String(order.id)) || null }));
+}
+
 async function ordersList(input: any) {
   const stage = ["new", "separating", "expedition"].includes(input.stage) ? input.stage : "new";
   const statuses = stage === "new"
@@ -347,7 +477,7 @@ async function ordersList(input: any) {
     .order("created_at", { ascending: false })
     .limit(200);
   if (result.error) throw result.error;
-  return { orders: result.data || [], stage };
+  return { orders: await attachPublicOrderCodes(result.data || []), stage };
 }
 
 async function orderById(value: unknown): Promise<any> {
@@ -359,7 +489,8 @@ async function orderById(value: unknown): Promise<any> {
     .maybeSingle();
   if (result.error) throw result.error;
   if (!result.data || !supportedOrder(result.data)) return { error: "order_not_found", status: 404, message: "Pedido não encontrado." };
-  return { order: result.data };
+  const orders = await attachPublicOrderCodes([result.data]);
+  return { order: orders[0] };
 }
 
 async function orderDetail(input: any) {
@@ -495,7 +626,9 @@ Deno.serve(async (req: Request) => {
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) return json(req, { ok: false, error: "server_config" }, 500);
   const origin = req.headers.get("origin") || "";
   if (origin && !ALLOWED_ORIGINS.has(origin)) return json(req, { ok: false, error: "origin_not_allowed" }, 403);
-  if (req.headers.get("x-admin-code") !== ADMIN_CODE) return json(req, { ok: false, error: "admin_code_invalid" }, 401);
+  const adminCodeStatus = verifyAdminCode(req.headers.get("x-admin-code"));
+  if (adminCodeStatus === "not_configured") return json(req, { ok: false, error: "admin_auth_not_configured" }, 503);
+  if (adminCodeStatus !== "valid") return json(req, { ok: false, error: "admin_code_invalid" }, 401);
 
   try {
     const url = new URL(req.url);
@@ -507,7 +640,9 @@ Deno.serve(async (req: Request) => {
     const input = { ...Object.fromEntries(url.searchParams.entries()), ...body };
     const action = clean(input.action, 40);
     let result: any;
-    if (req.method === "GET" && action === "baskets") {
+    if (req.method === "POST" && action === "customer_lookup") result = await customerLookup(input);
+    else if (req.method === "POST" && action === "customer_save") result = await customerSave(input);
+    else if (req.method === "GET" && action === "baskets") {
       const status = ["active", "inactive", "all"].includes(input.status) ? input.status : "active";
       result = await basketList(status);
     }

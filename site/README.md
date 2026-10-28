@@ -1,23 +1,22 @@
 # Catálogo Dona Antônia
 
-O catálogo público está em `/site/`; o painel administrativo fica em `/site/admin/`. A interface usa HTML, CSS e JavaScript nativos para reduzir dependências e carregar rapidamente em celulares. As cinco fotos quadradas recuperadas do histórico do GitHub ficam em `assets/cestas/`.
+O catálogo público fica em `/site/`; o painel administrativo fica em `/site/admin/`. A interface usa HTML, CSS e JavaScript nativos.
 
-## Catálogo público
+## Loja
 
-- Na abertura, carrega somente o nome e a foto de cada cesta. Busca preço, composição e disponibilidade quando a pessoa toca em **Ver Produtos** e busca as marcas/opções somente ao tocar em **Personalizar**. As imagens usam carregamento assíncrono e lazy loading nas cestas abaixo da primeira linha e nos produtos.
-- A opção padrão configurada no admin é selecionada primeiro; se não estiver disponível, a loja escolhe a alternativa disponível mais barata.
-- Exibe o preço configurado da cesta, sem mostrar valores individuais dos produtos.
-- Busca o telefone no cadastro de clientes do Supabase pelo fluxo `customer_lookup` / `lookup_customer_by_phone`, com fallback para um único telefone principal ativo quando o cadastro antigo também associa o mesmo número a outro cliente.
-- Ao confirmar, o navegador envia o pedido ao fluxo `submit_order`. A função registra o pedido para o Admin, reserva o estoque e inicia o envio de WhatsApp pelo fluxo servidor.
-- A página não chama o Bling diretamente. O acesso privilegiado ao banco fica nas Edge Functions e não é enviado ao navegador.
+- `site/app.js` coordena a vitrine. As áreas de extras, cesta e checkout ficam separadas em `site/storefront/extras.js`, `basket.js` e `checkout.js`.
+- A vitrine carrega fotos sob demanda e consulta o preço, a composição e a disponibilidade quando a pessoa abre uma cesta.
+- O pedido é criado no servidor por `storefront-v2`; o acesso privilegiado ao Supabase não é enviado ao navegador.
+- Os novos pedidos usam um único código curto no formato duas letras e três números. O mesmo código aparece no pedido, no admin e na lista pública. Os códigos históricos não são regravados.
 
 ## Administração
 
-- O código temporário `Eomc2020` abre o painel. A validação também é feita pela Edge Function `site-admin-v1`.
-- Em **Cestas**, o administrador adiciona e remove posições, define quantidades, busca e marca marcas/opções, escolhe o produto padrão e informa o preço final. O valor acompanha os preços dos produtos padrão e as quantidades, preservando o ajuste cadastrado para a cesta.
-- Kits sem composição podem ser desativados para saírem da vitrine; o filtro **Inativas** permite reativá-los depois.
-- Em **Produtos**, o administrador busca cadastros e edita campos comerciais, preços, estoque, categorias, descrições e flags. O seletor ao lado de cada produto ativa ou desativa o produto direto na lista; produtos não são apagados fisicamente.
-- **Clientes** permanece em consulta somente leitura.
-- As alterações administrativas são gravadas no Supabase por uma função servidor. A chave privilegiada não é enviada ao navegador. Nenhuma migração nem alteração estrutural foi feita no banco.
+- O painel usa um único código de acesso, sem login de usuário e senha. O valor fica em memória apenas durante a sessão do navegador.
+- Configure um segredo aleatório de 32 a 128 caracteres com o nome `DONA_ADMIN_CODE` nas Edge Functions do Supabase. Não coloque o valor no HTML, JavaScript, configuração pública ou GitHub.
+- Em **Clientes**, é possível editar nome e endereço. Telefone e CPF/CNPJ continuam somente para consulta. A gravação é feita no servidor, valida se outro operador atualizou o cadastro e registra uma linha no histórico administrativo.
+- **Cestas** e **Produtos** mantêm os fluxos de edição do painel; cadastros são desativados em vez de apagados.
+- Em **WhatsApp**, **Pedido recebido** controla a mensagem enviada na criação do pedido; **Após a separação** controla outro envio. Salvar rascunho não envia nada à Meta. Envie a versão para análise e ative-a por número depois da aprovação; o modelo atual continua enviando até essa ativação.
 
-O código de acesso é provisório e ficará visível no código do site enquanto a autenticação definitiva não for implantada. Meta e Bling permanecem desconectados.
+## Publicação
+
+A mudança de banco fica em `supabase/migrations/20261028050000_site_customer_edit_and_order_codes_v1.sql`. A migração precisa ser aplicada antes de publicar as funções que a utilizam. Configure `DONA_ADMIN_CODE` antes de publicar as funções administrativas.

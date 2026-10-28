@@ -4,6 +4,7 @@
   const config = window.DONA_SITE_CONFIG || {};
   const supabase = String(config.supabaseUrl || "").replace(/\/$/, "");
   const key = config.publishableKey || "";
+  const adminCode = () => window.DonaAdminAuth?.getCode?.() || "";
   const endpoint = supabase + "/functions/v1/site-order-message-admin-v1";
   const $ = (id) => document.getElementById(id);
   const state = { loaded: false, busy: false, metaReady: false, dirty: false, channels: [], metaResults: {}, submissionResults: {} };
@@ -35,7 +36,7 @@
   async function api(action, method, body) {
     const url = new URL(endpoint);
     url.searchParams.set("action", action);
-    const headers = { apikey: key };
+    const headers = { apikey: key, "x-admin-code": adminCode() };
     const init = { method: method || "GET", headers, cache: "no-store" };
     if (body !== undefined) {
       headers["Content-Type"] = "application/json";
@@ -172,7 +173,7 @@
     state.busy = true;
     const button = $("order-message-submit");
     button.disabled = true;
-    button.textContent = "Enviando para a Meta…";
+    button.textContent = "Enviando para análise…";
     $("order-message-status").textContent = "Salvando o texto e enviando os modelos dos dois canais para análise.";
     try {
       await api("save_draft", "POST", { draft_body: $("order-message-body").value });
@@ -193,7 +194,7 @@
       $("order-message-status").textContent = error.message;
     } finally {
       state.busy = false;
-      button.textContent = "Enviar para aprovação na Meta";
+      button.textContent = "Enviar para análise da Meta";
       button.disabled = !state.metaReady;
     }
   }

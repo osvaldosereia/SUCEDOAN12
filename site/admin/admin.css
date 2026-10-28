@@ -203,3 +203,17 @@
 .message-draft-state { margin:0; padding:9px 11px; border-radius:10px; background:#f7f2ea; color:var(--ink); font-size:.8rem; line-height:1.45; }
 .message-meta-check { margin:0; color:var(--muted); font-size:.74rem; line-height:1.4; }
 .order-message-status dd { overflow-wrap:anywhere; }
+
+
+/* Admin access */
+.admin-login-main { width: min(900px, 100%); margin: 0 auto; padding: 48px 16px; }
+.admin-login-card { display: grid; gap: 12px; width: min(100%, 440px); margin: 4vh auto 0; padding: 24px; border: 1px solid var(--line); border-radius: 17px; background: var(--surface); box-shadow: 0 12px 30px rgba(45,32,18,.08); }
+.admin-login-card > * { margin: 0; }
+.admin-login-card h1 { color: var(--ink); font-size: 1.55rem; }
+.admin-login-card label { margin-top: 6px; color: var(--muted); font-size: .84rem; font-weight: 700; }
+.admin-login-card input { width: 100%; min-height: 46px; padding: 0 12px; border: 1px solid #d8cfc3; border-radius: 10px; background: #fff; color: var(--ink); }
+.admin-login-card input:focus { outline: 2px solid #b76e62; outline-offset: 1px; }
+.admin-login-card .form-message { min-height: 1.25em; }
+.admin-logout { border: 0; background: transparent; color: var(--brand); font: inherit; cursor: pointer; }
+#admin-app[hidden], #admin-login[hidden] { display: none !important; }
+@media (max-width: 480px) { .admin-login-main { padding: 24px 14px; } .admin-login-card { padding: 20px; } }
