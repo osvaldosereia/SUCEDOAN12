@@ -965,6 +965,7 @@ async function whatsappConversationMedia(input: any) {
   }
 
   if (!path) return { error: "media_not_cached", message: "Esta mídia ainda não está disponível no cache privado.", status: 404 };
+  // O bucket privado limita objetos do cache a 20 MB; attendance_media_cache_v1 não armazena file_size.
   if (fileSize > 20 * 1024 * 1024) return { error: "media_too_large", status: 413 };
   if (!allowedMimeTypes.has(mimeType)) return { error: "media_type_not_allowed", status: 415 };
 
