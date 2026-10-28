@@ -5,7 +5,7 @@
   const endpoint = base + "/functions/v1/site-admin-v1";
   const publishableKey = config.publishableKey || "";
   const $ = (id) => document.getElementById(id);
-  const state = { cursor: null, total: 0, conversations: [], selectedId: "", selectedConversation: null, before: null, listLoading: false, listRequestId: 0, conversationLoading: false, conversationRequestId: 0, olderLoading: false, quickFilter: "all", favoriteIds: new Set(), favoritesAvailable: false, ordersAvailable: false, favoriteBusyIds: new Set(), orderBusyIds: new Set(), sendingTextIds: new Set(), sendingMediaIds: new Set(), pendingTextByConversation: new Map(), pendingMediaKey: "", pendingMediaFingerprint: "", uncertainSends: new Map(), statusCheckingIds: new Set(), drafts: new Map(), statusRefreshing: false };
+  const state = { cursor: null, total: 0, conversations: [], selectedId: "", selectedConversation: null, before: null, listLoading: false, listRequestId: 0, conversationLoading: false, conversationRequestId: 0, olderLoading: false, quickFilter: "all", favoriteIds: new Set(), favoritesAvailable: false, ordersAvailable: false, favoriteBusyIds: new Set(), orderBusyIds: new Set(), anaModeBusyIds: new Set(), sendingTextIds: new Set(), sendingMediaIds: new Set(), pendingTextByConversation: new Map(), pendingMediaKey: "", pendingMediaFingerprint: "", uncertainSends: new Map(), statusCheckingIds: new Set(), drafts: new Map(), statusRefreshing: false };
   const dateLabel = (value) => {
     if (!value) return "Sem atividade";
     const date = new Date(value);
@@ -267,7 +267,7 @@
       const meta = document.createElement("span");
       meta.textContent = (item.whatsapp_profile_name && !item.customer_name ? "Nome exibido pelo WhatsApp · " : "") + (item.channel || "WhatsApp")
         + (item.channel_number ? " · Canal " + item.channel_number : "")
-        + " · " + (item.human_required ? "Atendimento humano" : item.mode || item.status || "Conversa");
+        + " · " + (String(item.mode || "").toLowerCase() === "paused" ? "ANA desligada" : item.human_required ? "Atendimento humano" : String(item.mode || "").toLowerCase() === "ai" ? "ANA ativa" : item.mode || item.status || "Conversa");
       const date = document.createElement("small");
       date.textContent = dateLabel(item.last_activity_at);
       button.append(title, meta, date);
@@ -371,6 +371,39 @@
     } finally {
       state.orderBusyIds.delete(conversationId);
       if (button.isConnected) button.disabled = !state.ordersAvailable;
+    }
+  }
+
+  async function toggleSelectedConversationAna() {
+    const conversationId = state.selectedId;
+    const conversation = state.selectedConversation;
+    if (!conversationId || !conversation || state.anaModeBusyIds.has(conversationId)) return;
+    const enabled = String(conversation.mode || "").toLowerCase() === "paused";
+    if (!enabled && !window.confirm("Desligar a ANA permanentemente nesta conversa? Ela continuará desligada até você reativá-la manualmente.")) return;
+
+    state.anaModeBusyIds.add(conversationId);
+    const toggle = $("whatsapp-conversation-ana-toggle");
+    if (toggle) toggle.disabled = true;
+    try {
+      const data = await request("whatsapp_conversation_ana_mode", { conversation_id: conversationId, enabled });
+      if (state.selectedId === conversationId) {
+        state.selectedConversation = { ...conversation, ...data, id: conversationId };
+      }
+      const listed = state.conversations.find((item) => item.id === conversationId);
+      if (listed) Object.assign(listed, data);
+      const host = $("whatsapp-conversation-items");
+      const scrollTop = host.scrollTop;
+      renderQueue(state.conversations, false);
+      host.scrollTop = scrollTop;
+      if (state.selectedId === conversationId) renderHeader(data);
+      setStatus(enabled
+        ? "ANA reativada manualmente nesta conversa."
+        : "ANA desligada permanentemente nesta conversa; a reativação será manual.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Não foi possível alterar a ANA desta conversa.");
+    } finally {
+      state.anaModeBusyIds.delete(conversationId);
+      if (state.selectedId === conversationId) renderHeader(state.selectedConversation || {});
     }
   }
 
@@ -632,9 +665,22 @@
     const channelNumber = conversation.channel_number || selected.channel_number || "";
     const profileNameOnly = !conversation.customer_name && !selected.customer_name && Boolean(conversation.whatsapp_profile_name || selected.whatsapp_profile_name);
     $("whatsapp-conversation-title").textContent = (customerName || "Contato") + (profileNameOnly ? " · WhatsApp" : "") + (phoneLast4 ? " · •••• " + phoneLast4 : "");
-    const stateLabel = conversation.human_required ? "Precisa de atendimento humano" : [conversation.mode, conversation.status, conversation.stage].filter(Boolean).join(" · ");
+    const mode = String(conversation.mode || selected.mode || "").toLowerCase();
+    const anaPaused = mode === "paused";
+    const stateLabel = anaPaused
+      ? "ANA desligada nesta conversa"
+      : conversation.human_required ? "Precisa de atendimento humano" : [conversation.mode, conversation.status, conversation.stage].filter(Boolean).join(" · ");
     const channel = channelName + (channelNumber ? " · Canal " + channelNumber : "");
     $("whatsapp-conversation-subtitle").textContent = channel + " · " + (stateLabel || "Conversa");
+    const anaToggle = $("whatsapp-conversation-ana-toggle");
+    if (anaToggle) {
+      anaToggle.hidden = false;
+      anaToggle.disabled = state.anaModeBusyIds.has(String(conversation.id || selected.id || state.selectedId));
+      anaToggle.textContent = anaPaused ? "Reativar ANA" : "Desligar ANA";
+      anaToggle.title = anaPaused ? "Reativar a ANA manualmente nesta conversa" : "Desligar a ANA permanentemente nesta conversa";
+      anaToggle.setAttribute("aria-label", anaToggle.title);
+      anaToggle.setAttribute("aria-pressed", String(anaPaused));
+    }
     $("whatsapp-conversation-header").hidden = false;
     $("whatsapp-conversation-empty").hidden = true;
   }
@@ -748,6 +794,7 @@
         before_id: targetBefore?.id || "",
       });
       if (state.selectedId !== id || requestId !== state.conversationRequestId) return;
+      state.selectedConversation = { ...(state.selectedConversation || {}), ...(data.conversation || {}) };
       renderHeader(data.conversation || {});
       renderMessages(data.messages || [], older);
       if (!older) {
@@ -857,11 +904,12 @@
   $("whatsapp-conversation-filter")?.addEventListener("change", () => loadConversations());
   $("whatsapp-conversation-more")?.addEventListener("click", () => loadConversations({ append: true }));
   $("whatsapp-conversation-older")?.addEventListener("click", () => state.selectedId && loadConversation(state.selectedId, { older: true }));
+  $("whatsapp-conversation-ana-toggle")?.addEventListener("click", () => void toggleSelectedConversationAna());
   document.querySelectorAll("[data-conversation-view]").forEach((button) => {
     button.addEventListener("click", () => {
       state.quickFilter = button.dataset.conversationView || "all";
       document.querySelectorAll("[data-conversation-view]").forEach((tab) => {
-        tab.setAttribute("aria-selected", String(tab === button));
+        tab.setAttribute("aria-pressed", String(tab === button));
       });
       void loadConversations();
     });
