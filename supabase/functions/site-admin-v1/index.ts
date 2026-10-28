@@ -1298,9 +1298,62 @@ async function whatsappCampaignPreview(input: any) {
   };
 }
 
-async function whatsappAnaAdminStatus() {
-  const result = await db.rpc("ops2_ana_admin_load_v1");
+
+async function whatsappAnaPauseChannel(input: any) {
+  const accountId = uuid(input.whatsapp_account_id);
+  if (!accountId) return { error: "invalid_whatsapp_account_id", status: 400 };
+  const current = await db.from("whatsapp_channel_runtime_v1")
+    .select("ana_enabled")
+    .eq("whatsapp_account_id", accountId)
+    .maybeSingle();
+  if (current.error) throw current.error;
+  if (!current.data) return { error: "channel_not_found", status: 404 };
+  if (current.data.ana_enabled !== true) return { already_paused: true, ana_enabled: false };
+
+  const actorId = await adminFavoriteUserId();
+  if (!actorId) return { error: "admin_identity_unavailable", status: 403 };
+  const result = await db.rpc("ops2_ana_admin_set_channel_v1", {
+    p_whatsapp_account_id: accountId,
+    p_enabled: false,
+    p_actor_id: actorId,
+  });
   if (result.error) throw result.error;
+  const saved = result.data || { ok: false, error: "ana_pause_failed" };
+  if (saved.ok !== true) return { error: clean(saved.error || "ana_pause_failed", 80), status: 409 };
+  return {
+    ana_enabled: false,
+    channel_key: clean(saved.channel_key, 8),
+  };
+}
+
+async function whatsappAnaAdminStatus() {
+  const [result, runtimeResult] = await Promise.all([
+    db.rpc("ops2_ana_admin_load_v1"),
+    db.from("whatsapp_channel_runtime_v1")
+      .select("whatsapp_account_id,ana_enabled,capture_enabled,send_enabled,outbound_provider,homologated_at")
+      .order("updated_at", { ascending: false }),
+  ]);
+  if (result.error) throw result.error;
+  if (runtimeResult.error) throw runtimeResult.error;
+  const runtimeRows = runtimeResult.data || [];
+  const accountIds = runtimeRows.map((row: any) => uuid(row.whatsapp_account_id)).filter(Boolean);
+  const accountsResult = accountIds.length
+    ? await db.from("whatsapp_accounts").select("id,phone_e164,display_name,slug").in("id", accountIds).limit(30)
+    : { data: [], error: null };
+  if (accountsResult.error) throw accountsResult.error;
+  const accountById = new Map((accountsResult.data || []).map((row: any) => [row.id, row]));
+  const channels = runtimeRows.map((row: any) => {
+    const account: any = accountById.get(row.whatsapp_account_id) || {};
+    return {
+      id: uuid(row.whatsapp_account_id),
+      name: clean(account.display_name || account.slug || "WhatsApp", 120),
+      phone_last4: String(account.phone_e164 || "").replace(/\D/g, "").slice(-4),
+      ana_enabled: row.ana_enabled === true,
+      can_pause: row.ana_enabled === true,
+      can_enable: row.capture_enabled === true && row.send_enabled === true
+        && row.outbound_provider === "meta" && Boolean(row.homologated_at),
+    };
+  });
   const snapshot = result.data || {};
   if (snapshot.ok !== true) return { error: "ana_admin_status_unavailable", status: 503 };
 
@@ -1343,6 +1396,7 @@ async function whatsappAnaAdminStatus() {
   ];
   const diffAvailable = Boolean(active.configuration && draft.configuration);
   return {
+    channels,
     active: active.version ? {
       version: Number(active.version),
       created_at: active.created_at || null,
@@ -1798,6 +1852,7 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "whatsapp_conversation_media") result = await whatsappConversationMedia(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_favorite") result = await whatsappConversationFavorite(input);
     else if (req.method === "POST" && action === "whatsapp_campaign_preview") result = await whatsappCampaignPreview(input);
+    else if (req.method === "POST" && action === "whatsapp_ana_pause_channel") result = await whatsappAnaPauseChannel(input);
     else if (req.method === "POST" && action === "whatsapp_ana_admin_status") result = await whatsappAnaAdminStatus();
     else if (req.method === "POST" && action === "customer_lookup") result = await customerLookup(input);
     else if (req.method === "POST" && action === "customer_save") result = await customerSave(input);
