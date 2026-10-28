@@ -9,9 +9,9 @@
   <link rel="preload" as="image" href="../img/logoantonia5.png">
   <link rel="preload" as="image" href="assets/cestas/cesta-economica.jpg" fetchpriority="high">
   <link rel="preconnect" href="https://ssbesxgaijknwsjbsbcz.supabase.co" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=11">
+  <link rel="stylesheet" href="styles.css?v=12">
   <script src="config.js?v=2" defer></script>
-  <script src="app.js?v=12" defer></script>
+  <script src="app.js?v=13" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -93,13 +93,20 @@
         </div>
         <p id="lookup-message" class="helper" role="status">Buscaremos o cadastro e o endereço já registrado.</p>
         <div id="customer-card" class="customer-card" hidden></div>
+        <div class="delivery-date-field">
+          <label class="field-label" for="delivery-date">Data de entrega</label>
+          <select id="delivery-date" class="field-select" disabled required>
+            <option value="">As datas disponíveis serão carregadas ao abrir o checkout.</option>
+          </select>
+          <p id="delivery-date-message" class="helper" role="status" aria-live="polite">As datas disponíveis serão carregadas ao abrir o checkout.</p>
+        </div>
         <fieldset id="payment-options" class="payment-options" disabled>
           <legend>Forma de pagamento</legend>
           <label><input type="radio" name="payment" value="Dinheiro"> <span>Dinheiro</span></label>
           <label><input type="radio" name="payment" value="Cartão de crédito"> <span>Cartão de crédito</span></label>
           <label><input type="radio" name="payment" value="PIX"> <span>Pix</span></label>
         </fieldset>
-        <p id="order-note" class="helper">Ao confirmar, o pedido será registrado para a equipe da Dona Antônia. Confira o endereço, os produtos e a forma de pagamento antes de concluir.</p>
+        <p id="order-note" class="helper">Ao confirmar, o pedido será registrado para a equipe da Dona Antônia. Confira o endereço, a data de entrega, os produtos e a forma de pagamento antes de concluir.</p>
       </div>
       <div class="sheet-actions">
         <button id="confirm-order" class="button button-primary button-wide" type="button" disabled>Confirmar pedido</button>

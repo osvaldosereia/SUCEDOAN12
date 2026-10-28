@@ -4,7 +4,7 @@
   const config = window.DONA_SITE_CONFIG || {};
   const root = String(config.supabaseUrl || "").replace(/\/$/, "") + "/functions/v1/" + (config.storefrontFunction || "storefront-v2");
   const key = config.publishableKey || "";
-  const state = { cards: [], baskets: new Map(), activeKey: "", customer: null, toastTimer: 0 };
+  const state = { cards: [], baskets: new Map(), activeKey: "", customer: null, toastTimer: 0, deliveryOptions: [], deliveryPromise: null, submittingOrder: false };
   const $ = (id) => document.getElementById(id);
   const esc = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
   const plain = (value) => String(value == null ? "" : value).replace(/\s+/g, " ").trim();
@@ -500,6 +500,55 @@
     return [first, second, third, fourth].filter(Boolean);
   }
 
+  function updateConfirmOrderAvailability() {
+    const select = $("delivery-date");
+    const payment = document.querySelector('input[name="payment"]:checked');
+    const selectedDateIsAvailable = select && !select.disabled && state.deliveryOptions.some((option) => option.date === select.value);
+    $("confirm-order").disabled = state.submittingOrder || !state.customer || !payment || !selectedDateIsAvailable;
+  }
+
+  function loadDeliveryOptions() {
+    if (state.deliveryPromise) return state.deliveryPromise;
+    const select = $("delivery-date");
+    const message = $("delivery-date-message");
+    const previousDate = select.value;
+    state.deliveryOptions = [];
+    select.disabled = true;
+    select.innerHTML = '<option value="">Carregando datas disponíveis…</option>';
+    message.textContent = "Carregando as datas de entrega…";
+    updateConfirmOrderAvailability();
+
+    state.deliveryPromise = request("delivery_options")
+      .then((result) => {
+        const options = (Array.isArray(result.options) ? result.options : [])
+          .filter((option) => option && /^\d{4}-\d{2}-\d{2}$/.test(String(option.date || "")) && String(option.label || "").trim())
+          .slice(0, 10);
+        state.deliveryOptions = options;
+        if (!options.length) {
+          select.innerHTML = '<option value="">Nenhuma data disponível</option>';
+          select.disabled = true;
+          message.textContent = "No momento não há datas de entrega disponíveis.";
+          return;
+        }
+        select.innerHTML = '<option value="">Selecione uma data</option>' +
+          options.map((option) => '<option value="' + esc(option.date) + '">' + esc(option.label) + "</option>").join("");
+        select.value = options.some((option) => option.date === previousDate) ? previousDate : "";
+        select.disabled = false;
+        message.textContent = "As datas disponíveis são atualizadas ao abrir o checkout.";
+      })
+      .catch(() => {
+        state.deliveryOptions = [];
+        select.innerHTML = '<option value="">Não foi possível carregar as datas</option>';
+        select.disabled = true;
+        message.textContent = "Não foi possível carregar as datas. Feche e reabra o checkout para tentar novamente.";
+      })
+      .finally(() => {
+        state.deliveryPromise = null;
+        updateConfirmOrderAvailability();
+      });
+    return state.deliveryPromise;
+  }
+
   async function lookupCustomer() {
     const phone = phoneDigits($("customer-phone").value);
     state.customer = null;
@@ -527,8 +576,8 @@
         (lines.length ? lines.map(esc).join("<br>") : "Endereço cadastrado sem detalhes.");
       $("customer-card").hidden = false;
       $("payment-options").disabled = false;
-      $("lookup-message").textContent = "Cadastro encontrado. Escolha a forma de pagamento.";
-      $("confirm-order").disabled = !document.querySelector('input[name="payment"]:checked');
+      $("lookup-message").textContent = "Cadastro encontrado. Escolha a data de entrega e a forma de pagamento.";
+      updateConfirmOrderAvailability();
     } catch (error) {
       $("lookup-message").textContent = error.message === "rate_limited" ? "Muitas buscas. Aguarde um pouco e tente novamente." : "Não foi possível consultar agora. Tente novamente.";
     } finally {
@@ -562,22 +611,26 @@
 
   async function confirmOrder() {
     const data = state.baskets.get(state.activeKey);
-    const customer = state.customer || {};
+    const customer = state.customer;
     const payment = document.querySelector('input[name="payment"]:checked');
-    if (!data || !customer || !payment) return;
+    const deliveryDate = $("delivery-date").value;
+    const dateIsAvailable = state.deliveryOptions.some((option) => option.date === deliveryDate);
+    if (!data || !customer || !payment || !dateIsAvailable) return;
     const recipient = whatsappNumber(customer.phone || $("customer-phone").value);
     if (!recipient) {
       toast("O telefone cadastrado não está em um formato válido.");
       return;
     }
     const button = $("confirm-order");
-    button.disabled = true;
+    state.submittingOrder = true;
+    updateConfirmOrderAvailability();
     button.textContent = "Registrando…";
     try {
       const result = await request("submit_order", {
         method: "POST",
         body: {
           whatsapp_phone: customer.phone || $("customer-phone").value,
+          delivery_date: deliveryDate,
           payment_method: payment.value,
           customer_details: {
             name: customer.display_name || "",
@@ -612,6 +665,7 @@
       const reason = String(error && error.message || "");
       const messages = {
         delivery_details_required: "Complete o endereço de entrega antes de concluir o pedido.",
+        required_checkout_data: "A data de entrega é obrigatória. Reabra o checkout para carregar as datas disponíveis e tente novamente.",
         customer_name_required: "O cadastro precisa ter o nome do cliente.",
         all_items_unavailable: "Os produtos ficaram sem estoque. Atualize a cesta e tente novamente.",
         invalid_whatsapp_phone: "O telefone do cadastro não está em um formato válido.",
@@ -619,8 +673,9 @@
       };
       toast(messages[reason] || "Não foi possível registrar o pedido. Confira os dados e tente novamente.");
     } finally {
+      state.submittingOrder = false;
       button.textContent = "Confirmar pedido";
-      button.disabled = !state.customer || !document.querySelector('input[name="payment"]:checked');
+      updateConfirmOrderAvailability();
     }
   }
 
@@ -634,13 +689,13 @@
     if (state.activeKey !== sizeKey || $("detail-sheet").hidden || !basket.orderable) return;
     closeSheet("detail-sheet");
     showSheet("order-sheet");
+    loadDeliveryOptions();
     $("customer-phone").focus({ preventScroll: true });
   });
   $("lookup-button").addEventListener("click", lookupCustomer);
   $("customer-phone").addEventListener("keydown", (event) => { if (event.key === "Enter") lookupCustomer(); });
-  $("payment-options").addEventListener("change", () => {
-    $("confirm-order").disabled = !state.customer || !document.querySelector('input[name="payment"]:checked');
-  });
+  $("payment-options").addEventListener("change", updateConfirmOrderAvailability);
+  $("delivery-date").addEventListener("change", updateConfirmOrderAvailability);
   $("confirm-order").addEventListener("click", confirmOrder);
   document.querySelectorAll("[data-close]").forEach((button) => button.addEventListener("click", () => closeSheet(button.dataset.close + "-sheet")));
   document.querySelectorAll(".sheet-backdrop").forEach((backdrop) => backdrop.addEventListener("click", (event) => {
