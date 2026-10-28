@@ -5,7 +5,7 @@
   const endpoint = base + "/functions/v1/site-admin-v1";
   const publishableKey = config.publishableKey || "";
   const $ = (id) => document.getElementById(id);
-  const state = { cursor: null, total: 0, selectedId: "", before: null, busy: false, accountsLoaded: false, favoriteIds: new Set(), favoritesAvailable: false, favoriteBusyIds: new Set() };
+  const state = { cursor: null, total: 0, selectedId: "", before: null, busy: false, accountsLoaded: false, favoriteIds: new Set(), favoritesAvailable: false, favoriteBusyIds: new Set(), textSending: false, pendingTextKey: "", pendingTextValue: "", pendingTextConversationId: "", uncertainConversationIds: new Set() };
   const dateLabel = (value) => {
     if (!value) return "Sem atividade";
     const date = new Date(value);
@@ -27,12 +27,108 @@
     if (!response.ok || data.ok === false) {
       const error = new Error(data.message || data.error || "Não foi possível consultar as conversas.");
       error.code = data.error || "";
+      error.status = response.status;
+      error.data = data;
       throw error;
     }
     return data;
   }
 
   function setStatus(message) { $("whatsapp-conversations-status").textContent = message; }
+
+  function setComposerStatus(message, tone) {
+    const status = $("whatsapp-conversation-compose-status");
+    if (!status) return;
+    status.textContent = message;
+    status.dataset.tone = tone || "neutral";
+  }
+
+  function syncComposer() {
+    const input = $("whatsapp-conversation-draft");
+    const button = $("whatsapp-conversation-send");
+    const count = $("whatsapp-conversation-compose-count");
+    if (!input || !button) return;
+    const text = input.value.trim();
+    const locked = state.uncertainConversationIds.has(state.selectedId);
+    input.disabled = state.busy || state.textSending || !state.selectedId || locked;
+    button.disabled = state.busy || state.textSending || !state.selectedId || !text || text.length > 4000 || locked;
+    if (count) count.textContent = input.value.length + " / 4000";
+    if (locked) setComposerStatus("Envio com resultado incerto. Confira o histórico antes de enviar outra mensagem.", "error");
+  }
+
+  function makeTextIdempotencyKey() {
+    const id = window.crypto && typeof window.crypto.randomUUID === "function"
+      ? window.crypto.randomUUID()
+      : Date.now() + ":" + Math.random().toString(36).slice(2, 14);
+    return "admin-text:" + id;
+  }
+
+  function sendErrorLabel(error) {
+    const code = error && error.code || "";
+    if (code === "service_window_closed") return "Janela de atendimento de 24 horas encerrada.";
+    if (code === "human_send_not_homologated") return "Este canal ainda não está homologado para atendimento humano.";
+    if (code === "meta_transport_not_configured") return "O envio Meta não está configurado neste ambiente.";
+    if (code === "meta_canary_destination_blocked") return "Este contato não está liberado pelo controle de envio do canal.";
+    if (code === "rate_limited") return "Limite de mensagens atingido. Aguarde antes de tentar novamente.";
+    if (code === "meta_send_uncertain" || code === "duplicate_not_dispatchable") return "Resultado do envio incerto. Confira o histórico antes de reenviar.";
+    return error instanceof Error ? error.message : "Não foi possível enviar a mensagem.";
+  }
+
+  async function sendConversationText(event) {
+    event.preventDefault();
+    const conversationId = state.selectedId;
+    const input = $("whatsapp-conversation-draft");
+    const text = input ? input.value.trim() : "";
+    if (!conversationId || !text || state.textSending || state.uncertainConversationIds.has(conversationId)) return;
+    if (text.length > 4000) {
+      setComposerStatus("A mensagem excede o limite de 4.000 caracteres.", "error");
+      return;
+    }
+    if (!state.pendingTextKey || state.pendingTextValue !== text || state.pendingTextConversationId !== conversationId) {
+      state.pendingTextKey = makeTextIdempotencyKey();
+      state.pendingTextValue = text;
+      state.pendingTextConversationId = conversationId;
+    }
+    const idempotencyKey = state.pendingTextKey;
+    state.textSending = true;
+    setComposerStatus("Enviando pelo canal oficial…", "neutral");
+    syncComposer();
+    try {
+      const result = await request("whatsapp_conversation_send_text", {
+        conversation_id: conversationId,
+        text,
+        idempotency_key: idempotencyKey,
+      });
+      if (state.pendingTextKey === idempotencyKey) {
+        state.pendingTextKey = "";
+        state.pendingTextValue = "";
+        state.pendingTextConversationId = "";
+      }
+      if (state.selectedId === conversationId) {
+        input.value = "";
+        setComposerStatus(result.duplicate ? "Mensagem já registrada anteriormente." : "Mensagem aceita pelo provedor; o histórico mostrará a confirmação.", "success");
+        setStatus("Mensagem aceita no canal oficial. Atualizando o histórico…");
+      }
+      state.textSending = false;
+      syncComposer();
+      if (state.selectedId === conversationId) await loadConversation(conversationId);
+    } catch (error) {
+      const uncertain = error?.data?.uncertain === true
+        || error?.code === "meta_send_uncertain"
+        || error?.code === "duplicate_not_dispatchable"
+        || (!error?.status)
+        || (error?.status >= 500 && error?.data?.uncertain !== false);
+      if (uncertain) state.uncertainConversationIds.add(conversationId);
+      else if (state.pendingTextKey === idempotencyKey) {
+        state.pendingTextKey = "";
+        state.pendingTextValue = "";
+        state.pendingTextConversationId = "";
+      }
+      if (state.selectedId === conversationId) setComposerStatus(sendErrorLabel(error), "error");
+      state.textSending = false;
+      syncComposer();
+    }
+  }
   function addOption(select, value, label) {
     const option = document.createElement("option");
     option.value = value;
@@ -339,6 +435,7 @@
       state.favoriteIds.clear();
       state.favoritesAvailable = false;
       $("whatsapp-conversation-header").hidden = true;
+      $("whatsapp-conversation-compose").hidden = true;
       $("whatsapp-conversation-messages").replaceChildren();
       $("whatsapp-conversation-empty").hidden = false;
       setStatus("Buscando conversas…");
@@ -382,6 +479,11 @@
     if (!older) {
       state.selectedId = id;
       $("whatsapp-conversation-header").hidden = true;
+      $("whatsapp-conversation-compose").hidden = true;
+      $("whatsapp-conversation-draft").value = "";
+      state.pendingTextKey = "";
+      state.pendingTextValue = "";
+      state.pendingTextConversationId = "";
       $("whatsapp-conversation-empty").hidden = false;
       $("whatsapp-conversation-messages").replaceChildren();
       for (const button of document.querySelectorAll(".whatsapp-conversation-card")) {
@@ -393,6 +495,10 @@
       if (state.selectedId !== id) return;
       renderHeader(data.conversation || {});
       renderMessages(data.messages || [], older);
+      if (!older) {
+        $("whatsapp-conversation-compose").hidden = false;
+        setComposerStatus("Envio sujeito à janela de 24 horas e à homologação do canal.", "neutral");
+      }
       state.before = data.next_before || null;
       $("whatsapp-conversation-older").hidden = !state.before;
       setStatus("Histórico carregado em modo de consulta.");
@@ -403,9 +509,20 @@
       } else setStatus(error instanceof Error ? error.message : "Não foi possível carregar mensagens anteriores.");
     } finally {
       state.busy = false;
+      syncComposer();
     }
   }
 
+  $("whatsapp-conversation-compose")?.addEventListener("submit", sendConversationText);
+  $("whatsapp-conversation-draft")?.addEventListener("input", () => {
+    const text = $("whatsapp-conversation-draft").value.trim();
+    if (state.pendingTextValue !== text || state.pendingTextConversationId !== state.selectedId) {
+      state.pendingTextKey = "";
+      state.pendingTextValue = text;
+      state.pendingTextConversationId = state.selectedId;
+    }
+    syncComposer();
+  });
   $("whatsapp-conversations-refresh")?.addEventListener("click", () => loadConversations());
   $("whatsapp-conversation-search-button")?.addEventListener("click", () => loadConversations());
   $("whatsapp-conversation-search")?.addEventListener("keydown", (event) => { if (event.key === "Enter") loadConversations(); });
