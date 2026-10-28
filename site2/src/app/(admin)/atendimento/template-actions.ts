@@ -1,12 +1,11 @@
-"use server";
+"use client";
 
-import { requireAdminSession } from "@/lib/auth/require-admin-session";
 import {
 	type AttendanceTemplateListResult,
 	type AttendanceTemplateSendResult,
 	listAdminAttendanceTemplates,
 	sendAdminAttendanceTemplate,
-} from "@/lib/supabase/admin-attendance-templates";
+} from "@/lib/supabase/browser-admin-attendance-templates";
 
 const UUID_PATTERN =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -20,7 +19,6 @@ function record(value: unknown): Record<string, unknown> | null {
 export async function listAttendanceTemplates(
 	value: unknown,
 ): Promise<AttendanceTemplateListResult> {
-	await requireAdminSession();
 	const accountId = record(value)?.accountId;
 	if (typeof accountId !== "string" || !UUID_PATTERN.test(accountId)) {
 		return { ok: false, error: "unavailable" };
@@ -31,7 +29,6 @@ export async function listAttendanceTemplates(
 export async function sendAttendanceTemplate(
 	value: unknown,
 ): Promise<AttendanceTemplateSendResult> {
-	await requireAdminSession();
 	const input = record(value);
 	if (!input || typeof input.accountId !== "string") {
 		return { ok: false, error: "invalid_account_id" };

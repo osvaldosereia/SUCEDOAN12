@@ -1,7 +1,6 @@
-"use server";
+"use client";
 
-import { redirect } from "next/navigation";
-import { sendAttendanceTextThroughGateway } from "@/lib/supabase/admin-attendance";
+import { sendAttendanceTextThroughGateway } from "@/lib/supabase/browser-admin-attendance";
 
 const UUID =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -34,6 +33,10 @@ function inboxHref(input: {
 	return `/atendimento?${params.toString()}`;
 }
 
+function navigate(path: string): void {
+	window.location.assign(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}${path}`);
+}
+
 export async function sendAttendanceText(formData: FormData): Promise<void> {
 	const accountId = String(formData.get("account_id") ?? "");
 	const conversationId = String(formData.get("conversation_id") ?? "");
@@ -44,10 +47,11 @@ export async function sendAttendanceText(formData: FormData): Promise<void> {
 	const idempotencyKey = String(formData.get("idempotency_key") ?? "");
 
 	if (!UUID.test(accountId) || !UUID.test(conversationId)) {
-		redirect("/atendimento?notice=invalid_conversation");
+		navigate("/atendimento?notice=invalid_conversation");
+		return;
 	}
 	if (!text || text.length > 4000 || !UUID.test(idempotencyKey)) {
-		redirect(
+		navigate(
 			inboxHref({
 				accountId,
 				conversationId,
@@ -55,6 +59,7 @@ export async function sendAttendanceText(formData: FormData): Promise<void> {
 				notice: "invalid_text",
 			}),
 		);
+		return;
 	}
 
 	const result = await sendAttendanceTextThroughGateway({
@@ -68,5 +73,5 @@ export async function sendAttendanceText(formData: FormData): Promise<void> {
 			? result.error
 			: "unavailable";
 
-	redirect(inboxHref({ accountId, conversationId, search, notice }));
+	navigate(inboxHref({ accountId, conversationId, search, notice }));
 }

@@ -6,7 +6,7 @@ import { useRef, useState } from "react";
 import type {
 	AttendanceLibraryItem,
 	AttendanceQuickReply,
-} from "@/lib/supabase/admin-attendance";
+} from "@/lib/supabase/browser-admin-attendance";
 import { createClient } from "@/lib/supabase/client";
 import { sendAttendanceText } from "./actions";
 import { InteractiveMessageComposer } from "./interactive-message-composer";

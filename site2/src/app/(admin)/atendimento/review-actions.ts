@@ -1,13 +1,11 @@
-"use server";
+"use client";
 
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { acknowledgeAdminIdentityReview } from "@/lib/supabase/admin-identity-reviews";
-import { sendAdminBasketFlow } from "@/lib/supabase/admin-order-flow";
+import { acknowledgeAdminIdentityReview } from "@/lib/supabase/browser-admin-identity-reviews";
+import { sendAdminBasketFlow } from "@/lib/supabase/browser-admin-order-flow";
 import {
 	prepareAdminCatalogIntent,
 	sendAdminCatalogConfirmation,
-} from "@/lib/supabase/admin-order-intents";
+} from "@/lib/supabase/browser-admin-order-intents";
 
 const UUID =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -20,7 +18,11 @@ const PAYMENT_METHODS = new Set([
 	"meal_card",
 ]);
 
-function returnToCatalogIntent(formData: FormData, notice: string): never {
+function navigate(path: string): void {
+	window.location.assign(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}${path}`);
+}
+
+function returnToCatalogIntent(formData: FormData, notice: string): void {
 	const params = new URLSearchParams();
 	const accountId = String(formData.get("account_id") ?? "");
 	const conversationId = String(formData.get("conversation_id") ?? "");
@@ -31,10 +33,10 @@ function returnToCatalogIntent(formData: FormData, notice: string): never {
 	if (UUID.test(conversationId)) params.set("conversation_id", conversationId);
 	if (search) params.set("search", search);
 	params.set("notice", notice);
-	redirect(`/atendimento?${params.toString()}#pedidos-whatsapp`);
+	navigate(`/atendimento?${params.toString()}#pedidos-whatsapp`);
 }
 
-function returnToFlow(formData: FormData, notice: string): never {
+function returnToFlow(formData: FormData, notice: string): void {
 	const params = new URLSearchParams();
 	const accountId = String(formData.get("account_id") ?? "");
 	const conversationId = String(formData.get("conversation_id") ?? "");
@@ -45,16 +47,16 @@ function returnToFlow(formData: FormData, notice: string): never {
 	if (UUID.test(conversationId)) params.set("conversation_id", conversationId);
 	if (search) params.set("search", search);
 	params.set("notice", notice);
-	redirect(`/atendimento?${params.toString()}#enviar-flow`);
+	navigate(`/atendimento?${params.toString()}#enviar-flow`);
 }
 
-function returnToReview(state: string, notice: string): never {
+function returnToReview(state: string, notice: string): void {
 	const safeState = state === "acknowledged" ? "acknowledged" : "pending";
 	const params = new URLSearchParams({
 		identity_state: safeState,
 		identity_notice: notice,
 	});
-	redirect(`/atendimento?${params.toString()}#identidades-sem-telefone`);
+	navigate(`/atendimento?${params.toString()}#identidades-sem-telefone`);
 }
 
 export async function acknowledgeIdentityReview(
@@ -62,14 +64,13 @@ export async function acknowledgeIdentityReview(
 ): Promise<void> {
 	const eventId = String(formData.get("event_id") ?? "");
 	const state = String(formData.get("identity_state") ?? "pending");
-	if (!UUID.test(eventId)) returnToReview(state, "invalid_event");
+	if (!UUID.test(eventId)) return returnToReview(state, "invalid_event");
 
 	const result = await acknowledgeAdminIdentityReview(eventId);
 	if (result.ok) {
-		revalidatePath("/atendimento");
-		returnToReview("acknowledged", "reviewed");
+		return returnToReview("acknowledged", "reviewed");
 	}
-	returnToReview(state, result.error ?? "unavailable");
+	return returnToReview(state, result.error ?? "unavailable");
 }
 
 export async function prepareCatalogOrderIntent(
@@ -89,7 +90,7 @@ export async function prepareCatalogOrderIntent(
 		customerName.length > 180 ||
 		(addressId !== "" && !UUID.test(addressId))
 	) {
-		returnToCatalogIntent(formData, "catalog_preparation_invalid");
+		return returnToCatalogIntent(formData, "catalog_preparation_invalid");
 	}
 	const newAddress = addressId
 		? null
@@ -120,7 +121,7 @@ export async function prepareCatalogOrderIntent(
 				Number(maxLength),
 		)
 	) {
-		returnToCatalogIntent(formData, "catalog_preparation_invalid");
+		return returnToCatalogIntent(formData, "catalog_preparation_invalid");
 	}
 	const result = await prepareAdminCatalogIntent({
 		intentId,
@@ -130,10 +131,9 @@ export async function prepareCatalogOrderIntent(
 		newAddress,
 	});
 	if (result.ok) {
-		revalidatePath("/atendimento");
-		returnToCatalogIntent(formData, "catalog_prepared");
+		return returnToCatalogIntent(formData, "catalog_prepared");
 	}
-	returnToCatalogIntent(formData, result.error ?? "unavailable");
+	return returnToCatalogIntent(formData, result.error ?? "unavailable");
 }
 
 export async function sendCatalogOrderConfirmation(
@@ -141,13 +141,12 @@ export async function sendCatalogOrderConfirmation(
 ): Promise<void> {
 	const intentId = String(formData.get("intent_id") ?? "");
 	if (!UUID.test(intentId)) {
-		returnToCatalogIntent(formData, "catalog_confirmation_invalid");
+		return returnToCatalogIntent(formData, "catalog_confirmation_invalid");
 	}
 	const result = await sendAdminCatalogConfirmation(intentId);
 	if (!result.ok) {
-		returnToCatalogIntent(formData, result.error ?? "unavailable");
+		return returnToCatalogIntent(formData, result.error ?? "unavailable");
 	}
-	revalidatePath("/atendimento");
 	const notice =
 		result.issueCode === "service_window_closed"
 			? "service_window_closed"
@@ -162,7 +161,7 @@ export async function sendCatalogOrderConfirmation(
 							: result.status === "failed"
 								? "catalog_confirmation_failed"
 								: "catalog_confirmation_needs_review";
-	returnToCatalogIntent(formData, notice);
+	return returnToCatalogIntent(formData, notice);
 }
 
 export async function sendBasketFlow(formData: FormData): Promise<void> {
@@ -174,15 +173,14 @@ export async function sendBasketFlow(formData: FormData): Promise<void> {
 		!UUID.test(basketTemplateId) ||
 		!UUID.test(idempotencyKey)
 	) {
-		returnToFlow(formData, "flow_send_request_invalid");
+		return returnToFlow(formData, "flow_send_request_invalid");
 	}
 	const result = await sendAdminBasketFlow({
 		conversationId,
 		basketTemplateId,
 		idempotencyKey,
 	});
-	if (!result.ok) returnToFlow(formData, result.error);
-	revalidatePath("/atendimento");
+	if (!result.ok) return returnToFlow(formData, result.error);
 	const notice =
 		result.status === "sent"
 			? "flow_send_sent"
@@ -191,5 +189,5 @@ export async function sendBasketFlow(formData: FormData): Promise<void> {
 				: result.status === "needs_review"
 					? "flow_send_needs_review"
 					: "flow_send_failed";
-	returnToFlow(formData, notice);
+	return returnToFlow(formData, notice);
 }

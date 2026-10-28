@@ -1,12 +1,11 @@
-"use server";
+"use client";
 
-import { requireAdminSession } from "@/lib/auth/require-admin-session";
 import {
 	completeAttendanceLibraryUploadThroughGateway,
 	getAttendanceMessageMedia,
 	prepareAttendanceLibraryUploadThroughGateway,
 	sendAttendanceLibraryItemThroughGateway,
-} from "@/lib/supabase/admin-attendance";
+} from "@/lib/supabase/browser-admin-attendance";
 
 const LIBRARY_ERROR_CODES = new Set([
 	"invalid_media_file",
@@ -53,7 +52,6 @@ function mediaError(error: string): string {
 }
 
 export async function loadAttendanceMedia(messageId: string) {
-	await requireAdminSession();
 	try {
 		return await getAttendanceMessageMedia(messageId);
 	} catch {
@@ -67,7 +65,6 @@ export async function prepareAttendanceMediaUpload(input: {
 	filename: string;
 	sizeBytes: number;
 }) {
-	await requireAdminSession();
 	try {
 		const result = await prepareAttendanceLibraryUploadThroughGateway(input);
 		return result.ok
@@ -82,7 +79,6 @@ export async function completeAttendanceMediaUpload(input: {
 	itemId: string;
 	sizeBytes: number;
 }) {
-	await requireAdminSession();
 	try {
 		const result = await completeAttendanceLibraryUploadThroughGateway(input);
 		return result.ok
@@ -99,7 +95,6 @@ export async function sendAttendanceMedia(input: {
 	caption: string;
 	idempotencyKey: string;
 }) {
-	await requireAdminSession();
 	try {
 		const result = await sendAttendanceLibraryItemThroughGateway(input);
 		return result.ok

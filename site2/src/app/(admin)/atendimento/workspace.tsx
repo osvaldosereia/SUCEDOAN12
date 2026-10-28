@@ -1,3 +1,5 @@
+"use client";
+
 import {
 	AlertCircle,
 	ArrowUpRight,
@@ -7,6 +9,8 @@ import {
 	UserRound,
 } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import {
 	type AttendanceContext,
 	type AttendanceConversation,
@@ -19,17 +23,17 @@ import {
 	getAttendanceLibraryItems,
 	getAttendanceQueue,
 	getAttendanceQuickReplies,
-} from "@/lib/supabase/admin-attendance";
-import { getAdminFlowConfiguration } from "@/lib/supabase/admin-flow-configuration";
+} from "@/lib/supabase/browser-admin-attendance";
+import { getAdminFlowConfiguration } from "@/lib/supabase/browser-admin-flow-configuration";
 import {
 	type AdminIdentityReview,
 	type AdminIdentityReviewState,
 	getAdminIdentityReviews,
-} from "@/lib/supabase/admin-identity-reviews";
+} from "@/lib/supabase/browser-admin-identity-reviews";
 import {
 	type AdminWhatsAppOrderIntent,
 	getAdminWhatsAppOrderIntents,
-} from "@/lib/supabase/admin-order-intents";
+} from "@/lib/supabase/browser-admin-order-intents";
 import { MessageComposer } from "./message-composer";
 import { MessageList } from "./message-list";
 import { MessageMedia } from "./message-media";
@@ -1133,11 +1137,46 @@ function CatalogIntentPreparation({
 	);
 }
 
-export async function InboxWorkspace({
-	searchParams,
-}: {
-	searchParams: SearchParams;
-}) {
+export function InboxWorkspace() {
+	const [content, setContent] = useState<ReactNode | null>(null);
+	useEffect(() => {
+		const searchParams = Object.fromEntries(
+			new URLSearchParams(window.location.search).entries(),
+		) as SearchParams;
+		void loadInboxWorkspace(searchParams)
+			.then(setContent)
+			.catch(() =>
+				setContent(
+					<div className="page-stack">
+						<div className="page-heading">
+							<div>
+								<p className="eyebrow">ROTINA</p>
+								<h1>Atendimento</h1>
+							</div>
+						</div>
+						<ErrorPanel message="Não foi possível carregar o atendimento. Tente novamente." />
+					</div>,
+				),
+			);
+	}, []);
+	return (
+		content ?? (
+			<div className="page-stack inbox-page" aria-busy="true">
+				<div className="page-heading">
+					<div>
+						<p className="eyebrow">ROTINA</p>
+						<h1>Atendimento</h1>
+					</div>
+				</div>
+				<p role="status">Carregando conversas…</p>
+			</div>
+		)
+	);
+}
+
+async function loadInboxWorkspace(
+	searchParams: SearchParams,
+): Promise<ReactNode> {
 	const search = value(searchParams.search).trim().slice(0, 80);
 	const notice = noticeText(value(searchParams.notice));
 	const identityState: AdminIdentityReviewState =
@@ -1274,7 +1313,11 @@ export async function InboxWorkspace({
 			)}
 
 			<div className="inbox-filters-card">
-				<form action="/atendimento" className="inbox-filter-form" method="get">
+				<form
+					action={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/atendimento`}
+					className="inbox-filter-form"
+					method="get"
+				>
 					<label>
 						<span>Número de atendimento</span>
 						<select defaultValue={account.id} name="account_id">

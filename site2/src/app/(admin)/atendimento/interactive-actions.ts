@@ -1,11 +1,10 @@
-"use server";
+"use client";
 
-import { requireAdminSession } from "@/lib/auth/require-admin-session";
 import {
 	type AttendanceInteractiveInput,
 	type AttendanceInteractiveResult,
 	sendAdminAttendanceInteractive,
-} from "@/lib/supabase/admin-attendance-interactive";
+} from "@/lib/supabase/browser-admin-attendance-interactive";
 
 const UUID_PATTERN =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -96,7 +95,6 @@ function normalize(value: unknown): AttendanceInteractiveInput | null {
 export async function sendAttendanceInteractive(
 	value: unknown,
 ): Promise<AttendanceInteractiveResult> {
-	await requireAdminSession();
 	const input = normalize(value);
 	if (!input) return { ok: false, error: "interactive_invalid" };
 	return sendAdminAttendanceInteractive(input);
