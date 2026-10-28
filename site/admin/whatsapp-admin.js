@@ -124,8 +124,58 @@
       + campaignDeliveryMarkup(item)
       + '<small class="whatsapp-campaign-snapshot">' + esc(campaignSnapshotLabel(item)) + "</small>"
       + campaignExclusionMarkup(item)
+      + (item.id ? '<button class="button button-outline whatsapp-campaign-preview-button" type="button" data-campaign-preview="' + esc(item.id) + '" aria-expanded="false">Prévia do público</button><div class="whatsapp-campaign-preview" data-campaign-preview-result hidden role="status" aria-live="polite"></div>' : "")
       + '</div><div class="whatsapp-record-side"><span class="whatsapp-record-status ' + statusClass(item.status) + '">'
       + esc(human(item.status)) + "</span><time>" + esc(dateLabel(when)) + "</time></div></article>";
+  }
+
+  async function loadCampaignPreview(button) {
+    const campaignId = String(button?.dataset?.campaignPreview || "");
+    const row = button?.closest(".whatsapp-campaign-row");
+    const panel = row?.querySelector("[data-campaign-preview-result]");
+    if (!campaignId || !panel || button.disabled) return;
+    button.disabled = true;
+    button.setAttribute("aria-expanded", "true");
+    panel.hidden = false;
+    panel.textContent = "Calculando prévia dos filtros atuais…";
+    try {
+      const response = await fetch(`${supabase}/functions/v1/site-admin-v1`, {
+        method: "POST",
+        headers: {
+          apikey: publishableKey,
+          "x-admin-code": window.DonaAdminAuth?.getCode?.() || "",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ action: "whatsapp_campaign_preview", campaign_id: campaignId }),
+        cache: "no-store",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok === false) throw new Error(data.message || data.error || "Não foi possível calcular a prévia.");
+      const preview = data.preview || {};
+      const exclusions = preview.exclusion_counts || {};
+      const formatCount = (value) => Math.max(0, Math.trunc(Number(value) || 0)).toLocaleString("pt-BR");
+      const reasons = [
+        ["Opt-out", exclusions.opted_out_count],
+        ["Sem consentimento", exclusions.no_consent_count],
+        ["Cadastro inativo", exclusions.inactive_customer_count],
+        ["Telefone inválido", exclusions.invalid_phone_count],
+        ["Telefone duplicado", exclusions.duplicate_phone_count],
+      ].map(([label, value]) => '<span class="whatsapp-campaign-preview-chip">' + esc(label) + ': <strong>' + formatCount(value) + '</strong></span>').join("");
+      const template = data.template || {};
+      const templateText = template.sendable
+        ? "Modelo aprovado: " + [template.name, template.language, human(template.category)].filter(Boolean).join(" · ")
+        : "Modelo não liberado: " + (template.error === "template_not_sendable" ? "não aprovado ou indisponível" : template.error === "account_not_available" ? "canal indisponível" : "status não confirmado");
+      panel.innerHTML = '<div class="whatsapp-campaign-preview-counts">'
+        + '<strong>' + formatCount(preview.eligible_count) + ' aptos pelas regras atuais</strong>'
+        + '<span>' + formatCount(preview.excluded_count) + ' excluídos de ' + formatCount(preview.found_count) + ' encontrados pelos filtros</span>'
+        + '</div><div class="whatsapp-campaign-preview-reasons">' + reasons + '</div>'
+        + '<small class="whatsapp-campaign-preview-template">' + esc(templateText) + '</small>'
+        + '<p>Prévia somente de contagens: não congela a lista nem envia mensagens. As flags atuais não substituem evidência individual; revise as origens antes de uma campanha ampla.</p>';
+    } catch (error) {
+      panel.textContent = error instanceof Error ? error.message : "Não foi possível calcular a prévia.";
+    } finally {
+      button.disabled = false;
+    }
   }
 
   function render(data) {
@@ -335,6 +385,10 @@
     }
   }
 
+  $("whatsapp-campaigns-content")?.addEventListener("click", (event) => {
+    const button = event.target instanceof Element ? event.target.closest("[data-campaign-preview]") : null;
+    if (button) loadCampaignPreview(button);
+  });
   document.querySelectorAll("[data-whatsapp-overview-refresh]").forEach((button) => button.addEventListener("click", () => loadOverview(true)));
   $("whatsapp-ana-refresh")?.addEventListener("click", () => loadAnaStatus(true));
   window.DonaWhatsAppAdmin = { loadOverview, loadAnaStatus };
