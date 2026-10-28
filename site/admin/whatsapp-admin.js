@@ -10,14 +10,16 @@
 
   function human(value) {
     const labels = {
-      approved: "Aprovado", approved_by_meta: "Aprovado", active: "Ativa", completed: "Concluída",
-      failed: "Falhou", pending: "Pendente", submitted: "Enviada para análise", in_review: "Em análise",
-      paused: "Pausada", scheduled: "Agendada", draft: "Rascunho", running: "Em andamento",
-      sent: "Processada", skipped: "Ignorada", handoff: "Atendimento humano",
-      allow: "Permitido", block: "Bloqueado", reply: "Resposta automática",
+      approved: "Aprovado", approved_by_meta: "Aprovado", meta_approved: "Aprovado",
+      active: "Ativa", completed: "Concluída", failed: "Falhou", rejected: "Rejeitado",
+      cancelled: "Cancelada", canceled: "Cancelada", pending: "Pendente", submitted: "Enviada para análise",
+      in_review: "Em análise", paused: "Pausada", scheduled: "Agendada", draft: "Rascunho",
+      running: "Em andamento", processing: "Em processamento", sent: "Processada", skipped: "Ignorada",
+      handoff: "Atendimento humano", allow: "Permitido", block: "Bloqueado", reply: "Resposta automática",
+      marketing: "Marketing", utility: "Utilidade", authentication: "Autenticação",
     };
     const raw = String(value || "").trim();
-    return labels[raw.toLowerCase()] || raw.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) || "—";
+    return labels[raw.toLowerCase()] || raw.toLowerCase().replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) || "—";
   }
 
   function dateLabel(value) {
@@ -26,12 +28,29 @@
     return Number.isNaN(date.getTime()) ? "Sem data" : new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(date);
   }
 
+  function statusClass(value) {
+    const code = String(value || "").toLowerCase();
+    if (["approved", "approved_by_meta", "meta_approved"].includes(code)) return "approved";
+    if (["active", "completed"].includes(code)) return code;
+    if (["failed", "rejected", "cancelled", "canceled"].includes(code)) return code === "failed" ? "failed" : "rejected";
+    return "";
+  }
+
   function flag(label, enabled) {
-    return `<span class="whatsapp-flag ${enabled ? "on" : "off"}">${esc(label)} · ${enabled ? "ligado" : "desligado"}</span>`;
+    return '<span class="whatsapp-flag ' + (enabled ? "on" : "off") + '">' + esc(label) + " · " + (enabled ? "ligado" : "desligado") + "</span>";
+  }
+
+  function recordRow(title, subtitle, status, when, extra) {
+    return '<article class="whatsapp-record-row"><div class="whatsapp-record-main"><h3>' + esc(title || "Registro") + '</h3><p>' + esc(subtitle || "Sem detalhes") + '</p></div><div class="whatsapp-record-side"><span class="whatsapp-record-status ' + statusClass(status) + '">' + esc(human(status)) + '</span>' + (extra ? '<small>' + esc(extra) + '</small>' : "") + '<time>' + esc(dateLabel(when)) + '</time></div></article>';
+  }
+
+  function emptyList(message) {
+    return '<p class="whatsapp-overview-empty">' + esc(message) + "</p>";
   }
 
   function render(data) {
     const channels = Array.isArray(data.channels) ? data.channels : [];
+    const templateItems = Array.isArray(data.templates?.items) ? data.templates.items : [];
     const campaigns = Array.isArray(data.campaigns?.recent) ? data.campaigns.recent : [];
     const ana = Array.isArray(data.ana?.recent) ? data.ana.recent : [];
     const channelMarkup = channels.length ? channels.map((channel) => `
@@ -47,11 +66,31 @@
           ${flag("Campanhas", channel.campaigns_enabled)}
           ${flag("Envio humano", channel.human_send_enabled)}
         </div>
-      </article>`).join("") : '<p class="whatsapp-overview-empty">Nenhum canal cadastrado.</p>';
-    const campaignMarkup = campaigns.length ? campaigns.map((item) => `
-      <div class="whatsapp-activity-item"><div><strong>${esc(item.name)}</strong><p class="admin-muted">${esc(item.channel || "Canal não informado")} · ${esc(human(item.status))}</p></div><time>${esc(dateLabel(item.scheduled_for || item.created_at))}</time></div>`).join("") : '<p class="whatsapp-overview-empty">Nenhuma campanha cadastrada.</p>';
-    const anaMarkup = ana.length ? ana.map((item) => `
-      <div class="whatsapp-activity-item"><div><strong>${esc(human(item.decision || item.status))}</strong><p class="admin-muted">${esc(item.channel || "Canal não informado")} · ${esc(human(item.status))}</p></div><time>${esc(dateLabel(item.created_at))}</time></div>`).join("") : '<p class="whatsapp-overview-empty">Sem decisões recentes da ANA.</p>';
+      </article>`).join("") : emptyList("Nenhum canal cadastrado.");
+    const campaignSummary = campaigns.slice(0, 6).map((item) => recordRow(item.name, (item.channel || "Canal não informado") + " · " + human(item.status), item.status, item.scheduled_for || item.created_at, item.scheduled_for ? "Agendada" : "Cadastro"));
+    const anaSummary = ana.slice(0, 6).map((item) => recordRow(human(item.decision || item.status), (item.channel || "Canal não informado") + " · " + human(item.status), item.status, item.created_at));
+    const templatesMarkup = templateItems.length ? templateItems.map((item) => recordRow(
+      item.name,
+      [item.channel, human(item.category), item.language].filter(Boolean).join(" · "),
+      item.status,
+      item.last_synced_at || item.updated_at,
+      item.quality_rating ? "Qualidade: " + human(item.quality_rating) : "Sem avaliação de qualidade",
+    )).join("") : emptyList("Nenhum modelo cadastrado.");
+    const campaignsMarkup = campaigns.length ? campaigns.map((item) => recordRow(
+      item.name,
+      (item.channel || "Canal não informado") + (item.scheduled_for ? " · Agendada para " + dateLabel(item.scheduled_for) : ""),
+      item.status,
+      item.scheduled_for || item.started_at || item.created_at,
+      item.started_at ? "Início: " + dateLabel(item.started_at) : "Criada: " + dateLabel(item.created_at),
+    )).join("") : emptyList("Nenhuma campanha cadastrada.");
+    const anaMarkup = ana.length ? ana.map((item) => recordRow(
+      human(item.decision || item.status),
+      (item.channel || "Canal não informado") + " · " + human(item.status),
+      item.status,
+      item.created_at,
+      "Decisão registrada",
+    )).join("") : emptyList("Sem decisões recentes da ANA.");
+
     $("whatsapp-overview").innerHTML = `
       <div class="whatsapp-overview-grid">
         <article class="whatsapp-overview-card"><h3>Modelos</h3><strong class="whatsapp-metric">${esc(data.templates?.approved || 0)} / ${esc(data.templates?.total || 0)}</strong><p class="admin-muted">aprovados pela Meta</p></article>
@@ -60,10 +99,38 @@
       </div>
       <section class="whatsapp-overview-card"><h3>Canais e recursos habilitados</h3><div class="whatsapp-channel-list">${channelMarkup}</div></section>
       <div class="whatsapp-overview-grid">
-        <section class="whatsapp-overview-card"><h3>Campanhas recentes</h3><div class="whatsapp-activity-list">${campaignMarkup}</div></section>
-        <section class="whatsapp-overview-card"><h3>ANA · decisões recentes</h3><div class="whatsapp-activity-list">${anaMarkup}</div></section>
+        <section class="whatsapp-overview-card"><h3>Campanhas recentes</h3><div class="whatsapp-activity-list">${campaignSummary.length ? campaignSummary.join("") : emptyList("Nenhuma campanha cadastrada.")}</div></section>
+        <section class="whatsapp-overview-card"><h3>ANA · decisões recentes</h3><div class="whatsapp-activity-list">${anaSummary.length ? anaSummary.join("") : emptyList("Sem decisões recentes da ANA.")}</div></section>
       </div>`;
-    $("whatsapp-overview-status").textContent = `Resumo atualizado em ${dateLabel(data.generated_at)}. Os indicadores de envio representam configurações do canal.`;
+
+    const anaEnabled = channels.filter((channel) => channel.ana_enabled).length;
+    $("whatsapp-ana-content").innerHTML = `
+      <div class="whatsapp-record-summary">
+        <article class="whatsapp-overview-card"><h3>Canais com ANA</h3><strong class="whatsapp-metric">${esc(anaEnabled)} / ${esc(channels.length)}</strong><p class="admin-muted">configuração do canal</p></article>
+        <article class="whatsapp-overview-card"><h3>Registros</h3><strong class="whatsapp-metric">${esc(data.ana?.total || 0)}</strong><p class="admin-muted">fora de simulação</p></article>
+        <article class="whatsapp-overview-card"><h3>Recentes</h3><strong class="whatsapp-metric">${esc(ana.length)}</strong><p class="admin-muted">decisões carregadas</p></article>
+      </div>
+      <section class="whatsapp-overview-card"><h3>ANA por canal</h3><div class="whatsapp-channel-list">${channels.length ? channels.map((channel) => '<article class="whatsapp-channel"><div class="whatsapp-channel-head"><div><h3>' + esc(channel.name) + '</h3><p class="admin-muted">Entrada: ' + esc(human(channel.inbound_provider)) + ' · Saída: ' + esc(human(channel.outbound_provider)) + '</p></div></div><div class="whatsapp-channel-flags">' + flag("ANA", channel.ana_enabled) + flag("Captura", channel.capture_enabled) + '</div></article>').join("") : emptyList("Nenhum canal cadastrado.")}</div></section>
+      <section class="whatsapp-overview-card"><h3>Decisões recentes</h3><div class="whatsapp-record-list">${anaMarkup || emptyList("Sem decisões recentes da ANA.")}</div></section>`;
+
+    $("whatsapp-templates-content").innerHTML = `
+      <div class="whatsapp-record-summary">
+        <article class="whatsapp-overview-card"><h3>Aprovados pela Meta</h3><strong class="whatsapp-metric">${esc(data.templates?.approved || 0)}</strong><p class="admin-muted">disponíveis no catálogo</p></article>
+        <article class="whatsapp-overview-card"><h3>Total cadastrado</h3><strong class="whatsapp-metric">${esc(data.templates?.total || 0)}</strong><p class="admin-muted">modelos encontrados</p></article>
+        <article class="whatsapp-overview-card"><h3>Lista carregada</h3><strong class="whatsapp-metric">${esc(templateItems.length)}</strong><p class="admin-muted">mais recentes</p></article>
+      </div>
+      <section class="whatsapp-overview-card"><h3>Catálogo de modelos</h3><div class="whatsapp-record-list">${templatesMarkup}</div></section>`;
+
+    $("whatsapp-campaigns-content").innerHTML = `
+      <div class="whatsapp-record-summary">
+        <article class="whatsapp-overview-card"><h3>Campanhas cadastradas</h3><strong class="whatsapp-metric">${esc(data.campaigns?.total || 0)}</strong><p class="admin-muted">registros no Supabase</p></article>
+        <article class="whatsapp-overview-card"><h3>Lista carregada</h3><strong class="whatsapp-metric">${esc(campaigns.length)}</strong><p class="admin-muted">mais recentes</p></article>
+        <article class="whatsapp-overview-card"><h3>Agendadas</h3><strong class="whatsapp-metric">${esc(campaigns.filter((item) => item.scheduled_for && !["completed", "failed", "cancelled"].includes(String(item.status || "").toLowerCase())).length)}</strong><p class="admin-muted">na lista recente</p></article>
+      </div>
+      <section class="whatsapp-overview-card"><h3>Campanhas recentes</h3><div class="whatsapp-record-list">${campaignsMarkup}</div></section>`;
+
+    const refreshed = "Dados atualizados em " + dateLabel(data.generated_at) + ". Flags de envio representam configurações do canal; esta consulta não envia mensagens.";
+    for (const node of document.querySelectorAll("[data-whatsapp-overview-status]")) node.textContent = refreshed;
   }
 
   async function loadOverview(force) {
@@ -71,7 +138,7 @@
     const status = $("whatsapp-overview-status");
     if (!status || !supabase || !publishableKey) return;
     loading = true;
-    status.textContent = "Consultando canais e configurações…";
+    for (const node of document.querySelectorAll("[data-whatsapp-overview-status]")) node.textContent = "Consultando dados do WhatsApp…";
     try {
       const response = await fetch(`${supabase}/functions/v1/site-admin-v1`, {
         method: "POST",
@@ -84,16 +151,17 @@
         cache: "no-store",
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok || data.ok === false) throw new Error(data.message || "Não foi possível carregar o resumo.");
+      if (!response.ok || data.ok === false) throw new Error(data.message || data.error || "Não foi possível carregar os dados do WhatsApp.");
       render(data);
       loaded = true;
     } catch (error) {
-      status.textContent = error instanceof Error ? error.message : "Não foi possível carregar o resumo.";
+      const message = error instanceof Error ? error.message : "Não foi possível carregar os dados do WhatsApp.";
+      for (const node of document.querySelectorAll("[data-whatsapp-overview-status]")) node.textContent = message;
     } finally {
       loading = false;
     }
   }
 
-  document.getElementById("whatsapp-overview-refresh")?.addEventListener("click", () => loadOverview(true));
+  document.querySelectorAll("[data-whatsapp-overview-refresh]").forEach((button) => button.addEventListener("click", () => loadOverview(true)));
   window.DonaWhatsAppAdmin = { loadOverview };
 })();
