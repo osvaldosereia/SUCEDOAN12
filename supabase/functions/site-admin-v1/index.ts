@@ -682,11 +682,14 @@ async function whatsappOverview() {
       p_campaign_ids: campaignIds,
     });
     if (!campaignStatusResult.error && Array.isArray(campaignStatusResult.data)) {
-      campaignDeliverySummaryAvailable = true;
-      for (const row of campaignStatusResult.data || []) {
+      for (const row of campaignStatusResult.data) {
         const campaignId = String(row.campaign_id || "");
         if (campaignId) campaignStatusById.set(campaignId, row);
       }
+      campaignDeliverySummaryAvailable = campaignIds.every((campaignId: string) =>
+        campaignStatusById.has(String(campaignId))
+      );
+      if (!campaignDeliverySummaryAvailable) campaignStatusById.clear();
     }
   }
   const latestCampaignSnapshot = new Map<string, any>();
@@ -696,7 +699,7 @@ async function whatsappOverview() {
   let snapshotLookupLimited = false;
   while (campaignIds.length && latestCampaignSnapshot.size < campaignIds.length) {
     const snapshotsResult = await db.from("marketing_campaign_snapshots_v1")
-      .select("campaign_id,campaign_revision,snapshot_version,template_name,template_language,template_category,found_count,eligible_count,excluded_count,created_at")
+      .select("id,campaign_id,campaign_revision,snapshot_version,template_name,template_language,template_category,found_count,eligible_count,excluded_count,created_at")
       .in("campaign_id", campaignIds)
       .order("created_at", { ascending: false })
       .range(snapshotOffset, snapshotOffset + snapshotPageSize - 1);
@@ -756,7 +759,27 @@ async function whatsappOverview() {
     updated_at: row.updated_at || null,
   }));
   const campaigns = (campaignsResult.data || []).map((row: any) => {
-    const snapshot = latestCampaignSnapshot.get(String(row.id));
+    const campaignId = String(row.id);
+    const summary = campaignStatusById.get(campaignId) || {};
+    let snapshot = latestCampaignSnapshot.get(campaignId) || null;
+    if (campaignDeliverySummaryAvailable && summary.snapshot_available) {
+      snapshot = {
+        id: summary.snapshot_id || null,
+        campaign_revision: summary.snapshot_campaign_revision,
+        snapshot_version: summary.snapshot_version,
+        template_name: summary.snapshot_template_name,
+        template_language: summary.snapshot_template_language,
+        template_category: summary.snapshot_template_category,
+        found_count: summary.snapshot_found_count,
+        eligible_count: summary.snapshot_eligible_count,
+        excluded_count: summary.snapshot_excluded_count,
+        created_at: summary.snapshot_created_at,
+      };
+    }
+    const exclusionCountsAvailable = Boolean(
+      snapshot && campaignDeliverySummaryAvailable && summary.snapshot_available
+      && String(summary.snapshot_id || "") === String(snapshot.id || "")
+    );
     return {
       name: clean(row.name || "Campanha", 140),
       channel: clean(accountById.get(row.whatsapp_account_id)?.display_name || "", 120),
@@ -769,7 +792,7 @@ async function whatsappOverview() {
       completed_at: row.completed_at || null,
       failed_at: row.failed_at || null,
       delivery: campaignDeliverySummaryAvailable ? (() => {
-        const result = campaignStatusById.get(String(row.id)) || {};
+        const result = summary;
         return {
           available: true,
           accepted_count: Number(result.accepted_count) || 0,
@@ -793,10 +816,19 @@ async function whatsappOverview() {
         found_count: Number(snapshot.found_count) || 0,
         eligible_count: Number(snapshot.eligible_count) || 0,
         excluded_count: Number(snapshot.excluded_count) || 0,
+        exclusion_counts: exclusionCountsAvailable ? {
+          available: true,
+          opted_out_count: Number(summary.excluded_opted_out_count) || 0,
+          no_consent_count: Number(summary.excluded_no_consent_count) || 0,
+          inactive_customer_count: Number(summary.excluded_inactive_customer_count) || 0,
+          invalid_phone_count: Number(summary.excluded_invalid_phone_count) || 0,
+          duplicate_phone_count: Number(summary.excluded_duplicate_phone_count) || 0,
+        } : { available: false },
         created_at: snapshot.created_at || null,
       } : null,
     };
   });
+
   const ana = (anaResult.data || []).map((row: any) => ({
     channel: clean(accountById.get(row.whatsapp_account_id)?.display_name || "", 120),
     status: clean(row.status, 40),
