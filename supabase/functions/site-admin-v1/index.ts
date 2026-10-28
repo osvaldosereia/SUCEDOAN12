@@ -2117,11 +2117,19 @@ async function whatsappAnaPauseChannel(input: any) {
 }
 
 async function whatsappAnaAdminStatus() {
-  const [result, runtimeResult] = await Promise.all([
+  const anaDeliverySampleLimit = 200;
+  const [result, runtimeResult, anaDeliveryResult] = await Promise.all([
     db.rpc("ops2_ana_admin_load_v1"),
     db.from("whatsapp_channel_runtime_v1")
       .select("whatsapp_account_id,ana_enabled,capture_enabled,send_enabled,outbound_provider,homologated_at")
       .order("updated_at", { ascending: false }),
+    db.from("whatsapp_messages_v1")
+      .select("whatsapp_account_id,status_current,sent_at,created_at")
+      .eq("direction", "outbound")
+      .eq("sender_kind", "ana_ai")
+      .eq("provider", "meta")
+      .order("created_at", { ascending: false })
+      .limit(anaDeliverySampleLimit),
   ]);
   if (result.error) throw result.error;
   if (runtimeResult.error) throw runtimeResult.error;
@@ -2144,6 +2152,24 @@ async function whatsappAnaAdminStatus() {
         && row.outbound_provider === "meta" && Boolean(row.homologated_at),
     };
   });
+  const deliveryByAccount = new Map<string, { message_count: number; status_counts: Map<string, number>; last_message_at: string | null }>();
+  for (const row of anaDeliveryResult.data || []) {
+    const accountId = uuid(row.whatsapp_account_id);
+    if (!accountId) continue;
+    const aggregate = deliveryByAccount.get(accountId) || {
+      message_count: 0,
+      status_counts: new Map<string, number>(),
+      last_message_at: null,
+    };
+    const status = clean(row.status_current, 40).toLowerCase() || "pending";
+    aggregate.message_count += 1;
+    aggregate.status_counts.set(status, (aggregate.status_counts.get(status) || 0) + 1);
+    const messageAt = row.sent_at || row.created_at || null;
+    if (messageAt && (!aggregate.last_message_at || Date.parse(String(messageAt)) > Date.parse(aggregate.last_message_at))) {
+      aggregate.last_message_at = String(messageAt);
+    }
+    deliveryByAccount.set(accountId, aggregate);
+  }
   const snapshot = result.data || {};
   if (snapshot.ok !== true) return { error: "ana_admin_status_unavailable", status: 503 };
 
@@ -2187,6 +2213,21 @@ async function whatsappAnaAdminStatus() {
   const diffAvailable = Boolean(active.configuration && draft.configuration);
   return {
     channels,
+    delivery: {
+      available: !anaDeliveryResult.error,
+      sample_limit: anaDeliverySampleLimit,
+      channels: channels.map((channel: any) => {
+        const aggregate = deliveryByAccount.get(channel.id);
+        return {
+          id: channel.id,
+          name: channel.name,
+          phone_last4: channel.phone_last4,
+          message_count: aggregate?.message_count || 0,
+          status_counts: aggregate ? Object.fromEntries(aggregate.status_counts) : {},
+          last_message_at: aggregate?.last_message_at || null,
+        };
+      }),
+    },
     active: active.version ? {
       version: Number(active.version),
       created_at: active.created_at || null,
