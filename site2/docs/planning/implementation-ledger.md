@@ -964,7 +964,7 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 - A classificação direcionada não audita as 60 funções individualmente e não apaga os avisos do Advisor; tabelas privadas sem políticas e funções com guarda interna não são tratadas como vulnerabilidade confirmada apenas pelo lint. A revisão completa de produção permanece pendente.
 - Consultas limitaram-se a metadados de privilégios/definições e advisors; nenhum valor de segredo, mensagem, cliente ou pedido foi lido. Nenhuma configuração Auth, permissão, dado comercial, Flow, Meta, Bling ou NF-e foi alterada.
 
-## Gate de hospedagem do Admin (27/10/2026, atualizado)
+## Histórico: hipótese de hospedagem Cloudflare (27/10/2026; supersedida em 28/10/2026)
 
 - O proprietário não aceita pagar Railway; nenhum serviço pago foi criado. A conexão Railway do Codex exige reautenticação.
 - Ruling: usar Cloudflare Workers no plano Free com o adaptador OpenNext e manter Next.js padrão — evita custo e evita migrar o app inteiro para Vinext beta; a documentação oficial confirma suporte ao Next.js 16, App Router, Server Actions e SSR — se a compatibilidade do Worker falhar no runtime Free, não haverá URL operacional até ajustar o runtime ou escolher outro provedor.
@@ -987,3 +987,11 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 - Decisão: configurar Next `basePath` com `NEXT_PUBLIC_BASE_PATH=/site2` na build Cloudflare e adicionar, depois de DNS proxied, a rota Worker `donaantonia.com.br/site2*`. A rota cobre o subcaminho; os demais caminhos continuam no GitHub Pages.
 - A Cloudflare Route exige zona ativa e hostname com DNS proxied. Para ativá-la será preciso migrar os nameservers do Registro.br para Cloudflare, copiando e conferindo os registros atuais de site, e-mail e TXT. Isso pode interromper serviços; o agente não alterará nameservers ou DNS sem ação do proprietário. Nenhuma alteração de DNS foi feita.
 - A mudança de `basePath` e suas instruções serão compiladas e enviadas nesta branch; até a migração DNS e criação da rota, `donaantonia.com.br/site2` não estará publicada. O preview disponível será `workers.dev/site2` quando o Worker for conectado e criado.
+
+## Correção do caminho de publicação (28/10/2026)
+
+- O proprietário rejeitou Cloudflare; as instruções e dependências de Workers/OpenNext registradas acima estão supersedidas e não devem ser seguidas. Não alterar nameservers nem DNS.
+- O domínio já usa GitHub Pages e deve continuar assim. O objetivo é acrescentar o Admin em `/site2`, preservando a raiz e `/site/admin/`.
+- O código atual usa SSR, cookies de servidor e Server Actions; GitHub Pages não executa esses recursos. Não afirmar que a pasta-fonte ou `.next` possa ser enviada diretamente para publicação.
+- Caminho escolhido: converter o Admin para exportação estática do Next.js, usar sessão Supabase no navegador e operações autenticadas nas Edge Functions existentes; então publicar somente o artefato estático em `site2/` na branch que o Pages publica. Manter segredo administrativo e tokens fora do bundle.
+- Ainda não foi feita a conversão nem publicada a rota `/site2`. O ledger e README foram corrigidos para remover instruções incorretas de Cloudflare. Nenhuma migration, Edge Function, DNS ou integração externa foi alterada.

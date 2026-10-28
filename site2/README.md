@@ -41,29 +41,16 @@ O Supabase local usa Postgres 17 e mantém signup e seeds desligados até as pol
 
 As credenciais nunca são registradas em Git. Integrações reais ficam desligadas até os gates documentados serem concluídos.
 
-# Publicar o Admin sem custo
+# Publicação em `donaantonia.com.br/site2`
 
-O código do Admin está neste diretório (`site2`). Para publicá-lo online sem criar um serviço pago, use Cloudflare Workers no plano Free. O Cloudflare conecta diretamente ao GitHub e publica novos commits da branch selecionada. O deploy usa o adaptador OpenNext para manter os recursos de servidor do Next.js.
+A publicação desejada é no GitHub Pages já usado pelo domínio, em `https://donaantonia.com.br/site2/`. Não há mudança de DNS nem serviço de hospedagem adicional planejados. O site atual e o Admin legado em `/site/admin/` devem permanecer intactos.
 
-## Configuração no Cloudflare
+**O código ainda não está pronto para upload no GitHub Pages.** O Admin atual usa recursos de servidor do Next.js (sessão em cookies, páginas renderizadas no servidor e Server Actions). GitHub Pages hospeda arquivos estáticos e não executa esses recursos. Enviar a pasta-fonte `site2` ou a pasta `.next` não publica uma aplicação funcional.
 
-1. No painel Cloudflare, abra **Workers & Pages → Create application → GitHub** e autorize o repositório `osvaldosereia/SUCEDOAN12`.
-2. Selecione a branch `codex/whatsapp-admin-greenfield-20261026` e defina a raiz do projeto como `site2`.
-3. Use o nome `sucedoan12-admin`, o comando de build `pnpm run build:cloudflare` e o comando de deploy `pnpm run deploy:cloudflare`.
-4. Em **Build variables and secrets**, configure `NEXT_PUBLIC_SUPABASE_URL=https://ssbesxgaijknwsjbsbcz.supabase.co`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` usando o valor publicável do projeto original e `NEXT_PUBLIC_BASE_PATH=/site2`. O Next.js embute esses valores no Worker durante a build. A chave publicável não é uma chave administrativa. Não coloque valores de secrets no GitHub, no `wrangler.jsonc` ou neste README.
-5. Selecione ou mantenha o plano **Workers Free**. O Worker usa o subdomínio gratuito `workers.dev`; o painel fornecerá o endereço depois que o primeiro deploy concluir.
-6. Para usar `https://donaantonia.com.br/site2`, crie no Worker a rota `donaantonia.com.br/site2*`. O site atual em `donaantonia.com.br` continua no GitHub Pages e recebe os demais caminhos.
+Antes de publicar, será necessário gerar uma exportação estática do Next.js e adaptar as telas para usar o cliente Supabase no navegador com a chave publicável e as Edge Functions/RPCs autenticadas já existentes. IDs de telas de detalhe deverão funcionar em rotas estáticas. Nenhuma chave `service_role`, token Meta, token Bling ou outro secret pode entrar no bundle.
 
-### Requisito de DNS para `/site2`
-
-Hoje o domínio principal e `/site/admin/` são servidos pelo GitHub Pages. A rota de Worker por caminho exige que `donaantonia.com.br` seja uma zona ativa no Cloudflare e que o DNS do domínio esteja proxied por lá. Antes de trocar os nameservers no Registro.br, replique os registros DNS atuais, inclusive os do GitHub Pages e os de e-mail. Essa troca ainda não foi feita. Enquanto ela não acontecer, o Worker fica acessível pelo endereço `workers.dev`; o domínio personalizado `/site2` ainda não será atendido.
-
-O arquivo `wrangler.jsonc` mantém emissão fiscal e recuperação avançada do Bling desligadas. O site usa as funções e secrets já configurados no Supabase; não copie tokens da Meta ou do Bling para o Cloudflare.
-
-O plano Free tem limites: até 100.000 requisições Worker por dia, 10 ms de CPU por chamada e 3.000 minutos mensais de build. O serviço pode falhar quando esses limites forem excedidos. Não é necessário ativar um plano pago.
-
-Fontes oficiais: [Next.js no Cloudflare Workers](https://developers.cloudflare.com/workers/framework-guides/web-apps/opennext/), [Deploys pelo GitHub](https://developers.cloudflare.com/workers/ci-cd/builds/git-integration/) e [limites do Free](https://developers.cloudflare.com/workers/platform/pricing/).
+Quando a exportação estiver pronta, apenas o conteúdo gerado para `site2/` deverá ser acrescentado à branch publicada pelo GitHub Pages. Não mesclar esta branch inteira sobre `main`: ela também contém código de desenvolvimento e está divergente da branch do site. Consulte `docs/superpowers/plans/2026-10-28-github-pages-static-admin.md` antes da publicação.
 
 ## Desenvolvimento local
 
-Para desenvolvimento, execute `pnpm dev` neste diretório. Os comandos usuais `pnpm build` e `pnpm start` continuam disponíveis e não dependem do adaptador Cloudflare.
+Para desenvolvimento, execute `pnpm dev` neste diretório. Os comandos usuais `pnpm build` e `pnpm start` continuam disponíveis para execução local com Node.js.

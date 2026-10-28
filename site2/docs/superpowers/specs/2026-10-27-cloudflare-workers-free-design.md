@@ -1,3 +1,8 @@
+# SUPERSEDED — 28/10/2026
+
+O proprietário rejeitou Cloudflare. Não seguir esta especificação. A decisão vigente está em `docs/superpowers/plans/2026-10-28-github-pages-static-admin.md`.
+
+
 # Publicação gratuita do Admin no Cloudflare Workers
 
 ## Intenção

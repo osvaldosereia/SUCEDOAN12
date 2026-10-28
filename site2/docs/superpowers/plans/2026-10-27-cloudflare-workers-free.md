@@ -1,3 +1,8 @@
+# SUPERSEDED — 28/10/2026
+
+O proprietário rejeitou Cloudflare. Não executar este plano. A decisão vigente está em `docs/superpowers/plans/2026-10-28-github-pages-static-admin.md`.
+
+
 # Cloudflare Workers Free Deployment Implementation Plan
 
 > **For agentic workers:** Execute this plan task-by-task in the current branch.

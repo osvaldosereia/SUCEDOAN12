@@ -1,3 +1,8 @@
+# SUPERSEDED — 28/10/2026
+
+O plano de rota Cloudflare foi rejeitado. Não alterar nameservers ou DNS. Consulte `docs/superpowers/plans/2026-10-28-github-pages-static-admin.md`.
+
+
 # Admin Dona Antônia em `/site2` — Implementation Plan
 
 > **For agentic workers:** Execute this plan task by task in the current branch. Do not add or run automated tests; use static and build verification only.

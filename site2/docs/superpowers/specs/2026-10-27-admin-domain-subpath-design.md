@@ -1,3 +1,8 @@
+# SUPERSEDED — 28/10/2026
+
+Este documento partiu da hipótese rejeitada de Cloudflare. O domínio deve permanecer no GitHub Pages sem alterações de DNS. Consulte `docs/superpowers/plans/2026-10-28-github-pages-static-admin.md`.
+
+
 # Admin Dona Antônia em `/site2` — Design
 
 ## Intenção
