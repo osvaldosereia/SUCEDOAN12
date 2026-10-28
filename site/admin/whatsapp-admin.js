@@ -76,7 +76,7 @@
       [item.channel, human(item.category), item.language].filter(Boolean).join(" · "),
       item.status,
       item.last_synced_at || item.updated_at,
-      item.quality_rating ? "Qualidade: " + human(item.quality_rating) : "Sem avaliação de qualidade",
+      [item.quality_rating ? "Qualidade: " + human(item.quality_rating) : "Sem avaliação de qualidade", item.rejection_reason ? "Motivo da reprovação: " + item.rejection_reason : ""].filter(Boolean).join(" · "),
     )).join("") : emptyList("Nenhum modelo cadastrado.");
     const campaignsMarkup = campaigns.length ? campaigns.map((item) => recordRow(
       item.name,
