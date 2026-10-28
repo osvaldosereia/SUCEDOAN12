@@ -1,6 +1,6 @@
 # Admin WhatsApp — Sucedoan
 
-O app, as funções/migrations do Supabase e a documentação ficam nesta pasta `site2/` na raiz do repositório GitHub. Para publicar, configure `site2` como diretório raiz do projeto e defina as variáveis necessárias no provedor; nunca versione segredos.
+O app, as funções/migrations do Supabase e a documentação ficam nesta pasta `site2/` na raiz do repositório GitHub. A publicação desejada é um artefato estático em `/site2/` no GitHub Pages existente; veja a seção de publicação antes de alterar o site.
 
 Painel interno da Dona Antônia para atendimento WhatsApp, cestas, produtos, clientes, pedidos e configurações de ANA/Meta/Supabase/Bling.
 
@@ -19,7 +19,7 @@ Abra `http://localhost:3000`. As telas administrativas não leem nem escrevem em
 
 ## Estado da liberação
 
-O checkout contém a implementação greenfield e **ainda não está liberado para pedidos reais**. As 7 migrations e 14 Edge Functions estão aplicadas/publicadas no Supabase canônico `ssbesxgaijknwsjbsbcz`. O proprietário recusou criar staging; ainda faltam configurar e publicar os Flows nos dois números, preencher posições de cesta sem opção elegível, validar fotos no Flow e homologar pedido, webhook e Bling. O painel `/configuracoes/fluxos` cria rascunhos, envia o JSON fixado no projeto e mostra os erros de validação da Meta; não publica Flow nem envia mensagens. Não confundir `pnpm typecheck`/build local com homologação operacional. A sequência de liberação está em `docs/planning/staging-cutover.md`.
+O checkout contém a implementação greenfield e **ainda não está liberado para pedidos reais**. As migrations previstas e os gateways necessários estão aplicados/publicados no Supabase canônico `ssbesxgaijknwsjbsbcz`. O proprietário recusou criar staging; ainda faltam configurar e publicar os Flows nos dois números, preencher posições de cesta sem opção elegível, validar fotos no Flow e homologar pedido, webhook e Bling. O painel `/configuracoes/fluxos` cria rascunhos, envia o JSON fixado no projeto e mostra os erros de validação da Meta; não publica Flow nem envia mensagens. Não confundir `pnpm typecheck`/build local com homologação operacional. A sequência de liberação está em `docs/planning/staging-cutover.md`.
 
 ## Verificações focadas
 

@@ -431,6 +431,10 @@ entrypoint = "./functions/admin-product-image-v1/index.ts"
 [functions.admin-basket-molds-browser-v1]
 enabled = true
 verify_jwt = true
+
+[functions.admin-products-browser-v1]
+enabled = true
+verify_jwt = true
 entrypoint = "./functions/admin-basket-molds-browser-v1/index.ts"
 
 [functions.admin-product-whatsapp-availability-v1]
