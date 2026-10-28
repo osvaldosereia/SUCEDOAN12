@@ -77,7 +77,14 @@
     const time = document.createElement("time");
     time.dateTime = message.message_at || "";
     time.textContent = dateLabel(message.message_at);
-    bubble.append(body, time);
+    const statusCode = String(message.status_current || "").trim().toLowerCase().slice(0, 40);
+    if (message.direction === "outbound" && statusCode) {
+      const labels = { accepted: "Aceita pela API", queued: "Na fila", pending: "Pendente", sent: "Enviada", delivered: "Entregue", read: "Lida", failed: "Falhou", rejected: "Rejeitada" };
+      const status = document.createElement("small");
+      status.className = "whatsapp-message-status";
+      status.textContent = "Envio: " + (labels[statusCode] || statusCode.replace(/[_-]+/g, " "));
+      bubble.append(body, time, status);
+    } else bubble.append(body, time);
     return bubble;
   }
 
