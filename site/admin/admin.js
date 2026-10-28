@@ -31,6 +31,99 @@
     toastTimer = setTimeout(() => node.classList.remove("show"), 3200);
   }
 
+  let pendingBlingOauthResult = null;
+
+  function blingOauthResultMessage(result) {
+    const detail = String(result?.detail || "");
+    if (result?.status === "success") {
+      return detail === "status_catalog_pending"
+        ? "Bling reautorizado. O token foi atualizado, mas falta confirmar uma permissão de situações."
+        : "Bling reautorizado e conectado ao Admin.";
+    }
+    const errors = {
+      authorization_denied: "A autorização do Bling foi cancelada.",
+      missing_code_or_state: "O Bling não retornou os dados da autorização. Tente novamente.",
+      oauth_not_started: "A solicitação de autorização expirou. Inicie novamente pelo botão.",
+      oauth_expired: "A autorização expirou. Inicie novamente pelo botão.",
+      oauth_state_mismatch: "A autorização não corresponde a esta solicitação. Inicie novamente pelo botão.",
+      credentials_missing: "As credenciais do aplicativo Bling estão incompletas.",
+      token_exchange_failed: "O Bling não confirmou a autorização. Tente novamente.",
+      callback_failed: "Não foi possível concluir a autorização do Bling. Tente novamente.",
+    };
+    return errors[detail] || "Não foi possível concluir a autorização do Bling. Tente novamente.";
+  }
+
+  function showPendingBlingOauthResult() {
+    const app = $("admin-app");
+    if (app.hidden || !pendingBlingOauthResult) return false;
+    toast(blingOauthResultMessage(pendingBlingOauthResult));
+    pendingBlingOauthResult = null;
+    try { window.sessionStorage.removeItem("dona-admin-bling-oauth-result"); } catch (_) {}
+    return true;
+  }
+
+  function handleBlingOauthReturn() {
+    const url = new URL(window.location.href);
+    const status = url.searchParams.get("bling_oauth");
+    if (status) {
+      pendingBlingOauthResult = { status, detail: url.searchParams.get("detail") || "" };
+      try {
+        window.sessionStorage.setItem("dona-admin-bling-oauth-result", JSON.stringify(pendingBlingOauthResult));
+      } catch (_) {}
+      url.searchParams.delete("bling_oauth");
+      url.searchParams.delete("detail");
+      window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    } else {
+      try {
+        pendingBlingOauthResult = JSON.parse(window.sessionStorage.getItem("dona-admin-bling-oauth-result") || "null");
+      } catch (_) {}
+    }
+    if (!pendingBlingOauthResult || showPendingBlingOauthResult()) return;
+    const app = $("admin-app");
+    const observer = new MutationObserver(() => {
+      if (showPendingBlingOauthResult()) observer.disconnect();
+    });
+    observer.observe(app, { attributes: true, attributeFilter: ["hidden"] });
+  }
+
+  async function reauthorizeBling() {
+    const button = $("bling-reauthorize");
+    if (button.disabled) return;
+    const confirmed = window.confirm(
+      "O Bling será aberto para aprovar novamente a integração. Se estiver corrigindo o erro 403, primeiro salve no aplicativo Bling a permissão para gravar pedidos. Ao concluir, você voltará a este Admin. Continuar?"
+    );
+    if (!confirmed) return;
+    button.disabled = true;
+    button.textContent = "Conectando…";
+    try {
+      if (!supabase || !publishableKey) throw new Error("A configuração do Admin está incompleta.");
+      const endpoint = new URL(supabase + "/functions/v1/admin-products-live-v1");
+      endpoint.searchParams.set("action", "bling_oauth_begin");
+      endpoint.searchParams.set("return_to", "site_admin");
+      const response = await fetch(endpoint.toString(), {
+        method: "POST",
+        headers: {
+          apikey: publishableKey,
+          "x-admin-code": window.DonaAdminAuth?.getCode?.() || "",
+          "Content-Type": "application/json",
+        },
+        body: "{}",
+        cache: "no-store",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (data.error === "owner_required") throw new Error("Somente o proprietário pode reautorizar o Bling.");
+      if (data.error === "bling_client_id_missing") throw new Error("O aplicativo Bling está sem identificador. Confira a configuração da integração.");
+      if (!response.ok || data.ok === false || !data.authorization_url) {
+        throw new Error("Não foi possível iniciar a reautorização do Bling. Confira a conexão e tente novamente.");
+      }
+      window.location.assign(data.authorization_url);
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = "Reautorizar Bling";
+      toast(error instanceof Error ? error.message : "Não foi possível iniciar a reautorização do Bling.");
+    }
+  }
+
   function setView(name) {
     document.querySelectorAll(".nav-tab").forEach((button) => {
       const active = button.dataset.view === name;
@@ -210,5 +303,8 @@
   $("customer-editor").addEventListener("submit", saveCustomer);
   document.querySelectorAll(".nav-tab").forEach((button) => button.addEventListener("click", () => setView(button.dataset.view)));
   document.querySelectorAll("[data-go]").forEach((button) => button.addEventListener("click", () => setView(button.dataset.go)));
+  const blingReauthorizeButton = $("bling-reauthorize");
+  if (blingReauthorizeButton) blingReauthorizeButton.addEventListener("click", reauthorizeBling);
+  handleBlingOauthReturn();
 
 })();
