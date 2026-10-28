@@ -155,7 +155,7 @@ async function cachedTemplates(accountId: string, names: string[]) {
   const unique = [...new Set(names.filter(Boolean))];
   if (!unique.length) return [];
   const result = await db.from("whatsapp_templates_v1")
-    .select("name,status,category,components,metadata")
+    .select("name,status,category,components,metadata,last_synced_at")
     .eq("whatsapp_account_id", accountId)
     .eq("language", LANGUAGE)
     .in("name", unique);
@@ -224,6 +224,11 @@ async function readState(kind: MessageKind) {
     const pending = templates.find((item: any) => item.name === setting.pending_template_name);
     const activeMetadata = active?.metadata && typeof active.metadata === "object" ? active.metadata : {};
     const pendingMetadata = pending?.metadata && typeof pending.metadata === "object" ? pending.metadata : {};
+    const activeComponents = Array.isArray(active?.components) ? active.components : [];
+    const pendingComponents = Array.isArray(pending?.components) ? pending.components : [];
+    const activeBody = activeComponents.find((item: any) => String(item.type || "").toUpperCase() === "BODY")?.text || "";
+    const pendingBody = pendingComponents.find((item: any) => String(item.type || "").toUpperCase() === "BODY")?.text || "";
+    const draftBody = String(setting.draft_body || "");
     return {
       channel,
       label: "WhatsApp final " + channel,
@@ -234,6 +239,9 @@ async function readState(kind: MessageKind) {
       pending_status: pending?.status || null,
       pending_rejection_reason: pendingMetadata.rejected_reason || null,
       pending_can_activate: Boolean(pending && approvedTemplateShape(pending, kind)),
+      draft_matches_active: Boolean(active) && activeBody === draftBody,
+      draft_matches_pending: Boolean(pending) && pendingBody === draftBody,
+      meta_checked_at: [active?.last_synced_at, pending?.last_synced_at].filter(Boolean).sort().pop() || null,
       updated_at: setting.updated_at,
       account_ready: Boolean(account && account.waba_id && account.phone_number_id),
     };
@@ -377,12 +385,14 @@ async function refreshStatus(kind: MessageKind) {
       const items = await syncTemplates(account);
       results.push({
         channel,
+        checked_at: new Date().toISOString(),
         synced: items.filter((item: any) => String(item.name || "").startsWith(namePrefix(kind, channel))).length,
         ok: true,
       });
     } catch (error) {
       results.push({
         channel,
+        checked_at: new Date().toISOString(),
         ok: false,
         error: error instanceof MetaTemplatesError
           ? error.code
@@ -392,9 +402,8 @@ async function refreshStatus(kind: MessageKind) {
       });
     }
   }
-  return { ok: true, results };
+  return { ok: true, checked_at: new Date().toISOString(), results };
 }
-
 async function activateApproved(kind: MessageKind, channel: Channel) {
   const settings = await settingsRows(kind);
   const setting: any = settings.find((row: any) => row.channel === channel);
