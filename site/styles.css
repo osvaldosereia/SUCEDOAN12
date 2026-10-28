@@ -315,3 +315,14 @@ body.sheet-open.sheet-scroll-chain { overflow-x: hidden; overflow-y: auto; }
   .product-search-control input { min-height: 46px; font-size: .95rem; }
   .product-search-compact { padding: 10px; }
 }
+
+/* Basket extras: keep complete cards visible on mobile and let the sheet own vertical scrolling. */
+.extra-product-more { justify-self: start; min-height: 42px; }
+.extra-product-more[hidden] { display: none !important; }
+@media (max-width: 639px) {
+  .extra-product-scroll { height: auto; min-height: 0; max-height: none; padding: 0; overflow: visible; overscroll-behavior-y: auto; scrollbar-gutter: auto; }
+  .extra-product-card { min-width: 0; grid-template-columns: 52px minmax(0, 1fr); }
+  .extra-product-copy > strong { overflow-wrap: anywhere; word-break: normal; }
+  .extra-quantity { min-width: 0; flex-wrap: wrap; }
+  .extra-product-more { width: 100%; justify-self: stretch; }
+}

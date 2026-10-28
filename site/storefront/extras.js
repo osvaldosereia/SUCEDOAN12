@@ -274,16 +274,19 @@
           const panelId = "extra-panel-" + category.key;
           const status = category.loading
             ? category.products.length ? "Carregando mais produtos…" : "Carregando produtos…"
-            : category.error ? "Não foi possível carregar. Toque na categoria para tentar novamente."
+            : category.error ? "Não foi possível carregar. Tente novamente."
               : category.loaded && !category.products.length ? "Nenhum produto disponível nesta categoria."
                 : "";
+          const showMore = category.error || (category.loaded && category.hasMore);
+          const moreLabel = category.error ? "Tentar novamente" : "Carregar mais produtos";
           const products = category.products.map((product) => extraProductMarkup(data, product)).join("");
           return '<section class="extra-category" data-extra-category-card="' + esc(category.key) + '">' +
             '<button class="extra-category-toggle" type="button" data-extra-category="' + esc(category.key) + '" aria-expanded="' + String(category.expanded) + '" aria-controls="' + esc(panelId) + '">' +
             '<span>' + esc(category.label) + '</span><span class="variation-chevron" aria-hidden="true">' + (category.expanded ? "−" : "+") + '</span></button>' +
             '<div class="extra-category-panel" id="' + esc(panelId) + '"' + (category.expanded ? "" : " hidden") + '>' +
             '<div class="extra-product-scroll" data-extra-scroll="' + esc(category.key) + '" role="list" aria-label="Produtos de ' + esc(category.label) + '">' + products + '</div>' +
-            '<p class="extra-product-status" data-extra-status="' + esc(category.key) + '" role="status">' + esc(status) + '</p></div></section>';
+            '<p class="extra-product-status" data-extra-status="' + esc(category.key) + '" role="status">' + esc(status) + '</p>' +
+            '<button class="button button-outline extra-product-more" type="button" data-extra-more="' + esc(category.key) + '"' + (showMore ? "" : " hidden") + (category.loading ? " disabled" : "") + '>' + esc(moreLabel) + '</button></div></section>';
         }).join("") + '</div></section>';
     }
   
@@ -292,6 +295,13 @@
       if (!container || container.closest?.("[data-extra-controls-bound='true']")) return;
       container.dataset.extraControlsBound = "true";
       container.addEventListener("click", (event) => {
+        const moreButton = event.target?.closest?.("[data-extra-more]");
+        if (moreButton && container.contains(moreButton) && !moreButton.disabled) {
+          const categoryCard = moreButton.closest("[data-extra-category-card]");
+          const scrollElement = categoryCard && categoryCard.querySelector("[data-extra-scroll]");
+          if (scrollElement) loadMoreExtraProducts(moreButton.dataset.extraMore, scrollElement);
+          return;
+        }
         const button = event.target?.closest?.("[data-extra-adjust]");
         if (!button || !container.contains(button) || button.disabled) return;
         changeExtraQuantity(button.dataset.extraAdjust, Number(button.dataset.delta || 0));
@@ -330,7 +340,12 @@
       category.loading = true;
       category.error = false;
       const status = $("detail-content").querySelector('[data-extra-status="' + category.key + '"]');
+      const moreButton = scrollElement && scrollElement.closest("[data-extra-category-card]")?.querySelector("[data-extra-more]");
       if (status) status.textContent = category.products.length ? "Carregando mais produtos…" : "Carregando produtos…";
+      if (moreButton) {
+        moreButton.disabled = true;
+        moreButton.textContent = "Carregando…";
+      }
       try {
         let fetched = [];
         let pages = 0;
@@ -358,10 +373,15 @@
         category.error = true;
         if (scrollElement && scrollElement.isConnected) {
           const currentStatus = $("detail-content").querySelector('[data-extra-status="' + category.key + '"]');
-          if (currentStatus) currentStatus.textContent = "Não foi possível carregar. Toque na categoria para tentar novamente.";
+          if (currentStatus) currentStatus.textContent = "Não foi possível carregar. Tente novamente.";
         }
       } finally {
         category.loading = false;
+        if (moreButton) {
+          moreButton.hidden = !(category.error || (category.loaded && category.hasMore));
+          moreButton.disabled = false;
+          moreButton.textContent = category.error ? "Tentar novamente" : "Carregar mais produtos";
+        }
       }
     }
   
