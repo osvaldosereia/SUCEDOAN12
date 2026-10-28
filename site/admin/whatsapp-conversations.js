@@ -5,7 +5,7 @@
   const endpoint = base + "/functions/v1/site-admin-v1";
   const publishableKey = config.publishableKey || "";
   const $ = (id) => document.getElementById(id);
-  const state = { page: 0, selectedId: "", before: null, busy: false, accountsLoaded: false };
+  const state = { cursor: null, total: 0, selectedId: "", before: null, busy: false, accountsLoaded: false };
   const dateLabel = (value) => {
     if (!value) return "Sem atividade";
     const date = new Date(value);
@@ -128,7 +128,8 @@
     let selectFirst = "";
     const host = $("whatsapp-conversation-items");
     if (!append) {
-      state.page = 0;
+      state.cursor = null;
+      state.total = 0;
       state.selectedId = "";
       state.before = null;
       $("whatsapp-conversation-header").hidden = true;
@@ -138,16 +139,17 @@
     } else setStatus("Carregando mais conversas…");
     try {
       const data = await request("whatsapp_conversation_list", {
-        page: append ? state.page + 1 : 0,
+        cursor: append ? state.cursor : null,
         account_id: $("whatsapp-conversation-account").value || "",
         search: $("whatsapp-conversation-search").value || "",
         filter: $("whatsapp-conversation-filter").value || "all",
       });
       renderAccounts(data.accounts);
       renderQueue(data.items, append);
-      state.page = data.page || 0;
-      $("whatsapp-conversation-more").hidden = data.has_more !== true;
-      setStatus((data.total || 0) + " conversa(s) no filtro atual · mais recentes primeiro.");
+      state.cursor = data.next_cursor || null;
+      if (!append) state.total = data.total || 0;
+      $("whatsapp-conversation-more").hidden = !state.cursor;
+      setStatus(state.total + " conversa(s) no filtro atual · mais recentes primeiro.");
       if (!append && data.items && data.items.length) selectFirst = data.items[0].id;
       else if (append && data.items && data.items.length && !state.selectedId) selectFirst = data.items[0].id;
     } catch (error) {
@@ -179,7 +181,7 @@
       }
     }
     try {
-      const data = await request("whatsapp_conversation_messages", { conversation_id: id, before: targetBefore });
+      const data = await request("whatsapp_conversation_messages", { conversation_id: id, before_created_at: targetBefore?.created_at || "", before_id: targetBefore?.id || "" });
       if (state.selectedId !== id) return;
       renderHeader(data.conversation || {});
       renderMessages(data.messages || [], older);
