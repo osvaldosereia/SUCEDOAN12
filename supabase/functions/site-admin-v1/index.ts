@@ -1509,20 +1509,123 @@ async function conversationOrderOverrides(adminUserId: string) {
 async function recentOrderConversationIds(conversationIds?: string[]) {
   if (conversationIds && !conversationIds.length) return new Set<string>();
   const since = new Date(Date.now() - 28 * 60 * 60 * 1000).toISOString();
-  let query = db.from("whatsapp_messages_v1")
+  let messageQuery = db.from("whatsapp_messages_v1")
     .select("conversation_id,text_body")
     .eq("direction", "inbound")
     .gte("created_at", since)
     .or("text_body.ilike.%pedido%,text_body.ilike.%encomendar%,text_body.ilike.%pedir%")
     .limit(2000);
-  if (conversationIds) query = query.in("conversation_id", conversationIds);
-  const result = await query;
-  if (result.error) throw result.error;
+  if (conversationIds) messageQuery = messageQuery.in("conversation_id", conversationIds);
+  const [messageResult, orderResult] = await Promise.all([
+    messageQuery,
+    db.from("orders")
+      .select("conversation_id,customer_id,phone_e164,whatsapp_account_id,status,created_at,source")
+      .in("source", ORDER_SOURCES)
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(2000),
+  ]);
+  if (messageResult.error) throw messageResult.error;
+  if (orderResult.error) throw orderResult.error;
+
   const keyword = /(^|[^\p{L}\p{N}_])(pedido|encomendar|pedir)(?=$|[^\p{L}\p{N}_])/iu;
-  return new Set((result.data || [])
+  const ids = new Set<string>((messageResult.data || [])
     .filter((row: any) => keyword.test(String(row.text_body || "")))
     .map((row: any) => uuid(row.conversation_id))
     .filter(Boolean));
+  const activeOrders = (orderResult.data || []).filter((order: any) =>
+    !["cancelled", "canceled", "returned", "refunded", "voided"].includes(String(order.status || "").trim().toLowerCase()),
+  );
+  const customerIds = Array.from(new Set(activeOrders.map((order: any) => uuid(order.customer_id)).filter(Boolean)));
+  const rawPhones = activeOrders.map((order: any) => clean(order.phone_e164, 40)).filter(Boolean);
+  const phoneCandidates = Array.from(new Set(rawPhones.flatMap((phone: string) => [phone, normalizeBrazilPhone(phone)]).filter(Boolean)));
+  const loadCandidates = async (field: string, values: string[]) => {
+    const rows: any[] = [];
+    for (let offset = 0; offset < values.length; offset += 100) {
+      const result = await db.from("conversations")
+        .select("id,customer_id,whatsapp_account_id,wa_contact_e164,updated_at,created_at")
+        .in(field, values.slice(offset, offset + 100));
+      if (result.error) throw result.error;
+      rows.push(...(result.data || []));
+    }
+    return rows;
+  };
+  const [byCustomerRows, byPhoneRows] = await Promise.all([
+    loadCandidates("customer_id", customerIds),
+    loadCandidates("wa_contact_e164", phoneCandidates),
+  ]);
+  const candidatesById = new Map<string, any>();
+  for (const row of [...byCustomerRows, ...byPhoneRows]) {
+    const id = uuid(row.id);
+    if (id) candidatesById.set(id, row);
+  }
+  const candidates = Array.from(candidatesById.values());
+  const activity = (row: any) => Date.parse(String(row.updated_at || row.created_at || "")) || 0;
+
+  for (const order of activeOrders) {
+    const directId = uuid(order.conversation_id);
+    if (directId) {
+      ids.add(directId);
+      continue;
+    }
+    const orderPhone = normalizeBrazilPhone(order.phone_e164);
+    const phoneMatches = orderPhone
+      ? candidates.filter((row: any) => normalizeBrazilPhone(row.wa_contact_e164) === orderPhone)
+      : [];
+    const orderCustomerId = uuid(order.customer_id);
+    const customerMatches = orderCustomerId
+      ? candidates.filter((row: any) => uuid(row.customer_id) === orderCustomerId)
+      : [];
+    const matches = phoneMatches.length ? phoneMatches : customerMatches;
+    if (!matches.length) continue;
+    const orderAccountId = uuid(order.whatsapp_account_id);
+    const sameAccount = orderAccountId
+      ? matches.filter((row: any) => uuid(row.whatsapp_account_id) === orderAccountId)
+      : [];
+    const ranked = [...(sameAccount.length ? sameAccount : matches)].sort((left: any, right: any) => activity(right) - activity(left));
+    const matchedId = uuid(ranked[0]?.id);
+    if (matchedId) ids.add(matchedId);
+  }
+  if (!conversationIds) return ids;
+  const allowed = new Set(conversationIds.map((id) => uuid(id)).filter(Boolean));
+  return new Set(Array.from(ids).filter((id) => allowed.has(id)));
+}
+async function whatsappConversationAnaMode(input: any) {
+  const conversationId = uuid(input.conversation_id);
+  if (!conversationId) return { error: "invalid_conversation_id", status: 400 };
+  if (typeof input.enabled !== "boolean") return { error: "invalid_ana_mode", status: 400 };
+  const conversationResult = await db.from("conversations")
+    .select("id,mode,human_required")
+    .eq("id", conversationId)
+    .maybeSingle();
+  if (conversationResult.error) throw conversationResult.error;
+  if (!conversationResult.data) return { error: "conversation_not_found", status: 404 };
+
+  const enabled = input.enabled === true;
+  const nextMode = enabled ? "ai" : "paused";
+  const nextHumanRequired = !enabled;
+  const now = new Date().toISOString();
+  const updated = await db.from("conversations")
+    .update({
+      mode: nextMode,
+      human_required: nextHumanRequired,
+      ai_resume_at: enabled ? now : null,
+      human_takeover_at: enabled ? null : now,
+      updated_at: now,
+    })
+    .eq("id", conversationId)
+    .select("id,mode,human_required,ai_resume_at")
+    .maybeSingle();
+  if (updated.error) throw updated.error;
+  if (!updated.data) return { error: "conversation_not_found", status: 404 };
+  return {
+    conversation_id: conversationId,
+    mode: updated.data.mode,
+    human_required: updated.data.human_required === true,
+    ai_resume_at: updated.data.ai_resume_at || null,
+    enabled,
+    permanent: !enabled,
+  };
 }
 
 async function whatsappConversationOrderOverride(input: any) {
@@ -1732,9 +1835,9 @@ async function whatsappConversationList(input: any) {
       || customerById.get(customerIdByPhone.get(String(row.wa_contact_e164 || "")) || "")
       || {};
     const whatsappProfileName = profileNameByConversation.get(row.id) || "";
-    const hasRecentOrderKeyword = recentOrderSet.has(row.id);
+    const hasRecentOrder = recentOrderSet.has(row.id);
     const orderOverride = orderOverrides.get(row.id) || "";
-    const isInOrders = orderOverride === "include" || (orderOverride !== "exclude" && hasRecentOrderKeyword);
+    const isInOrders = orderOverride === "include" || (orderOverride !== "exclude" && hasRecentOrder);
     return {
       id: row.id,
       customer_name: clean(linkedCustomer.name || "", 180),
@@ -1747,7 +1850,7 @@ async function whatsappConversationList(input: any) {
       mode: clean(row.mode, 40),
       human_required: row.human_required === true,
       is_favorite: favoriteIdSet.has(row.id),
-      has_recent_order_keyword: hasRecentOrderKeyword,
+      has_recent_order: hasRecentOrder,
       order_override: orderOverride,
       is_in_orders: isInOrders,
       last_activity_at: lastActivity,
@@ -3564,6 +3667,7 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "whatsapp_conversation_send_media") result = await whatsappConversationSendMedia(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_media") result = await whatsappConversationMedia(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_favorite") result = await whatsappConversationFavorite(input);
+    else if (req.method === "POST" && action === "whatsapp_conversation_ana_mode") result = await whatsappConversationAnaMode(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_order_override") result = await whatsappConversationOrderOverride(input);
     else if (req.method === "POST" && action === "whatsapp_campaign_draft_load") result = await whatsappCampaignDraftLoad(input);
     else if (req.method === "POST" && action === "whatsapp_campaign_draft_create") result = await whatsappCampaignDraftCreate(input);
