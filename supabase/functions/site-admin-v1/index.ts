@@ -911,6 +911,67 @@ async function conversationFavoriteIds(adminUserId: string) {
   return ids;
 }
 
+async function conversationOrderOverrides(adminUserId: string) {
+  const overrides = new Map<string, string>();
+  const pageSize = 500;
+  let offset = 0;
+  while (true) {
+    const result = await db.from("whatsapp_conversation_order_overrides_v1")
+      .select("conversation_id,mode")
+      .eq("admin_user_id", adminUserId)
+      .order("updated_at", { ascending: false })
+      .order("conversation_id", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (result.error) throw result.error;
+    const rows = result.data || [];
+    for (const row of rows) {
+      const conversationId = uuid(row.conversation_id);
+      const mode = clean(row.mode, 12).toLowerCase();
+      if (conversationId && ["include", "exclude"].includes(mode)) overrides.set(conversationId, mode);
+    }
+    if (rows.length < pageSize) break;
+    offset += rows.length;
+  }
+  return overrides;
+}
+
+async function recentOrderConversationIds(conversationIds?: string[]) {
+  if (conversationIds && !conversationIds.length) return new Set<string>();
+  const since = new Date(Date.now() - 28 * 60 * 60 * 1000).toISOString();
+  let query = db.from("whatsapp_messages_v1")
+    .select("conversation_id,text_body")
+    .eq("direction", "inbound")
+    .gte("created_at", since)
+    .or("text_body.ilike.%pedido%,text_body.ilike.%encomendar%,text_body.ilike.%pedir%")
+    .limit(2000);
+  if (conversationIds) query = query.in("conversation_id", conversationIds);
+  const result = await query;
+  if (result.error) throw result.error;
+  const keyword = /(^|[^\p{L}\p{N}_])(pedido|encomendar|pedir)(?=$|[^\p{L}\p{N}_])/iu;
+  return new Set((result.data || [])
+    .filter((row: any) => keyword.test(String(row.text_body || "")))
+    .map((row: any) => uuid(row.conversation_id))
+    .filter(Boolean));
+}
+
+async function whatsappConversationOrderOverride(input: any) {
+  const mode = clean(input.mode, 12).toLowerCase();
+  if (!["include", "exclude"].includes(mode)) return { error: "invalid_order_override", status: 400 };
+  const conversationId = uuid(input.conversation_id);
+  if (!conversationId) return { error: "invalid_conversation_id", status: 400 };
+  const adminUserId = await adminFavoriteUserId();
+  if (!adminUserId) {
+    return { error: "order_override_identity_unavailable", status: 409, message: "Não foi possível identificar o administrador para salvar esta marcação." };
+  }
+  const conversation = await db.from("conversations").select("id").eq("id", conversationId).maybeSingle();
+  if (conversation.error) throw conversation.error;
+  if (!conversation.data) return { error: "conversation_not_found", status: 404 };
+  const result = await db.from("whatsapp_conversation_order_overrides_v1")
+    .upsert({ admin_user_id: adminUserId, conversation_id: conversationId, mode, updated_at: new Date().toISOString() }, { onConflict: "admin_user_id,conversation_id" });
+  if (result.error) throw result.error;
+  return { conversation_id: conversationId, mode, is_in_orders: mode === "include" };
+}
+
 async function whatsappConversationFavorite(input: any) {
   const mode = clean(input.mode, 12).toLowerCase();
   if (!["add", "remove"].includes(mode)) return { error: "invalid_favorite_action", status: 400 };
@@ -950,29 +1011,65 @@ async function whatsappConversationList(input: any) {
     return { error: "invalid_conversation_cursor", status: 400 };
   }
   const requestedAccount = clean(input.account_id, 64);
-  const accountId = requestedAccount ? uuid(requestedAccount) : "";
+  let accountId = requestedAccount ? uuid(requestedAccount) : "";
   if (requestedAccount && !accountId) return { error: "invalid_account_id", status: 400 };
+  const quickFilter = clean(input.quick_filter, 20).toLowerCase();
+  if (!["", "all", "favorites", "0975", "1018", "orders"].includes(quickFilter)) {
+    return { error: "invalid_quick_filter", status: 400 };
+  }
   const search = clean(input.search, 80).replace(/\D/g, "");
   const filter = clean(input.filter, 20).toLowerCase();
   const onlyHuman = filter === "human";
-  const onlyFavorites = filter === "favorites";
+  const onlyFavorites = quickFilter === "favorites" || filter === "favorites";
+  const onlyOrders = quickFilter === "orders";
   let favoriteIds: string[] = [];
   let favoritesAvailable = false;
-  try {
-    const adminUserId = await adminFavoriteUserId();
-    if (adminUserId) {
-      favoriteIds = await conversationFavoriteIds(adminUserId);
+  let adminUserId = "";
+  let orderOverrides = new Map<string, string>();
+  let ordersAvailable = false;
+  try { adminUserId = await adminFavoriteUserId(); } catch { adminUserId = ""; }
+  if (adminUserId) {
+    const [favoriteResult, orderResult] = await Promise.allSettled([
+      conversationFavoriteIds(adminUserId),
+      conversationOrderOverrides(adminUserId),
+    ]);
+    if (favoriteResult.status === "fulfilled") {
+      favoriteIds = favoriteResult.value;
       favoritesAvailable = true;
     }
-  } catch {
-    favoritesAvailable = false;
+    if (orderResult.status === "fulfilled") {
+      orderOverrides = orderResult.value;
+      ordersAvailable = true;
+    }
   }
   if (onlyFavorites && !favoritesAvailable) {
-    return { error: "favorites_unavailable", status: 503, message: "Favoritos indisponíveis. Atualize o Admin depois de aplicar a migração necessária." };
+    return { error: "favorites_unavailable", status: 503, message: "Favoritos indisponíveis neste ambiente." };
+  }
+
+  const accountResult = await db.from("whatsapp_accounts")
+    .select("id,slug,display_name,phone_e164,is_active")
+    .order("display_name");
+  if (accountResult.error) throw accountResult.error;
+  const accounts = accountResult.data || [];
+  if (["0975", "1018"].includes(quickFilter)) {
+    const selectedAccount = accounts.find((row: any) => String(row.phone_e164 || "").replace(/\D/g, "").endsWith(quickFilter));
+    accountId = selectedAccount ? uuid(selectedAccount.id) : "00000000-0000-0000-0000-000000000000";
+  }
+
+  let orderKeywordIds = new Set<string>();
+  let orderIds = new Set<string>();
+  if (onlyOrders) {
+    orderKeywordIds = await recentOrderConversationIds();
+    for (const id of orderKeywordIds) {
+      if (orderOverrides.get(id) !== "exclude") orderIds.add(id);
+    }
+    for (const [id, mode] of orderOverrides) {
+      if (mode === "include") orderIds.add(id);
+    }
   }
 
   let conversationQuery = db.from("conversations")
-    .select("id,whatsapp_account_id,wa_contact_e164,status,stage,human_required,mode,last_inbound_at,last_outbound_at,updated_at,created_at", { count: "exact" })
+    .select("id,customer_id,whatsapp_account_id,wa_contact_e164,status,stage,human_required,mode,last_inbound_at,last_outbound_at,updated_at,created_at", { count: "exact" })
     .order("updated_at", { ascending: false })
     .order("id", { ascending: false })
     .limit(pageSize + 1);
@@ -989,18 +1086,37 @@ async function whatsappConversationList(input: any) {
       ? conversationQuery.in("id", favoriteIds)
       : conversationQuery.eq("id", "00000000-0000-0000-0000-000000000000");
   }
+  if (onlyOrders) {
+    const orderIdList = Array.from(orderIds);
+    conversationQuery = orderIdList.length
+      ? conversationQuery.in("id", orderIdList)
+      : conversationQuery.eq("id", "00000000-0000-0000-0000-000000000000");
+  }
 
-  const [conversationResult, accountResult] = await Promise.all([
-    conversationQuery,
-    db.from("whatsapp_accounts").select("id,slug,display_name,phone_e164,is_active").order("display_name"),
-  ]);
+  const conversationResult = await conversationQuery;
   if (conversationResult.error) throw conversationResult.error;
-  if (accountResult.error) throw accountResult.error;
-
   const rows = conversationResult.data || [];
   const hasMore = rows.length > pageSize;
   const pageRows = rows.slice(0, pageSize);
-  const accounts = accountResult.data || [];
+  const customerIds = Array.from(new Set(pageRows.map((row: any) => uuid(row.customer_id)).filter(Boolean)));
+  const contactPhones = Array.from(new Set(pageRows.map((row: any) => String(row.wa_contact_e164 || "")).filter(Boolean)));
+  const byIdQuery = customerIds.length
+    ? db.from("customers").select("id,name,primary_whatsapp_e164").in("id", customerIds)
+    : Promise.resolve({ data: [], error: null });
+  const byPhoneQuery = contactPhones.length
+    ? db.from("customers").select("id,name,primary_whatsapp_e164").in("primary_whatsapp_e164", contactPhones)
+    : Promise.resolve({ data: [], error: null });
+  const pageIds = pageRows.map((row: any) => uuid(row.id)).filter(Boolean);
+  const recentForPageQuery = onlyOrders
+    ? Promise.resolve({ data: Array.from(orderKeywordIds).filter((id) => pageIds.includes(id)).map((id) => ({ conversation_id: id })), error: null })
+    : recentOrderConversationIds(pageIds).then((ids) => ({ data: Array.from(ids).map((id) => ({ conversation_id: id })), error: null }));
+  const [byIdResult, byPhoneResult, recentForPageResult] = await Promise.all([byIdQuery, byPhoneQuery, recentForPageQuery]);
+  if (byIdResult.error) throw byIdResult.error;
+  if (byPhoneResult.error) throw byPhoneResult.error;
+  if (recentForPageResult.error) throw recentForPageResult.error;
+  const customerById = new Map((byIdResult.data || []).map((row: any) => [uuid(row.id), row]));
+  const customerByPhone = new Map((byPhoneResult.data || []).map((row: any) => [String(row.primary_whatsapp_e164 || ""), row]));
+  const recentOrderSet = new Set((recentForPageResult.data || []).map((row: any) => uuid(row.conversation_id)).filter(Boolean));
   const accountById = new Map(accounts.map((row: any) => [row.id, row]));
   const favoriteIdSet = new Set(favoriteIds);
   const items = pageRows.map((row: any) => {
@@ -1009,8 +1125,15 @@ async function whatsappConversationList(input: any) {
     const accountDigits = String(account.phone_e164 || "").replace(/\D/g, "");
     const lastActivity = [row.last_inbound_at, row.last_outbound_at, row.updated_at, row.created_at]
       .filter(Boolean).sort((a: string, b: string) => new Date(b).getTime() - new Date(a).getTime())[0] || null;
+    const linkedCustomer: any = customerById.get(uuid(row.customer_id))
+      || customerByPhone.get(String(row.wa_contact_e164 || ""))
+      || {};
+    const hasRecentOrderKeyword = recentOrderSet.has(row.id);
+    const orderOverride = orderOverrides.get(row.id) || "";
+    const isInOrders = orderOverride === "include" || (orderOverride !== "exclude" && hasRecentOrderKeyword);
     return {
       id: row.id,
+      customer_name: clean(linkedCustomer.name || "", 180),
       channel: clean(account.display_name || account.slug || "WhatsApp", 120),
       channel_number: accountDigits.slice(-4),
       phone_last4: phoneDigits.slice(-4),
@@ -1019,6 +1142,9 @@ async function whatsappConversationList(input: any) {
       mode: clean(row.mode, 40),
       human_required: row.human_required === true,
       is_favorite: favoriteIdSet.has(row.id),
+      has_recent_order_keyword: hasRecentOrderKeyword,
+      order_override: orderOverride,
+      is_in_orders: isInOrders,
       last_activity_at: lastActivity,
       updated_at: row.updated_at,
     };
@@ -1036,6 +1162,7 @@ async function whatsappConversationList(input: any) {
     has_more: hasMore,
     next_cursor: hasMore && lastRow ? { updated_at: lastRow.updated_at, id: lastRow.id } : null,
     favorites_available: favoritesAvailable,
+    orders_available: ordersAvailable,
   };
 }
 
@@ -2738,6 +2865,7 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "whatsapp_conversation_send_media") result = await whatsappConversationSendMedia(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_media") result = await whatsappConversationMedia(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_favorite") result = await whatsappConversationFavorite(input);
+    else if (req.method === "POST" && action === "whatsapp_conversation_order_override") result = await whatsappConversationOrderOverride(input);
     else if (req.method === "POST" && action === "whatsapp_campaign_draft_load") result = await whatsappCampaignDraftLoad(input);
     else if (req.method === "POST" && action === "whatsapp_campaign_draft_create") result = await whatsappCampaignDraftCreate(input);
     else if (req.method === "POST" && action === "whatsapp_campaign_draft_update") result = await whatsappCampaignDraftUpdate(input);

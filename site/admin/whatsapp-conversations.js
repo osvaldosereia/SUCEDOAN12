@@ -5,7 +5,7 @@
   const endpoint = base + "/functions/v1/site-admin-v1";
   const publishableKey = config.publishableKey || "";
   const $ = (id) => document.getElementById(id);
-  const state = { cursor: null, total: 0, conversations: [], selectedId: "", before: null, busy: false, accountsLoaded: false, favoriteIds: new Set(), favoritesAvailable: false, favoriteBusyIds: new Set(), textSending: false, mediaSending: false, pendingTextKey: "", pendingTextValue: "", pendingTextConversationId: "", pendingMediaKey: "", pendingMediaFingerprint: "", uncertainConversationIds: new Set(), statusRefreshing: false };
+  const state = { cursor: null, total: 0, conversations: [], selectedId: "", selectedConversation: null, before: null, listLoading: false, listRequestId: 0, conversationLoading: false, conversationRequestId: 0, olderLoading: false, quickFilter: "all", favoriteIds: new Set(), favoritesAvailable: false, ordersAvailable: false, favoriteBusyIds: new Set(), orderBusyIds: new Set(), textSending: false, mediaSending: false, pendingTextKey: "", pendingTextValue: "", pendingTextConversationId: "", pendingMediaKey: "", pendingMediaFingerprint: "", uncertainConversationIds: new Set(), statusRefreshing: false };
   const dateLabel = (value) => {
     if (!value) return "Sem atividade";
     const date = new Date(value);
@@ -57,10 +57,10 @@
     const locked = state.uncertainConversationIds.has(state.selectedId);
     const sending = state.textSending || state.mediaSending;
     input.maxLength = file ? 1024 : 4000;
-    input.disabled = state.busy || sending || !state.selectedId || locked;
-    button.disabled = state.busy || sending || !state.selectedId || !text || text.length > 4000 || Boolean(file) || locked;
-    if (fileInput) fileInput.disabled = state.busy || sending || !state.selectedId || locked;
-    if (mediaButton) mediaButton.disabled = state.busy || sending || !state.selectedId || !file || text.length > 1024 || locked;
+    input.disabled = state.conversationLoading || sending || !state.selectedId || locked;
+    button.disabled = state.conversationLoading || sending || !state.selectedId || !text || text.length > 4000 || Boolean(file) || locked;
+    if (fileInput) fileInput.disabled = state.conversationLoading || sending || !state.selectedId || locked;
+    if (mediaButton) mediaButton.disabled = state.conversationLoading || sending || !state.selectedId || !file || text.length > 1024 || locked;
     if (removeButton) removeButton.hidden = !file || sending;
     if (fileLabel) fileLabel.textContent = file
       ? file.name + " · " + (file.size >= 1024 * 1024 ? (file.size / (1024 * 1024)).toFixed(1) + " MB" : Math.max(1, Math.round(file.size / 1024)) + " KB")
@@ -239,23 +239,6 @@
     }
   }
 
-  function addOption(select, value, label) {
-    const option = document.createElement("option");
-    option.value = value;
-    option.textContent = label;
-    select.append(option);
-  }
-
-  function renderAccounts(accounts) {
-    if (state.accountsLoaded) return;
-    const select = $("whatsapp-conversation-account");
-    for (const account of accounts || []) {
-      const number = account.number_last4 ? " · •••• " + account.number_last4 : "";
-      addOption(select, account.id, account.name + number + (account.active ? "" : " (inativo)"));
-    }
-    state.accountsLoaded = true;
-  }
-
   function renderQueue(items, append) {
     const host = $("whatsapp-conversation-items");
     if (!append) host.replaceChildren();
@@ -272,9 +255,13 @@
       button.dataset.conversationId = item.id;
       button.setAttribute("aria-pressed", String(item.id === state.selectedId));
       const title = document.createElement("strong");
-      title.textContent = item.phone_last4 ? "Contato · •••• " + item.phone_last4 : "Contato";
+      title.textContent = item.customer_name
+        ? item.customer_name + (item.phone_last4 ? " · •••• " + item.phone_last4 : "")
+        : item.phone_last4 ? "Contato · •••• " + item.phone_last4 : "Contato";
       const meta = document.createElement("span");
-      meta.textContent = item.channel + " · " + (item.human_required ? "Atendimento humano" : item.mode || item.status || "Conversa");
+      meta.textContent = (item.channel || "WhatsApp")
+        + (item.channel_number ? " · Canal " + item.channel_number : "")
+        + " · " + (item.human_required ? "Atendimento humano" : item.mode || item.status || "Conversa");
       const date = document.createElement("small");
       date.textContent = dateLabel(item.last_activity_at);
       button.append(title, meta, date);
@@ -293,7 +280,22 @@
         event.stopPropagation();
         toggleConversationFavorite(item.id, favoriteButton);
       });
-      entry.append(button, favoriteButton);
+
+      const orderButton = document.createElement("button");
+      const inOrders = item.is_in_orders === true;
+      orderButton.type = "button";
+      orderButton.className = "whatsapp-conversation-order-toggle";
+      orderButton.dataset.conversationId = item.id;
+      orderButton.textContent = inOrders ? "−" : "+";
+      orderButton.title = inOrders ? "Remover da aba Pedidos" : "Adicionar à aba Pedidos";
+      orderButton.setAttribute("aria-label", orderButton.title);
+      orderButton.setAttribute("aria-pressed", String(inOrders));
+      orderButton.disabled = !state.ordersAvailable || state.orderBusyIds.has(item.id);
+      orderButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        toggleConversationOrder(item.id, orderButton);
+      });
+      entry.append(button, favoriteButton, orderButton);
       host.append(entry);
     }
   }
@@ -311,12 +313,15 @@
       const isFavorite = !wasFavorite;
       if (isFavorite) state.favoriteIds.add(conversationId);
       else state.favoriteIds.delete(conversationId);
+      const conversation = state.conversations.find((item) => item.id === conversationId);
+      if (conversation) conversation.is_favorite = isFavorite;
       button.setAttribute("aria-pressed", String(isFavorite));
       button.setAttribute("aria-label", isFavorite ? "Remover dos favoritos" : "Favoritar conversa");
       button.title = isFavorite ? "Remover dos favoritos" : "Favoritar conversa";
       button.textContent = isFavorite ? "★" : "☆";
-      if (!isFavorite && $("whatsapp-conversation-filter").value === "favorites") {
+      if (!isFavorite && state.quickFilter === "favorites") {
         button.closest(".whatsapp-conversation-item")?.remove();
+        state.conversations = state.conversations.filter((item) => item.id !== conversationId);
         state.total = Math.max(0, state.total - 1);
         setStatus(state.total + " conversa(s) favorita(s) no filtro atual.");
       } else {
@@ -327,6 +332,39 @@
     } finally {
       state.favoriteBusyIds.delete(conversationId);
       if (button.isConnected) button.disabled = !state.favoritesAvailable;
+    }
+  }
+
+  async function toggleConversationOrder(conversationId, button) {
+    if (!state.ordersAvailable || state.orderBusyIds.has(conversationId)) return;
+    const conversation = state.conversations.find((item) => item.id === conversationId);
+    if (!conversation) return;
+    const wasInOrders = conversation.is_in_orders === true;
+    const mode = wasInOrders ? "exclude" : "include";
+    state.orderBusyIds.add(conversationId);
+    button.disabled = true;
+    try {
+      await request("whatsapp_conversation_order_override", { mode, conversation_id: conversationId });
+      conversation.order_override = mode;
+      conversation.is_in_orders = !wasInOrders;
+      const isInOrders = conversation.is_in_orders;
+      button.textContent = isInOrders ? "−" : "+";
+      button.title = isInOrders ? "Remover da aba Pedidos" : "Adicionar à aba Pedidos";
+      button.setAttribute("aria-label", button.title);
+      button.setAttribute("aria-pressed", String(isInOrders));
+      if (!isInOrders && state.quickFilter === "orders") {
+        button.closest(".whatsapp-conversation-item")?.remove();
+        state.conversations = state.conversations.filter((item) => item.id !== conversationId);
+        state.total = Math.max(0, state.total - 1);
+        setStatus(state.total + " conversa(s) na aba Pedidos das últimas 28 horas.");
+      } else {
+        setStatus(isInOrders ? "Conversa adicionada à aba Pedidos." : "Conversa removida da aba Pedidos.");
+      }
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Não foi possível salvar esta marcação.");
+    } finally {
+      state.orderBusyIds.delete(conversationId);
+      if (button.isConnected) button.disabled = !state.ordersAvailable;
     }
   }
 
@@ -548,7 +586,7 @@
   async function refreshSelectedMessageStatuses() {
     const conversationId = state.selectedId;
     const host = $("whatsapp-conversation-messages");
-    if (!conversationId || !host || state.statusRefreshing || state.busy) return false;
+    if (!conversationId || !host || state.statusRefreshing || state.conversationLoading) return false;
     const messageIds = Array.from(new Set(
       Array.from(host.querySelectorAll(".whatsapp-message.outbound[data-message-id]"))
         .map((bubble) => String(bubble.dataset.messageId || ""))
@@ -579,16 +617,21 @@
   }
 
   function renderHeader(conversation) {
-    $("whatsapp-conversation-title").textContent = conversation.phone_last4 ? "Contato · •••• " + conversation.phone_last4 : "Contato";
+    const selected = state.selectedConversation || {};
+    const phoneLast4 = conversation.phone_last4 || selected.phone_last4 || "";
+    const customerName = conversation.customer_name || selected.customer_name || "";
+    const channelName = conversation.channel || selected.channel || "WhatsApp";
+    const channelNumber = conversation.channel_number || selected.channel_number || "";
+    $("whatsapp-conversation-title").textContent = (customerName || "Contato") + (phoneLast4 ? " · •••• " + phoneLast4 : "");
     const stateLabel = conversation.human_required ? "Precisa de atendimento humano" : [conversation.mode, conversation.status, conversation.stage].filter(Boolean).join(" · ");
-    const channel = conversation.channel + (conversation.channel_number ? " · •••• " + conversation.channel_number : "");
+    const channel = channelName + (channelNumber ? " · Canal " + channelNumber : "");
     $("whatsapp-conversation-subtitle").textContent = channel + " · " + (stateLabel || "Conversa");
     $("whatsapp-conversation-header").hidden = false;
     $("whatsapp-conversation-empty").hidden = true;
   }
 
   async function loadConversations({ append = false, silent = false } = {}) {
-    if (state.busy) return;
+    if (append && state.listLoading) return;
     if (!base || !publishableKey) return;
     const rawSearch = $("whatsapp-conversation-search").value.trim();
     const searchDigits = rawSearch.replace(/\D/g, "");
@@ -596,32 +639,28 @@
       if (!silent) setStatus("Digite pelo menos quatro dígitos do telefone.");
       return;
     }
-    state.busy = true;
-    let selectFirst = "";
+    const requestId = ++state.listRequestId;
+    state.listLoading = true;
     const host = $("whatsapp-conversation-items");
     if (!append && !silent) {
       state.cursor = null;
       state.total = 0;
       state.conversations = [];
-      state.selectedId = "";
-      state.before = null;
       state.favoriteIds.clear();
       state.favoritesAvailable = false;
-      $("whatsapp-conversation-header").hidden = true;
-      $("whatsapp-conversation-compose").hidden = true;
-      $("whatsapp-conversation-messages").replaceChildren();
-      $("whatsapp-conversation-empty").hidden = false;
+      state.ordersAvailable = false;
       setStatus("Buscando conversas…");
     } else if (append) setStatus("Carregando mais conversas…");
     try {
       const data = await request("whatsapp_conversation_list", {
         cursor: append ? state.cursor : null,
-        account_id: $("whatsapp-conversation-account").value || "",
+        quick_filter: state.quickFilter,
         search: $("whatsapp-conversation-search").value || "",
         filter: $("whatsapp-conversation-filter").value || "all",
       });
-      renderAccounts(data.accounts);
+      if (requestId !== state.listRequestId) return;
       state.favoritesAvailable = data.favorites_available === true;
+      state.ordersAvailable = data.orders_available === true;
       const incoming = Array.isArray(data.items) ? data.items : [];
       if (silent) {
         const incomingIds = new Set(incoming.map((item) => String(item.id)));
@@ -639,6 +678,7 @@
         const additions = incoming.filter((item) => !existingIds.has(String(item.id)));
         state.conversations.push(...additions);
         state.cursor = data.next_cursor || null;
+        state.total = data.total || state.total;
         renderQueue(additions, true);
       } else {
         state.conversations = incoming;
@@ -648,12 +688,13 @@
       }
       $("whatsapp-conversation-more").hidden = !state.cursor;
       if (!silent) {
-        setStatus(state.total + " conversa(s) no filtro atual · mais recentes primeiro."
-          + (state.favoritesAvailable ? "" : " Favoritos indisponíveis neste ambiente."));
+        const label = state.quickFilter === "orders"
+          ? state.total + " conversa(s) com pedido nas últimas 28 horas."
+          : state.total + " conversa(s) no filtro atual · mais recentes primeiro.";
+        setStatus(label + (state.ordersAvailable ? "" : " Marcações manuais de pedidos indisponíveis neste ambiente."));
       }
-      if (!append && !silent && data.items && data.items.length) selectFirst = data.items[0].id;
-      else if (append && data.items && data.items.length && !state.selectedId) selectFirst = data.items[0].id;
     } catch (error) {
+      if (requestId !== state.listRequestId) return;
       if (!silent) setStatus(error instanceof Error ? error.message : "Não foi possível carregar as conversas.");
       if (!append && !silent) {
         host.replaceChildren();
@@ -663,17 +704,18 @@
         host.append(message);
       }
     } finally {
-      state.busy = false;
+      if (requestId === state.listRequestId) state.listLoading = false;
     }
-    if (selectFirst) await loadConversation(selectFirst);
   }
 
   async function loadConversation(id, { older = false } = {}) {
-    if (!id || state.busy) return;
-    state.busy = true;
+    if (!id || (older && (state.olderLoading || state.conversationLoading))) return;
+    const requestId = older ? state.conversationRequestId : ++state.conversationRequestId;
     const targetBefore = older ? state.before : null;
     if (!older) {
       state.selectedId = id;
+      state.selectedConversation = state.conversations.find((item) => item.id === id) || null;
+      state.conversationLoading = true;
       $("whatsapp-conversation-header").hidden = true;
       $("whatsapp-conversation-compose").hidden = true;
       $("whatsapp-conversation-draft").value = "";
@@ -682,14 +724,23 @@
       state.pendingTextValue = "";
       state.pendingTextConversationId = "";
       $("whatsapp-conversation-empty").hidden = false;
+      $("whatsapp-conversation-empty").innerHTML = "<strong>Carregando conversa…</strong><span>As mensagens serão abertas quando você selecionar uma conversa.</span>";
       $("whatsapp-conversation-messages").replaceChildren();
       for (const button of document.querySelectorAll(".whatsapp-conversation-card")) {
         button.setAttribute("aria-pressed", String(button.dataset.conversationId === id));
       }
+      syncComposer();
+    } else {
+      state.olderLoading = true;
+      $("whatsapp-conversation-older").disabled = true;
     }
     try {
-      const data = await request("whatsapp_conversation_messages", { conversation_id: id, before_created_at: targetBefore?.created_at || "", before_id: targetBefore?.id || "" });
-      if (state.selectedId !== id) return;
+      const data = await request("whatsapp_conversation_messages", {
+        conversation_id: id,
+        before_created_at: targetBefore?.created_at || "",
+        before_id: targetBefore?.id || "",
+      });
+      if (state.selectedId !== id || requestId !== state.conversationRequestId) return;
       renderHeader(data.conversation || {});
       renderMessages(data.messages || [], older);
       if (!older) {
@@ -698,15 +749,21 @@
       }
       state.before = data.next_before || null;
       $("whatsapp-conversation-older").hidden = !state.before;
-      setStatus("Histórico carregado em modo de consulta.");
+      setStatus("Histórico carregado.");
     } catch (error) {
+      if (state.selectedId !== id || requestId !== state.conversationRequestId) return;
       if (!older) {
         $("whatsapp-conversation-empty").textContent = error instanceof Error ? error.message : "Não foi possível abrir esta conversa.";
         $("whatsapp-conversation-empty").hidden = false;
       } else setStatus(error instanceof Error ? error.message : "Não foi possível carregar mensagens anteriores.");
     } finally {
-      state.busy = false;
-      syncComposer();
+      if (older) {
+        state.olderLoading = false;
+        $("whatsapp-conversation-older").disabled = false;
+      } else if (requestId === state.conversationRequestId) {
+        state.conversationLoading = false;
+        syncComposer();
+      }
     }
   }
 
@@ -736,16 +793,17 @@
   $("whatsapp-conversations-refresh")?.addEventListener("click", () => { void refreshConversationView(); });
   $("whatsapp-conversation-search-button")?.addEventListener("click", () => loadConversations());
   $("whatsapp-conversation-search")?.addEventListener("keydown", (event) => { if (event.key === "Enter") loadConversations(); });
-  $("whatsapp-conversation-account")?.addEventListener("change", () => loadConversations());
   $("whatsapp-conversation-filter")?.addEventListener("change", () => loadConversations());
   $("whatsapp-conversation-more")?.addEventListener("click", () => loadConversations({ append: true }));
   $("whatsapp-conversation-older")?.addEventListener("click", () => state.selectedId && loadConversation(state.selectedId, { older: true }));
-  window.setInterval(() => {
-    const app = $("admin-app");
-    const panel = $("whatsapp-section-conversations");
-    if (!app || app.hidden || !window.DonaAdminAuth?.getCode?.()
-        || !panel || document.hidden || panel.hidden || panel.closest(".admin-view")?.hidden || state.busy) return;
-    void loadConversations({ silent: true });
-  }, 15000);
+  document.querySelectorAll("[data-conversation-view]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.quickFilter = button.dataset.conversationView || "all";
+      document.querySelectorAll("[data-conversation-view]").forEach((tab) => {
+        tab.setAttribute("aria-selected", String(tab === button));
+      });
+      void loadConversations();
+    });
+  });
   window.DonaWhatsAppConversations = { load: () => loadConversations() };
 })();

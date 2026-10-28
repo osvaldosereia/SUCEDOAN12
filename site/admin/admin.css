@@ -581,3 +581,22 @@
 .whatsapp-campaign-consent-warning { margin:9px 0 0; padding:9px 11px; border:1px solid #efd9b4; border-radius:9px; background:#fff8ed; color:#765225; font-size:.73rem; line-height:1.45; }
 .whatsapp-campaign-consent-warning strong { color:#805a28; }
 .whatsapp-campaign-send-blocked { margin:0; padding:9px 11px; border:1px solid #efd9b4; border-radius:9px; background:#fff8ed; color:#805a28; font-size:.74rem; line-height:1.45; font-weight:700; }
+
+.whatsapp-conversation-filters { grid-template-columns:minmax(180px,1fr) minmax(170px,230px) auto; }
+.whatsapp-conversation-views { display:flex; gap:4px; margin:0 0 9px; padding:4px; overflow-x:auto; border-radius:10px; background:#f3eee7; scrollbar-width:thin; }
+.whatsapp-conversation-view { flex:0 0 auto; min-height:34px; padding:6px 9px; border:0; border-radius:8px; background:transparent; color:#75695d; font:inherit; font-size:.72rem; font-weight:750; white-space:nowrap; cursor:pointer; }
+.whatsapp-conversation-view:hover { background:#fff; color:var(--ink); }
+.whatsapp-conversation-view[aria-pressed="true"] { background:#fff; color:var(--accent,#7e3029); box-shadow:0 1px 3px #3d26151a; }
+.whatsapp-conversation-item { grid-template-columns:minmax(0,1fr) 32px 32px; }
+.whatsapp-conversation-order-toggle { display:grid; place-items:center; width:30px; height:30px; margin-top:7px; border:1px solid #e8ddd2; border-radius:8px; background:#fff; color:#7e3029; font-size:1.05rem; font-weight:800; cursor:pointer; }
+.whatsapp-conversation-order-toggle:hover:not(:disabled) { border-color:#d9b7aa; background:#fbf2ee; }
+.whatsapp-conversation-order-toggle[aria-pressed="true"] { border-color:#d7e8d7; background:#eef7ee; color:#27683b; }
+.whatsapp-conversation-order-toggle:disabled { opacity:.4; cursor:not-allowed; }
+@media (max-width:760px) {
+  .whatsapp-conversation-filters { grid-template-columns:minmax(0,1fr) minmax(150px,.9fr) auto; }
+}
+@media (max-width:520px) {
+  .whatsapp-conversation-filters { grid-template-columns:1fr 1fr; }
+  .whatsapp-conversation-filters > button { grid-column:1/-1; }
+  .whatsapp-conversation-views { margin-inline:-2px; }
+}
