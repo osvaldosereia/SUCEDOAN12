@@ -18,7 +18,7 @@
   const state = {
     baskets: [], basket: null, pickerIndex: -1, pickerQuery: "", pickerOffset: 0, pickerTotal: 0,
     pickerSelected: new Set(), productCache: new Map(), productsOffset: 0, productsTotal: 0,
-    productsQuery: "", productsStatus: "active", basketsStatus: "active", toastTimer: 0,
+    productsQuery: "", productsStatus: "active", productsSegment: "all", basketsStatus: "active", toastTimer: 0,
   };
 
   async function request(action, options = {}) {
@@ -237,7 +237,7 @@
     const host = $("products-result");
     if (reset) host.innerHTML = '<p class="admin-muted">Carregando produtos…</p>';
     try {
-      const data = await request("products", { params: { q: state.productsQuery, status: state.productsStatus, offset: state.productsOffset, limit: 24 } });
+      const data = await request("products", { params: { q: state.productsQuery, status: state.productsStatus, segment: state.productsSegment, offset: state.productsOffset, limit: 24 } });
       state.productsTotal = Number(data.total || 0);
       (data.products || []).forEach((product) => state.productCache.set(String(product.id), product));
       if (reset) state.productsOffset = 0;
@@ -432,9 +432,11 @@
       event.preventDefault();
       state.productsQuery = $("product-query").value.trim();
       state.productsStatus = $("product-status").value;
+      state.productsSegment = $("product-segment").value;
       loadProducts(true);
     });
     $("product-status").addEventListener("change", () => $("product-search").requestSubmit());
+    $("product-segment").addEventListener("change", () => $("product-search").requestSubmit());
     $("basket-status").addEventListener("change", () => {
       state.basketsStatus = $("basket-status").value;
       loadBaskets();
