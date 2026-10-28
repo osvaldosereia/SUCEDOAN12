@@ -1088,3 +1088,12 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 - A exportação atualizada foi publicada exclusivamente em `site2/` no `main`, commit `c745899f358b1836c2a083b8df758a0a98035ca0`. Nenhum arquivo de `/site`, raiz, domínio ou configuração Pages foi substituído.
 - O workflow `pages build and deployment` desse commit terminou em `success`. As páginas `/site2/`, `/site2/login/`, `/site2/configuracoes/`, `/site2/configuracoes/fluxos/` e `/site/admin/` responderam HTTP 200; os bundles JavaScript novos e o CSS também responderam 200.
 - O novo carregamento dinâmico ainda não foi executado com uma sessão Auth real. Operador precisa entrar para conferir canais, ANA, Bling, os dois WABAs e o caminho do pedido. Não criar um pedido de cliente nem enviar mensagem durante esse gate.
+
+## Auditoria agregada de fotos e alternativas do Flow (28/10/2026)
+
+- Consulta somente leitura ao Supabase de produção `ssbesxgaijknwsjbsbcz`, em 28/10/2026 09:43 UTC, retornou apenas agregados; nenhuma linha de cliente, produto ou pedido foi aberta e nenhum registro foi alterado.
+- Dos 362 produtos ativos para WhatsApp, 314 (86,7%) têm URL de imagem HTTPS e 48 não têm URL. A checagem confirma o formato da URL armazenada; não prova que cada arquivo remoto ainda responde ou renderiza corretamente.
+- As cinco cestas ativas para WhatsApp têm imagem HTTPS. O modelo contém 118 posições: 96 já têm pelo menos uma alternativa ativa para WhatsApp com URL HTTPS; 22 não têm alternativa elegível. Não há posição sem vínculo de opção, sem produto ativo, nem caso em que a única falha seja foto: nas 22 posições, os produtos ligados estão ativos, mas com disponibilidade de WhatsApp desligada.
+- Lacunas por cesta: Econômica 3/14; Grande Completa 5/27; Média Completa 5/27; Mini Completa 4/23; Pequena Completa 5/27. Assim, nenhuma das cinco cestas satisfaz atualmente a cobertura total exigida para abrir todas as posições do Flow.
+- Bloqueio operacional: revisar no Admin os 22 vínculos/flags e decidir quais produtos devem ficar disponíveis no WhatsApp; não ativar automaticamente porque isso muda o catálogo comercial. Completar/validar também fotos nos demais 48 produtos que deverão ser oferecidos no Flow. Depois, repetir apenas esta auditoria agregada e executar validação visual de acessibilidade das imagens antes de publicar o Flow.
+- Nenhum Flow foi publicado, nenhuma mensagem foi enviada e não houve escrita no Bling, emissão de NF-e ou mutação de catálogo. Esta rodada não criou nem executou testes automatizados.
