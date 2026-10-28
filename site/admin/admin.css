@@ -407,3 +407,10 @@
 .whatsapp-campaign-status-chip.unavailable { background:#fff3db; color:#77541d; }
 .whatsapp-campaign-delivery-extra,.whatsapp-campaign-snapshot { color:var(--muted); font-size:.72rem; line-height:1.5; }
 .whatsapp-campaign-snapshot { display:block; }
+
+.whatsapp-ana-diff-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:12px; }
+.whatsapp-ana-diff-row { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:42px; padding:9px 11px; border:1px solid var(--line); border-radius:9px; background:#f8f9fb; color:var(--ink); font-size:.78rem; }
+.whatsapp-ana-diff-row strong { flex:0 0 auto; color:#737b85; font-size:.7rem; }
+.whatsapp-ana-diff-row.changed { border-color:#e8d5bd; background:#fff8ef; }
+.whatsapp-ana-diff-row.changed strong { color:#8b5a25; }
+@media (max-width:520px) { .whatsapp-ana-diff-list { grid-template-columns:1fr; } }
