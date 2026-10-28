@@ -484,3 +484,33 @@
   .whatsapp-ana-channel { grid-template-columns:minmax(0,1fr) auto; gap:9px; }
   .whatsapp-ana-channel > .button, .whatsapp-ana-channel > small { grid-column:1 / -1; justify-self:stretch; }
 }
+
+
+.whatsapp-campaign-header-actions { display:flex; align-items:center; gap:8px; }
+.whatsapp-campaign-editor-card { display:grid; gap:16px; padding:18px; border:1px solid var(--line); border-radius:15px; background:#fff; }
+.whatsapp-campaign-editor-head { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
+.whatsapp-campaign-editor-head h3 { margin:0 0 5px; }
+.whatsapp-campaign-editor-head p { margin:0; }
+.whatsapp-campaign-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.whatsapp-campaign-field { display:grid; gap:6px; min-width:0; color:var(--ink); font-size:.78rem; font-weight:700; }
+.whatsapp-campaign-field input,.whatsapp-campaign-field select { width:100%; min-width:0; min-height:42px; padding:8px 10px; border:1px solid #d8cfc3; border-radius:9px; background:#fff; color:var(--ink); font:inherit; font-weight:500; }
+.whatsapp-campaign-field input:focus,.whatsapp-campaign-field select:focus { outline:2px solid #b76e62; outline-offset:1px; }
+.whatsapp-campaign-field-wide { grid-column:1 / -1; }
+.whatsapp-campaign-field-wide h4 { margin:0 0 4px; color:var(--ink); font-size:.92rem; }
+.whatsapp-campaign-field-wide p { margin:0; font-size:.76rem; }
+.whatsapp-campaign-editor-note { margin:0; padding:10px 12px; border-radius:9px; background:#fff8ef; color:#76582d; font-size:.75rem; line-height:1.45; }
+.whatsapp-campaign-editor-actions { display:flex; align-items:center; justify-content:flex-end; gap:12px; }
+.whatsapp-campaign-editor-actions p { margin:0 auto 0 0; font-size:.78rem; }
+.whatsapp-campaign-edit-button { margin-top:8px; }
+@media (max-width:720px) {
+  .whatsapp-campaign-header-actions { flex-wrap:wrap; justify-content:flex-end; }
+  .whatsapp-campaign-form-grid { grid-template-columns:1fr; }
+  .whatsapp-campaign-field-wide { grid-column:auto; }
+}
+@media (max-width:520px) {
+  .whatsapp-campaign-editor-head { flex-direction:column; }
+  .whatsapp-campaign-editor-head > button { width:100%; }
+  .whatsapp-campaign-editor-actions { align-items:stretch; flex-direction:column; }
+  .whatsapp-campaign-editor-actions p { margin:0; }
+  .whatsapp-campaign-editor-actions .button { width:100%; }
+}
