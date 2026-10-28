@@ -115,7 +115,7 @@
       } catch (error) {
         if (!host.isConnected) return;
         button.disabled = false;
-        const code = error instanceof Error ? error.message : "";
+        const code = error instanceof Error ? (error.code || error.message) : "";
         title.textContent = code === "media_not_cached" ? "Mídia indisponível" : "Tentar novamente";
         hint.textContent = code === "media_not_cached"
           ? "O arquivo ainda não está no cache privado."
