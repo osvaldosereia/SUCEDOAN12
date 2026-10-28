@@ -2,11 +2,16 @@ import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { verifyAdminCode } from "../_shared/admin-code-v1.ts";
 import { sendTextViaMeta, sendMediaViaMeta, MetaTransportError } from "../_shared/whatsapp-meta-transport-v1.mjs";
 import { canonicalOutboundMetaMime, outboundMetaMaxBytes, validateOutboundMetaMediaContent, uploadMetaMedia, MetaMediaError } from "../_shared/whatsapp-meta-media-v1.mjs";
+import { ANA_DRY_RUN_INSTRUCTIONS, ANA_DRY_RUN_SCHEMA, buildAnaDryRunInput, normalizeAnaDryRunResult, isSimpleAnaGreeting } from "../_shared/ana-policy-v1.mjs";
+import { validateAnaConfiguration, buildAnaRuntimeInstructions, routeAnaMessage } from "../_shared/ana-admin-config-v1.mjs";
+import { shouldSendAnaLiveReply } from "../_shared/ana-live-policy-v1.mjs";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const META_WHATSAPP_ACCESS_TOKEN = (Deno.env.get("META_WHATSAPP_ACCESS_TOKEN") || "").trim();
 const META_WHATSAPP_GRAPH_VERSION = (Deno.env.get("META_WHATSAPP_GRAPH_VERSION") || "").trim();
+const OPENAI_API_KEY = (Deno.env.get("OPENAI_API_KEY") || "").trim();
+const ANA_MODEL = (Deno.env.get("ANA_OPENAI_MODEL") || "gpt-6-luna").trim();
 const attendanceMetaConfigReady = () => Boolean(META_WHATSAPP_ACCESS_TOKEN && /^v\d+\.\d+$/.test(META_WHATSAPP_GRAPH_VERSION));
 const ALLOWED_ORIGINS = new Set([
   "https://donaantonia.com.br",
@@ -1477,6 +1482,224 @@ async function whatsappCampaignPreview(input: any) {
 }
 
 
+
+function anaOutputText(data: any) {
+  return (Array.isArray(data?.output) ? data.output : [])
+    .flatMap((item: any) => Array.isArray(item?.content) ? item.content : [])
+    .filter((item: any) => item?.type === "output_text")
+    .map((item: any) => String(item?.text || ""))
+    .join("")
+    .trim();
+}
+
+async function anaOpenAiKey() {
+  if (OPENAI_API_KEY) return OPENAI_API_KEY;
+  if (!SERVICE_ROLE_KEY) return "";
+  try {
+    const result = await db.rpc("get_conversation_worker_provider_secret_v1");
+    return !result.error && typeof result.data === "string" ? result.data.trim() : "";
+  } catch {
+    return "";
+  }
+}
+
+function anaOperationalContext() {
+  return {
+    catalog_ordering: "Para consultar produtos e fazer pedido, direcione o cliente ao catálogo/site oficial. O atendimento pode orientar e oferecer atendimento humano, mas esta prévia não cria pedido.",
+    human_support: "Atendimento humano está disponível quando o cliente pedir ajuda, quando faltar contexto confiável ou quando houver exceção operacional.",
+    never_collect_in_chat: ["CPF/CNPJ", "endereço completo"],
+    dynamic_data_rule: "Preço, estoque, total, composição de cesta, prazo/entrega, pagamento e dados do pedido são dinâmicos. Só afirme esses dados quando vierem explicitamente no contexto; caso contrário, encaminhe para humano ou para o catálogo/site oficial.",
+    known_customer_first_name: "",
+  };
+}
+
+async function generateAnaDryRunSuggestion(inboundText: string, instructions = ANA_DRY_RUN_INSTRUCTIONS) {
+  const apiKey = await anaOpenAiKey();
+  if (!apiKey) return { ok: false as const, error: "openai_not_configured", latency_ms: 0 };
+  const input = buildAnaDryRunInput({ inboundText, history: [], operationalContext: anaOperationalContext() });
+  const started = Date.now();
+  try {
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: ANA_MODEL,
+        store: false,
+        max_output_tokens: 500,
+        reasoning: { effort: "low" },
+        instructions,
+        input: [{ role: "user", content: [{ type: "input_text", text: JSON.stringify(input) }] }],
+        text: { format: { type: "json_schema", name: "ana_dry_run_suggestion", strict: true, schema: ANA_DRY_RUN_SCHEMA } },
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return { ok: false as const, error: "openai_http_error", latency_ms: Date.now() - started };
+    let parsed: any = {};
+    try { parsed = JSON.parse(anaOutputText(data) || "{}"); }
+    catch { return { ok: false as const, error: "openai_parse_error", latency_ms: Date.now() - started }; }
+    return { ok: true as const, result: normalizeAnaDryRunResult(parsed), latency_ms: Date.now() - started };
+  } catch (error: any) {
+    return { ok: false as const, error: clean(error?.name || "openai_request_error", 120), latency_ms: Date.now() - started };
+  }
+}
+
+async function whatsappAnaAdminTest(input: any) {
+  const actorId = await adminFavoriteUserId();
+  if (!actorId) return { error: "admin_identity_unavailable", status: 403 };
+  const loaded = await db.rpc("ops2_ana_admin_load_v1");
+  if (loaded.error) throw loaded.error;
+  const draft = loaded.data?.draft;
+  const validation = validateAnaConfiguration(draft?.configuration);
+  if (!validation.ok) return { error: "configuration_invalid", status: 409 };
+  const revision = Number(draft?.revision);
+  if (!Number.isSafeInteger(revision) || Number(input.expected_revision) !== revision) {
+    return { error: "revision_conflict", status: 409, message: "O rascunho mudou. Atualize a tela antes de testar." };
+  }
+  const suite = Array.isArray(draft.configuration.test_cases) ? draft.configuration.test_cases.slice(0, 20) : [];
+  if (!suite.length) return { error: "required_test_cases_missing", status: 409 };
+
+  const began = Date.now();
+  let passed = 0;
+  let failed = 0;
+  const safeReasons: string[] = [];
+  const scenarioResults: any[] = [];
+  const simulate = async (message: string, channel: string, context: any = {}, options: any = {}) => {
+    const trace: any[] = [];
+    if (options?.deterministicGreeting === true && isSimpleAnaGreeting(message)) {
+      trace.push({ step: "suite_guard", type: "simple_greeting" });
+      return { outcome: "reply", reason: "required_suite_simple_greeting", response_text: "Olá! Como posso ajudar?", latency_ms: 0, trace };
+    }
+    if (context?.humanMode === true) {
+      trace.push({ step: "gate", type: "human_mode" });
+      return { outcome: "handoff", reason: "human_mode_gate", response_text: "", latency_ms: 0, trace };
+    }
+    const route = routeAnaMessage(draft.configuration, message, channel, context);
+    if (route.triggerKey) trace.push({ step: "automation", trigger_key: route.triggerKey });
+    if (route.path === "actions") {
+      let responseText = "";
+      let outcome = "no_reply";
+      let continueAi = false;
+      for (const action of route.actions || []) {
+        if (action.type === "label") { trace.push({ step: "action", type: "label", label_id: action.labelId }); outcome = "label"; }
+        if (action.type === "remove_label") { trace.push({ step: "action", type: "remove_label", label_id: action.labelId }); outcome = "label"; }
+        if (action.type === "fixed_reply") { trace.push({ step: "action", type: "fixed_reply", response_text: action.responseText }); responseText = action.responseText; outcome = "reply"; }
+        if (action.type === "handoff") { trace.push({ step: "action", type: "handoff" }); return { outcome: "handoff", reason: "trigger_actions_handoff", response_text: "", latency_ms: 0, trace }; }
+        if (action.type === "continue_ai") { trace.push({ step: "action", type: "continue_ai" }); continueAi = true; }
+      }
+      if (responseText) return { outcome: "reply", reason: "trigger_actions_reply", response_text: responseText, latency_ms: 0, trace };
+      if (!continueAi) return { outcome, reason: "trigger_actions_completed", response_text: "", latency_ms: 0, trace };
+      trace.push({ step: "ai", type: "would_call_ai" });
+    }
+    if (route.path === "fixed_reply") return { outcome: "reply", reason: "fixed_reply_trigger", response_text: route.responseText, latency_ms: 0, trace };
+    if (route.path === "handoff") return { outcome: "handoff", reason: route.reason || "trigger_handoff", response_text: "", latency_ms: 0, trace };
+    if (route.path === "label") return { outcome: "label", reason: "trigger_label", response_text: "", latency_ms: 0, trace };
+    if (route.path === "remove_label") return { outcome: "label", reason: "trigger_label_remove", response_text: "", latency_ms: 0, trace };
+    const generated = await generateAnaDryRunSuggestion(message, buildAnaRuntimeInstructions(draft.configuration));
+    if (!generated.ok) return { outcome: "handoff", reason: "ai_fallback_handoff", response_text: "", latency_ms: Number(generated.latency_ms) || 0, trace };
+    const result = generated.result;
+    if (result.decision === "no_reply") return { outcome: "no_reply", reason: "ai_no_reply", response_text: "", latency_ms: Number(generated.latency_ms) || 0, trace };
+    if (!shouldSendAnaLiveReply({ decision: result.decision, confidence: result.confidence, responseText: result.response_text })) {
+      return { outcome: "handoff", reason: "ai_low_confidence_handoff", response_text: "", latency_ms: Number(generated.latency_ms) || 0, trace };
+    }
+    trace.push({ step: "ai", type: "reply_eligible", confidence: result.confidence });
+    return { outcome: "reply", reason: "ai_reply_eligible", response_text: result.response_text, latency_ms: Number(generated.latency_ms) || 0, trace };
+  };
+
+  for (const scenario of suite) {
+    const result = await simulate(String(scenario.input || ""), String(scenario.channel || "0975"), {}, { deterministicGreeting: true });
+    const ok = result.outcome === scenario.expected;
+    if (ok) passed++; else failed++;
+    safeReasons.push(ok ? "scenario_pass" : "scenario_failed");
+    scenarioResults.push({
+      key: clean(scenario.key, 40),
+      expected: clean(scenario.expected, 40),
+      actual: clean(result.outcome, 40),
+      passed: ok,
+      reason: clean(result.reason, 80),
+    });
+  }
+
+  const recorded = await db.rpc("ops2_ana_admin_record_test_run_v1", {
+    p_draft_revision: revision,
+    p_scenario_keys: suite.map((scenario: any) => String(scenario.key)),
+    p_passed_count: passed,
+    p_failed_count: failed,
+    p_safe_reasons: safeReasons,
+    p_latency_ms: Math.max(0, Date.now() - began),
+    p_actor_id: actorId,
+  });
+  if (recorded.error) throw recorded.error;
+  const saved = recorded.data || { ok: false, error: "test_run_record_failed" };
+  if (saved.ok !== true) return { error: clean(saved.error || "test_run_record_failed", 80), status: 409 };
+  return {
+    dry_run: true,
+    dry_run_not_sendable: true,
+    test_run: {
+      id: uuid(saved.id),
+      draft_revision: revision,
+      passed_count: passed,
+      failed_count: failed,
+    },
+    results: scenarioResults,
+  };
+}
+
+async function whatsappAnaAdminPublish(input: any) {
+  const testRunId = uuid(input.test_run_id);
+  if (!testRunId) return { error: "test_run_required", status: 400 };
+  const actorId = await adminFavoriteUserId();
+  if (!actorId) return { error: "admin_identity_unavailable", status: 403 };
+  const current = await db.rpc("ops2_ana_admin_load_v1");
+  if (current.error) throw current.error;
+  const configuration = current.data?.draft?.configuration;
+  const validation = validateAnaConfiguration(configuration);
+  if (!validation.ok) return { error: "configuration_invalid", status: 409 };
+  if (current.data?.active?.configuration && stableAdminJson(current.data.active.configuration) === stableAdminJson(configuration)) {
+    return { error: "draft_already_active", status: 409 };
+  }
+  const labelIds = [...new Set(configuration.triggers.flatMap((trigger: any) =>
+    Array.isArray(trigger.actions) ? trigger.actions : [{ type: trigger.action, label_id: trigger.label_id }]
+  ).filter((action: any) => ["label", "remove_label"].includes(action.type)).map((action: any) => String(action.label_id)))];
+  if (labelIds.length) {
+    const activeLabels = await db.from("attendance_labels_v1").select("id").eq("is_active", true).in("id", labelIds);
+    if (activeLabels.error) throw activeLabels.error;
+    const found = new Set((activeLabels.data || []).map((label: any) => label.id));
+    if (labelIds.some((id: string) => !found.has(id))) return { error: "trigger_label_not_active", status: 409 };
+  }
+  const result = await db.rpc("ops2_ana_admin_publish_v1", {
+    p_test_run_id: testRunId,
+    p_note: clean(input.note || "Ativação confirmada no Admin", 240),
+    p_actor_id: actorId,
+  });
+  if (result.error) throw result.error;
+  const saved = result.data || { ok: false, error: "ana_publish_failed" };
+  if (saved.ok !== true) return { error: clean(saved.error || "ana_publish_failed", 100), status: 409 };
+  return { version: Number(saved.version) || 0, version_id: Number(saved.version_id) || 0, draft_revision: Number(saved.draft_revision) || 0 };
+}
+
+async function whatsappAnaAdminRollback(input: any) {
+  const versionId = Number(input.version_id);
+  if (!Number.isSafeInteger(versionId) || versionId < 1) return { error: "version_invalid", status: 400 };
+  const actorId = await adminFavoriteUserId();
+  if (!actorId) return { error: "admin_identity_unavailable", status: 403 };
+  const current = await db.rpc("ops2_ana_admin_load_v1");
+  if (current.error) throw current.error;
+  const versions = Array.isArray(current.data?.versions) ? current.data.versions : [];
+  const version = versions.find((item: any) => Number(item.id) === versionId);
+  if (!version) return { error: "version_not_found", status: 404 };
+  if (Number(current.data?.active?.id) === versionId) return { error: "version_already_active", status: 409 };
+  const result = await db.rpc("ops2_ana_admin_rollback_v1", {
+    p_version_id: versionId,
+    p_note: clean(input.note || "Restauração confirmada no Admin", 240),
+    p_actor_id: actorId,
+  });
+  if (result.error) throw result.error;
+  const saved = result.data || { ok: false, error: "ana_rollback_failed" };
+  if (saved.ok !== true) return { error: clean(saved.error || "ana_rollback_failed", 100), status: 409 };
+  return { version: Number(saved.version) || 0, version_id: Number(saved.version_id) || 0 };
+}
+
 async function whatsappAnaPauseChannel(input: any) {
   const accountId = uuid(input.whatsapp_account_id);
   if (!accountId) return { error: "invalid_whatsapp_account_id", status: 400 };
@@ -1593,6 +1816,7 @@ async function whatsappAnaAdminStatus() {
       changed: stableAdminJson(active.configuration?.[section.key]) !== stableAdminJson(draft.configuration?.[section.key]),
     })) : [],
     versions: versions.slice(0, 10).map((item: any) => ({
+      id: Number(item.id) || 0,
       version: Number(item.version) || 0,
       is_active: Boolean(active.id && item.id === active.id),
       published_by: actorName(item.actor_id),
@@ -1600,6 +1824,8 @@ async function whatsappAnaAdminStatus() {
       created_at: item.created_at || null,
     })),
     test_runs: tests.slice(0, 5).map((item: any) => ({
+      id: uuid(item.id),
+      draft_revision: Number(item.draft_revision) || 0,
       passed_count: Number(item.passed_count) || 0,
       failed_count: Number(item.failed_count) || 0,
       created_at: item.created_at || null,
@@ -2033,6 +2259,9 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "whatsapp_campaign_draft_create") result = await whatsappCampaignDraftCreate(input);
     else if (req.method === "POST" && action === "whatsapp_campaign_draft_update") result = await whatsappCampaignDraftUpdate(input);
     else if (req.method === "POST" && action === "whatsapp_campaign_preview") result = await whatsappCampaignPreview(input);
+    else if (req.method === "POST" && action === "whatsapp_ana_admin_test") result = await whatsappAnaAdminTest(input);
+    else if (req.method === "POST" && action === "whatsapp_ana_admin_publish") result = await whatsappAnaAdminPublish(input);
+    else if (req.method === "POST" && action === "whatsapp_ana_admin_rollback") result = await whatsappAnaAdminRollback(input);
     else if (req.method === "POST" && action === "whatsapp_ana_pause_channel") result = await whatsappAnaPauseChannel(input);
     else if (req.method === "POST" && action === "whatsapp_ana_admin_status") result = await whatsappAnaAdminStatus();
     else if (req.method === "POST" && action === "customer_lookup") result = await customerLookup(input);
