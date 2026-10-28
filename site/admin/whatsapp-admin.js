@@ -68,6 +68,37 @@
     ].filter(Boolean).join(" · ");
   }
 
+  function campaignDeliveryMarkup(item) {
+    const delivery = item.delivery;
+    if (!delivery?.available) {
+      return '<div class="whatsapp-campaign-statuses"><span class="whatsapp-campaign-status-chip unavailable">Status Meta indisponível</span></div>';
+    }
+    const count = (value) => String(Math.max(0, Math.trunc(Number(value) || 0)));
+    const badges = [
+      ["api", "API aceitou " + count(delivery.accepted_count)],
+      ["sent", "Meta enviou " + count(delivery.sent_count)],
+      ["delivered", "Entregue " + count(delivery.delivered_count)],
+      ["read", "Lido " + count(delivery.read_count)],
+      ["failed", "Falha " + count(delivery.failed_count)],
+    ].map(([kind, label]) => '<span class="whatsapp-campaign-status-chip ' + kind + '">' + esc(label) + "</span>").join("");
+    const pending = "Pendentes: " + count(delivery.pending_count)
+      + " · Incertos: " + count(delivery.uncertain_count)
+      + " · Ignorados: " + count(delivery.skipped_count);
+    return '<div class="whatsapp-campaign-statuses" aria-label="Resultados de envio">' + badges + '</div><small class="whatsapp-campaign-delivery-extra">' + esc(pending) + "</small>";
+  }
+
+  function campaignRecordRow(item) {
+    const subtitle = (item.channel || "Canal não informado")
+      + (item.scheduled_for ? " · Agendada para " + dateLabel(item.scheduled_for) : "");
+    const when = item.scheduled_for || item.started_at || item.created_at;
+    return '<article class="whatsapp-record-row whatsapp-campaign-row"><div class="whatsapp-record-main">'
+      + '<h3>' + esc(item.name || "Campanha") + "</h3><p>" + esc(subtitle) + "</p>"
+      + campaignDeliveryMarkup(item)
+      + '<small class="whatsapp-campaign-snapshot">' + esc(campaignSnapshotLabel(item)) + "</small>"
+      + '</div><div class="whatsapp-record-side"><span class="whatsapp-record-status ' + statusClass(item.status) + '">'
+      + esc(human(item.status)) + "</span><time>" + esc(dateLabel(when)) + "</time></div></article>";
+  }
+
   function render(data) {
     const channels = Array.isArray(data.channels) ? data.channels : [];
     const templateItems = Array.isArray(data.templates?.items) ? data.templates.items : [];
@@ -96,13 +127,7 @@
       item.last_synced_at || item.updated_at,
       [item.quality_rating ? "Qualidade: " + human(item.quality_rating) : "Sem avaliação de qualidade", item.rejection_reason ? "Motivo da reprovação: " + item.rejection_reason : ""].filter(Boolean).join(" · "),
     )).join("") : emptyList("Nenhum modelo cadastrado.");
-    const campaignsMarkup = campaigns.length ? campaigns.map((item) => recordRow(
-      item.name,
-      (item.channel || "Canal não informado") + (item.scheduled_for ? " · Agendada para " + dateLabel(item.scheduled_for) : ""),
-      item.status,
-      item.scheduled_for || item.started_at || item.created_at,
-      campaignSnapshotLabel(item),
-    )).join("") : emptyList("Nenhuma campanha cadastrada.");
+    const campaignsMarkup = campaigns.length ? campaigns.map(campaignRecordRow).join("") : emptyList("Nenhuma campanha cadastrada.");
     const anaMarkup = ana.length ? ana.map((item) => recordRow(
       human(item.decision || item.status),
       (item.channel || "Canal não informado") + " · " + human(item.status),
