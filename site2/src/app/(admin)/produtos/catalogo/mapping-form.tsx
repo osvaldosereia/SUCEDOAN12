@@ -1,36 +1,46 @@
 "use client";
 
-import { useActionState } from "react";
-import type { AdminCatalogAccount } from "@/lib/supabase/admin-catalog-mappings";
-import type { AdminProduct } from "@/lib/supabase/admin-products";
+import { useState } from "react";
 import {
-	type CatalogMappingFormState,
-	saveCatalogMappingAction,
-} from "./actions";
+	type BrowserCatalogAccount,
+	type BrowserCatalogMapping,
+	type BrowserCatalogProduct,
+	saveBrowserCatalogMapping,
+} from "@/lib/supabase/browser-admin-catalog";
 
-const INITIAL_STATE: CatalogMappingFormState = { kind: "idle", message: "" };
+type FormNotice = { kind: "success" | "error"; message: string };
+
+function errorMessage(code: string | null): string {
+	const messages: Record<string, string> = {
+		not_configured: "A conexão com o Supabase ainda não está configurada.",
+		not_authenticated: "Entre novamente para salvar o vínculo.",
+		not_authorized: "Esta conta não tem permissão para editar o Catálogo Meta.",
+		invalid_input: "Confira o número, o ID do catálogo e o ID do produto Meta.",
+		mapping_already_exists:
+			"Esse ID de produto Meta já está vinculado neste catálogo e número.",
+		mapping_not_found: "O vínculo não existe mais. Atualize a página.",
+		whatsapp_product_unavailable:
+			"Escolha um produto ativo e habilitado para venda no WhatsApp.",
+	};
+	return code
+		? (messages[code] ??
+				"Não foi possível salvar. Atualize a página e tente novamente.")
+		: "Não foi possível salvar. Atualize a página e tente novamente.";
+}
 
 export function CatalogMappingForm({
 	accounts,
 	products,
 	mapping,
+	onSaved,
 }: {
-	accounts: AdminCatalogAccount[];
-	products: AdminProduct[];
-	mapping?: {
-		id: string;
-		accountId: string;
-		catalogId: string;
-		retailerId: string;
-		productId: string;
-		productName: string;
-		productSku: string | null;
-	};
+	accounts: BrowserCatalogAccount[];
+	products: BrowserCatalogProduct[];
+	mapping?: BrowserCatalogMapping;
+	onSaved?: () => void;
 }) {
-	const [state, formAction, pending] = useActionState(
-		saveCatalogMappingAction,
-		INITIAL_STATE,
-	);
+	const [pending, setPending] = useState(false);
+	const [notice, setNotice] = useState<FormNotice | null>(null);
 	const currentProduct = mapping
 		? {
 				id: mapping.productId,
@@ -45,6 +55,30 @@ export function CatalogMappingForm({
 			: []),
 		...products,
 	];
+
+	async function submit(event: React.FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+		const data = new FormData(event.currentTarget);
+		setPending(true);
+		setNotice(null);
+		const result = await saveBrowserCatalogMapping({
+			accountId: String(data.get("accountId") ?? ""),
+			catalogId: String(data.get("catalogId") ?? "").trim(),
+			retailerId: String(data.get("retailerId") ?? "").trim(),
+			productId: String(data.get("productId") ?? ""),
+			linkId: String(data.get("linkId") ?? "") || null,
+		});
+		setPending(false);
+		if (!result.ok) {
+			setNotice({ kind: "error", message: errorMessage(result.error) });
+			return;
+		}
+		setNotice({
+			kind: "success",
+			message: "Vínculo salvo e enviado para conferência.",
+		});
+		onSaved?.();
+	}
 
 	return (
 		<section
@@ -68,11 +102,11 @@ export function CatalogMappingForm({
 				</p>
 			) : products.length === 0 && !currentProduct ? (
 				<p className="meta-catalog-empty">
-					Não há produtos ativos nesta busca. Procure pelo nome ou SKU acima e
+					Não há produtos ativos nesta busca. Procure pelo nome ou SKU e
 					selecione o produto correto.
 				</p>
 			) : (
-				<form action={formAction} className="meta-catalog-form">
+				<form className="meta-catalog-form" onSubmit={submit}>
 					<input name="linkId" type="hidden" value={mapping?.id ?? ""} />
 					<div className="meta-catalog-form-grid">
 						<label className="customer-field">
@@ -133,7 +167,7 @@ export function CatalogMappingForm({
 					</div>
 					<div className="meta-catalog-form-footer">
 						<p>
-							Salvar ou corrigir um vínculo sempre remove a verificação
+							Salvar ou corrigir um vínculo sempre remove a conferência
 							anterior. Somente uma conferência do catálogo Meta poderá
 							liberá-lo para pedidos.
 						</p>
@@ -141,12 +175,12 @@ export function CatalogMappingForm({
 							{pending ? "Salvando…" : "Salvar vínculo"}
 						</button>
 					</div>
-					{state.message && (
+					{notice && (
 						<p
 							aria-live="polite"
-							className={`product-editor-message product-editor-message--${state.kind}`}
+							className={`product-editor-message product-editor-message--${notice.kind}`}
 						>
-							{state.message}
+							{notice.message}
 						</p>
 					)}
 				</form>

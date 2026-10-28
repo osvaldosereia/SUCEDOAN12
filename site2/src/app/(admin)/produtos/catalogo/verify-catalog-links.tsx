@@ -3,7 +3,7 @@
 import { AlertCircle, CheckCircle2, LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { AdminCatalogMapping } from "@/lib/supabase/admin-catalog-mappings";
+import type { BrowserCatalogMapping } from "@/lib/supabase/browser-admin-catalog";
 import { createClient } from "@/lib/supabase/client";
 
 type VerifyGroup = {
@@ -53,7 +53,7 @@ function errorMessage(code: unknown): string {
 	}
 }
 
-function makeGroups(mappings: AdminCatalogMapping[]): VerifyGroup[] {
+function makeGroups(mappings: BrowserCatalogMapping[]): VerifyGroup[] {
 	const groups = new Map<string, VerifyGroup>();
 	for (const mapping of mappings) {
 		if (mapping.status !== "needs_review" || !mapping.productEligible) continue;
@@ -74,7 +74,7 @@ function makeGroups(mappings: AdminCatalogMapping[]): VerifyGroup[] {
 export function VerifyCatalogLinks({
 	mappings,
 }: {
-	mappings: AdminCatalogMapping[];
+	mappings: BrowserCatalogMapping[];
 }) {
 	const groups = makeGroups(mappings);
 	const router = useRouter();
