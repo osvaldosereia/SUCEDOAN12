@@ -2,9 +2,18 @@
 
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import Link from "next/link";
-import { useActionState, useState } from "react";
-import type { OrderLane } from "@/lib/supabase/admin-orders";
-import { type OrderBoardActionState, orderBoardAction } from "./actions";
+import { type FormEvent, useEffect, useState } from "react";
+import type { OrderBoardResult, OrderLane } from "@/lib/supabase/admin-orders";
+import { getBrowserAdminOrderBoard } from "@/lib/supabase/browser-admin-orders";
+
+const PAGE_SIZE = 5;
+const EMPTY_RESULT: OrderBoardResult = {
+	orders: [],
+	total: 0,
+	hasMore: false,
+	counts: null,
+	error: null,
+};
 
 const money = new Intl.NumberFormat("pt-BR", {
 	style: "currency",
@@ -37,6 +46,12 @@ const errorNames: Record<string, string> = {
 	unavailable: "Não foi possível carregar os pedidos agora. Tente novamente.",
 };
 
+function parseLane(value: string | null): OrderLane {
+	return value === "separate" || value === "ready" || value === "delivered"
+		? value
+		: "new";
+}
+
 function orderDate(value: string | null): string {
 	if (!value) return "Data não informada";
 	const date = new Date(value);
@@ -50,20 +65,68 @@ function orderDate(value: string | null): string {
 	}).format(date);
 }
 
-export function OrdersBoard({
-	initialState,
-}: {
-	initialState: OrderBoardActionState;
-}) {
-	const [state, formAction, pending] = useActionState(
-		orderBoardAction,
-		initialState,
-	);
-	const [query, setQuery] = useState(state.query);
-	const result = state.result;
-	const start = result.orders.length ? state.offset + 1 : 0;
-	const end = state.offset + result.orders.length;
-	const searchMode = state.query.length > 0;
+export function OrdersBoard() {
+	const [lane, setLane] = useState<OrderLane>("new");
+	const [query, setQuery] = useState("");
+	const [searchInput, setSearchInput] = useState("");
+	const [offset, setOffset] = useState(0);
+	const [routeReady, setRouteReady] = useState(false);
+	const [pending, setPending] = useState(false);
+	const [result, setResult] = useState<OrderBoardResult>(EMPTY_RESULT);
+	const searchMode = query.length > 0;
+
+	useEffect(() => {
+		setLane(parseLane(new URL(window.location.href).searchParams.get("tab")));
+		setRouteReady(true);
+	}, []);
+
+	useEffect(() => {
+		if (!routeReady) return;
+		let active = true;
+		setPending(true);
+		void getBrowserAdminOrderBoard({ lane, query, offset })
+			.then((nextResult) => {
+				if (!active) return;
+				setResult((previous) => ({
+					...nextResult,
+					counts: nextResult.counts ?? previous.counts,
+				}));
+			})
+			.catch(() => {
+				if (active) setResult({ ...EMPTY_RESULT, error: "unavailable" });
+			})
+			.finally(() => {
+				if (active) setPending(false);
+			});
+		return () => {
+			active = false;
+		};
+	}, [lane, offset, query, routeReady]);
+
+	function selectLane(nextLane: OrderLane) {
+		setLane(nextLane);
+		setQuery("");
+		setSearchInput("");
+		setOffset(0);
+		const url = new URL(window.location.href);
+		url.searchParams.set("tab", nextLane);
+		window.history.replaceState(null, "", url);
+	}
+
+	function search(event: FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+		setQuery(searchInput.trim().slice(0, 80));
+		setOffset(0);
+	}
+
+	function clearSearch() {
+		setQuery("");
+		setSearchInput("");
+		setOffset(0);
+	}
+
+	const start = result.orders.length ? offset + 1 : 0;
+	const end = offset + result.orders.length;
 
 	return (
 		<div className="page-stack admin-order-page" id="admin-order-page">
@@ -78,29 +141,30 @@ export function OrdersBoard({
 			</section>
 
 			<nav aria-label="Etapas dos pedidos" className="order-lane-nav">
-				{(["new", "separate", "ready", "delivered"] as const).map((lane) => {
-					const count = result.counts?.[lane];
-					const active = !searchMode && state.lane === lane;
-					return (
-						<Link
-							aria-current={active ? "page" : undefined}
-							className={`order-lane-tab${active ? " order-lane-tab--active" : ""}`}
-							href={`/pedidos?tab=${lane}`}
-							key={lane}
-						>
-							<span>{laneNames[lane]}</span>
-							{count !== undefined && (
-								<span className="order-lane-count">{count}</span>
-							)}
-						</Link>
-					);
-				})}
+				{(["new", "separate", "ready", "delivered"] as const).map(
+					(candidateLane) => {
+						const count = result.counts?.[candidateLane];
+						const active = !searchMode && lane === candidateLane;
+						return (
+							<button
+								aria-current={active ? "page" : undefined}
+								className={`order-lane-tab${active ? " order-lane-tab--active" : ""}`}
+								disabled={pending}
+								key={candidateLane}
+								onClick={() => selectLane(candidateLane)}
+								type="button"
+							>
+								<span>{laneNames[candidateLane]}</span>
+								{count !== undefined && (
+									<span className="order-lane-count">{count}</span>
+								)}
+							</button>
+						);
+					},
+				)}
 			</nav>
 
-			<form action={formAction} className="order-search-card">
-				<input name="intent" type="hidden" value="search" />
-				<input name="lane" type="hidden" value={state.lane} />
-				<input name="offset" type="hidden" value="0" />
+			<form className="order-search-card" onSubmit={search}>
 				<label className="catalog-search-field">
 					<span>Buscar pedido</span>
 					<span className="catalog-search-input">
@@ -109,19 +173,19 @@ export function OrdersBoard({
 							autoComplete="off"
 							maxLength={80}
 							name="query"
-							onChange={(event) => setQuery(event.target.value)}
+							onChange={(event) => setSearchInput(event.target.value)}
 							placeholder="Número, nome, telefone ou endereço"
-							value={query}
+							value={searchInput}
 						/>
 					</span>
 				</label>
 				<button className="catalog-submit" disabled={pending} type="submit">
 					{pending ? "Buscando…" : "Buscar"}
 				</button>
-				{query && (
-					<Link className="catalog-clear" href={`/pedidos?tab=${state.lane}`}>
+				{searchMode && (
+					<button className="catalog-clear" onClick={clearSearch} type="button">
 						Limpar busca
-					</Link>
+					</button>
 				)}
 			</form>
 
@@ -174,6 +238,10 @@ export function OrdersBoard({
 						</Link>
 					))}
 				</section>
+			) : pending || !routeReady ? (
+				<section className="catalog-message" role="status">
+					Carregando pedidos…
+				</section>
 			) : (
 				<section className="catalog-empty">
 					<strong>
@@ -184,7 +252,7 @@ export function OrdersBoard({
 					<p>
 						{searchMode
 							? "Confira o texto da busca e tente novamente."
-							: `Os pedidos em ${laneNames[state.lane].toLowerCase()} aparecerão aqui.`}
+							: `Os pedidos em ${laneNames[lane].toLowerCase()} aparecerão aqui.`}
 					</p>
 				</section>
 			)}
@@ -195,35 +263,25 @@ export function OrdersBoard({
 						{start}–{end} de {result.total} pedidos
 					</span>
 					<div>
-						{state.offset > 0 && (
-							<form action={formAction}>
-								<input name="intent" type="hidden" value="previous" />
-								<input name="lane" type="hidden" value={state.lane} />
-								<input name="query" type="hidden" value={state.query} />
-								<input name="offset" type="hidden" value={state.offset} />
-								<button
-									aria-label="Pedidos anteriores"
-									disabled={pending}
-									type="submit"
-								>
-									<ChevronLeft size={17} />
-								</button>
-							</form>
+						{offset > 0 && (
+							<button
+								aria-label="Pedidos anteriores"
+								disabled={pending}
+								onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
+								type="button"
+							>
+								<ChevronLeft size={17} />
+							</button>
 						)}
 						{result.hasMore && (
-							<form action={formAction}>
-								<input name="intent" type="hidden" value="next" />
-								<input name="lane" type="hidden" value={state.lane} />
-								<input name="query" type="hidden" value={state.query} />
-								<input name="offset" type="hidden" value={state.offset} />
-								<button
-									aria-label="Próximos pedidos"
-									disabled={pending}
-									type="submit"
-								>
-									<ChevronRight size={17} />
-								</button>
-							</form>
+							<button
+								aria-label="Próximos pedidos"
+								disabled={pending}
+								onClick={() => setOffset(offset + PAGE_SIZE)}
+								type="button"
+							>
+								<ChevronRight size={17} />
+							</button>
 						)}
 					</div>
 				</div>
