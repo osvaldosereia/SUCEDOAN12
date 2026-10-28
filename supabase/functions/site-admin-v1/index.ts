@@ -788,6 +788,26 @@ async function whatsappConversationList(input: any) {
   };
 }
 
+function normalizeWhatsappLocation(value: any) {
+  const metadata = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const candidates = [metadata.location, metadata.coordinates, metadata];
+  const location = candidates.find((item: any) => item && typeof item === "object" && !Array.isArray(item)) || {};
+  const rawLatitude = location.latitude ?? location.lat;
+  const rawLongitude = location.longitude ?? location.lng ?? location.lon;
+  if (rawLatitude === undefined || rawLatitude === null || String(rawLatitude).trim() === ""
+    || rawLongitude === undefined || rawLongitude === null || String(rawLongitude).trim() === "") return null;
+  const latitude = Number(rawLatitude);
+  const longitude = Number(rawLongitude);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)
+    || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return null;
+  return {
+    latitude,
+    longitude,
+    name: clean(location.name || location.label || "", 120),
+    address: clean(location.address || "", 240),
+  };
+}
+
 async function whatsappConversationMessages(input: any) {
   const conversationId = uuid(input.conversation_id);
   if (!conversationId) return { error: "invalid_conversation_id", status: 400 };
@@ -814,7 +834,7 @@ async function whatsappConversationMessages(input: any) {
     db.from("whatsapp_accounts").select("id,slug,display_name,phone_e164").eq("id", conversation.whatsapp_account_id).maybeSingle(),
     (() => {
       let query = db.from("whatsapp_messages_v1")
-        .select("id,direction,message_type,text_body,status_current,received_at,sent_at,created_at")
+        .select("id,direction,message_type,text_body,status_current,metadata,received_at,sent_at,created_at")
         .eq("conversation_id", conversationId)
         .eq("whatsapp_account_id", conversation.whatsapp_account_id);
       if (beforeRaw && beforeId) {
@@ -852,10 +872,106 @@ async function whatsappConversationMessages(input: any) {
       message_type: clean(row.message_type, 30),
       text_body: String(row.text_body || "").replace(/\u0000/g, "").slice(0, 4000),
       status_current: clean(row.status_current, 40),
+      location: row.message_type === "location" ? normalizeWhatsappLocation(row.metadata) : null,
       message_at: row.received_at || row.sent_at || row.created_at,
     })),
     next_before: hasMore && oldestRow ? { created_at: oldestRow.created_at, id: oldestRow.id } : null,
   };
+}
+
+async function whatsappConversationMedia(input: any) {
+  const conversationId = uuid(input.conversation_id);
+  const messageId = uuid(input.message_id);
+  if (!conversationId || !messageId) return { error: "invalid_media_reference", status: 400 };
+
+  const messageResult = await db.from("whatsapp_messages_v1")
+    .select("id,message_type")
+    .eq("id", messageId)
+    .eq("conversation_id", conversationId)
+    .maybeSingle();
+  if (messageResult.error) throw messageResult.error;
+  if (!messageResult.data) return { error: "message_not_found", status: 404 };
+  const messageType = clean(messageResult.data.message_type, 30);
+  if (!["image", "audio", "video", "document"].includes(messageType)) {
+    return { error: "message_media_unsupported", status: 415 };
+  }
+
+  const allowedMimeTypes = new Set([
+    "image/jpeg", "image/png", "image/webp", "image/gif",
+    "audio/ogg", "audio/mpeg", "audio/mp4", "audio/aac", "audio/wav", "audio/x-wav",
+    "video/mp4",
+    "application/pdf", "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/zip", "application/octet-stream",
+  ]);
+  let bucket = "";
+  let path = "";
+  let mimeType = "";
+  let filename = "";
+  let fileSize = 0;
+
+  const canonicalResult = await db.from("whatsapp_media_v1")
+    .select("media_type,storage_bucket,storage_path,mime_type,file_size,metadata")
+    .eq("message_id", messageId)
+    .maybeSingle();
+  if (canonicalResult.error) throw canonicalResult.error;
+  const canonical: any = canonicalResult.data || {};
+  const canonicalPath = safeWhatsappStoragePath(canonical.storage_path);
+  if (canonical.media_type === messageType && canonical.storage_bucket === "attendance-media-v1" && canonicalPath) {
+    bucket = canonical.storage_bucket;
+    path = canonicalPath;
+    mimeType = String(canonical.mime_type || "").split(";", 1)[0].trim().toLowerCase();
+    fileSize = Number(canonical.file_size) || 0;
+    const metadata = canonical.metadata && typeof canonical.metadata === "object" ? canonical.metadata : {};
+    filename = safeWhatsappFilename(metadata.filename || metadata.file_name || "");
+  }
+
+  if (!path) {
+    const now = new Date().toISOString();
+    const cacheResult = await db.from("attendance_media_cache_v1")
+      .select("object_path,mime_type,filename,expires_at")
+      .eq("message_id", messageId)
+      .gt("expires_at", now)
+      .maybeSingle();
+    if (cacheResult.error) throw cacheResult.error;
+    const cached: any = cacheResult.data || {};
+    const cachedPath = safeWhatsappStoragePath(cached.object_path);
+    if (cachedPath) {
+      bucket = "attendance-media-v1";
+      path = cachedPath;
+      mimeType = String(cached.mime_type || "").split(";", 1)[0].trim().toLowerCase();
+      filename = safeWhatsappFilename(cached.filename || "");
+    }
+  }
+
+  if (!path) return { error: "media_not_cached", message: "Esta mídia ainda não está disponível no cache privado.", status: 404 };
+  if (fileSize > 20 * 1024 * 1024) return { error: "media_too_large", status: 413 };
+  if (!allowedMimeTypes.has(mimeType)) return { error: "media_type_not_allowed", status: 415 };
+
+  const signed = await db.storage.from(bucket).createSignedUrl(path, 600, { download: messageType === "document" });
+  if (signed.error || !signed.data?.signedUrl) return { error: "media_sign_failed", status: 503 };
+  return {
+    url: signed.data.signedUrl,
+    mime_type: mimeType,
+    filename: filename || "arquivo",
+    expires_at: new Date(Date.now() + 600000).toISOString(),
+  };
+}
+
+function safeWhatsappStoragePath(value: any) {
+  const path = String(value || "").trim();
+  if (!path || path.length > 800 || path.startsWith("/") || path.includes("\\")
+    || path.split("/").some((segment) => !segment || segment === "." || segment === "..")) return "";
+  return path;
+}
+
+function safeWhatsappFilename(value: any) {
+  const leaf = String(value || "").replace(/\\/g, "/").split("/").pop() || "arquivo";
+  const safe = leaf.replace(/[\u0000-\u001f\u007f]/g, "")
+    .replace(/[^A-Za-z0-9._()\- ]/g, "_").slice(0, 180).trim();
+  return safe || "arquivo";
 }
 
 async function whatsappAnaAdminStatus() {
@@ -921,6 +1037,7 @@ Deno.serve(async (req: Request) => {
     if (req.method === "POST" && action === "whatsapp_overview") result = await whatsappOverview();
     else if (req.method === "POST" && action === "whatsapp_conversation_list") result = await whatsappConversationList(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_messages") result = await whatsappConversationMessages(input);
+    else if (req.method === "POST" && action === "whatsapp_conversation_media") result = await whatsappConversationMedia(input);
     else if (req.method === "POST" && action === "whatsapp_ana_admin_status") result = await whatsappAnaAdminStatus();
     else if (req.method === "POST" && action === "customer_lookup") result = await customerLookup(input);
     else if (req.method === "POST" && action === "customer_save") result = await customerSave(input);
