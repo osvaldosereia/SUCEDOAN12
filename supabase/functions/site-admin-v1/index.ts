@@ -647,17 +647,29 @@ async function whatsappOverview() {
   }
 
   const campaignIds = (campaignsResult.data || []).map((row: any) => row.id).filter(Boolean);
-  const snapshotsResult = campaignIds.length
-    ? await db.from("marketing_campaign_snapshots_v1")
+  const latestCampaignSnapshot = new Map<string, any>();
+  const snapshotPageSize = 200;
+  const maxSnapshotRows = 2000;
+  let snapshotOffset = 0;
+  let snapshotLookupLimited = false;
+  while (campaignIds.length && latestCampaignSnapshot.size < campaignIds.length) {
+    const snapshotsResult = await db.from("marketing_campaign_snapshots_v1")
       .select("campaign_id,campaign_revision,snapshot_version,template_name,template_language,template_category,found_count,eligible_count,excluded_count,created_at")
       .in("campaign_id", campaignIds)
-      .order("created_at", { ascending: false }).limit(200)
-    : { data: [], error: null };
-  if (snapshotsResult.error) throw snapshotsResult.error;
-  const latestCampaignSnapshot = new Map<string, any>();
-  for (const snapshot of snapshotsResult.data || []) {
-    const campaignId = String(snapshot.campaign_id || "");
-    if (campaignId && !latestCampaignSnapshot.has(campaignId)) latestCampaignSnapshot.set(campaignId, snapshot);
+      .order("created_at", { ascending: false })
+      .range(snapshotOffset, snapshotOffset + snapshotPageSize - 1);
+    if (snapshotsResult.error) throw snapshotsResult.error;
+    const rows = snapshotsResult.data || [];
+    for (const snapshot of rows) {
+      const campaignId = String(snapshot.campaign_id || "");
+      if (campaignId && !latestCampaignSnapshot.has(campaignId)) latestCampaignSnapshot.set(campaignId, snapshot);
+    }
+    snapshotOffset += rows.length;
+    if (rows.length < snapshotPageSize) break;
+    if (snapshotOffset >= maxSnapshotRows) {
+      snapshotLookupLimited = true;
+      break;
+    }
   }
 
   const accounts = accountsResult.data || [];
@@ -714,6 +726,7 @@ async function whatsappOverview() {
       paused_at: row.paused_at || null,
       completed_at: row.completed_at || null,
       failed_at: row.failed_at || null,
+      snapshot_lookup_limited: !snapshot && snapshotLookupLimited,
       snapshot: snapshot ? {
         campaign_revision: Number(snapshot.campaign_revision) || 0,
         snapshot_version: Number(snapshot.snapshot_version) || 0,
