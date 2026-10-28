@@ -978,3 +978,12 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 - `src/proxy.ts` foi convertido para `src/middleware.ts` para executar a atualização Supabase de cookies em Edge; Next.js emite o aviso esperado de convenção depreciada. O bundle OpenNext confirmou que as variáveis `NEXT_PUBLIC_*` ficam embutidas no Worker; basta fornecê-las durante a build.
 - O `.gitignore` raiz agora exclui `.open-next/`, `.wrangler/` e `.dev.vars*` para evitar versionar bundles gerados ou valores de desenvolvimento.
 - Nenhuma migration, Edge Function, dado comercial, Flow Meta, callback, mensagem WhatsApp, escrita Bling ou configuração fiscal foi alterada. Valores de credenciais não foram lidos.
+
+## Publicação do novo Admin em `donaantonia.com.br/site2` (27/10/2026)
+
+- O proprietário informou que o domínio já hospeda o site e apontou `https://donaantonia.com.br/site/admin/`. A URL respondeu HTTP 200 com título `Admin · Dona Antônia`; o conteúdo servido é HTML/CSS/JavaScript estático. No GitHub `main`, os arquivos desse Admin existem em `site/admin/` (`index.html`, `admin.js`, `catalog-admin.js`, estilos e scripts de pedidos). Esse Admin e a raiz do site devem permanecer intactos.
+- A branch de trabalho contém o Admin novo em Next.js dentro de `site2`; ele usa cookies, Server Actions e SSR, então o GitHub Pages não o executa apenas por existir uma pasta nessa localização.
+- A `main:CNAME` associa `donaantonia.com.br` ao GitHub Pages. A resolução pública atual retorna nameservers `e.sec.dns.br`/`f.sec.dns.br`, A records do GitHub Pages no ápice e `www CNAME osvaldosereia.github.io`; a zona ainda não está no Cloudflare.
+- Decisão: configurar Next `basePath` com `NEXT_PUBLIC_BASE_PATH=/site2` na build Cloudflare e adicionar, depois de DNS proxied, a rota Worker `donaantonia.com.br/site2*`. A rota cobre o subcaminho; os demais caminhos continuam no GitHub Pages.
+- A Cloudflare Route exige zona ativa e hostname com DNS proxied. Para ativá-la será preciso migrar os nameservers do Registro.br para Cloudflare, copiando e conferindo os registros atuais de site, e-mail e TXT. Isso pode interromper serviços; o agente não alterará nameservers ou DNS sem ação do proprietário. Nenhuma alteração de DNS foi feita.
+- A mudança de `basePath` e suas instruções serão compiladas e enviadas nesta branch; até a migração DNS e criação da rota, `donaantonia.com.br/site2` não estará publicada. O preview disponível será `workers.dev/site2` quando o Worker for conectado e criado.

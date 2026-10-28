@@ -50,8 +50,13 @@ O código do Admin está neste diretório (`site2`). Para publicá-lo online sem
 1. No painel Cloudflare, abra **Workers & Pages → Create application → GitHub** e autorize o repositório `osvaldosereia/SUCEDOAN12`.
 2. Selecione a branch `codex/whatsapp-admin-greenfield-20261026` e defina a raiz do projeto como `site2`.
 3. Use o nome `sucedoan12-admin`, o comando de build `pnpm run build:cloudflare` e o comando de deploy `pnpm run deploy:cloudflare`.
-4. Em **Build variables and secrets**, configure `NEXT_PUBLIC_SUPABASE_URL=https://ssbesxgaijknwsjbsbcz.supabase.co` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` usando o valor publicável do projeto original. O Next.js embute esses valores públicos no Worker durante a build. A chave publicável não é uma chave administrativa. Não coloque valores de secrets no GitHub, no `wrangler.jsonc` ou neste README.
+4. Em **Build variables and secrets**, configure `NEXT_PUBLIC_SUPABASE_URL=https://ssbesxgaijknwsjbsbcz.supabase.co`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` usando o valor publicável do projeto original e `NEXT_PUBLIC_BASE_PATH=/site2`. O Next.js embute esses valores no Worker durante a build. A chave publicável não é uma chave administrativa. Não coloque valores de secrets no GitHub, no `wrangler.jsonc` ou neste README.
 5. Selecione ou mantenha o plano **Workers Free**. O Worker usa o subdomínio gratuito `workers.dev`; o painel fornecerá o endereço depois que o primeiro deploy concluir.
+6. Para usar `https://donaantonia.com.br/site2`, crie no Worker a rota `donaantonia.com.br/site2*`. O site atual em `donaantonia.com.br` continua no GitHub Pages e recebe os demais caminhos.
+
+### Requisito de DNS para `/site2`
+
+Hoje o domínio principal e `/site/admin/` são servidos pelo GitHub Pages. A rota de Worker por caminho exige que `donaantonia.com.br` seja uma zona ativa no Cloudflare e que o DNS do domínio esteja proxied por lá. Antes de trocar os nameservers no Registro.br, replique os registros DNS atuais, inclusive os do GitHub Pages e os de e-mail. Essa troca ainda não foi feita. Enquanto ela não acontecer, o Worker fica acessível pelo endereço `workers.dev`; o domínio personalizado `/site2` ainda não será atendido.
 
 O arquivo `wrangler.jsonc` mantém emissão fiscal e recuperação avançada do Bling desligadas. O site usa as funções e secrets já configurados no Supabase; não copie tokens da Meta ou do Bling para o Cloudflare.
 
