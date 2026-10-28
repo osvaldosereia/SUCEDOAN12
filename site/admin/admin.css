@@ -434,5 +434,5 @@
 
 .whatsapp-campaign-exclusions { display:flex; flex-wrap:wrap; gap:5px; margin-top:2px; }
 .whatsapp-campaign-exclusion-chip { display:inline-flex; min-height:23px; align-items:center; padding:3px 7px; border:1px solid #e7e3dc; border-radius:999px; background:#faf9f6; color:#5c626a; font-size:.68rem; font-weight:700; }
-.whatsapp-campaign-exclusion-chip:first-child { border-color:#efd2cd; background:#fff7f5; color:#963a32; }
+.whatsapp-campaign-exclusion-chip.is-suppressed { border-color:#efd2cd; background:#fff7f5; color:#963a32; }
 .whatsapp-campaign-exclusion-muted { color:var(--muted); font-size:.68rem; line-height:1.4; }
