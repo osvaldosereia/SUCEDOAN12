@@ -47,11 +47,7 @@
     if (name === "baskets") window.DonaCatalogAdmin?.loadBaskets();
     if (name === "products") window.DonaCatalogAdmin?.loadProducts();
     if (name === "orders") window.DonaOrdersAdmin?.loadOrders();
-    if (name === "whatsapp") {
-      const activeTab = document.querySelector("[data-whatsapp-tab][aria-selected=\"true\"]")?.dataset.whatsappTab || "confirmation";
-      if (activeTab === "separation") window.DonaOrderSeparationMessageAdmin?.load();
-      else window.DonaOrderMessageAdmin?.load();
-    }
+    if (name === "whatsapp") loadWhatsAppSection();
   }
 
   document.querySelectorAll("[data-whatsapp-tab]").forEach((button) => {
@@ -69,6 +65,33 @@
       });
       if (name === "separation") window.DonaOrderSeparationMessageAdmin?.load();
       else window.DonaOrderMessageAdmin?.load();
+    });
+  });
+
+  function loadWhatsAppSection() {
+    const selected = document.querySelector("[data-whatsapp-section][aria-selected=\"true\"]")?.dataset.whatsappSection || "overview";
+    if (selected === "overview") window.DonaWhatsAppAdmin?.loadOverview();
+    else {
+      const inner = document.querySelector("[data-whatsapp-tab][aria-selected=\"true\"]")?.dataset.whatsappTab || "confirmation";
+      if (inner === "separation") window.DonaOrderSeparationMessageAdmin?.load();
+      else window.DonaOrderMessageAdmin?.load();
+    }
+  }
+
+  document.querySelectorAll("[data-whatsapp-section]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const name = button.dataset.whatsappSection;
+      document.querySelectorAll("[data-whatsapp-section]").forEach((tab) => {
+        const active = tab === button;
+        tab.classList.toggle("active", active);
+        tab.setAttribute("aria-selected", String(active));
+      });
+      document.querySelectorAll("[data-whatsapp-section-panel]").forEach((panel) => {
+        const active = panel.dataset.whatsappSectionPanel === name;
+        panel.hidden = !active;
+        panel.classList.toggle("active", active);
+      });
+      loadWhatsAppSection();
     });
   });
 
