@@ -16,7 +16,7 @@
   <script src="order-message-admin.js?v=3" defer></script>
   <script src="separation-message-admin.js?v=3" defer></script>
   <script src="whatsapp-admin.js?v=11" defer></script>
-  <script src="whatsapp-conversations.js?v=6" defer></script>
+  <script src="whatsapp-conversations.js?v=7" defer></script>
   <script src="admin.js?v=15" defer></script>
 </head>
 <body class="admin-page">
@@ -241,6 +241,16 @@
               <div id="whatsapp-conversation-empty" class="whatsapp-conversation-empty"><strong>Selecione uma conversa</strong><span>O histórico aparecerá aqui.</span></div>
               <button id="whatsapp-conversation-older" class="button button-outline" type="button" hidden>Carregar mensagens anteriores</button>
               <div id="whatsapp-conversation-messages" class="whatsapp-conversation-messages" aria-live="polite"></div>
+              <form id="whatsapp-conversation-compose" class="whatsapp-conversation-compose" hidden>
+                <label class="whatsapp-compose-field" for="whatsapp-conversation-draft">
+                  <span>Responder ao cliente</span>
+                  <textarea id="whatsapp-conversation-draft" rows="3" maxlength="4000" placeholder="Escreva uma mensagem…" autocomplete="off"></textarea>
+                </label>
+                <div class="whatsapp-compose-footer">
+                  <p id="whatsapp-conversation-compose-status" data-tone="neutral" role="status" aria-live="polite">Texto permitido quando a janela de atendimento está aberta.</p>
+                  <div><small id="whatsapp-conversation-compose-count">0 / 4000</small><button id="whatsapp-conversation-send" class="button button-primary" type="submit" disabled>Enviar</button></div>
+                </div>
+              </form>
             </section>
           </div>
         </section>
