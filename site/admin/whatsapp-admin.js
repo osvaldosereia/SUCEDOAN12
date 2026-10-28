@@ -8,6 +8,7 @@
   let loaded = false;
   let loading = false;
   let lastOverview = null;
+  let latestAnaDryRunDetails = null;
 
   function human(value) {
     const labels = {
@@ -499,6 +500,9 @@
     const events = Array.isArray(data.events) ? data.events : [];
     const differences = Array.isArray(data.configuration_diff) ? data.configuration_diff : [];
     const latestTest = tests[0] || null;
+    const draftAlreadyActive = Boolean(data.diff_available && differences.length && differences.every((item) => item.changed !== true));
+    const publishableTest = Boolean(latestTest?.id && Number(latestTest.draft_revision) === Number(draft?.revision)
+      && Number(latestTest.failed_count) === 0 && Number(latestTest.passed_count) > 0 && !draftAlreadyActive);
     const versionRows = versions.length ? versions.map((item) => recordRow(
       "Versão " + (item.version || "—"),
       [
@@ -509,6 +513,9 @@
       item.is_active ? "active" : "history",
       item.created_at,
     )).join("") : emptyList("Nenhuma versão ativa ou anterior.");
+    const rollbackButtons = versions.filter((item) => !item.is_active && Number(item.id) > 0).map((item) =>
+      '<button class="button button-outline whatsapp-ana-rollback-button" type="button" data-ana-rollback="' + esc(item.id) + '" data-version-label="' + esc(item.version || "") + '">Restaurar v' + esc(item.version || "—") + '</button>'
+    ).join("");
     const eventRows = events.length ? events.map((item) => recordRow(
       human(item.action),
       [
@@ -534,7 +541,7 @@
       </div>
       <section class="whatsapp-overview-card"><h3>Rascunho e versão ativa</h3><p class="admin-muted">Diferenças por seção da configuração da ANA.</p>${diffMarkup}</section>
       <div class="whatsapp-overview-grid">
-        <section class="whatsapp-overview-card"><h3>Histórico de versões</h3><div class="whatsapp-record-list">${versionRows}</div></section>
+        <section class="whatsapp-overview-card"><h3>Histórico de versões</h3><div class="whatsapp-record-list">${versionRows}</div>${rollbackButtons ? '<div class="whatsapp-ana-rollback-list"><span class="admin-muted">Restaurar configuração</span>' + rollbackButtons + '</div>' : ""}</section>
         <section class="whatsapp-overview-card"><h3>Atividade recente</h3><div class="whatsapp-record-list">${eventRows}</div></section>
       </div>`;
     const channelMarkup = channels.length ? channels.map((channel) => `
@@ -543,14 +550,117 @@
         <span class="whatsapp-ana-channel-state ${channel.ana_enabled ? "is-active" : "is-paused"}">${channel.ana_enabled ? "ANA ativa" : "ANA pausada"}</span>
         ${channel.ana_enabled && channel.id ? '<button class="button button-outline" type="button" data-ana-pause="' + esc(channel.id) + '" data-channel-name="' + esc(channel.name || "WhatsApp") + '" data-channel-last4="' + esc(channel.phone_last4 || "") + '">Pausar ANA</button>' : '<small class="admin-muted">Para reativar, revise a configuração ativa antes.</small>'}
       </article>`).join("") : emptyList("Nenhum canal WhatsApp cadastrado.");
+    const testDetails = Array.isArray(latestAnaDryRunDetails?.results) ? latestAnaDryRunDetails.results : [];
+    const testDetailsMarkup = testDetails.length
+      ? '<div class="whatsapp-ana-test-results"><h4>Resultado do teste seco · ' + esc(latestAnaDryRunDetails.test_run?.passed_count || 0) + ' aprovados, ' + esc(latestAnaDryRunDetails.test_run?.failed_count || 0) + ' falhas</h4>'
+        + testDetails.map((item) => '<div class="whatsapp-ana-test-row ' + (item.passed ? "is-pass" : "is-fail") + '"><span>' + esc(item.key || "Cenário") + '</span><strong>' + (item.passed ? "Aprovado" : "Falhou") + '</strong><small>Esperado: ' + esc(human(item.expected)) + ' · Obtido: ' + esc(human(item.actual)) + '</small></div>').join("")
+        + '</div>'
+      : "";
+    const publishButton = publishableTest
+      ? '<button class="button button-primary" type="button" data-ana-publish="' + esc(latestTest.id) + '">Ativar rascunho testado</button>'
+      : '<button class="button button-outline" type="button" disabled title="O rascunho precisa passar no teste seco atual.">' + (draftAlreadyActive ? "Rascunho já está ativo" : "Teste seco aprovado obrigatório") + '</button>';
     $("whatsapp-ana-content").innerHTML = `
       <section class="whatsapp-overview-card"><h3>Estado por número</h3>
         <p class="admin-muted">A pausa impede novas respostas automáticas nesse número; captura e atendimento humano permanecem ativos.</p>
         <div class="whatsapp-ana-channels">${channelMarkup}</div>
+      </section>
+      <section class="whatsapp-overview-card"><h3>Teste seco e ativação interna</h3>
+        <p class="admin-muted">O teste avalia os cenários do rascunho e registra o resultado. Ativar altera a configuração usada pela ANA; isso não publica modelos Meta nem envia mensagens.</p>
+        <div class="whatsapp-ana-admin-actions">
+          <button class="button button-outline" type="button" data-ana-test data-draft-revision="${esc(draft?.revision || "")}" ${draft?.revision ? "" : "disabled"}>Executar teste seco</button>
+          ${publishButton}
+        </div>
+        ${testDetailsMarkup}
       </section>`;
-    $("whatsapp-ana-status").textContent = "Versões, comparação e histórico consultados. Pausar exige confirmação.";
+    $("whatsapp-ana-status").textContent = "Versões, comparação e histórico consultados. Testes, ativação interna e pausa exigem confirmação.";
 
   }
+
+  async function anaAdminRequest(action, payload) {
+    const response = await fetch(supabase + "/functions/v1/site-admin-v1", {
+      method: "POST",
+      headers: {
+        apikey: publishableKey,
+        "x-admin-code": window.DonaAdminAuth?.getCode?.() || "",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(Object.assign({ action }, payload || {})),
+      cache: "no-store",
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.ok === false) {
+      const messages = {
+        revision_conflict: "O rascunho mudou. Atualize a tela antes de tentar novamente.",
+        draft_already_active: "A configuração ativa já corresponde a este rascunho.",
+        admin_identity_unavailable: "Não foi possível resolver o usuário owner ativo do Admin.",
+        required_test_cases_missing: "O rascunho não tem cenários de teste configurados.",
+        test_run_missing_or_stale_or_failed: "O teste não passou para a revisão atual do rascunho.",
+        configuration_invalid: "Corrija as validações da configuração antes de ativar.",
+        trigger_label_not_active: "Um gatilho usa uma etiqueta que não está ativa.",
+        version_already_active: "Essa versão já está ativa.",
+      };
+      throw new Error(messages[data.error] || data.message || data.error || "Não foi possível concluir a ação da ANA.");
+    }
+    return data;
+  }
+
+  async function runAnaDryTest(button) {
+    const revision = Number(button?.dataset?.draftRevision);
+    if (!Number.isSafeInteger(revision) || revision < 1 || button.disabled) return;
+    if (!window.confirm("Executar o teste seco do rascunho? Ele pode chamar a IA e gerar custo. O resultado fica registrado; nenhuma mensagem é enviada.")) return;
+    const status = $("whatsapp-ana-status");
+    latestAnaDryRunDetails = null;
+    button.disabled = true;
+    if (status) status.textContent = "Executando cenários do teste seco…";
+    try {
+      const data = await anaAdminRequest("whatsapp_ana_admin_test", { expected_revision: revision });
+      latestAnaDryRunDetails = { test_run: data.test_run || {}, results: Array.isArray(data.results) ? data.results : [] };
+      if (status) status.textContent = "Teste seco concluído. Nenhuma mensagem foi enviada.";
+      await loadAnaStatus(true);
+    } catch (error) {
+      if (status) status.textContent = error instanceof Error ? error.message : "Não foi possível executar o teste seco.";
+    } finally {
+      if (button.isConnected) button.disabled = false;
+    }
+  }
+
+  async function publishAnaDraft(button) {
+    const testRunId = String(button?.dataset?.anaPublish || "");
+    if (!testRunId || button.disabled) return;
+    if (!window.confirm("Ativar a configuração interna da ANA após o teste aprovado? Isso altera as respostas automáticas a partir da configuração atual, mas não publica modelos Meta nem envia mensagem.")) return;
+    const status = $("whatsapp-ana-status");
+    button.disabled = true;
+    if (status) status.textContent = "Ativando configuração da ANA…";
+    try {
+      const data = await anaAdminRequest("whatsapp_ana_admin_publish", { test_run_id: testRunId, note: "Ativação confirmada no Admin" });
+      if (status) status.textContent = "Configuração ANA v" + String(data.version || "—") + " ativada.";
+      await loadAnaStatus(true);
+    } catch (error) {
+      if (status) status.textContent = error instanceof Error ? error.message : "Não foi possível ativar o rascunho.";
+    } finally {
+      if (button.isConnected) button.disabled = false;
+    }
+  }
+
+  async function rollbackAnaVersion(button) {
+    const versionId = Number(button?.dataset?.anaRollback);
+    const versionLabel = String(button?.dataset?.versionLabel || "");
+    if (!Number.isSafeInteger(versionId) || versionId < 1 || button.disabled) return;
+    if (!window.confirm("Restaurar a versão " + (versionLabel || versionId) + " da configuração interna da ANA? Isso não publica modelos Meta nem envia mensagens.")) return;
+    const status = $("whatsapp-ana-status");
+    button.disabled = true;
+    if (status) status.textContent = "Restaurando configuração ANA v" + (versionLabel || versionId) + "…";
+    try {
+      const data = await anaAdminRequest("whatsapp_ana_admin_rollback", { version_id: versionId, note: "Restauração confirmada no Admin" });
+      if (status) status.textContent = "Configuração ANA v" + String(data.version || versionLabel || versionId) + " restaurada.";
+      await loadAnaStatus(true);
+    } catch (error) {
+      if (status) status.textContent = error instanceof Error ? error.message : "Não foi possível restaurar a versão.";
+    } finally {
+      if (button.isConnected) button.disabled = false;
+    }
+  }
+
   async function pauseAnaChannel(button) {
     const accountId = String(button?.dataset?.anaPause || "");
     if (!accountId || button.disabled) return;
@@ -638,8 +748,17 @@
   });
   document.querySelectorAll("[data-whatsapp-overview-refresh]").forEach((button) => button.addEventListener("click", () => loadOverview(true)));
   $("whatsapp-ana-content")?.addEventListener("click", (event) => {
-    const button = event.target instanceof Element ? event.target.closest("[data-ana-pause]") : null;
-    if (button) pauseAnaChannel(button);
+    const target = event.target instanceof Element ? event.target : null;
+    const testButton = target?.closest("[data-ana-test]");
+    const publishButton = target?.closest("[data-ana-publish]");
+    const pauseButton = target?.closest("[data-ana-pause]");
+    if (testButton) runAnaDryTest(testButton);
+    else if (publishButton) publishAnaDraft(publishButton);
+    else if (pauseButton) pauseAnaChannel(pauseButton);
+  });
+  $("whatsapp-ana-version-content")?.addEventListener("click", (event) => {
+    const button = event.target instanceof Element ? event.target.closest("[data-ana-rollback]") : null;
+    if (button) rollbackAnaVersion(button);
   });
   $("whatsapp-ana-refresh")?.addEventListener("click", () => loadAnaStatus(true));
   window.DonaWhatsAppAdmin = { loadOverview, loadAnaStatus };
