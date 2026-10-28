@@ -621,8 +621,35 @@ async function markOrderDelivered(input: any) {
 
 
 
+async function whatsappMarketingConsentSummary() {
+  const countQuery = () => db.from("marketing_customer_consent_current_v1")
+    .select("customer_id", { count: "exact", head: true });
+  const results = await Promise.all([
+    countQuery().eq("consent_state", "opt_in"),
+    countQuery().eq("consent_state", "opt_out"),
+    countQuery().eq("consent_state", "never_consented"),
+    countQuery().eq("consent_state", "opt_in").eq("latest_source", "merchant_owner_attestation"),
+    countQuery().eq("consent_state", "opt_in").eq("latest_source", "historical_merchant_attestation"),
+  ]);
+  if (results.some((result) => result.error || typeof result.count !== "number")) {
+    return { available: false };
+  }
+  const [optInCount, optOutCount, noConsentCount, ownerAttestationCount, historicalAttestationCount] =
+    results.map((result) => Math.max(0, Number(result.count) || 0));
+  return {
+    available: true,
+    total_count: optInCount + optOutCount + noConsentCount,
+    opt_in_count: optInCount,
+    opt_out_count: optOutCount,
+    no_consent_count: noConsentCount,
+    merchant_owner_attestation_count: ownerAttestationCount,
+    historical_merchant_attestation_count: historicalAttestationCount,
+    other_opt_in_source_count: Math.max(0, optInCount - ownerAttestationCount - historicalAttestationCount),
+  };
+}
+
 async function whatsappOverview() {
-  const [accountsResult, runtimeResult, templateCountResult, approvedCountResult, templateRowsResult, templateEventsResult, campaignsResult, anaResult] = await Promise.all([
+  const [accountsResult, runtimeResult, templateCountResult, approvedCountResult, templateRowsResult, templateEventsResult, campaignsResult, anaResult, consentSummary] = await Promise.all([
     db.from("whatsapp_accounts").select("id,slug,display_name,phone_e164").order("display_name"),
     db.from("whatsapp_channel_runtime_v1").select("whatsapp_account_id,inbound_provider,outbound_provider,capture_enabled,send_enabled,ana_enabled,campaigns_enabled,human_send_enabled,homologated_at,updated_at"),
     db.from("whatsapp_templates_v1").select("id", { count: "exact", head: true }),
@@ -641,6 +668,7 @@ async function whatsappOverview() {
     db.from("whatsapp_ana_jobs_v1")
       .select("id,whatsapp_account_id,status,decision,created_at", { count: "exact" })
       .eq("dry_run", false).order("created_at", { ascending: false }).limit(50),
+    whatsappMarketingConsentSummary(),
   ]);
   for (const result of [accountsResult, runtimeResult, templateCountResult, approvedCountResult, templateRowsResult, templateEventsResult, campaignsResult, anaResult]) {
     if (result.error) throw result.error;
@@ -786,6 +814,7 @@ async function whatsappOverview() {
     },
     campaigns: { total: campaignsResult.count || 0, recent: campaigns, loaded: campaigns.length },
     ana: { total: anaResult.count || 0, recent: ana, loaded: ana.length },
+    consent_summary: consentSummary,
     generated_at: new Date().toISOString(),
   };
 }
