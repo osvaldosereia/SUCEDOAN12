@@ -190,3 +190,12 @@
 .order-message-status small { color: var(--muted); font-size: .76rem; }
 .message-rejection { margin: 0; padding: 10px; border-radius: 9px; background: #fff1ed; color: #7d3329; font-size: .8rem; line-height: 1.45; }
 @media (max-width: 540px) { .message-actions > button { width: 100%; } .order-message-status { grid-template-columns: 1fr; } .order-message-channel > header { align-items: flex-start; flex-direction: column; } }
+
+.whatsapp-tabs,.message-type-tabs { display:flex; gap:8px; overflow-x:auto; margin:0 0 18px; padding:0 0 7px; border-bottom:1px solid var(--line); }
+.whatsapp-tab,.message-type-tab { flex:0 0 auto; min-height:40px; padding:8px 14px; border:1px solid transparent; border-radius:10px 10px 0 0; background:transparent; color:var(--muted); font:inherit; font-size:.88rem; font-weight:750; cursor:pointer; white-space:nowrap; }
+.whatsapp-tab.active,.message-type-tab.active { border-color:var(--line); border-bottom-color:#fbf8f2; background:#fbf8f2; color:var(--ink); }
+.whatsapp-tab-panel[hidden] { display:none !important; }
+.message-type-tabs { margin-top:8px; border-bottom:0; }
+.message-type-tab { border:1px solid var(--line); border-radius:999px; background:#fff; }
+.message-type-tab.active { border-color:#7e3029; background:#7e3029; color:#fff; }
+@media (max-width:540px) { .whatsapp-tab,.message-type-tab { font-size:.8rem; padding-inline:11px; } }

@@ -37,8 +37,28 @@
     if (name === "baskets") window.DonaCatalogAdmin?.loadBaskets();
     if (name === "products") window.DonaCatalogAdmin?.loadProducts();
     if (name === "orders") window.DonaOrdersAdmin?.loadOrders();
-    if (name === "whatsapp") window.DonaOrderMessageAdmin?.load();
+    if (name === "whatsapp") {
+      window.DonaOrderMessageAdmin?.load();
+      window.DonaOrderSeparationMessageAdmin?.load();
+    }
   }
+
+  document.querySelectorAll("[data-whatsapp-tab]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const name = button.dataset.whatsappTab;
+      document.querySelectorAll("[data-whatsapp-tab]").forEach((tab) => {
+        const active = tab === button;
+        tab.classList.toggle("active", active);
+        tab.setAttribute("aria-selected", String(active));
+      });
+      document.querySelectorAll("[data-whatsapp-panel]").forEach((panel) => {
+        const active = panel.dataset.whatsappPanel === name;
+        panel.hidden = !active;
+        panel.classList.toggle("active", active);
+      });
+      if (name === "separation") window.DonaOrderSeparationMessageAdmin?.load();
+    });
+  });
 
   function digits(value) { return String(value || "").replace(/\D/g, ""); }
   function formatAddress(address) {
