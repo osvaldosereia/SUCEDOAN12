@@ -104,6 +104,7 @@
     const templateItems = Array.isArray(data.templates?.items) ? data.templates.items : [];
     const campaigns = Array.isArray(data.campaigns?.recent) ? data.campaigns.recent : [];
     const ana = Array.isArray(data.ana?.recent) ? data.ana.recent : [];
+    const consentSummary = data.consent_summary || {};
     const channelMarkup = channels.length ? channels.map((channel) => `
       <article class="whatsapp-channel">
         <div class="whatsapp-channel-head">
@@ -128,6 +129,25 @@
       [item.quality_rating ? "Qualidade: " + human(item.quality_rating) : "Sem avaliação de qualidade", item.rejection_reason ? "Motivo da reprovação: " + item.rejection_reason : ""].filter(Boolean).join(" · "),
     )).join("") : emptyList("Nenhum modelo cadastrado.");
     const campaignsMarkup = campaigns.length ? campaigns.map(campaignRecordRow).join("") : emptyList("Nenhuma campanha cadastrada.");
+    const consentAuditMarkup = consentSummary.available ? `
+      <section class="whatsapp-overview-card whatsapp-consent-audit">
+        <div class="whatsapp-consent-heading"><div><h3>Consentimento registrado</h3><p class="admin-muted">Estado atual do cadastro · ${esc(consentSummary.total_count || 0)} clientes</p></div><span class="whatsapp-consent-readonly">Consulta agregada</span></div>
+        <div class="whatsapp-consent-stat-grid">
+          <div class="whatsapp-consent-stat"><span>Opt-in registrado</span><strong>${esc(consentSummary.opt_in_count || 0)}</strong></div>
+          <div class="whatsapp-consent-stat is-suppressed"><span>Opt-out · excluído</span><strong>${esc(consentSummary.opt_out_count || 0)}</strong></div>
+          <div class="whatsapp-consent-stat"><span>Sem consentimento</span><strong>${esc(consentSummary.no_consent_count || 0)}</strong></div>
+        </div>
+        <div class="whatsapp-consent-origins">
+          <span>Declaração administrativa: <strong>${esc(consentSummary.merchant_owner_attestation_count || 0)}</strong></span>
+          <span>Declaração histórica: <strong>${esc(consentSummary.historical_merchant_attestation_count || 0)}</strong></span>
+          <span>Outra origem ou sem origem: <strong>${esc(consentSummary.other_opt_in_source_count || 0)}</strong></span>
+        </div>
+        <p class="whatsapp-consent-notice">As origens administrativas registradas não recuperam evidência individual. Audite a fonte original antes de campanhas amplas. Estes totais não são a prévia de uma campanha; a audiência também aplica cadastro ativo, telefone válido e filtros.</p>
+      </section>` : `
+      <section class="whatsapp-overview-card whatsapp-consent-audit">
+        <h3>Consentimento registrado</h3>
+        <p class="whatsapp-consent-notice">Resumo agregado indisponível. A tela não estima a elegibilidade das campanhas.</p>
+      </section>`;
     const anaMarkup = ana.length ? ana.map((item) => recordRow(
       human(item.decision || item.status),
       (item.channel || "Canal não informado") + " · " + human(item.status),
@@ -172,7 +192,7 @@
         <article class="whatsapp-overview-card"><h3>Lista carregada</h3><strong class="whatsapp-metric">${esc(campaigns.length)}</strong><p class="admin-muted">mais recentes</p></article>
         <article class="whatsapp-overview-card"><h3>Agendadas</h3><strong class="whatsapp-metric">${esc(campaigns.filter((item) => item.scheduled_for && !["completed", "failed", "cancelled"].includes(String(item.status || "").toLowerCase())).length)}</strong><p class="admin-muted">na lista recente</p></article>
       </div>
-      <section class="whatsapp-overview-card"><h3>Campanhas recentes</h3><div class="whatsapp-record-list">${campaignsMarkup}</div></section>`;
+      ${consentAuditMarkup}<section class="whatsapp-overview-card"><h3>Campanhas recentes</h3><div class="whatsapp-record-list">${campaignsMarkup}</div></section>`;
 
     const refreshed = "Dados atualizados em " + dateLabel(data.generated_at) + ". Flags de envio representam configurações do canal; esta consulta não envia mensagens.";
     for (const node of document.querySelectorAll("[data-whatsapp-overview-status]")) node.textContent = refreshed;
