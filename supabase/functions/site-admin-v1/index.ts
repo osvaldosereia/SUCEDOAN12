@@ -1483,6 +1483,157 @@ async function whatsappCampaignPreview(input: any) {
 
 
 
+function campaignAdminCount(value: any) {
+  const count = Number(value);
+  return Number.isFinite(count) ? Math.max(0, Math.trunc(count)) : 0;
+}
+
+async function campaignAdminRpc(functionName: string, args: Record<string, unknown>, fallback: string) {
+  const result = await db.rpc(functionName, args);
+  if (result.error) throw result.error;
+  const saved: any = result.data || {};
+  if (saved.ok !== true) {
+    const error = clean(saved.error || fallback, 100);
+    const messages: Record<string, string> = {
+      campaign_not_found: "Campanha não encontrada.",
+      revision_conflict: "A campanha mudou em outra sessão. Atualize a lista e tente novamente.",
+      snapshot_stale: "O snapshot não corresponde à revisão atual da campanha.",
+      template_not_sendable: "O modelo deixou de estar aprovado ou disponível neste canal.",
+      campaigns_disabled: "O envio de campanhas está desativado para este canal.",
+      campaign_invalid_transition: "O status atual não permite esta ação.",
+      invalid_idempotency_key: "Não foi possível identificar esta operação.",
+    };
+    return { error, message: messages[error] || "A operação não foi concluída.", status: 409 };
+  }
+  return saved;
+}
+
+async function whatsappCampaignSnapshot(input: any) {
+  const campaignId = uuid(input.campaign_id);
+  const revision = Number(input.revision);
+  const idempotencyKey = uuid(input.idempotency_key);
+  if (!campaignId || !Number.isInteger(revision) || revision < 0 || !idempotencyKey) {
+    return { error: "invalid_campaign_snapshot", message: "Dados inválidos para congelar a audiência.", status: 400 };
+  }
+  const saved: any = await campaignAdminRpc("marketing_create_campaign_snapshot_v1", {
+    p_campaign_id: campaignId,
+    p_expected_revision: revision,
+    p_idempotency_key: idempotencyKey,
+  }, "campaign_snapshot_failed");
+  if (saved.error) return saved;
+  return {
+    campaign_id: campaignId,
+    revision: campaignAdminCount(saved.revision),
+    snapshot_version: campaignAdminCount(saved.snapshot_version),
+    found_count: campaignAdminCount(saved.found_count),
+    eligible_count: campaignAdminCount(saved.eligible_count),
+    excluded_count: campaignAdminCount(saved.excluded_count),
+  };
+}
+
+async function whatsappCampaignTransition(input: any) {
+  const campaignId = uuid(input.campaign_id);
+  const revision = Number(input.revision);
+  const toStatus = clean(input.to_status, 32).toLowerCase();
+  const reasonByStatus: Record<string, string> = {
+    ready_for_review: "Revisão solicitada pelo Admin",
+    approved: "Audiência aprovada pelo Admin",
+    draft: "Retornado a rascunho pelo Admin",
+    cancelled: "Cancelado pelo Admin",
+  };
+  if (!campaignId || !Number.isInteger(revision) || revision < 0 || !reasonByStatus[toStatus]) {
+    return { error: "invalid_campaign_transition", message: "Transição de campanha inválida.", status: 400 };
+  }
+  const saved: any = await campaignAdminRpc("marketing_transition_campaign_v1", {
+    p_campaign_id: campaignId,
+    p_expected_revision: revision,
+    p_to_status: toStatus,
+    p_reason: reasonByStatus[toStatus],
+  }, "campaign_transition_failed");
+  if (saved.error) return saved;
+  return { campaign_id: campaignId, revision: campaignAdminCount(saved.revision), status: clean(saved.status, 32) };
+}
+
+async function whatsappCampaignSchedule(input: any) {
+  const campaignId = uuid(input.campaign_id);
+  const revision = Number(input.revision);
+  const scheduledFor = clean(input.scheduled_for, 80);
+  const scheduledAt = Date.parse(scheduledFor);
+  if (!campaignId || !Number.isInteger(revision) || revision < 0 || !isIsoCursorTimestamp(scheduledFor)) {
+    return { error: "invalid_campaign_schedule", message: "Informe data e horário válidos para o agendamento.", status: 400 };
+  }
+  if (!Number.isFinite(scheduledAt) || scheduledAt < Date.now() + 5 * 60 * 1000) {
+    return { error: "campaign_schedule_too_soon", message: "Agende com pelo menos cinco minutos de antecedência.", status: 400 };
+  }
+  const saved: any = await campaignAdminRpc("marketing_schedule_campaign_v1", {
+    p_campaign_id: campaignId,
+    p_expected_revision: revision,
+    p_scheduled_for: new Date(scheduledAt).toISOString(),
+  }, "campaign_schedule_failed");
+  if (saved.error) return saved;
+  return {
+    campaign_id: campaignId,
+    revision: campaignAdminCount(saved.revision),
+    status: clean(saved.status, 32),
+    scheduled_for: saved.scheduled_for || null,
+    mode: clean(saved.mode, 24),
+  };
+}
+
+async function whatsappCampaignPause(input: any) {
+  const campaignId = uuid(input.campaign_id);
+  const revision = Number(input.revision);
+  if (!campaignId || !Number.isInteger(revision) || revision < 0) {
+    return { error: "invalid_campaign_pause", message: "Dados inválidos para pausar a campanha.", status: 400 };
+  }
+  const current = await db.from("marketing_campaigns_v1").select("revision,status").eq("id", campaignId).maybeSingle();
+  if (current.error) throw current.error;
+  if (!current.data) return { error: "campaign_not_found", message: "Campanha não encontrada.", status: 404 };
+  if (Number(current.data.revision) !== revision) {
+    return { error: "revision_conflict", message: "A campanha mudou em outra sessão. Atualize a lista e tente novamente.", status: 409 };
+  }
+  const saved: any = await campaignAdminRpc("marketing_pause_campaign_v1", {
+    p_campaign_id: campaignId,
+    p_reason: "Pausada pelo Admin",
+  }, "campaign_pause_failed");
+  if (saved.error) return saved;
+  return { campaign_id: campaignId, status: clean(saved.status, 32) };
+}
+
+async function whatsappCampaignCancel(input: any) {
+  const campaignId = uuid(input.campaign_id);
+  const revision = Number(input.revision);
+  if (!campaignId || !Number.isInteger(revision) || revision < 0) {
+    return { error: "invalid_campaign_cancel", message: "Dados inválidos para cancelar a campanha.", status: 400 };
+  }
+  const current = await db.from("marketing_campaigns_v1").select("revision,status").eq("id", campaignId).maybeSingle();
+  if (current.error) throw current.error;
+  if (!current.data) return { error: "campaign_not_found", message: "Campanha não encontrada.", status: 404 };
+  if (Number(current.data.revision) !== revision) {
+    return { error: "revision_conflict", message: "A campanha mudou em outra sessão. Atualize a lista e tente novamente.", status: 409 };
+  }
+  const status = clean(current.data.status, 32).toLowerCase();
+  const activeStatuses = new Set(["scheduled", "running", "paused"]);
+  const saved: any = activeStatuses.has(status)
+    ? await campaignAdminRpc("marketing_cancel_campaign_execution_v1", {
+      p_campaign_id: campaignId,
+      p_reason: "Cancelada pelo Admin",
+    }, "campaign_cancel_failed")
+    : await campaignAdminRpc("marketing_transition_campaign_v1", {
+      p_campaign_id: campaignId,
+      p_expected_revision: revision,
+      p_to_status: "cancelled",
+      p_reason: "Cancelada pelo Admin",
+    }, "campaign_cancel_failed");
+  if (saved.error) return saved;
+  return {
+    campaign_id: campaignId,
+    status: clean(saved.status, 32),
+    skipped_dispatches: campaignAdminCount(saved.skipped_dispatches),
+    cancelled_outboxes: campaignAdminCount(saved.cancelled_outboxes),
+  };
+}
+
 function anaOutputText(data: any) {
   return (Array.isArray(data?.output) ? data.output : [])
     .flatMap((item: any) => Array.isArray(item?.content) ? item.content : [])
@@ -2259,6 +2410,11 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "whatsapp_campaign_draft_create") result = await whatsappCampaignDraftCreate(input);
     else if (req.method === "POST" && action === "whatsapp_campaign_draft_update") result = await whatsappCampaignDraftUpdate(input);
     else if (req.method === "POST" && action === "whatsapp_campaign_preview") result = await whatsappCampaignPreview(input);
+    else if (req.method === "POST" && action === "whatsapp_campaign_snapshot") result = await whatsappCampaignSnapshot(input);
+    else if (req.method === "POST" && action === "whatsapp_campaign_transition") result = await whatsappCampaignTransition(input);
+    else if (req.method === "POST" && action === "whatsapp_campaign_schedule") result = await whatsappCampaignSchedule(input);
+    else if (req.method === "POST" && action === "whatsapp_campaign_pause") result = await whatsappCampaignPause(input);
+    else if (req.method === "POST" && action === "whatsapp_campaign_cancel") result = await whatsappCampaignCancel(input);
     else if (req.method === "POST" && action === "whatsapp_ana_admin_test") result = await whatsappAnaAdminTest(input);
     else if (req.method === "POST" && action === "whatsapp_ana_admin_publish") result = await whatsappAnaAdminPublish(input);
     else if (req.method === "POST" && action === "whatsapp_ana_admin_rollback") result = await whatsappAnaAdminRollback(input);
