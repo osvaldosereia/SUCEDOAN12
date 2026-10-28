@@ -1,8 +1,12 @@
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { verifyAdminCode } from "../_shared/admin-code-v1.ts";
+import { sendTextViaMeta, MetaTransportError } from "../_shared/whatsapp-meta-transport-v1.mjs";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+const META_WHATSAPP_ACCESS_TOKEN = (Deno.env.get("META_WHATSAPP_ACCESS_TOKEN") || "").trim();
+const META_WHATSAPP_GRAPH_VERSION = (Deno.env.get("META_WHATSAPP_GRAPH_VERSION") || "").trim();
+const attendanceMetaConfigReady = () => Boolean(META_WHATSAPP_ACCESS_TOKEN && /^v\d+\.\d+$/.test(META_WHATSAPP_GRAPH_VERSION));
 const ALLOWED_ORIGINS = new Set([
   "https://donaantonia.com.br",
   "https://www.donaantonia.com.br",
@@ -1298,6 +1302,179 @@ async function whatsappAnaAdminStatus() {
   };
 }
 
+function attendanceSendHttpStatus(error: string) {
+  if (error === "rate_limited") return 429;
+  if (["service_window_closed", "human_send_not_homologated", "meta_transport_not_configured", "meta_send_uncertain", "meta_canary_destination_blocked", "duplicate_not_dispatchable"].includes(error)) return 409;
+  if (error.startsWith("meta_")) return 502;
+  if (error === "server_config") return 503;
+  return 400;
+}
+
+async function markAttendanceClaimFailed(claim: any, errorCode: string) {
+  const now = new Date().toISOString();
+  const updated = await db.from("whatsapp_outbox_v1")
+    .update({ status: "failed", last_error: clean(errorCode, 180) || "transport_error", updated_at: now })
+    .eq("id", claim?.outbox_id).eq("status", "claimed");
+  if (updated.error) throw updated.error;
+}
+
+async function markAttendanceMetaUncertain(claim: any, errorCode: string) {
+  const now = new Date().toISOString();
+  const code = "meta_send_uncertain:" + (clean(errorCode, 120) || "unknown");
+  const updated = await db.from("whatsapp_outbox_v1")
+    .update({ last_error: code, updated_at: now })
+    .eq("id", claim?.outbox_id).eq("status", "claimed");
+  if (updated.error) throw updated.error;
+  return { ok: false, error: "meta_send_uncertain", uncertain: true, retryable: false, outbox_id: claim?.outbox_id };
+}
+
+async function attendanceProviderUrl(channel: string | null) {
+  if (!channel) return null;
+  const result = await db.rpc("ops2_papoai_attendance_provider_url_v1", { p_channel: channel });
+  if (result.error) throw result.error;
+  return clean(result.data, 2048) || null;
+}
+
+function attendanceChannelFromPhone(value: unknown) {
+  const digits = String(value ?? "").replace(/\D+/g, "");
+  if (digits.endsWith("0975")) return "0975";
+  if (digits.endsWith("1018")) return "1018";
+  return null;
+}
+
+async function dispatchAttendancePapoAi(claim: any) {
+  const channel = attendanceChannelFromPhone(claim.account_phone_e164);
+  const webhookUrl = await attendanceProviderUrl(channel);
+  if (!channel || !webhookUrl) {
+    await markAttendanceClaimFailed(claim, "transport_config_missing");
+    return { ok: false, error: "transport_config_missing", provider: "papoai" };
+  }
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone_e164: claim.to_phone_e164,
+        message_text: claim.text,
+        event_id: claim.idempotency_key,
+        conversation_id: claim.conversation_id,
+        source: "vitrine_admin_attendance",
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!response.ok) throw new Error("papoai_http_" + response.status);
+    const acceptedAt = new Date().toISOString();
+    const updated = await db.from("whatsapp_outbox_v1")
+      .update({ status: "sent", sent_at: acceptedAt, last_error: null, updated_at: acceptedAt })
+      .eq("id", claim.outbox_id).eq("status", "claimed");
+    if (updated.error) throw updated.error;
+    return { ok: true, status: "accepted", outbox_status: "sent", channel, provider: "papoai" };
+  } catch (error) {
+    await markAttendanceClaimFailed(claim, clean(error instanceof Error ? error.message : error, 180) || "papoai_transport_failed");
+    return { ok: false, error: "papoai_transport_failed", provider: "papoai" };
+  }
+}
+
+async function dispatchAttendanceMeta(claim: any) {
+  if (!attendanceMetaConfigReady() || !/^\d{5,30}$/.test(String(claim?.phone_number_id || ""))) {
+    await markAttendanceClaimFailed(claim, "meta_transport_not_configured");
+    return { ok: false, error: "meta_transport_not_configured", provider: "meta" };
+  }
+  try {
+    const result = await sendTextViaMeta({
+      accessToken: META_WHATSAPP_ACCESS_TOKEN,
+      phoneNumberId: claim.phone_number_id,
+      toE164: claim.to_phone_e164,
+      text: claim.text,
+      graphVersion: META_WHATSAPP_GRAPH_VERSION,
+      timeoutMs: 15000,
+    });
+    const acceptedAt = new Date().toISOString();
+    const accepted = await db.rpc("ops2_admin_attendance_accept_meta_outbound_v1", {
+      p_outbox_id: claim.outbox_id,
+      p_provider_message_id: result.providerMessageId,
+      p_accepted_at: acceptedAt,
+    });
+    if (accepted.error || accepted.data?.ok !== true) {
+      return await markAttendanceMetaUncertain(claim, accepted.error?.message || accepted.data?.error || "canonical_persist_failed");
+    }
+    return {
+      ok: true,
+      status: "accepted",
+      outbox_status: "sent",
+      provider: "meta",
+      provider_message_id: result.providerMessageId,
+      message_id: accepted.data?.message_id || null,
+      status_current: accepted.data?.status_current || "accepted",
+    };
+  } catch (error) {
+    if (error instanceof MetaTransportError) {
+      if (error.uncertain) return await markAttendanceMetaUncertain(claim, error.code);
+      await markAttendanceClaimFailed(claim, error.code);
+      return { ok: false, error: error.code, provider: "meta", retryable: error.retryable === true, uncertain: false, http_status: error.httpStatus };
+    }
+    return await markAttendanceMetaUncertain(claim, "unexpected_transport_error");
+  }
+}
+
+async function dispatchAttendanceOutbox(outboxId: unknown) {
+  const id = uuid(outboxId);
+  if (!id) return { ok: false, error: "invalid_outbox_id" };
+  const claimedResult = await db.rpc("ops2_admin_attendance_claim_outbox_v3", { p_outbox_id: id });
+  if (claimedResult.error) throw claimedResult.error;
+  const claim = claimedResult.data || { ok: false, error: "outbox_claim_failed" };
+  if (claim.already_sent === true) return { ok: true, status: "accepted", outbox_status: "sent", duplicate: true, provider: claim.provider || null };
+  if (claim.ok !== true) return claim;
+  if (claim.provider === "meta") return await dispatchAttendanceMeta(claim);
+  if (claim.provider === "papoai") return await dispatchAttendancePapoAi(claim);
+  await markAttendanceClaimFailed(claim, "outbound_provider_unavailable");
+  return { ok: false, error: "outbound_provider_unavailable", provider: claim.provider || null };
+}
+
+async function whatsappConversationSendText(input: any) {
+  const conversationId = uuid(input.conversation_id);
+  if (!conversationId) return { error: "invalid_conversation_id", status: 400 };
+  if (input.to_phone_e164 !== undefined || input.whatsapp_account_id !== undefined || input.account_id !== undefined || input.customer_id !== undefined) {
+    return { error: "destination_fields_not_allowed", status: 400 };
+  }
+  const text = String(input.text ?? "").replace(/\r\n?/g, "\n").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").trim();
+  if (!text) return { error: "message_empty", status: 400 };
+  if (text.length > 4000) return { error: "message_too_long", status: 400 };
+  const idempotencyKey = clean(input.idempotency_key, 120);
+  if (!/^[A-Za-z0-9._:-]{8,120}$/.test(idempotencyKey)) return { error: "invalid_idempotency_key", status: 400 };
+
+  const unresolved = await db.from("whatsapp_outbox_v1").select("id", { count: "exact", head: true })
+    .eq("conversation_id", conversationId).eq("purpose", "human_attendance").eq("status", "claimed")
+    .like("last_error", "meta_send_uncertain:%");
+  if (unresolved.error) throw unresolved.error;
+  if ((unresolved.count || 0) > 0) return { error: "meta_send_uncertain", status: 409, uncertain: true };
+
+  const queuedResult = await db.rpc("ops2_admin_attendance_enqueue_text_v3", {
+    p_conversation_id: conversationId,
+    p_text: text,
+    p_idempotency_key: idempotencyKey,
+  });
+  if (queuedResult.error) throw queuedResult.error;
+  const queued = queuedResult.data || { ok: false, error: "enqueue_failed" };
+  if (queued.ok !== true) {
+    const error = String(queued.error || "enqueue_failed");
+    return { ...queued, status: attendanceSendHttpStatus(error) };
+  }
+  if (queued.duplicate === true && queued.status === "sent") {
+    return { ok: true, status: "accepted", duplicate: true, outbox_id: queued.outbox_id, provider: queued.provider || null };
+  }
+  if (queued.duplicate === true && queued.status !== "queued") {
+    return { error: "duplicate_not_dispatchable", status: 409, outbox_id: queued.outbox_id, outbox_status: queued.status, provider: queued.provider || null };
+  }
+
+  const sent = await dispatchAttendanceOutbox(queued.outbox_id);
+  if (sent?.ok !== true) {
+    const error = String(sent?.error || "send_failed");
+    return { ...sent, status: attendanceSendHttpStatus(error) };
+  }
+  return sent;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
   if (!["GET", "POST"].includes(req.method)) return json(req, { ok: false, error: "method_not_allowed" }, 405);
@@ -1321,6 +1498,7 @@ Deno.serve(async (req: Request) => {
     if (req.method === "POST" && action === "whatsapp_overview") result = await whatsappOverview();
     else if (req.method === "POST" && action === "whatsapp_conversation_list") result = await whatsappConversationList(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_messages") result = await whatsappConversationMessages(input);
+    else if (req.method === "POST" && action === "whatsapp_conversation_send_text") result = await whatsappConversationSendText(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_media") result = await whatsappConversationMedia(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_favorite") result = await whatsappConversationFavorite(input);
     else if (req.method === "POST" && action === "whatsapp_ana_admin_status") result = await whatsappAnaAdminStatus();
