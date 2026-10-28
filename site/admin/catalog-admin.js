@@ -18,7 +18,7 @@
   const state = {
     baskets: [], basket: null, pickerIndex: -1, pickerQuery: "", pickerOffset: 0, pickerTotal: 0,
     pickerSelected: new Set(), productCache: new Map(), productsOffset: 0, productsTotal: 0,
-    productsQuery: "", productsStatus: "active", basketsStatus: "active", toastTimer: 0,
+    productsQuery: "", productsStatus: "active", productsRecent: "all", productsQualityFilters: new Set(), basketsStatus: "active", toastTimer: 0,
   };
 
   async function request(action, options = {}) {
@@ -237,7 +237,7 @@
     const host = $("products-result");
     if (reset) host.innerHTML = '<p class="admin-muted">Carregando produtos…</p>';
     try {
-      const data = await request("products", { params: { q: state.productsQuery, status: state.productsStatus, offset: state.productsOffset, limit: 24 } });
+      const data = await request("products", { params: { q: state.productsQuery, status: state.productsStatus, filters: [...state.productsQualityFilters].join(","), recent: state.productsRecent, offset: state.productsOffset, limit: 24 } });
       state.productsTotal = Number(data.total || 0);
       (data.products || []).forEach((product) => state.productCache.set(String(product.id), product));
       if (reset) state.productsOffset = 0;
@@ -432,9 +432,20 @@
       event.preventDefault();
       state.productsQuery = $("product-query").value.trim();
       state.productsStatus = $("product-status").value;
+      state.productsRecent = $("product-recent").value;
       loadProducts(true);
     });
     $("product-status").addEventListener("change", () => $("product-search").requestSubmit());
+    $("product-recent").addEventListener("change", () => $("product-search").requestSubmit());
+    $("product-quality-filters").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-product-quality]");
+      if (!button) return;
+      const filter = button.dataset.productQuality;
+      if (state.productsQualityFilters.has(filter)) state.productsQualityFilters.delete(filter);
+      else state.productsQualityFilters.add(filter);
+      button.setAttribute("aria-pressed", String(state.productsQualityFilters.has(filter)));
+      $("product-search").requestSubmit();
+    });
     $("basket-status").addEventListener("change", () => {
       state.basketsStatus = $("basket-status").value;
       loadBaskets();
