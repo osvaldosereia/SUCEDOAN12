@@ -1135,6 +1135,42 @@ async function whatsappConversationMessages(input: any) {
   };
 }
 
+async function whatsappConversationMessageStatuses(input: any) {
+  const conversationId = uuid(input.conversation_id);
+  const rawIds = input.message_ids;
+  if (!conversationId) return { error: "invalid_conversation_id", status: 400 };
+  if (!Array.isArray(rawIds) || rawIds.length < 1 || rawIds.length > 100) {
+    return { error: "invalid_message_ids", status: 400 };
+  }
+  const messageIds = Array.from(new Set(rawIds.map((value: any) => uuid(value)).filter(Boolean)));
+  if (!messageIds.length || messageIds.length !== rawIds.length) {
+    return { error: "invalid_message_ids", status: 400 };
+  }
+
+  const conversationResult = await db.from("conversations")
+    .select("id,whatsapp_account_id")
+    .eq("id", conversationId)
+    .maybeSingle();
+  if (conversationResult.error) throw conversationResult.error;
+  if (!conversationResult.data) return { error: "conversation_not_found", status: 404 };
+
+  const result = await db.from("whatsapp_messages_v1")
+    .select("id,status_current")
+    .eq("conversation_id", conversationId)
+    .eq("whatsapp_account_id", conversationResult.data.whatsapp_account_id)
+    .eq("direction", "outbound")
+    .in("id", messageIds)
+    .limit(100);
+  if (result.error) throw result.error;
+  return {
+    conversation_id: conversationId,
+    statuses: (result.data || []).map((row: any) => ({
+      id: uuid(row.id),
+      status_current: clean(row.status_current, 40),
+    })),
+  };
+}
+
 async function whatsappConversationMedia(input: any) {
   const conversationId = uuid(input.conversation_id);
   const messageId = uuid(input.message_id);
@@ -2681,6 +2717,7 @@ Deno.serve(async (req: Request) => {
     if (req.method === "POST" && action === "whatsapp_overview") result = await whatsappOverview();
     else if (req.method === "POST" && action === "whatsapp_conversation_list") result = await whatsappConversationList(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_messages") result = await whatsappConversationMessages(input);
+    else if (req.method === "POST" && action === "whatsapp_conversation_message_statuses") result = await whatsappConversationMessageStatuses(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_send_text") result = await whatsappConversationSendText(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_send_media") result = await whatsappConversationSendMedia(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_media") result = await whatsappConversationMedia(input);
