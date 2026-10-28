@@ -655,7 +655,7 @@ async function whatsappMarketingConsentSummary() {
 
 async function whatsappOverview() {
   const [accountsResult, runtimeResult, templateCountResult, approvedCountResult, templateRowsResult, templateEventsResult, campaignsResult, anaResult, consentSummary] = await Promise.all([
-    db.from("whatsapp_accounts").select("id,slug,display_name,phone_e164").order("display_name"),
+    db.from("whatsapp_accounts").select("id,slug,display_name,phone_e164,is_active").order("display_name"),
     db.from("whatsapp_channel_runtime_v1").select("whatsapp_account_id,inbound_provider,outbound_provider,capture_enabled,send_enabled,ana_enabled,campaigns_enabled,human_send_enabled,homologated_at,updated_at"),
     db.from("whatsapp_templates_v1").select("id", { count: "exact", head: true }),
     db.from("whatsapp_templates_v1").select("id", { count: "exact", head: true }).eq("status", "approved"),
@@ -668,7 +668,7 @@ async function whatsappOverview() {
       .not("reason", "is", null)
       .order("occurred_at", { ascending: false }).limit(200),
     db.from("marketing_campaigns_v1")
-      .select("id,name,whatsapp_account_id,status,revision,scheduled_for,created_at,started_at,paused_at,completed_at,failed_at", { count: "exact" })
+      .select("id,name,whatsapp_account_id,template_id,filters,status,revision,scheduled_for,created_at,started_at,paused_at,completed_at,failed_at", { count: "exact" })
       .order("created_at", { ascending: false }).limit(100),
     db.from("whatsapp_ana_jobs_v1")
       .select("id,whatsapp_account_id,status,decision,created_at", { count: "exact" })
@@ -737,6 +737,8 @@ async function whatsappOverview() {
     const runtime: any = runtimeByAccount.get(account.id) || {};
     const digits = String(account.phone_e164 || "").replace(/\D/g, "");
     return {
+      id: uuid(account.id),
+      is_active: account.is_active === true,
       name: clean(account.display_name || account.slug || "Canal", 120),
       phone_last4: digits.slice(-4),
       inbound_provider: clean(runtime.inbound_provider, 40),
@@ -751,6 +753,8 @@ async function whatsappOverview() {
     };
   });
   const templates = (templateRowsResult.data || []).map((row: any) => ({
+    id: uuid(row.id),
+    whatsapp_account_id: uuid(row.whatsapp_account_id),
     name: clean(row.name || "Modelo sem nome", 160),
     channel: clean(accountById.get(row.whatsapp_account_id)?.display_name || "", 120),
     language: clean(row.language, 24),
@@ -787,6 +791,9 @@ async function whatsappOverview() {
     );
     return {
       id: uuid(row.id),
+      whatsapp_account_id: uuid(row.whatsapp_account_id),
+      template_id: uuid(row.template_id),
+      draft_editable: String(row.status || "").toLowerCase() === "draft" && !normalizeCampaignDraftFilters(row.filters).error,
       name: clean(row.name || "Campanha", 140),
       channel: clean(accountById.get(row.whatsapp_account_id)?.display_name || "", 120),
       status: clean(row.status, 40),
@@ -1226,6 +1233,177 @@ function stableAdminJson(value: any): string {
   return JSON.stringify(value) ?? "undefined";
 }
 
+
+
+const CAMPAIGN_FILTER_TEXT_FIELDS = new Set(["city", "neighborhood", "brand", "category"]);
+const CAMPAIGN_FILTER_DATE_FIELDS = new Set(["last_purchase_before", "last_purchase_after"]);
+const CAMPAIGN_FILTER_NUMBER_FIELDS = new Set([
+  "inactive_days", "min_order_count", "max_order_count", "min_lifetime_value", "max_lifetime_value",
+]);
+const CAMPAIGN_FILTER_FIELDS = new Set([
+  ...CAMPAIGN_FILTER_TEXT_FIELDS,
+  ...CAMPAIGN_FILTER_DATE_FIELDS,
+  ...CAMPAIGN_FILTER_NUMBER_FIELDS,
+]);
+
+function normalizeCampaignDraftFilters(value: any): { error?: string; filters: Record<string, unknown> } {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return { error: "invalid_filters", filters: {} };
+  const filters: Record<string, unknown> = {};
+  for (const [key, raw] of Object.entries(value)) {
+    if (!CAMPAIGN_FILTER_FIELDS.has(key)) return { error: "unsupported_campaign_filter", filters: {} };
+    if (raw === null || raw === undefined || raw === "") continue;
+    if (CAMPAIGN_FILTER_TEXT_FIELDS.has(key)) {
+      if (typeof raw !== "string") return { error: "invalid_campaign_filter", filters: {} };
+      const text = clean(raw, 120);
+      if (text) filters[key] = text;
+      continue;
+    }
+    if (CAMPAIGN_FILTER_DATE_FIELDS.has(key)) {
+      if (typeof raw !== "string") return { error: "invalid_campaign_filter", filters: {} };
+      const date = raw.slice(0, 10);
+      const parsedDate = new Date(date + "T00:00:00.000Z");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== date) {
+        return { error: "invalid_campaign_filter", filters: {} };
+      }
+      filters[key] = date + "T00:00:00.000Z";
+      continue;
+    }
+    if (typeof raw !== "string" && typeof raw !== "number") return { error: "invalid_campaign_filter", filters: {} };
+    const number = Number(raw);
+    const integer = key === "inactive_days" || key === "min_order_count" || key === "max_order_count";
+    const maximum = key === "inactive_days" ? 3650
+      : integer ? 1000000 : 1000000000;
+    if (!Number.isFinite(number) || number < 0 || number > maximum || (integer && !Number.isInteger(number))) {
+      return { error: "invalid_campaign_filter", filters: {} };
+    }
+    filters[key] = number;
+  }
+  if (filters.min_order_count !== undefined && filters.max_order_count !== undefined
+      && Number(filters.min_order_count) > Number(filters.max_order_count)) {
+    return { error: "invalid_campaign_filter_range", filters: {} };
+  }
+  if (filters.min_lifetime_value !== undefined && filters.max_lifetime_value !== undefined
+      && Number(filters.min_lifetime_value) > Number(filters.max_lifetime_value)) {
+    return { error: "invalid_campaign_filter_range", filters: {} };
+  }
+  return { filters };
+}
+
+async function validateMarketingCampaignTemplate(accountId: string, templateId: string) {
+  const result = await db.from("whatsapp_templates_v1")
+    .select("id,whatsapp_account_id,category,status")
+    .eq("id", templateId)
+    .eq("whatsapp_account_id", accountId)
+    .maybeSingle();
+  if (result.error) throw result.error;
+  const row = result.data;
+  if (!row) return { error: "template_not_found", status: 404 };
+  if (String(row.category || "").toUpperCase() !== "MARKETING"
+      || String(row.status || "").toUpperCase() !== "APPROVED") {
+    return { error: "template_not_sendable", status: 409 };
+  }
+  return null;
+}
+
+async function whatsappCampaignDraftLoad(input: any) {
+  const campaignId = uuid(input.campaign_id);
+  if (!campaignId) return { error: "invalid_campaign_id", status: 400 };
+  const result = await db.from("marketing_campaigns_v1")
+    .select("id,name,status,revision,filters,whatsapp_account_id,template_id")
+    .eq("id", campaignId)
+    .maybeSingle();
+  if (result.error) throw result.error;
+  if (!result.data) return { error: "campaign_not_found", status: 404 };
+  const campaign: any = result.data;
+  if (String(campaign.status || "").toLowerCase() !== "draft") {
+    return { error: "campaign_not_draft", status: 409 };
+  }
+  const normalized = normalizeCampaignDraftFilters(campaign.filters);
+  if (normalized.error) return { error: "campaign_filters_not_editable", status: 409 };
+  return {
+    campaign: {
+      id: uuid(campaign.id),
+      name: clean(campaign.name, 140),
+      revision: Number(campaign.revision) || 0,
+      whatsapp_account_id: uuid(campaign.whatsapp_account_id),
+      template_id: uuid(campaign.template_id),
+      filters: normalized.filters,
+    },
+  };
+}
+
+async function whatsappCampaignDraftCreate(input: any) {
+  const name = clean(input.name, 140);
+  const accountId = uuid(input.whatsapp_account_id);
+  const templateId = uuid(input.template_id);
+  const idempotencyKey = uuid(input.idempotency_key);
+  if (!name) return { error: "invalid_name", status: 400 };
+  if (!accountId || !templateId) return { error: "invalid_campaign_channel_or_template", status: 400 };
+  if (!idempotencyKey) return { error: "invalid_idempotency_key", status: 400 };
+  const normalized = normalizeCampaignDraftFilters(input.filters);
+  if (normalized.error) return { error: normalized.error, status: 400 };
+  if (Object.keys(normalized.filters).length === 0) {
+    return { error: "campaign_filter_required", status: 400, message: "Informe ao menos um filtro de público para salvar o rascunho." };
+  }
+  const templateError = await validateMarketingCampaignTemplate(accountId, templateId);
+  if (templateError) return templateError;
+  const result = await db.rpc("marketing_create_campaign_v1", {
+    p_name: name,
+    p_whatsapp_account_id: accountId,
+    p_template_id: templateId,
+    p_filters: normalized.filters,
+    p_variable_values: {},
+    p_deep_link: {},
+    p_idempotency_key: idempotencyKey,
+  });
+  if (result.error) throw result.error;
+  const saved = result.data || {};
+  if (saved.ok !== true) return { error: clean(saved.error || "campaign_create_failed", 100), status: 409 };
+  return {
+    campaign_id: uuid(saved.campaign_id),
+    revision: Number(saved.revision) || 0,
+    status: clean(saved.status || "draft", 40),
+    idempotent: saved.idempotent === true,
+  };
+}
+
+async function whatsappCampaignDraftUpdate(input: any) {
+  const campaignId = uuid(input.campaign_id);
+  const accountId = uuid(input.whatsapp_account_id);
+  const templateId = uuid(input.template_id);
+  const revision = Number(input.revision);
+  const name = clean(input.name, 140);
+  if (!campaignId || !accountId || !templateId || !Number.isInteger(revision) || revision < 0) {
+    return { error: "invalid_campaign_draft", status: 400 };
+  }
+  if (!name) return { error: "invalid_name", status: 400 };
+  const normalized = normalizeCampaignDraftFilters(input.filters);
+  if (normalized.error) return { error: normalized.error, status: 400 };
+  if (Object.keys(normalized.filters).length === 0) {
+    return { error: "campaign_filter_required", status: 400, message: "Informe ao menos um filtro de público para salvar o rascunho." };
+  }
+  const templateError = await validateMarketingCampaignTemplate(accountId, templateId);
+  if (templateError) return templateError;
+  const result = await db.rpc("marketing_update_campaign_draft_v1", {
+    p_campaign_id: campaignId,
+    p_expected_revision: revision,
+    p_patch: {
+      name,
+      whatsapp_account_id: accountId,
+      template_id: templateId,
+      filters: normalized.filters,
+    },
+  });
+  if (result.error) throw result.error;
+  const saved = result.data || {};
+  if (saved.ok !== true) return { error: clean(saved.error || "campaign_update_failed", 100), status: 409 };
+  return {
+    campaign_id: campaignId,
+    revision: Number(saved.revision) || 0,
+    status: clean(saved.status || "draft", 40),
+    semantic_changed: saved.semantic_changed === true,
+  };
+}
 
 async function whatsappCampaignPreview(input: any) {
   const campaignId = uuid(input.campaign_id);
@@ -1851,6 +2029,9 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "whatsapp_conversation_send_media") result = await whatsappConversationSendMedia(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_media") result = await whatsappConversationMedia(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_favorite") result = await whatsappConversationFavorite(input);
+    else if (req.method === "POST" && action === "whatsapp_campaign_draft_load") result = await whatsappCampaignDraftLoad(input);
+    else if (req.method === "POST" && action === "whatsapp_campaign_draft_create") result = await whatsappCampaignDraftCreate(input);
+    else if (req.method === "POST" && action === "whatsapp_campaign_draft_update") result = await whatsappCampaignDraftUpdate(input);
     else if (req.method === "POST" && action === "whatsapp_campaign_preview") result = await whatsappCampaignPreview(input);
     else if (req.method === "POST" && action === "whatsapp_ana_pause_channel") result = await whatsappAnaPauseChannel(input);
     else if (req.method === "POST" && action === "whatsapp_ana_admin_status") result = await whatsappAnaAdminStatus();
