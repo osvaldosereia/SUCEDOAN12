@@ -284,7 +284,7 @@
             '<button class="extra-category-toggle" type="button" data-extra-category="' + esc(category.key) + '" aria-expanded="' + String(category.expanded) + '" aria-controls="' + esc(panelId) + '">' +
             '<span>' + esc(category.label) + '</span><span class="variation-chevron" aria-hidden="true">' + (category.expanded ? "−" : "+") + '</span></button>' +
             '<div class="extra-category-panel" id="' + esc(panelId) + '"' + (category.expanded ? "" : " hidden") + '>' +
-            '<div class="extra-product-scroll" data-extra-scroll="' + esc(category.key) + '" role="list" aria-label="Produtos de ' + esc(category.label) + '">' + products + '</div>' +
+            '<div class="extra-product-list" data-extra-list="' + esc(category.key) + '" role="list" aria-label="Produtos de ' + esc(category.label) + '">' + products + '</div>' +
             '<p class="extra-product-status" data-extra-status="' + esc(category.key) + '" role="status">' + esc(status) + '</p>' +
             '<button class="button button-outline extra-product-more" type="button" data-extra-more="' + esc(category.key) + '"' + (showMore ? "" : " hidden") + (category.loading ? " disabled" : "") + '>' + esc(moreLabel) + '</button></div></section>';
         }).join("") + '</div></section>';
@@ -298,8 +298,8 @@
         const moreButton = event.target?.closest?.("[data-extra-more]");
         if (moreButton && container.contains(moreButton) && !moreButton.disabled) {
           const categoryCard = moreButton.closest("[data-extra-category-card]");
-          const scrollElement = categoryCard && categoryCard.querySelector("[data-extra-scroll]");
-          if (scrollElement) loadMoreExtraProducts(moreButton.dataset.extraMore, scrollElement);
+          const listElement = categoryCard && categoryCard.querySelector("[data-extra-list]");
+          if (listElement) loadMoreExtraProducts(moreButton.dataset.extraMore, listElement);
           return;
         }
         const button = event.target?.closest?.("[data-extra-adjust]");
@@ -314,8 +314,8 @@
       category.expanded = !category.expanded;
       const content = $("detail-content");
       const button = content.querySelector('[data-extra-category="' + category.key + '"]');
-      const scroll = content.querySelector('[data-extra-scroll="' + category.key + '"]');
-      const panel = scroll && scroll.parentElement;
+      const list = content.querySelector('[data-extra-list="' + category.key + '"]');
+      const panel = list && list.parentElement;
       if (button) {
         button.setAttribute("aria-expanded", String(category.expanded));
         const icon = button.querySelector(".variation-chevron");
@@ -323,24 +323,24 @@
       }
       if (panel) panel.hidden = !category.expanded;
       if (category.expanded && (!category.loaded || category.error)) {
-        loadExtraCategory(data, category, scroll);
+        loadExtraCategory(data, category, list);
       }
     }
   
-    function loadMoreExtraProducts(categoryKey, scrollElement) {
+    function loadMoreExtraProducts(categoryKey, listElement) {
       const data = state.baskets.get(state.activeKey);
       const category = data && extraCategoriesFor(data).find((entry) => entry.key === String(categoryKey));
       if (category && category.expanded && category.loaded && category.hasMore) {
-        loadExtraCategory(data, category, scrollElement);
+        loadExtraCategory(data, category, listElement);
       }
     }
   
-    async function loadExtraCategory(data, category, scrollElement) {
+    async function loadExtraCategory(data, category, listElement) {
       if (!category || category.loading || !category.hasMore) return;
       category.loading = true;
       category.error = false;
       const status = $("detail-content").querySelector('[data-extra-status="' + category.key + '"]');
-      const moreButton = scrollElement && scrollElement.closest("[data-extra-category-card]")?.querySelector("[data-extra-more]");
+      const moreButton = listElement && listElement.closest("[data-extra-category-card]")?.querySelector("[data-extra-more]");
       if (status) status.textContent = category.products.length ? "Carregando mais produtos…" : "Carregando produtos…";
       if (moreButton) {
         moreButton.disabled = true;
@@ -360,18 +360,18 @@
         } while (!fetched.length && category.hasMore && pages < 8);
         category.products = category.products.concat(fetched);
         category.loaded = true;
-        if (scrollElement && scrollElement.isConnected && state.baskets.get(state.activeKey) === data && !$("detail-sheet").hidden) {
+        if (listElement && listElement.isConnected && state.baskets.get(state.activeKey) === data && !$("detail-sheet").hidden) {
           if (fetched.length) {
-            scrollElement.insertAdjacentHTML("beforeend", fetched.map((product) => extraProductMarkup(data, product)).join(""));
-            scrollElement.querySelectorAll("img").forEach((image) => image.addEventListener("error", () => { image.src = "../img/logoantonia5.png"; }, { once: true }));
-            bindExtraProductControls(scrollElement);
+            listElement.insertAdjacentHTML("beforeend", fetched.map((product) => extraProductMarkup(data, product)).join(""));
+            listElement.querySelectorAll("img").forEach((image) => image.addEventListener("error", () => { image.src = "../img/logoantonia5.png"; }, { once: true }));
+            bindExtraProductControls(listElement);
           }
           const currentStatus = $("detail-content").querySelector('[data-extra-status="' + category.key + '"]');
           if (currentStatus) currentStatus.textContent = !category.products.length ? "Nenhum produto disponível nesta categoria." : "";
         }
       } catch (_) {
         category.error = true;
-        if (scrollElement && scrollElement.isConnected) {
+        if (listElement && listElement.isConnected) {
           const currentStatus = $("detail-content").querySelector('[data-extra-status="' + category.key + '"]');
           if (currentStatus) currentStatus.textContent = "Não foi possível carregar. Tente novamente.";
         }
@@ -932,7 +932,6 @@
       extraCategoriesMarkup,
       bindExtraProductControls,
       toggleExtraCategory,
-      loadMoreExtraProducts,
       initHomeExtras,
       clearHomeExtraSelections,
       homeSelectionReviewMarkup,

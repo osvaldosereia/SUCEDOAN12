@@ -57,7 +57,7 @@ h1 { margin-bottom: 8px; font-size: clamp(1.7rem, 7vw, 2.3rem); line-height: 1.1
 .sheet-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-bottom: 13px; border-bottom: 1px solid var(--line); }
 .sheet-header h2 { margin: 0; font-size: 1.28rem; }
 .icon-button { width: 40px; height: 40px; flex: 0 0 auto; border: 0; border-radius: 50%; background: #efe7dc; color: var(--ink); font-size: 1.55rem; line-height: 1; }
-.sheet-content { min-height: 80px; flex: 1; padding: 13px 0; overflow: auto; overflow-anchor: none; overscroll-behavior-y: auto; }
+.sheet-content { min-height: 0; flex: 1 1 auto; padding: 13px 0; overflow: auto; overflow-anchor: none; overscroll-behavior-y: auto; }
 #detail-content { padding-right: 9px; padding-left: 9px; border-radius: 14px; background: #eee6da; }
 .product-list { display: grid; gap: 16px; }
 .product-row { display: grid; gap: 0; padding: 14px; border: 1px solid #ded0bf; border-radius: 15px; background: #fff; box-shadow: 0 3px 10px rgba(58, 40, 22, .065); }
@@ -98,7 +98,7 @@ h1 { margin-bottom: 8px; font-size: clamp(1.7rem, 7vw, 2.3rem); line-height: 1.1
 .extra-category-toggle:focus-visible { outline: 3px solid rgba(126,48,41,.22); outline-offset: 2px; }
 .extra-category-panel { display: grid; gap: 7px; padding-top: 9px; }
 .extra-category-panel[hidden] { display: none; }
-.extra-product-scroll { display: grid; align-content: start; gap: 8px; height: min(282px, 36dvh); min-height: 180px; padding: 1px 3px 1px 1px; overflow: auto; overscroll-behavior-y: auto; scrollbar-gutter: stable; }
+.extra-product-list { display: grid; align-content: start; gap: 8px; min-width: 0; }
 .extra-product-card { display: grid; grid-template-columns: 52px minmax(0,1fr); align-items: center; gap: 10px; min-height: 98px; padding: 10px; border: 1px solid #ded0bf; border-radius: 12px; background: #fff; }
 .extra-product-card > img { width: 52px; height: 52px; border-radius: 9px; background: #f0e9de; object-fit: contain; }
 .extra-product-copy { display: grid; gap: 6px; min-width: 0; }
@@ -316,13 +316,13 @@ body.sheet-open.sheet-scroll-chain { overflow-x: hidden; overflow-y: auto; }
   .product-search-compact { padding: 10px; }
 }
 
-/* Basket extras: keep complete cards visible on mobile and let the sheet own vertical scrolling. */
+/* Extra lists stay in the basket sheet flow, so cards are never cut by a nested scroll area. */
+.extra-product-list { min-width: 0; }
 .extra-product-more { justify-self: start; min-height: 42px; }
 .extra-product-more[hidden] { display: none !important; }
 @media (max-width: 639px) {
-  .extra-product-scroll { height: auto; min-height: 0; max-height: none; padding: 0; overflow: visible; overscroll-behavior-y: auto; scrollbar-gutter: auto; }
   .extra-product-card { min-width: 0; grid-template-columns: 52px minmax(0, 1fr); }
-  .extra-product-copy > strong { overflow-wrap: anywhere; word-break: normal; }
+  .extra-product-copy > strong { overflow: visible; text-overflow: clip; overflow-wrap: anywhere; word-break: normal; }
   .extra-quantity { min-width: 0; flex-wrap: wrap; }
   .extra-product-more { width: 100%; justify-self: stretch; }
 }

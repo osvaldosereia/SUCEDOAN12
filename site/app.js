@@ -201,9 +201,6 @@
     $("detail-content").querySelectorAll("[data-select-position]").forEach((button) => button.addEventListener("click", () => changeProduct(button.dataset.selectPosition, button.dataset.selectProduct)));
     $("detail-content").querySelectorAll("[data-adjust-position]").forEach((button) => button.addEventListener("click", () => changeBasketItemQuantity(button.dataset.adjustPosition, Number(button.dataset.delta || 0))));
     $("detail-content").querySelectorAll("[data-extra-category]").forEach((button) => button.addEventListener("click", () => toggleExtraCategory(button.dataset.extraCategory)));
-    $("detail-content").querySelectorAll("[data-extra-scroll]").forEach((scrollElement) => scrollElement.addEventListener("scroll", () => {
-      if (scrollElement.scrollTop + scrollElement.clientHeight >= scrollElement.scrollHeight - 56) loadMoreExtraProducts(scrollElement.dataset.extraScroll, scrollElement);
-    }, { passive: true }));
     bindExtraProductControls($("detail-content"));
     bindHomeSelectionControls($("detail-content"), data);
     $("detail-content").querySelectorAll("img").forEach((image) => image.addEventListener("error", () => { image.src = "../img/logoantonia5.png"; }, { once: true }));
@@ -304,7 +301,7 @@
   });
   const {
     displayedTotalCents, extraCategoriesFor, extraCategoriesMarkup,
-    bindExtraProductControls, toggleExtraCategory, loadMoreExtraProducts,
+    bindExtraProductControls, toggleExtraCategory,
     initHomeExtras, homeSelectionReviewMarkup, bindHomeSelectionControls, attachHomeSelections
   } = extras;
   const { basketForSize, toggleItemOptions, changeBasketItemQuantity, changeProduct } = basket;
