@@ -673,7 +673,7 @@
     }
     syncComposer();
   });
-  $("whatsapp-conversations-refresh")?.addEventListener("click", () => loadConversations());
+  $("whatsapp-conversations-refresh")?.addEventListener("click", () => loadConversations({ silent: true }));
   $("whatsapp-conversation-search-button")?.addEventListener("click", () => loadConversations());
   $("whatsapp-conversation-search")?.addEventListener("keydown", (event) => { if (event.key === "Enter") loadConversations(); });
   $("whatsapp-conversation-account")?.addEventListener("change", () => loadConversations());
