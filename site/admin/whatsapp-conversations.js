@@ -5,7 +5,7 @@
   const endpoint = base + "/functions/v1/site-admin-v1";
   const publishableKey = config.publishableKey || "";
   const $ = (id) => document.getElementById(id);
-  const state = { cursor: null, total: 0, selectedId: "", before: null, busy: false, accountsLoaded: false, favoriteIds: new Set(), favoritesAvailable: false, favoriteBusyIds: new Set(), textSending: false, mediaSending: false, pendingTextKey: "", pendingTextValue: "", pendingTextConversationId: "", pendingMediaKey: "", pendingMediaFingerprint: "", uncertainConversationIds: new Set() };
+  const state = { cursor: null, total: 0, conversations: [], selectedId: "", before: null, busy: false, accountsLoaded: false, favoriteIds: new Set(), favoritesAvailable: false, favoriteBusyIds: new Set(), textSending: false, mediaSending: false, pendingTextKey: "", pendingTextValue: "", pendingTextConversationId: "", pendingMediaKey: "", pendingMediaFingerprint: "", uncertainConversationIds: new Set() };
   const dateLabel = (value) => {
     if (!value) return "Sem atividade";
     const date = new Date(value);
@@ -539,23 +539,20 @@
     state.busy = true;
     let selectFirst = "";
     const host = $("whatsapp-conversation-items");
-    if (!append) {
+    if (!append && !silent) {
       state.cursor = null;
       state.total = 0;
-      if (!silent) {
-        state.selectedId = "";
-        state.before = null;
-        $("whatsapp-conversation-header").hidden = true;
-        $("whatsapp-conversation-compose").hidden = true;
-        $("whatsapp-conversation-messages").replaceChildren();
-        $("whatsapp-conversation-empty").hidden = false;
-        setStatus("Buscando conversas…");
-      }
-      if (!silent) {
-        state.favoriteIds.clear();
-        state.favoritesAvailable = false;
-      }
-    } else setStatus("Carregando mais conversas…");
+      state.conversations = [];
+      state.selectedId = "";
+      state.before = null;
+      state.favoriteIds.clear();
+      state.favoritesAvailable = false;
+      $("whatsapp-conversation-header").hidden = true;
+      $("whatsapp-conversation-compose").hidden = true;
+      $("whatsapp-conversation-messages").replaceChildren();
+      $("whatsapp-conversation-empty").hidden = false;
+      setStatus("Buscando conversas…");
+    } else if (append) setStatus("Carregando mais conversas…");
     try {
       const data = await request("whatsapp_conversation_list", {
         cursor: append ? state.cursor : null,
@@ -565,9 +562,30 @@
       });
       renderAccounts(data.accounts);
       state.favoritesAvailable = data.favorites_available === true;
-      renderQueue(data.items, append);
-      state.cursor = data.next_cursor || null;
-      if (!append) state.total = data.total || 0;
+      const incoming = Array.isArray(data.items) ? data.items : [];
+      if (silent) {
+        const incomingIds = new Set(incoming.map((item) => String(item.id)));
+        const scrollTop = host.scrollTop;
+        state.conversations = [
+          ...incoming,
+          ...state.conversations.filter((item) => !incomingIds.has(String(item.id))),
+        ];
+        state.cursor = state.cursor || data.next_cursor || null;
+        state.total = data.total || 0;
+        renderQueue(state.conversations, false);
+        host.scrollTop = scrollTop;
+      } else if (append) {
+        const existingIds = new Set(state.conversations.map((item) => String(item.id)));
+        const additions = incoming.filter((item) => !existingIds.has(String(item.id)));
+        state.conversations.push(...additions);
+        state.cursor = data.next_cursor || null;
+        renderQueue(additions, true);
+      } else {
+        state.conversations = incoming;
+        state.cursor = data.next_cursor || null;
+        state.total = data.total || 0;
+        renderQueue(incoming, false);
+      }
       $("whatsapp-conversation-more").hidden = !state.cursor;
       if (!silent) {
         setStatus(state.total + " conversa(s) no filtro atual · mais recentes primeiro."
