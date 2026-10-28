@@ -1,12 +1,8 @@
-"use server";
-
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import {
 	type AnaKnowledgeStatus,
 	callAnaAdminAction,
 	loadAnaAdmin,
-} from "@/lib/supabase/admin-ana";
+} from "@/lib/supabase/browser-admin-ana";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -16,8 +12,14 @@ function record(value: unknown): JsonRecord | null {
 		: null;
 }
 
+export class AnaActionError extends Error {
+	constructor(readonly notice: string) {
+		super(notice);
+	}
+}
+
 function go(notice: string): never {
-	redirect(`/ana?notice=${encodeURIComponent(notice)}`);
+	throw new AnaActionError(notice);
 }
 
 function expectedRevision(formData: FormData): number | null {
@@ -72,7 +74,7 @@ function knowledgeKey(title: string, existing: Set<string>): string {
 	return key;
 }
 
-export async function saveAnaDraft(formData: FormData): Promise<void> {
+export async function saveAnaDraft(formData: FormData): Promise<string> {
 	const revision = expectedRevision(formData);
 	if (revision === null) go("invalid");
 
@@ -170,11 +172,10 @@ export async function saveAnaDraft(formData: FormData): Promise<void> {
 		note: "Ajuste da configuração da ANA pelo Admin",
 	});
 	if (!saved.ok) go(gatewayNotice(saved.code));
-	revalidatePath("/ana");
-	go("draft_saved");
+	return "draft_saved";
 }
 
-export async function runAnaDraftTest(formData: FormData): Promise<void> {
+export async function runAnaDraftTest(formData: FormData): Promise<string> {
 	const revision = expectedRevision(formData);
 	if (revision === null) go("invalid");
 	const loaded = await loadAnaAdmin();
@@ -189,11 +190,10 @@ export async function runAnaDraftTest(formData: FormData): Promise<void> {
 	if (!result.ok) go(gatewayNotice(result.code));
 	const testRun = record(result.payload.test_run);
 	if (!testRun || typeof testRun.failed_count !== "number") go("unavailable");
-	revalidatePath("/ana");
-	go(testRun.failed_count === 0 ? "test_passed" : "test_failed");
+	return testRun.failed_count === 0 ? "test_passed" : "test_failed";
 }
 
-export async function publishAnaDraft(formData: FormData): Promise<void> {
+export async function publishAnaDraft(formData: FormData): Promise<string> {
 	const revision = expectedRevision(formData);
 	if (revision === null || formData.get("confirm_publish") !== "on")
 		go("invalid");
@@ -225,11 +225,10 @@ export async function publishAnaDraft(formData: FormData): Promise<void> {
 		note,
 	});
 	if (!published.ok) go(gatewayNotice(published.code));
-	revalidatePath("/ana");
-	go("published");
+	return "published";
 }
 
-export async function rollbackAnaVersion(formData: FormData): Promise<void> {
+export async function rollbackAnaVersion(formData: FormData): Promise<string> {
 	const versionId = Number(formData.get("version_id"));
 	if (
 		!Number.isSafeInteger(versionId) ||
@@ -255,6 +254,5 @@ export async function rollbackAnaVersion(formData: FormData): Promise<void> {
 		note,
 	});
 	if (!rolledBack.ok) go(gatewayNotice(rolledBack.code));
-	revalidatePath("/ana");
-	go("rolled_back");
+	return "rolled_back";
 }

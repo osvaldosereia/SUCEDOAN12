@@ -1,3 +1,5 @@
+"use client";
+
 import {
 	Bot,
 	Check,
@@ -9,9 +11,13 @@ import {
 	ShieldCheck,
 	Sparkles,
 } from "lucide-react";
-import { requireAdminSession } from "@/lib/auth/require-admin-session";
-import { loadAnaAdmin } from "@/lib/supabase/admin-ana";
+import { useCallback, useEffect, useState } from "react";
 import {
+	type AnaAdminLoad,
+	loadAnaAdmin,
+} from "@/lib/supabase/browser-admin-ana";
+import {
+	AnaActionError,
 	publishAnaDraft,
 	rollbackAnaVersion,
 	runAnaDraftTest,
@@ -77,17 +83,52 @@ function roleLabel(role: string): string {
 	return "Consulta";
 }
 
-export default async function AnaPage({
-	searchParams,
-}: {
-	searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
-	await requireAdminSession();
-	const [loaded, query] = await Promise.all([loadAnaAdmin(), searchParams]);
+type AnaAction = (formData: FormData) => Promise<string>;
+
+export default function AnaPage() {
+	const [loaded, setLoaded] = useState<AnaAdminLoad | null>(null);
+	const [noticeCode, setNoticeCode] = useState("");
+	const [busy, setBusy] = useState(false);
+	const refresh = useCallback(async () => {
+		const result = await loadAnaAdmin();
+		setLoaded(result);
+	}, []);
+	useEffect(() => {
+		void refresh();
+		setNoticeCode(
+			new URLSearchParams(window.location.search).get("notice") ?? "",
+		);
+	}, [refresh]);
+	async function submit(form: HTMLFormElement, action: AnaAction) {
+		setBusy(true);
+		setNoticeCode("");
+		try {
+			setNoticeCode(await action(new FormData(form)));
+			await refresh();
+		} catch (error) {
+			setNoticeCode(
+				error instanceof AnaActionError ? error.notice : "unavailable",
+			);
+		} finally {
+			setBusy(false);
+		}
+	}
+	if (!loaded) {
+		return (
+			<div className="page-stack" id="ana-admin-page" aria-busy="true">
+				<section className="page-heading">
+					<div>
+						<p className="eyebrow">ASSISTENTE</p>
+						<h1>Atendente virtual ANA</h1>
+					</div>
+				</section>
+				<p role="status">Carregando configuração…</p>
+			</div>
+		);
+	}
 	const view = loaded.ok ? loaded.view : null;
 	const loadError = loaded.ok ? null : loaded.error;
-	const notice =
-		typeof query.notice === "string" ? notices[query.notice] : null;
+	const notice = notices[noticeCode] ?? null;
 
 	if (!view) {
 		const message =
@@ -198,7 +239,13 @@ export default async function AnaPage({
 				</div>
 
 				{canEdit ? (
-					<form action={saveAnaDraft} className="ana-editor-form">
+					<form
+						className="ana-editor-form"
+						onSubmit={(event) => {
+							event.preventDefault();
+							void submit(event.currentTarget, saveAnaDraft);
+						}}
+					>
 						<input
 							type="hidden"
 							name="expected_revision"
@@ -347,7 +394,11 @@ export default async function AnaPage({
 							<p>
 								Salvar não envia mensagens e não altera a versão em atendimento.
 							</p>
-							<button className="button button--primary" type="submit">
+							<button
+								className="button button--primary"
+								disabled={busy}
+								type="submit"
+							>
 								<Save aria-hidden="true" size={16} />
 								Salvar rascunho
 							</button>
@@ -382,7 +433,13 @@ export default async function AnaPage({
 						</span>
 					</div>
 					{canEdit ? (
-						<form action={runAnaDraftTest} className="ana-action-form">
+						<form
+							className="ana-action-form"
+							onSubmit={(event) => {
+								event.preventDefault();
+								void submit(event.currentTarget, runAnaDraftTest);
+							}}
+						>
 							<input
 								type="hidden"
 								name="expected_revision"
@@ -390,7 +447,7 @@ export default async function AnaPage({
 							/>
 							<button
 								className="button button--secondary"
-								disabled={view.testCaseCount === 0}
+								disabled={busy || view.testCaseCount === 0}
 								type="submit"
 							>
 								<Sparkles aria-hidden="true" size={16} />
@@ -480,7 +537,13 @@ export default async function AnaPage({
 					<ShieldCheck aria-hidden="true" size={18} />
 				</div>
 				{view.role === "owner" ? (
-					<form action={publishAnaDraft} className="ana-publish-form">
+					<form
+						className="ana-publish-form"
+						onSubmit={(event) => {
+							event.preventDefault();
+							void submit(event.currentTarget, publishAnaDraft);
+						}}
+					>
 						<input
 							type="hidden"
 							name="expected_revision"
@@ -504,7 +567,7 @@ export default async function AnaPage({
 						</label>
 						<button
 							className="button button--primary"
-							disabled={!publishTest}
+							disabled={busy || !publishTest}
 							type="submit"
 						>
 							<Sparkles aria-hidden="true" size={16} />
@@ -548,7 +611,10 @@ export default async function AnaPage({
 											<p>{version.changeNote || "Sem nota registrada."}</p>
 										</div>
 										<form
-											action={rollbackAnaVersion}
+											onSubmit={(event) => {
+												event.preventDefault();
+												void submit(event.currentTarget, rollbackAnaVersion);
+											}}
 											className="ana-rollback-form"
 										>
 											<input
@@ -576,6 +642,7 @@ export default async function AnaPage({
 											</label>
 											<button
 												className="button button--secondary"
+												disabled={busy}
 												type="submit"
 											>
 												<RotateCcw aria-hidden="true" size={15} />

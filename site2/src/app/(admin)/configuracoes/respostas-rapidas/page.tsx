@@ -1,13 +1,14 @@
+"use client";
+
 import { ArrowLeft, Star } from "lucide-react";
 import Link from "next/link";
-import { getAttendanceQuickReplies } from "@/lib/supabase/admin-attendance";
-import { pauseQuickReply, saveQuickReply } from "../quick-replies-actions";
-
-type SearchParams = Promise<Record<string, string | string[] | undefined>>;
-
-function param(value: string | string[] | undefined): string {
-	return Array.isArray(value) ? (value[0] ?? "") : (value ?? "");
-}
+import { useCallback, useEffect, useState } from "react";
+import {
+	type BrowserQuickReply,
+	loadBrowserQuickReplies,
+	pauseBrowserQuickReply,
+	saveBrowserQuickReply,
+} from "@/lib/supabase/browser-admin-quick-replies";
 
 function noticeText(code: string): string | null {
 	const messages: Record<string, string> = {
@@ -31,24 +32,63 @@ function noticeText(code: string): string | null {
 	return messages[code] ?? null;
 }
 
-export default async function QuickRepliesPage({
-	searchParams,
-}: {
-	searchParams: SearchParams;
-}) {
-	const query = await searchParams;
-	const noticeCode = param(query.notice);
+export default function QuickRepliesPage() {
+	const [items, setItems] = useState<BrowserQuickReply[]>([]);
+	const [error, setError] = useState<string | null>(null);
+	const [noticeCode, setNoticeCode] = useState("");
+	const [busy, setBusy] = useState(false);
+	const refresh = useCallback(async () => {
+		const result = await loadBrowserQuickReplies();
+		setItems(result.ok ? result.data : []);
+		setError(
+			result.ok
+				? null
+				: result.error === "not_authenticated"
+					? "Entre novamente para consultar as respostas rápidas."
+					: result.error === "not_authorized"
+						? "Seu perfil não pode consultar as respostas rápidas."
+						: "Não foi possível carregar as respostas rápidas agora.",
+		);
+	}, []);
+	useEffect(() => {
+		void refresh();
+		setNoticeCode(
+			new URLSearchParams(window.location.search).get("notice") ?? "",
+		);
+	}, [refresh]);
+	async function save(event: React.FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+		const form = event.currentTarget;
+		const data = new FormData(form);
+		setBusy(true);
+		setNoticeCode("");
+		const result = await saveBrowserQuickReply({
+			id:
+				typeof data.get("id") === "string" && data.get("id")
+					? String(data.get("id"))
+					: null,
+			title: String(data.get("title") ?? ""),
+			content: String(data.get("content") ?? ""),
+			isFavorite: data.get("is_favorite") === "on",
+			sortOrder: Number(data.get("sort_order") ?? 0),
+		});
+		setNoticeCode(result.ok ? "saved" : result.error);
+		if (result.ok && !data.get("id")) form.reset();
+		await refresh();
+		setBusy(false);
+	}
+	async function pause(event: React.FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+		const id = String(new FormData(event.currentTarget).get("id") ?? "");
+		setBusy(true);
+		setNoticeCode("");
+		const result = await pauseBrowserQuickReply(id);
+		setNoticeCode(result.ok ? "paused" : result.error);
+		await refresh();
+		setBusy(false);
+	}
 	const notice = noticeText(noticeCode);
-	const result = await getAttendanceQuickReplies(true);
-	const items = result.ok ? result.data : [];
 	const activeCount = items.filter((item) => item.isActive).length;
-	const error = result.ok
-		? null
-		: result.error === "not_authenticated"
-			? "Entre novamente para consultar as respostas rápidas."
-			: result.error === "not_authorized"
-				? "Seu perfil não pode consultar as respostas rápidas."
-				: "Não foi possível carregar as respostas rápidas agora.";
 
 	return (
 		<div className="page-stack quick-replies-page">
@@ -88,7 +128,7 @@ export default async function QuickRepliesPage({
 						<p>O título aparece no seletor da conversa.</p>
 					</div>
 				</div>
-				<form action={saveQuickReply} className="quick-reply-form">
+				<form className="quick-reply-form" onSubmit={save}>
 					<label>
 						<span>Título</span>
 						<input maxLength={80} name="title" required />
@@ -112,7 +152,7 @@ export default async function QuickRepliesPage({
 								defaultValue={0}
 							/>
 						</label>
-						<button className="quick-reply-save" type="submit">
+						<button className="quick-reply-save" disabled={busy} type="submit">
 							Salvar resposta
 						</button>
 					</div>
@@ -153,7 +193,7 @@ export default async function QuickRepliesPage({
 									</span>
 								</summary>
 								<div className="quick-reply-item-content">
-									<form action={saveQuickReply} className="quick-reply-form">
+									<form className="quick-reply-form" onSubmit={save}>
 										<input name="id" type="hidden" value={item.id} />
 										<label>
 											<span>Título</span>
@@ -193,7 +233,11 @@ export default async function QuickRepliesPage({
 													type="number"
 												/>
 											</label>
-											<button className="quick-reply-save" type="submit">
+											<button
+												className="quick-reply-save"
+												disabled={busy}
+												type="submit"
+											>
 												{item.isActive
 													? "Salvar alterações"
 													: "Salvar e reativar"}
@@ -201,9 +245,13 @@ export default async function QuickRepliesPage({
 										</div>
 									</form>
 									{item.isActive && (
-										<form action={pauseQuickReply}>
+										<form onSubmit={pause}>
 											<input name="id" type="hidden" value={item.id} />
-											<button className="quick-reply-pause" type="submit">
+											<button
+												className="quick-reply-pause"
+												disabled={busy}
+												type="submit"
+											>
 												Pausar resposta
 											</button>
 										</form>
