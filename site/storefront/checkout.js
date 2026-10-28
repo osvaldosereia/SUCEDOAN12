@@ -180,7 +180,26 @@
         closeSheet("detail-sheet");
         showSheet("order-sheet");
         loadDeliveryOptions();
-        $("customer-phone").focus({ preventScroll: true });
+        if (state.catalogCode && !state.identityLookupStarted) {
+          state.identityLookupStarted = true;
+          $("lookup-message").textContent = "Identificando seu cadastro…";
+          try {
+            const identity = await request("resolve_identity_code", { params: { code: state.catalogCode } });
+            const phone = phoneDigits(identity.phone_e164);
+            if (phone.length < 10 || phone.length > 13) throw new Error("invalid_identity_phone");
+            $("customer-phone").value = phone;
+            state.catalogCode = "";
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.delete("catalog_code");
+            window.history.replaceState({}, "", currentUrl.pathname + currentUrl.search + currentUrl.hash);
+            await lookupCustomer();
+          } catch (_) {
+            $("lookup-message").textContent = "Não foi possível identificar pelo link. Digite seu telefone para continuar.";
+            $("customer-phone").focus({ preventScroll: true });
+          }
+        } else {
+          $("customer-phone").focus({ preventScroll: true });
+        }
       });
       $("lookup-button").addEventListener("click", lookupCustomer);
       $("customer-phone").addEventListener("keydown", (event) => { if (event.key === "Enter") lookupCustomer(); });
