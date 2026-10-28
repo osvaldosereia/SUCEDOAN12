@@ -821,24 +821,307 @@ async function setOrderSeparationItem(input: any) {
   return { update: result.data };
 }
 
+async function separationFiscalHubCall(subaction: string, extra: any = {}) {
+  const key = await db.rpc("get_bling_hub_key_v2");
+  if (key.error || !key.data) return { error: "bling_bridge_not_configured", status: 503 };
+  try {
+    const response = await fetch(SUPABASE_URL.replace(/\/+$/, "") + "/functions/v1/admin-service-intelligence-v1", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-dona-antonia-bling-hub-key": String(key.data) },
+      body: JSON.stringify({ action: "vitrine_bling_hub_internal", subaction, ...extra }),
+      signal: AbortSignal.timeout(120000),
+    });
+    const data = await response.json().catch(() => ({ ok: false, error: "invalid_bling_response" }));
+    if (!response.ok || data?.ok === false) {
+      return { error: String(data?.error || "bling_hub_unavailable"), status: response.status || 502, detail: data?.detail || null, data };
+    }
+    return { data };
+  } catch (error) {
+    return { error: "bling_hub_unavailable", status: 502, detail: clean((error as Error)?.message || error, 240) };
+  }
+}
+
+function separationFiscalObject(value: any) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+async function buildSeparationFiscalSnapshot(orderId: string) {
+  const [orderResult, itemsResult, completionResult, reservationsResult] = await Promise.all([
+    db.from("orders").select("*").eq("id", orderId).maybeSingle(),
+    db.from("order_items").select("id,product_id,sku_snapshot,name_snapshot,quantity,unit_price,metadata,created_at")
+      .eq("order_id", orderId).order("created_at", { ascending: true }),
+    db.from("order_separation_completions_v1")
+      .select("deliverable_order_item_ids,completed_at,metadata").eq("order_id", orderId).maybeSingle(),
+    db.from("vitrine_stock_reservations").select("status,expires_at").eq("order_id", orderId),
+  ]);
+  if (orderResult.error) throw orderResult.error;
+  if (itemsResult.error) throw itemsResult.error;
+  if (completionResult.error) throw completionResult.error;
+  if (reservationsResult.error) throw reservationsResult.error;
+  const order = orderResult.data;
+  const completion = completionResult.data;
+  if (!order) throw new Error("order_not_found");
+  if (!completion?.completed_at || completion.metadata?.stock_applied !== true) {
+    throw new Error("separation_completion_not_recorded");
+  }
+
+  let ids = Array.isArray(completion.deliverable_order_item_ids)
+    ? completion.deliverable_order_item_ids.map((value: any) => String(value))
+    : [];
+  if (!ids.length) {
+    const separated = await db.from("order_separation_items_v1").select("order_item_id")
+      .eq("order_id", orderId).eq("state", "separated");
+    if (separated.error) throw separated.error;
+    ids = (separated.data || []).map((row: any) => String(row.order_item_id)).filter(Boolean);
+  }
+  const idSet = new Set(ids);
+  const rows = (itemsResult.data || []).filter((item: any) => idSet.has(String(item.id)));
+  const productIds = [...new Set(rows.map((item: any) => String(item.product_id || "")).filter(Boolean))];
+  const products = new Map<string, any>();
+  if (productIds.length) {
+    const result = await db.from("products").select("id,sku,gtin,name").in("id", productIds);
+    if (result.error) throw result.error;
+    for (const product of result.data || []) products.set(String(product.id), product);
+  }
+
+  const grouped = new Map<string, any>();
+  for (const item of rows) {
+    if (!item.product_id) continue;
+    const metadata = separationFiscalObject(item.metadata);
+    const kind = String(metadata.history_kind || "");
+    const centsFromMetadata = Number(metadata.unit_price_cents);
+    const unit = kind.includes("component") && Number.isFinite(centsFromMetadata)
+      ? Math.round(centsFromMetadata) : Math.round(Number(item.unit_price || 0) * 100);
+    const quantity = Number(item.quantity || 0);
+    if (!Number.isFinite(quantity) || quantity <= 0) continue;
+    const product = products.get(String(item.product_id));
+    const key = String(item.product_id) + "|" + unit;
+    const current = grouped.get(key);
+    if (current) current.quantity = Math.round((current.quantity + quantity) * 1000) / 1000;
+    else grouped.set(key, {
+      product_id: item.product_id, sku: item.sku_snapshot || product?.sku || "",
+      gtin: product?.gtin || "", name: item.name_snapshot || product?.name || "Produto",
+      quantity, unit_price_cents: unit, source_kind: kind.includes("component") ? "basket_component" : "product",
+    });
+  }
+
+  const items = [...grouped.values()];
+  const itemCents = items.reduce((sum: number, item: any) =>
+    sum + Math.round(Number(item.quantity) * Number(item.unit_price_cents)), 0);
+  const customer = separationFiscalObject(order.customer_snapshot);
+  const delivery = separationFiscalObject(order.delivery_address);
+  const totalCents = cents(order.total);
+  const reservations = reservationsResult.data || [];
+  const stockConsumed = reservations.some((row: any) => row.status === "consumed");
+  const stockReserved = stockConsumed || reservations.some((row: any) =>
+    row.status === "reserved" && (!row.expires_at || Date.parse(row.expires_at) > Date.now())
+  );
+  const stockReleased = !stockReserved && reservations.some((row: any) => row.status === "released");
+  const paymentMethod = clean(order.payment_method, 80);
+  return {
+    source_order_id: orderId, order_number: order.order_number || "",
+    status: order.status || "ready", created_at: order.created_at,
+    queue_reason: "separation_completed", issues: [],
+    customer: {
+      source_customer_id: order.customer_id || delivery.source_customer_id || customer.customer_id || null,
+      name: customer.name || customer.full_name || delivery.customer_name || delivery.recipient_name || "",
+    },
+    delivery,
+    payment: {
+      method: paymentMethod, label: paymentMethod, timing: "on_delivery", source: clean(order.source, 80) || "vitrine",
+      stock_reserved: stockReserved, stock_consumed: stockConsumed, stock_released: stockReleased,
+      stock_model: "canonical_vitrine_v1",
+    },
+    items,
+    totals: { individual_products_cents: itemCents, commercial_order_cents: totalCents, commercial_delta_cents: totalCents - itemCents },
+  };
+}
+
+async function markSeparationFiscalMetadata(orderId: string, metadata: any) {
+  const result = await db.rpc("ops2_mark_order_separation_completion_v2", {
+    p_order_id: orderId, p_phase: "completed", p_metadata: metadata,
+  });
+  if (result.error) throw result.error;
+  if (result.data?.ok !== true) throw new Error(String(result.data?.error || "separation_completion_update_failed"));
+}
+
+async function openSeparationFiscalAttention(orderId: string, type: string, summary: string, action: string, evidence: any = {}) {
+  try {
+    await db.rpc("ops_open_attention_v1", {
+      p_type: type, p_summary: summary, p_entity_type: "order", p_entity_id: orderId,
+      p_correlation_id: orderId, p_priority: "high", p_owner_role: "supervisor",
+      p_recommended_action: action, p_evidence: evidence || {}, p_source_system: "bling",
+      p_idempotency_key: "order-fiscal-auto-v5:" + type + ":" + orderId, p_due_at: null,
+    });
+  } catch {}
+}
+
+async function runSeparationFiscalIntegration(orderId: string) {
+  let blingVerified: any = { attempted: true, ok: false };
+  try {
+    const snapshot = await buildSeparationFiscalSnapshot(orderId);
+    const verified = await separationFiscalHubCall("ops2_ensure_order_state", {
+      payload: snapshot, target_key: "verified", canary: false,
+    });
+    if (verified.error || verified.data?.ok !== true) {
+      throw new Error(String(verified.error || verified.data?.error || "bling_order_verification_failed"));
+    }
+    blingVerified = { attempted: true, ok: true, bling_order_id: verified.data?.bling_order_id || null };
+    await markSeparationFiscalMetadata(orderId, {
+      bling_verified: true, bling_order_id: blingVerified.bling_order_id, verified_at: new Date().toISOString(),
+    });
+  } catch (error) {
+    const reason = clean((error as Error)?.message || error, 300) || "bling_order_verification_failed";
+    blingVerified = { attempted: true, ok: false, error: reason };
+    try {
+      await markSeparationFiscalMetadata(orderId, {
+        bling_verified: false, bling_verify_error: reason, bling_verify_failed_at: new Date().toISOString(),
+      });
+    } catch {}
+    await openSeparationFiscalAttention(orderId, "order_bling_verified_pending",
+      "Separação concluída; sincronização Verificado no Bling está pendente.",
+      "Revise a integração do pedido com o Bling. A separação física já foi concluída.", blingVerified);
+    return { bling_verified: blingVerified, fiscal_auto: { attempted: false, ok: false, error: "bling_not_verified" } };
+  }
+
+  let fiscal: any;
+  try {
+    const preflight = await db.rpc("ops2_fiscal_dispatch_preflight_v1", { p_order_id: orderId });
+    if (preflight.error) {
+      fiscal = { attempted: false, ok: false, error: "fiscal_preflight_unavailable", detail: clean(preflight.error.message, 240) };
+    } else if (preflight.data?.ready !== true) {
+      fiscal = { attempted: false, ok: false, error: "fiscal_preflight_blocked", blockers: preflight.data?.blockers || [] };
+    } else {
+      const preview = await separationFiscalHubCall("fiscal_dispatch_preview", { source_order_id: orderId });
+      if (preview.error || preview.data?.ok !== true) {
+        fiscal = { attempted: false, ok: false, error: String(preview.error || preview.data?.error || "fiscal_dispatch_preview_unavailable") };
+      } else if (preview.data?.already_authorized === true || preview.data?.invoice?.situation?.authorized === true) {
+        fiscal = { attempted: false, ok: true, authorized: true, stage: "authorized", idempotent_replay: true };
+      } else if (Array.isArray(preview.data?.hard_blockers) && preview.data.hard_blockers.length) {
+        fiscal = { attempted: false, ok: false, error: "fiscal_dispatch_not_eligible", blockers: preview.data.hard_blockers };
+      } else if (preview.data?.config?.human_issue_enabled !== true || preview.data?.config?.dispatch_gate_mode !== "enforce") {
+        fiscal = { attempted: false, ok: false, error: "fiscal_auto_issue_not_enabled" };
+      } else {
+        const issued = await separationFiscalHubCall("fiscal_dispatch_canary_human_execute", {
+          source_order_id: orderId, confirmation: "EMITIR_NFE",
+        });
+        if (issued.error || issued.data?.ok !== true) {
+          fiscal = { attempted: true, ok: false, error: String(issued.error || issued.data?.error || "fiscal_issue_failed"), detail: issued.detail || null };
+        } else {
+          const invoice = issued.data?.invoice || null;
+          const authorized = issued.data?.authorized === true || invoice?.situation?.authorized === true;
+          const jobStatus = String(issued.data?.job?.status || "").toLowerCase();
+          const failed = invoice?.situation?.failed === true || ["failed", "error", "review_required", "rejected"].includes(jobStatus);
+          const processing = issued.data?.pending === true || issued.data?.generated === true
+            || Number(issued.data?.invoice_id || invoice?.id || 0) > 0
+            || ["generating", "generated", "authorizing", "processing"].includes(jobStatus);
+          const accepted = authorized || (!failed && processing);
+          fiscal = {
+            attempted: true, ok: accepted, authorized,
+            stage: authorized ? "authorized" : accepted ? "processing" : "blocked",
+            error: accepted ? null : String(issued.data?.error || "fiscal_result_not_confirmed"),
+            invoice_id: Number(issued.data?.invoice_id || invoice?.id || 0) || null,
+            invoice_number: invoice?.numero || null,
+          };
+        }
+      }
+    }
+  } catch (error) {
+    fiscal = { attempted: true, ok: false, error: clean((error as Error)?.message || error, 300) || "fiscal_issue_failed" };
+  }
+
+  try {
+    await markSeparationFiscalMetadata(orderId, {
+      bling_verified: true, bling_order_id: blingVerified.bling_order_id || null,
+      fiscal_auto_attempted: fiscal?.attempted === true, fiscal_auto_ok: fiscal?.ok === true,
+      fiscal_auto_authorized: fiscal?.authorized === true, fiscal_auto_stage: fiscal?.stage || null,
+      fiscal_auto_error: fiscal?.ok === true ? null : String(fiscal?.error || "fiscal_issue_failed"),
+      fiscal_auto_at: new Date().toISOString(), external_integrations_pending: fiscal?.ok !== true,
+    });
+  } catch (error) {
+    fiscal = { ...fiscal, metadata_persisted: false, metadata_error: clean((error as Error)?.message || error, 240) };
+  }
+
+  if (fiscal?.ok !== true) {
+    await openSeparationFiscalAttention(orderId, "order_fiscal_auto_issue_pending",
+      "Pedido separado; a NF-e automática precisa de atenção.",
+      "Abra o pedido e revise a pendência fiscal antes de liberar a expedição.", fiscal);
+  }
+  return { bling_verified: blingVerified, fiscal_auto: fiscal };
+}
+
 async function completeOrderSeparation(input: any) {
   const id = uuid(input.order_id);
   const expected = clean(input.expected_order_updated_at, 80);
   if (!id || !expected) return { error: "invalid_separation_completion", status: 400, message: "Atualize a separação antes de confirmar." };
+
+  const assignmentResult = await db.from("order_separation_assignments_v1")
+    .select("separator_key,separator_label,assigned_at").eq("order_id", id).maybeSingle();
+  if (assignmentResult.error) throw assignmentResult.error;
+  if (!clean(assignmentResult.data?.separator_key, 40)) {
+    return { error: "separator_required", status: 409, message: "Selecione o responsável pela separação para continuar." };
+  }
+
   const prepared = await db.rpc("ops2_prepare_order_separation_completion_v2", {
-    p_order_id: id,
-    p_expected_order_updated_at: expected,
+    p_order_id: id, p_expected_order_updated_at: expected,
   });
   if (prepared.error) throw prepared.error;
-  if (prepared.data?.ok === false || prepared.data?.error) return { error: String(prepared.data.error || "separation_incomplete"), status: 409, message: "Confira todos os produtos e selecione o separador antes de confirmar." };
+  if (prepared.data?.ok !== true) {
+    return { error: String(prepared.data?.error || "separation_incomplete"), status: 409,
+      message: "Confira todos os produtos e selecione o separador antes de confirmar." };
+  }
+
   const applied = await db.rpc("ops2_apply_order_separation_stock_v2", { p_order_id: id });
   if (applied.error) throw applied.error;
-  if (applied.data?.ok === false || applied.data?.error) {
-    const code = String(applied.data.error || "separation_stock_update_failed");
+  if (applied.data?.ok !== true) {
+    const code = String(applied.data?.error || "separation_stock_update_failed");
     if (code.includes("bling")) return { error: code, status: 409, message: "O estoque precisa estar sob autoridade do Bling para concluir a separação." };
     return { error: code, status: 409, message: "Não foi possível concluir a separação e atualizar o estoque." };
   }
-  return { prepared: prepared.data, applied: applied.data };
+
+  const orderResult = await db.from("orders").select("id,status,updated_at").eq("id", id).maybeSingle();
+  if (orderResult.error) throw orderResult.error;
+  if (!orderResult.data || String(orderResult.data.status) !== "ready") {
+    return { error: "ready_transition_failed", status: 409,
+      message: "A separação foi salva, mas o pedido não passou para expedição. Atualize a lista e revise o pedido.",
+      recovery_scheduled: true };
+  }
+
+  try {
+    await db.rpc("ops_sync_delivery_stop_v1", { p_order_id: id, p_order_status: "ready" });
+  } catch {}
+
+  const completed = await db.rpc("ops2_mark_order_separation_completion_v2", {
+    p_order_id: id, p_phase: "completed",
+    p_metadata: {
+      separated_at: new Date().toISOString(), separator_key: assignmentResult.data.separator_key,
+      separator_label: assignmentResult.data.separator_label || null, operational_completion: true,
+      external_integrations_pending: true, physical_stock_launch_point: "dispatch",
+    },
+  });
+  if (completed.error) throw completed.error;
+  if (completed.data?.ok !== true) {
+    return { error: String(completed.data?.error || "separation_completion_not_recorded"), status: 409,
+      message: "A separação foi aplicada, mas não foi possível registrar sua conclusão. Atualize e revise o pedido.",
+      recovery_scheduled: true };
+  }
+
+  const fiscalTask = runSeparationFiscalIntegration(id).catch(async (error) => {
+    const reason = clean((error as Error)?.message || error, 300);
+    await openSeparationFiscalAttention(orderId, "order_post_separation_integration_pending",
+      "A separação terminou; a integração fiscal precisa de revisão.",
+      "Revise a sincronização do pedido no Bling e a emissão da NF-e. Não refaça a separação.", { error: reason });
+    return null;
+  });
+  const edgeRuntime = (globalThis as any).EdgeRuntime;
+  const integrationsQueued = Boolean(edgeRuntime && typeof edgeRuntime.waitUntil === "function");
+  if (integrationsQueued) edgeRuntime.waitUntil(fiscalTask);
+  const integrationResult = integrationsQueued ? null : await fiscalTask;
+
+  return {
+    prepared: prepared.data, applied: applied.data, completion: completed.data,
+    integrations_queued: integrationsQueued, fiscal_integration: integrationResult,
+  };
 }
 
 async function markOrderDelivered(input: any) {
