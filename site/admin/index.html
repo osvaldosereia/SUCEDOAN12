@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Admin · Dona Antônia</title>
   <link rel="stylesheet" href="../styles.css?v=5">
-  <link rel="stylesheet" href="admin.css?v=35">
+  <link rel="stylesheet" href="admin.css?v=36">
   <link rel="stylesheet" href="orders-admin.css?v=1">
   <script src="../config.js?v=3"></script>
   <script src="admin-auth.js?v=1" defer></script>
@@ -16,7 +16,7 @@
   <script src="order-message-admin.js?v=3" defer></script>
   <script src="separation-message-admin.js?v=3" defer></script>
   <script src="whatsapp-admin.js?v=25" defer></script>
-  <script src="whatsapp-conversations.js?v=10" defer></script>
+  <script src="whatsapp-conversations.js?v=11" defer></script>
   <script src="admin.js?v=15" defer></script>
 </head>
 <body class="admin-page">
@@ -225,14 +225,20 @@
             <button id="whatsapp-conversations-refresh" class="button button-outline" type="button">Atualizar</button>
           </div>
           <div class="whatsapp-conversation-filters">
-            <label>Canal<select id="whatsapp-conversation-account"><option value="">Todos os canais</option></select></label>
             <label>Telefone<input id="whatsapp-conversation-search" type="search" inputmode="numeric" placeholder="Buscar pelos últimos dígitos" autocomplete="off"></label>
-            <label>Fila<select id="whatsapp-conversation-filter"><option value="all">Todas</option><option value="human">Precisa de atendimento humano</option><option value="favorites">Favoritas</option></select></label>
+            <label>Fila<select id="whatsapp-conversation-filter"><option value="all">Todas</option><option value="human">Precisa de atendimento humano</option></select></label>
             <button id="whatsapp-conversation-search-button" class="button button-primary" type="button">Buscar</button>
           </div>
           <p id="whatsapp-conversations-status" class="admin-muted" role="status" aria-live="polite">Carregando conversas…</p>
           <div class="whatsapp-conversation-browser">
             <aside class="whatsapp-conversation-list" aria-label="Lista de conversas">
+              <nav class="whatsapp-conversation-views" aria-label="Filtrar conversas">
+                <button class="whatsapp-conversation-view" type="button" data-conversation-view="all" aria-pressed="true">Todas</button>
+                <button class="whatsapp-conversation-view" type="button" data-conversation-view="favorites" aria-pressed="false">Favoritas</button>
+                <button class="whatsapp-conversation-view" type="button" data-conversation-view="0975" aria-pressed="false">0975</button>
+                <button class="whatsapp-conversation-view" type="button" data-conversation-view="1018" aria-pressed="false">1018</button>
+                <button class="whatsapp-conversation-view" type="button" data-conversation-view="orders" aria-pressed="false">Pedidos · 28h</button>
+              </nav>
               <div id="whatsapp-conversation-items" class="whatsapp-conversation-items"></div>
               <button id="whatsapp-conversation-more" class="button button-outline button-wide" type="button" hidden>Carregar mais conversas</button>
             </aside>
