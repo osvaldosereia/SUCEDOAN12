@@ -295,11 +295,23 @@ async function quickBalanceLookup(input: any) {
     return { status: 409, error: "ambiguous_ean", message: "Este EAN está ligado a mais de um produto. Confira o cadastro antes de continuar." };
   }
 
-  const product = products[0];
+  let product = products[0];
+  let activatedOnRead = false;
+  if (product.is_active !== true) {
+    const activation = await db.from("products")
+      .update({ is_active: true })
+      .eq("id", product.id)
+      .select(productFields)
+      .single();
+    if (activation.error) throw activation.error;
+    product = activation.data;
+    activatedOnRead = true;
+  }
   const stock = product.stock === null || product.stock === undefined ? null : Number(product.stock);
   const stockReady = Number.isFinite(stock);
   return {
     found: true,
+    activated_on_read: activatedOnRead,
     gondolas: (gondolaResult.data || []).map((row: any) => String(row.number)),
     product: {
       id: product.id,

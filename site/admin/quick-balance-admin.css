@@ -13,7 +13,8 @@
 .quick-balance-product { display: grid; gap: 9px; padding: 10px; border: 1px solid var(--line); border-radius: 13px; background: #fff; }
 .quick-balance-product[hidden] { display: none; }
 .quick-balance-product-summary { display: grid; grid-template-columns: 50px minmax(0,1fr); align-items: center; gap: 9px; min-width: 0; }
-.quick-balance-product-summary > img { width: 50px; height: 50px; border: 1px solid var(--line); border-radius: 9px; background: #f4f1eb; object-fit: contain; }
+.quick-balance-image-slot { box-sizing: border-box; display: grid; place-items: center; width: 50px; height: 50px; overflow: hidden; border: 1px solid var(--line); border-radius: 9px; background: #f4f1eb; }
+.quick-balance-image-slot > img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .quick-balance-product-copy { min-width: 0; }
 .quick-balance-product-copy h3 { margin: 0 0 3px; color: var(--ink); font-size: .94rem; line-height: 1.2; overflow-wrap: anywhere; }
 .quick-balance-product-copy p { margin: 0; color: var(--muted); font-size: .7rem; overflow-wrap: anywhere; }
@@ -45,7 +46,7 @@
   .quick-balance-scan-controls .button { min-height: 46px; padding-inline: 8px; font-size: .84rem; }
   .quick-balance-product { gap: 8px; padding: 8px; }
   .quick-balance-product-summary { grid-template-columns: 46px minmax(0,1fr); gap: 7px; }
-  .quick-balance-product-summary > img { width: 46px; height: 46px; }
+  .quick-balance-image-slot { width: 46px; height: 46px; }
   .quick-balance-stock-grid { grid-template-columns: minmax(0,.68fr) minmax(0,1.32fr); gap: 6px; }
   .quick-balance-stat, .quick-balance-count { gap: 5px; padding: 7px; }
   .quick-balance-stat strong { font-size: 1.12rem; }

@@ -146,14 +146,22 @@
     ].filter(Boolean);
     $("quick-balance-identifiers").textContent = identifiers.join(" · ");
     const image = $("quick-balance-image");
-    if (currentProduct.image_url) {
-      image.src = currentProduct.image_url;
-      image.alt = currentProduct.name;
-      image.hidden = false;
+    const imageUrl = currentProduct.image_url;
+    image.hidden = true;
+    image.dataset.imageSource = imageUrl;
+    if (imageUrl) {
+      image.alt = "";
+      image.onload = () => {
+        if (image.dataset.imageSource === imageUrl) image.hidden = false;
+      };
+      image.onerror = () => {
+        if (image.dataset.imageSource === imageUrl) image.hidden = true;
+      };
+      image.src = imageUrl;
+      if (image.complete && image.naturalWidth > 0) image.hidden = false;
     } else {
       image.removeAttribute("src");
       image.alt = "";
-      image.hidden = true;
     }
     $("quick-balance-current-stock").textContent = currentProduct.stock_ready ? formatQuantity(currentProduct.current_stock) : "Não cadastrado";
     validityInput.value = currentProduct.validity_date || "";
@@ -203,7 +211,11 @@
         return;
       }
       renderProduct(data);
-      setStatus("quick-balance-scan-status", "Localizado.", "success");
+      setStatus(
+        "quick-balance-scan-status",
+        data.activated_on_read === true ? "Ativado. Conte e salve." : "Localizado.",
+        "success",
+      );
       scanInput.blur();
     } catch (error) {
       if (requestId === lookupSequence) {
