@@ -282,7 +282,7 @@
     displayedTotalCents: extras.displayedTotalCents
   });
   const checkout = window.DonaStorefrontCheckout.create({
-    state, $, money, toast, request, whatsappNumber, quantityOf, closeSheet, showSheet
+    state, $, esc, phoneDigits, money, toast, request, whatsappNumber, quantityOf, closeSheet, showSheet
   });
   const {
     displayedTotalCents, extraCategoriesFor, extraCategoriesMarkup,
