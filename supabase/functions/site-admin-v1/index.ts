@@ -622,7 +622,7 @@ async function markOrderDelivered(input: any) {
 
 
 async function whatsappOverview() {
-  const [accountsResult, runtimeResult, templateCountResult, approvedCountResult, templateRowsResult, campaignsResult, anaResult] = await Promise.all([
+  const [accountsResult, runtimeResult, templateCountResult, approvedCountResult, templateRowsResult, templateEventsResult, campaignsResult, anaResult] = await Promise.all([
     db.from("whatsapp_accounts").select("id,slug,display_name,phone_e164").order("display_name"),
     db.from("whatsapp_channel_runtime_v1").select("whatsapp_account_id,inbound_provider,outbound_provider,capture_enabled,send_enabled,ana_enabled,campaigns_enabled,human_send_enabled,homologated_at,updated_at"),
     db.from("whatsapp_templates_v1").select("id", { count: "exact", head: true }),
@@ -630,6 +630,10 @@ async function whatsappOverview() {
     db.from("whatsapp_templates_v1")
       .select("id,whatsapp_account_id,name,language,category,status,quality_rating,last_synced_at,updated_at")
       .order("updated_at", { ascending: false }).limit(100),
+    db.from("whatsapp_template_events_v1")
+      .select("whatsapp_account_id,template_name,language,status,reason,occurred_at")
+      .not("reason", "is", null)
+      .order("occurred_at", { ascending: false }).limit(200),
     db.from("marketing_campaigns_v1")
       .select("id,name,whatsapp_account_id,status,scheduled_for,created_at,started_at,paused_at,completed_at,failed_at", { count: "exact" })
       .order("created_at", { ascending: false }).limit(100),
@@ -637,13 +641,21 @@ async function whatsappOverview() {
       .select("id,whatsapp_account_id,status,decision,created_at", { count: "exact" })
       .eq("dry_run", false).order("created_at", { ascending: false }).limit(50),
   ]);
-  for (const result of [accountsResult, runtimeResult, templateCountResult, approvedCountResult, templateRowsResult, campaignsResult, anaResult]) {
+  for (const result of [accountsResult, runtimeResult, templateCountResult, approvedCountResult, templateRowsResult, templateEventsResult, campaignsResult, anaResult]) {
     if (result.error) throw result.error;
   }
 
   const accounts = accountsResult.data || [];
   const runtimeByAccount = new Map((runtimeResult.data || []).map((row: any) => [row.whatsapp_account_id, row]));
   const accountById = new Map(accounts.map((row: any) => [row.id, row]));
+  const templateKey = (accountId: any, name: any, language: any) =>
+    [String(accountId || ""), clean(name, 160).toLowerCase(), clean(language, 24).toLowerCase()].join("|");
+  const latestRejectionByTemplate = new Map<string, string>();
+  for (const event of templateEventsResult.data || []) {
+    if (clean(event.status, 40).toLowerCase() !== "rejected") continue;
+    const key = templateKey(event.whatsapp_account_id, event.template_name, event.language);
+    if (!latestRejectionByTemplate.has(key)) latestRejectionByTemplate.set(key, clean(event.reason, 280));
+  }
   const channels = accounts.map((account: any) => {
     const runtime: any = runtimeByAccount.get(account.id) || {};
     const digits = String(account.phone_e164 || "").replace(/\D/g, "");
@@ -668,6 +680,9 @@ async function whatsappOverview() {
     category: clean(row.category, 40),
     status: clean(row.status, 40),
     quality_rating: clean(row.quality_rating, 40),
+    rejection_reason: clean(row.status, 40).toLowerCase() === "rejected"
+      ? latestRejectionByTemplate.get(templateKey(row.whatsapp_account_id, row.name, row.language)) || "Motivo não informado pela Meta"
+      : "",
     last_synced_at: row.last_synced_at || null,
     updated_at: row.updated_at || null,
   }));
