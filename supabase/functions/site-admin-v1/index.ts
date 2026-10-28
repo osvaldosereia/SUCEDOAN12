@@ -1489,6 +1489,66 @@ async function whatsappCampaignPreview(input: any) {
 
 
 
+
+async function whatsappCampaignContentPreview(input: any) {
+  const campaignId = uuid(input.campaign_id);
+  if (!campaignId) return { error: "invalid_campaign_id", message: "Campanha inválida.", status: 400 };
+  const campaignResult = await db.from("marketing_campaigns_v1")
+    .select("id,name,revision,whatsapp_account_id,template_id")
+    .eq("id", campaignId)
+    .maybeSingle();
+  if (campaignResult.error) throw campaignResult.error;
+  if (!campaignResult.data) return { error: "campaign_not_found", message: "Campanha não encontrada.", status: 404 };
+  const campaign: any = campaignResult.data;
+  const templateResult = await db.rpc("marketing_campaign_template_snapshot_v1", {
+    p_whatsapp_account_id: campaign.whatsapp_account_id,
+    p_template_id: campaign.template_id,
+  });
+  if (templateResult.error) throw templateResult.error;
+  const template: any = templateResult.data || {};
+  if (template.ok !== true) {
+    return { error: clean(template.error || "template_not_sendable", 80), message: "O conteúdo do modelo aprovado não está disponível.", status: 409 };
+  }
+
+  const parts: any[] = [];
+  for (const component of Array.isArray(template.components) ? template.components.slice(0, 8) : []) {
+    const type = clean(component?.type, 24).toUpperCase();
+    const format = clean(component?.format, 24).toUpperCase();
+    if (type === "HEADER") {
+      if (format === "TEXT") parts.push({ label: "Cabeçalho", text: clean(component?.text, 3000) });
+      else parts.push({ label: "Cabeçalho", text: format ? "Conteúdo de mídia (" + format.toLowerCase() + "); o arquivo não é exibido nesta prévia." : "Conteúdo de mídia; o arquivo não é exibido nesta prévia." });
+    } else if (type === "BODY") {
+      parts.push({ label: "Mensagem", text: clean(component?.text, 6000) });
+    } else if (type === "FOOTER") {
+      parts.push({ label: "Rodapé", text: clean(component?.text, 1000) });
+    } else if (type === "BUTTONS") {
+      const buttons = Array.isArray(component?.buttons) ? component.buttons.slice(0, 10) : [];
+      const labels = buttons.map((button: any) => {
+        const label = clean(button?.text, 160);
+        const buttonType = clean(button?.type, 24).toUpperCase();
+        return [buttonType, label].filter(Boolean).join(": ");
+      }).filter(Boolean);
+      if (labels.length) parts.push({ label: "Botões", text: labels.join("\n") });
+    }
+  }
+  const text = parts.map((part) => String(part.text || "")).join(" ");
+  const variableCount = (text.match(/{{\s*\d+\s*}}/g) || []).length;
+  return {
+    campaign: {
+      id: campaignId,
+      name: clean(campaign.name, 140),
+      revision: Number(campaign.revision) || 0,
+    },
+    template: {
+      name: clean(template.name, 160),
+      language: clean(template.language, 24),
+      category: clean(template.category, 40),
+      parts,
+      variable_count: variableCount,
+    },
+  };
+}
+
 function campaignAdminCount(value: any) {
   const count = Number(value);
   return Number.isFinite(count) ? Math.max(0, Math.trunc(count)) : 0;
@@ -2503,6 +2563,7 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "whatsapp_campaign_draft_create") result = await whatsappCampaignDraftCreate(input);
     else if (req.method === "POST" && action === "whatsapp_campaign_draft_update") result = await whatsappCampaignDraftUpdate(input);
     else if (req.method === "POST" && action === "whatsapp_campaign_preview") result = await whatsappCampaignPreview(input);
+    else if (req.method === "POST" && action === "whatsapp_campaign_content_preview") result = await whatsappCampaignContentPreview(input);
     else if (req.method === "POST" && action === "whatsapp_campaign_snapshot") result = await whatsappCampaignSnapshot(input);
     else if (req.method === "POST" && action === "whatsapp_campaign_transition") result = await whatsappCampaignTransition(input);
     else if (req.method === "POST" && action === "whatsapp_campaign_schedule") result = await whatsappCampaignSchedule(input);
