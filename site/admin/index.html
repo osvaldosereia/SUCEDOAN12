@@ -7,18 +7,18 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Admin · Dona Antônia</title>
   <link rel="stylesheet" href="../styles.css?v=5">
-  <link rel="stylesheet" href="admin.css?v=41">
+  <link rel="stylesheet" href="admin.css?v=42">
   <link rel="stylesheet" href="orders-admin.css?v=2">
-  <link rel="stylesheet" href="quick-balance-admin.css?v=1">
+  <link rel="stylesheet" href="quick-balance-admin.css?v=2">
   <script src="../config.js?v=3"></script>
-  <script src="admin-auth.js?v=1" defer></script>
+  <script src="admin-auth.js?v=2" defer></script>
   <script src="catalog-admin.js?v=11" defer></script>
   <script src="orders-admin.js?v=4" defer></script>
   <script src="order-message-admin.js?v=3" defer></script>
   <script src="separation-message-admin.js?v=3" defer></script>
   <script src="whatsapp-admin.js?v=28" defer></script>
   <script src="whatsapp-conversations.js?v=12" defer></script>
-  <script src="quick-balance-admin.js?v=3" defer></script>
+  <script src="quick-balance-admin.js?v=4" defer></script>
   <script src="admin.js?v=16" defer></script>
 </head>
 <body class="admin-page">
@@ -29,6 +29,8 @@
       <p>Digite o código de acesso para continuar.</p>
       <label for="admin-access-code">Código de acesso</label>
       <input id="admin-access-code" name="admin-access-code" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" minlength="13" maxlength="128" required>
+      <label class="admin-remember-login" for="admin-remember-login"><input id="admin-remember-login" type="checkbox" checked><span>Manter conectado por até 30 dias neste aparelho</span></label>
+      <p class="admin-remember-note">O prazo se renova quando você usa o admin. Use apenas em aparelho confiável.</p>
       <button id="admin-login-button" class="button button-primary button-wide" type="submit">Acessar admin</button>
       <p id="admin-login-message" class="form-message" role="status" aria-live="polite"></p>
       <a class="admin-link" href="../">Voltar à loja</a>
@@ -189,44 +191,46 @@
       </section>
 
       <section class="admin-view quick-balance-view" data-panel="quick-balance" hidden>
-        <div class="section-title quick-balance-heading">
-          <div><h2>Balanço rápido</h2><p>Leia o EAN e atualize estoque, validade e gôndola.</p></div>
-          <span class="quick-balance-ready" aria-hidden="true">Leitor pronto</span>
-        </div>
-        <p class="quick-balance-scope-note">A contagem é salva no cadastro do Supabase. A configuração atual de vendas permanece inalterada.</p>
         <div class="quick-balance-surface">
           <form id="quick-balance-scan" class="quick-balance-scan">
-            <label for="quick-balance-ean">Código de barras</label>
+            <label for="quick-balance-ean">EAN</label>
             <div class="quick-balance-scan-controls">
-              <input id="quick-balance-ean" type="text" inputmode="none" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="40" placeholder="Leia com o leitor EAN" aria-describedby="quick-balance-scan-status">
+              <input id="quick-balance-ean" type="text" inputmode="none" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="40" placeholder="EAN do produto" aria-describedby="quick-balance-scan-status">
               <button id="quick-balance-search" class="button button-primary" type="submit">Buscar</button>
             </div>
           </form>
-          <p id="quick-balance-scan-status" class="quick-balance-status" role="status" aria-live="polite">Leia com o leitor ou digite o EAN e toque em Buscar.</p>
+          <p id="quick-balance-scan-status" class="quick-balance-status" role="status" aria-live="polite"></p>
           <article id="quick-balance-product" class="quick-balance-product" hidden>
             <div class="quick-balance-product-summary">
-              <img id="quick-balance-image" alt="" width="76" height="76" hidden>
+              <img id="quick-balance-image" alt="" width="52" height="52" hidden>
               <div class="quick-balance-product-copy"><h3 id="quick-balance-name"></h3><p id="quick-balance-identifiers"></p></div>
-              <span id="quick-balance-active" class="quick-balance-product-state"></span>
             </div>
             <div class="quick-balance-stock-grid">
-              <section class="quick-balance-stat"><span>Estoque atual</span><strong id="quick-balance-current-stock">—</strong><small id="quick-balance-stock-source"></small></section>
+              <section class="quick-balance-stat"><span>Estoque</span><strong id="quick-balance-current-stock">—</strong></section>
               <section class="quick-balance-count">
-                <div class="quick-balance-count-head"><span>Contagem física</span><small>Toque no número para digitar</small></div>
+                <div class="quick-balance-count-head"><span>Contagem</span><output id="quick-balance-count-value" class="quick-balance-count-value" aria-live="polite">0</output></div>
                 <div class="quick-balance-count-controls">
-                  <button class="quick-balance-step" type="button" data-count-step="-1" aria-label="Diminuir contagem em uma unidade">−</button>
-                  <button id="quick-balance-count-open" class="quick-balance-count-value" type="button" aria-label="Abrir teclado numérico">Informar</button>
-                  <button class="quick-balance-step" type="button" data-count-step="1" aria-label="Aumentar contagem em uma unidade">+</button>
+                  <button class="quick-balance-step" type="button" data-count-step="-1" aria-label="Diminuir uma unidade">−</button>
+                  <button class="quick-balance-step" type="button" data-count-step="1" aria-label="Aumentar uma unidade">+</button>
+                </div>
+                <div class="quick-balance-keypad-grid" aria-label="Teclado numérico">
+                  <button type="button" data-key="1">1</button><button type="button" data-key="2">2</button><button type="button" data-key="3">3</button>
+                  <button type="button" data-key="4">4</button><button type="button" data-key="5">5</button><button type="button" data-key="6">6</button>
+                  <button type="button" data-key="7">7</button><button type="button" data-key="8">8</button><button type="button" data-key="9">9</button>
+                  <button type="button" class="quick-balance-keypad-secondary" data-keypad-action="clear" aria-label="Limpar contagem">C</button>
+                  <button type="button" data-key="0">0</button>
+                  <button type="button" class="quick-balance-keypad-secondary" data-keypad-action="backspace" aria-label="Apagar último dígito">⌫</button>
+                  <button type="button" class="quick-balance-keypad-secondary" data-key=",">,</button>
                 </div>
               </section>
             </div>
             <div class="quick-balance-fields">
               <label for="quick-balance-validity">Validade<input id="quick-balance-validity" type="date"></label>
-              <label for="quick-balance-gondola">Gôndola<select id="quick-balance-gondola"><option value="">Sem gôndola</option></select></label>
+              <label for="quick-balance-gondola">Gôndola<select id="quick-balance-gondola"><option value="">—</option></select></label>
             </div>
             <p id="quick-balance-save-status" class="quick-balance-save-status" role="status" aria-live="polite"></p>
             <div class="quick-balance-savebar">
-              <button id="quick-balance-save" class="button button-primary" type="button" disabled>Salvar balanço</button>
+              <button id="quick-balance-save" class="button button-primary" type="button" disabled>Salvar</button>
               <button id="quick-balance-next" class="button button-outline" type="button" hidden>Próximo EAN</button>
             </div>
           </article>
@@ -474,19 +478,6 @@
       <button id="picker-more" class="button button-outline button-wide" type="button" hidden>Carregar mais resultados</button>
       <footer class="dialog-actions"><button class="button button-outline" type="button" data-dialog-close="product-picker-dialog">Cancelar</button><button id="apply-picker-products" class="button button-primary" type="button">Aplicar seleção</button></footer>
     </div>
-  </dialog>
-  <dialog id="quick-balance-keypad" class="quick-balance-keypad" aria-labelledby="quick-balance-keypad-title">
-    <section class="quick-balance-keypad-body">
-      <header><div><p class="eyebrow">Quantidade contada</p><h2 id="quick-balance-keypad-title">Digite o estoque</h2></div><button class="icon-button" type="button" data-keypad-action="cancel" aria-label="Fechar teclado">×</button></header>
-      <output id="quick-balance-keypad-value" class="quick-balance-keypad-value" aria-live="polite">0</output>
-      <div class="quick-balance-keypad-grid" aria-label="Teclado numérico">
-        <button type="button" data-key="1">1</button><button type="button" data-key="2">2</button><button type="button" data-key="3">3</button>
-        <button type="button" data-key="4">4</button><button type="button" data-key="5">5</button><button type="button" data-key="6">6</button>
-        <button type="button" data-key="7">7</button><button type="button" data-key="8">8</button><button type="button" data-key="9">9</button>
-        <button type="button" class="quick-balance-keypad-secondary" data-keypad-action="clear">Limpar</button><button type="button" data-key="0">0</button><button type="button" data-keypad-action="backspace" aria-label="Apagar último número">⌫</button>
-        <button type="button" class="quick-balance-keypad-secondary" data-key=",">,</button><button type="button" class="quick-balance-keypad-confirm" data-keypad-action="confirm">Confirmar</button>
-      </div>
-    </section>
   </dialog>
   <div id="admin-toast" class="toast" role="status" aria-live="polite"></div>
   </div>

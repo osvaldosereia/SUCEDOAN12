@@ -13,9 +13,7 @@
   const searchButton = $("quick-balance-search");
   const saveButton = $("quick-balance-save");
   const nextButton = $("quick-balance-next");
-  const quantityDialog = $("quick-balance-keypad");
-  const quantityDisplay = $("quick-balance-keypad-value");
-  const quantityDisplayCard = $("quick-balance-count-open");
+  const quantityDisplay = $("quick-balance-count-value");
   const validityInput = $("quick-balance-validity");
   const gondolaSelect = $("quick-balance-gondola");
   const saveStatus = $("quick-balance-save-status");
@@ -23,7 +21,7 @@
   let currentProduct = null;
   let currentEan = "";
   let quantityValue = "";
-  let keypadDraft = "";
+  let quantityEntryStarted = false;
   let scanTimer = 0;
   let scanBurstStartedAt = 0;
   let scanBurstLastAt = 0;
@@ -68,8 +66,7 @@
     saveButton.disabled = saving || savedCurrent || !currentProduct || quantityNumber(quantityValue) === null;
   }
   function setBusyFields(busy) {
-    view.querySelectorAll("[data-count-step]").forEach((button) => { button.disabled = busy; });
-    quantityDisplayCard.disabled = busy;
+    view.querySelectorAll("[data-count-step], [data-key], [data-keypad-action]").forEach((button) => { button.disabled = busy; });
     validityInput.disabled = busy;
     gondolaSelect.disabled = busy;
     nextButton.disabled = busy;
@@ -97,11 +94,11 @@
     return data;
   }
   function updateQuantityDisplay() {
-    quantityDisplayCard.textContent = quantityValue === "" ? "Informar" : formatQuantity(quantityValue);
-    quantityDisplayCard.setAttribute("aria-label", quantityValue === "" ? "Informar quantidade contada" : "Contagem: " + formatQuantity(quantityValue));
+    quantityDisplay.textContent = quantityValue || "0";
   }
   function setCountValue(value) {
-    quantityValue = String(value || "").replace(".", ",");
+    quantityValue = value === null || value === undefined ? "" : String(value).replace(".", ",");
+    quantityEntryStarted = true;
     updateQuantityDisplay();
     markDirty();
   }
@@ -137,9 +134,9 @@
       gondola: product.gondola === undefined ? null : product.gondola,
       current_stock: Number.isFinite(currentStock) ? currentStock : null,
       stock_ready: Number.isFinite(currentStock),
-      is_active: product.is_active === true,
     };
     quantityValue = currentProduct.stock_ready ? String(currentProduct.current_stock).replace(".", ",") : "";
+    quantityEntryStarted = false;
     savedCurrent = false;
     saving = false;
     updateQuantityDisplay();
@@ -161,11 +158,7 @@
       image.alt = "";
       image.hidden = true;
     }
-    const active = $("quick-balance-active");
-    active.textContent = currentProduct.is_active ? "Ativo" : "Inativo";
-    active.dataset.active = String(currentProduct.is_active);
     $("quick-balance-current-stock").textContent = currentProduct.stock_ready ? formatQuantity(currentProduct.current_stock) : "Não cadastrado";
-    $("quick-balance-stock-source").textContent = "Estoque físico no Supabase";
     validityInput.value = currentProduct.validity_date || "";
     renderGondolas(data.gondolas, currentProduct.gondola);
     setStatus("quick-balance-save-status", "", "neutral");
@@ -179,7 +172,7 @@
       scanInput.value = "";
       scanInput.disabled = false;
       searchButton.disabled = false;
-      setStatus("quick-balance-scan-status", "Salve este balanço antes de ler outro produto.", "error");
+      setStatus("quick-balance-scan-status", "Salve antes de ler outro EAN.", "error");
       scanInput.focus({ preventScroll: true });
       return;
     }
@@ -210,17 +203,17 @@
       const data = await request("quick_balance_lookup", { ean });
       if (requestId !== lookupSequence) return;
       if (!data.found || !data.product) {
-        setStatus("quick-balance-scan-status", data.message || "Produto não encontrado para este EAN.", "error");
-        scanInput.focus({ preventScroll: true });
+        setStatus("quick-balance-scan-status", data.message || "EAN não encontrado.", "error");
+        scanInput.blur();
         return;
       }
       renderProduct(data);
-      setStatus("quick-balance-scan-status", "Produto localizado. Confira e salve a contagem.", "success");
-      scanInput.focus({ preventScroll: true });
+      setStatus("quick-balance-scan-status", "Localizado.", "success");
+      scanInput.blur();
     } catch (error) {
       if (requestId === lookupSequence) {
-        setStatus("quick-balance-scan-status", error.message || "Não foi possível buscar o produto.", "error");
-        scanInput.focus({ preventScroll: true });
+        setStatus("quick-balance-scan-status", error.message || "Falha na busca.", "error");
+        scanInput.blur();
       }
     } finally {
       if (requestId === lookupSequence) {
@@ -235,26 +228,46 @@
     if (current === null) current = 0;
     setCountValue(String(Math.max(0, Math.min(999999.999, Math.round((current + step) * 1000) / 1000))));
   }
-  function openKeypad() {
-    if (!currentProduct || quantityDialog.open) return;
-    keypadDraft = quantityValue;
-    quantityDisplay.textContent = keypadDraft || "0";
-    quantityDialog.showModal();
-  }
-  function updateKeypad() { quantityDisplay.textContent = keypadDraft || "0"; }
   function appendKey(key) {
+    if (!currentProduct || saving || savedCurrent) return;
+    if (!quantityEntryStarted) {
+      quantityValue = "";
+      quantityEntryStarted = true;
+    }
     if (key === "," || key === ".") {
-      if (keypadDraft.includes(",") || keypadDraft.includes(".")) return;
-      keypadDraft = keypadDraft ? keypadDraft + "," : "0,";
-    } else if (/^\d$/.test(key)) {
-      const parts = keypadDraft.split(/[,.]/);
+      if (quantityValue.includes(",") || quantityValue.includes(".")) return;
+      quantityValue = quantityValue ? quantityValue + "," : "0,";
+    } else if (key.length === 1 && key >= "0" && key <= "9") {
+      const parts = quantityValue.split(/[,.]/);
       const whole = parts[0] || "";
       const fraction = parts[1] || "";
-      if (whole.replace(/\D/g, "").length >= 6 && !/[,.]/.test(keypadDraft)) return;
-      if (fraction.length >= 3) return;
-      keypadDraft = keypadDraft === "0" ? key : keypadDraft + key;
+      if (!/[,.]/.test(quantityValue) && whole.replace(/[^0-9]/g, "").length >= 6) return;
+      if (/[,.]/.test(quantityValue) && fraction.length >= 3) return;
+      quantityValue = quantityValue === "0" && !/[,.]/.test(quantityValue) && key !== "0"
+        ? key : quantityValue + key;
+    } else {
+      return;
     }
-    updateKeypad();
+    updateQuantityDisplay();
+    markDirty();
+  }
+  function handleQuantityKeypad(event) {
+    if (!(event.target instanceof Element)) return;
+    const button = event.target.closest("[data-key],[data-keypad-action]");
+    if (!button || button.disabled || !currentProduct || saving || savedCurrent) return;
+    if (button.dataset.key !== undefined) {
+      appendKey(button.dataset.key);
+    } else if (button.dataset.keypadAction === "clear") {
+      quantityEntryStarted = true;
+      quantityValue = "";
+      updateQuantityDisplay();
+      markDirty();
+    } else if (button.dataset.keypadAction === "backspace") {
+      quantityEntryStarted = true;
+      quantityValue = quantityValue.slice(0, -1);
+      updateQuantityDisplay();
+      markDirty();
+    }
   }
   async function saveCurrentCount() {
     if (!currentProduct || saving || savedCurrent) return;
@@ -267,7 +280,7 @@
     setBusyFields(true);
     saveButton.textContent = "Salvando…";
     updateSaveButton();
-    setStatus("quick-balance-save-status", "Salvando estoque, validade e gôndola…", "neutral");
+    setStatus("quick-balance-save-status", "Salvando…", "neutral");
     try {
       const data = await request("quick_balance_save", {
         product_id: currentProduct.id,
@@ -286,7 +299,7 @@
       currentProduct.gondola = gondolaSelect.value || null;
       $("quick-balance-current-stock").textContent = formatQuantity(currentProduct.current_stock);
       savedCurrent = true;
-      setStatus("quick-balance-save-status", "Balanço salvo no Supabase: estoque, validade e gôndola atualizados.", "success");
+      setStatus("quick-balance-save-status", "Salvo.", "success");
       nextButton.hidden = false;
       scanInput.disabled = false;
       searchButton.disabled = false;
@@ -297,7 +310,7 @@
     } finally {
       saving = false;
       setBusyFields(false);
-      saveButton.textContent = "Salvar balanço";
+      saveButton.textContent = "Salvar";
       updateSaveButton();
     }
   }
@@ -341,7 +354,6 @@
   view.querySelectorAll("[data-count-step]").forEach((button) => {
     button.addEventListener("click", () => adjustQuantity(Number(button.dataset.countStep) || 0));
   });
-  quantityDisplayCard.addEventListener("click", openKeypad);
   validityInput.addEventListener("change", markDirty);
   gondolaSelect.addEventListener("change", markDirty);
   saveButton.addEventListener("click", saveCurrentCount);
@@ -350,7 +362,7 @@
     currentProduct = null;
     currentEan = "";
     quantityValue = "";
-    keypadDraft = "";
+    quantityEntryStarted = false;
     savedCurrent = false;
     productCard.hidden = true;
     scanInput.value = "";
@@ -362,29 +374,7 @@
     setStatus("quick-balance-scan-status", "Pronto para o próximo EAN.", "neutral");
     scanInput.focus({ preventScroll: true });
   });
-  quantityDialog.addEventListener("click", (event) => {
-    if (event.target === quantityDialog) {
-      quantityDialog.close();
-      return;
-    }
-    if (!(event.target instanceof Element)) return;
-    const button = event.target.closest("[data-key],[data-keypad-action]");
-    if (!button) return;
-    const action = button.dataset.keypadAction;
-    if (button.dataset.key !== undefined) appendKey(button.dataset.key);
-    else if (action === "clear") keypadDraft = "";
-    else if (action === "backspace") keypadDraft = keypadDraft.slice(0, -1);
-    else if (action === "cancel") {
-      quantityDialog.close();
-      return;
-    } else if (action === "confirm") {
-      if (keypadDraft !== "" && quantityNumber(keypadDraft) === null) return;
-      setCountValue(keypadDraft);
-      quantityDialog.close();
-      return;
-    }
-    updateKeypad();
-  });
+  view.querySelector(".quick-balance-keypad-grid").addEventListener("click", handleQuantityKeypad);
 
   window.DonaQuickBalanceAdmin = {
     open() { window.setTimeout(() => scanInput.focus({ preventScroll: true }), 100); },
