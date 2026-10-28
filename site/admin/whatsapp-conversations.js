@@ -527,13 +527,13 @@
     $("whatsapp-conversation-empty").hidden = true;
   }
 
-  async function loadConversations({ append = false } = {}) {
+  async function loadConversations({ append = false, silent = false } = {}) {
     if (state.busy) return;
     if (!base || !publishableKey) return;
     const rawSearch = $("whatsapp-conversation-search").value.trim();
     const searchDigits = rawSearch.replace(/\D/g, "");
     if (rawSearch && searchDigits.length < 4) {
-      setStatus("Digite pelo menos quatro dígitos do telefone.");
+      if (!silent) setStatus("Digite pelo menos quatro dígitos do telefone.");
       return;
     }
     state.busy = true;
@@ -542,15 +542,17 @@
     if (!append) {
       state.cursor = null;
       state.total = 0;
-      state.selectedId = "";
-      state.before = null;
+      if (!silent) {
+        state.selectedId = "";
+        state.before = null;
+        $("whatsapp-conversation-header").hidden = true;
+        $("whatsapp-conversation-compose").hidden = true;
+        $("whatsapp-conversation-messages").replaceChildren();
+        $("whatsapp-conversation-empty").hidden = false;
+        setStatus("Buscando conversas…");
+      }
       state.favoriteIds.clear();
       state.favoritesAvailable = false;
-      $("whatsapp-conversation-header").hidden = true;
-      $("whatsapp-conversation-compose").hidden = true;
-      $("whatsapp-conversation-messages").replaceChildren();
-      $("whatsapp-conversation-empty").hidden = false;
-      setStatus("Buscando conversas…");
     } else setStatus("Carregando mais conversas…");
     try {
       const data = await request("whatsapp_conversation_list", {
@@ -565,13 +567,15 @@
       state.cursor = data.next_cursor || null;
       if (!append) state.total = data.total || 0;
       $("whatsapp-conversation-more").hidden = !state.cursor;
-      setStatus(state.total + " conversa(s) no filtro atual · mais recentes primeiro."
-        + (state.favoritesAvailable ? "" : " Favoritos indisponíveis neste ambiente."));
-      if (!append && data.items && data.items.length) selectFirst = data.items[0].id;
+      if (!silent) {
+        setStatus(state.total + " conversa(s) no filtro atual · mais recentes primeiro."
+          + (state.favoritesAvailable ? "" : " Favoritos indisponíveis neste ambiente."));
+      }
+      if (!append && !silent && data.items && data.items.length) selectFirst = data.items[0].id;
       else if (append && data.items && data.items.length && !state.selectedId) selectFirst = data.items[0].id;
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Não foi possível carregar as conversas.");
-      if (!append) {
+      if (!silent) setStatus(error instanceof Error ? error.message : "Não foi possível carregar as conversas.");
+      if (!append && !silent) {
         host.replaceChildren();
         const message = document.createElement("p");
         message.className = "whatsapp-overview-empty";
@@ -656,5 +660,10 @@
   $("whatsapp-conversation-filter")?.addEventListener("change", () => loadConversations());
   $("whatsapp-conversation-more")?.addEventListener("click", () => loadConversations({ append: true }));
   $("whatsapp-conversation-older")?.addEventListener("click", () => state.selectedId && loadConversation(state.selectedId, { older: true }));
+  window.setInterval(() => {
+    const panel = $("whatsapp-section-conversations");
+    if (document.hidden || !panel || panel.hidden || state.busy) return;
+    void loadConversations({ silent: true });
+  }, 15000);
   window.DonaWhatsAppConversations = { load: () => loadConversations() };
 })();
