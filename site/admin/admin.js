@@ -38,8 +38,9 @@
     if (name === "products") window.DonaCatalogAdmin?.loadProducts();
     if (name === "orders") window.DonaOrdersAdmin?.loadOrders();
     if (name === "whatsapp") {
-      window.DonaOrderMessageAdmin?.load();
-      window.DonaOrderSeparationMessageAdmin?.load();
+      const activeTab = document.querySelector("[data-whatsapp-tab][aria-selected=\"true\"]")?.dataset.whatsappTab || "confirmation";
+      if (activeTab === "separation") window.DonaOrderSeparationMessageAdmin?.load();
+      else window.DonaOrderMessageAdmin?.load();
     }
   }
 
@@ -57,6 +58,7 @@
         panel.classList.toggle("active", active);
       });
       if (name === "separation") window.DonaOrderSeparationMessageAdmin?.load();
+      else window.DonaOrderMessageAdmin?.load();
     });
   });
 
