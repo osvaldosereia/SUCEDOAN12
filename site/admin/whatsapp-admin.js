@@ -103,10 +103,15 @@
       ? "Snapshot vigente"
       : "Snapshot da revisão " + (snapshot.campaign_revision || "anterior") + " · campanha na revisão " + (item.revision || "atual");
     const template = [snapshot.template_name, snapshot.template_language, human(snapshot.template_category)].filter(Boolean).join(" · ");
+    const currentEvidenceCount = snapshot.currently_verified_consent_count == null ? Number.NaN : Number(snapshot.currently_verified_consent_count);
+    const evidenceStatus = Number.isFinite(currentEvidenceCount)
+      ? currentEvidenceCount + " opt-ins com evidência individual verificada agora"
+      : "Evidência individual atual indisponível";
     return [
       revision,
       (snapshot.eligible_count || 0) + " elegíveis de " + (snapshot.found_count || 0) + " encontrados",
       (snapshot.excluded_count || 0) + " excluídos",
+      evidenceStatus,
       template ? "Modelo: " + template : "",
       "Congelado em " + dateLabel(snapshot.created_at),
     ].filter(Boolean).join(" · ");
@@ -122,6 +127,7 @@
     const count = (value) => String(Math.max(0, Math.trunc(Number(value) || 0)));
     const reasons = [
       ["Opt-out", details.opted_out_count],
+      ["Sem evidência individual", details.consent_evidence_unverified_count],
       ["Sem consentimento", details.no_consent_count],
       ["Cadastro inativo", details.inactive_customer_count],
       ["Telefone inválido", details.invalid_phone_count],
@@ -134,7 +140,7 @@
         : '<small class="whatsapp-campaign-exclusion-muted">Nenhuma exclusão neste snapshot.</small>';
     }
     const chips = reasons.map(([label, value]) => {
-      const suppressed = label === "Opt-out" && Number(value) > 0;
+      const suppressed = ["Opt-out", "Sem evidência individual"].includes(label) && Number(value) > 0;
       return '<span class="whatsapp-campaign-exclusion-chip' + (suppressed ? " is-suppressed" : "") + '">' + esc(label) + ": " + count(value) + "</span>";
     }).join("");
     return '<div class="whatsapp-campaign-exclusions" aria-label="Motivos de exclusão">' + chips + '</div><small class="whatsapp-campaign-exclusion-muted">Os motivos podem se sobrepor.</small>';
@@ -185,16 +191,22 @@
       actions.push(campaignActionButton(item, "draft", "Voltar ao rascunho"));
     }
     const canExecute = item.campaigns_enabled === true && item.send_enabled === true && String(item.execution_mode || "off") !== "off";
-    if (status === "approved" && currentSnapshot && canExecute) {
+    const currentEvidenceCount = Number(item.snapshot?.currently_verified_consent_count);
+    const hasCurrentEvidence = Number.isFinite(currentEvidenceCount) && currentEvidenceCount > 0;
+    if (status === "approved" && currentSnapshot && canExecute && hasCurrentEvidence) {
       actions.push(campaignActionButton(item, "manual_batch", "Enviar lote de até 10"));
       const min = campaignLocalDateTimeValue(Date.now() + 5 * 60 * 1000);
       actions.push(
         '<label class="whatsapp-campaign-schedule"><span>Agendar a partir de</span><input type="datetime-local" data-campaign-schedule-time data-campaign-id="' + esc(item.id) + '" data-campaign-revision="' + esc(revision) + '" min="' + esc(min) + '"></label>'
         + campaignActionButton(item, "schedule", "Agendar campanha", "button-primary")
       );
+    } else if (status === "approved" && currentSnapshot && canExecute) {
+      actions.push('<p class="whatsapp-campaign-send-blocked" role="note">Envio bloqueado: o snapshot vigente não tem consentimentos individuais verificados.</p>');
     }
-    if (status === "paused" && item.manual_batch_mode === true && canExecute) {
+    if (status === "paused" && item.manual_batch_mode === true && canExecute && hasCurrentEvidence) {
       actions.push(campaignActionButton(item, "manual_batch", "Enviar próximo lote (até 10)", "button-primary"));
+    } else if (status === "paused" && item.manual_batch_mode === true && canExecute) {
+      actions.push('<p class="whatsapp-campaign-send-blocked" role="note">Próximo lote bloqueado: o snapshot vigente não tem consentimentos individuais verificados.</p>');
     }
     if (["scheduled", "running"].includes(status)) actions.push(campaignActionButton(item, "pause", "Pausar"));
     if (["draft", "ready_for_review", "approved", "scheduled", "running", "paused"].includes(status)) {
@@ -230,7 +242,7 @@
       const campaign = (lastOverview?.campaigns?.recent || []).find((item) => item.id === campaignId) || {};
       const eligible = Math.max(0, Math.trunc(Number(campaign.snapshot?.eligible_count) || 0)).toLocaleString("pt-BR");
       const excluded = Math.max(0, Math.trunc(Number(campaign.snapshot?.excluded_count) || 0)).toLocaleString("pt-BR");
-      confirmation = "Aprovar " + (campaign.name || "esta audiência") + " (" + eligible + " elegíveis; " + excluded + " excluídos) para que possa ser agendada depois? A aprovação não agenda nem envia. Confirme somente após revisar a fonte original do consentimento: este resumo não verifica evidência individual e uma declaração administrativa não comprova adesão.";
+      confirmation = "Aprovar " + (campaign.name || "esta audiência") + " (" + eligible + " elegíveis; " + excluded + " excluídos) para que possa ser agendada depois? A aprovação não agenda nem envia. O snapshot só considera opt-ins com evidência individual verificável; declarações administrativas ficam excluídas. Revise a origem e as contagens antes de aprovar.";
     } else if (action === "draft") {
       requestAction = "whatsapp_campaign_transition";
       payload.to_status = "draft";
@@ -246,7 +258,7 @@
       payload.scheduled_for = new Date(scheduledAt).toISOString();
       const campaign = (lastOverview?.campaigns?.recent || []).find((item) => item.id === campaignId) || {};
       const eligible = Math.max(0, Math.trunc(Number(campaign.snapshot?.eligible_count) || 0)).toLocaleString("pt-BR");
-      confirmation = "Agendar " + (campaign.name || "esta campanha") + " para " + new Date(scheduledAt).toLocaleString("pt-BR") + " no canal " + (campaign.channel || "selecionado") + ". O snapshot tem " + eligible + " destinatários aptos. A execução poderá enviar mensagens reais pelo WhatsApp no horário escolhido. Este resumo não verifica evidência individual; confira a fonte original e o modelo Meta antes de confirmar.";
+      confirmation = "Agendar " + (campaign.name || "esta campanha") + " para " + new Date(scheduledAt).toLocaleString("pt-BR") + " no canal " + (campaign.channel || "selecionado") + ". O snapshot tem " + eligible + " destinatários aptos. A execução poderá enviar mensagens reais pelo WhatsApp no horário escolhido. O snapshot só envia contatos com evidência individual verificável; confira a origem e o modelo Meta antes de confirmar.";
     } else if (action === "manual_batch") {
       requestAction = "whatsapp_campaign_manual_batch";
       payload.idempotency_key = button.dataset.campaignIdempotencyKey || campaignDraftIdempotencyKey();
@@ -255,7 +267,7 @@
       const modeWarning = mode === "canary"
         ? " O modo canário restringe os destinatários aos telefones de canário autorizados."
         : " O modo atual pode enviar mensagens a clientes elegíveis.";
-      confirmation = "Este lote envia imediatamente até 10 mensagens reais pelo modelo Meta para destinatários aptos do snapshot congelado." + modeWarning + " Mensagens aceitas pela Meta não podem ser recolhidas. Este resumo não verifica evidência individual; confira a fonte original e confirme apenas se deseja iniciar o envio agora.";
+      confirmation = "Este lote envia imediatamente até 10 mensagens reais pelo modelo Meta para destinatários aptos do snapshot congelado." + modeWarning + " Mensagens aceitas pela Meta não podem ser recolhidas. Cada destinatário será revalidado por evidência individual antes do envio. Confira a origem e confirme apenas se deseja iniciar agora.";
     } else if (action === "pause") {
       requestAction = "whatsapp_campaign_pause";
       confirmation = "Pausar a campanha? Isso interrompe os próximos despachos; mensagens já aceitas pela Meta não podem ser recolhidas.";
@@ -302,7 +314,7 @@
       + campaignDeliveryMarkup(item)
       + '<small class="whatsapp-campaign-snapshot">' + esc(campaignSnapshotLabel(item)) + "</small>"
       + campaignExclusionMarkup(item)
-      + (requiresConsentReview ? '<p class="whatsapp-campaign-consent-warning" role="note"><strong>Revise o consentimento antes de qualquer envio.</strong> Este painel não verifica evidência individual; confira a fonte original e confirme apenas contatos com consentimento comprovável.</p>' : "")
+      + (requiresConsentReview ? '<p class="whatsapp-campaign-consent-warning" role="note"><strong>O envio exige opt-in individual verificável.</strong> Declarações administrativas não comprovam adesão e ficam excluídas. Confira a origem e as contagens antes de aprovar.</p>' : "")
       + (item.id ? '<button class="button button-outline whatsapp-campaign-preview-button" type="button" data-campaign-preview="' + esc(item.id) + '" aria-expanded="false">Prévia do público</button><div class="whatsapp-campaign-preview" data-campaign-preview-result hidden role="status" aria-live="polite"></div>' : "")
       + (item.id ? '<button class="button button-outline whatsapp-campaign-preview-button" type="button" data-campaign-content-preview="' + esc(item.id) + '" aria-expanded="false">Ver conteúdo do modelo</button><div class="whatsapp-campaign-preview whatsapp-campaign-content-preview" data-campaign-content-result hidden role="status" aria-live="polite"></div>' : "")
       + (item.status === "draft" && item.draft_editable ? '<button class="button button-outline whatsapp-campaign-edit-button" type="button" data-campaign-edit="' + esc(item.id) + '">Editar rascunho</button>' : "")
@@ -367,6 +379,7 @@
       const formatCount = (value) => Math.max(0, Math.trunc(Number(value) || 0)).toLocaleString("pt-BR");
       const reasons = [
         ["Opt-out", exclusions.opted_out_count],
+        ["Sem evidência individual", exclusions.consent_evidence_unverified_count],
         ["Sem consentimento", exclusions.no_consent_count],
         ["Cadastro inativo", exclusions.inactive_customer_count],
         ["Telefone inválido", exclusions.invalid_phone_count],
@@ -405,6 +418,8 @@
     if (!response.ok || data.ok === false) {
       const messages = {
         campaign_filter_required: "Informe ao menos um filtro de público.",
+        no_eligible_recipients: "Envio bloqueado: nenhum destinatário do snapshot tem consentimento individual verificado.",
+        consent_evidence_unverified: "O consentimento atual não tem evidência individual verificada.",
         campaign_filters_not_editable: "Este rascunho usa filtros avançados que ainda não podem ser editados nesta tela.",
         revision_conflict: "A campanha mudou em outra sessão. Atualize os dados antes de tentar novamente.",
         snapshot_stale: "O snapshot não corresponde à revisão atual da campanha.",
