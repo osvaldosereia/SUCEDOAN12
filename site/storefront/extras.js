@@ -255,7 +255,7 @@
       const quantity = selected ? Number(selected.quantity || 0) : 0;
       const stock = Math.max(0, Number(product.stock_quantity || 0));
       return '<article class="extra-product-card" role="listitem" data-extra-product="' + esc(id) + '">' +
-        '<img src="' + esc(product.image_url || "../img/logoantonia5.png") + '" alt="" width="60" height="60" loading="lazy" decoding="async">' +
+        '<img src="' + esc(product.image_url || "../img/logoantonia5.png") + '" alt="" width="76" height="76" loading="lazy" decoding="async">' +
         '<div class="extra-product-copy"><strong>' + esc(product.name || "Produto") + '</strong><span>' + esc(money(product.price_cents)) + '</span>' +
         '<div class="extra-quantity"><span>Quantidade:</span><div class="quantity-stepper">' +
         '<button class="quantity-button" type="button" data-extra-adjust="' + esc(id) + '" data-delta="-1" aria-label="Diminuir ' + esc(product.name || "produto") + '"' + (quantity <= 0 ? " disabled" : "") + '>−</button>' +
@@ -417,7 +417,7 @@
       const detail = product.brand || product.packaging || "";
       return '<article class="home-extra-card" role="listitem" data-home-extra-product="' + esc(id) + '">' +
         '<button class="home-extra-open" type="button" data-home-extra-open="' + esc(id) + '" aria-label="Ver detalhes de ' + esc(name) + '" title="' + esc(name) + '">' +
-        '<span class="home-extra-photo-wrap"><img class="home-extra-photo" src="' + esc(product.image_url || "../img/logoantonia5.png") + '" alt="" width="96" height="96" loading="lazy" fetchpriority="low" decoding="async"></span>' +
+        '<span class="home-extra-photo-wrap"><img class="home-extra-photo" src="' + esc(product.image_url || "../img/logoantonia5.png") + '" alt="" width="108" height="108" loading="lazy" fetchpriority="low" decoding="async"></span>' +
         '<span class="home-extra-copy"><strong>' + esc(name) + '</strong>' +
         (detail ? '<span>' + esc(detail) + '</span>' : '') +
         '<b>' + esc(money(product.price_cents)) + '</b></span></button>' +
