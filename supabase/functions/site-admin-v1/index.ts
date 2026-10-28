@@ -840,9 +840,11 @@ async function whatsappOverview() {
         found_count: Number(snapshot.found_count) || 0,
         eligible_count: Number(snapshot.eligible_count) || 0,
         excluded_count: Number(snapshot.excluded_count) || 0,
+        currently_verified_consent_count: exclusionCountsAvailable ? Number(summary.currently_verified_consent_count) || 0 : null,
         exclusion_counts: exclusionCountsAvailable ? {
           available: true,
           opted_out_count: Number(summary.excluded_opted_out_count) || 0,
+          consent_evidence_unverified_count: Number(summary.excluded_consent_evidence_unverified_count) || 0,
           no_consent_count: Number(summary.excluded_no_consent_count) || 0,
           inactive_customer_count: Number(summary.excluded_inactive_customer_count) || 0,
           invalid_phone_count: Number(summary.excluded_invalid_phone_count) || 0,
@@ -1573,6 +1575,7 @@ async function whatsappCampaignPreview(input: any) {
       exclusion_counts: {
         available: true,
         opted_out_count: count(exclusions.opted_out),
+        consent_evidence_unverified_count: count(exclusions.consent_evidence_unverified),
         no_consent_count: count(exclusions.no_consent),
         inactive_customer_count: count(exclusions.inactive_customer),
         invalid_phone_count: count(exclusions.invalid_phone),
