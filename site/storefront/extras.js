@@ -27,6 +27,221 @@
       return Math.max(0, Number(data && data.totalCents || 0)) + extraTotalCents(data);
     }
   
+    function createProductSearchState() {
+      return { query: "", products: [], nextOffset: null, hasMore: false, loading: false, pending: false, error: false, sequence: 0, timer: 0, lastOffset: 0 };
+    }
+
+    const homeProductSearchState = createProductSearchState();
+    const homeExtrasSearchState = createProductSearchState();
+    let productSearchBound = false;
+
+    function normalizeProductSearchText(value) {
+      return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").replace(/[^a-z0-9]+/g, " ").trim();
+    }
+
+    function productSearchStateFor(scope, data) {
+      if (scope === "home") return homeProductSearchState;
+      if (scope === "home-extras") return homeExtrasSearchState;
+      const current = data || state.baskets.get(state.activeKey);
+      if (!current) return null;
+      if (!current.extraProductSearch) current.extraProductSearch = createProductSearchState();
+      return current.extraProductSearch;
+    }
+
+    function productSearchRootFor(scope, data) {
+      if (scope === "home") return $("home-product-search");
+      if (scope === "home-extras") return $("home-extra-product-search");
+      if (scope === "basket-extras") {
+        if (data && state.baskets.get(state.activeKey) !== data) return null;
+        const content = $("detail-content");
+        return content && content.querySelector('[data-product-search-root="basket-extras"]');
+      }
+      return null;
+    }
+
+    function productSearchStatus(search) {
+      const normalized = normalizeProductSearchText(search.query);
+      if (!normalized) return "";
+      if (normalized.length < 2) return "Digite pelo menos 2 caracteres para buscar.";
+      if (search.pending || search.loading) return search.products.length ? "Carregando mais produtos…" : "Buscando produtos…";
+      if (search.error) return search.products.length ? "Não foi possível carregar mais produtos." : "Não foi possível concluir a busca.";
+      if (!search.products.length) return "Nenhum produto encontrado. Confira o nome ou código.";
+      return search.products.length + (search.hasMore ? " produtos carregados." : " produtos encontrados.");
+    }
+
+    function productSearchResultsMarkup(scope, search, data) {
+      const products = Array.isArray(search.products) ? search.products : [];
+      const cards = scope === "basket-extras"
+        ? products.map((product) => extraProductMarkup(data, product)).join("")
+        : products.map(homeExtraProductMarkup).join("");
+      const list = cards
+        ? (scope === "basket-extras"
+          ? '<div class="product-search-results-list" role="list" aria-label="Resultados dos produtos extras">' + cards + "</div>"
+          : '<div class="home-extra-grid product-search-results-grid" role="list" aria-label="Resultados da busca">' + cards + "</div>")
+        : "";
+      const action = search.error
+        ? '<button class="button button-outline product-search-more" type="button" data-product-search-retry="' + esc(scope) + '">Tentar novamente</button>'
+        : search.hasMore && !search.loading
+          ? '<button class="button button-outline product-search-more" type="button" data-product-search-more="' + esc(scope) + '">Carregar mais resultados</button>'
+          : "";
+      return list + action;
+    }
+
+    function productSearchPanelMarkup(scope, label, placeholder, search, data) {
+      const normalized = normalizeProductSearchText(search.query);
+      const searching = normalized.length >= 2;
+      return '<div class="product-search product-search-compact" data-product-search-root="' + esc(scope) + '">' +
+        '<label class="product-search-label" for="basket-extra-product-search-input">' + esc(label) + '</label>' +
+        '<div class="product-search-control">' +
+        '<input id="basket-extra-product-search-input" data-product-search-input="' + esc(scope) + '" type="search" maxlength="100" autocomplete="off" enterkeyhint="search" placeholder="' + esc(placeholder) + '" value="' + esc(search.query) + '" aria-describedby="basket-extra-product-search-status">' +
+        '<button class="product-search-clear" type="button" data-product-search-clear="' + esc(scope) + '" aria-label="Limpar busca" hidden>×</button></div>' +
+        '<p id="basket-extra-product-search-status" class="product-search-status" data-product-search-status="' + esc(scope) + '" role="status" aria-live="polite">' + esc(productSearchStatus(search)) + '</p>' +
+        '<div class="product-search-results" data-product-search-results="' + esc(scope) + '"' + (searching ? "" : " hidden") + '>' +
+        productSearchResultsMarkup(scope, search, data) + "</div></div>";
+    }
+
+    function renderProductSearch(scope, data) {
+      const search = productSearchStateFor(scope, data);
+      const root = productSearchRootFor(scope, data);
+      if (!search || !root) return;
+      const normalized = normalizeProductSearchText(search.query);
+      const searching = normalized.length >= 2;
+      const input = root.querySelector("[data-product-search-input]");
+      const clear = root.querySelector("[data-product-search-clear]");
+      const status = root.querySelector("[data-product-search-status]");
+      const results = root.querySelector("[data-product-search-results]");
+      if (input && input.value !== search.query) input.value = search.query;
+      if (clear) clear.hidden = !search.query;
+      if (status) status.textContent = productSearchStatus(search);
+      if (results) {
+        results.hidden = !searching;
+        results.setAttribute("aria-busy", String(search.pending || search.loading));
+        results.innerHTML = productSearchResultsMarkup(scope, search, data);
+        if (scope === "basket-extras") bindExtraProductControls(results);
+        else bindHomeSearchProductCards(results);
+      }
+      if (scope === "home-extras") {
+        const categories = $("home-extra-categories");
+        if (categories) categories.hidden = searching;
+      } else if (scope === "basket-extras") {
+        const categories = root.querySelector("[data-extra-category-list]");
+        if (categories) categories.hidden = searching;
+      }
+    }
+
+    async function loadProductSearchPage(scope, data, offset, sequence) {
+      const search = productSearchStateFor(scope, data);
+      if (!search || search.sequence !== sequence || (scope === "basket-extras" && state.baskets.get(state.activeKey) !== data)) return;
+      search.pending = false;
+      search.loading = true;
+      search.error = false;
+      search.lastOffset = offset;
+      renderProductSearch(scope, data);
+      try {
+        const params = { q: search.query, limit: 12, offset };
+        if (scope !== "home") params.categories = EXTRA_CATEGORIES.map((category) => category.key).join(",");
+        const result = await request("products", { params });
+        if (search.sequence !== sequence || (scope === "basket-extras" && state.baskets.get(state.activeKey) !== data)) return;
+        const fetched = Array.isArray(result.products) ? result.products : [];
+        if (!(state.homeExtraProducts instanceof Map)) state.homeExtraProducts = new Map();
+        fetched.forEach((product) => {
+          const id = String(product.id || "");
+          if (id) state.homeExtraProducts.set(id, product);
+        });
+        if (offset > 0) {
+          const unique = new Map(search.products.map((product) => [String(product.id), product]));
+          fetched.forEach((product) => unique.set(String(product.id), product));
+          search.products = Array.from(unique.values());
+        } else {
+          search.products = fetched;
+        }
+        search.nextOffset = result.next_offset == null ? null : Number(result.next_offset);
+        search.hasMore = result.next_offset != null;
+      } catch (_) {
+        if (search.sequence === sequence) search.error = true;
+      } finally {
+        if (search.sequence === sequence) {
+          search.loading = false;
+          search.pending = false;
+          renderProductSearch(scope, data);
+        }
+      }
+    }
+
+    function setProductSearchQuery(scope, input) {
+      const data = scope === "basket-extras" ? state.baskets.get(state.activeKey) : null;
+      const search = productSearchStateFor(scope, data);
+      if (!search) return;
+      search.query = String(input.value || "").trim().slice(0, 100);
+      search.sequence += 1;
+      const sequence = search.sequence;
+      if (search.timer) window.clearTimeout(search.timer);
+      search.products = [];
+      search.nextOffset = null;
+      search.hasMore = false;
+      search.loading = false;
+      search.error = false;
+      search.lastOffset = 0;
+      search.pending = normalizeProductSearchText(search.query).length >= 2;
+      renderProductSearch(scope, data);
+      if (!search.pending) return;
+      search.timer = window.setTimeout(() => loadProductSearchPage(scope, data, 0, sequence), 280);
+    }
+
+    function bindHomeSearchProductCards(container) {
+      if (!container) return;
+      container.querySelectorAll("[data-home-extra-open]").forEach((button) => {
+        button.addEventListener("click", () => openHomeExtraProductDialog(button.dataset.homeExtraOpen, button));
+      });
+      container.querySelectorAll("[data-home-extra-adjust]").forEach((button) => {
+        button.addEventListener("click", () => changeHomeExtraQuantity(button.dataset.homeExtraAdjust, Number(button.dataset.delta || 0)));
+      });
+      container.querySelectorAll("img").forEach((image) => image.addEventListener("error", () => {
+        image.src = "../img/logoantonia5.png";
+      }, { once: true }));
+    }
+
+    function bindProductSearchEvents(container) {
+      if (!container || container.dataset.productSearchBound === "true") return;
+      container.dataset.productSearchBound = "true";
+      container.addEventListener("input", (event) => {
+        const input = event.target.closest("[data-product-search-input]");
+        if (!input || !container.contains(input)) return;
+        setProductSearchQuery(input.dataset.productSearchInput, input);
+      });
+      container.addEventListener("click", (event) => {
+        const clear = event.target.closest("[data-product-search-clear]");
+        if (clear && container.contains(clear)) {
+          const scope = clear.dataset.productSearchClear;
+          const root = productSearchRootFor(scope, scope === "basket-extras" ? state.baskets.get(state.activeKey) : null);
+          const input = root && root.querySelector("[data-product-search-input]");
+          if (input) {
+            input.value = "";
+            setProductSearchQuery(scope, input);
+            input.focus({ preventScroll: true });
+          }
+          return;
+        }
+        const more = event.target.closest("[data-product-search-more]");
+        const retry = event.target.closest("[data-product-search-retry]");
+        const action = more || retry;
+        if (!action || !container.contains(action)) return;
+        const scope = action.dataset.productSearchMore || action.dataset.productSearchRetry;
+        const data = scope === "basket-extras" ? state.baskets.get(state.activeKey) : null;
+        const search = productSearchStateFor(scope, data);
+        if (!search || search.loading) return;
+        loadProductSearchPage(scope, data, retry ? search.lastOffset : (search.nextOffset || 0), search.sequence);
+      });
+    }
+
+    function bindProductSearch() {
+      if (productSearchBound) return;
+      bindProductSearchEvents($("home-product-search"));
+      bindProductSearchEvents($("home-extra-product-search"));
+      bindProductSearchEvents($("detail-content"));
+      productSearchBound = true;
+    }
+
     function extraCategoriesFor(data) {
       if (!Array.isArray(data.extraCategories)) {
         data.extraCategories = EXTRA_CATEGORIES.map((category) => ({
@@ -55,7 +270,10 @@
   
     function extraCategoriesMarkup(data) {
       const categories = extraCategoriesFor(data);
-      return '<section class="extras-section" aria-labelledby="extras-title"><h3 id="extras-title">Produtos Extras</h3><div class="extra-category-list">' +
+      const search = productSearchStateFor("basket-extras", data);
+      const activeSearch = normalizeProductSearchText(search.query).length >= 2;
+      const searchPanel = productSearchPanelMarkup("basket-extras", "Buscar um produto extra", "Ex.: arroz, sabão ou óleo", search, data);
+      return '<section class="extras-section" aria-labelledby="extras-title"><h3 id="extras-title">Produtos Extras</h3>' + searchPanel + '<div class="extra-category-list" data-extra-category-list' + (activeSearch ? " hidden" : "") + '>' +
         categories.map((category) => {
           const panelId = "extra-panel-" + category.key;
           const status = category.loading
@@ -83,7 +301,6 @@
         changeExtraQuantity(button.dataset.extraAdjust, Number(button.dataset.delta || 0));
       });
     }
-  
     function toggleExtraCategory(categoryKey) {
       const data = state.baskets.get(state.activeKey);
       const category = data && extraCategoriesFor(data).find((entry) => entry.key === String(categoryKey));
@@ -393,6 +610,7 @@
       const subtotal = selections.reduce((sum, item) =>
         sum + Math.max(0, Number(item.price_cents || 0)) * Math.max(0, Math.trunc(Number(item.quantity || 0))), 0);
       summary.hidden = quantity === 0;
+      document.body.classList.toggle("has-home-extra-selection", quantity > 0);
       const count = $("home-extra-summary-count");
       const total = $("home-extra-summary-total");
       const hint = $("home-extra-summary-hint");
@@ -404,12 +622,12 @@
     }
 
     function updateHomeExtraCard(productId) {
-      const host = $("home-extra-categories");
-      if (!host) return;
       const id = String(productId);
       const selection = state.homeExtraSelections.get(id);
       const quantity = Number(selection && selection.quantity || 0);
-      host.querySelectorAll("[data-home-extra-product]").forEach((card) => {
+      const hosts = ["home-extra-categories", "home-product-search-results", "home-extra-product-search-results"]
+        .map((hostId) => $(hostId)).filter(Boolean);
+      hosts.forEach((host) => host.querySelectorAll("[data-home-extra-product]").forEach((card) => {
         if (card.dataset.homeExtraProduct !== id) return;
         const active = document.activeElement;
         const focusedDelta = active && card.contains(active) && active.matches("[data-home-extra-adjust]")
@@ -428,7 +646,7 @@
           if (target && target.disabled) target = focusedDelta === "1" ? minus : plus;
           if (target && !target.disabled) target.focus({ preventScroll: true });
         }
-      });
+      }));
       updateHomeExtraProductDialog(id);
     }
 
@@ -614,6 +832,7 @@
       homeCategoriesFor();
       const selectedIds = new Set(Array.from(state.homeExtraSelections.keys()).map(String));
       state.homeExtraSelections.clear();
+      selectedIds.forEach((id) => updateHomeExtraCard(id));
       state.baskets.forEach((data) => {
         if (!(data.homeExtraProductIds instanceof Set) || !(data.extraSelections instanceof Map)) return;
         selectedIds.forEach((id) => {
@@ -629,7 +848,9 @@
 
     function initHomeExtras() {
       const host = $("home-extra-categories");
-      if (!host || state.homeExtraStarted) return;
+      if (!host) return;
+      bindProductSearch();
+      if (state.homeExtraStarted) return;
       const categories = homeCategoriesFor();
       state.homeExtraStarted = true;
       bindHomeExtraProductDialog();

@@ -864,15 +864,35 @@ async function subcats(url:URL){
   return {ok:true,subcategories:[...m.entries()].map(([name,count])=>({name,count})).sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name,"pt-BR"))};
 }
 async function productList(url:URL){
-  const c=txt(url.searchParams.get("category"),48),sc=txt(url.searchParams.get("subcategory"),100),q=safeQ(url.searchParams.get("q")),limit=Math.floor(clamp(url.searchParams.get("limit")||24,1,36)),offset=Math.floor(clamp(url.searchParams.get("offset")||0,0,5000));
+  const c=txt(url.searchParams.get("category"),48),sc=txt(url.searchParams.get("subcategory"),100),rawQuery=safeQ(url.searchParams.get("q")),limit=Math.floor(clamp(url.searchParams.get("limit")||24,1,36)),offset=Math.floor(clamp(url.searchParams.get("offset")||0,0,5000));
+  const fold=(value:any)=>String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("pt-BR").replace(/[^a-z0-9]+/g," ").trim();
+  const queryText=fold(rawQuery),terms=queryText.split(/\s+/).filter(Boolean).slice(0,4);
+  const requestedCategories=String(url.searchParams.get("categories")||"").split(",").slice(0,16).map(value=>txt(value,48).toLocaleLowerCase("pt-BR")).filter(Boolean),allowedCategories=new Set(CATEGORIES.map(category=>category.key)),categories=Array.from(new Set(requestedCategories.filter(category=>allowedCategories.has(category)))).slice(0,4);
+  if(!c&&requestedCategories.length&&!categories.length)return {ok:true,products:[],next_offset:null};
   const eanIds=await eanCaptureProductIds();if(!eanIds.length)return {ok:true,products:[],next_offset:null};
   const data=await queryRowsByIds("products","id",eanIds,"id,sku,gtin,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit,is_active,is_whatsapp_active,sales_category",query=>{
-    if(c)query=query.eq("sales_category",c);if(sc)query=query.eq("customer_subsubcategory",sc);
-    if(q){for(const t of q.split(/\s+/).filter(Boolean).slice(0,4))query=query.or("name.ilike.%"+t+"%,gtin.ilike.%"+t+"%,sku.ilike.%"+t+"%,brand.ilike.%"+t+"%")}
+    if(c)query=query.eq("sales_category",c);else if(categories.length)query=query.in("sales_category",categories);
+    if(sc)query=query.eq("customer_subsubcategory",sc);
     return query.limit(10000);
   });
-  const byId=new Map(data.map((p:any)=>[String(p.id),p])),ordered=eanIds.filter(id=>byId.has(id));
-  // Paginate BUYABLE items only; retain the scan order and never create unavailable cards.
+  const matches=(p:any)=>{
+    if(!terms.length)return true;
+    const fields=[p.name,p.brand,p.gtin,p.sku,p.packaging].map(fold);
+    return terms.every(token=>fields.some(field=>field.includes(token)));
+  };
+  const byId=new Map(data.filter(matches).map((p:any)=>[String(p.id),p]));
+  const ordered=eanIds.filter(id=>byId.has(id));
+  if(terms.length){
+    const rank=(id:string)=>{
+      const p:any=byId.get(id),name=fold(p?.name),brand=fold(p?.brand),code=fold((p?.gtin||"")+" "+(p?.sku||""));
+      if(name===queryText)return 0;
+      if(name.startsWith(queryText))return 1;
+      if(name.includes(queryText))return 2;
+      return 10+terms.reduce((score,token)=>score+(name.startsWith(token)?0:name.includes(token)?1:brand.includes(token)?2:code.includes(token)?3:4),0);
+    };
+    ordered.sort((a,b)=>rank(a)-rank(b)||String(byId.get(a)?.name||"").localeCompare(String(byId.get(b)?.name||""),"pt-BR"));
+  }
+  // Paginate BUYABLE items only; retain relevance for searches and never create unavailable cards.
   const publicRows:any[]=[];
   let cursor=offset;
   while(cursor<ordered.length&&publicRows.length<limit){

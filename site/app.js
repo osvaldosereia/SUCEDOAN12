@@ -106,14 +106,21 @@
     state.toastTimer = setTimeout(() => node.classList.remove("show"), 2900);
   }
 
+  function syncSheetScrollState() {
+    const detailOpen = !$("detail-sheet").hidden;
+    const orderOpen = !$("order-sheet").hidden;
+    document.body.classList.toggle("sheet-open", detailOpen || orderOpen);
+    document.body.classList.toggle("sheet-scroll-chain", detailOpen && !orderOpen);
+  }
+
   function showSheet(id) {
     $(id).hidden = false;
-    document.body.classList.add("sheet-open");
+    syncSheetScrollState();
   }
 
   function closeSheet(id) {
     $(id).hidden = true;
-    if ($("detail-sheet").hidden && $("order-sheet").hidden) document.body.classList.remove("sheet-open");
+    syncSheetScrollState();
     if (id === "order-sheet") {
       state.customer = null;
       $("customer-card").hidden = true;
