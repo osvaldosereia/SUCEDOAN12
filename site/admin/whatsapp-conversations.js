@@ -5,7 +5,7 @@
   const endpoint = base + "/functions/v1/site-admin-v1";
   const publishableKey = config.publishableKey || "";
   const $ = (id) => document.getElementById(id);
-  const state = { cursor: null, total: 0, selectedId: "", before: null, busy: false, accountsLoaded: false };
+  const state = { cursor: null, total: 0, selectedId: "", before: null, busy: false, accountsLoaded: false, favoriteIds: new Set(), favoritesAvailable: false, favoriteBusyIds: new Set() };
   const dateLabel = (value) => {
     if (!value) return "Sem atividade";
     const date = new Date(value);
@@ -54,6 +54,12 @@
     const host = $("whatsapp-conversation-items");
     if (!append) host.replaceChildren();
     for (const item of items || []) {
+      const favorite = item.is_favorite === true;
+      if (favorite) state.favoriteIds.add(item.id);
+      else state.favoriteIds.delete(item.id);
+
+      const entry = document.createElement("article");
+      entry.className = "whatsapp-conversation-item";
       const button = document.createElement("button");
       button.type = "button";
       button.className = "whatsapp-conversation-card";
@@ -67,7 +73,54 @@
       date.textContent = dateLabel(item.last_activity_at);
       button.append(title, meta, date);
       button.addEventListener("click", () => loadConversation(item.id));
-      host.append(button);
+
+      const favoriteButton = document.createElement("button");
+      favoriteButton.type = "button";
+      favoriteButton.className = "whatsapp-conversation-favorite";
+      favoriteButton.dataset.conversationId = item.id;
+      favoriteButton.setAttribute("aria-pressed", String(favorite));
+      favoriteButton.setAttribute("aria-label", favorite ? "Remover dos favoritos" : "Favoritar conversa");
+      favoriteButton.title = favorite ? "Remover dos favoritos" : "Favoritar conversa";
+      favoriteButton.textContent = favorite ? "★" : "☆";
+      favoriteButton.disabled = !state.favoritesAvailable;
+      favoriteButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        toggleConversationFavorite(item.id, favoriteButton);
+      });
+      entry.append(button, favoriteButton);
+      host.append(entry);
+    }
+  }
+
+  async function toggleConversationFavorite(conversationId, button) {
+    if (!state.favoritesAvailable || state.favoriteBusyIds.has(conversationId)) return;
+    const wasFavorite = state.favoriteIds.has(conversationId);
+    state.favoriteBusyIds.add(conversationId);
+    button.disabled = true;
+    try {
+      await request("whatsapp_conversation_favorite", {
+        mode: wasFavorite ? "remove" : "add",
+        conversation_id: conversationId,
+      });
+      const isFavorite = !wasFavorite;
+      if (isFavorite) state.favoriteIds.add(conversationId);
+      else state.favoriteIds.delete(conversationId);
+      button.setAttribute("aria-pressed", String(isFavorite));
+      button.setAttribute("aria-label", isFavorite ? "Remover dos favoritos" : "Favoritar conversa");
+      button.title = isFavorite ? "Remover dos favoritos" : "Favoritar conversa";
+      button.textContent = isFavorite ? "★" : "☆";
+      if (!isFavorite && $("whatsapp-conversation-filter").value === "favorites") {
+        button.closest(".whatsapp-conversation-item")?.remove();
+        state.total = Math.max(0, state.total - 1);
+        setStatus(state.total + " conversa(s) favorita(s) no filtro atual.");
+      } else {
+        setStatus(isFavorite ? "Conversa adicionada aos favoritos." : "Conversa removida dos favoritos.");
+      }
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Não foi possível salvar o favorito.");
+    } finally {
+      state.favoriteBusyIds.delete(conversationId);
+      if (button.isConnected) button.disabled = !state.favoritesAvailable;
     }
   }
 
@@ -283,6 +336,8 @@
       state.total = 0;
       state.selectedId = "";
       state.before = null;
+      state.favoriteIds.clear();
+      state.favoritesAvailable = false;
       $("whatsapp-conversation-header").hidden = true;
       $("whatsapp-conversation-messages").replaceChildren();
       $("whatsapp-conversation-empty").hidden = false;
@@ -296,11 +351,13 @@
         filter: $("whatsapp-conversation-filter").value || "all",
       });
       renderAccounts(data.accounts);
+      state.favoritesAvailable = data.favorites_available === true;
       renderQueue(data.items, append);
       state.cursor = data.next_cursor || null;
       if (!append) state.total = data.total || 0;
       $("whatsapp-conversation-more").hidden = !state.cursor;
-      setStatus(state.total + " conversa(s) no filtro atual · mais recentes primeiro.");
+      setStatus(state.total + " conversa(s) no filtro atual · mais recentes primeiro."
+        + (state.favoritesAvailable ? "" : " Favoritos indisponíveis neste ambiente."));
       if (!append && data.items && data.items.length) selectFirst = data.items[0].id;
       else if (append && data.items && data.items.length && !state.selectedId) selectFirst = data.items[0].id;
     } catch (error) {
