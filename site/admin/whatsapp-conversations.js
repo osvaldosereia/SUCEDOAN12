@@ -5,7 +5,7 @@
   const endpoint = base + "/functions/v1/site-admin-v1";
   const publishableKey = config.publishableKey || "";
   const $ = (id) => document.getElementById(id);
-  const state = { cursor: null, total: 0, conversations: [], selectedId: "", before: null, busy: false, accountsLoaded: false, favoriteIds: new Set(), favoritesAvailable: false, favoriteBusyIds: new Set(), textSending: false, mediaSending: false, pendingTextKey: "", pendingTextValue: "", pendingTextConversationId: "", pendingMediaKey: "", pendingMediaFingerprint: "", uncertainConversationIds: new Set() };
+  const state = { cursor: null, total: 0, conversations: [], selectedId: "", before: null, busy: false, accountsLoaded: false, favoriteIds: new Set(), favoritesAvailable: false, favoriteBusyIds: new Set(), textSending: false, mediaSending: false, pendingTextKey: "", pendingTextValue: "", pendingTextConversationId: "", pendingMediaKey: "", pendingMediaFingerprint: "", uncertainConversationIds: new Set(), statusRefreshing: false };
   const dateLabel = (value) => {
     if (!value) return "Sem atividade";
     const date = new Date(value);
@@ -468,6 +468,7 @@
   function makeBubble(message) {
     const bubble = document.createElement("article");
     bubble.className = "whatsapp-message " + (message.direction === "outbound" ? "outbound" : "inbound");
+    bubble.dataset.messageId = String(message.id || "");
     const messageType = String(message.message_type || "").toLowerCase();
     const text = String(message.text_body || "").trim();
     const mediaTypes = ["image", "audio", "video", "document"];
@@ -516,6 +517,56 @@
       empty.append(title, hint);
     }
     empty.hidden = hasMessages;
+  }
+
+  function refreshRenderedMessageStatuses(messages) {
+    const host = $("whatsapp-conversation-messages");
+    const latest = new Map();
+    for (const message of messages || []) {
+      const id = String(message.id || "");
+      if (id && message.direction === "outbound") {
+        latest.set(id, String(message.status_current || "").trim().toLowerCase().slice(0, 40));
+      }
+    }
+    const labels = { accepted: "Aceita pela API", queued: "Na fila", pending: "Pendente", sent: "Enviada", delivered: "Entregue", read: "Lida", failed: "Falhou", rejected: "Rejeitada" };
+    for (const bubble of host.querySelectorAll(".whatsapp-message.outbound[data-message-id]")) {
+      const id = bubble.dataset.messageId;
+      if (!latest.has(id)) continue;
+      const code = latest.get(id);
+      let status = bubble.querySelector(".whatsapp-message-status");
+      if (!code) {
+        status?.remove();
+        continue;
+      }
+      if (!status) {
+        status = document.createElement("small");
+        status.className = "whatsapp-message-status";
+        bubble.append(status);
+      }
+      status.textContent = "Envio: " + (labels[code] || code.replace(/[_-]+/g, " "));
+    }
+  }
+
+  async function refreshSelectedMessageStatuses() {
+    const conversationId = state.selectedId;
+    if (!conversationId || state.statusRefreshing) return false;
+    state.statusRefreshing = true;
+    try {
+      const data = await request("whatsapp_conversation_messages", { conversation_id: conversationId, before_created_at: "", before_id: "" });
+      if (state.selectedId !== conversationId) return false;
+      refreshRenderedMessageStatuses(data.messages || []);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      state.statusRefreshing = false;
+    }
+  }
+
+  async function refreshConversationView() {
+    await loadConversations({ silent: true });
+    const statusUpdated = await refreshSelectedMessageStatuses();
+    if (statusUpdated) setStatus("Lista e status das mensagens atualizados.");
   }
 
   function renderHeader(conversation) {
@@ -673,7 +724,7 @@
     }
     syncComposer();
   });
-  $("whatsapp-conversations-refresh")?.addEventListener("click", () => loadConversations({ silent: true }));
+  $("whatsapp-conversations-refresh")?.addEventListener("click", () => { void refreshConversationView(); });
   $("whatsapp-conversation-search-button")?.addEventListener("click", () => loadConversations());
   $("whatsapp-conversation-search")?.addEventListener("keydown", (event) => { if (event.key === "Enter") loadConversations(); });
   $("whatsapp-conversation-account")?.addEventListener("change", () => loadConversations());
