@@ -865,7 +865,7 @@
       + '<article class="whatsapp-overview-card"><h3>Aprovados pela Meta</h3><strong class="whatsapp-metric">' + esc(data.templates?.approved || 0) + '</strong><p class="admin-muted">disponíveis</p></article>'
       + '<article class="whatsapp-overview-card"><h3>Total cadastrado</h3><strong class="whatsapp-metric">' + esc(data.templates?.total || 0) + '</strong><p class="admin-muted">modelos</p></article>'
       + '<article class="whatsapp-overview-card"><h3>No canal</h3><strong class="whatsapp-metric">' + esc(selectedItems.length) + '</strong><p class="admin-muted">na lista carregada</p></article></div>'
-      + '<section class="whatsapp-overview-card"><div class="whatsapp-template-admin-toolbar"><label>Canal<select data-template-account' + (channels.length ? "" : " disabled") + '>' + (channelsMarkup || '<option value="">Nenhum canal</option>') + '</select></label>'
+      + '<section class="whatsapp-overview-card"><div class="whatsapp-template-admin-toolbar"><label>Canal<select data-template-account' + (channels.length && !templateAdminBusy ? "" : " disabled") + '>' + (channelsMarkup || '<option value="">Nenhum canal</option>') + '</select></label>'
       + '<div class="whatsapp-template-admin-actions"><button class="button button-outline" type="button" data-template-load' + (!templateAdminAccountId || templateAdminBusy ? " disabled" : "") + '>Carregar modelos</button><button class="button button-outline" type="button" data-template-sync' + (!templateAdminAccountId || templateAdminBusy ? " disabled" : "") + '>Sincronizar com Meta</button><button class="button button-primary" type="button" data-template-new' + (!templateAdminAccountId || templateAdminBusy ? " disabled" : "") + '>Novo modelo</button></div></div>'
       + '<p class="admin-muted" data-template-admin-status role="status" aria-live="polite">' + esc(templateAdminStatus || "Resumo carregado. Carregue o catálogo completo para editar ou sincronize com a Meta.") + '</p>'
       + '<div class="whatsapp-template-editor-host" data-template-editor-host></div><div class="whatsapp-template-admin-list" data-template-admin-list></div></section>';
@@ -909,29 +909,40 @@
     if (templateAdminBusy) return;
     const root = $("whatsapp-templates-content");
     const status = root?.querySelector("[data-template-admin-status]");
-    const loadButton = root?.querySelector("[data-template-load]");
-    const syncButton = root?.querySelector("[data-template-sync]");
-    if (!root || !templateAdminAccountId) return;
+    const requestedAccountId = templateAdminAccountId;
+    if (!root || !requestedAccountId) return;
     templateAdminBusy = true;
+    const accountSelect = root.querySelector("[data-template-account]");
+    if (accountSelect) accountSelect.disabled = true;
+    const loadButton = root.querySelector("[data-template-load]");
+    const syncButton = root.querySelector("[data-template-sync]");
     if (loadButton) loadButton.disabled = true;
     if (syncButton) syncButton.disabled = true;
     if (status) status.textContent = sync ? "Consultando os status atuais na Meta…" : "Carregando o catálogo do canal…";
     try {
-      const data = await templateAdminRequest(sync ? "sync" : "list", {});
+      const data = await templateAdminRequest(sync ? "sync" : "list", { accountId: requestedAccountId });
+      if (requestedAccountId !== templateAdminAccountId) return;
       templateAdminItems = Array.isArray(data.items) ? data.items : [];
-      templateAdminLoadedAccountId = templateAdminAccountId;
+      templateAdminLoadedAccountId = requestedAccountId;
       templateAdminStatus = sync
         ? "Catálogo sincronizado com a Meta."
         : "Modelos carregados do catálogo deste canal.";
       renderTemplateAdminRows(templateAdminItems);
-      if (status) status.textContent = templateAdminStatus;
+      if (status?.isConnected) status.textContent = templateAdminStatus;
     } catch (error) {
-      templateAdminStatus = error instanceof Error ? error.message : "Não foi possível carregar os modelos.";
-      if (status) status.textContent = templateAdminStatus;
+      if (requestedAccountId === templateAdminAccountId) {
+        templateAdminStatus = error instanceof Error ? error.message : "Não foi possível carregar os modelos.";
+        if (status?.isConnected) status.textContent = templateAdminStatus;
+      }
     } finally {
       templateAdminBusy = false;
-      if (loadButton?.isConnected) loadButton.disabled = false;
-      if (syncButton?.isConnected) syncButton.disabled = false;
+      const currentRoot = $("whatsapp-templates-content");
+      const currentAccountSelect = currentRoot?.querySelector("[data-template-account]");
+      const currentLoadButton = currentRoot?.querySelector("[data-template-load]");
+      const currentSyncButton = currentRoot?.querySelector("[data-template-sync]");
+      if (currentAccountSelect?.isConnected) currentAccountSelect.disabled = !templateAdminAccountId;
+      if (currentLoadButton?.isConnected) currentLoadButton.disabled = !templateAdminAccountId;
+      if (currentSyncButton?.isConnected) currentSyncButton.disabled = !templateAdminAccountId;
     }
   }
 
@@ -940,13 +951,15 @@
   }
 
   function templateComponentsEditable(components) {
-    return (Array.isArray(components) ? components : []).every((item) => {
-      const type = String(item?.type || "").toUpperCase();
-      if (type === "BODY" || type === "FOOTER") return true;
-      if (type === "HEADER") return String(item?.format || "").toUpperCase() === "TEXT";
-      if (type === "BUTTONS") return Array.isArray(item.buttons) && item.buttons.every((button) => ["URL", "QUICK_REPLY", "CATALOG"].includes(String(button?.type || "").toUpperCase()));
-      return false;
-    });
+    const items = Array.isArray(components) ? components : [];
+    return items.some((item) => String(item?.type || "").toUpperCase() === "BODY")
+      && items.every((item) => {
+        const type = String(item?.type || "").toUpperCase();
+        if (type === "BODY" || type === "FOOTER") return true;
+        if (type === "HEADER") return String(item?.format || "").toUpperCase() === "TEXT";
+        if (type === "BUTTONS") return Array.isArray(item.buttons) && item.buttons.every((button) => ["URL", "QUICK_REPLY", "CATALOG"].includes(String(button?.type || "").toUpperCase()));
+        return false;
+      });
   }
 
   function templateEditorMarkup(item) {
@@ -957,8 +970,15 @@
     const footer = templateComponent(components, "FOOTER");
     const headerText = header && String(header.format || "").toUpperCase() === "TEXT" ? header.text || "" : "";
     const headerExample = Array.isArray(header?.example?.header_text) ? header.example.header_text.join(" | ") : "";
-    const bodyExample = Array.isArray(body?.example?.body_text?.[0]) ? body.example.body_text[0].join(" | ") : "";
-    const editable = !editing || templateComponentsEditable(components);
+    const bodyExampleRows = Array.isArray(body?.example?.body_text) ? body.example.body_text : [];
+    const bodyExample = Array.isArray(bodyExampleRows[0]) ? bodyExampleRows[0].join(" | ") : "";
+    const category = String(item?.category || "").toUpperCase();
+    const editable = !editing || (["UTILITY", "MARKETING"].includes(category) && templateComponentsEditable(components));
+    const editWarning = !editable
+      ? '<p class="whatsapp-template-editor-warning">A edição simples não suporta esta categoria, mídia ou botões. O conteúdo permanece no catálogo.</p>'
+      : editing && bodyExampleRows.length > 1
+        ? '<p class="whatsapp-template-editor-warning">Este modelo tem vários exemplos de variáveis. A edição simples enviará somente o primeiro conjunto à Meta.</p>'
+        : "";
     return '<section class="whatsapp-template-editor"><div class="whatsapp-template-editor-heading"><div><h4>' + (editing ? "Editar conteúdo do modelo" : "Novo modelo") + '</h4><p class="admin-muted">' + (editing ? "O nome, idioma e tipo Meta ficam vinculados ao cadastro." : "Ao enviar, a Meta revisará e poderá ajustar a categoria.") + '</p></div><button class="button button-outline" type="button" data-template-editor-close>Fechar</button></div>'
       + '<form data-template-editor-form data-template-id="' + esc(item?.id || "") + '"><div class="whatsapp-template-editor-grid">'
       + '<label>Nome do modelo<input name="name" maxlength="512" pattern="[a-z0-9_]+" value="' + esc(item?.name || "") + '"' + (editing ? " readonly" : " required") + ' placeholder="exemplo_pedido"></label>'
@@ -971,7 +991,7 @@
       + '<label class="whatsapp-template-editor-wide">Texto principal<textarea name="body" data-template-body rows="5" maxlength="1024" required>' + esc(body?.text || "") + '</textarea></label>'
       + '<label class="whatsapp-template-editor-wide">Exemplos das variáveis<textarea name="body_examples" rows="2" placeholder="Maria | amanhã">' + esc(bodyExample) + '</textarea><small>Use um exemplo para cada variável {{1}}, {{2}} e assim por diante, separados por |.</small></label>'
       + '<label class="whatsapp-template-editor-wide">Rodapé opcional<input name="footer" maxlength="60" value="' + esc(footer?.text || "") + '"></label></div>'
-      + (!editable ? '<p class="whatsapp-template-editor-warning">Este modelo usa mídia ou botões não compatíveis com a edição simples. O conteúdo foi preservado e a edição está desativada.</p>' : "")
+      + editWarning
       + '<p class="admin-muted" data-template-editor-status role="status" aria-live="polite"></p><div class="whatsapp-template-editor-actions"><button class="button button-primary" type="submit"' + (!editable ? " disabled" : "") + '>' + (editing ? "Enviar alteração à Meta" : "Enviar para análise da Meta") + '</button></div></form></section>';
   }
 
@@ -1079,17 +1099,20 @@
       return;
     }
     const action = existing ? "edit" : "create";
+    const existingBody = existing ? templateComponent(existing.components, "BODY") : null;
+    const additionalExamples = Array.isArray(existingBody?.example?.body_text) && existingBody.example.body_text.length > 1;
     const confirmation = existing
       ? "Enviar esta alteração do modelo para a Meta? A Meta poderá reclassificar ou reprovar o conteúdo."
       : "Enviar este modelo para análise da Meta? Ela definirá a categoria final e o status.";
-    if (!window.confirm(confirmation)) return;
+    const confirmationDetails = additionalExamples ? "\n\nA edição simples manterá somente o primeiro conjunto de exemplos de variáveis." : "";
+    if (!window.confirm(confirmation + confirmationDetails)) return;
     const submit = form.querySelector('button[type="submit"]');
     const status = form.querySelector("[data-template-editor-status]");
     form.dataset.saving = "true";
     if (submit) submit.disabled = true;
     if (status) status.textContent = "Enviando para a Meta…";
     try {
-      const payload = { draft };
+      const payload = { draft, confirmed: true };
       if (existing) payload.template_id = existing.id;
       else payload.account_id = templateAdminAccountId;
       const data = await templateAdminRequest(action, { method: "POST", payload });

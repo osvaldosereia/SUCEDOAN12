@@ -35,7 +35,7 @@ async function adminAuth(req:Request){
   const token=(req.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"").trim();
   if(!token){
     const status=verifyAdminCode(req.headers.get("x-admin-code"));
-    if(status==="valid")return {ok:true as const,status:200,user_id:"",role:"admin"};
+    if(status==="valid")return {ok:true as const,status:200,user_id:"",role:"template_editor"};
     return {ok:false as const,status:status==="not_configured"?503:401,error:status==="not_configured"?"admin_auth_not_configured":"admin_code_invalid"};
   }
   const user=await db.auth.getUser(token);
@@ -382,6 +382,12 @@ Deno.serve(async(req:Request)=>{
   try{
     const url=new URL(req.url);
     const action=String(url.searchParams.get("action")||(req.method==="POST"?"send":"list")).trim().toLowerCase();
+    if(auth.role==="template_editor"){
+      const allowed=req.method==="GET"
+        ? ["list","sync"].includes(action)
+        : req.method==="POST"&&["create","edit"].includes(action);
+      if(!allowed)return json(req,{ok:false,error:"forbidden"},403);
+    }
 
     if(req.method==="POST"){
       const body=await req.json().catch(()=>({}));
@@ -392,6 +398,7 @@ Deno.serve(async(req:Request)=>{
       }
 
       if(action==="send"||action==="send_template"){
+        if(auth.role!=="owner")return json(req,{ok:false,error:"forbidden"},403);
         if(body?.to_phone_e164!==undefined||body?.whatsapp_account_id!==undefined||body?.account_id!==undefined||body?.customer_id!==undefined||body?.phone_number_id!==undefined||body?.waba_id!==undefined){
           return json(req,{ok:false,error:"destination_fields_not_allowed"},400);
         }
@@ -423,6 +430,9 @@ Deno.serve(async(req:Request)=>{
         return json(req,result,result.ok===true?200:502);
       }
       if(action!=="create"&&action!=="edit"&&action!=="delete")return json(req,{ok:false,error:"action_not_allowed"},404);
+      if(action==="delete"&&auth.role!=="owner")return json(req,{ok:false,error:"forbidden"},403);
+      if((action==="create"||action==="edit")&&!["owner","template_editor"].includes(auth.role))return json(req,{ok:false,error:"forbidden"},403);
+      if((action==="create"||action==="edit")&&body?.confirmed!==true)return json(req,{ok:false,error:"template_confirmation_required"},400);
       if(mutationFieldsBlocked(body,action))return json(req,{ok:false,error:"mutation_fields_not_allowed"},400);
       if(!metaReady())return json(req,{ok:false,error:"meta_transport_not_configured"},503);
 
