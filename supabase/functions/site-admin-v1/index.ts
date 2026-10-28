@@ -2099,6 +2099,33 @@ async function generateAnaDryRunSuggestion(inboundText: string, instructions = A
   }
 }
 
+async function whatsappAnaAdminSaveDraft(input: any) {
+  const actorId = await adminFavoriteUserId();
+  if (!actorId) return { error: "admin_identity_unavailable", status: 403 };
+  const current = await db.rpc("ops2_ana_admin_load_v1");
+  if (current.error) throw current.error;
+  const draft = current.data?.draft;
+  const revision = Number(draft?.revision);
+  if (!Number.isSafeInteger(revision) || Number(input.expected_revision) !== revision) {
+    return { error: "revision_conflict", status: 409, message: "O rascunho mudou. Atualize a tela antes de salvar." };
+  }
+  const configuration = input.configuration;
+  const validation = validateAnaConfiguration(configuration);
+  if (!validation.ok) return { error: "configuration_invalid", status: 400, message: "Revise os campos da configuração da ANA." };
+  const saved = await db.rpc("ops2_ana_admin_save_draft_v1", {
+    p_configuration: configuration,
+    p_expected_revision: revision,
+    p_note: clean(input.note || "Ajuste básico da ANA", 240),
+    p_actor_id: actorId,
+  });
+  if (saved.error) throw saved.error;
+  const result = saved.data || { ok: false, error: "ana_draft_save_failed" };
+  if (result.ok !== true) return { error: clean(result.error || "ana_draft_save_failed", 100), status: 409 };
+  const refreshed = await db.rpc("ops2_ana_admin_load_v1");
+  if (refreshed.error) throw refreshed.error;
+  return { revision: Number(refreshed.data?.draft?.revision) || revision + 1 };
+}
+
 async function whatsappAnaAdminTest(input: any) {
   const actorId = await adminFavoriteUserId();
   if (!actorId) return { error: "admin_identity_unavailable", status: 403 };
@@ -2415,6 +2442,7 @@ async function whatsappAnaAdminStatus() {
     } : null,
     draft: Number.isSafeInteger(Number(draft.revision)) ? {
       revision: Number(draft.revision),
+      configuration: draft.configuration && typeof draft.configuration === "object" ? draft.configuration : null,
       updated_at: draft.updated_at || null,
       updated_by: actorName(draftEvent?.actor_id || draft.updated_by),
     } : null,
@@ -2877,6 +2905,7 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "whatsapp_campaign_pause") result = await whatsappCampaignPause(input);
     else if (req.method === "POST" && action === "whatsapp_campaign_cancel") result = await whatsappCampaignCancel(input);
     else if (req.method === "POST" && action === "whatsapp_campaign_manual_batch") result = await whatsappCampaignManualBatch(input);
+    else if (req.method === "POST" && action === "whatsapp_ana_admin_save_draft") result = await whatsappAnaAdminSaveDraft(input);
     else if (req.method === "POST" && action === "whatsapp_ana_admin_test") result = await whatsappAnaAdminTest(input);
     else if (req.method === "POST" && action === "whatsapp_ana_admin_publish") result = await whatsappAnaAdminPublish(input);
     else if (req.method === "POST" && action === "whatsapp_ana_admin_rollback") result = await whatsappAnaAdminRollback(input);

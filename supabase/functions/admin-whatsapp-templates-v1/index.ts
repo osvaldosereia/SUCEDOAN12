@@ -1,0 +1,498 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import {verifyAdminCode} from "../_shared/admin-code-v1.ts";
+import {createClient} from "npm:@supabase/supabase-js@2.58.0";
+import {buildTemplateCacheRows,listTemplatesViaMeta,createTemplateViaMeta,editTemplateViaMeta,deleteTemplateViaMeta,MetaTemplatesError} from "../_shared/whatsapp-meta-templates-v1.mjs";
+import {listFlowsViaMeta,getFlowViaMeta,createFlowViaMeta,uploadFlowJsonViaMeta,configureFlowEndpointViaMeta,getBusinessPublicKeyStatusViaMeta,derivePublicKeyPem,registerBusinessPublicKeyViaMeta,publishFlowViaMeta,deleteFlowViaMeta,sendDraftFlowCanaryViaMeta,assertFlowPublishable,validateFlowJson,MetaFlowsError} from "../_shared/whatsapp-meta-flows-v1.mjs";
+import {deriveFlowSessionKey,signState,FLOW_CANARY_SENDER_E164,FLOW_CANARY_RECIPIENT_E164} from "../_shared/whatsapp-flow-session-v1.mjs";
+import {sendTemplateViaMeta,MetaTransportError} from "../_shared/whatsapp-meta-transport-v1.mjs";
+import {buildPostorderTemplate} from "../_shared/customer-postorder-template-v3.mjs";
+import {buildPostorderOffersTemplate,buildPostorderConfirmTemplate} from "../_shared/customer-postorder-followup-templates-v1.mjs";
+
+const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
+const SERVICE_KEY=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
+const META_WHATSAPP_ACCESS_TOKEN=(Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||"").trim();
+const META_WHATSAPP_GRAPH_VERSION=(Deno.env.get("META_WHATSAPP_GRAPH_VERSION")||"").trim();
+const DA_FLOW_1018_RSA_PKCS8=(Deno.env.get("DA_FLOW_1018_RSA_PKCS8")||"").trim();
+const META_WHATSAPP_APP_SECRET=(Deno.env.get("META_WHATSAPP_APP_SECRET")||"").trim();
+const FLOW_FUNCTION_PATH="/functions/v1/whatsapp-1018-basket-flow-v1";
+const FLOW_CANARY_TOKEN_TTL_MS=24*60*60*1000;
+const db=createClient(SUPABASE_URL,SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
+const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
+
+const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {
+  "Access-Control-Allow-Origin":ORIGINS.has(origin)?origin:"https://www.donaantonia.com.br",
+  "Vary":"Origin",
+  "Access-Control-Allow-Headers":"content-type,authorization,apikey,x-admin-code",
+  "Access-Control-Allow-Methods":"GET,POST,OPTIONS"
+}};
+const json=(req:Request,body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors(req),"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
+const validUuid=(v:unknown)=>{const s=String(v??"").trim();return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)?s:null};
+const clean=(v:unknown,max=200)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
+const validIdempotency=(v:unknown)=>{const s=String(v??"").trim();return s.length>=8&&s.length<=120&&/^[A-Za-z0-9._:-]+$/.test(s)?s:null};
+const metaReady=()=>Boolean(META_WHATSAPP_ACCESS_TOKEN&&/^v\d+\.\d+$/.test(META_WHATSAPP_GRAPH_VERSION));
+
+async function adminAuth(req:Request){
+  const token=(req.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"").trim();
+  if(!token){
+    const status=verifyAdminCode(req.headers.get("x-admin-code"));
+    if(status==="valid")return {ok:true as const,status:200,user_id:"",role:"admin"};
+    return {ok:false as const,status:status==="not_configured"?503:401,error:status==="not_configured"?"admin_auth_not_configured":"admin_code_invalid"};
+  }
+  const user=await db.auth.getUser(token);
+  if(user.error||!user.data?.user?.id)return {ok:false as const,status:401,error:"admin_session_invalid"};
+  const row=await db.from("admin_users").select("user_id,role,is_active").eq("user_id",user.data.user.id).eq("is_active",true).maybeSingle();
+  if(row.error)return {ok:false as const,status:500,error:"admin_auth_lookup_failed"};
+  if(!row.data?.user_id)return {ok:false as const,status:403,error:"admin_not_authorized"};
+  return {ok:true as const,status:200,user_id:user.data.user.id,role:String(row.data.role||"viewer")};
+}
+
+async function accountById(accountId:string){
+  const q=await db.from("whatsapp_accounts").select("id,slug,display_name,waba_id,phone_number_id,is_active").eq("id",accountId).eq("is_active",true).maybeSingle();
+  if(q.error)throw q.error;
+  return q.data||null;
+}
+
+async function templateRowById(templateId:string){
+  const q=await db.from("whatsapp_templates_v1")
+    .select("id,whatsapp_account_id,waba_id,meta_template_id,name,language,category,status,components,quality_rating,last_synced_at,metadata,updated_at")
+    .eq("id",templateId)
+    .maybeSingle();
+  if(q.error)throw q.error;
+  return q.data||null;
+}
+
+async function cachedTemplates(accountId:string){
+  const q=await db.from("whatsapp_templates_v1")
+    .select("id,whatsapp_account_id,waba_id,meta_template_id,name,language,category,status,components,quality_rating,last_synced_at,metadata,updated_at")
+    .eq("whatsapp_account_id",accountId)
+    .order("name")
+    .order("language");
+  if(q.error)throw q.error;
+  return (q.data||[]).map((row:any)=>{
+    const attendance=row?.metadata?.attendance&&typeof row.metadata.attendance==="object"?row.metadata.attendance:{};
+    const approved=String(row.status||"").toUpperCase()==="APPROVED";
+    return {...row,sendable:approved&&attendance.enabled===true,attendance};
+  });
+}
+
+async function syncTemplates(account:any){
+  if(!metaReady())return {ok:false,error:"meta_transport_not_configured"};
+  if(!/^\d{5,30}$/.test(String(account?.waba_id||"")))return {ok:false,error:"waba_not_configured"};
+  const existing=await db.from("whatsapp_templates_v1").select("name,language,metadata").eq("whatsapp_account_id",account.id);
+  if(existing.error)throw existing.error;
+  const existingByKey=new Map((existing.data||[]).map((row:any)=>[`${row.name}\u0000${row.language}`,row]));
+  const remote=await listTemplatesViaMeta({accessToken:META_WHATSAPP_ACCESS_TOKEN,wabaId:account.waba_id,graphVersion:META_WHATSAPP_GRAPH_VERSION,timeoutMs:12000,maxPages:20});
+  if(remote.truncated)return {ok:false,error:"meta_templates_pagination_truncated",page_count:remote.page_count};
+  const syncedAt=new Date().toISOString();
+  const rows=buildTemplateCacheRows({items:remote.items,account,existingByKey,syncedAt});
+  if(rows.length){const saved=await db.from("whatsapp_templates_v1").upsert(rows,{onConflict:"waba_id,name,language"});if(saved.error)throw saved.error}
+  return {ok:true,synced:rows.length,last_synced_at:syncedAt,page_count:remote.page_count};
+}
+
+async function mutationResult(account:any,mutation:string,remote:any){
+  const sync=await syncTemplates(account);
+  const items=sync?.ok===true?await cachedTemplates(account.id):[];
+  return {
+    ok:true,
+    mutation,
+    account_id:account.id,
+    meta_template_id:clean(remote?.payload?.id??remote?.meta_template_id,80)||null,
+    sync,
+    sync_pending:sync?.ok!==true,
+    items,
+  };
+}
+
+function mutationFieldsBlocked(body:any,action:string){
+  const forbidden=["waba_id","phone_number_id","access_token","to_phone_e164","conversation_id","customer_id","whatsapp_account_id"];
+  if(forbidden.some(key=>body?.[key]!==undefined))return true;
+  if(action!=="create"&&body?.account_id!==undefined)return true;
+  if(action==="create"&&body?.template_id!==undefined)return true;
+  return false;
+}
+
+
+function flowEndpointUri(){
+  if(!SUPABASE_URL)return "";
+  return SUPABASE_URL.replace(/\/+$/,"")+FLOW_FUNCTION_PATH;
+}
+async function fixedFlowAccount(){
+  const q=await db.from("whatsapp_accounts").select("id,slug,display_name,phone_e164,waba_id,phone_number_id,is_active")
+    .eq("slug","dona-antonia-1018").eq("is_active",true).maybeSingle();
+  if(q.error)throw new MetaFlowsError("meta_flow_account_lookup_failed",{httpStatus:500});
+  return q.data||null;
+}
+function flowReadiness(account,role){
+  const checks={
+    meta_token:Boolean(META_WHATSAPP_ACCESS_TOKEN),
+    graph_version:/^v\d+\.\d+$/.test(META_WHATSAPP_GRAPH_VERSION),
+    account:Boolean(account&&account.slug==="dona-antonia-1018"&&String(account.phone_e164||"").replace(/\D/g,"").endsWith("1018")&&/^\d{5,30}$/.test(String(account.waba_id||""))&&/^\d{5,30}$/.test(String(account.phone_number_id||""))),
+    endpoint:Boolean(flowEndpointUri()),
+    private_key:Boolean(DA_FLOW_1018_RSA_PKCS8),
+    public_key_registered:false,
+    public_key_matches_private:false,
+    meta_app_secret:META_WHATSAPP_APP_SECRET.length>=16
+  };
+  return {ready:Object.values(checks).every(Boolean),channel:"1018",flow_endpoint_url:flowEndpointUri(),can_manage:role==="owner",checks};
+}
+function flowArgs(account){
+  return {accessToken:META_WHATSAPP_ACCESS_TOKEN,graphVersion:META_WHATSAPP_GRAPH_VERSION,wabaId:account.waba_id,phoneNumberId:account.phone_number_id};
+}
+async function flowReadinessWithMeta(account,role){
+  const state=flowReadiness(account,role);
+  if(state.checks.meta_token&&state.checks.graph_version&&state.checks.account){
+    try{
+      const expectedPublicKeyPem=DA_FLOW_1018_RSA_PKCS8?await derivePublicKeyPem(DA_FLOW_1018_RSA_PKCS8):null;
+      const key=await getBusinessPublicKeyStatusViaMeta({...flowArgs(account),expectedPublicKeyPem});
+      state.checks.public_key_registered=key.configured;
+      state.checks.public_key_matches_private=key.matches_expected===true;
+    }catch(error){
+      state.meta_key_check_error=error instanceof MetaFlowsError?error.code:"meta_flow_public_key_check_failed";
+    }
+  }else state.meta_key_check_error="meta_flow_meta_connection_not_configured";
+  state.ready=Object.values(state.checks).every(Boolean);
+  return state;
+}
+function requireFlowConnection(account){
+  if(!account||account.slug!=="dona-antonia-1018"||!String(account.phone_e164||"").replace(/\D/g,"").endsWith("1018")||!/^\d{5,30}$/.test(String(account.waba_id||""))||!/^\d{5,30}$/.test(String(account.phone_number_id||"")))throw new MetaFlowsError("meta_flow_account_not_configured",{httpStatus:503});
+  if(!META_WHATSAPP_ACCESS_TOKEN||!/^v\d+\.\d+$/.test(META_WHATSAPP_GRAPH_VERSION))throw new MetaFlowsError("meta_flow_meta_connection_not_configured",{httpStatus:503});
+}
+async function assertFlowOwned(account,flowId){
+  const listed=await listFlowsViaMeta({...flowArgs(account)});
+  if(!listed.items.some(item=>item.id===flowId)){
+    if(listed.truncated)throw new MetaFlowsError("meta_flow_catalog_truncated",{httpStatus:409});
+    throw new MetaFlowsError("meta_flow_not_found",{httpStatus:404});
+  }
+  return getFlowViaMeta({accessToken:META_WHATSAPP_ACCESS_TOKEN,graphVersion:META_WHATSAPP_GRAPH_VERSION,flowId});
+}
+function onlyKeys(value,allowed){
+  if(!value||typeof value!=="object"||Array.isArray(value))return false;
+  return Object.keys(value).every(key=>allowed.includes(key));
+}
+function onlyFlowQuery(url,allowed){
+  return [...url.searchParams.keys()].filter(key=>key!=="action").every(key=>allowed.includes(key));
+}
+function flowErrorResponse(req,error){
+  if(error instanceof MetaFlowsError){
+    const status=Number(error.httpStatus)||502;
+    const result={ok:false,error:error.code};
+    if(Number.isInteger(error.providerCode))result.provider_code=error.providerCode;
+    if(error.details!==null&&error.details!==undefined)result.details=error.details;
+    if(error.partialFlowId)result.flow_id=error.partialFlowId;
+    return json(req,result,status);
+  }
+  console.error("admin-whatsapp-templates-v1","flow_action_failed");
+  return json(req,{ok:false,error:"meta_flow_manager_error"},500);
+}
+async function handleFlowRead(req,url,auth){
+  const action=String(url.searchParams.get("action")||"");
+  if(action==="flow_readiness"){
+    if(!onlyFlowQuery(url,[]))return json(req,{ok:false,error:"flow_query_fields_not_allowed"},400);
+    const account=await fixedFlowAccount();
+    return json(req,{ok:true,...await flowReadinessWithMeta(account,auth.role)});
+  }
+  if(action==="flow_list"){
+    if(!onlyFlowQuery(url,[]))return json(req,{ok:false,error:"flow_query_fields_not_allowed"},400);
+    const account=await fixedFlowAccount();requireFlowConnection(account);
+    const result=await listFlowsViaMeta({...flowArgs(account)});
+    return json(req,{ok:true,...flowReadiness(account,auth.role),items:result.items,truncated:result.truncated});
+  }
+  if(action==="flow_detail"||action==="flow_validate"){
+    if(!onlyFlowQuery(url,["flow_id"]))return json(req,{ok:false,error:"flow_query_fields_not_allowed"},400);
+    const flowId=String(url.searchParams.get("flow_id")||"").trim();
+    if(!/^\d{5,30}$/.test(flowId))return json(req,{ok:false,error:"invalid_flow_id"},400);
+    const account=await fixedFlowAccount();requireFlowConnection(account);
+    const details=await assertFlowOwned(account,flowId);
+    return json(req,{ok:true,...flowReadiness(account,auth.role),flow:details,validation_available:Array.isArray(details.validation_errors)});
+  }
+  return json(req,{ok:false,error:"action_not_allowed"},404);
+}
+async function handleFlowMutation(req,action,body,auth){
+  if(auth.role!=="owner")return json(req,{ok:false,error:"forbidden"},403);
+  const account=await fixedFlowAccount();requireFlowConnection(account);
+  const args=flowArgs(account);
+  if(action==="flow_create"){
+    if(!onlyKeys(body,["name","categories"]))return json(req,{ok:false,error:"flow_fields_not_allowed"},400);
+    const created=await createFlowViaMeta({...args,name:body.name,categories:body.categories});
+    return json(req,{ok:true,flow:created},200);
+  }
+  if(action==="flow_register_key"){
+    if(!onlyKeys(body,[]))return json(req,{ok:false,error:"flow_fields_not_allowed"},400);
+    if(!DA_FLOW_1018_RSA_PKCS8)throw new MetaFlowsError("meta_flow_private_key_missing",{httpStatus:409});
+    await registerBusinessPublicKeyViaMeta({...args,privateKeyPem:DA_FLOW_1018_RSA_PKCS8});
+    const expectedPublicKeyPem=await derivePublicKeyPem(DA_FLOW_1018_RSA_PKCS8);
+    const status=await getBusinessPublicKeyStatusViaMeta({...args,expectedPublicKeyPem});
+    const registered=status.configured&&status.matches_expected===true;
+    return json(req,{ok:registered,registered,signature_status:status.signature_status},registered?200:502);
+  }
+  if(!onlyKeys(body,["flow_id"])&&action!=="flow_upload_json")return json(req,{ok:false,error:"flow_fields_not_allowed"},400);
+  if(action==="flow_upload_json"&&!onlyKeys(body,["flow_id","flow_json"]))return json(req,{ok:false,error:"flow_fields_not_allowed"},400);
+  const flowId=String(body?.flow_id||"").trim();
+  if(!/^\d{5,30}$/.test(flowId))return json(req,{ok:false,error:"invalid_flow_id"},400);
+  const current=await assertFlowOwned(account,flowId);
+  if(current.status!=="DRAFT")throw new MetaFlowsError("meta_flow_not_draft",{httpStatus:409});
+  if(action==="flow_send_canary"){
+    const readiness=await flowReadinessWithMeta(account,auth.role);
+    assertFlowPublishable(current,{
+      endpointUri:flowEndpointUri(),
+      publicKeyConfigured:readiness.checks.public_key_registered,
+      publicKeyMatchesPrivateKey:readiness.checks.public_key_matches_private,
+      privateKeyConfigured:readiness.checks.private_key,
+      metaAppSecretConfigured:readiness.checks.meta_app_secret,
+    });
+    const flowToken=await signState({type:"da-flow-1018-canary",sender:FLOW_CANARY_SENDER_E164,to:FLOW_CANARY_RECIPIENT_E164,flow_id:String(flowId),nonce:crypto.randomUUID()},await deriveFlowSessionKey(META_WHATSAPP_APP_SECRET),FLOW_CANARY_TOKEN_TTL_MS);
+    const sent=await sendDraftFlowCanaryViaMeta({...args,flowId,flowToken});
+    return json(req,{ok:sent.sent,flow_id:flowId,recipient_last_four:"8360",provider_message_id:sent.providerMessageId},sent.sent?200:502);
+  }
+  if(action==="flow_upload_json"){
+    const validated=validateFlowJson(body.flow_json);
+    const uploaded=await uploadFlowJsonViaMeta({...args,flowId,json:validated.json});
+    return json(req,{ok:uploaded.uploaded,error:uploaded.uploaded?undefined:"meta_flow_upload_failed",flow_id:flowId,validation_errors:uploaded.validation_errors,validation_available:Array.isArray(uploaded.validation_errors),data_api_version:uploaded.data_api_version},uploaded.uploaded?200:502);
+  }
+  if(action==="flow_configure_endpoint"){
+    const endpoint=flowEndpointUri();
+    if(!endpoint)throw new MetaFlowsError("meta_flow_endpoint_not_configured",{httpStatus:409});
+    const configured=await configureFlowEndpointViaMeta({...args,flowId,endpointUri:endpoint});
+    return json(req,{ok:configured.success,flow_id:flowId,endpoint_uri:configured.endpoint_uri},configured.success?200:502);
+  }
+  if(action==="flow_publish"){
+    const readiness=flowReadiness(account,auth.role);
+    const published=await publishFlowViaMeta({
+      ...args,flowId,endpointUri:flowEndpointUri(),privateKeyPem:DA_FLOW_1018_RSA_PKCS8,
+      privateKeyConfigured:readiness.checks.private_key,
+      metaAppSecretConfigured:readiness.checks.meta_app_secret,
+    });
+    return json(req,{ok:published.published,flow:published},published.published?200:502);
+  }
+  if(action==="flow_delete"){
+    if(current.status!=="DRAFT")throw new MetaFlowsError("meta_flow_delete_draft_only",{httpStatus:409});
+    const deleted=await deleteFlowViaMeta({...args,flowId});
+    return json(req,{ok:deleted.deleted,flow_id:flowId,deleted:deleted.deleted},deleted.deleted?200:502);
+  }
+  return json(req,{ok:false,error:"action_not_allowed"},404);
+}
+
+async function markFailed(claim:any,errorCode:string){
+  const now=new Date().toISOString();
+  const updated=await db.from("whatsapp_outbox_v1").update({status:"failed",last_error:clean(errorCode,180)||"template_transport_failed",updated_at:now}).eq("id",claim?.outbox_id).eq("status","claimed");
+  if(updated.error)throw updated.error;
+}
+
+async function markUncertain(claim:any,errorCode:string){
+  const now=new Date().toISOString();
+  const code=`meta_send_uncertain:${clean(errorCode,120)||"unknown"}`;
+  const updated=await db.from("whatsapp_outbox_v1").update({last_error:code,updated_at:now}).eq("id",claim?.outbox_id).eq("status","claimed");
+  if(updated.error)throw updated.error;
+  return {ok:false,error:"meta_send_uncertain",uncertain:true,retryable:false,outbox_id:claim?.outbox_id};
+}
+
+async function provisionPostorderTemplates(){
+  if(!metaReady())return {ok:false,error:"meta_transport_not_configured"};
+  const results:any[]=[];
+  for(const channel of ["0975","1018"] as const){
+    const q=await db.from("whatsapp_accounts").select("id,slug,display_name,waba_id,phone_number_id,is_active")
+      .eq("slug","dona-antonia-"+channel).eq("is_active",true).maybeSingle();
+    if(q.error)throw q.error;
+    const account=q.data;
+    if(!account){results.push({channel,error:"account_not_found"});continue}
+    const sync=await syncTemplates(account);
+    if(sync?.ok!==true){results.push({channel,error:sync?.error||"template_sync_failed"});continue}
+    // One provisioning action per channel prepares the order, offers and final
+    // confirmation templates. Each template is created only if absent in Meta.
+    for(const draft of [buildPostorderTemplate(channel),buildPostorderOffersTemplate(channel),buildPostorderConfirmTemplate(channel)]){
+      const saved=(await cachedTemplates(account.id)).find((t:any)=>t.name===draft.name&&t.language==="pt_BR");
+      if(saved){results.push({channel,name:draft.name,status:saved.status,created:false});continue}
+      try{
+        await createTemplateViaMeta({
+          accessToken:META_WHATSAPP_ACCESS_TOKEN,wabaId:account.waba_id,
+          graphVersion:META_WHATSAPP_GRAPH_VERSION,template:draft,timeoutMs:20000
+        });
+        const synced=await syncTemplates(account);
+        const row=synced?.ok===true?(await cachedTemplates(account.id)).find((t:any)=>t.name===draft.name):null;
+        results.push({channel,name:draft.name,status:row?.status||"PENDING",created:true,sync_pending:synced?.ok!==true});
+      }catch(error){
+        if(error instanceof MetaTemplatesError){
+          results.push({channel,name:draft.name,error:error.code,requires_sync:error.retryable===true});
+        }else throw error;
+      }
+    }
+  }
+  return {ok:results.every(x=>!x.error),results};
+}
+
+async function dispatchTemplate(outboxId:string){
+  const claimed=await db.rpc("ops2_admin_attendance_claim_template_outbox_v1",{p_outbox_id:outboxId});
+  if(claimed.error)throw claimed.error;
+  const claim=claimed.data||{ok:false,error:"outbox_claim_failed"};
+  if(claim?.already_sent===true)return {ok:true,status:"accepted",outbox_status:"sent",duplicate:true,provider:"meta",message_type:"template"};
+  if(claim?.ok!==true)return claim;
+  if(!metaReady()||!/^\d{5,30}$/.test(String(claim?.phone_number_id||""))){await markFailed(claim,"meta_transport_not_configured");return {ok:false,error:"meta_transport_not_configured",provider:"meta"}}
+  try{
+    const result=await sendTemplateViaMeta({
+      accessToken:META_WHATSAPP_ACCESS_TOKEN,
+      phoneNumberId:claim.phone_number_id,
+      toE164:claim.to_phone_e164,
+      templateName:claim.template_name,
+      languageCode:claim.language_code,
+      components:Array.isArray(claim.components)?claim.components:[],
+      graphVersion:META_WHATSAPP_GRAPH_VERSION,
+      timeoutMs:15000
+    });
+    const acceptedAt=new Date().toISOString();
+    const accepted=await db.rpc("ops2_admin_attendance_accept_meta_template_outbound_v1",{p_outbox_id:claim.outbox_id,p_provider_message_id:result.providerMessageId,p_accepted_at:acceptedAt});
+    if(accepted.error||accepted.data?.ok!==true)return await markUncertain(claim,accepted.error?.message||accepted.data?.error||"canonical_template_persist_failed");
+    return {ok:true,status:"accepted",outbox_status:"sent",provider:"meta",message_type:"template",provider_message_id:result.providerMessageId,message_id:accepted.data?.message_id||null,status_current:accepted.data?.status_current||"accepted",template_name:claim.template_name};
+  }catch(error){
+    if(error instanceof MetaTransportError){
+      if(error.uncertain)return await markUncertain(claim,error.code);
+      await markFailed(claim,error.code);
+      return {ok:false,error:error.code,provider:"meta",retryable:error.retryable===true,uncertain:false,http_status:error.httpStatus};
+    }
+    return await markUncertain(claim,"unexpected_template_transport_error");
+  }
+}
+
+async function sha256MetaCommand(input:string){
+  const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(input));
+  return [...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+
+Deno.serve(async(req:Request)=>{
+  if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
+  if(req.method!=="GET"&&req.method!=="POST")return json(req,{ok:false,error:"method_not_allowed"},405);
+  if(!SUPABASE_URL||!SERVICE_KEY)return json(req,{ok:false,error:"server_config"},500);
+  // Internal Meta template provisioning is a one-time, time-limited, service-only command.
+  // No user JWT or browser cookie is reused. This route never sends WhatsApp messages.
+  if(req.method==="POST"&&new URL(req.url).searchParams.get("action")==="postorder_provision_system"){
+    const token=String(req.headers.get("x-meta-provision-once")||"");
+    if(!/^[a-f0-9]{64}$/.test(token))return json(req,{ok:false,error:"unauthorized_command"},403);
+    try{
+      const claimed=await db.rpc("ops4_claim_meta_postorder_command_v1",{p_token_hash:await sha256MetaCommand(token)});
+      if(claimed.error||claimed.data!==true)return json(req,{ok:false,error:"command_invalid_or_expired"},403);
+      const result=await provisionPostorderTemplates();
+      return json(req,result,result.ok===true?200:502);
+    }catch(error){
+      console.error("postorder_provision_system",error instanceof MetaTemplatesError?error.code:"provision_failed");
+      return json(req,{ok:false,error:"provision_failed"},502);
+    }
+  }
+  const auth=await adminAuth(req);
+  if(!auth.ok)return json(req,{ok:false,error:auth.error},auth.status);
+
+  try{
+    const url=new URL(req.url);
+    const action=String(url.searchParams.get("action")||(req.method==="POST"?"send":"list")).trim().toLowerCase();
+
+    if(req.method==="POST"){
+      const body=await req.json().catch(()=>({}));
+
+      if(action.startsWith("flow_")){
+        try{return await handleFlowMutation(req,action,body,auth)}
+        catch(error){return flowErrorResponse(req,error)}
+      }
+
+      if(action==="send"||action==="send_template"){
+        if(body?.to_phone_e164!==undefined||body?.whatsapp_account_id!==undefined||body?.account_id!==undefined||body?.customer_id!==undefined||body?.phone_number_id!==undefined||body?.waba_id!==undefined){
+          return json(req,{ok:false,error:"destination_fields_not_allowed"},400);
+        }
+        if(body?.template_name!==undefined||body?.language_code!==undefined||body?.components!==undefined){return json(req,{ok:false,error:"template_identity_fields_not_allowed"},400)}
+        const conversationId=validUuid(body?.conversation_id);if(!conversationId)return json(req,{ok:false,error:"invalid_conversation_id"},400);
+        const templateId=validUuid(body?.template_id);if(!templateId)return json(req,{ok:false,error:"invalid_template_id"},400);
+        if(!Array.isArray(body?.parameters)||body.parameters.length>100||body.parameters.some((value:any)=>typeof value!=="string"||!value.trim()||value.length>1024))return json(req,{ok:false,error:"template_parameters_invalid"},400);
+        const idempotencyKey=validIdempotency(body?.idempotency_key);if(!idempotencyKey)return json(req,{ok:false,error:"invalid_idempotency_key"},400);
+        const queued=await db.rpc("ops2_admin_attendance_enqueue_template_v1",{p_conversation_id:conversationId,p_template_id:templateId,p_parameters:body.parameters,p_idempotency_key:idempotencyKey});
+        if(queued.error)throw queued.error;
+        const data=queued.data||{ok:false,error:"enqueue_failed"};
+        if(data?.ok!==true){
+          const error=String(data?.error||"enqueue_failed");
+          const status=error==="rate_limited"?429:["meta_template_send_not_homologated","meta_canary_destination_blocked","meta_send_uncertain","template_not_sendable"].includes(error)?409:400;
+          return json(req,data,status);
+        }
+        if(data?.duplicate===true){
+          if(data?.status==="sent")return json(req,{ok:true,status:"accepted",duplicate:true,outbox_id:data.outbox_id,provider:"meta",message_type:"template"},200);
+          if(data?.status!=="queued")return json(req,{ok:false,error:"duplicate_not_dispatchable",outbox_id:data.outbox_id,status:data.status,provider:"meta"},409);
+        }
+        const dispatched=await dispatchTemplate(data.outbox_id);
+        return json(req,dispatched,dispatched?.ok===true?200:502);
+      }
+
+      if(action==="postorder_provision"){
+        if(auth.role!=="owner")return json(req,{ok:false,error:"forbidden"},403);
+        if(Object.keys(body||{}).length)return json(req,{ok:false,error:"unexpected_fields"},400);
+        const result=await provisionPostorderTemplates();
+        return json(req,result,result.ok===true?200:502);
+      }
+      if(action!=="create"&&action!=="edit"&&action!=="delete")return json(req,{ok:false,error:"action_not_allowed"},404);
+      if(mutationFieldsBlocked(body,action))return json(req,{ok:false,error:"mutation_fields_not_allowed"},400);
+      if(!metaReady())return json(req,{ok:false,error:"meta_transport_not_configured"},503);
+
+      try{
+        if(action==="create"){
+          const accountId=validUuid(body?.account_id);if(!accountId)return json(req,{ok:false,error:"invalid_account_id"},400);
+          const account=await accountById(accountId);if(!account)return json(req,{ok:false,error:"account_not_found"},404);
+          const remote=await createTemplateViaMeta({accessToken:META_WHATSAPP_ACCESS_TOKEN,wabaId:account.waba_id,graphVersion:META_WHATSAPP_GRAPH_VERSION,template:body?.draft,timeoutMs:15000});
+          return json(req,await mutationResult(account,"create",remote),200);
+        }
+
+        const templateId=validUuid(body?.template_id);if(!templateId)return json(req,{ok:false,error:"invalid_template_id"},400);
+        const row=await templateRowById(templateId);if(!row)return json(req,{ok:false,error:"template_not_found"},404);
+        const account=await accountById(row.whatsapp_account_id);if(!account)return json(req,{ok:false,error:"account_not_found"},404);
+        if(!/^\d{5,30}$/.test(String(row.meta_template_id||"")))return json(req,{ok:false,error:"meta_template_id_missing"},409);
+
+        if(action==="edit"){
+          const remote=await editTemplateViaMeta({accessToken:META_WHATSAPP_ACCESS_TOKEN,templateId:row.meta_template_id,graphVersion:META_WHATSAPP_GRAPH_VERSION,template:body?.draft,timeoutMs:15000});
+          return json(req,await mutationResult(account,"edit",remote),200);
+        }
+
+        if(action==="delete"){
+          const remote=await deleteTemplateViaMeta({accessToken:META_WHATSAPP_ACCESS_TOKEN,wabaId:account.waba_id,graphVersion:META_WHATSAPP_GRAPH_VERSION,name:row.name,templateId:row.meta_template_id,timeoutMs:15000});
+          return json(req,await mutationResult(account,"delete",remote),200);
+        }
+      }catch(error){
+        if(error instanceof MetaTemplatesError&&(error.code==="meta_templates_timeout"||error.code==="meta_templates_network_error")){
+          return json(req,{ok:false,error:"meta_template_mutation_uncertain",uncertain:true,retryable:false,requires_sync:true},409);
+        }
+        throw error;
+      }
+    }
+
+    if(action.startsWith("flow_")){
+      try{return await handleFlowRead(req,url,auth)}
+      catch(error){return flowErrorResponse(req,error)}
+    }
+
+    if(action!=="list"&&action!=="sync")return json(req,{ok:false,error:"action_not_allowed"},404);
+    // GET list/sync resolves the official channel server-side; it does not depend on
+    // the Attendance queue or a separate client-side accounts lookup.
+    const accountId=validUuid(url.searchParams.get("account_id"));
+    const channel=String(url.searchParams.get("channel")||"");
+    if(!accountId&&!["0975","1018"].includes(channel))
+      return json(req,{ok:false,error:"channel_or_account_required"},400);
+    let account:any=null;
+    if(accountId)account=await accountById(accountId);
+    else{
+      const q=await db.from("whatsapp_accounts")
+        .select("id,slug,display_name,waba_id,phone_number_id,is_active")
+        .eq("slug","dona-antonia-"+channel).eq("is_active",true).maybeSingle();
+      if(q.error)throw q.error;
+      account=q.data||null;
+    }
+    if(!account)return json(req,{ok:false,error:"account_not_found"},404);
+    let sync=null;
+    if(action==="sync"){
+      sync=await syncTemplates(account);
+      if(sync?.ok!==true){const status=sync?.error==="meta_transport_not_configured"?503:502;return json(req,sync,status)}
+    }
+    const items=await cachedTemplates(account.id);
+    return json(req,{ok:true,account:{id:account.id,slug:account.slug,display_name:account.display_name,waba_id:account.waba_id},sync,items});
+  }catch(error){
+    if(error instanceof MetaTemplatesError){
+      console.error("admin-whatsapp-templates-v1",error.code,error.httpStatus||"");
+      return json(req,{ok:false,error:error.code,retryable:error.retryable===true},error.httpStatus&&error.httpStatus<500?502:503);
+    }
+    console.error("admin-whatsapp-templates-v1",error instanceof Error?error.message:String(error));
+    return json(req,{ok:false,error:"templates_backend_error"},500);
+  }
+});
+
+

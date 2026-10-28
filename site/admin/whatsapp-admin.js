@@ -700,6 +700,420 @@
     }
   }
 
+  let currentAnaDraftConfiguration = null;
+
+  function anaKnowledgeRowMarkup(item) {
+    return '<article class="whatsapp-ana-knowledge-row" data-ana-knowledge-row data-knowledge-key="' + esc(item?.key || "") + '">'
+      + '<label>Assunto<input type="text" maxlength="100" data-ana-knowledge-title value="' + esc(item?.title || "") + '" required></label>'
+      + '<label>Informação para a ANA<textarea rows="3" maxlength="1600" data-ana-knowledge-content required>' + esc(item?.content || "") + '</textarea></label>'
+      + '<button class="button button-outline" type="button" data-ana-knowledge-remove>Remover</button></article>';
+  }
+
+  function anaConfigurationEditorMarkup(draft) {
+    const configuration = draft?.configuration;
+    if (!configuration || typeof configuration !== "object") {
+      return '<section class="whatsapp-overview-card"><h3>Configuração básica da ANA</h3><p class="admin-muted">O rascunho de configuração não está disponível.</p></section>';
+    }
+    const behavior = configuration.behavior || {};
+    const knowledge = Array.isArray(configuration.knowledge) ? configuration.knowledge.filter((item) => item?.status !== "archived") : [];
+    const tone = String(behavior.tone || "cordial");
+    const conciseness = String(behavior.conciseness || "short");
+    const emoji = String(behavior.emoji || "sparingly");
+    const rows = knowledge.length ? knowledge.map(anaKnowledgeRowMarkup).join("") : '<p class="admin-muted" data-ana-knowledge-empty>Adicione informações confiáveis para a ANA consultar.</p>';
+    return '<section class="whatsapp-overview-card whatsapp-ana-editor-card"><div class="whatsapp-ana-editor-heading"><div><h3>Configuração básica da ANA</h3><p class="admin-muted">Edite o tom e as informações da loja. Isso salva apenas um rascunho.</p></div><span class="whatsapp-ana-draft-badge">Rascunho r' + esc(draft.revision || "—") + '</span></div>'
+      + '<form data-ana-editor data-revision="' + esc(draft.revision || "") + '">'
+      + '<div class="whatsapp-ana-basic-grid">'
+      + '<label>Tom de atendimento<select data-ana-tone><option value="cordial"' + (tone === "cordial" ? " selected" : "") + '>Cordial</option><option value="warm"' + (tone === "warm" ? " selected" : "") + '>Acolhedor</option><option value="neutral"' + (tone === "neutral" ? " selected" : "") + '>Profissional</option></select></label>'
+      + '<label>Tamanho das respostas<select data-ana-conciseness><option value="short"' + (conciseness === "short" ? " selected" : "") + '>Curtas</option><option value="balanced"' + (conciseness === "balanced" ? " selected" : "") + '>Com mais contexto</option></select></label>'
+      + '<label>Emojis<select data-ana-emoji><option value="sparingly"' + (emoji === "sparingly" ? " selected" : "") + '>Com moderação</option><option value="never"' + (emoji === "never" ? " selected" : "") + '>Não usar</option></select></label>'
+      + '<label class="whatsapp-ana-first-name"><input type="checkbox" data-ana-first-name' + (behavior.use_known_first_name_on_first_greeting === true ? " checked" : "") + '> Usar o primeiro nome no primeiro cumprimento</label></div>'
+      + '<div class="whatsapp-ana-knowledge-heading"><div><h4>Informações da loja</h4><p class="admin-muted">A ANA usa apenas os fatos publicados quando a configuração é ativada.</p></div><button class="button button-outline" type="button" data-ana-knowledge-add>Adicionar informação</button></div>'
+      + '<div class="whatsapp-ana-knowledge-list" data-ana-knowledge-list>' + rows + '</div>'
+      + '<div class="whatsapp-ana-editor-footer"><p class="admin-muted" data-ana-editor-status role="status" aria-live="polite">Salvar não altera a ANA ativa. Teste e ativação ficam abaixo.</p><button class="button button-primary" type="submit">Salvar rascunho</button></div>'
+      + '</form></section>';
+  }
+
+  function addAnaKnowledgeRow() {
+    const list = $("whatsapp-ana-content")?.querySelector("[data-ana-knowledge-list]");
+    if (!list) return;
+    list.querySelector("[data-ana-knowledge-empty]")?.remove();
+    list.insertAdjacentHTML("beforeend", anaKnowledgeRowMarkup({ key: "", title: "", content: "" }));
+    list.querySelector("[data-ana-knowledge-row]:last-child [data-ana-knowledge-title]")?.focus();
+  }
+
+  async function saveAnaDraft(form) {
+    if (!currentAnaDraftConfiguration || form.dataset.saving === "true") return;
+    const revision = Number(form.dataset.revision);
+    const status = form.querySelector("[data-ana-editor-status]");
+    const submit = form.querySelector('button[type="submit"]');
+    if (!Number.isSafeInteger(revision) || revision < 1) {
+      if (status) status.textContent = "Atualize o status da ANA antes de salvar.";
+      return;
+    }
+    const rows = Array.from(form.querySelectorAll("[data-ana-knowledge-row]"));
+    const rowByKey = new Map(rows.map((row) => [String(row.dataset.knowledgeKey || ""), row]).filter(([key]) => key));
+    const configuration = JSON.parse(JSON.stringify(currentAnaDraftConfiguration));
+    configuration.behavior = Object.assign({}, configuration.behavior || {}, {
+      tone: form.querySelector("[data-ana-tone]")?.value || "cordial",
+      conciseness: form.querySelector("[data-ana-conciseness]")?.value || "short",
+      emoji: form.querySelector("[data-ana-emoji]")?.value || "sparingly",
+      use_known_first_name_on_first_greeting: form.querySelector("[data-ana-first-name]")?.checked === true,
+    });
+    const knowledge = [];
+    for (const item of Array.isArray(configuration.knowledge) ? configuration.knowledge : []) {
+      if (item.status === "archived") { knowledge.push(item); continue; }
+      const row = rowByKey.get(String(item.key || ""));
+      if (!row) { knowledge.push(Object.assign({}, item, { status: "archived" })); continue; }
+      knowledge.push(Object.assign({}, item, {
+        title: row.querySelector("[data-ana-knowledge-title]")?.value.trim() || "",
+        content: row.querySelector("[data-ana-knowledge-content]")?.value.trim() || "",
+      }));
+    }
+    let newIndex = 0;
+    for (const row of rows.filter((item) => !String(item.dataset.knowledgeKey || ""))) {
+      const title = row.querySelector("[data-ana-knowledge-title]")?.value.trim() || "";
+      const content = row.querySelector("[data-ana-knowledge-content]")?.value.trim() || "";
+      if (!title && !content) continue;
+      if (!title || !content) {
+        if (status) status.textContent = "Preencha o assunto e a informação, ou remova a linha vazia.";
+        return;
+      }
+      const key = "info_" + Date.now().toString(36) + "_" + (++newIndex);
+      knowledge.push({ key, title, content, status: "published", keywords: [] });
+    }
+    if (knowledge.length > 30) {
+      if (status) status.textContent = "A ANA aceita até 30 informações. Remova uma antes de adicionar outra.";
+      return;
+    }
+    configuration.knowledge = knowledge;
+    form.dataset.saving = "true";
+    if (submit) submit.disabled = true;
+    if (status) status.textContent = "Salvando rascunho…";
+    try {
+      const saved = await anaAdminRequest("whatsapp_ana_admin_save_draft", {
+        expected_revision: revision,
+        configuration,
+        note: "Ajuste básico da ANA",
+      });
+      if (status) status.textContent = "Rascunho r" + String(saved.revision || revision + 1) + " salvo. Para aplicar, execute o teste e ative abaixo.";
+      await loadAnaStatus(true);
+    } catch (error) {
+      if (status) status.textContent = error instanceof Error ? error.message : "Não foi possível salvar o rascunho.";
+    } finally {
+      form.dataset.saving = "false";
+      if (submit?.isConnected) submit.disabled = false;
+    }
+  }
+
+  let templateAdminFallbackItems = [];
+  let templateAdminItems = [];
+  let templateAdminAccountId = "";
+  let templateAdminLoadedAccountId = "";
+  let templateAdminBusy = false;
+  let templateAdminStatus = "";
+
+  function templateStatusTone(value) {
+    const status = String(value || "").toUpperCase();
+    if (status === "APPROVED") return "is-approved";
+    if (status === "REJECTED" || status === "DELETED") return "is-rejected";
+    if (["PENDING", "IN_APPEAL", "PAUSED"].includes(status)) return "is-pending";
+    return "";
+  }
+
+  function renderTemplateAdminRows(items) {
+    const host = $("whatsapp-templates-content")?.querySelector("[data-template-admin-list]");
+    if (!host) return;
+    const rows = Array.isArray(items) ? items : [];
+    if (!rows.length) {
+      host.innerHTML = emptyList("Nenhum modelo neste canal.");
+      return;
+    }
+    host.innerHTML = rows.map((item) => {
+      const status = String(item.status || "UNKNOWN").toUpperCase();
+      const rejection = item.rejection_reason || item.metadata?.rejected_reason || "";
+      const quality = item.quality_rating || item.metadata?.meta_quality_score?.score || "Sem avaliação";
+      const category = item.category || "Aguardando classificação";
+      const detail = [item.language || "", "Categoria Meta: " + human(category), "Qualidade: " + human(quality)].filter(Boolean).join(" · ");
+      return '<article class="whatsapp-template-admin-row"><div class="whatsapp-template-admin-copy"><div class="whatsapp-template-admin-title"><h4>' + esc(item.name || "Modelo") + '</h4><span class="whatsapp-template-status ' + templateStatusTone(status) + '">' + esc(human(status)) + '</span></div>'
+        + '<p class="admin-muted">' + esc(detail) + '</p>'
+        + (rejection ? '<p class="whatsapp-template-rejection">Motivo informado pela Meta: ' + esc(rejection) + '</p>' : "")
+        + '<small class="admin-muted">Atualizado: ' + esc(dateLabel(item.last_synced_at || item.updated_at)) + '</small></div>'
+        + '<button class="button button-outline" type="button" data-template-edit="' + esc(item.id || "") + '"' + (!item.id ? " disabled" : "") + '>Editar</button></article>';
+    }).join("");
+  }
+
+  function renderTemplateAdmin(data, fallbackItems) {
+    const root = $("whatsapp-templates-content");
+    if (!root) return;
+    const channels = Array.isArray(data.channels) ? data.channels.filter((item) => item.id) : [];
+    templateAdminFallbackItems = Array.isArray(fallbackItems) ? fallbackItems : [];
+    let selected = channels.find((item) => item.id === templateAdminAccountId);
+    if (!selected) selected = channels.find((item) => ["0975", "1018"].includes(String(item.phone_last4 || ""))) || channels[0];
+    templateAdminAccountId = selected?.id || "";
+    if (templateAdminLoadedAccountId !== templateAdminAccountId) {
+      templateAdminLoadedAccountId = "";
+      templateAdminItems = [];
+    }
+    const selectedItems = templateAdminLoadedAccountId === templateAdminAccountId
+      ? templateAdminItems
+      : templateAdminFallbackItems.filter((item) => !item.whatsapp_account_id || item.whatsapp_account_id === templateAdminAccountId);
+    const channelsMarkup = channels.map((item) => {
+      const number = item.phone_last4 ? " · final " + item.phone_last4 : "";
+      return '<option value="' + esc(item.id) + '"' + (item.id === templateAdminAccountId ? " selected" : "") + '>' + esc(item.name || "WhatsApp") + esc(number) + '</option>';
+    }).join("");
+    root.innerHTML = '<div class="whatsapp-record-summary">'
+      + '<article class="whatsapp-overview-card"><h3>Aprovados pela Meta</h3><strong class="whatsapp-metric">' + esc(data.templates?.approved || 0) + '</strong><p class="admin-muted">disponíveis</p></article>'
+      + '<article class="whatsapp-overview-card"><h3>Total cadastrado</h3><strong class="whatsapp-metric">' + esc(data.templates?.total || 0) + '</strong><p class="admin-muted">modelos</p></article>'
+      + '<article class="whatsapp-overview-card"><h3>No canal</h3><strong class="whatsapp-metric">' + esc(selectedItems.length) + '</strong><p class="admin-muted">na lista carregada</p></article></div>'
+      + '<section class="whatsapp-overview-card"><div class="whatsapp-template-admin-toolbar"><label>Canal<select data-template-account' + (channels.length ? "" : " disabled") + '>' + (channelsMarkup || '<option value="">Nenhum canal</option>') + '</select></label>'
+      + '<div class="whatsapp-template-admin-actions"><button class="button button-outline" type="button" data-template-load' + (!templateAdminAccountId || templateAdminBusy ? " disabled" : "") + '>Carregar modelos</button><button class="button button-outline" type="button" data-template-sync' + (!templateAdminAccountId || templateAdminBusy ? " disabled" : "") + '>Sincronizar com Meta</button><button class="button button-primary" type="button" data-template-new' + (!templateAdminAccountId || templateAdminBusy ? " disabled" : "") + '>Novo modelo</button></div></div>'
+      + '<p class="admin-muted" data-template-admin-status role="status" aria-live="polite">' + esc(templateAdminStatus || "Resumo carregado. Carregue o catálogo completo para editar ou sincronize com a Meta.") + '</p>'
+      + '<div class="whatsapp-template-editor-host" data-template-editor-host></div><div class="whatsapp-template-admin-list" data-template-admin-list></div></section>';
+    renderTemplateAdminRows(selectedItems);
+  }
+
+  async function templateAdminRequest(action, options) {
+    const accountId = String(options?.accountId || templateAdminAccountId || "");
+    if (!supabase || !publishableKey || !accountId) throw new Error("Selecione um canal WhatsApp.");
+    const url = new URL(supabase + "/functions/v1/admin-whatsapp-templates-v1");
+    url.searchParams.set("action", action);
+    url.searchParams.set("account_id", accountId);
+    const method = options?.method || "GET";
+    const response = await fetch(url.toString(), {
+      method,
+      headers: {
+        apikey: publishableKey,
+        "x-admin-code": window.DonaAdminAuth?.getCode?.() || "",
+        ...(method === "POST" ? { "Content-Type": "application/json" } : {}),
+      },
+      ...(method === "POST" ? { body: JSON.stringify(options?.payload || {}) } : {}),
+      cache: "no-store",
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.ok === false) {
+      const messages = {
+        admin_auth_required: "A sessão do Admin expirou. Entre novamente.",
+        admin_code_invalid: "Acesso do Admin inválido. Entre novamente.",
+        meta_transport_not_configured: "A integração com a Meta ainda não está configurada.",
+        meta_template_mutation_uncertain: "A Meta pode ter recebido a alteração. Sincronize o catálogo antes de tentar de novo.",
+        meta_template_name_invalid: "Use o nome em minúsculas, sem espaços ou acentos.",
+        meta_template_examples_required: "Preencha um exemplo para cada variável {{n}}.",
+        meta_template_body_required: "Informe o texto principal do modelo.",
+      };
+      throw new Error(messages[data.error] || data.message || data.error || "Não foi possível carregar os modelos.");
+    }
+    return data;
+  }
+
+  async function loadTemplateAdminCatalog(sync) {
+    if (templateAdminBusy) return;
+    const root = $("whatsapp-templates-content");
+    const status = root?.querySelector("[data-template-admin-status]");
+    const loadButton = root?.querySelector("[data-template-load]");
+    const syncButton = root?.querySelector("[data-template-sync]");
+    if (!root || !templateAdminAccountId) return;
+    templateAdminBusy = true;
+    if (loadButton) loadButton.disabled = true;
+    if (syncButton) syncButton.disabled = true;
+    if (status) status.textContent = sync ? "Consultando os status atuais na Meta…" : "Carregando o catálogo do canal…";
+    try {
+      const data = await templateAdminRequest(sync ? "sync" : "list", {});
+      templateAdminItems = Array.isArray(data.items) ? data.items : [];
+      templateAdminLoadedAccountId = templateAdminAccountId;
+      templateAdminStatus = sync
+        ? "Catálogo sincronizado com a Meta."
+        : "Modelos carregados do catálogo deste canal.";
+      renderTemplateAdminRows(templateAdminItems);
+      if (status) status.textContent = templateAdminStatus;
+    } catch (error) {
+      templateAdminStatus = error instanceof Error ? error.message : "Não foi possível carregar os modelos.";
+      if (status) status.textContent = templateAdminStatus;
+    } finally {
+      templateAdminBusy = false;
+      if (loadButton?.isConnected) loadButton.disabled = false;
+      if (syncButton?.isConnected) syncButton.disabled = false;
+    }
+  }
+
+  function templateComponent(components, type) {
+    return (Array.isArray(components) ? components : []).find((item) => String(item?.type || "").toUpperCase() === type) || null;
+  }
+
+  function templateComponentsEditable(components) {
+    return (Array.isArray(components) ? components : []).every((item) => {
+      const type = String(item?.type || "").toUpperCase();
+      if (type === "BODY" || type === "FOOTER") return true;
+      if (type === "HEADER") return String(item?.format || "").toUpperCase() === "TEXT";
+      if (type === "BUTTONS") return Array.isArray(item.buttons) && item.buttons.every((button) => ["URL", "QUICK_REPLY", "CATALOG"].includes(String(button?.type || "").toUpperCase()));
+      return false;
+    });
+  }
+
+  function templateEditorMarkup(item) {
+    const editing = Boolean(item?.id);
+    const components = Array.isArray(item?.components) ? item.components : [];
+    const header = templateComponent(components, "HEADER");
+    const body = templateComponent(components, "BODY");
+    const footer = templateComponent(components, "FOOTER");
+    const headerText = header && String(header.format || "").toUpperCase() === "TEXT" ? header.text || "" : "";
+    const headerExample = Array.isArray(header?.example?.header_text) ? header.example.header_text.join(" | ") : "";
+    const bodyExample = Array.isArray(body?.example?.body_text?.[0]) ? body.example.body_text[0].join(" | ") : "";
+    const editable = !editing || templateComponentsEditable(components);
+    return '<section class="whatsapp-template-editor"><div class="whatsapp-template-editor-heading"><div><h4>' + (editing ? "Editar conteúdo do modelo" : "Novo modelo") + '</h4><p class="admin-muted">' + (editing ? "O nome, idioma e tipo Meta ficam vinculados ao cadastro." : "Ao enviar, a Meta revisará e poderá ajustar a categoria.") + '</p></div><button class="button button-outline" type="button" data-template-editor-close>Fechar</button></div>'
+      + '<form data-template-editor-form data-template-id="' + esc(item?.id || "") + '"><div class="whatsapp-template-editor-grid">'
+      + '<label>Nome do modelo<input name="name" maxlength="512" pattern="[a-z0-9_]+" value="' + esc(item?.name || "") + '"' + (editing ? " readonly" : " required") + ' placeholder="exemplo_pedido"></label>'
+      + '<label>Idioma<input name="language" maxlength="20" value="' + esc(item?.language || "pt_BR") + '"' + (editing ? " readonly" : " required") + '></label>'
+      + (editing
+        ? '<div class="whatsapp-template-readonly"><span>Tipo classificado pela Meta</span><strong>' + esc(human(item?.category || "Aguardando classificação")) + '</strong></div>'
+        : '<label>Tipo solicitado<select name="category"><option value="UTILITY">Utilidade</option><option value="MARKETING">Marketing</option></select></label>')
+      + '<label class="whatsapp-template-editor-wide">Cabeçalho opcional<input name="header" data-template-header maxlength="60" value="' + esc(headerText) + '"' + (header && !headerText ? " readonly" : "") + '></label>'
+      + '<label class="whatsapp-template-editor-wide">Exemplo do cabeçalho<textarea name="header_examples" rows="2" placeholder="Maria | amanhã">' + esc(headerExample) + '</textarea><small>Use somente se o cabeçalho tiver variáveis.</small></label>'
+      + '<label class="whatsapp-template-editor-wide">Texto principal<textarea name="body" data-template-body rows="5" maxlength="1024" required>' + esc(body?.text || "") + '</textarea></label>'
+      + '<label class="whatsapp-template-editor-wide">Exemplos das variáveis<textarea name="body_examples" rows="2" placeholder="Maria | amanhã">' + esc(bodyExample) + '</textarea><small>Use um exemplo para cada variável {{1}}, {{2}} e assim por diante, separados por |.</small></label>'
+      + '<label class="whatsapp-template-editor-wide">Rodapé opcional<input name="footer" maxlength="60" value="' + esc(footer?.text || "") + '"></label></div>'
+      + (!editable ? '<p class="whatsapp-template-editor-warning">Este modelo usa mídia ou botões não compatíveis com a edição simples. O conteúdo foi preservado e a edição está desativada.</p>' : "")
+      + '<p class="admin-muted" data-template-editor-status role="status" aria-live="polite"></p><div class="whatsapp-template-editor-actions"><button class="button button-primary" type="submit"' + (!editable ? " disabled" : "") + '>' + (editing ? "Enviar alteração à Meta" : "Enviar para análise da Meta") + '</button></div></form></section>';
+  }
+
+  async function openTemplateEditor(templateId) {
+    const root = $("whatsapp-templates-content");
+    const host = root?.querySelector("[data-template-editor-host]");
+    if (!root || !host || !templateAdminAccountId) return;
+    if (!templateId) {
+      host.innerHTML = templateEditorMarkup(null);
+      root.querySelector('[data-template-editor-form] [name="category"]')?.focus();
+      return;
+    }
+    const existing = templateAdminLoadedAccountId === templateAdminAccountId
+      ? templateAdminItems.find((item) => item.id === templateId)
+      : null;
+    if (!existing || !Array.isArray(existing.components)) await loadTemplateAdminCatalog(false);
+    const item = templateAdminItems.find((entry) => entry.id === templateId);
+    if (!item || !Array.isArray(item.components)) {
+      const status = root.querySelector("[data-template-admin-status]");
+      if (status) status.textContent = "Não foi possível carregar o conteúdo completo desse modelo.";
+      return;
+    }
+    host.innerHTML = templateEditorMarkup(item);
+    host.querySelector('[data-template-editor-form] [data-template-body]')?.focus();
+  }
+
+  function templateDraftFromForm(form, existing) {
+    const components = existing ? JSON.parse(JSON.stringify(existing.components || [])) : [];
+    const headerField = form.querySelector("[data-template-header]");
+    const headerValue = headerField && !headerField.readOnly ? headerField.value.trim() : "";
+    const bodyValue = form.querySelector("[data-template-body]")?.value.trim() || "";
+    const footerValue = form.querySelector('[name="footer"]')?.value.trim() || "";
+    const examplesRaw = form.querySelector('[name="body_examples"]')?.value || "";
+    const buildExample = (text, raw, type) => {
+      const matches = Array.from(String(text || "").matchAll(/\{\{(\d+)\}\}/g));
+      if (!matches.length) return null;
+      const indexes = Array.from(new Set(matches.map((match) => Number(match[1])))).sort((a, b) => a - b);
+      if (indexes.some((value, index) => value !== index + 1)) throw new Error("As variáveis devem seguir a ordem {{1}}, {{2}} e assim por diante.");
+      const values = String(raw || "").split("|").map((value) => value.trim());
+      if (values.length < indexes.length || values.slice(0, indexes.length).some((value) => !value)) {
+        throw new Error("Preencha um exemplo para cada variável " + (type || "") + ".");
+      }
+      return type === "header" ? { header_text: values.slice(0, indexes.length) } : { body_text: [values.slice(0, indexes.length)] };
+    };
+    if (!bodyValue) throw new Error("Informe o texto principal do modelo.");
+    const bodyExample = buildExample(bodyValue, examplesRaw, "do texto");
+    if (existing) {
+      const bodyIndex = components.findIndex((item) => String(item?.type || "").toUpperCase() === "BODY");
+      if (bodyIndex < 0) throw new Error("Esse modelo não possui um corpo de texto editável.");
+      components[bodyIndex] = Object.assign({}, components[bodyIndex], { text: bodyValue });
+      if (bodyExample) components[bodyIndex].example = bodyExample;
+      else delete components[bodyIndex].example;
+      let headerIndex = components.findIndex((item) => String(item?.type || "").toUpperCase() === "HEADER");
+      if (headerField && !headerField.readOnly) {
+        const headerExampleRaw = form.querySelector('[name="header_examples"]')?.value || "";
+        if (headerValue) {
+          const headerExample = buildExample(headerValue, headerExampleRaw, "do cabeçalho");
+          const headerComponent = { type: "HEADER", format: "TEXT", text: headerValue };
+          if (headerExample) headerComponent.example = headerExample;
+          if (headerIndex >= 0) components[headerIndex] = Object.assign({}, components[headerIndex], headerComponent);
+          else components.unshift(headerComponent);
+        } else if (headerIndex >= 0) components.splice(headerIndex, 1);
+      }
+      let footerIndex = components.findIndex((item) => String(item?.type || "").toUpperCase() === "FOOTER");
+      if (footerValue) {
+        if (footerIndex >= 0) components[footerIndex] = Object.assign({}, components[footerIndex], { text: footerValue });
+        else components.push({ type: "FOOTER", text: footerValue });
+      } else if (footerIndex >= 0) components.splice(footerIndex, 1);
+    } else {
+      const headerExampleRaw = form.querySelector('[name="header_examples"]')?.value || "";
+      if (headerValue) {
+        const headerExample = buildExample(headerValue, headerExampleRaw, "do cabeçalho");
+        const headerComponent = { type: "HEADER", format: "TEXT", text: headerValue };
+        if (headerExample) headerComponent.example = headerExample;
+        components.push(headerComponent);
+      }
+      const bodyComponent = { type: "BODY", text: bodyValue };
+      if (bodyExample) bodyComponent.example = bodyExample;
+      components.push(bodyComponent);
+      if (footerValue) components.push({ type: "FOOTER", text: footerValue });
+    }
+    const category = existing ? existing.category : form.querySelector('[name="category"]')?.value;
+    return {
+      name: existing ? existing.name : form.querySelector('[name="name"]')?.value.trim(),
+      language: existing ? existing.language : form.querySelector('[name="language"]')?.value.trim(),
+      category: String(category || "UTILITY").toUpperCase(),
+      components,
+    };
+  }
+
+  async function submitTemplateEditor(form) {
+    if (form.dataset.saving === "true") return;
+    const templateId = String(form.dataset.templateId || "");
+    const existing = templateId ? templateAdminItems.find((item) => item.id === templateId) : null;
+    if (templateId && !existing) {
+      const status = form.querySelector("[data-template-editor-status]");
+      if (status) status.textContent = "Carregue novamente o catálogo antes de editar.";
+      return;
+    }
+    let draft;
+    try { draft = templateDraftFromForm(form, existing); }
+    catch (error) {
+      const status = form.querySelector("[data-template-editor-status]");
+      if (status) status.textContent = error instanceof Error ? error.message : "Revise o conteúdo do modelo.";
+      return;
+    }
+    const action = existing ? "edit" : "create";
+    const confirmation = existing
+      ? "Enviar esta alteração do modelo para a Meta? A Meta poderá reclassificar ou reprovar o conteúdo."
+      : "Enviar este modelo para análise da Meta? Ela definirá a categoria final e o status.";
+    if (!window.confirm(confirmation)) return;
+    const submit = form.querySelector('button[type="submit"]');
+    const status = form.querySelector("[data-template-editor-status]");
+    form.dataset.saving = "true";
+    if (submit) submit.disabled = true;
+    if (status) status.textContent = "Enviando para a Meta…";
+    try {
+      const payload = { draft };
+      if (existing) payload.template_id = existing.id;
+      else payload.account_id = templateAdminAccountId;
+      const data = await templateAdminRequest(action, { method: "POST", payload });
+      templateAdminItems = Array.isArray(data.items) ? data.items : [];
+      templateAdminLoadedAccountId = templateAdminAccountId;
+      templateAdminFallbackItems = templateAdminItems;
+      renderTemplateAdminRows(templateAdminItems);
+      if (data.sync_pending === true) {
+        templateAdminStatus = "A Meta recebeu a solicitação, mas o catálogo ainda não sincronizou. Use Sincronizar com Meta antes de tentar novamente.";
+      } else {
+        templateAdminStatus = "Solicitação enviada. Categoria e status abaixo refletem o retorno sincronizado da Meta.";
+      }
+      const panelStatus = $("whatsapp-templates-content")?.querySelector("[data-template-admin-status]");
+      if (panelStatus) panelStatus.textContent = templateAdminStatus;
+      const editorHost = $("whatsapp-templates-content")?.querySelector("[data-template-editor-host]");
+      if (editorHost) editorHost.innerHTML = "";
+    } catch (error) {
+      if (status) status.textContent = error instanceof Error ? error.message : "Não foi possível enviar o modelo.";
+    } finally {
+      form.dataset.saving = "false";
+      if (submit?.isConnected) submit.disabled = false;
+    }
+  }
+
   function render(data) {
     lastOverview = data;
     const createCampaignButton = $("whatsapp-campaign-new");
@@ -787,13 +1201,7 @@
       <section class="whatsapp-overview-card"><h3>ANA por canal</h3><div class="whatsapp-channel-list">${channels.length ? channels.map((channel) => '<article class="whatsapp-channel"><div class="whatsapp-channel-head"><div><h3>' + esc(channel.name) + '</h3><p class="admin-muted">' + (channel.phone_last4 ? "Número terminado em •••• " + esc(channel.phone_last4) + " · " : "") + 'Entrada: ' + esc(human(channel.inbound_provider)) + ' · Saída: ' + esc(human(channel.outbound_provider)) + '</p></div></div><div class="whatsapp-channel-flags">' + flag("Atendimento ANA", channel.ana_enabled) + flag("Captura", channel.capture_enabled) + '</div></article>').join("") : emptyList("Nenhum canal cadastrado.")}</div></section>
       <section class="whatsapp-overview-card"><h3>Decisões recentes</h3><div class="whatsapp-record-list">${anaMarkup || emptyList("Sem decisões recentes da ANA.")}</div></section>`;
 
-    $("whatsapp-templates-content").innerHTML = `
-      <div class="whatsapp-record-summary">
-        <article class="whatsapp-overview-card"><h3>Aprovados pela Meta</h3><strong class="whatsapp-metric">${esc(data.templates?.approved || 0)}</strong><p class="admin-muted">disponíveis no catálogo</p></article>
-        <article class="whatsapp-overview-card"><h3>Total cadastrado</h3><strong class="whatsapp-metric">${esc(data.templates?.total || 0)}</strong><p class="admin-muted">modelos encontrados</p></article>
-        <article class="whatsapp-overview-card"><h3>Lista carregada</h3><strong class="whatsapp-metric">${esc(templateItems.length)}</strong><p class="admin-muted">mais recentes</p></article>
-      </div>
-      <section class="whatsapp-overview-card"><h3>Catálogo de modelos</h3><div class="whatsapp-record-list">${templatesMarkup}</div></section>`;
+    renderTemplateAdmin(data, templateItems);
 
     $("whatsapp-campaigns-content").innerHTML = `
       <div class="whatsapp-record-summary">
@@ -837,6 +1245,9 @@
   }
 
   function renderAnaAdmin(data) {
+    currentAnaDraftConfiguration = data.draft?.configuration && typeof data.draft.configuration === "object"
+      ? data.draft.configuration
+      : null;
     const channels = Array.isArray(data.channels) ? data.channels : [];
     const active = data.active || null;
     const draft = data.draft || null;
@@ -947,6 +1358,7 @@
       ? '<button class="button button-primary" type="button" data-ana-publish="' + esc(latestTest.id) + '">Ativar rascunho testado</button>'
       : '<button class="button button-outline" type="button" disabled title="O rascunho precisa passar no teste seco atual.">' + (draftAlreadyActive ? "Rascunho já está ativo" : "Teste seco aprovado obrigatório") + '</button>';
     $("whatsapp-ana-content").innerHTML = `
+      ${anaConfigurationEditorMarkup(draft)}
       <section class="whatsapp-overview-card"><h3>Estado por número</h3>
         <p class="admin-muted">A pausa impede novas respostas automáticas nesse número; captura e atendimento humano permanecem ativos.</p>
         <div class="whatsapp-ana-channels">${channelMarkup}</div>
@@ -1162,9 +1574,55 @@
     const testButton = target?.closest("[data-ana-test]");
     const publishButton = target?.closest("[data-ana-publish]");
     const pauseButton = target?.closest("[data-ana-pause]");
+    const addKnowledgeButton = target?.closest("[data-ana-knowledge-add]");
+    const removeKnowledgeButton = target?.closest("[data-ana-knowledge-remove]");
     if (testButton) runAnaDryTest(testButton);
     else if (publishButton) publishAnaDraft(publishButton);
     else if (pauseButton) pauseAnaChannel(pauseButton);
+    else if (addKnowledgeButton) addAnaKnowledgeRow();
+    else if (removeKnowledgeButton) {
+      const row = removeKnowledgeButton.closest("[data-ana-knowledge-row]");
+      row?.remove();
+      const list = $("whatsapp-ana-content")?.querySelector("[data-ana-knowledge-list]");
+      if (list && !list.querySelector("[data-ana-knowledge-row]")) list.innerHTML = '<p class="admin-muted" data-ana-knowledge-empty>Adicione informações confiáveis para a ANA consultar.</p>';
+    }
+  });
+  $("whatsapp-ana-content")?.addEventListener("submit", (event) => {
+    const form = event.target instanceof HTMLFormElement ? event.target.closest("[data-ana-editor]") : null;
+    if (!form) return;
+    event.preventDefault();
+    saveAnaDraft(form);
+  });
+  const templateRoot = $("whatsapp-templates-content");
+  templateRoot?.addEventListener("change", (event) => {
+    const select = event.target instanceof HTMLSelectElement ? event.target.closest("[data-template-account]") : null;
+    if (!select) return;
+    templateAdminAccountId = select.value;
+    templateAdminLoadedAccountId = "";
+    templateAdminItems = [];
+    templateAdminStatus = "";
+    const editor = templateRoot.querySelector("[data-template-editor-host]");
+    if (editor) editor.innerHTML = "";
+    renderTemplateAdminRows(templateAdminFallbackItems.filter((item) => !item.whatsapp_account_id || item.whatsapp_account_id === templateAdminAccountId));
+  });
+  templateRoot?.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest("[data-template-load]")) loadTemplateAdminCatalog(false);
+    else if (target?.closest("[data-template-sync]")) loadTemplateAdminCatalog(true);
+    else if (target?.closest("[data-template-new]")) openTemplateEditor("");
+    else if (target?.closest("[data-template-editor-close]")) {
+      const editor = templateRoot.querySelector("[data-template-editor-host]");
+      if (editor) editor.innerHTML = "";
+    } else {
+      const edit = target?.closest("[data-template-edit]");
+      if (edit?.dataset.templateEdit) openTemplateEditor(edit.dataset.templateEdit);
+    }
+  });
+  templateRoot?.addEventListener("submit", (event) => {
+    const form = event.target instanceof HTMLFormElement ? event.target.closest("[data-template-editor-form]") : null;
+    if (!form) return;
+    event.preventDefault();
+    submitTemplateEditor(form);
   });
   $("whatsapp-ana-version-content")?.addEventListener("click", (event) => {
     const button = event.target instanceof Element ? event.target.closest("[data-ana-rollback]") : null;
