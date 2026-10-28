@@ -81,6 +81,94 @@
       );
     }
   
+    let visibleOptionScanScheduled = false;
+
+    function queueVisibleOptions() {
+      if (visibleOptionScanScheduled) return;
+      visibleOptionScanScheduled = true;
+      requestAnimationFrame(() => {
+        visibleOptionScanScheduled = false;
+        const sizeKey = state.activeKey;
+        const data = state.baskets.get(sizeKey);
+        const content = $("detail-content");
+        if (!data || !data.detailLoaded || data.changing || data.optionsBatchPromise || !content || $("detail-sheet").hidden) return;
+
+        const viewport = content.getBoundingClientRect();
+        const margin = Math.max(160, Math.round(content.clientHeight * 0.55));
+        const targets = Array.from(content.querySelectorAll("[data-product-row]")).filter((row) => {
+          const item = data.items.find((entry) => String(entry.position_id) === row.dataset.productRow);
+          const count = Math.max(Number(item && item.alternative_count || 0), item && Array.isArray(item._alternatives) ? item._alternatives.length : 0);
+          if (!item || count < 2 || !item._expanded || item._optionsLoaded || item._optionsLoading || item._optionsError) return false;
+          const rect = row.getBoundingClientRect();
+          return rect.bottom >= viewport.top - margin && rect.top <= viewport.bottom + margin;
+        }).slice(0, 8).map((row) =>
+          data.items.find((entry) => String(entry.position_id) === row.dataset.productRow)
+        );
+        if (targets.length) loadOptionsForItems(sizeKey, data, targets);
+      });
+    }
+
+    function loadOptionsForItems(sizeKey, data, items) {
+      if (data.optionsBatchPromise) return data.optionsBatchPromise;
+      const targets = items.filter((item) => item && !item._optionsLoaded && !item._optionsLoading);
+      if (!targets.length) return Promise.resolve();
+
+      targets.forEach((item) => {
+        item._optionsLoading = true;
+        item._optionsError = false;
+      });
+      const positionId = targets[0].position_id;
+      const operation = Promise.resolve().then(async () => {
+        try {
+          const response = await request("basket_mold_options_batch", {
+            method: "POST",
+            body: {
+              basket_id: data.basket.id,
+              composition_number: data.basket.composition_number || 1,
+              positions: targets.map((item) => ({
+                position_id: item.position_id,
+                selected_product_id: item.product_id || "",
+                quantity: quantityOf(item)
+              }))
+            }
+          });
+          const byPosition = new Map((response.positions || []).map((row) => [String(row.position_id), row]));
+          const loadedOptions = [];
+          for (const item of targets) {
+            const result = byPosition.get(String(item.position_id));
+            if (!result) throw new Error("Missing basket options result.");
+            const alternativeCount = Number(result.alternative_count || 0);
+            let alternatives = Array.isArray(result.alternatives) ? result.alternatives : [];
+            if (alternativeCount > alternatives.length) {
+              alternatives = await optionsForItem(data.basket, Object.assign({}, item, {
+                alternatives,
+                alternative_count: alternativeCount
+              }));
+            }
+            loadedOptions.push({ item, alternatives, alternativeCount });
+          }
+          loadedOptions.forEach(({ item, alternatives, alternativeCount }) => {
+            item._alternatives = alternatives;
+            item.alternative_count = alternativeCount;
+            item._optionsLoaded = true;
+            item._optionsError = false;
+          });
+        } catch (_) {
+          targets.forEach((item) => { item._optionsError = true; });
+        } finally {
+          targets.forEach((item) => { item._optionsLoading = false; });
+          if (data.optionsBatchPromise === operation) data.optionsBatchPromise = null;
+          if (state.activeKey === sizeKey && !$("detail-sheet").hidden) {
+            renderDetailPreservingScroll(positionId);
+            queueVisibleOptions();
+          }
+        }
+      });
+      data.optionsBatchPromise = operation;
+      if (state.activeKey === sizeKey && !$("detail-sheet").hidden) renderDetailPreservingScroll(positionId);
+      return operation;
+    }
+
     async function quoteBasket(basket, selections, alternativesByPosition) {
       const quoted = await request("basket_mold_quote", {
         method: "POST",
@@ -111,13 +199,19 @@
       const rawItems = Array.isArray(initial.items) ? initial.items : [];
       return {
         basket,
-        items: rawItems.map((item) => Object.assign({}, item, {
-          _alternatives: [],
-          _optionsLoaded: false,
-          _optionsLoading: false,
-          _optionsError: false,
-          _expanded: false
-        })),
+        items: rawItems.map((item) => {
+          const alternativeCount = Math.max(
+            Number(item.alternative_count || 0),
+            Array.isArray(item.alternatives) ? item.alternatives.length : 0
+          );
+          return Object.assign({}, item, {
+            _alternatives: [],
+            _optionsLoaded: false,
+            _optionsLoading: false,
+            _optionsError: false,
+            _expanded: alternativeCount > 1
+          });
+        }),
         totalCents: Number(basket.display_price_cents || 0),
         orderable: Number(basket.stock_quantity || 0) > 0,
         detailLoaded: true,
@@ -134,37 +228,23 @@
       if (!data || data.changing) return;
       const item = data.items.find((row) => String(row.position_id) === String(positionId));
       if (!item || item._optionsLoading) return;
-  
-      if (item._expanded) {
+
+      if (item._expanded && !item._optionsError) {
         item._expanded = false;
         renderDetailPreservingScroll(positionId);
         return;
       }
-  
+
       item._expanded = true;
       item._optionsError = false;
       if (item._optionsLoaded) {
         renderDetailPreservingScroll(positionId);
         return;
       }
-  
-      item._optionsLoading = true;
+
       renderDetailPreservingScroll(positionId);
-      try {
-        const seed = Array.isArray(item.alternatives) ? item.alternatives.slice() : [];
-        item._alternatives = await optionsForItem(data.basket, Object.assign({}, item, {
-          alternatives: seed,
-          alternative_count: Number(item.alternative_count || seed.length)
-        }));
-        item._optionsLoaded = true;
-      } catch (_) {
-        item._expanded = false;
-        item._optionsError = true;
-        toast("Não foi possível carregar as opções deste item. Tente novamente.");
-      } finally {
-        item._optionsLoading = false;
-        if (state.activeKey === sizeKey && !$("detail-sheet").hidden) renderDetailPreservingScroll(positionId);
-      }
+      if (data.optionsBatchPromise) await data.optionsBatchPromise;
+      if (!item._optionsLoaded && !item._optionsLoading) await loadOptionsForItems(sizeKey, data, [item]);
     }
   
     function setQuotePendingControls(sizeKey, positionId, pending) {
@@ -186,6 +266,7 @@
         if (changingThisItem || item && item._optionsLoading) panel.setAttribute("aria-busy", "true");
         else panel.removeAttribute("aria-busy");
       });
+      if (!pending) queueVisibleOptions();
     }
   
     function updateSelectedProductInPlace(sizeKey, positionId) {
@@ -290,9 +371,13 @@
       await update;
     }
 
+    const detailContent = $("detail-content");
+    if (detailContent) detailContent.addEventListener("scroll", queueVisibleOptions, { passive: true });
+
     return {
       basketForSize,
       toggleItemOptions,
+      queueVisibleOptions,
       changeBasketItemQuantity,
       changeProduct
     };
