@@ -125,7 +125,8 @@
   }
 
   function campaignActionButton(item, action, label, style = "button-outline") {
-    return '<button class="button ' + style + '" type="button" data-campaign-action="' + esc(action) + '" data-campaign-id="' + esc(item.id) + '" data-campaign-revision="' + esc(Math.max(0, Math.trunc(Number(item.revision) || 0))) + '">' + esc(label) + "</button>";
+    const key = action === "manual_batch" ? ' data-campaign-idempotency-key="' + esc(campaignDraftIdempotencyKey()) + '"' : "";
+    return '<button class="button ' + style + '" type="button" data-campaign-action="' + esc(action) + '" data-campaign-id="' + esc(item.id) + '" data-campaign-revision="' + esc(Math.max(0, Math.trunc(Number(item.revision) || 0))) + '"' + key + '>' + esc(label) + "</button>";
   }
 
   function campaignActionsMarkup(item) {
@@ -141,12 +142,17 @@
       actions.push(campaignActionButton(item, "approve", "Aprovar audiência", "button-primary"));
       actions.push(campaignActionButton(item, "draft", "Voltar ao rascunho"));
     }
-    if (status === "approved" && currentSnapshot) {
+    const canExecute = item.campaigns_enabled === true && item.send_enabled === true && String(item.execution_mode || "off") !== "off";
+    if (status === "approved" && currentSnapshot && canExecute) {
+      actions.push(campaignActionButton(item, "manual_batch", "Enviar lote de até 10"));
       const min = campaignLocalDateTimeValue(Date.now() + 5 * 60 * 1000);
       actions.push(
         '<label class="whatsapp-campaign-schedule"><span>Agendar a partir de</span><input type="datetime-local" data-campaign-schedule-time data-campaign-id="' + esc(item.id) + '" data-campaign-revision="' + esc(revision) + '" min="' + esc(min) + '"></label>'
         + campaignActionButton(item, "schedule", "Agendar campanha", "button-primary")
       );
+    }
+    if (status === "paused" && item.manual_batch_mode === true && canExecute) {
+      actions.push(campaignActionButton(item, "manual_batch", "Enviar próximo lote (até 10)", "button-primary"));
     }
     if (["scheduled", "running"].includes(status)) actions.push(campaignActionButton(item, "pause", "Pausar"));
     if (["draft", "ready_for_review", "approved", "scheduled", "running", "paused"].includes(status)) {
@@ -195,7 +201,16 @@
       payload.scheduled_for = new Date(scheduledAt).toISOString();
       const campaign = (lastOverview?.campaigns?.recent || []).find((item) => item.id === campaignId) || {};
       const eligible = Math.max(0, Math.trunc(Number(campaign.snapshot?.eligible_count) || 0)).toLocaleString("pt-BR");
-      confirmation = "Agendar " + (campaign.name || "esta campanha") + " para " + new Date(scheduledAt).toLocaleString("pt-BR") + " no canal " + (campaign.channel || "selecionado") + ". O snapshot tem " + eligible + " destinatários aptos. A execução poderá enviar mensagens reais pelo WhatsApp no horário escolhido. Revise o consentimento, o modelo Meta e o lote antes de confirmar.";
+      confirmation = "Agendar " + (campaign.name || "esta campanha") + " para " + new Date(scheduledAt).toLocaleString("pt-BR") + " no canal " + (campaign.channel || "selecionado") + ". O snapshot tem " + eligible + " destinatários aptos. A execução poderá enviar mensagens reais pelo WhatsApp no horário escolhido. Revise a evidência individual de consentimento e o modelo Meta antes de confirmar.";
+    } else if (action === "manual_batch") {
+      requestAction = "whatsapp_campaign_manual_batch";
+      payload.idempotency_key = button.dataset.campaignIdempotencyKey || campaignDraftIdempotencyKey();
+      const campaign = (lastOverview?.campaigns?.recent || []).find((item) => item.id === campaignId) || {};
+      const mode = String(campaign.execution_mode || "off");
+      const modeWarning = mode === "canary"
+        ? " O modo canário restringe os destinatários aos telefones de canário autorizados."
+        : " O modo atual pode enviar mensagens a clientes elegíveis.";
+      confirmation = "Este lote envia imediatamente até 10 mensagens reais pelo modelo Meta para destinatários aptos do snapshot congelado." + modeWarning + " Mensagens aceitas pela Meta não podem ser recolhidas. Confira a evidência de consentimento e confirme apenas se deseja iniciar o envio agora.";
     } else if (action === "pause") {
       requestAction = "whatsapp_campaign_pause";
       confirmation = "Pausar a campanha? Isso interrompe os próximos despachos; mensagens já aceitas pela Meta não podem ser recolhidas.";
@@ -211,8 +226,18 @@
     row.querySelectorAll("[data-campaign-action], [data-campaign-schedule-time]").forEach((control) => { control.disabled = true; });
     if (status) status.textContent = "Atualizando campanha…";
     try {
-      await campaignAdminRequest(requestAction, payload);
+      const result = await campaignAdminRequest(requestAction, payload);
       await loadOverview(true);
+      if (action === "manual_batch") {
+        const updatedRow = Array.from(document.querySelectorAll(".whatsapp-campaign-row"))
+          .find((candidate) => candidate.querySelector('[data-campaign-id="' + campaignId + '"]'));
+        const updatedStatus = updatedRow?.querySelector("[data-campaign-action-status]");
+        if (updatedStatus) {
+          if (result.already_processed) updatedStatus.textContent = "Este lote já foi processado; confira os status no histórico.";
+          else if (result.status === "no_work") updatedStatus.textContent = "Não havia destinatários aptos pendentes no snapshot.";
+          else updatedStatus.textContent = result.claimed_count + " reservados; " + result.accepted_count + " aceitos pela API da Meta; " + result.failed_count + " falhas; " + result.uncertain_count + " incertos.";
+        }
+      }
     } catch (error) {
       if (status) status.textContent = error instanceof Error ? error.message : "Não foi possível atualizar a campanha.";
     } finally {
