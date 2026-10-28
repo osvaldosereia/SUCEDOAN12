@@ -728,8 +728,9 @@
           <span>Declaração administrativa: <strong>${esc(consentSummary.merchant_owner_attestation_count || 0)}</strong></span>
           <span>Declaração histórica: <strong>${esc(consentSummary.historical_merchant_attestation_count || 0)}</strong></span>
           <span>Outra origem ou sem origem: <strong>${esc(consentSummary.other_opt_in_source_count || 0)}</strong></span>
+          <span class="is-unverified">Evidência individual: <strong>Não verificada</strong></span>
         </div>
-        <p class="whatsapp-consent-notice"><strong>Este resumo não confirma evidência individual recuperada.</strong> As origens administrativas são declarações registradas, e “outra origem” também precisa ser auditada. Confira a fonte original antes de campanhas amplas. Estes totais não são a prévia da campanha; a audiência também aplica cadastro ativo, telefone válido e filtros.</p>
+        <p class="whatsapp-consent-notice"><strong>Evidência individual recuperada: não verificada neste resumo.</strong> As origens administrativas são declarações registradas, e “outra origem” também precisa ser auditada. Confira a fonte original antes de campanhas amplas. Estes totais não são a prévia da campanha; a audiência também aplica cadastro ativo, telefone válido e filtros.</p>
       </section>` : `
       <section class="whatsapp-overview-card whatsapp-consent-audit">
         <h3>Consentimento registrado</h3>
