@@ -9,12 +9,12 @@
   <link rel="preload" as="image" href="../img/logoantonia5.png">
   <link rel="preload" as="image" href="assets/cestas/cesta-economica.jpg" fetchpriority="high">
   <link rel="preconnect" href="https://ssbesxgaijknwsjbsbcz.supabase.co" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=15">
+  <link rel="stylesheet" href="styles.css?v=16">
   <script src="config.js?v=2" defer></script>
-  <script src="storefront/extras.js?v=3" defer></script>
+  <script src="storefront/extras.js?v=4" defer></script>
   <script src="storefront/basket.js?v=1" defer></script>
-  <script src="storefront/checkout.js?v=4" defer></script>
-  <script src="app.js?v=18" defer></script>
+  <script src="storefront/checkout.js?v=5" defer></script>
+  <script src="app.js?v=19" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -61,17 +61,17 @@
 
     <section id="home-extras" class="home-extras" aria-labelledby="home-extras-title">
       <div class="home-extras-heading">
-        <p class="eyebrow">Escolha mais itens</p>
-        <h2 id="home-extras-title">Produtos extras</h2>
-        <p>Adicione produtos de mercearia, limpeza, higiene, casa e pet. Eles entram no pedido junto com a cesta.</p>
+        <p class="eyebrow">Monte do seu jeito</p>
+        <h2 id="home-extras-title">Monte sua própria cesta</h2>
+        <p>Escolha produtos nas quatro categorias e finalize o pedido só com eles, sem selecionar uma cesta pronta. Pedido mínimo de R$ 75,00.</p>
       </div>
       <div id="home-extra-summary" class="home-extra-summary" hidden aria-live="polite">
         <div class="home-extra-summary-copy">
           <strong id="home-extra-summary-count"></strong>
           <span id="home-extra-summary-total"></span>
-          <span>Escolha uma cesta para levar estes produtos ao pedido.</span>
+          <span id="home-extra-summary-hint">Você pode concluir o pedido só com estes produtos.</span>
         </div>
-        <a class="button button-primary" href="#catalog">Escolher cesta</a>
+        <button id="home-extra-checkout" class="button button-primary" type="button">Finalizar pedido</button>
       </div>
       <div id="home-extra-categories" class="home-extra-categories"></div>
     </section>
@@ -107,6 +107,12 @@
         <button class="icon-button" type="button" data-close="order" aria-label="Fechar">×</button>
       </header>
       <div class="sheet-content">
+        <div id="custom-order-summary" class="custom-order-summary" hidden aria-live="polite">
+          <h3>Produtos escolhidos</h3>
+          <ul id="custom-order-items" class="custom-order-items"></ul>
+          <div class="custom-order-total"><span>Total dos produtos</span><strong id="custom-order-total">—</strong></div>
+          <p id="custom-order-minimum-message" class="helper" role="status" aria-live="polite"></p>
+        </div>
         <label class="field-label" for="customer-phone">WhatsApp para contato</label>
         <div class="search-row">
           <input id="customer-phone" inputmode="tel" autocomplete="tel" placeholder="+55 (65) 99999-9999" maxlength="22" aria-describedby="customer-phone-hint">
