@@ -71,7 +71,7 @@
       const draftNote = hasPending
         ? channel.draft_matches_pending
           ? "O rascunho salvo corresponde à versão enviada à Meta."
-          : "O rascunho foi alterado depois do envio. A Meta ainda avalia a versão indicada acima."
+          : "O rascunho foi alterado depois do envio. O status acima se refere à versão enviada anteriormente."
         : channel.draft_matches_active
           ? "O texto salvo é igual ao modelo em uso."
           : "Este texto está salvo como rascunho e ainda não foi enviado à Meta.";
@@ -88,7 +88,7 @@
       const submissionNote = submitted
         ? submitted.error
           ? '<p class="message-rejection">Envio para a Meta: falhou (' + esc(submitted.error) + ").</p>"
-          : '<p class="message-meta-check">Resposta ao envio: ' + esc(submitted.name || "modelo") + " · " + esc(statusLabel(submitted.status)) + (submitted.sync_pending ? " · aguardando confirmação no catálogo da Meta" : "") + ".</p>"
+          : '<p class="message-meta-check">Resposta ao envio: ' + esc(submitted.name || "modelo") + " · " + esc(submitted.sync_pending ? "status ainda não confirmado na consulta à Meta" : statusLabel(submitted.status)) + ".</p>"
         : "";
       const activateButton = canActivate
         ? '<button class="button button-primary" type="button" data-message-activate="' + esc(channel.channel) + '">Usar versão aprovada nos próximos envios</button>'
@@ -184,7 +184,7 @@
       const failures = results.filter((item) => item.error);
       const summary = results.map((item) => item.error
         ? item.channel + ": envio recusado (" + item.error + ")"
-        : item.channel + ": " + (item.name || "modelo") + " · resposta da Meta " + statusLabel(item.status) + (item.sync_pending ? " · ainda sem confirmação no catálogo" : "")
+        : item.channel + ": " + (item.name || "modelo") + " · " + (item.sync_pending ? "status ainda não confirmado na consulta à Meta" : "resposta da Meta " + statusLabel(item.status))
       );
       $("order-message-status").textContent = failures.length
         ? "Resultado por número: " + summary.join("; ")
