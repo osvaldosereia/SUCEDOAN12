@@ -68,6 +68,33 @@
     ].filter(Boolean).join(" · ");
   }
 
+  function campaignExclusionMarkup(item) {
+    const snapshot = item.snapshot;
+    if (!snapshot) return "";
+    const details = snapshot.exclusion_counts;
+    if (!details?.available) {
+      return '<small class="whatsapp-campaign-exclusion-muted">Detalhamento por motivo indisponível nesta versão do banco.</small>';
+    }
+    const count = (value) => String(Math.max(0, Math.trunc(Number(value) || 0)));
+    const reasons = [
+      ["Opt-out", details.opted_out_count],
+      ["Sem consentimento", details.no_consent_count],
+      ["Cadastro inativo", details.inactive_customer_count],
+      ["Telefone inválido", details.invalid_phone_count],
+      ["Telefone duplicado", details.duplicate_phone_count],
+    ];
+    const hasReasons = reasons.some(([, value]) => Number(value) > 0);
+    if (!hasReasons) {
+      return Number(snapshot.excluded_count) > 0
+        ? '<small class="whatsapp-campaign-exclusion-muted">Snapshot registra exclusões sem motivo detalhado.</small>'
+        : '<small class="whatsapp-campaign-exclusion-muted">Nenhuma exclusão neste snapshot.</small>';
+    }
+    const chips = reasons.map(([label, value]) =>
+      '<span class="whatsapp-campaign-exclusion-chip">' + esc(label) + ": " + count(value) + "</span>"
+    ).join("");
+    return '<div class="whatsapp-campaign-exclusions" aria-label="Motivos de exclusão">' + chips + '</div><small class="whatsapp-campaign-exclusion-muted">Os motivos podem se sobrepor.</small>';
+  }
+
   function campaignDeliveryMarkup(item) {
     const delivery = item.delivery;
     if (!delivery?.available) {
@@ -95,6 +122,7 @@
       + '<h3>' + esc(item.name || "Campanha") + "</h3><p>" + esc(subtitle) + "</p>"
       + campaignDeliveryMarkup(item)
       + '<small class="whatsapp-campaign-snapshot">' + esc(campaignSnapshotLabel(item)) + "</small>"
+      + campaignExclusionMarkup(item)
       + '</div><div class="whatsapp-record-side"><span class="whatsapp-record-status ' + statusClass(item.status) + '">'
       + esc(human(item.status)) + "</span><time>" + esc(dateLabel(when)) + "</time></div></article>";
   }
