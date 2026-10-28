@@ -1443,12 +1443,6 @@ async function whatsappConversationSendText(input: any) {
   const idempotencyKey = clean(input.idempotency_key, 120);
   if (!/^[A-Za-z0-9._:-]{8,120}$/.test(idempotencyKey)) return { error: "invalid_idempotency_key", status: 400 };
 
-  const unresolved = await db.from("whatsapp_outbox_v1").select("id", { count: "exact", head: true })
-    .eq("conversation_id", conversationId).eq("purpose", "human_attendance").eq("status", "claimed")
-    .like("last_error", "meta_send_uncertain:%");
-  if (unresolved.error) throw unresolved.error;
-  if ((unresolved.count || 0) > 0) return { error: "meta_send_uncertain", status: 409, uncertain: true };
-
   const queuedResult = await db.rpc("ops2_admin_attendance_enqueue_text_v3", {
     p_conversation_id: conversationId,
     p_text: text,
