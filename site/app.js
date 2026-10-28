@@ -153,7 +153,6 @@
       const alternatives = item._alternatives || [];
       const selected = alternatives.find((alt) => String(alt.product_id) === String(item.product_id));
       const image = selected && selected.image_url || item.image_url || "../img/cestas/cesta-mini.jpg";
-      const expanded = item._expanded === true;
       const optionCount = Math.max(Number(item.alternative_count || 0), alternatives.length);
       const changingThisItem = String(data.changingPosition || "") === String(item.position_id);
 
@@ -161,32 +160,25 @@
         const selectedOption = String(alt.product_id) === String(item.product_id);
         const optionPrice = alt.price_cents == null ? "Preço indisponível" : money(alt.price_cents);
         return '<button class="product-choice' + (selectedOption ? ' is-selected' : '') + '" type="button" data-select-position="' + esc(item.position_id) + '" data-select-product="' + esc(alt.product_id) + '" aria-pressed="' + String(selectedOption) + '"' + (data.changing || optionsBusy ? ' disabled' : '') + '>' +
-          '<img src="' + esc(alt.image_url || "../img/logoantonia5.png") + '" alt="" width="44" height="44" loading="lazy" decoding="async">' +
+          '<img src="' + esc(alt.image_url || "../img/logoantonia5.png") + '" alt="" width="52" height="52" loading="lazy" decoding="async">' +
           '<span class="product-choice-copy"><strong>' + esc(alt.name || "Produto") + '</strong><small>' + esc(optionPrice) + '</small></span>' +
           (selectedOption ? '<span class="product-choice-check" aria-hidden="true">✓</span>' : '') +
           '</button>';
       }).join("");
-      const panelContent = expanded
-        ? (item._optionsError
-          ? '<p class="variation-panel-label">Escolha uma marca</p><p class="variation-status" role="alert">Não foi possível carregar as opções. Toque em “Tentar novamente”.</p>'
-          : item._optionsLoading || !item._optionsLoaded
-            ? '<p class="variation-panel-label">Escolha uma marca</p><p class="variation-status" role="status">Carregando opções disponíveis…</p>'
-            : alternatives.length > 1
-              ? '<p class="variation-panel-label">Escolha uma marca</p><div class="product-option-picker" role="group" aria-label="Opções para ' + esc(item.label || item.name) + '">' + choices + '</div>'
-              : '<p class="variation-panel-label">Escolha uma marca</p><p class="variation-status">Só há esta opção disponível no momento.</p>')
-        : "";
+      const panelContent = item._optionsError
+        ? '<p class="variation-panel-label">Escolha uma marca</p><p class="variation-status" role="alert">Não foi possível carregar as opções.</p><button class="button button-outline variation-retry" type="button" data-retry-position="' + esc(item.position_id) + '">Tentar novamente</button>'
+        : item._optionsLoading || !item._optionsLoaded
+          ? '<p class="variation-panel-label">Escolha uma marca</p><p class="variation-status" role="status">Carregando opções disponíveis…</p>'
+          : alternatives.length > 1
+            ? '<p class="variation-panel-label">Escolha uma marca</p><div class="product-option-picker" role="group" aria-label="Opções para ' + esc(item.label || item.name) + '">' + choices + '</div>'
+            : '<p class="variation-panel-label">Escolha uma marca</p><p class="variation-status">Só há esta opção disponível no momento.</p>';
       const optionPicker = optionCount > 1
-        ? '<div class="variation-disclosure">' +
-          '<button class="variation-toggle" type="button" data-toggle-position="' + esc(item.position_id) + '" aria-expanded="' + String(Boolean(expanded)) + '" aria-controls="item-options-' + esc(item.position_id) + '"' + (data.changing || optionsBusy || item._optionsLoading ? ' disabled' : '') + '>' +
-          '<span>' + (item._optionsError ? "Tentar novamente" : expanded ? "Ocultar opções" : "Escolher uma marca") + '</span>' +
-          '<span class="variation-chevron" aria-hidden="true">' + (expanded ? "−" : "+") + '</span>' +
-          '</button>' +
-          '<div class="variation-panel" id="item-options-' + esc(item.position_id) + '"' + (expanded ? "" : " hidden") + ' aria-busy="' + String(Boolean(item._optionsLoading || changingThisItem)) + '">' +
+        ? '<div class="variation-disclosure"><div class="variation-panel" id="item-options-' + esc(item.position_id) + '" aria-busy="' + String(Boolean(item._optionsLoading || changingThisItem)) + '">' +
           panelContent +
           '</div></div>'
         : "";
       const itemQuantity = quantityOf(item);
-      return '<article class="product-row" data-product-row="' + esc(item.position_id) + '"><div class="product-row-main"><img src="' + esc(image) + '" alt="" width="58" height="58" loading="lazy" decoding="async">' +
+      return '<article class="product-row" data-product-row="' + esc(item.position_id) + '"><div class="product-row-main"><img src="' + esc(image) + '" alt="" width="64" height="64" loading="lazy" decoding="async">' +
         '<div class="product-row-copy"><h3 class="product-name">' + esc(item.name || "Produto") + '</h3><div class="product-quantity-line"><strong>Quantidade:</strong><div class="quantity-stepper">' +
         '<button class="quantity-button" type="button" data-adjust-position="' + esc(item.position_id) + '" data-delta="-1" aria-label="Diminuir quantidade de ' + esc(item.name || "produto") + '"' + (itemQuantity <= 0 || data.changing || optionsBusy ? " disabled" : "") + '>−</button>' +
         '<output class="quantity-value" data-quantity-value="' + esc(item.position_id) + '" aria-live="polite">' + itemQuantity + '</output>' +
@@ -197,7 +189,7 @@
     $("detail-content").innerHTML = note + '<div class="product-list">' + rows + "</div>" +
       '<div data-home-extra-review-mount>' + homeSelectionReviewMarkup(data) + "</div>" + extraCategoriesMarkup(data);
     $("order-button").disabled = !data.orderable;
-    $("detail-content").querySelectorAll("[data-toggle-position]").forEach((button) => button.addEventListener("click", () => toggleItemOptions(button.dataset.togglePosition)));
+    $("detail-content").querySelectorAll("[data-retry-position]").forEach((button) => button.addEventListener("click", () => retryItemOptions(button.dataset.retryPosition)));
     $("detail-content").querySelectorAll("[data-select-position]").forEach((button) => button.addEventListener("click", () => changeProduct(button.dataset.selectPosition, button.dataset.selectProduct)));
     $("detail-content").querySelectorAll("[data-adjust-position]").forEach((button) => button.addEventListener("click", () => changeBasketItemQuantity(button.dataset.adjustPosition, Number(button.dataset.delta || 0))));
     $("detail-content").querySelectorAll("[data-extra-category]").forEach((button) => button.addEventListener("click", () => toggleExtraCategory(button.dataset.extraCategory)));
@@ -220,19 +212,10 @@
       }) || rows[0];
     const anchorId = anchor && anchor.dataset.productRow;
     const anchorOffset = anchor ? anchor.getBoundingClientRect().top - viewport.top : null;
-    const pickerScroll = new Map();
-    content.querySelectorAll(".product-option-picker").forEach((picker) => {
-      const row = picker.closest("[data-product-row]");
-      if (row) pickerScroll.set(row.dataset.productRow, picker.scrollTop);
-    });
     const active = document.activeElement;
-    const focusKind = active && content.contains(active)
-      ? active.matches("[data-select-position]") ? "choice"
-        : active.matches("[data-toggle-position]") ? "toggle"
-          : ""
-      : "";
-    const focusPosition = focusKind && (active.dataset.selectPosition || active.dataset.togglePosition);
-    const focusProduct = focusKind === "choice" ? active.dataset.selectProduct : "";
+    const focusPosition = active && content.contains(active) && active.matches("[data-select-position]")
+      ? active.dataset.selectPosition : "";
+    const focusProduct = focusPosition ? active.dataset.selectProduct : "";
 
     renderDetail();
 
@@ -245,27 +228,16 @@
       const nextOffset = nextAnchor.getBoundingClientRect().top - nextViewportTop;
       targetScrollTop = Math.max(0, scrollTop + nextOffset - anchorOffset);
     }
-    const restorePickers = () => {
-      content.querySelectorAll(".product-option-picker").forEach((picker) => {
-        const row = picker.closest("[data-product-row]");
-        if (row && pickerScroll.has(row.dataset.productRow)) {
-          picker.scrollTop = pickerScroll.get(row.dataset.productRow);
-        }
-      });
-    };
     content.scrollTop = targetScrollTop;
-    restorePickers();
 
-    if (focusKind && focusPosition) {
-      const selector = focusKind === "choice" ? "[data-select-position]" : "[data-toggle-position]";
-      const focusTarget = Array.from(content.querySelectorAll(selector)).find((button) =>
-        (focusKind === "choice" ? button.dataset.selectPosition : button.dataset.togglePosition) === String(focusPosition) &&
-        (focusKind !== "choice" || button.dataset.selectProduct === String(focusProduct))
+    if (focusPosition) {
+      const focusTarget = Array.from(content.querySelectorAll("[data-select-position]")).find((button) =>
+        button.dataset.selectPosition === String(focusPosition) &&
+        button.dataset.selectProduct === String(focusProduct)
       );
       if (focusTarget) focusTarget.focus({ preventScroll: true });
     }
     content.scrollTop = targetScrollTop;
-    restorePickers();
   }
 
   function openDetail(sizeKey) {
@@ -304,7 +276,7 @@
     bindExtraProductControls, toggleExtraCategory,
     initHomeExtras, homeSelectionReviewMarkup, bindHomeSelectionControls, attachHomeSelections
   } = extras;
-  const { basketForSize, toggleItemOptions, changeBasketItemQuantity, changeProduct } = basket;
+  const { basketForSize, retryItemOptions, changeBasketItemQuantity, changeProduct } = basket;
 
   checkout.init();
   $("retry-catalog").addEventListener("click", loadCatalog);

@@ -31,7 +31,6 @@
               _optionsLoaded: previous._optionsLoaded === true || row._optionsLoaded === true,
               _optionsLoading: previous._optionsLoading === true,
               _optionsError: previous._optionsError === true,
-              _expanded: previous._expanded === true
             }) : row;
           });
           Object.assign(data, quote, { orderable: true, detailLoaded: true });
@@ -98,7 +97,7 @@
         const targets = Array.from(content.querySelectorAll("[data-product-row]")).filter((row) => {
           const item = data.items.find((entry) => String(entry.position_id) === row.dataset.productRow);
           const count = Math.max(Number(item && item.alternative_count || 0), item && Array.isArray(item._alternatives) ? item._alternatives.length : 0);
-          if (!item || count < 2 || !item._expanded || item._optionsLoaded || item._optionsLoading || item._optionsError) return false;
+          if (!item || count < 2 || item._optionsLoaded || item._optionsLoading || item._optionsError) return false;
           const rect = row.getBoundingClientRect();
           return rect.bottom >= viewport.top - margin && rect.top <= viewport.bottom + margin;
         }).slice(0, 8).map((row) =>
@@ -187,7 +186,6 @@
           _optionsLoaded: previous._optionsLoaded === true,
           _optionsLoading: false,
           _optionsError: false,
-          _expanded: previous._expanded === true
         });
       });
       return { basket: quoted.basket, items, totalCents: Number(quoted.total_cents || quoted.basket && quoted.basket.display_price_cents || 0) };
@@ -209,7 +207,6 @@
             _optionsLoaded: false,
             _optionsLoading: false,
             _optionsError: false,
-            _expanded: alternativeCount > 1
           });
         }),
         totalCents: Number(basket.display_price_cents || 0),
@@ -222,37 +219,25 @@
       };
     }
   
-    async function toggleItemOptions(positionId) {
+    async function retryItemOptions(positionId) {
       const sizeKey = state.activeKey;
       const data = state.baskets.get(sizeKey);
       if (!data || data.changing) return;
       const item = data.items.find((row) => String(row.position_id) === String(positionId));
-      if (!item || item._optionsLoading) return;
+      if (!item || item._optionsLoading || item._optionsLoaded) return;
 
-      if (item._expanded && !item._optionsError) {
-        item._expanded = false;
-        renderDetailPreservingScroll(positionId);
-        return;
-      }
-
-      item._expanded = true;
       item._optionsError = false;
-      if (item._optionsLoaded) {
-        renderDetailPreservingScroll(positionId);
-        return;
-      }
-
       renderDetailPreservingScroll(positionId);
       if (data.optionsBatchPromise) await data.optionsBatchPromise;
       if (!item._optionsLoaded && !item._optionsLoading) await loadOptionsForItems(sizeKey, data, [item]);
     }
-  
+
     function setQuotePendingControls(sizeKey, positionId, pending) {
       if (state.activeKey !== sizeKey || $("detail-sheet").hidden) return;
       const data = state.baskets.get(sizeKey);
       const content = $("detail-content");
-      content.querySelectorAll("[data-select-position], [data-toggle-position], [data-adjust-position]").forEach((button) => {
-        const buttonPosition = button.dataset.selectPosition || button.dataset.togglePosition || button.dataset.adjustPosition;
+      content.querySelectorAll("[data-select-position], [data-adjust-position]").forEach((button) => {
+        const buttonPosition = button.dataset.selectPosition || button.dataset.adjustPosition;
         const item = data.items.find((row) => String(row.position_id) === String(buttonPosition));
         const delta = Number(button.dataset.delta || 0);
         const atMinimum = button.dataset.adjustPosition && delta < 0 && quantityOf(item) <= 0;
@@ -351,7 +336,6 @@
               _optionsLoaded: current._optionsLoaded === true || row._optionsLoaded === true,
               _optionsLoading: current._optionsLoading === true,
               _optionsError: current._optionsError === true,
-              _expanded: current._expanded === true
             }) : row;
           });
           Object.assign(data, quote, { orderable: true, detailLoaded: true });
@@ -376,7 +360,7 @@
 
     return {
       basketForSize,
-      toggleItemOptions,
+      retryItemOptions,
       queueVisibleOptions,
       changeBasketItemQuantity,
       changeProduct
