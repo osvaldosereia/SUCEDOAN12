@@ -32,7 +32,12 @@
   }
 
   function setView(name) {
-    document.querySelectorAll(".nav-tab").forEach((button) => button.classList.toggle("active", button.dataset.view === name));
+    document.querySelectorAll(".nav-tab").forEach((button) => {
+      const active = button.dataset.view === name;
+      button.classList.toggle("active", active);
+      if (active) button.setAttribute("aria-current", "page");
+      else button.removeAttribute("aria-current");
+    });
     document.querySelectorAll("[data-panel]").forEach((panel) => {
       const active = panel.dataset.panel === name;
       panel.hidden = !active;
