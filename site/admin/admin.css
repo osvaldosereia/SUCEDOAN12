@@ -394,3 +394,16 @@
   .whatsapp-record-side { justify-items:start; text-align:left; }
   .whatsapp-record-summary { grid-template-columns:1fr; }
 }
+
+.whatsapp-campaign-row { align-items:flex-start; }
+.whatsapp-campaign-row .whatsapp-record-main { display:grid; gap:8px; }
+.whatsapp-campaign-statuses { display:flex; flex-wrap:wrap; gap:6px; }
+.whatsapp-campaign-status-chip { display:inline-flex; align-items:center; min-height:24px; padding:3px 8px; border-radius:999px; background:#f0f2f5; color:#535e6b; font-size:.7rem; font-weight:750; line-height:1.25; }
+.whatsapp-campaign-status-chip.api { background:#e9effa; color:#345b92; }
+.whatsapp-campaign-status-chip.sent { background:#e5f2f3; color:#28656a; }
+.whatsapp-campaign-status-chip.delivered { background:#e5f3e8; color:#27683b; }
+.whatsapp-campaign-status-chip.read { background:#eee9f8; color:#5f4a8b; }
+.whatsapp-campaign-status-chip.failed { background:#fae7e5; color:#963a32; }
+.whatsapp-campaign-status-chip.unavailable { background:#fff3db; color:#77541d; }
+.whatsapp-campaign-delivery-extra,.whatsapp-campaign-snapshot { color:var(--muted); font-size:.72rem; line-height:1.5; }
+.whatsapp-campaign-snapshot { display:block; }
