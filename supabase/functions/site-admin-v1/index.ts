@@ -684,6 +684,126 @@ async function whatsappOverview() {
   };
 }
 
+
+async function whatsappConversationList(input: any) {
+  const parsedPage = Number.parseInt(String(input.page ?? "0"), 10);
+  const page = Number.isFinite(parsedPage) ? Math.min(200, Math.max(0, parsedPage)) : 0;
+  const pageSize = 30;
+  const offset = page * pageSize;
+  const requestedAccount = clean(input.account_id, 64);
+  const accountId = requestedAccount ? uuid(requestedAccount) : "";
+  if (requestedAccount && !accountId) return { error: "invalid_account_id", status: 400 };
+  const search = clean(input.search, 80).replace(/\D/g, "");
+  const onlyHuman = clean(input.filter, 20) === "human";
+
+  let conversationQuery = db.from("conversations")
+    .select("id,whatsapp_account_id,wa_contact_e164,status,stage,human_required,mode,last_inbound_at,last_outbound_at,updated_at,created_at", { count: "exact" })
+    .order("updated_at", { ascending: false })
+    .range(offset, offset + pageSize - 1);
+  if (accountId) conversationQuery = conversationQuery.eq("whatsapp_account_id", accountId);
+  if (search.length >= 4) conversationQuery = conversationQuery.ilike("wa_contact_e164", "%" + search + "%");
+  if (onlyHuman) conversationQuery = conversationQuery.eq("human_required", true);
+
+  const [conversationResult, accountResult] = await Promise.all([
+    conversationQuery,
+    db.from("whatsapp_accounts").select("id,slug,display_name,phone_e164,is_active").order("display_name"),
+  ]);
+  if (conversationResult.error) throw conversationResult.error;
+  if (accountResult.error) throw accountResult.error;
+
+  const accounts = accountResult.data || [];
+  const accountById = new Map(accounts.map((row: any) => [row.id, row]));
+  const items = (conversationResult.data || []).map((row: any) => {
+    const account: any = accountById.get(row.whatsapp_account_id) || {};
+    const phoneDigits = String(row.wa_contact_e164 || "").replace(/\D/g, "");
+    const accountDigits = String(account.phone_e164 || "").replace(/\D/g, "");
+    const lastActivity = [row.last_inbound_at, row.last_outbound_at, row.updated_at, row.created_at]
+      .filter(Boolean).sort((a: string, b: string) => new Date(b).getTime() - new Date(a).getTime())[0] || null;
+    return {
+      id: row.id,
+      channel: clean(account.display_name || account.slug || "WhatsApp", 120),
+      channel_number: accountDigits.slice(-4),
+      phone_last4: phoneDigits.slice(-4),
+      status: clean(row.status, 40),
+      stage: clean(row.stage, 40),
+      mode: clean(row.mode, 40),
+      human_required: row.human_required === true,
+      last_activity_at: lastActivity,
+    };
+  });
+  return {
+    items,
+    accounts: accounts.map((row: any) => ({
+      id: row.id,
+      name: clean(row.display_name || row.slug || "WhatsApp", 120),
+      number_last4: String(row.phone_e164 || "").replace(/\D/g, "").slice(-4),
+      active: row.is_active === true,
+    })),
+    page,
+    page_size: pageSize,
+    total: conversationResult.count || 0,
+    has_more: offset + items.length < (conversationResult.count || 0),
+  };
+}
+
+async function whatsappConversationMessages(input: any) {
+  const conversationId = uuid(input.conversation_id);
+  if (!conversationId) return { error: "invalid_conversation_id", status: 400 };
+  const beforeRaw = clean(input.before, 64);
+  const before = beforeRaw ? new Date(beforeRaw) : null;
+  if (beforeRaw && (!before || Number.isNaN(before.getTime()))) return { error: "invalid_before", status: 400 };
+
+  const conversationResult = await db.from("conversations")
+    .select("id,whatsapp_account_id,wa_contact_e164,status,stage,mode,human_required")
+    .eq("id", conversationId)
+    .maybeSingle();
+  if (conversationResult.error) throw conversationResult.error;
+  if (!conversationResult.data) return { error: "conversation_not_found", status: 404 };
+  const conversation = conversationResult.data;
+
+  const [accountResult, messageResult] = await Promise.all([
+    db.from("whatsapp_accounts").select("id,slug,display_name,phone_e164").eq("id", conversation.whatsapp_account_id).maybeSingle(),
+    (() => {
+      let query = db.from("whatsapp_messages_v1")
+        .select("id,direction,message_type,text_body,received_at,sent_at,created_at")
+        .eq("conversation_id", conversationId)
+        .eq("whatsapp_account_id", conversation.whatsapp_account_id);
+      if (before) query = query.lt("created_at", before.toISOString());
+      return query.order("created_at", { ascending: false }).limit(31);
+    })(),
+  ]);
+  if (accountResult.error) throw accountResult.error;
+  if (messageResult.error) throw messageResult.error;
+
+  const rows = messageResult.data || [];
+  const hasMore = rows.length > 30;
+  const pageRows = rows.slice(0, 30);
+  const oldestTimestamp = pageRows.length ? pageRows[pageRows.length - 1].created_at : null;
+  const account: any = accountResult.data || {};
+  const phoneDigits = String(conversation.wa_contact_e164 || "").replace(/\D/g, "");
+  const accountDigits = String(account.phone_e164 || "").replace(/\D/g, "");
+  return {
+    conversation: {
+      id: conversation.id,
+      channel: clean(account.display_name || account.slug || "WhatsApp", 120),
+      channel_number: accountDigits.slice(-4),
+      phone_last4: phoneDigits.slice(-4),
+      status: clean(conversation.status, 40),
+      stage: clean(conversation.stage, 40),
+      mode: clean(conversation.mode, 40),
+      human_required: conversation.human_required === true,
+    },
+    messages: pageRows.reverse().map((row: any) => ({
+      id: row.id,
+      direction: clean(row.direction, 20),
+      message_type: clean(row.message_type, 30),
+      text_body: String(row.text_body || "").replace(/\u0000/g, "").slice(0, 4000),
+      message_at: row.received_at || row.sent_at || row.created_at,
+    })),
+    next_before: hasMore ? oldestTimestamp : null,
+  };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
   if (!["GET", "POST"].includes(req.method)) return json(req, { ok: false, error: "method_not_allowed" }, 405);
@@ -705,6 +825,8 @@ Deno.serve(async (req: Request) => {
     const action = clean(input.action, 40);
     let result: any;
     if (req.method === "POST" && action === "whatsapp_overview") result = await whatsappOverview();
+    else if (req.method === "POST" && action === "whatsapp_conversation_list") result = await whatsappConversationList(input);
+    else if (req.method === "POST" && action === "whatsapp_conversation_messages") result = await whatsappConversationMessages(input);
     else if (req.method === "POST" && action === "customer_lookup") result = await customerLookup(input);
     else if (req.method === "POST" && action === "customer_save") result = await customerSave(input);
     else if (req.method === "GET" && action === "baskets") {
