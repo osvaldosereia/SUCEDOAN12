@@ -1,3 +1,40 @@
+-- Require an active individual opt-in event tied to the customer's explicit WhatsApp reply.
+-- Existing administrative declarations remain untouched and are excluded from campaign sends.
+create or replace function public.marketing_has_verified_campaign_consent_v1(p_customer_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+  select exists (
+    select 1
+    from public.marketing_customer_consent_current_v1 current_consent
+    join public.marketing_consent_events_v1 evidence
+      on evidence.id = current_consent.latest_event_id
+     and evidence.customer_id = current_consent.customer_id
+    join public.marketing_weekly_consent_requests_v1 consent_request
+      on consent_request.id::text = evidence.source_ref
+     and consent_request.customer_id = current_consent.customer_id
+     and consent_request.consent_event_id = evidence.id
+     and consent_request.decision = 'opt_in'
+     and consent_request.response_message_id::text = evidence.metadata->>'response_message_id'
+     and consent_request.consent_text_version = evidence.consent_text_version
+     and consent_request.consent_text_snapshot = evidence.consent_text_snapshot
+     and consent_request.asked_at is not null
+     and evidence.occurred_at >= consent_request.asked_at
+    where current_consent.customer_id = p_customer_id
+      and current_consent.consent_state = 'opt_in'
+      and evidence.decision = 'opt_in'
+      and evidence.source = 'attendance_weekly_offers_consent'
+      and evidence.recorded_by = 'customer_whatsapp'
+      and evidence.source_event_key = 'weekly_consent_response:' || consent_request.response_message_id::text
+      and evidence.metadata->>'scope' = 'weekly_offers_coupons'
+      and nullif(btrim(evidence.source_ref), '') is not null
+      and nullif(btrim(evidence.consent_text_snapshot), '') is not null
+  );
+$function$;
+
 create or replace function public.site_admin_marketing_campaign_status_summary_v1(p_campaign_ids uuid[])
 returns table (
   campaign_id uuid,
@@ -19,7 +56,9 @@ returns table (
   snapshot_found_count bigint,
   snapshot_eligible_count bigint,
   snapshot_excluded_count bigint,
+  currently_verified_consent_count bigint,
   excluded_opted_out_count bigint,
+  excluded_consent_evidence_unverified_count bigint,
   excluded_no_consent_count bigint,
   excluded_inactive_customer_count bigint,
   excluded_invalid_phone_count bigint,
@@ -112,6 +151,8 @@ as $function$
       s.campaign_id,
       s.id as snapshot_id,
       count(distinct r.id) filter (where 'opted_out' = any(coalesce(r.exclusion_reasons, array[]::text[]))) as opted_out_count,
+      count(distinct r.id) filter (where 'consent_evidence_unverified' = any(coalesce(r.exclusion_reasons, array[]::text[]))) as consent_evidence_unverified_count,
+      count(distinct r.id) filter (where r.eligible_at_snapshot is true and public.marketing_has_verified_campaign_consent_v1(r.customer_id)) as currently_verified_consent_count,
       count(distinct r.id) filter (where 'no_consent' = any(coalesce(r.exclusion_reasons, array[]::text[]))) as no_consent_count,
       count(distinct r.id) filter (where 'inactive_customer' = any(coalesce(r.exclusion_reasons, array[]::text[]))) as inactive_customer_count,
       count(distinct r.id) filter (where 'invalid_phone' = any(coalesce(r.exclusion_reasons, array[]::text[]))) as invalid_phone_count,
@@ -140,7 +181,9 @@ as $function$
     coalesce(latest_snapshots.found_count, 0)::bigint,
     coalesce(latest_snapshots.eligible_count, 0)::bigint,
     coalesce(latest_snapshots.excluded_count, 0)::bigint,
+    coalesce(exclusion_summary.currently_verified_consent_count, 0)::bigint,
     coalesce(exclusion_summary.opted_out_count, 0)::bigint,
+    coalesce(exclusion_summary.consent_evidence_unverified_count, 0)::bigint,
     coalesce(exclusion_summary.no_consent_count, 0)::bigint,
     coalesce(exclusion_summary.inactive_customer_count, 0)::bigint,
     coalesce(exclusion_summary.invalid_phone_count, 0)::bigint,
