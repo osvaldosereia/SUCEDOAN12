@@ -786,6 +786,7 @@ async function whatsappOverview() {
       && String(summary.snapshot_id || "") === String(snapshot.id || "")
     );
     return {
+      id: uuid(row.id),
       name: clean(row.name || "Campanha", 140),
       channel: clean(accountById.get(row.whatsapp_account_id)?.display_name || "", 120),
       status: clean(row.status, 40),
@@ -1223,6 +1224,78 @@ function stableAdminJson(value: any): string {
     ).join(",") + "}";
   }
   return JSON.stringify(value) ?? "undefined";
+}
+
+
+async function whatsappCampaignPreview(input: any) {
+  const campaignId = uuid(input.campaign_id);
+  if (!campaignId) return { error: "invalid_campaign_id", status: 400 };
+  const campaignResult = await db.from("marketing_campaigns_v1")
+    .select("id,name,status,revision,filters,whatsapp_account_id,template_id")
+    .eq("id", campaignId)
+    .maybeSingle();
+  if (campaignResult.error) throw campaignResult.error;
+  if (!campaignResult.data) return { error: "campaign_not_found", status: 404 };
+  const campaign: any = campaignResult.data;
+  if (!campaign.filters || typeof campaign.filters !== "object" || Array.isArray(campaign.filters)) {
+    return { error: "campaign_filters_unavailable", status: 409 };
+  }
+
+  const [previewResult, templateResult] = await Promise.all([
+    db.rpc("marketing_preview_audience_v1", {
+      p_filters: campaign.filters,
+      p_limit: 1,
+      p_offset: 0,
+    }),
+    db.rpc("marketing_campaign_template_snapshot_v1", {
+      p_whatsapp_account_id: campaign.whatsapp_account_id,
+      p_template_id: campaign.template_id,
+    }),
+  ]);
+  if (previewResult.error) throw previewResult.error;
+  const preview = previewResult.data || {};
+  if (preview.ok !== true) {
+    return { error: clean(preview.error || "audience_preview_unavailable", 100), status: 409 };
+  }
+
+  const exclusions = preview.exclusion_reasons && typeof preview.exclusion_reasons === "object"
+    && !Array.isArray(preview.exclusion_reasons) ? preview.exclusion_reasons : {};
+  const count = (value: any) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : 0;
+  };
+  const template: any = !templateResult.error && templateResult.data && typeof templateResult.data === "object"
+    ? templateResult.data
+    : {};
+  return {
+    campaign: {
+      id: campaignId,
+      name: clean(campaign.name, 140),
+      status: clean(campaign.status, 40),
+      revision: Number(campaign.revision) || 0,
+    },
+    preview: {
+      found_count: count(preview.found_count),
+      eligible_count: count(preview.eligible_count),
+      excluded_count: count(preview.excluded_count),
+      exclusion_counts: {
+        available: true,
+        opted_out_count: count(exclusions.opted_out),
+        no_consent_count: count(exclusions.no_consent),
+        inactive_customer_count: count(exclusions.inactive_customer),
+        invalid_phone_count: count(exclusions.invalid_phone),
+        duplicate_phone_count: count(exclusions.duplicate_phone),
+      },
+    },
+    template: {
+      available: !templateResult.error,
+      sendable: template.ok === true,
+      error: template.ok === true ? "" : clean(template.error || "template_status_unavailable", 80),
+      name: template.ok === true ? clean(template.name, 160) : "",
+      language: template.ok === true ? clean(template.language, 24) : "",
+      category: template.ok === true ? clean(template.category, 40) : "",
+    },
+  };
 }
 
 async function whatsappAnaAdminStatus() {
@@ -1724,6 +1797,7 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "whatsapp_conversation_send_media") result = await whatsappConversationSendMedia(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_media") result = await whatsappConversationMedia(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_favorite") result = await whatsappConversationFavorite(input);
+    else if (req.method === "POST" && action === "whatsapp_campaign_preview") result = await whatsappCampaignPreview(input);
     else if (req.method === "POST" && action === "whatsapp_ana_admin_status") result = await whatsappAnaAdminStatus();
     else if (req.method === "POST" && action === "customer_lookup") result = await customerLookup(input);
     else if (req.method === "POST" && action === "customer_save") result = await customerSave(input);
