@@ -244,6 +244,149 @@ async function mapLimit<T, R>(items: T[], limit: number, task: (item: T) => Prom
   return results;
 }
 
+function normalizeQuickBalanceEan(value: unknown) {
+  const scanned = clean(value, 40).replace(/\D/g, "");
+  return scanned.length >= 8 && scanned.length <= 14 ? scanned : "";
+}
+
+function quickBalanceEanCandidates(value: string) {
+  const scanned = String(value || "").replace(/\D/g, "");
+  const canonical = scanned.replace(/^0+/, "") || "0";
+  const candidates = new Set<string>([scanned, canonical]);
+  for (const length of [8, 12, 13, 14]) {
+    if (canonical.length <= length) candidates.add(canonical.padStart(length, "0"));
+  }
+  return [...candidates];
+}
+
+async function quickBalanceLookup(input: any) {
+  const ean = normalizeQuickBalanceEan(input.ean);
+  if (!ean) return { status: 400, error: "invalid_ean", message: "Leia um código EAN válido." };
+
+  const candidates = quickBalanceEanCandidates(ean);
+  const productFields = "id,name,brand,sku,gtin,image_url,stock,validity_date,gondola,is_active";
+  const [gtinResult, captureResult, gondolaResult] = await Promise.all([
+    db.from("products").select(productFields).in("gtin", candidates).limit(50),
+    db.from("ean_capture_records_v1").select("matched_product_id").in("ean", candidates).eq("sync_status", "found").not("matched_product_id", "is", null).limit(100),
+    db.from("vitrine_gondolas").select("number").eq("active", true).order("number"),
+  ]);
+  if (gtinResult.error) throw gtinResult.error;
+  if (captureResult.error) throw captureResult.error;
+  if (gondolaResult.error) throw gondolaResult.error;
+
+  const byId = new Map<string, any>();
+  for (const product of gtinResult.data || []) byId.set(String(product.id), product);
+  const mappedIds = [...new Set((captureResult.data || []).map((row: any) => clean(row.matched_product_id, 80)).filter(Boolean))];
+  const missingIds = mappedIds.filter((id) => !byId.has(id));
+  if (missingIds.length) {
+    const mapped = await db.from("products").select(productFields).in("id", missingIds).limit(50);
+    if (mapped.error) throw mapped.error;
+    for (const product of mapped.data || []) byId.set(String(product.id), product);
+  }
+
+  const products = [...byId.values()];
+  if (!products.length) return { found: false, message: "Produto não encontrado para este EAN." };
+  if (products.length > 1) {
+    return { status: 409, error: "ambiguous_ean", message: "Este EAN está ligado a mais de um produto. Confira o cadastro antes de continuar." };
+  }
+
+  const product = products[0];
+  const stock = product.stock === null || product.stock === undefined ? null : Number(product.stock);
+  const stockReady = Number.isFinite(stock);
+  return {
+    found: true,
+    gondolas: (gondolaResult.data || []).map((row: any) => String(row.number)),
+    product: {
+      id: product.id,
+      name: product.name || "",
+      brand: product.brand || "",
+      sku: product.sku || "",
+      gtin: product.gtin || "",
+      image_url: product.image_url || "",
+      is_active: product.is_active === true,
+      validity_date: product.validity_date || null,
+      gondola: product.gondola ?? null,
+      current_stock: stockReady ? stock : null,
+      stock_ready: stockReady,
+      stock_source: "supabase",
+    },
+  };
+}
+
+async function quickBalanceSave(input: any) {
+  const productId = uuid(input.product_id);
+  const ean = normalizeQuickBalanceEan(input.ean);
+  const rawQuantity = String(input.counted_quantity ?? "").trim().replace(",", ".");
+  const quantity = rawQuantity === "" ? NaN : Number(rawQuantity);
+  if (!productId) return { status: 400, error: "invalid_product_id", message: "Produto inválido. Leia o EAN novamente." };
+  if (!ean) return { status: 400, error: "invalid_ean", message: "Leia o código EAN novamente." };
+  if (!Number.isFinite(quantity) || quantity < 0 || quantity > 999999.999 || (rawQuantity.split(".")[1] || "").length > 3) {
+    return { status: 400, error: "invalid_count", message: "Informe uma quantidade válida, com até três casas decimais." };
+  }
+  if (!Object.prototype.hasOwnProperty.call(input, "expected_stock")) {
+    return { status: 400, error: "invalid_product_snapshot", message: "Atualize o produto antes de salvar." };
+  }
+  const expectedStock = input.expected_stock === null ? null : Number(input.expected_stock);
+  if (expectedStock !== null && (!Number.isFinite(expectedStock) || expectedStock < 0)) {
+    return { status: 400, error: "invalid_product_snapshot", message: "Atualize o produto antes de salvar." };
+  }
+  const countedQuantity = Math.round(quantity * 1000) / 1000;
+  const parseDate = (value: unknown) => {
+    if (value === null || value === undefined || value === "") return null;
+    const date = String(value);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || new Date(date + "T00:00:00Z").toISOString().slice(0, 10) !== date) return undefined;
+    return date;
+  };
+  const validityDate = parseDate(input.validity_date);
+  const expectedValidityDate = parseDate(input.expected_validity_date);
+  if (validityDate === undefined || expectedValidityDate === undefined
+    || !Object.prototype.hasOwnProperty.call(input, "expected_gondola")) {
+    return { status: 400, error: "invalid_product_snapshot", message: "Atualize o produto antes de salvar." };
+  }
+  const gondola = clean(input.gondola, 24);
+  const expectedGondola = input.expected_gondola === null ? null : clean(input.expected_gondola, 24);
+
+  const [productResult, gondolaResult] = await Promise.all([
+    db.from("products").select("id,gondola").eq("id", productId).maybeSingle(),
+    db.from("vitrine_gondolas").select("number").eq("active", true),
+  ]);
+  if (productResult.error) throw productResult.error;
+  if (gondolaResult.error) throw gondolaResult.error;
+  if (!productResult.data) return { status: 404, error: "product_not_found", message: "Produto não encontrado. Leia o EAN novamente." };
+  const currentGondola = productResult.data.gondola ?? null;
+  const activeGondolas = new Set((gondolaResult.data || []).map((row: any) => String(row.number)));
+  if (gondola && gondola !== currentGondola && !activeGondolas.has(gondola)) {
+    return { status: 400, error: "invalid_gondola", message: "Selecione uma gôndola ativa." };
+  }
+
+  const saved = await db.rpc("ops_quick_balance_save_v1", {
+    p_product_id: productId,
+    p_scanned_ean: ean,
+    p_counted_quantity: countedQuantity,
+    p_validity_date: validityDate,
+    p_gondola: gondola || null,
+    p_expected_stock: expectedStock,
+    p_expected_validity_date: expectedValidityDate,
+    p_expected_gondola: expectedGondola,
+    p_operator_label: "Admin · Balanço rápido",
+  });
+  if (saved.error) throw saved.error;
+  if (saved.data?.ok !== true) {
+    const code = clean(saved.data?.error, 60) || "quick_balance_save_failed";
+    const status = code === "product_not_found" ? 404
+      : code === "product_changed" || code === "ean_mismatch" ? 409 : 400;
+    const messages: Record<string, string> = {
+      product_not_found: "Produto não encontrado. Leia o EAN novamente.",
+      product_changed: "O produto mudou em outra tela. Leia o EAN novamente antes de salvar.",
+      ean_mismatch: "O EAN não corresponde a este produto. Leia o código novamente.",
+      invalid_count: "Informe uma quantidade válida.",
+      invalid_gondola: "Selecione uma gôndola ativa.",
+    };
+    return { status, error: code, message: messages[code] || "Não foi possível salvar o balanço." };
+  }
+  return { saved: true, ...saved.data };
+}
+
 async function productSearch(input: any) {
   const limit = integer(input.limit ?? 24, 1, 50) || 24;
   const offset = integer(input.offset ?? 0, 0, 100000) || 0;
@@ -3056,6 +3199,8 @@ Deno.serve(async (req: Request) => {
       const status = ["active", "inactive", "all"].includes(input.status) ? input.status : "active";
       result = await basketList(status);
     }
+    else if (req.method === "POST" && action === "quick_balance_lookup") result = await quickBalanceLookup(input);
+    else if (req.method === "POST" && action === "quick_balance_save") result = await quickBalanceSave(input);
     else if (req.method === "GET" && action === "products") result = await productSearch(input);
     else if (req.method === "POST" && action === "product_save") result = await productSave(input);
     else if (req.method === "POST" && action === "product_set_active") result = await productSetActive(input);
