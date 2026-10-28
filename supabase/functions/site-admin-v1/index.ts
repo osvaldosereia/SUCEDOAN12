@@ -791,6 +791,9 @@ async function whatsappConversationList(input: any) {
 async function whatsappConversationMessages(input: any) {
   const conversationId = uuid(input.conversation_id);
   if (!conversationId) return { error: "invalid_conversation_id", status: 400 };
+  if (clean(input.before, 64)) {
+    return { error: "legacy_before_cursor_unsupported", message: "Atualize a página para continuar carregando o histórico.", status: 409 };
+  }
   const beforeRaw = clean(input.before_created_at, 64);
   const beforeIdRaw = clean(input.before_id, 64);
   const beforeId = beforeIdRaw ? uuid(beforeIdRaw) : "";
