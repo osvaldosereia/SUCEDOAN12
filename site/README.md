@@ -12,7 +12,7 @@ O catálogo público fica em `/site/`; o painel administrativo fica em `/site/ad
 ## Administração
 
 - O painel usa um único código de acesso, sem login de usuário e senha. O valor fica em memória apenas durante a sessão do navegador.
-- Configure um segredo aleatório de 32 a 128 caracteres com o nome `DONA_ADMIN_CODE` nas Edge Functions do Supabase. Não coloque o valor no HTML, JavaScript, configuração pública ou GitHub.
+- Configure um código de acesso forte de 13 a 128 caracteres com o nome `DONA_ADMIN_CODE` nas Edge Functions do Supabase. Não coloque o valor no HTML, JavaScript, configuração pública ou GitHub.
 - Em **Clientes**, é possível editar nome e endereço. Telefone e CPF/CNPJ continuam somente para consulta. A gravação é feita no servidor, valida se outro operador atualizou o cadastro e registra uma linha no histórico administrativo.
 - **Cestas** e **Produtos** mantêm os fluxos de edição do painel; cadastros são desativados em vez de apagados.
 - Em **WhatsApp**, **Pedido recebido** controla a mensagem enviada na criação do pedido; **Após a separação** controla outro envio. Salvar rascunho não envia nada à Meta. Envie a versão para análise e ative-a por número depois da aprovação; o modelo atual continua enviando até essa ativação.
