@@ -8,12 +8,12 @@
   <title>Admin · Dona Antônia</title>
   <link rel="stylesheet" href="../styles.css?v=5">
   <link rel="stylesheet" href="admin.css?v=42">
-  <link rel="stylesheet" href="orders-admin.css?v=2">
+  <link rel="stylesheet" href="orders-admin.css?v=5">
   <link rel="stylesheet" href="quick-balance-admin.css?v=4">
   <script src="../config.js?v=3"></script>
   <script src="admin-auth.js?v=2" defer></script>
   <script src="catalog-admin.js?v=11" defer></script>
-  <script src="orders-admin.js?v=4" defer></script>
+  <script src="orders-admin.js?v=5" defer></script>
   <script src="order-message-admin.js?v=3" defer></script>
   <script src="separation-message-admin.js?v=3" defer></script>
   <script src="whatsapp-admin.js?v=28" defer></script>
@@ -410,10 +410,11 @@
           <option value="kelly">Kelly</option>
         </select>
       </label>
-      <p id="separation-progress" class="separation-progress"></p>
+      <p id="separation-progress" class="separation-progress" aria-live="polite"></p>
+      <p id="separation-assignment-hint" class="separation-assignment-hint" role="status"></p>
+      <p id="separation-message" class="form-message" role="status" aria-live="polite"></p>
       <div id="separation-items" class="separation-items"></div>
       <div class="separation-total"><span>Total atualizado</span><strong id="separation-total-value">—</strong></div>
-      <p id="separation-message" class="form-message" role="status"></p>
       <footer class="orders-dialog-actions"><button class="button button-outline" type="button" data-orders-close="order-separation-dialog">Fechar</button><button id="confirm-separation" class="button button-primary" type="button" disabled>Confirmar separação</button></footer>
     </section>
   </dialog>
