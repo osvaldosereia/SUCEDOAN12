@@ -620,6 +620,70 @@ async function markOrderDelivered(input: any) {
 }
 
 
+
+async function whatsappOverview() {
+  const [accountsResult, runtimeResult, templateCountResult, approvedCountResult, campaignsResult, anaResult] = await Promise.all([
+    db.from("whatsapp_accounts").select("id,slug,display_name,phone_e164").order("display_name"),
+    db.from("whatsapp_channel_runtime_v1").select("whatsapp_account_id,inbound_provider,outbound_provider,capture_enabled,send_enabled,ana_enabled,campaigns_enabled,human_send_enabled,homologated_at,updated_at"),
+    db.from("whatsapp_templates_v1").select("id", { count: "exact", head: true }),
+    db.from("whatsapp_templates_v1").select("id", { count: "exact", head: true }).eq("status", "approved"),
+    db.from("marketing_campaigns_v1")
+      .select("id,name,whatsapp_account_id,status,scheduled_for,created_at", { count: "exact" })
+      .order("created_at", { ascending: false }).limit(6),
+    db.from("whatsapp_ana_jobs_v1")
+      .select("id,whatsapp_account_id,status,decision,created_at")
+      .eq("dry_run", false).order("created_at", { ascending: false }).limit(6),
+  ]);
+  for (const result of [accountsResult, runtimeResult, templateCountResult, approvedCountResult, campaignsResult, anaResult]) {
+    if (result.error) throw result.error;
+  }
+
+  const accounts = accountsResult.data || [];
+  const runtimeByAccount = new Map((runtimeResult.data || []).map((row: any) => [row.whatsapp_account_id, row]));
+  const accountById = new Map(accounts.map((row: any) => [row.id, row]));
+  const channels = accounts.map((account: any) => {
+    const runtime: any = runtimeByAccount.get(account.id) || {};
+    const digits = String(account.phone_e164 || "").replace(/\D/g, "");
+    return {
+      name: clean(account.display_name || account.slug || "Canal", 120),
+      phone_last4: digits.slice(-4),
+      inbound_provider: clean(runtime.inbound_provider, 40),
+      outbound_provider: clean(runtime.outbound_provider, 40),
+      capture_enabled: runtime.capture_enabled === true,
+      send_enabled: runtime.send_enabled === true,
+      ana_enabled: runtime.ana_enabled === true,
+      campaigns_enabled: runtime.campaigns_enabled === true,
+      human_send_enabled: runtime.human_send_enabled === true,
+      homologated_at: runtime.homologated_at || null,
+      updated_at: runtime.updated_at || null,
+    };
+  });
+  const campaigns = (campaignsResult.data || []).map((row: any) => ({
+    name: clean(row.name || "Campanha", 140),
+    channel: clean(accountById.get(row.whatsapp_account_id)?.display_name || "", 120),
+    status: clean(row.status, 40),
+    scheduled_for: row.scheduled_for || null,
+    created_at: row.created_at || null,
+  }));
+  const ana = (anaResult.data || []).map((row: any) => ({
+    channel: clean(accountById.get(row.whatsapp_account_id)?.display_name || "", 120),
+    status: clean(row.status, 40),
+    decision: clean(row.decision, 60),
+    created_at: row.created_at || null,
+  }));
+
+  return {
+    channels,
+    templates: {
+      total: templateCountResult.count || 0,
+      approved: approvedCountResult.count || 0,
+    },
+    campaigns: { total: campaignsResult.count || 0, recent: campaigns },
+    ana: { recent: ana },
+    generated_at: new Date().toISOString(),
+  };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
   if (!["GET", "POST"].includes(req.method)) return json(req, { ok: false, error: "method_not_allowed" }, 405);
@@ -640,7 +704,8 @@ Deno.serve(async (req: Request) => {
     const input = { ...Object.fromEntries(url.searchParams.entries()), ...body };
     const action = clean(input.action, 40);
     let result: any;
-    if (req.method === "POST" && action === "customer_lookup") result = await customerLookup(input);
+    if (req.method === "POST" && action === "whatsapp_overview") result = await whatsappOverview();
+    else if (req.method === "POST" && action === "customer_lookup") result = await customerLookup(input);
     else if (req.method === "POST" && action === "customer_save") result = await customerSave(input);
     else if (req.method === "GET" && action === "baskets") {
       const status = ["active", "inactive", "all"].includes(input.status) ? input.status : "active";
