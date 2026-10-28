@@ -343,6 +343,20 @@
 .whatsapp-message p { margin:0; color:var(--ink); font-size:.86rem; white-space:pre-wrap; overflow-wrap:anywhere; }
 .whatsapp-message time { display:block; margin-top:6px; color:var(--muted); font-size:.68rem; }
 .whatsapp-message-status { display:block; margin-top:2px; color:var(--muted); font-size:.68rem; font-weight:650; }
+.whatsapp-media-content,.whatsapp-location-card { display:grid; gap:8px; min-width:min(190px,70vw); max-width:min(360px,74vw); }
+.whatsapp-media-load { display:flex; width:100%; min-height:56px; align-items:center; gap:10px; padding:8px 10px; border:1px solid #dce5df; border-radius:10px; background:#f8fbf9; color:#31483a; text-align:left; cursor:pointer; }
+.whatsapp-media-load:disabled { cursor:wait; opacity:.72; }
+.whatsapp-media-icon { display:grid; width:34px; height:34px; flex:0 0 auto; place-items:center; border-radius:9px; background:#e8f2eb; color:var(--brand); font-size:16px; font-weight:900; }
+.whatsapp-media-copy { display:grid; gap:2px; }
+.whatsapp-media-copy strong { font-size:.8rem; }
+.whatsapp-media-copy small,.whatsapp-location-card span { color:var(--muted); font-size:.72rem; }
+.whatsapp-media-image,.whatsapp-media-video { display:block; max-width:min(360px,100%); max-height:55vh; border-radius:9px; }
+.whatsapp-media-audio { display:block; width:min(360px,100%); }
+.whatsapp-media-file { display:inline-flex; align-items:center; min-height:38px; padding:7px 10px; border:1px solid var(--line); border-radius:8px; color:var(--brand); font-size:.8rem; font-weight:700; text-decoration:none; }
+.whatsapp-media-caption { margin:0; color:var(--ink); font-size:.82rem; white-space:pre-wrap; overflow-wrap:anywhere; }
+.whatsapp-location-card { padding:10px; border:1px solid var(--line); border-radius:10px; background:#fff; }
+.whatsapp-location-card strong { color:var(--ink); font-size:.82rem; }
+.whatsapp-location-link { width:max-content; color:var(--brand); font-size:.76rem; font-weight:700; }
 #whatsapp-conversation-older { align-self:center; margin-top:10px; }
 @media (max-width:760px) {
   .whatsapp-conversation-filters { grid-template-columns:1fr 1fr; }
