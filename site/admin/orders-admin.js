@@ -129,7 +129,9 @@
     return result.separation || result.data || result;
   }
 
-  async function loadSeparation(orderId) {
+  async function loadSeparation(orderId, options = {}) {
+    const list = $("separation-items");
+    const previousScrollTop = options.preserveScroll && list ? list.scrollTop : 0;
     const result = await api("GET", "order_separation", { order_id: orderId });
     const separation = unwrapSeparation(result);
     const details = await api("GET", "order_detail", { order_id: orderId });
@@ -152,6 +154,7 @@
     };
     state.separatorKey = state.separation.separatorKey;
     renderSeparation();
+    if (options.preserveScroll && list) list.scrollTop = previousScrollTop;
   }
 
   function separationMissingValue() {
@@ -166,6 +169,14 @@
     const totalCount = separation.items.length;
     const doneCount = separation.items.filter((item) => item.state === "separated" || item.state === "missing").length;
     const total = Math.max(0, Number(separation.order.total || 0) - separationMissingValue());
+    const hasSeparator = Boolean(separation.separatorKey);
+    const assignmentHint = $("separation-assignment-hint");
+    if (assignmentHint) {
+      assignmentHint.textContent = hasSeparator
+        ? "Marque cada produto como encontrado ou não encontrado."
+        : "Selecione o responsável para liberar os botões dos produtos.";
+      assignmentHint.classList.toggle("is-ready", hasSeparator);
+    }
     $("separation-title").textContent = "Pedido " + orderNumber(separation.order);
     $("order-separator").value = separation.separatorKey;
     $("separation-progress").textContent = doneCount + " de " + totalCount + " produtos conferidos";
@@ -176,7 +187,7 @@
       return "<article class='separation-item " + (item.state === "missing" ? "is-missing" : item.state === "separated" ? "is-separated" : "") + "'>" +
         "<img src='" + esc(item.image_url || "../img/logoantonia5.png") + "' alt='' loading='lazy'>" +
         "<div class='separation-item-copy'><strong>" + esc(item.name) + "</strong><span class='separation-item-quantity'>Quantidade: " + esc(item.quantity) + "</span><small>" + esc(chosenLabel) + (item.state === "missing" ? " · abatido " + esc(money(item.line_total)) : "") + "</small></div>" +
-        "<div class='separation-item-actions'><button type='button' data-separation-item='" + esc(item.id) + "' data-separation-state='separated' aria-label='Confirmar produto encontrado' " + (state.busy || done ? "disabled" : "") + ">OK<span class='separation-action-label'> · Encontrado</span></button><button type='button' data-separation-item='" + esc(item.id) + "' data-separation-state='missing' aria-label='Confirmar produto não encontrado' " + (state.busy || done ? "disabled" : "") + ">X<span class='separation-action-label'> · Não encontrado</span></button></div>" +
+        "<div class='separation-item-actions'><button type='button' data-separation-item='" + esc(item.id) + "' data-separation-state='separated' aria-label='Confirmar produto encontrado' " + (state.busy || done || !hasSeparator ? "disabled" : "") + ">OK<span class='separation-action-label'> · Encontrado</span></button><button type='button' data-separation-item='" + esc(item.id) + "' data-separation-state='missing' aria-label='Confirmar produto não encontrado' " + (state.busy || done || !hasSeparator ? "disabled" : "") + ">X<span class='separation-action-label'> · Não encontrado</span></button></div>" +
       "</article>";
     }).join("");
     $("separation-items").querySelectorAll("img").forEach((image) => image.addEventListener("error", () => { image.src = "../img/logoantonia5.png"; }, { once: true }));
@@ -241,11 +252,13 @@
         expected_order_updated_at: separation.orderUpdatedAt,
         separator_key: separation.separatorKey
       });
-      await loadSeparation(separation.orderId);
-      $("separation-message").textContent = "";
+      await loadSeparation(separation.orderId, { preserveScroll: true });
+      $("separation-message").textContent = itemState === "separated"
+        ? "Produto marcado como encontrado."
+        : "Produto marcado como não encontrado.";
     } catch (error) {
       $("separation-message").textContent = error.message || "Não foi possível salvar a conferência.";
-      try { await loadSeparation(separation.orderId); } catch (_) {}
+      try { await loadSeparation(separation.orderId, { preserveScroll: true }); } catch (_) {}
     } finally {
       state.busy = false;
       renderSeparation();
