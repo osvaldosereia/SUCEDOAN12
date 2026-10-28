@@ -428,6 +428,11 @@ entrypoint = "./functions/admin-product-image-v1/index.ts"
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/admin-product-image-v1/*.html" ]
 
+[functions.admin-basket-molds-browser-v1]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/admin-basket-molds-browser-v1/index.ts"
+
 [functions.admin-product-whatsapp-availability-v1]
 enabled = true
 verify_jwt = true

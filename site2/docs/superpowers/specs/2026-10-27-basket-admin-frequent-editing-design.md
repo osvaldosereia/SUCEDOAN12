@@ -6,7 +6,7 @@ Permitir que a equipe ajuste pelo Admin a cesta que o Flow consome, sem depender
 
 ## Estado confirmado
 
-- `/cestas/[basketId]` já lista etapas e fotos, adiciona/remove alternativas e salva por sessão autenticada.
+- `/cestas` lista etapas e fotos; `/cestas/editar?id=<uuid>` adiciona/remove alternativas e salva pela sessão autenticada do navegador.
 - O gateway ativo `admin-basket-molds-v1` v21 aceita `name`, `hidden_adjustment` e `positions` com `label`, `quantity`, ordem e opções. O writer `admin_save_basket_mold_v3` exige usuário autenticado e chama a gravação transacional existente.
 - O Flow greenfield lê `label`, `sort_order` e opções; a escolha de quantidade do cliente é `0..6`. A coluna antiga `basket_mold_positions.quantity` não é consumida pelo Flow atual. Não expor essa coluna como controle que promete mudar o pedido.
 - O acréscimo fixo oculto altera a cotação server-side e não aparece como item/valor individual na confirmação enviada ao cliente.
@@ -31,3 +31,9 @@ Permitir que a equipe ajuste pelo Admin a cesta que o Flow consome, sem depender
 - Sem migration, DDL, escrita direta no banco, alteração do catálogo Meta, publicação de Flow, envio de mensagens, estoque, Bling ou NF-e nesta fatia.
 - A alteração usa `admin_save_basket_mold_v3` com sessão do usuário; o snapshot evita edição a partir de tela desatualizada. O writer existente recria as linhas de posição, portanto Flow em andamento deve ser reiniciado/revalidado.
 - Sem testes automatizados nesta tarefa; validar tipos, lint focalizado e diff.
+
+## Adaptação para GitHub Pages (28/10/2026)
+
+O objetivo de publicação foi definido como `donaantonia.com.br/site2`, no GitHub Pages existente. Como Pages não executa Server Actions do Next.js, a tela usa sessão do navegador e uma Edge Function intermediária autenticada. O browser envia somente a revisão opaca, os campos editáveis e IDs; a função relê o estado atual, preserva categorias/regras/metadados no servidor e chama o gateway/writer existente. A resposta devolve apenas a projeção necessária à tela. Nenhuma tabela ou RPC nova é necessária.
+
+A função intermediária `admin-basket-molds-browser-v1` foi publicada na versão 1 no Supabase canônico, com `verify_jwt=true` e CORS limitado ao domínio e aos endereços locais de desenvolvimento. A publicação não executou nenhuma ação de catálogo, pedido ou Meta; não publicar Flow nem executar operações Meta ao publicar novas versões desta função.

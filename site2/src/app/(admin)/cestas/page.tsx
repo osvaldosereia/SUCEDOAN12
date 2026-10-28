@@ -1,3 +1,5 @@
+"use client";
+
 import {
 	AlertCircle,
 	ArrowRight,
@@ -5,10 +7,16 @@ import {
 	ShoppingBasket,
 } from "lucide-react";
 import Link from "next/link";
-import {
-	getAdminBasketMoldList,
-	getAdminBasketMoldPhotoAudit,
+import { useEffect, useState } from "react";
+import type {
+	BasketMoldPhotoAudit,
+	BasketMoldResult,
+	BasketMoldSummary,
 } from "@/lib/supabase/admin-basket-molds";
+import {
+	getBrowserAdminBasketMoldList,
+	getBrowserAdminBasketMoldPhotoAudit,
+} from "@/lib/supabase/browser-admin-basket-molds";
 
 const errorCopy: Record<string, string> = {
 	not_configured: "O acesso ao Supabase ainda não está configurado.",
@@ -17,11 +25,26 @@ const errorCopy: Record<string, string> = {
 	unavailable: "Não foi possível carregar as cestas agora. Tente novamente.",
 };
 
-export default async function CestasPage() {
-	const result = await getAdminBasketMoldList();
-	const auditResult = result.ok
-		? await getAdminBasketMoldPhotoAudit(result.data)
-		: null;
+export default function CestasPage() {
+	const [result, setResult] = useState<BasketMoldResult<
+		BasketMoldSummary[]
+	> | null>(null);
+	const [auditResult, setAuditResult] =
+		useState<BasketMoldResult<BasketMoldPhotoAudit> | null>(null);
+	useEffect(() => {
+		let current = true;
+		void (async () => {
+			const list = await getBrowserAdminBasketMoldList();
+			if (!current) return;
+			setResult(list);
+			if (!list.ok) return;
+			const audit = await getBrowserAdminBasketMoldPhotoAudit(list.data);
+			if (current) setAuditResult(audit);
+		})();
+		return () => {
+			current = false;
+		};
+	}, []);
 	const audit = auditResult?.ok ? auditResult.data : null;
 
 	return (
@@ -74,7 +97,7 @@ export default async function CestasPage() {
 					</div>
 				)}
 
-			{result.ok && auditResult && !auditResult.ok && (
+			{result?.ok && auditResult && !auditResult.ok && (
 				<div
 					className="basket-mold-note basket-mold-note--warning"
 					role="status"
@@ -87,7 +110,11 @@ export default async function CestasPage() {
 				</div>
 			)}
 
-			{!result.ok ? (
+			{result === null ? (
+				<section className="catalog-message" role="status">
+					Carregando cestas…
+				</section>
+			) : !result.ok ? (
 				<section className="catalog-message" role="status">
 					<AlertCircle aria-hidden="true" size={20} />
 					<strong>{errorCopy[result.error] ?? errorCopy.unavailable}</strong>
@@ -155,7 +182,7 @@ export default async function CestasPage() {
 									<Link
 										aria-label={`Editar alternativas de ${basket.name}`}
 										className="basket-mold-edit-link"
-										href={`/cestas/${basket.id}`}
+										href={`/cestas/editar?id=${basket.id}`}
 									>
 										Editar alternativas{" "}
 										<ArrowRight aria-hidden="true" size={16} />

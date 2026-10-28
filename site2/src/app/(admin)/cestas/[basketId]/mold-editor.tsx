@@ -20,10 +20,10 @@ import type {
 	BasketMoldProductOption,
 } from "@/lib/supabase/admin-basket-molds";
 import {
-	saveBasketMoldOptionsAction,
-	searchBasketMoldProductsAction,
-	validateBasketMoldProductAction,
-} from "../actions";
+	saveBrowserBasketMoldOptions,
+	searchBrowserBasketMoldProducts,
+	validateBrowserBasketMoldProduct,
+} from "@/lib/supabase/browser-admin-basket-molds";
 import { BasketProductWhatsappEnableAction } from "./product-whatsapp-enable-action";
 
 type DraftOption = BasketMoldProductOption & { priceCents: number | null };
@@ -227,7 +227,7 @@ export function BasketMoldEditorClient({
 		}
 		setSearching(true);
 		setMessage(null);
-		const result = await searchBasketMoldProductsAction(query.trim());
+		const result = await searchBrowserBasketMoldProducts(query.trim());
 		setSearching(false);
 		if (!result.ok) {
 			setCandidates([]);
@@ -271,7 +271,7 @@ export function BasketMoldEditorClient({
 
 		setAddingId(candidate.id);
 		setMessage(null);
-		const validation = await validateBasketMoldProductAction(candidate.id);
+		const validation = await validateBrowserBasketMoldProduct(candidate.id);
 		setAddingId(null);
 		if (!validation.ok) {
 			setMessage({ kind: "error", text: errorMessage(validation.error) });
@@ -335,7 +335,7 @@ export function BasketMoldEditorClient({
 		}
 		setSaving(true);
 		setMessage(null);
-		const result = await saveBasketMoldOptionsAction({
+		const result = await saveBrowserBasketMoldOptions({
 			basketId: editor.basketId,
 			revision,
 			name: basketName.trim(),
