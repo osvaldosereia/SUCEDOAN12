@@ -15,6 +15,8 @@
       cancelled: "Cancelada", canceled: "Cancelada", pending: "Pendente", submitted: "Enviada para análise",
       in_review: "Em análise", paused: "Pausada", scheduled: "Agendada", draft: "Rascunho",
       running: "Em andamento", processing: "Em processamento", sent: "Processada", skipped: "Ignorada",
+      history: "Histórica", draft_saved: "Rascunho salvo", admin_save_draft: "Rascunho salvo",
+      admin_publish: "Versão ativada", admin_rollback: "Versão restaurada", admin_set_channel: "Canal atualizado",
       handoff: "Atendimento humano", allow: "Permitido", block: "Bloqueado", reply: "Resposta automática",
       marketing: "Marketing", utility: "Utilidade", authentication: "Autenticação",
     };
@@ -162,6 +164,70 @@
     }
   }
 
+  function renderAnaAdmin(data) {
+    const active = data.active || null;
+    const draft = data.draft || null;
+    const versions = Array.isArray(data.versions) ? data.versions : [];
+    const tests = Array.isArray(data.test_runs) ? data.test_runs : [];
+    const events = Array.isArray(data.events) ? data.events : [];
+    const latestTest = tests[0] || null;
+    const versionRows = versions.length ? versions.map((item) => recordRow(
+      "Versão " + (item.version || "—"),
+      item.is_active ? "Versão ativa" : "Versão anterior",
+      item.is_active ? "active" : "history",
+      item.created_at,
+    )).join("") : emptyList("Nenhuma versão ativa ou anterior.");
+    const eventRows = events.length ? events.map((item) => recordRow(
+      human(item.action),
+      [item.channel_key, item.draft_revision ? "Rascunho " + item.draft_revision : "", item.version_id ? "Versão registrada" : ""].filter(Boolean).join(" · "),
+      item.action,
+      item.created_at,
+    )).join("") : emptyList("Nenhuma alteração registrada.");
+    $("whatsapp-ana-version-content").innerHTML = `
+      <div class="whatsapp-record-summary">
+        <article class="whatsapp-overview-card"><h3>Versão ativa</h3><strong class="whatsapp-metric">${active?.version ? "v" + esc(active.version) : "—"}</strong><p class="admin-muted">${active ? "Ativada em " + esc(dateLabel(active.created_at)) : "Nenhuma versão ativa"}</p></article>
+        <article class="whatsapp-overview-card"><h3>Rascunho</h3><strong class="whatsapp-metric">${draft?.revision ? "r" + esc(draft.revision) : "—"}</strong><p class="admin-muted">${draft ? "Atualizado em " + esc(dateLabel(draft.updated_at)) : "Nenhum rascunho encontrado"}</p></article>
+        <article class="whatsapp-overview-card"><h3>Último teste</h3><strong class="whatsapp-metric">${latestTest ? esc(latestTest.passed_count) + " / " + esc((latestTest.passed_count || 0) + (latestTest.failed_count || 0)) : "—"}</strong><p class="admin-muted">${latestTest ? esc(latestTest.failed_count || 0) + " falha(s) · " + esc(dateLabel(latestTest.created_at)) : "Nenhum teste registrado"}</p></article>
+      </div>
+      <div class="whatsapp-overview-grid">
+        <section class="whatsapp-overview-card"><h3>Histórico de versões</h3><div class="whatsapp-record-list">${versionRows}</div></section>
+        <section class="whatsapp-overview-card"><h3>Atividade recente</h3><div class="whatsapp-record-list">${eventRows}</div></section>
+      </div>`;
+    $("whatsapp-ana-status").textContent = "Versões e atividade consultadas em modo somente leitura.";
+  }
+
+  let anaLoaded = false;
+  let anaLoading = false;
+  async function loadAnaStatus(force) {
+    if (anaLoading || (anaLoaded && !force)) return;
+    if (force) await loadOverview(true);
+    else await loadOverview();
+    anaLoading = true;
+    const status = $("whatsapp-ana-status");
+    if (status) status.textContent = "Consultando rascunho, versão ativa e histórico…";
+    try {
+      const response = await fetch(`${supabase}/functions/v1/site-admin-v1`, {
+        method: "POST",
+        headers: {
+          apikey: publishableKey,
+          "x-admin-code": window.DonaAdminAuth?.getCode?.() || "",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ action: "whatsapp_ana_admin_status" }),
+        cache: "no-store",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok === false) throw new Error(data.message || data.error || "Não foi possível consultar o status da ANA.");
+      renderAnaAdmin(data);
+      anaLoaded = true;
+    } catch (error) {
+      if (status) status.textContent = error instanceof Error ? error.message : "Não foi possível consultar o status da ANA.";
+    } finally {
+      anaLoading = false;
+    }
+  }
+
   document.querySelectorAll("[data-whatsapp-overview-refresh]").forEach((button) => button.addEventListener("click", () => loadOverview(true)));
-  window.DonaWhatsAppAdmin = { loadOverview };
+  $("whatsapp-ana-refresh")?.addEventListener("click", () => loadAnaStatus(true));
+  window.DonaWhatsAppAdmin = { loadOverview, loadAnaStatus };
 })();
