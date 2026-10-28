@@ -9,11 +9,11 @@
   <link rel="preload" as="image" href="../img/logoantonia5.png">
   <link rel="preload" as="image" href="assets/cestas/cesta-economica.jpg" fetchpriority="high">
   <link rel="preconnect" href="https://ssbesxgaijknwsjbsbcz.supabase.co" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=16">
+  <link rel="stylesheet" href="styles.css?v=17">
   <script src="config.js?v=2" defer></script>
   <script src="storefront/extras.js?v=4" defer></script>
   <script src="storefront/basket.js?v=1" defer></script>
-  <script src="storefront/checkout.js?v=5" defer></script>
+  <script src="storefront/checkout.js?v=6" defer></script>
   <script src="app.js?v=19" defer></script>
 </head>
 <body>
@@ -118,12 +118,12 @@
           <input id="customer-phone" inputmode="tel" autocomplete="tel" placeholder="+55 (65) 99999-9999" maxlength="22" aria-describedby="customer-phone-hint">
           <button id="lookup-button" class="button button-primary" type="button">Buscar</button>
         </div>
-        <p id="customer-phone-hint" class="helper">Digite com DDD. Se informar apenas os 8 ou 9 dígitos locais, usaremos o DDD 65; para outro DDD, digite o código junto.</p>
-        <p id="lookup-message" class="helper" role="status" aria-live="polite">Buscaremos seu cadastro e endereço. Se ainda não tiver cadastro, você poderá fazê-lo aqui.</p>
+        <p id="customer-phone-hint" class="helper">Informe o telefone com DDD. Sem DDD, usaremos 65.</p>
+        <p id="lookup-message" class="helper" role="status" aria-live="polite">Vamos buscar seu cadastro pelo telefone.</p>
         <div id="customer-card" class="customer-card" hidden></div>
         <form id="customer-registration" class="registration-panel" hidden>
           <h3 id="registration-title">Cadastre seus dados para continuar</h3>
-          <p id="registration-message" class="helper" role="status" aria-live="polite">Preencha seus dados para registrar o pedido.</p>
+          <p id="registration-message" class="helper registration-message" data-tone="neutral" role="status" aria-live="polite"></p>
           <div class="registration-grid">
             <label class="registration-field registration-field-wide" for="customer-name">Nome completo *
               <input id="customer-name" name="name" autocomplete="name" maxlength="180" required>
