@@ -632,10 +632,11 @@ async function whatsappOverview() {
       .order("updated_at", { ascending: false }).limit(100),
     db.from("whatsapp_template_events_v1")
       .select("whatsapp_account_id,template_name,language,status,reason,occurred_at")
+      .eq("status", "rejected")
       .not("reason", "is", null)
       .order("occurred_at", { ascending: false }).limit(200),
     db.from("marketing_campaigns_v1")
-      .select("id,name,whatsapp_account_id,status,scheduled_for,created_at,started_at,paused_at,completed_at,failed_at", { count: "exact" })
+      .select("id,name,whatsapp_account_id,status,revision,scheduled_for,created_at,started_at,paused_at,completed_at,failed_at", { count: "exact" })
       .order("created_at", { ascending: false }).limit(100),
     db.from("whatsapp_ana_jobs_v1")
       .select("id,whatsapp_account_id,status,decision,created_at", { count: "exact" })
@@ -643,6 +644,20 @@ async function whatsappOverview() {
   ]);
   for (const result of [accountsResult, runtimeResult, templateCountResult, approvedCountResult, templateRowsResult, templateEventsResult, campaignsResult, anaResult]) {
     if (result.error) throw result.error;
+  }
+
+  const campaignIds = (campaignsResult.data || []).map((row: any) => row.id).filter(Boolean);
+  const snapshotsResult = campaignIds.length
+    ? await db.from("marketing_campaign_snapshots_v1")
+      .select("campaign_id,campaign_revision,snapshot_version,template_name,template_language,template_category,found_count,eligible_count,excluded_count,created_at")
+      .in("campaign_id", campaignIds)
+      .order("created_at", { ascending: false }).limit(200)
+    : { data: [], error: null };
+  if (snapshotsResult.error) throw snapshotsResult.error;
+  const latestCampaignSnapshot = new Map<string, any>();
+  for (const snapshot of snapshotsResult.data || []) {
+    const campaignId = String(snapshot.campaign_id || "");
+    if (campaignId && !latestCampaignSnapshot.has(campaignId)) latestCampaignSnapshot.set(campaignId, snapshot);
   }
 
   const accounts = accountsResult.data || [];
@@ -686,17 +701,33 @@ async function whatsappOverview() {
     last_synced_at: row.last_synced_at || null,
     updated_at: row.updated_at || null,
   }));
-  const campaigns = (campaignsResult.data || []).map((row: any) => ({
-    name: clean(row.name || "Campanha", 140),
-    channel: clean(accountById.get(row.whatsapp_account_id)?.display_name || "", 120),
-    status: clean(row.status, 40),
-    scheduled_for: row.scheduled_for || null,
-    created_at: row.created_at || null,
-    started_at: row.started_at || null,
-    paused_at: row.paused_at || null,
-    completed_at: row.completed_at || null,
-    failed_at: row.failed_at || null,
-  }));
+  const campaigns = (campaignsResult.data || []).map((row: any) => {
+    const snapshot = latestCampaignSnapshot.get(String(row.id));
+    return {
+      name: clean(row.name || "Campanha", 140),
+      channel: clean(accountById.get(row.whatsapp_account_id)?.display_name || "", 120),
+      status: clean(row.status, 40),
+      revision: Number(row.revision) || 0,
+      scheduled_for: row.scheduled_for || null,
+      created_at: row.created_at || null,
+      started_at: row.started_at || null,
+      paused_at: row.paused_at || null,
+      completed_at: row.completed_at || null,
+      failed_at: row.failed_at || null,
+      snapshot: snapshot ? {
+        campaign_revision: Number(snapshot.campaign_revision) || 0,
+        snapshot_version: Number(snapshot.snapshot_version) || 0,
+        is_current_revision: Number(snapshot.campaign_revision) === Number(row.revision),
+        template_name: clean(snapshot.template_name, 160),
+        template_language: clean(snapshot.template_language, 24),
+        template_category: clean(snapshot.template_category, 40),
+        found_count: Number(snapshot.found_count) || 0,
+        eligible_count: Number(snapshot.eligible_count) || 0,
+        excluded_count: Number(snapshot.excluded_count) || 0,
+        created_at: snapshot.created_at || null,
+      } : null,
+    };
+  });
   const ana = (anaResult.data || []).map((row: any) => ({
     channel: clean(accountById.get(row.whatsapp_account_id)?.display_name || "", 120),
     status: clean(row.status, 40),
