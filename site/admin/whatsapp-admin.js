@@ -227,7 +227,10 @@
     } else if (action === "approve") {
       requestAction = "whatsapp_campaign_transition";
       payload.to_status = "approved";
-      confirmation = "Aprovar esta audiência congelada para que possa ser agendada depois? Esta aprovação não agenda nem envia mensagens.";
+      const campaign = (lastOverview?.campaigns?.recent || []).find((item) => item.id === campaignId) || {};
+      const eligible = Math.max(0, Math.trunc(Number(campaign.snapshot?.eligible_count) || 0)).toLocaleString("pt-BR");
+      const excluded = Math.max(0, Math.trunc(Number(campaign.snapshot?.excluded_count) || 0)).toLocaleString("pt-BR");
+      confirmation = "Aprovar " + (campaign.name || "esta audiência") + " (" + eligible + " elegíveis; " + excluded + " excluídos) para que possa ser agendada depois? A aprovação não agenda nem envia. Confirme somente após revisar a fonte original do consentimento: este resumo não verifica evidência individual e uma declaração administrativa não comprova adesão.";
     } else if (action === "draft") {
       requestAction = "whatsapp_campaign_transition";
       payload.to_status = "draft";
@@ -243,7 +246,7 @@
       payload.scheduled_for = new Date(scheduledAt).toISOString();
       const campaign = (lastOverview?.campaigns?.recent || []).find((item) => item.id === campaignId) || {};
       const eligible = Math.max(0, Math.trunc(Number(campaign.snapshot?.eligible_count) || 0)).toLocaleString("pt-BR");
-      confirmation = "Agendar " + (campaign.name || "esta campanha") + " para " + new Date(scheduledAt).toLocaleString("pt-BR") + " no canal " + (campaign.channel || "selecionado") + ". O snapshot tem " + eligible + " destinatários aptos. A execução poderá enviar mensagens reais pelo WhatsApp no horário escolhido. Revise a evidência individual de consentimento e o modelo Meta antes de confirmar.";
+      confirmation = "Agendar " + (campaign.name || "esta campanha") + " para " + new Date(scheduledAt).toLocaleString("pt-BR") + " no canal " + (campaign.channel || "selecionado") + ". O snapshot tem " + eligible + " destinatários aptos. A execução poderá enviar mensagens reais pelo WhatsApp no horário escolhido. Este resumo não verifica evidência individual; confira a fonte original e o modelo Meta antes de confirmar.";
     } else if (action === "manual_batch") {
       requestAction = "whatsapp_campaign_manual_batch";
       payload.idempotency_key = button.dataset.campaignIdempotencyKey || campaignDraftIdempotencyKey();
@@ -252,7 +255,7 @@
       const modeWarning = mode === "canary"
         ? " O modo canário restringe os destinatários aos telefones de canário autorizados."
         : " O modo atual pode enviar mensagens a clientes elegíveis.";
-      confirmation = "Este lote envia imediatamente até 10 mensagens reais pelo modelo Meta para destinatários aptos do snapshot congelado." + modeWarning + " Mensagens aceitas pela Meta não podem ser recolhidas. Confira a evidência de consentimento e confirme apenas se deseja iniciar o envio agora.";
+      confirmation = "Este lote envia imediatamente até 10 mensagens reais pelo modelo Meta para destinatários aptos do snapshot congelado." + modeWarning + " Mensagens aceitas pela Meta não podem ser recolhidas. Este resumo não verifica evidência individual; confira a fonte original e confirme apenas se deseja iniciar o envio agora.";
     } else if (action === "pause") {
       requestAction = "whatsapp_campaign_pause";
       confirmation = "Pausar a campanha? Isso interrompe os próximos despachos; mensagens já aceitas pela Meta não podem ser recolhidas.";
@@ -292,11 +295,14 @@
     const subtitle = (item.channel || "Canal não informado")
       + (item.scheduled_for ? " · Agendada para " + dateLabel(item.scheduled_for) : "");
     const when = item.scheduled_for || item.started_at || item.created_at;
+    const requiresConsentReview = ["approved", "scheduled", "running", "paused"].includes(String(item.status || "").toLowerCase())
+      && item.snapshot?.is_current_revision === true;
     return '<article class="whatsapp-record-row whatsapp-campaign-row"><div class="whatsapp-record-main">'
       + '<h3>' + esc(item.name || "Campanha") + "</h3><p>" + esc(subtitle) + "</p>"
       + campaignDeliveryMarkup(item)
       + '<small class="whatsapp-campaign-snapshot">' + esc(campaignSnapshotLabel(item)) + "</small>"
       + campaignExclusionMarkup(item)
+      + (requiresConsentReview ? '<p class="whatsapp-campaign-consent-warning" role="note"><strong>Revise o consentimento antes de qualquer envio.</strong> Este painel não verifica evidência individual; confira a fonte original e confirme apenas contatos com consentimento comprovável.</p>' : "")
       + (item.id ? '<button class="button button-outline whatsapp-campaign-preview-button" type="button" data-campaign-preview="' + esc(item.id) + '" aria-expanded="false">Prévia do público</button><div class="whatsapp-campaign-preview" data-campaign-preview-result hidden role="status" aria-live="polite"></div>' : "")
       + (item.id ? '<button class="button button-outline whatsapp-campaign-preview-button" type="button" data-campaign-content-preview="' + esc(item.id) + '" aria-expanded="false">Ver conteúdo do modelo</button><div class="whatsapp-campaign-preview whatsapp-campaign-content-preview" data-campaign-content-result hidden role="status" aria-live="polite"></div>' : "")
       + (item.status === "draft" && item.draft_editable ? '<button class="button button-outline whatsapp-campaign-edit-button" type="button" data-campaign-edit="' + esc(item.id) + '">Editar rascunho</button>' : "")
