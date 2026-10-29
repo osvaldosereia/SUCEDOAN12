@@ -488,7 +488,8 @@
       $("delivery-date").addEventListener("change", updateConfirmOrderAvailability);
       $("confirm-order").addEventListener("click", confirmOrder);
       $("add-more-products").addEventListener("click", () => {
-        closeSheet("order-sheet");
+        // Keep the verified customer/payment while the shopper adds items.
+        closeSheet("order-sheet", true);
         const products = $("home-extra-categories") || $("home-extra-product-search-results");
         if (products) products.scrollIntoView({ behavior: "smooth", block: "start" });
       });

@@ -137,10 +137,10 @@
     syncSheetScrollState();
   }
 
-  function closeSheet(id) {
+  function closeSheet(id, preserveCheckout = false) {
     $(id).hidden = true;
     syncSheetScrollState();
-    if (id === "order-sheet") {
+    if (id === "order-sheet" && !preserveCheckout) {
       state.customer = null;
       $("customer-card").hidden = true;
       $("payment-options").disabled = true;
