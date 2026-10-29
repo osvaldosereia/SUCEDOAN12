@@ -60,18 +60,27 @@
   async function loadOrder() {
     const params = new URLSearchParams(window.location.search);
     const capability = String(params.get("c") || "").trim();
+    const publicToken = String(params.get("k") || "").trim();
     window.history.replaceState(null, "", window.location.pathname);
-    if (!/^[a-f0-9]{64}$/i.test(capability) || !supabase || !key) {
-      throw new Error("invalid_link");
+    if (!supabase || !key) throw new Error("invalid_link");
+
+    if (/^[a-f0-9]{16}$/i.test(publicToken)) {
+      const viewUrl = new URL(supabase + "/functions/v1/order-public-view-v1");
+      viewUrl.searchParams.set("k", publicToken);
+      const order = await getJson(viewUrl.toString(), { apikey: key });
+      renderOrder(order);
+      return;
     }
+
+    if (!/^[a-f0-9]{64}$/i.test(capability)) throw new Error("invalid_link");
     const headers = { apikey: key, "x-customer-action-token": capability };
     const sessionUrl = new URL(supabase + "/functions/v1/order-customer-actions-v1");
     sessionUrl.searchParams.set("action", "session");
     const session = await getJson(sessionUrl.toString(), headers);
-    const publicToken = String(session.public_token || "");
-    if (!/^[a-f0-9]{16}$/i.test(publicToken)) throw new Error("order_unavailable");
+    const sessionPublicToken = String(session.public_token || "");
+    if (!/^[a-f0-9]{16}$/i.test(sessionPublicToken)) throw new Error("order_unavailable");
     const viewUrl = new URL(supabase + "/functions/v1/order-public-view-v1");
-    viewUrl.searchParams.set("k", publicToken);
+    viewUrl.searchParams.set("k", sessionPublicToken);
     const order = await getJson(viewUrl.toString(), { apikey: key });
     renderOrder(order);
   }
