@@ -47,11 +47,11 @@
 - Estado interno: arquivo comprimido pendente e URL temporária da prévia.
 - Formato enviado: `image_upload: { base64: string, content_type: "image/webp" | "image/jpeg" }`.
 
-- [ ] Adicionar seletor de arquivo, prévia, status e os botões Anexar/Trocar e Pesquisar no Google.
-- [ ] Implementar compressão em Canvas, preservando proporção e reduzindo dimensão/qualidade até produzir no máximo 51.200 bytes; usar JPEG se o navegador não codificar WebP.
-- [ ] Preencher a busca do Google Imagens com marca e nome, abrindo-a em nova aba.
-- [ ] Ao salvar, enviar somente o arquivo comprimido junto do payload atual; manter URL manual quando nenhum arquivo for selecionado.
-- [ ] Conferir sintaxe JavaScript e o estado visual do diálogo em desktop/mobile.
+- [x] Adicionar seletor de arquivo, prévia, status e os botões Enviar/Trocar e Pesquisar no Google.
+- [x] Implementar compressão em Canvas, preservando proporção e reduzindo dimensão/qualidade até produzir no máximo 51.200 bytes; usar JPEG se o navegador não codificar WebP.
+- [x] Preencher a busca do Google Imagens com marca e nome, abrindo-a em nova aba.
+- [x] Ao salvar, enviar somente o arquivo comprimido junto do payload atual; manter URL manual quando nenhum arquivo for selecionado.
+- [x] Conferir sintaxe JavaScript e revisar o layout responsivo do diálogo em desktop/mobile.
 
 ### Tarefa 2: Upload autenticado e persistência
 
@@ -62,10 +62,10 @@
 - Entrada opcional de `product_save`: `image_upload.base64` e `image_upload.content_type`.
 - Saída: `product.image_url` com a URL pública do objeto criado.
 
-- [ ] Rejeitar conteúdo com MIME não permitido, cabeçalho incompatível, base64 inválido ou conteúdo acima de 51.200 bytes.
-- [ ] Enviar bytes para `product-images` com nome aleatório sob `admin-products/`, sem expor a chave de serviço no browser.
-- [ ] Gravar a URL pública no mesmo `product_save`; em falha ao salvar o produto, remover o novo objeto antes de retornar o erro.
-- [ ] Manter o fluxo atual para URLs manuais e os demais campos de produto.
+- [x] Rejeitar conteúdo com MIME não permitido, cabeçalho incompatível, base64 inválido ou conteúdo acima de 51.200 bytes.
+- [x] Enviar bytes para `product-images` com nome aleatório sob `admin-products/`, sem expor a chave de serviço no browser.
+- [x] Gravar a URL pública no mesmo `product_save`; em falha ao salvar o produto, remover o novo objeto antes de retornar o erro.
+- [x] Manter o fluxo atual para URLs manuais e os demais campos de produto.
 
 ### Tarefa 3: Publicação e conferência
 
