@@ -743,7 +743,7 @@
         if (["orders", "interested"].includes(state.quickFilter) && Array.isArray(data.filter_ids)) {
           const filterIds = new Set(data.filter_ids.map((id) => String(id)));
           const olderPages = state.conversations.filter((item) =>
-            !state.firstPageIds.has(String(item.id)) && filterIds.has(String(item.id)) && !incomingIds.has(String(item.id)),
+            filterIds.has(String(item.id)) && !incomingIds.has(String(item.id)),
           );
           state.conversations = [...incoming, ...olderPages];
           state.firstPageIds = incomingIds;
