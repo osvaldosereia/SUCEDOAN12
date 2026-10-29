@@ -36,8 +36,8 @@
 - Modify: `supabase/functions/site-admin-v1/index.ts`
 
 **Interfaces:**
-- Add `recentInterestConversationIds(conversationIds?: string[]): Promise<Set<string>>` for inbound messages in the last 48 hours.
-- Refactor recent order detection to expose site-order, direct-chat-order, and effective order membership separately.
+- Add `recentConversationSignals(conversationIds?: string[])` to read recent inbound messages once and return site-order, direct-chat-order, and interest ID sets.
+- Reuse the shared signals for the two CRM queues so one list request does not scan the same recent messages twice.
 - Extend `whatsappConversationList(input)` to accept `quick_filter: "interested"`, return `is_interested`, and return an order-origin label for site, WhatsApp, or manual inclusion.
 
 - [ ] Recognize interest signals in recent inbound messages for product, price, availability, variant, delivery/collection, or explicit buying intent; avoid greeting-only matches.
