@@ -5,7 +5,7 @@
   const endpoint = base + "/functions/v1/site-admin-v1";
   const publishableKey = config.publishableKey || "";
   const $ = (id) => document.getElementById(id);
-  const state = { cursor: null, total: 0, conversations: [], selectedId: "", selectedConversation: null, before: null, listLoading: false, listRequestId: 0, conversationLoading: false, conversationRequestId: 0, olderLoading: false, quickFilter: "all", favoriteIds: new Set(), favoritesAvailable: false, ordersAvailable: false, favoriteBusyIds: new Set(), orderBusyIds: new Set(), anaModeBusyIds: new Set(), sendingTextIds: new Set(), sendingMediaIds: new Set(), pendingTextByConversation: new Map(), pendingMediaKey: "", pendingMediaFingerprint: "", uncertainSends: new Map(), statusCheckingIds: new Set(), drafts: new Map(), statusRefreshing: false };
+  const state = { cursor: null, total: 0, conversations: [], firstPageIds: new Set(), selectedId: "", selectedConversation: null, before: null, listLoading: false, listRequestId: 0, conversationLoading: false, conversationRequestId: 0, olderLoading: false, quickFilter: "all", favoriteIds: new Set(), favoritesAvailable: false, ordersAvailable: false, favoriteBusyIds: new Set(), orderBusyIds: new Set(), anaModeBusyIds: new Set(), sendingTextIds: new Set(), sendingMediaIds: new Set(), pendingTextByConversation: new Map(), pendingMediaKey: "", pendingMediaFingerprint: "", uncertainSends: new Map(), statusCheckingIds: new Set(), drafts: new Map(), statusRefreshing: false };
   const dateLabel = (value) => {
     if (!value) return "Sem atividade";
     const date = new Date(value);
@@ -244,6 +244,19 @@
     }
   }
 
+  function conversationMetaText(item) {
+    const orderOriginLabel = item.order_origin === "site"
+      ? "Pedido do site"
+      : item.order_origin === "whatsapp"
+        ? "Pedido pelo WhatsApp"
+        : item.order_origin === "manual" ? "Pedido marcado manualmente" : "";
+    const crmLabel = orderOriginLabel || (item.is_interested ? "Sinal de interesse" : "");
+    return (item.whatsapp_profile_name && !item.customer_name ? "Nome exibido pelo WhatsApp · " : "") + (item.channel || "WhatsApp")
+      + (item.channel_number ? " · Canal " + item.channel_number : "")
+      + " · " + (String(item.mode || "").toLowerCase() === "paused" ? "ANA desligada" : item.human_required ? "Atendimento humano" : String(item.mode || "").toLowerCase() === "ai" ? "ANA ativa" : item.mode || item.status || "Conversa")
+      + (crmLabel ? " · " + crmLabel : "");
+  }
+
   function renderQueue(items, append) {
     const host = $("whatsapp-conversation-items");
     if (!append) host.replaceChildren();
@@ -265,9 +278,7 @@
         ? displayName + (!item.customer_name && item.whatsapp_profile_name ? " · WhatsApp" : "") + (item.phone_last4 ? " · •••• " + item.phone_last4 : "")
         : item.phone_last4 ? "Contato · •••• " + item.phone_last4 : "Contato";
       const meta = document.createElement("span");
-      meta.textContent = (item.whatsapp_profile_name && !item.customer_name ? "Nome exibido pelo WhatsApp · " : "") + (item.channel || "WhatsApp")
-        + (item.channel_number ? " · Canal " + item.channel_number : "")
-        + " · " + (String(item.mode || "").toLowerCase() === "paused" ? "ANA desligada" : item.human_required ? "Atendimento humano" : String(item.mode || "").toLowerCase() === "ai" ? "ANA ativa" : item.mode || item.status || "Conversa");
+      meta.textContent = conversationMetaText(item);
       const date = document.createElement("small");
       date.textContent = dateLabel(item.last_activity_at);
       button.append(title, meta, date);
@@ -353,16 +364,25 @@
       await request("whatsapp_conversation_order_override", { mode, conversation_id: conversationId });
       conversation.order_override = mode;
       conversation.is_in_orders = !wasInOrders;
+      conversation.order_origin = conversation.is_in_orders
+        ? conversation.automatic_order_origin || "manual"
+        : "";
+      if (conversation.is_in_orders) conversation.is_interested = false;
       const isInOrders = conversation.is_in_orders;
+      const meta = button.closest(".whatsapp-conversation-item")?.querySelector(".whatsapp-conversation-card span");
+      if (meta) meta.textContent = conversationMetaText(conversation);
       button.textContent = isInOrders ? "−" : "+";
       button.title = isInOrders ? "Remover da aba Pedidos" : "Adicionar à aba Pedidos";
       button.setAttribute("aria-label", button.title);
       button.setAttribute("aria-pressed", String(isInOrders));
-      if (!isInOrders && state.quickFilter === "orders") {
+      if ((!isInOrders && state.quickFilter === "orders") || (isInOrders && state.quickFilter === "interested")) {
         button.closest(".whatsapp-conversation-item")?.remove();
         state.conversations = state.conversations.filter((item) => item.id !== conversationId);
+        state.firstPageIds.delete(conversationId);
         state.total = Math.max(0, state.total - 1);
-        setStatus(state.total + " conversa(s) na aba Pedidos das últimas 28 horas.");
+        setStatus(state.quickFilter === "interested"
+          ? state.total + " conversa(s) com sinal de interesse nas últimas 48 horas."
+          : state.total + " conversa(s) na aba Pedidos das últimas 28 horas.");
       } else {
         setStatus(isInOrders ? "Conversa adicionada à aba Pedidos." : "Conversa removida da aba Pedidos.");
       }
@@ -720,11 +740,21 @@
       if (silent) {
         const incomingIds = new Set(incoming.map((item) => String(item.id)));
         const scrollTop = host.scrollTop;
-        state.conversations = [
-          ...incoming,
-          ...state.conversations.filter((item) => !incomingIds.has(String(item.id))),
-        ];
-        state.cursor = state.cursor || data.next_cursor || null;
+        if (["orders", "interested"].includes(state.quickFilter) && Array.isArray(data.filter_ids)) {
+          const filterIds = new Set(data.filter_ids.map((id) => String(id)));
+          const olderPages = state.conversations.filter((item) =>
+            !state.firstPageIds.has(String(item.id)) && filterIds.has(String(item.id)) && !incomingIds.has(String(item.id)),
+          );
+          state.conversations = [...incoming, ...olderPages];
+          state.firstPageIds = incomingIds;
+          state.cursor = data.next_cursor || null;
+        } else {
+          state.conversations = [
+            ...incoming,
+            ...state.conversations.filter((item) => !incomingIds.has(String(item.id))),
+          ];
+          state.cursor = state.cursor || data.next_cursor || null;
+        }
         state.total = data.total || 0;
         renderQueue(state.conversations, false);
         host.scrollTop = scrollTop;
@@ -737,6 +767,7 @@
         renderQueue(additions, true);
       } else {
         state.conversations = incoming;
+        state.firstPageIds = new Set(incoming.map((item) => String(item.id)));
         state.cursor = data.next_cursor || null;
         state.total = data.total || 0;
         renderQueue(incoming, false);
@@ -745,7 +776,9 @@
       if (!silent) {
         const label = state.quickFilter === "orders"
           ? state.total + " conversa(s) com pedido nas últimas 28 horas."
-          : state.total + " conversa(s) no filtro atual · mais recentes primeiro.";
+          : state.quickFilter === "interested"
+            ? state.total + " conversa(s) com sinal de interesse nas últimas 48 horas."
+            : state.total + " conversa(s) no filtro atual · mais recentes primeiro.";
         setStatus(label + (state.ordersAvailable ? "" : " Marcações manuais de pedidos indisponíveis neste ambiente."));
       }
     } catch (error) {
@@ -913,6 +946,17 @@
       });
       void loadConversations();
     });
+  });
+  const refreshCrmQueue = () => {
+    if (document.visibilityState !== "visible"
+      || !["orders", "interested"].includes(state.quickFilter)
+      || state.listLoading
+      || state.conversationLoading) return;
+    void loadConversations({ silent: true });
+  };
+  window.setInterval(refreshCrmQueue, 5 * 60 * 1000);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") refreshCrmQueue();
   });
   window.DonaWhatsAppConversations = { load: () => loadConversations() };
 })();
