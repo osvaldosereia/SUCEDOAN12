@@ -1506,14 +1506,25 @@ async function conversationOrderOverrides(adminUserId: string) {
   return overrides;
 }
 
-async function recentOrderConversationIds(conversationIds?: string[]) {
-  if (conversationIds && !conversationIds.length) return new Set<string>();
-  const since = new Date(Date.now() - 28 * 60 * 60 * 1000).toISOString();
+function normalizeConversationSignalText(value: unknown) {
+  return clean(value, 4000).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+async function recentConversationSignals(conversationIds?: string[]) {
+  const empty = () => ({
+    siteOrderIds: new Set<string>(),
+    directOrderIds: new Set<string>(),
+    interestIds: new Set<string>(),
+  });
+  if (conversationIds && !conversationIds.length) return empty();
+
+  const interestSince = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+  const orderSince = new Date(Date.now() - 28 * 60 * 60 * 1000).toISOString();
   let messageQuery = db.from("whatsapp_messages_v1")
-    .select("conversation_id,text_body")
+    .select("conversation_id,text_body,created_at")
     .eq("direction", "inbound")
-    .gte("created_at", since)
-    .or("text_body.ilike.%pedido%,text_body.ilike.%encomendar%,text_body.ilike.%pedir%")
+    .gte("created_at", interestSince)
+    .order("created_at", { ascending: false })
     .limit(2000);
   if (conversationIds) messageQuery = messageQuery.in("conversation_id", conversationIds);
   const [messageResult, orderResult] = await Promise.all([
@@ -1521,18 +1532,34 @@ async function recentOrderConversationIds(conversationIds?: string[]) {
     db.from("orders")
       .select("conversation_id,customer_id,phone_e164,whatsapp_account_id,status,created_at,source")
       .in("source", ORDER_SOURCES)
-      .gte("created_at", since)
+      .gte("created_at", orderSince)
       .order("created_at", { ascending: false })
       .limit(2000),
   ]);
   if (messageResult.error) throw messageResult.error;
   if (orderResult.error) throw orderResult.error;
 
-  const keyword = /(^|[^\p{L}\p{N}_])(pedido|encomendar|pedir)(?=$|[^\p{L}\p{N}_])/iu;
-  const ids = new Set<string>((messageResult.data || [])
-    .filter((row: any) => keyword.test(String(row.text_body || "")))
-    .map((row: any) => uuid(row.conversation_id))
-    .filter(Boolean));
+  const interestSignal = /\b(?:preco|precos|valor|valores|quanto|custa|custam|disponivel|estoque|tamanho|tamanhos|cor|cores|modelo|modelos|produto|produtos|entrega|retirada|retirar|buscar|interesse|interessado|interessada|gostaria|procuro|busco|quero|encomenda|encomendar|comprar|separar|reservar)\b|\btem\s+(?:aqui|ainda|disponivel|em estoque|esse|essa|esses|essas|o|a|um|uma)\b/i;
+  const orderCommitment = /\b(?:vou querer|quero comprar|vou comprar|quero levar|vou levar|vou pedir|quero pedir|pode separar|separar pra mim|separar para mim|separa pra mim|separa para mim|separa|reservar pra mim|reservar para mim|reserve pra mim|reserve para mim|reservar|reserve|fico com|fica pra mim|fica para mim|pode anotar|anota meu pedido|pedido fechado|pode fechar|fechado|vou buscar|pode entregar|pode mandar|me ve|me separa|me reserva|me encomenda|quero esse|quero essa|quero esses|quero essas|quero o|quero a|quero um|quero uma|quero\s+\d{1,3})\b/i;
+  const transactionDetail = /\b(?:(?:\d{1,3}|um|uma|dois|duas|tres|quatro|cinco|seis)\s+[a-z0-9-]{2,}|\d{1,3}|pix|comprovante|paguei|pagamento|transferi|entrega|retirada|retirar|buscar|endereco|horario|bolo|torta|paes?|queijo|cesta|bandeja|vinho|cafe|doce|salgado|sanduiche|kit|presunto|salame|brie|gouda|parmesao|esse|essa|esses|essas|aquele|aquela|aqueles|aquelas|isso|este|esta|item)\b/i;
+  const interestIds = new Set<string>();
+  const evidenceByConversation = new Map<string, { commitment: boolean; detail: boolean }>();
+  const orderSinceMs = Date.parse(orderSince);
+  for (const row of messageResult.data || []) {
+    const conversationId = uuid(row.conversation_id);
+    if (!conversationId) continue;
+    const text = normalizeConversationSignalText(row.text_body);
+    if (interestSignal.test(text)) interestIds.add(conversationId);
+    const evidence = evidenceByConversation.get(conversationId) || { commitment: false, detail: false };
+    if (Date.parse(String(row.created_at || "")) >= orderSinceMs && orderCommitment.test(text)) evidence.commitment = true;
+    if (transactionDetail.test(text)) evidence.detail = true;
+    evidenceByConversation.set(conversationId, evidence);
+  }
+  const directOrderIds = new Set<string>();
+  for (const [conversationId, evidence] of evidenceByConversation) {
+    if (evidence.commitment && evidence.detail) directOrderIds.add(conversationId);
+  }
+
   const activeOrders = (orderResult.data || []).filter((order: any) =>
     !["cancelled", "canceled", "returned", "refunded", "voided"].includes(String(order.status || "").trim().toLowerCase()),
   );
@@ -1561,11 +1588,11 @@ async function recentOrderConversationIds(conversationIds?: string[]) {
   }
   const candidates = Array.from(candidatesById.values());
   const activity = (row: any) => Date.parse(String(row.updated_at || row.created_at || "")) || 0;
-
+  const siteOrderIds = new Set<string>();
   for (const order of activeOrders) {
     const directId = uuid(order.conversation_id);
     if (directId) {
-      ids.add(directId);
+      siteOrderIds.add(directId);
       continue;
     }
     const orderPhone = normalizeBrazilPhone(order.phone_e164);
@@ -1584,12 +1611,19 @@ async function recentOrderConversationIds(conversationIds?: string[]) {
       : [];
     const ranked = [...(sameAccount.length ? sameAccount : matches)].sort((left: any, right: any) => activity(right) - activity(left));
     const matchedId = uuid(ranked[0]?.id);
-    if (matchedId) ids.add(matchedId);
+    if (matchedId) siteOrderIds.add(matchedId);
   }
-  if (!conversationIds) return ids;
+
+  if (!conversationIds) return { siteOrderIds, directOrderIds, interestIds };
   const allowed = new Set(conversationIds.map((id) => uuid(id)).filter(Boolean));
-  return new Set(Array.from(ids).filter((id) => allowed.has(id)));
+  const filterAllowed = (ids: Set<string>) => new Set(Array.from(ids).filter((id) => allowed.has(id)));
+  return {
+    siteOrderIds: filterAllowed(siteOrderIds),
+    directOrderIds: filterAllowed(directOrderIds),
+    interestIds: filterAllowed(interestIds),
+  };
 }
+
 async function whatsappConversationAnaMode(input: any) {
   const conversationId = uuid(input.conversation_id);
   if (!conversationId) return { error: "invalid_conversation_id", status: 400 };
@@ -1688,7 +1722,7 @@ async function whatsappConversationList(input: any) {
   let accountId = requestedAccount ? uuid(requestedAccount) : "";
   if (requestedAccount && !accountId) return { error: "invalid_account_id", status: 400 };
   const quickFilter = clean(input.quick_filter, 20).toLowerCase();
-  if (!["", "all", "favorites", "0975", "1018", "orders"].includes(quickFilter)) {
+  if (!["", "all", "favorites", "0975", "1018", "orders", "interested"].includes(quickFilter)) {
     return { error: "invalid_quick_filter", status: 400 };
   }
   const search = clean(input.search, 80).replace(/\D/g, "");
@@ -1696,6 +1730,7 @@ async function whatsappConversationList(input: any) {
   const onlyHuman = filter === "human";
   const onlyFavorites = quickFilter === "favorites" || filter === "favorites";
   const onlyOrders = quickFilter === "orders";
+  const onlyInterested = quickFilter === "interested";
   let favoriteIds: string[] = [];
   let favoritesAvailable = false;
   let adminUserId = "";
@@ -1730,16 +1765,24 @@ async function whatsappConversationList(input: any) {
     accountId = selectedAccount ? uuid(selectedAccount.id) : "00000000-0000-0000-0000-000000000000";
   }
 
-  let orderKeywordIds = new Set<string>();
+  let signalSets: any = null;
   let orderIds = new Set<string>();
-  if (onlyOrders) {
-    orderKeywordIds = await recentOrderConversationIds();
-    for (const id of orderKeywordIds) {
+  let interestedIds = new Set<string>();
+  if (onlyOrders || onlyInterested) {
+    signalSets = await recentConversationSignals();
+    const automaticOrderIds = new Set<string>([
+      ...signalSets.siteOrderIds,
+      ...signalSets.directOrderIds,
+    ]);
+    for (const id of automaticOrderIds) {
       if (orderOverrides.get(id) !== "exclude") orderIds.add(id);
     }
     for (const [id, mode] of orderOverrides) {
       if (mode === "include") orderIds.add(id);
+      else if (mode === "exclude") orderIds.delete(id);
     }
+    interestedIds = new Set(signalSets.interestIds);
+    for (const id of orderIds) interestedIds.delete(id);
   }
 
   let conversationQuery = db.from("conversations")
@@ -1760,10 +1803,10 @@ async function whatsappConversationList(input: any) {
       ? conversationQuery.in("id", favoriteIds)
       : conversationQuery.eq("id", "00000000-0000-0000-0000-000000000000");
   }
-  if (onlyOrders) {
-    const orderIdList = Array.from(orderIds);
-    conversationQuery = orderIdList.length
-      ? conversationQuery.in("id", orderIdList)
+  if (onlyOrders || onlyInterested) {
+    const filteredIds = Array.from(onlyOrders ? orderIds : interestedIds);
+    conversationQuery = filteredIds.length
+      ? conversationQuery.in("id", filteredIds)
       : conversationQuery.eq("id", "00000000-0000-0000-0000-000000000000");
   }
 
@@ -1790,15 +1833,14 @@ async function whatsappConversationList(input: any) {
       .in("conversation_id", pageIds).eq("direction", "inbound")
       .order("created_at", { ascending: false }).limit(Math.min(pageIds.length * 8, 240))
     : Promise.resolve({ data: [], error: null });
-  const recentForPageQuery = onlyOrders
-    ? Promise.resolve({ data: Array.from(orderKeywordIds).filter((id) => pageIds.includes(id)).map((id) => ({ conversation_id: id })), error: null })
-    : recentOrderConversationIds(pageIds).then((ids) => ({ data: Array.from(ids).map((id) => ({ conversation_id: id })), error: null }));
-  const [byIdResult, byPhoneResult, recentForPageResult, customerPhonesResult, profileNamesResult] = await Promise.all([
-    byIdQuery, byPhoneQuery, recentForPageQuery, customerPhonesQuery, profileNamesQuery,
+  const recentSignalsQuery = signalSets
+    ? Promise.resolve(signalSets)
+    : recentConversationSignals(pageIds);
+  const [byIdResult, byPhoneResult, recentSignals, customerPhonesResult, profileNamesResult] = await Promise.all([
+    byIdQuery, byPhoneQuery, recentSignalsQuery, customerPhonesQuery, profileNamesQuery,
   ]);
   if (byIdResult.error) throw byIdResult.error;
   if (byPhoneResult.error) throw byPhoneResult.error;
-  if (recentForPageResult.error) throw recentForPageResult.error;
   const phoneRows = customerPhonesResult.error ? [] : customerPhonesResult.data || [];
   const phoneCustomerIds = Array.from(new Set(phoneRows.map((row: any) => uuid(row.customer_id)).filter(Boolean)));
   const knownCustomerIds = new Set([...(byIdResult.data || []), ...(byPhoneResult.data || [])].map((row: any) => uuid(row.id)).filter(Boolean));
@@ -1821,7 +1863,10 @@ async function whatsappConversationList(input: any) {
     const name = clean(metadata.contact_name || metadata.profile_name || "", 180);
     if (conversationId && name && !profileNameByConversation.has(conversationId)) profileNameByConversation.set(conversationId, name);
   }
-  const recentOrderSet = new Set((recentForPageResult.data || []).map((row: any) => uuid(row.conversation_id)).filter(Boolean));
+  const recentSiteOrderSet = recentSignals.siteOrderIds as Set<string>;
+  const recentDirectOrderSet = recentSignals.directOrderIds as Set<string>;
+  const recentOrderSet = new Set<string>([...recentSiteOrderSet, ...recentDirectOrderSet]);
+  const recentInterestSet = recentSignals.interestIds as Set<string>;
   const accountById = new Map(accounts.map((row: any) => [row.id, row]));
   const favoriteIdSet = new Set(favoriteIds);
   const items = pageRows.map((row: any) => {
@@ -1838,6 +1883,9 @@ async function whatsappConversationList(input: any) {
     const hasRecentOrder = recentOrderSet.has(row.id);
     const orderOverride = orderOverrides.get(row.id) || "";
     const isInOrders = orderOverride === "include" || (orderOverride !== "exclude" && hasRecentOrder);
+    const isInterested = recentInterestSet.has(row.id) && !isInOrders;
+    const automaticOrderOrigin = recentSiteOrderSet.has(row.id) ? "site" : recentDirectOrderSet.has(row.id) ? "whatsapp" : "";
+    const orderOrigin = isInOrders ? automaticOrderOrigin || "manual" : "";
     return {
       id: row.id,
       customer_name: clean(linkedCustomer.name || "", 180),
@@ -1852,7 +1900,10 @@ async function whatsappConversationList(input: any) {
       is_favorite: favoriteIdSet.has(row.id),
       has_recent_order: hasRecentOrder,
       order_override: orderOverride,
+      order_origin: orderOrigin,
+      automatic_order_origin: automaticOrderOrigin,
       is_in_orders: isInOrders,
+      is_interested: isInterested,
       last_activity_at: lastActivity,
       updated_at: row.updated_at,
     };
@@ -1871,6 +1922,7 @@ async function whatsappConversationList(input: any) {
     next_cursor: hasMore && lastRow ? { updated_at: lastRow.updated_at, id: lastRow.id } : null,
     favorites_available: favoritesAvailable,
     orders_available: ordersAvailable,
+    filter_ids: onlyOrders ? Array.from(orderIds) : onlyInterested ? Array.from(interestedIds) : null,
   };
 }
 
