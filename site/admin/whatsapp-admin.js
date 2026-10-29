@@ -307,11 +307,13 @@
     const subtitle = (item.channel || "Canal não informado")
       + (item.scheduled_for ? " · Agendada para " + dateLabel(item.scheduled_for) : "");
     const when = item.scheduled_for || item.started_at || item.created_at;
+    const canShowReport = Boolean(item.id) && !["draft", "ready_for_review"].includes(String(item.status || "").toLowerCase());
     const requiresConsentReview = ["approved", "scheduled", "running", "paused"].includes(String(item.status || "").toLowerCase())
       && item.snapshot?.is_current_revision === true;
     return '<article class="whatsapp-record-row whatsapp-campaign-row"><div class="whatsapp-record-main">'
       + '<h3>' + esc(item.name || "Campanha") + "</h3><p>" + esc(subtitle) + "</p>"
       + campaignDeliveryMarkup(item)
+      + (canShowReport ? '<button class="button button-outline whatsapp-campaign-report-button" type="button" data-campaign-report="' + esc(item.id) + '" aria-expanded="false">Ver resultado</button><div class="whatsapp-campaign-report-host" data-campaign-report-result hidden></div>' : "")
       + '<small class="whatsapp-campaign-snapshot">' + esc(campaignSnapshotLabel(item)) + "</small>"
       + campaignExclusionMarkup(item)
       + (requiresConsentReview ? '<p class="whatsapp-campaign-consent-warning" role="note"><strong>O envio exige opt-in individual verificável.</strong> Declarações administrativas não comprovam adesão e ficam excluídas. Confira a origem e as contagens antes de aprovar.</p>' : "")
