@@ -205,6 +205,12 @@
       : "Selecione uma imagem para compactar em até 50 KB.");
   }
 
+  function productImageUrlInputChanged() {
+    if (!state.productImage.blob && !state.productImage.compressing) return;
+    clearProductImageSelection();
+    setProductImageStatus("O endereço informado será usado ao salvar.");
+  }
+
   function productImageUrlChanged(event) {
     clearProductImageSelection();
     const imageUrl = event.currentTarget.value;
@@ -433,6 +439,7 @@
     $("product-form").addEventListener("submit", saveProduct);
     $("product-image-file").addEventListener("change", selectProductImage);
     $("product-image-select").addEventListener("click", () => $("product-image-file").click());
+    $("product-form").elements.image_url.addEventListener("input", productImageUrlInputChanged);
     $("product-form").elements.image_url.addEventListener("change", productImageUrlChanged);
     $("product-image-google-search").addEventListener("click", searchProductImageGoogle);
     $("product-dialog").addEventListener("close", resetProductImageSelection);
