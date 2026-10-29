@@ -318,7 +318,24 @@ body.sheet-open.sheet-scroll-chain { overflow-x: hidden; overflow-y: auto; }
 
 /* Extra lists stay in the basket sheet flow, so cards are never cut by a nested scroll area. */
 .extra-product-list { min-width: 0; }
-.extra-product-more { justify-self: start; min-height: 42px; }
+.extra-product-more {
+  justify-self: start;
+  min-height: 44px;
+  padding-inline: 18px;
+  border-color: #d2ad97;
+  border-radius: 999px;
+  background: #f6e9dc;
+  color: var(--brand-dark);
+  box-shadow: 0 2px 5px rgba(93, 33, 29, .08);
+}
+.extra-product-more:hover:not(:disabled) {
+  border-color: #b98a72;
+  background: #efddcc;
+}
+.extra-product-more:focus-visible {
+  outline: 3px solid rgba(126, 48, 41, .24);
+  outline-offset: 2px;
+}
 .extra-product-more[hidden] { display: none !important; }
 @media (max-width: 639px) {
   .extra-product-card { min-width: 0; grid-template-columns: 76px minmax(0, 1fr); }
