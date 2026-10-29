@@ -1,0 +1,16 @@
+/* Proteção do webhook de confirmações nas campanhas do PapoAI */
+.papoai-guard { margin:0 0 20px; padding:16px 18px; border:1px solid #e8ded4; border-radius:13px; background:#fff; }
+.papoai-guard-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.papoai-guard h3 { margin:0 0 4px; font-size:1rem; color:#342d27; }
+.papoai-guard p { margin:0; font-size:.83rem; line-height:1.5; color:#676058; }
+.papoai-guard-heading .button { min-height:35px; padding:4px 12px; font-size:.77rem; }
+.papoai-guard-state { display:inline-flex; margin:13px 0 7px; padding:5px 10px; border-radius:7px; font-size:.8rem; font-weight:800; background:#f1efec; color:#5f5850; }
+.papoai-guard-state[data-active=true] { background:#eaf4ed; color:#276342; }
+.papoai-guard-stats { display:flex; flex-wrap:wrap; gap:18px; margin:14px 0; font-size:.8rem; color:#676058; }
+.papoai-guard-stats strong { display:block; font-size:1.05rem; color:#342d27; }
+.papoai-guard-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.papoai-guard-actions button { min-height:42px; }
+#papoai-guard-action[data-active=true] { background:#f8ece9; color:#862d26; border:1px solid #e5c8c2; }
+.papoai-guard-message { min-height:19px; margin-top:10px!important; }
+.papoai-guard-message[data-error=true] { color:#a12c22; }
+@media(max-width:600px){.papoai-guard{padding:14px}.papoai-guard-actions button{width:100%}}
