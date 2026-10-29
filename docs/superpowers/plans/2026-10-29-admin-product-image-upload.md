@@ -72,8 +72,8 @@
 **Arquivos:**
 - Todos os arquivos acima.
 
-- [ ] Revisar o diff e executar verificação de sintaxe das telas.
-- [ ] Implantar a função Supabase e confirmar resposta ativa.
+- [x] Revisar o diff e executar verificação estática de sintaxe das telas.
+- [x] Implantar a função Supabase e confirmar resposta ativa.
 - [ ] Mesclar a alteração do site e confirmar conclusão da publicação Pages.
 - [ ] Conferir no código publicado as quatro garantias: busca Google, prévia, limite de 51.200 bytes e persistência em `image_url`.
 
