@@ -449,6 +449,41 @@ async function adminProductMetadataForEdit(productId: string) {
   return { ...existing, admin_last_edited_at: new Date().toISOString() };
 }
 
+const MAX_PRODUCT_IMAGE_BYTES = 50 * 1024;
+function decodeProductImageUpload(input: any) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return { status: 400, error: "invalid_product_image", message: "Arquivo de imagem inválido." };
+  }
+  const contentType = String(input.content_type || "");
+  if (!["image/webp", "image/jpeg"].includes(contentType)) {
+    return { status: 415, error: "product_image_type_not_allowed", message: "A imagem precisa estar em WebP ou JPEG." };
+  }
+  const base64 = String(input.base64 || "");
+  if (!base64 || base64.length > 68268 || base64.length % 4 !== 0
+    || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(base64)) {
+    return { status: 400, error: "invalid_product_image", message: "O arquivo de imagem está inválido." };
+  }
+
+  let binary: string;
+  try { binary = atob(base64); }
+  catch { return { status: 400, error: "invalid_product_image", message: "O arquivo de imagem está inválido." }; }
+  if (!binary.length || binary.length > MAX_PRODUCT_IMAGE_BYTES) {
+    return { status: 413, error: "product_image_too_large", message: "A imagem precisa ter no máximo 50 KB." };
+  }
+  const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+  const isWebp = contentType === "image/webp"
+    && bytes.length >= 12
+    && String.fromCharCode(...bytes.subarray(0, 4)) === "RIFF"
+    && String.fromCharCode(...bytes.subarray(8, 12)) === "WEBP";
+  const isJpeg = contentType === "image/jpeg"
+    && bytes.length >= 3
+    && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  if (!isWebp && !isJpeg) {
+    return { status: 415, error: "product_image_content_invalid", message: "O conteúdo do arquivo não corresponde a uma imagem JPEG ou WebP." };
+  }
+  return { bytes, contentType };
+}
+
 async function productSave(input: any) {
   const id = input.id ? uuid(input.id) : "";
   if (input.id && !id) return { status: 400, error: "invalid_product_id", message: "Produto inválido." };
@@ -486,12 +521,38 @@ async function productSave(input: any) {
     payload.metadata = { admin_last_edited_at: new Date().toISOString() };
   }
 
-  const query = id
-    ? db.from("products").update(payload).eq("id", id)
-    : db.from("products").insert({ ...payload, is_active: input.is_active !== false });
-  const result = await query.select(PRODUCT_COLUMNS).single();
-  if (result.error) throw result.error;
-  return { product: result.data };
+  let uploadedImagePath: string | null = null;
+  if (input.image_upload !== undefined && input.image_upload !== null) {
+    const decodedImage = decodeProductImageUpload(input.image_upload);
+    if ("status" in decodedImage) return decodedImage;
+    const fileExtension = decodedImage.contentType === "image/webp" ? "webp" : "jpg";
+    uploadedImagePath = "admin-products/" + crypto.randomUUID() + "." + fileExtension;
+    const storage = db.storage.from("product-images");
+    const upload = await storage.upload(
+      uploadedImagePath,
+      new Blob([decodedImage.bytes], { type: decodedImage.contentType }),
+      { contentType: decodedImage.contentType, cacheControl: "31536000", upsert: false },
+    );
+    if (upload.error) throw upload.error;
+    payload.image_url = storage.getPublicUrl(uploadedImagePath).data.publicUrl;
+  }
+
+  let savedProduct: any;
+  try {
+    const query = id
+      ? db.from("products").update(payload).eq("id", id)
+      : db.from("products").insert({ ...payload, is_active: input.is_active !== false });
+    const result = await query.select(PRODUCT_COLUMNS).single();
+    if (result.error) throw result.error;
+    savedProduct = result.data;
+  } catch (error) {
+    if (uploadedImagePath) {
+      const cleanup = await db.storage.from("product-images").remove([uploadedImagePath]);
+      if (cleanup.error) console.error("site-admin-v1 product image cleanup failed", uploadedImagePath, cleanup.error);
+    }
+    throw error;
+  }
+  return { product: savedProduct };
 }
 
 async function productSetMostSold(input: any) {
