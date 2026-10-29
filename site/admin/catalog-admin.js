@@ -29,10 +29,22 @@
       headers["Content-Type"] = "application/json";
       init.body = JSON.stringify({ action, ...(options.body || {}) });
     }
-    const response = await fetch(url.toString(), init);
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || data.ok === false) throw new Error(data.message || data.error || "Não foi possível concluir a operação.");
-    return data;
+    // Não interromper gravações: somente as consultas GET têm timeout.
+    const readRequest = init.method === "GET";
+    const controller = readRequest && typeof AbortController !== "undefined" ? new AbortController() : null;
+    const timer = controller ? setTimeout(() => controller.abort(), 16000) : null;
+    if (controller) init.signal = controller.signal;
+    try {
+      const response = await fetch(url.toString(), init);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok === false) throw new Error(data.message || data.error || "Não foi possível concluir a operação.");
+      return data;
+    } catch (error) {
+      if (controller?.signal.aborted) throw new Error("O Supabase demorou demais para responder. Tente novamente.");
+      throw error;
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
   }
 
   function toast(message) {
