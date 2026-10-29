@@ -39,6 +39,7 @@
 
     const url = new URL(supabaseUrl + "/functions/v1/admin-marketing-campaign-report-v1");
     url.searchParams.set("campaign_id", campaignId);
+    url.searchParams.set("summary_only", "true");
     const response = await fetch(url.toString(), {
       method: "GET",
       headers: { apikey: publishableKey, "x-admin-code": adminCode },
