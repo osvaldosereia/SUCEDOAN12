@@ -112,13 +112,33 @@
       const select = $("delivery-date");
       const payment = document.querySelector('input[name="payment"]:checked');
       const data = state.baskets.get(state.activeKey);
-      const orderItemsAvailable = data && (data.customOrder
+      const orderItemsAvailable = Boolean(data && (data.customOrder
         ? selectedExtraEntries(data).length > 0
-        : data.orderable === true);
-      const minimumSatisfied = !data || !data.customOrder || customOrderSubtotalCents(data) >= minimumOrderCents;
-      const selectedDateIsAvailable = select && !select.disabled && state.deliveryOptions.some((option) => option.date === select.value);
-      $("confirm-order").disabled = state.submittingOrder || !orderItemsAvailable ||
-        !minimumSatisfied || !customerHasCheckoutAddress(state.customer) || !payment || !selectedDateIsAvailable;
+        : data.orderable === true));
+      const subtotal = data && data.customOrder ? customOrderSubtotalCents(data) : 0;
+      const minimumSatisfied = !data || !data.customOrder || subtotal >= minimumOrderCents;
+      const customerConfirmed = customerHasCheckoutAddress(state.customer);
+      const selectedDateIsAvailable = Boolean(select && !select.disabled && state.deliveryOptions.some((option) => option.date === select.value));
+      const cannotConfirm = state.submittingOrder || !orderItemsAvailable ||
+        !minimumSatisfied || !customerConfirmed || !payment || !selectedDateIsAvailable;
+      $("confirm-order").disabled = cannotConfirm;
+
+      // Explain the exact blocking condition near the button, visible at the
+      // bottom of the checkout even when the product list is scrolled away.
+      let reason = "";
+      if (!state.submittingOrder) {
+        if (!orderItemsAvailable) reason = "Escolha pelo menos um produto disponível para continuar.";
+        else if (!minimumSatisfied) reason = "Pedido mínimo de " + money(minimumOrderCents) +
+          ". Faltam " + money(minimumOrderCents - subtotal) + " em produtos para liberar a confirmação.";
+        else if (!customerConfirmed) reason = "Busque e confirme seu cadastro para continuar.";
+        else if (!selectedDateIsAvailable) reason = "Selecione uma data de entrega disponível.";
+        else if (!payment) reason = "Escolha a forma de pagamento para confirmar o pedido.";
+      }
+      const reasonElement = $("confirm-order-reason");
+      reasonElement.textContent = reason;
+      reasonElement.hidden = !reason;
+      $("add-more-products").hidden = !data || data.customOrder !== true ||
+        orderItemsAvailable === false || minimumSatisfied || state.submittingOrder;
     }
   
     function loadDeliveryOptions() {
@@ -467,6 +487,11 @@
       $("payment-options").addEventListener("change", updateConfirmOrderAvailability);
       $("delivery-date").addEventListener("change", updateConfirmOrderAvailability);
       $("confirm-order").addEventListener("click", confirmOrder);
+      $("add-more-products").addEventListener("click", () => {
+        closeSheet("order-sheet");
+        const products = $("home-extra-categories") || $("home-extra-product-search-results");
+        if (products) products.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
       document.querySelectorAll("[data-close]").forEach((button) => button.addEventListener("click", () => closeSheet(button.dataset.close + "-sheet")));
       document.querySelectorAll(".sheet-backdrop").forEach((backdrop) => backdrop.addEventListener("click", (event) => {
         if (event.target === backdrop) closeSheet(backdrop.id);

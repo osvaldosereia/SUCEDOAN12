@@ -348,3 +348,8 @@ body.sheet-open.sheet-scroll-chain { overflow-x: hidden; overflow-y: auto; }
 .customer-marketing-consent { display:flex; align-items:flex-start; gap:10px; padding:12px 2px; font-size:.84rem; line-height:1.48; color:var(--text, #292320); cursor:pointer; }
 .customer-marketing-consent input[type="checkbox"] { display:block; flex:0 0 19px; width:19px; height:19px; margin:1px 0 0; accent-color:var(--brand-dark, #7e3029); }
 .customer-marketing-consent span { flex:1; }
+
+/* Checkout: show the reason the final button cannot be used (especially order minimum). */
+.checkout-blocker-message { margin:0 0 10px; color:#854329; font-size:.9rem; line-height:1.42; font-weight:600; }
+.checkout-blocker-message[hidden], #add-more-products[hidden] { display:none !important; }
+#add-more-products { min-height:44px; margin-bottom:10px; }
