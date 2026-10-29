@@ -8,7 +8,6 @@ export type CampaignDispatch = {
   customer_id: string | null;
   status: string;
   provider_message_id: string | null;
-  created_at: string;
 };
 
 export type MessageRecord = {
@@ -63,7 +62,7 @@ function hasSentStatus(dispatch: CampaignDispatch, message: MessageRecord | unde
   return statuses.some((status) => SENT_STATUSES.has(status));
 }
 
-function sentAt(dispatch: CampaignDispatch, message: MessageRecord | undefined, events: StatusEvent[]) {
+function sentAt(message: MessageRecord | undefined, events: StatusEvent[]) {
   if (message?.sent_at) {
     const timestamp = Date.parse(message.sent_at);
     if (Number.isFinite(timestamp)) return timestamp;
@@ -75,13 +74,7 @@ function sentAt(dispatch: CampaignDispatch, message: MessageRecord | undefined, 
     .filter(Number.isFinite);
   if (eventTimes.length) return Math.min(...eventTimes);
 
-  if (SENT_STATUSES.has(normalizeStatus(message?.status_current)) && message?.created_at) {
-    const timestamp = Date.parse(message.created_at);
-    if (Number.isFinite(timestamp)) return timestamp;
-  }
-
-  const dispatchCreatedAt = Date.parse(dispatch.created_at || "");
-  return Number.isFinite(dispatchCreatedAt) ? dispatchCreatedAt : null;
+  return null;
 }
 
 async function inboundMessages(
@@ -119,9 +112,9 @@ export async function buildCampaignResponseSummary(
   dispatches: CampaignDispatch[],
   messages: Map<string, MessageRecord>,
   events: Map<string, StatusEvent[]>,
-  sentCount: number,
 ): Promise<ResponseSummary> {
-  const sentAtByCustomer = new Map<string, number>();
+  const sentTimesByCustomer = new Map<string, number[]>();
+  let incompleteSentTime = false;
   for (const dispatch of dispatches) {
     const providerId = String(dispatch.provider_message_id || "");
     const message = messages.get(providerId);
@@ -129,14 +122,18 @@ export async function buildCampaignResponseSummary(
     if (!hasSentStatus(dispatch, message, statusEvents)) continue;
 
     const customerId = String(dispatch.customer_id || "");
-    const timestamp = sentAt(dispatch, message, statusEvents);
-    if (!customerId || timestamp === null) continue;
+    const timestamp = sentAt(message, statusEvents);
+    if (!customerId || timestamp === null) {
+      incompleteSentTime = true;
+      continue;
+    }
 
-    const current = sentAtByCustomer.get(customerId);
-    if (current === undefined || timestamp < current) sentAtByCustomer.set(customerId, timestamp);
+    const customerTimes = sentTimesByCustomer.get(customerId) || [];
+    customerTimes.push(timestamp);
+    sentTimesByCustomer.set(customerId, customerTimes);
   }
 
-  if (!accountId || sentAtByCustomer.size === 0) {
+  if (!accountId || sentTimesByCustomer.size === 0 || incompleteSentTime) {
     return {
       responses: 0,
       response_rate: 0,
@@ -145,27 +142,27 @@ export async function buildCampaignResponseSummary(
     };
   }
 
-  const timestamps = [...sentAtByCustomer.values()];
+  const timestamps = [...sentTimesByCustomer.values()].flat();
   const from = new Date(Math.min(...timestamps)).toISOString();
   const to = new Date(Math.max(...timestamps) + RESPONSE_WINDOW_MS).toISOString();
-  const inbound = await inboundMessages(db, accountId, [...sentAtByCustomer.keys()], from, to);
+  const inbound = await inboundMessages(db, accountId, [...sentTimesByCustomer.keys()], from, to);
   const responded = new Set<string>();
 
   for (const message of inbound) {
     const customerId = String(message.customer_id || "");
-    const sentTimestamp = sentAtByCustomer.get(customerId);
-    if (sentTimestamp === undefined) continue;
+    const sentTimestamps = sentTimesByCustomer.get(customerId);
+    if (!sentTimestamps?.length) continue;
 
     const receivedTimestamp = Date.parse(String(message.received_at || message.created_at || ""));
     if (!Number.isFinite(receivedTimestamp)) continue;
-    if (receivedTimestamp >= sentTimestamp && receivedTimestamp <= sentTimestamp + RESPONSE_WINDOW_MS) {
+    if (sentTimestamps.some((sentTimestamp) => receivedTimestamp >= sentTimestamp && receivedTimestamp <= sentTimestamp + RESPONSE_WINDOW_MS)) {
       responded.add(customerId);
     }
   }
 
   return {
     responses: responded.size,
-    response_rate: sentCount ? Number(((responded.size / sentCount) * 100).toFixed(1)) : 0,
+    response_rate: sentTimesByCustomer.size ? Number(((responded.size / sentTimesByCustomer.size) * 100).toFixed(1)) : 0,
     response_window_hours: RESPONSE_WINDOW_HOURS,
     response_measurement_available: true,
   };

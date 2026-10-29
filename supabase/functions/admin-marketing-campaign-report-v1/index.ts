@@ -13,7 +13,7 @@ const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {"A
 const json=(req:Request,body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors(req),"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
 const validUuid=(value:unknown)=>{const s=String(value??"").trim();return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)?s:null};
 const maskPhone=(value:unknown)=>{const digits=String(value??"").replace(/\D/g,"");if(digits.length<4)return "—";return `${"*".repeat(Math.max(4,digits.length-4))}${digits.slice(-4)}`};
-const statusRank:Record<string,number>={accepted:1,sent:2,delivered:3,read:4,failed:5};
+const statusRank:Record<string,number>={read:60,delivered:50,sent:40,failed:35,accepted:30,sending:20,queued:10};
 
 async function adminAuth(req:Request){
   const suppliedCode=req.headers.get("x-admin-code");
@@ -29,8 +29,8 @@ async function adminAuth(req:Request){
   if(row.error)return {ok:false as const,status:500,error:"admin_auth_lookup_failed"};if(!row.data?.user_id)return {ok:false as const,status:403,error:"admin_not_authorized"};return {ok:true as const,status:200,user_id:user.data.user.id};
 }
 function chunks<T>(items:T[],size=IN_CHUNK){const out:T[][]=[];for(let i=0;i<items.length;i+=size)out.push(items.slice(i,i+size));return out}
-async function allDispatches(campaignId:string,includeDetails=true){
-  const columns=includeDetails?"id,customer_id,phone_e164,status,provider_message_id,last_error,skip_reason,created_at,updated_at":"customer_id,status,provider_message_id,created_at";
+async function allDispatches(campaignId:string){
+  const columns="id,customer_id,phone_e164,status,provider_message_id,last_error,skip_reason,created_at,updated_at";
   const rows:any[]=[];for(let from=0;;from+=PAGE_SIZE){const result=await db.from("marketing_campaign_dispatches_v1").select(columns).eq("campaign_id",campaignId).order("created_at",{ascending:true}).range(from,from+PAGE_SIZE-1);if(result.error)throw result.error;rows.push(...(result.data||[]));if((result.data||[]).length<PAGE_SIZE)break}return rows;
 }
 async function customerMap(ids:string[]){const map=new Map<string,any>();for(const part of chunks([...new Set(ids.filter(Boolean))])){const result=await db.from("customers").select("id,name,primary_whatsapp_e164").in("id",part);if(result.error)throw result.error;for(const row of result.data||[])map.set(String(row.id),row)}return map}
@@ -47,17 +47,30 @@ async function messageMap(accountId:string,ids:string[]){
 async function eventMap(messageIds:string[]){
   const map=new Map<string,any[]>();
   for(const part of chunks([...new Set(messageIds.filter(Boolean))])){
-    const result=await db.from("whatsapp_message_status_events_v1").select("message_id,status,occurred_at,received_at")
+    const result=await db.from("whatsapp_message_status_events_v1").select("id,message_id,status,occurred_at,received_at")
       .eq("provider","meta").in("message_id",part).order("occurred_at",{ascending:true});
     if(result.error)throw result.error;
     for(const row of result.data||[]){const key=String(row.message_id);const list=map.get(key)||[];list.push(row);map.set(key,list)}
   }
   return map;
 }
+function eventStatusOrder(left:any,right:any){
+  const leftOccurred=Date.parse(String(left?.occurred_at||"")),rightOccurred=Date.parse(String(right?.occurred_at||""));
+  const leftValid=Number.isFinite(leftOccurred),rightValid=Number.isFinite(rightOccurred);
+  if(leftValid&&rightValid&&leftOccurred!==rightOccurred)return rightOccurred-leftOccurred;
+  if(leftValid!==rightValid)return leftValid?-1:1;
+  const priorityDifference=(statusRank[String(right?.status||"").toLowerCase()]||0)-(statusRank[String(left?.status||"").toLowerCase()]||0);
+  if(priorityDifference)return priorityDifference;
+  const leftReceived=Date.parse(String(left?.received_at||"")),rightReceived=Date.parse(String(right?.received_at||""));
+  const leftReceivedValid=Number.isFinite(leftReceived),rightReceivedValid=Number.isFinite(rightReceived);
+  if(leftReceivedValid&&rightReceivedValid&&leftReceived!==rightReceived)return rightReceived-leftReceived;
+  if(leftReceivedValid!==rightReceivedValid)return leftReceivedValid?-1:1;
+  return String(right?.id||"").localeCompare(String(left?.id||""));
+}
 function finalStatus(dispatch:any,message:any,events:any[]){
-  const candidates=[String(dispatch?.status||"").toLowerCase(),String(message?.status_current||"").toLowerCase(),...events.map(event=>String(event?.status||"").toLowerCase())].filter(Boolean);
-  if(candidates.includes("read"))return "read";if(candidates.includes("delivered"))return "delivered";if(candidates.includes("sent"))return "sent";if(candidates.includes("failed")||String(dispatch?.status||"").toLowerCase()==="failed")return "failed";if(candidates.includes("accepted"))return "accepted";
-  const known=candidates.sort((a,b)=>(statusRank[b]||0)-(statusRank[a]||0))[0];return known||String(dispatch?.status||"pending");
+  const latestEvent=[...events].sort(eventStatusOrder)[0];
+  const current=String(latestEvent?.status||message?.status_current||"").toLowerCase();
+  return current||String(dispatch?.status||"pending").toLowerCase();
 }
 function latestAt(dispatch:any,message:any,events:any[]){const values=[dispatch?.updated_at,message?.sent_at,message?.created_at,...events.flatMap(event=>[event?.occurred_at,event?.received_at])].filter(Boolean).map(value=>new Date(value).getTime()).filter(Number.isFinite);return values.length?new Date(Math.max(...values)).toISOString():null}
 
@@ -65,14 +78,21 @@ Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});if(req.method!=="GET")return json(req,{ok:false,error:"method_not_allowed"},405);if(!SUPABASE_URL||!SERVICE_KEY)return json(req,{ok:false,error:"server_config"},500);
   const auth=await adminAuth(req);if(!auth.ok)return json(req,{ok:false,error:auth.error},auth.status);
   try{
-    const requestUrl=new URL(req.url),campaignId=validUuid(requestUrl.searchParams.get("campaign_id")),includeItems=requestUrl.searchParams.get("summary_only")!=="true";if(!campaignId)return json(req,{ok:false,error:"invalid_campaign_id"},400);
+    const requestUrl=new URL(req.url),campaignId=validUuid(requestUrl.searchParams.get("campaign_id")),summaryOnly=requestUrl.searchParams.get("summary_only")==="true";if(!campaignId)return json(req,{ok:false,error:"invalid_campaign_id"},400);
     const campaign=await db.from("marketing_campaigns_v1").select("id,name,status,template_name_snapshot,whatsapp_account_id,scheduled_for,started_at,completed_at,created_at").eq("id",campaignId).maybeSingle();if(campaign.error)throw campaign.error;if(!campaign.data)return json(req,{ok:false,error:"campaign_not_found"},404);
-    const dispatches=await allDispatches(campaignId,includeItems),customerIds=dispatches.map(row=>String(row.customer_id||"")).filter(Boolean),providerIds=dispatches.map(row=>String(row.provider_message_id||"")).filter(Boolean);
-    const [customers,messages]=await Promise.all([includeItems?customerMap(customerIds):Promise.resolve(new Map<string,any>()),messageMap(String(campaign.data.whatsapp_account_id||""),providerIds)]);const events=await eventMap([...messages.values()].map(message=>String(message.id)));
-    const reportRows=dispatches.map(dispatch=>{const customer=customers.get(String(dispatch.customer_id||"")),key=String(dispatch.provider_message_id||""),message=messages.get(key),eventRows=message?events.get(String(message.id))||[]:[];return {dispatch,customer,message,eventRows,status:finalStatus(dispatch,message,eventRows)}});
-    const items=includeItems?reportRows.map(row=>({name:String(row.customer?.name||"Cliente"),masked_phone:maskPhone(row.customer?.primary_whatsapp_e164||row.dispatch.phone_e164),status:row.status,updated_at:latestAt(row.dispatch,row.message,row.eventRows),error:row.dispatch.last_error||row.dispatch.skip_reason||null})):[];
-    const total=reportRows.length,read=reportRows.filter(row=>row.status==="read").length,delivered=reportRows.filter(row=>row.status==="read"||row.status==="delivered").length,sent=reportRows.filter(row=>["sent","delivered","read"].includes(row.status)).length,failed=reportRows.filter(row=>row.status==="failed").length,accepted=dispatches.filter(dispatch=>String(dispatch.status||"").toLowerCase()==="accepted").length,pending=reportRows.filter(row=>["pending","queued","claimed","retry","sending"].includes(row.status)).length,uncertain=reportRows.filter(row=>row.status==="uncertain").length,skipped=reportRows.filter(row=>row.status==="skipped").length;const responseSummary=await buildCampaignResponseSummary(db,String(campaign.data.whatsapp_account_id||""),dispatches,messages,events,sent);
+    const campaignDetails={name:campaign.data.name,status:campaign.data.status,template_name:campaign.data.template_name_snapshot,scheduled_for:campaign.data.scheduled_for,started_at:campaign.data.started_at,completed_at:campaign.data.completed_at,created_at:campaign.data.created_at};
+    if(summaryOnly){
+      const summaryResult=await db.rpc("site_admin_marketing_campaign_report_summary_v1",{p_campaign_id:campaignId});
+      if(summaryResult.error)throw summaryResult.error;
+      const row=Array.isArray(summaryResult.data)?summaryResult.data[0]||{}:summaryResult.data||{};
+      const {read_count,...summary}=row;
+      return json(req,{ok:true,campaign:campaignDetails,summary:{...summary,read:read_count},generated_at:new Date().toISOString()},200);
+    }
+    const dispatches=await allDispatches(campaignId),customerIds=dispatches.map(row=>String(row.customer_id||"")).filter(Boolean),providerIds=dispatches.map(row=>String(row.provider_message_id||"")).filter(Boolean);
+    const [customers,messages]=await Promise.all([customerMap(customerIds),messageMap(String(campaign.data.whatsapp_account_id||""),providerIds)]);const events=await eventMap([...messages.values()].map(message=>String(message.id)));
+    const items=dispatches.map(dispatch=>{const customer=customers.get(String(dispatch.customer_id||"")),key=String(dispatch.provider_message_id||""),message=messages.get(key),eventRows=message?events.get(String(message.id))||[]:[];return {name:String(customer?.name||"Cliente"),masked_phone:maskPhone(customer?.primary_whatsapp_e164||dispatch.phone_e164),status:finalStatus(dispatch,message,eventRows),updated_at:latestAt(dispatch,message,eventRows),error:dispatch.last_error||dispatch.skip_reason||null}});
+    const total=items.length,read=items.filter(item=>item.status==="read").length,delivered=items.filter(item=>item.status==="read"||item.status==="delivered").length,sent=items.filter(item=>["sent","delivered","read"].includes(item.status)).length,failed=items.filter(item=>item.status==="failed").length,accepted=dispatches.filter(dispatch=>String(dispatch.status||"").toLowerCase()==="accepted").length,pending=items.filter(item=>["pending","queued","claimed","retry","sending"].includes(item.status)).length,uncertain=items.filter(item=>item.status==="uncertain").length,skipped=items.filter(item=>item.status==="skipped").length;const responseSummary=await buildCampaignResponseSummary(db,String(campaign.data.whatsapp_account_id||""),dispatches,messages,events);
     const delivery_rate=sent?Number(((delivered/sent)*100).toFixed(1)):0,read_rate=delivered?Number(((read/delivered)*100).toFixed(1)):0;
-    return json(req,{ok:true,campaign:{name:campaign.data.name,status:campaign.data.status,template_name:campaign.data.template_name_snapshot,scheduled_for:campaign.data.scheduled_for,started_at:campaign.data.started_at,completed_at:campaign.data.completed_at,created_at:campaign.data.created_at},summary:{total,accepted,sent,delivered,read,failed,pending,uncertain,skipped,delivery_rate,read_rate,...responseSummary},generated_at:new Date().toISOString(),...(includeItems?{items}:{})},200);
+    return json(req,{ok:true,campaign:campaignDetails,summary:{total,accepted,sent,delivered,read,failed,pending,uncertain,skipped,delivery_rate,read_rate,...responseSummary},generated_at:new Date().toISOString(),items},200);
   }catch(error){console.error("admin_marketing_campaign_report_error",error instanceof Error?error.message:String(error));return json(req,{ok:false,error:"internal_error"},500)}
 });

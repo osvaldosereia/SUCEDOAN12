@@ -70,12 +70,12 @@
     }
 
     const responseDetail = summary.response_measurement_available === true
-      ? percent(summary.response_rate) + " das enviadas · até " + count(summary.response_window_hours || 48) + " h"
+      ? percent(summary.response_rate) + " dos clientes enviados · até " + count(summary.response_window_hours || 48) + " h"
       : "Sem horário de envio suficiente para estimar";
     const metrics = [
       ["Destinatários", summary.total, "inclui pendentes e falhas"],
-      ["Enviadas", summary.sent, "Aceitas pela Meta: " + count(summary.accepted)],
-      ["Entregues", summary.delivered, percent(summary.delivery_rate) + " das enviadas"],
+      ["Enviadas", summary.sent, "Aceitas pela Meta: " + count(summary.accepted) + " · inclui entregues e lidas"],
+      ["Entregues", summary.delivered, percent(summary.delivery_rate) + " das enviadas · inclui lidas"],
       ["Lidas", summary.read, percent(summary.read_rate) + " das entregues"],
       ["Falhas", summary.failed, "não entregues"],
       ["Clientes que responderam", summary.responses, responseDetail],
@@ -95,13 +95,14 @@
       + '<small>Atualizado ' + esc(dateLabel(data.generated_at)) + '</small></div>'
       + '<div class="wa-campaign-report-grid">' + cards + '</div>'
       + '<p class="wa-campaign-report-pending">' + esc(deliveryState) + '</p>'
-      + '<p class="wa-campaign-report-note">Entrega e leitura vêm dos status recebidos da Meta. Respostas são estimadas: contam clientes que enviaram mensagem em até 48 horas após o envio; podem incluir outro assunto.</p>'
+      + '<p class="wa-campaign-report-note">As contagens de enviadas e entregues são cumulativas: entregues inclui lidas. Os status vêm da Meta. Respostas são estimadas em até 48 horas após o envio e podem incluir outro assunto.</p>'
       + '</section>';
     panel.dataset.loaded = "true";
   }
 
   function renderError(panel, message) {
-    panel.innerHTML = '<p class="wa-campaign-report-error" role="alert">' + esc(message) + '</p>';
+    panel.innerHTML = '<div class="wa-campaign-report-error" role="alert"><span>' + esc(message)
+      + '</span><button class="button button-outline wa-campaign-report-retry" type="button" data-campaign-report-retry>Tentar novamente</button></div>';
     delete panel.dataset.loaded;
   }
 
@@ -109,14 +110,16 @@
   if (!campaigns) return;
 
   campaigns.addEventListener("click", async (event) => {
-    const target = event.target instanceof Element ? event.target.closest("[data-campaign-report]") : null;
+    const clicked = event.target instanceof Element ? event.target : null;
+    const retry = clicked?.closest("[data-campaign-report-retry]") || null;
+    const row = clicked?.closest(".whatsapp-campaign-row");
+    const target = retry ? row?.querySelector("[data-campaign-report]") : clicked?.closest("[data-campaign-report]");
     if (!target || target.disabled) return;
     const campaignId = String(target.dataset.campaignReport || "");
-    const row = target.closest(".whatsapp-campaign-row");
     const panel = row?.querySelector("[data-campaign-report-result]");
     if (!campaignId || !panel) return;
 
-    if (target.getAttribute("aria-expanded") === "true") {
+    if (!retry && target.getAttribute("aria-expanded") === "true") {
       panel.hidden = true;
       target.setAttribute("aria-expanded", "false");
       target.textContent = "Ver resultado";
