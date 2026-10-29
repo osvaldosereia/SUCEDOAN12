@@ -8,12 +8,14 @@
   <title>Admin · Dona Antônia</title>
   <link rel="stylesheet" href="../styles.css?v=5">
   <link rel="stylesheet" href="admin.css?v=45">
+  <link rel="stylesheet" href="baskets-admin.css?v=1">
   <link rel="stylesheet" href="whatsapp-campaign-report.css?v=1">
   <link rel="stylesheet" href="orders-admin.css?v=5">
   <link rel="stylesheet" href="quick-balance-admin.css?v=4">
   <script src="../config.js?v=3"></script>
   <script src="admin-auth.js?v=2" defer></script>
-  <script src="catalog-admin.js?v=11" defer></script>
+  <script src="catalog-admin.js?v=12" defer></script>
+  <script src="baskets-admin.js?v=1" defer></script>
   <script src="orders-admin.js?v=5" defer></script>
   <script src="order-message-admin.js?v=3" defer></script>
   <script src="separation-message-admin.js?v=3" defer></script>
@@ -21,7 +23,7 @@
   <script src="whatsapp-campaign-report.js?v=1" defer></script>
   <script src="whatsapp-conversations.js?v=16" defer></script>
   <script src="quick-balance-admin.js?v=7" defer></script>
-  <script src="admin.js?v=17" defer></script>
+  <script src="admin.js?v=18" defer></script>
 </head>
 <body class="admin-page">
   <main id="admin-login" class="admin-login-main">
@@ -160,7 +162,7 @@
       </section>
 
       <section class="admin-view" data-panel="baskets" hidden>
-        <div class="section-title"><div><h2>Cestas</h2><p>Defina o produto padrão, as variações, a quantidade e o valor inicial de cada composição.</p></div><div class="basket-admin-controls"><select id="basket-status" aria-label="Filtrar cestas"><option value="active">Ativas</option><option value="inactive">Inativas</option><option value="all">Todas</option></select><button id="reload-baskets" class="button button-outline" type="button">Atualizar</button></div></div>
+        <div class="section-title"><div><h2>Cestas</h2><p>Escolha os produtos e marcas de cada cesta. Você pode repetir as marcas nas outras cestas que também tenham o mesmo item.</p></div><div class="basket-admin-controls"><select id="basket-status" aria-label="Filtrar cestas"><option value="active">Ativas</option><option value="inactive">Inativas</option><option value="all">Todas</option></select><button id="reload-baskets" class="button button-outline" type="button">Atualizar</button></div></div>
         <div id="admin-baskets" class="admin-basket-list"><p class="admin-muted">Carregando…</p></div>
         <div class="edit-notice">
           <strong>Como o valor é calculado</strong>

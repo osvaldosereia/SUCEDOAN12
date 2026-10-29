@@ -1,0 +1,30 @@
+.basket-share-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e7dbcc;
+  border-radius: 10px;
+  background: #faf6f0;
+  cursor: pointer;
+}
+.basket-share-toggle > input {
+  flex: 0 0 auto;
+  margin: 3px 0 0;
+  accent-color: var(--brand);
+}
+.basket-share-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.basket-share-copy strong {
+  color: var(--ink);
+  font-size: .8rem;
+  line-height: 1.35;
+}
+.basket-share-copy small {
+  color: var(--muted);
+  font-size: .7rem;
+  line-height: 1.4;
+}
