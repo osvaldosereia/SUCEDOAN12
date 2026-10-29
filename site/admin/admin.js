@@ -138,10 +138,7 @@
     });
     $("page-title").textContent = ({ customers: "Clientes", baskets: "Cestas", products: "Produtos", orders: "Pedidos", "quick-balance": "Balanço rápido", whatsapp: "WhatsApp", overview: "Visão geral" })[name] || "Visão geral";
     if (name === "baskets") window.DonaBasketAdmin?.loadBaskets();
-    if (name === "products") {
-      window.DonaCatalogAdmin?.loadProducts();
-      window.DonaProductTaxonomyAdmin?.load(true);
-    }
+    if (name === "products") window.DonaCatalogAdmin?.loadProducts();
     if (name === "orders") window.DonaOrdersAdmin?.loadOrders();
     if (name === "quick-balance") window.DonaQuickBalanceAdmin?.open();
     if (name === "whatsapp") loadWhatsAppSection();
