@@ -36,10 +36,24 @@
       headers["Content-Type"] = "application/json";
       init.body = JSON.stringify(opts.body);
     }
-    const response = await fetch(url.toString(), init);
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || data.ok === false) throw new Error(data.error || "Não foi possível carregar agora.");
-    return data;
+    // Leituras não podem deixar a loja travada por minutos quando a API falha.
+    // Gravações de pedidos não são abortadas automaticamente para evitar pedidos duplicados.
+    const readRequest = init.method === "GET";
+    const timeoutMs = action === "home_size_cards" ? 16000 : 22000;
+    const controller = readRequest && typeof AbortController !== "undefined" ? new AbortController() : null;
+    const timeout = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+    if (controller) init.signal = controller.signal;
+    try {
+      const response = await fetch(url.toString(), init);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok === false) throw new Error(data.error || "Não foi possível carregar agora.");
+      return data;
+    } catch (error) {
+      if (controller?.signal.aborted) throw new Error("A consulta demorou além do esperado. Tente novamente.");
+      throw error;
+    } finally {
+      if (timeout) clearTimeout(timeout);
+    }
   }
 
   function imageForBasket(card, keyName) {
@@ -64,7 +78,9 @@
 
   function showEmpty(message, canRetry) {
     $("basket-grid").setAttribute("aria-busy", "false");
-    $("basket-grid").innerHTML = '<div class="empty-state">' + esc(message) + "</div>";
+    const contact = "https://wa.me/5565998150975?text=" + encodeURIComponent("Olá, gostaria de consultar as cestas básicas da Dona Antônia.");
+    $("basket-grid").innerHTML = '<div class="empty-state" role="alert"><p>' + esc(message) +
+      '</p><a class="button button-primary" href="' + esc(contact) + '" target="_blank" rel="noopener noreferrer">Consultar cestas pelo WhatsApp</a></div>';
     $("catalog-status").textContent = canRetry ? "Não carregou" : "";
     $("retry-catalog").hidden = !canRetry;
   }
@@ -93,8 +109,11 @@
       });
       renderCards();
       $("catalog-status").textContent = state.cards.length + " tamanhos";
+      $("home-extras").hidden = false;
+      initHomeExtras();
     } catch (error) {
-      showEmpty("Não foi possível carregar as cestas. Confira sua conexão e tente novamente.", true);
+      $("home-extras").hidden = true;
+      showEmpty("O catálogo está temporariamente indisponível. Você ainda pode consultar nossas cestas pelo WhatsApp.", true);
     }
   }
 
@@ -281,5 +300,4 @@
   checkout.init();
   $("retry-catalog").addEventListener("click", loadCatalog);
   loadCatalog();
-  initHomeExtras();
 })();
