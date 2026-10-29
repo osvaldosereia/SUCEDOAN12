@@ -9,11 +9,11 @@
   <link rel="preload" as="image" href="../img/logoantonia5.png">
   <link rel="preload" as="image" href="assets/cestas/cesta-economica.jpg" fetchpriority="high">
   <link rel="preconnect" href="https://ssbesxgaijknwsjbsbcz.supabase.co" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=26">
+  <link rel="stylesheet" href="styles.css?v=27">
   <script src="config.js?v=2" defer></script>
   <script src="storefront/extras.js?v=15" defer></script>
   <script src="storefront/basket.js?v=3" defer></script>
-  <script src="storefront/checkout.js?v=7" defer></script>
+  <script src="storefront/checkout.js?v=8" defer></script>
   <script src="app.js?v=24" defer></script>
 </head>
 <body>
@@ -196,6 +196,10 @@
             </label>
           </div>
           <p class="helper registration-help">O endereço de entrega é obrigatório. Atendemos Cuiabá e Várzea Grande.</p>
+          <label class="customer-marketing-consent">
+            <input id="customer-marketing-opt-in" type="checkbox" name="marketing_opt_in" value="1">
+            <span>Aceito receber ofertas e novidades da Dona Antônia pelo WhatsApp no número informado. Posso cancelar quando quiser.</span>
+          </label>
           <button id="register-customer-button" class="button button-primary button-wide" type="submit">Salvar cadastro e continuar</button>
         </form>
         <div class="delivery-date-field">

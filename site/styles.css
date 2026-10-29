@@ -343,3 +343,8 @@ body.sheet-open.sheet-scroll-chain { overflow-x: hidden; overflow-y: auto; }
   .extra-quantity { min-width: 0; flex-wrap: wrap; }
   .extra-product-more { width: 100%; justify-self: stretch; }
 }
+
+/* Aceite opcional de ofertas no checkout. Desmarcado por padrão. */
+.customer-marketing-consent { display:flex; align-items:flex-start; gap:10px; padding:12px 2px; font-size:.84rem; line-height:1.48; color:var(--text, #292320); cursor:pointer; }
+.customer-marketing-consent input[type="checkbox"] { display:block; flex:0 0 19px; width:19px; height:19px; margin:1px 0 0; accent-color:var(--brand-dark, #7e3029); }
+.customer-marketing-consent span { flex:1; }

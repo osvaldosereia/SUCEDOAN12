@@ -1106,7 +1106,31 @@ async function registerCustomer(req:Request,p:any){
   });
   if(r.error)return {error:"registration_unavailable",status:503};
   if(r.data?.ok!==true){const e=txt(r.data?.error,100)||"registration_failed";return {error:e,status:["document_already_in_use","document_mismatch","identity_mismatch"].includes(e)?409:400};}
-  const customer=await loadCustomerForCheckout(r.data.customer_id);return {ok:true,registration_complete:true,customer,bling_job_id:r.data.bling_job_id||null};
+  // A choice made on the public checkout is an independent, individually logged opt-in.
+  // No opt-in is inferred from an existing order, phone, or historical owner declaration.
+  let consentRecorded = false;
+  if (p?.marketing_opt_in === true && p?.source === "checkout") {
+    const key = "checkout_optin:" + crypto.randomUUID();
+    const saved = await db.rpc("marketing_record_consent_v1", {
+      p_customer_id: r.data.customer_id,
+      p_decision: "opt_in",
+      p_source: "site_checkout_checkbox",
+      p_source_ref: key,
+      p_source_event_key: key,
+      p_consent_text_version: "site_whatsapp_marketing_optin_v1",
+      p_consent_text_snapshot: "Aceito receber ofertas e novidades da Dona Antônia pelo WhatsApp no número informado. Posso cancelar quando quiser.",
+      p_occurred_at: new Date().toISOString(),
+      p_recorded_by: "storefront_site_checkout",
+      p_metadata: { channel: "site_checkout", customer_checked: true, consent_scope: "whatsapp_marketing" }
+    });
+    if (saved.error || saved.data?.ok !== true) {
+      console.error("checkout_consent_record_failed", saved.error?.code || saved.data?.error || "unknown");
+      return { error: "consent_record_unavailable", status: 503 };
+    }
+    consentRecorded = true;
+  }
+  const customer=await loadCustomerForCheckout(r.data.customer_id);
+  return {ok:true,registration_complete:true,customer,consent_recorded:consentRecorded,bling_job_id:r.data.bling_job_id||null};
 }
 
 function kickWhatsappOrderOutbound(orderId:string){
