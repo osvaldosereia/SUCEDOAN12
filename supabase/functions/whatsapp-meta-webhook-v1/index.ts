@@ -540,6 +540,41 @@ Deno.serve(async (req: Request) => {
     try { payload = JSON.parse(rawBody); } catch { return json({ ok: false, error: "invalid_json" }, 400); }
     if (payload?.object !== "whatsapp_business_account") return json({ ok: false, error: "unsupported_object" }, 400);
 
+    // Durante uma campanha PapoAI, eventos exclusivos de entrega/leitura
+    // são persistidos em lote e reconciliados depois pelo pg_cron.
+    // Mensagens recebidas, ecos e eventos de templates usam o fluxo normal.
+    const entries = Array.isArray(payload?.entry) ? payload.entry : [];
+    let statusOnly = entries.length > 0;
+    let statusCount = 0;
+    for (const entry of entries) {
+      const changes = Array.isArray(entry?.changes) ? entry.changes : [];
+      if (!changes.length) { statusOnly = false; break; }
+      for (const change of changes) {
+        const value = change?.value || {};
+        const statuses = Array.isArray(value.statuses) ? value.statuses : [];
+        if (change?.field !== "messages" || !statuses.length ||
+            (Array.isArray(value.messages) && value.messages.length) ||
+            (Array.isArray(value.message_echoes) && value.message_echoes.length)) {
+          statusOnly = false;
+          break;
+        }
+        statusCount += statuses.length;
+      }
+      if (!statusOnly) break;
+    }
+    if (statusOnly && statusCount > 0) {
+      const buffered = await db.rpc("whatsapp_papoai_guard_buffer_v1", { p_payload: payload });
+      if (buffered.error) {
+        console.error("whatsapp-papoai-guard buffer", errorText(buffered.error).slice(0, 160));
+        // Nunca retornar 200 se a persistência durável falhou: Meta poderá reenviar.
+        return json({ ok: false, error: "guard_buffer_unavailable" }, 503);
+      }
+      if (buffered.data?.buffered === true) return json({
+        ok: true, protected_campaign: true,
+        buffered: !buffered.data.duplicate, duplicate: buffered.data.duplicate === true,
+      }, 200);
+    }
+
     // Keep the app-level WhatsApp Business Account webhook subscription healthy.
     // This is required in Coexistence mode so messages typed in the WhatsApp
     // Business mobile app arrive here as smb_message_echoes.
