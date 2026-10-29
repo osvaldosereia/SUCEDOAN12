@@ -819,3 +819,8 @@
 /* Lista de resultados da busca por nome no cadastro de clientes. */
 .customer-name-results{display:grid;grid-template-columns:1fr;gap:8px;max-height:55vh;overflow-y:auto;}
 .customer-name-item{width:100%;justify-content:flex-start;text-align:left;white-space:normal;overflow-wrap:anywhere;font-size:.86rem;padding:12px;min-height:44px;}
+
+/* Exclusão de cadastro: ação separada do botão de salvar, com alvo acessível no celular. */
+.customer-delete-button { margin-top:10px; min-height:44px; color:#ac2828; border-color:#d9a5a5; background:#fff; }
+.customer-delete-button:hover:not(:disabled) { background:#fff5f5; border-color:#ac2828; }
+.customer-delete-button:disabled { opacity:.55; cursor:wait; }

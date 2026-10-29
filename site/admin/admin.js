@@ -225,6 +225,7 @@
     };
     Object.entries(values).forEach(([name, value]) => { form.elements[name].value = value; });
     form.hidden = false;
+    $("customer-save-status").textContent = "";
   }
 
   function customerResultHtml(customer) {
@@ -368,6 +369,51 @@
     }
   }
 
+  async function deleteCustomer() {
+    const form = $("customer-editor");
+    const button = $("delete-customer");
+    const saveButton = $("save-customer");
+    const status = $("customer-save-status");
+    if (form.hidden || button.disabled || saveButton.disabled) return;
+    const customerId = form.elements["customer_id"].value;
+    const snapshot = form.elements["customer_updated_at"].value;
+    if (!customerId || !snapshot) return;
+    const name = form.elements["name"].value.trim() || "este cliente";
+    if (!window.confirm(
+      "Excluir o cadastro de " + name + "?\n\n" +
+      "Ele deixará de aparecer nas buscas e os dados de contato serão desvinculados. " +
+      "Pedidos e histórico comercial serão preservados.\n\nConfirmar exclusão?"
+    )) return;
+
+    button.disabled = true;
+    saveButton.disabled = true;
+    button.textContent = "Excluindo…";
+    status.textContent = "Excluindo cadastro…";
+    try {
+      await adminRequest("customer_delete", {
+        customer_id: customerId,
+        customer_updated_at: snapshot,
+      });
+      form.reset();
+      form.hidden = true;
+      $("customer-result").className = "customer-result empty-result";
+      $("customer-result").textContent = "Cadastro excluído. Pesquise outro cliente para continuar.";
+      $("customer-phone").value = "";
+      toast("Cadastro excluído.");
+    } catch (error) {
+      status.textContent = error?.message === "customer_changed"
+        ? "O cadastro foi alterado em outra sessão. Busque novamente antes de excluir."
+        : error?.message === "customer_not_found"
+        ? "Este cadastro já foi excluído ou não existe mais."
+        : "Não foi possível excluir o cadastro. Tente novamente.";
+    } finally {
+      button.disabled = false;
+      saveButton.disabled = false;
+      button.textContent = "Excluir cadastro";
+    }
+  }
+
+  $("delete-customer").addEventListener("click", deleteCustomer);
   $("customer-search-type").addEventListener("change", (event) => {
     const mode = event.target.value;
     const input = $("customer-phone");

@@ -115,7 +115,7 @@ async function customerLookup(input: any) {
 
   const [customerResult, addressResult] = await Promise.all([
     db.from("customers").select("id,name,cpf_cnpj,primary_whatsapp_e164,updated_at")
-      .eq("id", customerId).maybeSingle(),
+      .eq("id", customerId).eq("is_active", true).maybeSingle(),
     db.from("customer_addresses")
       .select("id,street,number,complement,neighborhood,city,state,postal_code,reference,updated_at")
       .eq("customer_id", customerId).eq("is_active", true)
@@ -228,6 +228,25 @@ async function customerSave(input: any) {
     address_id: updated.data.address_id || null,
     address_updated_at: updated.data.address_updated_at || null,
   };
+}
+
+async function customerDelete(input: any) {
+  const customerId = uuid(input.customer_id);
+  const expectedUpdatedAt = clean(input.customer_updated_at, 80);
+  if (!customerId || !expectedUpdatedAt || Number.isNaN(Date.parse(expectedUpdatedAt))) {
+    return { error: "invalid_customer_snapshot", status: 400 };
+  }
+  const result = await db.rpc("ops2_site_admin_customer_delete_v1", {
+    p_customer_id: customerId,
+    p_expected_customer_updated_at: expectedUpdatedAt,
+  });
+  if (result.error) throw result.error;
+  if (result.data?.ok !== true) {
+    const error = clean(result.data?.error, 80) || "customer_delete_failed";
+    const status = error === "customer_not_found" ? 404 : error === "customer_changed" ? 409 : 400;
+    return { error, status };
+  }
+  return { deleted: true, customer_id: customerId };
 }
 
 function integer(value: unknown, min: number, max: number) {
@@ -3871,6 +3890,7 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "customer_search_name") result = await customerSearchName(input);
     else if (req.method === "POST" && action === "customer_lookup") result = await customerLookup(input);
     else if (req.method === "POST" && action === "customer_save") result = await customerSave(input);
+    else if (req.method === "POST" && action === "customer_delete") result = await customerDelete(input);
     else if (req.method === "GET" && action === "baskets") {
       const status = ["active", "inactive", "all"].includes(input.status) ? input.status : "active";
       result = await basketList(status);

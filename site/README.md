@@ -20,3 +20,5 @@ O catálogo público fica em `/site/`; o painel administrativo fica em `/site/ad
 ## Publicação
 
 A mudança de banco fica em `supabase/migrations/20261028050000_site_customer_edit_and_order_codes_v1.sql`. A migração precisa ser aplicada antes de publicar as funções que a utilizam. Configure `DONA_ADMIN_CODE` antes de publicar as funções administrativas.
+
+- Em **Clientes**, **Excluir cadastro** desativa o registro, remove os identificadores de contato ativos (telefone, CPF/CNPJ e e-mails vinculados) e o retira das buscas. A operação exige confirmação, preserva pedidos/conversas e registra histórico administrativo. Não apaga pedidos nem documentos fiscais.
