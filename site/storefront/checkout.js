@@ -344,7 +344,7 @@
             complement: $("customer-complement").value.trim(),
             postal_code: $("customer-postal-code").value.trim(),
             reference: $("customer-reference").value.trim(),
-            marketing_opt_in: $("customer-marketing-opt-in").checked === true,
+            marketing_opt_in: $("customer-marketing-opt-in").checked ? true : null,
             source: "checkout"
           }
         });
