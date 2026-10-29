@@ -83,6 +83,7 @@ function normalizeBrazilPhone(value: unknown) {
   let local = "";
   if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) local = digits.slice(2);
   else if (digits.length === 10 || digits.length === 11) local = digits;
+  else if (digits.length === 8 || digits.length === 9) local = "65" + digits;
   else return "";
   if (local.length === 10 && /[6-9]/.test(local.charAt(2))) local = local.slice(0, 2) + "9" + local.slice(2);
   return "+55" + local;
@@ -91,14 +92,15 @@ function normalizeBrazilPhone(value: unknown) {
 async function customerLookup(input: any) {
   const lookupDocument = clean(input.document, 30).replace(/\D/g, "");
   const phone = normalizeBrazilPhone(input.phone);
-  if (!phone && ![11, 14].includes(lookupDocument.length)) return { found: false };
-  let customerId = "";
+  const directId = uuid(input.customer_id);
+  if (!directId && !phone && ![11, 14].includes(lookupDocument.length)) return { found: false };
+  let customerId = directId;
 
-  if ([11, 14].includes(lookupDocument.length)) {
+  if (!customerId && [11, 14].includes(lookupDocument.length)) {
     const match = await db.rpc("ops2_site_admin_customer_by_document_v1", { p_document: lookupDocument });
     if (match.error) throw match.error;
     customerId = uuid(match.data);
-  } else {
+  } else if (!customerId) {
     const match = await db.rpc("lookup_customer_by_phone", { p_phone: phone });
     if (match.error) throw match.error;
     customerId = uuid(match.data?.[0]?.customer_id);
@@ -153,10 +155,27 @@ async function customerLookup(input: any) {
 }
 
 
+async function customerSearchName(input: any) {
+  const name = clean(input.name, 120).replace(/[%_\\]/g, "").trim();
+  if (name.length < 2) return { customers: [] };
+  const found = await db.from("customers")
+    .select("id,name,primary_whatsapp_e164,cpf_cnpj")
+    .eq("is_active", true).ilike("name", "%" + name + "%").order("name").limit(30);
+  if (found.error) throw found.error;
+  return { customers: (found.data || []).map((c: any) => ({
+    id: c.id,
+    display_name: c.name || "",
+    phone: String(c.primary_whatsapp_e164 || "").replace(/^\+55/, ""),
+    document_last4: String(c.cpf_cnpj || "").replace(/\D/g, "").slice(-4)
+  })) };
+}
+
 async function customerSave(input: any) {
   const customerId = uuid(input.customer_id);
   const expectedCustomerUpdatedAt = clean(input.customer_updated_at, 80);
   const name = clean(input.name, 180);
+  const normalizedPhone = normalizeBrazilPhone(input.phone);
+  if (!normalizedPhone) return { error: "invalid_phone", status: 400 };
   const documentRaw = clean(input.document, 22);
   const document = documentRaw.replace(/\D/g, "");
   if (documentRaw && ![11, 14].includes(document.length)) {
@@ -184,7 +203,7 @@ async function customerSave(input: any) {
     postal_code: clean(rawAddress.postal_code, 20),
     reference: clean(rawAddress.reference, 220),
   };
-  const updated = await db.rpc("ops2_site_admin_customer_update_v2", {
+  const updated = await db.rpc("ops2_site_admin_customer_update_v3", {
     p_customer_id: customerId,
     p_expected_customer_updated_at: expectedCustomerUpdatedAt,
     p_name: name,
@@ -192,8 +211,9 @@ async function customerSave(input: any) {
     p_expected_address_updated_at: addressId ? expectedAddressUpdatedAt : null,
     p_address: address,
     p_document: document,
+    p_phone: normalizedPhone,
   });
-  if (updated.error?.code === "23505") return { error: "document_already_in_use", status: 409 };
+  if (updated.error?.code === "23505") return { error: "phone_or_document_already_in_use", status: 409 };
   if (updated.error) throw updated.error;
   if (updated.data?.ok !== true) {
     const code = clean(updated.data?.error, 60) || "customer_save_failed";
@@ -3848,6 +3868,7 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "whatsapp_ana_admin_rollback") result = await whatsappAnaAdminRollback(input);
     else if (req.method === "POST" && action === "whatsapp_ana_pause_channel") result = await whatsappAnaPauseChannel(input);
     else if (req.method === "POST" && action === "whatsapp_ana_admin_status") result = await whatsappAnaAdminStatus();
+    else if (req.method === "POST" && action === "customer_search_name") result = await customerSearchName(input);
     else if (req.method === "POST" && action === "customer_lookup") result = await customerLookup(input);
     else if (req.method === "POST" && action === "customer_save") result = await customerSave(input);
     else if (req.method === "GET" && action === "baskets") {

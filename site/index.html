@@ -13,7 +13,7 @@
   <script src="config.js?v=2" defer></script>
   <script src="storefront/extras.js?v=15" defer></script>
   <script src="storefront/basket.js?v=3" defer></script>
-  <script src="storefront/checkout.js?v=6" defer></script>
+  <script src="storefront/checkout.js?v=7" defer></script>
   <script src="app.js?v=24" defer></script>
 </head>
 <body>
@@ -151,10 +151,10 @@
         </div>
         <label class="field-label" for="customer-phone">WhatsApp para contato</label>
         <div class="search-row">
-          <input id="customer-phone" inputmode="tel" autocomplete="tel" placeholder="+55 (65) 99999-9999" maxlength="22" aria-describedby="customer-phone-hint">
+          <input id="customer-phone" inputmode="tel" autocomplete="tel" placeholder="(65) 99999-9999" maxlength="22" aria-describedby="customer-phone-hint">
           <button id="lookup-button" class="button button-primary" type="button">Buscar</button>
         </div>
-        <p id="customer-phone-hint" class="helper">Informe o telefone com DDD. Sem DDD, usaremos 65.</p>
+        <p id="customer-phone-hint" class="helper">Digite com ou sem DDD. Buscamos pelos 8 dígitos finais; sem DDD, o padrão é 65.</p>
         <p id="lookup-message" class="helper" role="status" aria-live="polite">Vamos buscar seu cadastro pelo telefone.</p>
         <div id="customer-card" class="customer-card" hidden></div>
         <form id="customer-registration" class="registration-panel" hidden>

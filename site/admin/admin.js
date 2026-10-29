@@ -191,6 +191,14 @@
   });
 
   function digits(value) { return String(value || "").replace(/\D/g, ""); }
+  function displayPhone(value) { return String(value || "").replace(/^\+55(?=\d{10,11}$)/, ""); }
+  function normalizeAdminPhone(value) {
+    let number = digits(value);
+    if (number.startsWith("55") && [12, 13].includes(number.length)) number = number.slice(2);
+    if ([8, 9].includes(number.length)) number = "65" + number;
+    if (number.length === 10 && /[6-9]/.test(number.charAt(2))) number = number.slice(0, 2) + "9" + number.slice(2);
+    return [10, 11].includes(number.length) ? number : "";
+  }
   function formatAddress(address) {
     if (!address) return [];
     return [
@@ -209,7 +217,7 @@
       customer_updated_at: customer.updated_at || "",
       address_id: address.id || "",
       address_updated_at: address.updated_at || "",
-      name: customer.display_name || "", phone: customer.phone || "",
+      name: customer.display_name || "", phone: displayPhone(customer.phone),
       document: customer.document || "",
       street: address.street || "", number: address.number || "", complement: address.complement || "",
       neighborhood: address.neighborhood || "", city: address.city || "", state: address.state || "",
@@ -219,16 +227,40 @@
     form.hidden = false;
   }
 
+  function customerResultHtml(customer) {
+    const address = formatAddress(customer.address);
+    return `<strong>${esc(customer.display_name || "Cliente")}</strong><span>${esc(displayPhone(customer.phone))}</span><br>${address.length ? address.map(esc).join("<br>") : "Sem endereço ativo cadastrado."}`;
+  }
+
+  async function openCustomer(customerId) {
+    const result = $("customer-result");
+    $("customer-editor").hidden = true;
+    result.textContent = "Abrindo cadastro…";
+    try {
+      const data = await adminRequest("customer_lookup", { customer_id: customerId });
+      if (!data.found || !data.customer) throw new Error("not_found");
+      result.innerHTML = customerResultHtml(data.customer);
+      fillCustomer(data.customer);
+    } catch (_) {
+      result.textContent = "Não foi possível abrir o cadastro. Busque novamente.";
+    }
+  }
+
   async function searchCustomer(event) {
     event.preventDefault();
-    const query = digits($("customer-phone").value);
-    const byDocument = $("customer-search-type").value === "document";
+    const raw = $("customer-phone").value.trim();
+    const by = $("customer-search-type").value;
+    const query = by === "name" ? raw : digits(raw);
     const button = $("customer-search-button");
     const result = $("customer-result");
     $("customer-editor").hidden = true;
-    if (byDocument ? ![11, 14].includes(query.length) : (query.length < 10 || query.length > 13)) {
+    if (by === "name" ? query.length < 2 :
+        by === "document" ? ![11, 14].includes(query.length) :
+        (query.length < 8 || query.length > 13)) {
       result.className = "customer-result empty-result";
-      result.textContent = byDocument ? "Digite um CPF (11 dígitos) ou CNPJ (14 dígitos)." : "Digite um telefone com DDD.";
+      result.textContent = by === "name" ? "Digite pelo menos 2 letras do nome." :
+        by === "document" ? "Digite um CPF ou CNPJ válido em quantidade de dígitos." :
+        "Digite o telefone, com ou sem DDD.";
       return;
     }
     button.disabled = true;
@@ -236,16 +268,33 @@
     result.className = "customer-result";
     result.textContent = "Consultando cadastro…";
     try {
-      const data = await adminRequest("customer_lookup", byDocument ? { document: query } : { phone: query });
-      if (!data.found || !data.customer) {
-        result.className = "customer-result empty-result";
-        result.textContent = "Nenhum cliente encontrado para os dados informados.";
+      if (by === "name") {
+        const response = await adminRequest("customer_search_name", { name: query });
+        const matches = response.customers || [];
+        if (!matches.length) { result.textContent = "Nenhum cliente encontrado."; return; }
+        result.replaceChildren();
+        const list = document.createElement("div");
+        list.className = "customer-name-results";
+        for (const customer of matches) {
+          const item = document.createElement("button");
+          item.type = "button";
+          item.className = "button button-outline customer-name-item";
+          item.textContent = [customer.display_name, displayPhone(customer.phone),
+            customer.document_last4 ? "CPF/CNPJ final " + customer.document_last4 : ""].filter(Boolean).join(" · ");
+          item.addEventListener("click", () => openCustomer(customer.id));
+          list.appendChild(item);
+        }
+        result.appendChild(list);
         return;
       }
-      const customer = data.customer;
-      const address = formatAddress(customer.address);
-      result.innerHTML = `<strong>${esc(customer.display_name || "Cliente")}</strong><span>${esc(customer.phone || $("customer-phone").value)}</span><br>${address.length ? address.map(esc).join("<br>") : "Sem endereço ativo cadastrado."}`;
-      fillCustomer(customer);
+      const data = await adminRequest("customer_lookup", by === "document" ? { document: query } : { phone: query });
+      if (!data.found || !data.customer) {
+        result.className = "customer-result empty-result";
+        result.textContent = "Nenhum cliente encontrado.";
+        return;
+      }
+      result.innerHTML = customerResultHtml(data.customer);
+      fillCustomer(data.customer);
     } catch (_) {
       result.className = "customer-result empty-result";
       result.textContent = "Não foi possível consultar o cadastro. Tente novamente.";
@@ -254,7 +303,6 @@
       button.textContent = "Buscar";
     }
   }
-
 
   async function saveCustomer(event) {
     event.preventDefault();
@@ -268,6 +316,13 @@
     status.textContent = "Salvando as alterações com segurança…";
     const value = (name) => form.elements[name].value.trim();
     const customerDocument = digits(value("document"));
+    const newPhone = normalizeAdminPhone(value("phone"));
+    if (!newPhone) {
+      status.textContent = "Informe um telefone válido, com ou sem DDD (padrão 65).";
+      button.disabled = false;
+      button.textContent = "Salvar alterações";
+      return;
+    }
     if (value("document") && ![11, 14].includes(customerDocument.length)) {
       status.textContent = "Informe um CPF com 11 dígitos ou CNPJ com 14 dígitos.";
       button.disabled = false;
@@ -282,6 +337,7 @@
         address_updated_at: value("address_updated_at"),
         name: value("name"),
         document: customerDocument,
+        phone: newPhone,
         address: {
           street: value("street"),
           number: value("number"),
@@ -293,7 +349,7 @@
           reference: value("reference"),
         },
       });
-      const refreshed = await adminRequest("customer_lookup", customerDocument ? { document: customerDocument } : { phone: digits(value("phone")) });
+      const refreshed = await adminRequest("customer_lookup", { customer_id: value("customer_id") });
       if (refreshed.found && refreshed.customer) fillCustomer(refreshed.customer);
       status.textContent = "Cadastro atualizado.";
       $("customer-result").textContent = "Cadastro atualizado com sucesso.";
@@ -303,6 +359,8 @@
         ? "Este cadastro mudou em outra sessão. Busque o cliente novamente antes de salvar."
         : error.message === "invalid_document" ? "CPF/CNPJ inválido. Confira os dígitos."
         : error.message === "document_already_in_use" ? "CPF/CNPJ já cadastrado em outro cliente."
+        : error.message === "phone_already_in_use" || error.message === "phone_or_document_already_in_use" ? "Telefone ou CPF/CNPJ já cadastrado em outro cliente."
+        : error.message === "invalid_phone" ? "Telefone inválido."
         : "Não foi possível salvar. Confira os dados e tente novamente.";
     } finally {
       button.disabled = false;
@@ -311,13 +369,16 @@
   }
 
   $("customer-search-type").addEventListener("change", (event) => {
-    const byDocument = event.target.value === "document";
+    const mode = event.target.value;
     const input = $("customer-phone");
     input.value = "";
-    input.placeholder = byDocument ? "Digite o CPF ou CNPJ" : "Telefone com DDD";
-    input.maxLength = byDocument ? 18 : 16;
+    input.placeholder = mode === "name" ? "Digite o nome do cliente" :
+      mode === "document" ? "Digite o CPF ou CNPJ" : "Telefone com ou sem DDD";
+    input.inputMode = mode === "name" ? "text" : "numeric";
+    input.maxLength = mode === "name" ? 120 : 18;
     $("customer-editor").hidden = true;
-    $("customer-result").textContent = byDocument ? "Digite o CPF ou CNPJ." : "Digite o telefone com DDD.";
+    $("customer-result").textContent = mode === "name" ? "Digite o nome." :
+      mode === "document" ? "Digite o CPF ou CNPJ." : "Digite o telefone com ou sem DDD.";
   });
   $("customer-search").addEventListener("submit", searchCustomer);
   $("customer-editor").addEventListener("submit", saveCustomer);

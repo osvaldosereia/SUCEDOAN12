@@ -44,7 +44,7 @@ const txt=(v:any,n=180)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").rep
 const uid=(v:any)=>{const s=txt(v,80);return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)?s:""};
 const clamp=(v:any,min:number,max:number)=>{const n=Number(v);return Number.isFinite(n)?Math.max(min,Math.min(max,n)):min};
 const cents=(v:any)=>Math.round(Number(v||0)*100);
-const phone=(v:any)=>{let d=String(v??"").replace(/\D+/g,"");if(d.startsWith("00"))d=d.slice(2);let local="";if(d.startsWith("55")&&(d.length===12||d.length===13))local=d.slice(2);else if(d.length===10||d.length===11)local=d;else return "";if(local.length===10&&/[6-9]/.test(local.charAt(2)))local=local.slice(0,2)+"9"+local.slice(2);return "+55"+local};
+const phone=(v:any)=>{let d=String(v??"").replace(/\D+/g,"");if(d.startsWith("00"))d=d.slice(2);let local="";if(d.startsWith("55")&&(d.length===12||d.length===13))local=d.slice(2);else if(d.length===10||d.length===11)local=d;else if(d.length===8||d.length===9)local="65"+d;else return "";if(local.length===10&&/[6-9]/.test(local.charAt(2)))local=local.slice(0,2)+"9"+local.slice(2);return "+55"+local};
 const safeQ=(v:any)=>txt(v,100).replace(/[,%()]/g," ").trim();
 async function sha(v:string){const x=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(v));return [...new Uint8Array(x)].map(b=>b.toString(16).padStart(2,"0")).join("")}
 function ip(req:Request){for(const v of [req.headers.get("cf-connecting-ip"),String(req.headers.get("x-forwarded-for")||"").split(",")[0],req.headers.get("x-real-ip")]){const s=String(v||"").trim();if(s)return s.slice(0,120)}return ""}
@@ -1043,7 +1043,38 @@ async function loadCustomerForCheckout(customerId:string){
   return {id:cq.data.id,display_name:cq.data.name||"",phone:cq.data.primary_whatsapp_e164||"",document_present:doc.length===11||doc.length===14,document_last4:doc?doc.slice(-4):"",marketing_opt_in:cq.data.marketing_opt_in===true,registration_complete:sq.data?.registration_complete===true,missing_fields:Array.isArray(sq.data?.missing_fields)?sq.data.missing_fields:[],address:a};
 }
 async function lookupCustomer(v:any){
-  const ph=phone(v);if(!ph)return {ok:true,found:false};const id=await customerIdByPhone(ph);if(!id)return {ok:true,found:false};const customer=await loadCustomerForCheckout(id);return {ok:true,found:Boolean(customer),customer};
+  const entered=String(v??"").replace(/\D/g,"");
+  const raw=entered.startsWith("55") && (entered.length===12||entered.length===13) ? entered.slice(2) : entered;
+  const ph=phone(v);
+  if(!ph)return {ok:true,found:false};
+  // When the user supplies a full number, exact matching takes priority.
+  const exactId = (raw.length===8||raw.length===9) ? null : await customerIdByPhone(ph);
+  if(exactId){
+    const customer=await loadCustomerForCheckout(exactId);
+    return {ok:true,found:Boolean(customer),customer};
+  }
+  // The last eight digits are the lookup key irrespective of DDD or ninth digit.
+  const suffix=raw.slice(-8);
+  if(suffix.length!==8)return {ok:true,found:false};
+  const [primary,linked]=await Promise.all([
+    db.from("customers").select("id").eq("is_active",true).like("primary_whatsapp_e164","%"+suffix).limit(30),
+    db.from("customer_phones").select("customer_id").like("phone_e164","%"+suffix).limit(30),
+  ]);
+  if(primary.error)throw primary.error;
+  if(linked.error)throw linked.error;
+  const candidates=[...new Set([
+    ...(primary.data||[]).map((c:any)=>c.id),
+    ...(linked.data||[]).map((c:any)=>c.customer_id)
+  ])];
+  if(!candidates.length)return {ok:true,found:false};
+  const active=await db.from("customers").select("id").in("id",candidates).eq("is_active",true).limit(2);
+  if(active.error)throw active.error;
+  if((active.data||[]).length>1 || primary.data?.length===30 || linked.data?.length===30)
+    return {ok:true,found:false,ambiguous:true};
+  const id=uid(active.data?.[0]?.id);
+  if(!id)return {ok:true,found:false};
+  const customer=await loadCustomerForCheckout(id);
+  return {ok:true,found:Boolean(customer),customer};
 }
 async function registerCustomer(req:Request,p:any){
   const ph=phone(p?.phone);if(!ph)return {error:"invalid_phone",status:400};
@@ -1262,7 +1293,7 @@ Deno.serve(async(req:Request)=>{
     if(req.method==="GET"&&action==="resolve_identity_code"){const r=await resolveCode(req,u.searchParams.get("code"));return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,{ok:true,...r},200,{"Cache-Control":"no-store"})}
     if(req.method==="GET"&&action==="resolve_identity_token"){const r=await resolveToken(u.searchParams.get("token"));return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,{ok:true,...r},200,{"Cache-Control":"no-store"})}
     if(req.method==="GET"&&action==="delivery_options")return json(req,{ok:true,options:deliveryOptions(),cutoff_hour:CUTOFF_HOUR,time_zone:TZ},200,{"Cache-Control":"no-store"});
-    if(req.method==="GET"&&action==="customer_lookup"){const ph=phone(u.searchParams.get("phone")),rk=await sha(ph||ip(req)||"unknown"),gate=await db.rpc("consume_public_rate_limit",{p_rate_key:"storefront-v2:customer-lookup:"+rk,p_bucket:"lookup_customer",p_limit:20,p_window_seconds:300});if(gate.error)return json(req,{ok:false,error:"rate_limit_unavailable"},503);if(gate.data!==true)return json(req,{ok:false,error:"rate_limited"},429);return json(req,await lookupCustomer(ph),200,{"Cache-Control":"no-store"})}
+    if(req.method==="GET"&&action==="customer_lookup"){const raw=u.searchParams.get("phone"),ph=phone(raw),rk=await sha(ph||ip(req)||"unknown"),gate=await db.rpc("consume_public_rate_limit",{p_rate_key:"storefront-v2:customer-lookup:"+rk,p_bucket:"lookup_customer",p_limit:20,p_window_seconds:300});if(gate.error)return json(req,{ok:false,error:"rate_limit_unavailable"},503);if(gate.data!==true)return json(req,{ok:false,error:"rate_limited"},429);return json(req,await lookupCustomer(raw),200,{"Cache-Control":"no-store"})}
 
     const body=req.method==="POST"?await req.json().catch(()=>({})):{};
     if(req.method==="POST"&&action==="basket_mold_options_batch"){
@@ -1282,7 +1313,7 @@ Deno.serve(async(req:Request)=>{
     if(req.method==="POST"&&action==="get_basket"){const b=await basket(uid(body?.id));return b?json(req,{ok:true,basket:{id:b.basket.id,name:b.basket.name,image_url:b.basket.image_url,base_price:Number(b.basket.display_price_cents||0)/100,ready:true},items:b.items.map((i:any)=>({...i,product:{id:i.product_id,name:i.name,image_url:i.image_url,stock:i.stock_quantity,packaging:i.packaging,is_active:i.stock_quantity>0}}))}):json(req,{ok:false,error:"basket_not_found"},404)}
     if(req.method==="POST"&&action==="list_sections"){return json(req,{ok:true,sections:CATEGORIES.map(c=>({name:c.key,label:c.label}))})}
     if(req.method==="POST"&&action==="list_products"){const fake=new URL(req.url);if(body?.section)fake.searchParams.set("category",String(body.section));if(body?.q)fake.searchParams.set("q",String(body.q));fake.searchParams.set("limit",String(body?.limit||20));fake.searchParams.set("offset",String(Math.max(0,(Number(body?.page||1)-1)*Number(body?.limit||20))));const p=await productList(fake);return json(req,{ok:true,products:p.products.map((x:any)=>({id:x.id,name:x.name,price:Number(x.price_cents||0)/100,stock:x.stock_quantity,image_url:x.image_url,brand:x.brand,category:x.category,packaging:x.packaging,is_offer:x.regular_price_cents!=null})),page:Number(body?.page||1),limit:Number(body?.limit||20),total:null,has_more:p.next_offset!=null})}
-    if(req.method==="POST"&&action==="lookup_customer_by_phone"){const ph=phone(body?.phone),rk=await sha(ph||ip(req)||"unknown"),gate=await db.rpc("consume_public_rate_limit",{p_rate_key:"storefront-v2:lookup:"+rk,p_bucket:"lookup_customer",p_limit:20,p_window_seconds:300});if(gate.error)return json(req,{ok:false,error:"rate_limit_unavailable"},503);if(gate.data!==true)return json(req,{ok:false,error:"rate_limited"},429);return json(req,await lookupCustomer(ph))}
+    if(req.method==="POST"&&action==="lookup_customer_by_phone"){const ph=phone(body?.phone),rk=await sha(ph||ip(req)||"unknown"),gate=await db.rpc("consume_public_rate_limit",{p_rate_key:"storefront-v2:lookup:"+rk,p_bucket:"lookup_customer",p_limit:20,p_window_seconds:300});if(gate.error)return json(req,{ok:false,error:"rate_limit_unavailable"},503);if(gate.data!==true)return json(req,{ok:false,error:"rate_limited"},429);return json(req,await lookupCustomer(body?.phone))}
     if(req.method==="POST"&&action==="create_order"){
       let ph=phone(body?.phone);
       if(!ph)return json(req,{ok:false,error:"invalid_phone"},400);

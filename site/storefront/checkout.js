@@ -100,7 +100,7 @@
       checkoutPhone = phone;
       const lines = addressLines(customer.address);
       $("customer-card").innerHTML = "<strong>" + esc(customer.display_name || "Cliente") + "</strong>" +
-        '<span class="muted-line">' + esc(customer.phone || phone) + "</span><br>" +
+        '<span class="muted-line">' + esc(String(customer.phone || phone).replace(/^\+55/, "")) + "</span><br>" +
         (lines.length ? lines.map(esc).join("<br>") : "Endereço cadastrado sem detalhes.");
       $("customer-card").hidden = false;
       $("customer-registration").hidden = true;
@@ -207,7 +207,7 @@
           const identity = await request("resolve_identity_code", { params: { code: state.catalogCode } });
           const phone = phoneDigits(identity.phone_e164);
           if (!normalizeCheckoutPhone(phone).phone) throw new Error("invalid_identity_phone");
-          $("customer-phone").value = phone;
+          $("customer-phone").value = phone.replace(/^55(?=\d{10,11}$)/, "");
           state.catalogCode = "";
           const currentUrl = new URL(window.location.href);
           currentUrl.searchParams.delete("catalog_code");
@@ -280,9 +280,13 @@
         ? "Sem DDD, usaremos o DDD 65. Consultando cadastro…"
         : "Consultando cadastro…";
       try {
-        const result = await request("customer_lookup", { params: { phone: normalized.phone } });
+        const result = await request("customer_lookup", { params: { phone: $("customer-phone").value } });
         if (requestId !== lookupSequence) return;
         const customer = result.customer;
+        if (result.ambiguous) {
+          $("lookup-message").textContent = "Mais de um cadastro usa este final de telefone. Informe o DDD e o número completo para continuar.";
+          return;
+        }
         if (!result.found || !customer) {
           showRegistrationForm(null);
           $("lookup-message").textContent = normalized.assumedLocalDdd
@@ -291,13 +295,14 @@
           return;
         }
         if (!customerHasCheckoutAddress(customer)) {
+          checkoutPhone = customer.phone || normalized.phone;
           showRegistrationForm(customer);
           $("lookup-message").textContent = "Cadastro encontrado. Complete o endereço abaixo.";
           return;
         }
-        setConfirmedCustomer(customer, normalized.phone);
+        setConfirmedCustomer(customer, customer.phone || normalized.phone);
         $("lookup-message").textContent = normalized.assumedLocalDdd
-          ? "Cadastro localizado com DDD 65. Confira os dados e escolha a entrega."
+          ? "Cadastro localizado pelos dígitos finais. Confira os dados e escolha a entrega."
           : "Cadastro e endereço encontrados. Escolha a data e o pagamento.";
       } catch (error) {
         if (requestId !== lookupSequence) return;
