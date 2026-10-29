@@ -89,13 +89,13 @@ function normalizeBrazilPhone(value: unknown) {
 }
 
 async function customerLookup(input: any) {
-  const document = clean(input.document, 30).replace(/\D/g, "");
+  const lookupDocument = clean(input.document, 30).replace(/\D/g, "");
   const phone = normalizeBrazilPhone(input.phone);
-  if (!phone && ![11, 14].includes(document.length)) return { found: false };
+  if (!phone && ![11, 14].includes(lookupDocument.length)) return { found: false };
   let customerId = "";
 
-  if ([11, 14].includes(document.length)) {
-    const match = await db.rpc("ops2_site_admin_customer_by_document_v1", { p_document: document });
+  if ([11, 14].includes(lookupDocument.length)) {
+    const match = await db.rpc("ops2_site_admin_customer_by_document_v1", { p_document: lookupDocument });
     if (match.error) throw match.error;
     customerId = uuid(match.data);
   } else {
