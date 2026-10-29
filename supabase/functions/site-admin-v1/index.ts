@@ -1542,6 +1542,8 @@ async function recentConversationSignals(conversationIds?: string[]) {
   const interestSignal = /\b(?:preco|precos|valor|valores|quanto|custa|custam|disponivel|estoque|tamanho|tamanhos|cor|cores|modelo|modelos|produto|produtos|entrega|retirada|retirar|buscar|interesse|interessado|interessada|gostaria|procuro|busco|quero|encomenda|encomendar|comprar|separar|reservar)\b|\btem\s+(?:aqui|ainda|disponivel|em estoque|esse|essa|esses|essas|o|a|um|uma)\b/i;
   const orderCommitment = /\b(?:vou querer|quero comprar|vou comprar|quero levar|vou levar|vou pedir|quero pedir|pode separar|separar pra mim|separar para mim|separa pra mim|separa para mim|separa|reservar pra mim|reservar para mim|reserve pra mim|reserve para mim|reservar|reserve|fico com|fica pra mim|fica para mim|pode anotar|anota meu pedido|pedido fechado|pode fechar|fechado|vou buscar|pode entregar|pode mandar|me ve|me separa|me reserva|me encomenda|quero esse|quero essa|quero esses|quero essas|quero o|quero a|quero um|quero uma|quero\s+\d{1,3})\b/i;
   const transactionDetail = /\b(?:(?:\d{1,3}|um|uma|dois|duas|tres|quatro|cinco|seis)\s+[a-z0-9-]{2,}|\d{1,3}|pix|comprovante|paguei|pagamento|transferi|entrega|retirada|retirar|buscar|endereco|horario|bolo|torta|paes?|queijo|cesta|bandeja|vinho|cafe|doce|salgado|sanduiche|kit|presunto|salame|brie|gouda|parmesao|esse|essa|esses|essas|aquele|aquela|aqueles|aquelas|isso|este|esta|item)\b/i;
+  const ambiguousOrderCommitment = /\b(?:pode mandar|quero\s+(?:o|a|um|uma|esse|essa|esses|essas)|quero\s+\d{1,3})\b/i;
+  const orderInformationRequest = /\b(?:preco|valor|quanto|foto|imagem|video|informacao|cardapio|ingrediente|medida)\b/i;
   const interestIds = new Set<string>();
   const evidenceByConversation = new Map<string, { commitment: boolean; detail: boolean }>();
   const orderSinceMs = Date.parse(orderSince);
@@ -1551,7 +1553,10 @@ async function recentConversationSignals(conversationIds?: string[]) {
     const text = normalizeConversationSignalText(row.text_body);
     if (interestSignal.test(text)) interestIds.add(conversationId);
     const evidence = evidenceByConversation.get(conversationId) || { commitment: false, detail: false };
-    if (Date.parse(String(row.created_at || "")) >= orderSinceMs && orderCommitment.test(text)) evidence.commitment = true;
+    const ambiguousInquiry = ambiguousOrderCommitment.test(text) && orderInformationRequest.test(text);
+    if (Date.parse(String(row.created_at || "")) >= orderSinceMs
+      && orderCommitment.test(text)
+      && !ambiguousInquiry) evidence.commitment = true;
     if (transactionDetail.test(text)) evidence.detail = true;
     evidenceByConversation.set(conversationId, evidence);
   }
