@@ -248,7 +248,7 @@
     }
   }
 
-  async function compressProductImage(file) {
+  async function compressProductImage(file, token) {
     const supportedType = /^image\/(jpeg|png|webp|avif|gif|bmp)$/i;
     if (!file.type || !supportedType.test(file.type)) {
       throw new Error("Use uma imagem JPG, PNG, WebP, AVIF, GIF ou BMP.");
@@ -269,6 +269,7 @@
       const sourceMax = Math.max(decoded.width, decoded.height);
 
       for (const maxDimension of maxDimensions) {
+        if (token !== state.productImage.token) throw new Error("Preparação cancelada.");
         const scale = Math.min(1, maxDimension / sourceMax);
         const width = Math.max(1, Math.round(decoded.width * scale));
         const height = Math.max(1, Math.round(decoded.height * scale));
@@ -280,6 +281,7 @@
         decoded.draw(context, width, height);
 
         for (const quality of qualities) {
+          if (token !== state.productImage.token) throw new Error("Preparação cancelada.");
           let blob;
           if (!outputType) {
             const webp = await canvasToBlob(canvas, "image/webp", quality);
@@ -343,7 +345,7 @@
     updateProductSaveButton();
 
     try {
-      const blob = await compressProductImage(file);
+      const blob = await compressProductImage(file, token);
       if (token !== pending.token) return;
       pending.blob = blob;
       pending.previewUrl = URL.createObjectURL(blob);
@@ -430,6 +432,7 @@
   function bind() {
     $("product-form").addEventListener("submit", saveProduct);
     $("product-image-file").addEventListener("change", selectProductImage);
+    $("product-image-select").addEventListener("click", () => $("product-image-file").click());
     $("product-form").elements.image_url.addEventListener("change", productImageUrlChanged);
     $("product-image-google-search").addEventListener("click", searchProductImageGoogle);
     $("product-dialog").addEventListener("close", resetProductImageSelection);
