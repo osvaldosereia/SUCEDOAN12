@@ -1543,7 +1543,7 @@ async function recentConversationSignals(conversationIds?: string[]) {
   const orderCommitment = /\b(?:vou querer|quero comprar|vou comprar|quero levar|vou levar|vou pedir|quero pedir|pode separar|separar pra mim|separar para mim|separa pra mim|separa para mim|separa|reservar pra mim|reservar para mim|reserve pra mim|reserve para mim|reservar|reserve|fico com|fica pra mim|fica para mim|pode anotar|anota meu pedido|pedido fechado|pode fechar|fechado|vou buscar|pode entregar|pode mandar|me ve|me separa|me reserva|me encomenda|quero esse|quero essa|quero esses|quero essas|quero o|quero a|quero um|quero uma|quero\s+\d{1,3})\b/i;
   const transactionDetail = /\b(?:(?:\d{1,3}|um|uma|dois|duas|tres|quatro|cinco|seis)\s+[a-z0-9-]{2,}|\d{1,3}|pix|comprovante|paguei|pagamento|transferi|entrega|retirada|retirar|buscar|endereco|horario|bolo|torta|paes?|queijo|cesta|bandeja|vinho|cafe|doce|salgado|sanduiche|kit|presunto|salame|brie|gouda|parmesao|esse|essa|esses|essas|aquele|aquela|aqueles|aquelas|isso|este|esta|item)\b/i;
   const ambiguousOrderCommitment = /\b(?:pode mandar|quero\s+(?:o|a|um|uma|esse|essa|esses|essas)|quero\s+\d{1,3})\b/i;
-  const orderInformationRequest = /\b(?:precos?|valores?|quantos?|fotos?|imagens?|videos?|informacoes?|cardapios?|ingredientes?|medidas?|quantidades?)\b/i;
+  const orderInformationRequest = /\b(?:precos?|valor(?:es)?|quantos?|fotos?|imagem(?:s)?|videos?|informacao(?:es)?|cardapios?|ingredientes?|medidas?|quantidades?)\b/i;
   const interestIds = new Set<string>();
   const evidenceByConversation = new Map<string, { commitment: boolean; detail: boolean }>();
   const orderSinceMs = Date.parse(orderSince);
