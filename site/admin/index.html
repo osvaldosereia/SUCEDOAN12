@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="../styles.css?v=5">
   <link rel="stylesheet" href="admin.css?v=49">
   <link rel="stylesheet" href="taxonomy-admin.css?v=1">
+  <link rel="stylesheet" href="papoai-guard-admin.css?v=1">
   <link rel="stylesheet" href="baskets-admin.css?v=1">
   <link rel="stylesheet" href="whatsapp-campaign-report.css?v=1">
   <link rel="stylesheet" href="orders-admin.css?v=5">
@@ -17,6 +18,7 @@
   <script src="admin-auth.js?v=2" defer></script>
   <script src="catalog-admin.js?v=14" defer></script>
   <script src="taxonomy-admin.js?v=1" defer></script>
+  <script src="papoai-guard-admin.js?v=1" defer></script>
   <script src="baskets-admin.js?v=2" defer></script>
   <script src="orders-admin.js?v=5" defer></script>
   <script src="order-message-admin.js?v=3" defer></script>
@@ -263,6 +265,24 @@
       </section>
 
       <section class="admin-view" data-panel="whatsapp" hidden>
+        <section class="papoai-guard" id="papoai-campaign-guard" aria-labelledby="papoai-guard-title">
+          <div class="papoai-guard-heading">
+            <div><h3 id="papoai-guard-title">Proteção para disparo PapoAI</h3>
+              <p>Ative antes de enviar uma campanha. O recebimento de mensagens continua funcionando; as confirmações de envio e leitura serão colocadas em fila.</p>
+            </div>
+            <button id="papoai-guard-refresh" type="button" class="button button-outline">Atualizar</button>
+          </div>
+          <strong class="papoai-guard-state" id="papoai-guard-state" data-active="false">Consultar status</strong>
+          <p id="papoai-guard-detail">A proteção dura até duas horas e desativa automaticamente.</p>
+          <div class="papoai-guard-stats">
+            <span><strong id="papoai-guard-pending">—</strong> eventos pendentes</span>
+            <span><strong id="papoai-guard-review">—</strong> exigem revisão</span>
+          </div>
+          <div class="papoai-guard-actions">
+            <button id="papoai-guard-action" class="button button-primary" type="button" disabled>Carregando…</button>
+          </div>
+          <p id="papoai-guard-message" class="papoai-guard-message" role="status" aria-live="polite"></p>
+        </section>
         <nav class="whatsapp-section-tabs" aria-label="Seções do WhatsApp" role="tablist">
           <button class="whatsapp-section-tab active" id="whatsapp-section-tab-overview" type="button" role="tab" aria-selected="true" aria-controls="whatsapp-section-overview" data-whatsapp-section="overview">Resumo</button>
           <button class="whatsapp-section-tab" id="whatsapp-section-tab-conversations" type="button" role="tab" aria-selected="false" aria-controls="whatsapp-section-conversations" data-whatsapp-section="conversations">Conversas</button>
