@@ -547,6 +547,14 @@ async function basketList(status = "active") {
   else if (status === "inactive") templateQuery.eq("is_active", false);
   const templates = await templateQuery;
   if (templates.error) throw templates.error;
+  const [categoriesResult, sharedItemsResult] = await Promise.all([
+    db.from("basket_categories").select("id,slug"),
+    db.from("basket_mold_shared_items").select("id,label").eq("scope", "cestas-completas"),
+  ]);
+  if (categoriesResult.error) throw categoriesResult.error;
+  if (sharedItemsResult.error) throw sharedItemsResult.error;
+  const categorySlugById = new Map((categoriesResult.data || []).map((category: any) => [String(category.id), String(category.slug || "")]));
+  const sharedItemByLabel = new Map((sharedItemsResult.data || []).map((item: any) => [String(item.label), item]));
   const editors = await mapLimit(templates.data || [], 5, async (basket: any) => {
     const result = await db.rpc("basket_mold_editor_v1", { p_basket_id: basket.id });
     return { basket, editor: result.error ? null : result.data };
@@ -562,23 +570,28 @@ async function basketList(status = "active") {
 
   const baskets = valid.map(({ basket, editor: rawEditor }) => {
     const editor = rawEditor || {};
-    const positions = (editor.positions || []).slice().sort((a: any, b: any) => Number(a.sort_order || 0) - Number(b.sort_order || 0)).map((position: any) => ({
-      id: position.position_id,
-      label: position.label,
-      quantity: Number(position.quantity || 0),
-      sort_order: Number(position.sort_order || 0),
-      metadata: position.metadata || {},
-      options: (position.options || []).slice().sort((a: any, b: any) => Number(a.sort_order || 0) - Number(b.sort_order || 0)).map((option: any) => {
-        const product = productById.get(String(option.product_id)) || {};
-        return {
-          option_id: option.option_id,
-          product_id: option.product_id,
-          sort_order: Number(option.sort_order || 0),
-          metadata: option.metadata || {},
-          product: { ...product, effective_price_cents: productPriceCents(product) },
-        };
-      }),
-    }));
+    const shareableCategory = categorySlugById.get(String(basket.category_id)) === "cestas-completas";
+    const positions = (editor.positions || []).slice().sort((a: any, b: any) => Number(a.sort_order || 0) - Number(b.sort_order || 0)).map((position: any) => {
+      const sharedItem = shareableCategory ? sharedItemByLabel.get(String(position.label || "")) : null;
+      return {
+        id: position.position_id,
+        label: position.label,
+        quantity: Number(position.quantity || 0),
+        sort_order: Number(position.sort_order || 0),
+        metadata: position.metadata || {},
+        shared_item_id: sharedItem?.id || null,
+        options: (position.options || []).slice().sort((a: any, b: any) => Number(a.sort_order || 0) - Number(b.sort_order || 0)).map((option: any) => {
+          const product = productById.get(String(option.product_id)) || {};
+          return {
+            option_id: option.option_id,
+            product_id: option.product_id,
+            sort_order: Number(option.sort_order || 0),
+            metadata: option.metadata || {},
+            product: { ...product, effective_price_cents: productPriceCents(product) },
+          };
+        }),
+      };
+    });
     const productTotal = positions.reduce((sum: number, position: any) => {
       const defaultProduct = position.options[0]?.product;
       return sum + Math.round(Number(defaultProduct?.effective_price_cents || 0) * position.quantity);
@@ -593,6 +606,7 @@ async function basketList(status = "active") {
       description: basket.description || "",
       image_url: basket.image_url || "",
       is_active: basket.is_active,
+      shareable: shareableCategory,
       mold_id: editor.mold_id,
       public_composition_count: Number(editor.public_composition_count || 1),
       hidden_adjustment_cents: hiddenAdjustment,
@@ -625,9 +639,13 @@ async function basketSave(input: any) {
   const basketId = uuid(input.basket_id);
   const targetPriceCents = integer(input.target_price_cents, 0, 100000000);
   const positions = Array.isArray(input.positions) ? input.positions.slice(0, 80) : null;
+  const shareChangesInput = input.share_changes == null ? [] : input.share_changes;
   if (!basketId) return { status: 400, error: "invalid_basket_id", message: "Cesta inválida." };
   if (targetPriceCents === null) return { status: 400, error: "invalid_basket_price", message: "Informe um valor válido para a cesta." };
   if (!positions?.length) return { status: 400, error: "basket_positions_required", message: "A cesta precisa ter pelo menos um produto." };
+  if (!Array.isArray(shareChangesInput) || shareChangesInput.length > 80) {
+    return { status: 400, error: "invalid_basket_share_changes", message: "Não foi possível interpretar as alterações de compartilhamento." };
+  }
 
   const editorResult = await db.rpc("basket_mold_editor_v1", { p_basket_id: basketId });
   if (editorResult.error || !editorResult.data) return { status: 404, error: "basket_not_found", message: "Cesta não encontrada." };
@@ -635,7 +653,7 @@ async function basketSave(input: any) {
   const publicCount = integer(input.public_composition_count ?? editor.public_composition_count, 1, 6);
   if (publicCount === null) return { status: 400, error: "invalid_composition_count", message: "Número de composições inválido." };
 
-  const normalized = [] as Array<Record<string, unknown>>;
+  const normalized = [] as Array<Record<string, any>>;
   const productIds = new Set<string>();
   for (const [positionIndex, position] of positions.entries()) {
     const label = clean(position.label, 180);
@@ -654,6 +672,33 @@ async function basketSave(input: any) {
     normalized.push({ label, quantity, metadata: position.metadata || {}, sort_order: positionIndex, options: normalizedOptions });
   }
 
+  const normalizedShareChanges = [] as Array<Record<string, any>>;
+  for (const change of shareChangesInput) {
+    const action = String(change?.action || "");
+    if (action === "disable") {
+      const sharedItemId = uuid(change.shared_item_id);
+      if (!sharedItemId) return { status: 400, error: "invalid_basket_share_item", message: "Item compartilhado inválido." };
+      normalizedShareChanges.push({ action, shared_item_id: sharedItemId });
+      continue;
+    }
+    if (action !== "upsert") return { status: 400, error: "invalid_basket_share_action", message: "Ação de compartilhamento inválida." };
+
+    const rawId = change.shared_item_id;
+    const sharedItemId = rawId == null || rawId === "" ? null : uuid(rawId);
+    const label = clean(change.label, 180);
+    const matchingPosition = normalized.find((position: any) => position.label === label);
+    if ((rawId != null && rawId !== "" && !sharedItemId) || !label || !matchingPosition?.options?.length) {
+      return { status: 400, error: "invalid_basket_share_item", message: "Revise o nome e as marcas do item que será compartilhado." };
+    }
+    normalizedShareChanges.push({
+      action,
+      shared_item_id: sharedItemId,
+      old_label: clean(change.old_label || label, 180),
+      label,
+      options: matchingPosition.options.map((option: any) => ({ product_id: option.product_id })),
+    });
+  }
+
   const productsResult = await db.from("products").select("id,price,offer_price,is_offer,is_active").in("id", [...productIds]);
   if (productsResult.error) throw productsResult.error;
   const productById = new Map((productsResult.data || []).map((product: any) => [String(product.id), product]));
@@ -669,21 +714,23 @@ async function basketSave(input: any) {
   ) ? cents(editor.conditional_hidden_adjustment) : 0;
   const hiddenAdjustment = (targetPriceCents - productTotal - conditionalApplied) / 100;
 
-  const saved = await db.rpc("save_basket_mold_v1", {
+  const saved = await db.rpc("site_admin_save_basket_mold_shared_v1", {
     p_basket_id: basketId,
     p_hidden_adjustment: hiddenAdjustment,
     p_public_composition_count: publicCount,
     p_positions: normalized,
     p_operator: "Admin site Dona Antônia",
+    p_share_changes: normalizedShareChanges,
   });
   if (saved.error) throw saved.error;
+  const savedData = saved.data || {};
   return {
-    editor: saved.data,
+    editor: savedData.editor || savedData,
     display_price_cents: targetPriceCents,
-    hidden_adjustment_cents: cents(hiddenAdjustment),
+    hidden_adjustment_cents: Number(savedData.hidden_adjustment_cents ?? cents(hiddenAdjustment)),
+    shared_item_updates: Array.isArray(savedData.share_changes) ? savedData.share_changes.length : 0,
   };
 }
-
 
 const ORDER_SOURCES = ["vitrine", "storefront_v2"];
 const SEPARATOR_KEYS = new Set(["jose", "claudio", "jovenil", "kelly"]);
