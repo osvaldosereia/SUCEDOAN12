@@ -1418,7 +1418,10 @@ async function whatsappOverview() {
       id: uuid(row.id),
       whatsapp_account_id: uuid(row.whatsapp_account_id),
       template_id: uuid(row.template_id),
-      draft_editable: String(row.status || "").toLowerCase() === "draft" && !normalizeCampaignDraftFilters(row.filters).error,
+      draft_editable: String(row.status || "").toLowerCase() === "draft"
+        && (!normalizeCampaignDraftFilters(row.filters).error
+          || isLegacyCampaignDraftFilters(row.filters)
+          || isEmptyCampaignDraftFilters(row.filters)),
       name: clean(row.name || "Campanha", 140),
       channel: clean(accountById.get(row.whatsapp_account_id)?.display_name || "", 120),
       status: clean(row.status, 40),
@@ -2267,58 +2270,34 @@ function stableAdminJson(value: any): string {
 
 
 
-const CAMPAIGN_FILTER_TEXT_FIELDS = new Set(["city", "neighborhood", "brand", "category"]);
-const CAMPAIGN_FILTER_DATE_FIELDS = new Set(["last_purchase_before", "last_purchase_after"]);
-const CAMPAIGN_FILTER_NUMBER_FIELDS = new Set([
-  "inactive_days", "min_order_count", "max_order_count", "min_lifetime_value", "max_lifetime_value",
+const CAMPAIGN_PURCHASE_RECENCY_VALUES = new Set(["all", "last_30", "days_31_60", "over_60"]);
+const LEGACY_CAMPAIGN_FILTER_FIELDS = new Set([
+  "city", "neighborhood", "brand", "category", "inactive_days", "min_order_count",
+  "max_order_count", "min_lifetime_value", "max_lifetime_value",
+  "last_purchase_after", "last_purchase_before",
 ]);
-const CAMPAIGN_FILTER_FIELDS = new Set([
-  ...CAMPAIGN_FILTER_TEXT_FIELDS,
-  ...CAMPAIGN_FILTER_DATE_FIELDS,
-  ...CAMPAIGN_FILTER_NUMBER_FIELDS,
-]);
+
+function isLegacyCampaignDraftFilters(value: any): boolean {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const keys = Object.keys(value);
+  return keys.length > 0 && keys.every((key) => LEGACY_CAMPAIGN_FILTER_FIELDS.has(key));
+}
+
+function isEmptyCampaignDraftFilters(value: any): boolean {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length === 0);
+}
 
 function normalizeCampaignDraftFilters(value: any): { error?: string; filters: Record<string, unknown> } {
   if (!value || typeof value !== "object" || Array.isArray(value)) return { error: "invalid_filters", filters: {} };
-  const filters: Record<string, unknown> = {};
-  for (const [key, raw] of Object.entries(value)) {
-    if (!CAMPAIGN_FILTER_FIELDS.has(key)) return { error: "unsupported_campaign_filter", filters: {} };
-    if (raw === null || raw === undefined || raw === "") continue;
-    if (CAMPAIGN_FILTER_TEXT_FIELDS.has(key)) {
-      if (typeof raw !== "string") return { error: "invalid_campaign_filter", filters: {} };
-      const text = clean(raw, 120);
-      if (text) filters[key] = text;
-      continue;
-    }
-    if (CAMPAIGN_FILTER_DATE_FIELDS.has(key)) {
-      if (typeof raw !== "string") return { error: "invalid_campaign_filter", filters: {} };
-      const date = raw.slice(0, 10);
-      const parsedDate = new Date(date + "T00:00:00.000Z");
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== date) {
-        return { error: "invalid_campaign_filter", filters: {} };
-      }
-      filters[key] = date + "T00:00:00.000Z";
-      continue;
-    }
-    if (typeof raw !== "string" && typeof raw !== "number") return { error: "invalid_campaign_filter", filters: {} };
-    const number = Number(raw);
-    const integer = key === "inactive_days" || key === "min_order_count" || key === "max_order_count";
-    const maximum = key === "inactive_days" ? 3650
-      : integer ? 1000000 : 1000000000;
-    if (!Number.isFinite(number) || number < 0 || number > maximum || (integer && !Number.isInteger(number))) {
-      return { error: "invalid_campaign_filter", filters: {} };
-    }
-    filters[key] = number;
+  const keys = Object.keys(value);
+  if (keys.length !== 1 || keys[0] !== "purchase_recency") {
+    return { error: keys.length === 0 ? "campaign_filter_required" : "unsupported_campaign_filter", filters: {} };
   }
-  if (filters.min_order_count !== undefined && filters.max_order_count !== undefined
-      && Number(filters.min_order_count) > Number(filters.max_order_count)) {
-    return { error: "invalid_campaign_filter_range", filters: {} };
+  const recency = value.purchase_recency;
+  if (typeof recency !== "string" || !CAMPAIGN_PURCHASE_RECENCY_VALUES.has(recency)) {
+    return { error: "invalid_campaign_filter", filters: {} };
   }
-  if (filters.min_lifetime_value !== undefined && filters.max_lifetime_value !== undefined
-      && Number(filters.min_lifetime_value) > Number(filters.max_lifetime_value)) {
-    return { error: "invalid_campaign_filter_range", filters: {} };
-  }
-  return { filters };
+  return { filters: { purchase_recency: recency } };
 }
 
 async function validateMarketingCampaignTemplate(accountId: string, templateId: string) {
@@ -2405,7 +2384,9 @@ async function whatsappCampaignDraftLoad(input: any) {
     return { error: "campaign_not_draft", status: 409 };
   }
   const normalized = normalizeCampaignDraftFilters(campaign.filters);
-  if (normalized.error) return { error: "campaign_filters_not_editable", status: 409 };
+  const requiresAudienceReset = Boolean(normalized.error
+    && (isLegacyCampaignDraftFilters(campaign.filters) || isEmptyCampaignDraftFilters(campaign.filters)));
+  if (normalized.error && !requiresAudienceReset) return { error: "campaign_filters_not_editable", status: 409 };
   const variableIndices = await marketingCampaignTemplateVariableIndices(uuid(campaign.whatsapp_account_id), uuid(campaign.template_id));
   if (variableIndices.error) return variableIndices;
   const variableValues = normalizeCampaignTemplateVariables(campaign.variable_values, variableIndices.indices || [], false);
@@ -2417,7 +2398,8 @@ async function whatsappCampaignDraftLoad(input: any) {
       whatsapp_account_id: uuid(campaign.whatsapp_account_id),
       template_id: uuid(campaign.template_id),
       variable_values: variableValues.values || {},
-      filters: normalized.filters,
+      filters: requiresAudienceReset ? {} : normalized.filters,
+      requires_audience_reset: requiresAudienceReset,
     },
   };
 }

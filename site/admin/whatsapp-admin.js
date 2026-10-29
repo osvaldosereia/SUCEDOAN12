@@ -435,27 +435,24 @@
     return data;
   }
 
-  function campaignFilterFields() {
-    return [
-      { key: "city", label: "Cidade", type: "text" },
-      { key: "neighborhood", label: "Bairro", type: "text" },
-      { key: "brand", label: "Marca comprada", type: "text" },
-      { key: "category", label: "Categoria comprada", type: "text" },
-      { key: "inactive_days", label: "Sem compra há pelo menos (dias)", type: "number", step: "1" },
-      { key: "min_order_count", label: "Pedidos mínimos", type: "number", step: "1" },
-      { key: "max_order_count", label: "Pedidos máximos", type: "number", step: "1" },
-      { key: "min_lifetime_value", label: "Valor acumulado mínimo (R$)", type: "number", step: "0.01" },
-      { key: "max_lifetime_value", label: "Valor acumulado máximo (R$)", type: "number", step: "0.01" },
-      { key: "last_purchase_after", label: "Última compra a partir de", type: "date" },
-      { key: "last_purchase_before", label: "Última compra antes de", type: "date" },
-    ];
-  }
+  const campaignAudienceOptions = [
+    { value: "all", label: "Todos os clientes" },
+    { value: "last_30", label: "Compraram até 30 dias" },
+    { value: "days_31_60", label: "Compraram entre 31 e 60 dias atrás" },
+    { value: "over_60", label: "Compraram há mais de 60 dias" },
+  ];
 
-  function campaignFilterInputMarkup(field, filters) {
-    const value = filters?.[field.key] == null ? "" : String(filters[field.key]).slice(0, 10);
-    const step = field.step ? ' step="' + esc(field.step) + '"' : "";
-    const min = field.type === "number" ? ' min="0"' : "";
-    return '<label class="whatsapp-campaign-field"><span>' + esc(field.label) + '</span><input type="' + field.type + '" name="' + esc(field.key) + '" value="' + esc(value) + '"' + step + min + '></label>';
+  function campaignAudienceInputMarkup(value, requiresReset) {
+    const selectedValue = requiresReset ? "" : String(value || "all");
+    const placeholder = requiresReset
+      ? '<option value="" selected disabled>Selecione uma faixa</option>'
+      : "";
+    const options = campaignAudienceOptions.map((option) =>
+      '<option value="' + esc(option.value) + '"' + (option.value === selectedValue ? " selected" : "") + '>'
+      + esc(option.label) + "</option>"
+    ).join("");
+    return '<label class="whatsapp-campaign-field whatsapp-campaign-field-wide"><span>Público da campanha</span><select name="purchase_recency" required>'
+      + placeholder + options + "</select></label>";
   }
 
   function campaignDraftIdempotencyKey() {
@@ -502,20 +499,25 @@
       + esc(item.name) + " · " + esc(item.language || "") + "</option>"
     ).join("");
     const filters = campaign?.filters || {};
-    const filterInputs = campaignFilterFields().map((field) => campaignFilterInputMarkup(field, filters)).join("");
+    const audienceNeedsReset = campaign?.requires_audience_reset === true;
+    const audienceInput = campaignAudienceInputMarkup(filters.purchase_recency, audienceNeedsReset);
+    const audienceResetNotice = audienceNeedsReset
+      ? '<p class="whatsapp-campaign-audience-reset" role="status">Este rascunho usa filtros antigos. Escolha uma nova faixa de compra para substituir o público antes de salvar.</p>'
+      : "";
     const editing = Boolean(campaign?.id);
     host.innerHTML = '<section class="whatsapp-campaign-editor-card" aria-labelledby="whatsapp-campaign-editor-title">'
       + '<div class="whatsapp-campaign-editor-head"><div><h3 id="whatsapp-campaign-editor-title">' + (editing ? "Editar rascunho" : "Novo rascunho") + '</h3>'
       + '<p class="admin-muted">Salva a configuração como rascunho. Não congela a audiência, agenda nem envia mensagens.</p></div>'
       + '<button class="button button-outline" type="button" data-campaign-editor-close>Fechar</button></div>'
-      + '<form data-campaign-draft-form data-mode="' + (editing ? "edit" : "create") + '" data-campaign-id="' + esc(campaign?.id || "") + '" data-revision="' + esc(campaign?.revision || 0) + '" data-idempotency-key="' + esc(campaignDraftIdempotencyKey()) + '">'
+      + '<form data-campaign-draft-form data-mode="' + (editing ? "edit" : "create") + '" data-audience-reset-required="' + (audienceNeedsReset ? "true" : "false") + '" data-campaign-id="' + esc(campaign?.id || "") + '" data-revision="' + esc(campaign?.revision || 0) + '" data-idempotency-key="' + esc(campaignDraftIdempotencyKey()) + '">'
       + '<div class="whatsapp-campaign-form-grid">'
       + '<label class="whatsapp-campaign-field"><span>Nome da campanha</span><input type="text" name="name" maxlength="140" required value="' + esc(campaign?.name || "") + '"></label>'
       + '<label class="whatsapp-campaign-field"><span>Número de envio</span><select name="whatsapp_account_id" required>' + channelOptions + '</select></label>'
       + '<label class="whatsapp-campaign-field whatsapp-campaign-field-wide"><span>Modelo Meta aprovado · Marketing</span><select name="template_id" required><option value="">Selecione o modelo</option>' + templateOptions + '</select></label>'
       + '<section class="whatsapp-campaign-variable-editor whatsapp-campaign-field-wide" data-campaign-variable-editor data-state="loading"><h4>Personalização do modelo</h4><p data-campaign-variable-status class="admin-muted" role="status" aria-live="polite">Carregando variáveis do modelo aprovado…</p><div data-campaign-variable-fields></div><div data-campaign-template-example></div></section>'
-      + '<div class="whatsapp-campaign-field-wide"><h4>Filtros da audiência</h4><p class="admin-muted">Use pelo menos um filtro. Opt-outs, sem consentimento, cadastros inativos e telefones inválidos continuam excluídos pelo motor existente.</p></div>'
-      + filterInputs
+      + '<div class="whatsapp-campaign-field-wide"><h4>Filtros da audiência</h4><p class="admin-muted">As faixas consideram a última compra. Clientes sem compra aparecem em “Todos os clientes”. Opt-outs, falta de consentimento, cadastros inativos e telefones inválidos continuam excluídos.</p></div>'
+      + audienceResetNotice
+      + audienceInput
       + '</div><p class="whatsapp-campaign-editor-note">Antes de qualquer campanha ampla, confira a evidência individual de consentimento. Este formulário só salva rascunhos.</p>'
       + '<div class="whatsapp-campaign-editor-actions"><p data-campaign-draft-status class="admin-muted" role="status" aria-live="polite"></p>'
       + '<button class="button button-primary" type="submit">' + (editing ? "Salvar rascunho" : "Criar rascunho") + '</button></div></form></section>';
@@ -646,16 +648,13 @@
     if (!form || form.dataset.saving === "true") return;
     const status = form.querySelector("[data-campaign-draft-status]");
     const submit = form.querySelector('button[type="submit"]');
-    const filters = {};
-    for (const field of campaignFilterFields()) {
-      const input = form.elements.namedItem(field.key);
-      const value = String(input?.value || "").trim();
-      if (value) filters[field.key] = value;
-    }
-    if (!Object.keys(filters).length) {
-      if (status) status.textContent = "Informe ao menos um filtro de público.";
+    const audience = form.elements.namedItem("purchase_recency");
+    const purchaseRecency = String(audience?.value || "").trim();
+    if (!campaignAudienceOptions.some((option) => option.value === purchaseRecency)) {
+      if (status) status.textContent = "Escolha uma faixa de compra para o público da campanha.";
       return;
     }
+    const filters = { purchase_recency: purchaseRecency };
     const account = form.elements.namedItem("whatsapp_account_id");
     const template = form.elements.namedItem("template_id");
     const name = form.elements.namedItem("name");
