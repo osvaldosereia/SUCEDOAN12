@@ -8,6 +8,7 @@
   <title>Admin · Dona Antônia</title>
   <link rel="stylesheet" href="../styles.css?v=5">
   <link rel="stylesheet" href="admin.css?v=49">
+  <link rel="stylesheet" href="taxonomy-admin.css?v=1">
   <link rel="stylesheet" href="baskets-admin.css?v=1">
   <link rel="stylesheet" href="whatsapp-campaign-report.css?v=1">
   <link rel="stylesheet" href="orders-admin.css?v=5">
@@ -15,6 +16,7 @@
   <script src="../config.js?v=3"></script>
   <script src="admin-auth.js?v=2" defer></script>
   <script src="catalog-admin.js?v=13" defer></script>
+  <script src="taxonomy-admin.js?v=1" defer></script>
   <script src="baskets-admin.js?v=1" defer></script>
   <script src="orders-admin.js?v=5" defer></script>
   <script src="order-message-admin.js?v=3" defer></script>
@@ -173,7 +175,7 @@
       </section>
 
       <section class="admin-view" data-panel="products" hidden>
-        <div class="section-title"><div><h2>Produtos</h2><p>Edite os campos do cadastro existente no Supabase.</p></div><button id="new-product" class="button button-primary" type="button">Novo produto</button></div>
+        <div class="section-title"><div><h2>Produtos</h2><p>Edite os campos do cadastro existente no Supabase.</p></div><div class="product-section-actions"><button id="manage-product-taxonomy" class="button button-outline" type="button">Gerenciar classificações</button><button id="new-product" class="button button-primary" type="button">Novo produto</button></div></div>
         <form id="product-search" class="customer-search product-admin-search">
           <label for="product-query">Buscar por nome, marca, SKU ou GTIN</label>
           <div class="product-search-controls">
@@ -446,6 +448,30 @@
       <p id="basket-save-message" class="form-message" role="status"></p>
       <footer class="dialog-actions"><button class="button button-outline" type="button" data-dialog-close="basket-dialog">Cancelar</button><button id="save-basket" class="button button-primary" type="submit">Salvar cesta</button></footer>
     </form>
+  </dialog>
+
+  <dialog id="taxonomy-dialog" class="catalog-dialog taxonomy-dialog" aria-labelledby="taxonomy-title">
+    <div class="dialog-form">
+      <header class="dialog-heading"><div><p class="eyebrow">Cadastro de produtos</p><h2 id="taxonomy-title">Gerenciar classificações</h2></div><button id="taxonomy-close" class="icon-button" type="button" aria-label="Fechar">×</button></header>
+      <p class="dialog-hint">Crie e renomeie categorias, subcategorias, marcas e gôndolas. Renomear atualiza todos os produtos vinculados, sem alterar o estoque ou preço.</p>
+      <div class="taxonomy-tabs" role="tablist" aria-label="Tipo de classificação">
+        <button class="active" role="tab" type="button" aria-selected="true" data-taxonomy-kind="category">Categorias</button>
+        <button role="tab" type="button" aria-selected="false" data-taxonomy-kind="subcategory">Subcategorias</button>
+        <button role="tab" type="button" aria-selected="false" data-taxonomy-kind="brand">Marcas</button>
+        <button role="tab" type="button" aria-selected="false" data-taxonomy-kind="gondola">Gôndolas</button>
+      </div>
+      <div class="taxonomy-toolbar"><input id="taxonomy-search" type="search" aria-label="Buscar classificação" placeholder="Buscar..."><button id="taxonomy-new" class="button button-primary" type="button">Adicionar</button></div>
+      <p id="taxonomy-total" class="taxonomy-total"></p>
+      <div id="taxonomy-list" class="taxonomy-list" aria-live="polite"></div>
+      <form id="taxonomy-form" class="taxonomy-form" hidden>
+        <h3 id="taxonomy-form-title">Adicionar classificação</h3>
+        <label>Nome<input id="taxonomy-name" name="name" required maxlength="100" autocomplete="off"></label>
+        <label id="taxonomy-parent-wrap" hidden>Categoria vinculada<select id="taxonomy-parent" name="parent_id"></select><p id="taxonomy-parent-help" hidden>Para mudar a categoria vinculada, crie uma nova subcategoria e ajuste os produtos.</p></label>
+        <div class="taxonomy-form-actions"><button id="taxonomy-cancel" type="button" class="button button-outline">Cancelar</button><button id="taxonomy-save" type="submit" class="button button-primary">Salvar</button></div>
+      </form>
+      <p id="taxonomy-status" class="taxonomy-status" role="status" aria-live="polite"></p>
+      <p class="dialog-hint">Só é permitido excluir classificações sem produtos vinculados. A edição individual de um produto continua disponível no seu cadastro.</p>
+    </div>
   </dialog>
 
   <dialog id="product-dialog" class="catalog-dialog product-dialog">
