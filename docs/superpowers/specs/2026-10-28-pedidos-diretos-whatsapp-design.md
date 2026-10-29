@@ -17,7 +17,7 @@ A aba **Pedidos · 28h** considera pedidos do site ligados por conversa, telefon
 - Criar **Interessados · 48h** para conversas recentes com sinais de interesse em produto, preço, disponibilidade, variantes, entrega/retirada ou intenção de compra.
 - Considerar pedido como categoria prioritária: quando a conversa atingir sinais de compra direta, ela sai de **Interessados** e aparece em **Pedidos**.
 - Mostrar a origem do pedido (site ou WhatsApp) e manter os controles manuais existentes.
-- Recalcular as categorias ao trocar/atualizar a aba e automaticamente a cada 60 segundos enquanto a página estiver visível em uma das abas de CRM.
+- Recalcular as categorias ao trocar/atualizar a aba e automaticamente a cada 5 minutos enquanto a página estiver visível em uma das abas de CRM.
 
 ## Regra proposta
 
