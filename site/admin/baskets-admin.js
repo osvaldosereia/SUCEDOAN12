@@ -77,7 +77,7 @@
       state.baskets = result.baskets || [];
       renderBaskets();
     } catch (error) {
-      host.innerHTML = `<p class="admin-muted">${esc(error.message || "Não foi possível carregar as cestas.")}</p>`;
+      host.innerHTML = `<p class="admin-muted" role="alert">${esc(error.message || "Não foi possível carregar as cestas.")}</p><button id="retry-baskets" class="button button-outline" type="button">Tentar novamente</button>`;
     }
   }
 
@@ -316,6 +316,7 @@
     document.addEventListener("click", (event) => {
       const target = event.target.closest("button");
       if (!target) return;
+      if (target.id === "retry-baskets") { loadBaskets(); return; }
       if (target.dataset.editBasket) {
         const basket = state.baskets.find((item) => String(item.id) === target.dataset.editBasket);
         if (basket) openBasket(basket);
