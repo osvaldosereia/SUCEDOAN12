@@ -695,3 +695,53 @@
   .whatsapp-conversation-header { align-items:stretch; flex-direction:column; }
   .whatsapp-conversation-ana-toggle { width:100%; }
 }
+
+
+/* Admin mobile layout containment */
+.admin-page #admin-app,
+.admin-page .admin-shell,
+.admin-page .admin-main,
+.admin-page #admin-view,
+.admin-page .admin-view {
+  min-width: 0;
+  max-width: 100%;
+}
+.admin-page #admin-app,
+.admin-page .admin-shell,
+.admin-page .admin-main,
+.admin-page #admin-view,
+.admin-page .admin-view,
+.admin-page .section-title > * {
+  box-sizing: border-box;
+}
+.admin-page .admin-view,
+.admin-page #admin-view {
+  width: 100%;
+}
+.admin-page .section-title > * {
+  min-width: 0;
+  max-width: 100%;
+}
+@media (max-width: 720px) {
+  .admin-page .admin-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    min-width: 0;
+    gap: 4px;
+    overflow: visible;
+  }
+  .admin-page .nav-tab {
+    width: 100%;
+    min-width: 0;
+    white-space: normal;
+  }
+  .admin-page .section-title {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .admin-page .basket-admin-controls {
+    width: 100%;
+    min-width: 0;
+  }
+}
