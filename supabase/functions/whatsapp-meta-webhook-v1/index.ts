@@ -17,11 +17,16 @@ import {
 } from "../_shared/whatsapp-meta-webhook-v1.mjs";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
+// Prefer the long-lived legacy service JWT when available.
+// The new opaque sb_secret_ key is proxied to short-lived JWTs and may be
+// rejected as PGRST303 ("JWT issued at future") during clock skew incidents.
 const SERVICE_KEY = (() => {
+  const legacy = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
+  if (legacy.startsWith("eyJ")) return legacy;
   try {
-    return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") || "{}").default || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") || "{}").default || legacy;
   } catch {
-    return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    return legacy;
   }
 })();
 const APP_SECRET = Deno.env.get("META_WHATSAPP_APP_SECRET") || "";
