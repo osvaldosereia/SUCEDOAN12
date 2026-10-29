@@ -815,3 +815,7 @@
 #customer-search-type { flex:0 0 125px; min-width:0; min-height:46px; padding:0 9px; border:1px solid #d8cfc3; border-radius:10px; background:#fff; color:var(--ink); font:inherit; }
 #customer-search #customer-phone { flex:1 1 170px; width:auto; }
 @media(max-width:480px){ #customer-search-type { flex:1 1 100px; } #customer-search #customer-phone { flex:2 1 155px; } #customer-search-button { flex:1 1 100%; } }
+
+/* Lista de resultados da busca por nome no cadastro de clientes. */
+.customer-name-results{display:grid;grid-template-columns:1fr;gap:8px;max-height:55vh;overflow-y:auto;}
+.customer-name-item{width:100%;justify-content:flex-start;text-align:left;white-space:normal;overflow-wrap:anywhere;font-size:.86rem;padding:12px;min-height:44px;}
