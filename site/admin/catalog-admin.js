@@ -430,7 +430,7 @@
   function bind() {
     $("product-form").addEventListener("submit", saveProduct);
     $("product-image-file").addEventListener("change", selectProductImage);
-    $("product-form").elements.image_url.addEventListener("input", productImageUrlChanged);
+    $("product-form").elements.image_url.addEventListener("change", productImageUrlChanged);
     $("product-image-google-search").addEventListener("click", searchProductImageGoogle);
     $("product-dialog").addEventListener("close", resetProductImageSelection);
     $("products-result").addEventListener("change", setProductActive);
