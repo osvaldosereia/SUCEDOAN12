@@ -4,7 +4,7 @@
 
 **Goal:** Add an **Interessados · 48h** queue that automatically moves conversations to **Pedidos · 28h** when they meet the approved direct-order or website-order criteria.
 
-**Architecture:** Keep classification in the existing `site-admin-v1` Edge Function. Derive interest and direct-order conversation sets from recent inbound messages, combine them with linked site orders and existing per-admin overrides, and return display labels to the current Admin. Refresh the CRM queues every 60 seconds only while the page is visible and one of those queues is selected.
+**Architecture:** Keep classification in the existing `site-admin-v1` Edge Function. Derive interest and direct-order conversation sets from recent inbound messages, combine them with linked site orders and existing per-admin overrides, and return display labels to the current Admin. Refresh the CRM queues every 5 minutes only while the page is visible and one of those queues is selected.
 
 **Tech Stack:** Existing Deno Edge Function, Supabase Postgres, static Admin JavaScript and CSS.
 
@@ -61,7 +61,7 @@
 - [ ] Add the **Interessados · 48h** tab and cache-bust the changed files.
 - [ ] Show whether a queued order came from the site, WhatsApp, or manual inclusion.
 - [ ] Remove a manually included conversation from the interest list immediately.
-- [ ] Recalculate the selected CRM queue every 60 seconds when `document.visibilityState === "visible"`; pause polling on other tabs/hidden pages and preserve the selected conversation.
+- [ ] Recalculate the selected CRM queue every 5 minutes when `document.visibilityState === "visible"`; pause polling on other tabs/hidden pages and preserve the selected conversation.
 - [ ] Review the UI event flow and CSS selectors after the update without running tests.
 
 ### Task 3: Deploy and verify the published source
