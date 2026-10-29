@@ -948,7 +948,14 @@
     });
   });
   const refreshCrmQueue = () => {
+    const app = $("admin-app");
+    const conversationsPanel = $("whatsapp-section-conversations");
     if (document.visibilityState !== "visible"
+      || !app
+      || app.hidden
+      || !conversationsPanel
+      || conversationsPanel.hidden
+      || !conversationsPanel.getClientRects().length
       || !["orders", "interested"].includes(state.quickFilter)
       || state.listLoading
       || state.conversationLoading) return;
