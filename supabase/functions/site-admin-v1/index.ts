@@ -89,18 +89,25 @@ function normalizeBrazilPhone(value: unknown) {
 }
 
 async function customerLookup(input: any) {
+  const document = clean(input.document, 30).replace(/\D/g, "");
   const phone = normalizeBrazilPhone(input.phone);
-  if (!phone) return { found: false };
+  if (!phone && ![11, 14].includes(document.length)) return { found: false };
+  let customerId = "";
 
-  const match = await db.rpc("lookup_customer_by_phone", { p_phone: phone });
-  if (match.error) throw match.error;
-  let customerId = uuid(match.data?.[0]?.customer_id);
-
-  if (!customerId) {
-    const exact = await db.from("customers").select("id")
-      .eq("primary_whatsapp_e164", phone).eq("is_active", true).limit(2);
-    if (exact.error) throw exact.error;
-    if (exact.data?.length === 1) customerId = uuid(exact.data[0].id);
+  if ([11, 14].includes(document.length)) {
+    const match = await db.rpc("ops2_site_admin_customer_by_document_v1", { p_document: document });
+    if (match.error) throw match.error;
+    customerId = uuid(match.data);
+  } else {
+    const match = await db.rpc("lookup_customer_by_phone", { p_phone: phone });
+    if (match.error) throw match.error;
+    customerId = uuid(match.data?.[0]?.customer_id);
+    if (!customerId) {
+      const exact = await db.from("customers").select("id")
+        .eq("primary_whatsapp_e164", phone).eq("is_active", true).limit(2);
+      if (exact.error) throw exact.error;
+      if (exact.data?.length === 1) customerId = uuid(exact.data[0].id);
+    }
   }
   if (!customerId) return { found: false };
 
@@ -139,6 +146,7 @@ async function customerLookup(input: any) {
       display_name: customerResult.data.name || "",
       phone: customerResult.data.primary_whatsapp_e164 || phone,
       document_last4: document ? document.slice(-4) : "",
+      document,
       address,
     },
   };
@@ -149,6 +157,11 @@ async function customerSave(input: any) {
   const customerId = uuid(input.customer_id);
   const expectedCustomerUpdatedAt = clean(input.customer_updated_at, 80);
   const name = clean(input.name, 180);
+  const documentRaw = clean(input.document, 22);
+  const document = documentRaw.replace(/\D/g, "");
+  if (documentRaw && ![11, 14].includes(document.length)) {
+    return { error: "invalid_document", status: 400 };
+  }
   if (!customerId || !expectedCustomerUpdatedAt || Number.isNaN(Date.parse(expectedCustomerUpdatedAt))) {
     return { error: "invalid_customer_snapshot", status: 400 };
   }
@@ -171,14 +184,16 @@ async function customerSave(input: any) {
     postal_code: clean(rawAddress.postal_code, 20),
     reference: clean(rawAddress.reference, 220),
   };
-  const updated = await db.rpc("ops2_site_admin_customer_update_v1", {
+  const updated = await db.rpc("ops2_site_admin_customer_update_v2", {
     p_customer_id: customerId,
     p_expected_customer_updated_at: expectedCustomerUpdatedAt,
     p_name: name,
     p_address_id: addressId || null,
     p_expected_address_updated_at: addressId ? expectedAddressUpdatedAt : null,
     p_address: address,
+    p_document: document,
   });
+  if (updated.error?.code === "23505") return { error: "document_already_in_use", status: 409 };
   if (updated.error) throw updated.error;
   if (updated.data?.ok !== true) {
     const code = clean(updated.data?.error, 60) || "customer_save_failed";

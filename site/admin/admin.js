@@ -210,7 +210,7 @@
       address_id: address.id || "",
       address_updated_at: address.updated_at || "",
       name: customer.display_name || "", phone: customer.phone || "",
-      document: customer.document_last4 ? `•••.•••.•••-${customer.document_last4}` : "—",
+      document: customer.document || "",
       street: address.street || "", number: address.number || "", complement: address.complement || "",
       neighborhood: address.neighborhood || "", city: address.city || "", state: address.state || "",
       postal_code: address.postal_code || "", reference: address.reference || "",
@@ -221,13 +221,14 @@
 
   async function searchCustomer(event) {
     event.preventDefault();
-    const phone = digits($("customer-phone").value);
+    const query = digits($("customer-phone").value);
+    const byDocument = $("customer-search-type").value === "document";
     const button = $("customer-search-button");
     const result = $("customer-result");
     $("customer-editor").hidden = true;
-    if (phone.length < 10 || phone.length > 13) {
+    if (byDocument ? ![11, 14].includes(query.length) : (query.length < 10 || query.length > 13)) {
       result.className = "customer-result empty-result";
-      result.textContent = "Digite um telefone com DDD.";
+      result.textContent = byDocument ? "Digite um CPF (11 dígitos) ou CNPJ (14 dígitos)." : "Digite um telefone com DDD.";
       return;
     }
     button.disabled = true;
@@ -235,10 +236,10 @@
     result.className = "customer-result";
     result.textContent = "Consultando cadastro…";
     try {
-      const data = await adminRequest("customer_lookup", { phone });
+      const data = await adminRequest("customer_lookup", byDocument ? { document: query } : { phone: query });
       if (!data.found || !data.customer) {
         result.className = "customer-result empty-result";
-        result.textContent = "Nenhum cliente encontrado para esse telefone.";
+        result.textContent = "Nenhum cliente encontrado para os dados informados.";
         return;
       }
       const customer = data.customer;
@@ -266,6 +267,13 @@
     button.textContent = "Salvando…";
     status.textContent = "Salvando as alterações com segurança…";
     const value = (name) => form.elements[name].value.trim();
+    const customerDocument = digits(value("document"));
+    if (value("document") && ![11, 14].includes(customerDocument.length)) {
+      status.textContent = "Informe um CPF com 11 dígitos ou CNPJ com 14 dígitos.";
+      button.disabled = false;
+      button.textContent = "Salvar alterações";
+      return;
+    }
     try {
       await adminRequest("customer_save", {
         customer_id: value("customer_id"),
@@ -273,6 +281,7 @@
         address_id: value("address_id"),
         address_updated_at: value("address_updated_at"),
         name: value("name"),
+        document: customerDocument,
         address: {
           street: value("street"),
           number: value("number"),
@@ -284,7 +293,7 @@
           reference: value("reference"),
         },
       });
-      const refreshed = await adminRequest("customer_lookup", { phone: digits(value("phone")) });
+      const refreshed = await adminRequest("customer_lookup", customerDocument ? { document: customerDocument } : { phone: digits(value("phone")) });
       if (refreshed.found && refreshed.customer) fillCustomer(refreshed.customer);
       status.textContent = "Cadastro atualizado.";
       $("customer-result").textContent = "Cadastro atualizado com sucesso.";
@@ -292,6 +301,8 @@
     } catch (error) {
       status.textContent = error.message === "customer_changed"
         ? "Este cadastro mudou em outra sessão. Busque o cliente novamente antes de salvar."
+        : error.message === "invalid_document" ? "CPF/CNPJ inválido. Confira os dígitos."
+        : error.message === "document_already_in_use" ? "CPF/CNPJ já cadastrado em outro cliente."
         : "Não foi possível salvar. Confira os dados e tente novamente.";
     } finally {
       button.disabled = false;
@@ -299,6 +310,15 @@
     }
   }
 
+  $("customer-search-type").addEventListener("change", (event) => {
+    const byDocument = event.target.value === "document";
+    const input = $("customer-phone");
+    input.value = "";
+    input.placeholder = byDocument ? "Digite o CPF ou CNPJ" : "Telefone com DDD";
+    input.maxLength = byDocument ? 18 : 16;
+    $("customer-editor").hidden = true;
+    $("customer-result").textContent = byDocument ? "Digite o CPF ou CNPJ." : "Digite o telefone com DDD.";
+  });
   $("customer-search").addEventListener("submit", searchCustomer);
   $("customer-editor").addEventListener("submit", saveCustomer);
   document.querySelectorAll(".nav-tab").forEach((button) => button.addEventListener("click", () => setView(button.dataset.view)));

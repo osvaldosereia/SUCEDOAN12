@@ -23,7 +23,7 @@
   <script src="whatsapp-campaign-report.js?v=1" defer></script>
   <script src="whatsapp-conversations.js?v=16" defer></script>
   <script src="quick-balance-admin.js?v=7" defer></script>
-  <script src="admin.js?v=18" defer></script>
+  <script src="admin.js?v=19" defer></script>
 </head>
 <body class="admin-page">
   <main id="admin-login" class="admin-login-main">
@@ -103,7 +103,7 @@
       <section class="admin-view active" data-panel="overview">
         <div class="welcome-admin">
           <h2>Catálogo conectado</h2>
-          <p>Consulte as cestas publicadas e localize um cliente pelo telefone.</p>
+          <p>Consulte as cestas publicadas e localize clientes por telefone ou CPF/CNPJ.</p>
         </div>
         <div class="admin-shortcuts">
           <button class="shortcut-card" type="button" data-go="baskets"><strong>Cestas</strong><span>Editar produtos, marcas e valor padrão</span></button>
@@ -124,18 +124,19 @@
       </section>
 
       <section class="admin-view" data-panel="customers" hidden>
-        <div class="section-title"><div><h2>Clientes</h2><p>Encontre um cadastro existente pelo telefone.</p></div></div>
+        <div class="section-title"><div><h2>Clientes</h2><p>Encontre um cadastro pelo telefone ou CPF/CNPJ.</p></div></div>
         <form id="customer-search" class="customer-search">
-          <label for="customer-phone">Telefone com DDD</label>
+          <label for="customer-phone">Buscar cliente</label>
           <div class="search-row">
-            <input id="customer-phone" inputmode="tel" autocomplete="tel" placeholder="(11) 99999-9999" maxlength="16" required>
+            <select id="customer-search-type" aria-label="Buscar por"><option value="phone">Telefone</option><option value="document">CPF/CNPJ</option></select>
+            <input id="customer-phone" inputmode="numeric" autocomplete="off" placeholder="Telefone com DDD" maxlength="18" required>
             <button id="customer-search-button" class="button button-primary" type="submit">Buscar</button>
           </div>
         </form>
-        <div id="customer-result" class="customer-result empty-result">Digite o telefone para consultar o cadastro.</div>
+        <div id="customer-result" class="customer-result empty-result">Digite o telefone ou CPF/CNPJ para consultar o cadastro.</div>
         <div class="edit-notice">
           <strong>Edição segura do cadastro</strong>
-          <span>Edite o nome e o endereço do cliente. Telefone e CPF/CNPJ permanecem somente para consulta. As alterações são registradas no histórico administrativo.</span>
+          <span>Edite nome, CPF/CNPJ e endereço do cliente. O telefone permanece somente para consulta. As alterações são registradas no histórico administrativo.</span>
         </div>
         <form id="customer-editor" class="customer-editor" hidden>
           <div class="section-title"><div><h3>Dados do cadastro</h3><p>Confira os campos antes de salvar.</p></div></div>
@@ -146,7 +147,7 @@
           <div class="editor-grid">
             <label>Nome<input name="name" maxlength="180" required></label>
             <label>Telefone<input name="phone" readonly></label>
-            <label>CPF/CNPJ<input name="document" readonly></label>
+            <label>CPF/CNPJ<input name="document" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="Somente números"></label>
             <label>Rua<input name="street" maxlength="180"></label>
             <label>Número<input name="number" maxlength="40"></label>
             <label>Complemento<input name="complement" maxlength="140"></label>
