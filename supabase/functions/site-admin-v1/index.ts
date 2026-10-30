@@ -462,7 +462,7 @@ async function productSearch(input: any) {
   const limit = integer(input.limit ?? 24, 1, 50) || 24;
   const offset = integer(input.offset ?? 0, 0, 100000) || 0;
   const status = ["active", "inactive"].includes(input.status) ? input.status : "all";
-  const segment = ["no_photo", "zero_stock", "recently_edited", "recently_added", "no_ean", "no_ncm"].includes(input.segment)
+  const segment = ["no_photo", "zero_stock", "recently_edited", "recently_added", "no_ean", "no_ncm", "substitution"].includes(input.segment)
     ? input.segment
     : "all";
   const queryText = clean(input.q, 80).replace(/[^\p{L}\p{N}\s._-]/gu, " ").replace(/\s+/g, " ").trim();
@@ -483,6 +483,7 @@ async function productSearch(input: any) {
 
   const recentAfter = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   if (segment === "zero_stock") query = query.eq("stock", 0);
+  if (segment === "substitution") query = query.gt("stock", 0);
   if (segment === "recently_added") query = query.gte("created_at", recentAfter);
   if (segment === "recently_edited") query = query.gte("metadata->>admin_last_edited_at", recentAfter);
 
@@ -875,7 +876,7 @@ async function ordersList(input: any) {
       ? ["confirmed", "processing"]
       : ["ready", "out_for_delivery", "delivered"];
   const result = await db.from("orders")
-    .select("id,order_number,status,total,created_at,updated_at,phone_e164,customer_snapshot,source,payment_method")
+    .select("id,order_number,status,total,created_at,updated_at,phone_e164,customer_snapshot,source,payment_method,bling_order_id,sync_status")
     .in("source", ORDER_SOURCES)
     .in("status", statuses)
     .order("created_at", { ascending: false })
@@ -945,7 +946,25 @@ async function orderSeparation(input: any) {
   }
   const result = await db.rpc("ops2_get_order_separation_v2", { p_order_id: found.order.id });
   if (result.error) throw result.error;
-  return { separation: result.data };
+  const separation = result.data || {};
+  const rows = Array.isArray(separation.items) ? separation.items : [];
+  const itemIds = rows.map((item: any) => uuid(item.order_item_id)).filter(Boolean);
+  if (!itemIds.length) return { separation };
+  const metadataResult = await db.from("order_items").select("id,metadata").in("id", itemIds);
+  if (metadataResult.error) throw metadataResult.error;
+  const substitutions = new Map<string, any>();
+  for (const row of metadataResult.data || []) {
+    const substitution = row.metadata?.separation_substitution;
+    if (substitution) substitutions.set(String(row.id), substitution);
+  }
+  return {
+    separation: Object.assign({}, separation, {
+      items: rows.map((item: any) => {
+        const substitution = substitutions.get(String(item.order_item_id));
+        return substitution ? Object.assign({}, item, { state: "substituted", substitution }) : item;
+      }),
+    }),
+  };
 }
 
 async function setOrderSeparator(input: any) {
@@ -965,22 +984,54 @@ async function setOrderSeparator(input: any) {
 async function setOrderSeparationItem(input: any) {
   const id = uuid(input.order_id);
   const itemId = uuid(input.order_item_id);
-  const state = input.state === "missing" || input.state === "separated" ? input.state : "";
+  const state = ["missing", "separated", "substituted"].includes(input.state) ? input.state : "";
+  const replacementProductId = state === "substituted" ? uuid(input.replacement_product_id) : "";
   const separatorKey = clean(input.separator_key, 40).toLowerCase();
   const expected = clean(input.expected_order_updated_at, 80);
-  if (!id || !itemId || !state || !expected || !SEPARATOR_KEYS.has(separatorKey)) {
+  if (!id || !itemId || !state || (state === "substituted" && !replacementProductId) || !expected || !SEPARATOR_KEYS.has(separatorKey)) {
     return { error: "invalid_separation_update", status: 400, message: "Não foi possível conferir este produto. Atualize a separação." };
   }
-  const result = await db.rpc("ops2_set_order_separation_item_v2", {
+  const result = await db.rpc("ops2_admin_set_order_separation_item_v1", {
     p_order_id: id,
     p_order_item_id: itemId,
     p_state: state,
     p_expected_order_updated_at: expected,
     p_separator_key: separatorKey,
+    p_replacement_product_id: replacementProductId || null,
   });
   if (result.error) throw result.error;
-  if (result.data?.ok === false || result.data?.error) return { error: String(result.data.error || "separation_update_failed"), status: 409, message: "A separação mudou em outra tela. Atualize e tente novamente." };
+  if (result.data?.ok !== true) {
+    const code = String(result.data?.error || "separation_update_failed");
+    const messages: Record<string, string> = {
+      insufficient_replacement_stock: "O estoque disponível desse produto é insuficiente para substituir esta quantidade.",
+      replacement_product_unavailable: "O produto substituto está inativo ou sem estoque. Escolha outro produto.",
+      replacement_stock_already_consumed: "O estoque deste pedido já foi aplicado. Atualize a separação.",
+      item_already_checked: "Este produto já foi conferido em outra tela. Atualize a separação.",
+      stale_order_version: "A separação mudou em outra tela. Atualize e tente novamente.",
+    };
+    return { error: code, status: 409, message: messages[code] || "A separação mudou em outra tela. Atualize e tente novamente." };
+  }
   return { update: result.data };
+}
+
+async function cancelSiteOrder(input: any) {
+  const id = uuid(input.order_id || input.id);
+  if (!id) return { error: "invalid_order_id", status: 400, message: "Pedido inválido." };
+  const found = await orderById(id);
+  if (found.error) return found;
+  const result = await db.rpc("ops2_admin_cancel_site_order_v1", { p_order_id: id });
+  if (result.error) throw result.error;
+  if (result.data?.ok !== true) {
+    const code = String(result.data?.error || "order_cancel_failed");
+    return {
+      error: code,
+      status: 409,
+      message: code === "order_cancel_not_allowed"
+        ? "Este pedido já foi enviado ao Bling ou avançou para expedição e não pode ser excluído por aqui."
+        : "O pedido mudou em outra tela. Atualize a lista e tente novamente.",
+    };
+  }
+  return { cancelled: true, order_id: id, order_number: found.order.order_number || null };
 }
 
 async function separationFiscalHubCall(subaction: string, extra: any = {}) {
@@ -3910,6 +3961,7 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "order_set_separator") result = await setOrderSeparator(input);
     else if (req.method === "POST" && action === "order_separation_item") result = await setOrderSeparationItem(input);
     else if (req.method === "POST" && action === "order_complete_separation") result = await completeOrderSeparation(input);
+    else if (req.method === "POST" && action === "order_cancel") result = await cancelSiteOrder(input);
     else if (req.method === "POST" && action === "order_mark_delivered") result = await markOrderDelivered(input);
     else return json(req, { ok: false, error: "action_invalid" }, 400);
 
