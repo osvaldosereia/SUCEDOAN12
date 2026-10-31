@@ -7,9 +7,9 @@
   <meta name="referrer" content="no-referrer">
   <meta name="theme-color" content="#7e3029">
   <title>Meu pedido · Dona Antônia</title>
-  <link rel="stylesheet" href="../site/pedido.css?v=1">
+  <link rel="stylesheet" href="../site/pedido.css?v=2">
   <script src="../site/config.js?v=3" defer></script>
-  <script src="../site/pedido.js?v=1" defer></script>
+  <script src="../site/pedido.js?v=2" defer></script>
 </head>
 <body>
   <main class="order-page">
@@ -26,6 +26,23 @@
         <h1 id="order-code">Seu pedido</h1>
         <p id="order-status" class="order-status"></p>
       </header>
+      <section class="order-customer" aria-label="Dados do cliente e endereço de entrega">
+        <div class="order-customer-fields">
+          <div class="order-customer-field">
+            <span>Cliente</span>
+            <strong id="order-customer-name">Cliente</strong>
+          </div>
+          <div class="order-customer-field">
+            <span>WhatsApp</span>
+            <a id="order-customer-phone" target="_blank" rel="noopener noreferrer" hidden></a>
+            <span id="order-customer-phone-empty" hidden>Telefone não informado</span>
+          </div>
+        </div>
+        <div class="order-customer-address">
+          <span>Endereço de entrega</span>
+          <p id="order-customer-address">Endereço não informado</p>
+        </div>
+      </section>
       <p id="order-delivery" class="order-delivery"></p>
       <div id="order-items" class="order-items"></div>
       <div class="order-total"><span>Total</span><strong id="order-total">—</strong></div>
