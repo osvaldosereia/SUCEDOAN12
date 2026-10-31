@@ -31,7 +31,7 @@
   }
 
   function phoneDigits(value) {
-    return String(value == null ? "" : value).replace(/\\D/g, "");
+    return String(value == null ? "" : value).replace(/\D/g, "");
   }
 
   function formatPhone(value) {
