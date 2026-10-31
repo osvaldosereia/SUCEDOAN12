@@ -30,12 +30,63 @@
     return data;
   }
 
+  function phoneDigits(value) {
+    return String(value == null ? "" : value).replace(/\\D/g, "");
+  }
+
+  function formatPhone(value) {
+    const digits = phoneDigits(value);
+    const local = digits.startsWith("55") && (digits.length === 12 || digits.length === 13)
+      ? digits.slice(2)
+      : digits;
+    if (local.length === 11) return "(" + local.slice(0, 2) + ") " + local.slice(2, 7) + "-" + local.slice(7);
+    if (local.length === 10) return "(" + local.slice(0, 2) + ") " + local.slice(2, 6) + "-" + local.slice(6);
+    return "";
+  }
+
+  function whatsappNumber(value) {
+    const digits = phoneDigits(value);
+    if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) return digits;
+    if (digits.length === 10 || digits.length === 11) return "55" + digits;
+    return "";
+  }
+
+  function renderCustomer(snapshot, delivery) {
+    const name = String(snapshot.customer_name || (snapshot.customer && snapshot.customer.name) || "Cliente").trim() || "Cliente";
+    $("order-customer-name").textContent = name;
+
+    const phone = String(snapshot.customer_phone || snapshot.phone || "").trim();
+    const phoneLink = $("order-customer-phone");
+    const phoneEmpty = $("order-customer-phone-empty");
+    const number = whatsappNumber(phone);
+    if (number) {
+      phoneLink.href = "https://wa.me/" + number;
+      phoneLink.textContent = formatPhone(phone) || phoneDigits(phone);
+      phoneLink.setAttribute("aria-label", "Conversar pelo WhatsApp com " + name);
+      phoneLink.hidden = false;
+      phoneEmpty.hidden = true;
+    } else {
+      phoneLink.removeAttribute("href");
+      phoneLink.hidden = true;
+      phoneEmpty.hidden = false;
+    }
+
+    const address = delivery && typeof delivery === "object" ? delivery : {};
+    const firstLine = [address.street, address.number].filter(Boolean).join(", ");
+    const secondLine = [address.complement, address.district || address.neighborhood].filter(Boolean).join(" · ");
+    const cityLine = [address.city, address.state].filter(Boolean).join(" - ");
+    const reference = address.reference ? "Referência: " + address.reference : "";
+    $("order-customer-address").textContent =
+      [firstLine, secondLine, cityLine, reference].filter(Boolean).join(" · ") || "Endereço não informado";
+  }
+
   function renderOrder(data) {
     const snapshot = data.snapshot || {};
     const items = Array.isArray(snapshot.items) ? snapshot.items : [];
     const delivery = snapshot.delivery && typeof snapshot.delivery === "object" ? snapshot.delivery : {};
     const dateLabel = delivery.label || delivery.date_label || delivery.date ||
       snapshot.delivery_date_label || snapshot.delivery_date || "";
+    renderCustomer(snapshot, delivery);
     $("order-code").textContent = data.public_code ? "Pedido " + data.public_code : "Seu pedido";
     $("order-status").textContent = statusText(data.current_status);
     $("order-delivery").textContent = dateLabel ? "Entrega: " + dateLabel : "Data de entrega conforme combinado com a loja";
