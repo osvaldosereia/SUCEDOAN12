@@ -238,3 +238,69 @@ body {
     z-index: 50;
   }
 }
+
+
+/* Sidebar navigation: compact square text buttons. */
+.experiment-nav {
+  justify-items: center;
+  gap: 6px;
+}
+
+.experiment-nav-link {
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: min(100%, clamp(58px, calc(var(--experiment-rail) - 12px), 100px));
+  aspect-ratio: 1;
+  gap: 0;
+  padding: 6px;
+  border: 1px solid #e5e2e1;
+  border-radius: 16px;
+  background: #f0f0f2;
+  color: #667085;
+  font-size: clamp(9px, 1.1vw, 11px);
+  line-height: 1.12;
+  text-align: center;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+
+.experiment-icon {
+  display: none;
+}
+
+.experiment-nav-link:hover,
+.experiment-nav-link:focus-visible {
+  border-color: #d9cbd0;
+  background: #eee7ea;
+  color: var(--experiment-burgundy);
+}
+
+.experiment-nav-link.is-active {
+  border-color: var(--experiment-burgundy);
+  background: var(--experiment-burgundy);
+  color: #fff;
+}
+
+.experiment-whatsapp {
+  box-sizing: border-box;
+  width: min(100%, clamp(58px, calc(var(--experiment-rail) - 12px), 100px));
+  aspect-ratio: 1;
+  align-content: center;
+  justify-items: center;
+  gap: 0;
+  margin-right: auto;
+  margin-left: auto;
+  padding: 6px;
+  border-radius: 16px;
+  font-size: clamp(9px, 1.1vw, 11px);
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+
+.experiment-whatsapp svg,
+.experiment-whatsapp small {
+  display: none;
+}
