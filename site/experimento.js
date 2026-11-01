@@ -91,7 +91,7 @@
 
   document.addEventListener("click", (event) => {
     const guarded = event.target instanceof Element
-      ? event.target.closest("#home-extra-checkout, #order-button, #confirm-order, #lookup-button, #register-customer-button")
+      ? event.target.closest("#confirm-order, #lookup-button, #register-customer-button")
       : null;
     if (!guarded) return;
     event.preventDefault();
