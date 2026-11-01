@@ -227,16 +227,23 @@ body {
 }
 
 
-/* Align basket sheets with content on wide layouts; cover the rail on mobile. */
+/* Make every custom sheet cover and block the background while open. */
 .sheet-backdrop {
-  left: var(--experiment-rail);
+  inset: 0;
+  z-index: 50;
+  overscroll-behavior: contain;
 }
 
-@media (max-width: 768px) {
-  .sheet-backdrop {
-    left: 0;
-    z-index: 50;
-  }
+.sheet {
+  width: min(640px, 100%);
+  max-width: 100%;
+}
+
+.experiment-page .home-extra-product-dialog {
+  width: min(480px, 100vw);
+  max-width: 100vw;
+  max-height: 100dvh;
+  overscroll-behavior: contain;
 }
 
 
