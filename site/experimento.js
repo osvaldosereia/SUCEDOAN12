@@ -11,10 +11,10 @@
   const basketOrder = ["grande", "media", "pequena", "mini", "economica"];
   let toastTimer = 0;
 
-  function showTestNotice(message) {
+  function showStoreNotice(message) {
     const toast = document.getElementById("toast");
     if (!toast) return;
-    toast.textContent = message || "Modo de teste: nenhum pedido foi enviado.";
+    toast.textContent = message || "Não foi possível abrir esta seção. Tente novamente.";
     toast.classList.add("show");
     window.clearTimeout(toastTimer);
     toastTimer = window.setTimeout(() => toast.classList.remove("show"), 3600);
@@ -55,14 +55,14 @@
     const card = cards.find((item) => normalize(item.querySelector(".basket-title")?.textContent).includes(wanted));
     if (!card) {
       scrollToNode(document.getElementById("catalog"));
-      showTestNotice("A cesta está carregando. Tente novamente em instantes.");
+      showStoreNotice("A cesta está carregando. Tente novamente em instantes.");
       return;
     }
     const button = card.querySelector("[data-open-basket]");
     if (button && !button.disabled) button.click();
     else {
       scrollToNode(card);
-      showTestNotice("A cesta ainda está carregando.");
+      showStoreNotice("A cesta ainda está carregando.");
     }
   }
 
@@ -89,23 +89,25 @@
     if (section === "builder") scrollToNode(document.getElementById("home-extras"));
   });
 
-  document.addEventListener("click", (event) => {
-    const guarded = event.target instanceof Element
-      ? event.target.closest("#confirm-order, #lookup-button, #register-customer-button")
-      : null;
-    if (!guarded) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    showTestNotice("Versão de teste: pedidos e consultas de cadastro estão desativados.");
-  }, true);
-
-  document.addEventListener("submit", (event) => {
-    if (!(event.target instanceof HTMLFormElement)) return;
-    if (event.target.id !== "customer-registration") return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    showTestNotice("Versão de teste: o cadastro não foi enviado.");
-  }, true);
+  if (document.body.dataset.testMode === "true") {
+    document.addEventListener("click", (event) => {
+      const guarded = event.target instanceof Element
+        ? event.target.closest("#confirm-order, #lookup-button, #register-customer-button")
+        : null;
+      if (!guarded) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      showStoreNotice("Versão de teste: pedidos e consultas de cadastro estão desativados.");
+    }, true);
+  
+    document.addEventListener("submit", (event) => {
+      if (!(event.target instanceof HTMLFormElement)) return;
+      if (event.target.id !== "customer-registration") return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      showStoreNotice("Versão de teste: o cadastro não foi enviado.");
+    }, true);
+  }
 
   const basketGrid = document.getElementById("basket-grid");
   if (basketGrid && typeof MutationObserver === "function") {
