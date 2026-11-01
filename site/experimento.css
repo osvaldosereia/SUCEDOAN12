@@ -1,0 +1,227 @@
+:root {
+  --experiment-rail: clamp(84px, 18.9vw, 138px);
+  --experiment-burgundy: #511d32;
+  --experiment-paper: #f7f6f5;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  overflow-x: hidden;
+  background: var(--experiment-paper);
+}
+
+.experiment-sidebar {
+  position: fixed;
+  z-index: 30;
+  inset: 0 auto 0 0;
+  display: flex;
+  flex-direction: column;
+  width: var(--experiment-rail);
+  padding: 9px 5px max(10px, env(safe-area-inset-bottom));
+  overflow-x: hidden;
+  overflow-y: auto;
+  border-right: 1px solid #e7e4e2;
+  background: #fbfaf9;
+  scrollbar-width: thin;
+}
+
+.experiment-logo-crop {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  margin: 2px auto 11px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #f6e9ca;
+}
+
+.experiment-logo-crop img {
+  display: block;
+  width: auto;
+  max-width: none;
+  height: 76px;
+  margin: -2px 0 0;
+}
+
+.experiment-nav {
+  display: grid;
+  gap: 3px;
+  padding-bottom: 10px;
+}
+
+.experiment-nav-link {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 4px 1px 5px;
+  border-radius: 12px;
+  color: #667085;
+  font-size: 11px;
+  font-weight: 620;
+  line-height: 1.08;
+  text-align: center;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  transition: background-color .15s ease, color .15s ease;
+}
+
+.experiment-nav-link:hover,
+.experiment-nav-link:focus-visible,
+.experiment-nav-link.is-active {
+  color: var(--experiment-burgundy);
+  background: #f5eff1;
+}
+
+.experiment-icon {
+  display: grid;
+  place-items: center;
+  width: clamp(36px, 6vw, 48px);
+  height: clamp(36px, 6vw, 48px);
+  border-radius: 13px;
+  background: #eef0f3;
+}
+
+.experiment-icon svg {
+  width: 23px;
+  height: 23px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.experiment-whatsapp {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  margin-top: auto;
+  padding: 9px 4px 10px;
+  border-radius: 13px;
+  background: #178f4b;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 1.12;
+  text-align: center;
+  text-decoration: none;
+}
+
+.experiment-whatsapp:hover,
+.experiment-whatsapp:focus-visible {
+  background: #11743c;
+}
+
+.experiment-whatsapp svg {
+  width: 23px;
+  height: 23px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.experiment-whatsapp small {
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.experiment-page {
+  min-width: 0;
+  margin-left: var(--experiment-rail);
+}
+
+.experiment-page main {
+  width: min(1080px, calc(100% - 24px));
+  margin: 0 auto;
+  padding: 16px 0 34px;
+}
+
+.experiment-page .welcome {
+  padding: 6px 3px 15px;
+}
+
+.experiment-mode-label {
+  display: inline-flex;
+  margin: 0 0 10px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #f0ecee;
+  color: var(--experiment-burgundy);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .015em;
+}
+
+.experiment-page .welcome h1 {
+  margin-bottom: 7px;
+}
+
+.experiment-page #catalog,
+.experiment-page #home-extras {
+  scroll-margin-top: 14px;
+}
+
+.experiment-page #basket-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.experiment-page .basket-photo {
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+
+.experiment-page .basket-title {
+  font-size: clamp(.82rem, 2.4vw, .96rem);
+}
+
+.experiment-page .card-button {
+  min-height: 40px;
+  padding-inline: 7px;
+  font-size: clamp(.72rem, 2vw, .9rem);
+}
+
+.experiment-page .home-extra-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.experiment-page .home-extra-category {
+  scroll-margin-top: 14px;
+}
+
+.experiment-page .experiment-footer {
+  margin: 0 auto;
+  padding: 16px 8px 26px;
+  color: #756d63;
+  font-size: .78rem;
+  text-align: center;
+}
+
+.experiment-page .site-footer {
+  display: none;
+}
+
+@media (max-width: 380px) {
+  :root { --experiment-rail: 78px; }
+  .experiment-sidebar { padding-right: 3px; padding-left: 3px; }
+  .experiment-logo-crop { width: 64px; height: 64px; }
+  .experiment-logo-crop img { height: 68px; }
+  .experiment-nav-link { font-size: 10px; }
+  .experiment-page main { width: calc(100% - 16px); }
+  .experiment-page #basket-grid { gap: 8px; }
+  .experiment-page .basket-body { padding: 9px; }
+}
+
+@media (min-width: 640px) {
+  .experiment-page main { width: min(1080px, calc(100% - 40px)); padding-top: 24px; }
+  .experiment-page #basket-grid { gap: 16px; }
+  .experiment-sidebar { padding-right: 8px; padding-left: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .experiment-nav-link { transition: none; }
+}
