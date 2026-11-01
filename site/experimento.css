@@ -250,14 +250,14 @@ body {
 /* Sidebar navigation: compact square text buttons. */
 .experiment-nav {
   justify-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .experiment-nav-link {
   box-sizing: border-box;
   display: grid;
   place-items: center;
-  width: min(100%, clamp(58px, calc(var(--experiment-rail) - 12px), 100px));
+  width: min(100%, clamp(58px, calc(var(--experiment-rail) - 12px), 66px));
   aspect-ratio: 1;
   gap: 0;
   padding: 6px;
@@ -265,7 +265,7 @@ body {
   border-radius: 16px;
   background: #f0f0f2;
   color: #667085;
-  font-size: clamp(9px, 1.1vw, 11px);
+  font-size: clamp(10px, 1.1vw, 11px);
   line-height: 1.12;
   text-align: center;
   text-decoration: none;
@@ -292,7 +292,7 @@ body {
 
 .experiment-whatsapp {
   box-sizing: border-box;
-  width: min(100%, clamp(58px, calc(var(--experiment-rail) - 12px), 100px));
+  width: min(100%, clamp(58px, calc(var(--experiment-rail) - 12px), 66px));
   aspect-ratio: 1;
   align-content: center;
   justify-items: center;
@@ -301,7 +301,7 @@ body {
   margin-left: auto;
   padding: 6px;
   border-radius: 16px;
-  font-size: clamp(9px, 1.1vw, 11px);
+  font-size: clamp(10px, 1.1vw, 11px);
   line-height: 1.12;
   overflow-wrap: anywhere;
   hyphens: auto;
