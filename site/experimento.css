@@ -320,7 +320,26 @@ body {
   hyphens: none;
 }
 
-.experiment-whatsapp svg,
+.experiment-whatsapp svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
 .experiment-whatsapp small {
   display: none;
+}
+
+@media (min-width: 900px) {
+  .experiment-page #basket-grid,
+  .experiment-page .home-extra-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1440px) {
+  .experiment-page #basket-grid,
+  .experiment-page .home-extra-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
