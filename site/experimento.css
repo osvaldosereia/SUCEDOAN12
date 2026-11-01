@@ -227,14 +227,14 @@ body {
 }
 
 
-/* Keep the basket sheets in the space beside the fixed navigation rail. */
+/* Align basket sheets with content on wide layouts; cover the rail on mobile. */
 .sheet-backdrop {
   left: var(--experiment-rail);
 }
 
-@media (max-width: 560px) {
+@media (max-width: 768px) {
   .sheet-backdrop {
     left: 0;
-    z-index: 40;
+    z-index: 50;
   }
 }
