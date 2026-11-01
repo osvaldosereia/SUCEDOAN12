@@ -258,9 +258,10 @@ body {
   display: grid;
   place-items: center;
   width: min(100%, clamp(58px, calc(var(--experiment-rail) - 12px), 66px));
-  aspect-ratio: 1;
+  height: 48px;
+  min-height: 48px;
   gap: 0;
-  padding: 6px;
+  padding: 4px;
   border: 1px solid #e5e2e1;
   border-radius: 16px;
   background: #f0f0f2;
@@ -290,10 +291,22 @@ body {
   color: #fff;
 }
 
+.experiment-nav-link[data-experiment-nav="basket"] {
+  border-color: #bf9955;
+  background: #fffaf0;
+}
+
+.experiment-nav-link[data-experiment-nav="basket"].is-active {
+  border-color: #e0bd73;
+  background: var(--experiment-burgundy);
+  color: #fff;
+}
+
 .experiment-whatsapp {
   box-sizing: border-box;
   width: min(100%, clamp(58px, calc(var(--experiment-rail) - 12px), 66px));
-  aspect-ratio: 1;
+  height: 48px;
+  min-height: 48px;
   align-content: center;
   justify-items: center;
   gap: 0;
