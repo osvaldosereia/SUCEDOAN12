@@ -10,30 +10,62 @@
   <link rel="preload" as="image" href="assets/cestas/cesta-economica.jpg" fetchpriority="high">
   <link rel="preconnect" href="https://ssbesxgaijknwsjbsbcz.supabase.co" crossorigin>
   <link rel="stylesheet" href="styles.css?v=28">
+  <link rel="stylesheet" href="experimento.css?v=9">
   <script src="config.js?v=2" defer></script>
-  <script src="storefront/extras.js?v=15" defer></script>
+  <script src="storefront/experimento-extras.js?v=1" defer></script>
   <script src="storefront/basket.js?v=3" defer></script>
   <script src="storefront/checkout.js?v=10" defer></script>
   <script src="app.js?v=26" defer></script>
+  <script src="experimento.js?v=3" defer></script>
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="./" aria-label="Dona Antônia, início">
-      <img src="../img/logoantonia5.png" alt="Dona Antônia" width="176" height="64" fetchpriority="high">
+  <aside class="experiment-sidebar" aria-label="Navegação da loja">
+    <div class="experiment-logo-crop" aria-label="Personagem da logo Dona Antônia">
+      <img src="../img/logoantonia5.png" alt="Personagem Dona Antônia" width="545" height="118">
+    </div>
+    <nav class="experiment-nav" aria-label="Seções da loja">
+      <a class="experiment-nav-link is-active" href="#inicio" data-experiment-nav="home" aria-current="page">
+        <span class="experiment-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span><span>Início</span>
+      </a>
+      <a class="experiment-nav-link" href="#catalog" data-experiment-nav="basket" data-size="Grande">
+        <span class="experiment-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18l-2 11H5L3 9Z"/><path d="m7 9 5-6 5 6M8 12v5m4-5v5m4-5v5"/></svg></span><span>Grande</span>
+      </a>
+      <a class="experiment-nav-link" href="#catalog" data-experiment-nav="basket" data-size="Média">
+        <span class="experiment-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18l-2 11H5L3 9Z"/><path d="m7 9 5-6 5 6M8 12v5m4-5v5m4-5v5"/></svg></span><span>Média</span>
+      </a>
+      <a class="experiment-nav-link" href="#catalog" data-experiment-nav="basket" data-size="Pequena">
+        <span class="experiment-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18l-2 11H5L3 9Z"/><path d="m7 9 5-6 5 6M8 12v5m4-5v5m4-5v5"/></svg></span><span>Pequena</span>
+      </a>
+      <a class="experiment-nav-link" href="#catalog" data-experiment-nav="basket" data-size="Mini">
+        <span class="experiment-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18l-2 11H5L3 9Z"/><path d="m7 9 5-6 5 6M8 12v5m4-5v5m4-5v5"/></svg></span><span>Mini</span>
+      </a>
+      <a class="experiment-nav-link" href="#catalog" data-experiment-nav="basket" data-size="Econômica">
+        <span class="experiment-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18l-2 11H5L3 9Z"/><path d="m7 9 5-6 5 6M8 12v5m4-5v5m4-5v5"/></svg></span><span>Econômica</span>
+      </a>
+      <a class="experiment-nav-link" href="#home-extra-categories" data-experiment-nav="popular">
+        <span class="experiment-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/></svg></span><span>Mais vendidos</span>
+      </a>
+      <a class="experiment-nav-link" href="#home-extras" data-experiment-nav="builder">
+        <span class="experiment-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/><circle cx="12" cy="12" r="9"/></svg></span><span>Monte sua Cesta</span>
+      </a>
+    </nav>
+    <a class="experiment-whatsapp" href="https://wa.me/5565998159975?text=Ol%C3%A1%2C%20gostaria%20de%20falar%20com%20a%20Dona%20Ant%C3%B4nia." target="_blank" rel="noopener noreferrer" aria-label="Falar com a Dona Antônia pelo WhatsApp no número 65 99815-9975">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 11.7a8.4 8.4 0 0 1-12.4 7.4L4 20l.9-4A8.4 8.4 0 1 1 20.5 11.7Z"/><path d="M9 8.4c.2-.5.5-.5.8-.5h.5c.2 0 .4.1.5.4l.7 1.7c.1.2.1.4 0 .6l-.5.7c-.2.2-.2.4 0 .7.5.8 1.2 1.5 2.1 1.9.2.1.5.1.7-.1l.7-.8c.2-.2.4-.3.7-.2l1.6.8c.3.1.4.3.4.5 0 .4-.2 1.2-.7 1.6-.5.4-1.1.6-1.8.5-1-.1-2.2-.7-3.5-1.8-1.5-1.3-2.5-2.9-2.8-4-.2-.8 0-1.6.4-2Z"/></svg>
+      <span>WhatsApp</span><small>(65) 99815-9975</small>
     </a>
-  </header>
-
+  </aside>
+  <div class="experiment-page">
   <main>
-    <section class="welcome" aria-labelledby="welcome-title">
+    <section id="inicio" class="welcome" aria-labelledby="welcome-title">
       <p class="eyebrow">Praticidade para sua casa</p>
-      <h1 id="welcome-title">Cestas básicas</h1>
-      <p>Escolha o tamanho ideal e veja os produtos que vão na sua cesta.</p>
+      <h1 id="welcome-title">Início</h1>
+      <p>Encontre sua cesta e navegue pelas sessões da loja.</p>
     </section>
       <div id="home-extra-summary" class="home-extra-summary" hidden aria-live="polite">
         <div class="home-extra-summary-copy">
           <strong id="home-extra-summary-count"></strong>
           <span id="home-extra-summary-total"></span>
-          <span id="home-extra-summary-hint">Você pode concluir o pedido só com estes produtos.</span>
+          <span id="home-extra-summary-hint">Você pode finalizar o pedido só com estes produtos.</span>
         </div>
         <button id="home-extra-checkout" class="button button-primary" type="button">Finalizar pedido</button>
       </div>
@@ -71,8 +103,8 @@
     <section id="home-extras" class="home-extras" aria-labelledby="home-extras-title">
       <div class="home-extras-heading">
         <p class="eyebrow">Monte do seu jeito</p>
-        <h2 id="home-extras-title">Monte sua própria cesta</h2>
-        <p>Escolha produtos nas quatro categorias e finalize o pedido só com eles, sem selecionar uma cesta pronta. Pedido mínimo de R$ 75,00.</p>
+        <h2 id="home-extras-title">Monte sua Cesta</h2>
+        <p>Escolha produtos nas categorias disponíveis e finalize o pedido só com eles, sem selecionar uma cesta pronta. Pedido mínimo de R$ 75,00.</p>
       </div>
       <div id="home-extra-product-search" class="product-search product-search-extra" data-product-search-root="home-extras">
         <label class="product-search-label" for="home-extra-product-search-input">Buscar nos produtos para montar sua cesta</label>
@@ -114,11 +146,6 @@
 
     <aside class="privacy-note">Seu pedido será registrado para a equipe da Dona Antônia. A loja dará sequência ao atendimento.</aside>
   </main>
-
-  <footer class="site-footer">
-    <img src="../img/logoantonia5.png" alt="" width="118" height="43" loading="lazy" decoding="async">
-    <span>Feito com carinho para você.</span>
-  </footer>
 
   <div id="detail-sheet" class="sheet-backdrop" hidden>
     <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="detail-title">
@@ -225,5 +252,6 @@
     </section>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </div>
 </body>
 </html>
