@@ -225,3 +225,16 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .experiment-nav-link { transition: none; }
 }
+
+
+/* Keep the basket sheets in the space beside the fixed navigation rail. */
+.sheet-backdrop {
+  left: var(--experiment-rail);
+}
+
+@media (max-width: 560px) {
+  .sheet-backdrop {
+    left: 0;
+    z-index: 40;
+  }
+}
