@@ -168,7 +168,7 @@
       </section>
 
       <section class="admin-view" data-panel="baskets" hidden>
-        <div class="section-title basket-grid-heading"><div><h2>Cestas</h2><p>Gerencie os tipos de produto em uma tabela. O mesmo título aparece em todas as cestas; uma quantidade zero deixa o tipo fora daquela composição.</p></div><div class="basket-admin-controls"><button id="add-basket-type" class="button button-outline" type="button">Adicionar tipo</button><button id="reload-baskets" class="button button-outline" type="button">Atualizar</button><button id="save-basket-grid" class="button button-primary" type="button">Salvar alterações</button></div></div>
+        <div class="section-title basket-grid-heading"><div><h2>Cestas</h2><p>Edite o título, as variações, o valor padrão e as quantidades de cada cesta nesta tela. Quantidade zero deixa o tipo fora daquela composição.</p></div><div class="basket-admin-controls"><button id="add-basket-type" class="button button-outline" type="button">Adicionar tipo</button><button id="reload-baskets" class="button button-outline" type="button">Atualizar</button><button id="save-basket-grid" class="button button-primary" type="button">Salvar alterações</button></div></div>
         <div id="basket-manual-review"></div>
         <div id="admin-baskets" class="admin-basket-grid"><p class="admin-muted">Carregando…</p></div>
         <div class="edit-notice basket-grid-note">
@@ -455,20 +455,6 @@
       <div class="separation-total"><span>Total atualizado</span><strong id="separation-total-value">—</strong></div>
       <footer class="orders-dialog-actions"><button class="button button-outline" type="button" data-orders-close="order-separation-dialog">Fechar</button><button id="confirm-separation" class="button button-primary" type="button" disabled>Confirmar separação</button></footer>
     </section>
-  </dialog>
-
-  <dialog id="basket-dialog" class="catalog-dialog">
-    <form id="basket-form" class="dialog-form">
-      <header class="dialog-heading"><div><p class="eyebrow">Editar composição</p><h2 id="basket-dialog-title">Cesta</h2></div><button class="icon-button" type="button" data-dialog-close="basket-dialog" aria-label="Fechar">×</button></header>
-      <label class="dialog-field" for="basket-default-price">Valor padrão da cesta
-        <span class="price-input-row"><span>R$</span><input id="basket-default-price" type="number" min="0" max="1000000" step="0.01" inputmode="decimal" required></span>
-      </label>
-      <p id="basket-price-hint" class="dialog-hint">Ajustado automaticamente conforme o produto padrão e as quantidades.</p>
-      <div class="position-heading"><h3>Produtos da cesta</h3><button id="add-basket-position" class="button button-outline" type="button">Adicionar produto</button></div>
-      <div id="basket-position-editor" class="basket-position-editor"></div>
-      <p id="basket-save-message" class="form-message" role="status"></p>
-      <footer class="dialog-actions"><button class="button button-outline" type="button" data-dialog-close="basket-dialog">Cancelar</button><button id="save-basket" class="button button-primary" type="submit">Salvar cesta</button></footer>
-    </form>
   </dialog>
 
   <dialog id="taxonomy-dialog" class="catalog-dialog taxonomy-dialog" aria-labelledby="taxonomy-title">
