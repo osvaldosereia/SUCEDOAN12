@@ -111,7 +111,7 @@
         </div>
         <div class="admin-shortcuts">
           <button class="shortcut-card" type="button" data-go="baskets"><strong>Cestas</strong><span>Editar produtos, marcas e valor padrão</span></button>
-          <button class="shortcut-card" type="button" data-go="products"><strong>Produtos</strong><span>Editar cadastro, estoque e ativação</span></button>
+          <button class="shortcut-card" type="button" data-go="products"><strong>Produtos</strong><span>Editar cadastro, estoque do Supabase e ativação</span></button>
           <button class="shortcut-card" type="button" data-go="customers"><strong>Clientes</strong><span>Buscar cadastro e endereço</span></button>
           <button class="shortcut-card" type="button" data-go="orders"><strong>Pedidos</strong><span>Confirmar, separar e acompanhar entregas</span></button>
           <button class="shortcut-card" type="button" data-go="quick-balance"><strong>Balanço rápido</strong><span>Contar estoque, validade e gôndola pelo EAN</span></button>
@@ -224,7 +224,7 @@
               <div class="quick-balance-product-copy"><h3 id="quick-balance-name"></h3><p id="quick-balance-identifiers"></p></div>
             </div>
             <div class="quick-balance-stock-grid">
-              <section class="quick-balance-stat"><span>Estoque</span><strong id="quick-balance-current-stock">—</strong></section>
+              <section class="quick-balance-stat"><span>Estoque no Supabase</span><strong id="quick-balance-current-stock">—</strong></section>
               <section class="quick-balance-count">
                 <div class="quick-balance-count-head"><span>Contagem</span><output id="quick-balance-count-value" class="quick-balance-count-value" aria-live="polite">0</output></div>
                 <div class="quick-balance-count-controls">
@@ -504,7 +504,7 @@
         <label>Marca<input name="brand"></label><label>SKU<input name="sku"></label>
         <label>GTIN<input name="gtin" inputmode="numeric"></label><label>NCM<input name="ncm"></label>
         <label>Preço (R$)<input name="price" type="number" min="0" step="0.01"></label><label>Preço de oferta (R$)<input name="offer_price" type="number" min="0" step="0.01"></label>
-        <label>Custo (R$)<input name="cost" type="number" min="0" step="0.01"></label><label>Estoque<input name="stock" type="number" min="0" step="0.01"></label>
+        <label>Custo (R$)<input name="cost" type="number" min="0" step="0.01"></label><label>Estoque no Supabase<input name="stock" type="number" min="0" step="0.01"></label>
         <label>Estoque mínimo<input name="min_stock" type="number" min="0" step="0.01"></label><label>Embalagem<input name="packaging"></label>
         <label>Unidade<input name="unit"></label><label>Fornecedor<input name="supplier"></label>
         <label>Categoria<input name="category"></label><label>Subcategoria<input name="subcategory"></label>
