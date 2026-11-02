@@ -277,11 +277,14 @@ function errorResponse(error: any) {
   if (code === "23505") return { status: 409, error: "duplicate_product_identifier", message: "SKU ou GTIN já cadastrado em outro produto." };
   const detail = clean(error?.message || error, 400);
   const lowerDetail = detail.toLowerCase();
-  if (lowerDetail.includes("separation_requires_bling_stock_authority") || lowerDetail.includes("stock authority")) return { status: 409, error: "separation_stock_authority", message: "O estoque precisa estar sob autoridade do Bling para concluir a separação." };
-  if (lowerDetail.includes("fiscal") || lowerDetail.includes("authorize document") || lowerDetail.includes("authorize_document")) return { status: 409, error: "delivery_fiscal_gate", message: "Entrega bloqueada: autorize o documento fiscal e o estoque físico antes de marcar como entregue." };
+  if (lowerDetail.includes("stock authority") || lowerDetail.includes("separation_stock")) return { status: 409, error: "separation_stock_update", message: "Não foi possível atualizar o saldo do Supabase ao concluir a separação. Revise os itens e tente novamente." };
+  if (lowerDetail.includes("fiscal") || lowerDetail.includes("authorize document") || lowerDetail.includes("authorize_document")) return { status: 409, error: "delivery_fiscal_gate", message: "Entrega bloqueada: autorize o documento fiscal e confirme o saldo registrado no Supabase antes de marcar como entregue." };
   if (lowerDetail.includes("payment") || lowerDetail.includes("settlement") || lowerDetail.includes("captured")) return { status: 409, error: "delivery_payment_gate", message: "Entrega bloqueada: o pagamento precisa estar confirmado no sistema." };
   if (lowerDetail.includes("separator")) return { status: 409, error: "separator_required", message: "Selecione o responsável pela separação para continuar." };
   if (lowerDetail.includes("expected_order_updated_at") || lowerDetail.includes("concurrent") || lowerDetail.includes("updated_at_mismatch")) return { status: 409, error: "separation_changed", message: "A separação mudou em outra tela. Atualize e tente novamente." };
+  if (detail.includes("site_basket_grid_price_invalid")) return { status: 400, error: "basket_grid_price_invalid", message: "Informe um valor padrão válido para cada cesta." };
+  if (detail.includes("site_basket_grid_empty_basket")) return { status: 400, error: "basket_grid_empty_basket", message: "Cada cesta ativa precisa ter pelo menos um tipo com quantidade maior que zero." };
+  if (lowerDetail.includes("site_basket_grid")) return { status: 400, error: "basket_grid_invalid", message: "Revise os títulos, as variações e as quantidades da grade." };
   if (detail.includes("basket_mold_basket_not_found")) return { status: 404, error: "basket_not_found", message: "Cesta não encontrada." };
   if (detail.includes("basket_mold_positions_required")) return { status: 400, error: "basket_positions_required", message: "A cesta precisa ter pelo menos um produto." };
   if (detail.includes("basket_mold_position_options_required")) return { status: 400, error: "basket_options_required", message: "Cada produto precisa ter ao menos uma opção." };
@@ -763,7 +766,7 @@ async function basketGridList() {
   const templateRows = templatesResult.data || [];
   if (!templateRows.length) return { baskets: [], types: [], manual_replacements: [] };
 
-  const moldResult = await db.from("basket_molds").select("id,basket_id").in("basket_id", templateRows.map((row: any) => row.id));
+  const moldResult = await db.from("basket_molds").select("id,basket_id,hidden_adjustment,conditional_hidden_enabled,conditional_hidden_product_id,conditional_hidden_adjustment").in("basket_id", templateRows.map((row: any) => row.id));
   if (moldResult.error) throw moldResult.error;
   const moldByBasket = new Map((moldResult.data || []).map((row: any) => [String(row.basket_id), row]));
   const baskets = templateRows.filter((row: any) => moldByBasket.has(String(row.id)));
@@ -842,8 +845,33 @@ async function basketGridList() {
     product: productById.get(String(row.product_id)) || {},
     reason: String(row.reason || "manual_review_required"),
   }));
+  const basketsWithPrices = baskets.map((row: any) => {
+    const mold: any = moldByBasket.get(String(row.id)) || {};
+    const productTotalCents = types.reduce((total: number, type: any) => {
+      const quantity = Number(type.quantities?.[String(row.id)] || 0);
+      const defaultProduct = type.options?.[0]?.product;
+      return total + Math.round(Number(defaultProduct?.effective_price_cents || 0) * quantity);
+    }, 0);
+    const conditionalApplied = mold.conditional_hidden_enabled === true
+      && mold.conditional_hidden_product_id
+      && types.some((type: any) =>
+        Number(type.quantities?.[String(row.id)] || 0) > 0
+        && String(type.options?.[0]?.product_id) === String(mold.conditional_hidden_product_id)
+      )
+      ? cents(mold.conditional_hidden_adjustment)
+      : 0;
+    const defaultPriceCents = Math.max(0,
+      productTotalCents + cents(mold.hidden_adjustment) + conditionalApplied
+    );
+    return {
+      id: String(row.id),
+      name: String(row.name || ""),
+      sort_order: Number(row.sort_order || 0),
+      default_price_cents: defaultPriceCents,
+    };
+  });
   return {
-    baskets: baskets.map((row: any) => ({ id: String(row.id), name: String(row.name || ""), sort_order: Number(row.sort_order || 0) })),
+    baskets: basketsWithPrices,
     types,
     manual_replacements: manualReplacements,
   };
@@ -890,8 +918,25 @@ async function basketGridSave(input: any) {
     normalized.push({ id: typeId, title, options, quantities });
   }
 
-  const saved = await db.rpc("site_admin_save_basket_grid_v1", {
+  const basketPricesInput = input.basket_prices && typeof input.basket_prices === "object" && !Array.isArray(input.basket_prices)
+    ? input.basket_prices
+    : null;
+  if (!basketPricesInput) {
+    return { status: 400, error: "basket_grid_price_invalid", message: "Informe um valor padrão válido para cada cesta." };
+  }
+  const basketPrices: Record<string, number> = {};
+  for (const [basketId, value] of Object.entries(basketPricesInput)) {
+    const normalizedBasketId = uuid(basketId);
+    const priceCents = integer(value, 0, 100000000);
+    if (!normalizedBasketId || priceCents === null) {
+      return { status: 400, error: "basket_grid_price_invalid", message: "Informe um valor padrão válido para cada cesta." };
+    }
+    basketPrices[normalizedBasketId.toLowerCase()] = priceCents;
+  }
+
+  const saved = await db.rpc("site_admin_save_basket_grid_with_prices_v1", {
     p_rows: normalized,
+    p_basket_prices: basketPrices,
     p_operator: "Admin site Dona Antônia",
   });
   if (saved.error) throw saved.error;
@@ -1494,7 +1539,7 @@ async function completeOrderSeparation(input: any) {
   if (applied.error) throw applied.error;
   if (applied.data?.ok !== true) {
     const code = String(applied.data?.error || "separation_stock_update_failed");
-    if (code.includes("bling")) return { error: code, status: 409, message: "O estoque precisa estar sob autoridade do Bling para concluir a separação." };
+    if (code.includes("stock_authority")) return { error: code, status: 409, message: "O saldo de estoque é controlado pelo cadastro de produtos do Supabase." };
     return { error: code, status: 409, message: "Não foi possível concluir a separação e atualizar o estoque." };
   }
 

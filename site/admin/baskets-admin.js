@@ -32,6 +32,20 @@
     return Number.isFinite(number) ? String(number) : "0";
   }
 
+  function priceInputValue(value) {
+    if (typeof value === "string") return value;
+    return (Math.max(0, Number(value || 0)) / 100).toFixed(2);
+  }
+
+  function parsePriceCents(value) {
+    const normalized = String(value ?? "").trim().replace(",", ".");
+    if (!/^\d{1,7}(?:\.\d{1,2})?$/.test(normalized)) return null;
+    const number = Number(normalized);
+    return Number.isFinite(number) && number >= 0 && number <= 1000000
+      ? Math.round(number * 100)
+      : null;
+  }
+
   function productStatus(product) {
     if (product?.is_active === true) return { text: "Ativo", className: "is-active" };
     if (product?.is_active === false) return { text: "Inativo", className: "is-inactive" };
@@ -42,22 +56,33 @@
     const host = $("basket-manual-review");
     if (!host) return;
     const rows = state.manualReplacements || [];
-    host.innerHTML = rows.length
+    const groups = new Map();
+    rows.forEach((row) => {
+      const key = [row.type_id || row.position_label || "", row.product_id, row.reason].join(":");
+      const group = groups.get(key) || { ...row, baskets: new Set() };
+      group.baskets.add(row.basket_name || "Cesta");
+      groups.set(key, group);
+    });
+    const groupedRows = [...groups.values()];
+    host.innerHTML = groupedRows.length
       ? '<section class="basket-manual-review" aria-labelledby="basket-manual-review-title">' +
-          '<div class="basket-manual-review-heading"><div><h3 id="basket-manual-review-title">Produtos para ajuste manual</h3><p>A cesta continua ativa e pode receber pedidos. Revise estas opções quando puder.</p></div><span>' + rows.length + '</span></div>' +
-          '<ul>' + rows.map((row) => {
+      '<div class="basket-manual-review-heading"><div><h3 id="basket-manual-review-title">Produtos para ajuste manual</h3><p>As cestas continuam ativas. Revise apenas estas opções quando puder.</p></div><span>' + groupedRows.length + '</span></div>' +
+          '<ul>' + groupedRows.map((row) => {
             const type = state.types.find((item) => String(item.id) === String(row.type_id));
             const title = type?.title || row.position_label || "Produto da cesta";
             const product = row.product || productCache.get(String(row.product_id)) || {};
-            const reason = row.reason === "only_configured_option_unavailable"
-              ? "Única opção da cesta indisponível"
+            const reason = row.reason === "only_configured_option_inactive"
+              ? "Desativado no WhatsApp; mantido como única opção da cesta"
+              : row.reason === "only_configured_option_unavailable"
+                ? "Única opção desativada ou sem saldo suficiente no Supabase"
               : row.reason === "replacement_product_inactive"
                 ? "Variação substituta inativa"
-                : "Sem opção com estoque suficiente";
+              : "Nenhuma opção ativa com saldo suficiente no estoque do Supabase";
             const manage = row.type_id
               ? '<button class="button button-outline" type="button" data-manual-type="' + esc(row.type_id) + '">Gerenciar variações</button>'
               : "";
-            return '<li><div class="basket-manual-review-copy"><strong>' + esc(row.basket_name || "Cesta") + '</strong><span>' + esc(title) + ' · ' + esc(product.name || "Produto") + '</span><small>' + esc(reason) + '</small></div>' + manage + '</li>';
+            const basketNames = [...row.baskets].sort((a, b) => a.localeCompare(b, "pt-BR")).join(", ");
+            return '<li><div class="basket-manual-review-copy"><strong>' + esc(title) + ' · ' + esc(product.name || "Produto") + '</strong><span>Cestas: ' + esc(basketNames) + '</span><small>' + esc(reason) + '</small></div>' + manage + '</li>';
           }).join("") + '</ul></section>'
       : "";
   }
@@ -91,8 +116,13 @@
     renderManualReview();
     const baskets = state.baskets || [];
     const types = state.types || [];
+    const prices = '<section class="basket-default-prices" aria-labelledby="basket-default-prices-title">' +
+      '<div class="basket-default-prices-heading"><h3 id="basket-default-prices-title">Valores padrão das cestas</h3><p>Preço exibido inicialmente no site. As variações podem alterar o total.</p></div>' +
+      '<div class="basket-default-prices-grid">' + baskets.map((basket) =>
+        '<label class="basket-default-price"><span>' + esc(basket.name) + '</span><span class="basket-default-price-input"><span>R$</span><input type="number" min="0" max="1000000" step="0.01" inputmode="decimal" value="' + esc(priceInputValue(basket.default_price_value ?? basket.default_price_cents)) + '" data-basket-price="' + esc(basket.id) + '" aria-label="Valor padrão da cesta ' + esc(basket.name) + '"></span></label>'
+      ).join("") + '</div></section>';
     if (!types.length) {
-      host.innerHTML = '<p class="admin-muted basket-grid-empty">Nenhum tipo cadastrado. Adicione um tipo para começar a montar as cestas.</p>';
+      host.innerHTML = prices + '<p class="admin-muted basket-grid-empty">Nenhum tipo cadastrado. Adicione um tipo para começar a montar as cestas.</p>';
       return;
     }
     const headers = baskets.map((basket) => '<th scope="col"><span>' + esc(basket.name) + '</span><small>unidades</small></th>').join("");
@@ -111,7 +141,7 @@
         '<button class="text-button danger-text" type="button" data-delete-type="' + esc(key) + '">Excluir tipo</button></div></th>' +
         '<td class="basket-grid-variations">' + renderOptions(type, key) + '</td>' + quantityCells + '</tr>';
     }).join("");
-    host.innerHTML = '<div class="basket-grid-table-wrap"><table class="basket-grid-table"><thead><tr><th scope="col">Tipo e título</th><th scope="col">Variações · ordem de substituição</th>' + headers + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+    host.innerHTML = prices + '<div class="basket-grid-table-wrap"><table class="basket-grid-table"><thead><tr><th scope="col">Tipo e título</th><th scope="col">Variações · ordem de substituição</th>' + headers + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
   async function loadBaskets() {
@@ -121,7 +151,10 @@
     host.innerHTML = '<p class="admin-muted">Carregando tipos e cestas…</p>';
     try {
       const data = await request("basket_grid", { params: {} });
-      state.baskets = data.baskets || [];
+      state.baskets = (data.baskets || []).map((basket) => ({
+        ...basket,
+        default_price_value: priceInputValue(basket.default_price_cents),
+      }));
       state.types = (data.types || []).map((type, index) => ({
         ...type,
         _key: type.id || ("loaded-" + index),
@@ -188,7 +221,7 @@
         '<input type="checkbox" value="' + esc(product.id) + '" data-picker-product ' + (state.pickerSelected.has(String(product.id)) ? "checked" : "") + '>' +
         '<span><strong>' + esc(product.name) + '</strong><small>' + esc([product.brand, product.sku && ("SKU " + product.sku), product.is_active ? "Ativo" : "Inativo"].filter(Boolean).join(" · ")) + '</small></span><b>' + money(product.effective_price_cents ?? effectivePrice(product)) + '</b></label>').join("");
       if (reset) host.innerHTML = "";
-      if (!rows && reset) host.innerHTML = '<p class="admin-muted">Nenhum produto encontrado.</p>';
+      if (!(data.products || []).length && reset) host.innerHTML = '<p class="admin-muted">Nenhum produto encontrado.</p>';
       host.insertAdjacentHTML("beforeend", rows);
       state.pickerOffset += (data.products || []).length;
       $("picker-more").hidden = state.pickerOffset >= state.pickerTotal;
@@ -247,11 +280,6 @@
         document.getElementById("basket-type-" + typeKey(type, index))?.querySelector("[data-type-title]")?.focus();
         return;
       }
-      if (!type.options?.length) {
-        toast("Adicione pelo menos uma variação para " + title + ".");
-        document.getElementById("basket-type-" + typeKey(type, index))?.scrollIntoView({ behavior: "smooth", block: "center" });
-        return;
-      }
       const quantities = {};
       for (const basket of state.baskets) {
         const value = parseQuantity(type.quantities?.[basket.id]);
@@ -260,6 +288,11 @@
           return;
         }
         quantities[basket.id] = value;
+      }
+      if (Object.values(quantities).some((quantity) => quantity > 0) && !type.options?.length) {
+        toast("Adicione uma variação para “" + title + "” ou deixe sua quantidade em zero em todas as cestas.");
+        document.getElementById("basket-type-" + typeKey(type, index))?.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
       }
       payload.push({
         id: type.id || null,
@@ -272,11 +305,21 @@
       toast("Adicione pelo menos um tipo de produto.");
       return;
     }
+    const basketPrices = {};
+    for (const basket of state.baskets) {
+      const price = parsePriceCents(basket.default_price_value ?? priceInputValue(basket.default_price_cents));
+      if (price == null) {
+        toast("Informe um valor entre R$ 0,00 e R$ 1.000.000,00 para “" + basket.name + "”.");
+        document.querySelector('[data-basket-price="' + basket.id + '"]')?.focus();
+        return;
+      }
+      basketPrices[basket.id] = price;
+    }
     state.saving = true;
     button.disabled = true;
     button.textContent = "Salvando…";
     try {
-      await request("basket_grid_save", { method: "POST", body: { types: payload } });
+      await request("basket_grid_save", { method: "POST", body: { types: payload, basket_prices: basketPrices } });
       toast("Grade de cestas salva.");
       await loadBaskets();
     } catch (error) {
@@ -297,6 +340,7 @@
       if (String(row.product_id) === String(product.id)) row.product = product;
     });
     renderGrid();
+    await loadBaskets();
   }
 
   function bind() {
@@ -337,6 +381,11 @@
     });
 
     $("admin-baskets").addEventListener("input", (event) => {
+      if (event.target.dataset.basketPrice != null) {
+        const basket = state.baskets.find((item) => String(item.id) === String(event.target.dataset.basketPrice));
+        if (basket) basket.default_price_value = event.target.value;
+        return;
+      }
       const key = event.target.dataset.typeTitle || event.target.dataset.typeQuantity;
       if (!key) return;
       const type = findType(key);

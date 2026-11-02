@@ -111,7 +111,7 @@
         </div>
         <div class="admin-shortcuts">
           <button class="shortcut-card" type="button" data-go="baskets"><strong>Cestas</strong><span>Editar produtos, marcas e valor padrão</span></button>
-          <button class="shortcut-card" type="button" data-go="products"><strong>Produtos</strong><span>Editar cadastro, estoque e ativação</span></button>
+          <button class="shortcut-card" type="button" data-go="products"><strong>Produtos</strong><span>Editar cadastro, estoque do Supabase e ativação</span></button>
           <button class="shortcut-card" type="button" data-go="customers"><strong>Clientes</strong><span>Buscar cadastro e endereço</span></button>
           <button class="shortcut-card" type="button" data-go="orders"><strong>Pedidos</strong><span>Confirmar, separar e acompanhar entregas</span></button>
           <button class="shortcut-card" type="button" data-go="quick-balance"><strong>Balanço rápido</strong><span>Contar estoque, validade e gôndola pelo EAN</span></button>
@@ -168,7 +168,7 @@
       </section>
 
       <section class="admin-view" data-panel="baskets" hidden>
-        <div class="section-title basket-grid-heading"><div><h2>Cestas</h2><p>Gerencie os tipos de produto em uma tabela. O mesmo título aparece em todas as cestas; uma quantidade zero deixa o tipo fora daquela composição.</p></div><div class="basket-admin-controls"><button id="add-basket-type" class="button button-outline" type="button">Adicionar tipo</button><button id="reload-baskets" class="button button-outline" type="button">Atualizar</button><button id="save-basket-grid" class="button button-primary" type="button">Salvar alterações</button></div></div>
+        <div class="section-title basket-grid-heading"><div><h2>Cestas</h2><p>Edite o título, as variações, o valor padrão e as quantidades de cada cesta nesta tela. Quantidade zero deixa o tipo fora daquela composição.</p></div><div class="basket-admin-controls"><button id="add-basket-type" class="button button-outline" type="button">Adicionar tipo</button><button id="reload-baskets" class="button button-outline" type="button">Atualizar</button><button id="save-basket-grid" class="button button-primary" type="button">Salvar alterações</button></div></div>
         <div id="basket-manual-review"></div>
         <div id="admin-baskets" class="admin-basket-grid"><p class="admin-muted">Carregando…</p></div>
         <div class="edit-notice basket-grid-note">
@@ -224,7 +224,7 @@
               <div class="quick-balance-product-copy"><h3 id="quick-balance-name"></h3><p id="quick-balance-identifiers"></p></div>
             </div>
             <div class="quick-balance-stock-grid">
-              <section class="quick-balance-stat"><span>Estoque</span><strong id="quick-balance-current-stock">—</strong></section>
+              <section class="quick-balance-stat"><span>Estoque no Supabase</span><strong id="quick-balance-current-stock">—</strong></section>
               <section class="quick-balance-count">
                 <div class="quick-balance-count-head"><span>Contagem</span><output id="quick-balance-count-value" class="quick-balance-count-value" aria-live="polite">0</output></div>
                 <div class="quick-balance-count-controls">
@@ -457,20 +457,6 @@
     </section>
   </dialog>
 
-  <dialog id="basket-dialog" class="catalog-dialog">
-    <form id="basket-form" class="dialog-form">
-      <header class="dialog-heading"><div><p class="eyebrow">Editar composição</p><h2 id="basket-dialog-title">Cesta</h2></div><button class="icon-button" type="button" data-dialog-close="basket-dialog" aria-label="Fechar">×</button></header>
-      <label class="dialog-field" for="basket-default-price">Valor padrão da cesta
-        <span class="price-input-row"><span>R$</span><input id="basket-default-price" type="number" min="0" max="1000000" step="0.01" inputmode="decimal" required></span>
-      </label>
-      <p id="basket-price-hint" class="dialog-hint">Ajustado automaticamente conforme o produto padrão e as quantidades.</p>
-      <div class="position-heading"><h3>Produtos da cesta</h3><button id="add-basket-position" class="button button-outline" type="button">Adicionar produto</button></div>
-      <div id="basket-position-editor" class="basket-position-editor"></div>
-      <p id="basket-save-message" class="form-message" role="status"></p>
-      <footer class="dialog-actions"><button class="button button-outline" type="button" data-dialog-close="basket-dialog">Cancelar</button><button id="save-basket" class="button button-primary" type="submit">Salvar cesta</button></footer>
-    </form>
-  </dialog>
-
   <dialog id="taxonomy-dialog" class="catalog-dialog taxonomy-dialog" aria-labelledby="taxonomy-title">
     <div class="dialog-form">
       <header class="dialog-heading"><div><p class="eyebrow">Cadastro de produtos</p><h2 id="taxonomy-title">Gerenciar classificações</h2></div><button id="taxonomy-close" class="icon-button" type="button" aria-label="Fechar">×</button></header>
@@ -504,7 +490,7 @@
         <label>Marca<input name="brand"></label><label>SKU<input name="sku"></label>
         <label>GTIN<input name="gtin" inputmode="numeric"></label><label>NCM<input name="ncm"></label>
         <label>Preço (R$)<input name="price" type="number" min="0" step="0.01"></label><label>Preço de oferta (R$)<input name="offer_price" type="number" min="0" step="0.01"></label>
-        <label>Custo (R$)<input name="cost" type="number" min="0" step="0.01"></label><label>Estoque<input name="stock" type="number" min="0" step="0.01"></label>
+        <label>Custo (R$)<input name="cost" type="number" min="0" step="0.01"></label><label>Estoque no Supabase<input name="stock" type="number" min="0" step="0.01"></label>
         <label>Estoque mínimo<input name="min_stock" type="number" min="0" step="0.01"></label><label>Embalagem<input name="packaging"></label>
         <label>Unidade<input name="unit"></label><label>Fornecedor<input name="supplier"></label>
         <label>Categoria<input name="category"></label><label>Subcategoria<input name="subcategory"></label>

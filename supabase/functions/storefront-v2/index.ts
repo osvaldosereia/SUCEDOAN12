@@ -120,24 +120,12 @@ async function basketCarouselItems(baskets:any[]){
 }
 function basketCategoryFields(b:any){const c=Array.isArray(b?.category)?b.category[0]:b?.category;return {category_name:c?.name||null,category_slug:c?.slug||null};}
 // R5_MOLD_STOREFRONT_V1
-const INACTIVE_BASKET_STOCK_MAX_AGE_MS=48*60*60_000;
 async function moldAvailableStockMap(productIds:string[]){
   const ids=[...new Set(productIds.filter(Boolean))];const out=new Map<string,number>();if(!ids.length)return out;
-  const [sq,oq]=await Promise.all([
-    db.from("storefront_ean_sellable_stock_v1").select("product_id,loose_sellable_stock,ean_sellable_stock,is_active,stock_authority,link_status,bling_product_id,selected_deposit_id,sellable_virtual,mirror_observed_at,basket_locked_quantity").in("product_id",ids),
-    db.from("vitrine_stock_reservations").select("product_id,quantity,status,expires_at").in("product_id",ids).in("status",["reserved","allocated"])
-  ]);if(sq.error)throw sq.error;if(oq.error)throw oq.error;
-  const reservedOrders=new Map<string,number>(),now=Date.now();
-  for(const r of oq.data||[]){if(r.expires_at&&new Date(r.expires_at).getTime()<=now)continue;const id=String(r.product_id);reservedOrders.set(id,(reservedOrders.get(id)||0)+Number(r.quantity||0))}
-  for(const r of sq.data||[]){
-    const id=String(r.product_id),observedAt=Date.parse(String(r.mirror_observed_at||""));
-    const freshBling=r.stock_authority==="bling"&&r.link_status==="matched"&&r.bling_product_id!=null&&r.selected_deposit_id!=null&&r.sellable_virtual!=null&&Number.isFinite(observedAt)&&observedAt<=now+5*60_000&&now-observedAt<=INACTIVE_BASKET_STOCK_MAX_AGE_MS;
-    // Use the configured inventory authority: EAN captures override legacy
-    // stock, but must not replace a live Bling stock mirror.
-    const eanAvailable=r.stock_authority!=="bling"&&r.ean_sellable_stock!=null;
-    const base=eanAvailable?Number(r.ean_sellable_stock):r.is_active===true?Number(r.loose_sellable_stock||0):freshBling?Number(r.sellable_virtual||0)-Number(r.basket_locked_quantity||0):0;
-    out.set(id,Math.max(0,base-(eanAvailable?0:(reservedOrders.get(id)||0))));
-  }
+  const {data,error}=await db.from("storefront_product_sellable_stock_v1")
+    .select("product_id,sellable_stock,is_active").in("product_id",ids);
+  if(error)throw error;
+  for(const r of data||[])out.set(String(r.product_id),r.is_active===true?Math.max(0,Number(r.sellable_stock||0)):0);
   return out;
 }
 function moldEffectivePriceCents(p:any){const n=p?.is_offer===true&&p?.offer_price!=null&&Number(p.offer_price)>=0?Number(p.offer_price):Number(p?.price||0);return cents(n)}
@@ -584,9 +572,11 @@ function basketFlowQuoteFromConfig(config:any,payload:any){
   const resultItems:any[]=[],demand=new Map<string,number>(),stockByProduct=new Map<string,number>();
   const addLine=(position:any,option:any,quantity:number,fixed=false)=>{
     if(quantity<1)return;
-    resultItems.push({position_id:position.position_id,product_id:option.product_id,name:option.name,brand:option.brand||"",packaging:option.packaging||"",image_url:option.image_url||"",price_cents:Number(option.price_cents),stock_quantity:Number(option.stock_quantity),quantity,fixed});
-    demand.set(option.product_id,(demand.get(option.product_id)||0)+quantity);
-    stockByProduct.set(option.product_id,Number(option.stock_quantity));
+    resultItems.push({position_id:position.position_id,product_id:option.product_id,name:option.name,brand:option.brand||"",packaging:option.packaging||"",image_url:option.image_url||"",price_cents:Number(option.price_cents),stock_quantity:Number(option.stock_quantity),quantity,fixed,manual_replacement_required:fixed&&Number(option.stock_quantity)<quantity});
+    if(!fixed){
+      demand.set(option.product_id,(demand.get(option.product_id)||0)+quantity);
+      stockByProduct.set(option.product_id,Number(option.stock_quantity));
+    }
   };
   for(const position of config.positions){
     const base=position.base, submittedForPosition=incoming.get(position.position_id);
@@ -615,7 +605,11 @@ function basketFlowQuoteFromConfig(config:any,payload:any){
     if(quantity>Number(stockByProduct.get(productId)||0))return {error:"basket_flow_stock_changed",status:409};
   }
   let productTotal=0,capacity=30;
-  for(const item of resultItems){productTotal+=Math.round(Number(item.price_cents)*Number(item.quantity));capacity=Math.min(capacity,Math.floor(Number(stockByProduct.get(item.product_id)||0)/Number(demand.get(item.product_id)||1)))}
+  for(const item of resultItems){
+    productTotal+=Math.round(Number(item.price_cents)*Number(item.quantity));
+    if(item.fixed)continue;
+    capacity=Math.min(capacity,Math.max(0,Math.floor(Number(stockByProduct.get(item.product_id)||0)/Number(demand.get(item.product_id)||1))));
+  }
   const baseBasket=config.basket,hidden=Number(baseBasket.hidden_adjustment_cents||0);
   const conditional=baseBasket.conditional_hidden_enabled===true&&baseBasket.conditional_hidden_product_id&&resultItems.some((x:any)=>x.product_id===String(baseBasket.conditional_hidden_product_id)&&x.quantity>0)?Number(baseBasket.conditional_hidden_adjustment_cents||0):0;
   const total=Math.max(0,productTotal+hidden+conditional);
@@ -864,8 +858,8 @@ async function queryRowsByIds(table:string,column:string,ids:string[],selection:
 }
 async function sellableMap(ids:string[]){
   const out=new Map<string,number>();if(!ids.length)return out;
-  const rows=await queryRowsByIds("storefront_ean_sellable_stock_v1","product_id",ids,"product_id,loose_sellable_stock,ean_sellable_stock");
-  for(const r of rows)out.set(String(r.product_id),Math.max(0,Number(r.ean_sellable_stock??r.loose_sellable_stock??0)));return out;
+  const rows=await queryRowsByIds("storefront_product_sellable_stock_v1","product_id",ids,"product_id,sellable_stock");
+  for(const r of rows)out.set(String(r.product_id),Math.max(0,Number(r.sellable_stock||0)));return out;
 }
 async function eanCaptureProductIds(){
   const {data,error}=await db.from("ean_capture_records_v1").select("matched_product_id,created_at").eq("sync_status","found").not("matched_product_id","is",null).order("created_at",{ascending:false}).limit(10000);
