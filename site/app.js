@@ -171,9 +171,16 @@
     const rows = data.items.map((item) => {
       const alternatives = item._alternatives || [];
       const selected = alternatives.find((alt) => String(alt.product_id) === String(item.product_id));
-      const image = selected && selected.image_url || item.image_url || "../img/cestas/cesta-mini.jpg";
       const optionCount = Math.max(Number(item.alternative_count || 0), alternatives.length);
       const changingThisItem = String(data.changingPosition || "") === String(item.position_id);
+      const title = item.label || "Produto";
+      const selectedName = selected && selected.name || item.name || "Produto";
+      const selectedImage = selected && selected.image_url || item.image_url || "../img/logoantonia5.png";
+      const selectedPrice = selected && selected.price_cents != null ? selected.price_cents : item.price_cents;
+      const selectedCard = '<div class="product-choice product-choice-static is-selected" aria-label="Produto selecionado">' +
+        '<img src="' + esc(selectedImage) + '" alt="" width="52" height="52" loading="lazy" decoding="async">' +
+        '<span class="product-choice-copy"><strong>' + esc(selectedName) + '</strong><small>' + (selectedPrice == null ? "Preço indisponível" : money(selectedPrice)) + '</small></span>' +
+        '<span class="product-choice-check" aria-hidden="true">✓</span></div>';
 
       const choices = alternatives.map((alt) => {
         const selectedOption = String(alt.product_id) === String(item.product_id);
@@ -185,23 +192,20 @@
           '</button>';
       }).join("");
       const panelContent = item._optionsError
-        ? '<p class="variation-panel-label">Escolha uma marca</p><p class="variation-status" role="alert">Não foi possível carregar as opções.</p><button class="button button-outline variation-retry" type="button" data-retry-position="' + esc(item.position_id) + '">Tentar novamente</button>'
-        : item._optionsLoading || !item._optionsLoaded
-          ? '<p class="variation-panel-label">Escolha uma marca</p><p class="variation-status" role="status">Carregando opções disponíveis…</p>'
+        ? selectedCard + '<p class="variation-status" role="alert">Não foi possível carregar outras opções.</p><button class="button button-outline variation-retry" type="button" data-retry-position="' + esc(item.position_id) + '">Tentar novamente</button>'
+        : item._optionsLoading || (!item._optionsLoaded && optionCount > 1)
+          ? selectedCard + '<p class="variation-status" role="status">Carregando opções disponíveis…</p>'
           : alternatives.length > 1
-            ? '<p class="variation-panel-label">Escolha uma marca</p><div class="product-option-picker" role="group" aria-label="Opções para ' + esc(item.label || item.name) + '">' + choices + '</div>'
-            : '<p class="variation-panel-label">Escolha uma marca</p><p class="variation-status">Só há esta opção disponível no momento.</p>';
-      const optionPicker = optionCount > 1
-        ? '<div class="variation-disclosure"><div class="variation-panel" id="item-options-' + esc(item.position_id) + '" aria-busy="' + String(Boolean(item._optionsLoading || changingThisItem)) + '">' +
-          panelContent +
-          '</div></div>'
-        : "";
+            ? '<p class="variation-panel-label">Escolha uma opção</p><div class="product-option-picker" role="group" aria-label="Opções para ' + esc(title) + '">' + choices + '</div>'
+            : selectedCard;
+      const optionPicker = '<div class="variation-disclosure"><div class="variation-panel" id="item-options-' + esc(item.position_id) + '" aria-busy="' + String(Boolean(item._optionsLoading || changingThisItem)) + '">' +
+        panelContent +
+        '</div></div>';
       const itemQuantity = quantityOf(item);
-      return '<article class="product-row" data-product-row="' + esc(item.position_id) + '"><div class="product-row-main"><img src="' + esc(image) + '" alt="" width="64" height="64" loading="lazy" decoding="async">' +
-        '<div class="product-row-copy"><h3 class="product-name">' + esc(item.name || "Produto") + '</h3><div class="product-quantity-line"><strong>Quantidade:</strong><div class="quantity-stepper">' +
-        '<button class="quantity-button" type="button" data-adjust-position="' + esc(item.position_id) + '" data-delta="-1" aria-label="Diminuir quantidade de ' + esc(item.name || "produto") + '"' + (itemQuantity <= 0 || data.changing || optionsBusy ? " disabled" : "") + '>−</button>' +
+      return '<article class="product-row" data-product-row="' + esc(item.position_id) + '"><div class="product-row-main"><h3 class="product-name">' + esc(title) + '</h3><div class="product-quantity-line"><div class="quantity-stepper">' +
+        '<button class="quantity-button" type="button" data-adjust-position="' + esc(item.position_id) + '" data-delta="-1" aria-label="Diminuir quantidade de ' + esc(title) + '"' + (itemQuantity <= 0 || data.changing || optionsBusy ? " disabled" : "") + '>−</button>' +
         '<output class="quantity-value" data-quantity-value="' + esc(item.position_id) + '" aria-live="polite">' + itemQuantity + '</output>' +
-        '<button class="quantity-button" type="button" data-adjust-position="' + esc(item.position_id) + '" data-delta="1" aria-label="Aumentar quantidade de ' + esc(item.name || "produto") + '"' + (data.changing || optionsBusy ? " disabled" : "") + '>+</button></div></div></div></div>' +
+        '<button class="quantity-button" type="button" data-adjust-position="' + esc(item.position_id) + '" data-delta="1" aria-label="Aumentar quantidade de ' + esc(title) + '"' + (data.changing || optionsBusy ? " disabled" : "") + '>+</button></div></div></div>' +
         optionPicker + "</article>";
     }).join("");
     const note = data.orderable ? "" : '<p class="helper stock-note">Esta composição está sem estoque disponível no momento.</p>';
