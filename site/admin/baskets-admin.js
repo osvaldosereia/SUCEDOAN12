@@ -41,7 +41,22 @@
   function renderBaskets() {
     const host = $("admin-baskets");
     if (!host) return;
-    host.innerHTML = state.baskets.map((basket) => {
+    const manualItems = state.baskets.flatMap((basket) => (basket.positions || []).flatMap((position) =>
+      (position.options || [])
+        .filter((option) => option.metadata?.manual_replacement_required === true)
+        .map((option) => ({ basket, position, option }))
+    ));
+    const manualReview = manualItems.length
+      ? `<section class="edit-notice" aria-labelledby="manual-basket-items-title">
+          <h3 id="manual-basket-items-title">Produtos para ajuste manual</h3>
+          <p>Não há uma opção disponível para estes itens. Altere a composição ou a variação para manter a cesta completa.</p>
+          <ul>${manualItems.map(({ basket, position, option }) => {
+            const product = option.product || productCache.get(String(option.product_id)) || {};
+            return `<li><strong>${esc(basket.name)}</strong> · ${esc(position.label || "Item")} — ${esc(product.name || "Produto")} <button class="button button-outline" type="button" data-edit-basket="${esc(basket.id)}">Alterar cesta</button></li>`;
+          }).join("")}</ul>
+        </section>`
+      : "";
+    host.innerHTML = manualReview + state.baskets.map((basket) => {
       const positions = basket.positions || [];
       const quantity = positions.reduce((sum, position) => sum + Number(position.quantity || 0), 0);
       const options = positions.reduce((sum, position) => sum + (position.options || []).length, 0);
