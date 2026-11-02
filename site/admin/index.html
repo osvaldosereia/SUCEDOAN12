@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="admin.css?v=49">
   <link rel="stylesheet" href="taxonomy-admin.css?v=1">
   <link rel="stylesheet" href="papoai-guard-admin.css?v=1">
-  <link rel="stylesheet" href="baskets-admin.css?v=1">
+  <link rel="stylesheet" href="baskets-admin.css?v=2">
   <link rel="stylesheet" href="whatsapp-campaign-report.css?v=1">
   <link rel="stylesheet" href="orders-admin.css?v=6">
   <link rel="stylesheet" href="quick-balance-admin.css?v=4">
@@ -19,7 +19,7 @@
   <script src="catalog-admin.js?v=14" defer></script>
   <script src="taxonomy-admin.js?v=1" defer></script>
   <script src="papoai-guard-admin.js?v=1" defer></script>
-  <script src="baskets-admin.js?v=3" defer></script>
+  <script src="baskets-admin.js?v=4" defer></script>
   <script src="orders-admin.js?v=6" defer></script>
   <script src="order-message-admin.js?v=3" defer></script>
   <script src="separation-message-admin.js?v=3" defer></script>
@@ -168,11 +168,12 @@
       </section>
 
       <section class="admin-view" data-panel="baskets" hidden>
-        <div class="section-title"><div><h2>Cestas</h2><p>Escolha os produtos e marcas de cada cesta. Você pode repetir as marcas nas outras cestas que também tenham o mesmo item.</p></div><div class="basket-admin-controls"><select id="basket-status" aria-label="Filtrar cestas"><option value="active">Ativas</option><option value="inactive">Inativas</option><option value="all">Todas</option></select><button id="reload-baskets" class="button button-outline" type="button">Atualizar</button></div></div>
-        <div id="admin-baskets" class="admin-basket-list"><p class="admin-muted">Carregando…</p></div>
-        <div class="edit-notice">
-          <strong>Como o valor é calculado</strong>
-          <span>O valor padrão considera o preço do produto marcado como padrão, a quantidade e o ajuste da cesta. Trocar, adicionar ou remover itens atualiza o valor automaticamente.</span>
+        <div class="section-title basket-grid-heading"><div><h2>Cestas</h2><p>Gerencie os tipos de produto em uma tabela. O mesmo título aparece em todas as cestas; uma quantidade zero deixa o tipo fora daquela composição.</p></div><div class="basket-admin-controls"><button id="add-basket-type" class="button button-outline" type="button">Adicionar tipo</button><button id="reload-baskets" class="button button-outline" type="button">Atualizar</button><button id="save-basket-grid" class="button button-primary" type="button">Salvar alterações</button></div></div>
+        <div id="basket-manual-review"></div>
+        <div id="admin-baskets" class="admin-basket-grid"><p class="admin-muted">Carregando…</p></div>
+        <div class="edit-notice basket-grid-note">
+          <strong>Como funcionam as variações</strong>
+          <span>A ordem define a substituição automática: se uma opção for desativada, a próxima opção cadastrada é usada. Se restar só uma opção indisponível em uma cesta, ela permanece ativa e aparece na lista de ajuste manual.</span>
         </div>
       </section>
 
@@ -548,7 +549,7 @@
     <div class="dialog-form">
       <header class="dialog-heading"><div><p class="eyebrow">Buscar e marcar</p><h2>Produtos e variações</h2></div><button class="icon-button" type="button" data-dialog-close="product-picker-dialog" aria-label="Fechar">×</button></header>
       <form id="picker-search" class="customer-search"><label for="picker-query">Nome, marca, SKU ou GTIN</label><div class="product-search-controls"><input id="picker-query" type="search" placeholder="Digite para buscar"><button class="button button-primary" type="submit">Buscar</button></div></form>
-      <p class="dialog-hint">Marque as opções que podem ocupar esta posição. Escolha o produto padrão na tela da cesta.</p>
+      <p class="dialog-hint">Marque as opções deste tipo. A ordem da lista na tabela define a sequência de substituição.</p>
       <div id="picker-results" class="picker-results"><p class="admin-muted">Busque os produtos para começar.</p></div>
       <button id="picker-more" class="button button-outline button-wide" type="button" hidden>Carregar mais resultados</button>
       <footer class="dialog-actions"><button class="button button-outline" type="button" data-dialog-close="product-picker-dialog">Cancelar</button><button id="apply-picker-products" class="button button-primary" type="button">Aplicar seleção</button></footer>
