@@ -104,6 +104,21 @@
   font-size: .86rem;
   font-weight: 750;
 }
+.basket-default-price-sum {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px;
+  color: var(--muted);
+  font-size: .68rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+.basket-default-price-sum strong {
+  color: #665446;
+  font-size: .72rem;
+  font-weight: 800;
+}
 .basket-grid-table-wrap {
   max-width: 100%;
   overflow: auto;
