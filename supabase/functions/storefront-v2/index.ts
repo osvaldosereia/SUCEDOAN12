@@ -365,7 +365,8 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
       position_id:pid,label:pos.label,product_id:product.id,name:product.name,brand:product.brand||"",
       sku:product.sku,gtin:product.gtin,image_url:product.image_url||"",packaging:product.packaging||"",
       stock_quantity:stock,base_quantity:qty,quantity:qty,price_cents:price,
-      alternative_count:alternatives.length,alternatives_loaded:includeAlternatives,
+      // Lightweight details only read the selected product. Use configured options to trigger the follow-up availability lookup.
+      alternative_count:includeAlternatives?alternatives.length:linkedOptions.length,alternatives_loaded:includeAlternatives,
       alternatives:includeAlternatives?publicAlternatives:[],
       manual_replacement_required:manualReplacementRequired
     });
