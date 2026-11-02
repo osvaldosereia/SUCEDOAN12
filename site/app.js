@@ -205,7 +205,10 @@
         optionPicker + "</article>";
     }).join("");
     const note = data.orderable ? "" : '<p class="helper stock-note">Esta composição está sem estoque disponível no momento.</p>';
-    $("detail-content").innerHTML = note + '<div class="product-list">' + rows + "</div>" +
+    const manualReplacementNote = data.items.some((item) => item.manual_replacement_required === true)
+      ? '<p class="helper stock-note">Alguns itens podem ser substituídos durante a separação do pedido.</p>'
+      : "";
+    $("detail-content").innerHTML = note + manualReplacementNote + '<div class="product-list">' + rows + "</div>" +
       '<div data-home-extra-review-mount>' + homeSelectionReviewMarkup(data) + "</div>" + extraCategoriesMarkup(data);
     $("order-button").disabled = !data.orderable;
     $("detail-content").querySelectorAll("[data-retry-position]").forEach((button) => button.addEventListener("click", () => retryItemOptions(button.dataset.retryPosition)));
