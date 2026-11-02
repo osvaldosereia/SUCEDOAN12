@@ -110,6 +110,26 @@
       '<button class="button button-outline basket-grid-add-option" type="button" data-add-variation="' + esc(key) + '">Adicionar variações</button>';
   }
 
+  function basketProductsSumCents(basketId) {
+    return state.types.reduce((total, type) => {
+      const quantity = Number(type.quantities?.[basketId] || 0);
+      if (!Number.isFinite(quantity) || quantity <= 0) return total;
+      const option = Array.isArray(type.options) ? type.options[0] : null;
+      if (!option) return total;
+      const product = option.product || productCache.get(String(option.product_id)) || {};
+      const unitPrice = Number(product.effective_price_cents ?? effectivePrice(product));
+      if (!Number.isFinite(unitPrice) || unitPrice < 0) return total;
+      return total + Math.round(unitPrice) * quantity;
+    }, 0);
+  }
+
+  function updateBasketProductSums() {
+    document.querySelectorAll("[data-basket-product-sum]").forEach((summary) => {
+      const value = summary.querySelector("strong");
+      if (value) value.textContent = money(basketProductsSumCents(summary.dataset.basketProductSum));
+    });
+  }
+
   function renderGrid() {
     const host = $("admin-baskets");
     if (!host) return;
@@ -119,7 +139,7 @@
     const prices = '<section class="basket-default-prices" aria-labelledby="basket-default-prices-title">' +
       '<div class="basket-default-prices-heading"><h3 id="basket-default-prices-title">Valores padrão das cestas</h3><p>Preço exibido inicialmente no site. As variações podem alterar o total.</p></div>' +
       '<div class="basket-default-prices-grid">' + baskets.map((basket) =>
-        '<label class="basket-default-price"><span>' + esc(basket.name) + '</span><span class="basket-default-price-input"><span>R$</span><input type="number" min="0" max="1000000" step="0.01" inputmode="decimal" value="' + esc(priceInputValue(basket.default_price_value ?? basket.default_price_cents)) + '" data-basket-price="' + esc(basket.id) + '" aria-label="Valor padrão da cesta ' + esc(basket.name) + '"></span></label>'
+        '<label class="basket-default-price"><span>' + esc(basket.name) + '</span><span class="basket-default-price-input"><span>R$</span><input type="number" min="0" max="1000000" step="0.01" inputmode="decimal" value="' + esc(priceInputValue(basket.default_price_value ?? basket.default_price_cents)) + '" data-basket-price="' + esc(basket.id) + '" aria-label="Valor padrão da cesta ' + esc(basket.name) + '"></span><small class="basket-default-price-sum" data-basket-product-sum="' + esc(basket.id) + '" aria-live="polite">Soma dos produtos: <strong>' + money(basketProductsSumCents(basket.id)) + '</strong></small></label>'
       ).join("") + '</div></section>';
     if (!types.length) {
       host.innerHTML = prices + '<p class="admin-muted basket-grid-empty">Nenhum tipo cadastrado. Adicione um tipo para começar a montar as cestas.</p>';
@@ -394,6 +414,7 @@
       if (event.target.dataset.typeQuantity != null) {
         const quantity = parseQuantity(event.target.value);
         type.quantities[event.target.dataset.basketId] = quantity == null ? event.target.value : quantity;
+        updateBasketProductSums();
       }
     });
 
