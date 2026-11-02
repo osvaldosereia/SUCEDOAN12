@@ -262,12 +262,13 @@
       const row = Array.from(content.querySelectorAll("[data-product-row]")).find((entry) => entry.dataset.productRow === String(positionId));
       if (!data || !item || !row) return;
   
-      const image = row.querySelector(".product-row-main img");
-      const name = row.querySelector(".product-name");
-      const quantity = row.querySelector(".product-quantity-line strong");
-      if (image) image.src = item.image_url || "../img/cestas/cesta-mini.jpg";
-      if (name) name.textContent = item.name || "Produto";
-      if (quantity) quantity.textContent = "Quantidade:";
+      const selectedAlternative = (item._alternatives || []).find((option) => String(option.product_id) === String(item.product_id));
+      if (selectedAlternative) Object.assign(selectedAlternative, {
+        name: item.name || selectedAlternative.name,
+        image_url: item.image_url || selectedAlternative.image_url,
+        price_cents: item.price_cents ?? selectedAlternative.price_cents,
+        stock_quantity: item.stock_quantity ?? selectedAlternative.stock_quantity,
+      });
       const quantityValue = row.querySelector("[data-quantity-value]");
       if (quantityValue) quantityValue.textContent = String(quantityOf(item));
       row.querySelectorAll("[data-adjust-position]").forEach((button) => {
@@ -278,6 +279,14 @@
         const selected = String(button.dataset.selectProduct) === String(item.product_id);
         button.classList.toggle("is-selected", selected);
         button.setAttribute("aria-pressed", String(selected));
+        if (selected) {
+          const image = button.querySelector("img");
+          const name = button.querySelector(".product-choice-copy strong");
+          const price = button.querySelector(".product-choice-copy small");
+          if (image && item.image_url) image.src = item.image_url;
+          if (name) name.textContent = item.name || "Produto";
+          if (price) price.textContent = money(item.price_cents);
+        }
         let marker = button.querySelector(".product-choice-check");
         if (selected && !marker) {
           marker = document.createElement("span");

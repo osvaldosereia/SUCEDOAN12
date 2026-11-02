@@ -749,6 +749,155 @@ async function basketList(status = "active") {
   return { baskets };
 }
 
+async function basketGridList() {
+  const categoryResult = await db.from("basket_categories").select("id").eq("slug", "cestas-completas").maybeSingle();
+  if (categoryResult.error) throw categoryResult.error;
+  if (!categoryResult.data) return { baskets: [], types: [], manual_replacements: [] };
+  const templatesResult = await db.from("basket_templates")
+    .select("id,name,sort_order")
+    .eq("category_id", categoryResult.data.id)
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true });
+  if (templatesResult.error) throw templatesResult.error;
+  const templateRows = templatesResult.data || [];
+  if (!templateRows.length) return { baskets: [], types: [], manual_replacements: [] };
+
+  const moldResult = await db.from("basket_molds").select("id,basket_id").in("basket_id", templateRows.map((row: any) => row.id));
+  if (moldResult.error) throw moldResult.error;
+  const moldByBasket = new Map((moldResult.data || []).map((row: any) => [String(row.basket_id), row]));
+  const baskets = templateRows.filter((row: any) => moldByBasket.has(String(row.id)));
+  const basketIds = baskets.map((row: any) => String(row.id));
+  const moldIds = baskets.map((row: any) => String(moldByBasket.get(String(row.id)).id));
+  if (!basketIds.length) return { baskets: [], types: [], manual_replacements: [] };
+
+  const [typesResult, optionsResult, quantitiesResult, manualReviewResult, positionsResult] = await Promise.all([
+    db.from("site_basket_product_types").select("id,title,sort_order").order("sort_order", { ascending: true }).order("title", { ascending: true }),
+    db.from("site_basket_product_type_options").select("product_type_id,product_id,sort_order,metadata").order("sort_order", { ascending: true }),
+    db.from("site_basket_product_type_quantities").select("product_type_id,basket_id,quantity").in("basket_id", basketIds),
+    db.rpc("basket_mold_manual_replacement_review_v1", { p_basket_ids: basketIds }),
+    db.from("basket_mold_positions").select("id,metadata,mold_id").in("mold_id", moldIds),
+  ]);
+  if (typesResult.error) throw typesResult.error;
+  if (optionsResult.error) throw optionsResult.error;
+  if (quantitiesResult.error) throw quantitiesResult.error;
+  if (manualReviewResult.error) throw manualReviewResult.error;
+  if (positionsResult.error) throw positionsResult.error;
+
+  const optionRows = optionsResult.data || [];
+  const quantityRows = quantitiesResult.data || [];
+  const manualRows = Array.isArray(manualReviewResult.data) ? manualReviewResult.data : [];
+  const typeIdByPosition = new Map<string, string>();
+  (positionsResult.data || []).forEach((position: any) => {
+    const typeId = position.metadata?.site_basket_product_type_id;
+    if (typeId) typeIdByPosition.set(String(position.id), String(typeId));
+  });
+  const productIds = [...new Set([
+    ...optionRows.map((row: any) => String(row.product_id)),
+    ...manualRows.map((row: any) => String(row.product_id)),
+  ])];
+  const productById = new Map<string, any>();
+  if (productIds.length) {
+    const productsResult = await db.from("products").select(PRODUCT_COLUMNS).in("id", productIds);
+    if (productsResult.error) throw productsResult.error;
+    (productsResult.data || []).forEach((product: any) => productById.set(String(product.id), {
+      ...product,
+      effective_price_cents: productPriceCents(product),
+    }));
+  }
+
+  const optionsByType = new Map<string, any[]>();
+  optionRows.forEach((row: any) => {
+    const typeId = String(row.product_type_id);
+    const options = optionsByType.get(typeId) || [];
+    options.push({
+      product_id: String(row.product_id),
+      sort_order: Number(row.sort_order || 0),
+      metadata: row.metadata || {},
+      product: productById.get(String(row.product_id)) || {},
+    });
+    optionsByType.set(typeId, options);
+  });
+  const quantitiesByType = new Map<string, Record<string, number>>();
+  quantityRows.forEach((row: any) => {
+    const typeId = String(row.product_type_id);
+    const quantities = quantitiesByType.get(typeId) || {};
+    quantities[String(row.basket_id)] = Number(row.quantity || 0);
+    quantitiesByType.set(typeId, quantities);
+  });
+  const types = (typesResult.data || []).map((row: any) => ({
+    id: String(row.id),
+    title: String(row.title || ""),
+    sort_order: Number(row.sort_order || 0),
+    options: optionsByType.get(String(row.id)) || [],
+    quantities: quantitiesByType.get(String(row.id)) || {},
+  }));
+  const manualReplacements = manualRows.map((row: any) => ({
+    basket_id: String(row.basket_id),
+    basket_name: String(row.basket_name || ""),
+    position_id: String(row.position_id),
+    position_label: String(row.position_label || ""),
+    type_id: typeIdByPosition.get(String(row.position_id)) || null,
+    product_id: String(row.product_id),
+    product: productById.get(String(row.product_id)) || {},
+    reason: String(row.reason || "manual_review_required"),
+  }));
+  return {
+    baskets: baskets.map((row: any) => ({ id: String(row.id), name: String(row.name || ""), sort_order: Number(row.sort_order || 0) })),
+    types,
+    manual_replacements: manualReplacements,
+  };
+}
+
+async function basketGridSave(input: any) {
+  const inputTypes = Array.isArray(input.types) ? input.types.slice(0, 80) : null;
+  if (!inputTypes?.length) return { status: 400, error: "basket_grid_types_required", message: "Adicione pelo menos um tipo de produto." };
+  if (Array.isArray(input.types) && input.types.length > 80) return { status: 400, error: "basket_grid_too_many_types", message: "A grade aceita até 80 tipos de produto." };
+
+  const normalized = [] as Array<Record<string, any>>;
+  const typeIds = new Set<string>();
+  for (const type of inputTypes) {
+    const rawId = type?.id;
+    const typeId = rawId == null || rawId === "" ? null : uuid(rawId);
+    const title = clean(type?.title, 180);
+    const rawOptionInput = Array.isArray(type?.options) ? type.options : null;
+    const rawQuantities = type?.quantities && typeof type.quantities === "object" && !Array.isArray(type.quantities) ? type.quantities : null;
+    if ((rawId != null && rawId !== "" && !typeId) || !title || !rawOptionInput || rawOptionInput.length > 40 || !rawQuantities) {
+      return { status: 400, error: "invalid_basket_grid_type", message: "Revise os títulos, as quantidades e as variações da grade." };
+    }
+    const rawOptions = rawOptionInput.slice(0, 40);
+    if (typeId && typeIds.has(typeId)) return { status: 400, error: "duplicate_basket_grid_type", message: "Há tipos repetidos na grade." };
+    if (typeId) typeIds.add(typeId);
+    const options = [] as Array<Record<string, any>>;
+    const productIds = new Set<string>();
+    for (const option of rawOptions) {
+      const productId = uuid(option?.product_id);
+      if (!productId || productIds.has(productId)) {
+        return { status: 400, error: "invalid_basket_grid_option", message: "Remova variações inválidas ou repetidas." };
+      }
+      productIds.add(productId);
+      const metadata = option?.metadata && typeof option.metadata === "object" && !Array.isArray(option.metadata) ? option.metadata : {};
+      options.push({ product_id: productId, metadata });
+    }
+    const quantities: Record<string, number> = {};
+    for (const [basketId, value] of Object.entries(rawQuantities)) {
+      const quantity = integer(value, 0, 999);
+      if (!uuid(basketId) || quantity === null) {
+        return { status: 400, error: "invalid_basket_grid_quantity", message: "Informe quantidades inteiras iguais ou maiores que zero." };
+      }
+      quantities[basketId] = quantity;
+    }
+    normalized.push({ id: typeId, title, options, quantities });
+  }
+
+  const saved = await db.rpc("site_admin_save_basket_grid_v1", {
+    p_rows: normalized,
+    p_operator: "Admin site Dona Antônia",
+  });
+  if (saved.error) throw saved.error;
+  return { saved: true, result: saved.data || {} };
+}
+
 async function basketSetActive(input: any) {
   const basketId = uuid(input.basket_id);
   if (!basketId || typeof input.is_active !== "boolean") {
@@ -3959,6 +4108,7 @@ Deno.serve(async (req: Request) => {
       const status = ["active", "inactive", "all"].includes(input.status) ? input.status : "active";
       result = await basketList(status);
     }
+    else if (req.method === "GET" && action === "basket_grid") result = await basketGridList();
     else if (req.method === "POST" && action === "quick_balance_lookup") result = await quickBalanceLookup(input);
     else if (req.method === "POST" && action === "quick_balance_save") result = await quickBalanceSave(input);
     else if (req.method === "GET" && action === "products") result = await productSearch(input);
@@ -3966,6 +4116,7 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "product_set_active") result = await productSetActive(input);
     else if (req.method === "POST" && action === "product_set_most_sold") result = await productSetMostSold(input);
     else if (req.method === "POST" && action === "basket_save") result = await basketSave(input);
+    else if (req.method === "POST" && action === "basket_grid_save") result = await basketGridSave(input);
     else if (req.method === "POST" && action === "basket_set_active") result = await basketSetActive(input);
     else if (req.method === "GET" && action === "orders_list") result = await ordersList(input);
     else if (req.method === "GET" && action === "order_detail") result = await orderDetail(input);
