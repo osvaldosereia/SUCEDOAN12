@@ -683,6 +683,16 @@ async function basketList(status = "active") {
     if (result.error) throw result.error;
     productById = new Map((result.data || []).map((product: any) => [String(product.id), product]));
   }
+  const manualReviewResult = await db.rpc("basket_mold_manual_replacement_review_v1", {
+    p_basket_ids: (templates.data || []).map((basket: any) => basket.id),
+  });
+  if (manualReviewResult.error) throw manualReviewResult.error;
+  const manualReviewByOption = new Map<string, string>(
+    (Array.isArray(manualReviewResult.data) ? manualReviewResult.data : []).map((row: any) => [
+      String(row.position_id) + ":" + String(row.product_id),
+      String(row.reason || "manual_review_required"),
+    ] as [string, string]),
+  );
 
   const baskets = valid.map(({ basket, editor: rawEditor }) => {
     const editor = rawEditor || {};
@@ -698,11 +708,14 @@ async function basketList(status = "active") {
         shared_item_id: sharedItem?.id || null,
         options: (position.options || []).slice().sort((a: any, b: any) => Number(a.sort_order || 0) - Number(b.sort_order || 0)).map((option: any) => {
           const product = productById.get(String(option.product_id)) || {};
+          const manualReason = manualReviewByOption.get(String(position.position_id) + ":" + String(option.product_id));
           return {
             option_id: option.option_id,
             product_id: option.product_id,
             sort_order: Number(option.sort_order || 0),
-            metadata: option.metadata || {},
+            metadata: manualReason
+              ? { ...(option.metadata || {}), manual_replacement_required: true, manual_replacement_reason: manualReason }
+              : option.metadata || {},
             product: { ...product, effective_price_cents: productPriceCents(product) },
           };
         }),
