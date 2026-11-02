@@ -8,186 +8,171 @@
   const $ = (id) => document.getElementById(id);
   const state = {
     baskets: [],
-    basket: null,
-    initialPositions: new Map(),
-    pickerIndex: -1,
+    types: [],
+    manualReplacements: [],
+    pickerTypeKey: "",
     pickerQuery: "",
     pickerOffset: 0,
     pickerTotal: 0,
     pickerSelected: new Set(),
-    basketsStatus: "active",
+    loading: false,
+    saving: false,
   };
 
-  function basketProductTotal(basket) {
-    return (basket.positions || []).reduce((total, position) => {
-      const product = position.options?.[0]?.product;
-      const price = Number(product?.effective_price_cents ?? effectivePrice(product || {}));
-      return total + Math.round(price * Number(position.quantity || 0));
-    }, 0);
+  function typeKey(type, index = 0) {
+    return String(type.id || type._key || ("new-" + index));
   }
 
-  function conditionalAdjustment(basket) {
-    if (!basket.conditional_hidden_enabled || !basket.conditional_hidden_product_id) return 0;
-    const includesConditionalProduct = (basket.positions || []).some((position) =>
-      String(position.options?.[0]?.product_id) === String(basket.conditional_hidden_product_id) && Number(position.quantity) > 0
-    );
-    return includesConditionalProduct ? Number(basket.conditional_hidden_adjustment_cents || 0) : 0;
+  function findType(key) {
+    return state.types.find((type, index) => typeKey(type, index) === String(key));
   }
 
-  function currentBasketPrice(basket) {
-    return Math.max(0, basketProductTotal(basket) + Number(basket.hidden_adjustment_cents || 0) + conditionalAdjustment(basket));
+  function quantityValue(value) {
+    const number = Number(value || 0);
+    return Number.isFinite(number) ? String(number) : "0";
   }
 
-  function renderBaskets() {
+  function productStatus(product) {
+    if (product?.is_active === true) return { text: "Ativo", className: "is-active" };
+    if (product?.is_active === false) return { text: "Inativo", className: "is-inactive" };
+    return { text: "Status indisponível", className: "is-unknown" };
+  }
+
+  function renderManualReview() {
+    const host = $("basket-manual-review");
+    if (!host) return;
+    const rows = state.manualReplacements || [];
+    host.innerHTML = rows.length
+      ? '<section class="basket-manual-review" aria-labelledby="basket-manual-review-title">' +
+          '<div class="basket-manual-review-heading"><div><h3 id="basket-manual-review-title">Produtos para ajuste manual</h3><p>A cesta continua ativa e pode receber pedidos. Revise estas opções quando puder.</p></div><span>' + rows.length + '</span></div>' +
+          '<ul>' + rows.map((row) => {
+            const type = state.types.find((item) => String(item.id) === String(row.type_id));
+            const title = type?.title || row.position_label || "Produto da cesta";
+            const product = row.product || productCache.get(String(row.product_id)) || {};
+            const reason = row.reason === "only_configured_option_unavailable"
+              ? "Única opção da cesta indisponível"
+              : row.reason === "replacement_product_inactive"
+                ? "Variação substituta inativa"
+                : "Sem opção com estoque suficiente";
+            const manage = row.type_id
+              ? '<button class="button button-outline" type="button" data-manual-type="' + esc(row.type_id) + '">Gerenciar variações</button>'
+              : "";
+            return '<li><div class="basket-manual-review-copy"><strong>' + esc(row.basket_name || "Cesta") + '</strong><span>' + esc(title) + ' · ' + esc(product.name || "Produto") + '</span><small>' + esc(reason) + '</small></div>' + manage + '</li>';
+          }).join("") + '</ul></section>'
+      : "";
+  }
+
+  function renderOptions(type, key) {
+    const options = Array.isArray(type.options) ? type.options : [];
+    const list = options.map((option, index) => {
+      const product = option.product || productCache.get(String(option.product_id)) || {};
+      const status = productStatus(product);
+      const price = product.effective_price_cents ?? effectivePrice(product);
+      const stock = product.stock == null ? "Estoque não informado" : "Estoque " + quantityValue(product.stock);
+      const brand = product.brand ? " · " + esc(product.brand) : "";
+      const defaultBadge = index === 0 ? ' <small class="basket-grid-default">Padrão</small>' : "";
+      return '<div class="basket-grid-option">' +
+        '<span class="basket-grid-option-order" aria-label="Opção ' + (index + 1) + '">' + (index + 1) + '</span>' +
+        '<div class="basket-grid-option-copy"><strong>' + esc(product.name || "Produto") + brand + defaultBadge + '</strong><span>' + money(price) + '/un. · ' + esc(stock) + '</span><small class="basket-option-status ' + status.className + '">' + status.text + '</small></div>' +
+        '<div class="basket-grid-option-actions">' +
+          '<button class="text-button" type="button" data-move-option="-1" data-type-key="' + esc(key) + '" data-product-id="' + esc(option.product_id) + '" aria-label="Subir opção ' + esc(product.name || "Produto") + '"' + (index === 0 ? " disabled" : "") + '>↑</button>' +
+          '<button class="text-button" type="button" data-move-option="1" data-type-key="' + esc(key) + '" data-product-id="' + esc(option.product_id) + '" aria-label="Descer opção ' + esc(product.name || "Produto") + '"' + (index === options.length - 1 ? " disabled" : "") + '>↓</button>' +
+          '<button class="text-button danger-text" type="button" data-remove-option="true" data-type-key="' + esc(key) + '" data-product-id="' + esc(option.product_id) + '" aria-label="Remover ' + esc(product.name || "Produto") + '">×</button>' +
+          '<button class="text-button product-edit-mini" type="button" data-edit-product="' + esc(option.product_id) + '">Editar</button>' +
+        '</div></div>';
+    }).join("");
+    return '<div class="basket-grid-options">' + (list || '<p class="admin-muted">Nenhuma variação cadastrada.</p>') + '</div>' +
+      '<button class="button button-outline basket-grid-add-option" type="button" data-add-variation="' + esc(key) + '">Adicionar variações</button>';
+  }
+
+  function renderGrid() {
     const host = $("admin-baskets");
     if (!host) return;
-    const manualItems = state.baskets.flatMap((basket) => (basket.positions || []).flatMap((position) =>
-      (position.options || [])
-        .filter((option) => option.metadata?.manual_replacement_required === true)
-        .map((option) => ({ basket, position, option }))
-    ));
-    const manualReview = manualItems.length
-      ? `<section class="edit-notice" aria-labelledby="manual-basket-items-title">
-          <h3 id="manual-basket-items-title">Produtos para ajuste manual</h3>
-          <p>Não há uma opção disponível para estes itens. Altere a composição ou a variação para manter a cesta completa.</p>
-          <ul>${manualItems.map(({ basket, position, option }) => {
-            const product = option.product || productCache.get(String(option.product_id)) || {};
-            return `<li><strong>${esc(basket.name)}</strong> · ${esc(position.label || "Item")} — ${esc(product.name || "Produto")} <button class="button button-outline" type="button" data-edit-basket="${esc(basket.id)}">Alterar cesta</button></li>`;
-          }).join("")}</ul>
-        </section>`
-      : "";
-    host.innerHTML = manualReview + state.baskets.map((basket) => {
-      const positions = basket.positions || [];
-      const quantity = positions.reduce((sum, position) => sum + Number(position.quantity || 0), 0);
-      const options = positions.reduce((sum, position) => sum + (position.options || []).length, 0);
-      const normalizedName = String(basket.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-      const sizeKey = normalizedName.includes("econom") ? "economica" : normalizedName.includes("grande") ? "grande" : normalizedName.includes("media") ? "media" : normalizedName.includes("pequena") ? "pequena" : normalizedName.includes("mini") ? "mini" : "";
-      const image = sizeKey ? `../assets/cestas/cesta-${sizeKey}.jpg` : basket.image_url;
-      const imageMarkup = image
-        ? `<img src="${esc(image)}" alt="" width="76" height="76" loading="lazy" decoding="async">`
-        : '<span class="product-image-placeholder">DA</span>';
-      const action = basket.is_active === false
-        ? `<button class="button button-outline" type="button" data-set-basket-active="true" data-basket-id="${esc(basket.id)}">Reativar</button>`
-        : positions.length
-          ? `<button class="button button-primary" type="button" data-edit-basket="${esc(basket.id)}">Editar</button>`
-          : `<button class="button button-outline danger-button" type="button" data-set-basket-active="false" data-basket-id="${esc(basket.id)}">Desativar kit</button>`;
-      const summary = positions.length
-        ? `${positions.length} itens · ${quantity} unidades · ${options} opções`
-        : "Sem composição cadastrada · não aparece na vitrine";
-      const price = positions.length ? money(currentBasketPrice(basket)) : "Sem composição";
-      return `<article class="catalog-basket-card">
-        ${imageMarkup}
-        <div class="catalog-basket-info"><h3>${esc(basket.name)}</h3><span>${summary}</span><strong>${price}</strong></div>
-        ${action}
-      </article>`;
-    }).join("") || '<p class="admin-muted">Nenhuma cesta encontrada.</p>';
+    renderManualReview();
+    const baskets = state.baskets || [];
+    const types = state.types || [];
+    if (!types.length) {
+      host.innerHTML = '<p class="admin-muted basket-grid-empty">Nenhum tipo cadastrado. Adicione um tipo para começar a montar as cestas.</p>';
+      return;
+    }
+    const headers = baskets.map((basket) => '<th scope="col"><span>' + esc(basket.name) + '</span><small>unidades</small></th>').join("");
+    const rows = types.map((type, index) => {
+      const key = typeKey(type, index);
+      const quantities = type.quantities || {};
+      const quantityCells = baskets.map((basket) => {
+        const value = quantityValue(quantities[basket.id]);
+        return '<td><label class="basket-grid-quantity"><span class="visually-hidden">Quantidade de ' + esc(type.title || "tipo") + ' na cesta ' + esc(basket.name) + '</span><input type="number" min="0" max="999" step="1" value="' + esc(value) + '" data-type-quantity="' + esc(key) + '" data-basket-id="' + esc(basket.id) + '"></label></td>';
+      }).join("");
+      return '<tr id="basket-type-' + esc(key) + '">' +
+        '<th scope="row"><div class="basket-grid-title-cell"><div class="basket-grid-order">' +
+          '<button class="text-button" type="button" data-move-type="-1" data-type-key="' + esc(key) + '" aria-label="Subir tipo"' + (index === 0 ? " disabled" : "") + '>↑</button>' +
+          '<button class="text-button" type="button" data-move-type="1" data-type-key="' + esc(key) + '" aria-label="Descer tipo"' + (index === types.length - 1 ? " disabled" : "") + '>↓</button>' +
+        '</div><label class="basket-grid-title-field"><span>Título exibido no site</span><input type="text" maxlength="180" placeholder="Ex.: Arroz" value="' + esc(type.title || "") + '" data-type-title="' + esc(key) + '"></label>' +
+        '<button class="text-button danger-text" type="button" data-delete-type="' + esc(key) + '">Excluir tipo</button></div></th>' +
+        '<td class="basket-grid-variations">' + renderOptions(type, key) + '</td>' + quantityCells + '</tr>';
+    }).join("");
+    host.innerHTML = '<div class="basket-grid-table-wrap"><table class="basket-grid-table"><thead><tr><th scope="col">Tipo e título</th><th scope="col">Variações · ordem de substituição</th>' + headers + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
   async function loadBaskets() {
     const host = $("admin-baskets");
-    if (!host) return;
-    host.innerHTML = '<p class="admin-muted">Carregando cestas…</p>';
+    if (!host || state.loading) return;
+    state.loading = true;
+    host.innerHTML = '<p class="admin-muted">Carregando tipos e cestas…</p>';
     try {
-      const result = await request("baskets", { params: { status: state.basketsStatus } });
-      state.baskets = result.baskets || [];
-      renderBaskets();
+      const data = await request("basket_grid", { params: {} });
+      state.baskets = data.baskets || [];
+      state.types = (data.types || []).map((type, index) => ({
+        ...type,
+        _key: type.id || ("loaded-" + index),
+        options: (type.options || []).map((option) => {
+          if (option.product) productCache.set(String(option.product_id), option.product);
+          return option;
+        }),
+        quantities: Object.fromEntries(state.baskets.map((basket) => [basket.id, Number(type.quantities?.[basket.id] || 0)])),
+      }));
+      state.manualReplacements = data.manual_replacements || [];
+      state.manualReplacements.forEach((row) => {
+        if (row.product) productCache.set(String(row.product_id), row.product);
+      });
+      renderGrid();
     } catch (error) {
-      host.innerHTML = `<p class="admin-muted" role="alert">${esc(error.message || "Não foi possível carregar as cestas.")}</p><button id="retry-baskets" class="button button-outline" type="button">Tentar novamente</button>`;
+      host.innerHTML = '<p class="admin-muted" role="alert">' + esc(error.message || "Não foi possível carregar a grade de cestas.") + '</p><button id="retry-baskets" class="button button-outline" type="button">Tentar novamente</button>';
+    } finally {
+      state.loading = false;
     }
   }
 
-  function renderPositions() {
-    const host = $("basket-position-editor");
-    if (!host || !state.basket) return;
-    host.innerHTML = (state.basket.positions || []).map((position, index) => {
-      const options = position.options || [];
-      const shareChecked = position.share_options_across_baskets === true;
-      const shareControl = state.basket.shareable === true ? `<label class="basket-share-toggle">
-          <input type="checkbox" data-share-options="${index}" ${shareChecked ? "checked" : ""}>
-          <span class="basket-share-copy"><strong>Repetir estas marcas nas outras cestas</strong><small>Apenas nas cestas que já têm este item.</small></span>
-        </label>` : "";
-      return `<article class="basket-position-card" data-position="${index}">
-        <header><strong>Item ${index + 1}</strong><button class="text-button danger-text" type="button" data-remove-position="${index}">Remover item</button></header>
-        <div class="position-fields"><label>Nome do item<input data-position-label="${index}" value="${esc(position.label || "")}" maxlength="180" placeholder="Ex.: Arroz"></label>
-          <label>Unidades na cesta<input data-position-quantity="${index}" type="number" min="0.01" max="999" step="0.01" value="${esc(position.quantity ?? 1)}"></label></div>
-        <div class="position-options"><strong>Marcas/opções <small>Marque o padrão</small></strong>
-          ${options.length ? options.map((option, optionIndex) => {
-            const product = option.product || productCache.get(String(option.product_id)) || {};
-            const status = product.is_active === true ? "Ativo" : product.is_active === false ? "Inativo" : "Status indisponível";
-            const statusClass = product.is_active === true ? "is-active" : product.is_active === false ? "is-inactive" : "is-unknown";
-            return `<div class="basket-option-row">
-              <label class="basket-option-choice">
-                <input type="radio" name="basket-default-${index}" value="${esc(option.product_id)}" data-default-option="${index}" ${optionIndex === 0 ? "checked" : ""}>
-                <span class="basket-option-copy"><strong>${esc(product.name || "Produto")}${product.brand ? ` · ${esc(product.brand)}` : ""}</strong>
-                  <small>${esc(product.sku || "Sem SKU")} · ${money(product.effective_price_cents || 0)}/un.</small>
-                  <small class="basket-option-status ${statusClass}">${status}</small></span>
-              </label>
-              <div class="basket-option-actions">
-                <button class="text-button product-edit-mini" type="button" data-edit-product="${esc(option.product_id)}">Editar</button>
-                <button class="text-button danger-text" type="button" data-remove-option="${index}" data-product-id="${esc(option.product_id)}" aria-label="Remover opção" title="Remover opção">×</button>
-              </div>
-            </div>`;
-          }).join("") : '<p class="admin-muted">Nenhuma marca selecionada. Adicione produtos para esta posição.</p>'}
-        </div>
-        <button class="button button-outline button-wide" type="button" data-pick-products="${index}">Buscar e marcar produtos</button>
-        ${shareControl}
-      </article>`;
-    }).join("");
-    updateBasketPrice();
-  }
-
-  function updateBasketPrice() {
-    if (!state.basket) return;
-    const priceCents = currentBasketPrice(state.basket);
-    $("basket-default-price").value = (priceCents / 100).toFixed(2);
-    $("basket-price-hint").textContent = `Produtos padrão: ${money(basketProductTotal(state.basket))} · ajuste da cesta: ${money(state.basket.hidden_adjustment_cents)}. O total será atualizado ao trocar marcas ou quantidades.`;
-  }
-
-  function openBasket(basket) {
-    state.basket = JSON.parse(JSON.stringify(basket));
-    state.basket.positions = state.basket.positions || [];
-    state.initialPositions = new Map();
-    state.basket.positions.forEach((position, index) => {
-      position.options = position.options || [];
-      position.options.forEach((option) => productCache.set(String(option.product_id), option.product || {}));
-      position.share_key = position.id ? `position:${position.id}` : `new:${index}`;
-      position.share_options_across_baskets = Boolean(position.shared_item_id);
-      state.initialPositions.set(position.share_key, {
-        label: String(position.label || ""),
-        sharedItemId: position.shared_item_id || null,
-        optionIds: position.options.map((option) => String(option.product_id)),
-      });
-    });
-    $("basket-dialog-title").textContent = `Editar ${basket.name}`;
-    $("basket-save-message").textContent = "";
-    renderPositions();
-    const dialog = $("basket-dialog");
-    if (!dialog.open) dialog.showModal();
-  }
-
-  function addPosition() {
-    if (!state.basket) return;
-    state.basket.positions.push({
-      label: "",
-      quantity: 1,
-      sort_order: state.basket.positions.length,
-      metadata: {},
+  function addType() {
+    if (state.types.length >= 80) {
+      toast("A grade aceita até 80 tipos de produto.");
+      return;
+    }
+    const key = "new-" + Date.now().toString(36) + "-" + state.types.length;
+    state.types.push({
+      id: null,
+      _key: key,
+      title: "",
+      sort_order: state.types.length,
       options: [],
-      share_key: `new:${Date.now()}:${state.basket.positions.length}`,
-      share_options_across_baskets: false,
+      quantities: Object.fromEntries(state.baskets.map((basket) => [basket.id, 0])),
     });
-    renderPositions();
-    $("basket-position-editor").lastElementChild?.scrollIntoView({ behavior: "smooth", block: "center" });
+    renderGrid();
+    const row = document.getElementById("basket-type-" + key);
+    row?.scrollIntoView({ behavior: "smooth", block: "center" });
+    row?.querySelector("[data-type-title]")?.focus();
   }
 
-  async function openPicker(positionIndex) {
-    state.pickerIndex = positionIndex;
-    state.pickerSelected = new Set((state.basket.positions[positionIndex].options || []).map((option) => String(option.product_id)));
+  async function openPicker(key) {
+    const type = findType(key);
+    if (!type) return;
+    state.pickerTypeKey = String(key);
+    state.pickerSelected = new Set((type.options || []).map((option) => String(option.product_id)));
     state.pickerQuery = "";
     state.pickerOffset = 0;
     $("picker-query").value = "";
     $("picker-results").innerHTML = '<p class="admin-muted">Carregando produtos…</p>';
-    $("product-picker-dialog").showModal();
+    if (!$("product-picker-dialog").open) $("product-picker-dialog").showModal();
     await loadPickerProducts(true);
   }
 
@@ -199,132 +184,119 @@
       const data = await request("products", { params: { q: state.pickerQuery, status: "all", offset: state.pickerOffset, limit: 24 } });
       state.pickerTotal = Number(data.total || 0);
       (data.products || []).forEach((product) => productCache.set(String(product.id), product));
-      const rows = (data.products || []).map((product) => `<label class="picker-product-row">
-        <input type="checkbox" value="${esc(product.id)}" data-picker-product ${state.pickerSelected.has(String(product.id)) ? "checked" : ""}>
-        <span><strong>${esc(product.name)}</strong><small>${esc([product.brand, product.sku && `SKU ${product.sku}`, product.is_active ? "Ativo" : "Inativo"].filter(Boolean).join(" · "))}</small></span><b>${money(product.effective_price_cents ?? effectivePrice(product))}</b>
-      </label>`).join("");
+      const rows = (data.products || []).map((product) => '<label class="picker-product-row">' +
+        '<input type="checkbox" value="' + esc(product.id) + '" data-picker-product ' + (state.pickerSelected.has(String(product.id)) ? "checked" : "") + '>' +
+        '<span><strong>' + esc(product.name) + '</strong><small>' + esc([product.brand, product.sku && ("SKU " + product.sku), product.is_active ? "Ativo" : "Inativo"].filter(Boolean).join(" · ")) + '</small></span><b>' + money(product.effective_price_cents ?? effectivePrice(product)) + '</b></label>').join("");
       if (reset) host.innerHTML = "";
       if (!rows && reset) host.innerHTML = '<p class="admin-muted">Nenhum produto encontrado.</p>';
       host.insertAdjacentHTML("beforeend", rows);
       state.pickerOffset += (data.products || []).length;
       $("picker-more").hidden = state.pickerOffset >= state.pickerTotal;
     } catch (error) {
-      host.innerHTML = `<p class="admin-muted">${esc(error.message || "Falha ao buscar produtos.")}</p>`;
+      host.innerHTML = '<p class="admin-muted" role="alert">' + esc(error.message || "Falha ao buscar produtos.") + '</p>';
     }
   }
 
   function applyPicker() {
-    const position = state.basket?.positions?.[state.pickerIndex];
-    if (!position) return;
-    const previous = new Map((position.options || []).map((option) => [String(option.product_id), option]));
-    position.options = [...state.pickerSelected].map((id) => {
-      const existing = previous.get(id);
-      const product = productCache.get(id) || existing?.product || {};
-      return { product_id: id, product, metadata: existing?.metadata || {} };
-    });
+    const type = findType(state.pickerTypeKey);
+    if (!type) return;
+    const previous = new Map((type.options || []).map((option) => [String(option.product_id), option]));
+    const selected = (type.options || []).filter((option) => state.pickerSelected.has(String(option.product_id)));
+    const added = [...state.pickerSelected]
+      .filter((id) => !previous.has(id))
+      .map((id) => ({ product_id: id, product: productCache.get(id) || {}, metadata: {} }));
+    type.options = [...selected, ...added];
     $("product-picker-dialog").close();
-    renderPositions();
+    renderGrid();
   }
 
-  function sameOptionSet(before, after) {
-    if (before.length !== after.length) return false;
-    const previous = new Set(before);
-    return after.every((id) => previous.has(id));
+  function moveType(key, delta) {
+    const index = state.types.findIndex((type, itemIndex) => typeKey(type, itemIndex) === String(key));
+    const next = index + delta;
+    if (index < 0 || next < 0 || next >= state.types.length) return;
+    const item = state.types.splice(index, 1)[0];
+    state.types.splice(next, 0, item);
+    renderGrid();
   }
 
-  function shareChangesForSave() {
-    const changes = [];
-    (state.basket?.positions || []).forEach((position) => {
-      const original = state.initialPositions.get(position.share_key);
-      const previouslyShared = Boolean(original?.sharedItemId);
-      const shouldShare = position.share_options_across_baskets === true;
+  function moveOption(key, productId, delta) {
+    const type = findType(key);
+    if (!type) return;
+    const index = type.options.findIndex((option) => String(option.product_id) === String(productId));
+    const next = index + delta;
+    if (index < 0 || next < 0 || next >= type.options.length) return;
+    const option = type.options.splice(index, 1)[0];
+    type.options.splice(next, 0, option);
+    renderGrid();
+  }
 
-      if (previouslyShared && !shouldShare) {
-        changes.push({ action: "disable", shared_item_id: original.sharedItemId });
+  function parseQuantity(value) {
+    if (value === "" || value == null) return 0;
+    const number = Number(String(value).replace(",", "."));
+    return Number.isInteger(number) ? number : null;
+  }
+
+  async function saveGrid() {
+    if (state.saving) return;
+    const button = $("save-basket-grid");
+    const payload = [];
+    for (const [index, type] of state.types.entries()) {
+      const title = String(type.title || "").trim();
+      if (!title) {
+        toast("Informe o título de cada tipo de produto.");
+        document.getElementById("basket-type-" + typeKey(type, index))?.querySelector("[data-type-title]")?.focus();
         return;
       }
-      if (!shouldShare) return;
-
-      const optionIds = (position.options || []).map((option) => String(option.product_id));
-      const changed = !previouslyShared || original.label !== String(position.label || "") || !sameOptionSet(original.optionIds, optionIds);
-      if (!changed) return;
-      changes.push({
-        action: "upsert",
-        shared_item_id: original?.sharedItemId || null,
-        old_label: original?.label || String(position.label || ""),
-        label: String(position.label || ""),
-        options: optionIds,
+      if (!type.options?.length) {
+        toast("Adicione pelo menos uma variação para " + title + ".");
+        document.getElementById("basket-type-" + typeKey(type, index))?.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+      const quantities = {};
+      for (const basket of state.baskets) {
+        const value = parseQuantity(type.quantities?.[basket.id]);
+        if (value == null || value < 0 || value > 999) {
+          toast("Informe uma quantidade inteira de 0 a 999 para " + title + " na cesta " + basket.name + ".");
+          return;
+        }
+        quantities[basket.id] = value;
+      }
+      payload.push({
+        id: type.id || null,
+        title,
+        quantities,
+        options: type.options.map((option) => ({ product_id: option.product_id, metadata: option.metadata || {} })),
       });
-    });
-    return changes;
-  }
-
-  function numberFromPrice(value) {
-    if (value === "" || value == null) return null;
-    const number = Number(String(value).replace(",", "."));
-    return Number.isFinite(number) ? number : null;
-  }
-
-  function priceToCents(value) {
-    return Math.round((numberFromPrice(value) || 0) * 100);
-  }
-
-  async function saveBasket(event) {
-    event.preventDefault();
-    const basket = state.basket;
-    if (!basket) return;
-    const button = $("save-basket");
-    const targetPrice = priceToCents($("basket-default-price").value);
+    }
+    if (!payload.length) {
+      toast("Adicione pelo menos um tipo de produto.");
+      return;
+    }
+    state.saving = true;
     button.disabled = true;
     button.textContent = "Salvando…";
-    $("basket-save-message").textContent = "";
     try {
-      const result = await request("basket_save", { method: "POST", body: {
-        basket_id: basket.id,
-        target_price_cents: targetPrice,
-        public_composition_count: basket.public_composition_count || 1,
-        positions: basket.positions.map((position, index) => ({
-          label: position.label,
-          quantity: numberFromPrice(position.quantity),
-          sort_order: index,
-          metadata: position.metadata || {},
-          options: (position.options || []).map((option, optionIndex) => ({ product_id: option.product_id, metadata: option.metadata || {}, sort_order: optionIndex })),
-        })),
-        share_changes: shareChangesForSave(),
-      } });
-      basket.hidden_adjustment_cents = Number(result.hidden_adjustment_cents || 0);
-      basket.display_price_cents = targetPrice;
-      $("basket-dialog").close();
-      const sharedCount = Number(result.shared_item_updates || 0);
-      toast(sharedCount
-        ? `Composição salva. ${sharedCount} item(ns) compartilhado(s) nas cestas que já os têm.`
-        : "Composição da cesta salva.");
+      await request("basket_grid_save", { method: "POST", body: { types: payload } });
+      toast("Grade de cestas salva.");
       await loadBaskets();
     } catch (error) {
-      $("basket-save-message").textContent = error.message || "Não foi possível salvar a cesta.";
+      toast(error.message || "Não foi possível salvar a grade de cestas.");
     } finally {
+      state.saving = false;
       button.disabled = false;
-      button.textContent = "Salvar cesta";
+      button.textContent = "Salvar alterações";
     }
   }
 
   async function productSaved(product) {
     productCache.set(String(product.id), product);
-    if (state.basket) {
-      let changed = false;
-      (state.basket.positions || []).forEach((position) => (position.options || []).forEach((option) => {
-        if (String(option.product_id) !== String(product.id)) return;
-        option.product = product;
-        changed = true;
-      }));
-      if (changed) {
-        const dialog = $("basket-dialog");
-        const scrollTop = dialog.scrollTop;
-        renderPositions();
-        dialog.scrollTop = scrollTop;
-      }
-    }
-    if (state.baskets.length) await loadBaskets();
+    state.types.forEach((type) => (type.options || []).forEach((option) => {
+      if (String(option.product_id) === String(product.id)) option.product = product;
+    }));
+    state.manualReplacements.forEach((row) => {
+      if (String(row.product_id) === String(product.id)) row.product = product;
+    });
+    renderGrid();
   }
 
   function bind() {
@@ -332,68 +304,50 @@
       const target = event.target.closest("button");
       if (!target) return;
       if (target.id === "retry-baskets") { loadBaskets(); return; }
-      if (target.dataset.editBasket) {
-        const basket = state.baskets.find((item) => String(item.id) === target.dataset.editBasket);
-        if (basket) openBasket(basket);
+      if (target.id === "add-basket-type") { addType(); return; }
+      if (target.id === "reload-baskets") { loadBaskets(); return; }
+      if (target.id === "save-basket-grid") { saveGrid(); return; }
+      if (target.dataset.addVariation != null) { openPicker(target.dataset.addVariation); return; }
+      if (target.dataset.manualType != null) {
+        const row = document.getElementById("basket-type-" + target.dataset.manualType);
+        row?.scrollIntoView({ behavior: "smooth", block: "center" });
+        openPicker(target.dataset.manualType);
+        return;
+      }
+      if (target.dataset.moveType != null) { moveType(target.dataset.typeKey, Number(target.dataset.moveType)); return; }
+      if (target.dataset.moveOption != null) { moveOption(target.dataset.typeKey, target.dataset.productId, Number(target.dataset.moveOption)); return; }
+      if (target.dataset.removeOption != null) {
+        const type = findType(target.dataset.typeKey);
+        if (type) type.options = type.options.filter((option) => String(option.product_id) !== String(target.dataset.productId));
+        renderGrid();
+        return;
+      }
+      if (target.dataset.deleteType != null) {
+        const type = findType(target.dataset.deleteType);
+        if (!type) return;
+        if (!window.confirm("Excluir o tipo “" + (type.title || "sem título") + "” e removê-lo das cestas?")) return;
+        state.types = state.types.filter((item, index) => typeKey(item, index) !== target.dataset.deleteType);
+        renderGrid();
+        return;
       }
       if (target.dataset.editProduct) openProduct(productCache.get(String(target.dataset.editProduct)));
-      if (target.dataset.setBasketActive != null) {
-        const active = target.dataset.setBasketActive === "true";
-        target.disabled = true;
-        request("basket_set_active", { method: "POST", body: { basket_id: target.dataset.basketId, is_active: active } })
-          .then(() => { toast(active ? "Cesta reativada." : "Kit desativado; você pode reativá-lo no filtro Inativas."); return loadBaskets(); })
-          .catch((error) => toast(error.message || "Não foi possível alterar a situação da cesta."))
-          .finally(() => { target.disabled = false; });
-      }
-      if (target.id === "add-basket-position") addPosition();
-      if (target.dataset.pickProducts != null) openPicker(Number(target.dataset.pickProducts));
-      if (target.dataset.removePosition != null) {
-        state.basket.positions.splice(Number(target.dataset.removePosition), 1);
-        renderPositions();
-      }
-      if (target.dataset.removeOption != null) {
-        const position = state.basket.positions[Number(target.dataset.removeOption)];
-        position.options = position.options.filter((option) => String(option.product_id) !== target.dataset.productId);
-        renderPositions();
-      }
-      if (target.id === "apply-picker-products") applyPicker();
       if (target.id === "picker-more") loadPickerProducts(false);
-      if (target.dataset.dialogClose === "basket-dialog" || target.dataset.dialogClose === "product-picker-dialog") {
-        $(target.dataset.dialogClose).close();
+      if (target.id === "apply-picker-products") applyPicker();
+      if (target.dataset.dialogClose === "product-picker-dialog") $("product-picker-dialog").close();
+    });
+
+    $("admin-baskets").addEventListener("input", (event) => {
+      const key = event.target.dataset.typeTitle || event.target.dataset.typeQuantity;
+      if (!key) return;
+      const type = findType(key);
+      if (!type) return;
+      if (event.target.dataset.typeTitle != null) type.title = event.target.value;
+      if (event.target.dataset.typeQuantity != null) {
+        const quantity = parseQuantity(event.target.value);
+        type.quantities[event.target.dataset.basketId] = quantity == null ? event.target.value : quantity;
       }
     });
 
-    $("basket-position-editor").addEventListener("input", (event) => {
-      const labelIndex = event.target.dataset.positionLabel;
-      const quantityIndex = event.target.dataset.positionQuantity;
-      if (labelIndex != null) state.basket.positions[Number(labelIndex)].label = event.target.value;
-      if (quantityIndex != null) state.basket.positions[Number(quantityIndex)].quantity = numberFromPrice(event.target.value) || 0;
-      if (labelIndex != null || quantityIndex != null) updateBasketPrice();
-    });
-    $("basket-position-editor").addEventListener("change", (event) => {
-      if (event.target.dataset.defaultOption != null) {
-        const index = Number(event.target.dataset.defaultOption);
-        const options = state.basket.positions[index].options;
-        const selected = options.find((option) => String(option.product_id) === String(event.target.value));
-        if (selected) state.basket.positions[index].options = [selected, ...options.filter((option) => option !== selected)];
-        renderPositions();
-      }
-      if (event.target.dataset.shareOptions != null) {
-        const position = state.basket.positions[Number(event.target.dataset.shareOptions)];
-        if (position) position.share_options_across_baskets = event.target.checked;
-      }
-    });
-    $("basket-default-price").addEventListener("input", (event) => {
-      if (!state.basket) return;
-      const desired = priceToCents(event.target.value);
-      state.basket.hidden_adjustment_cents = desired - basketProductTotal(state.basket) - conditionalAdjustment(state.basket);
-      $("basket-price-hint").textContent = `Ajuste da cesta atualizado para ${money(state.basket.hidden_adjustment_cents)}. O total acompanha os produtos padrão e quantidades.`;
-    });
-    $("basket-form").addEventListener("submit", saveBasket);
-    $("basket-status").addEventListener("change", () => {
-      state.basketsStatus = $("basket-status").value;
-      loadBaskets();
-    });
     $("picker-search").addEventListener("submit", (event) => {
       event.preventDefault();
       state.pickerQuery = $("picker-query").value.trim();
@@ -405,7 +359,6 @@
       if (event.target.checked) state.pickerSelected.add(id);
       else state.pickerSelected.delete(id);
     });
-    $("reload-baskets").addEventListener("click", loadBaskets);
   }
 
   bind();
