@@ -277,8 +277,8 @@ function errorResponse(error: any) {
   if (code === "23505") return { status: 409, error: "duplicate_product_identifier", message: "SKU ou GTIN já cadastrado em outro produto." };
   const detail = clean(error?.message || error, 400);
   const lowerDetail = detail.toLowerCase();
-  if (lowerDetail.includes("separation_requires_bling_stock_authority") || lowerDetail.includes("stock authority")) return { status: 409, error: "separation_stock_authority", message: "O estoque precisa estar sob autoridade do Bling para concluir a separação." };
-  if (lowerDetail.includes("fiscal") || lowerDetail.includes("authorize document") || lowerDetail.includes("authorize_document")) return { status: 409, error: "delivery_fiscal_gate", message: "Entrega bloqueada: autorize o documento fiscal e o estoque físico antes de marcar como entregue." };
+  if (lowerDetail.includes("stock authority") || lowerDetail.includes("separation_stock")) return { status: 409, error: "separation_stock_update", message: "Não foi possível atualizar o saldo do Supabase ao concluir a separação. Revise os itens e tente novamente." };
+  if (lowerDetail.includes("fiscal") || lowerDetail.includes("authorize document") || lowerDetail.includes("authorize_document")) return { status: 409, error: "delivery_fiscal_gate", message: "Entrega bloqueada: autorize o documento fiscal e confirme o saldo registrado no Supabase antes de marcar como entregue." };
   if (lowerDetail.includes("payment") || lowerDetail.includes("settlement") || lowerDetail.includes("captured")) return { status: 409, error: "delivery_payment_gate", message: "Entrega bloqueada: o pagamento precisa estar confirmado no sistema." };
   if (lowerDetail.includes("separator")) return { status: 409, error: "separator_required", message: "Selecione o responsável pela separação para continuar." };
   if (lowerDetail.includes("expected_order_updated_at") || lowerDetail.includes("concurrent") || lowerDetail.includes("updated_at_mismatch")) return { status: 409, error: "separation_changed", message: "A separação mudou em outra tela. Atualize e tente novamente." };
@@ -1494,7 +1494,7 @@ async function completeOrderSeparation(input: any) {
   if (applied.error) throw applied.error;
   if (applied.data?.ok !== true) {
     const code = String(applied.data?.error || "separation_stock_update_failed");
-    if (code.includes("bling")) return { error: code, status: 409, message: "O estoque precisa estar sob autoridade do Bling para concluir a separação." };
+    if (code.includes("stock_authority")) return { error: code, status: 409, message: "O saldo de estoque é controlado pelo cadastro de produtos do Supabase." };
     return { error: code, status: 409, message: "Não foi possível concluir a separação e atualizar o estoque." };
   }
 
