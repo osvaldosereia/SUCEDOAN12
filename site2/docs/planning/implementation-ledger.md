@@ -1164,3 +1164,9 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 
 - Nova consulta agregada somente leitura ao Supabase canônico: 5 cestas ativas no WhatsApp, 118 posições, 92 prontas e 26 pendentes; a contagem continua igual ao preflight de 28/10. A tabela de bindings do Flow continua com zero linhas.
 - Não há eventos `product.whatsapp_availability.updated` no `admin_audit_logs` desde 28/10 14:20 UTC. Não foram lidos nomes/IDs de produtos, clientes, pedidos ou valores de secrets; nenhuma escrita foi realizada. O próximo avanço continua condicionado à revisão comercial das opções e à configuração individual dos dois WABAs no Admin.
+
+## Rechecagem: aumento de opções pendentes sem auditoria correspondente (02/11/2026 16:28 UTC)
+
+- Consulta agregada somente leitura encontrou 5 cestas ativas no WhatsApp e 118 posições: 88 prontas e 30 pendentes. O total pendente subiu de 26 para 30 desde 31/10; as quatro novas pendências não puderam ser atribuídas a uma ação registrada.
+- As 30 posições pendentes têm pelo menos um produto ativo com foto HTTPS, mas nenhuma tem alternativa ativa habilitada para WhatsApp. A separação agregada de causas não encontrou pendência por ausência de produto ativo ou foto; não foram retornados nomes ou IDs.
+- `whatsapp_ordering_private.whatsapp_order_flow_bindings_v1` continua sem registros. `admin_audit_logs` não tem eventos desde 31/10 11:30 UTC, inclusive de disponibilidade WhatsApp. Não inferir causa da mudança sem evidência; nenhum produto foi alterado e nenhuma ação foi enviada à Meta, ao WhatsApp ou ao Bling.
