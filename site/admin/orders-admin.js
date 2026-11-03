@@ -388,7 +388,7 @@
       });
       state.replacementSearch = null;
       await loadSeparation(separation.orderId, { preserveScroll: true });
-      $("separation-message").textContent = "Produto substituído por " + productName + ". O valor original foi mantido.";
+      $("separation-message").textContent = "Produto substituído por " + productName + ". O original foi inativado na vitrine e o valor original foi mantido.";
     } catch (error) {
       $("separation-message").textContent = error.message || "Não foi possível substituir o produto.";
       try { await loadSeparation(separation.orderId, { preserveScroll: true }); } catch (_) {}
@@ -466,7 +466,7 @@
       await loadSeparation(separation.orderId, { preserveScroll: true });
       $("separation-message").textContent = itemState === "separated"
         ? "Produto marcado como encontrado."
-        : "Produto marcado como não encontrado.";
+        : "Produto marcado como não encontrado e inativado na vitrine.";
     } catch (error) {
       $("separation-message").textContent = error.message || "Não foi possível salvar a conferência.";
       try { await loadSeparation(separation.orderId, { preserveScroll: true }); } catch (_) {}

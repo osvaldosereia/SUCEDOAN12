@@ -90,3 +90,102 @@
 .order-whatsapp-status .notice-delivered { color: #267a44; }
 .order-notice-issue { grid-column: 1 / -1; padding: 9px 11px; border-radius: 10px; background: #faf6f4; color: #62564f; font-size: .84rem; line-height: 1.45; }
 .order-notice-issue strong { display: block; color: #302521; }
+
+
+/* Ações de separação: alto contraste e áreas de toque maiores para uso na produção. */
+.separation-item-actions { gap: 8px; }
+.separation-item-actions button {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 126px;
+  min-height: 60px;
+  padding: 9px 11px;
+  border: 2px solid currentColor;
+  border-radius: 12px;
+  font-size: .92rem;
+  font-weight: 900;
+  line-height: 1.1;
+  white-space: normal;
+  touch-action: manipulation;
+  box-shadow: 0 2px 5px #34272218;
+}
+.separation-item-actions button[data-separation-state="separated"] {
+  border-color: #2f8250;
+  background: #eaf6ed;
+  color: #1d6238;
+}
+.separation-item-actions button[data-separation-state="missing"] {
+  border-color: #c74e42;
+  background: #fff0ed;
+  color: #8f2d22;
+}
+.separation-item-actions button[data-separation-state="substituted"] {
+  border-color: #477bb4;
+  background: #edf4fd;
+  color: #244f82;
+}
+.separation-item-actions button:hover:not(:disabled) { filter: brightness(.96); }
+.separation-item-actions button:focus-visible {
+  outline: 3px solid #302521;
+  outline-offset: 2px;
+}
+.separation-item-actions .separation-action-label {
+  display: block;
+  font-size: .82rem;
+  font-weight: 850;
+}
+@media (max-width: 640px) {
+  .separation-item-actions { gap: 8px; }
+  .separation-item-actions button {
+    min-height: 62px;
+    padding: 8px 4px;
+    font-size: .82rem;
+  }
+  .separation-item-actions .separation-action-label {
+    font-size: .76rem;
+    line-height: 1.1;
+  }
+}
+
+
+/* No celular, o cabeçalho rola junto com os produtos; o rodapé de conclusão fica acessível. */
+@media (max-width: 640px) {
+  .separation-sheet .orders-dialog-body {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    padding-bottom: 0;
+  }
+  .separation-sheet .separation-items {
+    flex: 0 0 auto;
+    min-height: 90px;
+    overflow: visible;
+    overscroll-behavior: auto;
+    touch-action: auto;
+  }
+  .separation-sheet .separation-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    flex: 0 0 auto;
+    margin-top: 12px;
+    padding: 8px 0 max(16px, env(safe-area-inset-bottom));
+    border-top: 1px solid #e8dfdc;
+    background: #fff;
+    box-shadow: 0 -10px 18px #ffffff;
+  }
+  .separation-sheet .separation-footer .separation-total {
+    margin: 0;
+    padding: 4px 0 10px;
+    border-top: 0;
+  }
+  .separation-sheet .separation-footer .orders-dialog-actions {
+    margin-top: 0;
+    padding-top: 4px;
+  }
+}
