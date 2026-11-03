@@ -1170,3 +1170,9 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 - Consulta agregada somente leitura encontrou 5 cestas ativas no WhatsApp e 118 posições: 88 prontas e 30 pendentes. O total pendente subiu de 26 para 30 desde 31/10; as quatro novas pendências não puderam ser atribuídas a uma ação registrada.
 - As 30 posições pendentes têm pelo menos um produto ativo com foto HTTPS, mas nenhuma tem alternativa ativa habilitada para WhatsApp. A separação agregada de causas não encontrou pendência por ausência de produto ativo ou foto; não foram retornados nomes ou IDs.
 - `whatsapp_ordering_private.whatsapp_order_flow_bindings_v1` continua sem registros. `admin_audit_logs` não tem eventos desde 31/10 11:30 UTC, inclusive de disponibilidade WhatsApp. Não inferir causa da mudança sem evidência; nenhum produto foi alterado e nenhuma ação foi enviada à Meta, ao WhatsApp ou ao Bling.
+
+## Rechecagem: pendências aumentaram novamente (03/11/2026 00:29 UTC)
+
+- Consulta agregada somente leitura encontrou 5 cestas ativas no WhatsApp e 118 posições: 83 prontas e 35 pendentes, cinco a mais que a leitura de 02/11 às 16:28 UTC.
+- As 35 posições pendentes têm produto ativo com foto HTTPS, mas não têm produto ativo habilitado para WhatsApp; não há pendências explicadas por falta de produto ativo ou foto. A elegibilidade agregada não retornou nomes/IDs de produtos.
+- Permanecem zero bindings em `whatsapp_ordering_private.whatsapp_order_flow_bindings_v1` e zero registros em `admin_audit_logs` desde a leitura anterior. A causa do aumento não é conhecida; não inferir alteração manual ou automática. Nenhuma escrita, publicação de Flow, mensagem, ação no Bling ou emissão fiscal ocorreu.
