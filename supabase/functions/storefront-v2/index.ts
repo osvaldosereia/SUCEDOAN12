@@ -128,6 +128,17 @@ async function moldAvailableStockMap(productIds:string[]){
   for(const r of data||[])out.set(String(r.product_id),r.is_active===true?Math.max(0,Number(r.sellable_stock||0)):0);
   return out;
 }
+async function orderableProductStockMap(productIds:string[]){
+  const ids=[...new Set(productIds.filter(Boolean))];const out=new Map<string,number>();if(!ids.length)return out;
+  const {data,error}=await db.from("storefront_ean_sellable_stock_v1")
+    .select("product_id,is_active,stock_authority,loose_sellable_stock,ean_sellable_stock").in("product_id",ids);
+  if(error)throw error;
+  for(const r of data||[]){
+    const stock=r.stock_authority==="bling"?r.loose_sellable_stock:(r.ean_sellable_stock??r.loose_sellable_stock);
+    out.set(String(r.product_id),r.is_active===true?Math.max(0,Number(stock||0)):0);
+  }
+  return out;
+}
 function moldEffectivePriceCents(p:any){const n=p?.is_offer===true&&p?.offer_price!=null&&Number(p.offer_price)>=0?Number(p.offer_price):Number(p?.price||0);return cents(n)}
 function moldConfiguredDefaults(options:any[]){
   const defaults=new Map<string,string>();
@@ -165,7 +176,7 @@ async function publicBasketExtras(legacyExtras:any[]=[],themeId:string){
   const legacy=legacyExtras.find((x:any,index:number)=>String(x?.id||"legacy-"+index)===String(themeId));
   const rows=theme?[{id:String(theme.id),label:String(theme.name||"Produtos extras"),items:theme.items}]:legacy?[{id:String(legacy.id||themeId),label:String(legacy.label||"Produto adicional"),items:(Array.isArray(legacy.product_ids)?legacy.product_ids:[]).map((product_id:any)=>({product_id}))}]:[];
   const ids=[...new Set(rows.flatMap((t:any)=>t.items.map((x:any)=>uid(x.product_id)).filter(Boolean)))];
-  const [products,stock]=await Promise.all([moldProductsMap(ids),moldAvailableStockMap(ids)]);
+  const [products,stock]=await Promise.all([moldProductsMap(ids),orderableProductStockMap(ids)]);
   const toProduct=(id:any)=>{
     const p=products.get(String(id)),available=stock.get(String(id))||0,priceCents=p?moldEffectivePriceCents(p):0;
     return p?.is_active===true&&available>0&&priceCents>0?{product_id:p.id,name:p.name,brand:p.brand||"",sku:p.sku,gtin:p.gtin,image_url:p.image_url||"",packaging:p.packaging||"",stock_quantity:available,price_cents:priceCents}:null;
@@ -871,7 +882,7 @@ async function offerList(){
   const rows=(await activeProductRows("id,sku,gtin,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit,metadata,is_active"))
     .filter((p:any)=>p.is_offer===true&&p.offer_price!=null)
     .sort((a:any,b:any)=>String(a.name||"").localeCompare(String(b.name||""),"pt-BR")).slice(0,200);
-  const sm=await moldAvailableStockMap(rows.map((p:any)=>p.id));
+  const sm=await orderableProductStockMap(rows.map((p:any)=>p.id));
   return {ok:true,offers:rows.map((p:any)=>({...pub(p,sm.get(p.id)||0),product_id:p.id,offer_priority:p.metadata?.offer_source==="auto_expiry"?0:1})).filter((p:any)=>p.stock_quantity>0&&p.price_available).sort((a:any,b:any)=>a.offer_priority-b.offer_priority||a.name.localeCompare(b.name,"pt-BR")).slice(0,160)};
 }
 async function activeProductRows(selection:string,category="",subcategory=""):Promise<any[]>{
@@ -928,7 +939,7 @@ async function productList(url:URL){
   let cursor=offset;
   while(cursor<ordered.length&&publicRows.length<limit){
     const chunk=ordered.slice(cursor,cursor+Math.max(24,limit+12));
-    const sm=await moldAvailableStockMap(chunk);
+    const sm=await orderableProductStockMap(chunk);
     for(const id of chunk){
       cursor++;
       const p=byId.get(id);
@@ -943,7 +954,7 @@ async function productList(url:URL){
 async function oneProduct(id:string){
   const {data:p,error}=await db.from("products").select("id,sku,gtin,name,description_short,description_long,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit,is_active").eq("id",id).maybeSingle();
   if(error)throw error;if(!p||p.is_active!==true)return null;
-  const sm=await moldAvailableStockMap([id]),o=pub(p,sm.get(id)||0);
+  const sm=await orderableProductStockMap([id]),o=pub(p,sm.get(id)||0);
   if(o.stock_quantity<=0||!o.price_available)return null;
   const characteristics=[["Marca",p.brand],["Embalagem",p.packaging],["Unidade",p.unit],["Categoria",p.category],["Subcategoria",p.subcategory],["Tipo",p.customer_subsubcategory||p.subsubcategory]].filter((x:any)=>txt(x[1],200)).map((x:any)=>({label:x[0],value:String(x[1])}));
   return {...o,sku:p.sku||"",gtin:p.gtin||"",description:p.description_long||p.description_short||"",characteristics};
