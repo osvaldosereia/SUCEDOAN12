@@ -121,7 +121,8 @@
       const selectedDateIsAvailable = Boolean(select && !select.disabled && state.deliveryOptions.some((option) => option.date === select.value));
       const cannotConfirm = state.submittingOrder || !orderItemsAvailable ||
         !minimumSatisfied || !customerConfirmed || !payment || !selectedDateIsAvailable;
-      $("confirm-order").disabled = cannotConfirm;
+      const confirmationButton = $("confirm-order");
+      confirmationButton.disabled = cannotConfirm;
 
       // Explain the exact blocking condition near the button, visible at the
       // bottom of the checkout even when the product list is scrolled away.
@@ -441,6 +442,24 @@
           }
         });
         closeSheet("order-sheet");
+        const publicOrderCode = String(result.order_number || "").trim().slice(0, 24);
+        if (publicOrderCode) {
+          $("order-receipt-title").textContent = "Pedido " + publicOrderCode;
+          const receipt = $("order-receipt");
+          const trackingLink = $("order-receipt-link");
+          let safeTrackingUrl = "";
+          try {
+            const url = new URL(String(result.order_public_url || ""));
+            if (url.protocol === "https:" &&
+              ["donaantonia.com.br", "www.donaantonia.com.br"].includes(url.hostname) &&
+              url.pathname === "/p/" &&
+              Boolean(url.searchParams.get("k"))) safeTrackingUrl = url.href;
+          } catch {}
+          trackingLink.href = safeTrackingUrl;
+          trackingLink.hidden = !safeTrackingUrl;
+          receipt.hidden = false;
+          receipt.focus();
+        }
         if (data.customOrder && typeof onCustomOrderSubmitted === "function") onCustomOrderSubmitted();
         toast(result.stock_adjustment
           ? "Pedido " + (result.order_number || "") + " registrado no Admin com ajuste de estoque."

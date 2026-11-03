@@ -81,3 +81,12 @@
   .replacement-option { grid-template-columns: 38px minmax(0, 1fr) auto; }
   .replacement-option img { width: 38px; height: 38px; }
 }
+
+.order-notice-filter { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 12px; color: #5f524d; font-size: .87rem; }
+.order-notice-filter input { width: 18px; height: 18px; accent-color: #7e3029; }
+.order-whatsapp-status { display: grid; gap: 3px; margin-top: 7px; color: #6c605a; font-size: .78rem; line-height: 1.35; }
+.order-whatsapp-status .notice-failed { color: #9b2c22; font-weight: 700; }
+.order-whatsapp-status .notice-pending { color: #86510e; font-weight: 700; }
+.order-whatsapp-status .notice-delivered { color: #267a44; }
+.order-notice-issue { grid-column: 1 / -1; padding: 9px 11px; border-radius: 10px; background: #faf6f4; color: #62564f; font-size: .84rem; line-height: 1.45; }
+.order-notice-issue strong { display: block; color: #302521; }

@@ -14,7 +14,7 @@
   <script src="config.js?v=2" defer></script>
   <script src="storefront/experimento-extras.js?v=1" defer></script>
   <script src="storefront/basket.js?v=4" defer></script>
-  <script src="storefront/checkout.js?v=11" defer></script>
+  <script src="storefront/checkout.js?v=12" defer></script>
   <script src="app.js?v=28" defer></script>
   <script src="experimento.js?v=3" defer></script>
 </head>
@@ -56,7 +56,16 @@
   </aside>
   <div class="experiment-page">
   <main>
-    <section id="inicio" class="welcome" aria-labelledby="welcome-title">
+
+    <section id="order-receipt" class="order-receipt" role="status" aria-live="polite" tabindex="-1" hidden>
+      <div>
+        <p class="eyebrow">Pedido registrado</p>
+        <h2 id="order-receipt-title"></h2>
+        <p>Você pode acompanhar o pedido aqui mesmo. A confirmação por WhatsApp é um aviso separado.</p>
+      </div>
+      <a id="order-receipt-link" class="button button-primary" href="" hidden>Acompanhar pedido</a>
+    </section>
+    <section id="inicio" class="welcome"    <section id="inicio" class="welcome" aria-labelledby="welcome-title">
       <p class="eyebrow">Praticidade para sua casa</p>
       <h1 id="welcome-title">Início</h1>
       <p>Encontre sua cesta e navegue pelas sessões da loja.</p>

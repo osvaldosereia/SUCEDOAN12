@@ -51,11 +51,88 @@
     return order.public_code || order.order_number || String(order.id || "").slice(0, 8).toUpperCase();
   }
 
+  const whatsappNoticeLabels = {
+    accepted: "Aceita pela Meta, aguardando entrega",
+    sent: "Enviada, aguardando confirmação",
+    awaiting_delivery: "A Meta recebeu o aviso, aguardando entrega",
+    delivered: "Entregue",
+    read: "Lida",
+    failed: "Falhou",
+    retry: "Nova tentativa aguardando a fila",
+    uncertain: "Envio sem confirmação. Verifique antes de reenviar",
+    pending: "Aviso aguardando configuração",
+    suppressed: "Envio desativado",
+    sending: "Enviando",
+    unrecorded: "Sem registro de envio",
+  };
+
+  function whatsappNoticeDetail(notice) {
+    const code = String(notice && notice.error_code || "").trim();
+    if (code === "130403") return "Confira se o contato está bloqueado no número comercial.";
+    if (code === "131026") return "Confirme com o cliente se o número recebe WhatsApp.";
+    if (code === "meta_invalid_request" || code === "100") return "O formato do aviso precisa ser corrigido.";
+    if (code && /^[0-9]{1,10}$/.test(code)) return "Código Meta " + code + ".";
+    if (code && /^meta_[a-z_]{1,40}$/.test(code)) return "Falha ao montar ou enviar o aviso.";
+    return "";
+  }
+
+  function renderWhatsAppNoticeLine(title, notice) {
+    const item = notice || { status: "unrecorded" };
+    const status = String(item.status || "unrecorded").toLowerCase();
+    const statusLabel = whatsappNoticeLabels[status] || "Status " + status;
+    const issue = whatsappNoticeDetail(item);
+    const style = ["failed", "uncertain", "unrecorded"].includes(status)
+      ? "notice-failed"
+      : ["pending", "retry"].includes(status)
+        ? "notice-pending"
+        : ["delivered", "read"].includes(status) ? "notice-delivered" : "";
+    return "<span class='" + style + "'><strong>" + esc(title) + "</strong> " +
+      esc(statusLabel) + (issue ? " · " + esc(issue) : "") + "</span>";
+  }
+
+  function orderHasWhatsAppAttention(order) {
+    if (order.whatsapp_notice_tracking_available === false) return true;
+    const statuses = Object.values(order.whatsapp_notices || {}).map((item) => String(item && item.status || ""));
+    if (["ready", "out_for_delivery", "delivered"].includes(String(order.status || "")) &&
+      !order.whatsapp_notices?.separation) statuses.push("unrecorded");
+    if (!order.whatsapp_notices?.received) statuses.push("unrecorded");
+    return statuses.some((status) => ["failed", "retry", "uncertain", "pending", "unrecorded"].includes(status));
+  }
+
+  function orderWhatsAppNoticeMarkup(order) {
+    if (order.whatsapp_notice_tracking_available === false) {
+      return "<span class='notice-failed'><strong>WhatsApp</strong> Não foi possível consultar os avisos.</span>";
+    }
+    const notices = order.whatsapp_notices || {};
+    const lines = [renderWhatsAppNoticeLine("Pedido recebido", notices.received)];
+    if (["ready", "out_for_delivery", "delivered"].includes(String(order.status || ""))) {
+      lines.push(renderWhatsAppNoticeLine("Separação", notices.separation));
+    }
+    return "<span class='order-whatsapp-status'>" + lines.join("") + "</span>";
+  }
+
+  function orderWhatsAppNoticeDetail(order) {
+    if (order.whatsapp_notice_tracking_available === false) {
+      return "<div class='order-notice-issue'><strong>Avisos do WhatsApp</strong> Não foi possível consultar os envios. Atualize a janela e confira as conversas.</div>";
+    }
+    const notices = order.whatsapp_notices || {};
+    const lines = [renderWhatsAppNoticeLine("Pedido recebido", notices.received)];
+    if (["ready", "out_for_delivery", "delivered"].includes(String(order.status || ""))) {
+      lines.push(renderWhatsAppNoticeLine("Pedido separado para expedição", notices.separation));
+    }
+    return "<div class='order-notice-issue'><strong>Avisos do WhatsApp</strong>" +
+      lines.join("") + "</div>";
+  }
+
   function renderList() {
     const list = $("orders-list");
     const status = $("orders-status");
-    status.textContent = state.orders.length ? state.orders.length + (state.orders.length === 1 ? " pedido" : " pedidos") : "Nenhum pedido nesta etapa.";
-    list.innerHTML = state.orders.map((order) => {
+    const attentionOnly = $("orders-notice-attention")?.checked === true;
+    const visibleOrders = attentionOnly ? state.orders.filter(orderHasWhatsAppAttention) : state.orders;
+    status.textContent = visibleOrders.length
+      ? visibleOrders.length + (attentionOnly ? " pedido para conferir no WhatsApp" : visibleOrders.length === 1 ? " pedido" : " pedidos")
+      : attentionOnly ? "Nenhum pedido exige conferência dos avisos de WhatsApp." : "Nenhum pedido nesta etapa.";
+    list.innerHTML = visibleOrders.map((order) => {
       const delivered = order.status === "delivered";
       const action = state.stage === "new"
         ? "<button class='button button-primary order-action' type='button' data-order-confirm='" + esc(order.id) + "'>Confirmar</button>"
@@ -75,6 +152,7 @@
           "<span class='order-card-top'><strong>" + esc(orderNumber(order)) + "</strong><time>" + esc(date(order.created_at)) + "</time></span>" +
           "<span class='order-card-name'>" + esc(customerName(order)) + "</span>" +
           "<span class='order-card-phone'>" + esc(phone) + "</span>" +
+          orderWhatsAppNoticeMarkup(order) +
           "<span class='order-card-bottom'><span>Valor do pedido</span><strong>" + esc(money(order.total)) + "</strong></span>" +
         "</button>" +
         "<div class='order-card-action'>" + action + deleteAction + "</div>" +
@@ -119,7 +197,8 @@
         "<div><span>Cliente</span><strong>" + esc(customerName(order)) + "</strong></div>" +
         "<div><span>Telefone</span><strong>" + esc(order.phone_e164 || order.phone || "—") + "</strong></div>" +
         "<div><span>Data</span><strong>" + esc(date(order.created_at)) + "</strong></div>" +
-        "<div><span>Total</span><strong>" + esc(money(order.total)) + "</strong></div>";
+        "<div><span>Total</span><strong>" + esc(money(order.total)) + "</strong></div>" +
+        orderWhatsAppNoticeDetail(order);
       const items = Array.isArray(result.items) ? result.items : [];
       $("order-detail-items").innerHTML = items.length ? items.map((item) =>
         "<article class='order-detail-item'><img src='" + esc(item.image_url || "../img/logoantonia5.png") + "' alt='' loading='lazy'><div><strong>" + esc(item.name || "Produto") + "</strong><span>Quantidade: " + esc(item.quantity) + "</span></div><strong>" + esc(money(item.line_total)) + "</strong></article>"
@@ -434,6 +513,7 @@
   }
 
   document.querySelectorAll("[data-order-stage]").forEach((button) => button.addEventListener("click", () => setStage(button.dataset.orderStage)));
+  $("orders-notice-attention").addEventListener("change", renderList);
   $("orders-reload").addEventListener("click", loadOrders);
   $("order-separator").addEventListener("change", (event) => chooseSeparator(event.target.value));
   $("confirm-separation").addEventListener("click", completeSeparation);

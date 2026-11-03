@@ -1075,6 +1075,40 @@ async function attachPublicOrderCodes(orders: any[]) {
   return orders.map((order) => ({ ...order, public_code: codes.get(String(order.id)) || null }));
 }
 
+async function attachOrderWhatsappNotices(orders: any[]) {
+  const rows = Array.isArray(orders) ? orders : [];
+  const ids = rows.map((order) => uuid(order.id)).filter(Boolean);
+  if (!ids.length) return rows.map((order) => ({
+    ...order, whatsapp_notice_tracking_available: true, whatsapp_notices: {},
+  }));
+
+  const result = await db.rpc("site_order_whatsapp_notice_status_v1", { p_order_ids: ids });
+  if (result.error) {
+    console.error("order_whatsapp_notice_status", clean(result.error.message || "status_lookup_failed", 180));
+    return rows.map((order) => ({ ...order, whatsapp_notice_tracking_available: false }));
+  }
+
+  const byOrder = new Map<string, Record<string, any>>();
+  for (const notice of Array.isArray(result.data) ? result.data : []) {
+    const orderId = uuid(notice?.order_id);
+    const stage = String(notice?.stage || "");
+    if (!orderId || !["received", "separation"].includes(stage)) continue;
+    const notices = byOrder.get(orderId) || {};
+    notices[stage] = {
+      status: clean(notice.status, 32).toLowerCase(),
+      error_code: clean(notice.error_code, 32),
+      channel_origin: clean(notice.channel_origin, 4),
+    };
+    byOrder.set(orderId, notices);
+  }
+
+  return rows.map((order) => ({
+    ...order,
+    whatsapp_notice_tracking_available: true,
+    whatsapp_notices: byOrder.get(uuid(order.id)) || {},
+  }));
+}
+
 async function ordersList(input: any) {
   const stage = ["new", "separating", "expedition"].includes(input.stage) ? input.stage : "new";
   const statuses = stage === "new"
@@ -1089,7 +1123,7 @@ async function ordersList(input: any) {
     .order("created_at", { ascending: false })
     .limit(200);
   if (result.error) throw result.error;
-  return { orders: await attachPublicOrderCodes(result.data || []), stage };
+  return { orders: await attachOrderWhatsappNotices(await attachPublicOrderCodes(result.data || [])), stage };
 }
 
 async function orderById(value: unknown): Promise<any> {
@@ -1127,7 +1161,8 @@ async function orderDetail(input: any) {
       image_url: item.metadata?.image_url || "",
       sku: item.sku_snapshot || "",
     }));
-  return { order, items };
+  const [trackedOrder] = await attachOrderWhatsappNotices([order]);
+  return { order: trackedOrder, items };
 }
 
 async function confirmStorefrontOrder(input: any) {

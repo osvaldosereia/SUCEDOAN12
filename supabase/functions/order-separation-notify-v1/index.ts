@@ -44,7 +44,7 @@ function missingItemsText(value:unknown){
   }
   const omitted=lines.length-kept.length;
   if(omitted>0)kept.push(`• +${omitted} item(ns) — veja os detalhes na vitrine do pedido`);
-  return kept.join("\n");
+  return kept.join(" ");
 }
 
 async function activeAccount(accountId:string|null,channel:Channel){

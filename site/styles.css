@@ -354,3 +354,28 @@ body.sheet-open.sheet-scroll-chain { overflow-x: hidden; overflow-y: auto; }
 .checkout-blocker-message { margin:0 0 10px; color:#854329; font-size:.9rem; line-height:1.42; font-weight:600; }
 .checkout-blocker-message[hidden], #add-more-products[hidden] { display:none !important; }
 #add-more-products { min-height:44px; margin-bottom:10px; }
+
+
+.order-receipt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  max-width: 1100px;
+  margin: 14px auto 22px;
+  padding: 16px 18px;
+  border: 1px solid #d7e7d8;
+  border-radius: 14px;
+  background: #f4faf4;
+  color: var(--ink);
+}
+.order-receipt h2 { margin: 2px 0 5px; font-size: 1.1rem; }
+.order-receipt p { margin: 0; color: var(--muted); font-size: .87rem; line-height: 1.45; }
+.order-receipt .eyebrow { color: #267a44; font-weight: 800; }
+.order-receipt .button { flex: 0 0 auto; }
+.order-receipt[hidden] { display: none; }
+
+@media (max-width: 650px) {
+  .order-receipt { align-items: stretch; flex-direction: column; gap: 12px; margin: 12px; padding: 14px; }
+  .order-receipt .button { width: 100%; }
+}
