@@ -149,3 +149,43 @@
     line-height: 1.1;
   }
 }
+
+
+/* No celular, o cabeçalho rola junto com os produtos; o rodapé de conclusão fica acessível. */
+@media (max-width: 640px) {
+  .separation-sheet .orders-dialog-body {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    padding-bottom: 0;
+  }
+  .separation-sheet .separation-items {
+    flex: 0 0 auto;
+    min-height: 90px;
+    overflow: visible;
+    overscroll-behavior: auto;
+    touch-action: auto;
+  }
+  .separation-sheet .separation-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    flex: 0 0 auto;
+    margin-top: 12px;
+    padding: 8px 0 max(16px, env(safe-area-inset-bottom));
+    border-top: 1px solid #e8dfdc;
+    background: #fff;
+    box-shadow: 0 -10px 18px #ffffff;
+  }
+  .separation-sheet .separation-footer .separation-total {
+    margin: 0;
+    padding: 4px 0 10px;
+    border-top: 0;
+  }
+  .separation-sheet .separation-footer .orders-dialog-actions {
+    margin-top: 0;
+    padding-top: 4px;
+  }
+}
