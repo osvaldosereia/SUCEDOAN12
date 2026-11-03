@@ -452,6 +452,13 @@
           required_checkout_data: "A data de entrega é obrigatória. Reabra o checkout para carregar as datas disponíveis e tente novamente.",
           customer_name_required: "O cadastro precisa ter o nome do cliente.",
           all_items_unavailable: "Os produtos ficaram sem estoque. Atualize a cesta e tente novamente.",
+          product_unavailable: "Um produto ficou indisponível. Atualize a página e tente novamente.",
+          insufficient_stock: "O estoque de um produto mudou. Atualize a cesta e tente novamente.",
+          basket_unavailable: "Esta cesta não está mais disponível. Atualize a página e escolha outra cesta.",
+          basket_mold_unavailable: "Esta cesta não está mais disponível. Atualize a página e escolha outra cesta.",
+          basket_mold_composition_invalid: "A composição da cesta foi atualizada. Volte à cesta e tente novamente.",
+          basket_mold_component_invalid: "Os itens da cesta foram atualizados. Volte à cesta e tente novamente.",
+          basket_mold_components_required: "Não foi possível carregar os itens da cesta. Atualize a página e tente novamente.",
           minimum_order: "O pedido mínimo é R$ 75,00. Acrescente produtos e tente novamente.",
           invalid_whatsapp_phone: "O telefone do cadastro não está em um formato válido.",
           invalid_payment: "A forma de pagamento não foi reconhecida. Selecione novamente e tente outra vez."
