@@ -303,7 +303,7 @@
       if (state.activeKey !== activeKey) return;
       $("order-title").textContent = isCustomOrder ? "Pedido personalizado" : "Encomendar cesta";
       renderOrderReview(data);
-      const orderContent = $("#order-sheet .sheet-content");
+      const orderContent = document.querySelector("#order-sheet .sheet-content");
       if (orderContent) orderContent.scrollTop = 0;
       showSheet("order-sheet");
       loadDeliveryOptions();
