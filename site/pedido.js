@@ -26,7 +26,7 @@
     out_for_delivery: "Pedido em expedição",
     delivered: "Pedido entregue",
     cancelled: "Pedido cancelado"
-  })[String(value || "").toLowerCase()] || "Pedido recebido";
+  })[String(value || "").toLowerCase()] || "Status em atualização";
 
   async function getJson(url, headers) {
     const response = await fetch(url, { method: "GET", headers, cache: "no-store", credentials: "omit" });
