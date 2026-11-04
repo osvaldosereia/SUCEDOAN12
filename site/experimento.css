@@ -303,7 +303,7 @@ body {
   box-sizing: border-box;
   display: grid;
   place-items: center;
-  width: min(100%, clamp(54px, calc(var(--experiment-rail) - 16px), 66px));
+  width: min(100%, clamp(54px, calc(var(--experiment-rail) - 20px), 64px));
   height: 62px;
   min-height: 62px;
   padding: 0;
@@ -337,8 +337,8 @@ body {
 }
 .experiment-checkout-count {
   position: absolute;
-  top: -8px;
-  right: -8px;
+  top: -6px;
+  right: -6px;
   box-sizing: border-box;
   display: grid;
   place-items: center;
