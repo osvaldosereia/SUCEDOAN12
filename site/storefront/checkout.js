@@ -237,6 +237,41 @@
       return entries;
     }
 
+    function updateSidebarCheckoutCount() {
+      const button = $("sidebar-checkout");
+      const badge = $("sidebar-checkout-count");
+      if (!button || !badge) return 0;
+
+      const data = state.baskets.get(state.activeKey);
+      let count = 0;
+      const extras = new Map();
+
+      if (data && data.customOrder !== true) {
+        orderReviewEntries(data).forEach((entry) => {
+          const quantity = Math.max(0, Math.trunc(Number(entry.quantity || 0)));
+          if (entry.kind === "basket") count += quantity;
+          else if (entry.kind === "extra" && entry.id && quantity > 0) extras.set(String(entry.id), quantity);
+        });
+      }
+
+      if (state.homeExtraSelections instanceof Map) {
+        state.homeExtraSelections.forEach((item, id) => {
+          const quantity = Math.max(0, Math.trunc(Number(item && item.quantity || 0)));
+          if (quantity > 0) extras.set(String(id), quantity);
+          else extras.delete(String(id));
+        });
+      }
+
+      extras.forEach((quantity) => { count += quantity; });
+      count = Math.max(0, Math.trunc(count));
+      badge.textContent = String(count);
+      badge.hidden = count === 0;
+      button.setAttribute("aria-label", count
+        ? "Abrir checkout, " + count + (count === 1 ? " item no pedido" : " itens no pedido")
+        : "Abrir checkout");
+      return count;
+    }
+
     function orderReviewTotalCents(data) {
       const extras = selectedExtraEntries(data).reduce((sum, item) =>
         sum + Math.max(0, Number(item.price_cents || 0)) * Math.max(0, Math.trunc(Number(item.quantity || 0))), 0);
@@ -289,6 +324,7 @@
         minimumMessage.hidden = true;
       }
       updateConfirmOrderAvailability();
+      updateSidebarCheckoutCount();
 
       itemsHost.querySelectorAll("img").forEach((image) => image.addEventListener("error", () => {
         image.src = "../img/logoantonia5.png";
@@ -371,6 +407,7 @@
         extraSelections
       });
       state.activeKey = customOrderKey;
+      updateSidebarCheckoutCount();
       return openOrderSheet(true);
     }
 
@@ -699,9 +736,10 @@
           else if (!$("detail-sheet").hidden) closeSheet("detail-sheet");
         }
       });
+      updateSidebarCheckoutCount();
     }
 
-    return { init, loadDeliveryOptions, lookupCustomer, confirmOrder, startCustomOrder };
+    return { init, loadDeliveryOptions, lookupCustomer, confirmOrder, startCustomOrder, updateSidebarCheckoutCount };
   }
 
   window.DonaStorefrontCheckout = { create };
