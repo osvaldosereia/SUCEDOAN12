@@ -291,6 +291,22 @@ body {
   color: #fff;
 }
 
+.experiment-nav-link.experiment-nav-checkout {
+  border-color: #aacdb2;
+  background: #eff7f0;
+  color: #27643c;
+  font-family: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.experiment-nav-link.experiment-nav-checkout:hover,
+.experiment-nav-link.experiment-nav-checkout:focus-visible {
+  border-color: #72a681;
+  background: #e2f0e5;
+  color: #1f5831;
+}
+
 .experiment-nav-link[data-experiment-nav="basket"] {
   border-color: #bf9955;
   background: #fffaf0;

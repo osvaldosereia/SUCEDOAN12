@@ -671,6 +671,11 @@
       updateHomeExtraProductDialog(id);
     }
 
+    function syncHomeExtraSelection(productId) {
+      renderHomeExtraSummary();
+      updateHomeExtraCard(productId);
+    }
+
     function homeSelectionReviewMarkup(data) {
       const selections = data && data.extraSelections instanceof Map ? data.extraSelections : new Map();
       const ids = data && data.homeExtraProductIds instanceof Set ? Array.from(data.homeExtraProductIds) : [];
@@ -939,6 +944,7 @@
       toggleExtraCategory,
       initHomeExtras,
       clearHomeExtraSelections,
+      syncHomeExtraSelection,
       homeSelectionReviewMarkup,
       bindHomeSelectionControls,
       attachHomeSelections

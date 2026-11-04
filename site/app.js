@@ -295,6 +295,9 @@
   });
   const checkout = window.DonaStorefrontCheckout.create({
     state, $, esc, phoneDigits, money, toast, request, whatsappNumber, quantityOf, closeSheet, showSheet,
+    changeBasketItemQuantity: basket.changeBasketItemQuantity,
+    attachHomeSelections: extras.attachHomeSelections,
+    onHomeExtraQuantityChanged: extras.syncHomeExtraSelection,
     onCustomOrderSubmitted: extras.clearHomeExtraSelections
   });
   const {
