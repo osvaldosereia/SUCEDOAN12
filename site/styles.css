@@ -270,24 +270,34 @@ body.home-extra-dialog-open { overflow: hidden; }
 }
 
 
-/* Resumo do pedido no checkout sem valores individuais. */
-.order-review-toggle { min-height: 44px; margin-bottom: 10px; }
-.order-review-panel { display: grid; gap: 9px; margin: 0 0 13px; padding: 13px; border: 1px solid #dfd2c1; border-radius: 14px; background: #fff; }
-.order-review-panel[hidden] { display: none; }
-.order-review-panel > h3 { margin: 0; font-size: .98rem; }
-.order-review-kind { margin: 0; color: var(--muted); font-size: .78rem; line-height: 1.4; }
-.order-review-items { display: grid; gap: 7px; max-height: min(26dvh, 190px); margin: 0; padding: 0; overflow: auto; list-style: none; }
-.order-review-item { display: flex; align-items: flex-start; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
-.order-review-item > div { display: grid; gap: 3px; min-width: 0; }
-.order-review-item strong { overflow-wrap: anywhere; font-size: .82rem; line-height: 1.3; }
-.order-review-item span { color: var(--muted); font-size: .75rem; }
-.order-review-total { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 2px; font-size: .86rem; }
-.order-review-total strong { color: var(--brand); font-size: 1rem; }
+/* Lista completa do pedido no checkout, com valores somente no total. */
+.order-review-panel { display: grid; gap: 10px; margin: 0 0 18px; padding: 0; border: 0; border-radius: 0; background: transparent; }
+.order-review-panel > h3 { margin: 0; font-size: 1.02rem; }
+.order-review-kind { margin: 0; color: var(--muted); font-size: .86rem; line-height: 1.4; }
+.order-review-items { display: grid; gap: 10px; margin: 0; padding: 0; overflow: visible; list-style: none; }
+.order-review-item { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-width: 0; padding: 12px; border: 1px solid #dfd2c1; border-radius: 16px; background: #fff; box-shadow: 0 3px 10px rgba(58, 40, 22, .055); }
+.order-review-item-photo { display: block; width: 72px; height: 72px; border-radius: 12px; background: #f8f4ee; object-fit: contain; }
+.order-review-item-copy { display: grid; gap: 4px; min-width: 0; }
+.order-review-item-copy strong { overflow-wrap: anywhere; font-size: .98rem; line-height: 1.3; }
+.order-review-item-copy span { color: var(--muted); font-size: .78rem; }
+.order-review-quantity { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+.order-review-quantity button { display: grid; place-items: center; width: 42px; min-width: 42px; height: 44px; padding: 0; border: 1px solid #d8c8b6; border-radius: 11px; background: #fffaf4; color: var(--brand); font: inherit; font-size: 1.3rem; font-weight: 800; line-height: 1; }
+.order-review-quantity button:focus-visible { outline: 3px solid rgba(126,48,41,.18); border-color: var(--brand); }
+.order-review-quantity button:disabled { cursor: default; opacity: .45; }
+.order-review-quantity output { min-width: 24px; color: var(--ink); font-size: .98rem; font-weight: 800; text-align: center; }
+.order-review-total { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0 2px; border-top: 1px solid var(--line); font-size: .95rem; }
+.order-review-total strong { color: var(--brand); font-size: 1.12rem; }
 .order-review-minimum-message { margin: 0; }
+
 @media (max-width: 639px) {
+  .order-review-item { grid-template-columns: 58px minmax(0, 1fr) auto; gap: 8px; padding: 9px; }
+  .order-review-item-photo { width: 58px; height: 58px; }
+  .order-review-item-copy strong { font-size: .9rem; }
+  .order-review-quantity { gap: 2px; }
+  .order-review-quantity button { width: 38px; min-width: 38px; height: 42px; }
+  .order-review-quantity output { min-width: 20px; font-size: .9rem; }
   .home-extra-summary-copy span:last-child { display: block; font-size: .72rem; }
 }
-
 
 /* Product search */
 .product-search { display: grid; gap: 8px; min-width: 0; }
