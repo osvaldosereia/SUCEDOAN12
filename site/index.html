@@ -9,13 +9,13 @@
   <link rel="preload" as="image" href="../img/logoantonia5.png">
   <link rel="preload" as="image" href="assets/cestas/cesta-economica.jpg" fetchpriority="high">
   <link rel="preconnect" href="https://ssbesxgaijknwsjbsbcz.supabase.co" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=30">
-  <link rel="stylesheet" href="experimento.css?v=9">
+  <link rel="stylesheet" href="styles.css?v=31">
+  <link rel="stylesheet" href="experimento.css?v=10">
   <script src="config.js?v=2" defer></script>
-  <script src="storefront/experimento-extras.js?v=2" defer></script>
+  <script src="storefront/experimento-extras.js?v=3" defer></script>
   <script src="storefront/basket.js?v=4" defer></script>
-  <script src="storefront/checkout.js?v=13" defer></script>
-  <script src="app.js?v=28" defer></script>
+  <script src="storefront/checkout.js?v=14" defer></script>
+  <script src="app.js?v=29" defer></script>
   <script src="experimento.js?v=3" defer></script>
 </head>
 <body>
@@ -27,6 +27,9 @@
       <a class="experiment-nav-link is-active" href="#inicio" data-experiment-nav="home" aria-current="page">
         <span class="experiment-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span><span>Início</span>
       </a>
+      <button id="sidebar-checkout" class="experiment-nav-link experiment-nav-checkout" type="button" aria-label="Abrir checkout">
+        <span>Checkout</span>
+      </button>
       <a class="experiment-nav-link" href="#catalog" data-experiment-nav="basket" data-size="Grande">
         <span class="experiment-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18l-2 11H5L3 9Z"/><path d="m7 9 5-6 5 6M8 12v5m4-5v5m4-5v5"/></svg></span><span>Grande</span>
       </a>
@@ -179,15 +182,14 @@
         <button class="icon-button" type="button" data-close="order" aria-label="Fechar">×</button>
       </header>
       <div class="sheet-content">
-        <button id="order-review-toggle" class="button button-outline button-wide order-review-toggle" type="button" aria-expanded="false" aria-controls="order-review-panel">Ver pedido</button>
-        <div id="order-review-panel" class="order-review-panel" hidden aria-live="polite">
+        <section id="order-review-panel" class="order-review-panel" aria-labelledby="order-review-title">
           <h3 id="order-review-title">Produtos no pedido</h3>
           <p id="order-review-kind" class="order-review-kind"></p>
           <ul id="order-review-items" class="order-review-items"></ul>
           <p id="order-review-empty" class="helper" role="status" hidden></p>
           <div class="order-review-total"><span>Total do pedido</span><strong id="order-review-total">—</strong></div>
           <p id="order-review-minimum-message" class="helper order-review-minimum-message" role="status" aria-live="polite" hidden></p>
-        </div>
+        </section>
         <label class="field-label" for="customer-phone">WhatsApp para contato</label>
         <div class="search-row">
           <input id="customer-phone" inputmode="tel" autocomplete="tel" placeholder="(65) 99999-9999" maxlength="22" aria-describedby="customer-phone-hint">
