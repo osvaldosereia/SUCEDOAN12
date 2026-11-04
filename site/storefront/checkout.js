@@ -139,7 +139,7 @@
       reasonElement.textContent = reason;
       reasonElement.hidden = !reason;
       $("add-more-products").hidden = !data || data.customOrder !== true ||
-        orderItemsAvailable === false || minimumSatisfied || state.submittingOrder;
+        orderItemsAvailable === false || state.submittingOrder;
     }
   
     function loadDeliveryOptions() {
@@ -195,30 +195,71 @@
         sum + Math.max(0, Number(item.price_cents || 0)) * Math.max(0, Math.trunc(Number(item.quantity || 0))), 0);
     }
 
-    function renderCustomOrderSummary(data) {
-      const summary = $("custom-order-summary");
-      summary.hidden = !data || data.customOrder !== true;
-      if (summary.hidden) return;
-      const entries = selectedExtraEntries(data);
-      $("custom-order-items").innerHTML = entries.map((item) => {
-        const quantity = Math.max(0, Math.trunc(Number(item.quantity || 0)));
-        const lineTotal = Math.max(0, Number(item.price_cents || 0)) * quantity;
-        return '<li class="custom-order-item"><div><strong>' + esc(item.name || "Produto") +
-          '</strong><span>Quantidade: ' + quantity + '</span></div><b>' + esc(money(lineTotal)) + '</b></li>';
-      }).join("");
-      const subtotal = customOrderSubtotalCents(data);
-      $("custom-order-total").textContent = money(subtotal);
-      $("custom-order-minimum-message").textContent = subtotal < minimumOrderCents
-        ? "Pedido mínimo de " + money(minimumOrderCents) + ". Acrescente " + money(minimumOrderCents - subtotal) + " em produtos para continuar."
-        : "Pedido mínimo atingido.";
+    function orderReviewEntries(data) {
+      const entries = new Map();
+      const add = (id, name, quantity) => {
+        const qty = Math.max(0, Math.trunc(Number(quantity || 0)));
+        if (!qty) return;
+        const key = String(id || name || "product");
+        const current = entries.get(key);
+        if (current) current.quantity += qty;
+        else entries.set(key, { name: String(name || "Produto"), quantity: qty });
+      };
+      if (data && data.customOrder !== true && Array.isArray(data.items)) {
+        data.items.forEach((item) => add(item.product_id, item.name || item.label, quantityOf(item)));
+      }
+      selectedExtraEntries(data).forEach((item) => add(item.id, item.name, item.quantity));
+      return Array.from(entries.values());
+    }
+
+    function orderReviewTotalCents(data) {
+      const extras = selectedExtraEntries(data).reduce((sum, item) =>
+        sum + Math.max(0, Number(item.price_cents || 0)) * Math.max(0, Math.trunc(Number(item.quantity || 0))), 0);
+      return data && data.customOrder === true
+        ? extras
+        : Math.max(0, Number(data && data.totalCents || 0)) + extras;
+    }
+
+    function renderOrderReview(data) {
+      const panel = $("order-review-panel");
+      const toggle = $("order-review-toggle");
+      panel.hidden = true;
+      toggle.hidden = !data;
+      toggle.textContent = "Ver pedido";
+      toggle.setAttribute("aria-expanded", "false");
+      if (!data) return;
+
+      const basketName = String(data.basket && data.basket.name || data.summary && data.summary.name || "Cesta pronta");
+      $("order-review-kind").textContent = data.customOrder === true
+        ? "Pedido personalizado: inclui somente os produtos escolhidos em “Monte sua Cesta”; não inclui uma cesta pronta."
+        : basketName + (selectedExtraEntries(data).length ? " e produtos extras selecionados." : ".");
+      const entries = orderReviewEntries(data);
+      $("order-review-items").innerHTML = entries.map((item) =>
+        '<li class="order-review-item"><div><strong>' + esc(item.name) +
+        '</strong><span>Quantidade: ' + item.quantity + '</span></div></li>'
+      ).join("");
+      $("order-review-empty").textContent = entries.length ? "" : "Nenhum produto neste pedido.";
+      $("order-review-empty").hidden = entries.length > 0;
+      $("order-review-total").textContent = money(orderReviewTotalCents(data));
+
+      const minimumMessage = $("order-review-minimum-message");
+      if (data.customOrder === true) {
+        const subtotal = customOrderSubtotalCents(data);
+        minimumMessage.textContent = subtotal < minimumOrderCents
+          ? "Pedido mínimo de " + money(minimumOrderCents) + ". Faltam " + money(minimumOrderCents - subtotal) + "."
+          : "Pedido mínimo atingido.";
+        minimumMessage.hidden = false;
+      } else {
+        minimumMessage.textContent = "";
+        minimumMessage.hidden = true;
+      }
     }
 
     async function openOrderSheet(isCustomOrder) {
       const data = state.baskets.get(state.activeKey);
       if (isCustomOrder && (!data || data.customOrder !== true)) return;
       $("order-title").textContent = isCustomOrder ? "Pedido personalizado" : "Encomendar cesta";
-      $("custom-order-summary").hidden = !isCustomOrder;
-      if (isCustomOrder) renderCustomOrderSummary(data);
+      renderOrderReview(data);
       showSheet("order-sheet");
       loadDeliveryOptions();
       if (state.catalogCode && !state.identityLookupStarted) {
@@ -513,6 +554,14 @@
       $("payment-options").addEventListener("change", updateConfirmOrderAvailability);
       $("delivery-date").addEventListener("change", updateConfirmOrderAvailability);
       $("confirm-order").addEventListener("click", confirmOrder);
+      $("order-review-toggle").addEventListener("click", () => {
+        const toggle = $("order-review-toggle");
+        const panel = $("order-review-panel");
+        const expanded = toggle.getAttribute("aria-expanded") === "true";
+        panel.hidden = expanded;
+        toggle.setAttribute("aria-expanded", String(!expanded));
+        toggle.textContent = expanded ? "Ver pedido" : "Ocultar pedido";
+      });
       $("add-more-products").addEventListener("click", () => {
         // Keep the verified customer/payment while the shopper adds items.
         closeSheet("order-sheet", true);
