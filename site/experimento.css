@@ -292,19 +292,37 @@ body {
 }
 
 .experiment-nav-link.experiment-nav-checkout {
-  border-color: #aacdb2;
-  background: #eff7f0;
-  color: #27643c;
+  gap: 3px;
+  border-color: #7e3029;
+  background: #7e3029;
+  color: #fff;
   font-family: inherit;
-  font-weight: 750;
+  font-weight: 800;
   cursor: pointer;
+  box-shadow: 0 2px 7px rgba(81, 29, 50, .2);
+}
+
+.experiment-nav-checkout-mark { display: grid; place-items: center; }
+.experiment-nav-checkout-mark svg {
+  display: block;
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .experiment-nav-link.experiment-nav-checkout:hover,
 .experiment-nav-link.experiment-nav-checkout:focus-visible {
-  border-color: #72a681;
-  background: #e2f0e5;
-  color: #1f5831;
+  border-color: #66251f;
+  background: #66251f;
+  color: #fff;
+}
+.experiment-nav-link.experiment-nav-checkout:focus-visible {
+  outline: 3px solid rgba(211, 171, 98, .75);
+  outline-offset: 2px;
 }
 
 .experiment-nav-link[data-experiment-nav="basket"] {
