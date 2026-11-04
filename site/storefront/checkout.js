@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  function create({ state, $, esc, phoneDigits, money, toast, request, whatsappNumber, quantityOf, closeSheet, showSheet, onCustomOrderSubmitted }) {
+  function create({ state, $, esc, phoneDigits, money, toast, request, whatsappNumber, quantityOf, closeSheet, showSheet, changeBasketItemQuantity, onHomeExtraQuantityChanged, onCustomOrderSubmitted }) {
     const customOrderKey = "__custom_products__";
     const minimumOrderCents = 7500;
     function addressLines(address) {
@@ -195,21 +195,46 @@
         sum + Math.max(0, Number(item.price_cents || 0)) * Math.max(0, Math.trunc(Number(item.quantity || 0))), 0);
     }
 
-    function orderReviewEntries(data) {
-      const entries = new Map();
-      const add = (id, name, quantity) => {
-        const qty = Math.max(0, Math.trunc(Number(quantity || 0)));
-        if (!qty) return;
-        const key = String(id || name || "product");
-        const current = entries.get(key);
-        if (current) current.quantity += qty;
-        else entries.set(key, { name: String(name || "Produto"), quantity: qty });
-      };
-      if (data && data.customOrder !== true && Array.isArray(data.items)) {
-        data.items.forEach((item) => add(item.product_id, item.name || item.label, quantityOf(item)));
+    function orderReviewImageUrl(value) {
+      try {
+        const url = new URL(String(value || "").trim(), window.location.href);
+        return url.protocol === "http:" || url.protocol === "https:" ? url.href : "../img/logoantonia5.png";
+      } catch (_) {
+        return "../img/logoantonia5.png";
       }
-      selectedExtraEntries(data).forEach((item) => add(item.id, item.name, item.quantity));
-      return Array.from(entries.values());
+    }
+
+    function orderReviewEntries(data) {
+      const entries = [];
+      if (data && data.customOrder !== true && Array.isArray(data.items)) {
+        data.items.forEach((item) => {
+          const positionId = String(item.position_id || "");
+          entries.push({
+            kind: "basket",
+            positionId,
+            name: String(item.name || item.label || "Produto"),
+            imageUrl: item.image_url || item.image,
+            quantity: Math.max(0, Math.trunc(Number(quantityOf(item) || 0))),
+            maxQuantity: 1000
+          });
+        });
+      }
+      const extraEntries = data && data.extraSelections instanceof Map
+        ? Array.from(data.extraSelections.values())
+        : [];
+      extraEntries.forEach((item) => {
+        const id = String(item && item.id || "");
+        if (!item || !id) return;
+        entries.push({
+          kind: "extra",
+          id,
+          name: String(item.name || "Produto"),
+          imageUrl: item.image_url || item.image,
+          quantity: Math.max(0, Math.trunc(Number(item.quantity || 0))),
+          maxQuantity: Math.max(0, Math.trunc(Number(item.stock_quantity || 0)))
+        });
+      });
+      return entries;
     }
 
     function orderReviewTotalCents(data) {
@@ -221,29 +246,39 @@
     }
 
     function renderOrderReview(data) {
-      const panel = $("order-review-panel");
-      const toggle = $("order-review-toggle");
-      panel.hidden = true;
-      toggle.hidden = !data;
-      toggle.textContent = "Ver pedido";
-      toggle.setAttribute("aria-expanded", "false");
-      if (!data) return;
-
-      const basketName = String(data.basket && data.basket.name || data.summary && data.summary.name || "Cesta pronta");
-      $("order-review-kind").textContent = data.customOrder === true
-        ? "Pedido personalizado: inclui somente os produtos escolhidos em “Monte sua Cesta”; não inclui uma cesta pronta."
-        : basketName + (selectedExtraEntries(data).length ? " e produtos extras selecionados." : ".");
+      const itemsHost = $("order-review-items");
       const entries = orderReviewEntries(data);
-      $("order-review-items").innerHTML = entries.map((item) =>
-        '<li class="order-review-item"><div><strong>' + esc(item.name) +
-        '</strong><span>Quantidade: ' + item.quantity + '</span></div></li>'
-      ).join("");
+      itemsHost.innerHTML = entries.map((item) => {
+        const name = esc(item.name);
+        const targetData = item.kind === "basket"
+          ? ' data-position-id="' + esc(item.positionId) + '"'
+          : ' data-extra-id="' + esc(item.id) + '"';
+        const unavailable = data.changing === true || (item.kind === "basket" && !item.positionId);
+        const minusDisabled = unavailable || item.quantity <= 0;
+        const plusDisabled = unavailable || item.quantity >= item.maxQuantity;
+        return '<li class="order-review-item">' +
+          '<img class="order-review-item-photo" src="' + esc(orderReviewImageUrl(item.imageUrl)) + '" alt="" width="72" height="72" loading="lazy" decoding="async">' +
+          '<div class="order-review-item-copy"><strong>' + name + '</strong><span>Quantidade no pedido</span></div>' +
+          '<div class="order-review-quantity" role="group" aria-label="Quantidade de ' + name + '">' +
+            '<button type="button" data-order-review-adjust data-kind="' + item.kind + '"' + targetData + ' data-delta="-1" aria-label="Diminuir quantidade de ' + name + '"' + (minusDisabled ? " disabled" : "") + '>−</button>' +
+            '<output aria-live="polite">' + item.quantity + '</output>' +
+            '<button type="button" data-order-review-adjust data-kind="' + item.kind + '"' + targetData + ' data-delta="1" aria-label="Aumentar quantidade de ' + name + '"' + (plusDisabled ? " disabled" : "") + '>+</button>' +
+          '</div>' +
+        '</li>';
+      }).join("");
+      itemsHost.setAttribute("aria-busy", data && data.changing === true ? "true" : "false");
+      $("order-review-kind").textContent = !data
+        ? ""
+        : data.customOrder === true
+          ? "Pedido personalizado: inclui somente os produtos escolhidos em “Monte sua Cesta”; não inclui uma cesta pronta."
+          : String(data.basket && data.basket.name || data.summary && data.summary.name || "Cesta pronta") +
+            (selectedExtraEntries(data).length ? " e produtos extras selecionados." : ".");
       $("order-review-empty").textContent = entries.length ? "" : "Nenhum produto neste pedido.";
       $("order-review-empty").hidden = entries.length > 0;
-      $("order-review-total").textContent = money(orderReviewTotalCents(data));
+      $("order-review-total").textContent = data ? money(orderReviewTotalCents(data)) : "—";
 
       const minimumMessage = $("order-review-minimum-message");
-      if (data.customOrder === true) {
+      if (data && data.customOrder === true) {
         const subtotal = customOrderSubtotalCents(data);
         minimumMessage.textContent = subtotal < minimumOrderCents
           ? "Pedido mínimo de " + money(minimumOrderCents) + ". Faltam " + money(minimumOrderCents - subtotal) + "."
@@ -253,13 +288,23 @@
         minimumMessage.textContent = "";
         minimumMessage.hidden = true;
       }
+      updateConfirmOrderAvailability();
+
+      itemsHost.querySelectorAll("img").forEach((image) => image.addEventListener("error", () => {
+        image.src = "../img/logoantonia5.png";
+      }, { once: true }));
     }
 
     async function openOrderSheet(isCustomOrder) {
-      const data = state.baskets.get(state.activeKey);
-      if (isCustomOrder && (!data || data.customOrder !== true)) return;
+      const activeKey = state.activeKey;
+      const data = state.baskets.get(activeKey);
+      if (!data || (isCustomOrder && data.customOrder !== true)) return;
+      if (data.changePromise) await data.changePromise;
+      if (state.activeKey !== activeKey) return;
       $("order-title").textContent = isCustomOrder ? "Pedido personalizado" : "Encomendar cesta";
       renderOrderReview(data);
+      const orderContent = $("#order-sheet .sheet-content");
+      if (orderContent) orderContent.scrollTop = 0;
       showSheet("order-sheet");
       loadDeliveryOptions();
       if (state.catalogCode && !state.identityLookupStarted) {
@@ -282,6 +327,21 @@
       } else {
         $("customer-phone").focus({ preventScroll: true });
       }
+    }
+
+    function hasHomeExtraSelection() {
+      return state.homeExtraSelections instanceof Map && Array.from(state.homeExtraSelections.values()).some((item) =>
+        item && String(item.id || "") && Math.max(0, Math.trunc(Number(item.quantity || 0))) > 0);
+    }
+
+    async function openSidebarCheckout() {
+      if (hasHomeExtraSelection()) return startCustomOrder();
+      const data = state.baskets.get(state.activeKey);
+      if (!data || data.orderable !== true || data.customOrder === true) {
+        toast("Escolha uma cesta ou selecione produtos em “Monte sua Cesta” antes de continuar.");
+        return;
+      }
+      return openOrderSheet(false);
     }
 
     function startCustomOrder() {
@@ -543,6 +603,44 @@
         await openOrderSheet(false);
       });
       $("home-extra-checkout").addEventListener("click", startCustomOrder);
+      const sidebarCheckout = $("sidebar-checkout");
+      if (sidebarCheckout) sidebarCheckout.addEventListener("click", openSidebarCheckout);
+      $("order-review-items").addEventListener("click", async (event) => {
+        const button = event.target instanceof Element ? event.target.closest("[data-order-review-adjust]") : null;
+        if (!button) return;
+        event.preventDefault();
+        const activeKey = state.activeKey;
+        const data = state.baskets.get(activeKey);
+        const delta = Math.trunc(Number(button.dataset.delta || 0));
+        if (!data || (delta !== -1 && delta !== 1) || data.changing === true) return;
+
+        if (button.dataset.kind === "basket") {
+          if (!button.dataset.positionId || typeof changeBasketItemQuantity !== "function") return;
+          const itemsHost = $("order-review-items");
+          itemsHost.setAttribute("aria-busy", "true");
+          itemsHost.querySelectorAll("[data-order-review-adjust]").forEach((control) => { control.disabled = true; });
+          await changeBasketItemQuantity(button.dataset.positionId, delta);
+        } else if (button.dataset.kind === "extra") {
+          const item = data.extraSelections instanceof Map ? data.extraSelections.get(button.dataset.extraId) : null;
+          if (!item) return;
+          const id = String(item.id);
+          const maxQuantity = Math.max(0, Math.trunc(Number(item.stock_quantity || 0)));
+          const quantity = Math.max(0, Math.min(maxQuantity, Math.trunc(Number(item.quantity || 0)) + delta));
+          const updated = Object.assign({}, item, { quantity });
+          data.extraSelections.set(id, updated);
+          const isHomeProduct = data.customOrder === true ||
+            data.homeExtraProductIds instanceof Set && data.homeExtraProductIds.has(id) ||
+            state.homeExtraSelections instanceof Map && state.homeExtraSelections.has(id);
+          if (isHomeProduct && state.homeExtraSelections instanceof Map) {
+            if (quantity === 0) state.homeExtraSelections.delete(id);
+            else state.homeExtraSelections.set(id, updated);
+            if (typeof onHomeExtraQuantityChanged === "function") onHomeExtraQuantityChanged();
+          }
+        }
+
+        const current = state.baskets.get(activeKey);
+        if (current && state.activeKey === activeKey) renderOrderReview(current);
+      });
       $("lookup-button").addEventListener("click", lookupCustomer);
       $("customer-phone").addEventListener("input", () => {
         resetCustomerState($("customer-phone").value.trim()
@@ -554,14 +652,6 @@
       $("payment-options").addEventListener("change", updateConfirmOrderAvailability);
       $("delivery-date").addEventListener("change", updateConfirmOrderAvailability);
       $("confirm-order").addEventListener("click", confirmOrder);
-      $("order-review-toggle").addEventListener("click", () => {
-        const toggle = $("order-review-toggle");
-        const panel = $("order-review-panel");
-        const expanded = toggle.getAttribute("aria-expanded") === "true";
-        panel.hidden = expanded;
-        toggle.setAttribute("aria-expanded", String(!expanded));
-        toggle.textContent = expanded ? "Ver pedido" : "Ocultar pedido";
-      });
       $("add-more-products").addEventListener("click", () => {
         // Keep the verified customer/payment while the shopper adds items.
         closeSheet("order-sheet", true);
