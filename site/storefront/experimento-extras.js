@@ -794,6 +794,7 @@
       updateHomeExtraCard(id);
       updateBasketExtraCards(id, quantity, product.stock_quantity);
       renderHomeExtraSummary();
+      if (typeof state.updateSidebarCheckoutCount === "function") state.updateSidebarCheckoutCount();
     }
 
     function syncHomeSelectionFromBasket(product, quantity, data) {
@@ -870,6 +871,7 @@
         if (isActiveVisibleBasket(data)) $("detail-total").textContent = money(displayedTotalCents(data));
       });
       renderHomeExtras();
+      if (typeof state.updateSidebarCheckoutCount === "function") state.updateSidebarCheckoutCount();
     }
 
     function initHomeExtras() {
@@ -933,6 +935,7 @@
       if (state.homeExtraProducts.has(String(productId))) syncHomeSelectionFromBasket(product, quantity, data);
       updateBasketExtraCards(productId, quantity, product.stock_quantity);
       $("detail-total").textContent = money(displayedTotalCents(data));
+      if (typeof state.updateSidebarCheckoutCount === "function") state.updateSidebarCheckoutCount();
     }
 
     return {
