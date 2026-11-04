@@ -638,8 +638,8 @@
       if (count) count.textContent = quantity + (quantity === 1 ? " produto escolhido" : " produtos escolhidos");
       if (total) total.textContent = "Subtotal dos produtos: " + money(subtotal);
       if (hint) hint.textContent = subtotal < 7500
-        ? "Pedido mínimo de R$ 75,00; faltam " + money(7500 - subtotal) + "."
-        : "Você pode concluir o pedido só com estes produtos.";
+        ? "Pedido personalizado. Mínimo de R$ 75,00; faltam " + money(7500 - subtotal) + ". Cesta pronta não incluída."
+        : "Pedido personalizado com estes produtos. Cesta pronta não incluída.";
     }
 
     function updateHomeExtraCard(productId) {
