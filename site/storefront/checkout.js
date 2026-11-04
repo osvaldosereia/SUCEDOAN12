@@ -301,6 +301,7 @@
       if (!data || (isCustomOrder && data.customOrder !== true)) return;
       if (data.changePromise) await data.changePromise;
       if (state.activeKey !== activeKey) return;
+      setOrderSubmitMessage("", "");
       $("order-title").textContent = isCustomOrder ? "Pedido personalizado" : "Encomendar cesta";
       renderOrderReview(data);
       const orderContent = document.querySelector("#order-sheet .sheet-content");
@@ -504,6 +505,14 @@
         submitButton.disabled = false;
       }
     }
+    function setOrderSubmitMessage(message, tone) {
+      const messageNode = $("order-submit-message");
+      if (!messageNode) return;
+      messageNode.textContent = String(message || "");
+      messageNode.dataset.tone = tone || "error";
+      messageNode.hidden = !message;
+    }
+
     async function confirmOrder() {
       const data = state.baskets.get(state.activeKey);
       const customer = state.customer;
@@ -524,6 +533,7 @@
       state.submittingOrder = true;
       updateConfirmOrderAvailability();
       button.textContent = "Registrando…";
+      setOrderSubmitMessage("", "");
       try {
         const result = await request("submit_order", {
           method: "POST",
@@ -547,28 +557,42 @@
           }
         });
         closeSheet("order-sheet");
+        const receipt = $("order-receipt");
         const publicOrderCode = String(result.order_number || "").trim().slice(0, 24);
-        if (publicOrderCode) {
-          $("order-receipt-title").textContent = "Pedido " + publicOrderCode;
-          const receipt = $("order-receipt");
-          const trackingLink = $("order-receipt-link");
-          let safeTrackingUrl = "";
-          try {
-            const url = new URL(String(result.order_public_url || ""));
-            if (url.protocol === "https:" &&
-              ["donaantonia.com.br", "www.donaantonia.com.br"].includes(url.hostname) &&
-              url.pathname === "/p/" &&
-              Boolean(url.searchParams.get("k"))) safeTrackingUrl = url.href;
-          } catch {}
-          trackingLink.href = safeTrackingUrl;
-          trackingLink.hidden = !safeTrackingUrl;
-          receipt.hidden = false;
-          receipt.focus();
-        }
+        $("order-receipt-title").textContent = publicOrderCode ? "Pedido " + publicOrderCode : "Seu pedido foi recebido";
+        const serverTotalCents = result && result.total_cents;
+        const finalTotalCents = serverTotalCents !== null && serverTotalCents !== undefined && Number.isFinite(Number(serverTotalCents))
+          ? Number(serverTotalCents)
+          : orderReviewTotalCents(data);
+        $("order-receipt-total").textContent = money(finalTotalCents);
+        const deliveryOption = state.deliveryOptions.find((option) => option.date === deliveryDate);
+        $("order-receipt-delivery").textContent = deliveryOption && deliveryOption.label || deliveryDate;
+        $("order-receipt-payment").textContent = payment.value;
+
+        const trackingLink = $("order-receipt-link");
+        let safeTrackingUrl = "";
+        try {
+          const url = new URL(String(result.order_public_url || ""));
+          if (url.protocol === "https:" &&
+            ["donaantonia.com.br", "www.donaantonia.com.br"].includes(url.hostname) &&
+            url.pathname === "/p/" &&
+            Boolean(url.searchParams.get("k"))) safeTrackingUrl = url.href;
+        } catch {}
+        trackingLink.href = safeTrackingUrl;
+        trackingLink.hidden = !safeTrackingUrl;
+        $("order-receipt-followup").textContent = safeTrackingUrl
+          ? "No acompanhamento, você verá os produtos e o status atualizado do pedido."
+          : "O link de acompanhamento não ficou disponível. Se precisar, fale com a loja pelo WhatsApp.";
+        receipt.hidden = false;
+        window.requestAnimationFrame(() => {
+          receipt.focus({ preventScroll: true });
+          receipt.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
         if (data.customOrder && typeof onCustomOrderSubmitted === "function") onCustomOrderSubmitted();
+        const orderLabel = publicOrderCode ? "Pedido " + publicOrderCode : "Pedido";
         toast(result.stock_adjustment
-          ? "Pedido " + (result.order_number || "") + " registrado no Admin com ajuste de estoque."
-          : "Pedido " + (result.order_number || "") + " registrado no Admin.");
+          ? orderLabel + " recebido com ajuste de estoque."
+          : orderLabel + " recebido com sucesso.");
       } catch (error) {
         const reason = String(error && error.message || "");
         const messages = {
@@ -587,7 +611,10 @@
           invalid_whatsapp_phone: "O telefone do cadastro não está em um formato válido.",
           invalid_payment: "A forma de pagamento não foi reconhecida. Selecione novamente e tente outra vez."
         };
-        toast(messages[reason] || "Não foi possível registrar o pedido. Confira os dados e tente novamente.");
+        const message = messages[reason] ||
+          "Não recebemos a confirmação. O pedido pode ter sido registrado; antes de tentar novamente, fale com a loja pelo WhatsApp para evitar um pedido duplicado.";
+        setOrderSubmitMessage(message, messages[reason] ? "error" : "warning");
+        toast(message);
       } finally {
         state.submittingOrder = false;
         button.textContent = "Confirmar pedido";
