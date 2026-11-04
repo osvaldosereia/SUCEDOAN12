@@ -589,9 +589,10 @@
           receipt.scrollIntoView({ behavior: "smooth", block: "start" });
         });
         if (data.customOrder && typeof onCustomOrderSubmitted === "function") onCustomOrderSubmitted();
+        const orderLabel = publicOrderCode ? "Pedido " + publicOrderCode : "Pedido";
         toast(result.stock_adjustment
-          ? "Pedido " + (publicOrderCode || "") + " recebido com ajuste de estoque."
-          : "Pedido " + (publicOrderCode || "recebido com sucesso") + " registrado.");
+          ? orderLabel + " recebido com ajuste de estoque."
+          : orderLabel + " recebido com sucesso.");
       } catch (error) {
         const reason = String(error && error.message || "");
         const messages = {
