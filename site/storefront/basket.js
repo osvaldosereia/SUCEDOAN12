@@ -41,6 +41,7 @@
           data.changing = false;
           data.changingPosition = "";
           setQuotePendingControls(sizeKey, positionId, false);
+          if (typeof state.updateSidebarCheckoutCount === "function") state.updateSidebarCheckoutCount();
           if (data.changePromise === update) data.changePromise = null;
         }
       })();
