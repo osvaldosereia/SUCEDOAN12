@@ -291,39 +291,72 @@ body {
   color: #fff;
 }
 
-.experiment-nav-link.experiment-nav-checkout {
-  gap: 3px;
-  border-color: #7e3029;
-  background: #7e3029;
-  color: #fff;
-  font-family: inherit;
-  font-weight: 800;
-  cursor: pointer;
-  box-shadow: 0 2px 7px rgba(81, 29, 50, .2);
+.experiment-sidebar-actions {
+  display: grid;
+  justify-items: center;
+  gap: 9px;
+  margin-top: auto;
 }
-
-.experiment-nav-checkout-mark { display: grid; place-items: center; }
-.experiment-nav-checkout-mark svg {
+.experiment-checkout-button {
+  position: relative;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: min(100%, clamp(54px, calc(var(--experiment-rail) - 16px), 66px));
+  height: 62px;
+  min-height: 62px;
+  padding: 0;
+  border: 1px solid #b71c1c;
+  border-radius: 18px;
+  background: #c62828;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 3px 9px rgba(130, 25, 25, .24);
+  transition: background-color .15s ease, border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+}
+.experiment-checkout-button:hover {
+  border-color: #a91f1f;
+  background: #b52020;
+  box-shadow: 0 4px 11px rgba(130, 25, 25, .3);
+  transform: translateY(-1px);
+}
+.experiment-checkout-button:focus-visible {
+  outline: 3px solid #e0bd73;
+  outline-offset: 3px;
+}
+.experiment-checkout-icon {
   display: block;
-  width: 17px;
-  height: 17px;
+  width: 32px;
+  height: 32px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.8;
+  stroke-width: 1.9;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-
-.experiment-nav-link.experiment-nav-checkout:hover,
-.experiment-nav-link.experiment-nav-checkout:focus-visible {
-  border-color: #66251f;
-  background: #66251f;
-  color: #fff;
+.experiment-checkout-count {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  min-width: 25px;
+  height: 25px;
+  padding: 0 5px;
+  border: 2px solid #fbfaf9;
+  border-radius: 999px;
+  background: #fff;
+  color: #b71c1c;
+  font-size: 12px;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 2px 5px rgba(36, 24, 20, .24);
 }
-.experiment-nav-link.experiment-nav-checkout:focus-visible {
-  outline: 3px solid rgba(211, 171, 98, .75);
-  outline-offset: 2px;
-}
+.experiment-checkout-count[hidden] { display: none; }
+.experiment-sidebar-actions .experiment-whatsapp { margin: 0 auto; }
 
 .experiment-nav-link[data-experiment-nav="basket"] {
   border-color: #bf9955;
