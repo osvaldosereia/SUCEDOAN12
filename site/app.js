@@ -270,6 +270,7 @@
     const data = state.baskets.get(sizeKey);
     if (!data) return;
     state.activeKey = sizeKey;
+    if (typeof state.updateSidebarCheckoutCount === "function") state.updateSidebarCheckoutCount();
     $("detail-content").scrollTop = 0;
     if (data.error) data.error = false;
     attachHomeSelections(data);
@@ -279,6 +280,7 @@
     data.detailPromise = basketForSize(sizeKey).then((detail) => {
       Object.assign(data, detail, { summary: data.summary, detailLoaded: true, error: false });
       attachHomeSelections(data);
+      if (typeof state.updateSidebarCheckoutCount === "function") state.updateSidebarCheckoutCount();
       renderCards();
     }).catch(() => {
       data.error = true;
@@ -300,6 +302,7 @@
     onHomeExtraQuantityChanged: extras.syncHomeExtraSelection,
     onCustomOrderSubmitted: extras.clearHomeExtraSelections
   });
+  state.updateSidebarCheckoutCount = checkout.updateSidebarCheckoutCount;
   const {
     displayedTotalCents, extraCategoriesFor, extraCategoriesMarkup,
     bindExtraProductControls, toggleExtraCategory,
