@@ -9,12 +9,12 @@
   <link rel="preload" as="image" href="../img/logoantonia5.png">
   <link rel="preload" as="image" href="assets/cestas/cesta-economica.jpg" fetchpriority="high">
   <link rel="preconnect" href="https://ssbesxgaijknwsjbsbcz.supabase.co" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=31">
+  <link rel="stylesheet" href="styles.css?v=32">
   <link rel="stylesheet" href="experimento.css?v=10">
   <script src="config.js?v=2" defer></script>
   <script src="storefront/experimento-extras.js?v=3" defer></script>
   <script src="storefront/basket.js?v=4" defer></script>
-  <script src="storefront/checkout.js?v=14" defer></script>
+  <script src="storefront/checkout.js?v=15" defer></script>
   <script src="app.js?v=29" defer></script>
   <script src="experimento.js?v=3" defer></script>
 </head>
@@ -61,12 +61,26 @@
   <main>
 
     <section id="order-receipt" class="order-receipt" role="status" aria-live="polite" tabindex="-1" hidden>
-      <div>
-        <p class="eyebrow">Pedido registrado</p>
-        <h2 id="order-receipt-title"></h2>
-        <p>Você pode acompanhar o pedido aqui mesmo. A confirmação por WhatsApp é um aviso separado.</p>
+      <div class="order-receipt-main">
+        <div class="order-receipt-heading">
+          <span class="order-receipt-icon" aria-hidden="true">✓</span>
+          <div>
+            <p class="eyebrow">Pedido recebido com sucesso</p>
+            <h2 id="order-receipt-title">Seu pedido foi recebido</h2>
+            <p class="order-receipt-description">A loja recebeu seu pedido. A confirmação pelo WhatsApp é uma notificação separada e pode demorar alguns minutos.</p>
+          </div>
+        </div>
+        <dl class="order-receipt-facts" aria-label="Resumo do pedido">
+          <div><dt>Total confirmado</dt><dd id="order-receipt-total">—</dd></div>
+          <div><dt>Entrega</dt><dd id="order-receipt-delivery">—</dd></div>
+          <div><dt>Pagamento</dt><dd id="order-receipt-payment">—</dd></div>
+        </dl>
+        <p id="order-receipt-followup" class="order-receipt-followup">Use o botão abaixo para ver os produtos e acompanhar o status do pedido.</p>
       </div>
-      <a id="order-receipt-link" class="button button-primary" href="" hidden>Acompanhar pedido</a>
+      <div class="order-receipt-actions">
+        <a id="order-receipt-link" class="button button-primary" href="" hidden>Ver produtos e acompanhar status</a>
+        <a class="button button-outline" href="https://wa.me/5565998159975?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20meu%20pedido." target="_blank" rel="noopener noreferrer">Falar com a loja no WhatsApp</a>
+      </div>
     </section>
     <section id="inicio" class="welcome" aria-labelledby="welcome-title">
       <p class="eyebrow">Praticidade para sua casa</p>
@@ -260,6 +274,7 @@
       </div>
       <div class="sheet-actions">
         <p id="confirm-order-reason" class="checkout-blocker-message" role="status" aria-live="polite" hidden></p>
+        <p id="order-submit-message" class="order-submit-message" role="alert" aria-live="assertive" hidden></p>
         <button id="add-more-products" class="button button-outline button-wide" type="button" hidden>Voltar e adicionar produtos</button>
         <button id="confirm-order" class="button button-primary button-wide" type="button" aria-describedby="confirm-order-reason" disabled>Confirmar pedido</button>
       </div>
