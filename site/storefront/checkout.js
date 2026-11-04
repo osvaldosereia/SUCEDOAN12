@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  function create({ state, $, esc, phoneDigits, money, toast, request, whatsappNumber, quantityOf, closeSheet, showSheet, changeBasketItemQuantity, onHomeExtraQuantityChanged, onCustomOrderSubmitted }) {
+  function create({ state, $, esc, phoneDigits, money, toast, request, whatsappNumber, quantityOf, closeSheet, showSheet, changeBasketItemQuantity, attachHomeSelections, onHomeExtraQuantityChanged, onCustomOrderSubmitted }) {
     const customOrderKey = "__custom_products__";
     const minimumOrderCents = 7500;
     function addressLines(address) {
@@ -335,13 +335,17 @@
     }
 
     async function openSidebarCheckout() {
-      if (hasHomeExtraSelection()) return startCustomOrder();
       const data = state.baskets.get(state.activeKey);
-      if (!data || data.orderable !== true || data.customOrder === true) {
-        toast("Escolha uma cesta ou selecione produtos em “Monte sua Cesta” antes de continuar.");
-        return;
+      if (data && data.customOrder !== true) {
+        if (data.orderable !== true) {
+          toast("A cesta selecionada ainda está carregando ou indisponível. Tente novamente em instantes.");
+          return;
+        }
+        if (hasHomeExtraSelection() && typeof attachHomeSelections === "function") attachHomeSelections(data);
+        return openOrderSheet(false);
       }
-      return openOrderSheet(false);
+      if (hasHomeExtraSelection()) return startCustomOrder();
+      toast("Escolha uma cesta ou selecione produtos em “Monte sua Cesta” antes de continuar.");
     }
 
     function startCustomOrder() {
@@ -634,7 +638,7 @@
           if (isHomeProduct && state.homeExtraSelections instanceof Map) {
             if (quantity === 0) state.homeExtraSelections.delete(id);
             else state.homeExtraSelections.set(id, updated);
-            if (typeof onHomeExtraQuantityChanged === "function") onHomeExtraQuantityChanged();
+            if (typeof onHomeExtraQuantityChanged === "function") onHomeExtraQuantityChanged(id);
           }
         }
 
