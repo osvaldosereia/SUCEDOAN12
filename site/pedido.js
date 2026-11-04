@@ -53,22 +53,25 @@
 
   function renderCustomer(snapshot, delivery) {
     const name = String(snapshot.customer_name || (snapshot.customer && snapshot.customer.name) || "Cliente").trim() || "Cliente";
-    $("order-customer-name").textContent = name;
+    const nameTarget = $("order-customer-name");
+    if (nameTarget) nameTarget.textContent = name;
 
     const phone = String(snapshot.customer_phone || snapshot.phone || "").trim();
     const phoneLink = $("order-customer-phone");
     const phoneEmpty = $("order-customer-phone-empty");
     const number = whatsappNumber(phone);
-    if (number) {
-      phoneLink.href = "https://wa.me/" + number;
-      phoneLink.textContent = formatPhone(phone) || phoneDigits(phone);
-      phoneLink.setAttribute("aria-label", "Conversar pelo WhatsApp com " + name);
-      phoneLink.hidden = false;
-      phoneEmpty.hidden = true;
-    } else {
-      phoneLink.removeAttribute("href");
-      phoneLink.hidden = true;
-      phoneEmpty.hidden = false;
+    if (phoneLink) {
+      if (number) {
+        phoneLink.href = "https://wa.me/" + number;
+        phoneLink.textContent = formatPhone(phone) || phoneDigits(phone);
+        phoneLink.setAttribute("aria-label", "Conversar pelo WhatsApp com " + name);
+        phoneLink.hidden = false;
+        if (phoneEmpty) phoneEmpty.hidden = true;
+      } else {
+        phoneLink.removeAttribute("href");
+        phoneLink.hidden = true;
+        if (phoneEmpty) phoneEmpty.hidden = false;
+      }
     }
 
     const address = delivery && typeof delivery === "object" ? delivery : {};
@@ -76,8 +79,11 @@
     const secondLine = [address.complement, address.district || address.neighborhood].filter(Boolean).join(" · ");
     const cityLine = [address.city, address.state].filter(Boolean).join(" - ");
     const reference = address.reference ? "Referência: " + address.reference : "";
-    $("order-customer-address").textContent =
-      [firstLine, secondLine, cityLine, reference].filter(Boolean).join(" · ") || "Endereço não informado";
+    const addressTarget = $("order-customer-address");
+    if (addressTarget) {
+      addressTarget.textContent =
+        [firstLine, secondLine, cityLine, reference].filter(Boolean).join(" · ") || "Endereço não informado";
+    }
   }
 
   function renderOrder(data) {
