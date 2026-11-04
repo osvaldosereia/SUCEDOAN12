@@ -939,6 +939,7 @@
       toggleExtraCategory,
       initHomeExtras,
       clearHomeExtraSelections,
+      renderHomeExtraSummary,
       homeSelectionReviewMarkup,
       bindHomeSelectionControls,
       attachHomeSelections
