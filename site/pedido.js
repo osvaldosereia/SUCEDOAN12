@@ -16,12 +16,17 @@
   };
   const statusText = (value) => ({
     new: "Pedido recebido",
+    received: "Pedido recebido",
+    storefront_received: "Pedido recebido",
     confirmed: "Pedido confirmado",
+    processing: "Pedido em separação",
     separating: "Pedido em separação",
+    ready: "Pedido em expedição",
     ready_for_delivery: "Pedido em expedição",
+    out_for_delivery: "Pedido em expedição",
     delivered: "Pedido entregue",
     cancelled: "Pedido cancelado"
-  })[String(value || "").toLowerCase()] || "Pedido registrado";
+  })[String(value || "").toLowerCase()] || "Pedido recebido";
 
   async function getJson(url, headers) {
     const response = await fetch(url, { method: "GET", headers, cache: "no-store", credentials: "omit" });
