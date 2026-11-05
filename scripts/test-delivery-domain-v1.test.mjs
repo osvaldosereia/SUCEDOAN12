@@ -87,3 +87,26 @@ test("failed route creation retains selected orders for retry", () => {
   assert.deepEqual([...deliveryDomain.routeSelectionAfterAction(selection, false)], ["order-1", "order-2"]);
   assert.equal(deliveryDomain.routeSelectionAfterAction(selection, true).size, 0);
 });
+
+test("today's route queue excludes overdue and future orders and keeps same-day legacy orders", () => {
+  assert.equal(typeof deliveryDomain.partitionDeliveryOrders, "function");
+  const queue = deliveryDomain.partitionDeliveryOrders([
+    { id: "today", checkout_snapshot: { delivery: { date: "2026-11-05" } } },
+    { id: "overdue", checkout_snapshot: { delivery: { date: "2026-11-04" } } },
+    { id: "future", checkout_snapshot: { delivery: { date: "2026-11-06" } } },
+    { id: "legacy-today", created_at: "2026-11-05T04:30:00.000Z", checkout_snapshot: {} },
+    { id: "no-date", created_at: "invalid", checkout_snapshot: {} },
+  ], "2026-11-05");
+  assert.deepEqual(queue.today.map((order) => order.id), ["today", "legacy-today"]);
+  assert.deepEqual(queue.overdue.map((order) => order.id), ["overdue"]);
+  assert.deepEqual(queue.future.map((order) => order.id), ["future"]);
+  assert.deepEqual(queue.undated.map((order) => order.id), ["no-date"]);
+});
+
+test("prepaid payment method requires an explicit supported selection", () => {
+  assert.equal(typeof deliveryDomain.prepaidPaymentMethod, "function");
+  assert.equal(deliveryDomain.prepaidPaymentMethod(""), null);
+  assert.equal(deliveryDomain.prepaidPaymentMethod("pix"), "pix");
+  assert.equal(deliveryDomain.prepaidPaymentMethod("credit_card"), "credit_card");
+  assert.equal(deliveryDomain.prepaidPaymentMethod("cash"), null);
+});
