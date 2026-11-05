@@ -401,8 +401,15 @@ async function submitDraft(kind: MessageKind) {
         : error instanceof RequestFailure
         ? error.message
         : "meta_template_submit_failed";
-      const diagnostic = error instanceof MetaTemplatesError && error.httpStatus
-        ? `${code} (HTTP ${error.httpStatus}, Meta ${error.providerCode ?? "sem código"})`
+      const diagnostic = error instanceof MetaTemplatesError
+        ? [
+          code,
+          error.httpStatus ? `HTTP ${error.httpStatus}` : "",
+          error.providerCode != null ? `Meta ${error.providerCode}` : "",
+          error.providerSubcode != null ? `subcode ${error.providerSubcode}` : "",
+          error.providerType || "",
+          error.providerMessage || "",
+        ].filter(Boolean).join(" · ")
         : code;
       results.push({ channel, error: diagnostic });
     }
