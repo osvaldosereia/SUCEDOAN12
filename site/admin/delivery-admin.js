@@ -1,4 +1,4 @@
-import { addRouteSelection, buildMapsHref, latestLocationEvidence, routeSelectionAfterAction } from "./delivery-domain.mjs?v=2";
+import { addRouteSelection, buildMapsHref, latestLocationEvidence, partitionDeliveryOrders, prepaidPaymentMethod, routeSelectionAfterAction } from "./delivery-domain.mjs?v=3";
 
 (() => {
   "use strict";
@@ -71,6 +71,11 @@ import { addRouteSelection, buildMapsHref, latestLocationEvidence, routeSelectio
     return new Set((state.data?.runs || []).flatMap((run) => (run.stops || []).map((stop) => stop.order_id)));
   }
 
+  function readyDeliveryQueue() {
+    const ready = (state.data?.orders || []).filter((order) => order.status === "ready");
+    return partitionDeliveryOrders(ready, state.data?.service_date);
+  }
+
   function renderDriverOptions() {
     const catalog = state.data?.catalog || {};
     const drivers = Array.isArray(catalog.drivers) ? catalog.drivers : [];
@@ -84,11 +89,11 @@ import { addRouteSelection, buildMapsHref, latestLocationEvidence, routeSelectio
 
   function renderReadyOrders() {
     const assigned = orderIdsInRuns();
-    const ready = (state.data?.orders || []).filter((order) => order.status === "ready" && !assigned.has(order.id));
+    const ready = readyDeliveryQueue().today.filter((order) => !assigned.has(order.id));
     $("delivery-ready-count").textContent = String(ready.length);
     const host = $("delivery-ready-orders");
     if (!ready.length) {
-      host.innerHTML = `<div class="delivery-empty">Não há pedidos prontos sem entregador atribuído.</div>`;
+      host.innerHTML = `<div class="delivery-empty">Não há pedidos programados para hoje sem entregador atribuído.</div>`;
       updateSelectedCount();
       return;
     }
@@ -100,7 +105,7 @@ import { addRouteSelection, buildMapsHref, latestLocationEvidence, routeSelectio
       const prepaid = order.delivery_paid_ahead === true;
       const prepaidControl = prepaid
         ? `<span class="delivery-prepaid-badge">PAGO ADIANTADO · NÃO COBRAR</span>`
-        : `<div class="delivery-prepaid-control"><select data-prepaid-method="${esc(order.id)}" aria-label="Forma de pagamento antecipado"><option value="pix">Pix pago</option><option value="credit_card">Link/cartão pago</option></select><input type="text" data-prepaid-reference maxlength="120" placeholder="Referência opcional"><button type="button" class="button button-outline" data-prepaid-order="${esc(order.id)}">Marcar como pago</button></div>`;
+        : `<div class="delivery-prepaid-control"><select data-prepaid-method="${esc(order.id)}" aria-label="Forma de pagamento antecipado"><option value="" selected disabled>Selecione se já foi pago</option><option value="pix">Pix pago</option><option value="credit_card">Link/cartão pago</option></select><input type="text" data-prepaid-reference maxlength="120" placeholder="Referência opcional"><button type="button" class="button button-outline" data-prepaid-order="${esc(order.id)}">Marcar como pago</button></div>`;
       const evidenceMarkup = evidence
         ? `<div class="delivery-location-preview"><strong>Localizador recente ${evidence.direction === "outbound" ? "enviado pela loja" : "enviado pelo cliente"}</strong><span>${esc(formatDate(evidence.captured_at))}${evidence.label ? " · " + esc(evidence.label) : ""}</span><button type="button" class="button button-outline" data-confirm-location="${esc(order.id)}" data-evidence-id="${esc(evidence.id)}">Salvar no cadastro do cliente</button></div>`
         : `<p class="delivery-no-location">Nenhum localizador válido encontrado nesta conversa ou no cadastro.</p>`;
@@ -171,7 +176,7 @@ import { addRouteSelection, buildMapsHref, latestLocationEvidence, routeSelectio
       ? `<span class="delivery-prepaid-badge">PAGO ADIANTADO · NÃO COBRAR</span>`
       : delivered
         ? `<span class="delivery-payment-recorded">Pagamento registrado na entrega</span>`
-        : `<div class="delivery-prepaid-control"><select data-prepaid-method="${esc(order.id)}" aria-label="Forma de pagamento antecipado"><option value="pix">Pix pago</option><option value="credit_card">Link/cartão pago</option></select><input type="text" data-prepaid-reference maxlength="120" placeholder="Referência opcional"><button type="button" class="button button-outline" data-prepaid-order="${esc(order.id)}">Marcar como pago</button></div>`;
+        : `<div class="delivery-prepaid-control"><select data-prepaid-method="${esc(order.id)}" aria-label="Forma de pagamento antecipado"><option value="" selected disabled>Selecione se já foi pago</option><option value="pix">Pix pago</option><option value="credit_card">Link/cartão pago</option></select><input type="text" data-prepaid-reference maxlength="120" placeholder="Referência opcional"><button type="button" class="button button-outline" data-prepaid-order="${esc(order.id)}">Marcar como pago</button></div>`;
     const location = evidence && order.delivery_customer_address_id
       ? `<div class="delivery-location-preview"><strong>Localizador recente ${evidence.direction === "outbound" ? "enviado pela loja" : "enviado pelo cliente"}</strong><span>${esc(formatDate(evidence.captured_at))}</span><button type="button" class="button button-outline" data-confirm-location="${esc(order.id)}" data-evidence-id="${esc(evidence.id)}">Salvar no cadastro do cliente</button></div>`
       : evidence ? `<div class="delivery-location-preview"><strong>Localizador recente ${evidence.direction === "outbound" ? "enviado pela loja" : "enviado pelo cliente"}</strong><span>${esc(formatDate(evidence.captured_at))} · ao confirmar, ele será salvo no cadastro do cliente.</span><button type="button" class="button button-outline" data-confirm-location="${esc(order.id)}" data-evidence-id="${esc(evidence.id)}">Salvar no cadastro do cliente</button></div>` : "";
@@ -212,8 +217,18 @@ import { addRouteSelection, buildMapsHref, latestLocationEvidence, routeSelectio
     renderDrivers();
     renderRoutes();
     const assigned = orderIdsInRuns();
-    const available = (state.data?.orders || []).filter((order) => order.status === "ready" && !assigned.has(order.id)).length;
-    $("delivery-admin-status").textContent = `${available} pedido${available === 1 ? "" : "s"} em expedição disponível${available === 1 ? "" : "is"} · ${(state.data?.runs || []).length} rota${(state.data?.runs || []).length === 1 ? "" : "s"} hoje.`;
+    const queue = readyDeliveryQueue();
+    const available = queue.today.filter((order) => !assigned.has(order.id)).length;
+    const availableText = available
+      ? `${available} pedido${available === 1 ? "" : "s"} de hoje disponíve${available === 1 ? "l" : "is"}`
+      : "Nenhum pedido disponível para hoje";
+    const outsideToday = [];
+    if (queue.overdue.length) outsideToday.push(`${queue.overdue.length} atrasado${queue.overdue.length === 1 ? "" : "s"}`);
+    if (queue.undated.length) outsideToday.push(`${queue.undated.length} sem data`);
+    if (queue.future.length) outsideToday.push(`${queue.future.length} agendado${queue.future.length === 1 ? "" : "s"} para depois`);
+    const outsideText = outsideToday.length ? ` Fora da rota de hoje: ${outsideToday.join(", ")}.` : "";
+    const runs = state.data?.runs || [];
+    $("delivery-admin-status").textContent = `${availableText} · ${runs.length} rota${runs.length === 1 ? "" : "s"} hoje.${outsideText}`;
   }
 
   async function load() {
@@ -258,6 +273,8 @@ import { addRouteSelection, buildMapsHref, latestLocationEvidence, routeSelectio
       invalid_order_id: "um pedido selecionado não é válido. Atualize a lista e tente novamente.",
       duplicate_order_in_route: "há pedido duplicado na rota. Atualize a lista e selecione novamente.",
       order_not_ready: "um dos pedidos não está mais pronto para expedição; atualize a lista.",
+      order_delivery_date_mismatch: "um dos pedidos não está programado para hoje; confira a data de entrega e atualize a fila.",
+      service_date_unavailable: "não foi possível confirmar a data local da rota. Atualize a tela e tente novamente.",
       vehicle_already_dispatched: "este entregador já saiu em uma rota hoje.",
       order_already_dispatched: "um pedido já está em uma rota que saiu.",
       delivery_loading_confirmation_required: "confirme o carregamento de todos os pedidos antes de liberar a saída.",
@@ -350,7 +367,12 @@ import { addRouteSelection, buildMapsHref, latestLocationEvidence, routeSelectio
 
   async function markPrepaid(orderId, card) {
     const select = card?.querySelector(`[data-prepaid-method="${CSS.escape(orderId)}"]`);
-    const method = select?.value || "pix";
+    const method = prepaidPaymentMethod(select?.value);
+    if (!method) {
+      showMessage("Selecione Pix ou link/cartão já pago antes de confirmar.", true);
+      select?.focus();
+      return;
+    }
     const reference = card?.querySelector("[data-prepaid-reference]")?.value || "";
     const methodLabel = method === "pix" ? "Pix" : "link/cartão";
     if (!window.confirm(`Confirma que o pagamento de ${methodLabel} foi recebido integralmente? O entregador verá “PAGO ADIANTADO · NÃO COBRAR” e não cobrará na entrega.`)) return;

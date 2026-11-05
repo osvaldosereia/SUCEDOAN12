@@ -18,7 +18,7 @@ test("changed admin scripts use fresh cache versions", () => {
   assert.ok(/src="admin\.js\?v=25"/.test(html), "admin navigation code must bypass the previously cached script");
   assert.ok(/src="orders-admin\.js\?v=9"/.test(html), "delivery action in the expedition list must bypass the old script");
   assert.ok(/src="separation-message-admin\.js\?v=4"/.test(html), "new template controls must bypass the old script");
-  assert.ok(/src="delivery-admin\.js\?v=2"/.test(html), "delivery admin imports must bypass cached modules");
+  assert.ok(/src="delivery-admin\.js\?v=3"/.test(html), "delivery admin imports must bypass cached modules");
   assert.ok(/src="driver\.js\?v=2"/.test(read("site/entregador/index.html")), "driver portal imports must bypass cached modules");
 });
 
@@ -29,6 +29,26 @@ test("delivery function delegates bearer authentication to its handler", () => {
   assert.ok(/async function requireDriver\(req: Request\)/.test(source), "driver bearer token must be checked by the handler");
   assert.ok(/\.eq\("token_hash", tokenHash\)/.test(source), "handler must compare only the stored token hash");
   assert.ok(/\.gt\("expires_at", new Date\(\)\.toISOString\(\)\)/.test(source), "handler must reject expired driver access tokens");
+});
+
+test("admin delivery queue uses the service date and only renders today's orders", () => {
+  const html = read("site/admin/index.html");
+  const admin = read("site/admin/delivery-admin.js");
+  const domain = read("site/admin/delivery-domain.mjs");
+  assert.ok(/delivery-admin\.js\?v=3/.test(html), "the delivery module must use a fresh cache version");
+  assert.ok(/partitionDeliveryOrders\(/.test(admin), "the ready queue must be partitioned by service date");
+  const edge = read("supabase/functions/delivery-ops-v1/index.ts");
+  assert.ok(/const serviceDate = serviceDateInCuiaba\(\)/.test(edge), "the API must use Cuiabá's service date");
+  assert.ok(/service_date:\s*serviceDate/.test(edge), "the API must return its service date to the admin");
+  assert.ok(/export function partitionDeliveryOrders\(/.test(domain), "the queue partition must be covered by the tested domain module");
+});
+
+test("prepaid selector starts unselected and cannot fall back to Pix", () => {
+  const admin = read("site/admin/delivery-admin.js");
+  assert.ok(/<option value="" selected disabled>Selecione se já foi pago<\/option>/.test(admin), "the operator must choose the actual prepaid method");
+  assert.ok(/prepaidPaymentMethod\(select\?\.value\)/.test(admin), "the selected method must be explicitly validated");
+  assert.ok(/if \(!method\)\s*\{[\s\S]*?return;\s*\}/.test(admin), "the prepaid action must stop when no valid method was selected");
+  assert.doesNotMatch(admin, /select\?\.value\s*\|\|\s*"pix"/, "the UI must never assume Pix as the default");
 });
 
 test("confirmed address uses address_line when street is empty", () => {

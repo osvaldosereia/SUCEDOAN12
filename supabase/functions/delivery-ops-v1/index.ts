@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { verifyAdminCode } from "../_shared/admin-code-v1.ts";
+import { isScheduledForDate, serviceDateInCuiaba } from "../_shared/delivery-date-v1.mjs";
 import { sendTemplateViaMeta, MetaTransportError } from "../_shared/whatsapp-meta-transport-v1.mjs";
 import { channelForWhatsappAccount, driverVisibleRuns, mergePlannedRouteOrderIds, normalizeDriverPhone, normalizeRouteOrderIds, normalizeStopIds } from "../_shared/delivery-ops-validation-v1.mjs";
 import { incrementNotificationAttemptCount, sendAndPersistDeliveryNotice } from "../_shared/delivery-notification-state-v1.mjs";
@@ -208,6 +209,8 @@ async function locationEvidenceForOrders(orders: JsonRecord[]) {
 }
 
 async function adminDashboard() {
+  const serviceDate = serviceDateInCuiaba();
+  if (!serviceDate) throw new ApiFailure("service_date_unavailable", 503);
   const [runsData, catalogData, readyQuery] = await Promise.all([
     deliveryRuns(),
     catalog(),
@@ -231,6 +234,7 @@ async function adminDashboard() {
   }));
   const locations = await locationEvidenceForOrders(allOrders);
   return {
+    service_date: serviceDate,
     orders: allOrders.filter((order: any) => ["ready", "out_for_delivery"].includes(order.status)),
     runs: enrichedRuns,
     catalog: catalogData,
@@ -332,6 +336,20 @@ async function planRun(input: JsonRecord) {
   const existingOrderIds = existingRuns.flatMap((run: any) => (run.stops || []).map((stop: any) => uuid(stop.order_id)).filter(Boolean));
   try { ids = mergePlannedRouteOrderIds(existingOrderIds, ids); }
   catch (error) { throw new ApiFailure(jsonError(error), 400); }
+  const serviceDate = serviceDateInCuiaba();
+  if (!serviceDate) throw new ApiFailure("service_date_unavailable", 503);
+  const ordersResult = await db.from("orders")
+    .select("id,status,created_at,checkout_snapshot")
+    .in("id", ids)
+    .in("source", OP_SOURCES);
+  if (ordersResult.error) throw ordersResult.error;
+  const routeOrders = ordersResult.data || [];
+  if (routeOrders.length !== ids.length || routeOrders.some((order: any) => order.status !== "ready")) {
+    throw new ApiFailure("order_not_ready", 409);
+  }
+  if (routeOrders.some((order: any) => !isScheduledForDate(order, serviceDate))) {
+    throw new ApiFailure("order_delivery_date_mismatch", 409);
+  }
   const result = await db.rpc("smart_delivery_plan_run_v1", {
     p_vehicle_key: key,
     p_order_ids: ids,
