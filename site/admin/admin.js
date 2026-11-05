@@ -136,10 +136,11 @@
       panel.hidden = !active;
       panel.classList.toggle("active", active);
     });
-    $("page-title").textContent = ({ customers: "Clientes", baskets: "Cestas", products: "Produtos", orders: "Pedidos", "quick-balance": "Balanço rápido", whatsapp: "WhatsApp", overview: "Visão geral" })[name] || "Visão geral";
+    $("page-title").textContent = ({ customers: "Clientes", baskets: "Cestas", products: "Produtos", orders: "Pedidos", delivery: "Entregas", "quick-balance": "Balanço rápido", whatsapp: "WhatsApp", overview: "Visão geral" })[name] || "Visão geral";
     if (name === "baskets") window.DonaBasketAdmin?.loadBaskets();
     if (name === "products") window.DonaCatalogAdmin?.loadProducts();
     if (name === "orders") window.DonaOrdersAdmin?.loadOrders();
+    if (name === "delivery") window.DonaDeliveryAdmin?.load();
     if (name === "quick-balance") window.DonaQuickBalanceAdmin?.open();
     if (name === "whatsapp") loadWhatsAppSection();
   }
@@ -430,6 +431,7 @@
   $("customer-editor").addEventListener("submit", saveCustomer);
   document.querySelectorAll(".nav-tab").forEach((button) => button.addEventListener("click", () => setView(button.dataset.view)));
   document.querySelectorAll("[data-go]").forEach((button) => button.addEventListener("click", () => setView(button.dataset.go)));
+  window.DonaAdminSetView = setView;
   const blingReauthorizeButton = $("bling-reauthorize");
   if (blingReauthorizeButton) blingReauthorizeButton.addEventListener("click", reauthorizeBling);
   handleBlingOauthReturn();

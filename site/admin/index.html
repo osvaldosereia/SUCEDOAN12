@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="baskets-admin.css?v=3">
   <link rel="stylesheet" href="whatsapp-campaign-report.css?v=1">
   <link rel="stylesheet" href="orders-admin.css?v=9">
+  <link rel="stylesheet" href="delivery-admin.css?v=2">
   <link rel="stylesheet" href="quick-balance-admin.css?v=4">
   <script src="../config.js?v=3"></script>
   <script src="admin-auth.js?v=2" defer></script>
@@ -20,14 +21,16 @@
   <script src="taxonomy-admin.js?v=1" defer></script>
   <script src="papoai-guard-admin.js?v=1" defer></script>
   <script src="baskets-admin.js?v=5" defer></script>
-  <script src="orders-admin.js?v=8" defer></script>
+  <script src="orders-admin.js?v=9" defer></script>
+  <script type="module" src="delivery-admin.js?v=2"></script>
   <script src="order-message-admin.js?v=3" defer></script>
-  <script src="separation-message-admin.js?v=3" defer></script>
-  <script src="whatsapp-admin.js?v=29" defer></script>
+  <script src="separation-message-admin.js?v=4" defer></script>
+  <script src="whatsapp-template-button-support.js?v=1" defer></script>
+  <script src="whatsapp-admin.js?v=30" defer></script>
   <script src="whatsapp-campaign-report.js?v=1" defer></script>
   <script src="whatsapp-conversations.js?v=16" defer></script>
   <script src="quick-balance-admin.js?v=7" defer></script>
-  <script src="admin.js?v=23" defer></script>
+  <script src="admin.js?v=25" defer></script>
 </head>
 <body class="admin-page">
   <main id="admin-login" class="admin-login-main">
@@ -70,6 +73,9 @@
           <p class="nav-group-label">Operação</p>
           <button class="nav-tab" type="button" data-view="orders">
             <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M8 10h8M8 14h8M8 18h4"/></svg></span><span>Pedidos</span>
+          </button>
+          <button class="nav-tab" type="button" data-view="delivery">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 6h11v11H3zM14 10h4l3 3v4h-7z"/><circle cx="7.5" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path d="M6 9h5M6 12h3"/></svg></span><span>Entregas</span>
           </button>
           <button class="nav-tab" type="button" data-view="quick-balance">
             <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3"/><path d="M6.5 9.5h2v5h-2zM10.5 8h1.5v8h-1.5zM14 9.5h1.5v5H14zM17 8.5h1v7h-1z"/></svg></span><span>Balanço rápido</span>
@@ -267,7 +273,47 @@
         <input id="orders-notice-attention" type="checkbox">
         Mostrar falhas nos avisos de WhatsApp
       </label>
-    <div id="orders-list" class="orders-list"></div>    <div id="orders-list" class="orders-list"></div>
+        <div id="orders-list" class="orders-list"></div>
+      </section>
+
+      <section class="admin-view delivery-admin-view" data-panel="delivery" hidden>
+        <div class="section-title delivery-admin-heading">
+          <div><h2>Entregas</h2><p>Distribua os pedidos prontos entre os entregadores, confira a carga e acompanhe as rotas.</p></div>
+          <button id="delivery-admin-refresh" class="button button-outline" type="button">Atualizar</button>
+        </div>
+        <p class="delivery-admin-local-note">Fase inicial: rotas simples, ordenação manual pelo entregador e navegação pelo Google Maps. A previsão de chegada é informada pelo entregador.</p>
+        <p id="delivery-admin-status" class="admin-muted" role="status" aria-live="polite">Carregando entregas…</p>
+        <div class="delivery-admin-grid">
+          <section class="delivery-admin-section delivery-ready-section">
+            <div class="delivery-section-title"><div><h3>Pedidos em expedição</h3><p>Selecione os pedidos e atribua uma rota a um entregador ativo.</p></div><strong id="delivery-ready-count">0</strong></div>
+            <div class="delivery-planner-fields">
+              <label>Entregador ativo<select id="delivery-driver-select"><option value="">Selecione o entregador</option></select></label>
+              <label>Região da rota<select id="delivery-region-select"><option value="">Usar região dos pedidos</option></select></label>
+            </div>
+            <div id="delivery-ready-orders" class="delivery-ready-orders"></div>
+            <div class="delivery-planner-footer"><span id="delivery-selected-count">Nenhum pedido selecionado</span><button id="delivery-plan-run" class="button button-primary" type="button" disabled>Montar rota</button></div>
+          </section>
+
+          <section class="delivery-admin-section delivery-drivers-section">
+            <div class="delivery-section-title"><div><h3>Entregadores</h3><p>Ative apenas quem estiver trabalhando hoje.</p></div></div>
+            <form id="delivery-driver-form" class="delivery-driver-form">
+              <input id="delivery-driver-id" type="hidden">
+              <label>Nome<input id="delivery-driver-name" maxlength="120" autocomplete="name" required></label>
+              <label>WhatsApp<input id="delivery-driver-phone" type="tel" inputmode="tel" maxlength="32" placeholder="(65) 99999-9999"></label>
+              <label>Região principal<select id="delivery-driver-region"><option value="">Sem região definida</option></select></label>
+              <label class="delivery-active-toggle"><input id="delivery-driver-active" type="checkbox" checked><span>Disponível para receber entregas</span></label>
+              <div class="delivery-form-actions"><button id="delivery-driver-cancel" class="button button-outline" type="button" hidden>Cancelar edição</button><button id="delivery-driver-save" class="button button-primary" type="submit">Cadastrar entregador</button></div>
+            </form>
+            <div id="delivery-driver-list" class="delivery-driver-list"></div>
+            <div class="delivery-access-link-box"><input id="delivery-driver-access-link" type="url" readonly aria-label="Link individual do entregador" hidden><button id="delivery-driver-copy-access" class="button button-outline" type="button" hidden>Copiar link individual</button></div>
+          </section>
+        </div>
+
+        <section class="delivery-admin-section delivery-routes-section">
+          <div class="delivery-section-title"><div><h3>Rotas de hoje</h3><p>Confira os pedidos, confirme o carregamento e libere a saída do entregador.</p></div></div>
+          <div id="delivery-routes-list" class="delivery-routes-list"></div>
+        </section>
+        <p id="delivery-admin-action-status" class="form-message" role="status" aria-live="polite"></p>
       </section>
 
       <section class="admin-view" data-panel="whatsapp" hidden>
@@ -410,7 +456,9 @@
           <nav class="message-type-tabs" aria-label="Resultado da separação" role="tablist">
             <button class="message-type-tab active" type="button" role="tab" aria-selected="true" data-separation-kind="prepared_ok">Todos os produtos encontrados</button>
             <button class="message-type-tab" type="button" role="tab" aria-selected="false" data-separation-kind="prepared_adjusted">Com produtos em falta</button>
+            <button class="message-type-tab" type="button" role="tab" aria-selected="false" data-separation-kind="driver_next_stop">Aviso da próxima entrega</button>
           </nav>
+          <p class="message-help">Os novos avisos de pedido separado terão os botões “Conferir pedido” e “Acompanhar entrega”. O aviso da próxima entrega não terá botões e só será usado depois da aprovação da Meta e da ativação aqui.</p>
           <div class="message-editor">
             <label for="separation-message-body">Texto da mensagem</label>
             <textarea id="separation-message-body" rows="14" maxlength="1024" spellcheck="false" aria-describedby="separation-message-variables separation-message-meta-status separation-message-draft-state"></textarea>

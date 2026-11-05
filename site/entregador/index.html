@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#7e3029">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <title>Entregas · Dona Antônia</title>
+  <link rel="stylesheet" href="../styles.css?v=5">
+  <link rel="stylesheet" href="driver.css?v=1">
+  <script src="../config.js?v=3"></script>
+  <script type="module" src="driver.js?v=2"></script>
+</head>
+<body class="driver-page">
+  <main class="driver-app">
+    <header class="driver-header">
+      <a class="driver-brand" href="/site/" aria-label="Dona Antônia">
+        <img src="/img/logoantonia5.png" alt="Dona Antônia" width="145" height="53">
+      </a>
+      <button id="driver-logout" class="driver-logout" type="button" hidden>Sair deste aparelho</button>
+    </header>
+
+    <section id="driver-access" class="driver-access-card" hidden>
+      <div class="driver-access-mark" aria-hidden="true">DA</div>
+      <p class="eyebrow">ÁREA DO ENTREGADOR</p>
+      <h1 id="driver-access-title">Acesso individual</h1>
+      <p id="driver-access-message">Abra o link pessoal que a loja enviou. Se o acesso expirou, solicite outro no admin.</p>
+      <button id="driver-retry" class="button button-primary" type="button" hidden>Tentar novamente</button>
+    </section>
+
+    <section id="driver-main" hidden>
+      <div class="driver-welcome">
+        <div><p class="eyebrow">ROTA DO DIA</p><h1 id="driver-name">Entregador</h1></div>
+        <button id="driver-refresh" class="button button-outline" type="button" aria-label="Atualizar rota">Atualizar</button>
+      </div>
+      <p id="driver-status" class="driver-status" role="status" aria-live="polite">Carregando rota…</p>
+      <div id="driver-routes" class="driver-routes"></div>
+    </section>
+    <p id="driver-toast" class="driver-toast" role="status" aria-live="polite"></p>
+  </main>
+  <dialog id="driver-deliver-dialog" class="driver-dialog">
+    <form id="driver-deliver-form" method="dialog" class="driver-dialog-card">
+      <button id="driver-deliver-close" class="driver-dialog-close" type="button" aria-label="Fechar">×</button>
+      <p class="eyebrow">CONFIRMAÇÃO DE ENTREGA</p>
+      <h2 id="driver-deliver-title">Marcar como entregue</h2>
+      <p id="driver-deliver-payment-note" class="driver-payment-note"></p>
+      <label id="driver-payment-field">Forma recebida
+        <select id="driver-payment-method" required>
+          <option value="">Selecione</option>
+          <option value="pix">Pix</option>
+          <option value="cash">Dinheiro</option>
+          <option value="credit_card">Cartão ou link</option>
+          <option value="food_card">Cartão alimentação</option>
+          <option value="meal_card">Cartão refeição</option>
+          <option value="other">Outra forma</option>
+        </select>
+      </label>
+      <button id="driver-deliver-confirm" class="button button-primary" type="submit">Confirmar entrega</button>
+      <p id="driver-deliver-error" class="driver-form-error" role="status" aria-live="polite"></p>
+    </form>
+  </dialog>
+</body>
+</html>

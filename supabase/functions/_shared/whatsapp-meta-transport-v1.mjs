@@ -131,7 +131,7 @@ function validateTemplateRequest({ accessToken, phoneNumberId, toE164, templateN
         const index=String(component.index??''),parameters=component.parameters??[];
         if(!/^[0-9]$/.test(index)||!Array.isArray(parameters)||parameters.length!==1)throw invalidRequest();
         const item=safeTextParameter(parameters[0],2000);
-        if(!/^[a-f0-9]{64}$/.test(item.text))throw invalidRequest();
+        if(!/^(?:[a-f0-9]{16}|[a-f0-9]{64})$/.test(item.text))throw invalidRequest();
         return {type:'button',sub_type:'url',index,parameters:[item]};
       }
       return safeQuickReplyButton(component);

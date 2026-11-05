@@ -140,7 +140,7 @@
           ? "<button class='button button-primary order-action' type='button' data-order-separate='" + esc(order.id) + "'>SEPARAR</button>"
           : delivered
             ? "<div class='delivered-stamp' aria-label='Pedido entregue'>ENTREGUE</div>"
-            : "<button class='button button-primary order-action' type='button' data-order-deliver='" + esc(order.id) + "'>Entregue</button>";
+            : "<button class='button button-primary order-action' type='button' data-order-delivery-open='" + esc(order.id) + "'>Organizar entrega</button>";
       const cancelable = ["storefront_received", "received", "confirmed", "processing"].includes(String(order.status || ""))
         && !order.bling_order_id && order.sync_status === "local";
       const deleteAction = cancelable
@@ -501,17 +501,6 @@
     }
   }
 
-  async function deliverOrder(id) {
-    if (!window.confirm("Marcar este pedido como entregue?")) return;
-    try {
-      await api("POST", "order_mark_delivered", { order_id: id });
-      toast("Pedido marcado como entregue.");
-      loadOrders();
-    } catch (error) {
-      toast(error.message || "Não foi possível registrar a entrega.");
-    }
-  }
-
   document.querySelectorAll("[data-order-stage]").forEach((button) => button.addEventListener("click", () => setStage(button.dataset.orderStage)));
   $("orders-notice-attention").addEventListener("change", renderList);
   $("orders-reload").addEventListener("click", loadOrders);
@@ -523,7 +512,7 @@
     if (button.dataset.orderOpen) openOrder(button.dataset.orderOpen);
     if (button.dataset.orderConfirm) confirmOrder(button.dataset.orderConfirm);
     if (button.dataset.orderSeparate) openSeparation(button.dataset.orderSeparate);
-    if (button.dataset.orderDeliver) deliverOrder(button.dataset.orderDeliver);
+    if (button.dataset.orderDeliveryOpen) window.DonaDeliveryAdmin?.openForOrder(button.dataset.orderDeliveryOpen);
     if (button.dataset.orderDelete) deleteOrder(button.dataset.orderDelete);
   });
   $("separation-items").addEventListener("click", (event) => {
