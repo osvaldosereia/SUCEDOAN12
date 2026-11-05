@@ -60,6 +60,7 @@ const DEFAULT_BODIES: Record<MessageKind, string> = {
     "Seu entregador é {{3}}, WhatsApp {{4}}.",
     "Valor do pedido: {{5}}.",
     "Forma de pagamento: {{6}}.",
+    "Se precisar, fale diretamente com o entregador pelo WhatsApp informado.",
   ].join("\n\n"),
 };
 const KIND_PREFIX: Record<MessageKind, string> = {
