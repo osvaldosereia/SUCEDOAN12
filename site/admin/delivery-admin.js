@@ -67,6 +67,33 @@ import { addRouteSelection, buildMapsHref, latestLocationEvidence, partitionDeli
     return latestLocationEvidence(rows);
   }
 
+  function addressReferenceMarkup(reference) {
+    if (!reference) return "";
+    const hasPrimary = reference.address_has_primary_location === true;
+    const alternatives = Array.isArray(reference.saved_locations) ? reference.saved_locations : [];
+    const currentPoint = reference.destination_confidence === "confirmed" && reference.destination_label
+      ? `<span>Ponto usado neste pedido: ${esc(reference.destination_label)}${reference.destination_captured_at ? " · " + esc(formatDate(reference.destination_captured_at)) : ""}</span>`
+      : "";
+    const photo = reference.address_photo?.url
+      ? `<a class="delivery-address-reference-photo" href="${esc(reference.address_photo.url)}" target="_blank" rel="noopener"><img src="${esc(reference.address_photo.url)}" alt="Foto de referência da fachada" loading="lazy"><span>Ver foto da fachada${reference.address_photo.captured_at ? " · " + esc(formatDate(reference.address_photo.captured_at)) : ""}</span></a>`
+      : "";
+    if (!hasPrimary && !alternatives.length && !currentPoint && !photo) return "";
+    const primary = hasPrimary
+      ? `<span>Localização principal salva no cadastro do cliente</span>`
+      : "";
+    const otherPoints = alternatives.length
+      ? `<span>Pontos alternativos: ${alternatives.map((item) => esc(item.label || "Ponto alternativo")).join(" · ")}</span>`
+      : "";
+    return `<div class="delivery-address-reference"><strong>Referências do endereço</strong>${primary}${currentPoint}${otherPoints}${photo}</div>`;
+  }
+
+  function hasValidMapPoint(latitude, longitude) {
+    const lat = Number(latitude);
+    const lng = Number(longitude);
+    return Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 &&
+      lng >= -180 && lng <= 180 && !(lat === 0 && lng === 0);
+  }
+
   function orderIdsInRuns() {
     return new Set((state.data?.runs || []).flatMap((run) => (run.stops || []).map((stop) => stop.order_id)));
   }
@@ -99,7 +126,12 @@ import { addRouteSelection, buildMapsHref, latestLocationEvidence, partitionDeli
     }
     host.innerHTML = ready.map((order) => {
       const evidence = evidenceFor(order);
-      const candidate = evidence ? { address: order.delivery_address, destination_latitude: evidence.latitude, destination_longitude: evidence.longitude, destination_confidence: "confirmed" } : { delivery_address: order.delivery_address };
+      const addressReference = order.address_reference;
+      const candidate = evidence
+        ? { address: order.delivery_address, destination_latitude: evidence.latitude, destination_longitude: evidence.longitude, destination_confidence: "confirmed" }
+        : addressReference?.address_has_primary_location
+          ? { address: order.delivery_address, destination_latitude: addressReference.primary_latitude, destination_longitude: addressReference.primary_longitude, destination_confidence: "saved" }
+          : { delivery_address: order.delivery_address };
       const maps = buildMapsHref(candidate);
       const phone = order.phone_e164 || "";
       const prepaid = order.delivery_paid_ahead === true;
@@ -113,7 +145,7 @@ import { addRouteSelection, buildMapsHref, latestLocationEvidence, partitionDeli
         <label class="delivery-ready-select"><input type="checkbox" data-select-delivery-order="${esc(order.id)}" ${state.selected.has(order.id) ? "checked" : ""}><span><strong>Pedido ${esc(orderNumber(order))}</strong><small>${esc(customerName(order))}</small></span><b>${esc(money(order.total))}</b></label>
         <div class="delivery-order-details"><span>${esc(addressText(order))}</span><span>${phone ? `<a href="${esc(phoneHref(phone))}" target="_blank" rel="noopener">WhatsApp ${esc(phone)}</a>` : "Telefone não informado"}</span><span>Pagamento: ${esc(order.payment_display || "A confirmar")}</span></div>
         ${maps ? `<a class="delivery-map-link" href="${esc(maps)}" target="_blank" rel="noopener">Abrir endereço no Google Maps</a>` : ""}
-        ${prepaidControl}${evidenceMarkup}
+        ${prepaidControl}${evidenceMarkup}${addressReferenceMarkup(addressReference)}
       </article>`;
     }).join("");
     updateSelectedCount();
@@ -163,7 +195,19 @@ import { addRouteSelection, buildMapsHref, latestLocationEvidence, partitionDeli
   function renderRouteStop(run, stop) {
     const order = stop.order || {};
     const evidence = latestEvidenceForStop(order);
-    const mapStop = { ...stop, order, address: stop.address || order.delivery_address };
+    const addressReference = stop.address_reference || order.address_reference;
+    const hasRoutePoint = ["confirmed", "saved"].includes(String(stop.destination_confidence || "")) &&
+      hasValidMapPoint(stop.destination_latitude, stop.destination_longitude);
+    const mapStop = hasRoutePoint || !addressReference?.address_has_primary_location
+      ? { ...stop, order, address: stop.address || order.delivery_address }
+      : {
+        ...stop,
+        order,
+        address: stop.address || order.delivery_address,
+        destination_latitude: addressReference.primary_latitude,
+        destination_longitude: addressReference.primary_longitude,
+        destination_confidence: "saved",
+      };
     const mapHref = buildMapsHref(mapStop) || (evidence ? buildMapsHref({ destination_latitude: evidence.latitude, destination_longitude: evidence.longitude, destination_confidence: "confirmed" }) : "");
     const delivered = stop.status === "delivered";
     const planned = run.status === "planned" && !run.loading_started_at && !run.loaded_at && stop.status === "planned";
@@ -183,7 +227,7 @@ import { addRouteSelection, buildMapsHref, latestLocationEvidence, partitionDeli
     const items = Array.isArray(order.items) && order.items.length
       ? `<details class="delivery-items"><summary>${order.items.length} item${order.items.length === 1 ? "" : "s"} no pedido</summary><ul>${order.items.map((item) => `<li>${esc(item.quantity)} × ${esc(item.name)}</li>`).join("")}</ul></details>` : "";
     return `<article class="delivery-stop-card ${delivered ? "is-delivered" : ""}" data-delivery-order-card="${esc(order.id)}">
-      <div class="delivery-stop-main"><span class="delivery-stop-sequence">${esc(stop.sequence)}.</span><div class="delivery-stop-copy"><strong>Pedido ${esc(orderNumber(order))} · ${esc(customerName(order))}</strong><span>${esc(addressText(order))}</span><span>${phone ? esc(phone) : "Telefone não informado"} · ${esc(money(order.total))}</span><span>Pagamento: ${esc(order.payment_display || stop.payment_method || "A confirmar")}</span>${items}${unpaidAction}${location}</div></div>
+      <div class="delivery-stop-main"><span class="delivery-stop-sequence">${esc(stop.sequence)}.</span><div class="delivery-stop-copy"><strong>Pedido ${esc(orderNumber(order))} · ${esc(customerName(order))}</strong><span>${esc(addressText(order))}</span><span>${phone ? esc(phone) : "Telefone não informado"} · ${esc(money(order.total))}</span><span>Pagamento: ${esc(order.payment_display || stop.payment_method || "A confirmar")}</span>${items}${unpaidAction}${location}${addressReferenceMarkup(addressReference)}</div></div>
       <div class="delivery-stop-actions">${contact}${map}${delivered ? `<span class="delivery-delivered-label">ENTREGUE</span>` : `<span class="delivery-stop-status">${run.status === "dispatched" ? "Em rota" : "Aguardando saída"}</span>`}</div>
       ${move}
     </article>`;

@@ -18,8 +18,8 @@ test("changed admin scripts use fresh cache versions", () => {
   assert.ok(/src="admin\.js\?v=25"/.test(html), "admin navigation code must bypass the previously cached script");
   assert.ok(/src="orders-admin\.js\?v=9"/.test(html), "delivery action in the expedition list must bypass the old script");
   assert.ok(/src="separation-message-admin\.js\?v=4"/.test(html), "new template controls must bypass the old script");
-  assert.ok(/src="delivery-admin\.js\?v=3"/.test(html), "delivery admin imports must bypass cached modules");
-  assert.ok(/src="driver\.js\?v=2"/.test(read("site/entregador/index.html")), "driver portal imports must bypass cached modules");
+  assert.ok(/src="delivery-admin\.js\?v=4"/.test(html), "delivery admin imports must bypass cached modules");
+  assert.ok(/src="driver\.js\?v=3"/.test(read("site/entregador/index.html")), "driver portal imports must bypass cached modules");
 });
 
 test("delivery function delegates bearer authentication to its handler", () => {
@@ -35,7 +35,7 @@ test("admin delivery queue uses the service date and only renders today's orders
   const html = read("site/admin/index.html");
   const admin = read("site/admin/delivery-admin.js");
   const domain = read("site/admin/delivery-domain.mjs");
-  assert.ok(/delivery-admin\.js\?v=3/.test(html), "the delivery module must use a fresh cache version");
+  assert.ok(/delivery-admin\.js\?v=4/.test(html), "the delivery module must use a fresh cache version");
   assert.ok(/partitionDeliveryOrders\(/.test(admin), "the ready queue must be partitioned by service date");
   const edge = read("supabase/functions/delivery-ops-v1/index.ts");
   assert.ok(/const serviceDate = serviceDateInCuiaba\(\)/.test(edge), "the API must use Cuiabá's service date");

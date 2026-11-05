@@ -7,9 +7,9 @@
   <meta name="robots" content="noindex, nofollow, noarchive">
   <title>Entregas · Dona Antônia</title>
   <link rel="stylesheet" href="../styles.css?v=5">
-  <link rel="stylesheet" href="driver.css?v=1">
+  <link rel="stylesheet" href="driver.css?v=2">
   <script src="../config.js?v=3"></script>
-  <script type="module" src="driver.js?v=2"></script>
+  <script type="module" src="driver.js?v=3"></script>
 </head>
 <body class="driver-page">
   <main class="driver-app">
@@ -58,6 +58,46 @@
       <button id="driver-deliver-confirm" class="button button-primary" type="submit">Confirmar entrega</button>
       <p id="driver-deliver-error" class="driver-form-error" role="status" aria-live="polite"></p>
     </form>
+  </dialog>
+  <dialog id="driver-address-dialog" class="driver-dialog driver-address-dialog">
+    <div class="driver-dialog-card">
+      <button id="driver-address-close" class="driver-dialog-close" type="button" aria-label="Fechar">×</button>
+      <p class="eyebrow">CADASTRO DO ENDEREÇO</p>
+      <h2 id="driver-address-title">Confirmar local e foto</h2>
+      <p id="driver-address-current" class="driver-payment-note"></p>
+
+      <button id="driver-location-capture" class="driver-location-capture" type="button">Capturar GPS neste local</button>
+      <p id="driver-location-capture-status" class="driver-inline-status" role="status" aria-live="polite"></p>
+      <label>Como salvar o ponto
+        <select id="driver-location-mode">
+          <option value="primary">Atualizar localização principal</option>
+          <option value="alternate" disabled>Guardar como ponto alternativo</option>
+        </select>
+      </label>
+      <label id="driver-location-label-field" hidden>Nome do ponto alternativo
+        <input id="driver-location-label" type="text" maxlength="80" placeholder="Ex.: Portão lateral">
+      </label>
+      <button id="driver-location-save" class="button button-primary" type="button" disabled>Salvar localização principal</button>
+
+      <div id="driver-saved-location-section" class="driver-saved-location" hidden>
+        <label>Usar um ponto alternativo já salvo
+          <select id="driver-saved-location-select"><option value="">Selecione um ponto salvo</option></select>
+        </label>
+        <button id="driver-saved-location-use" class="button button-outline" type="button" disabled>Usar neste pedido</button>
+      </div>
+      <p id="driver-location-error" class="driver-form-error" role="status" aria-live="polite"></p>
+
+      <div class="driver-address-photo-editor">
+        <p class="driver-address-section-title">Foto de referência da fachada</p>
+        <img id="driver-address-saved-photo" class="driver-address-saved-photo" alt="Foto da fachada já cadastrada" hidden>
+        <p id="driver-address-saved-photo-date" class="driver-inline-status"></p>
+        <label for="driver-address-photo-input" class="driver-camera-button">Tirar foto ou escolher imagem</label>
+        <input id="driver-address-photo-input" class="driver-camera-input" type="file" accept="image/*" capture="environment">
+        <img id="driver-address-photo-preview" class="driver-address-saved-photo" alt="Prévia da nova foto da fachada" hidden>
+        <button id="driver-address-photo-save" class="button button-outline" type="button" hidden disabled>Salvar foto da fachada</button>
+        <p id="driver-address-photo-status" class="driver-inline-status" role="status" aria-live="polite"></p>
+      </div>
+    </div>
   </dialog>
 </body>
 </html>

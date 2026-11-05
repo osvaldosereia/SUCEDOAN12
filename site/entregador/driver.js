@@ -10,7 +10,11 @@ import { buildMapsHref, deliveryNoticeFailureMessage, movePlannedStop, paidAhead
   const $ = (id) => document.getElementById(id);
   const esc = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const money = (value) => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  const state = { token: "", driver: null, runs: [], busy: false, currentStop: null, toastTimer: 0, notifiedStops: new Set() };
+  const state = {
+    token: "", driver: null, runs: [], busy: false, currentStop: null,
+    addressStop: null, locationCapture: null, selectedPhoto: null, photoPreviewUrl: "",
+    toastTimer: 0, notifiedStops: new Set(),
+  };
 
   function tokenFromHash() {
     const hash = String(window.location.hash || "").replace(/^#/, "");
@@ -58,6 +62,25 @@ import { buildMapsHref, deliveryNoticeFailureMessage, movePlannedStop, paidAhead
     return data;
   }
 
+  async function requestPhoto(stopId, photo) {
+    const body = new FormData();
+    body.append("stop_id", stopId);
+    body.append("photo", photo, "fachada.jpg");
+    const response = await fetch(apiUrl("driver_upload_address_photo"), {
+      method: "POST",
+      headers: { apikey: key, authorization: "Bearer " + state.token },
+      body,
+      cache: "no-store",
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.ok === false) {
+      const error = new Error(data.error || "delivery_request_failed");
+      error.status = response.status;
+      throw error;
+    }
+    return data;
+  }
+
   function friendlyError(code) {
     const map = {
       driver_access_invalid: "Este link não é válido. Peça um novo acesso à loja.",
@@ -65,6 +88,25 @@ import { buildMapsHref, deliveryNoticeFailureMessage, movePlannedStop, paidAhead
       driver_run_not_found: "Esta rota não está mais disponível.",
       driver_stop_not_found: "Esta entrega não pertence à sua rota.",
       stop_is_not_next: "Conclua primeiro a entrega que aparece como próxima.",
+      stop_not_out_for_delivery: "Essa entrega ainda não foi iniciada.",
+      invalid_location_coordinates: "Não foi possível ler uma coordenada GPS válida. Tente capturar novamente.",
+      invalid_location_accuracy: "Não foi possível ler a precisão do GPS. Tente capturar novamente.",
+      invalid_location_mode: "Escolha como salvar esse ponto.",
+      alternate_location_label_required: "Informe um nome curto para o ponto alternativo.",
+      primary_location_required: "Salve primeiro o ponto principal do endereço.",
+      saved_location_not_available: "Esse ponto alternativo não pertence a este endereço.",
+      invalid_saved_location: "Selecione um ponto alternativo válido.",
+      save_location_before_photo: "Salve a localização do endereço antes da foto.",
+      customer_address_required: "Salve a localização do endereço antes da foto.",
+      address_photo_required: "Escolha ou tire uma foto da fachada.",
+      address_photo_type_invalid: "Escolha uma foto JPG, PNG ou WebP.",
+      address_photo_empty: "A foto está vazia. Tire outra foto.",
+      address_photo_too_large: "A foto ficou grande demais. Tente tirar outra com menor resolução.",
+      address_photo_upload_failed: "Não foi possível enviar a foto. Verifique a conexão e tente novamente.",
+      address_photo_save_failed: "A foto foi enviada, mas não foi vinculada ao endereço. Tente novamente.",
+      address_photo_compression_failed: "Não foi possível preparar a foto. Tente tirar outra imagem.",
+      address_photo_decode_failed: "O celular não conseguiu abrir essa imagem. Tente tirar outra foto diretamente pela câmera.",
+      customer_address_mismatch: "O endereço não corresponde a este pedido. Peça ajuda à loja.",
       route_locked: "A ordem não pode mais ser alterada depois da conferência da carga.",
       payment_method_required: "Selecione a forma de pagamento recebida.",
       next_stop_template_disabled: "O aviso automático está pausado. Avise o cliente pelo WhatsApp antes de sair.",
@@ -118,6 +160,12 @@ import { buildMapsHref, deliveryNoticeFailureMessage, movePlannedStop, paidAhead
     return buildMapsHref({ ...stop, address: order.delivery_address || stop.address });
   }
 
+  function shortDate(value) {
+    const date = value ? new Date(value) : null;
+    if (!date || !Number.isFinite(date.getTime())) return "";
+    return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(date);
+  }
+
   function paymentName(order) {
     if (order.delivery_paid_ahead === true) return order.delivery_paid_ahead_method === "pix" ? "Pix pago antecipadamente" : "Link de pagamento já pago";
     return order.payment_display || ({ pix: "Pix na entrega", cash: "Dinheiro na entrega", credit_card: "Cartão ou link na entrega", food_card: "Cartão alimentação", meal_card: "Cartão refeição", other: "Outra forma" })[order.payment_method] || "Forma a confirmar";
@@ -155,6 +203,15 @@ import { buildMapsHref, deliveryNoticeFailureMessage, movePlannedStop, paidAhead
     const payment = prepaid
       ? `<div class="driver-prepaid">${esc(paidAheadLabel(order))}</div>`
       : `<div class="driver-payment"><span>Receber na entrega</span><strong>${esc(paymentName(order))}</strong></div>`;
+    const locationSummary = stop.destination_confidence === "confirmed"
+      ? `<p class="driver-location-status"><strong>Localizador confirmado</strong>${stop.destination_label ? ` · ${esc(stop.destination_label)}` : ""}${stop.destination_captured_at ? ` · ${esc(shortDate(stop.destination_captured_at))}` : ""}</p>`
+      : `<p class="driver-location-status">${stop.destination_latitude != null && stop.destination_longitude != null ? "Ponto do mapa disponível" : "Mapa usará o endereço do pedido"}</p>`;
+    const addressPhoto = stop.address_photo?.url
+      ? `<figure class="driver-address-photo"><img src="${esc(stop.address_photo.url)}" alt="Foto de referência da fachada" loading="lazy"><figcaption>Foto da fachada${stop.address_photo.captured_at ? ` · ${esc(shortDate(stop.address_photo.captured_at))}` : ""}</figcaption></figure>`
+      : "";
+    const addressAction = isNext
+      ? `<button class="driver-address-action" type="button" data-open-address="${esc(stop.id)}">Confirmar local e foto</button>`
+      : "";
     const actions = delivered
       ? `<span class="driver-delivered-stamp">ENTREGUE</span>`
       : `<div class="driver-stop-actions">${wa ? `<a class="driver-action" href="${esc(wa)}" target="_blank" rel="noopener">WhatsApp do cliente</a>` : ""}${map ? `<a class="driver-action driver-action-map" href="${esc(map)}" target="_blank" rel="noopener">Abrir no Google Maps</a>` : ""}</div>`;
@@ -170,7 +227,7 @@ import { buildMapsHref, deliveryNoticeFailureMessage, movePlannedStop, paidAhead
     const savedNotice = state.notifiedStops.has(stop.id) ? `<p class="driver-notice-success">Aviso enviado ao cliente.</p>` : "";
     return `<article class="driver-stop ${delivered ? "is-delivered" : ""} ${isNext ? "is-next" : ""}" data-driver-stop="${esc(stop.id)}">
       <div class="driver-stop-top"><span class="driver-stop-number">${sequence}</span><div class="driver-stop-copy">${status}<span class="driver-stop-code">PEDIDO ${esc(orderNumber(order, stop))}</span><h3>${esc(orderName(order, stop))}</h3><span>${esc(stopAddress(stop))}</span><span>${phone ? esc(phone) : "WhatsApp não informado"}</span><span><strong>Total: ${esc(money(order.total ?? (Number(stop.total_cents || 0) / 100)))}</strong></span>${payment}</div></div>
-      ${canSort ? sortActions : ""}${actions}${savedNotice}${notice}${complete}${orderItems(order)}
+      ${locationSummary}${addressPhoto}${canSort ? sortActions : ""}${actions}${addressAction}${savedNotice}${notice}${complete}${orderItems(order)}
     </article>`;
   }
 
@@ -275,6 +332,250 @@ import { buildMapsHref, deliveryNoticeFailureMessage, movePlannedStop, paidAhead
     }
   }
 
+  function findStop(stopId) {
+    for (const run of state.runs) {
+      const found = (run.stops || []).find((stop) => stop.id === stopId);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  function openAddressDialog(stopId) {
+    const run = state.runs.find((item) => (item.stops || []).some((stop) => stop.id === stopId));
+    const stop = run ? nextStop(run) : null;
+    if (!stop || stop.id !== stopId) return toast("Confirme o endereço da entrega que aparece como próxima.", true);
+    state.addressStop = stop;
+    state.locationCapture = null;
+    state.selectedPhoto = null;
+    if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
+    state.photoPreviewUrl = "";
+    $("driver-address-title").textContent = "Pedido " + orderNumber(stop.order || {}, stop);
+    $("driver-location-mode").value = "primary";
+    $("driver-location-label").value = "";
+    $("driver-location-label-field").hidden = true;
+    $("driver-location-capture-status").textContent = "Toque para capturar o GPS enquanto estiver em frente ao endereço.";
+    $("driver-location-error").textContent = "";
+    $("driver-location-save").disabled = true;
+    $("driver-location-save").textContent = "Salvar localização principal";
+    $("driver-address-photo-input").value = "";
+    $("driver-address-photo-status").textContent = "Foto opcional. Enquadrar somente a fachada ajuda nas próximas entregas.";
+    $("driver-address-photo-save").hidden = true;
+    $("driver-address-photo-save").disabled = true;
+    $("driver-address-photo-preview").hidden = true;
+    $("driver-address-photo-preview").removeAttribute("src");
+    $("driver-address-dialog").dataset.stopId = stop.id;
+    syncAddressDialog();
+    $("driver-address-dialog").showModal();
+  }
+
+  function syncAddressDialog() {
+    const stop = state.addressStop;
+    if (!stop) return;
+    const hasCoordinates = stop.destination_latitude != null && stop.destination_longitude != null;
+    const label = stop.destination_label ? " · " + stop.destination_label : "";
+    $("driver-address-current").textContent = hasCoordinates
+      ? `${stop.destination_confidence === "confirmed" ? "Ponto atual confirmado" : "Ponto atual do pedido"}${label}${stop.destination_captured_at ? " · " + shortDate(stop.destination_captured_at) : ""}`
+      : "Ainda não há coordenadas salvas para este endereço.";
+    const mode = $("driver-location-mode");
+    const alternateOption = mode.querySelector('option[value="alternate"]');
+    alternateOption.disabled = !stop.address_has_primary_location;
+    if (mode.value === "alternate" && alternateOption.disabled) mode.value = "primary";
+    $("driver-location-label-field").hidden = mode.value !== "alternate";
+    $("driver-location-save").textContent = mode.value === "alternate" ? "Salvar ponto alternativo" : "Salvar localização principal";
+
+    const saved = Array.isArray(stop.saved_locations) ? stop.saved_locations : [];
+    const savedSection = $("driver-saved-location-section");
+    const savedSelect = $("driver-saved-location-select");
+    savedSection.hidden = saved.length === 0;
+    savedSelect.innerHTML = `<option value="">Selecione um ponto salvo</option>${saved.map((item) => `<option value="${esc(item.id)}">${esc(item.label)}${item.captured_at ? " · " + esc(shortDate(item.captured_at)) : ""}</option>`).join("")}`;
+    $("driver-saved-location-use").disabled = true;
+
+    const hasAddress = Boolean(stop.customer_address_id || stop.order?.delivery_customer_address_id);
+    $("driver-address-photo-input").disabled = !hasAddress;
+    if (!hasAddress) $("driver-address-photo-status").textContent = "Salve primeiro a localização para vincular a foto ao cadastro do endereço.";
+    const savedPhoto = stop.address_photo;
+    const savedPhotoPreview = $("driver-address-saved-photo");
+    if (savedPhoto?.url) {
+      savedPhotoPreview.src = savedPhoto.url;
+      savedPhotoPreview.hidden = false;
+      $("driver-address-saved-photo-date").textContent = savedPhoto.captured_at ? "Foto cadastrada em " + shortDate(savedPhoto.captured_at) : "Foto cadastrada";
+    } else {
+      savedPhotoPreview.removeAttribute("src");
+      savedPhotoPreview.hidden = true;
+      $("driver-address-saved-photo-date").textContent = "";
+    }
+  }
+
+  function captureAddressLocation() {
+    if (!state.addressStop || state.busy) return;
+    if (!navigator.geolocation?.getCurrentPosition) {
+      $("driver-location-capture-status").textContent = "Este aparelho não disponibilizou o GPS pelo navegador.";
+      return;
+    }
+    state.locationCapture = null;
+    $("driver-location-capture").disabled = true;
+    $("driver-location-capture").textContent = "Capturando GPS…";
+    $("driver-location-save").disabled = true;
+    $("driver-location-error").textContent = "";
+    $("driver-location-capture-status").textContent = "Aguarde a leitura do GPS do celular.";
+    navigator.geolocation.getCurrentPosition((position) => {
+      state.locationCapture = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy_m: position.coords.accuracy,
+      };
+      const accuracy = Math.round(position.coords.accuracy);
+      $("driver-location-capture-status").textContent = `GPS capturado. Precisão aproximada: ${accuracy} m. Se estiver longe da fachada, tente novamente.`;
+      $("driver-location-save").disabled = false;
+      $("driver-location-capture").disabled = false;
+      $("driver-location-capture").textContent = "Capturar GPS novamente";
+    }, (error) => {
+      state.locationCapture = null;
+      const message = error.code === 1
+        ? "Permita o acesso à localização do aparelho para salvar o ponto."
+        : error.code === 3 ? "O GPS demorou para responder. Tente novamente em local aberto." : "Não foi possível obter o GPS. Tente novamente em local aberto.";
+      $("driver-location-capture-status").textContent = message;
+      $("driver-location-capture").disabled = false;
+      $("driver-location-capture").textContent = "Tentar capturar GPS";
+    }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+  }
+
+  async function saveAddressLocation() {
+    const stop = state.addressStop;
+    if (!stop || !state.locationCapture || state.busy) return;
+    const mode = $("driver-location-mode").value;
+    const label = $("driver-location-label").value.trim();
+    if (mode === "alternate" && !label) {
+      $("driver-location-error").textContent = "Dê um nome ao ponto alternativo, por exemplo: Portão lateral.";
+      return;
+    }
+    if (state.locationCapture.accuracy_m > 100 && !window.confirm(`A precisão informada pelo aparelho é de aproximadamente ${Math.round(state.locationCapture.accuracy_m)} m. Quer salvar mesmo assim?`)) return;
+    $("driver-location-save").disabled = true;
+    $("driver-location-error").textContent = "Salvando localização…";
+    state.busy = true;
+    try {
+      await request("driver_save_location", "POST", { stop_id: stop.id, ...state.locationCapture, mode, label });
+      await loadAfterBusy();
+      state.addressStop = findStop(stop.id);
+      state.locationCapture = null;
+      syncAddressDialog();
+      $("driver-location-capture-status").textContent = "Localização salva. O botão do Google Maps já usa este ponto.";
+      $("driver-location-error").textContent = "";
+      $("driver-location-capture").textContent = "Capturar GPS novamente";
+      toast(mode === "alternate" ? "Ponto alternativo salvo para este endereço." : "Localização principal atualizada e salva no endereço do cliente.");
+    } catch (error) {
+      $("driver-location-error").textContent = friendlyError(error.message);
+      $("driver-location-save").disabled = false;
+    } finally {
+      state.busy = false;
+    }
+  }
+
+  async function useSavedAddressLocation() {
+    const stop = state.addressStop;
+    const evidenceId = $("driver-saved-location-select").value;
+    if (!stop || !evidenceId || state.busy) return;
+    $("driver-location-error").textContent = "Aplicando ponto salvo à entrega atual…";
+    state.busy = true;
+    try {
+      await request("driver_select_saved_location", "POST", { stop_id: stop.id, location_evidence_id: evidenceId });
+      await loadAfterBusy();
+      state.addressStop = findStop(stop.id);
+      syncAddressDialog();
+      $("driver-location-error").textContent = "";
+      toast("Ponto alternativo aplicado ao Google Maps desta entrega.");
+    } catch (error) {
+      $("driver-location-error").textContent = friendlyError(error.message);
+    } finally {
+      state.busy = false;
+    }
+  }
+
+  function compressAddressPhoto(file) {
+    return new Promise((resolve, reject) => {
+      if (!file || !/^image\//i.test(file.type || "")) return reject(new Error("address_photo_type_invalid"));
+      const objectUrl = URL.createObjectURL(file);
+      const image = new Image();
+      image.onload = () => {
+        const maxEdge = 1600;
+        const scale = Math.min(1, maxEdge / Math.max(image.naturalWidth, image.naturalHeight));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const context = canvas.getContext("2d", { alpha: false });
+        if (!context) {
+          URL.revokeObjectURL(objectUrl);
+          return reject(new Error("address_photo_compression_failed"));
+        }
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(objectUrl);
+        canvas.toBlob((blob) => {
+          if (!blob) return reject(new Error("address_photo_compression_failed"));
+          if (blob.size > 5 * 1024 * 1024) return reject(new Error("address_photo_too_large"));
+          resolve(blob);
+        }, "image/jpeg", 0.82);
+      };
+      image.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("address_photo_decode_failed"));
+      };
+      image.src = objectUrl;
+    });
+  }
+
+  async function selectAddressPhoto(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
+    state.photoPreviewUrl = "";
+    state.selectedPhoto = null;
+    $("driver-address-photo-preview").hidden = true;
+    $("driver-address-photo-save").hidden = true;
+    $("driver-address-photo-status").textContent = "Preparando foto…";
+    $("driver-address-photo-save").disabled = true;
+    try {
+      state.selectedPhoto = await compressAddressPhoto(file);
+      if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
+      state.photoPreviewUrl = URL.createObjectURL(state.selectedPhoto);
+      $("driver-address-photo-preview").src = state.photoPreviewUrl;
+      $("driver-address-photo-preview").hidden = false;
+      $("driver-address-photo-save").hidden = false;
+      $("driver-address-photo-save").disabled = false;
+      $("driver-address-photo-status").textContent = "Confira a imagem e salve para usar como referência nas próximas entregas.";
+    } catch (error) {
+      state.selectedPhoto = null;
+      $("driver-address-photo-save").hidden = true;
+      $("driver-address-photo-status").textContent = friendlyError(error.message);
+    }
+  }
+
+  async function saveAddressPhoto() {
+    const stop = state.addressStop;
+    if (!stop || !state.selectedPhoto || state.busy) return;
+    $("driver-address-photo-save").disabled = true;
+    $("driver-address-photo-status").textContent = "Enviando e vinculando a foto ao endereço…";
+    state.busy = true;
+    try {
+      await requestPhoto(stop.id, state.selectedPhoto);
+      await loadAfterBusy();
+      state.addressStop = findStop(stop.id);
+      state.selectedPhoto = null;
+      if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
+      state.photoPreviewUrl = "";
+      $("driver-address-photo-preview").hidden = true;
+      $("driver-address-photo-save").hidden = true;
+      $("driver-address-photo-input").value = "";
+      syncAddressDialog();
+      $("driver-address-photo-status").textContent = "Foto salva no cadastro deste endereço.";
+      toast("Foto da fachada salva para as próximas entregas.");
+    } catch (error) {
+      $("driver-address-photo-status").textContent = friendlyError(error.message);
+      $("driver-address-photo-save").disabled = false;
+    } finally {
+      state.busy = false;
+    }
+  }
+
   function openDeliveryDialog(stopId) {
     const run = state.runs.find((item) => (item.stops || []).some((stop) => stop.id === stopId));
     const stop = run ? nextStop(run) : null;
@@ -328,10 +629,31 @@ import { buildMapsHref, deliveryNoticeFailureMessage, movePlannedStop, paidAhead
     if (button.dataset.sortStop) sortStop(button.dataset.runId, button.dataset.stopId, button.dataset.sortStop);
     if (button.dataset.notifyNext) notifyNext(button.dataset.notifyNext, button);
     if (button.dataset.openDeliver) openDeliveryDialog(button.dataset.openDeliver);
+    if (button.dataset.openAddress) openAddressDialog(button.dataset.openAddress);
   });
 
   $("driver-deliver-form").addEventListener("submit", completeDelivery);
   $("driver-deliver-close").addEventListener("click", () => $("driver-deliver-dialog").close());
+  $("driver-address-close").addEventListener("click", () => {
+    $("driver-address-dialog").close();
+    state.addressStop = null;
+    state.locationCapture = null;
+    state.selectedPhoto = null;
+    if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
+    state.photoPreviewUrl = "";
+  });
+  $("driver-location-capture").addEventListener("click", captureAddressLocation);
+  $("driver-location-mode").addEventListener("change", () => {
+    $("driver-location-error").textContent = "";
+    syncAddressDialog();
+  });
+  $("driver-location-save").addEventListener("click", saveAddressLocation);
+  $("driver-saved-location-select").addEventListener("change", (event) => {
+    $("driver-saved-location-use").disabled = !event.target.value;
+  });
+  $("driver-saved-location-use").addEventListener("click", useSavedAddressLocation);
+  $("driver-address-photo-input").addEventListener("change", selectAddressPhoto);
+  $("driver-address-photo-save").addEventListener("click", saveAddressPhoto);
   $("driver-refresh").addEventListener("click", load);
   $("driver-retry").addEventListener("click", load);
   $("driver-logout").addEventListener("click", () => {

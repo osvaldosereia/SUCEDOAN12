@@ -4,6 +4,7 @@ import { isScheduledForDate, serviceDateInCuiaba } from "../_shared/delivery-dat
 import { sendTemplateViaMeta, MetaTransportError } from "../_shared/whatsapp-meta-transport-v1.mjs";
 import { channelForWhatsappAccount, driverVisibleRuns, mergePlannedRouteOrderIds, normalizeDriverPhone, normalizeRouteOrderIds, normalizeStopIds } from "../_shared/delivery-ops-validation-v1.mjs";
 import { incrementNotificationAttemptCount, sendAndPersistDeliveryNotice } from "../_shared/delivery-notification-state-v1.mjs";
+import { normalizeDriverLocationInput, validateAddressPhoto } from "../_shared/delivery-driver-address-v1.mjs";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SERVICE_KEY = (() => {
@@ -223,19 +224,64 @@ async function adminDashboard() {
   const runs = Array.isArray(runsData.runs) ? runsData.runs : [];
   const routeOrderIds = runs.flatMap((run: any) => (run.stops || []).map((stop: any) => uuid(stop.order_id)).filter(Boolean));
   const allOrders = await ordersByIds([...readyQuery.data.map((order: any) => order.id), ...routeOrderIds]);
-  const byId = new Map(allOrders.map((order: any) => [order.id, order]));
+  const orderById = new Map(allOrders.map((order: any) => [order.id, order]));
+  const stopIds = runs.flatMap((run: any) => (run.stops || []).map((stop: any) => uuid(stop.stop_id || stop.id)).filter(Boolean));
+  const stopDetailsQuery = stopIds.length
+    ? await db.from("ops_delivery_stops")
+      .select("id,customer_address_id,location_evidence_id,destination_latitude,destination_longitude,destination_confidence")
+      .in("id", stopIds)
+    : { data: [], error: null } as any;
+  if (stopDetailsQuery.error) throw stopDetailsQuery.error;
+  const stopDetails = new Map((stopDetailsQuery.data || []).map((stop: any) => [stop.id, stop]));
+  const routeStops = runs.flatMap((run: any) => (run.stops || []).map((stop: any) => {
+    const stopId = stop.stop_id || stop.id;
+    return {
+      ...stop,
+      ...(stopDetails.get(stopId) || {}),
+      id: stopId,
+      order: orderById.get(stop.order_id) || null,
+    };
+  }));
+  const addressContext = await enrichAddressContext([
+    ...allOrders.filter((order: any) => order.status === "out_for_delivery" ||
+      (order.status === "ready" && isScheduledForDate(order, serviceDate))).map((order: any) => ({
+      id: `order:${order.id}`,
+      customer_address_id: order.delivery_customer_address_id,
+      location_evidence_id: order.delivery_location_evidence_id,
+      order,
+    })),
+    ...routeStops,
+  ]);
+  const addressReferenceByOrderId = new Map<string, JsonRecord>();
+  const addressReferenceByStopId = new Map<string, JsonRecord>();
+  for (const context of addressContext) {
+    const orderId = uuid(context.order?.id);
+    const stopId = uuid(context.id);
+    if (orderId) addressReferenceByOrderId.set(orderId, context);
+    if (stopId && !String(context.id).startsWith("order:")) addressReferenceByStopId.set(stopId, context);
+  }
+  const enrichedOrders = allOrders.map((order: any) => ({
+    ...order,
+    address_reference: addressReferenceByOrderId.get(order.id) || null,
+  }));
+  const enrichedOrderById = new Map(enrichedOrders.map((order: any) => [order.id, order]));
   const enrichedRuns = runs.map((run: any) => ({
     ...run,
-    stops: (run.stops || []).map((stop: any) => ({
-      ...stop,
-      id: stop.stop_id || stop.id,
-      order: byId.get(stop.order_id) || null,
-    })),
+    stops: (run.stops || []).map((stop: any) => {
+      const stopId = stop.stop_id || stop.id;
+      return {
+        ...stop,
+        ...(stopDetails.get(stopId) || {}),
+        id: stopId,
+        order: enrichedOrderById.get(stop.order_id) || null,
+        address_reference: addressReferenceByStopId.get(stopId) || addressReferenceByOrderId.get(stop.order_id) || null,
+      };
+    }),
   }));
-  const locations = await locationEvidenceForOrders(allOrders);
+  const locations = await locationEvidenceForOrders(enrichedOrders);
   return {
     service_date: serviceDate,
-    orders: allOrders.filter((order: any) => ["ready", "out_for_delivery"].includes(order.status)),
+    orders: enrichedOrders.filter((order: any) => ["ready", "out_for_delivery"].includes(order.status)),
     runs: enrichedRuns,
     catalog: catalogData,
     locations,
@@ -250,17 +296,98 @@ async function driverSession(driver: JsonRecord) {
   if (driverQuery.error) throw driverQuery.error;
   const runs = driverVisibleRuns(runsData.runs, driver.id);
   const ids = runs.flatMap((run: any) => (run.stops || []).map((stop: any) => uuid(stop.order_id)).filter(Boolean));
-  const orders = await ordersByIds(ids);
+  const stopIds = runs.flatMap((run: any) => (run.stops || []).map((stop: any) => uuid(stop.stop_id || stop.id)).filter(Boolean));
+  const [orders, stopDetailsQuery] = await Promise.all([
+    ordersByIds(ids),
+    stopIds.length
+      ? db.from("ops_delivery_stops")
+        .select("id,customer_address_id,location_evidence_id,loaded_at,custody_confirmed_at,destination_latitude,destination_longitude,destination_confidence")
+        .in("id", stopIds)
+      : Promise.resolve({ data: [], error: null } as any),
+  ]);
+  if (stopDetailsQuery.error) throw stopDetailsQuery.error;
   const byId = new Map(orders.map((order: any) => [order.id, order]));
+  const stopDetails = new Map((stopDetailsQuery.data || []).map((stop: any) => [stop.id, stop]));
+  const flatStops = runs.flatMap((run: any) => (run.stops || []).map((stop: any) => {
+    const stopId = stop.stop_id || stop.id;
+    return { ...stop, ...(stopDetails.get(stopId) || {}), id: stopId, order: byId.get(stop.order_id) || null };
+  }));
+  const mediaStops = await enrichAddressContext(flatStops);
+  const enrichedByStopId = new Map(mediaStops.map((stop: any) => [stop.id, stop]));
   const enrichedRuns = runs.map((run: any) => ({
     ...run,
-    stops: (run.stops || []).map((stop: any) => ({
-      ...stop,
-      id: stop.stop_id || stop.id,
-      order: byId.get(stop.order_id) || null,
-    })),
+    stops: (run.stops || []).map((stop: any) => enrichedByStopId.get(stop.stop_id || stop.id) || stop),
   }));
   return { driver: driverQuery.data || driver, runs: enrichedRuns, refreshed_at: new Date().toISOString() };
+}
+
+async function enrichAddressContext(stops: JsonRecord[]) {
+  const addressIds = [...new Set(stops.map((stop) => uuid(stop.customer_address_id || stop.order?.delivery_customer_address_id)).filter(Boolean))];
+  if (!addressIds.length) return stops;
+  const currentEvidenceIds = [...new Set(stops.map((stop) => uuid(stop.location_evidence_id)).filter(Boolean))];
+  const [photosQuery, alternativesQuery, currentQuery, addressesQuery] = await Promise.all([
+    db.from("customer_address_reference_photos_v1")
+      .select("customer_address_id,storage_path,captured_at")
+      .in("customer_address_id", addressIds)
+      .order("captured_at", { ascending: false }).limit(1000),
+    db.from("customer_location_evidence_v1")
+      .select("id,customer_address_id,latitude,longitude,label,captured_at,metadata")
+      .in("customer_address_id", addressIds).eq("source", "driver").eq("confidence", "confirmed")
+      .contains("metadata", { capture_mode: "alternate" })
+      .order("captured_at", { ascending: false }).limit(500),
+    currentEvidenceIds.length
+      ? db.from("customer_location_evidence_v1")
+        .select("id,label,source,captured_at,confidence,metadata")
+        .in("id", currentEvidenceIds)
+      : Promise.resolve({ data: [], error: null } as any),
+    db.from("customer_addresses").select("id,latitude,longitude").in("id", addressIds).eq("is_active", true),
+  ]);
+  for (const result of [photosQuery, alternativesQuery, currentQuery, addressesQuery]) if (result.error) throw result.error;
+
+  const latestPhotoByAddress = new Map<string, JsonRecord>();
+  for (const photo of photosQuery.data || []) {
+    if (!latestPhotoByAddress.has(photo.customer_address_id)) latestPhotoByAddress.set(photo.customer_address_id, photo);
+  }
+  const signedPhotoByAddress = new Map<string, JsonRecord>();
+  await Promise.all([...latestPhotoByAddress.entries()].map(async ([addressId, photo]) => {
+    const signed = await db.storage.from("delivery-proof-v1").createSignedUrl(photo.storage_path, 3600);
+    if (!signed.error && signed.data?.signedUrl) {
+      signedPhotoByAddress.set(addressId, { url: signed.data.signedUrl, captured_at: photo.captured_at });
+    }
+  }));
+  const alternatesByAddress = new Map<string, JsonRecord[]>();
+  for (const row of alternativesQuery.data || []) {
+    const list = alternatesByAddress.get(row.customer_address_id) || [];
+    list.push({
+      id: row.id,
+      label: row.label || "Ponto alternativo",
+      latitude: Number(row.latitude),
+      longitude: Number(row.longitude),
+      captured_at: row.captured_at,
+    });
+    alternatesByAddress.set(row.customer_address_id, list);
+  }
+  const currentById = new Map((currentQuery.data || []).map((row: any) => [row.id, row]));
+  const addressById = new Map((addressesQuery.data || []).map((row: any) => [row.id, row]));
+  return stops.map((stop) => {
+    const addressId = uuid(stop.customer_address_id || stop.order?.delivery_customer_address_id);
+    const currentEvidence = currentById.get(stop.location_evidence_id);
+    const address = addressById.get(addressId);
+    const addressLat = Number(address?.latitude);
+    const addressLng = Number(address?.longitude);
+    return {
+      ...stop,
+      address_photo: signedPhotoByAddress.get(addressId) || null,
+      saved_locations: alternatesByAddress.get(addressId) || [],
+      primary_latitude: address?.latitude == null ? null : addressLat,
+      primary_longitude: address?.longitude == null ? null : addressLng,
+      address_has_primary_location: address?.latitude != null && address?.longitude != null &&
+        Number.isFinite(addressLat) && Number.isFinite(addressLng) && !(addressLat === 0 && addressLng === 0),
+      destination_label: currentEvidence?.label || "",
+      destination_source: currentEvidence?.source || "",
+      destination_captured_at: currentEvidence?.captured_at || null,
+    };
+  });
 }
 
 async function saveDriver(input: JsonRecord) {
@@ -474,7 +601,7 @@ async function routeForDriver(driverId: string) {
     .filter((run: any) => run.driver_id === driverId && ["planned", "dispatched"].includes(run.status));
   const stopIds = runs.flatMap((run: any) => (run.stops || []).map((stop: any) => uuid(stop.stop_id || stop.id)).filter(Boolean));
   const stopsQuery = stopIds.length
-    ? await db.from("ops_delivery_stops").select("id,status,sequence,run_id,order_id,loaded_at,custody_confirmed_at,destination_latitude,destination_longitude,destination_confidence,proof_metadata").in("id", stopIds)
+    ? await db.from("ops_delivery_stops").select("id,status,sequence,run_id,order_id,customer_address_id,location_evidence_id,loaded_at,custody_confirmed_at,destination_latitude,destination_longitude,destination_confidence,proof_metadata").in("id", stopIds)
     : { data: [], error: null } as any;
   if (stopsQuery.error) throw stopsQuery.error;
   const byId = new Map((stopsQuery.data || []).map((stop: any) => [stop.id, stop]));
@@ -504,15 +631,7 @@ async function driverReorder(driver: JsonRecord, input: JsonRecord) {
 async function driverComplete(driver: JsonRecord, input: JsonRecord) {
   const stopId = uuid(input.stop_id);
   if (!stopId) throw new ApiFailure("invalid_stop");
-  const route = await routeForDriver(driver.id);
-  const run = route.runs.find((row: any) => row.status === "dispatched" && (row.stops || []).some((stop: any) => stop.id === stopId));
-  if (!run) throw new ApiFailure("driver_stop_not_found", 404);
-  const ordered = [...(run.stops || [])].sort((a: any, b: any) => Number(a.sequence || 0) - Number(b.sequence || 0));
-  const stop = ordered.find((row: any) => row.status === "out_for_delivery");
-  if (!stop || stop.id !== stopId) throw new ApiFailure("stop_is_not_next", 409);
-  const orders = await ordersByIds([stop.order_id]);
-  const order: any = orders[0];
-  if (!order) throw new ApiFailure("order_not_found", 404);
+  const { stop, order } = await nextDriverStop(driver, stopId);
   const paidAhead = order.delivery_paid_ahead === true;
   const method = paidAhead ? order.delivery_paid_ahead_method : clean(input.method, 30).toLowerCase();
   if (!paidAhead && !["pix", "cash", "credit_card", "food_card", "meal_card", "other"].includes(method)) {
@@ -527,6 +646,100 @@ async function driverComplete(driver: JsonRecord, input: JsonRecord) {
   });
   if (result.error) throw new ApiFailure(jsonError(result.error), 409);
   return result.data || {};
+}
+
+async function nextDriverStop(driver: JsonRecord, stopId: string) {
+  const route = await routeForDriver(driver.id);
+  const run = route.runs.find((row: any) => row.status === "dispatched" && (row.stops || []).some((stop: any) => stop.id === stopId));
+  if (!run) throw new ApiFailure("driver_stop_not_found", 404);
+  const ordered = [...(run.stops || [])].sort((a: any, b: any) => Number(a.sequence || 0) - Number(b.sequence || 0));
+  const stop = ordered.find((row: any) => row.status === "out_for_delivery");
+  if (!stop || stop.id !== stopId) throw new ApiFailure("stop_is_not_next", 409);
+  const orders = await ordersByIds([stop.order_id]);
+  const order: any = orders[0];
+  if (!order) throw new ApiFailure("order_not_found", 404);
+  return { run, stop, order };
+}
+
+async function driverSaveLocation(driver: JsonRecord, input: JsonRecord) {
+  const stopId = uuid(input.stop_id);
+  if (!stopId) throw new ApiFailure("invalid_stop");
+  let location;
+  try { location = normalizeDriverLocationInput(input); }
+  catch (error) { throw new ApiFailure(jsonError(error), 400); }
+  await nextDriverStop(driver, stopId);
+  const result = await db.rpc("smart_delivery_driver_save_location_v1", {
+    p_stop_id: stopId,
+    p_driver_id: driver.id,
+    p_latitude: location.latitude,
+    p_longitude: location.longitude,
+    p_accuracy_m: location.accuracy_m,
+    p_mode: location.mode,
+    p_label: location.label || null,
+  });
+  if (result.error) throw new ApiFailure(jsonError(result.error), 409);
+  return result.data || {};
+}
+
+async function driverSelectSavedLocation(driver: JsonRecord, input: JsonRecord) {
+  const stopId = uuid(input.stop_id);
+  const evidenceId = uuid(input.location_evidence_id);
+  if (!stopId || !evidenceId) throw new ApiFailure("invalid_saved_location");
+  await nextDriverStop(driver, stopId);
+  const result = await db.rpc("smart_delivery_driver_select_location_v1", {
+    p_stop_id: stopId,
+    p_driver_id: driver.id,
+    p_location_evidence_id: evidenceId,
+  });
+  if (result.error) throw new ApiFailure(jsonError(result.error), 409);
+  return result.data || {};
+}
+
+async function driverUploadAddressPhoto(driver: JsonRecord, input: JsonRecord) {
+  const stopId = uuid(input.stop_id);
+  if (!stopId) throw new ApiFailure("invalid_stop");
+  const { stop, order } = await nextDriverStop(driver, stopId);
+  const photo = input.photo;
+  if (!photo || typeof photo.arrayBuffer !== "function") throw new ApiFailure("address_photo_required");
+  let photoInfo;
+  try { photoInfo = validateAddressPhoto(photo); }
+  catch (error) { throw new ApiFailure(jsonError(error), 400); }
+
+  const addressId = uuid(stop.customer_address_id || order.delivery_customer_address_id);
+  if (!addressId) throw new ApiFailure("save_location_before_photo", 409);
+  const address = await db.from("customer_addresses")
+    .select("id")
+    .eq("id", addressId)
+    .eq("customer_id", order.customer_id)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (address.error) throw address.error;
+  if (!address.data) throw new ApiFailure("customer_address_mismatch", 409);
+
+  const objectPath = `customer-addresses/${addressId}/${stopId}/${crypto.randomUUID()}.${photoInfo.extension}`;
+  const bytes = new Uint8Array(await photo.arrayBuffer());
+  const upload = await db.storage.from("delivery-proof-v1").upload(objectPath, bytes, {
+    contentType: photoInfo.contentType,
+    cacheControl: "31536000",
+    upsert: false,
+  });
+  if (upload.error) throw new ApiFailure("address_photo_upload_failed", 502);
+
+  const saved = await db.from("customer_address_reference_photos_v1").insert({
+    customer_address_id: addressId,
+    stop_id: stopId,
+    order_id: order.id,
+    driver_id: driver.id,
+    storage_path: objectPath,
+    content_type: photoInfo.contentType,
+    size_bytes: photoInfo.sizeBytes,
+  }).select("id,captured_at").single();
+  if (saved.error) {
+    const removed = await db.storage.from("delivery-proof-v1").remove([objectPath]);
+    if (removed.error) console.error("delivery_address_photo_orphan", jsonError(removed.error));
+    throw new ApiFailure("address_photo_save_failed", 500);
+  }
+  return { ok: true, photo: { id: saved.data.id, captured_at: saved.data.captured_at } };
 }
 
 async function activeWhatsappAccount(order: JsonRecord): Promise<{ account: JsonRecord; channel: Channel }> {
@@ -733,9 +946,18 @@ async function handle(req: Request) {
 
   const url = new URL(req.url);
   let input: JsonRecord = Object.fromEntries(url.searchParams.entries());
-  if (req.method === "POST") input = { ...input, ...await req.json().catch(() => ({})) };
+  if (req.method === "POST" && clean(input.action, 48) === "driver_upload_address_photo") {
+    try {
+      const form = await req.formData();
+      input = { ...input, stop_id: form.get("stop_id"), photo: form.get("photo") };
+    } catch {
+      return respond(req, { ok: false, error: "address_photo_required" }, 400);
+    }
+  } else if (req.method === "POST") {
+    input = { ...input, ...await req.json().catch(() => ({})) };
+  }
   const action = clean(input.action, 48);
-  const driverActions = new Set(["driver_session", "driver_reorder", "driver_complete", "driver_next_notice"]);
+  const driverActions = new Set(["driver_session", "driver_reorder", "driver_complete", "driver_next_notice", "driver_save_location", "driver_select_saved_location", "driver_upload_address_photo"]);
   try {
     if (driverActions.has(action)) {
       const session = await requireDriver(req);
@@ -744,6 +966,9 @@ async function handle(req: Request) {
       if (action === "driver_reorder") return respond(req, { ok: true, ...(await driverReorder(session.driver, input)) });
       if (action === "driver_complete") return respond(req, { ok: true, ...(await driverComplete(session.driver, input)) });
       if (action === "driver_next_notice") return respond(req, await notifyNextStop(session.driver, input));
+      if (action === "driver_save_location") return respond(req, { ok: true, ...(await driverSaveLocation(session.driver, input)) });
+      if (action === "driver_select_saved_location") return respond(req, { ok: true, ...(await driverSelectSavedLocation(session.driver, input)) });
+      if (action === "driver_upload_address_photo") return respond(req, await driverUploadAddressPhoto(session.driver, input));
     }
 
     await requireAdmin(req);
