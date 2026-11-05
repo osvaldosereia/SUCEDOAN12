@@ -1183,3 +1183,9 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 - Das 40 pendentes, 35 têm produto ativo com foto HTTPS, mas a disponibilidade para WhatsApp está desligada. Nas outras 5, existe opção ativa para WhatsApp, porém essa opção não tem foto HTTPS; também há produto ativo com foto nas posições, mas isso não torna elegível a opção WhatsApp sem foto. Nenhuma das 40 foi liberada automaticamente.
 - Há dois eventos agregados de auditoria desde 03/11 00:29 UTC, ambos `customer_update_admin_code` para `customer`; nenhum registra mudança de disponibilidade WhatsApp. Não foi consultado nem retornado identificador ou dado de cliente, produto, pedido, credencial ou token. A causa da mudança de prontidão permanece desconhecida; não inferir ação/autor.
 - Próxima revisão humana no Admin: conferir fotos HTTPS das opções WhatsApp pendentes e aprovar comercialmente qualquer alteração de disponibilidade dos demais produtos. Depois, validar os Flow e bindings individualmente nos dois WABAs. Não houve mutação de catálogo, pedido, estoque, binding, Flow, mensagem, Bling ou NF-e nesta leitura.
+
+## Rechecagem de prontidão e atividade administrativa (05/11/2026 17:02 UTC)
+
+- Consulta somente leitura ao Supabase canônico: 5 cestas ativas para WhatsApp, 118 posições, 78 prontas e 40 pendentes; zero bindings do Flow. Os totais permanecem iguais à leitura de 07:32 UTC.
+- Desde a checagem anterior, `admin_audit_logs` registra três eventos agregados `smart_delivery.driver_saved` (`delivery_driver`). O resumo não leu nem retornou nomes, identificadores ou outros dados dos motoristas; esses eventos não representam revisão das opções de cesta.
+- O caminho de pedido segue bloqueado pelas posições pendentes e pela ausência de bindings publicados/verificados para os WABAs. Nenhuma mensagem, publicação de Flow ou ação no Bling/NF-e foi feita nesta checagem.
