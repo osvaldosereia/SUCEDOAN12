@@ -1,0 +1,951 @@
+{
+	"version": "7.3",
+	"data_api_version": "3.0",
+	"routing_model": {
+		"BASKET_PRODUCT": ["PAYMENT"],
+		"PAYMENT": ["CUSTOMER_ADDRESS", "CUSTOMER_NEW_ADDRESS", "CUSTOMER_REVIEW"],
+		"CUSTOMER_ADDRESS": ["CUSTOMER_NEW_ADDRESS", "ORDER_REVIEW"],
+		"CUSTOMER_NEW_ADDRESS": ["ORDER_REVIEW"],
+		"CUSTOMER_REVIEW": [],
+		"ORDER_REVIEW": []
+	},
+	"screens": [
+		{
+			"id": "BASKET_PRODUCT",
+			"title": "Escolha os produtos",
+			"data": {
+				"position_index": {
+					"type": "number",
+					"__example__": 0
+				},
+				"position_number": {
+					"type": "number",
+					"__example__": 1
+				},
+				"position_count": {
+					"type": "number",
+					"__example__": 4
+				},
+				"position_progress_label": {
+					"type": "string",
+					"__example__": "Etapa 1 de 4"
+				},
+				"position_label": {
+					"type": "string",
+					"__example__": "Arroz"
+				},
+				"product_options": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"id": {
+								"type": "string"
+							},
+							"title": {
+								"type": "string"
+							},
+							"description": {
+								"type": "string"
+							},
+							"enabled": {
+								"type": "boolean"
+							},
+							"image": {
+								"type": "string"
+							},
+							"alt-text": {
+								"type": "string"
+							}
+						}
+					},
+					"__example__": [
+						{
+							"id": "00000000-0000-4000-8000-000000000001",
+							"title": "Arroz Tio Alvino",
+							"description": "R$ 28,90",
+							"enabled": true,
+							"image": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+							"alt-text": "Pacote de arroz Tio Alvino"
+						}
+					]
+				},
+				"quantity_options": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"id": {
+								"type": "string"
+							},
+							"title": {
+								"type": "string"
+							},
+							"enabled": {
+								"type": "boolean"
+							}
+						}
+					},
+					"__example__": [
+						{
+							"id": "0",
+							"title": "0",
+							"enabled": true
+						},
+						{
+							"id": "1",
+							"title": "1",
+							"enabled": true
+						},
+						{
+							"id": "2",
+							"title": "2",
+							"enabled": true
+						},
+						{
+							"id": "3",
+							"title": "3",
+							"enabled": true
+						},
+						{
+							"id": "4",
+							"title": "4",
+							"enabled": true
+						},
+						{
+							"id": "5",
+							"title": "5",
+							"enabled": true
+						},
+						{
+							"id": "6",
+							"title": "6",
+							"enabled": true
+						}
+					]
+				},
+				"selected_product_id": {
+					"type": "string",
+					"__example__": ""
+				},
+				"initial_product_id": {
+					"type": "string",
+					"__example__": ""
+				},
+				"selected_quantity": {
+					"type": "string",
+					"__example__": ""
+				},
+				"selected_items": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"position_id": {
+								"type": "string"
+							},
+							"product_id": {
+								"type": "string"
+							},
+							"quantity": {
+								"type": "number"
+							}
+						}
+					},
+					"__example__": []
+				},
+				"selection_error": {
+					"type": "string",
+					"__example__": ""
+				}
+			},
+			"layout": {
+				"type": "SingleColumnLayout",
+				"children": [
+					{
+						"type": "Form",
+						"name": "basket_form",
+						"init-values": {
+							"selected_product_id": "${data.selected_product_id}",
+							"selected_quantity": "${data.selected_quantity}"
+						},
+						"children": [
+							{
+								"type": "TextBody",
+								"text": "${data.position_progress_label}"
+							},
+							{
+								"type": "TextHeading",
+								"text": "${data.position_label}"
+							},
+							{
+								"type": "TextSubheading",
+								"text": "Escolha uma opção"
+							},
+							{
+								"type": "RadioButtonsGroup",
+								"name": "selected_product_id",
+								"label": "Produto",
+								"required": true,
+								"data-source": "${data.product_options}",
+								"on-select-action": {
+									"name": "data_exchange",
+									"payload": {
+										"component_action": "product_changed",
+										"position_index": "${data.position_index}",
+										"initial_product_id": "${data.initial_product_id}",
+										"selected_product_id": "${form.selected_product_id}",
+										"selected_quantity": "${form.selected_quantity}",
+										"selected_items": "${data.selected_items}"
+									}
+								}
+							},
+							{
+								"type": "Dropdown",
+								"name": "selected_quantity",
+								"label": "Quantidade",
+								"required": true,
+								"data-source": "${data.quantity_options}"
+							},
+							{
+								"type": "TextBody",
+								"text": "${data.selection_error}"
+							},
+							{
+								"type": "Footer",
+								"label": "Próximo",
+								"on-click-action": {
+									"name": "data_exchange",
+									"payload": {
+										"component_action": "next",
+										"position_index": "${data.position_index}",
+										"initial_product_id": "${data.initial_product_id}",
+										"selected_product_id": "${form.selected_product_id}",
+										"selected_quantity": "${form.selected_quantity}",
+										"selected_items": "${data.selected_items}"
+									}
+								}
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": "PAYMENT",
+			"title": "Forma de pagamento",
+			"data": {
+				"selected_items": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"position_id": {
+								"type": "string"
+							},
+							"product_id": {
+								"type": "string"
+							},
+							"quantity": {
+								"type": "number"
+							}
+						}
+					},
+					"__example__": [
+						{
+							"position_id": "00000000-0000-4000-8000-000000000002",
+							"product_id": "00000000-0000-4000-8000-000000000001",
+							"quantity": 1
+						}
+					]
+				},
+				"payment_method": {
+					"type": "string",
+					"__example__": ""
+				},
+				"payment_methods": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"id": {
+								"type": "string"
+							},
+							"title": {
+								"type": "string"
+							}
+						}
+					},
+					"__example__": [
+						{
+							"id": "pix",
+							"title": "Pix"
+						},
+						{
+							"id": "cash",
+							"title": "Dinheiro"
+						}
+					]
+				}
+			},
+			"layout": {
+				"type": "SingleColumnLayout",
+				"children": [
+					{
+						"type": "Form",
+						"name": "payment_form",
+						"init-values": {
+							"payment_method": "${data.payment_method}"
+						},
+						"children": [
+							{
+								"type": "TextHeading",
+								"text": "Como prefere pagar?"
+							},
+							{
+								"type": "RadioButtonsGroup",
+								"name": "payment_method",
+								"label": "Forma de pagamento",
+								"required": true,
+								"data-source": "${data.payment_methods}"
+							},
+							{
+								"type": "Footer",
+								"label": "Continuar",
+								"on-click-action": {
+									"name": "data_exchange",
+									"payload": {
+										"component_action": "continue",
+										"payment_method": "${form.payment_method}",
+										"selected_items": "${data.selected_items}"
+									}
+								}
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": "CUSTOMER_ADDRESS",
+			"title": "Endereço de entrega",
+			"data": {
+				"selected_items": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"position_id": {
+								"type": "string"
+							},
+							"product_id": {
+								"type": "string"
+							},
+							"quantity": {
+								"type": "number"
+							}
+						}
+					},
+					"__example__": [
+						{
+							"position_id": "00000000-0000-4000-8000-000000000002",
+							"product_id": "00000000-0000-4000-8000-000000000001",
+							"quantity": 1
+						}
+					]
+				},
+				"payment_method": {
+					"type": "string",
+					"__example__": "pix"
+				},
+				"payment_label": {
+					"type": "string",
+					"__example__": "Pix"
+				},
+				"customer_mode": {
+					"type": "string",
+					"__example__": "existing"
+				},
+				"customer_id": {
+					"type": "string",
+					"__example__": "00000000-0000-4000-8000-000000000003"
+				},
+				"customer_name": {
+					"type": "string",
+					"__example__": "Maria Silva"
+				},
+				"address_options": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"id": {
+								"type": "string"
+							},
+							"title": {
+								"type": "string"
+							},
+							"description": {
+								"type": "string"
+							}
+						}
+					},
+					"__example__": [
+						{
+							"id": "00000000-0000-4000-8000-000000000004",
+							"title": "Casa",
+							"description": "Rua das Flores, 123 · Centro · Várzea Grande/MT · 78110-000"
+						},
+						{
+							"id": "new",
+							"title": "Cadastrar outro endereço",
+							"description": "Informar outro endereço para este pedido"
+						}
+					]
+				},
+				"selected_address_id": {
+					"type": "string",
+					"__example__": "00000000-0000-4000-8000-000000000004"
+				},
+				"address_confirmation_required": {
+					"type": "boolean",
+					"__example__": true
+				}
+			},
+			"layout": {
+				"type": "SingleColumnLayout",
+				"children": [
+					{
+						"type": "Form",
+						"name": "address_selection_form",
+						"init-values": {
+							"address_id": "${data.selected_address_id}"
+						},
+						"children": [
+							{
+								"type": "TextHeading",
+								"text": "Confirme o endereço"
+							},
+							{
+								"type": "TextBody",
+								"text": "${data.customer_name}"
+							},
+							{
+								"type": "Dropdown",
+								"name": "address_id",
+								"label": "Endereço para entrega",
+								"required": true,
+								"data-source": "${data.address_options}"
+							},
+							{
+								"type": "Footer",
+								"label": "Continuar",
+								"on-click-action": {
+									"name": "data_exchange",
+									"payload": {
+										"component_action": "review_order",
+										"address_id": "${form.address_id}",
+										"customer_name": "${data.customer_name}",
+										"payment_method": "${data.payment_method}",
+										"selected_items": "${data.selected_items}"
+									}
+								}
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": "CUSTOMER_NEW_ADDRESS",
+			"title": "Cadastro e entrega",
+			"data": {
+				"flow_session_id": {
+					"type": "string",
+					"__example__": "00000000-0000-4000-8000-000000000005"
+				},
+				"selected_items": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"position_id": {
+								"type": "string"
+							},
+							"product_id": {
+								"type": "string"
+							},
+							"quantity": {
+								"type": "number"
+							}
+						}
+					},
+					"__example__": [
+						{
+							"position_id": "00000000-0000-4000-8000-000000000002",
+							"product_id": "00000000-0000-4000-8000-000000000001",
+							"quantity": 1
+						}
+					]
+				},
+				"payment_method": {
+					"type": "string",
+					"__example__": "pix"
+				},
+				"payment_label": {
+					"type": "string",
+					"__example__": "Pix"
+				},
+				"customer_id": {
+					"type": "string",
+					"__example__": ""
+				},
+				"customer_name": {
+					"type": "string",
+					"__example__": ""
+				},
+				"customer_name_editable": {
+					"type": "boolean",
+					"__example__": true
+				},
+				"new_address": {
+					"type": "object",
+					"properties": {
+						"street": {
+							"type": "string"
+						},
+						"number": {
+							"type": "string"
+						},
+						"complement": {
+							"type": "string"
+						},
+						"neighborhood": {
+							"type": "string"
+						},
+						"city": {
+							"type": "string"
+						},
+						"state": {
+							"type": "string"
+						},
+						"postal_code": {
+							"type": "string"
+						},
+						"reference": {
+							"type": "string"
+						}
+					},
+					"__example__": {
+						"street": "",
+						"number": "",
+						"complement": "",
+						"neighborhood": "",
+						"city": "",
+						"state": "",
+						"postal_code": "",
+						"reference": ""
+					}
+				},
+				"street": {
+					"type": "string",
+					"__example__": ""
+				},
+				"number": {
+					"type": "string",
+					"__example__": ""
+				},
+				"complement": {
+					"type": "string",
+					"__example__": ""
+				},
+				"neighborhood": {
+					"type": "string",
+					"__example__": ""
+				},
+				"city": {
+					"type": "string",
+					"__example__": ""
+				},
+				"state": {
+					"type": "string",
+					"__example__": ""
+				},
+				"postal_code": {
+					"type": "string",
+					"__example__": ""
+				},
+				"reference": {
+					"type": "string",
+					"__example__": ""
+				}
+			},
+			"layout": {
+				"type": "SingleColumnLayout",
+				"children": [
+					{
+						"type": "Form",
+						"name": "new_address_form",
+						"init-values": {
+							"customer_name": "${data.customer_name}",
+							"street": "${data.street}",
+							"number": "${data.number}",
+							"complement": "${data.complement}",
+							"neighborhood": "${data.neighborhood}",
+							"city": "${data.city}",
+							"state": "${data.state}",
+							"postal_code": "${data.postal_code}",
+							"reference": "${data.reference}"
+						},
+						"children": [
+							{
+								"type": "TextHeading",
+								"text": "Informe seus dados"
+							},
+							{
+								"type": "TextInput",
+								"name": "customer_name",
+								"label": "Nome completo",
+								"required": true,
+								"input-type": "text",
+								"enabled": "${data.customer_name_editable}"
+							},
+							{
+								"type": "TextSubheading",
+								"text": "Endereço para entrega"
+							},
+							{
+								"type": "TextInput",
+								"name": "street",
+								"label": "Rua ou avenida",
+								"required": true
+							},
+							{
+								"type": "TextInput",
+								"name": "number",
+								"label": "Número",
+								"required": true
+							},
+							{
+								"type": "TextInput",
+								"name": "complement",
+								"label": "Complemento (opcional)",
+								"required": false
+							},
+							{
+								"type": "TextInput",
+								"name": "neighborhood",
+								"label": "Bairro",
+								"required": true
+							},
+							{
+								"type": "TextInput",
+								"name": "city",
+								"label": "Cidade",
+								"required": true
+							},
+							{
+								"type": "TextInput",
+								"name": "state",
+								"label": "UF",
+								"helper-text": "Informe a sigla de duas letras.",
+								"required": true
+							},
+							{
+								"type": "TextInput",
+								"name": "postal_code",
+								"label": "CEP",
+								"required": true
+							},
+							{
+								"type": "TextInput",
+								"name": "reference",
+								"label": "Ponto de referência (opcional)",
+								"required": false
+							},
+							{
+								"type": "Footer",
+								"label": "Revisar pedido",
+								"on-click-action": {
+									"name": "data_exchange",
+									"payload": {
+										"component_action": "review_order",
+										"selected_items": "${data.selected_items}",
+										"payment_method": "${data.payment_method}",
+										"customer_name": "${form.customer_name}",
+										"new_address": {
+											"street": "${form.street}",
+											"number": "${form.number}",
+											"complement": "${form.complement}",
+											"neighborhood": "${form.neighborhood}",
+											"city": "${form.city}",
+											"state": "${form.state}",
+											"postal_code": "${form.postal_code}",
+											"reference": "${form.reference}"
+										}
+									}
+								}
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": "CUSTOMER_REVIEW",
+			"title": "Vamos confirmar seu cadastro",
+			"terminal": true,
+			"success": false,
+			"data": {
+				"flow_session_id": {
+					"type": "string",
+					"__example__": "00000000-0000-4000-8000-000000000005"
+				},
+				"selected_items": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"position_id": {
+								"type": "string"
+							},
+							"product_id": {
+								"type": "string"
+							},
+							"quantity": {
+								"type": "number"
+							}
+						}
+					},
+					"__example__": [
+						{
+							"position_id": "00000000-0000-4000-8000-000000000002",
+							"product_id": "00000000-0000-4000-8000-000000000001",
+							"quantity": 1
+						}
+					]
+				},
+				"payment_method": {
+					"type": "string",
+					"__example__": "pix"
+				},
+				"review_message": {
+					"type": "string",
+					"__example__": "Não conseguimos confirmar seu cadastro agora. Envie uma mensagem nesta conversa para continuar com a equipe."
+				}
+			},
+			"layout": {
+				"type": "SingleColumnLayout",
+				"children": [
+					{
+						"type": "Form",
+						"name": "customer_review_form",
+						"children": [
+							{
+								"type": "TextHeading",
+								"text": "Precisamos de ajuda da equipe"
+							},
+							{
+								"type": "TextBody",
+								"text": "${data.review_message}"
+							},
+							{
+								"type": "Footer",
+								"label": "Concluir",
+								"on-click-action": {
+									"name": "complete",
+									"payload": {
+										"request_human_review": true,
+										"flow_session_id": "${data.flow_session_id}"
+									}
+								}
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": "ORDER_REVIEW",
+			"title": "Revisão do pedido",
+			"terminal": true,
+			"data": {
+				"flow_session_id": {
+					"type": "string",
+					"__example__": "00000000-0000-4000-8000-000000000005"
+				},
+				"selected_items": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"position_id": {
+								"type": "string"
+							},
+							"product_id": {
+								"type": "string"
+							},
+							"quantity": {
+								"type": "number"
+							}
+						}
+					},
+					"__example__": [
+						{
+							"position_id": "00000000-0000-4000-8000-000000000002",
+							"product_id": "00000000-0000-4000-8000-000000000001",
+							"quantity": 1
+						}
+					]
+				},
+				"payment_method": {
+					"type": "string",
+					"__example__": "pix"
+				},
+				"payment_label": {
+					"type": "string",
+					"__example__": "Pix"
+				},
+				"customer_id": {
+					"type": "string",
+					"__example__": "00000000-0000-4000-8000-000000000003"
+				},
+				"customer_name": {
+					"type": "string",
+					"__example__": "Maria Silva"
+				},
+				"address_id": {
+					"type": "string",
+					"__example__": "00000000-0000-4000-8000-000000000004"
+				},
+				"new_address": {
+					"type": "object",
+					"properties": {
+						"street": {
+							"type": "string"
+						},
+						"number": {
+							"type": "string"
+						},
+						"complement": {
+							"type": "string"
+						},
+						"neighborhood": {
+							"type": "string"
+						},
+						"city": {
+							"type": "string"
+						},
+						"state": {
+							"type": "string"
+						},
+						"postal_code": {
+							"type": "string"
+						},
+						"reference": {
+							"type": "string"
+						}
+					},
+					"__example__": {
+						"street": "",
+						"number": "",
+						"complement": "",
+						"neighborhood": "",
+						"city": "",
+						"state": "",
+						"postal_code": "",
+						"reference": ""
+					}
+				},
+				"product_summary": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"__example__": ["2x Arroz Tio Alvino"]
+				},
+				"product_summary_text": {
+					"type": "string",
+					"__example__": "2x Arroz Tio Alvino"
+				},
+				"total_cents": {
+					"type": "number",
+					"__example__": 5780
+				},
+				"total_label": {
+					"type": "string",
+					"__example__": "R$ 57,80"
+				},
+				"delivery_address_text": {
+					"type": "string",
+					"__example__": "Rua das Flores, 123 · Centro · Várzea Grande/MT · 78110-000"
+				}
+			},
+			"layout": {
+				"type": "SingleColumnLayout",
+				"children": [
+					{
+						"type": "Form",
+						"name": "order_review_form",
+						"children": [
+							{
+								"type": "TextHeading",
+								"text": "Revise seu pedido"
+							},
+							{
+								"type": "TextSubheading",
+								"text": "Produtos e quantidades"
+							},
+							{
+								"type": "TextBody",
+								"text": "${data.product_summary_text}"
+							},
+							{
+								"type": "TextSubheading",
+								"text": "Forma de pagamento"
+							},
+							{
+								"type": "TextBody",
+								"text": "${data.payment_label}"
+							},
+							{
+								"type": "TextSubheading",
+								"text": "Endereço de entrega"
+							},
+							{
+								"type": "TextBody",
+								"text": "${data.delivery_address_text}"
+							},
+							{
+								"type": "TextSubheading",
+								"text": "Total do pedido"
+							},
+							{
+								"type": "TextHeading",
+								"text": "${data.total_label}"
+							},
+							{
+								"type": "Footer",
+								"label": "Enviar pedido",
+								"on-click-action": {
+									"name": "complete",
+									"payload": {
+										"flow_session_id": "${data.flow_session_id}",
+										"selected_items": "${data.selected_items}",
+										"payment_method": "${data.payment_method}",
+										"customer_id": "${data.customer_id}",
+										"customer_name": "${data.customer_name}",
+										"address_id": "${data.address_id}",
+										"new_address": "${data.new_address}",
+										"total_cents": "${data.total_cents}",
+										"delivery_address_text": "${data.delivery_address_text}"
+									}
+								}
+							}
+						]
+					}
+				]
+			}
+		}
+	]
+}
