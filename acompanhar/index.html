@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#7e3029">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <title>Acompanhar entrega · Dona Antônia</title>
+  <link rel="stylesheet" href="tracking.css?v=1">
+  <script src="/site/config.js?v=3"></script>
+  <script defer src="tracking.js?v=1"></script>
+</head>
+<body class="tracking-page">
+  <main class="tracking-shell">
+    <a class="tracking-brand" href="/site/"><img src="/img/logoantonia5.png" alt="Dona Antônia" width="150" height="55"></a>
+    <section class="tracking-card">
+      <p class="eyebrow">ACOMPANHE SUA ENTREGA</p>
+      <div id="tracking-loading" class="tracking-message" role="status">Consultando o status do pedido…</div>
+      <div id="tracking-error" class="tracking-message tracking-error" hidden>Não foi possível localizar este pedido. Abra novamente o link recebido no WhatsApp.</div>
+      <div id="tracking-result" hidden>
+        <h1 id="tracking-code">Pedido</h1>
+        <p id="tracking-status" class="tracking-status">Status em atualização</p>
+        <ol id="tracking-progress" class="tracking-progress" aria-label="Etapas do pedido">
+          <li data-tracking-step="received"><span></span><strong>Pedido recebido</strong></li>
+          <li data-tracking-step="processing"><span></span><strong>Em separação</strong></li>
+          <li data-tracking-step="ready"><span></span><strong>Pronto para expedição</strong></li>
+          <li data-tracking-step="out_for_delivery"><span></span><strong>Saiu para entrega</strong></li>
+          <li data-tracking-step="delivered"><span></span><strong>Entregue</strong></li>
+        </ol>
+        <p id="tracking-delivery-window" class="tracking-delivery-window"></p>
+        <p id="tracking-updated" class="tracking-updated"></p>
+        <p id="tracking-live-note" class="tracking-live-note" hidden></p>
+        <div class="tracking-actions">
+          <a id="tracking-order-link" class="tracking-button tracking-button-primary" href="/p/">Conferir pedido</a>
+          <a class="tracking-button tracking-button-outline" href="/site/">Voltar à loja</a>
+        </div>
+      </div>
+    </section>
+    <p class="tracking-footer">A Dona Antônia agradece a preferência.</p>
+  </main>
+</body>
+</html>

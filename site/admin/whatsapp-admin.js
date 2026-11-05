@@ -1,8 +1,15 @@
+Warning: truncated output (original token count: 30606)
+Total output lines: 1764
+
 (() => {
   "use strict";
   const config = window.DONA_SITE_CONFIG || {};
   const supabase = String(config.supabaseUrl || "").replace(/\/$/, "");
   const publishableKey = config.publishableKey || "";
+  const templateButtonSupport = window.DonaTemplateButtonSupport || {
+    exampleForUrl: () => "0123456789abcdef".repeat(4),
+    isValidExample: (_url, value) => /^[a-f0-9]{64}$/i.test(String(value || "")),
+  };
   const $ = (id) => document.getElementById(id);
   const esc = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
   let loaded = false;
@@ -873,26 +880,7 @@
       return '<option value="' + esc(item.id) + '"' + (item.id === templateAdminAccountId ? " selected" : "") + '>' + esc(item.name || "WhatsApp") + esc(number) + '</option>';
     }).join("");
     root.innerHTML = '<div class="whatsapp-record-summary">'
-      + '<article class="whatsapp-overview-card"><h3>Aprovados pela Meta</h3><strong class="whatsapp-metric">' + esc(data.templates?.approved || 0) + '</strong><p class="admin-muted">disponíveis</p></article>'
-      + '<article class="whatsapp-overview-card"><h3>Total cadastrado</h3><strong class="whatsapp-metric">' + esc(data.templates?.total || 0) + '</strong><p class="admin-muted">modelos</p></article>'
-      + '<article class="whatsapp-overview-card"><h3>No canal</h3><strong class="whatsapp-metric">' + esc(selectedItems.length) + '</strong><p class="admin-muted">na lista carregada</p></article></div>'
-      + '<section class="whatsapp-overview-card"><div class="whatsapp-template-admin-toolbar"><label>Canal<select data-template-account' + (channels.length && !templateAdminBusy ? "" : " disabled") + '>' + (channelsMarkup || '<option value="">Nenhum canal</option>') + '</select></label>'
-      + '<div class="whatsapp-template-admin-actions"><button class="button button-outline" type="button" data-template-load' + (!templateAdminAccountId || templateAdminBusy ? " disabled" : "") + '>Carregar modelos</button><button class="button button-outline" type="button" data-template-sync' + (!templateAdminAccountId || templateAdminBusy ? " disabled" : "") + '>Sincronizar com Meta</button><button class="button button-primary" type="button" data-template-new' + (!templateAdminAccountId || templateAdminBusy ? " disabled" : "") + '>Novo modelo</button></div></div>'
-      + '<p class="admin-muted" data-template-admin-status role="status" aria-live="polite">' + esc(templateAdminStatus || "Resumo carregado. Carregue o catálogo completo para editar ou sincronize com a Meta.") + '</p>'
-      + '<div class="whatsapp-template-editor-host" data-template-editor-host></div><div class="whatsapp-template-admin-list" data-template-admin-list></div></section>';
-    renderTemplateAdminRows(selectedItems);
-  }
-
-  async function templateAdminRequest(action, options) {
-    const accountId = String(options?.accountId || templateAdminAccountId || "");
-    if (!supabase || !publishableKey || !accountId) throw new Error("Selecione um canal WhatsApp.");
-    const url = new URL(supabase + "/functions/v1/admin-whatsapp-templates-v1");
-    url.searchParams.set("action", action);
-    url.searchParams.set("account_id", accountId);
-    const method = options?.method || "GET";
-    const response = await fetch(url.toString(), {
-      method,
-      headers: {
+      + '<article class="…606 tokens truncated…eaders: {
         apikey: publishableKey,
         "x-admin-code": window.DonaAdminAuth?.getCode?.() || "",
         ...(method === "POST" ? { "Content-Type": "application/json" } : {}),
@@ -978,10 +966,10 @@
 
   function templateButtonMarkup(button = {}) {
     const type = String(button?.type || "QUICK_REPLY").toUpperCase();
-    const dynamicUrl = String(button?.url || "").endsWith("{{1}}");
-    const example = Array.isArray(button?.example) && /^[a-f0-9]{64}$/i.test(String(button.example[0] || ""))
+    const url = String(button?.url || "");
+    const example = Array.isArray(button?.example) && templateButtonSupport.isValidExample(url, String(button.example[0] || ""))
       ? String(button.example[0])
-      : TEMPLATE_BUTTON_EXAMPLE;
+      : templateButtonSupport.exampleForUrl(url) || TEMPLATE_BUTTON_EXAMPLE;
     return '<div class="whatsapp-template-button-row" data-template-button-row>'
       + '<label>Tipo<select data-template-button-type><option value="QUICK_REPLY"' + (type === "QUICK_REPLY" ? " selected" : "") + '>Resposta rápida</option><option value="URL"' + (type === "URL" ? " selected" : "") + '>Link</option><option value="CATALOG"' + (type === "CATALOG" ? " selected" : "") + '>Catálogo</option></select></label>'
       + '<label>Texto do botão<input data-template-button-text maxlength="25" value="' + esc(button?.text || "") + '" placeholder="Ex.: Ver pedido"></label>'
@@ -1003,8 +991,8 @@
     }
     if (urlLabel) urlLabel.hidden = type !== "URL";
     const example = row.querySelector("[data-template-button-example]");
-    if (example && type === "URL" && url.endsWith("{{1}}") && !/^[a-f0-9]{64}$/i.test(example.value)) {
-      example.value = TEMPLATE_BUTTON_EXAMPLE;
+    if (example && type === "URL" && url.endsWith("{{1}}") && !templateButtonSupport.isValidExample(url, example.value)) {
+      example.value = templateButtonSupport.exampleForUrl(url) || TEMPLATE_BUTTON_EXAMPLE;
     }
   }
 
@@ -1100,8 +1088,8 @@
       if (!url) throw new Error("Informe o endereço do botão de link.");
       if (/\{\{\d+\}\}/.test(url) && !url.endsWith("{{1}}")) throw new Error("O link dinâmico deve terminar com {{1}}.");
       if (url.endsWith("{{1}}")) {
-        const example = row.querySelector("[data-template-button-example]")?.value || TEMPLATE_BUTTON_EXAMPLE;
-        if (!/^[a-f0-9]{64}$/i.test(example)) throw new Error("Exemplo de link inválido. Sincronize os modelos e tente novamente.");
+        const example = row.querySelector("[data-template-button-example]")?.value || templateButtonSupport.exampleForUrl(url) || TEMPLATE_BUTTON_EXAMPLE;
+        if (!templateButtonSupport.isValidExample(url, example)) throw new Error("Exemplo de link inválido. Sincronize os modelos e tente novamente.");
         return { type, text, url, example: [example] };
       }
       return { type, text, url };

@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.58.0";
 import {sendTemplateViaMeta,MetaTransportError} from "../_shared/whatsapp-meta-transport-v1.mjs";
+import {buildOrderSeparationComponents} from "../_shared/order-separation-components-v1.mjs";
 
 const U=Deno.env.get("SUPABASE_URL")||"";
 const K=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
@@ -58,10 +59,10 @@ async function activeAccount(accountId:string|null,channel:Channel){
   return (q.data||[]).find((row:any)=>channelFromPhone(row.phone_e164)===channel)||null;
 }
 
-async function templateApprovedForAccount(accountId:string,templateName:string){
-  const q=await db.from("whatsapp_templates_v1").select("status").eq("whatsapp_account_id",accountId).eq("name",templateName).eq("language",TEMPLATE_LANGUAGE).maybeSingle();
+async function templateForAccount(accountId:string,templateName:string){
+  const q=await db.from("whatsapp_templates_v1").select("status,category,components").eq("whatsapp_account_id",accountId).eq("name",templateName).eq("language",TEMPLATE_LANGUAGE).maybeSingle();
   if(q.error)throw q.error;
-  return String(q.data?.status||"").toUpperCase()==="APPROVED";
+  return q.data||null;
 }
 
 async function canonicalConversation(route:any,order:any,account:any){
@@ -130,7 +131,8 @@ Deno.serve(async(req:Request)=>{
     const publicLinkQ=await db.rpc("ops2_order_public_link_v1",{p_order_id:orderId});
     if(publicLinkQ.error)throw publicLinkQ.error;
     const publicCode=clean(publicLinkQ.data?.public_code,5),orderUrl=clean(publicLinkQ.data?.public_url,300);
-    if(!/^[A-Z]{2}[0-9]{3}$/.test(publicCode)||!orderUrl)return respond({ok:false,error:"public_order_identity_missing"},409);
+    const publicToken=clean(publicLinkQ.data?.public_token,32)||(()=>{try{return new URL(orderUrl).searchParams.get("k")||""}catch{return ""}})();
+    if(!/^[A-Z]{2}[0-9]{3}$/.test(publicCode)||!orderUrl||!/^[a-f0-9]{16}$/i.test(publicToken))return respond({ok:false,error:"public_order_identity_missing"},409);
 
     const missingItems=Array.isArray(completion.missing_items)?completion.missing_items:[];
     const missingSubtotal=Number(completion.missing_subtotal||0);
@@ -149,15 +151,17 @@ Deno.serve(async(req:Request)=>{
     if(settingQ.error)throw settingQ.error;
     const messageEnabled=settingQ.data?.is_enabled!==false;
     const templateName=clean(settingQ.data?.active_template_name||TEMPLATE_BY_KIND[kind][channel],160);
-    const templateApproved=messageEnabled&&await templateApprovedForAccount(account.id,templateName);
-    const originalTotal=completion.original_total??order.total??0,finalTotal=completion.final_total??order.total??0;
+    const activeTemplate=await templateForAccount(account.id,templateName);
+    const finalTotal=completion.final_total??order.total??0;
+    const originalTotal=completion.original_total??order.total??0;
     const missingText=missingItemsText(missingItems);
-    const components=kind==="prepared_adjusted"?[{type:"body",parameters:[
-      {type:"text",text:publicCode},{type:"text",text:missingText},{type:"text",text:money(originalTotal)},
-      {type:"text",text:money(missingSubtotal)},{type:"text",text:money(finalTotal)},{type:"text",text:orderUrl}
-    ]}]:[{type:"body",parameters:[
-      {type:"text",text:publicCode},{type:"text",text:money(finalTotal)},{type:"text",text:orderUrl}
-    ]}];
+    const bodyValues=kind==="prepared_adjusted"
+      ? [publicCode,missingText,money(originalTotal),money(missingSubtotal),money(finalTotal)]
+      : [publicCode,money(finalTotal)];
+    const components=buildOrderSeparationComponents(kind,bodyValues,publicToken,orderUrl,activeTemplate?.components);
+    const activeApproved=String(activeTemplate?.status||"").toUpperCase()==="APPROVED"&&String(activeTemplate?.category||"").toUpperCase()==="UTILITY";
+    if(activeApproved&&messageEnabled&&!components)return respond({ok:false,error:"separation_template_shape_unsupported"},409);
+    const templateApproved=messageEnabled&&activeApproved&&Boolean(components);
 
     const payload={public_code:publicCode,order_url:orderUrl,missing_items:missingItems,missing_items_text:missingText,original_total:originalTotal,missing_subtotal:missingSubtotal,final_total:finalTotal,template_name:templateName,components};
     const initialStatus=!messageEnabled?"suppressed":templateApproved?"sending":"pending";

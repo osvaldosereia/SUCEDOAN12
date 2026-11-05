@@ -118,11 +118,18 @@ function normalizeButtons(rawButtons){
     catch{throw fail('meta_template_buttons_invalid')}
     if(url.protocol!=='https:'||url.username||url.password)throw fail('meta_template_buttons_invalid');
     if(dynamic){
-      // Only approved order-action and offer deep-link paths may carry dynamic capabilities.
-      if(url.hostname!=='donaantonia.com.br'||!['/pedido/','/ofertas/'].includes(url.pathname)||url.searchParams.size!==1||
-         !url.searchParams.has('c')||url.hash)throw fail('meta_template_buttons_invalid');
+      // Only approved order-action, tracking, and offer deep-link paths may carry dynamic tokens.
+      const publicOrderLink = ['https://donaantonia.com.br/p/?k={{1}}','https://donaantonia.com.br/acompanhar/?k={{1}}'].includes(urlRaw);
+      const legacyCapabilityLink = url.hostname==='donaantonia.com.br'&&['/pedido/','/ofertas/'].includes(url.pathname)&&
+        url.searchParams.size===1&&url.searchParams.has('c')&&!url.hash;
+      const normalizedPublicOrderLink = url.hostname==='donaantonia.com.br'&&['/p/','/acompanhar/'].includes(url.pathname)&&
+        url.searchParams.size===1&&url.searchParams.has('k')&&!url.hash&&
+        /^https:\/\/donaantonia\.com\.br\/(p|acompanhar)\/\?k=\{\{1\}\}$/.test(urlRaw);
+      if(!publicOrderLink&&!legacyCapabilityLink&&!normalizedPublicOrderLink)throw fail('meta_template_buttons_invalid');
       const examples=raw?.example;
-      if(!Array.isArray(examples)||examples.length!==1||!/^[a-f0-9]{64}$/.test(String(examples[0]||'')))
+      const publicTokenLink = publicOrderLink || normalizedPublicOrderLink;
+      const examplePattern = publicTokenLink ? /^[a-f0-9]{16}$/ : /^[a-f0-9]{64}$/;
+      if(!Array.isArray(examples)||examples.length!==1||!examplePattern.test(String(examples[0]||'')))
         throw fail('meta_template_examples_required');
       return {type,text,url:urlRaw,example:examples};
     }

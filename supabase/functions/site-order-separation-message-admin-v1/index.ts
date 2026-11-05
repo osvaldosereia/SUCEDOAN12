@@ -8,7 +8,7 @@ import {
 import { verifyAdminCode } from "../_shared/admin-code-v1.ts";
 
 type Channel = "0975" | "1018";
-type MessageKind = "prepared_ok" | "prepared_adjusted";
+type MessageKind = "prepared_ok" | "prepared_adjusted" | "driver_next_stop";
 type JsonRecord = Record<string, unknown>;
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
@@ -36,9 +36,6 @@ const DEFAULT_BODIES: Record<MessageKind, string> = {
     "",
     "🚚 Seu pedido está pronto e seguirá para a rota de entrega.",
     "",
-    "Confira os detalhes:",
-    "{{3}}",
-    "",
     "Dona Antônia agradece a preferência.",
   ].join("\n"),
   prepared_adjusted: [
@@ -55,15 +52,20 @@ const DEFAULT_BODIES: Record<MessageKind, string> = {
     "",
     "Os demais produtos foram separados normalmente e seu pedido está pronto para seguir para a rota de entrega.",
     "",
-    "Confira os detalhes:",
-    "{{6}}",
-    "",
     "Dona Antônia agradece a compreensão.",
   ].join("\n"),
+  driver_next_stop: [
+    "Olá! O pedido {{1}} é nossa próxima entrega.",
+    "A previsão é chegar em até {{2}} minutos.",
+    "Seu entregador é {{3}}, WhatsApp {{4}}.",
+    "Valor do pedido: {{5}}.",
+    "Forma de pagamento: {{6}}.",
+  ].join("\n\n"),
 };
 const KIND_PREFIX: Record<MessageKind, string> = {
   prepared_ok: "pedidopreparadook",
   prepared_adjusted: "pedidopreparadoajuste",
+  driver_next_stop: "proximaentregadiante",
 };
 const db = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -100,12 +102,12 @@ const onlyKeys = (value: JsonRecord, allowed: string[]) =>
 const channelFrom = (value: unknown): Channel | null =>
   value === "0975" || value === "1018" ? value : null;
 const kindFrom = (value: unknown): MessageKind | null =>
-  value === "prepared_ok" || value === "prepared_adjusted" ? value : null;
+  value === "prepared_ok" || value === "prepared_adjusted" || value === "driver_next_stop" ? value : null;
 const defaultTemplateName = (kind: MessageKind, channel: Channel) =>
   KIND_PREFIX[kind] + channel + "v1";
 const namePrefix = (kind: MessageKind, channel: Channel) =>
   KIND_PREFIX[kind] + channel + "v";
-const expectedVariableCount = (kind: MessageKind) => kind === "prepared_ok" ? 3 : 6;
+const expectedVariableCount = (kind: MessageKind) => ({ prepared_ok: 2, prepared_adjusted: 5, driver_next_stop: 6 })[kind];
 
 function validateBody(value: unknown, kind: MessageKind) {
   const body = String(value ?? "").replace(/\r\n?/g, "\n").trim();
@@ -133,7 +135,7 @@ async function settingsRows(kind: MessageKind) {
     return row || {
       notification_kind: kind,
       channel,
-      is_enabled: true,
+      is_enabled: kind !== "driver_next_stop",
       draft_body: DEFAULT_BODIES[kind],
       active_template_name: defaultTemplateName(kind, channel),
       pending_template_name: null,
@@ -201,16 +203,52 @@ async function syncTemplates(account: any) {
   return remote.items;
 }
 
-function approvedTemplateShape(row: any, kind: MessageKind) {
+function templateShapeMatches(row: any, kind: MessageKind) {
   const components = Array.isArray(row?.components) ? row.components : [];
   const body = components.find((item: any) => String(item.type || "").toUpperCase() === "BODY");
   const variables = [...String(body?.text || "").matchAll(/\{\{(\d+)\}\}/g)]
     .map((match) => Number(match[1]));
   const expected = expectedVariableCount(kind);
-  return row?.status === "APPROVED" && String(row?.category || "").toUpperCase() === "UTILITY" &&
-    components.length === 1 && Boolean(body) && variables.length === expected &&
-    new Set(variables).size === expected &&
-    Array.from({ length: expected }, (_, index) => index + 1).every((number) => variables.includes(number));
+  if (String(row?.category || "").toUpperCase() !== "UTILITY" || !body || variables.length !== expected ||
+      new Set(variables).size !== expected ||
+      !Array.from({ length: expected }, (_, index) => index + 1).every((number) => variables.includes(number))) return false;
+  if (kind === "driver_next_stop") return components.length === 1;
+  const buttons = components.find((item: any) => String(item.type || "").toUpperCase() === "BUTTONS")?.buttons;
+  const expectedButtons = [
+    { text: "Conferir pedido", url: "https://donaantonia.com.br/p/?k={{1}}" },
+    { text: "Acompanhar entrega", url: "https://donaantonia.com.br/acompanhar/?k={{1}}" },
+  ];
+  return components.length === 2 && Array.isArray(buttons) && buttons.length === 2 &&
+    buttons.every((button: any, index: number) => String(button.type || "").toUpperCase() === "URL" &&
+      button.text === expectedButtons[index].text && button.url === expectedButtons[index].url);
+}
+
+function approvedTemplateShape(row: any, kind: MessageKind) {
+  return String(row?.status || "").toUpperCase() === "APPROVED" && templateShapeMatches(row, kind);
+}
+
+function templateDraft(kind: MessageKind, channel: Channel, version: number, body: string) {
+  const examples = kind === "prepared_ok"
+    ? ["DA066", "R$ 120,00"]
+    : kind === "prepared_adjusted"
+      ? ["DA066", "• 1x Feijão Carioca 1 kg", "R$ 120,00", "R$ 18,50", "R$ 101,50"]
+      : ["DA066", "15", "Carlos", "+5565999999999", "R$ 120,00", "Pix na entrega"];
+  const components: any[] = [{ type: "BODY", text: body, example: { body_text: [examples] } }];
+  if (kind !== "driver_next_stop") {
+    components.push({
+      type: "BUTTONS",
+      buttons: [
+        { type: "URL", text: "Conferir pedido", url: "https://donaantonia.com.br/p/?k={{1}}", example: ["1234567890abcdef"] },
+        { type: "URL", text: "Acompanhar entrega", url: "https://donaantonia.com.br/acompanhar/?k={{1}}", example: ["1234567890abcdef"] },
+      ],
+    });
+  }
+  return {
+    name: namePrefix(kind, channel) + version,
+    language: LANGUAGE,
+    category: "UTILITY",
+    components,
+  };
 }
 
 async function readState(kind: MessageKind) {
@@ -294,17 +332,6 @@ async function applyRateLimit(req: Request, action: string) {
   if (result.data !== true) throw new RequestFailure("rate_limited", 429);
 }
 
-function templateDraft(kind: MessageKind, channel: Channel, version: number, body: string) {
-  const examples = kind === "prepared_ok"
-    ? ["DA066", "R$ 120,00", "https://donaantonia.com.br/p/?k=exemplo1234567890"]
-    : ["DA066", "• 1x Feijão Carioca 1 kg", "R$ 120,00", "R$ 18,50", "R$ 101,50", "https://donaantonia.com.br/p/?k=exemplo1234567890"];
-  return {
-    name: namePrefix(kind, channel) + version,
-    language: LANGUAGE,
-    category: "UTILITY",
-    components: [{ type: "BODY", text: body, example: { body_text: [examples] } }],
-  };
-}
 function isPending(status: unknown) {
   return String(status || "").toUpperCase().startsWith("PENDING");
 }
@@ -331,12 +358,13 @@ async function submitDraft(kind: MessageKind) {
       const priorPending = setting?.pending_template_name
         ? matches.find((item: any) => item.name === setting.pending_template_name)
         : null;
-      if (priorPending && (isPending(priorPending.status) || String(priorPending.status).toUpperCase() === "APPROVED")) {
+      if (priorPending && templateShapeMatches(priorPending, kind) &&
+          (isPending(priorPending.status) || String(priorPending.status).toUpperCase() === "APPROVED")) {
         results.push({ channel, name: priorPending.name, status: priorPending.status, already_exists: true });
         continue;
       }
       const anyPending = matches
-        .filter((item: any) => isPending(item.status))
+        .filter((item: any) => isPending(item.status) && templateShapeMatches(item, kind))
         .sort((a: any, b: any) => versionOf(String(b.name)) - versionOf(String(a.name)))[0];
       if (anyPending) {
         await updateSetting(kind, channel, { pending_template_name: anyPending.name });

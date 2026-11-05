@@ -11,16 +11,17 @@
     kind: "prepared_ok",
     busy: false,
     metaReady: false,
-    drafts: { prepared_ok: null, prepared_adjusted: null },
-    dirty: { prepared_ok: false, prepared_adjusted: false },
+    drafts: { prepared_ok: null, prepared_adjusted: null, driver_next_stop: null },
+    dirty: { prepared_ok: false, prepared_adjusted: false, driver_next_stop: false },
     channels: [],
-    metaResults: { prepared_ok: {}, prepared_adjusted: {} },
-    submissionResults: { prepared_ok: {}, prepared_adjusted: {} },
+    metaResults: { prepared_ok: {}, prepared_adjusted: {}, driver_next_stop: {} },
+    submissionResults: { prepared_ok: {}, prepared_adjusted: {}, driver_next_stop: {} },
     toastTimer: 0
   };
   const variables = {
-    prepared_ok: "{{1}} código do pedido · {{2}} total confirmado · {{3}} link da lista do pedido",
-    prepared_adjusted: "{{1}} código do pedido · {{2}} itens em falta · {{3}} valor original · {{4}} abatimento · {{5}} novo total · {{6}} link da lista do pedido"
+    prepared_ok: "{{1}} código do pedido · {{2}} total confirmado",
+    prepared_adjusted: "{{1}} código do pedido · {{2}} itens em falta · {{3}} valor original · {{4}} abatimento · {{5}} novo total",
+    driver_next_stop: "{{1}} código do pedido · {{2}} previsão em minutos · {{3}} nome do entregador · {{4}} WhatsApp do entregador · {{5}} total do pedido · {{6}} forma de pagamento"
   };
   const esc = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (ch) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -138,7 +139,10 @@
     if (!state.dirty[state.kind] && (document.activeElement !== $("separation-message-body") || resetDraft)) {
       $("separation-message-body").value = state.drafts[state.kind];
     }
-    $("separation-message-variables").textContent = "Variáveis deste modelo: " + variables[state.kind] + ".";
+    const buttonNote = state.kind === "driver_next_stop"
+      ? "Este modelo não tem botões."
+      : "O modelo enviado também terá os botões dinâmicos “Conferir pedido” e “Acompanhar entrega”.";
+    $("separation-message-variables").textContent = "Variáveis deste modelo: " + variables[state.kind] + ". " + buttonNote;
     $("separation-message-meta-status").textContent = data.meta_ready
       ? "Conexão com a Meta disponível."
       : "Conexão com a Meta não configurada no servidor.";
