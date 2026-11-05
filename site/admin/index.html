@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#7e3029">
+  <meta name="theme-color" content="#ffffff">
   <meta name="robots" content="noindex, nofollow">
   <title>Admin · Dona Antônia</title>
   <link rel="stylesheet" href="../styles.css?v=5">
-  <link rel="stylesheet" href="admin.css?v=49">
+  <link rel="stylesheet" href="admin.css?v=50">
   <link rel="stylesheet" href="taxonomy-admin.css?v=1">
   <link rel="stylesheet" href="papoai-guard-admin.css?v=1">
   <link rel="stylesheet" href="baskets-admin.css?v=3">
@@ -27,7 +27,7 @@
   <script src="whatsapp-campaign-report.js?v=1" defer></script>
   <script src="whatsapp-conversations.js?v=16" defer></script>
   <script src="quick-balance-admin.js?v=7" defer></script>
-  <script src="admin.js?v=23" defer></script>
+  <script src="admin.js?v=24" defer></script>
 </head>
 <body class="admin-page">
   <main id="admin-login" class="admin-login-main">
@@ -46,14 +46,21 @@
   </main>
   <div id="admin-app" hidden>
   <header class="topbar">
-    <a class="brand" href="../" aria-label="Voltar ao catálogo">
-      <img src="../../img/logoantonia5.png" alt="Dona Antônia" width="176" height="64">
-    </a>
-    <a class="admin-link" href="../">Voltar à loja</a>
-    <button id="admin-logout" class="admin-link admin-logout" type="button">Sair</button>
+    <div class="admin-topbar-brand">
+      <button id="admin-menu-toggle" class="admin-menu-toggle" type="button" aria-label="Abrir menu" aria-controls="admin-sidebar" aria-expanded="false">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <a class="brand" href="../" aria-label="Voltar ao catálogo">
+        <img src="../../img/logoantonia5.png" alt="Dona Antônia" width="176" height="64">
+      </a>
+    </div>
+    <div class="admin-topbar-actions">
+      <a class="admin-link" href="../">Voltar à loja</a>
+      <button id="admin-logout" class="admin-link admin-logout" type="button">Sair</button>
+    </div>
   </header>
   <div class="admin-shell">
-    <aside class="admin-sidebar" aria-label="Navegação do painel">
+    <aside id="admin-sidebar" class="admin-sidebar" aria-label="Navegação do painel">
       <div class="admin-sidebar-heading">
         <p class="sidebar-kicker">PAINEL ADMINISTRATIVO</p>
         <strong>Dona Antônia</strong>
@@ -99,6 +106,7 @@
         <span><strong>Área administrativa</strong><small>Loja Dona Antônia</small></span>
       </div>
     </aside>
+    <button id="admin-nav-backdrop" class="admin-nav-backdrop" type="button" aria-label="Fechar menu" tabindex="-1" hidden></button>
     <main class="admin-main">
     <section id="admin-view">
       <div class="admin-heading">
