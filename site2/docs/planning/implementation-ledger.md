@@ -1176,3 +1176,10 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 - Consulta agregada somente leitura encontrou 5 cestas ativas no WhatsApp e 118 posições: 83 prontas e 35 pendentes, cinco a mais que a leitura de 02/11 às 16:28 UTC.
 - As 35 posições pendentes têm produto ativo com foto HTTPS, mas não têm produto ativo habilitado para WhatsApp; não há pendências explicadas por falta de produto ativo ou foto. A elegibilidade agregada não retornou nomes/IDs de produtos.
 - Permanecem zero bindings em `whatsapp_ordering_private.whatsapp_order_flow_bindings_v1` e zero registros em `admin_audit_logs` desde a leitura anterior. A causa do aumento não é conhecida; não inferir alteração manual ou automática. Nenhuma escrita, publicação de Flow, mensagem, ação no Bling ou emissão fiscal ocorreu.
+
+## Rechecagem de prontidão agregada (05/11/2026 07:32 UTC)
+
+- Consulta somente leitura ao Supabase canônico `ssbesxgaijknwsjbsbcz`: continuam 5 cestas ativas para WhatsApp e 118 posições; 78 posições prontas e 40 pendentes (cinco prontas a menos que em 03/11 00:29 UTC). A tabela de bindings greenfield continua vazia.
+- Das 40 pendentes, 35 têm produto ativo com foto HTTPS, mas a disponibilidade para WhatsApp está desligada. Nas outras 5, existe opção ativa para WhatsApp, porém essa opção não tem foto HTTPS; também há produto ativo com foto nas posições, mas isso não torna elegível a opção WhatsApp sem foto. Nenhuma das 40 foi liberada automaticamente.
+- Há dois eventos agregados de auditoria desde 03/11 00:29 UTC, ambos `customer_update_admin_code` para `customer`; nenhum registra mudança de disponibilidade WhatsApp. Não foi consultado nem retornado identificador ou dado de cliente, produto, pedido, credencial ou token. A causa da mudança de prontidão permanece desconhecida; não inferir ação/autor.
+- Próxima revisão humana no Admin: conferir fotos HTTPS das opções WhatsApp pendentes e aprovar comercialmente qualquer alteração de disponibilidade dos demais produtos. Depois, validar os Flow e bindings individualmente nos dois WABAs. Não houve mutação de catálogo, pedido, estoque, binding, Flow, mensagem, Bling ou NF-e nesta leitura.
