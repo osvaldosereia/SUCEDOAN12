@@ -1,11 +1,16 @@
 export class MetaTemplatesError extends Error {
-  constructor(code,{httpStatus=null,retryable=false,providerCode=null}={}){
+  constructor(code,{httpStatus=null,retryable=false,providerCode=null,providerSubcode=null,providerType=null,providerMessage=null}={}){
     super(code);
     this.name='MetaTemplatesError';
     this.code=code;
     this.httpStatus=httpStatus;
     this.retryable=retryable;
     this.providerCode=providerCode;
+    this.providerSubcode=providerSubcode;
+    this.providerType=clean(providerType,80)||null;
+    this.providerMessage=clean(providerMessage,240)
+      .replace(/\bBearer\s+[^\s,;]+/gi,'Bearer [redacted]')
+      .replace(/\b(access_token|token)=([^\s&]+)/gi,'$1=[redacted]')||null;
   }
 }
 
@@ -258,6 +263,9 @@ async function fetchPage(url,{token,timeout,fetchImpl}){
       httpStatus:Number(response.status)||null,
       retryable:response.status===408||response.status===429||response.status>=500,
       providerCode:payload?.error?.code??null,
+      providerSubcode:payload?.error?.error_subcode??null,
+      providerType:payload?.error?.type??null,
+      providerMessage:payload?.error?.message??null,
     });
   }
   if(!payload||!Array.isArray(payload.data))throw fail('meta_templates_invalid_response');
@@ -286,6 +294,9 @@ async function mutateJson(url,{token,timeout,fetchImpl,method,body}){
       httpStatus:Number(response.status)||null,
       retryable:response.status===408||response.status===429||response.status>=500,
       providerCode:payload?.error?.code??null,
+      providerSubcode:payload?.error?.error_subcode??null,
+      providerType:payload?.error?.type??null,
+      providerMessage:payload?.error?.message??null,
     });
   }
   if(!payload||typeof payload!=='object'||Array.isArray(payload))throw fail('meta_templates_invalid_response');
