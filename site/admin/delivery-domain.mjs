@@ -102,6 +102,50 @@ export function routeSelectionAfterAction(selected, succeeded) {
   return succeeded ? new Set() : new Set(selected || []);
 }
 
+function isCalendarDate(value) {
+  const date = String(value || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+  const parsed = new Date(date + "T00:00:00.000Z");
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date;
+}
+
+function dateInTimeZone(value, timeZone) {
+  const date = new Date(value || "");
+  if (!Number.isFinite(date.getTime())) return null;
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return values.year && values.month && values.day ? `${values.year}-${values.month}-${values.day}` : null;
+}
+
+function deliveryDateForQueueOrder(order, timeZone) {
+  const rawDate = order?.checkout_snapshot?.delivery?.date;
+  if (rawDate != null && String(rawDate).trim()) return isCalendarDate(rawDate) ? String(rawDate).trim() : null;
+  return dateInTimeZone(order?.created_at, timeZone);
+}
+
+export function partitionDeliveryOrders(orders, serviceDate, timeZone = "America/Cuiaba") {
+  if (!isCalendarDate(serviceDate)) throw new Error("invalid_service_date");
+  const queue = { today: [], overdue: [], future: [], undated: [] };
+  for (const order of Array.isArray(orders) ? orders : []) {
+    const deliveryDate = deliveryDateForQueueOrder(order, timeZone);
+    if (!deliveryDate) queue.undated.push(order);
+    else if (deliveryDate < serviceDate) queue.overdue.push(order);
+    else if (deliveryDate > serviceDate) queue.future.push(order);
+    else queue.today.push(order);
+  }
+  return queue;
+}
+
+export function prepaidPaymentMethod(value) {
+  const method = String(value || "").trim();
+  return ["pix", "credit_card"].includes(method) ? method : null;
+}
+
 export function paidAheadLabel(order) {
   return order?.delivery_paid_ahead === true
     ? "PAGO ADIANTADO · NÃO COBRAR"
