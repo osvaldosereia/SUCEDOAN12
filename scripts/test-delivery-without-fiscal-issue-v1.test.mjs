@@ -85,6 +85,7 @@ test("manual and automatic invoice actions honor the runtime send-off switch", (
   const integrationEnd = source.indexOf("\nasync function ", integrationStart + 1);
   const integration = source.slice(integrationStart, integrationEnd);
   assert.match(integration, /fiscalAuto\?\.skipped!==true/, "an intentional pause must not create a failure alert");
+  assert.match(integration, /fiscal_auto_skipped:\s*fiscalAuto\?\.skipped===true/, "an intentional pause must be saved in separation metadata");
 
   const handlerStart = source.indexOf("Deno.serve(async(r:Request)=>");
   const routeStart = source.indexOf('if(r.method==="POST"&&a==="order_fiscal_dispatch_canary_execute"){', handlerStart);

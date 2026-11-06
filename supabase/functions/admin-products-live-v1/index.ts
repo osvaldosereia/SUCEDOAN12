@@ -3977,6 +3977,7 @@ async function runSeparationPostCompletionIntegrations(oid:string,operator:strin
       fiscal_auto_attempted:fiscalAuto?.attempted===true,
       fiscal_auto_ok:fiscalAuto?.ok===true,
       fiscal_auto_authorized:fiscalAuto?.authorized===true,
+      fiscal_auto_skipped:fiscalAuto?.skipped===true,
       fiscal_auto_stage:fiscalAuto?.stage||null,
       fiscal_auto_error:fiscalAuto?.ok===true?null:String(fiscalAuto?.error||""),
       fiscal_auto_at:new Date().toISOString()
@@ -3992,8 +3993,8 @@ async function runSeparationPostCompletionIntegrations(oid:string,operator:strin
   }
   try{
     await opsEvent(
-      fiscalAuto?.authorized===true?"order.fiscal_auto_authorized":"order.fiscal_auto_processed",
-      fiscalAuto?.authorized===true?"NF-e autorizada automaticamente após a separação.":"Emissão fiscal automática processada após a separação.",
+      fiscalAuto?.skipped===true?"order.fiscal_auto_paused":fiscalAuto?.authorized===true?"order.fiscal_auto_authorized":"order.fiscal_auto_processed",
+      fiscalAuto?.skipped===true?"Emissão fiscal automática pausada conforme configuração.":fiscalAuto?.authorized===true?"NF-e autorizada automaticamente após a separação.":"Emissão fiscal automática processada após a separação.",
       "order",oid,{bling_verified:blingVerified,fiscal_auto:fiscalAuto},operator||"Separação","automation","bling","order-fiscal-auto-v4:"+oid
     );
   }catch{}
