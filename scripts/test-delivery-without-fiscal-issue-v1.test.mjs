@@ -62,3 +62,36 @@ test("single-order dispatch skips fiscal preview and still reports invoice as de
   assert.match(dispatch, /fiscal_invoice_sending_disabled/, "the response must explain that invoice sending is deferred");
   assert.match(dispatch, /ops4_start_dispatch_v1/, "the order must still enter the delivery flow");
 });
+
+test("manual and automatic invoice actions honor the runtime send-off switch", () => {
+  const source = read("supabase/functions/admin-products-live-v1/index.ts");
+  assert.match(source, /async function fiscalInvoiceSendBlocked\(/, "one shared guard must read the invoice-send runtime flag");
+  const gateStart = source.indexOf("async function fiscalInvoiceSendBlocked(");
+  const gateEnd = source.indexOf("async function orderFiscalIssueV4(", gateStart);
+  const sendGate = source.slice(gateStart, gateEnd);
+  assert.match(sendGate, /bling_invoice_send_enabled/, "the send flag must be checked before issuance");
+  assert.match(sendGate, /execution_mode/, "automatic or manual sending must require live execution mode");
+  const issueStart = source.indexOf("async function orderFiscalIssueV4(");
+  const issueEnd = source.indexOf("async function orderDispatchStartV4(", issueStart);
+  const manualIssue = source.slice(issueStart, issueEnd);
+  assert.ok(manualIssue.indexOf("fiscalInvoiceSendBlocked()") < manualIssue.indexOf("ops2_fiscal_dispatch_preflight_v1"), "manual issue must stop before fiscal preflight when sending is off");
+
+  const autoStart = source.indexOf("async function autoIssueFiscalAfterSeparation(");
+  const autoEnd = source.indexOf("async function runSeparationPostCompletionIntegrations(", autoStart);
+  const automaticIssue = source.slice(autoStart, autoEnd);
+  assert.ok(automaticIssue.indexOf("fiscalInvoiceSendBlocked()") < automaticIssue.indexOf("ops2_fiscal_dispatch_preflight_v1"), "automatic issue must stop before fiscal preflight when sending is off");
+
+  const integrationStart = source.indexOf("async function runSeparationPostCompletionIntegrations(");
+  const integrationEnd = source.indexOf("\nasync function ", integrationStart + 1);
+  const integration = source.slice(integrationStart, integrationEnd);
+  assert.match(integration, /fiscalAuto\?\.skipped!==true/, "an intentional pause must not create a failure alert");
+
+  const handlerStart = source.indexOf("Deno.serve(async(r:Request)=>");
+  const routeStart = source.indexOf('if(r.method==="POST"&&a==="order_fiscal_dispatch_canary_execute"){', handlerStart);
+  const directGuard = source.indexOf('if(a==="order_fiscal_dispatch_canary_execute"){', handlerStart);
+  const preflight = source.indexOf('db.rpc("ops2_fiscal_dispatch_preflight_v1"', routeStart);
+  const send = source.indexOf('hub("fiscal_dispatch_canary_human_execute"', routeStart);
+  const guard = source.indexOf("fiscalInvoiceSendBlocked()", handlerStart);
+  assert.ok(directGuard >= 0 && directGuard < guard && guard < routeStart, "the direct issue action must be blocked at the request boundary");
+  assert.ok(preflight > routeStart && send > preflight, "the guarded direct action must otherwise retain its explicit preflight and send path");
+});

@@ -1633,10 +1633,21 @@ async function orderFiscalStatusV4(rawId:any){
     fiscal_recovery:recovery?{stage:recovery.stage,diagnostics:recovery.diagnostics||{},created_at:recovery.created_at,external_write:recovery.external_write===true}:null
   };
 }
+async function fiscalInvoiceSendBlocked(){
+  const config=await db.from("fiscal_runtime_config")
+    .select("enabled,execution_mode,bling_invoice_send_enabled")
+    .eq("id",1).maybeSingle();
+  if(config.error)return {error:"fiscal_send_config_unavailable",status:409};
+  const allowed=config.data?.enabled===true
+    && String(config.data?.execution_mode||"").toLowerCase()==="live"
+    && config.data?.bling_invoice_send_enabled===true;
+  return allowed?null:{error:"fiscal_invoice_sending_disabled",status:409,detail:"A emissão de NF-e está temporariamente desativada."};
+}
 async function orderFiscalIssueV4(p:any,auth:any){
   if(auth?.role==="viewer")return {error:"forbidden",status:403};
   const oid=id(p?.id);if(!oid)return {error:"invalid_order",status:400};
   if(tx(p?.confirmation,40)!=="EMITIR_NFE")return {error:"fiscal_human_confirmation_required",status:409};
+  const sendBlocked=await fiscalInvoiceSendBlocked();if(sendBlocked)return sendBlocked;
   const pf=await db.rpc("ops2_fiscal_dispatch_preflight_v1",{p_order_id:oid});if(pf.error)throw pf.error;
   if(pf.data?.ready!==true)return {error:"fiscal_dispatch_preflight_failed",status:409,blockers:pf.data?.blockers||[],preflight:pf.data};
   const before:any=await orderFiscalStatusV4(oid);if(before.error)return before;
@@ -3909,6 +3920,8 @@ async function openSeparationIntegrationAttention(oid:string,type:string,summary
   }catch{}
 }
 async function autoIssueFiscalAfterSeparation(oid:string){
+  const sendBlocked=await fiscalInvoiceSendBlocked();
+  if(sendBlocked)return {attempted:false,ok:false,authorized:false,skipped:true,stage:"paused",error:sendBlocked.error};
   const pf=await db.rpc("ops2_fiscal_dispatch_preflight_v1",{p_order_id:oid});
   if(pf.error)return {attempted:false,ok:false,error:"fiscal_preflight_unavailable",detail:pf.error.message||null};
   if(pf.data?.ready!==true)return {attempted:false,ok:false,error:"fiscal_preflight_blocked",blockers:pf.data?.blockers||[],preflight:pf.data};
@@ -3969,7 +3982,7 @@ async function runSeparationPostCompletionIntegrations(oid:string,operator:strin
       fiscal_auto_at:new Date().toISOString()
     }});
   }catch{}
-  if(fiscalAuto?.ok!==true){
+  if(fiscalAuto?.ok!==true&&fiscalAuto?.skipped!==true){
     await openSeparationIntegrationAttention(
       oid,"order_fiscal_auto_issue_pending",
       "Pedido separado; NF-e automática precisa de atenção.",
@@ -4139,7 +4152,7 @@ async function adminAuth(r:Request){
   if(!q.data?.is_active)return {ok:false,status:403,error:"admin_not_authorized"};
   return {ok:true,status:200,user_id:user.data.user.id,role:q.data.role||"viewer"};
 }
-Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:61,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
+Deno.serve(async(r:Request)=>{if(r.method==="OPTIONS")return new Response(null,{status:204,headers:cors(r)});const u=new URL(r.url),a=tx(u.searchParams.get("action")||(r.method==="GET"?"health":""),80);if(!LOCAL.has(a))return js(r,{ok:false,error:"not_found"},404);try{if(a==="order_fiscal_dispatch_canary_execute"){const blocked=await fiscalInvoiceSendBlocked();if(blocked)return js(r,{ok:false,...blocked},blocked.status||409);}if(a==="health")return js(r,{ok:true,service:"admin-products-live-v1",mode:"canonical-admin-gateway",version:61,legacy_proxy:false});if(a==="ops2_recover_ean_verified"){
   if(r.method!=="POST")return js(r,{ok:false,error:"method_not_allowed"},405);
   const expected=await db.rpc("get_bling_hub_key_v2");
   if(expected.error||!expected.data)return js(r,{ok:false,error:"internal_auth_unavailable"},503);
