@@ -11,6 +11,7 @@
   const $ = (selector, scope = root) => scope?.querySelector(selector);
 
   let cards = [];
+  let formDraft = { name: "", brand: "", value: "", password: "" };
   let loading = false;
   let saving = false;
   let loadError = "";
@@ -159,10 +160,10 @@
         <section class="cards-form-panel" aria-labelledby="cards-form-title">
           <div class="cards-panel-heading"><span class="cards-panel-icon" aria-hidden="true">＋</span><div><h3 id="cards-form-title">Novo cartão</h3><p>Informe os dados para começar.</p></div></div>
           <form id="cards-create-form" autocomplete="off">
-            <label class="cards-field"><span>Nome</span><input name="name" type="text" maxlength="120" autocomplete="off" placeholder="Ex.: Cartão de compras" required ${saving ? "disabled" : ""}></label>
-            <label class="cards-field"><span>Bandeira</span><input name="brand" type="text" maxlength="60" list="cards-brand-options" placeholder="Ex.: Visa" required ${saving ? "disabled" : ""}><datalist id="cards-brand-options"><option value="Visa"></option><option value="Mastercard"></option><option value="Elo"></option><option value="Alelo"></option><option value="VR"></option><option value="Pluxee"></option><option value="Ticket"></option><option value="Outro"></option></datalist></label>
-            <label class="cards-field"><span>Valor inicial</span><span class="cards-money-input"><span>R$</span><input name="value" type="number" min="0.01" max="9999999999.99" step="0.01" inputmode="decimal" placeholder="0,00" required ${saving ? "disabled" : ""}></span></label>
-            <label class="cards-field"><span>Senha</span><input name="password" type="password" maxlength="120" autocomplete="new-password" placeholder="Digite a senha do cartão" required ${saving ? "disabled" : ""}></label>
+            <label class="cards-field"><span>Nome</span><input name="name" type="text" maxlength="120" autocomplete="off" value="${escapeHtml(formDraft.name)}" placeholder="Ex.: Cartão de compras" required ${saving ? "disabled" : ""}></label>
+            <label class="cards-field"><span>Bandeira</span><input name="brand" type="text" maxlength="60" list="cards-brand-options" value="${escapeHtml(formDraft.brand)}" placeholder="Ex.: Visa" required ${saving ? "disabled" : ""}><datalist id="cards-brand-options"><option value="Visa"></option><option value="Mastercard"></option><option value="Elo"></option><option value="Alelo"></option><option value="VR"></option><option value="Pluxee"></option><option value="Ticket"></option><option value="Outro"></option></datalist></label>
+            <label class="cards-field"><span>Valor inicial</span><span class="cards-money-input"><span>R$</span><input name="value" type="number" min="0.01" max="9999999999.99" step="0.01" inputmode="decimal" value="${escapeHtml(formDraft.value)}" placeholder="0,00" required ${saving ? "disabled" : ""}></span></label>
+            <label class="cards-field"><span>Senha</span><input name="password" type="password" maxlength="120" autocomplete="new-password" value="${escapeHtml(formDraft.password)}" placeholder="Digite a senha do cartão" required ${saving ? "disabled" : ""}></label>
             <button class="button button-primary cards-submit" type="submit" ${saving ? "disabled" : ""}>${saving ? "Salvando…" : "Cadastrar cartão"}</button>
           </form>
           <p class="cards-form-note">A senha fica oculta na lista e só é carregada quando você escolhe “Mostrar”.</p>
@@ -195,8 +196,10 @@
     const values = new FormData(form);
     const name = String(values.get("name") || "").trim();
     const brand = String(values.get("brand") || "").trim();
-    const initialValue = parseAmount(values.get("value"));
+    const rawValue = String(values.get("value") || "").trim();
+    const initialValue = parseAmount(rawValue);
     const password = String(values.get("password") || "").trim();
+    formDraft = { name, brand, value: rawValue, password };
 
     if (!name || !brand || initialValue === null || !password) {
       notice = "Preencha os quatro campos e informe um valor maior que zero.";
@@ -210,11 +213,18 @@
     render();
     try {
       await request("create", { name, brand, value: initialValue, password });
+      formDraft = { name: "", brand: "", value: "", password: "" };
       notice = "Cartão cadastrado.";
       noticeKind = "success";
       loadError = "";
-      const result = await request("list");
-      cards = Array.isArray(result.cards) ? result.cards : [];
+      try {
+        const result = await request("list");
+        cards = Array.isArray(result.cards) ? result.cards : [];
+      } catch {
+        loadError = "O cartão foi salvo, mas a lista não atualizou.";
+        notice = "Cartão cadastrado. Toque em Atualizar para carregar a lista.";
+        noticeKind = "error";
+      }
     } catch (error) {
       notice = error instanceof Error ? error.message : "Não foi possível cadastrar o cartão.";
       noticeKind = "error";
@@ -253,8 +263,14 @@
       pendingUseId = "";
       notice = "Uso registrado no histórico.";
       noticeKind = "success";
-      const result = await request("list");
-      cards = Array.isArray(result.cards) ? result.cards : [];
+      try {
+        const result = await request("list");
+        cards = Array.isArray(result.cards) ? result.cards : [];
+      } catch {
+        loadError = "O uso foi salvo, mas a lista não atualizou.";
+        notice = "Uso registrado. Toque em Atualizar para conferir o novo saldo.";
+        noticeKind = "error";
+      }
     } catch (error) {
       notice = error instanceof Error ? error.message : "Não foi possível registrar o uso.";
       noticeKind = "error";
@@ -263,6 +279,18 @@
       render();
     }
   }
+
+  root?.addEventListener("input", (event) => {
+    const form = event.target.closest("#cards-create-form");
+    if (!form) return;
+    const values = new FormData(form);
+    formDraft = {
+      name: String(values.get("name") || ""),
+      brand: String(values.get("brand") || ""),
+      value: String(values.get("value") || ""),
+      password: String(values.get("password") || ""),
+    };
+  });
 
   root?.addEventListener("submit", (event) => {
     if (event.target?.id !== "cards-create-form") return;
