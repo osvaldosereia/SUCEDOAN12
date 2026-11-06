@@ -10,7 +10,7 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
   const $ = (id) => document.getElementById(id);
   const esc = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const money = (value) => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  const state = { data: null, loading: false, selected: new Set(), busy: false, focusOrderId: "", accessLink: "", lastAccessDriverId: "", accessLinks: {} };
+  const state = { data: null, loading: false, selected: new Set(), busy: false, focusOrderId: "", focusRouteDriverId: "", accessLink: "", lastAccessDriverId: "" };
 
   async function api(action, method = "GET", payload = {}) {
     const url = new URL(endpoint);
@@ -105,22 +105,65 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
     return partitionDeliveryOrders(ready, state.data?.service_date);
   }
 
+  function routeStateForDriver(driverId) {
+    const runs = (state.data?.runs || []).filter((run) =>
+      (run.driver_id || run.driver?.id) === driverId && ["planned", "dispatched"].includes(run.status));
+    const locked = runs.some((run) => run.status === "dispatched" || run.loading_started_at || run.loaded_at);
+    const existing = runs.find((run) => run.status === "planned") || null;
+    const currentOrders = new Set(runs.flatMap((run) => (run.stops || [])
+      .map((stop) => stop.order_id).filter(Boolean)));
+    return { locked, existing, currentCount: currentOrders.size, capacity: locked ? 0 : Math.max(0, 30 - currentOrders.size) };
+  }
+
   function renderDriverOptions() {
     const catalog = state.data?.catalog || {};
     const drivers = Array.isArray(catalog.drivers) ? catalog.drivers : [];
     const regions = Array.isArray(catalog.regions) ? catalog.regions : [];
-    const option = (row, label) => `<option value="${esc(row.id)}">${esc(label(row))}</option>`;
-    $("delivery-driver-select").innerHTML = `<option value="">Selecione o entregador</option>` + drivers.filter((driver) => driver.is_active && driver.phone_e164).map((driver) => option(driver, (row) => row.name)).join("");
-    const regionOptions = `<option value="">Usar região dos pedidos</option>` + regions.filter((region) => region.is_active).map((region) => option(region, (row) => [row.name, row.city].filter(Boolean).join(" · "))).join("");
-    $("delivery-region-select").innerHTML = regionOptions;
-    $("delivery-driver-region").innerHTML = `<option value="">Sem região definida</option>` + regions.filter((region) => region.is_active).map((region) => option(region, (row) => row.name)).join("");
+    const driverSelect = $("delivery-driver-select");
+    const previousDriverId = driverSelect.value;
+    const previousRouteRegionId = $("delivery-region-select").value;
+    const previousDriverRegionId = $("delivery-driver-region").value;
+    const option = (row, label, disabled = false) =>
+      `<option value="${esc(row.id)}" ${disabled ? "disabled" : ""}>${esc(label)}</option>`;
+    const driverOptions = drivers.filter((driver) => driver.is_active && driver.phone_e164).map((driver) => {
+      const route = routeStateForDriver(driver.id);
+      const routeLabel = route.locked
+        ? " · carga conferida ou em rota"
+        : route.existing
+          ? ` · rota aberta ${route.currentCount}/30`
+          : " · nova rota";
+      return option({ id: driver.id }, driver.name + routeLabel, route.locked || route.capacity === 0);
+    }).join("");
+    driverSelect.innerHTML = `<option value="">Selecione o entregador</option>` + driverOptions;
+    if (previousDriverId && [...driverSelect.options].some((item) => item.value === previousDriverId && !item.disabled)) {
+      driverSelect.value = previousDriverId;
+    }
+    const regionOptions = `<option value="">Usar região dos pedidos</option>` +
+      regions.filter((region) => region.is_active).map((region) =>
+        option(region, [region.name, region.city].filter(Boolean).join(" · "))).join("");
+    const routeRegion = $("delivery-region-select");
+    routeRegion.innerHTML = regionOptions;
+    if (previousRouteRegionId && [...routeRegion.options].some((item) => item.value === previousRouteRegionId)) {
+      routeRegion.value = previousRouteRegionId;
+    }
+    const driverRegion = $("delivery-driver-region");
+    driverRegion.innerHTML = `<option value="">Sem região definida</option>` +
+      regions.filter((region) => region.is_active).map((region) => option(region, region.name)).join("");
+    if (previousDriverRegionId && [...driverRegion.options].some((item) => item.value === previousDriverRegionId)) {
+      driverRegion.value = previousDriverRegionId;
+    }
   }
+
 
   function renderReadyOrders() {
     const assigned = orderIdsInRuns();
     const ready = readyDeliveryQueue().today.filter((order) => !assigned.has(order.id));
-    $("delivery-ready-count").textContent = String(ready.length);
+    const availableIds = new Set(ready.map((order) => order.id));
+    state.selected = new Set([...state.selected].filter((id) => availableIds.has(id)));
     const host = $("delivery-ready-orders");
+    const openOrderDetails = new Set([...host.querySelectorAll("details[data-order-details][open]")]
+      .map((details) => details.dataset.orderDetails));
+    $("delivery-ready-count").textContent = String(ready.length);
     if (!ready.length) {
       host.innerHTML = `<div class="delivery-empty">Não há pedidos programados para hoje sem entregador atribuído.</div>`;
       updateSelectedCount();
@@ -143,15 +186,38 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
       const evidenceMarkup = evidence
         ? `<div class="delivery-location-preview"><strong>Localizador recente ${evidence.direction === "outbound" ? "enviado pela loja" : "enviado pelo cliente"}</strong><span>${esc(formatDate(evidence.captured_at))}${evidence.label ? " · " + esc(evidence.label) : ""}</span><button type="button" class="button button-outline" data-confirm-location="${esc(order.id)}" data-evidence-id="${esc(evidence.id)}">Salvar no cadastro do cliente</button></div>`
         : `<p class="delivery-no-location">Nenhum localizador válido encontrado nesta conversa ou no cadastro.</p>`;
+      const address = order.delivery_address || {};
+      const street = address.street || address.address_line || "";
+      const compactAddress = [
+        [street, address.number].filter(Boolean).join(", "),
+        address.neighborhood || address.district,
+        address.city,
+      ].filter(Boolean).join(" · ") || address.raw_text || address.formatted_address || "Endereço não informado";
+      const whatsappMarkup = phone
+        ? '<a href="' + esc(phoneHref(phone)) + '" target="_blank" rel="noopener">WhatsApp ' + esc(phone) + '</a>'
+        : "Telefone não informado";
+      const mapsMarkup = maps
+        ? '<a class="delivery-map-link" href="' + esc(maps) + '" target="_blank" rel="noopener">Abrir endereço no Google Maps</a>'
+        : "";
+      const detailsOpen = openOrderDetails.has(order.id) ? " open" : "";
       return `<article class="delivery-ready-card" data-delivery-order-card="${esc(order.id)}">
-        <label class="delivery-ready-select"><input type="checkbox" data-select-delivery-order="${esc(order.id)}" ${state.selected.has(order.id) ? "checked" : ""}><span><strong>Pedido ${esc(orderNumber(order))}</strong><small>${esc(customerName(order))}</small></span><b>${esc(money(order.total))}</b></label>
-        <div class="delivery-order-details"><span>${esc(addressText(order))}</span><span>${phone ? `<a href="${esc(phoneHref(phone))}" target="_blank" rel="noopener">WhatsApp ${esc(phone)}</a>` : "Telefone não informado"}</span><span>Pagamento: ${esc(order.payment_display || "A confirmar")}</span></div>
-        ${maps ? `<a class="delivery-map-link" href="${esc(maps)}" target="_blank" rel="noopener">Abrir endereço no Google Maps</a>` : ""}
-        ${prepaidControl}${evidenceMarkup}${addressReferenceMarkup(addressReference)}
+        <label class="delivery-ready-select">
+          <input type="checkbox" data-select-delivery-order="${esc(order.id)}" ${state.selected.has(order.id) ? "checked" : ""}>
+          <span><strong>Pedido ${esc(orderNumber(order))}</strong><small>${esc(customerName(order))}</small><small class="delivery-order-address">${esc(compactAddress)}</small></span>
+          <b>${esc(money(order.total))}</b>
+        </label>
+        <details class="delivery-order-more" data-order-details="${esc(order.id)}"${detailsOpen}>
+          <summary>Ver endereço completo, pagamento e localização</summary>
+          <div class="delivery-order-more-content">
+            <div class="delivery-order-details"><span>${esc(addressText(order))}</span><span>${whatsappMarkup}</span><span>Pagamento: ${esc(order.payment_display || "A confirmar")}</span></div>
+            ${mapsMarkup}${prepaidControl}${evidenceMarkup}${addressReferenceMarkup(addressReference)}
+          </div>
+        </details>
       </article>`;
     }).join("");
     updateSelectedCount();
   }
+
 
   function formatDate(value) {
     const date = new Date(value || "");
@@ -159,10 +225,61 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
   }
 
   function updateSelectedCount() {
-    const count = state.selected.size;
-    $("delivery-selected-count").textContent = count ? `${count} pedido${count === 1 ? "" : "s"} selecionado${count === 1 ? "" : "s"}` : "Nenhum pedido selecionado";
-    $("delivery-plan-run").disabled = !count || !$("delivery-driver-select").value || state.busy;
+    const assigned = orderIdsInRuns();
+    const available = state.data ? readyDeliveryQueue().today.filter((order) => !assigned.has(order.id)) : [];
+    const ordersById = new Map(available.map((order) => [order.id, order]));
+    const selectedOrders = [...state.selected].map((id) => ordersById.get(id)).filter(Boolean);
+    const count = selectedOrders.length;
+    const total = selectedOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+    const driverId = $("delivery-driver-select").value;
+    const driver = (state.data?.catalog?.drivers || []).find((item) => item.id === driverId);
+    const route = driverId ? routeStateForDriver(driverId) : null;
+    const enoughCapacity = route && !route.locked && count <= route.capacity;
+    const regionSelect = $("delivery-region-select");
+    const existingRegionId = route?.existing?.region_id || route?.existing?.region?.id || "";
+    if (route?.existing && existingRegionId) {
+      const hasRegionOption = [...regionSelect.options].some((item) => item.value === existingRegionId);
+      if (!hasRegionOption) {
+        const currentRegion = document.createElement("option");
+        currentRegion.value = existingRegionId;
+        currentRegion.textContent = route.existing.region?.name || "Região atual";
+        regionSelect.add(currentRegion);
+      }
+      regionSelect.value = existingRegionId;
+      regionSelect.disabled = true;
+    } else {
+      regionSelect.disabled = false;
+    }
+    const button = $("delivery-plan-run");
+    $("delivery-selected-count").textContent = count
+      ? `${count} pedido${count === 1 ? "" : "s"} selecionado${count === 1 ? "" : "s"} · ${money(total)}`
+      : "Nenhum pedido selecionado";
+    button.disabled = !count || !driverId || !enoughCapacity || state.busy;
+    button.textContent = route?.existing ? "Adicionar à rota" : "Criar rota";
+    const availableDrivers = (state.data?.catalog?.drivers || []).filter((item) => {
+      if (!item.is_active || !item.phone_e164) return false;
+      const driverRoute = routeStateForDriver(item.id);
+      return !driverRoute.locked && driverRoute.capacity > 0;
+    });
+    let hint = availableDrivers.length
+      ? "Selecione um entregador para ver a rota atual e as vagas disponíveis."
+      : "Nenhum entregador ativo tem vaga livre. Abra “Entregadores e acesso” para cadastrar ou ajustar a equipe.";
+    if (driver && route?.locked) {
+      hint = `${driver.name} já está com a carga conferida ou em rota. Escolha outro entregador para este grupo.`;
+    } else if (driver && route?.existing) {
+      hint = `${driver.name} já tem uma rota planejada com ${route.currentCount} pedido${route.currentCount === 1 ? "" : "s"}. Os pedidos marcados serão adicionados a ela; restam ${route.capacity} vaga${route.capacity === 1 ? "" : "s"}.`;
+    } else if (driver) {
+      hint = `Nova rota para ${driver.name}. Depois de montar, confira a lista, confirme a carga e libere a saída.`;
+    }
+    if (driver && route && !route.locked && count > route.capacity) {
+      hint += ` Desmarque ${count - route.capacity} pedido${count - route.capacity === 1 ? "" : "s"} para caber nesta rota.`;
+    }
+    $("delivery-route-assignment-hint").textContent = hint + (route?.existing && existingRegionId ? " A região da rota atual será mantida." : "");
+    $("delivery-selection-limit").textContent = route?.existing
+      ? `Limite da rota: 30 pedidos no total. ${route.capacity} vaga${route.capacity === 1 ? "" : "s"} restante${route.capacity === 1 ? "" : "s"}.`
+      : "Cada rota aceita até 30 pedidos. O que ficar sem marcar permanece na fila para outro entregador.";
   }
+
 
   function resetDriverForm() {
     $("delivery-driver-id").value = "";
@@ -185,10 +302,11 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
       const region = (state.data?.catalog?.regions || []).find((item) => item.id === driver.home_region_id);
       return `<article class="delivery-driver-row ${driver.is_active ? "is-active" : "is-inactive"}">
         <div><strong>${esc(driver.name)}</strong><small>${esc(driver.phone_e164 || "WhatsApp não informado")}${region ? " · " + esc(region.name) : ""}</small><em>${driver.is_active ? "Ativo" : "Inativo"}</em>${driver.is_active && !driver.phone_e164 ? `<small class="delivery-driver-phone-warning">Informe o WhatsApp para receber entregas e avisar os clientes.</small>` : ""}</div>
-        <div class="delivery-driver-actions"><button type="button" class="button button-outline" data-edit-driver="${esc(driver.id)}">Editar</button><button type="button" class="button button-outline" data-driver-access="${esc(driver.id)}" ${driver.is_active && driver.phone_e164 ? "" : "disabled"}>Gerar acesso</button><button type="button" class="button button-outline" data-revoke-driver-access="${esc(driver.id)}">Revogar acesso</button></div>
+        <div class="delivery-driver-actions"><button type="button" class="button button-outline" data-edit-driver="${esc(driver.id)}">Editar</button><button type="button" class="button button-outline" data-driver-access="${esc(driver.id)}" ${driver.is_active && driver.phone_e164 ? "" : "disabled"}>Gerar link de ativação</button><button type="button" class="button button-outline" data-revoke-driver-access="${esc(driver.id)}">Revogar acesso</button></div>
       </article>`;
     }).join("");
   }
+
 
   function latestEvidenceForStop(order) {
     return order ? evidenceFor(order) : null;
@@ -267,8 +385,12 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
   function renderRoutes() {
     const routes = Array.isArray(state.data?.runs) ? state.data.runs : [];
     const host = $("delivery-routes-list");
+    const openRouteIds = new Set([...host.querySelectorAll("details[data-run-stops][open]")]
+      .map((details) => details.dataset.runStops));
+    const focusDriverId = state.focusRouteDriverId;
     if (!routes.length) {
       host.innerHTML = `<div class="delivery-empty">Nenhuma rota foi criada para hoje.</div>`;
+      state.focusRouteDriverId = "";
       return;
     }
     host.innerHTML = routes.map((run) => {
@@ -276,26 +398,51 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
       const loaded = Boolean(run.loaded_at);
       const activeStops = stops.filter((stop) => stop.status !== "cancelled");
       const cancelledCount = stops.length - activeStops.length;
+      const cancelledSummary = cancelledCount ? " · " + cancelledCount + " cancelada" + (cancelledCount === 1 ? "" : "s") : "";
       const canDispatch = run.status === "planned" && loaded && activeStops.some((stop) => stop.status === "planned");
-      const stateLabel = run.status === "dispatched" ? "Em rota" : run.status === "completed" ? "Concluída" : "Planejada";
-      const loadControl = run.status === "planned" && !loaded
-        ? `<button class="button button-outline" type="button" data-run-loading="${esc(run.id)}">Confirmar carga conferida</button>`
+      const stateLabel = !activeStops.length ? "Sem pedidos ativos"
+        : run.status === "dispatched" ? "Em rota"
+          : run.status === "completed" ? "Concluída"
+            : loaded ? "Carga conferida" : "Aguardando conferência";
+      const total = activeStops.reduce((sum, stop) =>
+        sum + Number(stop.order?.total ?? (Number(stop.total_cents || 0) / 100)), 0);
+      const loadControl = run.status === "planned" && !loaded && activeStops.length
+        ? `<button class="button button-outline" type="button" data-run-loading="${esc(run.id)}">1. Confirmar carga</button>`
         : "";
       const dispatchControl = canDispatch
-        ? `<button class="button button-primary" type="button" data-run-dispatch="${esc(run.id)}">Liberar saída do entregador</button>`
+        ? `<button class="button button-primary" type="button" data-run-dispatch="${esc(run.id)}">2. Liberar saída</button>`
         : "";
-      const driverId = run.driver_id || run.driver?.id;
-      const portalAccess = driverId
-        ? `<div class="delivery-route-portal"><a class="button button-outline" href="../entregador/" target="_blank" rel="noopener">Abrir portal do entregador</a><button class="button button-outline" type="button" data-driver-access="${esc(driverId)}">Gerar link individual</button>${state.accessLinks[driverId] ? `<div class="delivery-route-access-link"><input type="url" readonly value="${esc(state.accessLinks[driverId])}" aria-label="Link individual do entregador"><button class="button button-outline" type="button" data-copy-route-access="${esc(driverId)}">Copiar acesso</button></div>` : `<small>O entregador usa o portal pelo link individual gerado aqui. A rota planejada aparece para ele antes da saída.</small>`}</div>`
-        : "";
-      return `<section class="delivery-route-card"><header class="delivery-route-heading"><div><p class="eyebrow">Rota de ${esc(run.service_date || "hoje")}</p><h4>${esc(run.driver?.name || "Entregador não atribuído")}</h4><span>${esc(run.region?.name || "Região não definida")}${run.vehicle?.label ? " · " + esc(run.vehicle.label) : ""}</span>${portalAccess}</div><strong class="delivery-route-state ${run.status === "dispatched" ? "is-dispatched" : ""}">${stateLabel}</strong></header><div class="delivery-route-stops">${stops.map((stop) => renderRouteStop(run, stop)).join("")}</div><footer class="delivery-route-footer"><span>${activeStops.length} entrega${activeStops.length === 1 ? "" : "s"}${cancelledCount ? ` · ${cancelledCount} cancelada${cancelledCount === 1 ? "" : "s"}` : ""}${loaded ? " · carga conferida" : ""}</span>${loadControl}${dispatchControl}</footer></section>`;
+      const driverId = run.driver_id || run.driver?.id || "";
+      const detailsOpen = openRouteIds.has(run.id) || (focusDriverId && focusDriverId === driverId);
+      return `<section class="delivery-route-card">
+        <header class="delivery-route-heading">
+          <div><p class="eyebrow">Rota de ${esc(run.service_date || "hoje")}</p><h4>${esc(run.driver?.name || "Entregador não atribuído")}</h4><span>${esc(run.region?.name || "Região não definida")}${run.vehicle?.label ? " · " + esc(run.vehicle.label) : ""}</span></div>
+          <strong class="delivery-route-state ${run.status === "dispatched" ? "is-dispatched" : ""} ${loaded ? "is-loaded" : ""}">${stateLabel}</strong>
+        </header>
+        <details class="delivery-route-stops-details" data-run-stops="${esc(run.id)}"${detailsOpen ? " open" : ""}>
+          <summary>Conferir ${activeStops.length} pedido${activeStops.length === 1 ? "" : "s"} · ${esc(money(total))}${cancelledSummary}</summary>
+          <div class="delivery-route-stops">${stops.map((stop) => renderRouteStop(run, stop)).join("")}</div>
+        </details>
+        <footer class="delivery-route-footer">
+          <span>${activeStops.length} entrega${activeStops.length === 1 ? "" : "s"} · ${esc(money(total))}${cancelledSummary}${!activeStops.length ? " · sem carga para conferir" : loaded ? " · carga conferida" : " · carga pendente"}</span>
+          ${loadControl}${dispatchControl}
+        </footer>
+      </section>`;
     }).join("");
+    state.focusRouteDriverId = "";
   }
+
 
   function render() {
     renderDriverOptions();
     renderReadyOrders();
     renderDrivers();
+    const teamPanel = document.querySelector(".delivery-team-management");
+    if (teamPanel && !teamPanel.dataset.initialized) {
+      const drivers = state.data?.catalog?.drivers || [];
+      teamPanel.open = !drivers.some((driver) => driver.is_active && driver.phone_e164);
+      teamPanel.dataset.initialized = "true";
+    }
     renderRoutes();
     const assigned = orderIdsInRuns();
     const queue = readyDeliveryQueue();
@@ -445,19 +592,48 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
 
   async function createRoute() {
     const driverId = $("delivery-driver-select").value;
-    if (!driverId || !state.selected.size) return;
-    if (!window.confirm(`Montar rota com ${state.selected.size} pedido(s)? O entregador poderá reordená-la pelo celular antes da saída.`)) return;
+    const driver = (state.data?.catalog?.drivers || []).find((item) => item.id === driverId);
+    if (!driverId || !driver || !state.selected.size) return;
+    const route = routeStateForDriver(driverId);
+    if (route.locked) {
+      showMessage("Este entregador já está com a carga conferida ou em rota. Escolha outro entregador.", true);
+      updateSelectedCount();
+      return;
+    }
+    if (state.selected.size > route.capacity) {
+      const remaining = Math.max(0, route.capacity - state.selected.size);
+      const itemLabel = remaining === 1 ? "pedido" : "pedidos";
+      showMessage("Você já marcou " + state.selected.size + ". Ainda pode marcar " + remaining + " " + itemLabel + " nesta rota.", true);
+      updateSelectedCount();
+      return;
+    }
+    const available = new Map(readyDeliveryQueue().today.filter((order) => !orderIdsInRuns().has(order.id)).map((order) => [order.id, order]));
+    const selectedTotal = [...state.selected].reduce((sum, id) => sum + Number(available.get(id)?.total || 0), 0);
+    const action = route.existing ? "adicionar à rota planejada" : "criar uma rota";
+    const detail = route.existing
+      ? " O grupo será somado aos " + route.currentCount + " pedidos que já estão na rota."
+      : "";
+    const countLabel = state.selected.size === 1 ? " pedido" : " pedidos";
+    const confirmation = "Confirma " + action + " para " + driver.name + " com " + state.selected.size + countLabel +
+      " (" + money(selectedTotal) + ")?"+ detail + " A sequência poderá ser revisada no portal antes da conferência da carga.";
+    if (!window.confirm(confirmation)) return;
     const payload = {
       driver_id: driverId,
       region_id: $("delivery-region-select").value || null,
       order_ids: [...state.selected],
       operator: "Admin",
     };
-    const succeeded = await runAction("plan_run", payload, "Rota montada. Agora confira a sequência e os pedidos atribuídos.");
+    state.focusRouteDriverId = driverId;
+    const success = route.existing
+      ? "Pedidos adicionados à rota de " + driver.name + ". Confira a carga e libere a saída."
+      : "Rota criada para " + driver.name + ". Confira a carga e libere a saída.";
+    const succeeded = await runAction("plan_run", payload, success);
+    if (!succeeded) state.focusRouteDriverId = "";
     state.selected = routeSelectionAfterAction(state.selected, succeeded);
     if (succeeded) renderReadyOrders();
     updateSelectedCount();
   }
+
 
   async function markPrepaid(orderId, card) {
     const select = card?.querySelector(`[data-prepaid-method="${CSS.escape(orderId)}"]`);
@@ -474,16 +650,14 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
   }
 
   async function issueDriverAccess(driverId) {
-    if (!window.confirm("Gerar um link individual para este entregador? Se já existir outro, ele será invalidado. O novo link dá acesso apenas às rotas dele e vale por 30 dias.")) return;
+    if (!window.confirm("Criar um novo acesso para este entregador? O link ativa o portal neste aparelho por 30 dias e substitui qualquer link anterior. Use no primeiro acesso, ao trocar de aparelho ou quando o acesso expirar. O link não será enviado automaticamente.")) return;
     try {
       const result = await api("issue_driver_access", "POST", { driver_id: driverId });
       const link = new URL("/site/entregador/", window.location.origin);
       link.hash = "token=" + result.token;
       state.accessLink = link.toString();
       state.lastAccessDriverId = driverId;
-      state.accessLinks[driverId] = state.accessLink;
-      showMessage(`Acesso criado para ${result.driver_name}. Copie e entregue o link diretamente ao entregador. Ele não foi enviado automaticamente.`);
-      renderRoutes();
+      showMessage(`Acesso criado para ${result.driver_name}. Copie o link e envie ao entregador para ativar este aparelho.`);
       const output = $("delivery-driver-access-link");
       output.value = state.accessLink;
       output.hidden = false;
@@ -499,10 +673,14 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
     if (checkbox) {
       const id = checkbox.dataset.selectDeliveryOrder;
       if (checkbox.checked) {
-        try { state.selected = addRouteSelection(state.selected, id); }
+        const driverId = $("delivery-driver-select").value;
+        const route = driverId ? routeStateForDriver(driverId) : { capacity: 30 };
+        try { state.selected = addRouteSelection(state.selected, id, route.capacity); }
         catch (error) {
           checkbox.checked = false;
-          showMessage(error.message === "route_too_many_orders" ? "Uma rota pode ter no máximo 30 pedidos. Monte outra rota para o restante." : friendlyError(error.message), true);
+          const remaining = Math.max(0, route.capacity - state.selected.size);
+          const itemLabel = remaining === 1 ? "pedido" : "pedidos";
+          showMessage(error.message === "route_too_many_orders" ? "Você já marcou o limite desta rota. Não há mais " + itemLabel + " disponíveis para este entregador." : friendlyError(error.message), true);
         }
       } else state.selected.delete(id);
       updateSelectedCount();
@@ -514,13 +692,16 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
     const button = event.target.closest("button");
     if (!button) return;
     if (button.dataset.editDriver) editDriver(button.dataset.editDriver);
-    if (button.dataset.driverAccess) await issueDriverAccess(button.dataset.driverAccess);
+    if (button.dataset.driverAccess) {
+      const details = button.closest(".delivery-team-management");
+      if (details) details.open = true;
+      await issueDriverAccess(button.dataset.driverAccess);
+    }
     if (button.dataset.revokeDriverAccess) {
       if (window.confirm("Revogar o acesso atual deste entregador? O link deixará de funcionar imediatamente.")) {
         const driverId = button.dataset.revokeDriverAccess;
         const revoked = await runAction("revoke_driver_access", { driver_id: driverId }, "Acesso revogado.");
         if (revoked) {
-          delete state.accessLinks[driverId];
           if (state.lastAccessDriverId === driverId) {
             state.accessLink = "";
             state.lastAccessDriverId = "";
@@ -581,16 +762,6 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
         await runAction("admin_complete_stop", { stop_id: button.dataset.adminDelivered, method: selector?.value || null, operator: "Admin" }, "Pedido marcado como entregue.");
       }
     }
-    if (button.dataset.copyRouteAccess) {
-      const link = state.accessLinks[button.dataset.copyRouteAccess] || "";
-      if (!link) return showMessage("Gere um novo link individual para este entregador.", true);
-      try { await navigator.clipboard.writeText(link); showMessage("Link individual copiado. Envie-o diretamente ao entregador."); }
-      catch (_) {
-        const input = button.closest(".delivery-route-access-link")?.querySelector("input");
-        input?.select();
-        showMessage("Selecione e copie o link individual manualmente.");
-      }
-    }
     if (button.dataset.prepaidOrder) await markPrepaid(button.dataset.prepaidOrder, button.closest("[data-delivery-order-card]"));
     if (button.dataset.confirmLocation) {
       if (window.confirm("Salvar este localizador como posição confirmada do endereço do cliente? Isso atualizará o cadastro do cliente e o pedido.")) {
@@ -602,12 +773,14 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
       }
     }
     if (button.dataset.runLoading) {
-      if (window.confirm("Confirma que todos os pedidos desta rota foram conferidos e carregados no veículo?")) {
+      const run = (state.data?.runs || []).find((item) => item.id === button.dataset.runLoading);
+      const count = (run?.stops || []).filter((stop) => stop.status !== "cancelled").length;
+      if (window.confirm("Confirma que conferiu e carregou os " + count + " pedidos desta rota no veículo? Só depois dessa etapa a saída será liberada.")) {
         await runAction("confirm_loading", { run_id: button.dataset.runLoading }, "Carga conferida. A saída já pode ser liberada.");
       }
     }
     if (button.dataset.runDispatch) {
-      if (window.confirm("Liberar a saída desta rota? Os pedidos entrarão em entrega e poderão receber avisos ao cliente.")) {
+      if (window.confirm("Liberar a saída desta rota? Os pedidos passarão para “em entrega” e o portal do entregador mostrará a próxima parada.")) {
         await runAction("dispatch_run", { run_id: button.dataset.runDispatch, operator: "Admin" }, "Rota liberada para entrega.");
       }
     }
@@ -618,8 +791,8 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
   $("delivery-plan-run").addEventListener("click", createRoute);
   $("delivery-admin-refresh").addEventListener("click", load);
   $("delivery-driver-copy-access").addEventListener("click", async () => {
-    try { await navigator.clipboard.writeText(state.accessLink); showMessage("Link copiado. Envie-o diretamente ao entregador."); }
-    catch (_) { $("delivery-driver-access-link").select(); showMessage("Selecione e copie o link manualmente."); }
+    try { await navigator.clipboard.writeText(state.accessLink); showMessage("Link copiado. Envie ao entregador para ativar o aparelho."); }
+    catch (_) { $("delivery-driver-access-link").select(); showMessage("Selecione e copie o link para ativar o aparelho."); }
   });
 
   function openForOrder(orderId) {

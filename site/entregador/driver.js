@@ -13,7 +13,7 @@ import { buildMapsHref, deliveryNoticeFailureMessage, movePlannedStop, paidAhead
   const state = {
     token: "", driver: null, runs: [], busy: false, currentStop: null,
     addressStop: null, locationCapture: null, selectedPhoto: null, photoPreviewUrl: "",
-    toastTimer: 0, notifiedStops: new Set(),
+    toastTimer: 0, notifiedStops: new Set(), openDetails: new Set(),
   };
 
   function tokenFromHash() {
@@ -233,18 +233,65 @@ import { buildMapsHref, deliveryNoticeFailureMessage, movePlannedStop, paidAhead
 
   function renderRun(run) {
     const stops = orderedStops(run);
+    const activeStops = stops.filter((stop) => stop.status !== "cancelled");
     const pending = stops.filter((stop) => stop.status === "out_for_delivery" || stop.status === "planned").length;
-    return `<section class="driver-route"><header class="driver-route-head"><div><h2>${run.region?.name ? esc(run.region.name) + " · " : ""}${stops.length} entrega${stops.length === 1 ? "" : "s"}</h2><p>${esc(run.service_date || "Rota de hoje")} · ${pending} pendente${pending === 1 ? "" : "s"}</p></div><span class="driver-route-badge ${run.status === "dispatched" ? "is-running" : ""}">${statusName(run)}</span></header><div class="driver-stops">${stops.map((stop, index) => renderStop(run, stop, index)).join("")}</div></section>`;
+    const delivered = stops.filter((stop) => stop.status === "delivered").length;
+    const next = run.status === "dispatched" ? nextStop(run) : null;
+    const isDispatched = run.status === "dispatched";
+    const isPlanned = run.status === "planned";
+    const detailStops = isDispatched ? stops.filter((stop) => stop.id !== next?.id) : stops;
+    const detailKey = run.id + (isDispatched ? ":remaining" : ":review");
+    const detailTitle = isDispatched
+      ? "Ver outras paradas (" + detailStops.length + ")"
+      : run.status === "completed"
+        ? "Ver entregas concluídas (" + activeStops.length + ")"
+        : "Revisar sequência e pedidos (" + activeStops.length + ")";
+    const guidance = isDispatched
+      ? `<p class="driver-route-guidance">Próxima parada em destaque. Conclua este pedido para seguir para o próximo.</p>`
+      : isPlanned
+        ? `<p class="driver-route-guidance is-planned">A loja ainda precisa conferir a carga e liberar a saída. Revise a sequência abaixo antes de começar.</p>`
+        : run.status === "completed"
+          ? `<p class="driver-route-guidance is-complete">Rota concluída. ${delivered} entrega${delivered === 1 ? "" : "s"} registrada${delivered === 1 ? "" : "s"}.</p>`
+          : "";
+    const primaryStop = next
+      ? renderStop(run, next, stops.findIndex((stop) => stop.id === next.id))
+      : isDispatched
+        ? `<div class="driver-empty-step"><strong>Nenhuma parada pendente</strong><span>Atualize a rota ou fale com a loja se precisar de ajuda.</span></div>`
+        : "";
+    const detailsOpen = state.openDetails.has(detailKey);
+    const routeDetails = detailStops.length
+      ? `<details class="driver-route-details" data-driver-details="${detailKey}"${detailsOpen ? " open" : ""}>
+          <summary>${detailTitle}</summary>
+          <div class="driver-stops">${detailStops.map((stop) => renderStop(run, stop, stops.indexOf(stop))).join("")}</div>
+        </details>`
+      : "";
+    const routeCount = activeStops.length;
+    const routeTitle = run.region?.name ? esc(run.region.name) + " · " + routeCount : String(routeCount);
+    const pendingLabel = pending + " pendente" + (pending === 1 ? "" : "s");
+    return `<section class="driver-route">
+      <header class="driver-route-head">
+        <div><h2>${routeTitle} entrega${routeCount === 1 ? "" : "s"}</h2><p>${esc(run.service_date || "Rota de hoje")} · ${pendingLabel}</p></div>
+        <span class="driver-route-badge ${run.status === "dispatched" ? "is-running" : ""}">${esc(statusName(run))}</span>
+      </header>
+      ${guidance}${primaryStop}${routeDetails}
+    </section>`;
   }
 
   function render() {
     $("driver-name").textContent = state.driver?.name || "Entregador";
-    $("driver-routes").innerHTML = state.runs.length
+    const host = $("driver-routes");
+    state.openDetails = new Set([...host.querySelectorAll("details[data-driver-details][open]")]
+      .map((details) => details.dataset.driverDetails));
+    host.innerHTML = state.runs.length
       ? state.runs.map(renderRun).join("")
       : `<div class="driver-empty"><strong>Nenhuma rota atribuída agora</strong><span>Quando a loja montar uma rota para você, ela aparecerá aqui.</span></div>`;
-    const stopsCount = state.runs.reduce((sum, run) => sum + (run.stops || []).filter((stop) => stop.status !== "delivered").length, 0);
-    $("driver-status").textContent = `Atualizado às ${new Intl.DateTimeFormat("pt-BR", { timeStyle: "short" }).format(new Date())} · ${stopsCount} entrega${stopsCount === 1 ? "" : "s"} pendente${stopsCount === 1 ? "" : "s"}.`;
+    const stopsCount = state.runs.reduce((sum, run) => sum + (run.stops || [])
+      .filter((stop) => !["delivered", "cancelled"].includes(stop.status)).length, 0);
+    const time = new Intl.DateTimeFormat("pt-BR", { timeStyle: "short" }).format(new Date());
+    $("driver-status").textContent = "Atualizado às " + time + " · " + stopsCount + " entrega" +
+      (stopsCount === 1 ? "" : "s") + " pendente" + (stopsCount === 1 ? "" : "s") + ".";
   }
+
 
   async function load() {
     if (!state.token || state.busy) return;
@@ -661,7 +708,7 @@ import { buildMapsHref, deliveryNoticeFailureMessage, movePlannedStop, paidAhead
     state.token = "";
     state.runs = [];
     state.driver = null;
-    setAccessState("Acesso encerrado", "Para abrir suas entregas novamente, use o link individual da loja.");
+    setAccessState("Acesso encerrado", "Para voltar ao portal, abra o link de ativação que a loja enviou. Ele será necessário novamente porque o acesso deste aparelho foi encerrado.");
   });
 
   const incomingToken = tokenFromHash();
@@ -674,7 +721,7 @@ import { buildMapsHref, deliveryNoticeFailureMessage, movePlannedStop, paidAhead
   }
 
   if (state.token) load();
-  else setAccessState("Acesso individual", "Abra o link pessoal que a loja enviou. Se o acesso expirou, solicite outro no admin.");
+  else setAccessState("Ative o acesso neste aparelho", "Abra o link que a loja enviou. Depois disso, você não precisará de outro link para receber novas rotas neste mesmo aparelho. Solicite um novo somente se trocar de aparelho ou se o acesso expirar.");
 
   window.setInterval(() => { if (state.token && !state.busy) load(); }, 60000);
 })();
