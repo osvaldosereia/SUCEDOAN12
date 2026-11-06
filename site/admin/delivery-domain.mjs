@@ -181,3 +181,4 @@ export function deliveryNoticeFailureMessage(code, friendlyMessage, mapsOpened =
   }
   return mapPrefix + "Aviso automático não enviado. " + String(friendlyMessage || code || "erro desconhecido");
 }
+
