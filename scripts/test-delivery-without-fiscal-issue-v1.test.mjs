@@ -36,6 +36,12 @@ test("dispatch no longer blocks on invoice authorization and keeps physical-stoc
   assert.match(dispatch, /gate->>'allowed'/i, "a failed physical-stock gate must still block dispatch");
 });
 
+test("fiscal delivery control accepts the out-for-delivery transition", () => {
+  const statusMigration = read("supabase/migrations/20261106035000_delivery_fiscal_status_out_for_delivery_v1.sql");
+  assert.match(statusMigration, /order_fiscal_controls_delivery_status_check/i, "the incompatible legacy status check must be replaced");
+  assert.match(statusMigration, /'out_for_delivery'/i, "the fiscal control must accept an order entering delivery");
+});
+
 test("separation honors the invoice-send kill switch before any fiscal send call", () => {
   const source = read("supabase/functions/site-admin-v1/index.ts");
   const start = source.indexOf("async function runSeparationFiscalIntegration(");
