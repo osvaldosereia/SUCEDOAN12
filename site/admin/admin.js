@@ -432,6 +432,8 @@
   $("customer-editor").addEventListener("submit", saveCustomer);
   document.querySelectorAll(".nav-tab").forEach((button) => button.addEventListener("click", () => setView(button.dataset.view)));
   document.querySelectorAll("[data-go]").forEach((button) => button.addEventListener("click", () => setView(button.dataset.go)));
+  const requestedView = new URLSearchParams(window.location.search).get("view");
+  if (requestedView === "delivery") setView("delivery");
   window.DonaAdminSetView = setView;
   const blingReauthorizeButton = $("bling-reauthorize");
   if (blingReauthorizeButton) blingReauthorizeButton.addEventListener("click", reauthorizeBling);
