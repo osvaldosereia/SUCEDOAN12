@@ -1719,8 +1719,7 @@ async function orderDispatchStartV4(p:any,auth:any){
   const oid=id(p?.id);if(!oid)return {error:"invalid_order",status:400};
   const ret=await db.from("order_delivery_return_cases").select("id,status").eq("order_id",oid).in("status",["returning","returned_review"]).limit(1).maybeSingle();
   if(ret.error)throw ret.error;if(ret.data?.id)return {error:"delivery_return_open",status:409,delivery_return_case_id:ret.data.id};
-  const fiscal:any=await orderFiscalStatusV4(oid);if(fiscal.error)return fiscal;
-  if(fiscal.authorized!==true)return {error:"fiscal_authorization_required_before_dispatch",status:409,fiscal};
+  const fiscal:any={attempted:false,ok:false,authorized:false,skipped:true,stage:"paused",error:"fiscal_invoice_sending_disabled"};
   let physical_stock:any={attempted:false,ok:true,authority:await stockAuthority()};
   if(physical_stock.authority==="bling"){
     const snap=await buildSnapshot(oid,"dispatch_physical_stock");

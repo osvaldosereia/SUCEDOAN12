@@ -1483,6 +1483,29 @@ async function runSeparationFiscalIntegration(orderId: string) {
     return { bling_verified: blingVerified, fiscal_auto: { attempted: false, ok: false, error: "bling_not_verified" } };
   }
 
+  const fiscalConfig = await db.from("fiscal_runtime_config")
+    .select("enabled,execution_mode,bling_invoice_send_enabled")
+    .eq("id", 1).maybeSingle();
+  const invoiceSendingEnabled = !fiscalConfig.error
+    && fiscalConfig.data?.enabled === true
+    && String(fiscalConfig.data?.execution_mode || "").toLowerCase() === "live"
+    && fiscalConfig.data?.bling_invoice_send_enabled === true;
+  if (!invoiceSendingEnabled) {
+    const reason = fiscalConfig.error ? "fiscal_send_config_unavailable" : "fiscal_invoice_sending_disabled";
+    let fiscal: any = { attempted: false, ok: false, authorized: false, skipped: true, stage: "paused", error: reason };
+    try {
+      await markSeparationFiscalMetadata(orderId, {
+        bling_verified: true, bling_order_id: blingVerified.bling_order_id || null,
+        fiscal_auto_attempted: false, fiscal_auto_ok: false, fiscal_auto_authorized: false,
+        fiscal_auto_skipped: true, fiscal_auto_stage: "paused", fiscal_auto_error: reason,
+        fiscal_auto_at: new Date().toISOString(), external_integrations_pending: true,
+      });
+    } catch (error) {
+      fiscal = { ...fiscal, metadata_persisted: false, metadata_error: clean((error as Error)?.message || error, 240) };
+    }
+    return { bling_verified: blingVerified, fiscal_auto: fiscal };
+  }
+
   let fiscal: any;
   try {
     const preflight = await db.rpc("ops2_fiscal_dispatch_preflight_v1", { p_order_id: orderId });
