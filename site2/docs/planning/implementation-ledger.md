@@ -1189,3 +1189,9 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 - Consulta somente leitura ao Supabase canônico: 5 cestas ativas para WhatsApp, 118 posições, 78 prontas e 40 pendentes; zero bindings do Flow. Os totais permanecem iguais à leitura de 07:32 UTC.
 - Desde a checagem anterior, `admin_audit_logs` registra três eventos agregados `smart_delivery.driver_saved` (`delivery_driver`). O resumo não leu nem retornou nomes, identificadores ou outros dados dos motoristas; esses eventos não representam revisão das opções de cesta.
 - O caminho de pedido segue bloqueado pelas posições pendentes e pela ausência de bindings publicados/verificados para os WABAs. Nenhuma mensagem, publicação de Flow ou ação no Bling/NF-e foi feita nesta checagem.
+
+## Rechecagem de atividade operacional (06/11/2026 02:03 UTC)
+
+- Consulta agregada somente leitura ao Supabase: os totais de prontidão não mudaram — 5 cestas ativas para WhatsApp, 118 posições, 78 prontas, 40 pendentes e zero bindings do Flow.
+- Desde 06/11 01:03 UTC, há quatro eventos agregados de auditoria relacionados a rotas de entrega: duas mudanças de atribuição (`smart_delivery.run_assignment_changed`) e dois planejamentos (`smart_delivery.run_planned`). Foram vistos somente os tipos e as contagens, sem IDs, endereços, nomes ou detalhes de pedidos/entregas.
+- Esta atividade indica uso das funções operacionais de entrega, mas não altera o estado de prontidão do pedido WhatsApp. Nenhuma mensagem, publicação de Flow, escrita no Bling ou emissão de NF-e ocorreu na checagem.
