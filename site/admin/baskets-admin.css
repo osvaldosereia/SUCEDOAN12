@@ -415,7 +415,7 @@
     flex-direction: column;
   }
   .basket-grid-title-cell {
-    grid-template-columns: 24px minmax(150px, 1fr);
+    grid-template-columns: 24px minmax(0, 1fr);
   }
   .basket-grid-title-cell > .danger-text {
     grid-column: 2;
