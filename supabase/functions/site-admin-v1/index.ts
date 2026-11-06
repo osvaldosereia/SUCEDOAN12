@@ -1117,7 +1117,7 @@ async function ordersList(input: any) {
       ? ["confirmed", "processing"]
       : ["ready", "out_for_delivery", "delivered"];
   const result = await db.from("orders")
-    .select("id,order_number,status,total,created_at,updated_at,phone_e164,customer_snapshot,source,payment_method,bling_order_id,sync_status")
+    .select("id,order_number,status,total,created_at,updated_at,phone_e164,delivery_address,checkout_snapshot,customer_snapshot,source,payment_method,bling_order_id,sync_status")
     .in("source", ORDER_SOURCES)
     .in("status", statuses)
     .order("created_at", { ascending: false })
