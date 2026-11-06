@@ -12,8 +12,8 @@
   <link rel="stylesheet" href="papoai-guard-admin.css?v=1">
   <link rel="stylesheet" href="baskets-admin.css?v=3">
   <link rel="stylesheet" href="whatsapp-campaign-report.css?v=1">
-  <link rel="stylesheet" href="orders-admin.css?v=10">
-  <link rel="stylesheet" href="delivery-admin.css?v=5">
+  <link rel="stylesheet" href="orders-admin.css?v=13">
+  <link rel="stylesheet" href="delivery-admin.css?v=9">
   <link rel="stylesheet" href="quick-balance-admin.css?v=4">
   <link rel="stylesheet" href="cards-admin.css?v=1">
   <script src="../config.js?v=3"></script>
@@ -22,8 +22,8 @@
   <script src="taxonomy-admin.js?v=1" defer></script>
   <script src="papoai-guard-admin.js?v=1" defer></script>
   <script src="baskets-admin.js?v=5" defer></script>
-  <script src="orders-admin.js?v=10" defer></script>
-  <script type="module" src="delivery-admin.js?v=6"></script>
+  <script src="orders-admin.js?v=14" defer></script>
+  <script type="module" src="delivery-admin.js?v=10"></script>
   <script src="order-message-admin.js?v=3" defer></script>
   <script src="separation-message-admin.js?v=4" defer></script>
   <script src="whatsapp-template-button-support.js?v=1" defer></script>
@@ -32,7 +32,7 @@
   <script src="whatsapp-conversations.js?v=16" defer></script>
   <script src="quick-balance-admin.js?v=7" defer></script>
   <script src="cards-admin.js?v=2" defer></script>
-  <script src="admin.js?v=26" defer></script>
+  <script src="admin.js?v=27" defer></script>
 </head>
 <body class="admin-page">
   <main id="admin-login" class="admin-login-main">
@@ -284,6 +284,8 @@
           <button class="orders-tab active" type="button" data-order-stage="new">NOVO</button>
           <button class="orders-tab" type="button" data-order-stage="separating">SEPARAR</button>
           <button class="orders-tab" type="button" data-order-stage="expedition">EXPEDIÇÃO</button>
+          <button class="orders-tab" type="button" data-order-stage="delivered">ENTREGUES</button>
+          <button class="orders-tab" type="button" data-order-stage="not_delivered">NÃO ENTREGUES</button>
         </nav>
         <p id="orders-status" class="admin-muted" role="status">Carregando pedidos…</p>
     
@@ -296,56 +298,51 @@
 
       <section class="admin-view delivery-admin-view" data-panel="delivery" hidden>
         <div class="section-title delivery-admin-heading">
-          <div><h2>Entregas</h2><p>Distribua os pedidos prontos, confira cada carga e acompanhe a saída dos entregadores.</p></div>
+          <div><h2>Entregas</h2><p>Acompanhe e organize as entregas por entregador.</p></div>
           <button id="delivery-admin-refresh" class="button button-outline" type="button">Atualizar</button>
         </div>
-        <p class="delivery-admin-local-note">O entregador usa o <a href="../entregador/" target="_blank" rel="noopener">portal de entregas</a>. O acesso individual é ativado uma vez no aparelho e só precisa ser renovado se trocar de aparelho, expirar ou for revogado. A ordem não é calculada automaticamente por distância; o entregador pode ajustá-la no portal antes da conferência da carga.</p>
         <p id="delivery-admin-status" class="admin-muted" role="status" aria-live="polite">Carregando entregas…</p>
-
-        <section class="delivery-admin-section delivery-ready-section">
-          <div class="delivery-section-title">
-            <div><h3>1. Distribua os pedidos</h3><p>Escolha um entregador e marque os pedidos que formarão a rota dele. Para dividir entre motoristas, crie um grupo por vez; os pedidos restantes continuam nesta fila.</p></div>
-            <strong id="delivery-ready-count">0</strong>
-          </div>
-          <div class="delivery-planner-fields">
-            <label>Entregador<select id="delivery-driver-select"><option value="">Selecione o entregador</option></select></label>
-            <label>Região da rota<select id="delivery-region-select"><option value="">Usar região dos pedidos</option></select></label>
-          </div>
-          <p id="delivery-route-assignment-hint" class="delivery-route-assignment-hint" role="status" aria-live="polite">Selecione um entregador para ver a rota atual e as vagas disponíveis.</p>
-          <div id="delivery-ready-orders" class="delivery-ready-orders"></div>
-          <div class="delivery-planner-footer">
-            <span id="delivery-selected-count" aria-live="polite">Nenhum pedido selecionado</span>
-            <button id="delivery-plan-run" class="button button-primary" type="button" disabled>Criar rota</button>
-          </div>
-          <p id="delivery-selection-limit" class="delivery-selection-limit">Cada rota aceita até 30 pedidos. O que ficar sem marcar permanece na fila para outro entregador.</p>
-        </section>
+        <nav id="delivery-driver-tabs" class="delivery-driver-tabs" role="tablist" aria-label="Entregas por entregador"></nav>
+        <section id="delivery-routes-list" class="delivery-routes-list" role="tabpanel" tabindex="0" aria-live="polite"></section>
 
         <details class="delivery-admin-section delivery-team-management">
           <summary>
-            <span><strong>Entregadores e acesso</strong><small>Cadastro, edição e recuperação do acesso individual</small></span>
+            <span><strong>Entregadores</strong><small>Cadastro e edição da equipe</small></span>
             <span class="delivery-team-toggle" aria-hidden="true">＋</span>
           </summary>
           <div class="delivery-team-content">
-            <p class="delivery-team-note">O link não é enviado automaticamente. Copie e envie ao entregador somente no primeiro acesso ou quando ele trocar de aparelho; gerar outro link invalida o anterior.</p>
             <form id="delivery-driver-form" class="delivery-driver-form">
               <input id="delivery-driver-id" type="hidden">
               <label>Nome<input id="delivery-driver-name" maxlength="120" autocomplete="name" required></label>
-              <label>WhatsApp<input id="delivery-driver-phone" type="tel" inputmode="tel" maxlength="32" placeholder="(65) 99999-9999"></label>
+              <label>WhatsApp (opcional)<input id="delivery-driver-phone" type="tel" inputmode="tel" maxlength="32" placeholder="Usado para aviso de previsão"></label>
               <label>Região principal<select id="delivery-driver-region"><option value="">Sem região definida</option></select></label>
               <label class="delivery-active-toggle"><input id="delivery-driver-active" type="checkbox" checked><span>Disponível para receber entregas</span></label>
               <div class="delivery-form-actions"><button id="delivery-driver-cancel" class="button button-outline" type="button" hidden>Cancelar edição</button><button id="delivery-driver-save" class="button button-primary" type="submit">Cadastrar entregador</button></div>
             </form>
             <div id="delivery-driver-list" class="delivery-driver-list"></div>
-            <div class="delivery-access-link-box"><input id="delivery-driver-access-link" type="url" readonly aria-label="Link individual do entregador" hidden><button id="delivery-driver-copy-access" class="button button-outline" type="button" hidden>Copiar link individual</button></div>
           </div>
         </details>
-
-        <section class="delivery-admin-section delivery-routes-section">
-          <div class="delivery-section-title"><div><h3>Rotas e saída</h3><p>Abra uma rota para conferir os pedidos. Depois confirme a carga e libere a saída nesta ordem.</p></div></div>
-          <div id="delivery-routes-list" class="delivery-routes-list"></div>
-        </section>
         <p id="delivery-admin-action-status" class="form-message" role="status" aria-live="polite"></p>
       </section>
+
+      <dialog id="delivery-address-dialog" class="orders-dialog delivery-address-dialog">
+        <form method="dialog" class="orders-dialog-body">
+          <header class="orders-dialog-heading"><div><p class="eyebrow">Endereço da entrega</p><h2 id="delivery-address-title">Confirmar local</h2></div><button class="button button-outline" type="submit">Fechar</button></header>
+          <p id="delivery-address-current" class="admin-muted"></p>
+          <button id="delivery-location-capture" class="button button-outline" type="button">Capturar GPS neste local</button>
+          <p id="delivery-location-capture-status" class="admin-muted" role="status" aria-live="polite"></p>
+          <label>Salvar localização como<select id="delivery-location-mode"><option value="primary">Localização principal do endereço</option><option value="alternate">Ponto alternativo</option></select></label>
+          <label id="delivery-location-label-field" hidden>Nome do ponto alternativo<input id="delivery-location-label" maxlength="100" placeholder="Ex.: portão lateral"></label>
+          <button id="delivery-location-save" class="button button-primary" type="button" disabled>Salvar localização</button>
+          <section id="delivery-saved-location-section" hidden><label>Ponto alternativo salvo<select id="delivery-saved-location-select"><option value="">Selecione um ponto</option></select></label><button id="delivery-saved-location-use" class="button button-outline" type="button" disabled>Usar neste pedido</button></section>
+          <label>Foto da fachada<input id="delivery-address-photo-input" type="file" accept="image/jpeg,image/png,image/webp" capture="environment"></label>
+          <img id="delivery-address-photo-preview" class="delivery-address-photo-preview" alt="Prévia da foto da fachada" hidden>
+          <button id="delivery-address-photo-save" class="button button-outline" type="button" hidden disabled>Salvar foto da fachada</button>
+          <p id="delivery-address-photo-status" class="admin-muted" role="status" aria-live="polite"></p>
+          <p id="delivery-location-error" class="form-message" role="status" aria-live="polite"></p>
+        </form>
+      </dialog>
+
 
       <section class="admin-view" data-panel="whatsapp" hidden>
         <section class="papoai-guard" id="papoai-campaign-guard" aria-labelledby="papoai-guard-title">
@@ -631,3 +628,4 @@
   </div>
 </body>
 </html>
+

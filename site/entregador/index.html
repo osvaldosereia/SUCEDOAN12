@@ -2,102 +2,17 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#7e3029">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta http-equiv="refresh" content="0;url=/site/admin/?view=delivery">
   <title>Entregas · Dona Antônia</title>
-  <link rel="stylesheet" href="../styles.css?v=5">
-  <link rel="stylesheet" href="driver.css?v=3">
-  <script src="../config.js?v=3"></script>
-  <script type="module" src="driver.js?v=4"></script>
+  <script>window.location.replace("/site/admin/?view=delivery");</script>
 </head>
-<body class="driver-page">
-  <main class="driver-app">
-    <header class="driver-header">
-      <a class="driver-brand" href="/site/" aria-label="Dona Antônia">
-        <img src="/img/logoantonia5.png" alt="Dona Antônia" width="145" height="53">
-      </a>
-      <button id="driver-logout" class="driver-logout" type="button" hidden>Sair deste aparelho</button>
-    </header>
-
-    <section id="driver-access" class="driver-access-card" hidden>
-      <div class="driver-access-mark" aria-hidden="true">DA</div>
-      <p class="eyebrow">ÁREA DO ENTREGADOR</p>
-      <h1 id="driver-access-title">Acesso individual</h1>
-      <p id="driver-access-message">Abra o link que a loja enviou para ativar este aparelho. Depois, o acesso continua para as novas rotas sem precisar gerar outro link.</p>
-      <button id="driver-retry" class="button button-primary" type="button" hidden>Tentar novamente</button>
-    </section>
-
-    <section id="driver-main" hidden>
-      <div class="driver-welcome">
-        <div><p class="eyebrow">ROTA DO DIA</p><h1 id="driver-name">Entregador</h1></div>
-        <button id="driver-refresh" class="button button-outline" type="button" aria-label="Atualizar rota">Atualizar</button>
-      </div>
-      <p id="driver-status" class="driver-status" role="status" aria-live="polite">Carregando rota…</p>
-      <div id="driver-routes" class="driver-routes"></div>
-    </section>
-    <p id="driver-toast" class="driver-toast" role="status" aria-live="polite"></p>
+<body>
+  <main>
+    <h1>Entregas agora ficam no Admin</h1>
+    <p>Entre com o acesso da loja e abra a seção Entregas.</p>
+    <a href="/site/admin/?view=delivery">Abrir Entregas no Admin</a>
   </main>
-  <dialog id="driver-deliver-dialog" class="driver-dialog">
-    <form id="driver-deliver-form" method="dialog" class="driver-dialog-card">
-      <button id="driver-deliver-close" class="driver-dialog-close" type="button" aria-label="Fechar">×</button>
-      <p class="eyebrow">CONFIRMAÇÃO DE ENTREGA</p>
-      <h2 id="driver-deliver-title">Marcar como entregue</h2>
-      <p id="driver-deliver-payment-note" class="driver-payment-note"></p>
-      <label id="driver-payment-field">Forma recebida
-        <select id="driver-payment-method" required>
-          <option value="">Selecione</option>
-          <option value="pix">Pix</option>
-          <option value="cash">Dinheiro</option>
-          <option value="credit_card">Cartão ou link</option>
-          <option value="food_card">Cartão alimentação</option>
-          <option value="meal_card">Cartão refeição</option>
-          <option value="other">Outra forma</option>
-        </select>
-      </label>
-      <button id="driver-deliver-confirm" class="button button-primary" type="submit">Confirmar entrega</button>
-      <p id="driver-deliver-error" class="driver-form-error" role="status" aria-live="polite"></p>
-    </form>
-  </dialog>
-  <dialog id="driver-address-dialog" class="driver-dialog driver-address-dialog">
-    <div class="driver-dialog-card">
-      <button id="driver-address-close" class="driver-dialog-close" type="button" aria-label="Fechar">×</button>
-      <p class="eyebrow">CADASTRO DO ENDEREÇO</p>
-      <h2 id="driver-address-title">Confirmar local e foto</h2>
-      <p id="driver-address-current" class="driver-payment-note"></p>
-
-      <button id="driver-location-capture" class="driver-location-capture" type="button">Capturar GPS neste local</button>
-      <p id="driver-location-capture-status" class="driver-inline-status" role="status" aria-live="polite"></p>
-      <label>Como salvar o ponto
-        <select id="driver-location-mode">
-          <option value="primary">Atualizar localização principal</option>
-          <option value="alternate" disabled>Guardar como ponto alternativo</option>
-        </select>
-      </label>
-      <label id="driver-location-label-field" hidden>Nome do ponto alternativo
-        <input id="driver-location-label" type="text" maxlength="80" placeholder="Ex.: Portão lateral">
-      </label>
-      <button id="driver-location-save" class="button button-primary" type="button" disabled>Salvar localização principal</button>
-
-      <div id="driver-saved-location-section" class="driver-saved-location" hidden>
-        <label>Usar um ponto alternativo já salvo
-          <select id="driver-saved-location-select"><option value="">Selecione um ponto salvo</option></select>
-        </label>
-        <button id="driver-saved-location-use" class="button button-outline" type="button" disabled>Usar neste pedido</button>
-      </div>
-      <p id="driver-location-error" class="driver-form-error" role="status" aria-live="polite"></p>
-
-      <div class="driver-address-photo-editor">
-        <p class="driver-address-section-title">Foto de referência da fachada</p>
-        <img id="driver-address-saved-photo" class="driver-address-saved-photo" alt="Foto da fachada já cadastrada" hidden>
-        <p id="driver-address-saved-photo-date" class="driver-inline-status"></p>
-        <label for="driver-address-photo-input" class="driver-camera-button">Tirar foto ou escolher imagem</label>
-        <input id="driver-address-photo-input" class="driver-camera-input" type="file" accept="image/*" capture="environment">
-        <img id="driver-address-photo-preview" class="driver-address-saved-photo" alt="Prévia da nova foto da fachada" hidden>
-        <button id="driver-address-photo-save" class="button button-outline" type="button" hidden disabled>Salvar foto da fachada</button>
-        <p id="driver-address-photo-status" class="driver-inline-status" role="status" aria-live="polite"></p>
-      </div>
-    </div>
-  </dialog>
 </body>
 </html>
