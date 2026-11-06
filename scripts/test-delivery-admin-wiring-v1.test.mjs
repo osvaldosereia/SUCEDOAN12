@@ -50,7 +50,7 @@ test("route management exposes driver portal, order details, and safe stop actio
   const admin = read("site/admin/delivery-admin.js");
   const orders = read("site/admin/orders-admin.js");
   const edge = read("supabase/functions/delivery-ops-v1/index.ts");
-  const migration = read("supabase/migrations/20261106130000_delivery_route_admin_actions_v1.sql");
+  const migration = read("supabase/migrations/20261106021520_delivery_route_admin_actions_v1.sql");
   assert.match(html, /href="\.\.\/entregador\/"/);
   assert.match(admin, /data-view-delivery-order/);
   assert.match(orders, /DonaOrdersAdmin\s*=\s*\{[^}]*openOrder/);
