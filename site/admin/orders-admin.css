@@ -43,6 +43,18 @@
   .separation-item-actions button { width: 100%; min-height: 48px; height: auto; padding: 8px; font-size: .82rem; line-height: 1.2; white-space: normal; }
   .separation-action-label { display: inline; }
 }
+
+.order-card-expedition .order-card-open{gap:9px}
+.order-delivery-date,.order-card-address{display:grid;gap:4px;padding:10px 12px;border-radius:10px;background:#fbf3f1}
+.order-delivery-date>span,.order-card-address>span{color:#7e3029;font-size:.72rem;font-weight:900;letter-spacing:.07em}
+.order-delivery-date strong{color:#7e3029;font-size:1.06rem;text-transform:capitalize}
+.order-card-address strong{color:#302521;font-size:1.05rem;line-height:1.35}
+.order-driver-select{display:grid;gap:6px;min-width:230px;text-align:left}
+.order-driver-select>span{color:#7e3029;font-size:.72rem;font-weight:900;letter-spacing:.07em}
+.order-driver-select select{min-height:44px;width:100%;padding:9px 11px;border:1px solid #d8cbc7;border-radius:10px;background:#fff;color:#302521;font:inherit;font-weight:700}
+.order-driver-select small,.delivery-history-date{color:#75645f;font-size:.8rem;line-height:1.35}
+.not-delivered-stamp{padding:10px 12px;border:2px solid #ad583a;border-radius:9px;color:#ad583a;font-weight:900;text-align:center}
+@media(max-width:640px){.order-driver-select{min-width:0;width:100%}.order-card-address strong{font-size:1rem}.order-delivery-date strong{font-size:1rem}}
 @media (min-width: 641px) {
   .separation-sheet { width: min(680px, calc(100vw - 24px)); max-width: calc(100vw - 24px); }
 }
@@ -191,3 +203,4 @@
     padding-top: 4px;
   }
 }
+
