@@ -3,18 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#7e3029">
+  <meta name="theme-color" content="#ffffff">
   <meta name="robots" content="noindex, nofollow">
   <title>Admin · Dona Antônia</title>
   <link rel="stylesheet" href="../styles.css?v=5">
-  <link rel="stylesheet" href="admin.css?v=49">
-  <link rel="stylesheet" href="taxonomy-admin.css?v=1">
+  <link rel="stylesheet" href="admin.css?v=50">
+  <link rel="stylesheet" href="taxonomy-admin.css?v=2">
   <link rel="stylesheet" href="papoai-guard-admin.css?v=1">
-  <link rel="stylesheet" href="baskets-admin.css?v=3">
+  <link rel="stylesheet" href="baskets-admin.css?v=4">
   <link rel="stylesheet" href="whatsapp-campaign-report.css?v=1">
-  <link rel="stylesheet" href="orders-admin.css?v=10">
-  <link rel="stylesheet" href="delivery-admin.css?v=4">
-  <link rel="stylesheet" href="quick-balance-admin.css?v=4">
+  <link rel="stylesheet" href="orders-admin.css?v=11">
+  <link rel="stylesheet" href="delivery-admin.css?v=5">
+  <link rel="stylesheet" href="quick-balance-admin.css?v=5">
   <script src="../config.js?v=3"></script>
   <script src="admin-auth.js?v=2" defer></script>
   <script src="catalog-admin.js?v=14" defer></script>
@@ -31,6 +31,7 @@
   <script src="whatsapp-conversations.js?v=16" defer></script>
   <script src="quick-balance-admin.js?v=7" defer></script>
   <script src="admin.js?v=25" defer></script>
+  <script src="admin-navigation.js?v=1" defer></script>
 </head>
 <body class="admin-page">
   <main id="admin-login" class="admin-login-main">
@@ -49,14 +50,21 @@
   </main>
   <div id="admin-app" hidden>
   <header class="topbar">
-    <a class="brand" href="../" aria-label="Voltar ao catálogo">
-      <img src="../../img/logoantonia5.png" alt="Dona Antônia" width="176" height="64">
-    </a>
-    <a class="admin-link" href="../">Voltar à loja</a>
-    <button id="admin-logout" class="admin-link admin-logout" type="button">Sair</button>
+    <div class="admin-topbar-brand">
+      <button id="admin-menu-toggle" class="admin-menu-toggle" type="button" aria-label="Abrir menu" aria-controls="admin-sidebar" aria-expanded="false">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <a class="brand" href="../" aria-label="Voltar ao catálogo">
+        <img src="../../img/logoantonia5.png" alt="Dona Antônia" width="176" height="64">
+      </a>
+    </div>
+    <div class="admin-topbar-actions">
+      <a class="admin-link" href="../">Voltar à loja</a>
+      <button id="admin-logout" class="admin-link admin-logout" type="button">Sair</button>
+    </div>
   </header>
   <div class="admin-shell">
-    <aside class="admin-sidebar" aria-label="Navegação do painel">
+    <aside id="admin-sidebar" class="admin-sidebar" aria-label="Navegação do painel">
       <div class="admin-sidebar-heading">
         <p class="sidebar-kicker">PAINEL ADMINISTRATIVO</p>
         <strong>Dona Antônia</strong>
@@ -105,6 +113,7 @@
         <span><strong>Área administrativa</strong><small>Loja Dona Antônia</small></span>
       </div>
     </aside>
+    <button id="admin-nav-backdrop" class="admin-nav-backdrop" type="button" aria-label="Fechar menu" hidden></button>
     <main class="admin-main">
     <section id="admin-view">
       <div class="admin-heading">
@@ -112,16 +121,18 @@
       </div>
       <section class="admin-view active" data-panel="overview">
         <div class="welcome-admin">
-          <h2>Catálogo conectado</h2>
-          <p>Consulte as cestas publicadas e localize clientes por telefone ou CPF/CNPJ.</p>
+          <span class="welcome-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10h18l-2 10H5L3 10Zm4 0 5-7 5 7M8 14v3m4-3v3m4-3v3"/></svg></span>
+          <div class="welcome-copy"><h2>Catálogo conectado</h2><p>Consulte as cestas publicadas e localize clientes por telefone ou CPF/CNPJ.</p></div>
         </div>
+        <h2 class="admin-shortcuts-title">Acessos rápidos</h2>
         <div class="admin-shortcuts">
-          <button class="shortcut-card" type="button" data-go="baskets"><strong>Cestas</strong><span>Editar produtos, marcas e valor padrão</span></button>
-          <button class="shortcut-card" type="button" data-go="products"><strong>Produtos</strong><span>Editar cadastro, estoque do Supabase e ativação</span></button>
-          <button class="shortcut-card" type="button" data-go="customers"><strong>Clientes</strong><span>Buscar cadastro e endereço</span></button>
-          <button class="shortcut-card" type="button" data-go="orders"><strong>Pedidos</strong><span>Confirmar, separar e acompanhar entregas</span></button>
-          <button class="shortcut-card" type="button" data-go="quick-balance"><strong>Balanço rápido</strong><span>Contar estoque, validade e gôndola pelo EAN</span></button>
-          <button class="shortcut-card" type="button" data-go="whatsapp"><strong>WhatsApp</strong><span>Editar a mensagem de confirmação e acompanhar a aprovação</span></button>
+          <button class="shortcut-card" type="button" data-go="baskets"><span class="shortcut-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10h18l-2 10H5L3 10Zm4 0 5-7 5 7M8 14v3m4-3v3m4-3v3"/></svg></span><strong>Cestas</strong><span>Editar produtos, marcas e valor padrão</span></button>
+          <button class="shortcut-card" type="button" data-go="products"><span class="shortcut-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 13 11 22l-9-9V3h10l8 10Zm-13-5h.01"/></svg></span><strong>Produtos</strong><span>Editar cadastro, estoque do Supabase e ativação</span></button>
+          <button class="shortcut-card" type="button" data-go="customers"><span class="shortcut-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20v-1.5a6.5 6.5 0 0 1 13 0V20M16 5.2a3.5 3.5 0 0 1 0 6.6M18 14a4.5 4.5 0 0 1 3.5 4.4V20"/></svg></span><strong>Clientes</strong><span>Buscar cadastro e endereço</span></button>
+          <button class="shortcut-card" type="button" data-go="orders"><span class="shortcut-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h2l2.8 12h12l3-9H5"/></svg></span><strong>Pedidos</strong><span>Confirmar, separar e acompanhar entregas</span></button>
+          <button class="shortcut-card" type="button" data-go="delivery"><span class="shortcut-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 6h11v11H3zM14 10h4l3 3v4h-7z"/><circle cx="7.5" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg></span><strong>Entregas</strong><span>Distribua os pedidos prontos entre os entregadores, confira a carga e acompanhe as rotas.</span></button>
+          <button class="shortcut-card" type="button" data-go="quick-balance"><span class="shortcut-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6v12M8 4v16M12 6v12M16 4v16M20 6v12"/></svg></span><strong>Balanço rápido</strong><span>Contar estoque, validade e gôndola pelo EAN</span></button>
+          <button class="shortcut-card" type="button" data-go="whatsapp"><span class="shortcut-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20.5 11.5a8.5 8.5 0 0 1-12.8 7.3L3 20l1.2-4.4A8.5 8.5 0 1 1 20.5 11.5Z"/><path d="M8.2 8.5c.4 2.4 2.3 4.3 4.7 4.7l1.4-1.3 2 .9c-.2 1.1-1.1 1.8-2.2 1.7-3.5-.4-6.2-3.1-6.6-.1-1.1.6-2 1.7-2.2l.9 2-1.9.8Z"/></svg></span><strong>WhatsApp</strong><span>Editar a mensagem de confirmação e acompanhar a aprovação</span></button>
         </div>
         <div class="edit-notice bling-reauthorize">
           <div class="bling-reauthorize-copy">
