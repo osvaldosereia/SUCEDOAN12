@@ -1,29 +1,29 @@
 /* Editor central de categorias, subcategorias, marcas e gôndolas. */
 .product-section-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
-.taxonomy-dialog { width:min(860px,calc(100vw - 24px)); max-height:min(90dvh,900px); }
+.taxonomy-dialog { width:min(860px,calc(100vw - 24px)); max-height:min(90dvh,900px); border-radius:14px; }
 .taxonomy-dialog .dialog-form { max-height:calc(90dvh - 40px); overflow:auto; }
 .taxonomy-tabs { display:flex; gap:6px; margin:0 0 14px; overflow-x:auto; padding-bottom:4px; }
-.taxonomy-tabs button { border:0; border-radius:9px; min-height:40px; padding:7px 13px; white-space:nowrap; background:#f2f2f3; color:#59616b; font-size:.82rem; font-weight:750; cursor:pointer; }
+.taxonomy-tabs button { border:0; border-radius:9px; min-height:44px; padding:8px 14px; white-space:nowrap; background:#f3f5f8; color:#505b67; font-size:.82rem; font-weight:750; cursor:pointer; }
 .taxonomy-tabs button.active { background:#7e3029; color:#fff; }
 .taxonomy-toolbar { display:flex; align-items:center; gap:9px; margin-bottom:8px; }
-.taxonomy-toolbar input { flex:1; min-width:0; min-height:43px; padding:8px 11px; border:1px solid #d8cfc3; border-radius:9px; background:#fff; font:inherit; }
+.taxonomy-toolbar input { flex:1; min-width:0; min-height:43px; padding:8px 11px; border:1px solid #d5dce4; border-radius:9px; background:#fff; font:inherit; }
 .taxonomy-total { margin:2px 0 10px; color:#767b82; font-size:.77rem; }
 .taxonomy-list { display:grid; gap:0; max-height:44dvh; overflow-y:auto; border-top:1px solid #eee; }
 .taxonomy-item { display:flex; align-items:center; justify-content:space-between; gap:12px; border-bottom:1px solid #eee; padding:10px 1px; }
 .taxonomy-item-name { display:grid; gap:3px; min-width:0; }
 .taxonomy-item-name strong { font-size:.86rem; overflow-wrap:anywhere; }
-.taxonomy-item-name small { color:#727b85; font-size:.73rem; }
+.taxonomy-item-name small { color:#697481; font-size:.73rem; }
 .taxonomy-item-actions { display:flex; gap:6px; flex:0 0 auto; }
-.taxonomy-item-actions .button,.taxonomy-delete { min-height:34px; padding:6px 11px; font:inherit; font-size:.75rem; font-weight:700; }
+.taxonomy-item-actions .button,.taxonomy-delete { min-height:42px; padding:8px 11px; font:inherit; font-size:.75rem; font-weight:700; }
 .taxonomy-delete { border:0; background:transparent; color:#9c463b; cursor:pointer; }
 .taxonomy-delete:disabled { color:#b5b5b5; cursor:not-allowed; }
-.taxonomy-form { display:grid; gap:11px; padding:14px; margin-top:12px; border-radius:12px; background:#f8f6f3; }
+.taxonomy-form { display:grid; gap:11px; padding:14px; margin-top:12px; border-radius:12px; background:#f7f8fa; }
 .taxonomy-form h3 { margin:0; font-size:.94rem; }
 .taxonomy-form label { display:grid; gap:5px; font-size:.8rem; font-weight:650; }
-.taxonomy-form input,.taxonomy-form select { width:100%; min-height:42px; padding:9px 11px; border:1px solid #d8cfc3; border-radius:9px; background:#fff; font:inherit; }
+.taxonomy-form input,.taxonomy-form select { width:100%; min-height:42px; padding:9px 11px; border:1px solid #d5dce4; border-radius:9px; background:#fff; font:inherit; }
 .taxonomy-form-actions { display:flex; justify-content:flex-end; gap:8px; }
 .taxonomy-form p { margin:0; font-size:.73rem; color:#737b86; }
-.taxonomy-status { min-height:18px; color:#59616b; font-size:.8rem; }
+.taxonomy-status { min-height:18px; color:#505b67; font-size:.8rem; }
 .taxonomy-status[data-error=true] { color:#ad372f; }
 .taxonomy-dialog [hidden] { display:none !important; }
 @media (max-width:620px) {
