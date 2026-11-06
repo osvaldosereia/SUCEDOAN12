@@ -1,4 +1,4 @@
-import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeliveryRescheduleDate, latestLocationEvidence, partitionDeliveryOrders, prepaidPaymentMethod, routeSelectionAfterAction } from "./delivery-domain.mjs?v=4";
+import { buildMapsHref, deliveryStopCapabilities, isValidDeliveryRescheduleDate, latestLocationEvidence, prepaidPaymentMethod } from "./delivery-domain.mjs?v=4";
 
 (() => {
   "use strict";
@@ -10,7 +10,7 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
   const $ = (id) => document.getElementById(id);
   const esc = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const money = (value) => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  const state = { data: null, loading: false, selected: new Set(), busy: false, focusOrderId: "", focusRouteDriverId: "", accessLink: "", lastAccessDriverId: "" };
+  const state = { data: null, loading: false, loadPromise: null, busy: false, focusOrderId: "", activeDriverId: "", addressStop: null, locationCapture: null, photoPreviewUrl: "" };
 
   async function api(action, method = "GET", payload = {}) {
     const url = new URL(endpoint);
@@ -24,6 +24,19 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
     const response = await fetch(url.toString(), init);
     const result = await response.json().catch(() => ({}));
     if (!response.ok || result.ok === false) throw new Error(result.error || "delivery_operation_failed");
+    return result;
+  }
+
+  async function uploadAddressPhoto(stopId, photo) {
+    const url = new URL(endpoint);
+    url.searchParams.set("action", "admin_upload_address_photo");
+    const headers = { apikey: key, "x-admin-code": window.DonaAdminAuth?.getCode?.() || "" };
+    const form = new FormData();
+    form.append("stop_id", stopId);
+    form.append("photo", photo, "fachada.jpg");
+    const response = await fetch(url.toString(), { method: "POST", headers, body: form, cache: "no-store" });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || result.ok === false) throw new Error(result.error || "address_photo_upload_failed");
     return result;
   }
 
@@ -94,192 +107,19 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
       lng >= -180 && lng <= 180 && !(lat === 0 && lng === 0);
   }
 
-  function orderIdsInRuns() {
-    return new Set((state.data?.runs || []).flatMap((run) => (run.stops || [])
-      .filter((stop) => stop.status !== "cancelled")
-      .map((stop) => stop.order_id)));
-  }
-
-  function readyDeliveryQueue() {
-    const ready = (state.data?.orders || []).filter((order) => order.status === "ready");
-    return partitionDeliveryOrders(ready, state.data?.service_date);
-  }
-
-  function routeStateForDriver(driverId) {
-    const runs = (state.data?.runs || []).filter((run) =>
-      (run.driver_id || run.driver?.id) === driverId && ["planned", "dispatched"].includes(run.status));
-    const locked = runs.some((run) => run.status === "dispatched" || run.loading_started_at || run.loaded_at);
-    const existing = runs.find((run) => run.status === "planned") || null;
-    const currentOrders = new Set(runs.flatMap((run) => (run.stops || [])
-      .map((stop) => stop.order_id).filter(Boolean)));
-    return { locked, existing, currentCount: currentOrders.size, capacity: locked ? 0 : Math.max(0, 30 - currentOrders.size) };
-  }
-
-  function renderDriverOptions() {
-    const catalog = state.data?.catalog || {};
-    const drivers = Array.isArray(catalog.drivers) ? catalog.drivers : [];
-    const regions = Array.isArray(catalog.regions) ? catalog.regions : [];
-    const driverSelect = $("delivery-driver-select");
-    const previousDriverId = driverSelect.value;
-    const previousRouteRegionId = $("delivery-region-select").value;
-    const previousDriverRegionId = $("delivery-driver-region").value;
-    const option = (row, label, disabled = false) =>
-      `<option value="${esc(row.id)}" ${disabled ? "disabled" : ""}>${esc(label)}</option>`;
-    const driverOptions = drivers.filter((driver) => driver.is_active && driver.phone_e164).map((driver) => {
-      const route = routeStateForDriver(driver.id);
-      const routeLabel = route.locked
-        ? " · carga conferida ou em rota"
-        : route.existing
-          ? ` · rota aberta ${route.currentCount}/30`
-          : " · nova rota";
-      return option({ id: driver.id }, driver.name + routeLabel, route.locked || route.capacity === 0);
-    }).join("");
-    driverSelect.innerHTML = `<option value="">Selecione o entregador</option>` + driverOptions;
-    if (previousDriverId && [...driverSelect.options].some((item) => item.value === previousDriverId && !item.disabled)) {
-      driverSelect.value = previousDriverId;
-    }
-    const regionOptions = `<option value="">Usar região dos pedidos</option>` +
-      regions.filter((region) => region.is_active).map((region) =>
-        option(region, [region.name, region.city].filter(Boolean).join(" · "))).join("");
-    const routeRegion = $("delivery-region-select");
-    routeRegion.innerHTML = regionOptions;
-    if (previousRouteRegionId && [...routeRegion.options].some((item) => item.value === previousRouteRegionId)) {
-      routeRegion.value = previousRouteRegionId;
-    }
-    const driverRegion = $("delivery-driver-region");
-    driverRegion.innerHTML = `<option value="">Sem região definida</option>` +
-      regions.filter((region) => region.is_active).map((region) => option(region, region.name)).join("");
-    if (previousDriverRegionId && [...driverRegion.options].some((item) => item.value === previousDriverRegionId)) {
-      driverRegion.value = previousDriverRegionId;
-    }
-  }
-
-
-  function renderReadyOrders() {
-    const assigned = orderIdsInRuns();
-    const ready = readyDeliveryQueue().today.filter((order) => !assigned.has(order.id));
-    const availableIds = new Set(ready.map((order) => order.id));
-    state.selected = new Set([...state.selected].filter((id) => availableIds.has(id)));
-    const host = $("delivery-ready-orders");
-    const openOrderDetails = new Set([...host.querySelectorAll("details[data-order-details][open]")]
-      .map((details) => details.dataset.orderDetails));
-    $("delivery-ready-count").textContent = String(ready.length);
-    if (!ready.length) {
-      host.innerHTML = `<div class="delivery-empty">Não há pedidos programados para hoje sem entregador atribuído.</div>`;
-      updateSelectedCount();
-      return;
-    }
-    host.innerHTML = ready.map((order) => {
-      const evidence = evidenceFor(order);
-      const addressReference = order.address_reference;
-      const candidate = evidence
-        ? { address: order.delivery_address, destination_latitude: evidence.latitude, destination_longitude: evidence.longitude, destination_confidence: "confirmed" }
-        : addressReference?.address_has_primary_location
-          ? { address: order.delivery_address, destination_latitude: addressReference.primary_latitude, destination_longitude: addressReference.primary_longitude, destination_confidence: "saved" }
-          : { delivery_address: order.delivery_address };
-      const maps = buildMapsHref(candidate);
-      const phone = order.phone_e164 || "";
-      const prepaid = order.delivery_paid_ahead === true;
-      const prepaidControl = prepaid
-        ? `<span class="delivery-prepaid-badge">PAGO ADIANTADO · NÃO COBRAR</span>`
-        : `<div class="delivery-prepaid-control"><select data-prepaid-method="${esc(order.id)}" aria-label="Forma de pagamento antecipado"><option value="" selected disabled>Selecione se já foi pago</option><option value="pix">Pix pago</option><option value="credit_card">Link/cartão pago</option></select><input type="text" data-prepaid-reference maxlength="120" placeholder="Referência opcional"><button type="button" class="button button-outline" data-prepaid-order="${esc(order.id)}">Marcar como pago</button></div>`;
-      const evidenceMarkup = evidence
-        ? `<div class="delivery-location-preview"><strong>Localizador recente ${evidence.direction === "outbound" ? "enviado pela loja" : "enviado pelo cliente"}</strong><span>${esc(formatDate(evidence.captured_at))}${evidence.label ? " · " + esc(evidence.label) : ""}</span><button type="button" class="button button-outline" data-confirm-location="${esc(order.id)}" data-evidence-id="${esc(evidence.id)}">Salvar no cadastro do cliente</button></div>`
-        : `<p class="delivery-no-location">Nenhum localizador válido encontrado nesta conversa ou no cadastro.</p>`;
-      const address = order.delivery_address || {};
-      const street = address.street || address.address_line || "";
-      const compactAddress = [
-        [street, address.number].filter(Boolean).join(", "),
-        address.neighborhood || address.district,
-        address.city,
-      ].filter(Boolean).join(" · ") || address.raw_text || address.formatted_address || "Endereço não informado";
-      const whatsappMarkup = phone
-        ? '<a href="' + esc(phoneHref(phone)) + '" target="_blank" rel="noopener">WhatsApp ' + esc(phone) + '</a>'
-        : "Telefone não informado";
-      const mapsMarkup = maps
-        ? '<a class="delivery-map-link" href="' + esc(maps) + '" target="_blank" rel="noopener">Abrir endereço no Google Maps</a>'
-        : "";
-      const detailsOpen = openOrderDetails.has(order.id) ? " open" : "";
-      return `<article class="delivery-ready-card" data-delivery-order-card="${esc(order.id)}">
-        <label class="delivery-ready-select">
-          <input type="checkbox" data-select-delivery-order="${esc(order.id)}" ${state.selected.has(order.id) ? "checked" : ""}>
-          <span><strong>Pedido ${esc(orderNumber(order))}</strong><small>${esc(customerName(order))}</small><small class="delivery-order-address">${esc(compactAddress)}</small></span>
-          <b>${esc(money(order.total))}</b>
-        </label>
-        <details class="delivery-order-more" data-order-details="${esc(order.id)}"${detailsOpen}>
-          <summary>Ver endereço completo, pagamento e localização</summary>
-          <div class="delivery-order-more-content">
-            <div class="delivery-order-details"><span>${esc(addressText(order))}</span><span>${whatsappMarkup}</span><span>Pagamento: ${esc(order.payment_display || "A confirmar")}</span></div>
-            ${mapsMarkup}${prepaidControl}${evidenceMarkup}${addressReferenceMarkup(addressReference)}
-          </div>
-        </details>
-      </article>`;
-    }).join("");
-    updateSelectedCount();
-  }
-
-
   function formatDate(value) {
     const date = new Date(value || "");
     return Number.isNaN(date.getTime()) ? "Data não informada" : new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(date);
   }
 
-  function updateSelectedCount() {
-    const assigned = orderIdsInRuns();
-    const available = state.data ? readyDeliveryQueue().today.filter((order) => !assigned.has(order.id)) : [];
-    const ordersById = new Map(available.map((order) => [order.id, order]));
-    const selectedOrders = [...state.selected].map((id) => ordersById.get(id)).filter(Boolean);
-    const count = selectedOrders.length;
-    const total = selectedOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
-    const driverId = $("delivery-driver-select").value;
-    const driver = (state.data?.catalog?.drivers || []).find((item) => item.id === driverId);
-    const route = driverId ? routeStateForDriver(driverId) : null;
-    const enoughCapacity = route && !route.locked && count <= route.capacity;
-    const regionSelect = $("delivery-region-select");
-    const existingRegionId = route?.existing?.region_id || route?.existing?.region?.id || "";
-    if (route?.existing && existingRegionId) {
-      const hasRegionOption = [...regionSelect.options].some((item) => item.value === existingRegionId);
-      if (!hasRegionOption) {
-        const currentRegion = document.createElement("option");
-        currentRegion.value = existingRegionId;
-        currentRegion.textContent = route.existing.region?.name || "Região atual";
-        regionSelect.add(currentRegion);
-      }
-      regionSelect.value = existingRegionId;
-      regionSelect.disabled = true;
-    } else {
-      regionSelect.disabled = false;
-    }
-    const button = $("delivery-plan-run");
-    $("delivery-selected-count").textContent = count
-      ? `${count} pedido${count === 1 ? "" : "s"} selecionado${count === 1 ? "" : "s"} · ${money(total)}`
-      : "Nenhum pedido selecionado";
-    button.disabled = !count || !driverId || !enoughCapacity || state.busy;
-    button.textContent = route?.existing ? "Adicionar à rota" : "Criar rota";
-    const availableDrivers = (state.data?.catalog?.drivers || []).filter((item) => {
-      if (!item.is_active || !item.phone_e164) return false;
-      const driverRoute = routeStateForDriver(item.id);
-      return !driverRoute.locked && driverRoute.capacity > 0;
-    });
-    let hint = availableDrivers.length
-      ? "Selecione um entregador para ver a rota atual e as vagas disponíveis."
-      : "Nenhum entregador ativo tem vaga livre. Abra “Entregadores e acesso” para cadastrar ou ajustar a equipe.";
-    if (driver && route?.locked) {
-      hint = `${driver.name} já está com a carga conferida ou em rota. Escolha outro entregador para este grupo.`;
-    } else if (driver && route?.existing) {
-      hint = `${driver.name} já tem uma rota planejada com ${route.currentCount} pedido${route.currentCount === 1 ? "" : "s"}. Os pedidos marcados serão adicionados a ela; restam ${route.capacity} vaga${route.capacity === 1 ? "" : "s"}.`;
-    } else if (driver) {
-      hint = `Nova rota para ${driver.name}. Depois de montar, confira a lista, confirme a carga e libere a saída.`;
-    }
-    if (driver && route && !route.locked && count > route.capacity) {
-      hint += ` Desmarque ${count - route.capacity} pedido${count - route.capacity === 1 ? "" : "s"} para caber nesta rota.`;
-    }
-    $("delivery-route-assignment-hint").textContent = hint + (route?.existing && existingRegionId ? " A região da rota atual será mantida." : "");
-    $("delivery-selection-limit").textContent = route?.existing
-      ? `Limite da rota: 30 pedidos no total. ${route.capacity} vaga${route.capacity === 1 ? "" : "s"} restante${route.capacity === 1 ? "" : "s"}.`
-      : "Cada rota aceita até 30 pedidos. O que ficar sem marcar permanece na fila para outro entregador.";
+  function renderDriverRegions() {
+    const select = $("delivery-driver-region");
+    const previous = select.value;
+    select.innerHTML = `<option value="">Sem região definida</option>` +
+      (state.data?.catalog?.regions || []).filter((region) => region.is_active)
+        .map((region) => `<option value="${esc(region.id)}">${esc(region.name)}</option>`).join("");
+    if (previous && [...select.options].some((option) => option.value === previous)) select.value = previous;
   }
-
 
   function resetDriverForm() {
     $("delivery-driver-id").value = "";
@@ -301,8 +141,8 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
     host.innerHTML = drivers.map((driver) => {
       const region = (state.data?.catalog?.regions || []).find((item) => item.id === driver.home_region_id);
       return `<article class="delivery-driver-row ${driver.is_active ? "is-active" : "is-inactive"}">
-        <div><strong>${esc(driver.name)}</strong><small>${esc(driver.phone_e164 || "WhatsApp não informado")}${region ? " · " + esc(region.name) : ""}</small><em>${driver.is_active ? "Ativo" : "Inativo"}</em>${driver.is_active && !driver.phone_e164 ? `<small class="delivery-driver-phone-warning">Informe o WhatsApp para receber entregas e avisar os clientes.</small>` : ""}</div>
-        <div class="delivery-driver-actions"><button type="button" class="button button-outline" data-edit-driver="${esc(driver.id)}">Editar</button><button type="button" class="button button-outline" data-driver-access="${esc(driver.id)}" ${driver.is_active && driver.phone_e164 ? "" : "disabled"}>Gerar link de ativação</button><button type="button" class="button button-outline" data-revoke-driver-access="${esc(driver.id)}">Revogar acesso</button></div>
+        <div><strong>${esc(driver.name)}</strong><small>${esc(driver.phone_e164 || "WhatsApp opcional")}${region ? " · " + esc(region.name) : ""}</small><em>${driver.is_active ? "Ativo" : "Inativo"}</em></div>
+        <div class="delivery-driver-actions"><button type="button" class="button button-outline" data-edit-driver="${esc(driver.id)}">Editar</button></div>
       </article>`;
     }).join("");
   }
@@ -312,7 +152,61 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
     return order ? evidenceFor(order) : null;
   }
 
-  function renderRouteStop(run, stop) {
+  function stopIsTerminal(stop) {
+    return ["delivered", "failed", "cancelled"].includes(String(stop.status || ""));
+  }
+
+  function orderedStopsForRun(run) {
+    return [...(run.stops || [])].sort((a, b) =>
+      Number(stopIsTerminal(a)) - Number(stopIsTerminal(b)) || Number(a.sequence || 0) - Number(b.sequence || 0));
+  }
+
+  function renderDriverTabs() {
+    const host = $("delivery-driver-tabs");
+    const runs = state.data?.runs || [];
+    const routeDriverIds = new Set(runs.map((run) => run.driver_id || run.driver?.id).filter(Boolean));
+    const drivers = (state.data?.catalog?.drivers || []).filter((driver) => driver.is_active || routeDriverIds.has(driver.id));
+    if (!drivers.some((driver) => driver.id === state.activeDriverId)) {
+      state.activeDriverId = (drivers.find((driver) => routeDriverIds.has(driver.id)) || drivers[0])?.id || "";
+    }
+    if (!drivers.length) {
+      host.innerHTML = "<p class='delivery-empty'>Cadastre um entregador para visualizar as entregas.</p>";
+      return;
+    }
+    host.innerHTML = drivers.map((driver) => {
+      const assignedRuns = runs.filter((run) => (run.driver_id || run.driver?.id) === driver.id);
+      const stops = assignedRuns.flatMap((run) => run.stops || []);
+      const pending = stops.filter((stop) => ["planned", "out_for_delivery"].includes(stop.status)).length;
+      const completed = stops.filter((stop) => stop.status === "delivered").length;
+      const failed = stops.filter((stop) => stop.status === "failed").length;
+      const counts = [
+        `${pending} pendente${pending === 1 ? "" : "s"}`,
+        completed ? `${completed} entregue${completed === 1 ? "" : "s"}` : "",
+        failed ? `${failed} não entregue${failed === 1 ? "" : "s"}` : "",
+      ].filter(Boolean).join(" · ");
+      const active = driver.id === state.activeDriverId;
+      return `<button id='delivery-driver-tab-${esc(driver.id)}' class='delivery-driver-tab ${active ? "is-active" : ""}' type='button' role='tab' aria-controls='delivery-routes-list' aria-selected='${active ? "true" : "false"}' tabindex='${active ? "0" : "-1"}' data-driver-tab='${esc(driver.id)}'><strong>${esc(driver.name)}</strong><span>${esc(counts)}</span></button>`;
+    }).join("");
+    const routesPanel = $("delivery-routes-list");
+    if (state.activeDriverId) routesPanel?.setAttribute("aria-labelledby", "delivery-driver-tab-" + state.activeDriverId);
+    if (!host.dataset.keyboardReady) {
+      host.addEventListener("keydown", (event) => {
+        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+        const tabs = [...host.querySelectorAll("[data-driver-tab]")];
+        if (!tabs.length) return;
+        const current = tabs.findIndex((tab) => tab.dataset.driverTab === state.activeDriverId);
+        const next = event.key === "Home" ? 0
+          : event.key === "End" ? tabs.length - 1
+            : (current + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+        event.preventDefault();
+        tabs[next].focus();
+        tabs[next].click();
+      });
+      host.dataset.keyboardReady = "true";
+    }
+  }
+
+  function renderRouteStop(run, stop, displayIndex, pendingStops) {
     const order = stop.order || {};
     const evidence = latestEvidenceForStop(order);
     const addressReference = stop.address_reference || order.address_reference;
@@ -320,183 +214,198 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
       hasValidMapPoint(stop.destination_latitude, stop.destination_longitude);
     const mapStop = hasRoutePoint || !addressReference?.address_has_primary_location
       ? { ...stop, order, address: stop.address || order.delivery_address }
-      : {
-        ...stop,
-        order,
-        address: stop.address || order.delivery_address,
-        destination_latitude: addressReference.primary_latitude,
-        destination_longitude: addressReference.primary_longitude,
-        destination_confidence: "saved",
-      };
+      : { ...stop, order, address: stop.address || order.delivery_address,
+          destination_latitude: addressReference.primary_latitude,
+          destination_longitude: addressReference.primary_longitude, destination_confidence: "saved" };
     const mapHref = buildMapsHref(mapStop) || (evidence ? buildMapsHref({ destination_latitude: evidence.latitude, destination_longitude: evidence.longitude, destination_confidence: "confirmed" }) : "");
     const capabilities = deliveryStopCapabilities(run, stop);
-    const delivered = capabilities.isDelivered;
-    const cancelled = capabilities.isCancelled;
+    const done = stop.status === "delivered";
+    const failed = stop.status === "failed";
+    const cancelled = stop.status === "cancelled";
     const stopId = stop.id || stop.stop_id;
     const phone = order.phone_e164 || stop.phone || "";
     const paid = order.delivery_paid_ahead === true;
+    const pendingIndex = pendingStops.findIndex((item) => (item.id || item.stop_id) === stopId);
+    const orderedActive = [...pendingStops].sort((a, b) => Number(a.sequence || 0) - Number(b.sequence || 0));
+    const currentStopStatus = run.status === "dispatched" ? "out_for_delivery" : "planned";
+    const isNext = run.service_date === state.data?.service_date &&
+      (orderedActive.find((item) => item.status === currentStopStatus)?.id || orderedActive.find((item) => item.status === currentStopStatus)?.stop_id) === stopId;
+    const canMarkDelivered = capabilities.canMarkDelivered ||
+      (run.status === "planned" && stop.status === "planned" && run.service_date === state.data?.service_date);
     const contact = phone ? `<a class="delivery-card-action" href="${esc(phoneHref(phone))}" target="_blank" rel="noopener">WhatsApp</a>` : "";
     const map = mapHref ? `<a class="delivery-card-action" href="${esc(mapHref)}" target="_blank" rel="noopener">Abrir no Maps</a>` : "";
     const viewOrder = order.id ? `<button class="delivery-card-action" type="button" data-view-delivery-order="${esc(order.id)}">Ver pedido</button>` : "";
-    const unpaidAction = capabilities.canMarkDelivered
-      ? ""
-      : paid
-      ? `<span class="delivery-prepaid-badge">PAGO ADIANTADO · NÃO COBRAR</span>`
-      : delivered
-        ? `<span class="delivery-payment-recorded">Pagamento registrado na entrega</span>`
-        : capabilities.isCancelled ? ""
-            : `<div class="delivery-prepaid-control"><select data-prepaid-method="${esc(order.id)}" aria-label="Forma de pagamento antecipado"><option value="" selected disabled>Selecione se já foi pago</option><option value="pix">Pix pago</option><option value="credit_card">Link/cartão pago</option></select><input type="text" data-prepaid-reference maxlength="120" placeholder="Referência opcional"><button type="button" class="button button-outline" data-prepaid-order="${esc(order.id)}">Marcar como pago</button></div>`;
-    const location = evidence && order.delivery_customer_address_id
-      ? `<div class="delivery-location-preview"><strong>Localizador recente ${evidence.direction === "outbound" ? "enviado pela loja" : "enviado pelo cliente"}</strong><span>${esc(formatDate(evidence.captured_at))}</span><button type="button" class="button button-outline" data-confirm-location="${esc(order.id)}" data-evidence-id="${esc(evidence.id)}">Salvar no cadastro do cliente</button></div>`
-      : evidence ? `<div class="delivery-location-preview"><strong>Localizador recente ${evidence.direction === "outbound" ? "enviado pela loja" : "enviado pelo cliente"}</strong><span>${esc(formatDate(evidence.captured_at))} · ao confirmar, ele será salvo no cadastro do cliente.</span><button type="button" class="button button-outline" data-confirm-location="${esc(order.id)}" data-evidence-id="${esc(evidence.id)}">Salvar no cadastro do cliente</button></div>` : "";
     const items = Array.isArray(order.items) && order.items.length
       ? `<details class="delivery-items"><summary>${order.items.length} item${order.items.length === 1 ? "" : "s"} no pedido</summary><ul>${order.items.map((item) => `<li>${esc(item.quantity)} × ${esc(item.name)}</li>`).join("")}</ul></details>` : "";
     const routeLockedDrivers = new Set((state.data?.runs || [])
-      .filter((candidate) => candidate.status === "dispatched" ||
-        (candidate.status === "planned" && (candidate.loading_started_at || candidate.loaded_at)))
-      .map((candidate) => candidate.driver_id || candidate.driver?.id)
-      .filter(Boolean));
+      .filter((candidate) => candidate.status === "dispatched")
+      .map((candidate) => candidate.driver_id || candidate.driver?.id).filter(Boolean));
     const activeDrivers = (state.data?.catalog?.drivers || []).filter((driver) =>
-      driver.is_active && driver.phone_e164 && normalizePhone(driver.phone_e164) !== "invalid" && driver.id !== run.driver_id &&
-      !routeLockedDrivers.has(driver.id));
+      driver.is_active && driver.id !== run.driver_id && !routeLockedDrivers.has(driver.id));
     const stopManagement = capabilities.canCancel
-      ? `<div class="delivery-stop-management">
-          <label class="delivery-stop-field">Passar para outro entregador<select data-route-target-driver="${esc(stopId)}"><option value="">${activeDrivers.length ? "Selecione o entregador" : "Nenhum outro entregador ativo"}</option>${activeDrivers.map((driver) => `<option value="${esc(driver.id)}">${esc(driver.name)}</option>`).join("")}</select></label>
-          <button class="button button-outline" type="button" data-stop-reassign="${esc(stopId)}" ${activeDrivers.length ? "" : "disabled"}>Passar pedido</button>
-          <label class="delivery-stop-field">Novo dia da entrega<input type="date" data-reschedule-date="${esc(stopId)}" min="${esc(state.data?.service_date || "")}" value="${esc(run.service_date || state.data?.service_date || "")}"></label>
-          <button class="button button-outline" type="button" data-stop-reschedule="${esc(stopId)}">Salvar novo dia</button>
-          <button class="button button-danger" type="button" data-stop-cancel="${esc(stopId)}">Cancelar entrega</button>
-        </div>`
-      : capabilities.canMarkDelivered
-        ? `<div class="delivery-stop-management delivery-stop-complete">
-            ${paid ? `<span class="delivery-prepaid-badge">PAGO ADIANTADO · NÃO COBRAR</span>` : `<label class="delivery-stop-field">Recebido por<select data-admin-delivery-payment="${esc(stopId)}"><option value="">Selecione como recebeu</option><option value="cash">Dinheiro</option><option value="pix">Pix</option><option value="credit_card">Cartão/link</option><option value="food_card">Cartão alimentação</option><option value="meal_card">Cartão refeição</option><option value="other">Outro</option></select></label>`}
-            <button class="button button-primary" type="button" data-admin-delivered="${esc(stopId)}">Marcar como entregue</button>
-          </div>`
-        : "";
-    const status = delivered ? `<span class="delivery-delivered-label">ENTREGUE</span>`
-      : cancelled ? `<span class="delivery-cancelled-label">ENTREGA CANCELADA · PEDIDO NA EXPEDIÇÃO</span>`
-        : `<span class="delivery-stop-status">${run.status === "dispatched" ? "Em rota" : "Aguardando saída"}</span>`;
-    return `<article class="delivery-stop-card ${delivered ? "is-delivered" : ""} ${cancelled ? "is-cancelled" : ""}" data-delivery-order-card="${esc(order.id)}" data-delivery-route-date="${esc(run.service_date || "")}">
-      <div class="delivery-stop-main"><span class="delivery-stop-sequence">${esc(stop.sequence)}.</span><div class="delivery-stop-copy"><strong>Pedido ${esc(orderNumber(order))} · ${esc(customerName(order))}</strong><span class="delivery-stop-address">${esc(addressText(order))}</span><span>${phone ? esc(phone) : "Telefone não informado"} · ${esc(money(order.total))}</span><span>Pagamento: ${esc(order.payment_display || stop.payment_method || "A confirmar")}</span>${items}${unpaidAction}${location}${addressReferenceMarkup(addressReference)}${stopManagement}</div></div>
+      ? `<div class="delivery-stop-management"><label class="delivery-stop-field">Passar para outro entregador<select data-route-target-driver="${esc(stopId)}"><option value="">${activeDrivers.length ? "Selecione o entregador" : "Nenhum outro entregador ativo"}</option>${activeDrivers.map((driver) => `<option value="${esc(driver.id)}">${esc(driver.name)}</option>`).join("")}</select></label><button class="button button-outline" type="button" data-stop-reassign="${esc(stopId)}" ${activeDrivers.length ? "" : "disabled"}>Passar pedido</button><label class="delivery-stop-field">Novo dia da entrega<input type="date" data-reschedule-date="${esc(stopId)}" min="${esc(state.data?.service_date || "")}" value="${esc(run.service_date || state.data?.service_date || "")}"></label><button class="button button-outline" type="button" data-stop-reschedule="${esc(stopId)}">Salvar novo dia</button><button class="button button-danger" type="button" data-stop-cancel="${esc(stopId)}">Cancelar entrega</button></div>`
+      : "";
+    const payment = canMarkDelivered
+      ? (paid ? `<span class="delivery-prepaid-badge">PAGO ADIANTADO · NÃO COBRAR</span>` : `<label class="delivery-stop-field">Recebido por<select data-admin-delivery-payment="${esc(stopId)}"><option value="">Selecione como recebeu</option><option value="cash">Dinheiro</option><option value="pix">Pix</option><option value="credit_card">Cartão/link</option><option value="food_card">Cartão alimentação</option><option value="meal_card">Cartão refeição</option><option value="other">Outro</option></select></label>`)
+      : paid ? `<span class="delivery-prepaid-badge">PAGO ADIANTADO · NÃO COBRAR</span>` : "";
+    const complete = canMarkDelivered
+      ? `<div class="delivery-stop-complete">${payment}<button class="button button-primary" type="button" data-admin-delivered="${esc(stopId)}">Marcar como entregue</button><button class="button button-outline delivery-fail-button" type="button" data-admin-failed="${esc(stopId)}">Não entregue</button></div>`
+      : "";
+    const movement = !stopIsTerminal(stop) && pendingStops.length > 1
+      ? `<div class="delivery-sort-actions"><button type="button" data-sort-stop="-1" data-run-id="${esc(run.id)}" data-stop-id="${esc(stopId)}" ${pendingIndex <= 0 ? "disabled" : ""}>↑ Subir</button><button type="button" data-sort-stop="1" data-run-id="${esc(run.id)}" data-stop-id="${esc(stopId)}" ${pendingIndex < 0 || pendingIndex >= pendingStops.length - 1 ? "disabled" : ""}>↓ Descer</button></div>`
+      : "";
+    const eta = isNext
+      ? `<div class="delivery-eta-box"><label>Previsão<select data-eta-stop="${esc(stopId)}"><option value="10">10 min</option><option value="15" selected>15 min</option><option value="20">20 min</option><option value="30">30 min</option><option value="40">40 min</option><option value="60">60 min</option></select></label><button class="button button-outline" type="button" data-notify-next="${esc(stopId)}" data-map-href="${esc(mapHref)}" ${order.phone_e164 && run.driver?.phone_e164 ? "" : "disabled"}>${run.status === "planned" ? "Avisar cliente e iniciar entregas" : "Avisar cliente e abrir rota"}</button></div><button class="button button-outline" type="button" data-open-address="${esc(stopId)}">Confirmar local e foto</button>`
+      : "";
+    const unpaid = !paid && !stopIsTerminal(stop) && !canMarkDelivered
+      ? `<div class="delivery-prepaid-control"><select data-prepaid-method="${esc(order.id)}" aria-label="Forma de pagamento antecipado"><option value="" selected disabled>Selecione se já foi pago</option><option value="pix">Pix pago</option><option value="credit_card">Link/cartão pago</option></select><input type="text" data-prepaid-reference maxlength="120" placeholder="Referência opcional"><button type="button" class="button button-outline" data-prepaid-order="${esc(order.id)}">Marcar como pago</button></div>`
+      : "";
+    const location = evidence
+      ? `<div class="delivery-location-preview"><strong>Localizador recente ${evidence.direction === "outbound" ? "enviado pela loja" : "enviado pelo cliente"}</strong><span>${esc(formatDate(evidence.captured_at))}</span><button type="button" class="button button-outline" data-confirm-location="${esc(order.id)}" data-evidence-id="${esc(evidence.id)}">Salvar no cadastro do cliente</button></div>`
+      : "";
+    const status = done ? `<span class="delivery-delivered-label">ENTREGUE</span>`
+      : failed ? `<span class="delivery-failed-label">NÃO ENTREGUE</span>`
+        : cancelled ? `<span class="delivery-cancelled-label">ENTREGA CANCELADA</span>`
+          : `<span class="delivery-stop-status">${run.status === "dispatched" ? "Em entrega" : run.service_date === state.data?.service_date ? "Pronta para entrega" : "Agendada"}</span>`;
+    const dateLabel = run.service_date ? `<span class="delivery-stop-date-highlight">Entrega: ${esc(new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" }).format(new Date(run.service_date + "T12:00:00Z")))}</span>` : "";
+    return `<article class="delivery-stop-card ${done ? "is-delivered" : ""} ${failed ? "is-failed" : ""} ${cancelled ? "is-cancelled" : ""} ${isNext ? "is-next" : ""}" data-delivery-order-card="${esc(order.id)}" data-delivery-route-date="${esc(run.service_date || "")}">
+      <div class="delivery-stop-main"><span class="delivery-stop-sequence">${displayIndex + 1}.</span><div class="delivery-stop-copy"><strong>Pedido ${esc(orderNumber(order))} · ${esc(customerName(order))}</strong>${dateLabel}<span class="delivery-stop-address">${esc(addressText(order))}</span><span>${phone ? esc(phone) : "Telefone não informado"} · ${esc(money(order.total))}</span><span>Pagamento: ${esc(order.payment_display || stop.payment_method || "A confirmar")}</span>${items}${unpaid}${location}${addressReferenceMarkup(addressReference)}${stopManagement}${movement}${eta}${complete}</div></div>
       <div class="delivery-stop-actions">${contact}${map}${viewOrder}${status}</div>
     </article>`;
   }
 
   function renderRoutes() {
-    const routes = Array.isArray(state.data?.runs) ? state.data.runs : [];
+    const allRoutes = Array.isArray(state.data?.runs) ? state.data.runs : [];
+    const routes = allRoutes.filter((run) => (run.driver_id || run.driver?.id) === state.activeDriverId);
     const host = $("delivery-routes-list");
-    const openRouteIds = new Set([...host.querySelectorAll("details[data-run-stops][open]")]
-      .map((details) => details.dataset.runStops));
-    const focusDriverId = state.focusRouteDriverId;
     if (!routes.length) {
-      host.innerHTML = `<div class="delivery-empty">Nenhuma rota foi criada para hoje.</div>`;
-      state.focusRouteDriverId = "";
-      return;
+      host.innerHTML = `<div class="delivery-empty">Este entregador ainda não tem entregas atribuídas.</div>`;
+        return;
     }
+    routes.sort((a, b) => String(a.service_date || "").localeCompare(String(b.service_date || "")));
     host.innerHTML = routes.map((run) => {
-      const stops = Array.isArray(run.stops) ? [...run.stops].sort((a, b) => Number(a.sequence || 0) - Number(b.sequence || 0)) : [];
-      const loaded = Boolean(run.loaded_at);
-      const activeStops = stops.filter((stop) => stop.status !== "cancelled");
-      const cancelledCount = stops.length - activeStops.length;
-      const cancelledSummary = cancelledCount ? " · " + cancelledCount + " cancelada" + (cancelledCount === 1 ? "" : "s") : "";
-      const canDispatch = run.status === "planned" && loaded && activeStops.some((stop) => stop.status === "planned");
-      const stateLabel = !activeStops.length ? "Sem pedidos ativos"
-        : run.status === "dispatched" ? "Em rota"
-          : run.status === "completed" ? "Concluída"
-            : loaded ? "Carga conferida" : "Aguardando conferência";
-      const total = activeStops.reduce((sum, stop) =>
+      const stops = orderedStopsForRun(run);
+      const pending = stops.filter((stop) => ["planned", "out_for_delivery"].includes(stop.status));
+      const deliveredCount = stops.filter((stop) => stop.status === "delivered").length;
+      const failedCount = stops.filter((stop) => stop.status === "failed").length;
+      const cancelledCount = stops.filter((stop) => stop.status === "cancelled").length;
+      const stateLabel = run.status === "dispatched" ? "Em entrega"
+        : run.status === "completed" ? "Concluída"
+          : run.status === "cancelled" ? "Cancelada"
+            : run.service_date === state.data?.service_date ? "Pronta para entrega" : "Agendada";
+      const total = stops.filter((stop) => stop.status !== "cancelled").reduce((sum, stop) =>
         sum + Number(stop.order?.total ?? (Number(stop.total_cents || 0) / 100)), 0);
-      const loadControl = run.status === "planned" && !loaded && activeStops.length
-        ? `<button class="button button-outline" type="button" data-run-loading="${esc(run.id)}">1. Confirmar carga</button>`
-        : "";
-      const dispatchControl = canDispatch
-        ? `<button class="button button-primary" type="button" data-run-dispatch="${esc(run.id)}">2. Liberar saída</button>`
-        : "";
       const driverId = run.driver_id || run.driver?.id || "";
-      const detailsOpen = openRouteIds.has(run.id) || (focusDriverId && focusDriverId === driverId);
+      const detailsOpen = true;
+      const summary = pending.length + " pendente" + (pending.length === 1 ? "" : "s") +
+        (deliveredCount ? " · " + deliveredCount + " entregue" + (deliveredCount === 1 ? "" : "s") : "") +
+        (failedCount ? " · " + failedCount + " não entregue" + (failedCount === 1 ? "" : "s") : "") +
+        (cancelledCount ? " · " + cancelledCount + " cancelada" + (cancelledCount === 1 ? "" : "s") : "");
+      const dateLabel = run.service_date ? new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "2-digit", month: "long", timeZone: "UTC" }).format(new Date(run.service_date + "T12:00:00Z")) : "Data não informada";
       return `<section class="delivery-route-card">
         <header class="delivery-route-heading">
-          <div><p class="eyebrow">Rota de ${esc(run.service_date || "hoje")}</p><h4>${esc(run.driver?.name || "Entregador não atribuído")}</h4><span>${esc(run.region?.name || "Região não definida")}${run.vehicle?.label ? " · " + esc(run.vehicle.label) : ""}</span></div>
-          <strong class="delivery-route-state ${run.status === "dispatched" ? "is-dispatched" : ""} ${loaded ? "is-loaded" : ""}">${stateLabel}</strong>
+          <div><p class="eyebrow">${esc(dateLabel)}</p><h4>${esc(run.driver?.name || "Entregador não atribuído")}</h4><span>${esc(summary)} · ${esc(money(total))}</span></div>
+          <strong class="delivery-route-state ${run.status === "dispatched" ? "is-dispatched" : ""}">${stateLabel}</strong>
         </header>
         <details class="delivery-route-stops-details" data-run-stops="${esc(run.id)}"${detailsOpen ? " open" : ""}>
-          <summary>Conferir ${activeStops.length} pedido${activeStops.length === 1 ? "" : "s"} · ${esc(money(total))}${cancelledSummary}</summary>
-          <div class="delivery-route-stops">${stops.map((stop) => renderRouteStop(run, stop)).join("")}</div>
+          <summary>${pending.length} entrega${pending.length === 1 ? "" : "s"} · ${esc(money(total))}</summary>
+          <div class="delivery-route-stops">${stops.map((stop, index) => renderRouteStop(run, stop, index, pending)).join("")}</div>
         </details>
-        <footer class="delivery-route-footer">
-          <span>${activeStops.length} entrega${activeStops.length === 1 ? "" : "s"} · ${esc(money(total))}${cancelledSummary}${!activeStops.length ? " · sem carga para conferir" : loaded ? " · carga conferida" : " · carga pendente"}</span>
-          ${loadControl}${dispatchControl}
-        </footer>
       </section>`;
     }).join("");
-    state.focusRouteDriverId = "";
   }
 
 
   function render() {
-    renderDriverOptions();
-    renderReadyOrders();
+    renderDriverRegions();
     renderDrivers();
     const teamPanel = document.querySelector(".delivery-team-management");
     if (teamPanel && !teamPanel.dataset.initialized) {
       const drivers = state.data?.catalog?.drivers || [];
-      teamPanel.open = !drivers.some((driver) => driver.is_active && driver.phone_e164);
+      teamPanel.open = !drivers.some((driver) => driver.is_active);
       teamPanel.dataset.initialized = "true";
     }
+    renderDriverTabs();
     renderRoutes();
-    const assigned = orderIdsInRuns();
-    const queue = readyDeliveryQueue();
-    const available = queue.today.filter((order) => !assigned.has(order.id)).length;
-    const availableText = available
-      ? `${available} pedido${available === 1 ? "" : "s"} de hoje disponíve${available === 1 ? "l" : "is"}`
-      : "Nenhum pedido disponível para hoje";
-    const outsideToday = [];
-    if (queue.overdue.length) outsideToday.push(`${queue.overdue.length} atrasado${queue.overdue.length === 1 ? "" : "s"}`);
-    if (queue.undated.length) outsideToday.push(`${queue.undated.length} sem data`);
-    if (queue.future.length) outsideToday.push(`${queue.future.length} agendado${queue.future.length === 1 ? "" : "s"} para depois`);
-    const outsideText = outsideToday.length ? ` Fora da rota de hoje: ${outsideToday.join(", ")}.` : "";
-    const runs = state.data?.runs || [];
-    $("delivery-admin-status").textContent = `${availableText} · ${runs.length} rota${runs.length === 1 ? "" : "s"} hoje.${outsideText}`;
+    const selectedRuns = (state.data?.runs || []).filter((run) => (run.driver_id || run.driver?.id) === state.activeDriverId);
+    const selectedStops = selectedRuns.flatMap((run) => run.stops || []);
+    const pending = selectedStops.filter((stop) => ["planned", "out_for_delivery"].includes(stop.status)).length;
+    const completed = selectedStops.filter((stop) => stop.status === "delivered").length;
+    $("delivery-admin-status").textContent = pending
+      ? `${pending} entrega${pending === 1 ? "" : "s"} pendente${pending === 1 ? "" : "s"} para ${driversName(state.activeDriverId)}${completed ? ` · ${completed} concluída${completed === 1 ? "" : "s"} hoje` : ""}.`
+      : completed ? `${completed} entrega${completed === 1 ? "" : "s"} concluída${completed === 1 ? "" : "s"} para ${driversName(state.activeDriverId)}.`
+        : "Nenhuma entrega atribuída para este entregador.";
+  }
+
+  function driversName(id) {
+    return (state.data?.catalog?.drivers || []).find((driver) => driver.id === id)?.name || "este entregador";
   }
 
   async function load() {
-    if (state.loading || !$("delivery-admin-status")) return;
+    if (!$("delivery-admin-status")) return null;
+    if (state.loading) return state.loadPromise;
     state.loading = true;
     $("delivery-admin-status").textContent = "Carregando pedidos, rotas e entregadores…";
-    try {
-      state.data = await api("admin_dashboard");
-      const assigned = orderIdsInRuns();
-      state.selected = new Set([...state.selected].filter((id) =>
-        !assigned.has(id) && (state.data.orders || []).some((order) => order.id === id && order.status === "ready")));
-      render();
-      showMessage("");
-      if (state.focusOrderId) {
-        const focused = document.querySelector(`[data-delivery-order-card="${CSS.escape(state.focusOrderId)}"]`);
-        focused?.scrollIntoView({ behavior: "smooth", block: "center" });
-        focused?.classList.add("is-focus");
-        window.setTimeout(() => focused?.classList.remove("is-focus"), 1800);
-        state.focusOrderId = "";
+    state.loadPromise = (async () => {
+      try {
+        state.data = await api("admin_dashboard");
+        render();
+        showMessage("");
+        if (state.focusOrderId) {
+          const focused = document.querySelector(`[data-delivery-order-card="${CSS.escape(state.focusOrderId)}"]`);
+          focused?.scrollIntoView({ behavior: "smooth", block: "center" });
+          focused?.classList.add("is-focus");
+          window.setTimeout(() => focused?.classList.remove("is-focus"), 1800);
+          state.focusOrderId = "";
+        }
+        return state.data;
+      } catch (error) {
+        $("delivery-admin-status").textContent = "Não foi possível carregar entregas: " + friendlyError(error.message);
+        state.data = null;
+        $("delivery-driver-list").innerHTML = "";
+        $("delivery-driver-tabs").innerHTML = "";
+        $("delivery-routes-list").innerHTML = "";
+        throw error;
+      } finally {
+        state.loading = false;
+        state.loadPromise = null;
       }
-    } catch (error) {
-      $("delivery-admin-status").textContent = "Não foi possível carregar entregas: " + friendlyError(error.message);
-      state.data = null;
-      $("delivery-ready-orders").innerHTML = "";
-      $("delivery-driver-list").innerHTML = "";
-      $("delivery-routes-list").innerHTML = "";
-    } finally {
-      state.loading = false;
-      updateSelectedCount();
+    })();
+    return state.loadPromise;
+  }
+
+  async function getContext() {
+    await load();
+    const assignments = new Map();
+    for (const run of state.data?.runs || []) {
+      const driverId = run.driver_id || run.driver?.id || "";
+      const driver = (state.data?.catalog?.drivers || []).find((item) => item.id === driverId) || run.driver || {};
+      for (const stop of run.stops || []) {
+        if (["planned", "out_for_delivery"].includes(String(stop.status || ""))) {
+          assignments.set(stop.order_id, {
+            order_id: stop.order_id,
+            driver_id: driverId,
+            driver_name: driver.name || "Entregador",
+            service_date: run.service_date || "",
+            locked: stop.status === "out_for_delivery" || run.status === "dispatched",
+          });
+        }
+      }
     }
+    return { drivers: state.data?.catalog?.drivers || [], assignments: [...assignments.values()] };
+  }
+
+  async function assignOrder(orderId, driverId) {
+    const result = await runAction("assign_order", { order_id: orderId, driver_id: driverId, operator: "Admin" }, "Entrega atribuída ao entregador.");
+    return result;
   }
 
   function friendlyError(code) {
     const map = {
       admin_code_invalid: "a sessão do admin expirou; acesse novamente.",
       driver_name_required: "informe o nome do entregador.",
-      driver_phone_required: "informe o WhatsApp do entregador ativo para enviar a previsão ao cliente.",
       driver_phone_invalid: "confira o WhatsApp do entregador com DDD.",
-      driver_not_active: "ative o entregador antes de gerar acesso.",
-      driver_and_orders_required: "selecione um entregador e pelo menos um pedido.",
+      driver_not_active: "ative o entregador para atribuir entregas.",
       route_too_many_orders: "uma rota pode ter no máximo 30 pedidos. Monte outra rota para o restante.",
       invalid_order_id: "um pedido selecionado não é válido. Atualize a lista e tente novamente.",
       duplicate_order_in_route: "há pedido duplicado na rota. Atualize a lista e selecione novamente.",
@@ -508,19 +417,23 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
       invalid_stop: "a entrega selecionada não é válida. Atualize a rota.",
       invalid_stop_or_driver: "selecione uma entrega e um entregador válidos.",
       route_driver_missing: "a rota não tem um entregador definido. Atualize os dados da rota.",
-      route_locked: "a rota já foi carregada ou saiu; retire o pedido ou ajuste a data antes da conferência da carga.",
+      route_locked: "esta rota já está em andamento e não pode ser reorganizada dessa forma.",
       invalid_delivery_date: "escolha uma data válida, a partir de hoje e diferente de domingo.",
       delivery_date_in_past: "a nova data não pode ser anterior a hoje.",
       delivery_not_available_sunday: "não é possível agendar entrega aos domingos.",
       driver_same_as_current: "selecione um entregador diferente do atual.",
       driver_already_dispatched: "o outro entregador já saiu em uma rota hoje.",
-      target_driver_route_locked: "o outro entregador já conferiu ou carregou a rota dele.",
+      target_driver_route_locked: "a rota do outro entregador já está em andamento.",
       payment_method_required: "selecione a forma de pagamento recebida antes de marcar como entregue.",
       service_date_unavailable: "não foi possível confirmar a data local da rota. Atualize a tela e tente novamente.",
       vehicle_already_dispatched: "este entregador já saiu em uma rota hoje.",
       order_already_dispatched: "um pedido já está em uma rota que saiu.",
-      delivery_loading_confirmation_required: "confirme o carregamento de todos os pedidos antes de liberar a saída.",
-      run_not_ready_for_dispatch: "a rota ainda não está pronta para sair.",
+      order_not_ready_for_dispatch: "o pedido ainda precisa terminar a separação antes de iniciar a entrega.",
+      separation_not_completed: "conclua a separação do pedido antes de iniciar a entrega.",
+      separation_stock_not_applied: "o estoque da separação ainda não foi atualizado.",
+      separation_has_pending_items: "a separação ainda tem produtos pendentes.",
+      delivery_not_due: "esta entrega está programada para outro dia.",
+      run_not_ready_for_dispatch: "atribua um entregador antes de iniciar a entrega.",
       stop_is_not_next: "só é possível registrar primeiro a entrega que está no topo da rota.",
       next_stop_template_disabled: "o aviso de próxima entrega está pausado para esse número.",
       next_stop_template_not_approved: "o aviso ainda não foi aprovado pela Meta.",
@@ -549,7 +462,6 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
       return false;
     } finally {
       state.busy = false;
-      updateSelectedCount();
     }
   }
 
@@ -578,7 +490,6 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
     event.preventDefault();
     const phone = normalizePhone($("delivery-driver-phone").value);
     if (phone === "invalid") return showMessage("Confira o WhatsApp: informe DDD e número.", true);
-    if ($("delivery-driver-active").checked && !phone) return showMessage("Informe o WhatsApp do entregador ativo para avisar os clientes sobre a próxima entrega.", true);
     const payload = {
       id: $("delivery-driver-id").value || null,
       name: $("delivery-driver-name").value.trim(),
@@ -589,51 +500,6 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
     const saved = await runAction("driver_save", payload, payload.id ? "Cadastro do entregador atualizado." : "Entregador cadastrado.");
     if (saved) resetDriverForm();
   }
-
-  async function createRoute() {
-    const driverId = $("delivery-driver-select").value;
-    const driver = (state.data?.catalog?.drivers || []).find((item) => item.id === driverId);
-    if (!driverId || !driver || !state.selected.size) return;
-    const route = routeStateForDriver(driverId);
-    if (route.locked) {
-      showMessage("Este entregador já está com a carga conferida ou em rota. Escolha outro entregador.", true);
-      updateSelectedCount();
-      return;
-    }
-    if (state.selected.size > route.capacity) {
-      const remaining = Math.max(0, route.capacity - state.selected.size);
-      const itemLabel = remaining === 1 ? "pedido" : "pedidos";
-      showMessage("Você já marcou " + state.selected.size + ". Ainda pode marcar " + remaining + " " + itemLabel + " nesta rota.", true);
-      updateSelectedCount();
-      return;
-    }
-    const available = new Map(readyDeliveryQueue().today.filter((order) => !orderIdsInRuns().has(order.id)).map((order) => [order.id, order]));
-    const selectedTotal = [...state.selected].reduce((sum, id) => sum + Number(available.get(id)?.total || 0), 0);
-    const action = route.existing ? "adicionar à rota planejada" : "criar uma rota";
-    const detail = route.existing
-      ? " O grupo será somado aos " + route.currentCount + " pedidos que já estão na rota."
-      : "";
-    const countLabel = state.selected.size === 1 ? " pedido" : " pedidos";
-    const confirmation = "Confirma " + action + " para " + driver.name + " com " + state.selected.size + countLabel +
-      " (" + money(selectedTotal) + ")?"+ detail + " A sequência poderá ser revisada no portal antes da conferência da carga.";
-    if (!window.confirm(confirmation)) return;
-    const payload = {
-      driver_id: driverId,
-      region_id: $("delivery-region-select").value || null,
-      order_ids: [...state.selected],
-      operator: "Admin",
-    };
-    state.focusRouteDriverId = driverId;
-    const success = route.existing
-      ? "Pedidos adicionados à rota de " + driver.name + ". Confira a carga e libere a saída."
-      : "Rota criada para " + driver.name + ". Confira a carga e libere a saída.";
-    const succeeded = await runAction("plan_run", payload, success);
-    if (!succeeded) state.focusRouteDriverId = "";
-    state.selected = routeSelectionAfterAction(state.selected, succeeded);
-    if (succeeded) renderReadyOrders();
-    updateSelectedCount();
-  }
-
 
   async function markPrepaid(orderId, card) {
     const select = card?.querySelector(`[data-prepaid-method="${CSS.escape(orderId)}"]`);
@@ -649,71 +515,198 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
     await runAction("mark_prepaid", { order_id: orderId, method, reference, operator: "Admin" }, "Pagamento marcado como antecipado.");
   }
 
-  async function issueDriverAccess(driverId) {
-    if (!window.confirm("Criar um novo acesso para este entregador? O link ativa o portal neste aparelho por 30 dias e substitui qualquer link anterior. Use no primeiro acesso, ao trocar de aparelho ou quando o acesso expirar. O link não será enviado automaticamente.")) return;
-    try {
-      const result = await api("issue_driver_access", "POST", { driver_id: driverId });
-      const link = new URL("/site/entregador/", window.location.origin);
-      link.hash = "token=" + result.token;
-      state.accessLink = link.toString();
-      state.lastAccessDriverId = driverId;
-      showMessage(`Acesso criado para ${result.driver_name}. Copie o link e envie ao entregador para ativar este aparelho.`);
-      const output = $("delivery-driver-access-link");
-      output.value = state.accessLink;
-      output.hidden = false;
-      $("delivery-driver-copy-access").hidden = false;
-      $("delivery-driver-copy-access").focus();
-    } catch (error) {
-      showMessage(friendlyError(error.message), true);
+  async function reorderStops(runId, stopId, direction) {
+    const run = (state.data?.runs || []).find((item) => item.id === runId);
+    if (!run) return;
+    const pending = (run.stops || []).filter((stop) => ["planned", "out_for_delivery"].includes(stop.status))
+      .sort((a, b) => Number(a.sequence || 0) - Number(b.sequence || 0));
+    const index = pending.findIndex((stop) => String(stop.id || stop.stop_id) === String(stopId));
+    const target = index + Number(direction);
+    if (index < 0 || target < 0 || target >= pending.length) return;
+    const reordered = [...pending];
+    const [moved] = reordered.splice(index, 1);
+    reordered.splice(target, 0, moved);
+    await runAction("admin_reorder_stops", { run_id: runId, stop_ids: reordered.map((stop) => stop.id || stop.stop_id), operator: "Admin" }, "Sequência atualizada.");
+  }
+
+  function findStop(stopId) {
+    return (state.data?.runs || []).flatMap((run) => run.stops || [])
+      .find((stop) => String(stop.id || stop.stop_id) === String(stopId));
+  }
+
+  function openAddressDialog(stopId) {
+    const stop = findStop(stopId);
+    if (!stop) return;
+    state.addressStop = stop;
+    state.locationCapture = null;
+    const dialog = $("delivery-address-dialog");
+    dialog.dataset.stopId = stop.id || stop.stop_id;
+    $("delivery-address-title").textContent = "Pedido " + orderNumber(stop.order || {}, stop);
+    $("delivery-location-mode").value = "primary";
+    $("delivery-location-label").value = "";
+    $("delivery-location-label-field").hidden = true;
+    $("delivery-location-capture-status").textContent = "Capture o GPS enquanto estiver em frente ao endereço.";
+    $("delivery-location-error").textContent = "";
+    $("delivery-location-save").disabled = true;
+    $("delivery-address-photo-input").value = "";
+    $("delivery-address-photo-input").disabled = !(stop.customer_address_id || stop.order?.delivery_customer_address_id);
+    $("delivery-address-photo-status").textContent = $("delivery-address-photo-input").disabled
+      ? "Salve primeiro a localização para vincular a foto ao endereço."
+      : "Foto opcional. Enquadre somente a fachada.";
+    $("delivery-address-photo-save").hidden = true;
+    $("delivery-address-photo-save").disabled = true;
+    $("delivery-address-photo-preview").hidden = true;
+    $("delivery-address-photo-preview").removeAttribute("src");
+    const reference = stop.address_reference || stop.order?.address_reference || {};
+    const hasCoordinates = stop.destination_latitude != null && stop.destination_longitude != null;
+    $("delivery-address-current").textContent = hasCoordinates
+      ? "Ponto atual do pedido" + (stop.destination_label ? " · " + stop.destination_label : "")
+      : "Ainda não há localização salva para este endereço.";
+    const alternate = $("delivery-location-mode").querySelector("option[value='alternate']");
+    alternate.disabled = reference.address_has_primary_location !== true;
+    const saved = Array.isArray(reference.saved_locations) ? reference.saved_locations : [];
+    $("delivery-saved-location-section").hidden = saved.length === 0;
+    $("delivery-saved-location-select").innerHTML = "<option value=''>Selecione um ponto salvo</option>" + saved.map((item) =>
+      "<option value='" + esc(item.id) + "'>" + esc(item.label || "Ponto alternativo") + (item.captured_at ? " · " + esc(formatDate(item.captured_at)) : "") + "</option>").join("");
+    $("delivery-saved-location-use").disabled = true;
+    dialog.showModal();
+    syncLocationMode();
+  }
+
+  function syncLocationMode() {
+    const alternate = $("delivery-location-mode").value === "alternate";
+    $("delivery-location-label-field").hidden = !alternate;
+    $("delivery-location-save").textContent = alternate ? "Salvar ponto alternativo" : "Salvar localização principal";
+    if (alternate && $("delivery-location-mode").querySelector("option[value='alternate']").disabled) {
+      $("delivery-location-mode").value = "primary";
+      $("delivery-location-label-field").hidden = true;
     }
   }
 
-  document.addEventListener("change", (event) => {
-    const checkbox = event.target.closest("[data-select-delivery-order]");
-    if (checkbox) {
-      const id = checkbox.dataset.selectDeliveryOrder;
-      if (checkbox.checked) {
-        const driverId = $("delivery-driver-select").value;
-        const route = driverId ? routeStateForDriver(driverId) : { capacity: 30 };
-        try { state.selected = addRouteSelection(state.selected, id, route.capacity); }
-        catch (error) {
-          checkbox.checked = false;
-          const remaining = Math.max(0, route.capacity - state.selected.size);
-          const itemLabel = remaining === 1 ? "pedido" : "pedidos";
-          showMessage(error.message === "route_too_many_orders" ? "Você já marcou o limite desta rota. Não há mais " + itemLabel + " disponíveis para este entregador." : friendlyError(error.message), true);
-        }
-      } else state.selected.delete(id);
-      updateSelectedCount();
+  function captureAddressLocation() {
+    if (!state.addressStop || state.busy) return;
+    if (!navigator.geolocation?.getCurrentPosition) {
+      $("delivery-location-capture-status").textContent = "O navegador não disponibilizou o GPS.";
+      return;
     }
-    if (event.target?.id === "delivery-driver-select") updateSelectedCount();
+    state.locationCapture = null;
+    $("delivery-location-capture").disabled = true;
+    $("delivery-location-capture").textContent = "Capturando GPS…";
+    $("delivery-location-save").disabled = true;
+    navigator.geolocation.getCurrentPosition((position) => {
+      state.locationCapture = { latitude: position.coords.latitude, longitude: position.coords.longitude, accuracy_m: position.coords.accuracy };
+      $("delivery-location-capture-status").textContent = "GPS capturado. Precisão aproximada: " + Math.round(position.coords.accuracy) + " m.";
+      $("delivery-location-save").disabled = false;
+      $("delivery-location-capture").disabled = false;
+      $("delivery-location-capture").textContent = "Capturar GPS novamente";
+    }, (error) => {
+      state.locationCapture = null;
+      $("delivery-location-capture-status").textContent = error.code === 1 ? "Permita o acesso à localização do aparelho." : "Não foi possível obter o GPS. Tente novamente em local aberto.";
+      $("delivery-location-capture").disabled = false;
+      $("delivery-location-capture").textContent = "Tentar capturar GPS";
+    }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+  }
+
+  async function saveAddressLocation() {
+    const stop = state.addressStop;
+    if (!stop || !state.locationCapture || state.busy) return;
+    const mode = $("delivery-location-mode").value;
+    const label = $("delivery-location-label").value.trim();
+    if (mode === "alternate" && !label) {
+      $("delivery-location-error").textContent = "Dê um nome ao ponto alternativo.";
+      return;
+    }
+    if (state.locationCapture.accuracy_m > 100 && !window.confirm("A precisão aproximada do GPS é " + Math.round(state.locationCapture.accuracy_m) + " m. Salvar mesmo assim?")) return;
+    state.busy = true;
+    $("delivery-location-save").disabled = true;
+    $("delivery-location-error").textContent = "Salvando localização…";
+    try {
+      await api("admin_save_location", "POST", { stop_id: stop.id || stop.stop_id, ...state.locationCapture, mode, label });
+      await load();
+      state.addressStop = findStop(stop.id || stop.stop_id) || stop;
+      state.locationCapture = null;
+      $("delivery-location-error").textContent = "Localização salva.";
+      $("delivery-location-capture-status").textContent = "Localização salva. O Google Maps usará este ponto.";
+    } catch (error) {
+      $("delivery-location-error").textContent = friendlyError(error.message);
+      $("delivery-location-save").disabled = false;
+    } finally { state.busy = false; }
+  }
+
+  async function useSavedLocation() {
+    const stop = state.addressStop;
+    const evidenceId = $("delivery-saved-location-select").value;
+    if (!stop || !evidenceId || state.busy) return;
+    state.busy = true;
+    try {
+      await api("admin_select_saved_location", "POST", { stop_id: stop.id || stop.stop_id, location_evidence_id: evidenceId });
+      await load();
+      state.addressStop = findStop(stop.id || stop.stop_id) || stop;
+      $("delivery-location-error").textContent = "Ponto aplicado a este pedido.";
+    } catch (error) {
+      $("delivery-location-error").textContent = friendlyError(error.message);
+    } finally { state.busy = false; }
+  }
+
+  async function saveAddressPhoto() {
+    const stop = state.addressStop;
+    const file = $("delivery-address-photo-input").files?.[0];
+    if (!stop || !file || state.busy) return;
+    state.busy = true;
+    $("delivery-address-photo-save").disabled = true;
+    $("delivery-address-photo-status").textContent = "Enviando foto…";
+    try {
+      await uploadAddressPhoto(stop.id || stop.stop_id, file);
+      await load();
+      $("delivery-address-photo-status").textContent = "Foto da fachada salva.";
+      $("delivery-address-photo-input").value = "";
+      $("delivery-address-photo-save").hidden = true;
+      $("delivery-address-photo-preview").hidden = true;
+      if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
+      state.photoPreviewUrl = "";
+    } catch (error) {
+      $("delivery-address-photo-status").textContent = friendlyError(error.message);
+      $("delivery-address-photo-save").disabled = false;
+    } finally { state.busy = false; }
+  }
+
+  document.addEventListener("change", (event) => {
+    if (event.target?.id === "delivery-location-mode") syncLocationMode();
+    if (event.target?.id === "delivery-saved-location-select") $("delivery-saved-location-use").disabled = !event.target.value;
+    if (event.target?.id === "delivery-address-photo-input") {
+      const file = event.target.files?.[0];
+      if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
+      state.photoPreviewUrl = file ? URL.createObjectURL(file) : "";
+      $("delivery-address-photo-preview").src = state.photoPreviewUrl;
+      $("delivery-address-photo-preview").hidden = !file;
+      $("delivery-address-photo-save").hidden = !file;
+      $("delivery-address-photo-save").disabled = !file;
+      $("delivery-address-photo-status").textContent = file ? "Confira a foto antes de salvar." : "";
+    }
   });
 
   document.addEventListener("click", async (event) => {
     const button = event.target.closest("button");
     if (!button) return;
+    if (button.dataset.driverTab) {
+      state.activeDriverId = button.dataset.driverTab;
+      renderDriverTabs();
+      renderRoutes();
+      const counts = (state.data?.runs || []).filter((run) => (run.driver_id || run.driver?.id) === state.activeDriverId)
+        .flatMap((run) => run.stops || []).filter((stop) => ["planned", "out_for_delivery"].includes(stop.status)).length;
+      $("delivery-admin-status").textContent = counts
+        ? counts + " entrega" + (counts === 1 ? "" : "s") + " pendente" + (counts === 1 ? "" : "s") + " para " + driversName(state.activeDriverId) + "."
+        : "Nenhuma entrega pendente para " + driversName(state.activeDriverId) + ".";
+    }
     if (button.dataset.editDriver) editDriver(button.dataset.editDriver);
-    if (button.dataset.driverAccess) {
-      const details = button.closest(".delivery-team-management");
-      if (details) details.open = true;
-      await issueDriverAccess(button.dataset.driverAccess);
-    }
-    if (button.dataset.revokeDriverAccess) {
-      if (window.confirm("Revogar o acesso atual deste entregador? O link deixará de funcionar imediatamente.")) {
-        const driverId = button.dataset.revokeDriverAccess;
-        const revoked = await runAction("revoke_driver_access", { driver_id: driverId }, "Acesso revogado.");
-        if (revoked) {
-          if (state.lastAccessDriverId === driverId) {
-            state.accessLink = "";
-            state.lastAccessDriverId = "";
-            $("delivery-driver-access-link").value = "";
-            $("delivery-driver-access-link").hidden = true;
-            $("delivery-driver-copy-access").hidden = true;
-          }
-          renderRoutes();
-        }
-      }
-    }
     if (button.dataset.viewDeliveryOrder) window.DonaOrdersAdmin?.openOrder(button.dataset.viewDeliveryOrder);
+    if (button.dataset.sortStop) await reorderStops(button.dataset.runId, button.dataset.stopId, button.dataset.sortStop);
+    if (button.dataset.openAddress) openAddressDialog(button.dataset.openAddress);
+    if (button.dataset.notifyNext) {
+      if (button.dataset.mapHref) window.open(button.dataset.mapHref, "_blank", "noopener,noreferrer");
+      const eta = button.closest(".delivery-eta-box")?.querySelector("[data-eta-stop]")?.value || "15";
+      await runAction("admin_next_notice", { stop_id: button.dataset.notifyNext, eta_minutes: eta }, "Aviso enviado ao cliente.");
+    }
     if (button.dataset.stopCancel) {
       if (window.confirm("Cancelar somente esta entrega e retirá-la da rota? O pedido continuará ativo na expedição para ser reprogramado ou colocado em outra rota.")) {
         await runAction("admin_cancel_stop", { stop_id: button.dataset.stopCancel, operator: "Admin" }, "Entrega retirada da rota. O pedido continua ativo em expedição.");
@@ -762,38 +755,27 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
         await runAction("admin_complete_stop", { stop_id: button.dataset.adminDelivered, method: selector?.value || null, operator: "Admin" }, "Pedido marcado como entregue.");
       }
     }
+    if (button.dataset.adminFailed) {
+      await runAction("admin_fail_stop", { stop_id: button.dataset.adminFailed, operator: "Admin" }, "Entrega registrada como não entregue.");
+    }
     if (button.dataset.prepaidOrder) await markPrepaid(button.dataset.prepaidOrder, button.closest("[data-delivery-order-card]"));
     if (button.dataset.confirmLocation) {
       if (window.confirm("Salvar este localizador como posição confirmada do endereço do cliente? Isso atualizará o cadastro do cliente e o pedido.")) {
         await runAction("confirm_location", {
           order_id: button.dataset.confirmLocation,
           location_evidence_id: button.dataset.evidenceId,
-          region_id: $("delivery-region-select").value || null,
         }, "Localizador confirmado e salvo no endereço do cliente.");
-      }
-    }
-    if (button.dataset.runLoading) {
-      const run = (state.data?.runs || []).find((item) => item.id === button.dataset.runLoading);
-      const count = (run?.stops || []).filter((stop) => stop.status !== "cancelled").length;
-      if (window.confirm("Confirma que conferiu e carregou os " + count + " pedidos desta rota no veículo? Só depois dessa etapa a saída será liberada.")) {
-        await runAction("confirm_loading", { run_id: button.dataset.runLoading }, "Carga conferida. A saída já pode ser liberada.");
-      }
-    }
-    if (button.dataset.runDispatch) {
-      if (window.confirm("Liberar a saída desta rota? Os pedidos passarão para “em entrega” e o portal do entregador mostrará a próxima parada.")) {
-        await runAction("dispatch_run", { run_id: button.dataset.runDispatch, operator: "Admin" }, "Rota liberada para entrega.");
       }
     }
   });
 
   $("delivery-driver-form").addEventListener("submit", submitDriver);
   $("delivery-driver-cancel").addEventListener("click", resetDriverForm);
-  $("delivery-plan-run").addEventListener("click", createRoute);
+  $("delivery-location-capture").addEventListener("click", captureAddressLocation);
+  $("delivery-location-save").addEventListener("click", saveAddressLocation);
+  $("delivery-saved-location-use").addEventListener("click", useSavedLocation);
+  $("delivery-address-photo-save").addEventListener("click", saveAddressPhoto);
   $("delivery-admin-refresh").addEventListener("click", load);
-  $("delivery-driver-copy-access").addEventListener("click", async () => {
-    try { await navigator.clipboard.writeText(state.accessLink); showMessage("Link copiado. Envie ao entregador para ativar o aparelho."); }
-    catch (_) { $("delivery-driver-access-link").select(); showMessage("Selecione e copie o link para ativar o aparelho."); }
-  });
 
   function openForOrder(orderId) {
     state.focusOrderId = String(orderId || "");
@@ -805,9 +787,11 @@ import { addRouteSelection, buildMapsHref, deliveryStopCapabilities, isValidDeli
     }, 700);
   }
 
-  window.DonaDeliveryAdmin = { load, openForOrder };
+  window.DonaDeliveryAdmin = { load, openForOrder, getContext, assignOrder };
   window.setInterval(() => {
     const panel = document.querySelector('[data-panel="delivery"]');
     if (panel && !panel.hidden && !state.loading && !state.busy) load();
   }, 60000);
+  if (!document.querySelector('[data-panel="delivery"]')?.hidden) load();
 })();
+
