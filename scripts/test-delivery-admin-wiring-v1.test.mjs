@@ -16,9 +16,11 @@ test("admin delivery script is loaded as a module", () => {
 test("changed admin scripts use fresh cache versions", () => {
   const html = read("site/admin/index.html");
   assert.ok(/src="admin\.js\?v=25"/.test(html), "admin navigation code must bypass the previously cached script");
-  assert.ok(/src="orders-admin\.js\?v=9"/.test(html), "delivery action in the expedition list must bypass the old script");
+  assert.ok(/src="orders-admin\.js\?v=10"/.test(html), "delivery order detail access must bypass the cached order script");
+  assert.ok(/href="orders-admin\.css\?v=10"/.test(html), "order details styling must bypass the cached stylesheet");
   assert.ok(/src="separation-message-admin\.js\?v=4"/.test(html), "new template controls must bypass the old script");
-  assert.ok(/src="delivery-admin\.js\?v=4"/.test(html), "delivery admin imports must bypass cached modules");
+  assert.ok(/src="delivery-admin\.js\?v=5"/.test(html), "delivery admin imports must bypass cached modules");
+  assert.ok(/href="delivery-admin\.css\?v=4"/.test(html), "delivery controls must bypass cached styles");
   assert.ok(/src="driver\.js\?v=3"/.test(read("site/entregador/index.html")), "driver portal imports must bypass cached modules");
 });
 
@@ -35,12 +37,36 @@ test("admin delivery queue uses the service date and only renders today's orders
   const html = read("site/admin/index.html");
   const admin = read("site/admin/delivery-admin.js");
   const domain = read("site/admin/delivery-domain.mjs");
-  assert.ok(/delivery-admin\.js\?v=4/.test(html), "the delivery module must use a fresh cache version");
+  assert.ok(/delivery-admin\.js\?v=5/.test(html), "the delivery module must use a fresh cache version");
   assert.ok(/partitionDeliveryOrders\(/.test(admin), "the ready queue must be partitioned by service date");
   const edge = read("supabase/functions/delivery-ops-v1/index.ts");
   assert.ok(/const serviceDate = serviceDateInCuiaba\(\)/.test(edge), "the API must use Cuiabá's service date");
   assert.ok(/service_date:\s*serviceDate/.test(edge), "the API must return its service date to the admin");
   assert.ok(/export function partitionDeliveryOrders\(/.test(domain), "the queue partition must be covered by the tested domain module");
+});
+
+test("route management exposes driver portal, order details, and safe stop actions", () => {
+  const html = read("site/admin/index.html");
+  const admin = read("site/admin/delivery-admin.js");
+  const orders = read("site/admin/orders-admin.js");
+  const edge = read("supabase/functions/delivery-ops-v1/index.ts");
+  const migration = read("supabase/migrations/20261106130000_delivery_route_admin_actions_v1.sql");
+  assert.match(html, /href="\.\.\/entregador\/"/);
+  assert.match(admin, /data-view-delivery-order/);
+  assert.match(orders, /DonaOrdersAdmin\s*=\s*\{[^}]*openOrder/);
+  assert.match(orders, /Endereço de entrega/);
+  assert.match(admin, /data-stop-cancel/);
+  assert.match(admin, /data-stop-reassign/);
+  assert.match(admin, /data-stop-reschedule/);
+  assert.match(admin, /data-admin-delivered/);
+  assert.match(edge, /action === "admin_cancel_stop"/);
+  assert.match(edge, /action === "admin_reassign_stop"/);
+  assert.match(edge, /action === "admin_reschedule_stop"/);
+  assert.match(edge, /action === "admin_complete_stop"/);
+  assert.match(edge, /p_idempotency_key:\s*"driver-delivery-v1:" \+ stop\.order_id/);
+  assert.match(migration, /v_run\.status <> 'planned'[\s\S]*?v_run\.loading_started_at is not null[\s\S]*?v_run\.loaded_at is not null/);
+  assert.match(migration, /delivery_not_available_sunday/);
+  assert.match(migration, /grant execute on function public\.smart_delivery_admin_reassign_stop_v1[\s\S]*?to service_role/);
 });
 
 test("prepaid selector starts unselected and cannot fall back to Pix", () => {

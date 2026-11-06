@@ -12,8 +12,8 @@
   <link rel="stylesheet" href="papoai-guard-admin.css?v=1">
   <link rel="stylesheet" href="baskets-admin.css?v=3">
   <link rel="stylesheet" href="whatsapp-campaign-report.css?v=1">
-  <link rel="stylesheet" href="orders-admin.css?v=9">
-  <link rel="stylesheet" href="delivery-admin.css?v=3">
+  <link rel="stylesheet" href="orders-admin.css?v=10">
+  <link rel="stylesheet" href="delivery-admin.css?v=4">
   <link rel="stylesheet" href="quick-balance-admin.css?v=4">
   <script src="../config.js?v=3"></script>
   <script src="admin-auth.js?v=2" defer></script>
@@ -21,8 +21,8 @@
   <script src="taxonomy-admin.js?v=1" defer></script>
   <script src="papoai-guard-admin.js?v=1" defer></script>
   <script src="baskets-admin.js?v=5" defer></script>
-  <script src="orders-admin.js?v=9" defer></script>
-  <script type="module" src="delivery-admin.js?v=4"></script>
+  <script src="orders-admin.js?v=10" defer></script>
+  <script type="module" src="delivery-admin.js?v=5"></script>
   <script src="order-message-admin.js?v=3" defer></script>
   <script src="separation-message-admin.js?v=4" defer></script>
   <script src="whatsapp-template-button-support.js?v=1" defer></script>
@@ -281,7 +281,7 @@
           <div><h2>Entregas</h2><p>Distribua os pedidos prontos entre os entregadores, confira a carga e acompanhe as rotas.</p></div>
           <button id="delivery-admin-refresh" class="button button-outline" type="button">Atualizar</button>
         </div>
-        <p class="delivery-admin-local-note">Fase inicial: rotas simples, ordenação manual pelo entregador e navegação pelo Google Maps. A previsão de chegada é informada pelo entregador.</p>
+        <p class="delivery-admin-local-note">O entregador usa o <a href="../entregador/" target="_blank" rel="noopener">portal de entregas</a> com o link individual gerado na rota. Ele já pode ver e ordenar a rota planejada; depois de conferir a carga, libere a saída para começar as entregas.</p>
         <p id="delivery-admin-status" class="admin-muted" role="status" aria-live="polite">Carregando entregas…</p>
         <div class="delivery-admin-grid">
           <section class="delivery-admin-section delivery-ready-section">

@@ -146,6 +146,28 @@ export function prepaidPaymentMethod(value) {
   return ["pix", "credit_card"].includes(method) ? method : null;
 }
 
+export function deliveryStopCapabilities(run, stop) {
+  const route = run || {};
+  const delivery = stop || {};
+  const editable = route.status === "planned" && delivery.status === "planned" &&
+    !route.loading_started_at && !route.loaded_at && !delivery.loaded_at &&
+    !delivery.custody_confirmed_at;
+  return {
+    canCancel: editable,
+    canReassign: editable,
+    canReschedule: editable,
+    canMarkDelivered: route.status === "dispatched" && delivery.status === "out_for_delivery",
+    isDelivered: delivery.status === "delivered",
+    isCancelled: delivery.status === "cancelled",
+  };
+}
+
+export function isValidDeliveryRescheduleDate(value, serviceDate) {
+  if (!isCalendarDate(value) || !isCalendarDate(serviceDate) || value < serviceDate) return false;
+  const dayOfWeek = new Date(value + "T00:00:00.000Z").getUTCDay();
+  return dayOfWeek !== 0;
+}
+
 export function paidAheadLabel(order) {
   return order?.delivery_paid_ahead === true
     ? "PAGO ADIANTADO · NÃO COBRAR"

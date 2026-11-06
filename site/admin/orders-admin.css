@@ -88,6 +88,8 @@
 .order-whatsapp-status .notice-failed { color: #9b2c22; font-weight: 700; }
 .order-whatsapp-status .notice-pending { color: #86510e; font-weight: 700; }
 .order-whatsapp-status .notice-delivered { color: #267a44; }
+.order-detail-summary .order-detail-address { grid-column: 1 / -1; }
+.order-detail-summary .order-detail-address strong { overflow-wrap: anywhere; line-height: 1.45; }
 .order-notice-issue { grid-column: 1 / -1; padding: 9px 11px; border-radius: 10px; background: #faf6f4; color: #62564f; font-size: .84rem; line-height: 1.45; }
 .order-notice-issue strong { display: block; color: #302521; }
 

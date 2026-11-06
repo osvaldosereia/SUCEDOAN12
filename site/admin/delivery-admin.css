@@ -5,3 +5,29 @@
 .delivery-driver-phone-warning{display:block;color:#a13a2f;font-size:.78rem;font-weight:750}
 .delivery-address-reference{display:grid;gap:5px;margin-left:30px;padding:9px 10px;border:1px solid #e5ddd8;border-radius:9px;background:#faf8f6;color:#655952;font-size:.76rem;line-height:1.4;overflow-wrap:anywhere}.delivery-address-reference>strong{color:#51413a;font-size:.78rem}.delivery-address-reference-photo{display:flex;align-items:center;gap:9px;width:max-content;max-width:100%;margin-top:2px;color:#315d8a;font-weight:750;text-decoration:none}.delivery-address-reference-photo:hover{text-decoration:underline}.delivery-address-reference-photo img{width:76px;height:58px;flex:0 0 76px;border-radius:7px;object-fit:cover;background:#eee}
 @media(max-width:640px){.delivery-address-reference{margin-left:28px}.delivery-address-reference-photo{align-items:flex-start}}
+
+.delivery-stop-copy>.delivery-stop-address{color:#382d28;font-size:1.04rem;font-weight:700;line-height:1.5}
+.delivery-stop-management{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:end;gap:8px;margin-top:8px;padding:10px;border:1px solid #eee4df;border-radius:10px;background:#faf8f6}
+.delivery-stop-field{display:grid;gap:5px;min-width:0;color:#51443f;font-size:.78rem;font-weight:750}
+.delivery-stop-field select,.delivery-stop-field input{width:100%;min-width:0;min-height:44px;padding:8px 10px;border:1px solid #d9ccc7;border-radius:8px;background:#fff;color:#302521;font:inherit}
+.delivery-stop-management>.button{min-height:44px;white-space:normal}
+.delivery-stop-management>.button-danger{border:1px solid #a13a2f;background:#fff;color:#9c3228}
+.delivery-stop-complete{grid-template-columns:minmax(0,1fr) auto}
+.delivery-stop-complete .delivery-prepaid-badge{margin:0}
+.delivery-cancelled-label{padding:5px 7px;border-radius:7px;background:#f3e9e7;color:#8c3028;font-size:.72rem;font-weight:850;line-height:1.3;text-align:center}
+.delivery-route-portal{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-top:10px}
+.delivery-route-portal .button{min-height:40px;font-size:.78rem}
+.delivery-route-portal>small{flex:1 1 100%;color:#665a54;font-size:.75rem;line-height:1.4}
+.delivery-route-access-link{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;flex:1 1 100%;min-width:0}
+.delivery-route-access-link input{min-width:0;width:100%;min-height:40px;padding:7px;border:1px solid #d9ccc7;border-radius:8px;font:.72rem ui-monospace,monospace}
+.delivery-route-access-link .button{min-height:40px}
+.delivery-admin-local-note a{color:#7e3029;font-weight:800}
+@media(max-width:640px){
+  .delivery-stop-copy>.delivery-stop-address{font-size:1.08rem;line-height:1.55}
+  .delivery-stop-management,.delivery-stop-complete{grid-template-columns:1fr}
+  .delivery-stop-management>.button,.delivery-stop-field{width:100%}
+  .delivery-route-portal{align-items:stretch}
+  .delivery-route-portal>.button{flex:1 1 100%;min-height:46px}
+  .delivery-route-access-link{grid-template-columns:1fr}
+  .delivery-route-access-link .button{width:100%;min-height:46px}
+}

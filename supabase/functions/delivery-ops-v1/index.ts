@@ -543,6 +543,78 @@ async function dispatchRun(input: JsonRecord) {
   return result.data || {};
 }
 
+async function adminReleaseStop(input: JsonRecord, serviceDate: string | null = null) {
+  const stopId = uuid(input.stop_id);
+  if (!stopId) throw new ApiFailure("invalid_stop");
+  const result = await db.rpc("smart_delivery_admin_release_stop_v1", {
+    p_stop_id: stopId,
+    p_service_date: serviceDate,
+    p_operator_label: clean(input.operator, 80) || "Admin",
+  });
+  if (result.error) throw new ApiFailure(jsonError(result.error), 409);
+  return result.data || {};
+}
+
+async function adminRescheduleStop(input: JsonRecord) {
+  const serviceDate = clean(input.service_date, 10);
+  const parsedDate = /^\d{4}-\d{2}-\d{2}$/.test(serviceDate)
+    ? new Date(serviceDate + "T00:00:00.000Z")
+    : null;
+  if (!parsedDate || !Number.isFinite(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== serviceDate) {
+    throw new ApiFailure("invalid_delivery_date");
+  }
+  return adminReleaseStop(input, serviceDate);
+}
+
+async function adminReassignStop(input: JsonRecord) {
+  const stopId = uuid(input.stop_id);
+  const driverId = uuid(input.driver_id);
+  if (!stopId || !driverId) throw new ApiFailure("invalid_stop_or_driver");
+  await assertActiveDriverCanNotify(driverId);
+  const result = await db.rpc("smart_delivery_admin_reassign_stop_v1", {
+    p_stop_id: stopId,
+    p_new_driver_id: driverId,
+    p_operator_label: clean(input.operator, 80) || "Admin",
+  });
+  if (result.error) throw new ApiFailure(jsonError(result.error), 409);
+  return result.data || {};
+}
+
+async function adminCompleteStop(input: JsonRecord) {
+  const stopId = uuid(input.stop_id);
+  if (!stopId) throw new ApiFailure("invalid_stop");
+  const stopResult = await db.from("ops_delivery_stops")
+    .select("id,status,run_id,order_id")
+    .eq("id", stopId).maybeSingle();
+  if (stopResult.error) throw stopResult.error;
+  const stop = stopResult.data;
+  if (!stop) throw new ApiFailure("stop_not_found", 404);
+  if (stop.status === "delivered") return { stop_id: stopId, order_id: stop.order_id, status: "delivered", already_delivered: true };
+  if (stop.status !== "out_for_delivery") throw new ApiFailure("stop_not_out_for_delivery", 409);
+  const runResult = await db.from("ops_delivery_runs")
+    .select("id,status")
+    .eq("id", stop.run_id).maybeSingle();
+  if (runResult.error) throw runResult.error;
+  if (runResult.data?.status !== "dispatched") throw new ApiFailure("stop_not_out_for_delivery", 409);
+  const orders = await ordersByIds([stop.order_id]);
+  const order: any = orders[0];
+  if (!order) throw new ApiFailure("order_not_found", 404);
+  const prepaid = order.delivery_paid_ahead === true;
+  const method = prepaid ? clean(order.delivery_paid_ahead_method, 30).toLowerCase() : clean(input.method, 30).toLowerCase();
+  if (!prepaid && !["pix", "cash", "credit_card", "food_card", "meal_card", "other"].includes(method)) {
+    throw new ApiFailure("payment_method_required", 400);
+  }
+  const result = await db.rpc("smart_delivery_complete_stop_v1", {
+    p_stop_id: stopId,
+    p_method: method,
+    p_amount_cents: order.total_cents,
+    p_operator_label: clean(input.operator, 80) || "Admin",
+    p_idempotency_key: "driver-delivery-v1:" + stop.order_id,
+  });
+  if (result.error) throw new ApiFailure(jsonError(result.error), 409);
+  return result.data || {};
+}
+
 async function markPrepaid(input: JsonRecord) {
   const orderId = uuid(input.order_id);
   const method = clean(input.method, 30).toLowerCase();
@@ -982,6 +1054,10 @@ async function handle(req: Request) {
     if (action === "confirm_location") return respond(req, { ok: true, ...(await confirmLocation(input)) });
     if (action === "confirm_loading") return respond(req, { ok: true, ...(await confirmLoading(input)) });
     if (action === "dispatch_run") return respond(req, { ok: true, ...(await dispatchRun(input)) });
+    if (action === "admin_cancel_stop") return respond(req, { ok: true, ...(await adminReleaseStop(input)) });
+    if (action === "admin_reschedule_stop") return respond(req, { ok: true, ...(await adminRescheduleStop(input)) });
+    if (action === "admin_reassign_stop") return respond(req, { ok: true, ...(await adminReassignStop(input)) });
+    if (action === "admin_complete_stop") return respond(req, { ok: true, ...(await adminCompleteStop(input)) });
     if (action === "mark_prepaid") return respond(req, { ok: true, ...(await markPrepaid(input)) });
     if (action === "issue_driver_access") return respond(req, { ok: true, ...(await issueDriverAccess(input)) });
     if (action === "revoke_driver_access") return respond(req, { ok: true, ...(await revokeDriverAccess(input)) });

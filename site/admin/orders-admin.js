@@ -47,6 +47,23 @@
     return customer.display_name || customer.name || customer.full_name || "Cliente";
   }
 
+  function deliveryAddress(order) {
+    const address = order.delivery_address || {};
+    if (typeof address === "string") return address;
+    const street = address.street || address.address_line || "";
+    const line = [street && [street, address.number].filter(Boolean).join(", "), address.complement,
+      address.neighborhood || address.district, [address.city, address.state].filter(Boolean).join(" - "),
+      address.postal_code ? "CEP " + address.postal_code : ""].filter(Boolean).join(" · ");
+    return line || address.raw_text || address.formatted_address || "Endereço não informado";
+  }
+
+  function paymentName(order) {
+    const method = String(order.delivery_paid_ahead ? order.delivery_paid_ahead_method : order.payment_method || "").toLowerCase();
+    const labels = { cash: "Dinheiro", money: "Dinheiro", pix: "Pix", credit_card: "Cartão/link", card: "Cartão", debit_card: "Cartão de débito", food_card: "Cartão alimentação", meal_card: "Cartão refeição", other: "Outro" };
+    const label = labels[method] || method || "A confirmar";
+    return order.delivery_paid_ahead ? "Pago antecipado · " + label : label;
+  }
+
   function orderNumber(order) {
     return order.public_code || order.order_number || String(order.id || "").slice(0, 8).toUpperCase();
   }
@@ -198,6 +215,8 @@
         "<div><span>Telefone</span><strong>" + esc(order.phone_e164 || order.phone || "—") + "</strong></div>" +
         "<div><span>Data</span><strong>" + esc(date(order.created_at)) + "</strong></div>" +
         "<div><span>Total</span><strong>" + esc(money(order.total)) + "</strong></div>" +
+        "<div><span>Pagamento</span><strong>" + esc(paymentName(order)) + "</strong></div>" +
+        "<div class='order-detail-address'><span>Endereço de entrega</span><strong>" + esc(deliveryAddress(order)) + "</strong></div>" +
         orderWhatsAppNoticeDetail(order);
       const items = Array.isArray(result.items) ? result.items : [];
       $("order-detail-items").innerHTML = items.length ? items.map((item) =>
@@ -533,6 +552,6 @@
   document.querySelectorAll("[data-orders-close]").forEach((button) => button.addEventListener("click", () => $(button.dataset.ordersClose).close()));
   $("order-detail-dialog").addEventListener("click", (event) => { if (event.target === event.currentTarget) event.currentTarget.close(); });
   $("order-separation-dialog").addEventListener("click", (event) => { if (event.target === event.currentTarget) event.currentTarget.close(); });
-  window.DonaOrdersAdmin = { loadOrders: loadOrders };
+  window.DonaOrdersAdmin = { loadOrders: loadOrders, openOrder: openOrder };
   window.setInterval(() => { if (!$("admin-view").hidden && !document.querySelector("[data-panel='orders']").hidden) loadOrders(); }, 45000);
 })();

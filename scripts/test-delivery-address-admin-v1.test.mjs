@@ -16,6 +16,6 @@ test("admin delivery cards expose the saved address point, alternatives, and fac
   assert.match(admin, /address_photo/);
   assert.match(edge, /customer_address_reference_photos_v1/);
   assert.match(edge, /primary_latitude/);
-  assert.match(html, /delivery-admin\.js\?v=4/);
-  assert.match(html, /delivery-admin\.css\?v=3/);
+  assert.match(html, /delivery-admin\.js\?v=5/);
+  assert.match(html, /delivery-admin\.css\?v=4/);
 });
