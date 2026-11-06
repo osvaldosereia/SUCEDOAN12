@@ -136,12 +136,13 @@
       panel.hidden = !active;
       panel.classList.toggle("active", active);
     });
-    $("page-title").textContent = ({ customers: "Clientes", baskets: "Cestas", products: "Produtos", orders: "Pedidos", delivery: "Entregas", "quick-balance": "Balanço rápido", whatsapp: "WhatsApp", overview: "Visão geral" })[name] || "Visão geral";
+    $("page-title").textContent = ({ customers: "Clientes", baskets: "Cestas", products: "Produtos", orders: "Pedidos", delivery: "Entregas", "quick-balance": "Balanço rápido", cards: "Cartão", whatsapp: "WhatsApp", overview: "Visão geral" })[name] || "Visão geral";
     if (name === "baskets") window.DonaBasketAdmin?.loadBaskets();
     if (name === "products") window.DonaCatalogAdmin?.loadProducts();
     if (name === "orders") window.DonaOrdersAdmin?.loadOrders();
     if (name === "delivery") window.DonaDeliveryAdmin?.load();
     if (name === "quick-balance") window.DonaQuickBalanceAdmin?.open();
+    if (name === "cards") window.DonaCardsAdmin?.load();
     if (name === "whatsapp") loadWhatsAppSection();
   }
 

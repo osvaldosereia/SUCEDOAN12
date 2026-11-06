@@ -13,8 +13,10 @@ O catálogo público fica em `/site/`; o painel administrativo fica em `/site/ad
 
 - O painel usa um único código de acesso, sem login de usuário e senha. O valor fica em memória apenas durante a sessão do navegador.
 - Configure um código de acesso forte de 13 a 128 caracteres com o nome `DONA_ADMIN_CODE` nas Edge Functions do Supabase. Não coloque o valor no HTML, JavaScript, configuração pública ou GitHub.
+- A seção **Cartão** usa `site-card-admin-v1` e as migrações `20261106144304_admin_saved_card_ledger_v1` e `20261106144413_admin_saved_card_service_role_policies_v1`; ela reutiliza o mesmo código de acesso do admin.
 - Em **Clientes**, é possível buscar por nome, telefone ou CPF/CNPJ e editar nome, telefone, CPF/CNPJ e endereço. O telefone é exibido sem o prefixo +55; o banco armazena o padrão E.164 para integrações. A gravação é feita no servidor, valida se outro operador atualizou o cadastro e registra uma linha no histórico administrativo.
 - **Cestas** e **Produtos** mantêm os fluxos de edição do painel; cadastros são desativados em vez de apagados.
+- Em **Cartão**, cadastre cartões, consulte o saldo disponível e registre usos com data e valor. A senha fica mascarada e só é carregada quando solicitada.
 - Em **WhatsApp**, **Pedido recebido** controla a mensagem enviada na criação do pedido; **Após a separação** controla outro envio. Salvar rascunho não envia nada à Meta. Envie a versão para análise e ative-a por número depois da aprovação; o modelo atual continua enviando até essa ativação.
 
 ## Publicação

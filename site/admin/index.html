@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="orders-admin.css?v=10">
   <link rel="stylesheet" href="delivery-admin.css?v=5">
   <link rel="stylesheet" href="quick-balance-admin.css?v=4">
+  <link rel="stylesheet" href="cards-admin.css?v=1">
   <script src="../config.js?v=3"></script>
   <script src="admin-auth.js?v=2" defer></script>
   <script src="catalog-admin.js?v=14" defer></script>
@@ -30,7 +31,8 @@
   <script src="whatsapp-campaign-report.js?v=1" defer></script>
   <script src="whatsapp-conversations.js?v=16" defer></script>
   <script src="quick-balance-admin.js?v=7" defer></script>
-  <script src="admin.js?v=25" defer></script>
+  <script src="cards-admin.js?v=1" defer></script>
+  <script src="admin.js?v=26" defer></script>
 </head>
 <body class="admin-page">
   <main id="admin-login" class="admin-login-main">
@@ -85,6 +87,12 @@
           </button>
         </div>
         <div class="nav-group">
+          <p class="nav-group-label">Financeiro</p>
+          <button class="nav-tab" type="button" data-view="cards">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg></span><span>Cartão</span>
+          </button>
+        </div>
+        <div class="nav-group">
           <p class="nav-group-label">Catálogo</p>
           <button class="nav-tab" type="button" data-view="baskets">
             <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10h18l-2 10H5L3 10Z"/><path d="m7 10 5-7 5 7M8 13v4M12 13v4M16 13v4"/></svg></span><span>Cestas</span>
@@ -121,6 +129,7 @@
           <button class="shortcut-card" type="button" data-go="customers"><strong>Clientes</strong><span>Buscar cadastro e endereço</span></button>
           <button class="shortcut-card" type="button" data-go="orders"><strong>Pedidos</strong><span>Confirmar, separar e acompanhar entregas</span></button>
           <button class="shortcut-card" type="button" data-go="quick-balance"><strong>Balanço rápido</strong><span>Contar estoque, validade e gôndola pelo EAN</span></button>
+          <button class="shortcut-card" type="button" data-go="cards"><strong>Cartão</strong><span>Consultar saldo e registrar usos</span></button>
           <button class="shortcut-card" type="button" data-go="whatsapp"><strong>WhatsApp</strong><span>Editar a mensagem de confirmação e acompanhar a aprovação</span></button>
         </div>
         <div class="edit-notice bling-reauthorize">
@@ -131,6 +140,15 @@
           <button id="bling-reauthorize" class="button button-outline" type="button">Reautorizar Bling</button>
         </div>
         <p id="admin-status" class="admin-muted" role="status">Painel administrativo disponível.</p>
+      </section>
+
+      <section class="admin-view" data-panel="cards" hidden>
+        <div class="section-title">
+          <div><h2>Cartões</h2><p>Cadastre saldos e acompanhe cada uso pelo histórico.</p></div>
+        </div>
+        <div id="cards-admin-root" class="cards-admin-root">
+          <p class="admin-muted" role="status">Carregando cartões…</p>
+        </div>
       </section>
 
       <section class="admin-view" data-panel="customers" hidden>
