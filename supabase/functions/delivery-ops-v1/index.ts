@@ -1,8 +1,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { verifyAdminCode } from "../_shared/admin-code-v1.ts";
-import { isScheduledForDate, serviceDateInCuiaba } from "../_shared/delivery-date-v1.mjs";
+import { deliveryDateForOrder, isScheduledForDate, serviceDateInCuiaba } from "../_shared/delivery-date-v1.mjs";
 import { sendTemplateViaMeta, MetaTransportError } from "../_shared/whatsapp-meta-transport-v1.mjs";
-import { channelForWhatsappAccount, driverVisibleRuns, mergePlannedRouteOrderIds, normalizeDriverPhone, normalizeRouteOrderIds, normalizeStopIds } from "../_shared/delivery-ops-validation-v1.mjs";
+import { channelForWhatsappAccount, driverVisibleRuns, normalizeDriverPhone, normalizeStopIds } from "../_shared/delivery-ops-validation-v1.mjs";
 import { incrementNotificationAttemptCount, sendAndPersistDeliveryNotice } from "../_shared/delivery-notification-state-v1.mjs";
 import { normalizeDriverLocationInput, validateAddressPhoto } from "../_shared/delivery-driver-address-v1.mjs";
 
@@ -146,17 +146,6 @@ async function catalog() {
   return asObject(result.data);
 }
 
-async function assertActiveDriverCanNotify(driverId: string) {
-  const driverResult = await db.from("delivery_drivers_v1")
-    .select("id,is_active,phone_e164")
-    .eq("id", driverId)
-    .maybeSingle();
-  if (driverResult.error) throw driverResult.error;
-  if (!driverResult.data?.is_active) throw new ApiFailure("driver_not_active", 409);
-  try { return normalizeDriverPhone(driverResult.data.phone_e164, true); }
-  catch (error) { throw new ApiFailure(jsonError(error), 400); }
-}
-
 async function ordersByIds(ids: string[]) {
   const unique = [...new Set(ids.map(uuid).filter(Boolean))];
   if (!unique.length) return [];
@@ -212,16 +201,38 @@ async function locationEvidenceForOrders(orders: JsonRecord[]) {
 async function adminDashboard() {
   const serviceDate = serviceDateInCuiaba();
   if (!serviceDate) throw new ApiFailure("service_date_unavailable", 503);
-  const [runsData, catalogData, readyQuery] = await Promise.all([
+  const [runsData, catalogData, readyQuery, futureRunQuery] = await Promise.all([
     deliveryRuns(),
     catalog(),
     db.from("orders")
       .select("id,order_number,status,total,created_at,updated_at,phone_e164,delivery_address,customer_snapshot,checkout_snapshot,payment_method,source,customer_id,conversation_id,whatsapp_account_id,delivery_customer_address_id,delivery_location_evidence_id,delivery_region_id,delivery_paid_ahead,delivery_paid_ahead_method,delivery_paid_ahead_reference,delivery_paid_ahead_at")
       .in("source", OP_SOURCES).in("status", ["ready", "out_for_delivery"])
       .order("created_at", { ascending: false }).limit(300),
+    db.from("ops_delivery_runs")
+      .select("id,service_date,vehicle_key,status,operator_label,created_at,updated_at,dispatched_at,completed_at,region_id,driver_id,vehicle_id")
+      .gt("service_date", serviceDate).in("status", ["planned", "dispatched"])
+      .order("service_date", { ascending: true }).limit(300),
   ]);
   if (readyQuery.error) throw readyQuery.error;
-  const runs = Array.isArray(runsData.runs) ? runsData.runs : [];
+  if (futureRunQuery.error) throw futureRunQuery.error;
+  const futureRunIds = (futureRunQuery.data || []).map((run: any) => run.id);
+  const futureStopsQuery = futureRunIds.length
+    ? await db.from("ops_delivery_stops")
+      .select("id,run_id,order_id,sequence,status,address_snapshot,phone_snapshot,customer_name_snapshot,order_number_snapshot,total_cents,payment_method_snapshot,maps_url_snapshot,customer_address_id,location_evidence_id,region_id,destination_latitude,destination_longitude,destination_confidence,failed_at,failure_reason,returned_at,proof_metadata")
+      .in("run_id", futureRunIds).order("sequence", { ascending: true })
+    : { data: [], error: null } as any;
+  if (futureStopsQuery.error) throw futureStopsQuery.error;
+  const allDrivers = catalogData.drivers || [];
+  const allRegions = catalogData.regions || [];
+  const allVehicles = catalogData.vehicles || [];
+  const futureRuns = (futureRunQuery.data || []).map((run: any) => ({
+    ...run,
+    driver: allDrivers.find((row: any) => row.id === run.driver_id) || null,
+    region: allRegions.find((row: any) => row.id === run.region_id) || null,
+    vehicle: allVehicles.find((row: any) => row.id === run.vehicle_id) || null,
+    stops: (futureStopsQuery.data || []).filter((stop: any) => stop.run_id === run.id).map((stop: any) => ({ ...stop, stop_id: stop.id })),
+  }));
+  const runs = [...(Array.isArray(runsData.runs) ? runsData.runs : []), ...futureRuns];
   const routeOrderIds = runs.flatMap((run: any) => (run.stops || []).map((stop: any) => uuid(stop.order_id)).filter(Boolean));
   const allOrders = await ordersByIds([...readyQuery.data.map((order: any) => order.id), ...routeOrderIds]);
   const orderById = new Map(allOrders.map((order: any) => [order.id, order]));
@@ -395,7 +406,7 @@ async function saveDriver(input: JsonRecord) {
   if (!name) throw new ApiFailure("driver_name_required");
   const isActive = input.is_active !== false;
   let phone: string | null;
-  try { phone = normalizeDriverPhone(input.phone_e164, isActive); }
+  try { phone = normalizeDriverPhone(input.phone_e164, false); }
   catch (error) { throw new ApiFailure(jsonError(error), 400); }
   const result = await db.rpc("smart_delivery_driver_save_v1", {
     p_id: uuid(input.id) || null,
@@ -447,97 +458,49 @@ async function saveVehicle(input: JsonRecord) {
   return { id: uuid(result.data) || uuid(result.data?.id) };
 }
 
-async function planRun(input: JsonRecord) {
-  const driverId = uuid(input.driver_id);
-  if (!driverId) throw new ApiFailure("driver_and_orders_required");
-  let ids: string[];
-  try { ids = normalizeRouteOrderIds(input.order_ids); }
-  catch (error) { throw new ApiFailure(jsonError(error), 400); }
-  await assertActiveDriverCanNotify(driverId);
-  const key = "driver_" + driverId.toLowerCase();
-  const runsData = await deliveryRuns();
-  const existingRuns = (Array.isArray(runsData.runs) ? runsData.runs : [])
-    .filter((run: any) => run.driver_id === driverId && ["planned", "dispatched"].includes(run.status));
-  if (existingRuns.some((run: any) => run.status === "dispatched")) throw new ApiFailure("vehicle_already_dispatched", 409);
-  if (existingRuns.some((run: any) => run.loading_started_at || run.loaded_at)) throw new ApiFailure("route_locked", 409);
-  const existingOrderIds = existingRuns.flatMap((run: any) => (run.stops || []).map((stop: any) => uuid(stop.order_id)).filter(Boolean));
-  try { ids = mergePlannedRouteOrderIds(existingOrderIds, ids); }
-  catch (error) { throw new ApiFailure(jsonError(error), 400); }
-  const serviceDate = serviceDateInCuiaba();
-  if (!serviceDate) throw new ApiFailure("service_date_unavailable", 503);
-  const ordersResult = await db.from("orders")
-    .select("id,status,created_at,checkout_snapshot")
-    .in("id", ids)
-    .in("source", OP_SOURCES);
-  if (ordersResult.error) throw ordersResult.error;
-  const routeOrders = ordersResult.data || [];
-  if (routeOrders.length !== ids.length || routeOrders.some((order: any) => order.status !== "ready")) {
-    throw new ApiFailure("order_not_ready", 409);
-  }
-  if (routeOrders.some((order: any) => !isScheduledForDate(order, serviceDate))) {
-    throw new ApiFailure("order_delivery_date_mismatch", 409);
-  }
-  const result = await db.rpc("smart_delivery_plan_run_v1", {
-    p_vehicle_key: key,
-    p_order_ids: ids,
-    p_operator_label: clean(input.operator, 80) || "Operação",
-    p_region_id: uuid(input.region_id) || null,
-    p_driver_id: driverId,
-    p_vehicle_id: uuid(input.vehicle_id) || null,
-    p_actor_user_id: null,
-  });
-  if (result.error) throw new ApiFailure(jsonError(result.error), 409);
-  return result.data || {};
-}
-
-async function assignRun(input: JsonRecord) {
-  const runId = uuid(input.run_id);
-  if (!runId) throw new ApiFailure("invalid_run");
-  const result = await db.rpc("smart_delivery_assign_run_v1", {
-    p_run_id: runId,
-    p_region_id: uuid(input.region_id) || null,
-    p_driver_id: uuid(input.driver_id) || null,
-    p_vehicle_id: uuid(input.vehicle_id) || null,
-    p_operator_label: clean(input.operator, 80) || "Operação",
-    p_actor_user_id: null,
-  });
-  if (result.error) throw new ApiFailure(jsonError(result.error), 409);
-  return result.data || {};
-}
-
-async function confirmLocation(input: JsonRecord) {
+async function assignOrder(input: JsonRecord) {
   const orderId = uuid(input.order_id);
-  const evidenceId = uuid(input.location_evidence_id);
-  if (!orderId || !evidenceId) throw new ApiFailure("invalid_location_confirmation");
-  const result = await db.rpc("smart_delivery_confirm_order_location_v1", {
+  const driverId = uuid(input.driver_id);
+  if (!orderId || !driverId) throw new ApiFailure("invalid_order_or_driver");
+  const orderResult = await db.from("orders")
+    .select("id,status,source,created_at,checkout_snapshot")
+    .eq("id", orderId).in("source", OP_SOURCES).maybeSingle();
+  if (orderResult.error) throw orderResult.error;
+  const order = orderResult.data;
+  if (!order) throw new ApiFailure("order_not_found", 404);
+  if (!["ready", "out_for_delivery"].includes(String(order.status || ""))) throw new ApiFailure("order_not_ready", 409);
+  const serviceDate = deliveryDateForOrder(order);
+  const today = serviceDateInCuiaba();
+  if (!serviceDate || !today) throw new ApiFailure("service_date_unavailable", 503);
+  if (serviceDate < today) throw new ApiFailure("order_delivery_date_in_past", 409);
+  if (new Date(serviceDate + "T12:00:00Z").getUTCDay() === 0) throw new ApiFailure("delivery_not_available_sunday", 409);
+
+  const existingStop = await db.from("ops_delivery_stops")
+    .select("id,run_id,status")
+    .eq("order_id", orderId).in("status", ["planned", "out_for_delivery"]).maybeSingle();
+  if (existingStop.error) throw existingStop.error;
+  if (existingStop.data) {
+    const runResult = await db.from("ops_delivery_runs").select("id,driver_id,status,service_date")
+      .eq("id", existingStop.data.run_id).maybeSingle();
+    if (runResult.error) throw runResult.error;
+    const run = runResult.data;
+    if (!run) throw new ApiFailure("run_not_found", 404);
+    if (run.driver_id !== driverId) {
+      if (existingStop.data.status !== "planned" || run.status !== "planned") {
+        throw new ApiFailure("order_already_dispatched", 409);
+      }
+          const reassigned = await db.rpc("smart_delivery_admin_reassign_stop_v1", {
+        p_stop_id: existingStop.data.id,
+        p_new_driver_id: driverId,
+        p_operator_label: clean(input.operator, 80) || "Admin",
+      });
+      if (reassigned.error) throw new ApiFailure(jsonError(reassigned.error), 409);
+    }
+  }
+  const result = await db.rpc("smart_delivery_admin_assign_order_v1", {
     p_order_id: orderId,
-    p_location_evidence_id: evidenceId,
-    p_region_id: uuid(input.region_id) || null,
-    p_confirmation_source: "delivery_admin",
-    p_actor_user_id: null,
-  });
-  if (result.error) throw new ApiFailure(jsonError(result.error), 409);
-  return result.data || {};
-}
-
-async function confirmLoading(input: JsonRecord) {
-  const runId = uuid(input.run_id);
-  if (!runId) throw new ApiFailure("invalid_run");
-  const result = await db.rpc("smart_delivery_confirm_loading_v1", { p_run_id: runId, p_stop_id: null, p_actor_user_id: null });
-  if (result.error) throw new ApiFailure(jsonError(result.error), 409);
-  return result.data || {};
-}
-
-async function dispatchRun(input: JsonRecord) {
-  const runId = uuid(input.run_id);
-  if (!runId) throw new ApiFailure("invalid_run");
-  const run = await db.from("ops_delivery_runs").select("id,driver_id").eq("id", runId).maybeSingle();
-  if (run.error) throw run.error;
-  if (!run.data?.driver_id) throw new ApiFailure("run_not_ready_for_dispatch", 409);
-  await assertActiveDriverCanNotify(String(run.data.driver_id));
-  const result = await db.rpc("smart_delivery_dispatch_run_v1", {
-    p_run_id: runId,
-    p_operator_label: clean(input.operator, 80) || "Operação",
+    p_driver_id: driverId,
+    p_operator_label: clean(input.operator, 80) || "Admin",
   });
   if (result.error) throw new ApiFailure(jsonError(result.error), 409);
   return result.data || {};
@@ -570,7 +533,6 @@ async function adminReassignStop(input: JsonRecord) {
   const stopId = uuid(input.stop_id);
   const driverId = uuid(input.driver_id);
   if (!stopId || !driverId) throw new ApiFailure("invalid_stop_or_driver");
-  await assertActiveDriverCanNotify(driverId);
   const result = await db.rpc("smart_delivery_admin_reassign_stop_v1", {
     p_stop_id: stopId,
     p_new_driver_id: driverId,
@@ -580,23 +542,170 @@ async function adminReassignStop(input: JsonRecord) {
   return result.data || {};
 }
 
-async function adminCompleteStop(input: JsonRecord) {
+async function adminReorderStops(input: JsonRecord) {
+  const runId = uuid(input.run_id);
+  if (!runId) throw new ApiFailure("invalid_run");
+  let stopIds: string[];
+  try { stopIds = normalizeStopIds(input.stop_ids); }
+  catch (error) { throw new ApiFailure(jsonError(error), 400); }
+  const result = await db.rpc("smart_delivery_reorder_stops_v1", {
+    p_run_id: runId,
+    p_stop_ids: stopIds,
+    p_actor_label: clean(input.operator, 80) || "Admin",
+  });
+  if (result.error) throw new ApiFailure(jsonError(result.error), 409);
+  return result.data || {};
+}
+
+async function adminFailStop(input: JsonRecord) {
   const stopId = uuid(input.stop_id);
   if (!stopId) throw new ApiFailure("invalid_stop");
+  const current = await db.from("ops_delivery_stops").select("id,status,order_id").eq("id", stopId).maybeSingle();
+  if (current.error) throw current.error;
+  if (!current.data) throw new ApiFailure("stop_not_found", 404);
+  if (current.data.status === "failed") {
+    return { stop_id: stopId, order_id: current.data.order_id, status: "failed", already_failed: true };
+  }
+  await ensureAdminStopDispatched(stopId);
+  const result = await db.rpc("smart_delivery_admin_fail_stop_v1", {
+    p_stop_id: stopId,
+    p_operator_label: clean(input.operator, 80) || "Admin",
+  });
+  if (result.error) throw new ApiFailure(jsonError(result.error), 409);
+  return result.data || {};
+}
+
+async function driverForAdminStop(stopId: string) {
+  const stopResult = await db.from("ops_delivery_stops").select("id,run_id,status,order_id").eq("id", stopId).maybeSingle();
+  if (stopResult.error) throw stopResult.error;
+  if (!stopResult.data) throw new ApiFailure("stop_not_found", 404);
+  const runResult = await db.from("ops_delivery_runs").select("driver_id").eq("id", stopResult.data.run_id).maybeSingle();
+  if (runResult.error) throw runResult.error;
+  const driverId = uuid(runResult.data?.driver_id);
+  if (!driverId) throw new ApiFailure("route_driver_missing", 409);
+  const driverResult = await db.from("delivery_drivers_v1").select("id,name,phone_e164,is_active").eq("id", driverId).maybeSingle();
+  if (driverResult.error) throw driverResult.error;
+  if (!driverResult.data?.is_active) throw new ApiFailure("driver_not_active", 409);
+  return driverResult.data;
+}
+
+async function adminNextNotice(input: JsonRecord) {
+  const stopId = uuid(input.stop_id);
+  if (!stopId) throw new ApiFailure("invalid_stop");
+  await ensureAdminStopDispatched(stopId);
+  return await notifyNextStop(await driverForAdminStop(stopId), input);
+}
+
+async function adminSaveLocation(input: JsonRecord) {
+  const stopId = uuid(input.stop_id);
+  if (!stopId) throw new ApiFailure("invalid_stop");
+  await ensureAdminStopDispatched(stopId);
+  return await driverSaveLocation(await driverForAdminStop(stopId), input);
+}
+
+async function adminSelectSavedLocation(input: JsonRecord) {
+  const stopId = uuid(input.stop_id);
+  if (!stopId) throw new ApiFailure("invalid_stop");
+  await ensureAdminStopDispatched(stopId);
+  return await driverSelectSavedLocation(await driverForAdminStop(stopId), input);
+}
+
+async function adminUploadAddressPhoto(input: JsonRecord) {
+  const stopId = uuid(input.stop_id);
+  if (!stopId) throw new ApiFailure("invalid_stop");
+  await ensureAdminStopDispatched(stopId);
+  return await driverUploadAddressPhoto(await driverForAdminStop(stopId), input);
+}
+
+async function adminDeliveryHistory(kind: string) {
+  if (kind === "delivered") {
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const result = await db.from("orders")
+      .select("id,order_number,status,total,created_at,updated_at,delivered_at,phone_e164,delivery_address,customer_snapshot,checkout_snapshot,payment_method,source")
+      .in("source", OP_SOURCES).eq("status", "delivered")
+      .or(`delivered_at.gte.${since},and(delivered_at.is.null,updated_at.gte.${since})`)
+      .order("delivered_at", { ascending: false, nullsFirst: false })
+      .order("updated_at", { ascending: false }).limit(500);
+    if (result.error) throw result.error;
+    return { kind, orders: result.data || [], since };
+  }
+  if (kind !== "not_delivered") throw new ApiFailure("history_kind_invalid");
+  const cases = await db.from("order_delivery_return_cases")
+    .select("id,order_id,attempt_number,status,failed_at,created_at,updated_at")
+    .order("failed_at", { ascending: false }).limit(500);
+  if (cases.error) throw cases.error;
+  const orders = await ordersByIds((cases.data || []).map((row: any) => row.order_id));
+  const orderById = new Map(orders.map((order: any) => [order.id, order]));
+  return {
+    kind,
+    orders: (cases.data || []).map((entry: any) => ({
+      ...(orderById.get(entry.order_id) || {}),
+      delivery_failure_case: entry,
+    })).filter((order: any) => order.id),
+  };
+}
+
+async function ensureAdminStopDispatched(stopId: string) {
   const stopResult = await db.from("ops_delivery_stops")
-    .select("id,status,run_id,order_id")
-    .eq("id", stopId).maybeSingle();
+    .select("id,status,run_id,order_id").eq("id", stopId).maybeSingle();
   if (stopResult.error) throw stopResult.error;
   const stop = stopResult.data;
   if (!stop) throw new ApiFailure("stop_not_found", 404);
-  if (stop.status === "delivered") return { stop_id: stopId, order_id: stop.order_id, status: "delivered", already_delivered: true };
-  if (stop.status !== "out_for_delivery") throw new ApiFailure("stop_not_out_for_delivery", 409);
+  if (!["planned", "out_for_delivery"].includes(stop.status)) throw new ApiFailure("stop_not_out_for_delivery", 409);
   const runResult = await db.from("ops_delivery_runs")
-    .select("id,status")
-    .eq("id", stop.run_id).maybeSingle();
+    .select("id,status,service_date").eq("id", stop.run_id).maybeSingle();
   if (runResult.error) throw runResult.error;
-  if (runResult.data?.status !== "dispatched") throw new ApiFailure("stop_not_out_for_delivery", 409);
-  const orders = await ordersByIds([stop.order_id]);
+  const run = runResult.data;
+  if (!run) throw new ApiFailure("run_not_found", 404);
+  if (run.service_date !== serviceDateInCuiaba()) throw new ApiFailure("delivery_not_due", 409);
+  const nextResult = await db.from("ops_delivery_stops")
+    .select("id")
+    .eq("run_id", run.id)
+    .in("status", ["planned", "out_for_delivery"])
+    .order("sequence", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (nextResult.error) throw nextResult.error;
+  if (nextResult.data?.id !== stopId) throw new ApiFailure("stop_is_not_next", 409);
+  if (stop.status === "out_for_delivery" && run.status === "dispatched") return stop;
+  if (run.status === "planned") {
+    const dispatched = await db.rpc("smart_delivery_admin_dispatch_run_v1", {
+      p_run_id: run.id,
+      p_operator_label: "Admin",
+    });
+    if (dispatched.error) throw new ApiFailure(jsonError(dispatched.error), 409);
+  } else if (run.status === "dispatched") {
+    const started = await db.rpc("ops4_start_dispatch_v1", {
+      p_order_id: stop.order_id,
+      p_operator_label: "Admin",
+      p_idempotency_key: "dispatch-v4:" + stop.order_id,
+    });
+    if (started.error) throw new ApiFailure(jsonError(started.error), 409);
+    const synced = await db.rpc("ops_sync_delivery_stop_v1", {
+      p_order_id: stop.order_id,
+      p_order_status: "out_for_delivery",
+    });
+    if (synced.error) throw new ApiFailure(jsonError(synced.error), 409);
+  } else {
+    throw new ApiFailure("run_not_dispatched", 409);
+  }
+  const refreshed = await db.from("ops_delivery_stops")
+    .select("id,status,run_id,order_id").eq("id", stopId).maybeSingle();
+  if (refreshed.error) throw refreshed.error;
+  if (refreshed.data?.status !== "out_for_delivery") throw new ApiFailure("stop_not_out_for_delivery", 409);
+  return refreshed.data;
+}
+
+async function adminCompleteStop(input: JsonRecord) {
+  const stopId = uuid(input.stop_id);
+  if (!stopId) throw new ApiFailure("invalid_stop");
+  const initialStop = await db.from("ops_delivery_stops")
+    .select("id,status,run_id,order_id")
+    .eq("id", stopId).maybeSingle();
+  if (initialStop.error) throw initialStop.error;
+  if (!initialStop.data) throw new ApiFailure("stop_not_found", 404);
+  if (initialStop.data.status === "delivered") return { stop_id: stopId, order_id: initialStop.data.order_id, status: "delivered", already_delivered: true };
+  const orders = await ordersByIds([initialStop.data.order_id]);
   const order: any = orders[0];
   if (!order) throw new ApiFailure("order_not_found", 404);
   const prepaid = order.delivery_paid_ahead === true;
@@ -604,6 +713,10 @@ async function adminCompleteStop(input: JsonRecord) {
   if (!prepaid && !["pix", "cash", "credit_card", "food_card", "meal_card", "other"].includes(method)) {
     throw new ApiFailure("payment_method_required", 400);
   }
+  const stop = await ensureAdminStopDispatched(stopId);
+  const runResult = await db.from("ops_delivery_runs").select("id,status").eq("id", stop.run_id).maybeSingle();
+  if (runResult.error) throw runResult.error;
+  if (runResult.data?.status !== "dispatched") throw new ApiFailure("stop_not_out_for_delivery", 409);
   const result = await db.rpc("smart_delivery_complete_stop_v1", {
     p_stop_id: stopId,
     p_method: method,
@@ -1018,7 +1131,7 @@ async function handle(req: Request) {
 
   const url = new URL(req.url);
   let input: JsonRecord = Object.fromEntries(url.searchParams.entries());
-  if (req.method === "POST" && clean(input.action, 48) === "driver_upload_address_photo") {
+  if (req.method === "POST" && ["driver_upload_address_photo", "admin_upload_address_photo"].includes(clean(input.action, 48))) {
     try {
       const form = await req.formData();
       input = { ...input, stop_id: form.get("stop_id"), photo: form.get("photo") };
@@ -1045,22 +1158,25 @@ async function handle(req: Request) {
 
     await requireAdmin(req);
     if (action === "admin_dashboard" && req.method === "GET") return respond(req, { ok: true, ...(await adminDashboard()) });
+    if (action === "admin_delivery_history" && req.method === "GET") return respond(req, { ok: true, ...(await adminDeliveryHistory(clean(input.kind, 32))) });
     if (req.method !== "POST") return respond(req, { ok: false, error: "method_not_allowed" }, 405);
     if (action === "driver_save") return respond(req, { ok: true, ...(await saveDriver(input)) });
     if (action === "region_save") return respond(req, { ok: true, ...(await saveRegion(input)) });
     if (action === "vehicle_save") return respond(req, { ok: true, ...(await saveVehicle(input)) });
-    if (action === "plan_run") return respond(req, { ok: true, ...(await planRun(input)) });
-    if (action === "assign_run") return respond(req, { ok: true, ...(await assignRun(input)) });
+    if (action === "assign_order") return respond(req, { ok: true, ...(await assignOrder(input)) });
+    if (action === "admin_reorder_stops") return respond(req, { ok: true, ...(await adminReorderStops(input)) });
+    if (action === "admin_fail_stop") return respond(req, { ok: true, ...(await adminFailStop(input)) });
+    if (action === "admin_next_notice") return respond(req, await adminNextNotice(input));
+    if (action === "admin_save_location") return respond(req, { ok: true, ...(await adminSaveLocation(input)) });
+    if (action === "admin_select_saved_location") return respond(req, { ok: true, ...(await adminSelectSavedLocation(input)) });
+    if (action === "admin_upload_address_photo") return respond(req, await adminUploadAddressPhoto(input));
     if (action === "confirm_location") return respond(req, { ok: true, ...(await confirmLocation(input)) });
-    if (action === "confirm_loading") return respond(req, { ok: true, ...(await confirmLoading(input)) });
-    if (action === "dispatch_run") return respond(req, { ok: true, ...(await dispatchRun(input)) });
     if (action === "admin_cancel_stop") return respond(req, { ok: true, ...(await adminReleaseStop(input)) });
     if (action === "admin_reschedule_stop") return respond(req, { ok: true, ...(await adminRescheduleStop(input)) });
     if (action === "admin_reassign_stop") return respond(req, { ok: true, ...(await adminReassignStop(input)) });
     if (action === "admin_complete_stop") return respond(req, { ok: true, ...(await adminCompleteStop(input)) });
     if (action === "mark_prepaid") return respond(req, { ok: true, ...(await markPrepaid(input)) });
     if (action === "issue_driver_access") return respond(req, { ok: true, ...(await issueDriverAccess(input)) });
-    if (action === "revoke_driver_access") return respond(req, { ok: true, ...(await revokeDriverAccess(input)) });
     return respond(req, { ok: false, error: "action_not_allowed" }, 404);
   } catch (error) {
     const status = error instanceof ApiFailure ? error.status : 500;
@@ -1071,3 +1187,4 @@ async function handle(req: Request) {
 }
 
 Deno.serve(handle);
+
