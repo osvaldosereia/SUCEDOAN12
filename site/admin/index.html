@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="baskets-admin.css?v=3">
   <link rel="stylesheet" href="whatsapp-campaign-report.css?v=1">
   <link rel="stylesheet" href="orders-admin.css?v=10">
-  <link rel="stylesheet" href="delivery-admin.css?v=4">
+  <link rel="stylesheet" href="delivery-admin.css?v=5">
   <link rel="stylesheet" href="quick-balance-admin.css?v=4">
   <script src="../config.js?v=3"></script>
   <script src="admin-auth.js?v=2" defer></script>
@@ -22,7 +22,7 @@
   <script src="papoai-guard-admin.js?v=1" defer></script>
   <script src="baskets-admin.js?v=5" defer></script>
   <script src="orders-admin.js?v=10" defer></script>
-  <script type="module" src="delivery-admin.js?v=5"></script>
+  <script type="module" src="delivery-admin.js?v=6"></script>
   <script src="order-message-admin.js?v=3" defer></script>
   <script src="separation-message-admin.js?v=4" defer></script>
   <script src="whatsapp-template-button-support.js?v=1" defer></script>
@@ -278,24 +278,37 @@
 
       <section class="admin-view delivery-admin-view" data-panel="delivery" hidden>
         <div class="section-title delivery-admin-heading">
-          <div><h2>Entregas</h2><p>Distribua os pedidos prontos entre os entregadores, confira a carga e acompanhe as rotas.</p></div>
+          <div><h2>Entregas</h2><p>Distribua os pedidos prontos, confira cada carga e acompanhe a saída dos entregadores.</p></div>
           <button id="delivery-admin-refresh" class="button button-outline" type="button">Atualizar</button>
         </div>
-        <p class="delivery-admin-local-note">O entregador usa o <a href="../entregador/" target="_blank" rel="noopener">portal de entregas</a> com o link individual gerado na rota. Ele já pode ver e ordenar a rota planejada; depois de conferir a carga, libere a saída para começar as entregas.</p>
+        <p class="delivery-admin-local-note">O entregador usa o <a href="../entregador/" target="_blank" rel="noopener">portal de entregas</a>. O acesso individual é ativado uma vez no aparelho e só precisa ser renovado se trocar de aparelho, expirar ou for revogado. A ordem não é calculada automaticamente por distância; o entregador pode ajustá-la no portal antes da conferência da carga.</p>
         <p id="delivery-admin-status" class="admin-muted" role="status" aria-live="polite">Carregando entregas…</p>
-        <div class="delivery-admin-grid">
-          <section class="delivery-admin-section delivery-ready-section">
-            <div class="delivery-section-title"><div><h3>Pedidos em expedição</h3><p>Esta lista mostra pedidos programados para hoje. Pedidos vencidos ou futuros ficam fora da rota do dia.</p></div><strong id="delivery-ready-count">0</strong></div>
-            <div class="delivery-planner-fields">
-              <label>Entregador ativo<select id="delivery-driver-select"><option value="">Selecione o entregador</option></select></label>
-              <label>Região da rota<select id="delivery-region-select"><option value="">Usar região dos pedidos</option></select></label>
-            </div>
-            <div id="delivery-ready-orders" class="delivery-ready-orders"></div>
-            <div class="delivery-planner-footer"><span id="delivery-selected-count">Nenhum pedido selecionado</span><button id="delivery-plan-run" class="button button-primary" type="button" disabled>Montar rota</button></div>
-          </section>
 
-          <section class="delivery-admin-section delivery-drivers-section">
-            <div class="delivery-section-title"><div><h3>Entregadores</h3><p>Ative apenas quem estiver trabalhando hoje.</p></div></div>
+        <section class="delivery-admin-section delivery-ready-section">
+          <div class="delivery-section-title">
+            <div><h3>1. Distribua os pedidos</h3><p>Escolha um entregador e marque os pedidos que formarão a rota dele. Para dividir entre motoristas, crie um grupo por vez; os pedidos restantes continuam nesta fila.</p></div>
+            <strong id="delivery-ready-count">0</strong>
+          </div>
+          <div class="delivery-planner-fields">
+            <label>Entregador<select id="delivery-driver-select"><option value="">Selecione o entregador</option></select></label>
+            <label>Região da rota<select id="delivery-region-select"><option value="">Usar região dos pedidos</option></select></label>
+          </div>
+          <p id="delivery-route-assignment-hint" class="delivery-route-assignment-hint" role="status" aria-live="polite">Selecione um entregador para ver a rota atual e as vagas disponíveis.</p>
+          <div id="delivery-ready-orders" class="delivery-ready-orders"></div>
+          <div class="delivery-planner-footer">
+            <span id="delivery-selected-count" aria-live="polite">Nenhum pedido selecionado</span>
+            <button id="delivery-plan-run" class="button button-primary" type="button" disabled>Criar rota</button>
+          </div>
+          <p id="delivery-selection-limit" class="delivery-selection-limit">Cada rota aceita até 30 pedidos. O que ficar sem marcar permanece na fila para outro entregador.</p>
+        </section>
+
+        <details class="delivery-admin-section delivery-team-management">
+          <summary>
+            <span><strong>Entregadores e acesso</strong><small>Cadastro, edição e recuperação do acesso individual</small></span>
+            <span class="delivery-team-toggle" aria-hidden="true">＋</span>
+          </summary>
+          <div class="delivery-team-content">
+            <p class="delivery-team-note">O link não é enviado automaticamente. Copie e envie ao entregador somente no primeiro acesso ou quando ele trocar de aparelho; gerar outro link invalida o anterior.</p>
             <form id="delivery-driver-form" class="delivery-driver-form">
               <input id="delivery-driver-id" type="hidden">
               <label>Nome<input id="delivery-driver-name" maxlength="120" autocomplete="name" required></label>
@@ -306,11 +319,11 @@
             </form>
             <div id="delivery-driver-list" class="delivery-driver-list"></div>
             <div class="delivery-access-link-box"><input id="delivery-driver-access-link" type="url" readonly aria-label="Link individual do entregador" hidden><button id="delivery-driver-copy-access" class="button button-outline" type="button" hidden>Copiar link individual</button></div>
-          </section>
-        </div>
+          </div>
+        </details>
 
         <section class="delivery-admin-section delivery-routes-section">
-          <div class="delivery-section-title"><div><h3>Rotas de hoje</h3><p>Confira os pedidos, confirme o carregamento e libere a saída do entregador.</p></div></div>
+          <div class="delivery-section-title"><div><h3>Rotas e saída</h3><p>Abra uma rota para conferir os pedidos. Depois confirme a carga e libere a saída nesta ordem.</p></div></div>
           <div id="delivery-routes-list" class="delivery-routes-list"></div>
         </section>
         <p id="delivery-admin-action-status" class="form-message" role="status" aria-live="polite"></p>
