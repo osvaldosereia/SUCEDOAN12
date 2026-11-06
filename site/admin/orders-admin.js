@@ -3,12 +3,13 @@
   const config = window.DONA_SITE_CONFIG || {};
   const supabase = String(config.supabaseUrl || "").replace(/\/$/, "");
   const adminFunction = String(config.adminFunction || "site-admin-v1");
+  const deliveryFunction = supabase + "/functions/v1/delivery-ops-v1";
   const publishableKey = config.publishableKey || "";
   const accessCode = () => window.DonaAdminAuth?.getCode?.() || "";
   const $ = (id) => document.getElementById(id);
   const esc = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
   const money = (value) => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  const state = { stage: "new", orders: [], currentOrder: null, separation: null, busy: false, refreshTimer: 0, separatorKey: "", replacementSearch: null, deletingOrderId: "" };
+  const state = { stage: "new", orders: [], currentOrder: null, separation: null, busy: false, refreshTimer: 0, separatorKey: "", replacementSearch: null, deletingOrderId: "", deliveryContext: null };
   const separatorNames = { jose: "José", claudio: "Cláudio", jovenil: "Jovenil", kelly: "Kelly" };
 
   async function api(method, action, payload) {
@@ -40,6 +41,31 @@
     if (!value) return "Data não informada";
     const parsed = new Date(value);
     return Number.isNaN(parsed.getTime()) ? "Data não informada" : new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(parsed);
+  }
+
+  function scheduledDate(order) {
+    const value = order?.checkout_snapshot?.delivery?.date || order?.delivery_date || order?.created_at;
+    const dateOnly = String(value || "").slice(0, 10);
+    const parsed = /^\d{4}-\d{2}-\d{2}$/.test(dateOnly)
+      ? new Date(dateOnly + "T12:00:00")
+      : new Date(value || "");
+    return Number.isNaN(parsed.getTime())
+      ? "Data não informada"
+      : new Intl.DateTimeFormat("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" }).format(parsed);
+  }
+
+  async function deliveryHistory(kind) {
+    const url = new URL(deliveryFunction);
+    url.searchParams.set("action", "admin_delivery_history");
+    url.searchParams.set("kind", kind);
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers: { apikey: publishableKey, "x-admin-code": accessCode() },
+      cache: "no-store",
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.ok === false) throw new Error(data.error || "Não foi possível carregar o histórico de entregas.");
+    return data;
   }
 
   function customerName(order) {
@@ -145,30 +171,50 @@
     const list = $("orders-list");
     const status = $("orders-status");
     const attentionOnly = $("orders-notice-attention")?.checked === true;
-    const visibleOrders = attentionOnly ? state.orders.filter(orderHasWhatsAppAttention) : state.orders;
+    const activeAssignments = new Set((state.deliveryContext?.assignments || []).map((item) => item.order_id));
+    const stageOrders = state.stage === "expedition"
+      ? state.orders.filter((order) => String(order.status || "") === "ready" ||
+        (String(order.status || "") === "out_for_delivery" && (!state.deliveryContext || activeAssignments.has(order.id))))
+      : state.orders;
+    const visibleOrders = attentionOnly ? stageOrders.filter(orderHasWhatsAppAttention) : stageOrders;
     status.textContent = visibleOrders.length
       ? visibleOrders.length + (attentionOnly ? " pedido para conferir no WhatsApp" : visibleOrders.length === 1 ? " pedido" : " pedidos")
       : attentionOnly ? "Nenhum pedido exige conferência dos avisos de WhatsApp." : "Nenhum pedido nesta etapa.";
     list.innerHTML = visibleOrders.map((order) => {
-      const delivered = order.status === "delivered";
+      const delivered = state.stage === "delivered";
+      const notDelivered = state.stage === "not_delivered";
+      const assignment = (state.deliveryContext?.assignments || []).find((item) => item.order_id === order.id);
       const action = state.stage === "new"
         ? "<button class='button button-primary order-action' type='button' data-order-confirm='" + esc(order.id) + "'>Confirmar</button>"
         : state.stage === "separating"
           ? "<button class='button button-primary order-action' type='button' data-order-separate='" + esc(order.id) + "'>SEPARAR</button>"
-          : delivered
-            ? "<div class='delivered-stamp' aria-label='Pedido entregue'>ENTREGUE</div>"
-            : "<button class='button button-primary order-action' type='button' data-order-delivery-open='" + esc(order.id) + "'>Organizar entrega</button>";
+          : state.stage === "expedition"
+            ? renderDriverSelector(order, assignment)
+            : delivered
+              ? "<div class='delivered-stamp' aria-label='Pedido entregue'>ENTREGUE</div>"
+              : notDelivered
+                ? "<div class='not-delivered-stamp'>NÃO ENTREGUE</div>"
+                : "";
       const cancelable = ["storefront_received", "received", "confirmed", "processing"].includes(String(order.status || ""))
         && !order.bling_order_id && order.sync_status === "local";
       const deleteAction = cancelable
         ? "<button class='button button-outline order-delete' type='button' data-order-delete='" + esc(order.id) + "'" + (state.deletingOrderId === order.id ? " disabled" : "") + ">Excluir</button>"
         : "";
       const phone = order.phone_e164 || order.phone || "Telefone não informado";
-      return "<article class='order-card'>" +
+      const deliveryDetails = state.stage === "expedition"
+        ? "<span class='order-delivery-date'><span>DATA DA ENTREGA</span><strong>" + esc(scheduledDate(order)) + "</strong></span>" +
+          "<span class='order-card-address'><span>ENDEREÇO DE ENTREGA</span><strong>" + esc(deliveryAddress(order)) + "</strong></span>"
+        : notDelivered
+          ? "<span class='delivery-history-date'>Não entregue em " + esc(date(order.delivery_failure_case?.failed_at || order.updated_at)) + "</span>"
+          : delivered
+          ? "<span class='delivery-history-date'>Entregue em " + esc(date(order.delivered_at || order.updated_at)) + "</span>"
+            : "";
+      return "<article class='order-card " + (state.stage === "expedition" ? "order-card-expedition" : "") + "'>" +
         "<button class='order-card-open' type='button' data-order-open='" + esc(order.id) + "' aria-label='Ver produtos do pedido " + esc(orderNumber(order)) + "'>" +
           "<span class='order-card-top'><strong>" + esc(orderNumber(order)) + "</strong><time>" + esc(date(order.created_at)) + "</time></span>" +
           "<span class='order-card-name'>" + esc(customerName(order)) + "</span>" +
           "<span class='order-card-phone'>" + esc(phone) + "</span>" +
+          deliveryDetails +
           orderWhatsAppNoticeMarkup(order) +
           "<span class='order-card-bottom'><span>Valor do pedido</span><strong>" + esc(money(order.total)) + "</strong></span>" +
         "</button>" +
@@ -178,14 +224,36 @@
     if (!state.orders.length) list.innerHTML = "<div class='orders-empty'>Os pedidos aparecerão aqui quando forem registrados.</div>";
   }
 
+  function renderDriverSelector(order, assignment) {
+    const assignedId = assignment?.driver_id || "";
+    const drivers = (state.deliveryContext?.drivers || []).filter((driver) => driver.is_active || driver.id === assignedId);
+    const options = drivers.map((driver) =>
+      "<option value='" + esc(driver.id) + "' " + (driver.id === assignedId ? "selected" : "") + ">" + esc(driver.name) + "</option>"
+    ).join("");
+    const isLocked = assignment?.locked === true;
+    const help = assignment
+      ? (isLocked ? "Em entrega com " : "Atribuído a ") + esc(assignment.driver_name || "entregador") + (assignment.service_date ? " · " + esc(assignment.service_date) : "")
+      : drivers.length ? "Escolha quem fará esta entrega." : "Cadastre um entregador em Entregas.";
+    return "<label class='order-driver-select'><span>ENTREGADOR</span><select data-order-driver='" + esc(order.id) + "' aria-label='Selecionar entregador para o pedido " + esc(orderNumber(order)) + "' " + (!drivers.length || isLocked ? "disabled" : "") + "><option value=''>Selecionar entregador</option>" + options + "</select><small>" + help + "</small></label>";
+  }
+
   async function loadOrders() {
     const status = $("orders-status");
     const list = $("orders-list");
     if (!list || $("admin-view").hidden) return;
     status.textContent = "Carregando pedidos…";
     try {
-      const result = await api("GET", "orders_list", { stage: state.stage });
-      state.orders = Array.isArray(result.orders) ? result.orders : [];
+      if (state.stage === "delivered" || state.stage === "not_delivered") {
+        const result = await deliveryHistory(state.stage);
+        state.orders = Array.isArray(result.orders) ? result.orders : [];
+      } else {
+        const result = await api("GET", "orders_list", { stage: state.stage });
+        state.orders = Array.isArray(result.orders) ? result.orders : [];
+        if (state.stage === "expedition") {
+          try { state.deliveryContext = await window.DonaDeliveryAdmin?.getContext?.() || null; }
+          catch (_) { state.deliveryContext = null; }
+        }
+      }
       renderList();
     } catch (error) {
       status.textContent = error.message || "Não foi possível carregar os pedidos.";
@@ -534,6 +602,27 @@
     if (button.dataset.orderDeliveryOpen) window.DonaDeliveryAdmin?.openForOrder(button.dataset.orderDeliveryOpen);
     if (button.dataset.orderDelete) deleteOrder(button.dataset.orderDelete);
   });
+  $("orders-list").addEventListener("change", async (event) => {
+    const select = event.target.closest("[data-order-driver]");
+    if (!select) return;
+    if (!select.value) {
+      await loadOrders();
+      return;
+    }
+    const orderId = select.dataset.orderDriver;
+    select.disabled = true;
+    try {
+      const saved = await window.DonaDeliveryAdmin?.assignOrder?.(orderId, select.value);
+      if (!saved) throw new Error("Não foi possível atribuir o entregador.");
+      toast("Entrega atribuída ao entregador.");
+      await loadOrders();
+    } catch (error) {
+      toast(error.message || "Não foi possível atribuir o entregador.");
+      await loadOrders();
+    } finally {
+      select.disabled = false;
+    }
+  });
   $("separation-items").addEventListener("click", (event) => {
     const choice = event.target.closest("[data-replacement-choice]");
     if (choice) {
@@ -555,3 +644,4 @@
   window.DonaOrdersAdmin = { loadOrders: loadOrders, openOrder: openOrder };
   window.setInterval(() => { if (!$("admin-view").hidden && !document.querySelector("[data-panel='orders']").hidden) loadOrders(); }, 45000);
 })();
+
