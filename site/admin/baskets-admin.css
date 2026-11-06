@@ -3,9 +3,9 @@
   align-items: flex-start;
   gap: 10px;
   padding: 10px 12px;
-  border: 1px solid #e7dbcc;
+  border: 1px solid var(--line);
   border-radius: 10px;
-  background: #faf6f0;
+  background: #f8f9fb;
   cursor: pointer;
 }
 .basket-share-toggle > input {
@@ -47,9 +47,9 @@
   margin-top: 16px;
 }
 .basket-default-prices {
-  margin: 14px 0;
-  padding: 14px;
-  border: 1px solid #e7dbcc;
+  margin: 16px 0;
+  padding: 18px;
+  border: 1px solid var(--line);
   border-radius: 12px;
   background: #fff;
 }
@@ -74,7 +74,7 @@
   display: grid;
   gap: 5px;
   min-width: 0;
-  color: #665446;
+  color: #505b68;
   font-size: .74rem;
   font-weight: 750;
 }
@@ -84,10 +84,10 @@
   gap: 7px;
   min-height: 40px;
   padding: 0 10px;
-  border: 1px solid #ddcebc;
+  border: 1px solid #d5dce4;
   border-radius: 9px;
   background: #fff;
-  color: #75675b;
+  color: #64707c;
 }
 .basket-default-price-input:focus-within {
   border-color: var(--brand);
@@ -99,7 +99,7 @@
   border: 0;
   outline: 0;
   background: transparent;
-  color: #332a24;
+  color: #20252b;
   font: inherit;
   font-size: .86rem;
   font-weight: 750;
@@ -115,15 +115,17 @@
   line-height: 1.35;
 }
 .basket-default-price-sum strong {
-  color: #665446;
+  color: #505b68;
   font-size: .72rem;
   font-weight: 800;
 }
 .basket-grid-table-wrap {
   max-width: 100%;
   overflow: auto;
-  border: 1px solid #e7dbcc;
-  border-radius: 13px;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+  border: 1px solid var(--line);
+  border-radius: 12px;
   background: #fff;
 }
 .basket-grid-table {
@@ -135,7 +137,7 @@
 .basket-grid-table th,
 .basket-grid-table td {
   padding: 12px;
-  border-bottom: 1px solid #eee5da;
+  border-bottom: 1px solid #e8ecf1;
   vertical-align: top;
 }
 .basket-grid-table thead th {
@@ -143,9 +145,9 @@
   z-index: 1;
   top: 0;
   min-width: 106px;
-  background: #f8f3eb;
-  color: #665446;
-  font-size: .76rem;
+  background: #f3f5f8;
+  color: #4a5561;
+  font-size: .78rem;
   text-align: center;
 }
 .basket-grid-table thead th:first-child {
@@ -164,7 +166,7 @@
 }
 .basket-grid-table thead th small {
   margin-top: 4px;
-  color: #88796c;
+  color: #697481;
   font-size: .66rem;
   font-weight: 600;
 }
@@ -213,7 +215,7 @@
   display: grid;
   gap: 5px;
   min-width: 0;
-  color: #75675b;
+  color: #64707c;
   font-size: .72rem;
   font-weight: 700;
 }
@@ -223,10 +225,10 @@
   min-width: 0;
   min-height: 41px;
   padding: 8px 10px;
-  border: 1px solid #ddcebc;
+  border: 1px solid #d5dce4;
   border-radius: 9px;
   background: #fff;
-  color: #332a24;
+  color: #20252b;
   font: inherit;
   font-size: .86rem;
 }
@@ -254,10 +256,10 @@
   align-items: center;
   gap: 8px;
   min-width: 0;
-  padding: 7px 8px;
-  border: 1px solid #eee4d8;
+  padding: 10px;
+  border: 1px solid var(--line);
   border-radius: 9px;
-  background: #fcfaf7;
+  background: #fff;
 }
 .basket-grid-option-order {
   display: grid;
@@ -265,8 +267,8 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #efe4d7;
-  color: #76362f;
+  background: #f5e7e9;
+  color: #7e3029;
   font-size: .73rem;
   font-weight: 800;
 }
@@ -277,13 +279,13 @@
 }
 .basket-grid-option-copy > strong {
   overflow-wrap: anywhere;
-  color: #332a24;
+  color: #20252b;
   font-size: .78rem;
   line-height: 1.3;
 }
 .basket-grid-option-copy > span,
 .basket-grid-option-copy > small {
-  color: #7b6d61;
+  color: #697481;
   font-size: .68rem;
 }
 .basket-grid-default {
@@ -322,7 +324,7 @@
 }
 .basket-manual-review-heading p {
   margin: 0;
-  color: #75675b;
+  color: #64707c;
   font-size: .8rem;
   line-height: 1.45;
 }
@@ -374,7 +376,7 @@
 }
 .basket-grid-empty {
   padding: 22px;
-  border: 1px dashed #ddcebc;
+  border: 1px dashed #d5dce4;
   border-radius: 12px;
   background: #fff;
 }
@@ -390,6 +392,15 @@
   border: 0;
 }
 @media (max-width: 760px) {
+  .admin-basket-grid::before { content: "Deslize para os lados para consultar as quantidades de todas as cestas."; display: block; margin: 6px 0 10px; color: #697481; font-size: .81rem; line-height: 1.4; }
+  .basket-grid-table thead th:first-child, .basket-grid-table tbody th { min-width: 174px; width: 174px; max-width: 174px; }
+  .basket-grid-table thead th:nth-child(2), .basket-grid-variations { min-width: 310px; }
+  .basket-grid-title-cell { grid-template-columns: 22px minmax(0, 1fr); gap: 6px; }
+  .basket-grid-table th, .basket-grid-table td { padding: 10px 8px; }
+  .basket-grid-table tbody th { overflow-wrap: anywhere; }
+  .basket-default-prices { padding: 13px; }
+  .basket-default-price { font-size: .84rem; }
+
   .basket-default-prices-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
