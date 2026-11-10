@@ -193,6 +193,13 @@ function shortTemplateShape(row: any) {
   return Boolean(urlButton && validVariables);
 }
 
+function templateBodyMatches(row: any, expectedBody: string) {
+  const components = Array.isArray(row?.components) ? row.components : [];
+  const body = components.find((item: any) => String(item.type || "").toUpperCase() === "BODY");
+  const normalize = (value: unknown) => String(value || "").replace(/\r\n?/g, "\n").trim();
+  return normalize(body?.text) === normalize(expectedBody);
+}
+
 async function readState() {
   const settings = await settingsRows();
   const channels = await Promise.all(settings.map(async (setting: any) => {
@@ -205,11 +212,9 @@ async function readState() {
     const pending = templates.find((item: any) => item.name === setting.pending_template_name);
     const activeMetadata = active?.metadata && typeof active.metadata === "object" ? active.metadata : {};
     const pendingMetadata = pending?.metadata && typeof pending.metadata === "object" ? pending.metadata : {};
-    const activeComponents = Array.isArray(active?.components) ? active.components : [];
-    const pendingComponents = Array.isArray(pending?.components) ? pending.components : [];
-    const activeBody = activeComponents.find((item: any) => String(item.type || "").toUpperCase() === "BODY")?.text || "";
-    const pendingBody = pendingComponents.find((item: any) => String(item.type || "").toUpperCase() === "BODY")?.text || "";
     const draftBody = String(setting.draft_body || "");
+    const draftMatchesActive = Boolean(active) && templateBodyMatches(active, draftBody);
+    const draftMatchesPending = Boolean(pending) && templateBodyMatches(pending, draftBody);
     return {
       channel,
       label: "WhatsApp final " + channel,
@@ -219,10 +224,10 @@ async function readState() {
       pending_template_name: setting.pending_template_name || null,
       pending_status: pending?.status || null,
       pending_rejection_reason: pendingMetadata.rejected_reason || null,
-      pending_can_activate: pending?.status === "APPROVED" && shortTemplateShape(pending),
+      pending_can_activate: draftMatchesPending && pending?.status === "APPROVED" && shortTemplateShape(pending),
       active_rejection_reason: activeMetadata.rejected_reason || null,
-      draft_matches_active: Boolean(active) && activeBody === draftBody,
-      draft_matches_pending: Boolean(pending) && pendingBody === draftBody,
+      draft_matches_active: draftMatchesActive,
+      draft_matches_pending: draftMatchesPending,
       meta_checked_at: [active?.last_synced_at, pending?.last_synced_at].filter(Boolean).sort().pop() || null,
       updated_at: setting.updated_at,
       account_ready: Boolean(account && account.waba_id && account.phone_number_id),
@@ -320,7 +325,8 @@ async function submitDraft() {
       const priorPending = setting?.pending_template_name
         ? matches.find((item: any) => item.name === setting.pending_template_name)
         : null;
-      if (priorPending && (isPending(priorPending.status) || priorPending.status === "APPROVED")) {
+      if (priorPending && shortTemplateShape(priorPending) && templateBodyMatches(priorPending, body) &&
+          (isPending(priorPending.status) || priorPending.status === "APPROVED")) {
         results.push({
           channel,
           name: priorPending.name,
@@ -330,7 +336,7 @@ async function submitDraft() {
         continue;
       }
       const anyPending = matches
-        .filter((item: any) => isPending(item.status))
+        .filter((item: any) => isPending(item.status) && shortTemplateShape(item) && templateBodyMatches(item, body))
         .sort((a: any, b: any) => String(b.name).localeCompare(String(a.name)))[0];
       if (anyPending) {
         await updateSetting(channel, { pending_template_name: anyPending.name });
