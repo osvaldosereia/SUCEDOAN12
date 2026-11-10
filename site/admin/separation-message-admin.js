@@ -87,7 +87,7 @@
       const draftNote = hasPending
         ? channel.draft_matches_pending
           ? "O rascunho salvo corresponde à versão enviada à Meta."
-          : "O rascunho foi alterado depois do envio. O status acima se refere à versão enviada anteriormente."
+          : "O texto salvo mudou depois do envio. O status acima é da versão antiga; clique em “Enviar para análise da Meta” para enviar o texto atual."
         : channel.draft_matches_active
           ? "O texto salvo é igual ao modelo em uso."
           : "Este texto está salvo como rascunho e ainda não foi enviado à Meta.";
