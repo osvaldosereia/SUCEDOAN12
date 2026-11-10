@@ -5,7 +5,7 @@
   const endpoint = base + "/functions/v1/site-admin-v1";
   const publishableKey = config.publishableKey || "";
   const $ = (id) => document.getElementById(id);
-  const state = { cursor: null, total: 0, conversations: [], firstPageIds: new Set(), selectedId: "", selectedConversation: null, before: null, listLoading: false, listRequestId: 0, conversationLoading: false, conversationRequestId: 0, olderLoading: false, quickFilter: "all", favoriteIds: new Set(), favoritesAvailable: false, ordersAvailable: false, favoriteBusyIds: new Set(), orderBusyIds: new Set(), anaModeBusyIds: new Set(), sendingTextIds: new Set(), sendingMediaIds: new Set(), pendingTextByConversation: new Map(), pendingMediaKey: "", pendingMediaFingerprint: "", uncertainSends: new Map(), statusCheckingIds: new Set(), drafts: new Map(), statusRefreshing: false };
+  const state = { cursor: null, total: 0, conversations: [], firstPageIds: new Set(), selectedId: "", selectedConversation: null, before: null, listLoading: false, listRequestId: 0, conversationLoading: false, conversationRequestId: 0, olderLoading: false, quickFilter: "all", favoriteIds: new Set(), favoritesAvailable: false, ordersAvailable: false, favoriteBusyIds: new Set(), orderBusyIds: new Set(), labelBusyConversations: new Set(), labelSaveBusy: false, labels: [], labelsLoaded: false, labelsLoading: false, anaModeBusyIds: new Set(), sendingTextIds: new Set(), sendingMediaIds: new Set(), pendingTextByConversation: new Map(), pendingMediaKey: "", pendingMediaFingerprint: "", uncertainSends: new Map(), statusCheckingIds: new Set(), drafts: new Map(), statusRefreshing: false };
   const dateLabel = (value) => {
     if (!value) return "Sem atividade";
     const date = new Date(value);
@@ -257,6 +257,317 @@
       + (crmLabel ? " · " + crmLabel : "");
   }
 
+  function labelColor(value) {
+    const color = String(value || "").trim();
+    return /^#[0-9a-f]{6}$/i.test(color) ? color : "#7e3029";
+  }
+
+  function renderLabelFilter() {
+    const select = $("whatsapp-conversation-label-filter");
+    if (!select) return;
+    const previous = select.value;
+    const allOption = document.createElement("option");
+    allOption.value = "";
+    allOption.textContent = "Todas as etiquetas";
+    select.replaceChildren(allOption);
+    for (const label of state.labels) {
+      const option = document.createElement("option");
+      option.value = label.id;
+      option.textContent = label.name;
+      select.append(option);
+    }
+    select.value = state.labels.some((label) => label.id === previous) ? previous : "";
+  }
+
+  function renderLabelManagerList() {
+    const host = $("whatsapp-label-manager-list");
+    if (!host) return;
+    host.replaceChildren();
+    if (!state.labels.length) {
+      const empty = document.createElement("p");
+      empty.className = "admin-muted";
+      empty.textContent = state.labelsLoading ? "Carregando etiquetas…" : "Nenhuma etiqueta ativa.";
+      host.append(empty);
+      return;
+    }
+    for (const label of state.labels) {
+      const row = document.createElement("article");
+      row.className = "whatsapp-label-manager-row";
+      const main = document.createElement("div");
+      main.className = "whatsapp-label-manager-main";
+      const swatch = document.createElement("span");
+      swatch.className = "whatsapp-label-swatch";
+      swatch.style.setProperty("--whatsapp-label-color", labelColor(label.color));
+      const name = document.createElement("strong");
+      name.textContent = label.name;
+      main.append(swatch, name);
+      if (label.system_managed) {
+        const badge = document.createElement("small");
+        badge.className = "whatsapp-label-system-badge";
+        badge.textContent = "Automática · nome protegido";
+        main.append(badge);
+      }
+      const edit = document.createElement("button");
+      edit.type = "button";
+      edit.className = "button button-outline";
+      edit.textContent = "Editar";
+      edit.addEventListener("click", () => editWhatsAppLabel(label.id));
+      row.append(main, edit);
+      host.append(row);
+    }
+  }
+
+  function renderConversationLabelEditor() {
+    const details = $("whatsapp-conversation-label-editor");
+    const host = $("whatsapp-conversation-label-options");
+    const summary = $("whatsapp-conversation-label-summary");
+    const status = $("whatsapp-conversation-label-status");
+    if (!details || !host || !summary) return;
+    const conversationId = state.selectedId;
+    details.hidden = !conversationId;
+    if (!conversationId) {
+      host.replaceChildren();
+      return;
+    }
+    const conversation = state.selectedConversation || {};
+    const manualIds = new Set((conversation.manual_label_ids || []).map(String));
+    const automaticIds = new Set((conversation.auto_label_ids || []).map(String));
+    const selectedCount = new Set([...manualIds, ...automaticIds]).size;
+    summary.textContent = "Etiquetas da conversa · " + selectedCount;
+    host.replaceChildren();
+    if (state.labelsLoading && !state.labelsLoaded) {
+      status.textContent = "Carregando etiquetas…";
+      return;
+    }
+    if (!state.labels.length) {
+      status.textContent = "Nenhuma etiqueta criada. Use “Gerenciar etiquetas” para criar a primeira.";
+      return;
+    }
+    for (const label of state.labels) {
+      const choice = document.createElement("label");
+      choice.className = "whatsapp-label-choice";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.dataset.whatsappLabelId = label.id;
+      checkbox.checked = manualIds.has(label.id) || automaticIds.has(label.id);
+      checkbox.disabled = label.system_managed === true || automaticIds.has(label.id) || state.labelBusyConversations.has(conversationId) || state.conversationLoading;
+      checkbox.title = label.system_managed === true
+        ? "Etiqueta controlada automaticamente pelo sistema"
+        : "Aplicar ou remover esta etiqueta";
+      const swatch = document.createElement("span");
+      swatch.className = "whatsapp-label-swatch";
+      swatch.style.setProperty("--whatsapp-label-color", labelColor(label.color));
+      const name = document.createElement("span");
+      name.textContent = label.name;
+      choice.append(checkbox, swatch, name);
+      if (label.system_managed === true) {
+        const automatic = document.createElement("small");
+        automatic.textContent = "Automática";
+        choice.append(automatic);
+      }
+      host.append(choice);
+    }
+    status.textContent = selectedCount
+      ? selectedCount + " etiqueta(s) nesta conversa. As automáticas são controladas pelo sistema."
+      : "Marque uma ou mais etiquetas para esta conversa.";
+  }
+
+  function appendConversationLabelBadges(host, item) {
+    const labels = Array.isArray(item.labels) ? item.labels : [];
+    if (!labels.length) return;
+    const badges = document.createElement("span");
+    badges.className = "whatsapp-conversation-label-badges";
+    for (const attached of labels.slice(0, 4)) {
+      const current = state.labels.find((label) => label.id === attached.id) || attached;
+      const badge = document.createElement("small");
+      badge.className = "whatsapp-conversation-label-badge";
+      badge.style.setProperty("--whatsapp-label-color", labelColor(current.color));
+      badge.textContent = current.name || "Etiqueta";
+      badges.append(badge);
+    }
+    if (labels.length > 4) {
+      const extra = document.createElement("small");
+      extra.className = "whatsapp-conversation-label-extra";
+      extra.textContent = "+" + (labels.length - 4);
+      badges.append(extra);
+    }
+    host.append(badges);
+  }
+
+  async function loadLabelCatalog({ force = false } = {}) {
+    if (state.labelsLoading || (state.labelsLoaded && !force)) return;
+    state.labelsLoading = true;
+    try {
+      const data = await request("whatsapp_labels_list");
+      state.labels = Array.isArray(data.labels) ? data.labels : [];
+      state.labelsLoaded = true;
+      renderLabelFilter();
+      renderLabelManagerList();
+      renderConversationLabelEditor();
+      const list = $("whatsapp-conversation-items");
+      if (list && state.conversations.length) {
+        const scrollTop = list.scrollTop;
+        renderQueue(state.conversations, false);
+        list.scrollTop = scrollTop;
+      }
+      const managerStatus = $("whatsapp-label-manager-status");
+      if (managerStatus) managerStatus.textContent = state.labels.length + " etiqueta(s) compartilhadas entre os canais 0975 e 1018.";
+    } catch (error) {
+      state.labelsLoaded = false;
+      const message = error instanceof Error ? error.message : "Não foi possível carregar as etiquetas.";
+      const managerStatus = $("whatsapp-label-manager-status");
+      if (managerStatus) managerStatus.textContent = message;
+      const conversationStatus = $("whatsapp-conversation-label-status");
+      if (conversationStatus && state.selectedId) conversationStatus.textContent = message;
+    } finally {
+      state.labelsLoading = false;
+      renderLabelManagerList();
+    }
+  }
+
+  function resetLabelForm() {
+    const id = $("whatsapp-label-id");
+    const name = $("whatsapp-label-name");
+    const color = $("whatsapp-label-color");
+    const submit = $("whatsapp-label-save");
+    const cancel = $("whatsapp-label-cancel");
+    const help = $("whatsapp-label-name-help");
+    if (id) id.value = "";
+    if (name) {
+      name.value = "";
+      name.disabled = false;
+    }
+    if (color) color.value = "#7e3029";
+    if (submit) {
+      submit.disabled = false;
+      submit.textContent = "Criar etiqueta";
+    }
+    if (cancel) cancel.hidden = true;
+    if (help) help.hidden = true;
+  }
+
+  function editWhatsAppLabel(id) {
+    const label = state.labels.find((item) => item.id === id);
+    if (!label) return;
+    $("whatsapp-label-id").value = label.id;
+    $("whatsapp-label-name").value = label.name;
+    $("whatsapp-label-name").disabled = label.system_managed === true;
+    $("whatsapp-label-color").value = labelColor(label.color);
+    $("whatsapp-label-save").textContent = "Salvar alterações";
+    $("whatsapp-label-save").disabled = false;
+    $("whatsapp-label-cancel").hidden = false;
+    $("whatsapp-label-name-help").hidden = !label.system_managed;
+    $("whatsapp-label-manager-status").textContent = label.system_managed
+      ? "Esta etiqueta é usada por uma automação. Você pode mudar a cor, mas o nome fica protegido."
+      : "Edite o nome ou a cor e salve.";
+    $("whatsapp-label-name").focus();
+  }
+
+  async function saveWhatsAppLabel(event) {
+    event.preventDefault();
+    if (state.labelSaveBusy) return;
+    const id = $("whatsapp-label-id").value.trim();
+    const name = $("whatsapp-label-name").value.trim();
+    const color = $("whatsapp-label-color").value;
+    if (!name && !id) {
+      $("whatsapp-label-manager-status").textContent = "Digite um nome para a etiqueta.";
+      $("whatsapp-label-name").focus();
+      return;
+    }
+    const submit = $("whatsapp-label-save");
+    state.labelSaveBusy = true;
+    submit.disabled = true;
+    submit.textContent = id ? "Salvando…" : "Criando…";
+    try {
+      const result = await request("whatsapp_label_save", { id, name, color });
+      const saved = result.label;
+      if (!saved?.id) throw new Error("O servidor não retornou a etiqueta salva.");
+      const position = state.labels.findIndex((label) => label.id === saved.id);
+      if (position >= 0) state.labels[position] = saved;
+      else state.labels.push(saved);
+      state.labels.sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0) || a.name.localeCompare(b.name, "pt-BR"));
+      state.labelsLoaded = true;
+      renderLabelFilter();
+      renderLabelManagerList();
+      renderConversationLabelEditor();
+      const list = $("whatsapp-conversation-items");
+      if (list) {
+        const scrollTop = list.scrollTop;
+        renderQueue(state.conversations, false);
+        list.scrollTop = scrollTop;
+      }
+      resetLabelForm();
+      $("whatsapp-label-manager-status").textContent = id ? "Etiqueta atualizada." : "Etiqueta criada e disponível nos canais 0975 e 1018.";
+    } catch (error) {
+      $("whatsapp-label-manager-status").textContent = error instanceof Error ? error.message : "Não foi possível salvar a etiqueta.";
+    } finally {
+      state.labelSaveBusy = false;
+      submit.disabled = false;
+      submit.textContent = $("whatsapp-label-id").value ? "Salvar alterações" : "Criar etiqueta";
+    }
+  }
+
+  async function openLabelManager() {
+    const dialog = $("whatsapp-label-manager-dialog");
+    if (!dialog) return;
+    await loadLabelCatalog({ force: true });
+    renderLabelManagerList();
+    if (!dialog.open) dialog.showModal();
+  }
+
+  async function saveConversationLabelsFromCheckbox(checkbox) {
+    const conversationId = state.selectedId;
+    const labelId = checkbox.dataset.whatsappLabelId || "";
+    if (!conversationId || !labelId || state.labelBusyConversations.has(conversationId)) return;
+    const conversation = state.selectedConversation || {};
+    const automaticIds = new Set((conversation.auto_label_ids || []).map(String));
+    if (automaticIds.has(labelId)) return;
+    const previousManualIds = Array.from(conversation.manual_label_ids || []).map(String);
+    const manualIds = new Set(previousManualIds);
+    if (checkbox.checked) manualIds.add(labelId);
+    else manualIds.delete(labelId);
+    state.labelBusyConversations.add(conversationId);
+    state.selectedConversation = { ...conversation, manual_label_ids: Array.from(manualIds) };
+    const status = $("whatsapp-conversation-label-status");
+    let statusMessage = "";
+    renderConversationLabelEditor();
+    status.textContent = "Salvando etiquetas…";
+    try {
+      const data = await request("whatsapp_conversation_labels_set", {
+        conversation_id: conversationId,
+        label_ids: Array.from(manualIds),
+      });
+      const listed = state.conversations.find((item) => item.id === conversationId);
+      if (listed) Object.assign(listed, data);
+      if (state.selectedId === conversationId) {
+        state.selectedConversation = { ...(state.selectedConversation || {}), ...data };
+        statusMessage = "Etiquetas salvas nesta conversa.";
+      }
+      if ($("whatsapp-conversation-label-filter").value) {
+        await loadConversations();
+      } else if (listed) {
+        const list = $("whatsapp-conversation-items");
+        const scrollTop = list.scrollTop;
+        renderQueue(state.conversations, false);
+        list.scrollTop = scrollTop;
+      }
+    } catch (error) {
+      if (state.selectedId === conversationId) {
+        state.selectedConversation = {
+          ...(state.selectedConversation || {}),
+          manual_label_ids: previousManualIds,
+        };
+        statusMessage = error instanceof Error ? error.message : "Não foi possível salvar as etiquetas.";
+      }
+    } finally {
+      state.labelBusyConversations.delete(conversationId);
+      if (state.selectedId === conversationId) {
+        renderConversationLabelEditor();
+        if (statusMessage) status.textContent = statusMessage;
+      }
+    }
+  }
+
   function renderQueue(items, append) {
     const host = $("whatsapp-conversation-items");
     if (!append) host.replaceChildren();
@@ -282,6 +593,7 @@
       const date = document.createElement("small");
       date.textContent = dateLabel(item.last_activity_at);
       button.append(title, meta, date);
+      appendConversationLabelBadges(button, item);
       button.addEventListener("click", () => loadConversation(item.id));
 
       const favoriteButton = document.createElement("button");
@@ -703,6 +1015,7 @@
     }
     $("whatsapp-conversation-header").hidden = false;
     $("whatsapp-conversation-empty").hidden = true;
+    renderConversationLabelEditor();
   }
 
   async function loadConversations({ append = false, silent = false } = {}) {
@@ -732,6 +1045,7 @@
         quick_filter: state.quickFilter,
         search: $("whatsapp-conversation-search").value || "",
         filter: $("whatsapp-conversation-filter").value || "all",
+        label_id: $("whatsapp-conversation-label-filter")?.value || "",
       });
       if (requestId !== state.listRequestId) return;
       state.favoritesAvailable = data.favorites_available === true;
@@ -827,6 +1141,7 @@
       state.before = null;
       updateOlderMessagesButton({ visible: false });
       $("whatsapp-conversation-header").hidden = true;
+      $("whatsapp-conversation-label-editor").hidden = true;
       $("whatsapp-conversation-compose").hidden = false;
       $("whatsapp-conversation-draft").value = state.drafts.get(id) || "";
       clearSelectedMedia();
@@ -960,6 +1275,22 @@
   $("whatsapp-conversation-search-button")?.addEventListener("click", () => loadConversations());
   $("whatsapp-conversation-search")?.addEventListener("keydown", (event) => { if (event.key === "Enter") loadConversations(); });
   $("whatsapp-conversation-filter")?.addEventListener("change", () => loadConversations());
+  $("whatsapp-conversation-label-filter")?.addEventListener("change", () => loadConversations());
+  $("whatsapp-label-manage")?.addEventListener("click", () => { void openLabelManager(); });
+  $("whatsapp-label-manager-close")?.addEventListener("click", () => $("whatsapp-label-manager-dialog").close());
+  $("whatsapp-label-manager-dialog")?.addEventListener("click", (event) => {
+    if (event.target === $("whatsapp-label-manager-dialog")) $("whatsapp-label-manager-dialog").close();
+  });
+  $("whatsapp-label-form")?.addEventListener("submit", saveWhatsAppLabel);
+  $("whatsapp-label-cancel")?.addEventListener("click", () => {
+    resetLabelForm();
+    $("whatsapp-label-manager-status").textContent = "Edição cancelada.";
+  });
+  $("whatsapp-label-manager-dialog")?.addEventListener("close", resetLabelForm);
+  $("whatsapp-conversation-label-options")?.addEventListener("change", (event) => {
+    const checkbox = event.target.closest("input[data-whatsapp-label-id]");
+    if (checkbox) void saveConversationLabelsFromCheckbox(checkbox);
+  });
   $("whatsapp-conversation-more")?.addEventListener("click", () => loadConversations({ append: true }));
   $("whatsapp-conversation-older")?.addEventListener("click", () => state.selectedId && loadConversation(state.selectedId, { older: true }));
   $("whatsapp-conversation-ana-toggle")?.addEventListener("click", () => void toggleSelectedConversationAna());
@@ -1005,6 +1336,7 @@
 
   function setConversationSheetEmpty(title, detailText) {
     $("whatsapp-conversation-header").hidden = true;
+    $("whatsapp-conversation-label-editor").hidden = true;
     $("whatsapp-conversation-compose").hidden = true;
     updateOlderMessagesButton({ visible: false });
     $("whatsapp-conversation-messages").replaceChildren();
@@ -1040,6 +1372,8 @@
 
     state.quickFilter = "all";
     $("whatsapp-conversation-filter").value = "all";
+    $("whatsapp-conversation-label-filter").value = "";
+    void loadLabelCatalog();
     document.querySelectorAll("[data-conversation-view]").forEach((button) => {
       button.setAttribute("aria-pressed", String(button.dataset.conversationView === "all"));
     });
@@ -1087,5 +1421,12 @@
   });
   orderConversationSheet?.addEventListener("close", restoreConversationDetail);
 
-  window.DonaWhatsAppConversations = { load: () => loadConversations(), openConversation, openOrderConversation };
+  window.DonaWhatsAppConversations = {
+    load: async () => {
+      await loadLabelCatalog();
+      return await loadConversations();
+    },
+    openConversation,
+    openOrderConversation,
+  };
 })();
