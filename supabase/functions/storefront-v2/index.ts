@@ -130,12 +130,29 @@ async function moldAvailableStockMap(productIds:string[]){
 }
 async function orderableProductStockMap(productIds:string[]){
   const ids=[...new Set(productIds.filter(Boolean))];const out=new Map<string,number>();if(!ids.length)return out;
-  const {data,error}=await db.from("storefront_ean_sellable_stock_v1")
-    .select("product_id,is_active,stock_authority,loose_sellable_stock,ean_sellable_stock").in("product_id",ids);
-  if(error)throw error;
+  const [{data,error},{data:productRows,error:productError}]=await Promise.all([
+    db.from("storefront_ean_sellable_stock_v1")
+      .select("product_id,is_active,stock_authority,loose_sellable_stock,ean_sellable_stock").in("product_id",ids),
+    db.from("storefront_product_sellable_stock_v1")
+      .select("product_id,sellable_stock,is_active,price,validity_date").in("product_id",ids)
+  ]);
+  if(error)throw error;if(productError)throw productError;
+  const websiteStock=new Map<string,any>((productRows||[]).map((row:any)=>[String(row.product_id),row]));
+  const today=iso(local());
   for(const r of data||[]){
-    const stock=r.stock_authority==="bling"?r.loose_sellable_stock:(r.ean_sellable_stock??r.loose_sellable_stock);
-    out.set(String(r.product_id),r.is_active===true?Math.max(0,Number(stock||0)):0);
+    const productId=String(r.product_id);
+    let stock:any;
+    if(r.stock_authority==="bling"){
+      stock=r.loose_sellable_stock;
+    }else if(r.stock_authority==="supabase"){
+      const row=websiteStock.get(productId);
+      const expiry=row?.validity_date?String(row.validity_date).slice(0,10):"";
+      const websiteEligible=row?.is_active===true&&Number(row.price||0)>0&&(!expiry||expiry>=today);
+      stock=websiteEligible?Math.floor(Number(row.sellable_stock||0)):0;
+    }else{
+      stock=r.ean_sellable_stock??r.loose_sellable_stock;
+    }
+    out.set(productId,r.is_active===true?Math.max(0,Number(stock||0)):0);
   }
   return out;
 }
