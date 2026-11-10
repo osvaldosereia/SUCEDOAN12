@@ -275,6 +275,11 @@ body.home-extra-dialog-open { overflow: hidden; }
 .order-review-panel > h3 { margin: 0; font-size: 1.02rem; }
 .order-review-kind { margin: 0; color: var(--muted); font-size: .86rem; line-height: 1.4; }
 .order-review-items { display: grid; gap: 10px; margin: 0; padding: 0; overflow: visible; list-style: none; }
+.order-review-clear-cart { min-height: 48px; margin: 0 0 2px; border-color: var(--brand); background: #fff7f3; color: var(--brand); font-weight: 800; }
+.order-review-clear-cart:hover:not(:disabled) { background: #f7e7e0; }
+.order-review-clear-cart:focus-visible { outline: 3px solid rgba(126,48,41,.18); outline-offset: 2px; }
+.order-review-clear-cart:disabled { cursor: default; opacity: .55; }
+.order-review-clear-cart[hidden] { display: none; }
 .order-review-item { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-width: 0; padding: 12px; border: 1px solid #dfd2c1; border-radius: 16px; background: #fff; box-shadow: 0 3px 10px rgba(58, 40, 22, .055); }
 .order-review-item-photo { display: block; width: 72px; height: 72px; border-radius: 12px; background: #f8f4ee; object-fit: contain; }
 .order-review-item-copy { display: grid; gap: 4px; min-width: 0; }
