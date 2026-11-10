@@ -40,53 +40,81 @@
 .delivery-route-heading span{display:block;margin-top:4px;color:#75645f;font-size:.8rem}
 .delivery-route-state{padding:5px 9px;border-radius:999px;background:#f4eadf;color:#77532c;font-size:.72rem;font-weight:850;white-space:nowrap}
 .delivery-route-state.is-dispatched{background:#e6f2e9;color:#21613a}
+.delivery-route-progress{display:grid;gap:8px;padding:11px 14px;border-bottom:1px solid #eee7e4;background:#fff}
+.delivery-route-progress-copy{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#75645f;font-size:.78rem}
+.delivery-route-progress-copy strong{color:#302521;font-size:.8rem}
+.delivery-route-progress-copy span{text-align:right}
+.delivery-route-progress-track{height:8px;overflow:hidden;border-radius:999px;background:#f0e8e4}
+.delivery-route-progress-track>span{display:block;height:100%;border-radius:inherit;background:#287246;transition:width .2s ease}
 .delivery-route-stops-details>summary{padding:11px 14px;cursor:pointer;color:#315d8a;font-size:.82rem;font-weight:850;line-height:1.4}
 .delivery-route-stops-details[open]>summary{border-bottom:1px solid #eee7e4;background:#fbf9f7}
 .delivery-route-stops{display:grid;gap:0}
-.delivery-stop-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:13px;border-bottom:1px solid #eee7e4;transition:opacity .15s,background .15s}
+.delivery-stop-card{display:grid;grid-template-columns:minmax(0,1fr);gap:11px;padding:14px;border-bottom:1px solid #eee7e4;transition:opacity .15s,background .15s}
 .delivery-stop-card:last-child{border-bottom:0}
-.delivery-stop-card.is-delivered,.delivery-stop-card.is-failed,.delivery-stop-card.is-cancelled{opacity:.55;filter:grayscale(.3)}
+.delivery-stop-card.is-delivered,.delivery-stop-card.is-failed,.delivery-stop-card.is-cancelled{opacity:.62;filter:grayscale(.25)}
 .delivery-stop-card.is-delivered{background:#f5f6f4}
-.delivery-stop-card.is-next{border-color:#ba7b32;box-shadow:0 0 0 2px #ba7b321c}
-.delivery-stop-main{display:flex;align-items:flex-start;gap:10px;min-width:0}
-.delivery-stop-sequence{display:grid;place-items:center;flex:0 0 30px;height:30px;border-radius:50%;background:#7e3029;color:#fff;font-size:.8rem;font-weight:900}
+.delivery-stop-card.is-next{border-color:#ba7b32;background:#fffdf9;box-shadow:inset 4px 0 #ba7b32}
+.delivery-stop-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;min-width:0}
+.delivery-stop-main{display:flex;align-items:flex-start;gap:10px;min-width:0;flex:1}
+.delivery-stop-sequence{display:grid;place-items:center;flex:0 0 32px;height:32px;border-radius:50%;background:#7e3029;color:#fff;font-size:.82rem;font-weight:900}
 .delivery-stop-card.is-delivered .delivery-stop-sequence{background:#8b9690}
-.delivery-stop-copy{display:grid;gap:6px;min-width:0;color:#665a54;font-size:.82rem;line-height:1.45;overflow-wrap:anywhere}
-.delivery-stop-copy>strong{color:#302521;font-size:.93rem}
-.delivery-stop-copy>.delivery-stop-address{color:#382d28;font-size:1.04rem;font-weight:750;line-height:1.5}
-.delivery-stop-date-highlight{display:inline-block;width:max-content;max-width:100%;padding:5px 8px;border-radius:7px;background:#fbf1ef;color:#7e3029;font-size:.82rem;font-weight:850}
-.delivery-stop-actions{display:flex;flex-direction:column;align-items:flex-end;gap:7px}
-.delivery-card-action{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:6px 9px;border:1px solid #d8e5dd;border-radius:8px;background:#f4faf6;color:#286844;font-size:.77rem;font-weight:750;text-decoration:none;white-space:nowrap}
+.delivery-stop-copy{display:grid;gap:5px;min-width:0;color:#665a54;font-size:.82rem;line-height:1.4;overflow-wrap:anywhere}
+.delivery-stop-title-row{display:flex;align-items:center;flex-wrap:wrap;gap:7px;min-width:0}
+.delivery-stop-title-row>strong{color:#302521;font-size:.91rem}
+.delivery-customer-name{color:#302521;font-size:1rem;line-height:1.3}
+.delivery-stop-copy>.delivery-stop-address{display:block;padding:9px 10px;border:1px solid #f0ded9;border-radius:9px;background:#fbf3f1;color:#382d28;font-size:1rem;font-style:normal;font-weight:800;line-height:1.45;overflow-wrap:anywhere}
+.delivery-stop-date-highlight{display:inline-block;width:max-content;max-width:100%;padding:4px 7px;border-radius:7px;background:#fbf1ef;color:#7e3029;font-size:.76rem;font-weight:850}
+.delivery-current-stop{display:inline-flex;align-items:center;width:max-content;max-width:100%;padding:6px 9px;border-radius:999px;background:#fff0d9;color:#754a12;font-size:.72rem;font-weight:900;line-height:1.2}
+.delivery-stop-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;color:#665a54;font-size:.82rem}
+.delivery-stop-phone{overflow-wrap:anywhere}
+.delivery-stop-total{flex:0 0 auto;color:#302521;font-size:.98rem}
+.delivery-stop-payment{color:#665a54;font-size:.8rem}
+.delivery-stop-status{display:inline-flex;width:max-content;max-width:100%;padding:5px 8px;border-radius:7px;background:#f2efed;color:#655952;font-size:.72rem;font-weight:850}
+.delivery-stop-status.is-delivered{background:#e7f2e9;color:#286844}
+.delivery-stop-status.is-failed{background:#f7e9e4;color:#a64c34}
+.delivery-stop-status.is-cancelled{background:#f3e9e7;color:#8c3028}
+.delivery-stop-actions{display:flex;align-items:stretch;flex-wrap:wrap;gap:8px}
+.delivery-card-action{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:7px 11px;border:1px solid #d8e5dd;border-radius:9px;background:#f4faf6;color:#286844;font-size:.8rem;font-weight:800;text-align:center;text-decoration:none}
 .delivery-card-action:hover{text-decoration:underline}
-.delivery-stop-status{color:#766963;font-size:.74rem}
-.delivery-delivered-label{padding:5px 7px;border:1px solid #438254;border-radius:6px;color:#347044;font-size:.72rem;font-weight:900}
-.delivery-failed-label{display:inline-block;padding:7px 9px;border-radius:7px;background:#f7e9e4;color:#a64c34;font-size:.78rem;font-weight:900;white-space:nowrap}
-.delivery-cancelled-label{padding:5px 7px;border-radius:7px;background:#f3e9e7;color:#8c3028;font-size:.72rem;font-weight:850;line-height:1.3;text-align:center}
-.delivery-sort-actions,.delivery-eta-box{display:flex;align-items:end;gap:8px;flex-wrap:wrap;margin-top:9px}
+.delivery-eta-box{display:grid;grid-template-columns:90px minmax(0,1fr);align-items:end;gap:8px}
+.delivery-eta-box label{display:grid;gap:5px;color:#75645f;font-size:.78rem;font-weight:750}
+.delivery-eta-box select,.delivery-eta-box button{min-height:44px}
+.delivery-route-start{width:100%;font-size:.8rem;line-height:1.25}
+.delivery-stop-complete{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;max-width:520px}
+.delivery-stop-complete .delivery-stop-field{grid-column:1/-1;display:grid;gap:5px;color:#75645f;font-size:.8rem;font-weight:750}
+.delivery-stop-complete .delivery-prepaid-badge{grid-column:1/-1}
+.delivery-stop-complete .button{min-height:46px}
+.delivery-fail-button{color:#963f32;border-color:#d7aaa0}
+.delivery-prepaid-badge{display:inline-flex;width:max-content;max-width:100%;padding:6px 9px;border-radius:8px;background:#fff0cf;color:#70470b;font-size:.74rem;font-weight:900;line-height:1.25}
+.delivery-more-options{border-top:1px solid #eee7e4;padding-top:7px}
+.delivery-more-options>summary,.delivery-extra-details>summary{display:flex;align-items:center;min-height:40px;cursor:pointer;color:#665a54;font-size:.8rem;font-weight:800;list-style:none}
+.delivery-more-options>summary::-webkit-details-marker,.delivery-extra-details>summary::-webkit-details-marker{display:none}
+.delivery-more-options>summary::after{content:"+";display:grid;place-items:center;width:24px;height:24px;margin-left:auto;border-radius:50%;background:#f7efeb;color:#7e3029;font-size:1rem;font-weight:900}
+.delivery-more-options[open]>summary::after{content:"−"}
+.delivery-more-content{display:grid;gap:9px;padding:5px 0 2px}
+.delivery-stop-management{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:end;gap:8px;padding:10px;border:1px solid #eee4df;border-radius:10px;background:#faf8f6}
+.delivery-stop-field{display:grid;gap:5px;min-width:0;color:#51443f;font-size:.8rem;font-weight:750}
+.delivery-stop-management>.button{min-height:42px;white-space:normal}
+.delivery-stop-management>.button-danger{border:1px solid #a13a2f;background:#fff;color:#9c3228}
+.delivery-sort-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .delivery-sort-actions button{min-height:40px;padding:7px 11px;border:1px solid #d8cbc7;border-radius:9px;background:#fff;color:#7e3029;font-weight:750;cursor:pointer}
 .delivery-sort-actions button:disabled{opacity:.45;cursor:default}
-.delivery-eta-box label{display:grid;gap:5px;color:#75645f;font-size:.82rem;font-weight:700}
-.delivery-stop-management{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:end;gap:8px;margin-top:8px;padding:10px;border:1px solid #eee4df;border-radius:10px;background:#faf8f6}
-.delivery-stop-management>.button{min-height:44px;white-space:normal}
-.delivery-stop-management>.button-danger{border:1px solid #a13a2f;background:#fff;color:#9c3228}
-.delivery-stop-complete{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;max-width:440px;margin-top:10px}
-.delivery-stop-complete .delivery-stop-field{display:grid;gap:5px;color:#75645f;font-size:.82rem;font-weight:700}
-.delivery-stop-complete .delivery-prepaid-badge{margin:0}
-.delivery-fail-button{color:#963f32;border-color:#d7aaa0}
-.delivery-prepaid-control{display:flex;align-items:center;flex-wrap:wrap;gap:7px}
-.delivery-prepaid-control select,.delivery-prepaid-control input{flex:1 1 150px;min-height:38px;padding:6px 8px;font-size:.78rem}
-.delivery-prepaid-control .button{min-height:38px;padding:6px 9px;font-size:.78rem}
-.delivery-prepaid-badge{display:inline-flex;width:max-content;max-width:100%;padding:6px 9px;border-radius:8px;background:#fff0cf;color:#70470b;font-size:.75rem;font-weight:900;line-height:1.25}
+.delivery-prepaid-control{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:7px}
+.delivery-prepaid-control select,.delivery-prepaid-control input{grid-column:1/-1;min-height:40px;padding:6px 8px;font-size:.78rem}
+.delivery-prepaid-control .button{grid-column:1/-1;min-height:42px;padding:6px 9px;font-size:.78rem}
 .delivery-location-preview,.delivery-address-reference{display:grid;gap:5px;padding:9px 10px;border:1px solid #e5ddd8;border-radius:9px;background:#faf8f6;color:#655952;font-size:.78rem;line-height:1.4;overflow-wrap:anywhere}
 .delivery-location-preview strong,.delivery-address-reference>strong{color:#315d8a;font-size:.79rem}
-.delivery-location-preview .button{width:max-content;max-width:100%;min-height:36px;margin-top:3px;padding:6px 9px;font-size:.77rem}
+.delivery-location-preview .button{width:max-content;max-width:100%;min-height:40px;margin-top:3px;padding:6px 9px;font-size:.77rem}
 .delivery-address-reference>strong{color:#51413a}
 .delivery-address-reference-photo{display:flex;align-items:center;gap:9px;width:max-content;max-width:100%;margin-top:2px;color:#315d8a;font-weight:750;text-decoration:none}
 .delivery-address-reference-photo:hover{text-decoration:underline}
 .delivery-address-reference-photo img{width:76px;height:58px;flex:0 0 76px;border-radius:7px;object-fit:cover;background:#eee}
-.delivery-items{margin-top:2px}
-.delivery-items summary{width:max-content;cursor:pointer;color:#315d8a;font-weight:750}
-.delivery-items ul{display:grid;gap:3px;padding-left:18px;margin:5px 0 0;color:#665a54;font-size:.78rem}
+.delivery-extra-details{border:1px solid #e5ddd8;border-radius:9px;background:#faf8f6;padding:0 9px}
+.delivery-extra-details>summary{min-height:38px}
+.delivery-items{padding-top:5px;border-top:1px solid #eee7e4}
+.delivery-items summary{width:max-content;max-width:100%;cursor:pointer;color:#315d8a;font-size:.78rem;font-weight:750;overflow-wrap:anywhere}
+.delivery-items ul{display:grid;gap:3px;padding-left:18px;margin:7px 0 2px;color:#665a54;font-size:.78rem}
+
 .delivery-empty{padding:20px 12px;border:1px dashed #d9cac5;border-radius:11px;background:#fff;color:#75645f;font-size:.84rem;text-align:center}
 #delivery-admin-action-status{min-height:1.25rem}
 #delivery-admin-action-status.is-error{color:#a13a2f}
@@ -108,16 +136,33 @@
   .delivery-team-content{padding:12px}
   .delivery-route-heading{align-items:flex-start;flex-direction:column}
   .delivery-route-state{white-space:normal}
-  .delivery-route-stops-details>summary{padding:12px}
-  .delivery-stop-card{grid-template-columns:1fr}
-  .delivery-stop-actions{flex-direction:row;align-items:center;flex-wrap:wrap;padding-left:40px}
-  .delivery-card-action{min-height:44px;white-space:normal;text-align:center}
-  .delivery-stop-copy>.delivery-stop-address{font-size:1.08rem;line-height:1.55}
-  .delivery-stop-management,.delivery-stop-complete{grid-template-columns:1fr;max-width:none}
+  .delivery-route-progress{padding:10px 12px}
+  .delivery-route-progress-copy{align-items:flex-start;flex-direction:column;gap:3px}
+  .delivery-route-progress-copy span{text-align:left}
+  .delivery-route-stops-details>summary{padding:11px 12px}
+  .delivery-stop-card{gap:10px;padding:12px}
+  .delivery-stop-heading{display:grid;grid-template-columns:minmax(0,1fr);gap:7px}
+  .delivery-stop-main{gap:9px}
+  .delivery-stop-sequence{flex-basis:30px;height:30px}
+  .delivery-stop-copy{gap:5px}
+  .delivery-stop-copy>.delivery-stop-address{font-size:1rem;line-height:1.45}
+  .delivery-stop-meta{align-items:flex-start}
+  .delivery-stop-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:7px}
+  .delivery-card-action{min-height:46px;padding:7px 6px;font-size:.76rem;white-space:normal}
+  .delivery-eta-box{grid-template-columns:90px minmax(0,1fr);gap:7px}
+  .delivery-eta-box select,.delivery-eta-box button{width:100%;min-height:46px}
+  .delivery-route-start{padding:7px;font-size:.74rem}
+  .delivery-stop-complete{grid-template-columns:repeat(2,minmax(0,1fr));max-width:none}
+  .delivery-stop-complete .button,.delivery-stop-field select{width:100%;min-height:46px}
+  .delivery-more-options>summary{min-height:44px}
+  .delivery-stop-management{grid-template-columns:minmax(0,1fr);padding:9px}
   .delivery-stop-management>.button,.delivery-stop-field{width:100%}
-  .delivery-sort-actions{margin-left:0}
-  .delivery-eta-box{align-items:stretch;flex-direction:column}
-  .delivery-eta-box select,.delivery-eta-box button{width:100%;min-height:44px}
+  .delivery-sort-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .delivery-sort-actions button{min-height:44px}
+  .delivery-prepaid-control{grid-template-columns:minmax(0,1fr)}
+  .delivery-prepaid-control select,.delivery-prepaid-control input,.delivery-prepaid-control .button{grid-column:1}
+  .delivery-location-preview .button{width:100%;min-height:44px}
   .delivery-address-reference-photo{align-items:flex-start}
   .delivery-address-dialog{width:calc(100% - 12px);max-height:94dvh}
 }
+
