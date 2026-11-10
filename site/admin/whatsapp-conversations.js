@@ -796,15 +796,36 @@
     }
   }
 
+  function updateOlderMessagesButton({ visible = true, loading = false, failed = false } = {}) {
+    const button = $("whatsapp-conversation-older");
+    if (!button) return;
+    const hasOlder = Boolean(state.before);
+    button.hidden = !visible;
+    button.disabled = !visible || loading || !hasOlder;
+    button.textContent = loading
+      ? "Carregando mensagens anteriores…"
+      : failed && hasOlder
+        ? "Tentar carregar mensagens anteriores"
+        : hasOlder
+          ? "Carregar mensagens anteriores"
+          : "Não há mensagens anteriores";
+    button.title = hasOlder
+      ? "Carregar mensagens mais antigas desta conversa"
+      : "Esta conversa não tem mensagens mais antigas para carregar";
+  }
+
   async function loadConversation(id, { older = false } = {}) {
     if (!id || (older && (state.olderLoading || state.conversationLoading))) return;
     const requestId = older ? state.conversationRequestId : ++state.conversationRequestId;
     const targetBefore = older ? state.before : null;
+    let olderFailed = false;
     if (!older) {
       if (state.selectedId) state.drafts.set(state.selectedId, $("whatsapp-conversation-draft").value);
       state.selectedId = id;
       state.selectedConversation = state.conversations.find((item) => item.id === id) || null;
       state.conversationLoading = true;
+      state.before = null;
+      updateOlderMessagesButton({ visible: false });
       $("whatsapp-conversation-header").hidden = true;
       $("whatsapp-conversation-compose").hidden = false;
       $("whatsapp-conversation-draft").value = state.drafts.get(id) || "";
@@ -818,7 +839,7 @@
       syncComposer();
     } else {
       state.olderLoading = true;
-      $("whatsapp-conversation-older").disabled = true;
+      updateOlderMessagesButton({ visible: true, loading: true });
     }
     try {
       const data = await request("whatsapp_conversation_messages", {
@@ -835,25 +856,27 @@
         setComposerStatus("Envio sujeito à janela de 24 horas e à homologação do canal.", "neutral");
       }
       state.before = data.next_before || null;
-      $("whatsapp-conversation-older").hidden = !state.before;
+      updateOlderMessagesButton({ visible: true });
       setStatus("Histórico carregado.");
     } catch (error) {
       if (state.selectedId !== id || requestId !== state.conversationRequestId) return;
       if (!older) {
         $("whatsapp-conversation-empty").textContent = error instanceof Error ? error.message : "Não foi possível abrir esta conversa.";
         $("whatsapp-conversation-empty").hidden = false;
-      } else setStatus(error instanceof Error ? error.message : "Não foi possível carregar mensagens anteriores.");
+      } else {
+        olderFailed = true;
+        setStatus(error instanceof Error ? error.message : "Não foi possível carregar mensagens anteriores.");
+      }
     } finally {
       if (older) {
         state.olderLoading = false;
-        $("whatsapp-conversation-older").disabled = false;
+        updateOlderMessagesButton({ visible: true, failed: olderFailed });
       } else if (requestId === state.conversationRequestId) {
         state.conversationLoading = false;
         syncComposer();
       }
     }
   }
-
   async function checkPendingSend() {
     const conversationId = state.selectedId;
     const pending = state.uncertainSends.get(conversationId);
@@ -981,6 +1004,7 @@
   function setConversationSheetEmpty(title, detailText) {
     $("whatsapp-conversation-header").hidden = true;
     $("whatsapp-conversation-compose").hidden = true;
+    updateOlderMessagesButton({ visible: false });
     $("whatsapp-conversation-messages").replaceChildren();
     const empty = $("whatsapp-conversation-empty");
     empty.replaceChildren();
