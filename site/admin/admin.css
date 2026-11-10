@@ -376,7 +376,11 @@
 .whatsapp-location-card { padding:10px; border:1px solid var(--line); border-radius:10px; background:#fff; }
 .whatsapp-location-card strong { color:var(--ink); font-size:.82rem; }
 .whatsapp-location-link { width:max-content; color:var(--brand); font-size:.76rem; font-weight:700; }
-#whatsapp-conversation-older { align-self:center; margin-top:10px; }
+.whatsapp-conversation-empty[hidden],
+#whatsapp-conversation-older[hidden],
+#whatsapp-conversation-more[hidden] { display:none !important; }
+#whatsapp-conversation-older { align-self:center; min-height:40px; margin-top:10px; }
+#whatsapp-conversation-older:disabled { opacity:.72; cursor:default; }
 @media (max-width:760px) {
   .whatsapp-conversation-filters { grid-template-columns:1fr 1fr; }
   .whatsapp-conversation-browser { grid-template-columns:minmax(140px,38%) minmax(0,1fr); min-height:420px; }
