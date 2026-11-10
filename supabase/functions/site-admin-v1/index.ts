@@ -1075,6 +1075,42 @@ async function attachPublicOrderCodes(orders: any[]) {
   return orders.map((order) => ({ ...order, public_code: codes.get(String(order.id)) || null }));
 }
 
+async function attachOrderWhatsappSource(orders: any[]) {
+  if (!orders.length) return orders;
+  const needsConversationLookup = [...new Set(orders
+    .filter((order) => !uuid(order.whatsapp_account_id))
+    .map((order) => uuid(order.conversation_id))
+    .filter(Boolean))];
+  const accountByConversation = new Map<string, string>();
+  if (needsConversationLookup.length) {
+    const conversationResult = await db.from("conversations")
+      .select("id,whatsapp_account_id")
+      .in("id", needsConversationLookup);
+    if (conversationResult.error) throw conversationResult.error;
+    for (const conversation of conversationResult.data || []) {
+      accountByConversation.set(uuid(conversation.id), uuid(conversation.whatsapp_account_id));
+    }
+  }
+  const accountIds = [...new Set(orders.map((order) =>
+    uuid(order.whatsapp_account_id) || accountByConversation.get(uuid(order.conversation_id)) || "",
+  ).filter(Boolean))];
+  const accountResult = accountIds.length
+    ? await db.from("whatsapp_accounts").select("id,display_name,slug,phone_e164").in("id", accountIds)
+    : { data: [], error: null };
+  if (accountResult.error) throw accountResult.error;
+  const accounts = new Map((accountResult.data || []).map((account: any) => [uuid(account.id), account]));
+  return orders.map((order) => {
+    const accountId = uuid(order.whatsapp_account_id) || accountByConversation.get(uuid(order.conversation_id)) || "";
+    const account: any = accounts.get(accountId) || {};
+    return {
+      ...order,
+      conversation_id: uuid(order.conversation_id) || null,
+      source_whatsapp_phone_e164: clean(account.phone_e164, 32) || null,
+      source_whatsapp_channel: clean(account.display_name || account.slug || "", 120) || null,
+    };
+  });
+}
+
 async function attachOrderWhatsappNotices(orders: any[]) {
   const rows = Array.isArray(orders) ? orders : [];
   const ids = rows.map((order) => uuid(order.id)).filter(Boolean);
@@ -1117,13 +1153,13 @@ async function ordersList(input: any) {
       ? ["confirmed", "processing"]
       : ["ready", "out_for_delivery", "delivered"];
   const result = await db.from("orders")
-    .select("id,order_number,status,total,created_at,updated_at,phone_e164,delivery_address,checkout_snapshot,customer_snapshot,source,payment_method,bling_order_id,sync_status")
+    .select("id,order_number,status,total,created_at,updated_at,phone_e164,delivery_address,checkout_snapshot,customer_snapshot,source,payment_method,bling_order_id,sync_status,conversation_id,whatsapp_account_id")
     .in("source", ORDER_SOURCES)
     .in("status", statuses)
     .order("created_at", { ascending: false })
     .limit(200);
   if (result.error) throw result.error;
-  return { orders: await attachOrderWhatsappNotices(await attachPublicOrderCodes(result.data || [])), stage };
+  return { orders: await attachOrderWhatsappNotices(await attachPublicOrderCodes(await attachOrderWhatsappSource(result.data || []))), stage };
 }
 
 async function orderById(value: unknown): Promise<any> {
