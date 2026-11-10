@@ -9,7 +9,7 @@
   const $ = (id) => document.getElementById(id);
   const esc = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
   const money = (value) => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  const state = { stage: "new", orders: [], currentOrder: null, separation: null, busy: false, refreshTimer: 0, separatorKey: "", replacementSearch: null, deletingOrderId: "", deliveryContext: null };
+  const state = { stage: "new", orders: [], currentOrder: null, separation: null, busy: false, refreshTimer: 0, separatorKey: "", replacementSearch: null, deletingOrderId: "", deliveryContext: null, searchSuffix: "", visibleOrderCount: 5 };
   const separatorNames = { jose: "José", claudio: "Cláudio", jovenil: "Jovenil", kelly: "Kelly" };
 
   async function api(method, action, payload) {
@@ -83,10 +83,20 @@
     return line || address.raw_text || address.formatted_address || "Endereço não informado";
   }
 
-  function whatsappHref(value) {
+  function storeWhatsappNumber(sourcePhone, sourceChannel) {
+    const digits = String(sourcePhone || "").replace(/\D/g, "");
+    if (digits.endsWith("0975")) return "0975";
+    if (digits.endsWith("1018")) return "1018";
+    return String(sourceChannel || "").match(/(?:0975|1018)/)?.[0] || "";
+  }
+
+  function formatWhatsappNumber(value) {
     const digits = String(value || "").replace(/\D/g, "");
-    if (!digits) return "";
-    return "https://wa.me/" + (digits.startsWith("55") ? digits : "55" + digits);
+    if (digits.startsWith("55") && digits.length === 13) {
+      const local = digits.slice(2);
+      return "+55 (" + local.slice(0, 2) + ") " + local.slice(2, 7) + "-" + local.slice(7);
+    }
+    return String(value || "");
   }
 
   function paymentName(order) {
@@ -182,11 +192,23 @@
       ? state.orders.filter((order) => String(order.status || "") === "ready" ||
         (String(order.status || "") === "out_for_delivery" && (!state.deliveryContext || activeAssignments.has(order.id))))
       : state.orders;
-    const visibleOrders = attentionOnly ? stageOrders.filter(orderHasWhatsAppAttention) : stageOrders;
+    const searchSuffix = String(state.searchSuffix || "");
+    if (searchSuffix && searchSuffix.length < 3) {
+      status.textContent = "Digite os 3 últimos dígitos do pedido.";
+      list.innerHTML = "";
+      return;
+    }
+    const searchedOrders = searchSuffix
+      ? stageOrders.filter((order) => String(order.order_number || orderNumber(order)).replace(/\D/g, "").endsWith(searchSuffix))
+      : stageOrders;
+    const visibleOrders = attentionOnly ? searchedOrders.filter(orderHasWhatsAppAttention) : searchedOrders;
+    const cardsToRender = visibleOrders.slice(0, state.visibleOrderCount);
     status.textContent = visibleOrders.length
-      ? visibleOrders.length + (attentionOnly ? " pedido para conferir no WhatsApp" : visibleOrders.length === 1 ? " pedido" : " pedidos")
-      : attentionOnly ? "Nenhum pedido exige conferência dos avisos de WhatsApp." : "Nenhum pedido nesta etapa.";
-    list.innerHTML = visibleOrders.map((order) => {
+      ? "Mostrando " + cardsToRender.length + " de " + visibleOrders.length + (attentionOnly ? " pedidos para conferir no WhatsApp." : " pedidos.")
+      : searchSuffix
+        ? "Nenhum pedido encontrado com final " + searchSuffix + "."
+        : attentionOnly ? "Nenhum pedido exige conferência dos avisos de WhatsApp." : "Nenhum pedido nesta etapa.";
+    list.innerHTML = cardsToRender.map((order) => {
       const delivered = state.stage === "delivered";
       const notDelivered = state.stage === "not_delivered";
       const assignment = (state.deliveryContext?.assignments || []).find((item) => item.order_id === order.id);
@@ -209,19 +231,18 @@
       const phone = order.phone_e164 || order.phone || "";
       const sourcePhone = order.source_whatsapp_phone_e164 || "";
       const sourceChannel = order.source_whatsapp_channel || "";
+      const sourceNumber = storeWhatsappNumber(sourcePhone, sourceChannel);
       const customerPhoneMarkup = phone
         ? "<span class='order-card-phone'><span>CELULAR DO CLIENTE</span><strong>" + esc(phone) + "</strong></span>"
         : "<span class='order-card-phone'>Celular do cliente não informado</span>";
       const sourceChannelMarkup = sourcePhone || sourceChannel
-        ? "<span class='order-card-channel'><span>WHATSAPP DA LOJA</span><strong>" + esc([sourceChannel, sourcePhone].filter(Boolean).join(" · ")) + "</strong></span>"
+        ? "<span class='order-card-channel'><span>PEDIDO RECEBIDO NO WHATSAPP DA LOJA</span><strong>" + esc(sourceNumber ? "Número " + sourceNumber : sourceChannel || "WhatsApp da loja") + "</strong>" + (sourcePhone ? "<small>" + esc(formatWhatsappNumber(sourcePhone)) + "</small>" : "") + "</span>"
         : String(order.source || "").toLowerCase().includes("whatsapp")
           ? "<span class='order-card-channel'><span>ORIGEM DO PEDIDO</span><strong>WhatsApp</strong></span>"
           : "";
-      const conversationAction = order.conversation_id
-        ? "<button class='button button-outline order-conversation-action' type='button' data-order-conversation='" + esc(order.conversation_id) + "'>Abrir conversa</button>"
-        : phone
-          ? "<a class='button button-outline order-conversation-action' href='" + esc(whatsappHref(phone)) + "' target='_blank' rel='noopener'>Abrir conversa</a>"
-          : "";
+      const conversationAction = order.conversation_id || phone
+        ? "<button class='button button-outline order-conversation-action' type='button' data-order-conversation='" + esc(order.conversation_id || "") + "' data-order-conversation-phone='" + esc(phone) + "' data-order-number='" + esc(orderNumber(order)) + "' data-order-customer='" + esc(customerName(order)) + "'>Abrir conversa</button>"
+        : "";
       const deliveryDetails = state.stage === "expedition"
         ? "<span class='order-delivery-date'><span>DATA DA ENTREGA</span><strong>" + esc(scheduledDate(order)) + "</strong></span>" +
           "<span class='order-card-address'><span>ENDEREÇO DE ENTREGA</span><strong>" + esc(deliveryAddress(order)) + "</strong></span>"
@@ -243,7 +264,17 @@
         "<div class='order-card-action'>" + action + conversationAction + deleteAction + "</div>" +
       "</article>";
     }).join("");
-    if (!state.orders.length) list.innerHTML = "<div class='orders-empty'>Os pedidos aparecerão aqui quando forem registrados.</div>";
+    if (visibleOrders.length > cardsToRender.length) {
+      list.insertAdjacentHTML("beforeend", "<button class='button button-outline orders-more-button' type='button' data-orders-more>Ver mais pedidos</button>");
+    }
+    if (!visibleOrders.length) {
+      const emptyMessage = !state.orders.length && !searchSuffix && !attentionOnly
+        ? "Os pedidos aparecerão aqui quando forem registrados."
+        : searchSuffix ? "Nenhum pedido encontrado com final " + searchSuffix + "."
+          : attentionOnly ? "Nenhum pedido exige conferência dos avisos de WhatsApp."
+            : "Nenhum pedido nesta etapa.";
+      list.innerHTML = "<div class='orders-empty'>" + esc(emptyMessage) + "</div>";
+    }
   }
 
   function renderDriverSelector(order, assignment) {
@@ -285,6 +316,10 @@
 
   function setStage(stage) {
     state.stage = stage;
+    state.searchSuffix = "";
+    state.visibleOrderCount = 5;
+    const searchInput = $("orders-search-suffix");
+    if (searchInput) searchInput.value = "";
     document.querySelectorAll("[data-order-stage]").forEach((button) => button.classList.toggle("active", button.dataset.orderStage === stage));
     loadOrders();
   }
@@ -613,18 +648,37 @@
   document.querySelectorAll("[data-order-stage]").forEach((button) => button.addEventListener("click", () => setStage(button.dataset.orderStage)));
   $("orders-notice-attention").addEventListener("change", renderList);
   $("orders-reload").addEventListener("click", loadOrders);
+  $("orders-search-suffix")?.addEventListener("input", (event) => {
+    const input = event.currentTarget;
+    const digits = String(input.value || "").replace(/\D/g, "").slice(0, 3);
+    if (input.value !== digits) input.value = digits;
+    state.searchSuffix = digits;
+    state.visibleOrderCount = 5;
+    renderList();
+  });
   $("order-separator").addEventListener("change", (event) => chooseSeparator(event.target.value));
   $("confirm-separation").addEventListener("click", completeSeparation);
   $("orders-list").addEventListener("click", (event) => {
     const button = event.target.closest("button");
     if (!button) return;
+    if (button.hasAttribute("data-orders-more")) {
+      state.visibleOrderCount += 5;
+      renderList();
+      return;
+    }
     if (button.dataset.orderOpen) openOrder(button.dataset.orderOpen);
     if (button.dataset.orderConfirm) confirmOrder(button.dataset.orderConfirm);
     if (button.dataset.orderSeparate) openSeparation(button.dataset.orderSeparate);
     if (button.dataset.orderDeliveryOpen) window.DonaDeliveryAdmin?.openForOrder(button.dataset.orderDeliveryOpen);
-    if (button.dataset.orderConversation) {
-      if (window.DonaWhatsAppConversations?.openConversation) {
-        void window.DonaWhatsAppConversations.openConversation(button.dataset.orderConversation);
+    if (button.hasAttribute("data-order-conversation")) {
+      const openConversation = window.DonaWhatsAppConversations?.openOrderConversation;
+      if (openConversation) {
+        void openConversation({
+          conversationId: button.dataset.orderConversation || "",
+          phone: button.dataset.orderConversationPhone || "",
+          orderNumber: button.dataset.orderNumber || "",
+          customerName: button.dataset.orderCustomer || "",
+        });
       } else toast("A sessão de conversas do WhatsApp ainda não está disponível.");
     }
     if (button.dataset.orderDelete) deleteOrder(button.dataset.orderDelete);
