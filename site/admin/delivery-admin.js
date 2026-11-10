@@ -206,6 +206,7 @@ import { buildMapsHref, deliveryStopCapabilities, isValidDeliveryRescheduleDate,
     }
   }
 
+
   function renderRouteStop(run, stop, displayIndex, pendingStops) {
     const order = stop.order || {};
     const evidence = latestEvidenceForStop(order);
@@ -236,7 +237,7 @@ import { buildMapsHref, deliveryStopCapabilities, isValidDeliveryRescheduleDate,
     const map = mapHref ? `<a class="delivery-card-action" href="${esc(mapHref)}" target="_blank" rel="noopener">Abrir no Maps</a>` : "";
     const viewOrder = order.id ? `<button class="delivery-card-action" type="button" data-view-delivery-order="${esc(order.id)}">Ver pedido</button>` : "";
     const items = Array.isArray(order.items) && order.items.length
-      ? `<details class="delivery-items"><summary>${order.items.length} item${order.items.length === 1 ? "" : "s"} no pedido</summary><ul>${order.items.map((item) => `<li>${esc(item.quantity)} × ${esc(item.name)}</li>`).join("")}</ul></details>` : "";
+      ? `<details class="delivery-items"><summary>Ver produtos do pedido · ${order.items.length} item${order.items.length === 1 ? "" : "s"}</summary><ul>${order.items.map((item) => `<li>${esc(item.quantity)} × ${esc(item.name)}</li>`).join("")}</ul></details>` : "";
     const routeLockedDrivers = new Set((state.data?.runs || [])
       .filter((candidate) => candidate.status === "dispatched")
       .map((candidate) => candidate.driver_id || candidate.driver?.id).filter(Boolean));
@@ -245,9 +246,9 @@ import { buildMapsHref, deliveryStopCapabilities, isValidDeliveryRescheduleDate,
     const stopManagement = capabilities.canCancel
       ? `<div class="delivery-stop-management"><label class="delivery-stop-field">Passar para outro entregador<select data-route-target-driver="${esc(stopId)}"><option value="">${activeDrivers.length ? "Selecione o entregador" : "Nenhum outro entregador ativo"}</option>${activeDrivers.map((driver) => `<option value="${esc(driver.id)}">${esc(driver.name)}</option>`).join("")}</select></label><button class="button button-outline" type="button" data-stop-reassign="${esc(stopId)}" ${activeDrivers.length ? "" : "disabled"}>Passar pedido</button><label class="delivery-stop-field">Novo dia da entrega<input type="date" data-reschedule-date="${esc(stopId)}" min="${esc(state.data?.service_date || "")}" value="${esc(run.service_date || state.data?.service_date || "")}"></label><button class="button button-outline" type="button" data-stop-reschedule="${esc(stopId)}">Salvar novo dia</button><button class="button button-danger" type="button" data-stop-cancel="${esc(stopId)}">Cancelar entrega</button></div>`
       : "";
-    const payment = canMarkDelivered
-      ? (paid ? `<span class="delivery-prepaid-badge">PAGO ADIANTADO · NÃO COBRAR</span>` : `<label class="delivery-stop-field">Recebido por<select data-admin-delivery-payment="${esc(stopId)}"><option value="">Selecione como recebeu</option><option value="cash">Dinheiro</option><option value="pix">Pix</option><option value="credit_card">Cartão/link</option><option value="food_card">Cartão alimentação</option><option value="meal_card">Cartão refeição</option><option value="other">Outro</option></select></label>`)
-      : paid ? `<span class="delivery-prepaid-badge">PAGO ADIANTADO · NÃO COBRAR</span>` : "";
+    const payment = canMarkDelivered && !paid
+      ? `<label class="delivery-stop-field">Forma de recebimento<select data-admin-delivery-payment="${esc(stopId)}"><option value="">Selecione como recebeu</option><option value="cash">Dinheiro</option><option value="pix">Pix</option><option value="credit_card">Cartão/link</option><option value="food_card">Cartão alimentação</option><option value="meal_card">Cartão refeição</option><option value="other">Outro</option></select></label>`
+      : "";
     const complete = canMarkDelivered
       ? `<div class="delivery-stop-complete">${payment}<button class="button button-primary" type="button" data-admin-delivered="${esc(stopId)}">Marcar como entregue</button><button class="button button-outline delivery-fail-button" type="button" data-admin-failed="${esc(stopId)}">Não entregue</button></div>`
       : "";
@@ -255,7 +256,7 @@ import { buildMapsHref, deliveryStopCapabilities, isValidDeliveryRescheduleDate,
       ? `<div class="delivery-sort-actions"><button type="button" data-sort-stop="-1" data-run-id="${esc(run.id)}" data-stop-id="${esc(stopId)}" ${pendingIndex <= 0 ? "disabled" : ""}>↑ Subir</button><button type="button" data-sort-stop="1" data-run-id="${esc(run.id)}" data-stop-id="${esc(stopId)}" ${pendingIndex < 0 || pendingIndex >= pendingStops.length - 1 ? "disabled" : ""}>↓ Descer</button></div>`
       : "";
     const eta = isNext
-      ? `<div class="delivery-eta-box"><label>Previsão<select data-eta-stop="${esc(stopId)}"><option value="10">10 min</option><option value="15" selected>15 min</option><option value="20">20 min</option><option value="30">30 min</option><option value="40">40 min</option><option value="60">60 min</option></select></label><button class="button button-outline" type="button" data-notify-next="${esc(stopId)}" data-map-href="${esc(mapHref)}" ${order.phone_e164 && run.driver?.phone_e164 ? "" : "disabled"}>${run.status === "planned" ? "Avisar cliente e iniciar entregas" : "Avisar cliente e abrir rota"}</button></div><button class="button button-outline" type="button" data-open-address="${esc(stopId)}">Confirmar local e foto</button>`
+      ? `<div class="delivery-eta-box"><label>Previsão<select data-eta-stop="${esc(stopId)}"><option value="10">10 min</option><option value="15" selected>15 min</option><option value="20">20 min</option><option value="30">30 min</option><option value="40">40 min</option><option value="60">60 min</option></select></label><button class="button button-outline delivery-route-start" type="button" data-notify-next="${esc(stopId)}" data-map-href="${esc(mapHref)}" ${order.phone_e164 && run.driver?.phone_e164 ? "" : "disabled"}>${run.status === "planned" ? "Avisar cliente e iniciar entregas" : "Avisar cliente e abrir rota"}</button></div>`
       : "";
     const unpaid = !paid && !stopIsTerminal(stop) && !canMarkDelivered
       ? `<div class="delivery-prepaid-control"><select data-prepaid-method="${esc(order.id)}" aria-label="Forma de pagamento antecipado"><option value="" selected disabled>Selecione se já foi pago</option><option value="pix">Pix pago</option><option value="credit_card">Link/cartão pago</option></select><input type="text" data-prepaid-reference maxlength="120" placeholder="Referência opcional"><button type="button" class="button button-outline" data-prepaid-order="${esc(order.id)}">Marcar como pago</button></div>`
@@ -263,24 +264,61 @@ import { buildMapsHref, deliveryStopCapabilities, isValidDeliveryRescheduleDate,
     const location = evidence
       ? `<div class="delivery-location-preview"><strong>Localizador recente ${evidence.direction === "outbound" ? "enviado pela loja" : "enviado pelo cliente"}</strong><span>${esc(formatDate(evidence.captured_at))}</span><button type="button" class="button button-outline" data-confirm-location="${esc(order.id)}" data-evidence-id="${esc(evidence.id)}">Salvar no cadastro do cliente</button></div>`
       : "";
-    const status = done ? `<span class="delivery-delivered-label">ENTREGUE</span>`
-      : failed ? `<span class="delivery-failed-label">NÃO ENTREGUE</span>`
-        : cancelled ? `<span class="delivery-cancelled-label">ENTREGA CANCELADA</span>`
+    const addressInfo = addressReferenceMarkup(addressReference);
+    const addressDetails = addressInfo
+      ? `<details class="delivery-extra-details"><summary>Referências do endereço</summary>${addressInfo}</details>`
+      : "";
+    const addressTools = isNext
+      ? `<button class="button button-outline" type="button" data-open-address="${esc(stopId)}">Confirmar local e foto da fachada</button>`
+      : "";
+    const extras = [items, unpaid, location, addressDetails, addressTools, stopManagement, movement].filter(Boolean).join("");
+    const moreOptions = extras
+      ? `<details class="delivery-more-options"><summary>Mais opções do pedido</summary><div class="delivery-more-content">${extras}</div></details>`
+      : "";
+    const status = done ? `<span class="delivery-stop-status is-delivered">ENTREGUE</span>`
+      : failed ? `<span class="delivery-stop-status is-failed">NÃO ENTREGUE</span>`
+        : cancelled ? `<span class="delivery-stop-status is-cancelled">ENTREGA CANCELADA</span>`
           : `<span class="delivery-stop-status">${run.status === "dispatched" ? "Em entrega" : run.service_date === state.data?.service_date ? "Pronta para entrega" : "Agendada"}</span>`;
     const dateLabel = run.service_date ? `<span class="delivery-stop-date-highlight">Entrega: ${esc(new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" }).format(new Date(run.service_date + "T12:00:00Z")))}</span>` : "";
+    const currentStopLabel = isNext
+      ? `<span class="delivery-current-stop">Próxima parada · ${pendingIndex + 1} de ${pendingStops.length}</span>`
+      : "";
+    const orderTotal = order.total ?? (Number(stop.total_cents || 0) / 100);
     return `<article class="delivery-stop-card ${done ? "is-delivered" : ""} ${failed ? "is-failed" : ""} ${cancelled ? "is-cancelled" : ""} ${isNext ? "is-next" : ""}" data-delivery-order-card="${esc(order.id)}" data-delivery-route-date="${esc(run.service_date || "")}">
-      <div class="delivery-stop-main"><span class="delivery-stop-sequence">${displayIndex + 1}.</span><div class="delivery-stop-copy"><strong>Pedido ${esc(orderNumber(order))} · ${esc(customerName(order))}</strong>${dateLabel}<span class="delivery-stop-address">${esc(addressText(order))}</span><span>${phone ? esc(phone) : "Telefone não informado"} · ${esc(money(order.total))}</span><span>Pagamento: ${esc(order.payment_display || stop.payment_method || "A confirmar")}</span>${items}${unpaid}${location}${addressReferenceMarkup(addressReference)}${stopManagement}${movement}${eta}${complete}</div></div>
-      <div class="delivery-stop-actions">${contact}${map}${viewOrder}${status}</div>
+      <header class="delivery-stop-heading">
+        <div class="delivery-stop-main">
+          <span class="delivery-stop-sequence">${displayIndex + 1}</span>
+          <div class="delivery-stop-copy">
+            <div class="delivery-stop-title-row"><strong>Pedido ${esc(orderNumber(order))}</strong>${status}</div>
+            <strong class="delivery-customer-name">${esc(customerName(order))}</strong>
+            ${dateLabel}
+            <span class="delivery-stop-address">${esc(addressText(order))}</span>
+            <div class="delivery-stop-meta">
+              <span class="delivery-stop-phone">${phone ? esc(phone) : "Telefone não informado"}</span>
+              <strong class="delivery-stop-total">${money(orderTotal)}</strong>
+            </div>
+            ${paid
+              ? `<span class="delivery-prepaid-badge">PAGO ADIANTADO · NÃO COBRAR</span>`
+              : `<span class="delivery-stop-payment">Pagamento: ${esc(order.payment_display || stop.payment_method || "A confirmar")}</span>`}
+          </div>
+        </div>
+        ${currentStopLabel}
+      </header>
+      <div class="delivery-stop-actions">${contact}${map}${viewOrder}</div>
+      ${eta}
+      ${complete}
+      ${moreOptions}
     </article>`;
   }
+
 
   function renderRoutes() {
     const allRoutes = Array.isArray(state.data?.runs) ? state.data.runs : [];
     const routes = allRoutes.filter((run) => (run.driver_id || run.driver?.id) === state.activeDriverId);
     const host = $("delivery-routes-list");
     if (!routes.length) {
-      host.innerHTML = `<div class="delivery-empty">Este entregador ainda não tem entregas atribuídas.</div>`;
-        return;
+      host.innerHTML = `<div class='delivery-empty'>Este entregador ainda não tem entregas atribuídas.</div>`;
+      return;
     }
     routes.sort((a, b) => String(a.service_date || "").localeCompare(String(b.service_date || "")));
     host.innerHTML = routes.map((run) => {
@@ -289,14 +327,18 @@ import { buildMapsHref, deliveryStopCapabilities, isValidDeliveryRescheduleDate,
       const deliveredCount = stops.filter((stop) => stop.status === "delivered").length;
       const failedCount = stops.filter((stop) => stop.status === "failed").length;
       const cancelledCount = stops.filter((stop) => stop.status === "cancelled").length;
+      const activeTotal = pending.length + deliveredCount + failedCount;
+      const completedCount = deliveredCount + failedCount;
+      const progressPercent = activeTotal ? Math.round((completedCount / activeTotal) * 100) : 100;
+      const progressText = activeTotal
+        ? `${completedCount} de ${activeTotal} paradas finalizadas · ${pending.length} pendentes`
+        : "Todas as paradas foram finalizadas";
       const stateLabel = run.status === "dispatched" ? "Em entrega"
         : run.status === "completed" ? "Concluída"
           : run.status === "cancelled" ? "Cancelada"
             : run.service_date === state.data?.service_date ? "Pronta para entrega" : "Agendada";
       const total = stops.filter((stop) => stop.status !== "cancelled").reduce((sum, stop) =>
         sum + Number(stop.order?.total ?? (Number(stop.total_cents || 0) / 100)), 0);
-      const driverId = run.driver_id || run.driver?.id || "";
-      const detailsOpen = true;
       const summary = pending.length + " pendente" + (pending.length === 1 ? "" : "s") +
         (deliveredCount ? " · " + deliveredCount + " entregue" + (deliveredCount === 1 ? "" : "s") : "") +
         (failedCount ? " · " + failedCount + " não entregue" + (failedCount === 1 ? "" : "s") : "") +
@@ -307,14 +349,17 @@ import { buildMapsHref, deliveryStopCapabilities, isValidDeliveryRescheduleDate,
           <div><p class="eyebrow">${esc(dateLabel)}</p><h4>${esc(run.driver?.name || "Entregador não atribuído")}</h4><span>${esc(summary)} · ${esc(money(total))}</span></div>
           <strong class="delivery-route-state ${run.status === "dispatched" ? "is-dispatched" : ""}">${stateLabel}</strong>
         </header>
-        <details class="delivery-route-stops-details" data-run-stops="${esc(run.id)}"${detailsOpen ? " open" : ""}>
-          <summary>${pending.length} entrega${pending.length === 1 ? "" : "s"} · ${esc(money(total))}</summary>
+        <div class="delivery-route-progress">
+          <div class="delivery-route-progress-copy"><strong>Progresso da rota</strong><span>${progressText}</span></div>
+          <div class="delivery-route-progress-track" role="progressbar" aria-label="Progresso das paradas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progressPercent}"><span style="width:${progressPercent}%"></span></div>
+        </div>
+        <details class="delivery-route-stops-details" data-run-stops="${esc(run.id)}" open>
+          <summary>${pending.length} entrega${pending.length === 1 ? "" : "s"} pendente${pending.length === 1 ? "" : "s"} · ${esc(money(total))}</summary>
           <div class="delivery-route-stops">${stops.map((stop, index) => renderRouteStop(run, stop, index, pending)).join("")}</div>
         </details>
       </section>`;
     }).join("");
   }
-
 
   function render() {
     renderDriverRegions();
