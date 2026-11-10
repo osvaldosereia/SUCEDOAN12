@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="papoai-guard-admin.css?v=1">
   <link rel="stylesheet" href="baskets-admin.css?v=3">
   <link rel="stylesheet" href="whatsapp-campaign-report.css?v=1">
-  <link rel="stylesheet" href="orders-admin.css?v=15">
+  <link rel="stylesheet" href="orders-admin.css?v=16">
   <link rel="stylesheet" href="delivery-admin.css?v=10">
   <link rel="stylesheet" href="quick-balance-admin.css?v=4">
   <link rel="stylesheet" href="cards-admin.css?v=1">
@@ -22,14 +22,14 @@
   <script src="taxonomy-admin.js?v=1" defer></script>
   <script src="papoai-guard-admin.js?v=1" defer></script>
   <script src="baskets-admin.js?v=5" defer></script>
-  <script src="orders-admin.js?v=15" defer></script>
+  <script src="orders-admin.js?v=16" defer></script>
   <script type="module" src="delivery-admin.js?v=12"></script>
   <script src="order-message-admin.js?v=4" defer></script>
   <script src="separation-message-admin.js?v=5" defer></script>
   <script src="whatsapp-template-button-support.js?v=1" defer></script>
   <script src="whatsapp-admin.js?v=30" defer></script>
   <script src="whatsapp-campaign-report.js?v=1" defer></script>
-  <script src="whatsapp-conversations.js?v=17" defer></script>
+  <script src="whatsapp-conversations.js?v=18" defer></script>
   <script src="quick-balance-admin.js?v=7" defer></script>
   <script src="cards-admin.js?v=2" defer></script>
   <script src="admin.js?v=27" defer></script>
@@ -287,12 +287,17 @@
           <button class="orders-tab" type="button" data-order-stage="delivered">ENTREGUES</button>
           <button class="orders-tab" type="button" data-order-stage="not_delivered">NÃO ENTREGUES</button>
         </nav>
+        <div class="orders-toolbar">
+          <label class="order-search-field" for="orders-search-suffix">
+            <span>Buscar pedido pelos 3 últimos dígitos</span>
+            <input id="orders-search-suffix" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="Ex.: 949" autocomplete="off">
+          </label>
+          <label class="order-notice-filter" for="orders-notice-attention">
+            <input id="orders-notice-attention" type="checkbox">
+            Mostrar falhas nos avisos de WhatsApp
+          </label>
+        </div>
         <p id="orders-status" class="admin-muted" role="status">Carregando pedidos…</p>
-    
-      <label class="order-notice-filter" for="orders-notice-attention">
-        <input id="orders-notice-attention" type="checkbox">
-        Mostrar falhas nos avisos de WhatsApp
-      </label>
         <div id="orders-list" class="orders-list"></div>
       </section>
 
@@ -623,6 +628,18 @@
       <button id="picker-more" class="button button-outline button-wide" type="button" hidden>Carregar mais resultados</button>
       <footer class="dialog-actions"><button class="button button-outline" type="button" data-dialog-close="product-picker-dialog">Cancelar</button><button id="apply-picker-products" class="button button-primary" type="button">Aplicar seleção</button></footer>
     </div>
+  </dialog>
+  <dialog id="order-conversation-sheet" class="order-conversation-sheet" aria-labelledby="order-conversation-sheet-title" aria-describedby="order-conversation-sheet-subtitle">
+    <header class="order-conversation-sheet-header">
+      <span class="order-conversation-sheet-handle" aria-hidden="true"></span>
+      <div>
+        <p class="eyebrow">Mensagens do WhatsApp</p>
+        <h2 id="order-conversation-sheet-title">Conversa do pedido</h2>
+        <p id="order-conversation-sheet-subtitle" class="admin-muted"></p>
+      </div>
+      <button class="icon-button" type="button" data-order-conversation-close aria-label="Fechar conversa">×</button>
+    </header>
+    <div id="order-conversation-sheet-slot" class="order-conversation-sheet-slot"></div>
   </dialog>
   <div id="admin-toast" class="toast" role="status" aria-live="polite"></div>
   </div>
