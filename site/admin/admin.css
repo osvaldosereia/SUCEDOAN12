@@ -887,3 +887,13 @@ dialog.whatsapp-label-manager-dialog::backdrop { background:#211511b8; backdrop-
   .whatsapp-label-form-actions .button { width:100%; }
   .whatsapp-label-manager-row .button { flex:0 0 auto; }
 }
+
+/* Ação de exclusão de etiquetas manuais. */
+.whatsapp-label-manager-actions { display:flex; flex:0 0 auto; align-items:center; gap:6px; }
+.whatsapp-label-delete { min-height:34px; padding:6px 10px; border-color:#d9aaa4; color:#9b3029; font-size:.72rem; }
+.whatsapp-label-delete:hover:not(:disabled) { border-color:#9b3029; background:#fff2ef; color:#8a261f; }
+.whatsapp-label-delete:disabled { opacity:.55; cursor:wait; }
+@media (max-width:520px) {
+  .whatsapp-label-manager-actions { gap:5px; }
+  .whatsapp-label-manager-actions .button { min-width:62px; padding-inline:8px; }
+}
