@@ -283,6 +283,9 @@
     function renderOrderReview(data) {
       const itemsHost = $("order-review-items");
       const entries = orderReviewEntries(data);
+      const clearButton = $("clear-order-cart");
+      clearButton.hidden = entries.length === 0;
+      clearButton.disabled = entries.length === 0 || Boolean(data && (data.changing === true || state.submittingOrder));
       itemsHost.innerHTML = entries.map((item) => {
         const name = esc(item.name);
         const targetData = item.kind === "basket"
@@ -308,9 +311,9 @@
           ? "Pedido personalizado: inclui somente os produtos escolhidos em “Monte sua Cesta”; não inclui uma cesta pronta."
           : String(data.basket && data.basket.name || data.summary && data.summary.name || "Cesta pronta") +
             (selectedExtraEntries(data).length ? " e produtos extras selecionados." : ".");
-      $("order-review-empty").textContent = entries.length ? "" : "Nenhum produto neste pedido.";
+      $("order-review-empty").textContent = entries.length ? "" : "Seu carrinho está vazio. Escolha uma cesta ou adicione produtos para continuar.";
       $("order-review-empty").hidden = entries.length > 0;
-      $("order-review-total").textContent = data ? money(orderReviewTotalCents(data)) : "—";
+      $("order-review-total").textContent = data ? money(orderReviewTotalCents(data)) : money(0);
 
       const minimumMessage = $("order-review-minimum-message");
       if (data && data.customOrder === true) {
@@ -329,6 +332,33 @@
       itemsHost.querySelectorAll("img").forEach((image) => image.addEventListener("error", () => {
         image.src = "../img/logoantonia5.png";
       }, { once: true }));
+    }
+
+    function clearOrderCart() {
+      const activeKey = state.activeKey;
+      const data = state.baskets.get(activeKey);
+      if (!data || data.changing === true || state.submittingOrder) return;
+
+      const extraIds = data.extraSelections instanceof Map ? Array.from(data.extraSelections.keys()) : [];
+      if (data.extraSelections instanceof Map) data.extraSelections.clear();
+      if (data.customOrder === true) {
+        state.baskets.delete(activeKey);
+      } else {
+        data.items = [];
+        data.totalCents = 0;
+        data.orderable = false;
+        data.detailLoaded = false;
+        data.detailPromise = null;
+        data.error = false;
+      }
+
+      if (typeof onCustomOrderSubmitted === "function") onCustomOrderSubmitted();
+      extraIds.forEach((id) => {
+        if (typeof onHomeExtraQuantityChanged === "function") onHomeExtraQuantityChanged(String(id));
+      });
+      state.activeKey = "";
+      renderOrderReview(null);
+      toast("Carrinho limpo.");
     }
 
     async function openOrderSheet(isCustomOrder) {
@@ -673,6 +703,7 @@
       $("home-extra-checkout").addEventListener("click", startCustomOrder);
       const sidebarCheckout = $("sidebar-checkout");
       if (sidebarCheckout) sidebarCheckout.addEventListener("click", openSidebarCheckout);
+      $("clear-order-cart").addEventListener("click", clearOrderCart);
       $("order-review-items").addEventListener("click", async (event) => {
         const button = event.target instanceof Element ? event.target.closest("[data-order-review-adjust]") : null;
         if (!button) return;
