@@ -870,7 +870,9 @@
     } finally {
       if (older) {
         state.olderLoading = false;
-        updateOlderMessagesButton({ visible: true, failed: olderFailed });
+        if (state.selectedId === id && requestId === state.conversationRequestId) {
+          updateOlderMessagesButton({ visible: true, failed: olderFailed });
+        }
       } else if (requestId === state.conversationRequestId) {
         state.conversationLoading = false;
         syncComposer();
