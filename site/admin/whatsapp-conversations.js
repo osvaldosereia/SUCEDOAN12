@@ -5,7 +5,7 @@
   const endpoint = base + "/functions/v1/site-admin-v1";
   const publishableKey = config.publishableKey || "";
   const $ = (id) => document.getElementById(id);
-  const state = { cursor: null, total: 0, conversations: [], firstPageIds: new Set(), selectedId: "", selectedConversation: null, before: null, listLoading: false, listRequestId: 0, conversationLoading: false, conversationRequestId: 0, olderLoading: false, quickFilter: "all", favoriteIds: new Set(), favoritesAvailable: false, ordersAvailable: false, favoriteBusyIds: new Set(), orderBusyIds: new Set(), labelBusyConversations: new Set(), labelSaveBusy: false, labels: [], labelsLoaded: false, labelsLoading: false, anaModeBusyIds: new Set(), sendingTextIds: new Set(), sendingMediaIds: new Set(), pendingTextByConversation: new Map(), pendingMediaKey: "", pendingMediaFingerprint: "", uncertainSends: new Map(), statusCheckingIds: new Set(), drafts: new Map(), statusRefreshing: false };
+  const state = { cursor: null, total: 0, conversations: [], firstPageIds: new Set(), selectedId: "", selectedConversation: null, before: null, listLoading: false, listRequestId: 0, conversationLoading: false, conversationRequestId: 0, olderLoading: false, quickFilter: "all", favoriteIds: new Set(), favoritesAvailable: false, ordersAvailable: false, favoriteBusyIds: new Set(), orderBusyIds: new Set(), labelBusyConversations: new Set(), labelSaveBusy: false, labelDeleteBusyIds: new Set(), labels: [], labelsLoaded: false, labelsLoading: false, anaModeBusyIds: new Set(), sendingTextIds: new Set(), sendingMediaIds: new Set(), pendingTextByConversation: new Map(), pendingMediaKey: "", pendingMediaFingerprint: "", uncertainSends: new Map(), statusCheckingIds: new Set(), drafts: new Map(), statusRefreshing: false };
   const dateLabel = (value) => {
     if (!value) return "Sem atividade";
     const date = new Date(value);
@@ -312,7 +312,23 @@
       edit.className = "button button-outline";
       edit.textContent = "Editar";
       edit.addEventListener("click", () => editWhatsAppLabel(label.id));
-      row.append(main, edit);
+      const actions = document.createElement("div");
+      actions.className = "whatsapp-label-manager-actions";
+      actions.append(edit);
+      if (label.system_managed) {
+        const badge = main.querySelector(".whatsapp-label-system-badge");
+        if (badge) badge.textContent = "Automática · protegida";
+      } else {
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "button button-outline whatsapp-label-delete";
+        remove.textContent = state.labelDeleteBusyIds.has(label.id) ? "Excluindo…" : "Excluir";
+        remove.disabled = state.labelDeleteBusyIds.has(label.id);
+        remove.setAttribute("aria-label", "Excluir etiqueta " + label.name);
+        remove.addEventListener("click", () => { void deleteWhatsAppLabel(label.id); });
+        actions.append(remove);
+      }
+      row.append(main, actions);
       host.append(row);
     }
   }
@@ -461,6 +477,56 @@
       ? "Esta etiqueta é usada por uma automação. Você pode mudar a cor, mas o nome fica protegido."
       : "Edite o nome ou a cor e salve.";
     $("whatsapp-label-name").focus();
+  }
+
+
+  async function deleteWhatsAppLabel(id) {
+    const label = state.labels.find((item) => item.id === id);
+    if (!label || label.system_managed || state.labelDeleteBusyIds.has(id)) return;
+    const confirmed = window.confirm(
+      "Excluir a etiqueta “" + label.name + "”? Ela deixará de aparecer nos filtros e conversas. O histórico das associações será preservado."
+    );
+    if (!confirmed) return;
+
+    state.labelDeleteBusyIds.add(id);
+    renderLabelManagerList();
+    const status = $("whatsapp-label-manager-status");
+    status.textContent = "Excluindo etiqueta…";
+    try {
+      await request("whatsapp_label_deactivate", { id });
+      state.labels = state.labels.filter((item) => item.id !== id);
+      const filter = $("whatsapp-conversation-label-filter");
+      if (filter?.value === id) filter.value = "";
+      const editingId = $("whatsapp-label-id").value.trim();
+      if (editingId === id) resetLabelForm();
+      if (state.selectedConversation) {
+        state.selectedConversation = {
+          ...state.selectedConversation,
+          manual_label_ids: (state.selectedConversation.manual_label_ids || []).filter((labelId) => labelId !== id),
+          labels: (state.selectedConversation.labels || []).filter((item) => item.id !== id),
+        };
+      }
+      for (const conversation of state.conversations) {
+        conversation.manual_label_ids = (conversation.manual_label_ids || []).filter((labelId) => labelId !== id);
+        conversation.labels = (conversation.labels || []).filter((item) => item.id !== id);
+      }
+      renderLabelFilter();
+      renderLabelManagerList();
+      renderConversationLabelEditor();
+      const list = $("whatsapp-conversation-items");
+      if (list) {
+        const scrollTop = list.scrollTop;
+        renderQueue(state.conversations, false);
+        list.scrollTop = scrollTop;
+      }
+      await loadConversations();
+      status.textContent = "Etiqueta excluída. O histórico das associações foi preservado.";
+    } catch (error) {
+      status.textContent = error instanceof Error ? error.message : "Não foi possível excluir a etiqueta.";
+    } finally {
+      state.labelDeleteBusyIds.delete(id);
+      renderLabelManagerList();
+    }
   }
 
   async function saveWhatsAppLabel(event) {
