@@ -965,25 +965,101 @@
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") refreshCrmQueue();
   });
-  async function openConversation(id) {
-    const conversationId = String(id || "").trim();
-    if (!conversationId) return false;
+  let conversationDetailPlaceholder = null;
+  let conversationDetailNode = null;
+
+  function restoreConversationDetail() {
+    const placeholder = conversationDetailPlaceholder;
+    if (placeholder?.parentNode && conversationDetailNode) {
+      placeholder.parentNode.insertBefore(conversationDetailNode, placeholder);
+      placeholder.remove();
+    }
+    conversationDetailPlaceholder = null;
+    conversationDetailNode = null;
+  }
+
+  function setConversationSheetEmpty(title, detailText) {
+    $("whatsapp-conversation-header").hidden = true;
+    $("whatsapp-conversation-compose").hidden = true;
+    $("whatsapp-conversation-messages").replaceChildren();
+    const empty = $("whatsapp-conversation-empty");
+    empty.replaceChildren();
+    const heading = document.createElement("strong");
+    heading.textContent = title;
+    const detail = document.createElement("span");
+    detail.textContent = detailText;
+    empty.append(heading, detail);
+    empty.hidden = false;
+  }
+
+  async function openOrderConversation({
+    conversationId = "",
+    phone = "",
+    orderNumber = "",
+    customerName = "",
+  } = {}) {
+    const dialog = $("order-conversation-sheet");
+    const slot = $("order-conversation-sheet-slot");
+    const detail = document.querySelector(".whatsapp-conversation-detail");
+    if (!dialog || !slot || !detail) return false;
+    if (detail.parentElement !== slot && !conversationDetailPlaceholder) {
+      conversationDetailPlaceholder = document.createComment("whatsapp conversation detail position");
+      detail.parentNode?.insertBefore(conversationDetailPlaceholder, detail);
+      conversationDetailNode = detail;
+    }
+    slot.append(detail);
+    const subtitle = [orderNumber, customerName].filter(Boolean).join(" · ");
+    $("order-conversation-sheet-subtitle").textContent = subtitle;
+    if (!dialog.open) dialog.showModal();
+
     state.quickFilter = "all";
-    $("whatsapp-conversation-search").value = "";
     $("whatsapp-conversation-filter").value = "all";
     document.querySelectorAll("[data-conversation-view]").forEach((button) => {
       button.setAttribute("aria-pressed", String(button.dataset.conversationView === "all"));
     });
-    const whatsappPanel = document.querySelector('[data-panel="whatsapp"]');
-    const switchingToWhatsapp = !whatsappPanel || whatsappPanel.hidden;
-    if (switchingToWhatsapp) window.DonaAdminSetView?.("whatsapp");
-    const conversationsTab = $("whatsapp-section-tab-conversations");
-    if (conversationsTab?.getAttribute("aria-selected") !== "true") conversationsTab?.click();
-    else if (!switchingToWhatsapp) void loadConversations();
-    await loadConversation(conversationId);
-    $("whatsapp-conversation-detail")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    return true;
+
+    const id = String(conversationId || "").trim();
+    if (id) {
+      $("whatsapp-conversation-search").value = "";
+      await loadConversation(id);
+      return true;
+    }
+
+    const digits = String(phone || "").replace(/\D/g, "");
+    if (digits.length < 4) {
+      setConversationSheetEmpty("Conversa não disponível", "Este pedido não tem uma conversa ou número de telefone vinculado.");
+      return false;
+    }
+    if (state.selectedId) state.drafts.set(state.selectedId, $("whatsapp-conversation-draft").value);
+    state.selectedId = "";
+    state.selectedConversation = null;
+    $("whatsapp-conversation-search").value = digits;
+    $("whatsapp-conversation-compose").hidden = true;
+    $("whatsapp-conversation-header").hidden = true;
+    $("whatsapp-conversation-messages").replaceChildren();
+    const empty = $("whatsapp-conversation-empty");
+    empty.hidden = false;
+    empty.innerHTML = "<strong>Localizando conversa…</strong><span>Buscando este número na sessão de mensagens.</span>";
+    await loadConversations();
+    const match = state.conversations[0];
+    if (match?.id) {
+      await loadConversation(match.id);
+      return true;
+    }
+    setConversationSheetEmpty("Conversa não encontrada", "Não há uma conversa deste número na sessão Mensagens.");
+    return false;
   }
 
-  window.DonaWhatsAppConversations = { load: () => loadConversations(), openConversation };
+  async function openConversation(id, options = {}) {
+    return await openOrderConversation({ conversationId: id, ...options });
+  }
+
+  const orderConversationSheet = $("order-conversation-sheet");
+  orderConversationSheet?.querySelector("[data-order-conversation-close]")?.addEventListener("click", () => orderConversationSheet.close());
+  orderConversationSheet?.addEventListener("click", (event) => {
+    if (event.target === orderConversationSheet) orderConversationSheet.close();
+  });
+  orderConversationSheet?.addEventListener("close", restoreConversationDetail);
+
+  window.DonaWhatsAppConversations = { load: () => loadConversations(), openConversation, openOrderConversation };
 })();
