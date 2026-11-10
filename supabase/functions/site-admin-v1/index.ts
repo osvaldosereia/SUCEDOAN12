@@ -2375,6 +2375,47 @@ async function whatsappLabelSave(input: any) {
   return { label: attendanceLabelPayload(saved) };
 }
 
+
+async function whatsappLabelDeactivate(input: any) {
+  const rawId = clean(input.id || input.label_id || "", 64);
+  const labelId = rawId ? uuid(rawId) : "";
+  if (!labelId) return { error: "invalid_label_id", status: 400, message: "Etiqueta inválida." };
+
+  const currentResult = await db.from("attendance_labels_v1")
+    .select("id,name,color,sort_order,is_active")
+    .eq("id", labelId)
+    .maybeSingle();
+  if (currentResult.error) throw currentResult.error;
+  const current = currentResult.data;
+  if (!current || current.is_active !== true) {
+    return { error: "label_not_found", status: 404, message: "Esta etiqueta não está ativa." };
+  }
+  if (attendanceLabelIsSystemManaged(current)) {
+    return {
+      error: "system_label_delete_locked",
+      status: 409,
+      message: "Esta etiqueta é usada por uma automação e não pode ser excluída.",
+    };
+  }
+
+  const updateResult = await db.from("attendance_labels_v1")
+    .update({ is_active: false, updated_at: new Date().toISOString() })
+    .eq("id", labelId)
+    .eq("is_active", true)
+    .select("id,name")
+    .maybeSingle();
+  if (updateResult.error) throw updateResult.error;
+  if (!updateResult.data) {
+    return { error: "label_not_found", status: 404, message: "Esta etiqueta já foi excluída ou desativada." };
+  }
+  return {
+    label_id: uuid(updateResult.data.id),
+    name: clean(updateResult.data.name || "", 80),
+    deactivated: true,
+    history_preserved: true,
+  };
+}
+
 async function whatsappConversationLabelsSet(input: any) {
   const conversationId = uuid(input.conversation_id);
   if (!conversationId) return { error: "invalid_conversation_id", status: 400, message: "Conversa inválida." };
@@ -4420,6 +4461,7 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "whatsapp_conversation_list") result = await whatsappConversationList(input);
     else if (req.method === "POST" && action === "whatsapp_labels_list") result = await whatsappLabelsList();
     else if (req.method === "POST" && action === "whatsapp_label_save") result = await whatsappLabelSave(input);
+    else if (req.method === "POST" && action === "whatsapp_label_deactivate") result = await whatsappLabelDeactivate(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_labels_set") result = await whatsappConversationLabelsSet(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_messages") result = await whatsappConversationMessages(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_message_statuses") result = await whatsappConversationMessageStatuses(input);
