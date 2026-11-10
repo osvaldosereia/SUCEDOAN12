@@ -965,5 +965,25 @@
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") refreshCrmQueue();
   });
-  window.DonaWhatsAppConversations = { load: () => loadConversations() };
+  async function openConversation(id) {
+    const conversationId = String(id || "").trim();
+    if (!conversationId) return false;
+    state.quickFilter = "all";
+    $("whatsapp-conversation-search").value = "";
+    $("whatsapp-conversation-filter").value = "all";
+    document.querySelectorAll("[data-conversation-view]").forEach((button) => {
+      button.setAttribute("aria-pressed", String(button.dataset.conversationView === "all"));
+    });
+    const whatsappPanel = document.querySelector('[data-panel="whatsapp"]');
+    const switchingToWhatsapp = !whatsappPanel || whatsappPanel.hidden;
+    if (switchingToWhatsapp) window.DonaAdminSetView?.("whatsapp");
+    const conversationsTab = $("whatsapp-section-tab-conversations");
+    if (conversationsTab?.getAttribute("aria-selected") !== "true") conversationsTab?.click();
+    else if (!switchingToWhatsapp) void loadConversations();
+    await loadConversation(conversationId);
+    $("whatsapp-conversation-detail")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    return true;
+  }
+
+  window.DonaWhatsAppConversations = { load: () => loadConversations(), openConversation };
 })();
