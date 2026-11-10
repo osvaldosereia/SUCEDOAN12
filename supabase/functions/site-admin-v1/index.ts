@@ -2227,6 +2227,184 @@ async function whatsappConversationFavorite(input: any) {
   return { conversation_id: conversationId, is_favorite: false };
 }
 
+
+function attendanceLabelIsSystemManaged(row: any) {
+  const sortOrder = Number(row?.sort_order ?? 0);
+  return Number.isFinite(sortOrder) && sortOrder >= 200 && sortOrder < 1000;
+}
+
+function attendanceLabelPayload(row: any) {
+  return {
+    id: uuid(row?.id),
+    name: clean(row?.name || "", 80),
+    color: /^#[0-9a-f]{6}$/i.test(String(row?.color || "")) ? String(row.color).toLowerCase() : "#7e3029",
+    sort_order: Number(row?.sort_order || 0),
+    system_managed: attendanceLabelIsSystemManaged(row),
+  };
+}
+
+async function whatsappLabelsList() {
+  const result = await db.from("attendance_labels_v1")
+    .select("id,name,color,sort_order,is_active")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true });
+  if (result.error) throw result.error;
+  return { labels: (result.data || []).map(attendanceLabelPayload) };
+}
+
+async function whatsappConversationLabelMap(conversationIds: string[]) {
+  const ids = Array.from(new Set((conversationIds || []).map((value) => uuid(value)).filter(Boolean)));
+  const output = new Map<string, any>();
+  for (const id of ids) output.set(id, { labels: [], manual_label_ids: [], auto_label_ids: [] });
+  if (!ids.length) return output;
+
+  const [allResult, manualResult, autoResult] = await Promise.all([
+    db.from("attendance_conversation_labels_v1").select("conversation_id,label_id").in("conversation_id", ids),
+    db.from("attendance_conversation_manual_labels_v1").select("conversation_id,label_id").in("conversation_id", ids),
+    db.from("attendance_conversation_auto_labels_v1").select("conversation_id,label_id").in("conversation_id", ids),
+  ]);
+  if (allResult.error) throw allResult.error;
+  if (manualResult.error) throw manualResult.error;
+  if (autoResult.error) throw autoResult.error;
+
+  const allRows = allResult.data || [];
+  const manualRows = manualResult.data || [];
+  const autoRows = autoResult.data || [];
+  const labelIds = Array.from(new Set([...allRows, ...manualRows, ...autoRows]
+    .map((row: any) => uuid(row.label_id)).filter(Boolean)));
+  const labelResult = labelIds.length
+    ? await db.from("attendance_labels_v1").select("id,name,color,sort_order,is_active").in("id", labelIds).eq("is_active", true)
+    : { data: [], error: null };
+  if (labelResult.error) throw labelResult.error;
+  const labelsById = new Map<string, any>();
+  for (const row of labelResult.data || []) labelsById.set(uuid(row.id), attendanceLabelPayload(row));
+  const manualByConversation = new Map<string, Set<string>>();
+  const autoByConversation = new Map<string, Set<string>>();
+  const labelsByConversation = new Map<string, Set<string>>();
+  const add = (map: Map<string, Set<string>>, conversationId: string, labelId: string) => {
+    if (!conversationId || !labelId || !output.has(conversationId) || !labelsById.has(labelId)) return;
+    if (!map.has(conversationId)) map.set(conversationId, new Set());
+    map.get(conversationId)!.add(labelId);
+  };
+  for (const row of manualRows) add(manualByConversation, uuid(row.conversation_id), uuid(row.label_id));
+  for (const row of autoRows) add(autoByConversation, uuid(row.conversation_id), uuid(row.label_id));
+  for (const row of allRows) add(labelsByConversation, uuid(row.conversation_id), uuid(row.label_id));
+
+  for (const id of ids) {
+    const manualIds = Array.from(manualByConversation.get(id) || []);
+    const autoIds = Array.from(autoByConversation.get(id) || []);
+    const visibleIds = Array.from(new Set([
+      ...Array.from(labelsByConversation.get(id) || []),
+      ...manualIds,
+      ...autoIds,
+    ]));
+    const labels = visibleIds.map((labelId) => labelsById.get(labelId)).filter(Boolean)
+      .sort((a: any, b: any) => a.sort_order - b.sort_order || a.name.localeCompare(b.name, "pt-BR"));
+    output.set(id, { labels, manual_label_ids: manualIds, auto_label_ids: autoIds });
+  }
+  return output;
+}
+
+async function whatsappLabelSave(input: any) {
+  const rawId = clean(input.id || "", 64);
+  const labelId = rawId ? uuid(rawId) : "";
+  const color = clean(input.color || "", 7).toLowerCase();
+  if (rawId && !labelId) return { error: "invalid_label_id", status: 400, message: "Etiqueta inválida." };
+  if (!/^#[0-9a-f]{6}$/.test(color)) return { error: "invalid_label_color", status: 400, message: "Escolha uma cor válida." };
+
+  let current: any = null;
+  let systemManaged = false;
+  if (labelId) {
+    const currentResult = await db.from("attendance_labels_v1")
+      .select("id,name,color,sort_order,is_active")
+      .eq("id", labelId)
+      .maybeSingle();
+    if (currentResult.error) throw currentResult.error;
+    current = currentResult.data;
+    if (!current || current.is_active !== true) {
+      return { error: "label_not_found", status: 404, message: "Esta etiqueta não está ativa." };
+    }
+    systemManaged = attendanceLabelIsSystemManaged(current);
+  }
+
+  const requestedName = clean(input.name || "", 80).replace(/\s+/g, " ");
+  if (systemManaged && requestedName && requestedName !== clean(current.name, 80)) {
+    return { error: "system_label_name_locked", status: 409, message: "O nome desta etiqueta é usado por uma automação e não pode ser alterado." };
+  }
+  const name = systemManaged ? clean(current.name, 80) : requestedName;
+  if (name.length < 2 || name.length > 60) {
+    return { error: "invalid_label_name", status: 400, message: "O nome da etiqueta deve ter de 2 a 60 caracteres." };
+  }
+  const normalizeName = (value: unknown) => clean(value || "", 80).normalize("NFC").toLocaleLowerCase("pt-BR");
+  const existingResult = await db.from("attendance_labels_v1").select("id,name").eq("is_active", true);
+  if (existingResult.error) throw existingResult.error;
+  const duplicate = (existingResult.data || []).some((row: any) =>
+    uuid(row.id) !== labelId && normalizeName(row.name) === normalizeName(name));
+  if (duplicate) return { error: "label_name_exists", status: 409, message: "Já existe uma etiqueta ativa com esse nome." };
+
+  let saved: any;
+  if (labelId) {
+    const changes: any = { color, updated_at: new Date().toISOString() };
+    if (!systemManaged) changes.name = name;
+    const updateResult = await db.from("attendance_labels_v1")
+      .update(changes)
+      .eq("id", labelId)
+      .select("id,name,color,sort_order,is_active")
+      .single();
+    if (updateResult.error) {
+      if (updateResult.error.code === "23505") return { error: "label_name_exists", status: 409, message: "Já existe uma etiqueta ativa com esse nome." };
+      throw updateResult.error;
+    }
+    saved = updateResult.data;
+  } else {
+    const orderResult = await db.from("attendance_labels_v1").select("sort_order")
+      .order("sort_order", { ascending: false }).limit(1);
+    if (orderResult.error) throw orderResult.error;
+    const highestOrder = Number(orderResult.data?.[0]?.sort_order || 0);
+    const insertResult = await db.from("attendance_labels_v1")
+      .insert({ name, color, sort_order: Math.max(1000, highestOrder + 1), is_active: true })
+      .select("id,name,color,sort_order,is_active")
+      .single();
+    if (insertResult.error) {
+      if (insertResult.error.code === "23505") return { error: "label_name_exists", status: 409, message: "Já existe uma etiqueta ativa com esse nome." };
+      throw insertResult.error;
+    }
+    saved = insertResult.data;
+  }
+  return { label: attendanceLabelPayload(saved) };
+}
+
+async function whatsappConversationLabelsSet(input: any) {
+  const conversationId = uuid(input.conversation_id);
+  if (!conversationId) return { error: "invalid_conversation_id", status: 400, message: "Conversa inválida." };
+  if (!Array.isArray(input.label_ids) || input.label_ids.length > 20) {
+    return { error: "invalid_label_ids", status: 400, message: "Selecione até 20 etiquetas." };
+  }
+  const parsedIds = input.label_ids.map((value: any) => uuid(value));
+  if (parsedIds.some((id: string) => !id)) {
+    return { error: "invalid_label_ids", status: 400, message: "Uma das etiquetas selecionadas é inválida." };
+  }
+  const labelIds = Array.from(new Set(parsedIds));
+  const result = await db.rpc("ops2_admin_attendance_set_labels_v1", {
+    p_conversation_id: conversationId,
+    p_label_ids: labelIds,
+  });
+  if (result.error) throw result.error;
+  if (result.data?.ok !== true) {
+    const code = clean(result.data?.error || "conversation_label_save_failed", 80);
+    return {
+      error: code,
+      status: code === "conversation_not_found" ? 404 : 400,
+      message: code === "invalid_or_inactive_label"
+        ? "Uma etiqueta não está mais ativa. Atualize a lista e tente novamente."
+        : "Não foi possível salvar as etiquetas desta conversa.",
+    };
+  }
+  const labelMap = await whatsappConversationLabelMap([conversationId]);
+  return { conversation_id: conversationId, ...(labelMap.get(conversationId) || { labels: [], manual_label_ids: [], auto_label_ids: [] }) };
+}
+
 async function whatsappConversationList(input: any) {
   const pageSize = 30;
   const cursorSupplied = Object.prototype.hasOwnProperty.call(input, "cursor") && input.cursor !== null;
@@ -2248,6 +2426,20 @@ async function whatsappConversationList(input: any) {
     return { error: "invalid_quick_filter", status: 400 };
   }
   const search = clean(input.search, 80).replace(/\D/g, "");
+  const rawLabelId = clean(input.label_id || "", 64);
+  const labelId = rawLabelId ? uuid(rawLabelId) : "";
+  if (rawLabelId && !labelId) return { error: "invalid_label_id", status: 400 };
+  let labelConversationIds: string[] = [];
+  let labelConversationIdSet = new Set<string>();
+  if (labelId) {
+    const activeLabelResult = await db.from("attendance_labels_v1").select("id").eq("id", labelId).eq("is_active", true).maybeSingle();
+    if (activeLabelResult.error) throw activeLabelResult.error;
+    if (!activeLabelResult.data) return { error: "label_not_found", status: 404, message: "Esta etiqueta não está ativa." };
+    const assignmentResult = await db.from("attendance_conversation_labels_v1").select("conversation_id").eq("label_id", labelId);
+    if (assignmentResult.error) throw assignmentResult.error;
+    labelConversationIds = Array.from(new Set((assignmentResult.data || []).map((row: any) => uuid(row.conversation_id)).filter(Boolean)));
+    labelConversationIdSet = new Set(labelConversationIds);
+  }
   const filter = clean(input.filter, 20).toLowerCase();
   const onlyHuman = filter === "human";
   const onlyFavorites = quickFilter === "favorites" || filter === "favorites";
@@ -2331,6 +2523,11 @@ async function whatsappConversationList(input: any) {
       ? conversationQuery.in("id", filteredIds)
       : conversationQuery.eq("id", "00000000-0000-0000-0000-000000000000");
   }
+  if (labelId) {
+    conversationQuery = labelConversationIds.length
+      ? conversationQuery.in("id", labelConversationIds)
+      : conversationQuery.eq("id", "00000000-0000-0000-0000-000000000000");
+  }
 
   const conversationResult = await conversationQuery;
   if (conversationResult.error) throw conversationResult.error;
@@ -2358,8 +2555,9 @@ async function whatsappConversationList(input: any) {
   const recentSignalsQuery = signalSets
     ? Promise.resolve(signalSets)
     : recentConversationSignals(pageIds);
-  const [byIdResult, byPhoneResult, recentSignals, customerPhonesResult, profileNamesResult] = await Promise.all([
-    byIdQuery, byPhoneQuery, recentSignalsQuery, customerPhonesQuery, profileNamesQuery,
+  const labelMapQuery = whatsappConversationLabelMap(pageIds);
+  const [byIdResult, byPhoneResult, recentSignals, customerPhonesResult, profileNamesResult, labelMap] = await Promise.all([
+    byIdQuery, byPhoneQuery, recentSignalsQuery, customerPhonesQuery, profileNamesQuery, labelMapQuery,
   ]);
   if (byIdResult.error) throw byIdResult.error;
   if (byPhoneResult.error) throw byPhoneResult.error;
@@ -2426,6 +2624,7 @@ async function whatsappConversationList(input: any) {
       automatic_order_origin: automaticOrderOrigin,
       is_in_orders: isInOrders,
       is_interested: isInterested,
+      ...(labelMap.get(uuid(row.id)) || { labels: [], manual_label_ids: [], auto_label_ids: [] }),
       last_activity_at: lastActivity,
       updated_at: row.updated_at,
     };
@@ -2444,7 +2643,11 @@ async function whatsappConversationList(input: any) {
     next_cursor: hasMore && lastRow ? { updated_at: lastRow.updated_at, id: lastRow.id } : null,
     favorites_available: favoritesAvailable,
     orders_available: ordersAvailable,
-    filter_ids: onlyOrders ? Array.from(orderIds) : onlyInterested ? Array.from(interestedIds) : null,
+    filter_ids: onlyOrders
+      ? Array.from(orderIds).filter((id) => !labelId || labelConversationIdSet.has(id))
+      : onlyInterested
+        ? Array.from(interestedIds).filter((id) => !labelId || labelConversationIdSet.has(id))
+        : null,
   };
 }
 
@@ -2490,7 +2693,7 @@ async function whatsappConversationMessages(input: any) {
   if (!conversationResult.data) return { error: "conversation_not_found", status: 404 };
   const conversation = conversationResult.data;
 
-  const [accountResult, messageResult] = await Promise.all([
+  const [accountResult, messageResult, labelMap] = await Promise.all([
     db.from("whatsapp_accounts").select("id,slug,display_name,phone_e164").eq("id", conversation.whatsapp_account_id).maybeSingle(),
     (() => {
       let query = db.from("whatsapp_messages_v1")
@@ -2504,6 +2707,7 @@ async function whatsappConversationMessages(input: any) {
       }
       return query.order("created_at", { ascending: false }).order("id", { ascending: false }).limit(31);
     })(),
+    whatsappConversationLabelMap([conversationId]),
   ]);
   if (accountResult.error) throw accountResult.error;
   if (messageResult.error) throw messageResult.error;
@@ -2525,6 +2729,7 @@ async function whatsappConversationMessages(input: any) {
       stage: clean(conversation.stage, 40),
       mode: clean(conversation.mode, 40),
       human_required: conversation.human_required === true,
+      ...(labelMap.get(conversationId) || { labels: [], manual_label_ids: [], auto_label_ids: [] }),
     },
     messages: pageRows.reverse().map((row: any) => ({
       id: row.id,
@@ -4213,6 +4418,9 @@ Deno.serve(async (req: Request) => {
     let result: any;
     if (req.method === "POST" && action === "whatsapp_overview") result = await whatsappOverview();
     else if (req.method === "POST" && action === "whatsapp_conversation_list") result = await whatsappConversationList(input);
+    else if (req.method === "POST" && action === "whatsapp_labels_list") result = await whatsappLabelsList();
+    else if (req.method === "POST" && action === "whatsapp_label_save") result = await whatsappLabelSave(input);
+    else if (req.method === "POST" && action === "whatsapp_conversation_labels_set") result = await whatsappConversationLabelsSet(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_messages") result = await whatsappConversationMessages(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_message_statuses") result = await whatsappConversationMessageStatuses(input);
     else if (req.method === "POST" && action === "whatsapp_conversation_send_status") result = await whatsappConversationSendStatus(input);
