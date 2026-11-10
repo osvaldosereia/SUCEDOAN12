@@ -83,6 +83,12 @@
     return line || address.raw_text || address.formatted_address || "Endereço não informado";
   }
 
+  function whatsappHref(value) {
+    const digits = String(value || "").replace(/\D/g, "");
+    if (!digits) return "";
+    return "https://wa.me/" + (digits.startsWith("55") ? digits : "55" + digits);
+  }
+
   function paymentName(order) {
     const method = String(order.delivery_paid_ahead ? order.delivery_paid_ahead_method : order.payment_method || "").toLowerCase();
     const labels = { cash: "Dinheiro", money: "Dinheiro", pix: "Pix", credit_card: "Cartão/link", card: "Cartão", debit_card: "Cartão de débito", food_card: "Cartão alimentação", meal_card: "Cartão refeição", other: "Outro" };
@@ -200,7 +206,22 @@
       const deleteAction = cancelable
         ? "<button class='button button-outline order-delete' type='button' data-order-delete='" + esc(order.id) + "'" + (state.deletingOrderId === order.id ? " disabled" : "") + ">Excluir</button>"
         : "";
-      const phone = order.phone_e164 || order.phone || "Telefone não informado";
+      const phone = order.phone_e164 || order.phone || "";
+      const sourcePhone = order.source_whatsapp_phone_e164 || "";
+      const sourceChannel = order.source_whatsapp_channel || "";
+      const customerPhoneMarkup = phone
+        ? "<span class='order-card-phone'><span>CELULAR DO CLIENTE</span><strong>" + esc(phone) + "</strong></span>"
+        : "<span class='order-card-phone'>Celular do cliente não informado</span>";
+      const sourceChannelMarkup = sourcePhone || sourceChannel
+        ? "<span class='order-card-channel'><span>WHATSAPP DA LOJA</span><strong>" + esc([sourceChannel, sourcePhone].filter(Boolean).join(" · ")) + "</strong></span>"
+        : String(order.source || "").toLowerCase().includes("whatsapp")
+          ? "<span class='order-card-channel'><span>ORIGEM DO PEDIDO</span><strong>WhatsApp</strong></span>"
+          : "";
+      const conversationAction = order.conversation_id
+        ? "<button class='button button-outline order-conversation-action' type='button' data-order-conversation='" + esc(order.conversation_id) + "'>Abrir conversa</button>"
+        : phone
+          ? "<a class='button button-outline order-conversation-action' href='" + esc(whatsappHref(phone)) + "' target='_blank' rel='noopener'>Abrir conversa</a>"
+          : "";
       const deliveryDetails = state.stage === "expedition"
         ? "<span class='order-delivery-date'><span>DATA DA ENTREGA</span><strong>" + esc(scheduledDate(order)) + "</strong></span>" +
           "<span class='order-card-address'><span>ENDEREÇO DE ENTREGA</span><strong>" + esc(deliveryAddress(order)) + "</strong></span>"
@@ -213,12 +234,13 @@
         "<button class='order-card-open' type='button' data-order-open='" + esc(order.id) + "' aria-label='Ver produtos do pedido " + esc(orderNumber(order)) + "'>" +
           "<span class='order-card-top'><strong>" + esc(orderNumber(order)) + "</strong><time>" + esc(date(order.created_at)) + "</time></span>" +
           "<span class='order-card-name'>" + esc(customerName(order)) + "</span>" +
-          "<span class='order-card-phone'>" + esc(phone) + "</span>" +
+          sourceChannelMarkup +
+          customerPhoneMarkup +
           deliveryDetails +
           orderWhatsAppNoticeMarkup(order) +
           "<span class='order-card-bottom'><span>Valor do pedido</span><strong>" + esc(money(order.total)) + "</strong></span>" +
         "</button>" +
-        "<div class='order-card-action'>" + action + deleteAction + "</div>" +
+        "<div class='order-card-action'>" + action + conversationAction + deleteAction + "</div>" +
       "</article>";
     }).join("");
     if (!state.orders.length) list.innerHTML = "<div class='orders-empty'>Os pedidos aparecerão aqui quando forem registrados.</div>";
@@ -600,6 +622,11 @@
     if (button.dataset.orderConfirm) confirmOrder(button.dataset.orderConfirm);
     if (button.dataset.orderSeparate) openSeparation(button.dataset.orderSeparate);
     if (button.dataset.orderDeliveryOpen) window.DonaDeliveryAdmin?.openForOrder(button.dataset.orderDeliveryOpen);
+    if (button.dataset.orderConversation) {
+      if (window.DonaWhatsAppConversations?.openConversation) {
+        void window.DonaWhatsAppConversations.openConversation(button.dataset.orderConversation);
+      } else toast("A sessão de conversas do WhatsApp ainda não está disponível.");
+    }
     if (button.dataset.orderDelete) deleteOrder(button.dataset.orderDelete);
   });
   $("orders-list").addEventListener("change", async (event) => {
