@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Admin · Dona Antônia</title>
   <link rel="stylesheet" href="../styles.css?v=5">
-  <link rel="stylesheet" href="admin.css?v=50">
+  <link rel="stylesheet" href="admin.css?v=51">
   <link rel="stylesheet" href="taxonomy-admin.css?v=1">
   <link rel="stylesheet" href="papoai-guard-admin.css?v=1">
   <link rel="stylesheet" href="baskets-admin.css?v=3">
@@ -29,7 +29,7 @@
   <script src="whatsapp-template-button-support.js?v=1" defer></script>
   <script src="whatsapp-admin.js?v=30" defer></script>
   <script src="whatsapp-campaign-report.js?v=1" defer></script>
-  <script src="whatsapp-conversations.js?v=20" defer></script>
+  <script src="whatsapp-conversations.js?v=21" defer></script>
   <script src="quick-balance-admin.js?v=7" defer></script>
   <script src="cards-admin.js?v=2" defer></script>
   <script src="admin.js?v=27" defer></script>
@@ -412,6 +412,15 @@
             <label>Fila<select id="whatsapp-conversation-filter"><option value="all">Todas</option><option value="human">Precisa de atendimento humano</option></select></label>
             <button id="whatsapp-conversation-search-button" class="button button-primary" type="button">Buscar</button>
           </div>
+          <div class="whatsapp-label-toolbar">
+            <label class="whatsapp-label-filter-field">Etiqueta
+              <select id="whatsapp-conversation-label-filter" aria-label="Filtrar conversas por etiqueta">
+                <option value="">Todas as etiquetas</option>
+              </select>
+            </label>
+            <button id="whatsapp-label-manage" class="button button-outline" type="button">Gerenciar etiquetas</button>
+            <p>O catálogo de etiquetas é compartilhado pelos canais 0975 e 1018.</p>
+          </div>
           <p id="whatsapp-conversations-status" class="admin-muted" role="status" aria-live="polite">Carregando conversas…</p>
           <div class="whatsapp-conversation-browser">
             <aside class="whatsapp-conversation-list" aria-label="Lista de conversas">
@@ -431,6 +440,11 @@
                 <div><strong id="whatsapp-conversation-title"></strong><p id="whatsapp-conversation-subtitle" class="admin-muted"></p></div>
                 <button id="whatsapp-conversation-ana-toggle" class="button button-outline whatsapp-conversation-ana-toggle" type="button" aria-pressed="false" hidden>Desligar ANA</button>
               </header>
+              <details id="whatsapp-conversation-label-editor" class="whatsapp-conversation-label-editor" hidden>
+                <summary id="whatsapp-conversation-label-summary">Etiquetas da conversa · 0</summary>
+                <div id="whatsapp-conversation-label-options" class="whatsapp-conversation-label-options" role="group" aria-label="Etiquetas da conversa"></div>
+                <p id="whatsapp-conversation-label-status" class="admin-muted" role="status" aria-live="polite"></p>
+              </details>
               <div id="whatsapp-conversation-empty" class="whatsapp-conversation-empty"><strong>Selecione uma conversa</strong><span>O histórico aparecerá aqui.</span></div>
               <button id="whatsapp-conversation-older" class="button button-outline" type="button" hidden>Carregar mensagens anteriores</button>
               <div id="whatsapp-conversation-messages" class="whatsapp-conversation-messages" aria-live="polite"></div>
@@ -628,6 +642,32 @@
       <button id="picker-more" class="button button-outline button-wide" type="button" hidden>Carregar mais resultados</button>
       <footer class="dialog-actions"><button class="button button-outline" type="button" data-dialog-close="product-picker-dialog">Cancelar</button><button id="apply-picker-products" class="button button-primary" type="button">Aplicar seleção</button></footer>
     </div>
+  </dialog>
+  <dialog id="whatsapp-label-manager-dialog" class="whatsapp-label-manager-dialog" aria-labelledby="whatsapp-label-manager-title">
+    <section class="whatsapp-label-manager-panel">
+      <header class="whatsapp-label-manager-header">
+        <div><p class="eyebrow">Atendimento WhatsApp</p><h2 id="whatsapp-label-manager-title">Gerenciar etiquetas</h2></div>
+        <button id="whatsapp-label-manager-close" class="icon-button" type="button" aria-label="Fechar etiquetas">×</button>
+      </header>
+      <p class="whatsapp-label-shared-note">As etiquetas ficam disponíveis nos dois canais, 0975 e 1018. Etiquetas automáticas têm o nome protegido para manter as regras do sistema.</p>
+      <form id="whatsapp-label-form" class="whatsapp-label-form">
+        <input id="whatsapp-label-id" type="hidden">
+        <label class="whatsapp-label-name-field">Nome da etiqueta
+          <input id="whatsapp-label-name" type="text" maxlength="60" autocomplete="off" required>
+          <small id="whatsapp-label-name-help" hidden>O nome é usado por uma automação e não pode ser alterado.</small>
+        </label>
+        <label class="whatsapp-label-color-field">Cor
+          <input id="whatsapp-label-color" type="color" value="#7e3029" aria-label="Cor da etiqueta">
+        </label>
+        <div class="whatsapp-label-form-actions">
+          <p id="whatsapp-label-manager-status" role="status" aria-live="polite"></p>
+          <button id="whatsapp-label-cancel" class="button button-outline" type="button" hidden>Cancelar edição</button>
+          <button id="whatsapp-label-save" class="button button-primary" type="submit">Criar etiqueta</button>
+        </div>
+      </form>
+      <div class="whatsapp-label-manager-list-heading"><h3>Etiquetas disponíveis</h3><span>Compartilhadas entre os canais</span></div>
+      <div id="whatsapp-label-manager-list" class="whatsapp-label-manager-list" aria-live="polite"></div>
+    </section>
   </dialog>
   <dialog id="order-conversation-sheet" class="order-conversation-sheet" aria-labelledby="order-conversation-sheet-title" aria-describedby="order-conversation-sheet-subtitle">
     <header class="order-conversation-sheet-header">
