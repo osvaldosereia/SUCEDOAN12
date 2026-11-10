@@ -329,10 +329,10 @@ import { buildMapsHref, deliveryStopCapabilities, isValidDeliveryRescheduleDate,
       const cancelledCount = stops.filter((stop) => stop.status === "cancelled").length;
       const activeTotal = pending.length + deliveredCount + failedCount;
       const completedCount = deliveredCount + failedCount;
-      const progressPercent = activeTotal ? Math.round((completedCount / activeTotal) * 100) : 100;
+      const progressPercent = activeTotal ? Math.round((completedCount / activeTotal) * 100) : cancelledCount ? 0 : 100;
       const progressText = activeTotal
         ? `${completedCount} de ${activeTotal} paradas finalizadas · ${pending.length} pendentes`
-        : "Todas as paradas foram finalizadas";
+        : cancelledCount ? "Nenhuma entrega ativa nesta rota" : "Nenhuma parada nesta rota";
       const stateLabel = run.status === "dispatched" ? "Em entrega"
         : run.status === "completed" ? "Concluída"
           : run.status === "cancelled" ? "Cancelada"
