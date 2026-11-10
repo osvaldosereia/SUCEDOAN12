@@ -617,24 +617,60 @@ async function adminUploadAddressPhoto(input: JsonRecord) {
   return await driverUploadAddressPhoto(await driverForAdminStop(stopId), input);
 }
 
+async function attachOrderWhatsappSource(orders: any[]) {
+  if (!orders.length) return orders;
+  const needsConversationLookup = [...new Set(orders
+    .filter((order) => !uuid(order.whatsapp_account_id))
+    .map((order) => uuid(order.conversation_id))
+    .filter(Boolean))];
+  const accountByConversation = new Map<string, string>();
+  if (needsConversationLookup.length) {
+    const conversationResult = await db.from("conversations")
+      .select("id,whatsapp_account_id")
+      .in("id", needsConversationLookup);
+    if (conversationResult.error) throw conversationResult.error;
+    for (const conversation of conversationResult.data || []) {
+      accountByConversation.set(uuid(conversation.id), uuid(conversation.whatsapp_account_id));
+    }
+  }
+  const accountIds = [...new Set(orders.map((order) =>
+    uuid(order.whatsapp_account_id) || accountByConversation.get(uuid(order.conversation_id)) || "",
+  ).filter(Boolean))];
+  const accountResult = accountIds.length
+    ? await db.from("whatsapp_accounts").select("id,display_name,slug,phone_e164").in("id", accountIds)
+    : { data: [], error: null };
+  if (accountResult.error) throw accountResult.error;
+  const accounts = new Map((accountResult.data || []).map((account: any) => [uuid(account.id), account]));
+  return orders.map((order) => {
+    const accountId = uuid(order.whatsapp_account_id) || accountByConversation.get(uuid(order.conversation_id)) || "";
+    const account: any = accounts.get(accountId) || {};
+    return {
+      ...order,
+      conversation_id: uuid(order.conversation_id) || null,
+      source_whatsapp_phone_e164: clean(account.phone_e164, 32) || null,
+      source_whatsapp_channel: clean(account.display_name || account.slug || "", 120) || null,
+    };
+  });
+}
+
 async function adminDeliveryHistory(kind: string) {
   if (kind === "delivered") {
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const result = await db.from("orders")
-      .select("id,order_number,status,total,created_at,updated_at,delivered_at,phone_e164,delivery_address,customer_snapshot,checkout_snapshot,payment_method,source")
+      .select("id,order_number,status,total,created_at,updated_at,delivered_at,phone_e164,delivery_address,customer_snapshot,checkout_snapshot,payment_method,source,conversation_id,whatsapp_account_id")
       .in("source", OP_SOURCES).eq("status", "delivered")
       .or(`delivered_at.gte.${since},and(delivered_at.is.null,updated_at.gte.${since})`)
       .order("delivered_at", { ascending: false, nullsFirst: false })
       .order("updated_at", { ascending: false }).limit(500);
     if (result.error) throw result.error;
-    return { kind, orders: result.data || [], since };
+    return { kind, orders: await attachOrderWhatsappSource(result.data || []), since };
   }
   if (kind !== "not_delivered") throw new ApiFailure("history_kind_invalid");
   const cases = await db.from("order_delivery_return_cases")
     .select("id,order_id,attempt_number,status,failed_at,created_at,updated_at")
     .order("failed_at", { ascending: false }).limit(500);
   if (cases.error) throw cases.error;
-  const orders = await ordersByIds((cases.data || []).map((row: any) => row.order_id));
+  const orders = await attachOrderWhatsappSource(await ordersByIds((cases.data || []).map((row: any) => row.order_id)));
   const orderById = new Map(orders.map((order: any) => [order.id, order]));
   return {
     kind,
