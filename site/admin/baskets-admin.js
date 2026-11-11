@@ -52,10 +52,53 @@
     return { text: "Status indisponível", className: "is-unknown" };
   }
 
+  function rowMatchesTypeProduct(row, type, productId) {
+    const typeId = String(type.id || type._key || "");
+    const sameType = row.type_id != null
+      ? String(row.type_id) === typeId
+      : String(row.position_label || "").trim().toLocaleLowerCase("pt-BR")
+        === String(type.title || "").trim().toLocaleLowerCase("pt-BR");
+    return sameType && String(row.product_id) === String(productId);
+  }
+
+  function manualReviewRows() {
+    const singleInactiveOptions = (state.types || []).map((type) => {
+      const options = Array.isArray(type.options) ? type.options : [];
+      if (options.length !== 1) return null;
+      const option = options[0];
+      const product = option.product || productCache.get(String(option.product_id)) || {};
+      if (product.is_active !== false && product.is_whatsapp_active !== false) return null;
+      return { type, option, product };
+    }).filter(Boolean);
+
+    // The older review RPC only knows positions explicitly marked for manual review.
+    // Add every currently configured single inactive option from the basket grid itself.
+    const rows = (state.manualReplacements || []).filter((row) =>
+      !singleInactiveOptions.some(({ type, option }) =>
+        rowMatchesTypeProduct(row, type, option.product_id)
+      )
+    );
+    singleInactiveOptions.forEach(({ type, option, product }) => {
+      (state.baskets || [])
+        .filter((basket) => Number(type.quantities?.[basket.id] || 0) > 0)
+        .forEach((basket) => rows.push({
+          basket_id: basket.id,
+          basket_name: basket.name,
+          position_id: null,
+          position_label: type.title || "",
+          type_id: type.id || type._key || null,
+          product_id: option.product_id,
+          product,
+          reason: "only_configured_option_inactive",
+        }));
+    });
+    return rows;
+  }
+
   function renderManualReview() {
     const host = $("basket-manual-review");
     if (!host) return;
-    const rows = state.manualReplacements || [];
+    const rows = manualReviewRows();
     const groups = new Map();
     rows.forEach((row) => {
       const key = [row.type_id || row.position_label || "", row.product_id, row.reason].join(":");
@@ -66,18 +109,18 @@
     const groupedRows = [...groups.values()];
     host.innerHTML = groupedRows.length
       ? '<section class="basket-manual-review" aria-labelledby="basket-manual-review-title">' +
-      '<div class="basket-manual-review-heading"><div><h3 id="basket-manual-review-title">Produtos para ajuste manual</h3><p>As cestas continuam ativas. Revise apenas estas opções quando puder.</p></div><span>' + groupedRows.length + '</span></div>' +
+      '<div class="basket-manual-review-heading"><div><h3 id="basket-manual-review-title">Produtos sem substituto automático</h3><p>Cada produto aparece uma vez, com as cestas em que é usado. Adicione outra variação para permitir a substituição automática.</p></div><span>' + groupedRows.length + '</span></div>' +
           '<ul>' + groupedRows.map((row) => {
-            const type = state.types.find((item) => String(item.id) === String(row.type_id));
+            const type = state.types.find((item) => String(item.id || item._key) === String(row.type_id));
             const title = type?.title || row.position_label || "Produto da cesta";
             const product = row.product || productCache.get(String(row.product_id)) || {};
             const reason = row.reason === "only_configured_option_inactive"
-              ? "Desativado no WhatsApp; mantido como única opção da cesta"
+              ? "Única opção cadastrada · desativado no WhatsApp"
               : row.reason === "only_configured_option_unavailable"
-                ? "Única opção desativada ou sem saldo suficiente no Supabase"
+                ? "Única opção sem saldo suficiente ou desativada"
               : row.reason === "replacement_product_inactive"
                 ? "Variação substituta inativa"
-              : "Nenhuma opção ativa com saldo suficiente no estoque do Supabase";
+              : "Nenhuma opção ativa com saldo suficiente";
             const manage = row.type_id
               ? '<button class="button button-outline" type="button" data-manual-type="' + esc(row.type_id) + '">Gerenciar variações</button>'
               : "";
