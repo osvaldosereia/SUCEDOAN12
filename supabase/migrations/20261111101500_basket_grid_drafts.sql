@@ -509,7 +509,7 @@ BEGIN
 
   SELECT mold.* INTO v_source_mold
   FROM public.basket_molds mold
-  WHERE mold.basket_id = v_source.id;
+  WHERE mold.basket_id = v_src.id;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'site_basket_grid_source_mold_missing';
   END IF;
@@ -531,23 +531,23 @@ BEGIN
   SELECT
     NULL,
     v_new_name,
-    source.description,
-    source.image_url,
-    source.base_price,
+    src.description,
+    src.image_url,
+    src.base_price,
     false,
     coalesce((SELECT max(existing.sort_order) + 1 FROM public.basket_templates existing
       WHERE existing.category_id = v_category_id), 0),
-    source.rules,
+    src.rules,
     false,
     false,
     NULL,
-    source.hidden_adjustment,
-    source.uses_hygiene_kit,
-    source.split_kits_enabled,
-    source.category_id,
-    source.subcategory_id
-  FROM public.basket_templates source
-  WHERE source.id = v_source.id
+    src.hidden_adjustment,
+    src.uses_hygiene_kit,
+    src.split_kits_enabled,
+    src.category_id,
+    src.subcategory_id
+  FROM public.basket_templates src
+  WHERE src.id = v_src.id
   RETURNING id INTO v_new_basket_id;
 
   INSERT INTO public.basket_molds (
@@ -594,7 +594,7 @@ BEGIN
   INSERT INTO public.site_basket_product_type_quantities(product_type_id, basket_id, quantity)
   SELECT quantity.product_type_id, v_new_basket_id, quantity.quantity
   FROM public.site_basket_product_type_quantities quantity
-  WHERE quantity.basket_id = v_source.id;
+  WHERE quantity.basket_id = v_src.id;
 
   CREATE TEMP TABLE pg_temp._site_admin_basket_draft_items (
     old_id uuid PRIMARY KEY,
@@ -604,7 +604,7 @@ BEGIN
   INSERT INTO pg_temp._site_admin_basket_draft_items(old_id, new_id)
   SELECT item.id, gen_random_uuid()
   FROM public.basket_template_items item
-  WHERE item.basket_id = v_source.id;
+  WHERE item.basket_id = v_src.id;
 
   INSERT INTO public.basket_template_items (
     id, basket_id, product_id, quantity, removable, quantity_editable,
@@ -628,7 +628,7 @@ BEGIN
     'id', v_new_basket_id,
     'name', v_new_name,
     'is_active', false,
-    'source_basket_id', v_source.id,
+    'source_basket_id', v_src.id,
     'mold_id', v_new_mold_id
   );
 END;
