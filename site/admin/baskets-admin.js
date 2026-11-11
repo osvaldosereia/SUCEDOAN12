@@ -123,10 +123,45 @@
     }, 0);
   }
 
+  function basketProductsCostSummary(basketId) {
+    let totalCents = 0;
+    let missingProducts = 0;
+    state.types.forEach((type) => {
+      const quantity = Number(type.quantities?.[basketId] || 0);
+      if (!Number.isFinite(quantity) || quantity <= 0) return;
+      const option = Array.isArray(type.options) ? type.options[0] : null;
+      const product = option?.product || (option ? productCache.get(String(option.product_id)) : null);
+      const rawCost = product?.cost;
+      if (rawCost == null || String(rawCost).trim() === "") {
+        missingProducts += 1;
+        return;
+      }
+      const unitCost = Number(rawCost);
+      if (!Number.isFinite(unitCost) || unitCost < 0) {
+        missingProducts += 1;
+        return;
+      }
+      totalCents += Math.round((unitCost * quantity + Number.EPSILON) * 100);
+    });
+    return { totalCents, missingProducts };
+  }
+
   function updateBasketProductSums() {
     document.querySelectorAll("[data-basket-product-sum]").forEach((summary) => {
       const value = summary.querySelector("strong");
       if (value) value.textContent = money(basketProductsSumCents(summary.dataset.basketProductSum));
+    });
+    document.querySelectorAll("[data-basket-product-cost]").forEach((summary) => {
+      const label = summary.querySelector(".basket-default-price-cost-label");
+      const value = summary.querySelector("strong");
+      const note = summary.querySelector(".basket-default-price-cost-note");
+      const cost = basketProductsCostSummary(summary.dataset.basketProductCost);
+      if (label) label.textContent = cost.missingProducts ? "Custo parcial:" : "Soma de custo:";
+      if (value) value.textContent = money(cost.totalCents);
+      if (note) note.textContent = cost.missingProducts
+        ? " · " + cost.missingProducts + (cost.missingProducts === 1 ? " produto sem custo" : " produtos sem custo")
+        : "";
+      summary.dataset.incomplete = cost.missingProducts ? "true" : "false";
     });
   }
 
@@ -138,9 +173,10 @@
     const types = state.types || [];
     const prices = '<section class="basket-default-prices" aria-labelledby="basket-default-prices-title">' +
       '<div class="basket-default-prices-heading"><h3 id="basket-default-prices-title">Valores padrão das cestas</h3><p>Preço exibido inicialmente no site. As variações podem alterar o total.</p></div>' +
-      '<div class="basket-default-prices-grid">' + baskets.map((basket) =>
-        '<label class="basket-default-price"><span>' + esc(basket.name) + '</span><span class="basket-default-price-input"><span>R$</span><input type="number" min="0" max="1000000" step="0.01" inputmode="decimal" value="' + esc(priceInputValue(basket.default_price_value ?? basket.default_price_cents)) + '" data-basket-price="' + esc(basket.id) + '" aria-label="Valor padrão da cesta ' + esc(basket.name) + '"></span><small class="basket-default-price-sum" data-basket-product-sum="' + esc(basket.id) + '" aria-live="polite">Soma dos produtos: <strong>' + money(basketProductsSumCents(basket.id)) + '</strong></small></label>'
-      ).join("") + '</div></section>';
+      '<div class="basket-default-prices-grid">' + baskets.map((basket) => {
+        const cost = basketProductsCostSummary(basket.id);
+        return '<label class="basket-default-price"><span>' + esc(basket.name) + '</span><span class="basket-default-price-input"><span>R$</span><input type="number" min="0" max="1000000" step="0.01" inputmode="decimal" value="' + esc(priceInputValue(basket.default_price_value ?? basket.default_price_cents)) + '" data-basket-price="' + esc(basket.id) + '" aria-label="Valor padrão da cesta ' + esc(basket.name) + '"></span><small class="basket-default-price-sum" data-basket-product-sum="' + esc(basket.id) + '" aria-live="polite">Soma de venda: <strong>' + money(basketProductsSumCents(basket.id)) + '</strong></small><small class="basket-default-price-sum basket-default-price-cost" data-basket-product-cost="' + esc(basket.id) + '" data-incomplete="' + (cost.missingProducts ? "true" : "false") + '" aria-live="polite"><span class="basket-default-price-cost-label">' + (cost.missingProducts ? "Custo parcial:" : "Soma de custo:") + '</span><strong>' + money(cost.totalCents) + '</strong><span class="basket-default-price-cost-note">' + (cost.missingProducts ? " · " + cost.missingProducts + (cost.missingProducts === 1 ? " produto sem custo" : " produtos sem custo") : "") + '</span></small></label>';
+      }).join("") + '</div></section>';
     if (!types.length) {
       host.innerHTML = prices + '<p class="admin-muted basket-grid-empty">Nenhum tipo cadastrado. Adicione um tipo para começar a montar as cestas.</p>';
       return;
