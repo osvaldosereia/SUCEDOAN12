@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="admin.css?v=52">
   <link rel="stylesheet" href="taxonomy-admin.css?v=1">
   <link rel="stylesheet" href="papoai-guard-admin.css?v=1">
-  <link rel="stylesheet" href="baskets-admin.css?v=6">
+  <link rel="stylesheet" href="baskets-admin.css?v=7">
   <link rel="stylesheet" href="whatsapp-campaign-report.css?v=1">
   <link rel="stylesheet" href="orders-admin.css?v=16">
   <link rel="stylesheet" href="delivery-admin.css?v=10">
@@ -23,7 +23,7 @@
   <script src="catalog-admin.js?v=14" defer></script>
   <script src="taxonomy-admin.js?v=1" defer></script>
   <script src="papoai-guard-admin.js?v=1" defer></script>
-  <script src="baskets-admin.js?v=9" defer></script>
+  <script src="baskets-admin.js?v=10" defer></script>
   <script src="orders-admin.js?v=17" defer></script>
   <script type="module" src="delivery-admin.js?v=12"></script>
   <script src="order-message-admin.js?v=4" defer></script>
@@ -194,11 +194,11 @@
       </section>
 
       <section class="admin-view" data-panel="baskets" hidden>
-        <div class="section-title basket-grid-heading"><div><h2>Cestas</h2><p>Edite os itens, as opções de substituição, o preço e a quantidade de cada cesta. Quantidade zero remove o item daquela cesta.</p></div><div class="basket-admin-controls"><button id="add-basket-type" class="button button-outline" type="button" aria-label="Adicionar item à composição das cestas">Adicionar item</button><button id="reload-baskets" class="button button-outline" type="button">Atualizar</button><button id="save-basket-grid" class="button button-primary" type="button">Salvar alterações</button></div></div>
+        <div class="section-title basket-grid-heading"><div><h2>Cestas</h2><p>Edite os itens e valores das cestas. “Adicionar item” altera a composição; “Nova cesta” cria outra modalidade a partir de uma cesta existente.</p></div><div class="basket-admin-controls"><button id="add-basket-template" class="button button-outline" type="button" hidden>Nova cesta</button><button id="add-basket-type" class="button button-outline" type="button" aria-label="Adicionar item à composição das cestas">Adicionar item</button><button id="reload-baskets" class="button button-outline" type="button">Atualizar</button><span id="basket-dirty-state" class="basket-dirty-state" role="status" hidden>Alterações não salvas</span><button id="save-basket-grid" class="button button-primary" type="button">Salvar alterações</button></div></div>
         <div id="admin-baskets" class="admin-basket-grid"><p class="admin-muted">Carregando…</p></div>
         <div class="edit-notice basket-grid-note">
           <strong>Como funciona a substituição</strong>
-          <span>As opções são avaliadas na ordem. Com mais de uma opção, uma opção inativa ou sem estoque suficiente é substituída pela próxima. Se houver uma única opção, ela continua vendável mesmo com estoque zero ou negativo.</span>
+          <span>As opções são avaliadas na ordem. Com mais de uma opção, uma opção inativa ou sem estoque suficiente é substituída pela próxima. Se houver uma única opção, ela continua vendável mesmo com estoque zero ou negativo. Uma nova cesta começa como rascunho, fora da loja, e só entra à venda quando você ativá-la.</span>
         </div>
       </section>
 
@@ -631,6 +631,16 @@
       </div>
       <p id="product-save-message" class="form-message" role="status"></p>
       <footer class="dialog-actions"><button class="button button-outline" type="button" data-dialog-close="product-dialog">Cancelar</button><button id="save-product" class="button button-primary" type="submit">Salvar produto</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="basket-create-dialog" class="catalog-dialog basket-create-dialog">
+    <form id="basket-create-form" class="dialog-form">
+      <header class="dialog-heading"><div><p class="eyebrow">Nova modalidade</p><h2>Criar cesta</h2></div><button class="icon-button" type="button" data-dialog-close="basket-create-dialog" aria-label="Fechar">×</button></header>
+      <p class="dialog-hint">A composição e o preço são copiados da cesta escolhida. O novo rascunho fica fora da loja até você revisar e ativar.</p>
+      <label class="basket-create-field" for="basket-new-name"><span>Nome da nova cesta</span><input id="basket-new-name" type="text" maxlength="120" required placeholder="Ex.: Cesta Família"></label>
+      <label class="basket-create-field" for="basket-source-template"><span>Copiar composição de</span><select id="basket-source-template" required></select></label>
+      <footer class="dialog-actions"><button class="button button-outline" type="button" data-dialog-close="basket-create-dialog">Cancelar</button><button id="create-basket-submit" class="button button-primary" type="submit">Criar rascunho</button></footer>
     </form>
   </dialog>
 
