@@ -640,3 +640,110 @@
   font-weight: 650;
   line-height: 1.3;
 }
+
+
+/* New basket drafts */
+.basket-dirty-state {
+  align-self: center;
+  color: #985243;
+  font-size: .76rem;
+  font-weight: 700;
+}
+.basket-default-price-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.basket-default-price-heading > span:first-child {
+  min-width: 0;
+  color: var(--ink);
+  font-size: .76rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+.basket-state-badge {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border-radius: 999px;
+  font-size: .62rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+.basket-state-badge.is-live {
+  color: #276646;
+  background: #e8f3eb;
+}
+.basket-state-badge.is-draft {
+  color: #805b24;
+  background: #fff2d9;
+}
+.basket-activate-button {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 4px;
+  color: #8c342c;
+  font-size: .74rem;
+  font-weight: 800;
+}
+.basket-create-dialog {
+  width: min(480px, calc(100vw - 28px));
+}
+.basket-create-dialog .dialog-form {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+}
+.basket-create-field {
+  display: grid;
+  gap: 6px;
+  color: #57463a;
+  font-size: .8rem;
+  font-weight: 750;
+}
+.basket-create-field input,
+.basket-create-field select {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid #ddcebc;
+  border-radius: 10px;
+  background: #fff;
+  color: #332a24;
+  font: inherit;
+  font-size: 16px;
+}
+.basket-create-field input:focus,
+.basket-create-field select:focus {
+  outline: 2px solid color-mix(in srgb, var(--brand) 35%, transparent);
+  outline-offset: 1px;
+}
+.basket-create-dialog .dialog-actions {
+  margin-top: 4px;
+}
+
+@media (max-width: 760px) {
+  .basket-grid-heading .basket-admin-controls #save-basket-grid,
+  .basket-grid-heading .basket-admin-controls .basket-dirty-state {
+    grid-column: 1 / -1;
+  }
+  .basket-grid-heading .basket-admin-controls #save-basket-grid {
+    width: 100%;
+    min-height: 46px;
+  }
+  .basket-default-price-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .basket-activate-button {
+    min-height: 46px;
+  }
+}
+
+@media (max-width: 380px) {
+  .basket-default-prices-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.basket-admin-controls [hidden] { display: none !important; }
