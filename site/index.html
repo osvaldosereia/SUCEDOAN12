@@ -10,9 +10,11 @@
   <link rel="preload" as="image" href="assets/cestas/cesta-economica.jpg" fetchpriority="high">
   <link rel="preconnect" href="https://ssbesxgaijknwsjbsbcz.supabase.co" crossorigin>
   <link rel="stylesheet" href="styles.css?v=33">
+  <link rel="stylesheet" href="ean-camera.css?v=1">
   <link rel="stylesheet" href="experimento.css?v=12">
   <script src="config.js?v=2" defer></script>
-  <script src="storefront/experimento-extras.js?v=3" defer></script>
+  <script src="ean-camera.js?v=1" defer></script>
+  <script src="storefront/experimento-extras.js?v=4" defer></script>
   <script src="storefront/basket.js?v=4" defer></script>
   <script src="storefront/checkout.js?v=17" defer></script>
   <script src="app.js?v=29" defer></script>
@@ -139,7 +141,7 @@
       <div id="home-extra-product-search" class="product-search product-search-extra" data-product-search-root="home-extras">
         <label class="product-search-label" for="home-extra-product-search-input">Buscar nos produtos para montar sua cesta</label>
         <div class="product-search-control">
-          <input id="home-extra-product-search-input" data-product-search-input="home-extras" type="search" autocomplete="off" enterkeyhint="search" placeholder="Ex.: arroz, óleo ou sabão" aria-describedby="home-extra-product-search-status">
+          <input id="home-extra-product-search-input" data-product-search-input="home-extras" data-ean-camera-input type="search" autocomplete="off" enterkeyhint="search" placeholder="Ex.: arroz, óleo ou sabão" aria-describedby="home-extra-product-search-status">
           <button class="product-search-clear" type="button" data-product-search-clear="home-extras" aria-label="Limpar busca" hidden>×</button>
         </div>
         <p id="home-extra-product-search-status" class="product-search-status" data-product-search-status="home-extras" role="status" aria-live="polite"></p>
