@@ -418,3 +418,283 @@
     justify-content: flex-start;
   }
 }
+
+
+/* Mobile-first basket editor cards */
+@media (max-width: 760px) {
+  .basket-grid-heading .basket-admin-controls {
+    position: sticky;
+    z-index: 12;
+    top: 8px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: stretch;
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #e7e9ec;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .97);
+    box-shadow: 0 5px 16px rgba(30, 37, 45, .09);
+    backdrop-filter: blur(8px);
+  }
+
+  .basket-grid-heading .basket-admin-controls > .button {
+    width: 100%;
+    min-width: 0;
+    min-height: 46px;
+    justify-content: center;
+    padding: 8px 10px;
+    font-size: .82rem;
+    line-height: 1.25;
+    white-space: normal;
+  }
+
+  .basket-grid-heading .basket-admin-controls #save-basket-grid {
+    grid-column: 1 / -1;
+  }
+
+  .basket-default-prices {
+    padding: 12px;
+  }
+
+  .basket-default-prices-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  .basket-default-price {
+    min-width: 0;
+    font-size: .72rem;
+    line-height: 1.3;
+  }
+
+  .basket-default-price-input {
+    min-height: 46px;
+    padding-inline: 8px;
+  }
+
+  .basket-default-price-input input {
+    font-size: 16px;
+  }
+
+  .basket-grid-table-wrap {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .basket-grid-table {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    border-spacing: 0;
+  }
+
+  .basket-grid-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .basket-grid-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .basket-grid-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid #e7e9ec;
+    border-radius: 13px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(30, 37, 45, .035);
+  }
+
+  .basket-grid-table th,
+  .basket-grid-table td {
+    min-width: 0;
+    padding: 10px;
+    border-bottom: 0;
+    vertical-align: top;
+  }
+
+  .basket-grid-table tbody th {
+    position: static;
+    grid-column: 1 / -1;
+    min-width: 0;
+    padding: 12px;
+    border-bottom: 1px solid #e7e9ec;
+    background: #f8f7f4;
+  }
+
+  .basket-grid-title-cell {
+    grid-template-columns: 88px minmax(0, 1fr);
+    align-items: start;
+    gap: 8px;
+  }
+
+  .basket-grid-order {
+    align-self: start;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 4px;
+  }
+
+  .basket-grid-order .text-button {
+    display: grid;
+    place-items: center;
+    min-width: 40px;
+    min-height: 44px;
+    padding: 2px;
+    font-size: 1rem;
+  }
+
+  .basket-grid-title-field {
+    gap: 6px;
+    font-size: .72rem;
+  }
+
+  .basket-grid-title-field input {
+    min-height: 46px;
+    padding: 8px 10px;
+    font-size: 16px;
+  }
+
+  .basket-grid-title-cell > .danger-text {
+    grid-column: 2;
+    justify-self: start;
+    min-height: 44px;
+    padding: 8px 0;
+    font-size: .78rem;
+  }
+
+  .basket-grid-table tbody td.basket-grid-variations {
+    grid-column: 1 / -1;
+    min-width: 0;
+    padding: 12px;
+    border-bottom: 1px solid #eee5da;
+    background: #fff;
+  }
+
+  .basket-grid-options {
+    max-height: none;
+    overflow: visible;
+    gap: 8px;
+  }
+
+  .basket-grid-option {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 8px;
+    padding: 9px;
+  }
+
+  .basket-grid-option-order {
+    width: 28px;
+    height: 28px;
+  }
+
+  .basket-grid-option-actions {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(40px, 44px)) minmax(0, 1fr);
+    justify-content: stretch;
+    gap: 4px;
+  }
+
+  .basket-grid-option-actions .text-button {
+    min-width: 0;
+    min-height: 44px;
+    padding: 5px;
+    font-size: .8rem;
+  }
+
+  .basket-grid-option-actions .product-edit-mini {
+    width: 100%;
+    white-space: normal;
+  }
+
+  .basket-grid-add-option {
+    min-height: 46px;
+  }
+
+  .basket-grid-table tbody td:not(.basket-grid-variations) {
+    display: block;
+    padding: 10px 11px;
+    border-right: 1px solid #eee5da;
+    border-bottom: 1px solid #eee5da;
+    background: #fff;
+  }
+
+  .basket-grid-table tbody td:last-of-type {
+    grid-column: 1 / -1;
+    border-right: 0;
+  }
+
+  .basket-grid-quantity {
+    display: grid;
+    width: 100%;
+    margin: 0;
+    gap: 5px;
+  }
+
+  .basket-grid-quantity > .visually-hidden {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    clip-path: none;
+    color: #665446;
+    font-size: .67rem;
+    font-weight: 750;
+    line-height: 1.3;
+    white-space: normal;
+    border: 0;
+  }
+
+  .basket-grid-quantity input {
+    min-height: 46px;
+    padding: 8px;
+    font-size: 16px;
+  }
+
+  .basket-manual-review {
+    padding: 12px;
+  }
+
+  .basket-manual-review li > .button {
+    width: 100%;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 380px) {
+  .basket-default-prices-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .basket-grid-title-cell {
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .basket-grid-order .text-button {
+    min-width: 34px;
+  }
+
+  .basket-grid-option-actions {
+    grid-template-columns: repeat(3, minmax(36px, 40px)) minmax(0, 1fr);
+  }
+}
