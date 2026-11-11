@@ -755,50 +755,41 @@ async function basketList(status = "active") {
 async function basketGridList() {
   const categoryResult = await db.from("basket_categories").select("id").eq("slug", "cestas-completas").maybeSingle();
   if (categoryResult.error) throw categoryResult.error;
-  if (!categoryResult.data) return { baskets: [], types: [], manual_replacements: [] };
+  if (!categoryResult.data) return { baskets: [], types: [], basket_drafts_enabled: true };
+
   const templatesResult = await db.from("basket_templates")
-    .select("id,name,sort_order")
+    .select("id,name,sort_order,is_active")
     .eq("category_id", categoryResult.data.id)
-    .eq("is_active", true)
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
   if (templatesResult.error) throw templatesResult.error;
   const templateRows = templatesResult.data || [];
-  if (!templateRows.length) return { baskets: [], types: [], manual_replacements: [] };
+  if (!templateRows.length) return { baskets: [], types: [] };
 
-  const moldResult = await db.from("basket_molds").select("id,basket_id,hidden_adjustment,conditional_hidden_enabled,conditional_hidden_product_id,conditional_hidden_adjustment").in("basket_id", templateRows.map((row: any) => row.id));
+  const moldResult = await db.from("basket_molds")
+    .select("id,basket_id,hidden_adjustment,metadata,conditional_hidden_enabled,conditional_hidden_product_id,conditional_hidden_adjustment")
+    .in("basket_id", templateRows.map((row: any) => row.id));
   if (moldResult.error) throw moldResult.error;
   const moldByBasket = new Map((moldResult.data || []).map((row: any) => [String(row.basket_id), row]));
-  const baskets = templateRows.filter((row: any) => moldByBasket.has(String(row.id)));
+  const baskets = templateRows.filter((row: any) => {
+    const mold: any = moldByBasket.get(String(row.id));
+    return !!mold && (row.is_active === true || mold.metadata?.site_admin_basket_grid_draft === true);
+  });
   const basketIds = baskets.map((row: any) => String(row.id));
-  const moldIds = baskets.map((row: any) => String(moldByBasket.get(String(row.id)).id));
-  if (!basketIds.length) return { baskets: [], types: [], manual_replacements: [] };
+  if (!basketIds.length) return { baskets: [], types: [] };
 
-  const [typesResult, optionsResult, quantitiesResult, manualReviewResult, positionsResult] = await Promise.all([
+  const [typesResult, optionsResult, quantitiesResult] = await Promise.all([
     db.from("site_basket_product_types").select("id,title,sort_order").order("sort_order", { ascending: true }).order("title", { ascending: true }),
     db.from("site_basket_product_type_options").select("product_type_id,product_id,sort_order,metadata").order("sort_order", { ascending: true }),
     db.from("site_basket_product_type_quantities").select("product_type_id,basket_id,quantity").in("basket_id", basketIds),
-    db.rpc("basket_mold_manual_replacement_review_v1", { p_basket_ids: basketIds }),
-    db.from("basket_mold_positions").select("id,metadata,mold_id").in("mold_id", moldIds),
   ]);
   if (typesResult.error) throw typesResult.error;
   if (optionsResult.error) throw optionsResult.error;
   if (quantitiesResult.error) throw quantitiesResult.error;
-  if (manualReviewResult.error) throw manualReviewResult.error;
-  if (positionsResult.error) throw positionsResult.error;
 
   const optionRows = optionsResult.data || [];
   const quantityRows = quantitiesResult.data || [];
-  const manualRows = Array.isArray(manualReviewResult.data) ? manualReviewResult.data : [];
-  const typeIdByPosition = new Map<string, string>();
-  (positionsResult.data || []).forEach((position: any) => {
-    const typeId = position.metadata?.site_basket_product_type_id;
-    if (typeId) typeIdByPosition.set(String(position.id), String(typeId));
-  });
-  const productIds = [...new Set([
-    ...optionRows.map((row: any) => String(row.product_id)),
-    ...manualRows.map((row: any) => String(row.product_id)),
-  ])];
+  const productIds = [...new Set(optionRows.map((row: any) => String(row.product_id)))];
   const productById = new Map<string, any>();
   if (productIds.length) {
     const productsResult = await db.from("products").select(PRODUCT_COLUMNS).in("id", productIds);
@@ -835,16 +826,6 @@ async function basketGridList() {
     options: optionsByType.get(String(row.id)) || [],
     quantities: quantitiesByType.get(String(row.id)) || {},
   }));
-  const manualReplacements = manualRows.map((row: any) => ({
-    basket_id: String(row.basket_id),
-    basket_name: String(row.basket_name || ""),
-    position_id: String(row.position_id),
-    position_label: String(row.position_label || ""),
-    type_id: typeIdByPosition.get(String(row.position_id)) || null,
-    product_id: String(row.product_id),
-    product: productById.get(String(row.product_id)) || {},
-    reason: String(row.reason || "manual_review_required"),
-  }));
   const basketsWithPrices = baskets.map((row: any) => {
     const mold: any = moldByBasket.get(String(row.id)) || {};
     const productTotalCents = types.reduce((total: number, type: any) => {
@@ -867,15 +848,13 @@ async function basketGridList() {
       id: String(row.id),
       name: String(row.name || ""),
       sort_order: Number(row.sort_order || 0),
+      is_active: row.is_active === true,
       default_price_cents: defaultPriceCents,
     };
   });
-  return {
-    baskets: basketsWithPrices,
-    types,
-    manual_replacements: manualReplacements,
-  };
+  return { baskets: basketsWithPrices, types, basket_drafts_enabled: true };
 }
+
 
 async function basketGridSave(input: any) {
   const inputTypes = Array.isArray(input.types) ? input.types.slice(0, 80) : null;
@@ -941,6 +920,31 @@ async function basketGridSave(input: any) {
   });
   if (saved.error) throw saved.error;
   return { saved: true, result: saved.data || {} };
+}
+
+async function basketGridCreate(input: any) {
+  const rawName = String(input?.name || "").trim();
+  const name = clean(rawName, 120);
+  const sourceBasketId = uuid(input?.source_basket_id);
+  if (!name || rawName.length > 120 || !sourceBasketId) {
+    return { status: 400, error: "invalid_basket_draft", message: "Informe um nome de até 120 caracteres e uma cesta válida para copiar." };
+  }
+
+  const result = await db.rpc("site_admin_create_basket_grid_draft_v1", {
+    p_source_basket_id: sourceBasketId,
+    p_name: name,
+  });
+  if (result.error) {
+    const message = String(result.error.message || "");
+    if (message.includes("site_basket_grid_name_exists")) {
+      return { status: 409, error: "basket_name_exists", message: "Já existe uma cesta com esse nome." };
+    }
+    if (message.includes("site_basket_grid_source_invalid") || message.includes("site_basket_grid_source_mold_missing")) {
+      return { status: 400, error: "invalid_basket_source", message: "Escolha uma cesta ativa com composição cadastrada." };
+    }
+    throw result.error;
+  }
+  return { created: true, basket: result.data || {} };
 }
 
 async function basketSetActive(input: any) {
@@ -4506,6 +4510,7 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "product_set_most_sold") result = await productSetMostSold(input);
     else if (req.method === "POST" && action === "basket_save") result = await basketSave(input);
     else if (req.method === "POST" && action === "basket_grid_save") result = await basketGridSave(input);
+    else if (req.method === "POST" && action === "basket_grid_create") result = await basketGridCreate(input);
     else if (req.method === "POST" && action === "basket_set_active") result = await basketSetActive(input);
     else if (req.method === "GET" && action === "orders_list") result = await ordersList(input);
     else if (req.method === "GET" && action === "order_detail") result = await orderDetail(input);
