@@ -162,8 +162,8 @@
       '<div class="journey-intro"><h3>Mensagens da semana ' + week + '</h3>',
       '<p>Use apenas quatro mensagens organizadas por semana. Os botões abrem o envio manual; nada é enviado automaticamente.</p></div>',
       '<div class="journey-message-grid">' + actions.map(function (a) {
-        return '<article class="journey-message"><h4>' + safe(a[1]) + '</h4><p>' + safe(a[2]) + '</p>',
-          '<div class="journey-message-actions"><button type="button" class="button button-primary button-small" data-whatsapp="' + a[0] + '">Enviar</button>',
+        return '<article class="journey-message"><h4>' + safe(a[1]) + '</h4><p>' + safe(a[2]) + '</p>' +
+          '<div class="journey-message-actions"><button type="button" class="button button-primary button-small" data-whatsapp="' + a[0] + '">Enviar</button>' +
           '<button type="button" class="button button-light button-small" data-copy="' + a[0] + '">Copiar</button></div></article>';
       }).join("") + '</div>',
       '<div class="journey-tip">Sugestão: não cobrar respostas diárias, não publicar rankings e oferecer apoio individual a quem faltar.</div></div>',
