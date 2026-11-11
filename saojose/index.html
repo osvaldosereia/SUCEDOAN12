@@ -644,6 +644,9 @@
       if (!notes || typeof notes !== "object" || Array.isArray(notes)) notes = {};
       let settings = normalizeSettings(readJSON(KEYS.settings, defaultSettings));
 
+      let toastTimer = 0;
+      const toast = document.getElementById("toast");
+
       function decodeSettings(token) {
         const binary = window.atob(token.replace(/-/g, "+").replace(/_/g, "/"));
         const bytes = Uint8Array.from(binary, function (character) { return character.charCodeAt(0); });
@@ -682,8 +685,6 @@
         return 13;
       }
       let selectedWeek = getInitialWeek();
-      let toastTimer = 0;
-      const toast = document.getElementById("toast");
 
       function showToast(message) {
         if (!toast) return;
