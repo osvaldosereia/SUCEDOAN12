@@ -9,7 +9,6 @@
   const state = {
     baskets: [],
     types: [],
-    manualReplacements: [],
     pickerTypeKey: "",
     pickerQuery: "",
     pickerOffset: 0,
@@ -52,84 +51,6 @@
     return { text: "Status indisponível", className: "is-unknown" };
   }
 
-  function rowMatchesTypeProduct(row, type, productId) {
-    const typeId = String(type.id || type._key || "");
-    const sameType = row.type_id != null
-      ? String(row.type_id) === typeId
-      : String(row.position_label || "").trim().toLocaleLowerCase("pt-BR")
-        === String(type.title || "").trim().toLocaleLowerCase("pt-BR");
-    return sameType && String(row.product_id) === String(productId);
-  }
-
-  function manualReviewRows() {
-    const singleInactiveOptions = (state.types || []).map((type) => {
-      const options = Array.isArray(type.options) ? type.options : [];
-      if (options.length !== 1) return null;
-      const option = options[0];
-      const product = option.product || productCache.get(String(option.product_id)) || {};
-      if (product.is_active !== false && product.is_whatsapp_active !== false) return null;
-      return { type, option, product };
-    }).filter(Boolean);
-
-    // The older review RPC only knows positions explicitly marked for manual review.
-    // Add every currently configured single inactive option from the basket grid itself.
-    const rows = (state.manualReplacements || []).filter((row) =>
-      !singleInactiveOptions.some(({ type, option }) =>
-        rowMatchesTypeProduct(row, type, option.product_id)
-      )
-    );
-    singleInactiveOptions.forEach(({ type, option, product }) => {
-      (state.baskets || [])
-        .filter((basket) => Number(type.quantities?.[basket.id] || 0) > 0)
-        .forEach((basket) => rows.push({
-          basket_id: basket.id,
-          basket_name: basket.name,
-          position_id: null,
-          position_label: type.title || "",
-          type_id: type.id || type._key || null,
-          product_id: option.product_id,
-          product,
-          reason: "only_configured_option_inactive",
-        }));
-    });
-    return rows;
-  }
-
-  function renderManualReview() {
-    const host = $("basket-manual-review");
-    if (!host) return;
-    const rows = manualReviewRows();
-    const groups = new Map();
-    rows.forEach((row) => {
-      const key = [row.type_id || row.position_label || "", row.product_id, row.reason].join(":");
-      const group = groups.get(key) || { ...row, baskets: new Set() };
-      group.baskets.add(row.basket_name || "Cesta");
-      groups.set(key, group);
-    });
-    const groupedRows = [...groups.values()];
-    host.innerHTML = groupedRows.length
-      ? '<section class="basket-manual-review" aria-labelledby="basket-manual-review-title">' +
-      '<div class="basket-manual-review-heading"><div><h3 id="basket-manual-review-title">Produtos sem substituto automático</h3><p>Cada produto aparece uma vez, com as cestas em que é usado. Adicione outra variação para permitir a substituição automática.</p></div><span>' + groupedRows.length + '</span></div>' +
-          '<ul>' + groupedRows.map((row) => {
-            const type = state.types.find((item) => String(item.id || item._key) === String(row.type_id));
-            const title = type?.title || row.position_label || "Produto da cesta";
-            const product = row.product || productCache.get(String(row.product_id)) || {};
-            const reason = row.reason === "only_configured_option_inactive"
-              ? "Única opção cadastrada · desativado no WhatsApp"
-              : row.reason === "only_configured_option_unavailable"
-                ? "Única opção sem saldo suficiente ou desativada"
-              : row.reason === "replacement_product_inactive"
-                ? "Variação substituta inativa"
-              : "Nenhuma opção ativa com saldo suficiente";
-            const manage = row.type_id
-              ? '<button class="button button-outline" type="button" data-manual-type="' + esc(row.type_id) + '">Gerenciar variações</button>'
-              : "";
-            const basketNames = [...row.baskets].sort((a, b) => a.localeCompare(b, "pt-BR")).join(", ");
-            return '<li><div class="basket-manual-review-copy"><strong>' + esc(title) + ' · ' + esc(product.name || "Produto") + '</strong><span>Cestas: ' + esc(basketNames) + '</span><small>' + esc(reason) + '</small></div>' + manage + '</li>';
-          }).join("") + '</ul></section>'
-      : "";
-  }
-
   function renderOptions(type, key) {
     const options = Array.isArray(type.options) ? type.options : [];
     const list = options.map((option, index) => {
@@ -150,7 +71,7 @@
         '</div></div>';
     }).join("");
     return '<div class="basket-grid-options">' + (list || '<p class="admin-muted">Nenhuma variação cadastrada.</p>') + '</div>' +
-      '<button class="button button-outline basket-grid-add-option" type="button" data-add-variation="' + esc(key) + '">Adicionar variações</button>';
+      '<button class="button button-outline basket-grid-add-option" type="button" data-add-variation="' + esc(key) + '">' + (options.length ? "Gerenciar variações" : "Adicionar variações") + '</button>';
   }
 
   function basketProductsSumCents(basketId) {
@@ -211,7 +132,6 @@
   function renderGrid() {
     const host = $("admin-baskets");
     if (!host) return;
-    renderManualReview();
     const baskets = state.baskets || [];
     const types = state.types || [];
     const prices = '<section class="basket-default-prices" aria-labelledby="basket-default-prices-title">' +
@@ -263,10 +183,6 @@
         }),
         quantities: Object.fromEntries(state.baskets.map((basket) => [basket.id, Number(type.quantities?.[basket.id] || 0)])),
       }));
-      state.manualReplacements = data.manual_replacements || [];
-      state.manualReplacements.forEach((row) => {
-        if (row.product) productCache.set(String(row.product_id), row.product);
-      });
       renderGrid();
     } catch (error) {
       host.innerHTML = '<p class="admin-muted" role="alert">' + esc(error.message || "Não foi possível carregar a grade de cestas.") + '</p><button id="retry-baskets" class="button button-outline" type="button">Tentar novamente</button>';
@@ -451,12 +367,7 @@
       if (updatedOptions) updatedOptions.scrollTop = scrollTop;
     });
 
-    state.manualReplacements.forEach((row) => {
-      if (String(row.product_id) === productId) row.product = product;
-    });
-
     // Keep the unsaved basket draft; reloading basket_grid here discarded it.
-    renderManualReview();
     updateBasketProductSums();
   }
 
@@ -469,12 +380,6 @@
       if (target.id === "reload-baskets") { loadBaskets(); return; }
       if (target.id === "save-basket-grid") { saveGrid(); return; }
       if (target.dataset.addVariation != null) { openPicker(target.dataset.addVariation); return; }
-      if (target.dataset.manualType != null) {
-        const row = document.getElementById("basket-type-" + target.dataset.manualType);
-        row?.scrollIntoView({ behavior: "smooth", block: "center" });
-        openPicker(target.dataset.manualType);
-        return;
-      }
       if (target.dataset.moveType != null) { moveType(target.dataset.typeKey, Number(target.dataset.moveType)); return; }
       if (target.dataset.moveOption != null) { moveOption(target.dataset.typeKey, target.dataset.productId, Number(target.dataset.moveOption)); return; }
       if (target.dataset.removeOption != null) {
