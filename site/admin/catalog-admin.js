@@ -80,7 +80,7 @@
     const rows = products.map((product) => `<article class="admin-product-card">
       ${product.image_url ? `<img src="${esc(product.image_url)}" alt="" width="64" height="64" loading="lazy" decoding="async">` : '<span class="product-image-placeholder">DA</span>'}
       <div class="admin-product-info"><strong>${esc(product.name)}</strong><span>${esc([product.brand, product.sku && `SKU ${product.sku}`].filter(Boolean).join(" · "))}</span><b>${money(effectivePrice(product))}${product.is_offer ? " · oferta" : ""}</b></div>
-      <div class="admin-product-actions"><label class="product-active-toggle"><input type="checkbox" data-toggle-product="${esc(product.id)}" aria-label="Ativar ${esc(product.name)} no catálogo" ${product.is_active === true ? "checked" : ""}><span class="product-switch" aria-hidden="true"></span><span>${product.is_active === true ? "Ativo" : "Inativo"}</span></label><label class="product-active-toggle product-most-sold-toggle"><input type="checkbox" data-toggle-most-sold="${esc(product.id)}" aria-label="Exibir ${esc(product.name)} em Mais Vendidos" ${isMostSoldProduct(product) ? "checked" : ""}><span class="product-switch" aria-hidden="true"></span><span>Mais Vendidos</span></label><button class="button button-outline" type="button" data-edit-product="${esc(product.id)}">Editar</button></div>
+      <div class="admin-product-actions"><label class="product-active-toggle"><input type="checkbox" data-toggle-product="${esc(product.id)}" aria-label="Ativar ${esc(product.name)} no catálogo" ${product.is_active === true ? "checked" : ""}><span class="product-switch" aria-hidden="true"></span><span>${product.is_active === true ? "Ativo" : "Inativo"}</span></label><label class="product-active-toggle product-most-sold-toggle"><input type="checkbox" data-toggle-most-sold="${esc(product.id)}" aria-label="Exibir ${esc(product.name)} em Mais Vendidos" ${isMostSoldProduct(product) ? "checked" : ""}><span class="product-switch" aria-hidden="true"></span><span>Mais Vendidos</span></label><button class="button button-outline" type="button" data-edit-product="${esc(product.id)}">Editar</button><button class="button button-outline" type="button" data-clone-product="${esc(product.id)}">Clonar</button></div>
     </article>`).join("");
     if (!append) host.innerHTML = rows || '<p class="admin-muted">Nenhum produto encontrado.</p>';
     else host.insertAdjacentHTML("beforeend", rows);
@@ -396,6 +396,7 @@
     form.reset();
     $("product-id").value = product?.id || "";
     $("product-dialog-title").textContent = product ? "Editar produto" : "Novo produto";
+    $("product-clone-note").hidden = true;
     $("product-save-message").textContent = "";
     const textFields = ["name", "brand", "sku", "gtin", "ncm", "packaging", "unit", "supplier", "category", "subcategory", "subsubcategory", "storefront_category", "sales_category", "validity_date", "gondola", "shelf", "sort_order", "image_url", "description_short", "description_long", "customer_category", "customer_subcategory", "customer_subsubcategory"];
     textFields.forEach((name) => { form.elements[name].value = product?.[name] ?? (name === "sort_order" ? 0 : ""); });
@@ -406,6 +407,16 @@
     ["is_active", "is_offer", "is_whatsapp_active", "is_upsell"].forEach((name) => { form.elements[name].checked = product ? product[name] === true : ["is_active", "is_whatsapp_active"].includes(name); });
     form.elements.storefront_featured.checked = product ? isMostSoldProduct(product) : false;
     $("product-dialog").showModal();
+  }
+
+  function cloneProduct(product) {
+    if (!product) return;
+    openProduct({ ...product, id: "", gtin: "", image_url: "" });
+    $("product-dialog-title").textContent = "Novo produto baseado neste";
+    $("product-clone-note").hidden = false;
+    const nameField = $("product-form").elements.name;
+    nameField.focus();
+    nameField.select();
   }
 
   async function saveProduct(event) {
@@ -458,8 +469,13 @@
     $("products-result").addEventListener("change", setProductActive);
     $("products-result").addEventListener("change", setProductMostSold);
     $("products-result").addEventListener("click", (event) => {
-      const button = event.target.closest("[data-edit-product]");
-      if (button) openProduct(state.productCache.get(String(button.dataset.editProduct)));
+      const cloneButton = event.target.closest("[data-clone-product]");
+      if (cloneButton) {
+        cloneProduct(state.productCache.get(String(cloneButton.dataset.cloneProduct)));
+        return;
+      }
+      const editButton = event.target.closest("[data-edit-product]");
+      if (editButton) openProduct(state.productCache.get(String(editButton.dataset.editProduct)));
     });
     $("product-search").addEventListener("submit", (event) => {
       event.preventDefault();
