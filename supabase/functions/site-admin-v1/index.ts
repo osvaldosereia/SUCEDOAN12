@@ -1220,6 +1220,11 @@ async function basketSetActive(input: any) {
   if (!basketId || typeof input.is_active !== "boolean") {
     return { status: 400, error: "invalid_basket_status", message: "Cesta ou situação inválida." };
   }
+
+  const moldResult = await db.from("basket_molds").select("metadata").eq("basket_id", basketId).maybeSingle();
+  if (moldResult.error) throw moldResult.error;
+  const isDraft = moldResult.data?.metadata?.site_admin_basket_grid_draft === true;
+
   const result = await db.from("basket_templates")
     .update({ is_active: input.is_active })
     .eq("id", basketId)
@@ -1227,6 +1232,33 @@ async function basketSetActive(input: any) {
     .maybeSingle();
   if (result.error) throw result.error;
   if (!result.data) return { status: 404, error: "basket_not_found", message: "Cesta não encontrada." };
+
+  if (input.is_active && isDraft) {
+    try {
+      const grid = await basketGridList();
+      const saved = await basketGridSave({
+        types: (grid.types || []).map((type: any) => ({
+          id: type.id,
+          title: type.title,
+          options: (type.options || []).map((option: any) => ({
+            product_id: option.product_id,
+            metadata: option.metadata || {},
+          })),
+          quantities: type.quantities || {},
+        })),
+        basket_prices: Object.fromEntries((grid.baskets || []).map((basket: any) => [
+          basket.id,
+          basket.default_price_cents,
+        ])),
+      });
+      if (saved?.error) throw new Error(saved.message || "Não foi possível validar a composição da cesta.");
+    } catch (error) {
+      const rollback = await db.from("basket_templates").update({ is_active: false }).eq("id", basketId);
+      if (rollback.error) console.error("basket_activation_rollback_failed", rollback.error);
+      throw error;
+    }
+  }
+
   return { basket: result.data };
 }
 
