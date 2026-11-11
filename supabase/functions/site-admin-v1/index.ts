@@ -764,7 +764,7 @@ async function basketGridList() {
     .order("name", { ascending: true });
   if (templatesResult.error) throw templatesResult.error;
   const templateRows = templatesResult.data || [];
-  if (!templateRows.length) return { baskets: [], types: [] };
+  if (!templateRows.length) return { baskets: [], types: [], basket_drafts_enabled: true };
 
   const moldResult = await db.from("basket_molds")
     .select("id,basket_id,hidden_adjustment,metadata,conditional_hidden_enabled,conditional_hidden_product_id,conditional_hidden_adjustment")
@@ -776,7 +776,7 @@ async function basketGridList() {
     return !!mold && (row.is_active === true || mold.metadata?.site_admin_basket_grid_draft === true);
   });
   const basketIds = baskets.map((row: any) => String(row.id));
-  if (!basketIds.length) return { baskets: [], types: [] };
+  if (!basketIds.length) return { baskets: [], types: [], basket_drafts_enabled: true };
 
   const [typesResult, optionsResult, quantitiesResult] = await Promise.all([
     db.from("site_basket_product_types").select("id,title,sort_order").order("sort_order", { ascending: true }).order("title", { ascending: true }),
@@ -865,19 +865,18 @@ async function basketGridSave(input: any) {
   const typeIds = new Set<string>();
   for (const type of inputTypes) {
     const rawId = type?.id;
-    const typeId = rawId == null || rawId === "" ? null : uuid(rawId);
+    const typeId = rawId == null || rawId === "" ? crypto.randomUUID() : uuid(rawId);
     const title = clean(type?.title, 180);
     const rawOptionInput = Array.isArray(type?.options) ? type.options : null;
     const rawQuantities = type?.quantities && typeof type.quantities === "object" && !Array.isArray(type.quantities) ? type.quantities : null;
-    if ((rawId != null && rawId !== "" && !typeId) || !title || !rawOptionInput || rawOptionInput.length > 40 || !rawQuantities) {
+    if (!typeId || !title || !rawOptionInput || rawOptionInput.length > 40 || !rawQuantities) {
       return { status: 400, error: "invalid_basket_grid_type", message: "Revise os títulos, as quantidades e as variações da grade." };
     }
-    const rawOptions = rawOptionInput.slice(0, 40);
-    if (typeId && typeIds.has(typeId)) return { status: 400, error: "duplicate_basket_grid_type", message: "Há tipos repetidos na grade." };
-    if (typeId) typeIds.add(typeId);
+    if (typeIds.has(typeId)) return { status: 400, error: "duplicate_basket_grid_type", message: "Há tipos repetidos na grade." };
+    typeIds.add(typeId);
     const options = [] as Array<Record<string, any>>;
     const productIds = new Set<string>();
-    for (const option of rawOptions) {
+    for (const option of rawOptionInput) {
       const productId = uuid(option?.product_id);
       if (!productId || productIds.has(productId)) {
         return { status: 400, error: "invalid_basket_grid_option", message: "Remova variações inválidas ou repetidas." };
@@ -913,13 +912,114 @@ async function basketGridSave(input: any) {
     basketPrices[normalizedBasketId.toLowerCase()] = priceCents;
   }
 
+  const grid = await basketGridList();
+  const activeBaskets = grid.baskets.filter((basket: any) => basket.is_active === true);
+  const draftBaskets = grid.baskets.filter((basket: any) => basket.is_active !== true);
+  const knownBasketIds = new Set(grid.baskets.map((basket: any) => String(basket.id).toLowerCase()));
+  if (!activeBaskets.length) {
+    return { status: 409, error: "active_baskets_missing", message: "É preciso ter ao menos uma cesta ativa para salvar a composição." };
+  }
+  if (Object.keys(basketPrices).length !== knownBasketIds.size
+    || Object.keys(basketPrices).some((id) => !knownBasketIds.has(id.toLowerCase()))) {
+    return { status: 400, error: "basket_grid_price_invalid", message: "Informe o preço de cada cesta exibida na grade." };
+  }
+
+  const draftUpdates = [] as Array<{ basket: any; positions: Array<Record<string, any>> }>;
+  for (const basket of draftBaskets) {
+    const positions = normalized.flatMap((type, positionIndex) => {
+      const quantity = Number(type.quantities?.[basket.id] || 0);
+      if (quantity <= 0) return [];
+      return [{
+        label: type.title,
+        quantity,
+        sort_order: positionIndex,
+        metadata: { site_basket_product_type_id: type.id },
+        options: type.options.map((option: any) => ({ product_id: option.product_id, metadata: option.metadata || {} })),
+      }];
+    });
+    if (!positions.length) {
+      return { status: 400, error: "basket_grid_empty_draft", message: "Informe ao menos um item com quantidade maior que zero para a cesta “" + basket.name + "”." };
+    }
+    draftUpdates.push({ basket, positions });
+  }
+
+  const activeIds = activeBaskets.map((basket: any) => String(basket.id));
+  const activeRows = normalized.map((type) => ({
+    ...type,
+    quantities: Object.fromEntries(activeIds.map((id) => [id, Number(type.quantities?.[id] || 0)])),
+  }));
+  const activePrices = Object.fromEntries(activeBaskets.map((basket: any) => [
+    String(basket.id).toLowerCase(),
+    basketPrices[String(basket.id).toLowerCase()],
+  ]));
+
   const saved = await db.rpc("site_admin_save_basket_grid_with_prices_v1", {
-    p_rows: normalized,
-    p_basket_prices: basketPrices,
+    p_rows: activeRows,
+    p_basket_prices: activePrices,
     p_operator: "Admin site Dona Antônia",
   });
   if (saved.error) throw saved.error;
-  return { saved: true, result: saved.data || {} };
+
+  for (const draft of draftUpdates) {
+    const result = await basketSave({
+      basket_id: draft.basket.id,
+      target_price_cents: basketPrices[String(draft.basket.id).toLowerCase()],
+      positions: draft.positions,
+      share_changes: [],
+    });
+    if (result?.error) {
+      return { ...result, partial_save: true, message: result.message || "A composição das cestas ativas foi salva, mas houve erro ao salvar o rascunho “" + draft.basket.name + "”." };
+    }
+  }
+
+  if (draftUpdates.length) {
+    const quantityRows = draftUpdates.flatMap(({ basket }) => normalized.map((type) => ({
+      product_type_id: type.id,
+      basket_id: basket.id,
+      quantity: Number(type.quantities?.[basket.id] || 0),
+      updated_at: new Date().toISOString(),
+    })));
+    const quantitiesSaved = await db.from("site_basket_product_type_quantities")
+      .upsert(quantityRows, { onConflict: "product_type_id,basket_id" });
+    if (quantitiesSaved.error) throw quantitiesSaved.error;
+  }
+
+  return {
+    saved: true,
+    result: { ...(saved.data || {}), draft_baskets_saved: draftUpdates.length },
+  };
+}
+
+async function cleanupBasketGridDraft(basketId: string) {
+  const moldResult = await db.from("basket_molds").select("id").eq("basket_id", basketId);
+  if (moldResult.error) throw moldResult.error;
+  const moldIds = (moldResult.data || []).map((row: any) => String(row.id));
+  if (moldIds.length) {
+    const positionResult = await db.from("basket_mold_positions").select("id").in("mold_id", moldIds);
+    if (positionResult.error) throw positionResult.error;
+    const positionIds = (positionResult.data || []).map((row: any) => String(row.id));
+    if (positionIds.length) {
+      const deleteOptions = await db.from("basket_mold_position_options").delete().in("position_id", positionIds);
+      if (deleteOptions.error) throw deleteOptions.error;
+      const deletePositions = await db.from("basket_mold_positions").delete().in("id", positionIds);
+      if (deletePositions.error) throw deletePositions.error;
+    }
+    const deleteMolds = await db.from("basket_molds").delete().in("id", moldIds);
+    if (deleteMolds.error) throw deleteMolds.error;
+  }
+  const itemResult = await db.from("basket_template_items").select("id").eq("basket_id", basketId);
+  if (itemResult.error) throw itemResult.error;
+  const itemIds = (itemResult.data || []).map((row: any) => String(row.id));
+  if (itemIds.length) {
+    const deleteAlternatives = await db.from("basket_template_item_alternatives").delete().in("template_item_id", itemIds);
+    if (deleteAlternatives.error) throw deleteAlternatives.error;
+    const deleteItems = await db.from("basket_template_items").delete().in("id", itemIds);
+    if (deleteItems.error) throw deleteItems.error;
+  }
+  const deleteQuantities = await db.from("site_basket_product_type_quantities").delete().eq("basket_id", basketId);
+  if (deleteQuantities.error) throw deleteQuantities.error;
+  const deleteBasket = await db.from("basket_templates").delete().eq("id", basketId);
+  if (deleteBasket.error) throw deleteBasket.error;
 }
 
 async function basketGridCreate(input: any) {
@@ -930,21 +1030,189 @@ async function basketGridCreate(input: any) {
     return { status: 400, error: "invalid_basket_draft", message: "Informe um nome de até 120 caracteres e uma cesta válida para copiar." };
   }
 
-  const result = await db.rpc("site_admin_create_basket_grid_draft_v1", {
-    p_source_basket_id: sourceBasketId,
-    p_name: name,
-  });
-  if (result.error) {
-    const message = String(result.error.message || "");
-    if (message.includes("site_basket_grid_name_exists")) {
-      return { status: 409, error: "basket_name_exists", message: "Já existe uma cesta com esse nome." };
-    }
-    if (message.includes("site_basket_grid_source_invalid") || message.includes("site_basket_grid_source_mold_missing")) {
-      return { status: 400, error: "invalid_basket_source", message: "Escolha uma cesta ativa com composição cadastrada." };
-    }
-    throw result.error;
+  const categoryResult = await db.from("basket_categories").select("id").eq("slug", "cestas-completas").maybeSingle();
+  if (categoryResult.error) throw categoryResult.error;
+  if (!categoryResult.data) return { status: 404, error: "basket_category_not_found", message: "Categoria de cestas não encontrada." };
+
+  const sourceResult = await db.from("basket_templates")
+    .select("id,description,image_url,base_price,rules,hidden_adjustment,uses_hygiene_kit,split_kits_enabled,category_id,subcategory_id")
+    .eq("id", sourceBasketId)
+    .eq("category_id", categoryResult.data.id)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (sourceResult.error) throw sourceResult.error;
+  if (!sourceResult.data) return { status: 400, error: "invalid_basket_source", message: "Escolha uma cesta ativa para copiar." };
+  const source = sourceResult.data;
+
+  const [namesResult, orderResult, moldResult] = await Promise.all([
+    db.from("basket_templates").select("name").eq("category_id", categoryResult.data.id),
+    db.from("basket_templates").select("sort_order").eq("category_id", categoryResult.data.id).order("sort_order", { ascending: false }).limit(1).maybeSingle(),
+    db.from("basket_molds")
+      .select("id,hidden_adjustment,public_composition_count,metadata,conditional_hidden_enabled,conditional_hidden_product_id,conditional_hidden_adjustment")
+      .eq("basket_id", sourceBasketId)
+      .maybeSingle(),
+  ]);
+  if (namesResult.error) throw namesResult.error;
+  if (orderResult.error) throw orderResult.error;
+  if (moldResult.error) throw moldResult.error;
+  if ((namesResult.data || []).some((row: any) => String(row.name || "").trim().toLocaleLowerCase("pt-BR") === name.toLocaleLowerCase("pt-BR"))) {
+    return { status: 409, error: "basket_name_exists", message: "Já existe uma cesta com esse nome." };
   }
-  return { created: true, basket: result.data || {} };
+  if (!moldResult.data) return { status: 400, error: "invalid_basket_source", message: "A cesta escolhida não possui composição para copiar." };
+  const sourceMold = moldResult.data;
+
+  const [positionsResult, quantitiesResult, itemsResult] = await Promise.all([
+    db.from("basket_mold_positions").select("id,label,quantity,sort_order,metadata").eq("mold_id", sourceMold.id).order("sort_order", { ascending: true }),
+    db.from("site_basket_product_type_quantities").select("product_type_id,quantity").eq("basket_id", sourceBasketId),
+    db.from("basket_template_items")
+      .select("id,product_id,quantity,removable,quantity_editable,min_quantity,max_quantity,substitution_group,pricing_rule,sort_order,remove_unit_delta,add_unit_delta")
+      .eq("basket_id", sourceBasketId)
+      .order("sort_order", { ascending: true }),
+  ]);
+  if (positionsResult.error) throw positionsResult.error;
+  if (quantitiesResult.error) throw quantitiesResult.error;
+  if (itemsResult.error) throw itemsResult.error;
+  const sourcePositions = positionsResult.data || [];
+  const sourceItems = itemsResult.data || [];
+  if (!sourcePositions.length) return { status: 400, error: "empty_basket_source", message: "A cesta escolhida não tem itens para copiar." };
+
+  const positionIds = sourcePositions.map((row: any) => String(row.id));
+  const itemIds = sourceItems.map((row: any) => String(row.id));
+  const [optionsResult, alternativesResult] = await Promise.all([
+    positionIds.length
+      ? db.from("basket_mold_position_options").select("position_id,product_id,sort_order,metadata").in("position_id", positionIds).order("sort_order", { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
+    itemIds.length
+      ? db.from("basket_template_item_alternatives").select("template_item_id,product_id,priority,is_active").in("template_item_id", itemIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (optionsResult.error) throw optionsResult.error;
+  if (alternativesResult.error) throw alternativesResult.error;
+  const sourceOptions = optionsResult.data || [];
+  if (sourcePositions.some((position: any) => !sourceOptions.some((option: any) => String(option.position_id) === String(position.id)))) {
+    return { status: 400, error: "incomplete_basket_source", message: "A cesta escolhida tem uma posição sem produto vinculado." };
+  }
+
+  let newBasketId = "";
+  try {
+    const templateResult = await db.from("basket_templates").insert({
+      sku: null,
+      name,
+      description: source.description,
+      image_url: source.image_url,
+      base_price: source.base_price,
+      is_active: false,
+      sort_order: Number(orderResult.data?.sort_order ?? -1) + 1,
+      rules: source.rules || {},
+      is_whatsapp_active: false,
+      is_featured: false,
+      internal_notes: null,
+      hidden_adjustment: source.hidden_adjustment,
+      uses_hygiene_kit: source.uses_hygiene_kit === true,
+      split_kits_enabled: source.split_kits_enabled === true,
+      category_id: source.category_id,
+      subcategory_id: source.subcategory_id,
+    }).select("id,name,is_active").single();
+    if (templateResult.error) throw templateResult.error;
+    newBasketId = String(templateResult.data.id);
+
+    const newMoldMetadata = {
+      ...(sourceMold.metadata && typeof sourceMold.metadata === "object" ? sourceMold.metadata : {}),
+      site_admin_basket_grid_draft: true,
+    };
+    const newMoldResult = await db.from("basket_molds").insert({
+      basket_id: newBasketId,
+      hidden_adjustment: sourceMold.hidden_adjustment,
+      public_composition_count: sourceMold.public_composition_count,
+      metadata: newMoldMetadata,
+      conditional_hidden_enabled: sourceMold.conditional_hidden_enabled,
+      conditional_hidden_product_id: sourceMold.conditional_hidden_product_id,
+      conditional_hidden_adjustment: sourceMold.conditional_hidden_adjustment,
+    }).select("id").single();
+    if (newMoldResult.error) throw newMoldResult.error;
+    const newMoldId = String(newMoldResult.data.id);
+
+    const positionMap = new Map<string, string>();
+    const newPositions = sourcePositions.map((position: any) => {
+      const newId = crypto.randomUUID();
+      positionMap.set(String(position.id), newId);
+      return {
+        id: newId,
+        mold_id: newMoldId,
+        label: position.label,
+        quantity: position.quantity,
+        sort_order: position.sort_order,
+        metadata: position.metadata || {},
+      };
+    });
+    const insertPositions = await db.from("basket_mold_positions").insert(newPositions);
+    if (insertPositions.error) throw insertPositions.error;
+
+    const newOptions = sourceOptions.map((option: any) => ({
+      position_id: positionMap.get(String(option.position_id)),
+      product_id: option.product_id,
+      sort_order: option.sort_order,
+      metadata: option.metadata || {},
+    }));
+    if (newOptions.length) {
+      const insertOptions = await db.from("basket_mold_position_options").insert(newOptions);
+      if (insertOptions.error) throw insertOptions.error;
+    }
+
+    const newQuantities = (quantitiesResult.data || []).map((row: any) => ({
+      product_type_id: row.product_type_id,
+      basket_id: newBasketId,
+      quantity: row.quantity,
+    }));
+    if (newQuantities.length) {
+      const insertQuantities = await db.from("site_basket_product_type_quantities").insert(newQuantities);
+      if (insertQuantities.error) throw insertQuantities.error;
+    }
+
+    const itemMap = new Map<string, string>();
+    const newItems = sourceItems.map((item: any) => {
+      const newId = crypto.randomUUID();
+      itemMap.set(String(item.id), newId);
+      return {
+        id: newId,
+        basket_id: newBasketId,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        removable: item.removable,
+        quantity_editable: item.quantity_editable,
+        min_quantity: item.min_quantity,
+        max_quantity: item.max_quantity,
+        substitution_group: item.substitution_group,
+        pricing_rule: item.pricing_rule || {},
+        sort_order: item.sort_order,
+        remove_unit_delta: item.remove_unit_delta,
+        add_unit_delta: item.add_unit_delta,
+      };
+    });
+    if (newItems.length) {
+      const insertItems = await db.from("basket_template_items").insert(newItems);
+      if (insertItems.error) throw insertItems.error;
+    }
+
+    const newAlternatives = (alternativesResult.data || []).map((alternative: any) => ({
+      template_item_id: itemMap.get(String(alternative.template_item_id)),
+      product_id: alternative.product_id,
+      priority: alternative.priority,
+      is_active: alternative.is_active,
+    }));
+    if (newAlternatives.length) {
+      const insertAlternatives = await db.from("basket_template_item_alternatives").insert(newAlternatives);
+      if (insertAlternatives.error) throw insertAlternatives.error;
+    }
+
+    return { created: true, basket: { ...templateResult.data, source_basket_id: sourceBasketId } };
+  } catch (error) {
+    if (newBasketId) {
+      try { await cleanupBasketGridDraft(newBasketId); }
+      catch (cleanupError) { console.error("basket_grid_draft_cleanup_failed", cleanupError); }
+    }
+    throw error;
+  }
 }
 
 async function basketSetActive(input: any) {
