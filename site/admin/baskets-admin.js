@@ -16,7 +16,103 @@
     pickerSelected: new Set(),
     loading: false,
     saving: false,
+    dirty: false,
+    creating: false,
   };
+
+  function markDirty() {
+    state.dirty = true;
+    const status = $("basket-dirty-state");
+    if (status) status.hidden = false;
+  }
+
+  function clearDirty() {
+    state.dirty = false;
+    const status = $("basket-dirty-state");
+    if (status) status.hidden = true;
+  }
+
+  function populateBasketSources() {
+    const select = $("basket-source-template");
+    if (!select) return;
+    const selected = select.value;
+    const activeBaskets = state.baskets.filter((basket) => basket.is_active !== false);
+    select.innerHTML = activeBaskets.map((basket) =>
+      '<option value="' + esc(basket.id) + '">' + esc(basket.name) + '</option>'
+    ).join("");
+    if (activeBaskets.some((basket) => String(basket.id) === selected)) select.value = selected;
+  }
+
+  function openCreateBasketDialog() {
+    if (state.dirty) {
+      toast("Salve as alterações da composição antes de criar outra cesta.");
+      return;
+    }
+    populateBasketSources();
+    const form = $("basket-create-form");
+    form?.reset();
+    const dialog = $("basket-create-dialog");
+    if (dialog && !dialog.open) dialog.showModal();
+    $("basket-new-name")?.focus();
+  }
+
+  async function createBasketDraft(event) {
+    event.preventDefault();
+    if (state.creating || state.dirty) {
+      if (state.dirty) toast("Salve as alterações da composição antes de criar outra cesta.");
+      return;
+    }
+    const name = $("basket-new-name").value.trim();
+    const sourceBasketId = $("basket-source-template").value;
+    if (!name || !sourceBasketId) {
+      toast("Informe o nome e escolha uma cesta para copiar.");
+      return;
+    }
+    const submit = $("create-basket-submit");
+    state.creating = true;
+    submit.disabled = true;
+    submit.textContent = "Criando…";
+    try {
+      const result = await request("basket_grid_create", {
+        method: "POST",
+        body: { name, source_basket_id: sourceBasketId },
+      });
+      $("basket-create-dialog").close();
+      toast("Rascunho criado. Revise a composição e o valor antes de ativar.");
+      await loadBaskets();
+      const createdId = result.basket?.id;
+      if (createdId) document.querySelector('[data-basket-card="' + createdId + '"]')?.scrollIntoView({ behavior: "smooth", block: "center" });
+    } catch (error) {
+      toast(error.message || "Não foi possível criar a nova cesta.");
+    } finally {
+      state.creating = false;
+      submit.disabled = false;
+      submit.textContent = "Criar rascunho";
+    }
+  }
+
+  async function activateBasket(basketId) {
+    if (state.dirty) {
+      toast("Salve as alterações antes de ativar a cesta.");
+      return;
+    }
+    const basket = state.baskets.find((item) => String(item.id) === String(basketId));
+    if (!basket || basket.is_active) return;
+    if (!window.confirm("Ativar “" + basket.name + "” na loja? Ela ficará disponível para venda.")) return;
+    const button = document.querySelector('[data-activate-basket="' + basket.id + '"]');
+    if (button) { button.disabled = true; button.textContent = "Ativando…"; }
+    try {
+      await request("basket_set_active", {
+        method: "POST",
+        body: { basket_id: basket.id, is_active: true },
+      });
+      toast("Cesta ativada na loja.");
+      await loadBaskets();
+    } catch (error) {
+      if (button) { button.disabled = false; button.textContent = "Ativar na loja"; }
+      toast(error.message || "Não foi possível ativar a cesta.");
+    }
+  }
 
   function typeKey(type, index = 0) {
     return String(type.id || type._key || ("new-" + index));
@@ -138,13 +234,19 @@
       '<div class="basket-default-prices-heading"><h3 id="basket-default-prices-title">Valores padrão das cestas</h3><p>Preço exibido inicialmente no site. As variações podem alterar o total.</p></div>' +
       '<div class="basket-default-prices-grid">' + baskets.map((basket) => {
         const cost = basketProductsCostSummary(basket.id);
-        return '<label class="basket-default-price"><span>' + esc(basket.name) + '</span><span class="basket-default-price-input"><span>R$</span><input type="number" min="0" max="1000000" step="0.01" inputmode="decimal" value="' + esc(priceInputValue(basket.default_price_value ?? basket.default_price_cents)) + '" data-basket-price="' + esc(basket.id) + '" aria-label="Valor padrão da cesta ' + esc(basket.name) + '"></span><small class="basket-default-price-sum" data-basket-product-sum="' + esc(basket.id) + '" aria-live="polite">Soma de venda: <strong>' + money(basketProductsSumCents(basket.id)) + '</strong></small><small class="basket-default-price-sum basket-default-price-cost" data-basket-product-cost="' + esc(basket.id) + '" data-incomplete="' + (cost.missingProducts ? "true" : "false") + '" aria-live="polite"><span class="basket-default-price-cost-label">' + (cost.missingProducts ? "Custo parcial:" : "Soma de custo:") + '</span><strong>' + money(cost.totalCents) + '</strong><span class="basket-default-price-cost-note">' + (cost.missingProducts ? " · " + cost.missingProducts + (cost.missingProducts === 1 ? " produto sem custo" : " produtos sem custo") : "") + '</span></small></label>';
+        const basketIsActive = basket.is_active !== false;
+        const status = basketIsActive
+          ? '<span class="basket-state-badge is-live">Ativa na loja</span>'
+          : '<span class="basket-state-badge is-draft">Rascunho · fora da loja</span>';
+        const activateButton = basketIsActive ? ""
+          : '<button class="button button-outline basket-activate-button" type="button" data-activate-basket="' + esc(basket.id) + '">Ativar na loja</button>';
+        return '<div class="basket-default-price" data-basket-card="' + esc(basket.id) + '"><div class="basket-default-price-heading"><span>' + esc(basket.name) + '</span>' + status + '</div><label class="basket-default-price-input"><span>R$</span><input type="number" min="0" max="1000000" step="0.01" inputmode="decimal" value="' + esc(priceInputValue(basket.default_price_value ?? basket.default_price_cents)) + '" data-basket-price="' + esc(basket.id) + '" aria-label="Valor padrão da cesta ' + esc(basket.name) + '"></label><small class="basket-default-price-sum" data-basket-product-sum="' + esc(basket.id) + '" aria-live="polite">Soma de venda: <strong>' + money(basketProductsSumCents(basket.id)) + '</strong></small><small class="basket-default-price-sum basket-default-price-cost" data-basket-product-cost="' + esc(basket.id) + '" data-incomplete="' + (cost.missingProducts ? "true" : "false") + '" aria-live="polite"><span class="basket-default-price-cost-label">' + (cost.missingProducts ? "Custo parcial:" : "Soma de custo:") + '</span><strong>' + money(cost.totalCents) + '</strong><span class="basket-default-price-cost-note">' + (cost.missingProducts ? " · " + cost.missingProducts + (cost.missingProducts === 1 ? " produto sem custo" : " produtos sem custo") : "") + '</span></small>' + activateButton + '</div>';
       }).join("") + '</div></section>';
     if (!types.length) {
       host.innerHTML = prices + '<p class="admin-muted basket-grid-empty">Nenhum tipo cadastrado. Adicione um tipo para começar a montar as cestas.</p>';
       return;
     }
-    const headers = baskets.map((basket) => '<th scope="col"><span>' + esc(basket.name) + '</span><small>unidades</small></th>').join("");
+    const headers = baskets.map((basket) => '<th scope="col"><span>' + esc(basket.name) + '</span><small>' + (basket.is_active !== false ? "unidades" : "rascunho · unidades") + '</small></th>').join("");
     const rows = types.map((type, index) => {
       const key = typeKey(type, index);
       const quantities = type.quantities || {};
@@ -170,6 +272,8 @@
     host.innerHTML = '<p class="admin-muted">Carregando tipos e cestas…</p>';
     try {
       const data = await request("basket_grid", { params: {} });
+      const createButton = $("add-basket-template");
+      if (createButton) createButton.hidden = data.basket_drafts_enabled !== true;
       state.baskets = (data.baskets || []).map((basket) => ({
         ...basket,
         default_price_value: priceInputValue(basket.default_price_cents),
@@ -183,6 +287,8 @@
         }),
         quantities: Object.fromEntries(state.baskets.map((basket) => [basket.id, Number(type.quantities?.[basket.id] || 0)])),
       }));
+      clearDirty();
+      populateBasketSources();
       renderGrid();
     } catch (error) {
       host.innerHTML = '<p class="admin-muted" role="alert">' + esc(error.message || "Não foi possível carregar a grade de cestas.") + '</p><button id="retry-baskets" class="button button-outline" type="button">Tentar novamente</button>';
@@ -205,6 +311,7 @@
       options: [],
       quantities: Object.fromEntries(state.baskets.map((basket) => [basket.id, 0])),
     });
+    markDirty();
     renderGrid();
     const row = document.getElementById("basket-type-" + key);
     row?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -255,6 +362,7 @@
       .map((id) => ({ product_id: id, product: productCache.get(id) || {}, metadata: {} }));
     type.options = [...selected, ...added];
     $("product-picker-dialog").close();
+    markDirty();
     renderGrid();
   }
 
@@ -264,6 +372,7 @@
     if (index < 0 || next < 0 || next >= state.types.length) return;
     const item = state.types.splice(index, 1)[0];
     state.types.splice(next, 0, item);
+    markDirty();
     renderGrid();
   }
 
@@ -275,6 +384,7 @@
     if (index < 0 || next < 0 || next >= type.options.length) return;
     const option = type.options.splice(index, 1)[0];
     type.options.splice(next, 0, option);
+    markDirty();
     renderGrid();
   }
 
@@ -377,7 +487,12 @@
       if (!target) return;
       if (target.id === "retry-baskets") { loadBaskets(); return; }
       if (target.id === "add-basket-type") { addType(); return; }
-      if (target.id === "reload-baskets") { loadBaskets(); return; }
+      if (target.id === "add-basket-template") { openCreateBasketDialog(); return; }
+      if (target.dataset.activateBasket) { activateBasket(target.dataset.activateBasket); return; }
+      if (target.id === "reload-baskets") {
+        if (state.dirty && !window.confirm("Há alterações não salvas. Atualizar e descartá-las?")) return;
+        loadBaskets(); return;
+      }
       if (target.id === "save-basket-grid") { saveGrid(); return; }
       if (target.dataset.addVariation != null) { openPicker(target.dataset.addVariation); return; }
       if (target.dataset.moveType != null) { moveType(target.dataset.typeKey, Number(target.dataset.moveType)); return; }
@@ -385,6 +500,7 @@
       if (target.dataset.removeOption != null) {
         const type = findType(target.dataset.typeKey);
         if (type) type.options = type.options.filter((option) => String(option.product_id) !== String(target.dataset.productId));
+        markDirty();
         renderGrid();
         return;
       }
@@ -393,6 +509,7 @@
         if (!type) return;
         if (!window.confirm("Excluir o tipo “" + (type.title || "sem título") + "” e removê-lo das cestas?")) return;
         state.types = state.types.filter((item, index) => typeKey(item, index) !== target.dataset.deleteType);
+        markDirty();
         renderGrid();
         return;
       }
@@ -400,12 +517,14 @@
       if (target.id === "picker-more") loadPickerProducts(false);
       if (target.id === "apply-picker-products") applyPicker();
       if (target.dataset.dialogClose === "product-picker-dialog") $("product-picker-dialog").close();
+      if (target.dataset.dialogClose === "basket-create-dialog") $("basket-create-dialog").close();
     });
 
     $("admin-baskets").addEventListener("input", (event) => {
       if (event.target.dataset.basketPrice != null) {
         const basket = state.baskets.find((item) => String(item.id) === String(event.target.dataset.basketPrice));
         if (basket) basket.default_price_value = event.target.value;
+        markDirty();
         return;
       }
       const key = event.target.dataset.typeTitle || event.target.dataset.typeQuantity;
@@ -413,12 +532,15 @@
       const type = findType(key);
       if (!type) return;
       if (event.target.dataset.typeTitle != null) type.title = event.target.value;
+      markDirty();
       if (event.target.dataset.typeQuantity != null) {
         const quantity = parseQuantity(event.target.value);
         type.quantities[event.target.dataset.basketId] = quantity == null ? event.target.value : quantity;
         updateBasketProductSums();
       }
     });
+
+    $("basket-create-form").addEventListener("submit", createBasketDraft);
 
     $("picker-search").addEventListener("submit", (event) => {
       event.preventDefault();
@@ -432,6 +554,12 @@
       else state.pickerSelected.delete(id);
     });
   }
+
+  window.addEventListener("beforeunload", (event) => {
+    if (!state.dirty) return;
+    event.preventDefault();
+    event.returnValue = "";
+  });
 
   bind();
   window.DonaBasketAdmin = { loadBaskets, productSaved };
