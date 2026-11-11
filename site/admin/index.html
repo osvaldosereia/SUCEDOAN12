@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="admin.css?v=52">
   <link rel="stylesheet" href="taxonomy-admin.css?v=1">
   <link rel="stylesheet" href="papoai-guard-admin.css?v=1">
-  <link rel="stylesheet" href="baskets-admin.css?v=5">
+  <link rel="stylesheet" href="baskets-admin.css?v=6">
   <link rel="stylesheet" href="whatsapp-campaign-report.css?v=1">
   <link rel="stylesheet" href="orders-admin.css?v=16">
   <link rel="stylesheet" href="delivery-admin.css?v=10">
@@ -23,7 +23,7 @@
   <script src="catalog-admin.js?v=14" defer></script>
   <script src="taxonomy-admin.js?v=1" defer></script>
   <script src="papoai-guard-admin.js?v=1" defer></script>
-  <script src="baskets-admin.js?v=8" defer></script>
+  <script src="baskets-admin.js?v=9" defer></script>
   <script src="orders-admin.js?v=17" defer></script>
   <script type="module" src="delivery-admin.js?v=12"></script>
   <script src="order-message-admin.js?v=4" defer></script>
@@ -194,12 +194,11 @@
       </section>
 
       <section class="admin-view" data-panel="baskets" hidden>
-        <div class="section-title basket-grid-heading"><div><h2>Cestas</h2><p>Edite o título, as variações, o valor padrão e as quantidades de cada cesta nesta tela. Quantidade zero deixa o tipo fora daquela composição.</p></div><div class="basket-admin-controls"><button id="add-basket-type" class="button button-outline" type="button">Adicionar tipo</button><button id="reload-baskets" class="button button-outline" type="button">Atualizar</button><button id="save-basket-grid" class="button button-primary" type="button">Salvar alterações</button></div></div>
-        <div id="basket-manual-review"></div>
+        <div class="section-title basket-grid-heading"><div><h2>Cestas</h2><p>Edite os itens, as opções de substituição, o preço e a quantidade de cada cesta. Quantidade zero remove o item daquela cesta.</p></div><div class="basket-admin-controls"><button id="add-basket-type" class="button button-outline" type="button" aria-label="Adicionar item à composição das cestas">Adicionar item</button><button id="reload-baskets" class="button button-outline" type="button">Atualizar</button><button id="save-basket-grid" class="button button-primary" type="button">Salvar alterações</button></div></div>
         <div id="admin-baskets" class="admin-basket-grid"><p class="admin-muted">Carregando…</p></div>
         <div class="edit-notice basket-grid-note">
-          <strong>Como funcionam as variações</strong>
-          <span>A ordem define a substituição automática: se uma opção for desativada, a próxima opção cadastrada é usada. Se restar só uma opção indisponível em uma cesta, ela permanece ativa e aparece na lista de ajuste manual.</span>
+          <strong>Como funciona a substituição</strong>
+          <span>As opções são avaliadas na ordem. Com mais de uma opção, uma opção inativa ou sem estoque suficiente é substituída pela próxima. Se houver uma única opção, ela continua vendável mesmo com estoque zero ou negativo.</span>
         </div>
       </section>
 
