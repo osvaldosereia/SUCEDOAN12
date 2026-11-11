@@ -94,7 +94,7 @@
       return '<div class="product-search product-search-compact" data-product-search-root="' + esc(scope) + '">' +
         '<label class="product-search-label" for="basket-extra-product-search-input">' + esc(label) + '</label>' +
         '<div class="product-search-control">' +
-        '<input id="basket-extra-product-search-input" data-product-search-input="' + esc(scope) + '" type="search" maxlength="100" autocomplete="off" enterkeyhint="search" placeholder="' + esc(placeholder) + '" value="' + esc(search.query) + '" aria-describedby="basket-extra-product-search-status">' +
+        '<input id="basket-extra-product-search-input" data-product-search-input="' + esc(scope) + '" data-ean-camera-input type="search" maxlength="100" autocomplete="off" enterkeyhint="search" placeholder="' + esc(placeholder) + '" value="' + esc(search.query) + '" aria-describedby="basket-extra-product-search-status">' +
         '<button class="product-search-clear" type="button" data-product-search-clear="' + esc(scope) + '" aria-label="Limpar busca" hidden>×</button></div>' +
         '<p id="basket-extra-product-search-status" class="product-search-status" data-product-search-status="' + esc(scope) + '" role="status" aria-live="polite">' + esc(productSearchStatus(search)) + '</p>' +
         '<div class="product-search-results" data-product-search-results="' + esc(scope) + '"' + (searching ? "" : " hidden") + '>' +
