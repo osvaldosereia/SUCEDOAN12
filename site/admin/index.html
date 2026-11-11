@@ -16,13 +16,15 @@
   <link rel="stylesheet" href="delivery-admin.css?v=10">
   <link rel="stylesheet" href="quick-balance-admin.css?v=4">
   <link rel="stylesheet" href="cards-admin.css?v=1">
+  <link rel="stylesheet" href="../ean-camera.css?v=1">
   <script src="../config.js?v=3"></script>
+  <script src="../ean-camera.js?v=1" defer></script>
   <script src="admin-auth.js?v=2" defer></script>
   <script src="catalog-admin.js?v=14" defer></script>
   <script src="taxonomy-admin.js?v=1" defer></script>
   <script src="papoai-guard-admin.js?v=1" defer></script>
   <script src="baskets-admin.js?v=8" defer></script>
-  <script src="orders-admin.js?v=16" defer></script>
+  <script src="orders-admin.js?v=17" defer></script>
   <script type="module" src="delivery-admin.js?v=12"></script>
   <script src="order-message-admin.js?v=4" defer></script>
   <script src="separation-message-admin.js?v=5" defer></script>
@@ -206,7 +208,7 @@
         <form id="product-search" class="customer-search product-admin-search">
           <label for="product-query">Buscar por nome, marca, SKU ou GTIN</label>
           <div class="product-search-controls">
-            <input id="product-query" type="search" placeholder="Ex.: arroz, marca ou código">
+            <input id="product-query" type="search" data-ean-camera-input placeholder="Ex.: arroz, marca ou código">
             <select id="product-status" aria-label="Filtrar produtos por situação">
               <option value="active">Ativos</option>
               <option value="inactive">Inativos</option>
@@ -237,7 +239,7 @@
           <form id="quick-balance-scan" class="quick-balance-scan">
             <label for="quick-balance-ean">EAN</label>
             <div class="quick-balance-scan-controls">
-              <input id="quick-balance-ean" type="text" inputmode="none" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="40" placeholder="EAN do produto" aria-describedby="quick-balance-scan-status">
+              <input id="quick-balance-ean" type="text" data-ean-camera-input data-ean-camera-submit="false" inputmode="none" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="40" placeholder="EAN do produto" aria-describedby="quick-balance-scan-status">
               <button id="quick-balance-search" class="button button-primary" type="submit">Buscar</button>
             </div>
           </form>
@@ -636,7 +638,7 @@
   <dialog id="product-picker-dialog" class="catalog-dialog picker-dialog">
     <div class="dialog-form">
       <header class="dialog-heading"><div><p class="eyebrow">Buscar e marcar</p><h2>Produtos e variações</h2></div><button class="icon-button" type="button" data-dialog-close="product-picker-dialog" aria-label="Fechar">×</button></header>
-      <form id="picker-search" class="customer-search"><label for="picker-query">Nome, marca, SKU ou GTIN</label><div class="product-search-controls"><input id="picker-query" type="search" placeholder="Digite para buscar"><button class="button button-primary" type="submit">Buscar</button></div></form>
+      <form id="picker-search" class="customer-search"><label for="picker-query">Nome, marca, SKU ou GTIN</label><div class="product-search-controls"><input id="picker-query" type="search" data-ean-camera-input placeholder="Digite para buscar"><button class="button button-primary" type="submit">Buscar</button></div></form>
       <p class="dialog-hint">Marque as opções deste tipo. A ordem da lista na tabela define a sequência de substituição.</p>
       <div id="picker-results" class="picker-results"><p class="admin-muted">Busque os produtos para começar.</p></div>
       <button id="picker-more" class="button button-outline button-wide" type="button" hidden>Carregar mais resultados</button>
