@@ -1035,7 +1035,7 @@ async function basketGridCreate(input: any) {
   if (!categoryResult.data) return { status: 404, error: "basket_category_not_found", message: "Categoria de cestas não encontrada." };
 
   const sourceResult = await db.from("basket_templates")
-    .select("id,description,image_url,base_price,rules,hidden_adjustment,uses_hygiene_kit,split_kits_enabled,category_id,subcategory_id")
+    .select("id,description,image_url,base_price,rules,hidden_adjustment,uses_hygiene_kit,split_kits_enabled,category_id,subcategory_id,is_whatsapp_active")
     .eq("id", sourceBasketId)
     .eq("category_id", categoryResult.data.id)
     .eq("is_active", true)
@@ -1104,7 +1104,7 @@ async function basketGridCreate(input: any) {
       is_active: false,
       sort_order: Number(orderResult.data?.sort_order ?? -1) + 1,
       rules: source.rules || {},
-      is_whatsapp_active: false,
+      is_whatsapp_active: source.is_whatsapp_active === true,
       is_featured: false,
       internal_notes: null,
       hidden_adjustment: source.hidden_adjustment,
