@@ -352,15 +352,33 @@
   }
 
   async function productSaved(product) {
-    productCache.set(String(product.id), product);
-    state.types.forEach((type) => (type.options || []).forEach((option) => {
-      if (String(option.product_id) === String(product.id)) option.product = product;
-    }));
-    state.manualReplacements.forEach((row) => {
-      if (String(row.product_id) === String(product.id)) row.product = product;
+    const productId = String(product.id);
+    productCache.set(productId, product);
+
+    state.types.forEach((type, index) => {
+      const options = type.options || [];
+      if (!options.some((option) => String(option.product_id) === productId)) return;
+      options.forEach((option) => {
+        if (String(option.product_id) === productId) option.product = product;
+      });
+
+      const row = document.getElementById("basket-type-" + typeKey(type, index));
+      const variations = row?.querySelector(".basket-grid-variations");
+      if (!variations) return;
+      const previousOptions = variations.querySelector(".basket-grid-options");
+      const scrollTop = previousOptions?.scrollTop || 0;
+      variations.innerHTML = renderOptions(type, typeKey(type, index));
+      const updatedOptions = variations.querySelector(".basket-grid-options");
+      if (updatedOptions) updatedOptions.scrollTop = scrollTop;
     });
-    renderGrid();
-    await loadBaskets();
+
+    state.manualReplacements.forEach((row) => {
+      if (String(row.product_id) === productId) row.product = product;
+    });
+
+    // Keep the unsaved basket draft; reloading basket_grid here discarded it.
+    renderManualReview();
+    updateBasketProductSums();
   }
 
   function bind() {
