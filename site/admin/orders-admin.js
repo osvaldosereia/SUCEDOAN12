@@ -423,7 +423,7 @@
         : item.state === "separated" ? "is-separated"
           : item.state === "substituted" ? "is-substituted" : "";
       const replacementSearch = state.replacementSearch && state.replacementSearch.itemId === String(item.id)
-        ? "<div class='separation-replacement-search'><label>Buscar produto substituto<input type='search' autocomplete='off' data-replacement-query='" + esc(item.id) + "' value='" + esc(state.replacementSearch.query || "") + "' placeholder='Nome, marca ou código'></label><div class='replacement-results' data-replacement-results='" + esc(item.id) + "' role='listbox' aria-label='Produtos disponíveis'>Digite pelo menos 2 caracteres.</div></div>"
+        ? "<div class='separation-replacement-search'><label for='replacement-product-query-" + esc(item.id) + "'>Buscar produto substituto</label><input id='replacement-product-query-" + esc(item.id) + "' type='search' autocomplete='off' data-ean-camera-input data-replacement-query='" + esc(item.id) + "' value='" + esc(state.replacementSearch.query || "") + "' placeholder='Nome, marca, SKU, GTIN ou EAN'><div class='replacement-results' data-replacement-results='" + esc(item.id) + "' role='listbox' aria-label='Produtos disponíveis'>Digite pelo menos 2 caracteres.</div></div>"
         : "";
       return "<article class='separation-item " + cardClass + "'>" +
         "<img src='" + esc(item.image_url || "../img/logoantonia5.png") + "' alt='' loading='lazy'>" +
