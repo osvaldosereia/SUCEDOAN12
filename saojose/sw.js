@@ -1,4 +1,4 @@
-const CACHE_NAME = "saojose-static-v2";
+const CACHE_NAME = "saojose-static-v3";
 const ROOT = new URL("./", self.registration.scope).href;
 const FILES = [ROOT, ROOT + "index.html", ROOT + "manifest.webmanifest", ROOT + "icon.svg", ROOT + "jornada.js", ROOT + "jornada.css"];
 
