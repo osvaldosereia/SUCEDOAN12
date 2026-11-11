@@ -1,6 +1,6 @@
-const CACHE_NAME = "saojose-static-v3";
+const CACHE_NAME = "saojose-static-v4";
 const ROOT = new URL("./", self.registration.scope).href;
-const FILES = [ROOT, ROOT + "index.html", ROOT + "manifest.webmanifest", ROOT + "icon.svg", ROOT + "jornada.js", ROOT + "jornada.css"];
+const FILES = [ROOT, ROOT + "index.html", ROOT + "manifest.webmanifest", ROOT + "icon.svg", ROOT + "brasao.webp", ROOT + "jornada.js", ROOT + "jornada.css"];
 
 self.addEventListener("install", function (event) {
   event.waitUntil(
