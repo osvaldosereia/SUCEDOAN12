@@ -698,3 +698,25 @@
     grid-template-columns: repeat(3, minmax(36px, 40px)) minmax(0, 1fr);
   }
 }
+
+
+/* Basket cost summary */
+.basket-default-price-cost {
+  padding-top: 4px;
+  border-top: 1px dashed #eee5da;
+  color: #5f5147;
+}
+.basket-default-price-cost strong {
+  color: #60372f;
+  font-size: .76rem;
+}
+.basket-default-price-cost[data-incomplete="true"] .basket-default-price-cost-label,
+.basket-default-price-cost[data-incomplete="true"] strong,
+.basket-default-price-cost-note {
+  color: #91473e;
+}
+.basket-default-price-cost-note {
+  font-size: .66rem;
+  font-weight: 650;
+  line-height: 1.3;
+}
