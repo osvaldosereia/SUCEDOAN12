@@ -20,7 +20,7 @@
   <script src="../config.js?v=3"></script>
   <script src="../ean-camera.js?v=1" defer></script>
   <script src="admin-auth.js?v=2" defer></script>
-  <script src="catalog-admin.js?v=14" defer></script>
+  <script src="catalog-admin.js?v=15" defer></script>
   <script src="taxonomy-admin.js?v=1" defer></script>
   <script src="papoai-guard-admin.js?v=1" defer></script>
   <script src="baskets-admin.js?v=10" defer></script>
@@ -587,6 +587,7 @@
   <dialog id="product-dialog" class="catalog-dialog product-dialog">
     <form id="product-form" class="dialog-form">
       <header class="dialog-heading"><div><p class="eyebrow">Cadastro do Supabase</p><h2 id="product-dialog-title">Novo produto</h2></div><button class="icon-button" type="button" data-dialog-close="product-dialog" aria-label="Fechar">×</button></header>
+      <p id="product-clone-note" class="dialog-hint" role="status" hidden>Os dados do produto foram copiados. Foto e EAN ficaram em branco; ajuste o que mudou e salve como novo cadastro.</p>
       <input id="product-id" type="hidden">
       <div class="editor-grid product-fields">
         <label class="full-width">Nome<input name="name" maxlength="240" required></label>
