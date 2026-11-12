@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Admin · Dona Antônia</title>
   <link rel="stylesheet" href="../styles.css?v=5">
-  <link rel="stylesheet" href="admin.css?v=52">
+  <link rel="stylesheet" href="admin.css?v=53">
   <link rel="stylesheet" href="taxonomy-admin.css?v=1">
   <link rel="stylesheet" href="papoai-guard-admin.css?v=1">
   <link rel="stylesheet" href="baskets-admin.css?v=7">
@@ -20,7 +20,7 @@
   <script src="../config.js?v=3"></script>
   <script src="../ean-camera.js?v=1" defer></script>
   <script src="admin-auth.js?v=2" defer></script>
-  <script src="catalog-admin.js?v=15" defer></script>
+  <script src="catalog-admin.js?v=16" defer></script>
   <script src="taxonomy-admin.js?v=1" defer></script>
   <script src="papoai-guard-admin.js?v=1" defer></script>
   <script src="baskets-admin.js?v=10" defer></script>
@@ -612,7 +612,9 @@
               <button id="product-image-select" class="button button-outline" type="button">Enviar ou trocar imagem</button>
               <input id="product-image-file" type="file" accept="image/jpeg,image/png,image/webp,image/avif,image/gif,image/bmp" hidden>
               <button id="product-image-google-search" class="button button-outline" type="button">Pesquisar no Google Imagens</button>
+              <button id="product-image-ai" class="button button-outline product-image-ai-button" type="button" disabled>Gerar PNG transparente com OpenAI</button>
             </div>
+            <p class="product-image-ai-note">A nova foto só substitui a atual depois de aprovada. A imagem original permanece preservada.</p>
             <p id="product-image-status" role="status" aria-live="polite">Selecione uma imagem para compactar em até 50 KB.</p>
           </div>
         </div>
