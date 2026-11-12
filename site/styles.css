@@ -70,7 +70,7 @@ h1 { margin-bottom: 8px; font-size: clamp(1.7rem, 7vw, 2.3rem); line-height: 1.1
 .quantity-button:disabled { cursor: default; opacity: .43; }
 .quantity-value { min-width: 25px; color: var(--ink); font-size: .95rem; font-weight: 800; text-align: center; }
 .product-row img { width: 64px; height: 64px; border-radius: 9px; background: #f0e9de; object-fit: contain; }
-.product-name { min-width: 0; margin: 0; font-size: 1.12rem; line-height: 1.25; overflow-wrap: anywhere; }
+.product-name { min-width: 0; margin: 0; color: var(--brand-dark); font-size: 1.28rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.2; overflow-wrap: anywhere; }
 .product-quantity { margin: 0; color: var(--muted); font-size: .8rem; }
 .product-option-picker { display: grid; gap: 8px; overflow: visible; padding: 0 2px; }
 .product-choice { display: grid; grid-template-columns: 64px minmax(0,1fr) auto; align-items: center; gap: 10px; width: 100%; min-height: 88px; padding: 8px 10px; border: 1px solid #e2d6c7; border-radius: 11px; background: #fff; color: var(--ink); text-align: left; }
@@ -78,9 +78,9 @@ h1 { margin-bottom: 8px; font-size: clamp(1.7rem, 7vw, 2.3rem); line-height: 1.1
 .product-choice-static { cursor: default; }
 .product-choice:disabled { cursor: wait; opacity: 1; }
 .product-choice img { width: 64px; height: 64px; border-radius: 8px; background: #f0e9de; object-fit: contain; }
-.product-option-stepper { display: inline-flex; align-items: center; gap: 3px; }
-.option-quantity-button { width: 30px; height: 32px; border-radius: 8px; }
-.product-option-quantity { min-width: 20px; color: var(--ink); font-size: .9rem; font-weight: 800; text-align: center; }
+.product-option-stepper { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; white-space: nowrap; }
+.option-quantity-button { flex: 0 0 38px; width: 38px; min-width: 38px; height: 38px; border-radius: 9px; }
+.product-option-quantity { min-width: 22px; flex: 0 0 auto; color: var(--ink); font-size: .9rem; font-weight: 800; text-align: center; }
 .product-choice-copy { display: grid; min-width: 0; gap: 3px; }
 .product-choice-copy strong { display: -webkit-box; min-height: 2.5em; overflow: hidden; font-size: .79rem; line-height: 1.25; text-overflow: ellipsis; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .product-choice-copy small { color: var(--muted); font-size: .77rem; }
@@ -92,7 +92,6 @@ h1 { margin-bottom: 8px; font-size: clamp(1.7rem, 7vw, 2.3rem); line-height: 1.1
 .variation-chevron { font-size: 1.1rem; line-height: 1; }
 .variation-panel { display: grid; gap: 8px; min-width: 0; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: #f8f3eb; }
 .variation-panel[hidden] { display: none; }
-.variation-panel-label { margin: 0; color: var(--muted); font-size: .68rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
 .variation-status { margin: 0; padding: 9px 10px; border-radius: 9px; background: #f8f3eb; color: var(--muted); font-size: .77rem; line-height: 1.4; }
 .extras-section { display: grid; gap: 12px; margin-top: 23px; padding-top: 20px; border-top: 1px solid #d8cbbb; }
 .extras-section > h3 { margin: 0; color: var(--ink); font-size: 1.05rem; }
@@ -449,4 +448,28 @@ body.sheet-open.sheet-scroll-chain { overflow-x: hidden; overflow-y: auto; }
   .order-receipt-actions { min-width: 0; }
   .order-receipt-facts { gap: 11px 16px; padding: 12px; }
   .order-receipt-facts > div { min-width: 84px; }
+}
+
+/* Ajustes mobile para a escolha de várias opções na cesta. */
+@media (max-width: 639px) {
+  #detail-content { padding-bottom: max(28px, env(safe-area-inset-bottom)); }
+  .product-name { font-size: 1.3rem; }
+  .product-choice {
+    grid-template-columns: 56px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    gap: 5px 10px;
+    min-height: 0;
+    padding: 9px;
+  }
+  .product-choice img {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    width: 56px;
+    height: 56px;
+  }
+  .product-choice-copy { grid-column: 2; grid-row: 1; gap: 2px; }
+  .product-choice-copy strong { min-height: 0; font-size: .88rem; }
+  .product-choice-copy small { font-size: .78rem; }
+  .product-option-stepper { grid-column: 2; grid-row: 2; justify-self: end; align-self: center; }
+  .option-quantity-button { flex-basis: 40px; width: 40px; min-width: 40px; height: 40px; }
 }
