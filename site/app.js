@@ -444,6 +444,8 @@
         });
       }
       const optionChoices = Array.from(choiceById.values());
+      const originalOptionIndex = optionChoices.findIndex((option) => String(option.product_id) === fallbackId);
+      if (originalOptionIndex > 0) optionChoices.unshift(optionChoices.splice(originalOptionIndex, 1)[0]);
       const optionCount = Math.max(Number(item.alternative_count || 0), optionChoices.length);
       const changingThisItem = String(data.changingPosition || "") === String(item.position_id);
       const title = item.label || "Produto";
