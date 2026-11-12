@@ -110,7 +110,7 @@
   top: 50%;
   left: 8%;
   right: 8%;
-  height: 25%;
+  height: 36%;
   transform: translateY(-50%);
   border: 2px solid #ffffffb8;
   border-radius: 10px;
@@ -130,7 +130,7 @@
 .ean-camera-status { min-height: 1.35em; margin: 0; color: #61564c; font-size: .88rem; line-height: 1.4; }
 .ean-camera-status[data-tone="error"] { color: #a52d25; font-weight: 700; }
 .ean-camera-status[data-tone="success"] { color: #27683b; font-weight: 700; }
-.ean-camera-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.ean-camera-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
 .ean-camera-action-button {
   min-width: 112px;
   min-height: 44px;
