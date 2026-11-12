@@ -11,8 +11,10 @@
   const money = (value) => (cents(value) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const MAX_PRODUCT_IMAGE_BYTES = 50 * 1024;
   const state = {
-    productCache: new Map(), productsOffset: 0, productsTotal: 0,
+    productCache: new Map(), productsOffset: 0, productsTotal: 0, productsRequestId: 0, productsLoadingMore: false,
     productsQuery: "", productsStatus: "active", productsSegment: "all", toastTimer: 0,
+    basketProductTypes: [], productBasketMemberships: new Map(), basketProductMetadataReady: false,
+    basketProductMetadataLoading: null, basketProductMetadataError: "", basketProductMetadataDirty: false,
     productImage: { blob: null, previewUrl: "", token: 0, compressing: false },
     savingProduct: false, generatingProductImage: false,
   };
@@ -75,32 +77,153 @@
     return product?.storefront_featured === true || tags.some(isMostSoldTag);
   }
 
+  function applyProductBasketMetadata(data) {
+    state.basketProductTypes = (data.types || []).filter((type) => String(type.id || "").trim());
+    state.productBasketMemberships = data.memberships instanceof Map ? data.memberships : new Map();
+    state.basketProductMetadataDirty = data.dirty === true;
+    state.basketProductMetadataReady = true;
+    state.basketProductMetadataError = "";
+    refreshProductBasketSelectors();
+  }
+
+  async function loadProductBasketMetadata() {
+    if (state.basketProductMetadataReady && !state.basketProductMetadataError) return;
+    if (state.basketProductMetadataLoading) return state.basketProductMetadataLoading;
+    const basketAdmin = window.DonaBasketAdmin;
+    if (!basketAdmin?.getProductMembershipData) throw new Error("O módulo de cestas ainda não está disponível.");
+    state.basketProductMetadataReady = false;
+    state.basketProductMetadataError = "";
+    refreshProductBasketSelectors();
+    const operation = basketAdmin.getProductMembershipData()
+      .then(applyProductBasketMetadata)
+      .catch((error) => {
+        state.basketProductMetadataReady = true;
+        state.basketProductMetadataError = error.message || "Não foi possível carregar as posições das cestas.";
+        refreshProductBasketSelectors();
+        throw error;
+      })
+      .finally(() => { state.basketProductMetadataLoading = null; });
+    state.basketProductMetadataLoading = operation;
+    return operation;
+  }
+
+  function productBasketTypeSelect(product) {
+    const productId = String(product.id || "");
+    const memberships = state.productBasketMemberships.get(productId) || [];
+    const selectedId = memberships.find((id) => state.basketProductTypes.some((type) => String(type.id) === String(id))) || "";
+    const unavailable = !state.basketProductMetadataReady || Boolean(state.basketProductMetadataError) || state.basketProductMetadataDirty;
+    const title = state.basketProductMetadataError || (state.basketProductMetadataDirty
+      ? "Salve as alterações da grade de cestas antes de alterar este vínculo."
+      : !state.basketProductMetadataReady ? "Carregando as posições das cestas."
+      : "");
+    let options = '<option value="">Nenhum</option>';
+    if (!state.basketProductMetadataReady) {
+      options = '<option value="">Carregando cestas…</option>';
+    } else if (state.basketProductMetadataError) {
+      options = '<option value="">Falha ao carregar cestas</option>';
+    } else {
+      options += state.basketProductTypes.map((type) =>
+        '<option value="' + esc(type.id) + '"' + (String(type.id) === String(selectedId) ? " selected" : "") + ">" + esc(type.title || "Tipo sem título") + "</option>"
+      ).join("");
+    }
+    return '<label class="product-basket-select"><span>Parte da cesta</span><select data-product-basket-type="' + esc(productId) + '" aria-label="Parte da cesta para ' + esc(product.name || "produto") + '"' + (unavailable ? " disabled" : "") + (title ? ' title="' + esc(title) + '"' : "") + ">" + options + "</select></label>";
+  }
+
+  function refreshProductBasketSelectors() {
+    document.querySelectorAll("#products-result [data-product-basket-type]").forEach((select) => {
+      const product = state.productCache.get(String(select.dataset.productBasketType));
+      if (!product) return;
+      const label = select.closest(".product-basket-select");
+      if (label) label.outerHTML = productBasketTypeSelect(product);
+    });
+  }
+
   function renderProducts(products, append) {
     const host = $("products-result");
-    const rows = products.map((product) => `<article class="admin-product-card">
-      ${product.image_url ? `<img src="${esc(product.image_url)}" alt="" width="64" height="64" loading="lazy" decoding="async">` : '<span class="product-image-placeholder">DA</span>'}
-      <div class="admin-product-info"><strong>${esc(product.name)}</strong><span>${esc([product.brand, product.sku && `SKU ${product.sku}`].filter(Boolean).join(" · "))}</span><b>${money(effectivePrice(product))}${product.is_offer ? " · oferta" : ""}</b></div>
-      <div class="admin-product-actions"><label class="product-active-toggle"><input type="checkbox" data-toggle-product="${esc(product.id)}" aria-label="Ativar ${esc(product.name)} no catálogo" ${product.is_active === true ? "checked" : ""}><span class="product-switch" aria-hidden="true"></span><span>${product.is_active === true ? "Ativo" : "Inativo"}</span></label><label class="product-active-toggle product-most-sold-toggle"><input type="checkbox" data-toggle-most-sold="${esc(product.id)}" aria-label="Exibir ${esc(product.name)} em Mais Vendidos" ${isMostSoldProduct(product) ? "checked" : ""}><span class="product-switch" aria-hidden="true"></span><span>Mais Vendidos</span></label><button class="button button-outline" type="button" data-edit-product="${esc(product.id)}">Editar</button><button class="button button-outline" type="button" data-clone-product="${esc(product.id)}">Clonar</button></div>
-    </article>`).join("");
+    const rows = products.map((product) => {
+      const stockNumber = product.stock == null ? NaN : Number(product.stock);
+      const stock = Number.isFinite(stockNumber) ? stockNumber.toLocaleString("pt-BR", { maximumFractionDigits: 3 }) : "—";
+      return `<article class="admin-product-card">
+        ${product.image_url ? `<img src="${esc(product.image_url)}" alt="" width="64" height="64" loading="lazy" decoding="async">` : '<span class="product-image-placeholder">DA</span>'}
+        <div class="admin-product-info"><strong>${esc(product.name)}</strong><span>${esc([product.brand, product.sku && `SKU ${product.sku}`].filter(Boolean).join(" · "))}</span><span class="product-stock">Estoque: ${esc(stock)}</span><b>${money(effectivePrice(product))}${product.is_offer ? " · oferta" : ""}</b></div>
+        <div class="admin-product-actions"><label class="product-active-toggle"><input type="checkbox" data-toggle-product="${esc(product.id)}" aria-label="Ativar ${esc(product.name)} no catálogo" ${product.is_active === true ? "checked" : ""}><span class="product-switch" aria-hidden="true"></span><span>${product.is_active === true ? "Ativo" : "Inativo"}</span></label><label class="product-active-toggle product-most-sold-toggle"><input type="checkbox" data-toggle-most-sold="${esc(product.id)}" aria-label="Exibir ${esc(product.name)} em Mais Vendidos" ${isMostSoldProduct(product) ? "checked" : ""}><span class="product-switch" aria-hidden="true"></span><span>Mais Vendidos</span></label>${productBasketTypeSelect(product)}<button class="button button-outline" type="button" data-edit-product="${esc(product.id)}">Editar</button><button class="button button-outline" type="button" data-clone-product="${esc(product.id)}">Clonar</button></div>
+      </article>`;
+    }).join("");
     if (!append) host.innerHTML = rows || '<p class="admin-muted">Nenhum produto encontrado.</p>';
     else host.insertAdjacentHTML("beforeend", rows);
-    $("products-more").hidden = state.productsOffset >= state.productsTotal;
   }
 
   async function loadProducts(reset = true) {
-    if (reset) state.productsOffset = 0;
+    let requestId;
+    if (reset) {
+      requestId = ++state.productsRequestId;
+      state.productsOffset = 0;
+      state.productsTotal = 0;
+      state.productsLoadingMore = false;
+      $("products-more").hidden = true;
+      $("products-more").disabled = false;
+      $("products-result").innerHTML = '<p class="admin-muted">Carregando produtos…</p>';
+    } else {
+      if (state.productsLoadingMore) return;
+      state.productsLoadingMore = true;
+      requestId = state.productsRequestId;
+      $("products-more").disabled = true;
+    }
     const host = $("products-result");
-    if (reset) host.innerHTML = '<p class="admin-muted">Carregando produtos…</p>';
+    const offset = reset ? 0 : state.productsOffset;
+    loadProductBasketMetadata().catch(() => {});
     try {
-      const data = await request("products", { params: { q: state.productsQuery, status: state.productsStatus, segment: state.productsSegment, offset: state.productsOffset, limit: 24 } });
+      const data = await request("products", { params: { q: state.productsQuery, status: state.productsStatus, segment: state.productsSegment, offset, limit: 5 } });
+      if (requestId !== state.productsRequestId) return;
       state.productsTotal = Number(data.total || 0);
       (data.products || []).forEach((product) => state.productCache.set(String(product.id), product));
-      if (reset) state.productsOffset = 0;
       renderProducts(data.products || [], !reset);
-      state.productsOffset += (data.products || []).length;
+      state.productsOffset = offset + (data.products || []).length;
       $("products-more").hidden = state.productsOffset >= state.productsTotal;
     } catch (error) {
-      host.innerHTML = `<p class="admin-muted">${esc(error.message || "Não foi possível carregar produtos.")}</p>`;
+      if (requestId !== state.productsRequestId) return;
+      const message = '<p class="admin-muted">' + esc(error.message || "Não foi possível carregar produtos.") + "</p>";
+      if (reset) host.innerHTML = message;
+      else host.insertAdjacentHTML("beforeend", message);
+    } finally {
+      if (requestId === state.productsRequestId) {
+        state.productsLoadingMore = false;
+        $("products-more").disabled = false;
+      }
+    }
+  }
+
+  async function setProductBasketType(event) {
+    const select = event.target;
+    if (!select.matches("[data-product-basket-type]")) return;
+    const productId = String(select.dataset.productBasketType);
+    const productTypeId = String(select.value || "");
+    const product = state.productCache.get(productId);
+    const previous = state.productBasketMemberships.get(productId) || [];
+    const previousTypeId = previous.find((id) => state.basketProductTypes.some((type) => String(type.id) === String(id))) || "";
+    if (productTypeId === String(previousTypeId) && previous.length <= 1) return;
+    const basketAdmin = window.DonaBasketAdmin;
+    if (!basketAdmin?.setProductType) {
+      refreshProductBasketSelectors();
+      toast("Não foi possível carregar a administração das cestas. Atualize a página.");
+      return;
+    }
+    select.disabled = true;
+    try {
+      const data = await basketAdmin.setProductType(productId, productTypeId, product);
+      applyProductBasketMetadata(data);
+      toast(productTypeId ? "Produto vinculado à posição da cesta." : "Produto removido das cestas.");
+    } catch (error) {
+      try {
+        applyProductBasketMetadata(await basketAdmin.getProductMembershipData());
+      } catch (syncError) {
+        state.basketProductMetadataReady = true;
+        state.basketProductMetadataError = syncError.message || "Não foi possível confirmar o vínculo salvo. Atualize a lista.";
+        refreshProductBasketSelectors();
+      }
+      toast(error.message || "Não foi possível alterar o vínculo do produto.");
+    } finally {
+      refreshProductBasketSelectors();
     }
   }
 
@@ -589,6 +712,7 @@
     $("product-dialog").addEventListener("close", resetProductImageSelection);
     $("products-result").addEventListener("change", setProductActive);
     $("products-result").addEventListener("change", setProductMostSold);
+    $("products-result").addEventListener("change", setProductBasketType);
     $("products-result").addEventListener("click", (event) => {
       const cloneButton = event.target.closest("[data-clone-product]");
       if (cloneButton) {
@@ -617,7 +741,7 @@
   }
 
   bind();
-  window.DonaCatalogAdmin = { loadProducts };
+  window.DonaCatalogAdmin = { loadProducts, syncBasketMembership: applyProductBasketMetadata };
   window.DonaAdminProductBridge = {
     request,
     esc,
