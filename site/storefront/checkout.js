@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  function create({ state, $, esc, phoneDigits, money, toast, request, whatsappNumber, quantityOf, closeSheet, showSheet, changeBasketItemQuantity, attachHomeSelections, onHomeExtraQuantityChanged, onCustomOrderSubmitted }) {
+  function create({ state, $, esc, phoneDigits, money, toast, request, whatsappNumber, quantityOf, closeSheet, showSheet, changeBasketItemQuantity, attachHomeSelections, onHomeExtraQuantityChanged, onCustomOrderSubmitted, onCartCleared, onOrderSubmitted }) {
     const customOrderKey = "__custom_products__";
     const minimumOrderCents = 7500;
     function addressLines(address) {
@@ -357,6 +357,7 @@
         if (typeof onHomeExtraQuantityChanged === "function") onHomeExtraQuantityChanged(String(id));
       });
       state.activeKey = "";
+      if (typeof onCartCleared === "function") onCartCleared();
       renderOrderReview(null);
       toast("Carrinho limpo.");
     }
@@ -658,6 +659,7 @@
           receipt.scrollIntoView({ behavior: "smooth", block: "start" });
         });
         if (data.customOrder && typeof onCustomOrderSubmitted === "function") onCustomOrderSubmitted();
+        if (typeof onOrderSubmitted === "function") onOrderSubmitted();
         const orderLabel = publicOrderCode ? "Pedido " + publicOrderCode : "Pedido";
         toast(result.stock_adjustment
           ? orderLabel + " recebido com ajuste de estoque."

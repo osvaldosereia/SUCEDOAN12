@@ -220,6 +220,70 @@
       };
     }
   
+    async function restoreBasketSelections(data, savedRows) {
+      const savedByPosition = new Map((Array.isArray(savedRows) ? savedRows : []).map((row) => [
+        String(row && row.position_id || ""),
+        row
+      ]).filter(([positionId]) => positionId));
+      let configurationChanged = savedByPosition.size !== (data.items || []).length;
+      const currentPositions = new Set((data.items || []).map((item) => String(item.position_id)));
+      if (Array.from(savedByPosition.keys()).some((positionId) => !currentPositions.has(positionId))) configurationChanged = true;
+      const restoredItems = await Promise.all((data.items || []).map(async (item) => {
+        const saved = savedByPosition.get(String(item.position_id));
+        if (!saved) {
+          configurationChanged = true;
+          return Object.assign({}, item);
+        }
+        const restored = Object.assign({}, item, {
+          quantity: Math.max(0, Math.min(1000, Math.trunc(Number(saved.quantity || 0))))
+        });
+        if (saved.product_id && String(saved.product_id) !== String(item.product_id || "")) {
+          try {
+            const options = await optionsForItem(data.basket, item);
+            const choice = options.find((option) => String(option.product_id) === String(saved.product_id));
+            if (choice) {
+              Object.assign(restored, {
+                product_id: choice.product_id,
+                name: choice.name || restored.name,
+                image_url: choice.image_url || restored.image_url,
+                packaging: choice.packaging || restored.packaging,
+                stock_quantity: choice.stock_quantity,
+                price_cents: choice.price_cents,
+                _alternatives: options,
+                _optionsLoaded: true,
+                _optionsError: false
+              });
+            } else {
+              configurationChanged = true;
+            }
+          } catch (_) {
+            configurationChanged = true;
+          }
+        }
+        return restored;
+      }));
+      try {
+        const quote = await quoteBasket(data.basket, restoredItems.map((item) => ({
+          position_id: item.position_id,
+          product_id: item.product_id,
+          quantity: quantityOf(item)
+        })), restoredItems);
+        return Object.assign({}, data, quote, {
+          orderable: data.orderable !== false,
+          detailLoaded: true,
+          cartQuoteRefreshed: true,
+          cartConfigurationChanged: configurationChanged
+        });
+      } catch (_) {
+        return Object.assign({}, data, {
+          orderable: data.orderable !== false,
+          detailLoaded: true,
+          cartQuoteRefreshed: false,
+          cartConfigurationChanged: true
+        });
+      }
+    }
+
     async function retryItemOptions(positionId) {
       const sizeKey = state.activeKey;
       const data = state.baskets.get(sizeKey);
@@ -359,6 +423,7 @@
           data.changingPosition = "";
           setQuotePendingControls(sizeKey, positionId, false);
           if (data.changePromise === update) data.changePromise = null;
+          if (typeof state.updateSidebarCheckoutCount === "function") state.updateSidebarCheckoutCount();
         }
       })();
       data.changePromise = update;
@@ -370,6 +435,7 @@
 
     return {
       basketForSize,
+      restoreBasketSelections,
       retryItemOptions,
       queueVisibleOptions,
       changeBasketItemQuantity,

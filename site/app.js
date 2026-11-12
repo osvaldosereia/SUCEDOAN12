@@ -11,6 +11,252 @@
   const plain = (value) => String(value == null ? "" : value).replace(/\s+/g, " ").trim();
   const money = (cents) => (Number(cents || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+  // Salva os itens do carrinho, sem dados pessoais ou do checkout.
+  const CART_STORAGE_KEY = "dona-antonia:storefront-cart:v1";
+  const CART_STORAGE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+  let pendingCartSnapshot = readCartSnapshot();
+  let cartPersistenceReady = !pendingCartSnapshot;
+  let cartRestorePromise = null;
+
+  function storedProductRows(rows) {
+    return (Array.isArray(rows) ? rows : []).slice(0, 200).map((row) => {
+      const id = String(row && row.id || "").slice(0, 120);
+      const quantity = Math.max(0, Math.min(1000, Math.trunc(Number(row && row.quantity || 0))));
+      if (!id || quantity <= 0) return null;
+      return {
+        id,
+        quantity,
+        name: String(row && row.name || "Produto").slice(0, 160),
+        image_url: String(row && row.image_url || "").slice(0, 500),
+        price_cents: Math.max(0, Math.trunc(Number(row && row.price_cents || 0))),
+        stock_quantity: Math.max(0, Math.trunc(Number(row && row.stock_quantity || 0)))
+      };
+    }).filter(Boolean);
+  }
+
+  function readCartSnapshot() {
+    try {
+      const raw = window.localStorage.getItem(CART_STORAGE_KEY);
+      if (!raw) return null;
+      const saved = JSON.parse(raw);
+      const savedAt = Number(saved && saved.saved_at || 0);
+      if (!saved || saved.version !== 1 || !Number.isFinite(savedAt) ||
+          savedAt <= 0 || Date.now() - savedAt > CART_STORAGE_MAX_AGE_MS ||
+          savedAt > Date.now() + 60000) {
+        window.localStorage.removeItem(CART_STORAGE_KEY);
+        return null;
+      }
+      const items = (Array.isArray(saved.items) ? saved.items : []).slice(0, 200).map((row) => {
+        const positionId = String(row && row.position_id || "").slice(0, 120);
+        const productId = String(row && row.product_id || "").slice(0, 120);
+        if (!positionId || !productId) return null;
+        return {
+          position_id: positionId,
+          product_id: productId,
+          quantity: Math.max(0, Math.min(1000, Math.trunc(Number(row && row.quantity || 0))))
+        };
+      }).filter(Boolean);
+      return {
+        version: 1,
+        saved_at: savedAt,
+        size_key: String(saved.size_key || "").slice(0, 40),
+        custom: saved.custom === true,
+        items,
+        extras: storedProductRows(saved.extras),
+        home_extras: storedProductRows(saved.home_extras)
+      };
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function clearPersistedCart() {
+    pendingCartSnapshot = null;
+    cartPersistenceReady = true;
+    try { window.localStorage.removeItem(CART_STORAGE_KEY); } catch (_) {}
+  }
+
+  function selectionsForStorage(map) {
+    if (!(map instanceof Map)) return [];
+    return Array.from(map.entries()).map(([key, item]) => ({
+      id: String(item && item.id || key || ""),
+      quantity: Math.max(0, Math.min(1000, Math.trunc(Number(item && item.quantity || 0)))),
+      name: String(item && item.name || "Produto"),
+      image_url: String(item && (item.image_url || item.image) || ""),
+      price_cents: Number(item && item.price_cents || 0),
+      stock_quantity: Number(item && item.stock_quantity || 0)
+    })).filter((item) => item.id && item.quantity > 0).slice(0, 200);
+  }
+
+  function persistCartSnapshot() {
+    if (!cartPersistenceReady) return;
+    const data = state.baskets.get(state.activeKey);
+    if (state.activeKey && data && data.customOrder !== true && !data.detailLoaded) return;
+
+    const basketData = data && data.customOrder !== true && data.detailLoaded && data.basket ? data : null;
+    const items = basketData ? basketData.items.map((item) => ({
+      position_id: String(item.position_id || ""),
+      product_id: String(item.product_id || ""),
+      quantity: quantityOf(item)
+    })).filter((item) => item.position_id && item.product_id) : [];
+    const extras = selectionsForStorage(data && data.extraSelections);
+    const homeExtras = selectionsForStorage(state.homeExtraSelections);
+    if (pendingCartSnapshot && pendingCartSnapshot.size_key && !basketData && !(data && data.customOrder === true)) {
+      const preserved = Object.assign({}, pendingCartSnapshot, {
+        saved_at: Date.now(),
+        home_extras: homeExtras
+      });
+      try {
+        window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(preserved));
+        pendingCartSnapshot = preserved;
+      } catch (_) {}
+      return;
+    }
+    const hasBasketItems = items.some((item) => item.quantity > 0);
+    if (!hasBasketItems && !extras.length && !homeExtras.length) {
+      clearPersistedCart();
+      return;
+    }
+
+    const snapshot = {
+      version: 1,
+      saved_at: Date.now(),
+      size_key: basketData ? String(state.activeKey) : "",
+      custom: Boolean(data && data.customOrder === true),
+      items,
+      extras,
+      home_extras: homeExtras
+    };
+    try {
+      window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(snapshot));
+      pendingCartSnapshot = snapshot;
+    } catch (_) {}
+  }
+
+  async function restoreCartSnapshot() {
+    if (!pendingCartSnapshot || !state.cards.length) return;
+    if (cartRestorePromise) return cartRestorePromise;
+    const saved = pendingCartSnapshot;
+    cartRestorePromise = (async () => {
+      const productRows = new Map();
+      const uniqueProducts = new Map();
+      [...saved.extras, ...saved.home_extras].forEach((item) => {
+        if (item && item.id && !uniqueProducts.has(item.id)) uniqueProducts.set(item.id, item);
+      });
+      const loadedProducts = await Promise.all(Array.from(uniqueProducts.values()).map(async (item) => {
+        let product = null;
+        try {
+          const result = await request("product", { params: { product_id: item.id } });
+          product = result && result.product || null;
+        } catch (error) {
+          if (String(error && error.message || "") !== "product_not_found") {
+            product = Object.assign({}, item, { id: item.id, _cartPriceMayBeStale: true });
+          }
+        }
+        if (product && Number(product.stock_quantity || 0) > 0) productRows.set(item.id, product);
+        return productRows.get(item.id) || null;
+      }));
+      const loadSelections = (rows) => {
+        const selections = new Map();
+        rows.forEach((item) => {
+          const product = productRows.get(String(item.id));
+          if (!product) return;
+          const stock = Math.max(0, Math.trunc(Number(product.stock_quantity || 0)));
+          const quantity = Math.min(stock, Math.max(0, Math.trunc(Number(item.quantity || 0))));
+          if (!quantity) return;
+          selections.set(String(item.id), Object.assign({}, product, {
+            id: String(item.id),
+            quantity,
+            price_cents: Number(product.price_cents || 0),
+            stock_quantity: stock
+          }));
+        });
+        return selections;
+      };
+
+      if (!(state.homeExtraSelections instanceof Map)) state.homeExtraSelections = new Map();
+      else state.homeExtraSelections.clear();
+      if (!(state.homeExtraProducts instanceof Map)) state.homeExtraProducts = new Map();
+      const homeSelections = loadSelections(saved.home_extras);
+      homeSelections.forEach((item, id) => {
+        state.homeExtraSelections.set(id, item);
+        state.homeExtraProducts.set(id, productRows.get(id) || item);
+      });
+
+      let restoredBasket = false;
+      let basketRestoreFailed = false;
+      let restoredQuoteRefreshed = true;
+      let basketConfigurationChanged = false;
+      const sizeKey = saved.size_key;
+      if (sizeKey && saved.custom !== true && state.baskets.has(sizeKey)) {
+        const data = state.baskets.get(sizeKey);
+        try {
+          const detail = await basket.basketForSize(sizeKey);
+          const restored = await basket.restoreBasketSelections(detail, saved.items);
+          Object.assign(data, restored, { summary: data.summary, detailLoaded: true, error: false });
+          data.extraSelections = loadSelections(saved.extras);
+          data.homeExtraProductIds = new Set(Array.from(homeSelections.keys()));
+          extras.attachHomeSelections(data);
+          state.activeKey = sizeKey;
+          restoredBasket = true;
+          restoredQuoteRefreshed = restored.cartQuoteRefreshed !== false;
+          basketConfigurationChanged = restored.cartConfigurationChanged === true;
+        } catch (_) {
+          state.activeKey = "";
+          basketRestoreFailed = true;
+        }
+      } else if (sizeKey && saved.custom !== true) {
+        basketRestoreFailed = true;
+      } else if (saved.custom === true) {
+        const customSelections = loadSelections(saved.extras.length ? saved.extras : saved.home_extras);
+        if (customSelections.size) {
+          const customKey = "__custom_products__";
+          state.baskets.set(customKey, {
+            customOrder: true,
+            summary: { name: "Pedido personalizado" },
+            basket: null,
+            items: [],
+            totalCents: 0,
+            orderable: true,
+            extraSelections: customSelections,
+            homeExtraProductIds: new Set(Array.from(homeSelections.keys()))
+          });
+          state.activeKey = customKey;
+        }
+      }
+
+      if (!basketRestoreFailed) pendingCartSnapshot = null;
+      cartPersistenceReady = true;
+      if (typeof extras.syncHomeExtraSelection === "function") {
+        homeSelections.forEach((_, id) => extras.syncHomeExtraSelection(id));
+        if (!homeSelections.size) extras.syncHomeExtraSelection("");
+      }
+      if (typeof state.updateSidebarCheckoutCount === "function") state.updateSidebarCheckoutCount();
+      const unavailableProducts = Array.from(uniqueProducts.keys()).filter((id) => !productRows.has(id)).length;
+      if (basketRestoreFailed) {
+        toast("Não foi possível atualizar a cesta agora; mantivemos o carrinho salvo. Tente novamente.");
+      } else if (restoredBasket || state.activeKey === "__custom_products__" || homeSelections.size) {
+        const usedFallbackPrice = loadedProducts.some((product) => product && product._cartPriceMayBeStale);
+        const message = unavailableProducts
+          ? "Atualizamos o carrinho; alguns produtos não estão mais disponíveis e foram removidos."
+          : basketConfigurationChanged
+            ? "A composição da cesta mudou. Confira os itens atuais antes de enviar."
+            : !restoredQuoteRefreshed
+              ? "Carrinho restaurado; confira os itens atualizados antes de enviar."
+              : usedFallbackPrice
+                ? "Carrinho restaurado. Preços e estoque serão revalidados ao enviar."
+                : "Carrinho restaurado com preços e disponibilidade atualizados.";
+        toast(message);
+      }
+      persistCartSnapshot();
+    })().catch(() => {
+      cartPersistenceReady = true;
+    }).finally(() => {
+      cartRestorePromise = null;
+    });
+    return cartRestorePromise;
+  }
+
   function quantityOf(item) {
     return Math.max(0, Math.trunc(Number(item ? (item.quantity ?? item.base_quantity ?? 0) : 0)));
   }
@@ -111,6 +357,7 @@
       $("catalog-status").textContent = state.cards.length + " tamanhos";
       $("home-extras").hidden = false;
       initHomeExtras();
+      restoreCartSnapshot();
     } catch (error) {
       $("home-extras").hidden = true;
       showEmpty("O catálogo está temporariamente indisponível. Você ainda pode consultar nossas cestas pelo WhatsApp.", true);
@@ -300,9 +547,16 @@
     changeBasketItemQuantity: basket.changeBasketItemQuantity,
     attachHomeSelections: extras.attachHomeSelections,
     onHomeExtraQuantityChanged: extras.syncHomeExtraSelection,
-    onCustomOrderSubmitted: extras.clearHomeExtraSelections
+    onCustomOrderSubmitted: extras.clearHomeExtraSelections,
+    onCartCleared: clearPersistedCart,
+    onOrderSubmitted: clearPersistedCart
   });
-  state.updateSidebarCheckoutCount = checkout.updateSidebarCheckoutCount;
+  state.clearPersistedCart = clearPersistedCart;
+  state.updateSidebarCheckoutCount = () => {
+    const count = checkout.updateSidebarCheckoutCount();
+    persistCartSnapshot();
+    return count;
+  };
   const {
     displayedTotalCents, extraCategoriesFor, extraCategoriesMarkup,
     bindExtraProductControls, toggleExtraCategory,
