@@ -801,6 +801,31 @@
 #product-image-status[data-state="error"] {
   color: #9a3029;
 }
+#product-image-status[data-state="success"] {
+  color: #23734f;
+}
+#product-image-status[data-state="working"] {
+  color: #77532e;
+}
+.product-image-ai-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: .76rem;
+  line-height: 1.45;
+}
+.product-image-buttons .product-image-ai-button {
+  flex: 0 0 100%;
+  width: 100%;
+  min-height: 46px;
+  justify-content: center;
+  border-color: var(--brand, #7e3029);
+  color: var(--brand, #7e3029);
+  font-weight: 700;
+}
+.product-image-ai-button:disabled {
+  cursor: not-allowed;
+  opacity: .58;
+}
 @media (max-width: 520px) {
   .product-image-editor {
     align-items: flex-start;
