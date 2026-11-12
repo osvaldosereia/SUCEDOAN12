@@ -14,7 +14,7 @@
     productCache: new Map(), productsOffset: 0, productsTotal: 0,
     productsQuery: "", productsStatus: "active", productsSegment: "all", toastTimer: 0,
     productImage: { blob: null, previewUrl: "", token: 0, compressing: false },
-    savingProduct: false,
+    savingProduct: false, generatingProductImage: false,
   };
 
   async function request(action, options = {}) {
@@ -189,11 +189,35 @@
   function updateProductSaveButton() {
     const button = $("save-product");
     if (!button) return;
-    const busy = state.productImage.compressing || state.savingProduct;
+    const busy = state.productImage.compressing || state.savingProduct || state.generatingProductImage;
     button.disabled = busy;
     button.textContent = state.productImage.compressing
       ? "Preparando imagem…"
+      : state.generatingProductImage ? "Aguarde a imagem…"
       : state.savingProduct ? "Salvando…" : "Salvar produto";
+    updateProductImageAiButton();
+  }
+
+  function updateProductImageAiButton() {
+    const button = $("product-image-ai");
+    if (!button) return;
+    const form = $("product-form");
+    const productId = String($("product-id").value || "").trim();
+    const imageUrl = String(form.elements.image_url.value || "").trim();
+    const cached = productId ? state.productCache.get(productId) : null;
+    const savedImageUrl = String(cached?.image_url || "").trim();
+    const imageChanged = Boolean(cached && imageUrl !== savedImageUrl);
+    const hasPendingUpload = Boolean(state.productImage.blob || state.productImage.compressing);
+    button.disabled = state.generatingProductImage || state.savingProduct || !productId || !imageUrl || imageChanged || hasPendingUpload;
+    button.textContent = state.generatingProductImage ? "Gerando e revisando PNG…" : "Gerar PNG transparente com OpenAI";
+    button.setAttribute("aria-busy", String(state.generatingProductImage));
+    $("product-image-select").disabled = state.generatingProductImage;
+    $("product-image-google-search").disabled = state.generatingProductImage;
+    form.elements.image_url.disabled = state.generatingProductImage;
+    button.title = !productId ? "Salve o produto com uma foto antes de gerar a imagem."
+      : imageChanged || hasPendingUpload ? "Salve primeiro a foto que você acabou de alterar."
+      : !imageUrl ? "Este produto ainda não tem uma foto salva."
+      : "Gera, revisa e aplica a foto PNG transparente ao catálogo.";
   }
 
   function clearProductImageSelection() {
@@ -218,9 +242,11 @@
   }
 
   function productImageUrlInputChanged() {
-    if (!state.productImage.blob && !state.productImage.compressing) return;
-    clearProductImageSelection();
-    setProductImageStatus("O endereço informado será usado ao salvar.");
+    if (state.productImage.blob || state.productImage.compressing) {
+      clearProductImageSelection();
+      setProductImageStatus("O endereço informado será usado ao salvar.");
+    }
+    updateProductImageAiButton();
   }
 
   function productImageUrlChanged(event) {
@@ -230,6 +256,7 @@
     setProductImageStatus(imageUrl.trim()
       ? "O endereço informado será usado ao salvar."
       : "Selecione uma imagem para compactar em até 50 KB.");
+    updateProductImageAiButton();
   }
 
   function canvasToBlob(canvas, type, quality) {
@@ -381,6 +408,76 @@
     }
   }
 
+  function productImageAiErrorMessage(error) {
+    const message = String(error?.message || error || "");
+    if (message.includes("admin_auth_not_configured")) return "O acesso administrativo da geração de imagens não está configurado.";
+    if (message.includes("admin_code_invalid") || message.includes("admin_auth_required")) return "Sua sessão administrativa expirou. Atualize a página e entre novamente.";
+    if (message.includes("product_image_missing")) return "Este produto não tem uma foto salva para usar como referência.";
+    if (message.includes("openai_key_missing")) return "A conexão de geração de imagens ainda não está configurada.";
+    if (message.includes("visual_validation_failed") || message.includes("openai_transparency_missing")) return "A imagem não passou na revisão de qualidade. A foto atual do catálogo foi mantida; você pode tentar novamente.";
+    if (message.includes("openai_http_429")) return "A geração está temporariamente ocupada. Aguarde um pouco e tente novamente.";
+    return "Não foi possível gerar a imagem agora. A foto atual do catálogo foi mantida; tente novamente.";
+  }
+
+  async function generateProductCatalogImage() {
+    const productId = String($("product-id").value || "").trim();
+    const form = $("product-form");
+    const imageUrl = String(form.elements.image_url.value || "").trim();
+    const cached = productId ? state.productCache.get(productId) : null;
+    const savedImageUrl = String(cached?.image_url || "").trim();
+    if (!productId) {
+      setProductImageStatus("Salve o produto antes de gerar a imagem transparente.", "error");
+      return;
+    }
+    if (!imageUrl) {
+      setProductImageStatus("Salve uma foto do produto antes de gerar a imagem transparente.", "error");
+      return;
+    }
+    if (state.productImage.blob || state.productImage.compressing || (cached && savedImageUrl !== imageUrl)) {
+      setProductImageStatus("Salve primeiro a alteração da foto e depois gere a imagem de catálogo.", "error");
+      return;
+    }
+    if (state.generatingProductImage || state.savingProduct) return;
+
+    state.generatingProductImage = true;
+    updateProductSaveButton();
+    setProductImageStatus("Enviando a foto para gerar e revisar o PNG. Isso pode levar alguns minutos; a foto atual só será trocada se a revisão for aprovada.", "working");
+    try {
+      const response = await fetch(`${supabaseUrl}/functions/v1/product-image-openai-v1`, {
+        method: "POST",
+        headers: {
+          apikey: publishableKey,
+          "x-admin-code": adminCode(),
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+        body: JSON.stringify({ event: "standardize", product_id: productId }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok !== true) throw new Error(String(data.error || data.message || "image_generation_failed"));
+
+      const updatedProduct = cached ? { ...cached, image_url: data.image_url, image_original_url: data.image_original_url, image_ai_url: data.image_url, image_ai_status: "completed" } : null;
+      if (updatedProduct) state.productCache.set(productId, updatedProduct);
+      if (String($("product-id").value || "").trim() === productId) {
+        form.elements.image_url.value = data.image_url;
+        clearProductImageSelection();
+        setProductImagePreview(data.image_url);
+        setProductImageStatus("PNG transparente aprovado e aplicado no catálogo. A foto original foi preservada.", "success");
+      }
+      toast("Imagem PNG transparente aplicada ao produto.");
+      loadProducts(true);
+    } catch (error) {
+      console.error("product image generation", error);
+      if (String($("product-id").value || "").trim() === productId) {
+        setProductImageStatus(productImageAiErrorMessage(error), "error");
+      }
+      toast(productImageAiErrorMessage(error));
+    } finally {
+      state.generatingProductImage = false;
+      updateProductSaveButton();
+    }
+  }
+
   function searchProductImageGoogle() {
     const form = $("product-form");
     const terms = [form.elements.brand.value, form.elements.name.value]
@@ -407,6 +504,7 @@
     ["is_active", "is_offer", "is_whatsapp_active", "is_upsell"].forEach((name) => { form.elements[name].checked = product ? product[name] === true : ["is_active", "is_whatsapp_active"].includes(name); });
     form.elements.storefront_featured.checked = product ? isMostSoldProduct(product) : false;
     $("product-dialog").showModal();
+    updateProductSaveButton();
   }
 
   function cloneProduct(product) {
@@ -421,6 +519,10 @@
 
   async function saveProduct(event) {
     event.preventDefault();
+    if (state.generatingProductImage) {
+      $("product-save-message").textContent = "Aguarde a geração e a revisão da nova imagem terminarem.";
+      return;
+    }
     if (state.productImage.compressing) {
       $("product-save-message").textContent = "Aguarde a preparação da imagem terminar.";
       return;
@@ -465,6 +567,7 @@
     $("product-form").elements.image_url.addEventListener("input", productImageUrlInputChanged);
     $("product-form").elements.image_url.addEventListener("change", productImageUrlChanged);
     $("product-image-google-search").addEventListener("click", searchProductImageGoogle);
+    $("product-image-ai").addEventListener("click", generateProductCatalogImage);
     $("product-dialog").addEventListener("close", resetProductImageSelection);
     $("products-result").addEventListener("change", setProductActive);
     $("products-result").addEventListener("change", setProductMostSold);
