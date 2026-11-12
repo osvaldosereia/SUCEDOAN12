@@ -5,7 +5,18 @@ export function moldProductIdsForRead(positions, options, requested, defaultSele
   const ids = [];
   for (const position of positions) {
     const positionId = String(position.id);
-    const selectedId = requested.get(positionId)?.product_id || defaultSelected.get(positionId) || "";
+    const selection = requested.get(positionId);
+    const selectedOptions = Array.isArray(selection?.options) && selection.options.length
+      ? selection.options
+      : selection?.product_id ? [selection] : [];
+    if (selectedOptions.length) {
+      for (const option of selectedOptions) {
+        const selectedId = String(option?.product_id || "");
+        if (selectedId) ids.push(selectedId);
+      }
+      continue;
+    }
+    const selectedId = defaultSelected.get(positionId) || "";
     if (selectedId) {
       ids.push(String(selectedId));
       continue;

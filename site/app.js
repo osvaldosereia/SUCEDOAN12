@@ -50,10 +50,15 @@
         const positionId = String(row && row.position_id || "").slice(0, 120);
         const productId = String(row && row.product_id || "").slice(0, 120);
         if (!positionId || !productId) return null;
+        const options = (Array.isArray(row && row.options) ? row.options : []).slice(0, 100).map((option) => ({
+          product_id: String(option && option.product_id || "").slice(0, 120),
+          quantity: Math.max(0, Math.min(1000, Math.trunc(Number(option && option.quantity || 0))))
+        })).filter((option) => option.product_id && option.quantity > 0);
         return {
           position_id: positionId,
           product_id: productId,
-          quantity: Math.max(0, Math.min(1000, Math.trunc(Number(row && row.quantity || 0))))
+          quantity: Math.max(0, Math.min(1000, Math.trunc(Number(row && row.quantity || 0)))),
+          options
         };
       }).filter(Boolean);
       return {
@@ -97,7 +102,13 @@
     const items = basketData ? basketData.items.map((item) => ({
       position_id: String(item.position_id || ""),
       product_id: String(item.product_id || ""),
-      quantity: quantityOf(item)
+      quantity: quantityOf(item),
+      options: (Array.isArray(item.selected_options) ? item.selected_options : [])
+        .filter((option) => option && option.product_id && Number(option.quantity || 0) > 0)
+        .map((option) => ({
+          product_id: String(option.product_id),
+          quantity: Math.max(0, Math.min(1000, Math.trunc(Number(option.quantity || 0))))
+        }))
     })).filter((item) => item.position_id && item.product_id) : [];
     const extras = selectionsForStorage(data && data.extraSelections);
     const homeExtras = selectionsForStorage(state.homeExtraSelections);
@@ -417,33 +428,56 @@
     const optionsBusy = data.items.some((row) => row._optionsLoading);
     const rows = data.items.map((item) => {
       const alternatives = item._alternatives || [];
-      const selected = alternatives.find((alt) => String(alt.product_id) === String(item.product_id));
-      const optionCount = Math.max(Number(item.alternative_count || 0), alternatives.length);
+      const selectedOptions = (Array.isArray(item.selected_options) ? item.selected_options : [])
+        .filter((option) => option && option.product_id && Number(option.quantity || 0) > 0);
+      const selectedById = new Map(selectedOptions.map((option) => [String(option.product_id), option]));
+      const choiceById = new Map(alternatives.filter((option) => option && option.product_id).map((option) => [String(option.product_id), option]));
+      selectedOptions.forEach((option) => {
+        if (!choiceById.has(String(option.product_id))) choiceById.set(String(option.product_id), option);
+      });
+      const fallbackId = String(item.product_id || "");
+      if (fallbackId && !choiceById.has(fallbackId)) {
+        choiceById.set(fallbackId, {
+          product_id: fallbackId, name: item.name, image_url: item.image_url,
+          price_cents: item.price_cents, stock_quantity: item.stock_quantity,
+          packaging: item.packaging
+        });
+      }
+      const optionChoices = Array.from(choiceById.values());
+      const optionCount = Math.max(Number(item.alternative_count || 0), optionChoices.length);
       const changingThisItem = String(data.changingPosition || "") === String(item.position_id);
       const title = item.label || "Produto";
-      const selectedName = selected && selected.name || item.name || "Produto";
-      const selectedImage = selected && selected.image_url || item.image_url || "../img/logoantonia5.png";
-      const selectedPrice = selected && selected.price_cents != null ? selected.price_cents : item.price_cents;
-      const selectedCard = '<div class="product-choice product-choice-static is-selected" aria-label="Produto selecionado">' +
-        '<img src="' + esc(selectedImage) + '" alt="" width="52" height="52" loading="lazy" decoding="async">' +
-        '<span class="product-choice-copy"><strong>' + esc(selectedName) + '</strong><small>' + (selectedPrice == null ? "Preço indisponível" : money(selectedPrice)) + '</small></span>' +
-        '<span class="product-choice-check" aria-hidden="true">✓</span></div>';
-
-      const choices = alternatives.map((alt) => {
-        const selectedOption = String(alt.product_id) === String(item.product_id);
+      const itemQuantityAtLimit = (row) => quantityOf(row) >= 1000;
+      const renderChoice = (alt) => {
+        const productId = String(alt.product_id || "");
+        const selected = selectedById.get(productId);
+        const quantity = Math.max(0, Math.trunc(Number(selected && selected.quantity || 0)));
+        const stock = Math.max(0, Math.trunc(Number(alt.stock_quantity || selected && selected.stock_quantity || 0)));
+        const disabled = data.changing || optionsBusy;
+        const optionName = alt.name || selected && selected.name || "Produto";
         const optionPrice = alt.price_cents == null ? "Preço indisponível" : money(alt.price_cents);
-        return '<button class="product-choice' + (selectedOption ? ' is-selected' : '') + '" type="button" data-select-position="' + esc(item.position_id) + '" data-select-product="' + esc(alt.product_id) + '" aria-pressed="' + String(selectedOption) + '"' + (data.changing || optionsBusy ? ' disabled' : '') + '>' +
-          '<img src="' + esc(alt.image_url || "../img/logoantonia5.png") + '" alt="" width="52" height="52" loading="lazy" decoding="async">' +
-          '<span class="product-choice-copy"><strong>' + esc(alt.name || "Produto") + '</strong><small>' + esc(optionPrice) + '</small></span>' +
-          (selectedOption ? '<span class="product-choice-check" aria-hidden="true">✓</span>' : '') +
-          '</button>';
-      }).join("");
+        return '<div class="product-choice' + (quantity > 0 ? ' is-selected' : '') + '" data-option-card="' + esc(productId) + '">' +
+          '<img src="' + esc(alt.image_url || "../img/logoantonia5.png") + '" alt="" width="64" height="64" loading="lazy" decoding="async">' +
+          '<span class="product-choice-copy"><strong>' + esc(optionName) + '</strong><small>' + esc(optionPrice) + '</small></span>' +
+          '<span class="product-option-stepper" role="group" aria-label="Quantidade de ' + esc(optionName) + '">' +
+            '<button class="quantity-button option-quantity-button" type="button" data-adjust-option data-adjust-position="' + esc(item.position_id) + '" data-adjust-product="' + esc(productId) + '" data-delta="-1" aria-label="Diminuir ' + esc(optionName) + '"' + (disabled || quantity <= 0 ? ' disabled' : '') + '>−</button>' +
+            '<output class="product-option-quantity" data-option-quantity="' + esc(productId) + '" aria-live="polite">' + quantity + '</output>' +
+            '<button class="quantity-button option-quantity-button" type="button" data-adjust-option data-adjust-position="' + esc(item.position_id) + '" data-adjust-product="' + esc(productId) + '" data-delta="1" aria-label="Adicionar ' + esc(optionName) + '"' + (disabled || quantity >= stock || itemQuantityAtLimit(item) ? ' disabled' : '') + '>+</button>' +
+          '</span>' +
+        '</div>';
+      };
+      const selectedChoice = optionChoices.find((option) => String(option.product_id) === fallbackId)
+        || selectedOptions[0]
+        || optionChoices[0]
+        || { product_id: fallbackId, name: item.name, image_url: item.image_url, price_cents: item.price_cents, stock_quantity: item.stock_quantity };
+      const selectedCard = selectedChoice && selectedChoice.product_id ? renderChoice(selectedChoice) : "";
+      const choices = optionChoices.map(renderChoice).join("");
       const panelContent = item._optionsError
         ? selectedCard + '<p class="variation-status" role="alert">Não foi possível carregar outras opções.</p><button class="button button-outline variation-retry" type="button" data-retry-position="' + esc(item.position_id) + '">Tentar novamente</button>'
         : item._optionsLoading || (!item._optionsLoaded && optionCount > 1)
           ? selectedCard + '<p class="variation-status" role="status">Carregando opções disponíveis…</p>'
-          : alternatives.length > 1
-            ? '<p class="variation-panel-label">Escolha uma opção</p><div class="product-option-picker" role="group" aria-label="Opções para ' + esc(title) + '">' + choices + '</div>'
+          : choices
+            ? '<p class="variation-panel-label">Escolha uma opção e ajuste cada quantidade</p><div class="product-option-picker" role="group" aria-label="Opções para ' + esc(title) + '">' + choices + '</div>'
             : selectedCard;
       const optionPicker = '<div class="variation-disclosure"><div class="variation-panel" id="item-options-' + esc(item.position_id) + '" aria-busy="' + String(Boolean(item._optionsLoading || changingThisItem)) + '">' +
         panelContent +
@@ -463,8 +497,8 @@
       '<div data-home-extra-review-mount>' + homeSelectionReviewMarkup(data) + "</div>" + extraCategoriesMarkup(data);
     $("order-button").disabled = !data.orderable;
     $("detail-content").querySelectorAll("[data-retry-position]").forEach((button) => button.addEventListener("click", () => retryItemOptions(button.dataset.retryPosition)));
-    $("detail-content").querySelectorAll("[data-select-position]").forEach((button) => button.addEventListener("click", () => changeProduct(button.dataset.selectPosition, button.dataset.selectProduct)));
-    $("detail-content").querySelectorAll("[data-adjust-position]").forEach((button) => button.addEventListener("click", () => changeBasketItemQuantity(button.dataset.adjustPosition, Number(button.dataset.delta || 0))));
+    $("detail-content").querySelectorAll("[data-adjust-option]").forEach((button) => button.addEventListener("click", () => basket.changeProductQuantity(button.dataset.adjustPosition, button.dataset.adjustProduct, Number(button.dataset.delta || 0))));
+    $("detail-content").querySelectorAll("[data-adjust-position]:not([data-adjust-option])").forEach((button) => button.addEventListener("click", () => changeBasketItemQuantity(button.dataset.adjustPosition, Number(button.dataset.delta || 0))));
     $("detail-content").querySelectorAll("[data-extra-category]").forEach((button) => button.addEventListener("click", () => toggleExtraCategory(button.dataset.extraCategory)));
     bindExtraProductControls($("detail-content"));
     bindHomeSelectionControls($("detail-content"), data);
@@ -486,9 +520,10 @@
     const anchorId = anchor && anchor.dataset.productRow;
     const anchorOffset = anchor ? anchor.getBoundingClientRect().top - viewport.top : null;
     const active = document.activeElement;
-    const focusPosition = active && content.contains(active) && active.matches("[data-select-position]")
-      ? active.dataset.selectPosition : "";
-    const focusProduct = focusPosition ? active.dataset.selectProduct : "";
+    const focusPosition = active && content.contains(active) && active.matches("[data-adjust-option]")
+      ? active.dataset.adjustPosition : "";
+    const focusProduct = focusPosition ? active.dataset.adjustProduct : "";
+    const focusDelta = focusPosition ? active.dataset.delta : "";
 
     renderDetail();
 
@@ -504,9 +539,10 @@
     content.scrollTop = targetScrollTop;
 
     if (focusPosition) {
-      const focusTarget = Array.from(content.querySelectorAll("[data-select-position]")).find((button) =>
-        button.dataset.selectPosition === String(focusPosition) &&
-        button.dataset.selectProduct === String(focusProduct)
+      const focusTarget = Array.from(content.querySelectorAll("[data-adjust-option]")).find((button) =>
+        button.dataset.adjustPosition === String(focusPosition) &&
+        button.dataset.adjustProduct === String(focusProduct) &&
+        button.dataset.delta === String(focusDelta)
       );
       if (focusTarget) focusTarget.focus({ preventScroll: true });
     }
@@ -562,7 +598,7 @@
     bindExtraProductControls, toggleExtraCategory,
     initHomeExtras, homeSelectionReviewMarkup, bindHomeSelectionControls, attachHomeSelections
   } = extras;
-  const { basketForSize, retryItemOptions, changeBasketItemQuantity, changeProduct } = basket;
+  const { basketForSize, retryItemOptions, changeBasketItemQuantity } = basket;
 
   checkout.init();
   $("retry-catalog").addEventListener("click", loadCatalog);
