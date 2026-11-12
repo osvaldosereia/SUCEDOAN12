@@ -414,6 +414,7 @@
     if (message.includes("admin_code_invalid") || message.includes("admin_auth_required")) return "Sua sessão administrativa expirou. Atualize a página e entre novamente.";
     if (message.includes("product_image_missing")) return "Este produto não tem uma foto salva para usar como referência.";
     if (message.includes("openai_key_missing")) return "A conexão de geração de imagens ainda não está configurada.";
+    if (message.includes("validator_invalid_json")) return "A revisão automática da IA não terminou corretamente. A foto atual foi mantida; tente novamente.";
     if (message.includes("visual_validation_failed") || message.includes("openai_transparency_missing")) return "A imagem não passou na revisão de qualidade. A foto atual do catálogo foi mantida; você pode tentar novamente.";
     if (message.includes("openai_http_429")) return "A geração está temporariamente ocupada. Aguarde um pouco e tente novamente.";
     return "Não foi possível gerar a imagem agora. A foto atual do catálogo foi mantida; tente novamente.";
