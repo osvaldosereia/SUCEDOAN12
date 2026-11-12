@@ -922,3 +922,12 @@ dialog.whatsapp-label-manager-dialog::backdrop { background:#211511b8; backdrop-
   .whatsapp-label-manager-actions { gap:5px; }
   .whatsapp-label-manager-actions .button { min-width:62px; padding-inline:8px; }
 }
+
+.ncm-search-row { display: flex; align-items: stretch; gap: 7px; min-width: 0; }
+.ncm-search-row input { flex: 1 1 auto; width: 1%; min-width: 0; }
+.ncm-search-button { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 6px; min-height: 42px; padding: 0 10px; white-space: nowrap; font-size: .76rem; }
+.ncm-search-button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-width: 2; }
+@media (max-width: 520px) {
+  .ncm-search-field { grid-column: 1 / -1; }
+  .ncm-search-button { padding-inline: 12px; }
+}

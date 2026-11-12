@@ -488,6 +488,22 @@
     window.open(url, "_blank", "noopener,noreferrer");
   }
 
+  function searchProductNcmGoogle() {
+    const form = $("product-form");
+    const terms = [
+      form.elements.name.value,
+      form.elements.brand.value,
+      form.elements.packaging.value,
+      form.elements.gtin.value,
+      "NCM Brasil"
+    ]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean)
+      .join(" ");
+    const url = "https://www.google.com/search?q=" + encodeURIComponent(terms);
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
   function openProduct(product = null) {
     const form = $("product-form");
     form.reset();
@@ -567,6 +583,7 @@
     $("product-form").elements.image_url.addEventListener("input", productImageUrlInputChanged);
     $("product-form").elements.image_url.addEventListener("change", productImageUrlChanged);
     $("product-image-google-search").addEventListener("click", searchProductImageGoogle);
+    $("product-ncm-google-search").addEventListener("click", searchProductNcmGoogle);
     $("product-image-ai").addEventListener("click", generateProductCatalogImage);
     $("product-dialog").addEventListener("close", resetProductImageSelection);
     $("products-result").addEventListener("change", setProductActive);
