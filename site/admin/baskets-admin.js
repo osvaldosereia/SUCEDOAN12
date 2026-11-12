@@ -401,7 +401,6 @@
         state.types = previousTypes;
         state.loaded = false;
         clearDirty();
-        renderGrid();
         throw new Error("Não foi possível confirmar o vínculo salvo. Atualize a página e tente novamente.");
       }
       const persistedMemberships = state.types.filter((type) =>
