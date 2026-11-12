@@ -647,9 +647,11 @@
         } catch {}
         trackingLink.href = safeTrackingUrl;
         trackingLink.hidden = !safeTrackingUrl;
-        $("order-receipt-followup").textContent = safeTrackingUrl
-          ? "No acompanhamento, você verá os produtos e o status atualizado do pedido."
-          : "O link de acompanhamento não ficou disponível. Se precisar, fale com a loja pelo WhatsApp.";
+        $("order-receipt-followup").textContent = result.basket_configuration_refreshed
+          ? "A cesta mudou durante o envio e foi atualizada automaticamente. A loja confirmará os itens e o total pelo WhatsApp."
+          : safeTrackingUrl
+            ? "No acompanhamento, você verá os produtos e o status atualizado do pedido."
+            : "O link de acompanhamento não ficou disponível. Se precisar, fale com a loja pelo WhatsApp.";
         receipt.hidden = false;
         window.requestAnimationFrame(() => {
           receipt.focus({ preventScroll: true });

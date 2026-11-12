@@ -14,6 +14,9 @@ const ORDER_CONFLICT_CODES=new Set<string>([
   ...STOCK_CONFLICT_CODES,"basket_mold_unavailable","basket_mold_not_configured",
   "basket_mold_component_invalid","basket_mold_option_invalid","basket_mold_composition_invalid"
 ]);
+const STALE_BASKET_CONFIGURATION_CODES=new Set<string>([
+  "basket_mold_component_invalid","basket_mold_option_invalid","basket_mold_composition_invalid"
+]);
 const CUTOFF_HOUR=11;
 const TZ="America/Cuiaba";
 const CATEGORIES=[
@@ -1220,6 +1223,66 @@ async function reconcileOrderItemsForStock(rawItems:any[]){
   return {items:adjusted,adjusted_items:adjustedItems,stock_adjustment:adjustedItems.length>0};
 }
 
+async function refreshBasketMoldOrderItems(items:any[]){
+  const refreshedItems=items.map((item:any)=>item);
+  let refreshedBasketCount=0,refreshedComponentCount=0;
+  for(let index=0;index<refreshedItems.length;index++){
+    const line=refreshedItems[index];
+    if(String(line?.type||"product")!=="basket_mold")continue;
+    const basketId=uid(line?.id);
+    if(!basketId)return null;
+    const rawComposition=Number(line?.composition_number||1);
+    const requestedComposition=Number.isInteger(rawComposition)&&rawComposition>0?rawComposition:1;
+    let detail=await moldDetail(basketId,requestedComposition,null,true,true);
+    if(!detail&&requestedComposition!==1)detail=await moldDetail(basketId,1,null,true,true);
+    if(!detail?.basket||!Array.isArray(detail.items)||!detail.items.length)return null;
+    const positionIds=detail.items.map((position:any)=>uid(position?.position_id)).filter(Boolean);
+    if(positionIds.length!==detail.items.length)return null;
+    const optionQuery=await db.from("basket_mold_position_options")
+      .select("position_id,product_id,sort_order")
+      .in("position_id",positionIds)
+      .order("sort_order")
+      .order("product_id");
+    if(optionQuery.error)throw optionQuery.error;
+    const validProductsByPosition=new Map<string,string[]>();
+    for(const option of optionQuery.data||[]){
+      const positionId=uid(option?.position_id),productId=uid(option?.product_id);
+      if(!positionId||!productId)continue;
+      if(!validProductsByPosition.has(positionId))validProductsByPosition.set(positionId,[]);
+      validProductsByPosition.get(positionId)!.push(productId);
+    }
+    const oldByPosition=new Map<string,string>();
+    for(const component of Array.isArray(line.components)?line.components:[]){
+      const positionId=uid(component?.position_id),productId=uid(component?.product_id);
+      if(positionId&&productId)oldByPosition.set(positionId,productId);
+    }
+    const components:any[]=[];
+    for(const position of detail.items){
+      const positionId=uid(position?.position_id);
+      const defaultProductId=uid(position?.product_id);
+      const validProducts=validProductsByPosition.get(positionId)||[];
+      const oldProductId=oldByPosition.get(positionId)||"";
+      const productId=oldProductId&&validProducts.includes(oldProductId)
+        ?oldProductId
+        :(defaultProductId&&validProducts.includes(defaultProductId)?defaultProductId:validProducts[0]||"");
+      const quantity=Number(position?.quantity??position?.base_quantity??0);
+      if(!positionId||!productId||!Number.isInteger(quantity)||quantity<0||quantity>1000)return null;
+      components.push({position_id:positionId,product_id:productId,quantity});
+    }
+    refreshedItems[index]={
+      ...line,
+      id:uid(detail.basket.id)||basketId,
+      composition_number:Number(detail.basket.composition_number)||1,
+      components
+    };
+    refreshedBasketCount++;
+    refreshedComponentCount+=components.length;
+  }
+  return refreshedBasketCount
+    ?{items:refreshedItems,basket_count:refreshedBasketCount,component_count:refreshedComponentCount}
+    :null;
+}
+
 async function submit(req:Request,p:any){
   const pay=txt(p?.payment_method,80),rawPhone=txt(p?.whatsapp_phone,40),ph=phone(rawPhone),requestedItems=Array.isArray(p?.items)?p.items.slice(0,80):[],whatsappOriginRaw=txt(p?.whatsapp_origin,4),whatsappOrigin=['0975','1018'].includes(whatsappOriginRaw)?whatsappOriginRaw:'';
   if(!ph)return {error:"invalid_whatsapp_phone",status:400};
@@ -1268,6 +1331,7 @@ async function submit(req:Request,p:any){
   if(missingAddress.length)return {error:"delivery_details_required",missing_fields:missingAddress,status:400};
   const marketingCampaign=txt(p?.marketing_context?.campaign,80);
   let stockRetryAttempted=false;
+  let basketConfigurationRefreshed=false;
   const customerSnapshot=()=>({
     ...(customer?{found:true,id:customer.id,marketing_opt_in:customer.marketing_opt_in===true,identity_status:"existing_optional"}:{found:false,identity_status:"unregistered"}),
     display_name:recipientName,
@@ -1275,10 +1339,35 @@ async function submit(req:Request,p:any){
     ...(whatsappOrigin?{whatsapp_origin:whatsappOrigin}:{}),
     ...(marketingCampaign?{marketing_campaign:marketingCampaign}:{}),
     ...(stockAdjustment?{stock_adjusted_retry:true,stock_adjustments:adjustedItems}:{}),
-    ...(stockRetryAttempted?{stock_retry_attempted:true}:{})
+    ...(stockRetryAttempted?{stock_retry_attempted:true}:{}),
+    ...(basketConfigurationRefreshed?{basket_configuration_refreshed:true}:{})
   });
   const createOrderAttempt=()=>db.rpc("create_vitrine_cart_order_v3",{p_phone:ph||null,p_payment_method:pay||null,p_items:items,p_customer_snapshot:customerSnapshot(),p_delivery:del||{}});
   let created=await createOrderAttempt();
+  if(created.error){
+    const firstError=txt(created.error.message,160).split("\n")[0];
+    if(STALE_BASKET_CONFIGURATION_CODES.has(firstError)){
+      try{
+        const refreshed=await refreshBasketMoldOrderItems(items);
+        if(refreshed){
+          items=refreshed.items;
+          basketConfigurationRefreshed=true;
+          console.warn("storefront_basket_configuration_refreshed",{
+            basket_count:refreshed.basket_count,
+            component_count:refreshed.component_count
+          });
+          created=await createOrderAttempt();
+        }else{
+          console.warn("storefront_basket_configuration_refresh_unavailable",{error_code:firstError});
+        }
+      }catch(error){
+        console.error("storefront_basket_configuration_refresh_failed",{
+          error_code:firstError,
+          detail:txt((error as any)?.message,120)
+        });
+      }
+    }
+  }
   if(created.error){
     const firstError=txt(created.error.message,160).split("\n")[0];
     if(STOCK_CONFLICT_CODES.has(firstError)){
@@ -1318,9 +1407,9 @@ async function submit(req:Request,p:any){
   }
   if(orderId&&ph)kickWhatsappOrderOutbound(orderId);
   const customerStatus=customer?.registration_complete===true?"registered":"pending_registration";
-  await recordOpsEvent("order.received","Pedido recebido pelo site e aguardando confirmação.",orderId,{source:"vitrine",customer_status:customerStatus,payment_method:pay||null,delivery_date:deliveryDate||null,stock_reserved:created.data?.stock_reserved===true,reservation_timing:created.data?.reservation_timing||null,reservation_status:created.data?.reservation_status||null,papoai_conversation_linked:Boolean(papoaiLink?.linked),stock_adjustment:stockAdjustment,adjusted_items:adjustedItems},"order-received:"+orderId);
+  await recordOpsEvent("order.received","Pedido recebido pelo site e aguardando confirmação.",orderId,{source:"vitrine",customer_status:customerStatus,payment_method:pay||null,delivery_date:deliveryDate||null,stock_reserved:created.data?.stock_reserved===true,reservation_timing:created.data?.reservation_timing||null,reservation_status:created.data?.reservation_status||null,papoai_conversation_linked:Boolean(papoaiLink?.linked),stock_adjustment:stockAdjustment,adjusted_items:adjustedItems,basket_configuration_refreshed:basketConfigurationRefreshed},"order-received:"+orderId);
   const orderCode=publicOrderLink?.public_code||canonicalOrderNumber||created.data?.order_number||null;
-  return {...created.data,order_number:orderCode,order_public_url:publicOrderLink?.public_url||null,order_public_code:orderCode,phone_attached:Boolean(ph),customer_status:customerStatus,registration_complete:customer?.registration_complete===true,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,customer:customer||null,history_synced:Boolean(customer),papoai_conversation_linked:Boolean(papoaiLink?.linked),stock_adjustment:stockAdjustment,adjusted_items:adjustedItems};
+  return {...created.data,order_number:orderCode,order_public_url:publicOrderLink?.public_url||null,order_public_code:orderCode,phone_attached:Boolean(ph),customer_status:customerStatus,registration_complete:customer?.registration_complete===true,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,customer:customer||null,history_synced:Boolean(customer),papoai_conversation_linked:Boolean(papoaiLink?.linked),stock_adjustment:stockAdjustment,adjusted_items:adjustedItems,basket_configuration_refreshed:basketConfigurationRefreshed};
 }
 
 async function basketBySize(sizeKey:string,lightweight=false){
