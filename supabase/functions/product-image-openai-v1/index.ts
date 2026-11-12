@@ -121,14 +121,24 @@ const validationSchema={type:"object",additionalProperties:false,properties:{
 function finalText(data:any){return arr(data?.output).filter((x:any)=>x?.type==="message").flatMap((x:any)=>arr(x?.content)).filter((x:any)=>x?.type==="output_text").map((x:any)=>String(x?.text||"")).join("").trim()}
 async function validateGenerated(key:string,sourceUrl:string,generated:Uint8Array){
   const candidate="data:image/png;base64,"+bytesToBase64(generated);
-  const body={model:VALIDATOR_MODEL,store:false,max_output_tokens:220,reasoning:{effort:"low"},input:[{role:"user",content:[
+  const body={model:VALIDATOR_MODEL,store:false,max_output_tokens:600,reasoning:{effort:"low"},input:[{role:"user",content:[
     {type:"input_text",text:"Compare as duas imagens do mesmo produto. A primeira é a foto original; a segunda é a imagem para catálogo. Seja rigoroso. Confirme fidelidade da embalagem, proporções, marca, cores, rótulo e textos; produto inteiro, centralizado, com margens transparentes uniformes e recorte limpo. A imagem final deve ter fundo realmente transparente, sem fundo branco/cinza, cenário, chão, sombra, halo ou objetos extras. Marque pass=false se houver deformação, parte removida, embalagem redesenhada, marca/variante alterada, fundo visível ou diferença importante."},
     {type:"input_image",image_url:sourceUrl,detail:"high"},{type:"input_image",image_url:candidate,detail:"high"}
   ]}],text:{format:{type:"json_schema",name:"product_image_validation",strict:true,schema:validationSchema}}};
   const r=await fetch(OPENAI_RESPONSES_URL,{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify(body),signal:AbortSignal.timeout(60000)});
   const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error("validator_http_"+r.status+"_"+clean(data?.error?.code||data?.error?.message||"error",120));
-  const t=finalText(data);if(!t)throw new Error("validator_empty_output");
-  let parsed:any;try{parsed=JSON.parse(t)}catch{throw new Error("validator_invalid_json")}
+  const t=finalText(data);if(!t)throw new Error("validator_empty_output_"+clean(data?.status||"unknown",30));
+  const trimmed=t.trim();
+  const candidates=[trimmed];
+  const firstBrace=trimmed.indexOf("{"),lastBrace=trimmed.lastIndexOf("}");
+  if(firstBrace>=0&&lastBrace>firstBrace)candidates.push(trimmed.slice(firstBrace,lastBrace+1));
+  let parsed:any=null;
+  for(const candidate of candidates){try{parsed=JSON.parse(candidate);break}catch{}}
+  if(!parsed||typeof parsed!=="object"||Array.isArray(parsed)){
+    const status=clean(data?.status||"unknown",30),reason=clean(data?.incomplete_details?.reason||"none",30);
+    console.warn("product image validator returned non-JSON output",{status,reason,output_length:t.length});
+    throw new Error("validator_invalid_json_"+status+"_"+reason);
+  }
   const validation={pass:parsed?.pass===true,fidelity_score:score(parsed?.fidelity_score),composition_score:score(parsed?.composition_score),background_score:score(parsed?.background_score),critical_issue:clean(parsed?.critical_issue,240)};
   const accepted=validation.pass&&validation.fidelity_score>=MIN_FIDELITY&&validation.composition_score>=MIN_COMPOSITION&&validation.background_score>=MIN_BACKGROUND&&!validation.critical_issue;
   return {accepted,validation,usage:obj(data?.usage),responseId:clean(data?.id,180)};
