@@ -477,7 +477,7 @@
         : item._optionsLoading || (!item._optionsLoaded && optionCount > 1)
           ? selectedCard + '<p class="variation-status" role="status">Carregando opções disponíveis…</p>'
           : choices
-            ? '<p class="variation-panel-label">Escolha uma opção e ajuste cada quantidade</p><div class="product-option-picker" role="group" aria-label="Opções para ' + esc(title) + '">' + choices + '</div>'
+            ? '<div class="product-option-picker" role="group" aria-label="Opções para ' + esc(title) + '">' + choices + '</div>'
             : selectedCard;
       const optionPicker = '<div class="variation-disclosure"><div class="variation-panel" id="item-options-' + esc(item.position_id) + '" aria-busy="' + String(Boolean(item._optionsLoading || changingThisItem)) + '">' +
         panelContent +
