@@ -196,6 +196,7 @@
         try {
           const response = await request("basket_mold_options_batch", {
             method: "POST",
+            readOnly: true,
             body: {
               basket_id: data.basket.id,
               composition_number: data.basket.composition_number || 1,
