@@ -180,14 +180,22 @@ function buildMoldSelectedOption(product:any,stock:number,quantity:number,allowU
   return {product_id:product.id,name:product.name,brand:product.brand||"",sku:product.sku,gtin:product.gtin,image_url:product.image_url||"",packaging:product.packaging||"",stock_quantity:stock,price_cents:moldEffectivePriceCents(product)};
 }
 async function moldProductsMap(ids:string[]){const clean=[...new Set(ids.filter(Boolean))],out=new Map<string,any>();if(!clean.length)return out;const q=await db.from("products").select("id,name,brand,sku,gtin,image_url,packaging,price,offer_price,is_offer,is_active").in("id",clean);if(q.error)throw q.error;for(const p of q.data||[])out.set(String(p.id),p);return out}
-async function publicBasketExtraThemes(legacyExtras:any[]=[]){
-  const themeQ=await db.from("basket_extra_themes").select("id,name,sort_order,basket_extra_theme_products(product_id,sort_order)").order("sort_order").order("created_at");
+async function publicBasketExtraThemes(){
+  const themeQ=await db.from("basket_extra_themes")
+    .select("id,name,sort_order,search_terms,sales_categories,is_active")
+    .order("sort_order").order("created_at");
   if(themeQ.error)throw themeQ.error;
-  const themeRows=(themeQ.data||[]).map((t:any)=>({...t,items:Array.isArray(t.basket_extra_theme_products)?t.basket_extra_theme_products.slice().sort((a:any,b:any)=>Number(a.sort_order||0)-Number(b.sort_order||0)):[]}));
-  return [
-    ...themeRows.map((t:any)=>({id:String(t.id),label:String(t.name||"Produtos extras"),product_count:t.items.length,products:[],products_loaded:false})),
-    ...legacyExtras.map((x:any,index:number)=>({id:String(x?.id||"legacy-"+index),label:String(x?.label||"Produto adicional"),product_count:Array.isArray(x?.product_ids)?x.product_ids.length:0,products:[],products_loaded:false}))
-  ].filter((x:any)=>x.product_count>0);
+  const rows=themeQ.data||[];
+  const hasConfiguration=(row:any)=>
+    (Array.isArray(row?.search_terms)&&row.search_terms.some((term:any)=>txt(term,80)))||
+    (Array.isArray(row?.sales_categories)&&row.sales_categories.length>0);
+  const configured=rows.some(hasConfiguration);
+  const sections=rows.filter((row:any)=>row.is_active===true&&Array.isArray(row.search_terms)&&row.search_terms.some((term:any)=>txt(term,80))&&Array.isArray(row.sales_categories)&&row.sales_categories.length>0)
+    .map((row:any)=>({
+      id:String(row.id),label:String(row.name||"Produtos extras"),sort_order:Number(row.sort_order||0),
+      search_enabled:true,product_count:0,products:[],products_loaded:false
+    }));
+  return {sections,configured};
 }
 async function publicBasketExtras(legacyExtras:any[]=[],themeId:string){
   const themeQ=await db.from("basket_extra_themes").select("id,name,sort_order,basket_extra_theme_products(product_id,sort_order)").eq("id",themeId).maybeSingle();
@@ -203,7 +211,42 @@ async function publicBasketExtras(legacyExtras:any[]=[],themeId:string){
   };
   return rows.map((t:any)=>({id:t.id,label:t.label,products:t.items.map((x:any)=>toProduct(x.product_id)).filter(Boolean),products_loaded:true})).filter((x:any)=>x.products.length>0);
 }
-async function basketExtraProducts(basketId:string,themeId:string){
+async function publicBasketExtraSectionProducts(section:any,offsetValue:any=0,limitValue:any=15){
+  const allowedCategories=new Set(CATEGORIES.map((category:any)=>category.key));
+  const categories=[...new Set((Array.isArray(section?.sales_categories)?section.sales_categories:[])
+    .map((value:any)=>txt(value,48).toLocaleLowerCase("pt-BR"))
+    .filter((value:string)=>allowedCategories.has(value)))].slice(0,4);
+  const fold=(value:any)=>String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("pt-BR").replace(/[^a-z0-9]+/g," ").trim();
+  const searchTerms=(Array.isArray(section?.search_terms)?section.search_terms:[])
+    .map((term:any)=>fold(term).split(/\s+/).filter(Boolean).slice(0,6))
+    .filter((tokens:string[])=>tokens.length>0).slice(0,20);
+  const limit=Math.floor(clamp(limitValue||15,1,36)),offset=Math.floor(clamp(offsetValue||0,0,5000));
+  if(section?.is_active!==true||!categories.length||!searchTerms.length)return {ok:true,products:[],next_offset:null};
+  const fields="id,sku,gtin,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit,is_active,sales_category";
+  const rows=(await Promise.all(categories.map((category:string)=>activeProductRows(fields,category)))).flat();
+  const byId=new Map<string,any>();
+  for(const product of rows){
+    const values=[product.name,product.brand,product.gtin,product.sku,product.packaging].map(fold);
+    const matches=searchTerms.some((tokens:string[])=>tokens.every((token:string)=>values.some((value:string)=>value.includes(token))));
+    if(matches)byId.set(String(product.id),product);
+  }
+  const ordered=Array.from(byId.values()).sort((a:any,b:any)=>
+    String(a.name||"").localeCompare(String(b.name||""),"pt-BR")||String(a.id).localeCompare(String(b.id)));
+  const publicProducts:any[]=[];
+  let cursor=offset;
+  while(cursor<ordered.length&&publicProducts.length<limit){
+    const chunk=ordered.slice(cursor,cursor+Math.max(24,limit*2));
+    const stock=await orderableProductStockMap(chunk.map((product:any)=>String(product.id)));
+    for(const product of chunk){
+      cursor++;
+      const candidate=pub(product,stock.get(String(product.id))||0);
+      if(candidate.stock_quantity>0&&candidate.price_available)publicProducts.push(candidate);
+      if(publicProducts.length>=limit)break;
+    }
+  }
+  return {ok:true,products:publicProducts,next_offset:cursor<ordered.length?cursor:null};
+}
+async function basketExtraProducts(basketId:string,themeId:string,offsetValue:any=0,limitValue:any=15){
   const id=uid(basketId),theme=txt(themeId,100);if(!id||!theme)return {error:"invalid_basket_extra_request",status:400};
   const [basketQ,moldQ,legacyQ]=await Promise.all([
     db.from("basket_templates").select("id,is_active").eq("id",id).maybeSingle(),
@@ -213,6 +256,15 @@ async function basketExtraProducts(basketId:string,themeId:string){
   if(basketQ.error)throw basketQ.error;if(moldQ.error)throw moldQ.error;if(legacyQ.error)throw legacyQ.error;
   const visibleTemplate=basketQ.data?.is_active===true,visibleLegacy=legacyQ.data?.model_active===true&&legacyQ.data?.category_active===true&&Boolean(legacyQ.data?.public_lot_id)&&Number(legacyQ.data?.public_available||0)>0;
   if(!visibleTemplate&&!visibleLegacy)return {error:"basket_not_found",status:404};
+  const sectionQ=await db.from("basket_extra_themes").select("id,name,search_terms,sales_categories,is_active").eq("id",theme).maybeSingle();
+  if(sectionQ.error)throw sectionQ.error;
+  const section=sectionQ.data;
+  if(section){
+    if(section.is_active!==true)return {error:"extra_section_not_found",status:404};
+    if(Array.isArray(section.search_terms)&&section.search_terms.length&&Array.isArray(section.sales_categories)&&section.sales_categories.length){
+      return await publicBasketExtraSectionProducts(section,offsetValue,limitValue);
+    }
+  }
   const legacy=Array.isArray(moldQ.data?.metadata?.optional_items)?moldQ.data.metadata.optional_items:[];
   return {ok:true,extras:await publicBasketExtras(legacy,theme)};
 }
@@ -371,9 +423,8 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
   if(selections&&requested.size!==positions.length)throw new Error("basket_mold_component_invalid");
 
   const readIds=[...new Set([...moldProductIdsForRead(positions,options,requested,defaultSelected,includeAlternatives),...defaultSelected.values(),...configuredDefaults.values()])];
-  const legacyExtras=Array.isArray(mold.metadata?.optional_items)?mold.metadata.optional_items:[];
-  const [products,available,extras]=await Promise.all([
-    moldProductsMap(readIds),moldAvailableStockMap(readIds),publicBasketExtraThemes(legacyExtras)
+  const [products,available,extraSections]=await Promise.all([
+    moldProductsMap(readIds),moldAvailableStockMap(readIds),publicBasketExtraThemes()
   ]);
   if(!includeAlternatives){
     const needsFallbackRead=positions.some((position:any)=>{
@@ -574,7 +625,7 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
       conditional_hidden_applied_cents:conditionalHidden,
       display_price_cents:totalCents,stock_quantity:capacity
     },
-    items,extras
+    items,extras:extraSections.sections,extras_configured:extraSections.configured
   };
 }
 // Read the available brands of one basket position only when requested by the customer.
@@ -1001,14 +1052,14 @@ async function basket(id:string){
   const {data:c,error}=await db.from("basket_commercial_catalog_v1").select("*").eq("source_kind","basket").eq("commercial_id",id).maybeSingle();
   if(error)throw error;if(!c||c.model_active!==true||c.category_active!==true||!c.public_lot_id||Number(c.public_available||0)<=0)return null;
   const mainLot=String(c.public_lot_id),linked=c.linked_lot_id?String(c.linked_lot_id):"",split=String(c.public_lot_kind||"")==="food"||Boolean(linked);
-  const extras=await publicBasketExtraThemes();
+  const extraSections=await publicBasketExtraThemes();
   if(split){
     const food=await splitLotItems(mainLot,"food"),hygiene=linked?await splitLotItems(linked,"hygiene"):[];
     return {basket:{id:c.commercial_id,name:c.public_name||c.model_name,category_name:c.category_name||null,category_slug:c.category_slug||null,
       display_price_cents:cents(c.sale_price),image_url:await basketLotImage(mainLot,linked||null,c.image_url||""),
       split_mode:true,stock_quantity:Number(c.public_available||0),availability_reason:c.availability_reason||"available",
       food_lot_id:mainLot,food_lot_code:c.public_lot_code||"",food_lot_quantity:Number(c.public_available||0),
-      hygiene_lot_id:linked||null,hygiene_lot_code:"",hygiene_lot_quantity:Number(c.linked_available||0),uses_hygiene_kit:Boolean(linked)},items:[...food,...hygiene],extras};
+      hygiene_lot_id:linked||null,hygiene_lot_code:"",hygiene_lot_quantity:Number(c.linked_available||0),uses_hygiene_kit:Boolean(linked)},items:[...food,...hygiene],extras:extraSections.sections,extras_configured:extraSections.configured};
   }
   const {data:items,error:ie}=await db.from("basket_stock_lot_items")
     .select("id,product_id,quantity_per_basket,position_order,source_template_item_id,product:products(id,name,image_url,packaging,is_active,price),rule:basket_template_items(id,removable,quantity_editable,min_quantity,max_quantity,remove_unit_delta,add_unit_delta)")
@@ -1023,7 +1074,7 @@ async function basket(id:string){
       quantity_editable:rule?.quantity_editable!==false,min_quantity:Number(rule?.min_quantity??0),max_quantity:Math.max(base,configuredMax),
       remove_unit_delta:rule?.remove_unit_delta==null?null:Number(rule.remove_unit_delta),add_unit_delta:rule?.add_unit_delta==null?null:Number(rule.add_unit_delta),
       regular_price:Number(product?.price||0),template_item_id:i.source_template_item_id||null,component_group:"legacy",preassembled:true
-    }}),extras};
+    }}),extras:extraSections.sections,extras_configured:extraSections.configured};
 }
 function groupChanged(items:any[],group:string){
   return items.filter(x=>x.component_group===group).some(x=>Number(x.quantity||0)!==Number(x.base_quantity||0));
@@ -1488,7 +1539,7 @@ Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
   try{
     const u=new URL(req.url),action=txt(u.searchParams.get("action")||(req.method==="POST"?"basket_quote":"home"),60);
-    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:81},200,{"Cache-Control":"no-store"});
+    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:82},200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="home_catalog_cards")return json(req,await homeCatalogCards(),200,{"Cache-Control":"public, max-age=30, stale-while-revalidate=180"});
     if(req.method==="GET"&&action==="home_size_cards")return json(req,await homeSizeCards(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
     if(req.method==="GET"&&action==="basket_flow_shell")return json(req,await basketFlowShell(),200,{"Cache-Control":"no-store"});
@@ -1508,7 +1559,7 @@ Deno.serve(async(req:Request)=>{
       const r=await moldPositionOptions(u.searchParams.get("basket_id")||"",Math.trunc(Number(u.searchParams.get("composition_number")||0)),u.searchParams.get("position_id")||"",u.searchParams.get("selected_product_ids")||u.searchParams.get("selected_product_id")||"",Math.trunc(Number(u.searchParams.get("quantity")||0)),Math.trunc(Number(u.searchParams.get("offset")||0)));
       return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,r,200,{"Cache-Control":"no-store"});
     }
-    if(req.method==="GET"&&action==="basket_extra_products"){const r=await basketExtraProducts(u.searchParams.get("basket_id")||"",u.searchParams.get("theme_id")||"");return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,r,200,{"Cache-Control":"no-store"})}
+    if(req.method==="GET"&&action==="basket_extra_products"){const r=await basketExtraProducts(u.searchParams.get("basket_id")||"",u.searchParams.get("theme_id")||"",u.searchParams.get("offset")||0,u.searchParams.get("limit")||15);return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,r,200,{"Cache-Control":"no-store"})}
     if(req.method==="GET"&&action==="resolve_identity_code"){const r=await resolveCode(req,u.searchParams.get("code"));return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,{ok:true,...r},200,{"Cache-Control":"no-store"})}
     if(req.method==="GET"&&action==="resolve_identity_token"){const r=await resolveToken(u.searchParams.get("token"));return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,{ok:true,...r},200,{"Cache-Control":"no-store"})}
     if(req.method==="GET"&&action==="delivery_options")return json(req,{ok:true,options:deliveryOptions(),cutoff_hour:CUTOFF_HOUR,time_zone:TZ},200,{"Cache-Control":"no-store"});
