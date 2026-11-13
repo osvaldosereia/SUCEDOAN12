@@ -445,23 +445,26 @@
     const rows = data.items.map((item) => {
       const alternatives = item._alternatives || [];
       const selectedOptions = (Array.isArray(item.selected_options) ? item.selected_options : [])
-        .filter((option) => option && option.product_id && Number(option.quantity || 0) > 0);
+        .filter((option) => option && option.product_id && option.is_active !== false && Number(option.quantity || 0) > 0);
       const selectedById = new Map(selectedOptions.map((option) => [String(option.product_id), option]));
-      const choiceById = new Map(alternatives.filter((option) => option && option.product_id).map((option) => [String(option.product_id), option]));
+      const choiceById = new Map(alternatives.filter((option) => option && option.product_id && option.is_active !== false).map((option) => [String(option.product_id), option]));
       selectedOptions.forEach((option) => {
         if (!choiceById.has(String(option.product_id))) choiceById.set(String(option.product_id), option);
       });
       const fallbackId = String(item.product_id || "");
-      if (fallbackId && !choiceById.has(fallbackId)) {
+      if (fallbackId && item.is_active !== false && !choiceById.has(fallbackId)) {
         choiceById.set(fallbackId, {
           product_id: fallbackId, name: item.name, image_url: item.image_url,
           price_cents: item.price_cents, stock_quantity: item.stock_quantity,
-          packaging: item.packaging
+          is_active: item.is_active, packaging: item.packaging
         });
       }
-      const optionChoices = Array.from(choiceById.values());
-      const originalOptionIndex = optionChoices.findIndex((option) => String(option.product_id) === fallbackId);
-      if (originalOptionIndex > 0) optionChoices.unshift(optionChoices.splice(originalOptionIndex, 1)[0]);
+      const defaultId = String(item.default_product_id || item.product_id || "");
+      const optionChoices = Array.from(choiceById.values()).sort((a, b) =>
+        (String(a.product_id) === defaultId ? -1 : 0) - (String(b.product_id) === defaultId ? -1 : 0) ||
+        Number(b.stock_quantity || 0) - Number(a.stock_quantity || 0) ||
+        Number(a.sort_order || 0) - Number(b.sort_order || 0)
+      );
       const optionCount = Math.max(Number(item.alternative_count || 0), optionChoices.length);
       const changingThisItem = String(data.changingPosition || "") === String(item.position_id);
       const title = item.label || "Produto";
