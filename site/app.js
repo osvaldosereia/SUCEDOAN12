@@ -243,6 +243,8 @@
         if (!homeSelections.size) extras.syncHomeExtraSelection("");
       }
       if (typeof state.updateSidebarCheckoutCount === "function") state.updateSidebarCheckoutCount();
+      renderCards();
+      if (state.activeKey) renderDetail();
       const unavailableProducts = Array.from(uniqueProducts.keys()).filter((id) => !productRows.has(id)).length;
       if (basketRestoreFailed) {
         toast("Não foi possível atualizar a cesta agora; mantivemos o carrinho salvo. Tente novamente.");
