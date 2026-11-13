@@ -303,7 +303,12 @@
     try {
       const response = await fetch(url.toString(), init);
       const data = await response.json().catch(() => ({}));
-      if (!response.ok || data.ok === false) throw new Error(data.error || "Não foi possível carregar agora.");
+      if (!response.ok || data.ok === false) {
+        const failure = new Error(data.error || "Não foi possível carregar agora.");
+        failure.status = response.status;
+        failure.data = data;
+        throw failure;
+      }
       return data;
     } catch (error) {
       if (controller?.signal.aborted) throw new Error("A consulta demorou além do esperado. Tente novamente.");
