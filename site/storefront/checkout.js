@@ -16,6 +16,7 @@
 
     let lookupSequence = 0;
     let checkoutPhone = "";
+    let stockConflictItems = [];
 
     function normalizeCheckoutPhone(value) {
       let digits = phoneDigits(value);
@@ -373,6 +374,7 @@
       if (data.changePromise) await data.changePromise;
       if (state.activeKey !== activeKey) return;
       setOrderSubmitMessage("", "");
+      renderStockConflictItems([]);
       $("order-title").textContent = isCustomOrder ? "Pedido personalizado" : "Encomendar cesta";
       renderOrderReview(data);
       const orderContent = document.querySelector("#order-sheet .sheet-content");
@@ -595,6 +597,90 @@
       messageNode.hidden = !message;
     }
 
+    function renderStockConflictItems(items) {
+      const host = $("order-stock-conflicts");
+      if (!host) return;
+      stockConflictItems = Array.isArray(items) ? items.filter((item) => item && String(item.id || "")) : [];
+      host.replaceChildren();
+      if (!stockConflictItems.length) {
+        host.hidden = true;
+        return;
+      }
+
+      const list = document.createElement("ul");
+      list.className = "order-stock-conflict-list";
+      const data = state.baskets.get(state.activeKey);
+      stockConflictItems.forEach((item) => {
+        const id = String(item.id || "");
+        const name = String(item.name || "Produto");
+        const requested = Math.max(0, Math.trunc(Number(item.requested || 0)));
+        const available = Math.max(0, Math.trunc(Number(item.available || 0)));
+        const row = document.createElement("li");
+        row.className = "order-stock-conflict";
+
+        const copy = document.createElement("div");
+        copy.className = "order-stock-conflict-copy";
+        const title = document.createElement("strong");
+        title.textContent = name;
+        const detail = document.createElement("span");
+        detail.textContent = available > 0
+          ? "No pedido: " + requested + " · disponível agora: " + available
+          : item.kind === "basket_mold_component"
+            ? "Este produto da cesta ficou indisponível."
+            : "Sem estoque disponível.";
+        copy.append(title, detail);
+        row.appendChild(copy);
+
+        const canRemove = item.kind === "product" &&
+          data && data.extraSelections instanceof Map && data.extraSelections.has(id);
+        if (canRemove) {
+          const remove = document.createElement("button");
+          remove.type = "button";
+          remove.className = "button button-outline order-stock-conflict-remove";
+          remove.dataset.stockConflictRemove = id;
+          remove.setAttribute("aria-label", "Remover " + name + " do pedido");
+          remove.textContent = "Remover do pedido";
+          row.appendChild(remove);
+        } else if (item.kind === "basket_mold_component") {
+          const note = document.createElement("span");
+          note.className = "order-stock-conflict-note";
+          note.textContent = "Volte à cesta para trocar a opção.";
+          row.appendChild(note);
+        }
+        list.appendChild(row);
+      });
+      host.appendChild(list);
+      host.hidden = false;
+    }
+
+    function removeStockConflictProduct(productId) {
+      const id = String(productId || "");
+      const activeKey = state.activeKey;
+      const data = state.baskets.get(activeKey);
+      const item = data && data.extraSelections instanceof Map ? data.extraSelections.get(id) : null;
+      if (!data || !item || data.changing === true || state.submittingOrder) return;
+
+      data.extraSelections.delete(id);
+      const isHomeProduct = data.customOrder === true ||
+        data.homeExtraProductIds instanceof Set && data.homeExtraProductIds.has(id) ||
+        state.homeExtraSelections instanceof Map && state.homeExtraSelections.has(id);
+      if (isHomeProduct && state.homeExtraSelections instanceof Map) {
+        state.homeExtraSelections.delete(id);
+        if (typeof onHomeExtraQuantityChanged === "function") onHomeExtraQuantityChanged(id);
+      }
+
+      const remaining = stockConflictItems.filter((conflict) => String(conflict.id || "") !== id);
+      renderOrderReview(data);
+      renderStockConflictItems(remaining);
+      setOrderSubmitMessage(
+        remaining.length
+          ? "Remova os outros produtos indicados para continuar. O restante do pedido será mantido."
+          : "Produto removido. O restante do pedido foi mantido; confira o total e confirme novamente.",
+        remaining.length ? "error" : "warning"
+      );
+      toast("Produto removido do pedido.");
+    }
+
     async function confirmOrder() {
       const data = state.baskets.get(state.activeKey);
       const customer = state.customer;
@@ -616,6 +702,7 @@
       updateConfirmOrderAvailability();
       button.textContent = "Registrando…";
       setOrderSubmitMessage("", "");
+      renderStockConflictItems([]);
       try {
         const result = await request("submit_order", {
           method: "POST",
@@ -696,9 +783,32 @@
           invalid_whatsapp_phone: "O telefone do cadastro não está em um formato válido.",
           invalid_payment: "A forma de pagamento não foi reconhecida. Selecione novamente e tente outra vez."
         };
-        const message = messages[reason] ||
-          "Não recebemos a confirmação. O pedido pode ter sido registrado; antes de tentar novamente, fale com a loja pelo WhatsApp para evitar um pedido duplicado.";
-        setOrderSubmitMessage(message, messages[reason] ? "error" : "warning");
+        const responseData = error && error.data && typeof error.data === "object" ? error.data : {};
+        const reportedConflicts = Array.isArray(responseData.stock_conflict_items)
+          ? responseData.stock_conflict_items
+          : Array.isArray(responseData.adjusted_items)
+            ? responseData.adjusted_items
+            : [];
+        renderStockConflictItems(reportedConflicts);
+        const conflictNames = stockConflictItems.map((item) => String(item.name || "Produto"));
+        const canRemoveConflict = (item) => item.kind === "product" &&
+          data.extraSelections instanceof Map && data.extraSelections.has(String(item.id || ""));
+        const removableConflictCount = stockConflictItems.filter(canRemoveConflict).length;
+        const hasBasketConflict = stockConflictItems.some((item) => item.kind === "basket_mold_component");
+        const message = conflictNames.length === 1
+          ? removableConflictCount
+            ? "“" + conflictNames[0] + "” ficou indisponível. Remova-o abaixo para continuar; os outros itens serão mantidos."
+            : "“" + conflictNames[0] + "” ficou indisponível na cesta. Volte à cesta para escolher outra opção; seu pedido foi mantido."
+          : conflictNames.length > 1
+            ? removableConflictCount === stockConflictItems.length
+              ? "Alguns produtos ficaram indisponíveis. Remova os itens indicados abaixo; os demais serão mantidos."
+              : hasBasketConflict
+                ? "Alguns itens ficaram indisponíveis. Remova os produtos extras indicados ou volte à cesta para trocar a opção indisponível."
+                : "Alguns produtos ficaram indisponíveis. Confira os itens indicados; seu pedido foi mantido."
+            : messages[reason] || (["product_unavailable", "insufficient_stock", "stock_conflict", "all_items_unavailable"].includes(reason)
+              ? "O estoque de um produto mudou. Seu carrinho foi mantido; confira os itens e tente novamente."
+              : "Não recebemos a confirmação. O pedido pode ter sido registrado; antes de tentar novamente, fale com a loja pelo WhatsApp para evitar um pedido duplicado.");
+        setOrderSubmitMessage(message, conflictNames.length ? "error" : (messages[reason] ? "error" : "warning"));
         toast(message);
       } finally {
         state.submittingOrder = false;
@@ -722,6 +832,13 @@
       const sidebarCheckout = $("sidebar-checkout");
       if (sidebarCheckout) sidebarCheckout.addEventListener("click", openSidebarCheckout);
       $("clear-order-cart").addEventListener("click", clearOrderCart);
+      const stockConflictsHost = $("order-stock-conflicts");
+      if (stockConflictsHost) stockConflictsHost.addEventListener("click", (event) => {
+        const button = event.target instanceof Element ? event.target.closest("[data-stock-conflict-remove]") : null;
+        if (!button) return;
+        event.preventDefault();
+        removeStockConflictProduct(button.dataset.stockConflictRemove);
+      });
       $("order-review-items").addEventListener("click", async (event) => {
         const button = event.target instanceof Element ? event.target.closest("[data-order-review-adjust]") : null;
         if (!button) return;
