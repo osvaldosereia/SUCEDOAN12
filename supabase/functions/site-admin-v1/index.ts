@@ -43,7 +43,7 @@ const EDITABLE_NUMBER_FIELDS = ["price", "offer_price", "cost", "stock", "min_st
 const EDITABLE_BOOLEAN_FIELDS = ["is_active", "is_offer", "is_upsell", "storefront_featured"];
 const MOST_SOLD_TAG = "mais-vendidos";
 function isMostSoldTag(value: unknown) {
-  return String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLocaleLowerCase("pt-BR")
+  return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR")
     .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") === MOST_SOLD_TAG;
 }
 
@@ -4869,6 +4869,74 @@ async function whatsappConversationSendMedia(input: any) {
   }
 }
 
+const BASKET_EXTRA_SECTION_CATEGORIES = [
+  { key: "mercearia", label: "Mercearia" },
+  { key: "limpeza_lavanderia", label: "Limpeza e lavanderia" },
+  { key: "higiene_beleza", label: "Higiene e beleza" },
+  { key: "casa_pet", label: "Casa e pet" },
+];
+const BASKET_EXTRA_SECTION_CATEGORY_KEYS = new Set(BASKET_EXTRA_SECTION_CATEGORIES.map((category) => category.key));
+
+async function extraSectionsList() {
+  const result = await db.from("basket_extra_themes")
+    .select("id,name,sort_order,search_terms,sales_categories,is_active,created_at,updated_at")
+    .order("sort_order").order("created_at");
+  if (result.error) throw result.error;
+  return { sections: result.data || [], categories: BASKET_EXTRA_SECTION_CATEGORIES };
+}
+
+async function extraSectionSave(input: any) {
+  const id = input.id ? uuid(input.id) : "";
+  if (input.id && !id) return { error: "extra_section_invalid_id", status: 400 };
+  const name = clean(input.name, 80);
+  if (name.length < 2) return { error: "extra_section_name_required", status: 400 };
+
+  const terms: string[] = [];
+  const seenTerms = new Set<string>();
+  const rawTerms = Array.isArray(input.search_terms) ? input.search_terms : [];
+  for (const value of rawTerms) {
+    const term = clean(value, 80);
+    const normalized = term.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
+    if (term.length < 2 || seenTerms.has(normalized)) continue;
+    seenTerms.add(normalized);
+    terms.push(term);
+  }
+  const isActive = typeof input.is_active === "boolean" ? input.is_active : true;
+  if (terms.length > 20) return { error: "extra_section_too_many_terms", status: 400 };
+  if (isActive && !terms.length) return { error: "extra_section_terms_required", status: 400 };
+
+  const categories = [...new Set((Array.isArray(input.sales_categories) ? input.sales_categories : [])
+    .map((value: any) => clean(value, 48).toLocaleLowerCase("pt-BR"))
+    .filter((value: string) => value))];
+  if (isActive && !categories.length) return { error: "extra_section_category_required", status: 400 };
+  if (categories.some((category: string) => !BASKET_EXTRA_SECTION_CATEGORY_KEYS.has(category))) {
+    return { error: "extra_section_invalid_category", status: 400 };
+  }
+
+  const row: any = {
+    name,
+    search_terms: terms,
+    sales_categories: categories,
+    is_active: isActive,
+    updated_at: new Date().toISOString(),
+  };
+  let result: any;
+  if (id) {
+    result = await db.from("basket_extra_themes").update(row).eq("id", id)
+      .select("id,name,sort_order,search_terms,sales_categories,is_active,created_at,updated_at").maybeSingle();
+  } else {
+    const last = await db.from("basket_extra_themes").select("sort_order")
+      .order("sort_order", { ascending: false }).limit(1).maybeSingle();
+    if (last.error) throw last.error;
+    row.sort_order = Number(last.data?.sort_order || 0) + 10;
+    result = await db.from("basket_extra_themes").insert(row)
+      .select("id,name,sort_order,search_terms,sales_categories,is_active,created_at,updated_at").maybeSingle();
+  }
+  if (result.error) throw result.error;
+  if (!result.data) return { error: "extra_section_not_found", status: 404 };
+  return { section: result.data };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
   if (!["GET", "POST"].includes(req.method)) return json(req, { ok: false, error: "method_not_allowed" }, 405);
@@ -4955,6 +5023,8 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "basket_save") result = await basketSave(input);
     else if (req.method === "POST" && action === "basket_grid_save") result = await basketGridSave(input);
     else if (req.method === "POST" && action === "basket_grid_create") result = await basketGridCreate(input);
+    else if (req.method === "POST" && action === "extra_sections_list") result = await extraSectionsList();
+    else if (req.method === "POST" && action === "extra_section_save") result = await extraSectionSave(input);
     else if (req.method === "POST" && action === "basket_set_active") result = await basketSetActive(input);
     else if (req.method === "GET" && action === "orders_list") result = await ordersList(input);
     else if (req.method === "GET" && action === "order_detail") result = await orderDetail(input);
