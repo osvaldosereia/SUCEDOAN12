@@ -1139,3 +1139,111 @@ body.basket-detail-open .experiment-page main > :not(#detail-sheet) {
   }
   .basket-detail-actions .button-wide { min-height: 48px; }
 }
+
+
+/* Cards das vitrines e da busca no mesmo padrão visual dos itens das cestas. */
+.experiment-page .home-extra-card {
+  display: grid;
+  grid-template-columns: clamp(64px, 20vw, 76px) minmax(0, 1fr);
+  grid-template-rows: minmax(64px, auto) 40px;
+  align-items: center;
+  align-content: stretch;
+  gap: 8px 10px;
+  min-width: 0;
+  min-height: 0;
+  padding: 8px;
+}
+
+.experiment-page .home-extra-card > .home-extra-photo {
+  grid-column: 1;
+  grid-row: 1;
+  width: clamp(64px, 20vw, 76px);
+  height: clamp(64px, 20vw, 76px);
+  max-width: none;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
+.experiment-page .home-extra-card > .product-choice-copy {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  gap: 3px;
+}
+
+.experiment-page .home-extra-card > .product-choice-copy strong {
+  min-height: 0;
+  font-size: .88rem;
+  line-height: 1.25;
+  -webkit-line-clamp: 2;
+}
+
+.experiment-page .home-extra-card > .product-choice-copy small {
+  color: var(--muted);
+  font-size: .83rem;
+}
+
+.experiment-page .home-extra-card > .home-extra-open {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: transparent;
+  font-size: 0;
+  cursor: pointer;
+}
+
+.experiment-page .home-extra-card > .home-extra-open:focus-visible {
+  outline: 3px solid rgba(126, 48, 41, .3);
+  outline-offset: 2px;
+}
+
+.experiment-page .home-extra-card > .product-option-stepper {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  z-index: 2;
+  justify-self: end;
+  align-self: center;
+}
+
+@media (max-width: 420px) {
+  .experiment-page .home-extra-card {
+    grid-template-columns: 64px minmax(0, 1fr);
+    grid-template-rows: minmax(64px, auto) 38px;
+    gap: 6px 8px;
+    padding: 7px;
+  }
+
+  .experiment-page .home-extra-card > .home-extra-photo {
+    width: 64px;
+    height: 64px;
+  }
+
+  .experiment-page .home-extra-card > .product-choice-copy strong {
+    font-size: .8rem;
+  }
+
+  .experiment-page .home-extra-card > .product-option-stepper {
+    gap: 4px;
+  }
+
+  .experiment-page .home-extra-card .option-quantity-button {
+    flex-basis: 34px;
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+  }
+
+  .experiment-page .home-extra-card .product-option-quantity {
+    min-width: 18px;
+    font-size: .84rem;
+  }
+}
