@@ -51,36 +51,41 @@
 
   function openBasket(size) {
     const wanted = normalize(size);
-    const cards = Array.from(document.querySelectorAll("#basket-grid .basket-card"));
-    const card = cards.find((item) => normalize(item.querySelector(".basket-title")?.textContent).includes(wanted));
-    if (!card) {
+    const button = Array.from(document.querySelectorAll("#basket-grid [data-open-basket]"))
+      .find((item) => normalize(item.dataset.openBasket || "") === wanted);
+    const card = button && button.closest(".basket-card");
+    if (!button) {
       scrollToNode(document.getElementById("catalog"));
       showStoreNotice("A cesta está carregando. Tente novamente em instantes.");
-      return;
+      return false;
     }
-    const button = card.querySelector("[data-open-basket]");
-    if (button && !button.disabled) button.click();
-    else {
-      scrollToNode(card);
-      showStoreNotice("A cesta ainda está carregando.");
+    if (!button.disabled) {
+      button.click();
+      return true;
     }
+    scrollToNode(card);
+    showStoreNotice("A cesta ainda está carregando.");
+    return false;
   }
 
   document.addEventListener("click", (event) => {
     const target = event.target instanceof Element ? event.target.closest("[data-experiment-nav]") : null;
     if (!target) return;
     event.preventDefault();
-    setActive(target);
 
     const section = target.dataset.experimentNav;
     if (section === "home") {
+      setActive(target);
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
     if (section === "basket") {
-      openBasket(target.dataset.size || "");
+      const key = target.dataset.sizeKey || target.dataset.size || "";
+      if (openBasket(key)) setActive(target);
       return;
     }
+
+    setActive(target);
     if (section === "popular") {
       const popular = document.querySelector('[data-home-extra-section="mais_vendidos"]');
       scrollToNode(popular || document.getElementById("home-extras"));
