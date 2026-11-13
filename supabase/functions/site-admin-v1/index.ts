@@ -579,6 +579,16 @@ async function productSave(input: any) {
     payload.metadata = { admin_last_edited_at: new Date().toISOString() };
   }
 
+  let gridBefore: any = null;
+  const deactivatingExistingProduct = !!id && payload.is_active === false;
+  if (deactivatingExistingProduct) {
+    try {
+      gridBefore = await basketGridList();
+    } catch (error) {
+      console.error("basket_default_grid_read_failed", String((error as any)?.message || error));
+    }
+  }
+
   let uploadedImagePath: string | null = null;
   if (input.image_upload !== undefined && input.image_upload !== null) {
     const decodedImage = decodeProductImageUpload(input.image_upload);
@@ -610,7 +620,14 @@ async function productSave(input: any) {
     }
     throw error;
   }
-  return { product: savedProduct };
+  const adjustment = deactivatingExistingProduct && gridBefore
+    ? await reassignBasketDefaultsForInactiveProduct(id, gridBefore)
+    : { changes: 0, warning: false };
+  return {
+    product: savedProduct,
+    default_product_changes: adjustment.changes,
+    default_adjustment_warning: adjustment.warning,
+  };
 }
 
 async function productSetMostSold(input: any) {
@@ -640,6 +657,89 @@ async function productSetMostSold(input: any) {
   return { product: result.data };
 }
 
+async function reassignBasketDefaultsForInactiveProduct(id: string, gridBefore: any) {
+  if (!Array.isArray(gridBefore?.types) || !Array.isArray(gridBefore?.baskets)) {
+    return { changes: 0, warning: false };
+  }
+  const affected = gridBefore.types.filter((type: any) =>
+    String(type.default_product_id || type.options?.[0]?.product_id || "") === id
+  );
+  if (!affected.length) return { changes: 0, warning: false };
+
+  const candidateIds = [...new Set(affected.flatMap((type: any) =>
+    (type.options || []).map((option: any) => String(option.product_id || ""))
+      .filter((productId: string) => productId && productId !== id)
+  ))];
+  const sellableStock = new Map<string, number>();
+  if (candidateIds.length) {
+    try {
+      const stockResult = await db.from("storefront_product_sellable_stock_v1")
+        .select("product_id,sellable_stock,is_active")
+        .in("product_id", candidateIds);
+      if (!stockResult.error) {
+        (stockResult.data || []).forEach((row: any) => {
+          sellableStock.set(String(row.product_id), row.is_active === true
+            ? Math.max(0, Number(row.sellable_stock || 0))
+            : 0);
+        });
+      }
+    } catch (_) {
+      // Use regular product stock if the sellable-stock view is unavailable.
+    }
+  }
+
+  let changes = 0;
+  let unresolved = false;
+  const updatedTypes = gridBefore.types.map((type: any) => {
+    if (String(type.default_product_id || type.options?.[0]?.product_id || "") !== id) return type;
+    const oldProduct = (type.options || []).find((option: any) => String(option.product_id) === id)?.product || {};
+    const referencePrice = Number(oldProduct.effective_price_cents ?? productPriceCents(oldProduct));
+    const alternatives = (type.options || []).filter((option: any) =>
+      String(option.product_id) !== id && option.product?.is_active === true
+    );
+    const stockFor = (option: any) => sellableStock.has(String(option.product_id))
+      ? Number(sellableStock.get(String(option.product_id)) || 0)
+      : Math.max(0, Number(option.product?.stock || 0));
+    const inStock = alternatives.filter((option: any) => stockFor(option) > 0);
+    const candidates = (inStock.length ? inStock : alternatives).slice().sort((a: any, b: any) => {
+      const aPrice = Number(a.product?.effective_price_cents ?? productPriceCents(a.product || {}));
+      const bPrice = Number(b.product?.effective_price_cents ?? productPriceCents(b.product || {}));
+      return Math.abs(aPrice - referencePrice) - Math.abs(bPrice - referencePrice)
+        || stockFor(b) - stockFor(a)
+        || String(a.product?.name || "").localeCompare(String(b.product?.name || ""), "pt-BR");
+    });
+    const replacement = candidates[0];
+    if (!replacement) {
+      unresolved = true;
+      return type;
+    }
+    changes++;
+    return {
+      ...type,
+      default_product_id: String(replacement.product_id),
+      options: [replacement, ...(type.options || []).filter((option: any) => option !== replacement)],
+    };
+  });
+
+  if (changes > 0) {
+    try {
+      const basketPrices = Object.fromEntries(gridBefore.baskets.map((basket: any) => [
+        String(basket.id).toLowerCase(),
+        Number(basket.default_price_cents || 0),
+      ]));
+      const saved = await basketGridSave({ types: updatedTypes, basket_prices: basketPrices });
+      if (saved?.error || saved?.status >= 400) {
+        console.error("basket_default_adjustment_failed", saved?.error || saved?.message || "unknown");
+        return { changes, warning: true };
+      }
+    } catch (error) {
+      console.error("basket_default_adjustment_failed", String((error as any)?.message || error));
+      return { changes, warning: true };
+    }
+  }
+  return { changes, warning: unresolved };
+}
+
 async function productSetActive(input: any) {
   const id = uuid(input.id ?? input.product_id);
   if (!id || typeof input.is_active !== "boolean") {
@@ -647,6 +747,15 @@ async function productSetActive(input: any) {
   }
   const metadata = await adminProductMetadataForEdit(id);
   if (!metadata) return { status: 404, error: "product_not_found", message: "Produto não encontrado." };
+
+  let gridBefore: any = null;
+  if (input.is_active === false) {
+    try {
+      gridBefore = await basketGridList();
+    } catch (error) {
+      console.error("basket_default_grid_read_failed", String((error as any)?.message || error));
+    }
+  }
   const result = await db.from("products")
     .update({ is_active: input.is_active, metadata })
     .eq("id", id)
@@ -654,7 +763,15 @@ async function productSetActive(input: any) {
     .maybeSingle();
   if (result.error) throw result.error;
   if (!result.data) return { status: 404, error: "product_not_found", message: "Produto não encontrado." };
-  return { product: result.data };
+
+  const adjustment = input.is_active === false && gridBefore
+    ? await reassignBasketDefaultsForInactiveProduct(id, gridBefore)
+    : { changes: 0, warning: false };
+  return {
+    product: result.data,
+    default_product_changes: adjustment.changes,
+    default_adjustment_warning: adjustment.warning,
+  };
 }
 
 async function basketList(status = "active") {
@@ -819,13 +936,24 @@ async function basketGridList() {
     quantities[String(row.basket_id)] = Number(row.quantity || 0);
     quantitiesByType.set(typeId, quantities);
   });
-  const types = (typesResult.data || []).map((row: any) => ({
-    id: String(row.id),
-    title: String(row.title || ""),
-    sort_order: Number(row.sort_order || 0),
-    options: optionsByType.get(String(row.id)) || [],
-    quantities: quantitiesByType.get(String(row.id)) || {},
-  }));
+  const types = (typesResult.data || []).map((row: any) => {
+    const options = optionsByType.get(String(row.id)) || [];
+    const preferred = options.find((option: any) => option.metadata?.preferred === true)
+      || options.find((option: any) => Number(option.sort_order || 0) === 0)
+      || options[0]
+      || null;
+    const orderedOptions = preferred
+      ? [preferred, ...options.filter((option: any) => option !== preferred)]
+      : options;
+    return {
+      id: String(row.id),
+      title: String(row.title || ""),
+      sort_order: Number(row.sort_order || 0),
+      default_product_id: preferred ? String(preferred.product_id) : "",
+      options: orderedOptions,
+      quantities: quantitiesByType.get(String(row.id)) || {},
+    };
+  });
   const basketsWithPrices = baskets.map((row: any) => {
     const mold: any = moldByBasket.get(String(row.id)) || {};
     const productTotalCents = types.reduce((total: number, type: any) => {
@@ -874,7 +1002,7 @@ async function basketGridSave(input: any) {
     }
     if (typeIds.has(typeId)) return { status: 400, error: "duplicate_basket_grid_type", message: "Há tipos repetidos na grade." };
     typeIds.add(typeId);
-    const options = [] as Array<Record<string, any>>;
+    const options: Array<Record<string, any>> = [];
     const productIds = new Set<string>();
     for (const option of rawOptionInput) {
       const productId = uuid(option?.product_id);
@@ -885,6 +1013,22 @@ async function basketGridSave(input: any) {
       const metadata = option?.metadata && typeof option.metadata === "object" && !Array.isArray(option.metadata) ? option.metadata : {};
       options.push({ product_id: productId, metadata });
     }
+    const rawDefaultId = type?.default_product_id;
+    const explicitDefaultId = rawDefaultId == null || rawDefaultId === "" ? null : uuid(rawDefaultId);
+    if (rawDefaultId != null && rawDefaultId !== "" && !explicitDefaultId) {
+      return { status: 400, error: "invalid_basket_grid_default", message: "Selecione um produto padrão válido." };
+    }
+    const metadataDefault = options.find((option: any) => option.metadata?.preferred === true)?.product_id;
+    const defaultProductId = explicitDefaultId || metadataDefault || options[0]?.product_id || null;
+    if (defaultProductId && !productIds.has(String(defaultProductId))) {
+      return { status: 400, error: "invalid_basket_grid_default", message: "O produto padrão precisa estar entre as opções desta posição." };
+    }
+    const orderedOptions = defaultProductId
+      ? [options.find((option: any) => option.product_id === defaultProductId)!, ...options.filter((option: any) => option.product_id !== defaultProductId)]
+      : options;
+    for (const option of orderedOptions) {
+      option.metadata = { ...(option.metadata || {}), preferred: option.product_id === defaultProductId };
+    }
     const quantities: Record<string, number> = {};
     for (const [basketId, value] of Object.entries(rawQuantities)) {
       const quantity = integer(value, 0, 999);
@@ -893,7 +1037,7 @@ async function basketGridSave(input: any) {
       }
       quantities[basketId] = quantity;
     }
-    normalized.push({ id: typeId, title, options, quantities });
+    normalized.push({ id: typeId, title, default_product_id: defaultProductId, options: orderedOptions, quantities });
   }
 
   const basketPricesInput = input.basket_prices && typeof input.basket_prices === "object" && !Array.isArray(input.basket_prices)
