@@ -27,7 +27,7 @@ const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 
 const PRODUCT_COLUMNS = [
   "id", "name", "brand", "sku", "gtin", "ncm", "price", "offer_price", "cost", "stock", "min_stock",
-  "image_url", "whatsapp_category", "is_whatsapp_active", "is_offer", "is_active", "packaging", "unit",
+  "image_url", "whatsapp_category", "is_offer", "is_active", "packaging", "unit",
   "supplier", "validity_date", "gondola", "shelf", "category", "subcategory", "subsubcategory",
   "description_short", "description_long", "tags", "sort_order", "is_upsell", "storefront_featured",
   "storefront_category", "sales_category", "customer_category", "customer_subcategory", "customer_subsubcategory",
@@ -40,7 +40,7 @@ const EDITABLE_TEXT_FIELDS = [
   "customer_subsubcategory",
 ];
 const EDITABLE_NUMBER_FIELDS = ["price", "offer_price", "cost", "stock", "min_stock"];
-const EDITABLE_BOOLEAN_FIELDS = ["is_active", "is_offer", "is_whatsapp_active", "is_upsell", "storefront_featured"];
+const EDITABLE_BOOLEAN_FIELDS = ["is_active", "is_offer", "is_upsell", "storefront_featured"];
 const MOST_SOLD_TAG = "mais-vendidos";
 function isMostSoldTag(value: unknown) {
   return String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLocaleLowerCase("pt-BR")
