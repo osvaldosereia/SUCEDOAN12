@@ -295,7 +295,7 @@
     }
     // Leituras não podem deixar a loja travada por minutos quando a API falha.
     // Gravações de pedidos não são abortadas automaticamente para evitar pedidos duplicados.
-    const readRequest = init.method === "GET";
+    const readRequest = init.method === "GET" || opts.readOnly === true;
     const timeoutMs = action === "home_size_cards" ? 16000 : 22000;
     const controller = readRequest && typeof AbortController !== "undefined" ? new AbortController() : null;
     const timeout = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
@@ -476,9 +476,11 @@
       const choices = optionChoices.map(renderChoice).join("");
       const panelContent = item._optionsError
         ? selectedCard + '<p class="variation-status" role="alert">Não foi possível carregar outras opções.</p><button class="button button-outline variation-retry" type="button" data-retry-position="' + esc(item.position_id) + '">Tentar novamente</button>'
-        : item._optionsLoading || (!item._optionsLoaded && optionCount > 1)
+        : item._optionsLoading
           ? selectedCard + '<p class="variation-status" role="status">Carregando opções disponíveis…</p>'
-          : choices
+          : !item._optionsLoaded && optionCount > 1
+            ? selectedCard + '<p class="variation-status">As opções serão carregadas quando este item aparecer na tela.</p>'
+            : choices
             ? '<div class="product-option-picker" role="group" aria-label="Opções para ' + esc(title) + '">' + choices + '</div>'
             : selectedCard;
       const optionPicker = '<div class="variation-disclosure"><div class="variation-panel" id="item-options-' + esc(item.position_id) + '" aria-busy="' + String(Boolean(item._optionsLoading || changingThisItem)) + '">' +
