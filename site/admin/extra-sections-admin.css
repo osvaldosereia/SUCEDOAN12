@@ -1,0 +1,99 @@
+.extra-sections-heading { align-items: flex-end; }
+.extra-section-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 1.2fr);
+  gap: 16px;
+  margin: 18px 0 22px;
+  padding: 20px;
+  border: 1px solid #e3d5c4;
+  border-radius: 16px;
+  background: #fff;
+}
+.extra-section-form[hidden] { display: none; }
+.extra-section-form > label { display: grid; align-content: start; gap: 7px; font-weight: 700; }
+.extra-section-form input:not([type="checkbox"]),
+.extra-section-form textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 13px;
+  border: 1px solid #d9c9b6;
+  border-radius: 10px;
+  background: #fff;
+  color: #302923;
+  font: inherit;
+}
+.extra-section-form textarea { min-height: 128px; resize: vertical; line-height: 1.45; }
+.extra-section-form .extra-section-name { grid-column: 1 / -1; }
+.extra-section-terms .admin-muted { color: #81766a; font-size: .84rem; font-weight: 400; line-height: 1.45; }
+.extra-section-categories {
+  grid-column: 1 / -1;
+  min-width: 0;
+  margin: 0;
+  padding: 13px 14px 15px;
+  border: 1px solid #e3d5c4;
+  border-radius: 11px;
+}
+.extra-section-categories legend { padding: 0 6px; font-weight: 750; }
+.extra-section-category-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.extra-section-category-option {
+  display: flex !important;
+  align-items: center;
+  gap: 8px !important;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid #e7ddcf;
+  border-radius: 9px;
+  background: #fbf8f3;
+  font-size: .88rem;
+  font-weight: 600 !important;
+}
+.extra-section-category-option input { accent-color: #7e3029; }
+.extra-section-form .extra-section-active {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 9px;
+  font-weight: 600;
+}
+.extra-section-active input { width: 17px; height: 17px; accent-color: #7e3029; }
+.extra-section-form-actions { display: flex; grid-column: 1 / -1; justify-content: flex-end; gap: 10px; }
+.extra-section-list { display: grid; gap: 10px; }
+.extra-section-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 18px;
+  border: 1px solid #e3d5c4;
+  border-radius: 14px;
+  background: #fff;
+}
+.extra-section-card.is-inactive { background: #f7f5f1; opacity: .78; }
+.extra-section-card-main { display: grid; gap: 5px; min-width: 0; }
+.extra-section-card-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
+.extra-section-card h3 { margin: 0; font-size: 1rem; }
+.extra-section-card p { margin: 0; color: #756a5f; font-size: .86rem; line-height: 1.4; overflow-wrap: anywhere; }
+.extra-section-card p strong { color: #302923; }
+.extra-section-status-badge { padding: 4px 8px; border-radius: 999px; background: #e8f3e9; color: #316c3b; font-size: .73rem; font-weight: 750; }
+.extra-section-card.is-inactive .extra-section-status-badge { background: #eee9e1; color: #756a5f; }
+.extra-section-card-actions { display: flex; flex: 0 0 auto; gap: 8px; }
+.extra-sections-empty { margin: 12px 0 0; padding: 18px; border: 1px dashed #d7c9b9; border-radius: 13px; background: #fff; color: #756a5f; text-align: center; }
+@media (max-width: 820px) {
+  .extra-section-form { grid-template-columns: minmax(0, 1fr); }
+  .extra-section-form .extra-section-name,
+  .extra-section-categories,
+  .extra-section-form .extra-section-active,
+  .extra-section-form-actions { grid-column: 1; }
+  .extra-section-category-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .extra-section-card { align-items: stretch; flex-direction: column; }
+  .extra-section-card-actions { justify-content: flex-end; }
+}
+@media (max-width: 480px) {
+  .extra-sections-heading { align-items: flex-start; flex-direction: column; }
+  .extra-section-category-options { grid-template-columns: minmax(0, 1fr); }
+  .extra-section-form { padding: 14px; }
+  .extra-section-card { padding: 13px; }
+  .extra-section-card-actions > .button { flex: 1; }
+}
+.extra-section-card.needs-config .extra-section-status-badge { background: #f8edd8; color: #826025; }
+.extra-section-not-configured { color: #826025 !important; font-size: .82rem !important; }
