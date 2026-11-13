@@ -214,9 +214,12 @@
           return;
         }
 
-        const nextPage = candidates.find(({ item }) =>
-          item._optionsLoaded && item._optionsMoreLoading && !item._optionsPageLoading && !item._optionsPageError
-        );
+        const expandedOptionGroups = state.expandedOptionGroups instanceof Set ? state.expandedOptionGroups : null;
+        const nextPage = candidates.find(({ item }) => {
+          const optionGroupKey = String(sizeKey || "") + ":" + String(item.position_id || "");
+          return Boolean(expandedOptionGroups && expandedOptionGroups.has(optionGroupKey)) &&
+            item._optionsLoaded && item._optionsMoreLoading && !item._optionsPageLoading && !item._optionsPageError;
+        });
         if (nextPage) loadNextOptionsPage(sizeKey, data, nextPage.item);
       });
     }
