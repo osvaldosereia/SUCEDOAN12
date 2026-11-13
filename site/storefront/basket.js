@@ -128,16 +128,20 @@
 
     function normalizeOptionRows(alternatives, item) {
       const rows = Array.isArray(alternatives) ? alternatives.slice() : [];
-      if (!rows.length && item.product_id && Number(item.stock_quantity || 0) > 0) rows.push({
+      if (!rows.length && item.product_id && item.is_active !== false && Number(item.stock_quantity || 0) > 0) rows.push({
         product_id: item.product_id, name: item.name, image_url: item.image_url,
-        price_cents: item.price_cents, stock_quantity: item.stock_quantity
+        price_cents: item.price_cents, stock_quantity: item.stock_quantity,
+        is_active: item.is_active, default_product_id: item.default_product_id
       });
       const unique = new Map();
       rows.forEach((option) => {
-        if (option && option.product_id) unique.set(String(option.product_id), option);
+        if (option && option.product_id && option.is_active !== false) unique.set(String(option.product_id), option);
       });
+      const defaultId = String(item.default_product_id || item.product_id || "");
       return Array.from(unique.values()).sort((a, b) =>
-        Number(a.price_cents || 0) - Number(b.price_cents || 0) ||
+        (String(a.product_id) === defaultId ? -1 : 0) - (String(b.product_id) === defaultId ? -1 : 0) ||
+        Number(b.stock_quantity || 0) - Number(a.stock_quantity || 0) ||
+        Number(a.sort_order || 0) - Number(b.sort_order || 0) ||
         String(a.name || "").localeCompare(String(b.name || ""), "pt-BR")
       );
     }
