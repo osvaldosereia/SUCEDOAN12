@@ -137,7 +137,7 @@ async function orderableProductStockMap(productIds:string[]){
     db.from("storefront_ean_sellable_stock_v1")
       .select("product_id,is_active,stock_authority,loose_sellable_stock,ean_sellable_stock").in("product_id",ids),
     db.from("storefront_product_sellable_stock_v1")
-      .select("product_id,sellable_stock,is_active,price,validity_date").in("product_id",ids)
+      .select("product_id,sellable_stock,is_active,is_whatsapp_active,price,validity_date").in("product_id",ids)
   ]);
   if(error)throw error;if(productError)throw productError;
   const websiteStock=new Map<string,any>((productRows||[]).map((row:any)=>[String(row.product_id),row]));
@@ -150,7 +150,7 @@ async function orderableProductStockMap(productIds:string[]){
     }else if(r.stock_authority==="supabase"){
       const row=websiteStock.get(productId);
       const expiry=row?.validity_date?String(row.validity_date).slice(0,10):"";
-      const websiteEligible=row?.is_active===true&&Number(row.price||0)>0&&(!expiry||expiry>=today);
+      const websiteEligible=row?.is_active===true&&row?.is_whatsapp_active===true&&Number(row.price||0)>0&&(!expiry||expiry>=today);
       stock=websiteEligible?Math.floor(Number(row.sellable_stock||0)):0;
     }else{
       stock=r.ean_sellable_stock??r.loose_sellable_stock;
@@ -1106,17 +1106,25 @@ function kickWhatsappOrderOutbound(orderId:string){
   if(runtime?.waitUntil)runtime.waitUntil(task);else void task;
 }
 
-type StockAdjustment={kind:"product"|"basket"|"basket_mold";id:string;name:string;action:"removed"|"reduced";requested:number;available:number;reason:string};
+type StockAdjustment={kind:"product"|"basket"|"basket_mold";id:string;name:string;image_url?:string;action:"removed"|"reduced";requested:number;available:number;reason:string};
 async function reconcileOrderItemsForStock(rawItems:any[]){
   const adjusted:any[]=[],adjustedItems:StockAdjustment[]=[];
+  const productIds=[...new Set(rawItems.slice(0,80)
+    .filter((raw:any)=>(raw?.type||"product")==="product")
+    .map((raw:any)=>uid(raw?.id)).filter(Boolean))];
+  const productSummaries=new Map<string,any>();
+  if(productIds.length){
+    const summaryQ=await db.from("products").select("id,name,image_url").in("id",productIds);
+    if(!summaryQ.error)for(const product of summaryQ.data||[])productSummaries.set(String(product.id),product);
+  }
   for(const raw of rawItems.slice(0,80)){
     const kind=raw?.type==="basket_mold"?"basket_mold":raw?.type==="basket"?"basket":"product",id=uid(raw?.id),requested=Math.max(1,Math.min(30,Math.trunc(Number(raw?.qty||1))));
     if(!id){adjustedItems.push({kind,id:"",name:kind==="basket"?"Cesta":"Produto",action:"removed",requested,available:0,reason:"item_invalido"});continue}
     if(kind==="basket_mold"){adjusted.push({...raw,type:"basket_mold",id,qty:requested,pricing_model:"configured_base_delta_v1"});continue;}
     if(kind==="product"){
-      const current=await oneProduct(id).catch(()=>null),available=Math.max(0,Math.floor(Number(current?.stock_quantity||0))),name=txt(current?.name||"Produto",160)||"Produto";
-      if(!current||available<=0){adjustedItems.push({kind,id,name,action:"removed",requested,available:0,reason:"sem_estoque"});continue}
-      const qty=Math.min(requested,available);if(qty<requested)adjustedItems.push({kind,id,name,action:qty>0?"reduced":"removed",requested,available:qty,reason:"estoque_reduzido"});
+      const current=await oneProduct(id).catch(()=>null),summary=productSummaries.get(id),available=Math.max(0,Math.floor(Number(current?.stock_quantity||0))),name=txt(current?.name||summary?.name||"Produto",160)||"Produto",image_url=String(current?.image_url||summary?.image_url||"");
+      if(!current||available<=0){adjustedItems.push({kind,id,name,image_url,action:"removed",requested,available:0,reason:"sem_estoque"});continue}
+      const qty=Math.min(requested,available);if(qty<requested)adjustedItems.push({kind,id,name,image_url,action:qty>0?"reduced":"removed",requested,available:qty,reason:"estoque_reduzido"});
       if(qty>0)adjusted.push({...raw,type:"product",id,qty});continue;
     }
     const current=await basket(id).catch(()=>null),name=txt(current?.basket?.name||"Cesta básica",160)||"Cesta básica";
@@ -1221,6 +1229,27 @@ async function refreshBasketMoldOrderItems(items:any[]){
     ?{items:refreshedItems,basket_count:refreshedBasketCount,component_count:refreshedComponentCount}
     :null;
 }
+async function stockConflictDetailsFromError(error:any,rawItems:any[]){
+  let details:any=null;
+  try{details=JSON.parse(String(error?.details||""))}catch{}
+  const productId=uid(details?.product_id);
+  if(!productId)return [];
+  const direct=rawItems.find((item:any)=>item?.type==="product"&&uid(item?.id)===productId);
+  const requestedFromCart=direct?Math.max(1,Math.trunc(Number(direct?.qty||1))):0;
+  const requested=Math.max(0,Math.trunc(Number(details?.requested??requestedFromCart)));
+  const available=Math.max(0,Math.floor(Number(details?.available||0)));
+  const productQ=await db.from("products").select("id,name,image_url").eq("id",productId).maybeSingle();
+  const product=productQ.error?null:productQ.data;
+  const name=txt(product?.name||details?.product_name||"Produto indisponível",160)||"Produto indisponível";
+  const kind=String(details?.kind||"")==="basket_mold_component"||(!direct&&rawItems.some((item:any)=>item?.type==="basket_mold"))
+    ?"basket_mold_component":"product";
+  return [{
+    kind,id:productId,name,image_url:String(product?.image_url||""),
+    action:available>0&&requested>available?"reduced":"removed",
+    requested,available,reason:txt(details?.reason||details?.error||"estoque_indisponivel",80)
+  }];
+}
+
 async function submit(req:Request,p:any){
   const pay=txt(p?.payment_method,80),rawPhone=txt(p?.whatsapp_phone,40),ph=phone(rawPhone),requestedItems=Array.isArray(p?.items)?p.items.slice(0,80):[],whatsappOriginRaw=txt(p?.whatsapp_origin,4),whatsappOrigin=['0975','1018'].includes(whatsappOriginRaw)?whatsappOriginRaw:'';
   if(!ph)return {error:"invalid_whatsapp_phone",status:400};
@@ -1229,7 +1258,9 @@ async function submit(req:Request,p:any){
   let items=stock.items;
   let stockAdjustment=stock.stock_adjustment;
   const adjustedItems=[...stock.adjusted_items];
-  if(!items.length)return {error:"all_items_unavailable",status:409,stock_adjustment:true,adjusted_items:adjustedItems,minimum_order_cents:MINIMUM_ORDER_CENTS};
+  const productConflicts=adjustedItems.filter((item:StockAdjustment)=>item.kind==="product");
+  if(productConflicts.length)return {error:"stock_conflict",status:409,stock_adjustment:true,adjusted_items:adjustedItems,stock_conflict_items:productConflicts,minimum_order_cents:MINIMUM_ORDER_CENTS};
+  if(!items.length)return {error:"all_items_unavailable",status:409,stock_adjustment:true,adjusted_items:adjustedItems,stock_conflict_items:adjustedItems,minimum_order_cents:MINIMUM_ORDER_CENTS};
   const deliveryDate=txt(p?.delivery_date,10),del=deliveryDate?selectedDelivery(deliveryDate):null;
   async function allowOrderAttempt(rateKey:string,limit:number,scope:string){
     try{
@@ -1322,14 +1353,17 @@ async function submit(req:Request,p:any){
         }
       }
       stockAdjustment=adjustedItems.length>0;
-      if(!items.length)return {error:"all_items_unavailable",status:409,stock_adjustment:true,adjusted_items:adjustedItems,minimum_order_cents:MINIMUM_ORDER_CENTS};
+      const productConflicts=refreshed.adjusted_items.filter((item:StockAdjustment)=>item.kind==="product");
+      if(productConflicts.length)return {error:"stock_conflict",status:409,stock_adjustment:true,adjusted_items:adjustedItems,stock_conflict_items:productConflicts,minimum_order_cents:MINIMUM_ORDER_CENTS};
+      if(!items.length)return {error:"all_items_unavailable",status:409,stock_adjustment:true,adjusted_items:adjustedItems,stock_conflict_items:adjustedItems,minimum_order_cents:MINIMUM_ORDER_CENTS};
       created=await createOrderAttempt();
     }
   }
   if(created.error){
     const e=txt(created.error.message,160).split("\n")[0];
     console.error("storefront_order_rejected",{error_code:e||"order_failed",stock_retry_attempted:stockRetryAttempted});
-    return {error:e||"order_failed",status:ORDER_CONFLICT_CODES.has(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS,stock_adjustment:stockAdjustment,adjusted_items:adjustedItems}
+    const stockConflictItems=STOCK_CONFLICT_CODES.has(e)?await stockConflictDetailsFromError(created.error,items):[];
+    return {error:e||"order_failed",status:ORDER_CONFLICT_CODES.has(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS,stock_adjustment:stockAdjustment,adjusted_items:adjustedItems,stock_conflict_items:stockConflictItems.length?stockConflictItems:adjustedItems}
   }
   const orderId=created.data?.order_id;let papoaiLink:any=null;let publicOrderLink:any=null;let canonicalOrderNumber:any=created.data?.order_number||null;
   if(orderId&&ph){try{const linked=await db.rpc("ops2_link_storefront_order_from_identity_v1",{p_order_id:orderId});if(!linked.error)papoaiLink=linked.data||null}catch(e){console.error("papoai_identity_order_link",txt((e as any)?.message,180))}}
