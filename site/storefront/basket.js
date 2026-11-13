@@ -507,8 +507,7 @@
         "Não foi possível atualizar a quantidade da variação. A quantidade anterior foi mantida.");
     }
 
-    const detailContent = $("detail-content");
-    if (detailContent) detailContent.addEventListener("scroll", queuePendingOptions, { passive: true });
+    window.addEventListener("scroll", queuePendingOptions, { passive: true });
 
     return {
       basketForSize,
