@@ -158,21 +158,65 @@
     return { text: "Status indisponível", className: "is-unknown" };
   }
 
+  function optionProduct(option) {
+    return option.product || productCache.get(String(option.product_id)) || {};
+  }
+
+  function optionPriceCents(option) {
+    const product = optionProduct(option);
+    return Number(product.effective_price_cents ?? effectivePrice(product)) || 0;
+  }
+
+  function chooseDefaultOption(type, preferredId, referencePriceCents) {
+    const options = Array.isArray(type.options) ? type.options : [];
+    const preferred = options.find((option) => String(option.product_id) === String(preferredId || ""));
+    if (preferred && optionProduct(preferred).is_active !== false) return preferred;
+    const candidates = options.filter((option) => optionProduct(option).is_active !== false);
+    candidates.sort((a, b) => {
+      const aPrice = optionPriceCents(a);
+      const bPrice = optionPriceCents(b);
+      const aDelta = Number.isFinite(Number(referencePriceCents)) ? Math.abs(aPrice - Number(referencePriceCents)) : 0;
+      const bDelta = Number.isFinite(Number(referencePriceCents)) ? Math.abs(bPrice - Number(referencePriceCents)) : 0;
+      const aStock = Number(optionProduct(a).stock || 0);
+      const bStock = Number(optionProduct(b).stock || 0);
+      return aDelta - bDelta || bStock - aStock ||
+        String(optionProduct(a).name || "").localeCompare(String(optionProduct(b).name || ""), "pt-BR");
+    });
+    return candidates[0] || options[0] || null;
+  }
+
+  function setTypeDefault(type, preferredId, referencePriceCents) {
+    const options = Array.isArray(type.options) ? type.options : [];
+    const chosen = chooseDefaultOption(type, preferredId, referencePriceCents);
+    type.default_product_id = String(chosen?.product_id || "");
+    if (chosen) type.options = [chosen, ...options.filter((option) => option !== chosen)];
+    return chosen;
+  }
+
   function renderOptions(type, key) {
     const options = Array.isArray(type.options) ? type.options : [];
-    const list = options.map((option, index) => {
-      const product = option.product || productCache.get(String(option.product_id)) || {};
+    const defaultProductId = String(
+      type.default_product_id ||
+      options.find((option) => option.metadata?.preferred === true)?.product_id ||
+      options[0]?.product_id ||
+      ""
+    );
+    const list = options.map((option) => {
+      const product = optionProduct(option);
       const status = productStatus(product);
       const price = product.effective_price_cents ?? effectivePrice(product);
       const stock = product.stock == null ? "Estoque não informado" : "Estoque " + quantityValue(product.stock);
+      const costNumber = product.cost == null || product.cost === "" ? null : Number(product.cost);
+      const costText = costNumber != null && Number.isFinite(costNumber) && costNumber >= 0
+        ? "Custo " + money(Math.round(costNumber * 100))
+        : "Custo não informado";
       const brand = product.brand ? " · " + esc(product.brand) : "";
-      const defaultBadge = index === 0 ? ' <small class="basket-grid-default">Padrão</small>' : "";
+      const isDefault = String(option.product_id) === defaultProductId;
+      const cannotSelectDefault = product.is_active === false && !isDefault;
       return '<div class="basket-grid-option">' +
-        '<span class="basket-grid-option-order" aria-label="Opção ' + (index + 1) + '">' + (index + 1) + '</span>' +
-        '<div class="basket-grid-option-copy"><strong>' + esc(product.name || "Produto") + brand + defaultBadge + '</strong><span>' + money(price) + '/un. · ' + esc(stock) + '</span><small class="basket-option-status ' + status.className + '">' + status.text + '</small></div>' +
+        '<label class="basket-grid-option-default"><input type="radio" name="basket-default-' + esc(key) + '" data-default-option data-type-key="' + esc(key) + '" data-product-id="' + esc(option.product_id) + '"' + (isDefault ? " checked" : "") + (cannotSelectDefault ? " disabled" : "") + '><span>Padrão</span></label>' +
+        '<div class="basket-grid-option-copy"><strong>' + esc(product.name || "Produto") + brand + '</strong><span>Venda: ' + money(price) + '/un. · ' + esc(stock) + '</span><span>' + esc(costText) + '</span><small class="basket-option-status ' + status.className + '">' + status.text + '</small></div>' +
         '<div class="basket-grid-option-actions">' +
-          '<button class="text-button" type="button" data-move-option="-1" data-type-key="' + esc(key) + '" data-product-id="' + esc(option.product_id) + '" aria-label="Subir opção ' + esc(product.name || "Produto") + '"' + (index === 0 ? " disabled" : "") + '>↑</button>' +
-          '<button class="text-button" type="button" data-move-option="1" data-type-key="' + esc(key) + '" data-product-id="' + esc(option.product_id) + '" aria-label="Descer opção ' + esc(product.name || "Produto") + '"' + (index === options.length - 1 ? " disabled" : "") + '>↓</button>' +
           '<button class="text-button danger-text" type="button" data-remove-option="true" data-type-key="' + esc(key) + '" data-product-id="' + esc(option.product_id) + '" aria-label="Remover ' + esc(product.name || "Produto") + '">×</button>' +
           '<button class="text-button product-edit-mini" type="button" data-edit-product="' + esc(option.product_id) + '">Editar</button>' +
         '</div></div>';
@@ -273,7 +317,7 @@
         '<button class="text-button danger-text" type="button" data-delete-type="' + esc(key) + '">Excluir tipo</button></div></th>' +
         '<td class="basket-grid-variations">' + renderOptions(type, key) + '</td>' + quantityCells + '</tr>';
     }).join("");
-    host.innerHTML = prices + '<div class="basket-grid-table-wrap"><table class="basket-grid-table"><thead><tr><th scope="col">Tipo e título</th><th scope="col">Variações · ordem de substituição</th>' + headers + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+    host.innerHTML = prices + '<div class="basket-grid-table-wrap"><table class="basket-grid-table"><thead><tr><th scope="col">Tipo e título</th><th scope="col">Opções e produto padrão</th>' + headers + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
   async function loadBaskets() {
@@ -294,6 +338,7 @@
         state.types = (data.types || []).map((type, index) => ({
           ...type,
           _key: type.id || ("loaded-" + index),
+          default_product_id: type.default_product_id || (type.options || []).find((option) => option.metadata?.preferred === true)?.product_id || type.options?.[0]?.product_id || "",
           options: (type.options || []).map((option) => {
             if (option.product) productCache.set(String(option.product_id), option.product);
             return option;
@@ -491,9 +536,12 @@
         ? (item.options || []).slice()
         : (item.options || []).filter((option) => !state.pickerSelected.has(String(option.product_id)))
     }));
+    const previousDefault = (type.options || []).find((option) => String(option.product_id) === String(type.default_product_id || type.options?.[0]?.product_id || ""));
+    const previousDefaultPrice = previousDefault ? optionPriceCents(previousDefault) : null;
     nextTypes[typeIndex].options = [...state.pickerSelected].map((id) =>
       previous.get(id) || previousByProduct.get(id) || { product_id: id, product: productCache.get(id) || {}, metadata: {} }
     );
+    setTypeDefault(nextTypes[typeIndex], type.default_product_id, previousDefaultPrice);
     const emptiedRequiredType = nextTypes.find((item) =>
       (item.options || []).length === 0 &&
       Object.values(item.quantities || {}).some((quantity) => Number(quantity || 0) > 0)
@@ -514,18 +562,6 @@
     if (index < 0 || next < 0 || next >= state.types.length) return;
     const item = state.types.splice(index, 1)[0];
     state.types.splice(next, 0, item);
-    markDirty();
-    renderGrid();
-  }
-
-  function moveOption(key, productId, delta) {
-    const type = findType(key);
-    if (!type) return;
-    const index = type.options.findIndex((option) => String(option.product_id) === String(productId));
-    const next = index + delta;
-    if (index < 0 || next < 0 || next >= type.options.length) return;
-    const option = type.options.splice(index, 1)[0];
-    type.options.splice(next, 0, option);
     markDirty();
     renderGrid();
   }
@@ -565,6 +601,7 @@
         id: type.id || null,
         title,
         quantities,
+        default_product_id: type.default_product_id || type.options[0]?.product_id || null,
         options: type.options.map((option) => ({ product_id: option.product_id, metadata: option.metadata || {} })),
       });
     }
@@ -644,10 +681,15 @@
       if (target.id === "save-basket-grid") { saveGrid(); return; }
       if (target.dataset.addVariation != null) { openPicker(target.dataset.addVariation); return; }
       if (target.dataset.moveType != null) { moveType(target.dataset.typeKey, Number(target.dataset.moveType)); return; }
-      if (target.dataset.moveOption != null) { moveOption(target.dataset.typeKey, target.dataset.productId, Number(target.dataset.moveOption)); return; }
       if (target.dataset.removeOption != null) {
         const type = findType(target.dataset.typeKey);
-        if (type) type.options = type.options.filter((option) => String(option.product_id) !== String(target.dataset.productId));
+        if (type) {
+          const currentDefault = String(type.default_product_id || type.options[0]?.product_id || "");
+          const oldOption = type.options.find((option) => String(option.product_id) === currentDefault);
+          const oldPrice = oldOption ? optionPriceCents(oldOption) : null;
+          type.options = type.options.filter((option) => String(option.product_id) !== String(target.dataset.productId));
+          if (String(target.dataset.productId) === currentDefault) setTypeDefault(type, "", oldPrice);
+        }
         markDirty();
         renderGrid();
         return;
@@ -666,6 +708,18 @@
       if (target.id === "apply-picker-products") applyPicker();
       if (target.dataset.dialogClose === "product-picker-dialog") $("product-picker-dialog").close();
       if (target.dataset.dialogClose === "basket-create-dialog") $("basket-create-dialog").close();
+    });
+
+    $("admin-baskets").addEventListener("change", (event) => {
+      const input = event.target;
+      if (!(input instanceof HTMLInputElement) || !input.matches("[data-default-option]") || !input.checked) return;
+      const type = findType(input.dataset.typeKey);
+      if (!type) return;
+      const selected = type.options.find((option) => String(option.product_id) === String(input.dataset.productId));
+      if (!selected || optionProduct(selected).is_active === false) return;
+      setTypeDefault(type, input.dataset.productId);
+      markDirty();
+      renderGrid();
     });
 
     $("admin-baskets").addEventListener("input", (event) => {
