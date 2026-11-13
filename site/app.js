@@ -569,14 +569,12 @@
     }
   }
 
-  function activateBasketNavigation(sizeKey, data) {
-    const basketName = keyOf(data && (data.basket && data.basket.name || data.summary && data.summary.name) || sizeKey);
+  function activateBasketNavigation(sizeKey) {
+    const activeKey = keyOf(sizeKey);
     const links = Array.from(document.querySelectorAll('.experiment-nav-link[data-experiment-nav="basket"]'));
-    const target = links.find((link) => {
-      const label = keyOf(link.dataset.size || "");
-      return basketName === label || basketName.endsWith(" " + label);
-    });
-    if (!target) return;
+    const target = links.find((link) =>
+      keyOf(link.dataset.sizeKey || link.dataset.size || "") === activeKey
+    ) || null;
     document.querySelectorAll(".experiment-nav-link").forEach((link) => {
       const active = link === target;
       link.classList.toggle("is-active", active);
