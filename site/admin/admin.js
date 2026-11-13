@@ -136,8 +136,9 @@
       panel.hidden = !active;
       panel.classList.toggle("active", active);
     });
-    $("page-title").textContent = ({ customers: "Clientes", baskets: "Cestas", products: "Produtos", orders: "Pedidos", delivery: "Entregas", "quick-balance": "Balanço rápido", cards: "Cartão", whatsapp: "WhatsApp", overview: "Visão geral" })[name] || "Visão geral";
+    $("page-title").textContent = ({ customers: "Clientes", baskets: "Cestas", products: "Produtos", "extra-sections": "Seções extras", orders: "Pedidos", delivery: "Entregas", "quick-balance": "Balanço rápido", cards: "Cartão", whatsapp: "WhatsApp", overview: "Visão geral" })[name] || "Visão geral";
     if (name === "baskets") window.DonaBasketAdmin?.loadBaskets();
+    if (name === "extra-sections") window.DonaExtraSectionsAdmin?.load();
     if (name === "products") window.DonaCatalogAdmin?.loadProducts();
     if (name === "orders") window.DonaOrdersAdmin?.loadOrders();
     if (name === "delivery") window.DonaDeliveryAdmin?.load();
