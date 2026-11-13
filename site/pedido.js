@@ -103,13 +103,9 @@
     $("order-delivery").textContent = dateLabel ? "Entrega: " + dateLabel : "Data de entrega conforme combinado com a loja";
     $("order-items").innerHTML = items.map((item) => {
       const quantity = Math.max(0, Number(item.quantity || 0));
-      const lineTotal = item.line_total != null
-        ? money(item.line_total)
-        : item.unit_price != null ? money(Number(item.unit_price) * quantity) : "";
       return '<article class="public-order-item">' +
         '<img src="' + esc(item.image_url || "/img/logoantonia5.png") + '" alt="" width="58" height="58" loading="lazy" decoding="async">' +
         '<div><strong>' + esc(item.name || "Produto") + '</strong><span>Quantidade: ' + quantity + '</span></div>' +
-        (lineTotal ? '<b>' + esc(lineTotal) + '</b>' : "") +
         '</article>';
     }).join("");
     const total = snapshot.final_total ?? snapshot.total ?? snapshot.total_amount ?? snapshot.original_total;
