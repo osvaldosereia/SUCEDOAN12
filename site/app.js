@@ -296,7 +296,7 @@
     // Leituras não podem deixar a loja travada por minutos quando a API falha.
     // Gravações de pedidos não são abortadas automaticamente para evitar pedidos duplicados.
     const readRequest = init.method === "GET" || opts.readOnly === true;
-    const timeoutMs = action === "home_size_cards" ? 16000 : 22000;
+    const timeoutMs = action.startsWith("basket_mold_options") ? 10000 : action === "home_size_cards" ? 16000 : 22000;
     const controller = readRequest && typeof AbortController !== "undefined" ? new AbortController() : null;
     const timeout = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
     if (controller) init.signal = controller.signal;
@@ -425,7 +425,6 @@
     }
     $("detail-title").textContent = data.basket.name || "Produtos da cesta";
     $("detail-total").textContent = money(displayedTotalCents(data));
-    const optionsBusy = data.items.some((row) => row._optionsLoading);
     const rows = data.items.map((item) => {
       const alternatives = item._alternatives || [];
       const selectedOptions = (Array.isArray(item.selected_options) ? item.selected_options : [])
@@ -455,7 +454,7 @@
         const selected = selectedById.get(productId);
         const quantity = Math.max(0, Math.trunc(Number(selected && selected.quantity || 0)));
         const stock = Math.max(0, Math.trunc(Number(alt.stock_quantity || selected && selected.stock_quantity || 0)));
-        const disabled = data.changing || optionsBusy;
+        const disabled = data.changing || item._optionsLoading;
         const optionName = alt.name || selected && selected.name || "Produto";
         const optionPrice = alt.price_cents == null ? "Preço indisponível" : money(alt.price_cents);
         return '<div class="product-choice' + (quantity > 0 ? ' is-selected' : '') + '" data-option-card="' + esc(productId) + '">' +
@@ -479,7 +478,7 @@
         : item._optionsLoading
           ? selectedCard + '<p class="variation-status" role="status">Carregando opções disponíveis…</p>'
           : !item._optionsLoaded && optionCount > 1
-            ? selectedCard + '<p class="variation-status">As opções serão carregadas quando este item aparecer na tela.</p>'
+            ? selectedCard + '<p class="variation-status">Preparando as opções deste item…</p>'
             : choices
             ? '<div class="product-option-picker" role="group" aria-label="Opções para ' + esc(title) + '">' + choices + '</div>'
             : selectedCard;
@@ -503,7 +502,7 @@
     bindExtraProductControls($("detail-content"));
     bindHomeSelectionControls($("detail-content"), data);
     $("detail-content").querySelectorAll("img").forEach((image) => image.addEventListener("error", () => { image.src = "../img/logoantonia5.png"; }, { once: true }));
-    if (basket) basket.queueVisibleOptions();
+    if (basket) basket.queuePendingOptions();
   }
 
   function renderDetailPreservingScroll(positionId) {
