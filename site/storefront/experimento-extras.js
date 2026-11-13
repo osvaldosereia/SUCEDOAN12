@@ -258,7 +258,7 @@
       const quantity = selected ? Number(selected.quantity || 0) : 0;
       const stock = Math.max(0, Number(product.stock_quantity || 0));
       return '<article class="extra-product-card" role="listitem" data-extra-product="' + esc(id) + '">' +
-        '<img src="' + esc(product.image_url || "../img/logoantonia5.png") + '" alt="" width="108" height="108" loading="lazy" decoding="async">' +
+        '<img src="' + esc(product.image_url || "../img/logoantonia5.png") + '" alt="" width="160" height="160" loading="lazy" decoding="async">' +
         '<div class="extra-product-copy"><strong>' + esc(product.name || "Produto") + '</strong><span>' + esc(money(product.price_cents)) + '</span>' +
         '<div class="extra-quantity"><span>Quantidade:</span><div class="quantity-stepper">' +
         '<button class="quantity-button" type="button" data-extra-adjust="' + esc(id) + '" data-delta="-1" aria-label="Diminuir ' + esc(product.name || "produto") + '"' + (quantity <= 0 ? " disabled" : "") + '>−</button>' +
