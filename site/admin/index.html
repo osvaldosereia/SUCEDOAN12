@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="taxonomy-admin.css?v=1">
   <link rel="stylesheet" href="papoai-guard-admin.css?v=1">
   <link rel="stylesheet" href="baskets-admin.css?v=8">
+  <link rel="stylesheet" href="extra-sections-admin.css?v=1">
   <link rel="stylesheet" href="whatsapp-campaign-report.css?v=1">
   <link rel="stylesheet" href="orders-admin.css?v=16">
   <link rel="stylesheet" href="delivery-admin.css?v=10">
@@ -24,6 +25,7 @@
   <script src="taxonomy-admin.js?v=1" defer></script>
   <script src="papoai-guard-admin.js?v=1" defer></script>
   <script src="baskets-admin.js?v=14" defer></script>
+  <script src="extra-sections-admin.js?v=1" defer></script>
   <script src="orders-admin.js?v=17" defer></script>
   <script type="module" src="delivery-admin.js?v=12"></script>
   <script src="order-message-admin.js?v=4" defer></script>
@@ -34,7 +36,7 @@
   <script src="whatsapp-conversations.js?v=22" defer></script>
   <script src="quick-balance-admin.js?v=7" defer></script>
   <script src="cards-admin.js?v=2" defer></script>
-  <script src="admin.js?v=27" defer></script>
+  <script src="admin.js?v=28" defer></script>
 </head>
 <body class="admin-page">
   <main id="admin-login" class="admin-login-main">
@@ -98,6 +100,9 @@
           <p class="nav-group-label">Catálogo</p>
           <button class="nav-tab" type="button" data-view="baskets">
             <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10h18l-2 10H5L3 10Z"/><path d="m7 10 5-7 5 7M8 13v4M12 13v4M16 13v4"/></svg></span><span>Cestas</span>
+          </button>
+          <button class="nav-tab" type="button" data-view="extra-sections">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/><circle cx="8" cy="5" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="10" cy="19" r="1.5"/></svg></span><span>Seções extras</span>
           </button>
           <button class="nav-tab" type="button" data-view="products">
             <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 9 4.5v9L12 21l-9-4.5v-9L12 3Z"/><path d="m3.5 7.7 8.5 4.5 8.5-4.5M12 12.2V21M7.5 5.3l9 4.5"/></svg></span><span>Produtos</span>
@@ -200,6 +205,34 @@
           <strong>Como funciona a substituição</strong>
           <span>As opções são avaliadas na ordem. Com mais de uma opção, uma opção inativa ou sem estoque suficiente é substituída pela próxima. Se houver uma única opção, ela continua vendável mesmo com estoque zero ou negativo. Uma nova cesta começa como rascunho, fora da loja, e só entra à venda quando você ativá-la.</span>
         </div>
+      </section>
+
+      <section class="admin-view" data-panel="extra-sections" hidden>
+        <div class="section-title extra-sections-heading">
+          <div><h2>Seções de produtos extras</h2><p>Crie grupos para a área “Produtos Extras” das cestas. Cada termo é buscado separadamente; o produto aparece quando corresponde a qualquer termo dentro das categorias escolhidas.</p></div>
+          <button id="new-extra-section" class="button button-primary" type="button">Nova seção</button>
+        </div>
+        <form id="extra-section-form" class="extra-section-form" hidden>
+          <input id="extra-section-id" name="id" type="hidden">
+          <label class="extra-section-name">Nome da seção
+            <input id="extra-section-name" name="name" maxlength="80" required placeholder="Ex.: Bebidas">
+          </label>
+          <label class="extra-section-terms">Palavras-chave, uma por linha
+            <textarea id="extra-section-terms" name="search_terms" rows="5" maxlength="2000" placeholder="refrigerante&#10;suco&#10;água"></textarea>
+            <span class="admin-muted">Cada linha é uma busca independente. Os resultados de todas as linhas são reunidos. Use até 20 linhas.</span>
+          </label>
+          <fieldset class="extra-section-categories">
+            <legend>Categorias do site em que buscar</legend>
+            <div id="extra-section-category-options" class="extra-section-category-options"></div>
+          </fieldset>
+          <label class="extra-section-active"><input id="extra-section-active" name="is_active" type="checkbox" checked> Exibir esta seção no site público</label>
+          <p id="extra-section-status" class="form-message" role="status" aria-live="polite"></p>
+          <div class="extra-section-form-actions">
+            <button id="cancel-extra-section" class="button button-outline" type="button">Cancelar</button>
+            <button id="save-extra-section" class="button button-primary" type="submit">Salvar seção</button>
+          </div>
+        </form>
+        <div id="extra-section-list" class="extra-section-list"><p class="admin-muted">Carregando…</p></div>
       </section>
 
       <section class="admin-view" data-panel="products" hidden>
