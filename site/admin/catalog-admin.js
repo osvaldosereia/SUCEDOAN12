@@ -641,7 +641,7 @@
     resetProductImageSelection();
     const productTags = Array.isArray(product?.tags) ? product.tags : String(product?.tags || "").split(",");
     form.elements.tags.value = productTags.filter((tag) => !isMostSoldTag(tag)).join(", ");
-    ["is_active", "is_offer", "is_whatsapp_active", "is_upsell"].forEach((name) => { form.elements[name].checked = product ? product[name] === true : ["is_active", "is_whatsapp_active"].includes(name); });
+    ["is_active", "is_offer", "is_upsell"].forEach((name) => { form.elements[name].checked = product ? product[name] === true : name === "is_active"; });
     form.elements.storefront_featured.checked = product ? isMostSoldProduct(product) : false;
     $("product-dialog").showModal();
     updateProductSaveButton();
@@ -669,7 +669,7 @@
     }
     const data = syncProductSearchForm(event.currentTarget);
     data.id = $("product-id").value || null;
-    ["is_active", "is_offer", "is_whatsapp_active", "is_upsell", "storefront_featured"].forEach((name) => { data[name] = event.currentTarget.elements[name].checked; });
+    ["is_active", "is_offer", "is_upsell", "storefront_featured"].forEach((name) => { data[name] = event.currentTarget.elements[name].checked; });
     const productTags = String(data.tags || "").split(",").map((tag) => tag.trim()).filter(Boolean);
     data.storefront_featured = data.storefront_featured === true || productTags.some(isMostSoldTag);
     data.tags = productTags.filter((tag) => !isMostSoldTag(tag));
