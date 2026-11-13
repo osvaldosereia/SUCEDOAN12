@@ -458,9 +458,13 @@
       const data = await request("products", { params: { q: state.pickerQuery, status: "all", offset: state.pickerOffset, limit: 24 } });
       state.pickerTotal = Number(data.total || 0);
       (data.products || []).forEach((product) => productCache.set(String(product.id), product));
-      const rows = (data.products || []).map((product) => '<label class="picker-product-row">' +
-        '<input type="checkbox" value="' + esc(product.id) + '" data-picker-product ' + (state.pickerSelected.has(String(product.id)) ? "checked" : "") + '>' +
-        '<span><strong>' + esc(product.name) + '</strong><small>' + esc([product.brand, product.sku && ("SKU " + product.sku), product.is_active ? "Ativo" : "Inativo"].filter(Boolean).join(" · ")) + '</small></span><b>' + money(product.effective_price_cents ?? effectivePrice(product)) + '</b></label>').join("");
+      const rows = (data.products || []).map((product) => {
+        const stockNumber = product.stock == null ? NaN : Number(product.stock);
+        const stock = Number.isFinite(stockNumber) ? stockNumber.toLocaleString("pt-BR", { maximumFractionDigits: 3 }) : "—";
+        return '<label class="picker-product-row">' +
+          '<input type="checkbox" value="' + esc(product.id) + '" data-picker-product ' + (state.pickerSelected.has(String(product.id)) ? "checked" : "") + '>' +
+          '<span><strong>' + esc(product.name) + '</strong><small>' + esc([product.brand, product.sku && ("SKU " + product.sku), product.is_active ? "Ativo" : "Inativo"].filter(Boolean).join(" · ")) + '</small><small class="picker-product-stock">Estoque: ' + esc(stock) + '</small></span><b>' + money(product.effective_price_cents ?? effectivePrice(product)) + '</b></label>';
+      }).join("");
       if (reset) host.innerHTML = "";
       if (!(data.products || []).length && reset) host.innerHTML = '<p class="admin-muted">Nenhum produto encontrado.</p>';
       host.insertAdjacentHTML("beforeend", rows);
