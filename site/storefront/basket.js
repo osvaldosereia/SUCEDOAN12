@@ -365,6 +365,14 @@
       const initial = await request("basket_by_size", { params: { size_key: sizeKey, lightweight: "1" } });
       const basket = initial.basket;
       const rawItems = Array.isArray(initial.items) ? initial.items : [];
+      const publicExtraRows = Array.isArray(initial.extras) ? initial.extras : [];
+      const extraSectionsConfigured = initial.extras_configured === true || publicExtraRows.some((row) => row && row.search_enabled === true);
+      const extraCategories = extraSectionsConfigured
+        ? publicExtraRows.filter((row) => row && row.search_enabled === true).map((row) => ({
+          key: String(row.id || ""), label: String(row.label || "Produtos extras"), searchEnabled: true,
+          expanded: false, loaded: false, loading: false, error: false, products: [], nextOffset: 0, hasMore: true
+        })).filter((row) => row.key)
+        : null;
       return {
         basket,
         items: rawItems.map((item) => {
@@ -388,7 +396,8 @@
         detailLoaded: true,
         detailPromise: null,
         changePromise: null,
-        extraCategories: null,
+        extraCategories,
+        extraCategoriesConfigured,
         extraSelections: new Map()
       };
     }
