@@ -483,16 +483,21 @@
         || { product_id: fallbackId, name: item.name, image_url: item.image_url, price_cents: item.price_cents, stock_quantity: item.stock_quantity };
       const selectedCard = selectedChoice && selectedChoice.product_id ? renderChoice(selectedChoice) : "";
       const choices = optionChoices.map(renderChoice).join("");
+      const moreOptionsStatus = item._optionsMoreLoading
+        ? item._optionsPageError
+          ? '<p class="variation-status" role="alert">Não foi possível carregar as demais opções.</p><button class="button button-outline variation-retry" type="button" data-retry-position="' + esc(item.position_id) + '">Tentar novamente</button>'
+          : item._optionsPageLoading
+            ? '<p class="variation-status" role="status">Carregando mais opções…</p>'
+            : '<p class="variation-status">As próximas opções serão carregadas ao chegar aqui.</p>'
+        : "";
       const panelContent = item._optionsError
         ? selectedCard + '<p class="variation-status" role="alert">Não foi possível carregar outras opções.</p><button class="button button-outline variation-retry" type="button" data-retry-position="' + esc(item.position_id) + '">Tentar novamente</button>'
-        : item._optionsLoading
+        : !item._optionsLoaded && optionCount > 1
           ? selectedCard + '<p class="variation-status" role="status">Carregando opções disponíveis…</p>'
-          : !item._optionsLoaded && optionCount > 1
-            ? selectedCard + '<p class="variation-status">Preparando as opções deste item…</p>'
-            : choices
-            ? '<div class="product-option-picker" role="group" aria-label="Opções para ' + esc(title) + '">' + choices + '</div>'
-            : selectedCard;
-      const optionPicker = '<div class="variation-disclosure"><div class="variation-panel" id="item-options-' + esc(item.position_id) + '" aria-busy="' + String(Boolean(item._optionsLoading || changingThisItem)) + '">' +
+          : choices
+            ? '<div class="product-option-picker" role="group" aria-label="Opções para ' + esc(title) + '">' + choices + '</div>' + moreOptionsStatus
+            : selectedCard + moreOptionsStatus;
+      const optionPicker = '<div class="variation-disclosure"><div class="variation-panel" id="item-options-' + esc(item.position_id) + '" aria-busy="' + String(Boolean(item._optionsLoading || item._optionsPageLoading || changingThisItem)) + '">' +
         panelContent +
         '</div></div>';
       return '<article class="product-row" data-product-row="' + esc(item.position_id) + '"><div class="product-row-main"><h3 class="product-name">' + esc(title) + '</h3></div>' +
