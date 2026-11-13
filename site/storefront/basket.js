@@ -155,29 +155,22 @@
       );
     }
   
-    let visibleOptionScanScheduled = false;
+    let pendingOptionScanScheduled = false;
 
-    function queueVisibleOptions() {
-      if (visibleOptionScanScheduled) return;
-      visibleOptionScanScheduled = true;
+    function queuePendingOptions() {
+      if (pendingOptionScanScheduled) return;
+      pendingOptionScanScheduled = true;
       requestAnimationFrame(() => {
-        visibleOptionScanScheduled = false;
+        pendingOptionScanScheduled = false;
         const sizeKey = state.activeKey;
         const data = state.baskets.get(sizeKey);
-        const content = $("detail-content");
-        if (!data || !data.detailLoaded || data.changing || data.optionsBatchPromise || !content || $("detail-sheet").hidden) return;
+        if (!data || !data.detailLoaded || data.changing || data.optionsBatchPromise || !Array.isArray(data.items) || $("detail-sheet").hidden) return;
 
-        const viewport = content.getBoundingClientRect();
-        const margin = Math.max(160, Math.round(content.clientHeight * 0.55));
-        const targets = Array.from(content.querySelectorAll("[data-product-row]")).filter((row) => {
-          const item = data.items.find((entry) => String(entry.position_id) === row.dataset.productRow);
+        // Carrega também os itens fora da área inicial, em blocos compatíveis com a API.
+        const targets = data.items.filter((item) => {
           const count = Math.max(Number(item && item.alternative_count || 0), item && Array.isArray(item._alternatives) ? item._alternatives.length : 0);
-          if (!item || count < 2 || item._optionsLoaded || item._optionsLoading || item._optionsError) return false;
-          const rect = row.getBoundingClientRect();
-          return rect.bottom >= viewport.top - margin && rect.top <= viewport.bottom + margin;
-        }).slice(0, 8).map((row) =>
-          data.items.find((entry) => String(entry.position_id) === row.dataset.productRow)
-        );
+          return Boolean(item && count > 1 && !item._optionsLoaded && !item._optionsLoading && !item._optionsError);
+        }).slice(0, 12);
         if (targets.length) loadOptionsForItems(sizeKey, data, targets);
       });
     }
@@ -236,7 +229,7 @@
           if (data.optionsBatchPromise === operation) data.optionsBatchPromise = null;
           if (state.activeKey === sizeKey && !$("detail-sheet").hidden) {
             renderDetailPreservingScroll(positionId);
-            queueVisibleOptions();
+            queuePendingOptions();
           }
         }
       });
@@ -436,7 +429,7 @@
         if (changingThisItem || item && item._optionsLoading) panel.setAttribute("aria-busy", "true");
         else panel.removeAttribute("aria-busy");
       });
-      if (!pending) queueVisibleOptions();
+      if (!pending) queuePendingOptions();
     }
 
     function updateSelectedProductInPlace(sizeKey, positionId) {
@@ -515,13 +508,13 @@
     }
 
     const detailContent = $("detail-content");
-    if (detailContent) detailContent.addEventListener("scroll", queueVisibleOptions, { passive: true });
+    if (detailContent) detailContent.addEventListener("scroll", queuePendingOptions, { passive: true });
 
     return {
       basketForSize,
       restoreBasketSelections,
       retryItemOptions,
-      queueVisibleOptions,
+      queuePendingOptions,
       changeBasketItemQuantity,
       changeProduct,
       changeProductQuantity
