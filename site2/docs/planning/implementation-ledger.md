@@ -1208,3 +1208,10 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 - Das 32 pendentes, 27 têm produto ativo com foto HTTPS, mas sem disponibilidade WhatsApp; nas outras 5 há opção ativa no WhatsApp sem foto HTTPS. Nenhuma pendência foi liberada automaticamente; não há caso agregado por falta de produto ativo ou por foto/WhatsApp elegível com outro requisito faltando.
 - Desde a consulta de 06/11 04:03 UTC, `admin_audit_logs` contém 18 eventos de entrega: 13 `delivery.order_assigned`, quatro `delivery.stop_reassigned` e um `delivery.stop_cancelled`. Só foram consultados tipo e contagem, sem identificadores, dados de cliente ou detalhes de pedidos/rotas.
 - A atividade de entrega não cria binding nem comprova jornada de pedido WhatsApp. Nenhuma mensagem, publicação de Flow, alteração de catálogo/estoque, escrita no Bling ou emissão de NF-e ocorreu nesta leitura.
+
+## Rechecagem de prontidão do catálogo (12/11/2026 06:34 UTC)
+
+- Consulta agregada somente leitura ao Supabase canônico: 5 cestas ativas para WhatsApp, 118 posições, 96 prontas e 22 pendentes; zero bindings greenfield. Em relação a 11/11 02:49 UTC, dez posições adicionais aparecem prontas. A causa da mudança não foi determinada.
+- As 22 posições pendentes têm produto ativo e foto HTTPS associado, mas não têm opção com disponibilidade WhatsApp habilitada. Não foram encontradas pendências por ausência de produto ativo, foto HTTPS ou preço; nenhuma disponibilidade foi alterada automaticamente.
+- Desde 11/11 10:58 UTC, há cinco eventos agregados: três `delivery.order_assigned` (`order`) e dois `smart_delivery.route_reordered` (`delivery_run`). Foram consultados apenas tipos e contagens; nenhum dado de cliente, endereço, pedido ou rota foi retornado.
+- O trabalho de entrega não cria bindings nem valida os dois WABAs. Nenhuma mensagem, publicação de Flow, mutação de catálogo/estoque, escrita Bling ou emissão de NF-e ocorreu nesta leitura.
