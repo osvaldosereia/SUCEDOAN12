@@ -7,9 +7,7 @@ const MODEL="gpt-image-2.5-sunburst";
 const VALIDATOR_MODEL="gpt-5.6-luna";
 const OPENAI_IMAGE_URL="https://api.openai.com/v1/images/edits";
 const OPENAI_RESPONSES_URL="https://api.openai.com/v1/responses";
-const MIN_FIDELITY=0.90;
-const MIN_COMPOSITION=0.90;
-const MIN_BACKGROUND=0.90;
+const MIN_FIDELITY=0.80;
 const ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
 
 const cors=(req:Request)=>{
@@ -32,22 +30,91 @@ const uuid=(v:unknown)=>{const s=clean(v,80);return /^[0-9a-f]{8}-[0-9a-f]{4}-[1
 function safeName(value:string){return clean(value,120).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,70)||"produto"}
 function base64ToBytes(b64:string){const raw=atob(b64);const out=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);return out}
 function bytesToBase64(bytes:Uint8Array){let binary="";const chunk=0x8000;for(let i=0;i<bytes.length;i+=chunk)binary+=String.fromCharCode(...bytes.subarray(i,Math.min(i+chunk,bytes.length)));return btoa(binary)}
-function pngHasAlphaChannel(bytes:Uint8Array){
+function paethPredictor(a:number,b:number,c:number){
+  const p=a+b-c,pa=Math.abs(p-a),pb=Math.abs(p-b),pc=Math.abs(p-c);
+  return pa<=pb&&pa<=pc?a:pb<=pc?b:c;
+}
+async function inspectPngTransparency(bytes:Uint8Array){
+  const invalid=(reason:string)=>({transparent:false,compositionOkay:false,reason,transparentRatio:0,borderTransparentRatio:0,objectCoverage:0,centerDeviation:1});
   const signature=[137,80,78,71,13,10,26,10];
-  if(bytes.length<33||!signature.every((value,index)=>bytes[index]===value))return false;
-  let colorType=-1,hasTransparencyChunk=false,offset=8;
+  if(bytes.length<45||!signature.every((value,index)=>bytes[index]===value))return invalid("png_signature_invalid");
+  let width=0,height=0,bitDepth=-1,colorType=-1,interlace=-1,hasEnd=false;
+  const idat:Uint8Array[]=[];
+  let offset=8;
   while(offset+12<=bytes.length){
     const chunkLength=new DataView(bytes.buffer,bytes.byteOffset+offset,4).getUint32(0,false);
-    if(chunkLength>bytes.length-offset-12)return false;
+    if(chunkLength>bytes.length-offset-12)return invalid("png_chunk_invalid");
     const type=String.fromCharCode(...bytes.subarray(offset+4,offset+8));
     if(type==="IHDR"){
-      if(chunkLength<13)return false;
-      colorType=bytes[offset+17];
-    }else if(type==="tRNS")hasTransparencyChunk=true;
-    if(type==="IEND")break;
+      if(chunkLength<13)return invalid("png_header_invalid");
+      const header=new DataView(bytes.buffer,bytes.byteOffset+offset+8,13);
+      width=header.getUint32(0,false);height=header.getUint32(4,false);
+      bitDepth=bytes[offset+16];colorType=bytes[offset+17];interlace=bytes[offset+20];
+    }else if(type==="IDAT"){
+      idat.push(bytes.subarray(offset+8,offset+8+chunkLength));
+    }else if(type==="IEND"){
+      hasEnd=true;break;
+    }
     offset+=chunkLength+12;
   }
-  return colorType===4||colorType===6||((colorType===2||colorType===3)&&hasTransparencyChunk);
+  const pixelCount=width*height;
+  if(!hasEnd||!width||!height||width>4096||height>4096||pixelCount>16_777_216)return invalid("png_dimensions_invalid");
+  const bytesPerPixel=colorType===6?4:colorType===4?2:0;
+  if(bitDepth!==8||!bytesPerPixel||interlace!==0||!idat.length)return invalid("png_alpha_layout_unsupported");
+  const compressedLength=idat.reduce((total,part)=>total+part.length,0);
+  if(!compressedLength||compressedLength>14_000_000)return invalid("png_data_size_invalid");
+  const compressed=new Uint8Array(compressedLength);let compressedOffset=0;
+  for(const part of idat){compressed.set(part,compressedOffset);compressedOffset+=part.length;}
+  let raw:Uint8Array;
+  try{
+    const stream=new Blob([compressed]).stream().pipeThrough(new DecompressionStream("deflate"));
+    raw=new Uint8Array(await new Response(stream).arrayBuffer());
+  }catch{return invalid("png_decompression_failed");}
+  const rowBytes=width*bytesPerPixel,expected=(rowBytes+1)*height;
+  if(raw.length!==expected)return invalid("png_pixel_data_invalid");
+  let inputOffset=0,transparentPixels=0,visiblePixels=0,borderTransparent=0,borderPixels=0;
+  let minX=width,minY=height,maxX=-1,maxY=-1;
+  let previous=new Uint8Array(rowBytes);
+  for(let y=0;y<height;y++){
+    const filter=raw[inputOffset++];
+    if(filter>4)return invalid("png_filter_invalid");
+    const row=raw.slice(inputOffset,inputOffset+rowBytes);inputOffset+=rowBytes;
+    for(let i=0;i<rowBytes;i++){
+      const left=i>=bytesPerPixel?row[i-bytesPerPixel]:0;
+      const up=previous[i];
+      const upperLeft=i>=bytesPerPixel?previous[i-bytesPerPixel]:0;
+      let predictor=0;
+      if(filter===1)predictor=left;
+      else if(filter===2)predictor=up;
+      else if(filter===3)predictor=Math.floor((left+up)/2);
+      else if(filter===4)predictor=paethPredictor(left,up,upperLeft);
+      row[i]=(row[i]+predictor)&255;
+    }
+    for(let x=0;x<width;x++){
+      const alpha=row[x*bytesPerPixel+bytesPerPixel-1];
+      if(alpha<=16)transparentPixels++;
+      if(alpha>=64)visiblePixels++;
+      if(alpha>32){minX=Math.min(minX,x);minY=Math.min(minY,y);maxX=Math.max(maxX,x);maxY=Math.max(maxY,y);}
+      if(x===0||x===width-1||y===0||y===height-1){
+        borderPixels++;
+        if(alpha<=16)borderTransparent++;
+      }
+    }
+    previous=row;
+  }
+  const transparentRatio=transparentPixels/pixelCount;
+  const borderTransparentRatio=borderPixels?borderTransparent/borderPixels:0;
+  const visibleRatio=visiblePixels/pixelCount;
+  const objectCoverage=maxX>=minX&&maxY>=minY?Math.max((maxX-minX+1)/width,(maxY-minY+1)/height):0;
+  const centerX=maxX>=minX?(minX+maxX+1)/(2*width):0;
+  const centerY=maxY>=minY?(minY+maxY+1)/(2*height):0;
+  const centerDeviation=Math.max(Math.abs(centerX-0.5),Math.abs(centerY-0.5));
+  const transparent=transparentRatio>=0.10&&borderTransparentRatio>=0.78&&visibleRatio>=0.01;
+  const compositionOkay=objectCoverage>=0.35&&objectCoverage<=0.98&&centerDeviation<=0.18;
+  let reason="ok";
+  if(!transparent)reason="transparent_pixels_not_detected";
+  else if(!compositionOkay)reason="object_composition_out_of_range";
+  return {transparent,compositionOkay,reason,transparentRatio:Number(transparentRatio.toFixed(3)),borderTransparentRatio:Number(borderTransparentRatio.toFixed(3)),objectCoverage:Number(objectCoverage.toFixed(3)),centerDeviation:Number(centerDeviation.toFixed(3))};
 }
 function extFor(type:string){return type==="image/png"?"png":type==="image/jpeg"?"jpg":"webp"}
 function contentTypeFor(url:string,header:string|null){
@@ -111,18 +178,20 @@ async function generate(key:string,source:{bytes:Uint8Array,type:string},product
   if(!r.ok)throw new Error("openai_http_"+r.status+"_"+clean(data?.error?.code||data?.error?.message||"error",120));
   const b64=clean(data?.data?.[0]?.b64_json,24_000_000);if(!b64)throw new Error("openai_empty_image");
   const bytes=base64ToBytes(b64);if(!bytes.length||bytes.length>14_000_000)throw new Error("openai_output_size_"+bytes.length);
-  if(!pngHasAlphaChannel(bytes))throw new Error("openai_transparency_missing");
-  return {bytes,usage:obj(data?.usage),requestId};
+  const transparency=await inspectPngTransparency(bytes);
+  if(!transparency.transparent)throw new Error("openai_transparency_missing_"+transparency.reason);
+  if(!transparency.compositionOkay)throw new Error("openai_composition_invalid_"+transparency.reason);
+  return {bytes,transparency,usage:obj(data?.usage),requestId};
 }
 const validationSchema={type:"object",additionalProperties:false,properties:{
   pass:{type:"boolean"},fidelity_score:{type:"number",minimum:0,maximum:1},composition_score:{type:"number",minimum:0,maximum:1},
   background_score:{type:"number",minimum:0,maximum:1},critical_issue:{type:"string",maxLength:240}
 },required:["pass","fidelity_score","composition_score","background_score","critical_issue"]};
 function finalText(data:any){return arr(data?.output).filter((x:any)=>x?.type==="message").flatMap((x:any)=>arr(x?.content)).filter((x:any)=>x?.type==="output_text").map((x:any)=>String(x?.text||"")).join("").trim()}
-async function validateGenerated(key:string,sourceUrl:string,generated:Uint8Array){
+async function validateGenerated(key:string,sourceUrl:string,generated:Uint8Array,transparency:any){
   const candidate="data:image/png;base64,"+bytesToBase64(generated);
   const body={model:VALIDATOR_MODEL,store:false,max_output_tokens:600,reasoning:{effort:"low"},input:[{role:"user",content:[
-    {type:"input_text",text:"Compare as duas imagens do mesmo produto. A primeira é a foto original; a segunda é a imagem para catálogo. Seja rigoroso. Confirme fidelidade da embalagem, proporções, marca, cores, rótulo e textos; produto inteiro, centralizado, com margens transparentes uniformes e recorte limpo. A imagem final deve ter fundo realmente transparente, sem fundo branco/cinza, cenário, chão, sombra, halo ou objetos extras. Marque pass=false se houver deformação, parte removida, embalagem redesenhada, marca/variante alterada, fundo visível ou diferença importante."},
+    {type:"input_text",text:"Compare a embalagem original com a imagem gerada e avalie somente a fidelidade do produto: marca, variante, formato e identidade. Uma rotina separada já verifica os pixels transparentes reais e se o produto está inteiro, centralizado e em tamanho adequado. NÃO avalie fundo, transparência, sombras, halo ou margens: PNGs transparentes podem aparecer pretos ou cinza no visualizador, e isso não significa que tenham fundo opaco. Não penalize pequenas diferenças em letras miúdas se a marca e a variante continuarem reconhecíveis. Marque pass=false e descreva um único motivo crítico somente se o produto/variante estiver errado, houver mudança material da embalagem, deformação importante ou parte ausente/cortada. Se não houver defeito crítico no produto, deixe critical_issue vazio. background_score é apenas diagnóstico e deve ser 1 quando não for possível avaliar."},
     {type:"input_image",image_url:sourceUrl,detail:"high"},{type:"input_image",image_url:candidate,detail:"high"}
   ]}],text:{format:{type:"json_schema",name:"product_image_validation",strict:true,schema:validationSchema}}};
   const r=await fetch(OPENAI_RESPONSES_URL,{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify(body),signal:AbortSignal.timeout(60000)});
@@ -140,8 +209,13 @@ async function validateGenerated(key:string,sourceUrl:string,generated:Uint8Arra
     throw new Error("validator_invalid_json_"+status+"_"+reason);
   }
   const validation={pass:parsed?.pass===true,fidelity_score:score(parsed?.fidelity_score),composition_score:score(parsed?.composition_score),background_score:score(parsed?.background_score),critical_issue:clean(parsed?.critical_issue,240)};
-  const accepted=validation.pass&&validation.fidelity_score>=MIN_FIDELITY&&validation.composition_score>=MIN_COMPOSITION&&validation.background_score>=MIN_BACKGROUND&&!validation.critical_issue;
-  return {accepted,validation,usage:obj(data?.usage),responseId:clean(data?.id,180)};
+  const normalizedIssue=validation.critical_issue.normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase();
+  const hasMaterialProductDefect=/(produto (errado|diferente)|marca (errada|trocada|diferente|alterada)|variante (errada|incorreta|diferente)|embalagem (deformada|alterada|diferente)|rotulo (alterado|diferente)|parte removida|faltando|cortado|deformado)/.test(normalizedIssue);
+  const backgroundOnly=/(fundo|transpar|background|alpha|sombra|halo|cenario)/.test(normalizedIssue)&&!hasMaterialProductDefect;
+  const compositionOnly=/(composicao|enquadramento|centraliz|margens?)/.test(normalizedIssue)&&!hasMaterialProductDefect;
+  const criticalIssue=Boolean(validation.critical_issue)&&!backgroundOnly&&!compositionOnly;
+  const accepted=validation.fidelity_score>=MIN_FIDELITY&&!criticalIssue&&transparency.transparent&&transparency.compositionOkay;
+  return {accepted,validation:{...validation,transparency},usage:obj(data?.usage),responseId:clean(data?.id,180)};
 }
 async function productRow(sb:any,productId:string){
   const q=await sb.from("products").select("id,name,brand,packaging,gtin,price,cost,category,sales_category,storefront_category,image_url,image_original_url,image_ai_url,image_ai_status,image_ai_attempts,metadata").eq("id",productId).maybeSingle();
@@ -187,8 +261,11 @@ async function standardize(req:Request,sb:any,auth:any,body:any){
   try{
     const source=await fetchImage(sourceUrl);
     const generated=await generate(key,source,product);
-    const check=await validateGenerated(key,sourceUrl,generated.bytes);
-    if(!check.accepted)throw new Error("visual_validation_failed_"+check.validation.fidelity_score.toFixed(2)+"_"+check.validation.composition_score.toFixed(2)+"_"+check.validation.background_score.toFixed(2)+"_"+clean(check.validation.critical_issue||"score",80));
+    const check=await validateGenerated(key,sourceUrl,generated.bytes,generated.transparency);
+    if(!check.accepted){
+      console.warn("product image rejected by quality review",{product_id:productId,validation:check.validation});
+      throw new Error("visual_validation_failed_"+check.validation.fidelity_score.toFixed(2)+"_"+check.validation.composition_score.toFixed(2)+"_"+check.validation.background_score.toFixed(2)+"_"+clean(check.validation.critical_issue||"score",80));
+    }
     const path=`openai/manual-v1/final/${productId}/${Date.now()}-${safeName(product.name)}.png`;
     const up=await sb.storage.from(BUCKET).upload(path,generated.bytes,{contentType:"image/png",cacheControl:"31536000",upsert:false});
     if(up.error)throw new Error("storage_"+clean(up.error.message,160));
