@@ -258,14 +258,14 @@
       const quantity = selected ? Number(selected.quantity || 0) : 0;
       const stock = Math.max(0, Number(product.stock_quantity || 0));
       const name = product.name || "Produto";
-      return '<article class="product-choice extra-product-card' + (quantity > 0 ? ' is-selected' : '') + '" role="listitem" data-extra-product="' + esc(id) + '">' +
+      return '<div class="product-choice extra-product-card' + (quantity > 0 ? ' is-selected' : '') + '" role="listitem" data-extra-product="' + esc(id) + '">' +
         '<img src="' + esc(product.image_url || "../img/logoantonia5.png") + '" alt="" width="96" height="96" loading="lazy" decoding="async">' +
         '<span class="product-choice-copy"><strong>' + esc(name) + '</strong><small>' + esc(money(product.price_cents)) + '</small></span>' +
         '<span class="product-option-stepper" role="group" aria-label="Quantidade de ' + esc(name) + '">' +
         '<button class="quantity-button option-quantity-button" type="button" data-extra-adjust="' + esc(id) + '" data-delta="-1" aria-label="Diminuir ' + esc(name) + '"' + (quantity <= 0 ? " disabled" : "") + '>−</button>' +
         '<output class="product-option-quantity" data-extra-quantity="' + esc(id) + '" aria-live="polite">' + quantity + '</output>' +
         '<button class="quantity-button option-quantity-button" type="button" data-extra-adjust="' + esc(id) + '" data-delta="1" aria-label="Adicionar ' + esc(name) + '"' + (quantity >= stock ? " disabled" : "") + '>+</button>' +
-        '</span></article>';
+        '</span></div>';
     }
   
     function extraCategoriesMarkup(data) {
@@ -273,7 +273,10 @@
       const search = productSearchStateFor("basket-extras", data);
       const activeSearch = normalizeProductSearchText(search.query).length >= 2;
       const searchPanel = productSearchPanelMarkup("basket-extras", "Buscar um produto extra", "Ex.: arroz, sabão ou óleo", search, data);
-      return '<section class="extras-section" aria-labelledby="extras-title"><h3 id="extras-title">Produtos Extras</h3>' + searchPanel + '<div class="extra-category-list" data-extra-category-list' + (activeSearch ? " hidden" : "") + '>' +
+      const emptyMessage = data.extraCategoriesConfigured && !categories.length
+        ? '<p class="extra-sections-empty">Nenhuma seção extra está ativa no momento.</p>'
+        : "";
+      return '<section class="extras-section" aria-labelledby="extras-title"><h3 id="extras-title">Produtos Extras</h3>' + searchPanel + emptyMessage + '<div class="extra-category-list" data-extra-category-list' + (activeSearch ? " hidden" : "") + '>' +
         categories.map((category) => {
           const panelId = "extra-panel-" + category.key;
           const status = category.loading
@@ -354,11 +357,19 @@
         let fetched = [];
         let pages = 0;
         do {
-          const result = await request("products", { params: {
-            category: category.key,
-            limit: category.loaded ? BASKET_EXTRA_MORE_PAGE_SIZE : BASKET_EXTRA_INITIAL_PAGE_SIZE,
-            offset: category.nextOffset
-          } });
+          const pageSize = category.loaded ? BASKET_EXTRA_MORE_PAGE_SIZE : BASKET_EXTRA_INITIAL_PAGE_SIZE;
+          const result = category.searchEnabled
+            ? await request("basket_extra_products", { params: {
+              basket_id: String(data.basket && data.basket.id || ""),
+              theme_id: category.key,
+              limit: pageSize,
+              offset: category.nextOffset
+            } })
+            : await request("products", { params: {
+              category: category.key,
+              limit: pageSize,
+              offset: category.nextOffset
+            } });
           fetched = Array.isArray(result.products) ? result.products : [];
           category.nextOffset = result.next_offset == null ? category.nextOffset : Number(result.next_offset);
           category.hasMore = result.next_offset != null;
@@ -921,8 +932,11 @@
       const data = state.baskets.get(state.activeKey);
       if (!data || !productId || !delta) return;
       const category = extraCategoriesFor(data).find((entry) => entry.products.some((product) => String(product.id) === String(productId)));
+      const searched = data.extraProductSearch && Array.isArray(data.extraProductSearch.products)
+        ? data.extraProductSearch.products.find((entry) => String(entry.id) === String(productId))
+        : null;
       const product = (category && category.products.find((entry) => String(entry.id) === String(productId))) ||
-        state.homeExtraProducts.get(String(productId));
+        searched || state.homeExtraProducts.get(String(productId));
       if (!product) return;
       const current = data.extraSelections.get(String(productId));
       const currentQuantity = Number(current && current.quantity || 0);
