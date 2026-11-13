@@ -643,15 +643,45 @@
 
   async function productSaved(product) {
     const productId = String(product.id);
+    const wasDirty = state.dirty;
     productCache.set(productId, product);
 
-    state.types.forEach((type, index) => {
+    const affectedDefaults = [];
+    state.types.forEach((type) => {
       const options = type.options || [];
+      const currentDefaultId = String(type.default_product_id || options[0]?.product_id || "");
+      const currentDefault = options.find((option) => String(option.product_id) === currentDefaultId);
+      const previousDefaultPrice = currentDefault ? optionPriceCents(currentDefault) : null;
       if (!options.some((option) => String(option.product_id) === productId)) return;
       options.forEach((option) => {
         if (String(option.product_id) === productId) option.product = product;
       });
+      if (product.is_active === false && currentDefaultId === productId) {
+        setTypeDefault(type, "", previousDefaultPrice);
+        affectedDefaults.push(type);
+      }
+    });
 
+    let defaultsSynced = affectedDefaults.length === 0;
+    if (affectedDefaults.length && !wasDirty) {
+      try {
+        const currentGrid = await request("basket_grid", { params: {} });
+        const remoteTypes = new Map((currentGrid.types || []).map((type) => [String(type.id), type]));
+        defaultsSynced = affectedDefaults.every((type) => {
+          const remote = remoteTypes.get(String(type.id));
+          const remoteId = String(remote?.default_product_id || "");
+          const option = type.options.find((item) => String(item.product_id) === remoteId);
+          if (!option || optionProduct(option).is_active === false) return false;
+          setTypeDefault(type, remoteId);
+          return true;
+        });
+      } catch (_) {
+        defaultsSynced = false;
+      }
+    }
+    if (affectedDefaults.length && (wasDirty || !defaultsSynced)) markDirty();
+
+    state.types.forEach((type, index) => {
       const row = document.getElementById("basket-type-" + typeKey(type, index));
       const variations = row?.querySelector(".basket-grid-variations");
       if (!variations) return;
@@ -662,7 +692,6 @@
       if (updatedOptions) updatedOptions.scrollTop = scrollTop;
     });
 
-    // Keep the unsaved basket draft; reloading basket_grid here discarded it.
     updateBasketProductSums();
   }
 
