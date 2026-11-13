@@ -250,7 +250,7 @@
 }
 .basket-grid-option {
   display: grid;
-  grid-template-columns: 26px minmax(0, 1fr) auto;
+  grid-template-columns: 70px minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
   min-width: 0;
@@ -259,16 +259,24 @@
   border-radius: 9px;
   background: #fcfaf7;
 }
-.basket-grid-option-order {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: #efe4d7;
-  color: #76362f;
-  font-size: .73rem;
-  font-weight: 800;
+.basket-grid-option-default {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #7b6d61;
+  font-size: .7rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.basket-grid-option-default input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #873b32;
+}
+.basket-grid-option-default input:disabled {
+  cursor: not-allowed;
+  opacity: .55;
 }
 .basket-grid-option-copy {
   display: grid;
@@ -340,7 +348,7 @@
     justify-self: start;
   }
   .basket-grid-option {
-    grid-template-columns: 24px minmax(0, 1fr);
+    grid-template-columns: 70px minmax(0, 1fr);
   }
   .basket-grid-option-actions {
     grid-column: 2;
@@ -522,22 +530,16 @@
   }
 
   .basket-grid-option {
-    grid-template-columns: 28px minmax(0, 1fr);
+    grid-template-columns: 70px minmax(0, 1fr);
     gap: 8px;
     padding: 9px;
   }
 
-  .basket-grid-option-order {
-    width: 28px;
-    height: 28px;
-  }
-
   .basket-grid-option-actions {
-    display: grid;
-    grid-column: 1 / -1;
-    grid-template-columns: repeat(3, minmax(40px, 44px)) minmax(0, 1fr);
-    justify-content: stretch;
-    gap: 4px;
+    display: flex;
+    grid-column: 2;
+    justify-content: flex-start;
+    gap: 6px;
   }
 
   .basket-grid-option-actions .text-button {
@@ -548,7 +550,8 @@
   }
 
   .basket-grid-option-actions .product-edit-mini {
-    width: 100%;
+    width: auto;
+    min-width: 72px;
     white-space: normal;
   }
 
