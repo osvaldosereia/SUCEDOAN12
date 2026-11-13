@@ -81,7 +81,11 @@
               _alternatives: previous._alternatives || row._alternatives || [],
               _optionsLoaded: previous._optionsLoaded === true || row._optionsLoaded === true,
               _optionsLoading: previous._optionsLoading === true,
-              _optionsError: previous._optionsError === true
+              _optionsError: previous._optionsError === true,
+              _optionsNextOffset: Number(previous._optionsNextOffset ?? row._optionsNextOffset ?? 0),
+              _optionsMoreLoading: previous._optionsMoreLoading === true,
+              _optionsPageLoading: previous._optionsPageLoading === true,
+              _optionsPageError: previous._optionsPageError === true
             }) : row;
           });
           Object.assign(data, quote, { orderable: true, detailLoaded: true });
@@ -122,31 +126,14 @@
         "Não foi possível atualizar a quantidade. A quantidade anterior foi mantida.");
     }
 
-    async function optionsForItem(basket, item) {
-      let alternatives = Array.isArray(item.alternatives) ? item.alternatives.slice() : [];
-      const count = Number(item.alternative_count || alternatives.length);
-      let offset = alternatives.length;
-      while (offset < count && offset < 100) {
-        const page = await request("basket_mold_options", { params: {
-          basket_id: basket.id,
-          composition_number: basket.composition_number || 1,
-          position_id: item.position_id,
-          selected_product_id: item.product_id || "",
-          selected_product_ids: optionRowsForItem(item).map((option) => option.product_id).join(","),
-          quantity: quantityOf(item),
-          offset
-        } });
-        const rows = Array.isArray(page.alternatives) ? page.alternatives : [];
-        if (!rows.length) break;
-        alternatives = alternatives.concat(rows);
-        offset = page.next_offset == null ? count : Number(page.next_offset);
-      }
-      if (!alternatives.length && item.product_id && Number(item.stock_quantity || 0) > 0) alternatives.push({
+    function normalizeOptionRows(alternatives, item) {
+      const rows = Array.isArray(alternatives) ? alternatives.slice() : [];
+      if (!rows.length && item.product_id && Number(item.stock_quantity || 0) > 0) rows.push({
         product_id: item.product_id, name: item.name, image_url: item.image_url,
         price_cents: item.price_cents, stock_quantity: item.stock_quantity
       });
       const unique = new Map();
-      alternatives.forEach((option) => {
+      rows.forEach((option) => {
         if (option && option.product_id) unique.set(String(option.product_id), option);
       });
       return Array.from(unique.values()).sort((a, b) =>
@@ -154,7 +141,38 @@
         String(a.name || "").localeCompare(String(b.name || ""), "pt-BR")
       );
     }
-  
+
+    function optionsPageForItem(basket, item, offset) {
+      return request("basket_mold_options", { params: {
+        basket_id: basket.id,
+        composition_number: basket.composition_number || 1,
+        position_id: item.position_id,
+        selected_product_id: item.product_id || "",
+        selected_product_ids: optionRowsForItem(item).map((option) => option.product_id).join(","),
+        quantity: quantityOf(item),
+        offset
+      } });
+    }
+
+    async function optionsForItem(basket, item, requiredProductIds) {
+      let alternatives = Array.isArray(item.alternatives) ? item.alternatives.slice() : [];
+      const count = Number(item.alternative_count || alternatives.length);
+      const required = new Set((Array.isArray(requiredProductIds) ? requiredProductIds : []).map(String));
+      const hasRequiredOptions = () => !required.size || Array.from(required).every((id) =>
+        alternatives.some((option) => String(option && option.product_id || "") === id)
+      );
+      let offset = alternatives.length;
+      while (offset < count && offset < 100 && !hasRequiredOptions()) {
+        const page = await optionsPageForItem(basket, item, offset);
+        const rows = Array.isArray(page.alternatives) ? page.alternatives : [];
+        const nextOffset = page.next_offset == null ? offset + rows.length : Number(page.next_offset);
+        if (!rows.length || nextOffset <= offset) break;
+        alternatives = alternatives.concat(rows);
+        offset = nextOffset;
+      }
+      return normalizeOptionRows(alternatives, item);
+    }
+
     let pendingOptionScanScheduled = false;
 
     function queuePendingOptions() {
@@ -164,14 +182,38 @@
         pendingOptionScanScheduled = false;
         const sizeKey = state.activeKey;
         const data = state.baskets.get(sizeKey);
-        if (!data || !data.detailLoaded || data.changing || data.optionsBatchPromise || !Array.isArray(data.items) || $("detail-sheet").hidden) return;
+        const content = $("detail-content");
+        if (!data || !data.detailLoaded || data.changing || data.optionsBatchPromise || !Array.isArray(data.items) || $("detail-sheet").hidden || !content) return;
 
-        // Carrega também os itens fora da área inicial, em blocos compatíveis com a API.
-        const targets = data.items.filter((item) => {
+        const viewportHeight = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 1);
+        const rowsByPosition = new Map(Array.from(content.querySelectorAll("[data-product-row]"))
+          .map((row) => [String(row.dataset.productRow || ""), row]));
+        const candidates = data.items.map((item) => {
           const count = Math.max(Number(item && item.alternative_count || 0), item && Array.isArray(item._alternatives) ? item._alternatives.length : 0);
-          return Boolean(item && count > 1 && !item._optionsLoaded && !item._optionsLoading && !item._optionsError);
-        }).slice(0, 12);
-        if (targets.length) loadOptionsForItems(sizeKey, data, targets);
+          const row = item && rowsByPosition.get(String(item.position_id || ""));
+          if (!row || count <= 1) return null;
+          const rect = row.getBoundingClientRect();
+          if (rect.bottom <= -viewportHeight * 0.18 || rect.top >= viewportHeight * 1.45) return null;
+          const visible = rect.bottom > 0 && rect.top < viewportHeight;
+          const distance = visible ? Math.max(0, rect.top) : rect.top >= viewportHeight ? rect.top - viewportHeight : Math.abs(rect.bottom);
+          return { item, visible, distance, top: rect.top };
+        }).filter(Boolean).sort((a, b) =>
+          Number(b.visible) - Number(a.visible) || a.distance - b.distance || a.top - b.top
+        );
+
+        const firstPages = candidates
+          .filter(({ item }) => !item._optionsLoaded && !item._optionsLoading && !item._optionsError)
+          .slice(0, 3)
+          .map(({ item }) => item);
+        if (firstPages.length) {
+          loadOptionsForItems(sizeKey, data, firstPages);
+          return;
+        }
+
+        const nextPage = candidates.find(({ item }) =>
+          item._optionsLoaded && item._optionsMoreLoading && !item._optionsPageLoading && !item._optionsPageError
+        );
+        if (nextPage) loadNextOptionsPage(sizeKey, data, nextPage.item);
       });
     }
 
@@ -206,26 +248,77 @@
           for (const item of targets) {
             const result = byPosition.get(String(item.position_id));
             if (!result) throw new Error("Missing basket options result.");
+            const rawAlternatives = Array.isArray(result.alternatives) ? result.alternatives : [];
             const alternativeCount = Number(result.alternative_count || 0);
-            let alternatives = Array.isArray(result.alternatives) ? result.alternatives : [];
-            if (alternativeCount > alternatives.length) {
-              alternatives = await optionsForItem(data.basket, Object.assign({}, item, {
-                alternatives,
-                alternative_count: alternativeCount
-              }));
-            }
-            loadedOptions.push({ item, alternatives, alternativeCount });
+            loadedOptions.push({
+              item,
+              alternatives: normalizeOptionRows(rawAlternatives, item),
+              alternativeCount,
+              nextOffset: rawAlternatives.length
+            });
           }
-          loadedOptions.forEach(({ item, alternatives, alternativeCount }) => {
+          loadedOptions.forEach(({ item, alternatives, alternativeCount, nextOffset }) => {
             item._alternatives = alternatives;
             item.alternative_count = alternativeCount;
             item._optionsLoaded = true;
             item._optionsError = false;
+            item._optionsNextOffset = nextOffset;
+            item._optionsMoreLoading = alternativeCount > nextOffset && nextOffset < 100;
+            item._optionsPageLoading = false;
+            item._optionsPageError = false;
           });
         } catch (_) {
           targets.forEach((item) => { item._optionsError = true; });
         } finally {
           targets.forEach((item) => { item._optionsLoading = false; });
+          if (data.optionsBatchPromise === operation) data.optionsBatchPromise = null;
+          if (state.activeKey === sizeKey && !$("detail-sheet").hidden) {
+            renderDetailPreservingScroll(positionId);
+            queuePendingOptions();
+          }
+        }
+      });
+      data.optionsBatchPromise = operation;
+      if (state.activeKey === sizeKey && !$("detail-sheet").hidden) renderDetailPreservingScroll(positionId);
+      return operation;
+    }
+
+    function loadNextOptionsPage(sizeKey, data, item) {
+      if (!data || !item || data.optionsBatchPromise || !item._optionsMoreLoading || item._optionsPageLoading) {
+        return data && data.optionsBatchPromise || Promise.resolve();
+      }
+      const positionId = String(item.position_id || "");
+      const offset = Math.max(0, Number(item._optionsNextOffset || 0));
+      item._optionsPageLoading = true;
+      item._optionsPageError = false;
+
+      const operation = Promise.resolve().then(async () => {
+        try {
+          const page = await optionsPageForItem(data.basket, item, offset);
+          const rows = Array.isArray(page.alternatives) ? page.alternatives : [];
+          const nextOffset = page.next_offset == null ? offset + rows.length : Number(page.next_offset);
+          const current = data.items.find((row) => String(row.position_id) === positionId) || item;
+          current._alternatives = normalizeOptionRows((current._alternatives || []).concat(rows), current);
+          current.alternative_count = Number(page.alternative_count || current.alternative_count || 0);
+          current._optionsLoaded = true;
+          current._optionsNextOffset = nextOffset;
+          current._optionsMoreLoading = rows.length > 0 && nextOffset > offset &&
+            nextOffset < current.alternative_count && nextOffset < 100;
+          current._optionsPageError = false;
+          if (current !== item) {
+            item._alternatives = current._alternatives;
+            item._optionsNextOffset = current._optionsNextOffset;
+            item._optionsMoreLoading = current._optionsMoreLoading;
+          }
+        } catch (_) {
+          const current = data.items.find((row) => String(row.position_id) === positionId) || item;
+          current._optionsMoreLoading = true;
+          current._optionsPageError = true;
+          if (current !== item) item._optionsPageError = true;
+        } finally {
+          const current = data.items.find((row) => String(row.position_id) === positionId) || item;
+          current._optionsPageLoading = false;
+          item._optionsPageLoading = false;
           if (data.optionsBatchPromise === operation) data.optionsBatchPromise = null;
           if (state.activeKey === sizeKey && !$("detail-sheet").hidden) {
             renderDetailPreservingScroll(positionId);
@@ -277,6 +370,10 @@
             _optionsLoaded: false,
             _optionsLoading: false,
             _optionsError: false,
+            _optionsNextOffset: 0,
+            _optionsMoreLoading: false,
+            _optionsPageLoading: false,
+            _optionsPageError: false,
           });
         }),
         totalCents: Number(basket.display_price_cents || 0),
@@ -316,7 +413,11 @@
         const needsOptionLookup = normalized.some((option) => option.product_id !== String(item.product_id || ""));
         if (needsOptionLookup || normalized.length > 1) {
           try {
-            choices = await optionsForItem(data.basket, Object.assign({}, item, { selected_options: normalized }));
+            choices = await optionsForItem(
+              data.basket,
+              Object.assign({}, item, { selected_options: normalized }),
+              normalized.map((option) => option.product_id)
+            );
           } catch (_) {
             optionLookupFailed = true;
           }
@@ -392,13 +493,22 @@
       const sizeKey = state.activeKey;
       const data = state.baskets.get(sizeKey);
       if (!data || data.changing) return;
-      const item = data.items.find((row) => String(row.position_id) === String(positionId));
-      if (!item || item._optionsLoading || item._optionsLoaded) return;
+      let item = data.items.find((row) => String(row.position_id) === String(positionId));
+      if (!item || item._optionsLoading || item._optionsPageLoading) return;
+      const retryingNextPage = item._optionsLoaded && item._optionsPageError;
+      if (item._optionsLoaded && !retryingNextPage) return;
 
-      item._optionsError = false;
+      if (retryingNextPage) item._optionsPageError = false;
+      else item._optionsError = false;
       renderDetailPreservingScroll(positionId);
       if (data.optionsBatchPromise) await data.optionsBatchPromise;
-      if (!item._optionsLoaded && !item._optionsLoading) await loadOptionsForItems(sizeKey, data, [item]);
+      item = data.items.find((row) => String(row.position_id) === String(positionId));
+      if (!item) return;
+      if (retryingNextPage && item._optionsMoreLoading && !item._optionsPageLoading) {
+        await loadNextOptionsPage(sizeKey, data, item);
+      } else if (!item._optionsLoaded && !item._optionsLoading) {
+        await loadOptionsForItems(sizeKey, data, [item]);
+      }
     }
 
     function setQuotePendingControls(sizeKey, positionId, pending) {
@@ -426,7 +536,7 @@
         const row = panel.closest("[data-product-row]");
         const item = row && data.items.find((entry) => String(entry.position_id) === row.dataset.productRow);
         const changingThisItem = Boolean(pending && row && row.dataset.productRow === String(positionId));
-        if (changingThisItem || item && item._optionsLoading) panel.setAttribute("aria-busy", "true");
+        if (changingThisItem || item && (item._optionsLoading || item._optionsPageLoading)) panel.setAttribute("aria-busy", "true");
         else panel.removeAttribute("aria-busy");
       });
       if (!pending) queuePendingOptions();
@@ -508,6 +618,8 @@
     }
 
     window.addEventListener("scroll", queuePendingOptions, { passive: true });
+    window.addEventListener("resize", queuePendingOptions, { passive: true });
+    $("detail-content").addEventListener("scroll", queuePendingOptions, { passive: true });
 
     return {
       basketForSize,
