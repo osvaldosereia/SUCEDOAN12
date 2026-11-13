@@ -585,9 +585,9 @@ body {
 }
 
 .product-choice {
-  grid-template-columns: 128px minmax(0, 1fr) auto;
+  grid-template-columns: 96px minmax(0, 1fr) auto;
   gap: 12px;
-  min-height: 144px;
+  min-height: 112px;
   padding: 9px 12px;
   border-color: #eee6db;
   border-radius: 13px;
@@ -608,8 +608,8 @@ body {
 }
 
 .product-choice img {
-  width: 128px;
-  height: 128px;
+  width: 96px;
+  height: 96px;
   border-radius: 10px;
   background: #f7f2eb;
 }
@@ -888,15 +888,15 @@ body {
   }
 
   .product-choice {
-    grid-template-columns: clamp(108px, 30vw, 120px) minmax(0, 1fr);
+    grid-template-columns: clamp(84px, 24vw, 96px) minmax(0, 1fr);
     gap: 10px;
     min-height: 0;
     padding: 8px 10px;
   }
 
   .product-choice img {
-    width: clamp(108px, 30vw, 120px);
-    height: clamp(108px, 30vw, 120px);
+    width: clamp(84px, 24vw, 96px);
+    height: clamp(84px, 24vw, 96px);
   }
 
   .home-extra-product-dialog {
@@ -1010,15 +1010,15 @@ body {
   }
 
   .product-choice {
-    grid-template-columns: clamp(108px, 30vw, 120px) minmax(0, 1fr);
+    grid-template-columns: clamp(84px, 24vw, 96px) minmax(0, 1fr);
     gap: 8px;
     min-height: 0;
     padding: 7px 8px;
   }
 
   .product-choice img {
-    width: clamp(108px, 30vw, 120px);
-    height: clamp(108px, 30vw, 120px);
+    width: clamp(84px, 24vw, 96px);
+    height: clamp(84px, 24vw, 96px);
   }
 
   .product-choice-copy strong {
