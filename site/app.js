@@ -386,8 +386,9 @@
   function syncSheetScrollState() {
     const detailOpen = !$("detail-sheet").hidden;
     const orderOpen = !$("order-sheet").hidden;
-    document.body.classList.toggle("sheet-open", detailOpen || orderOpen);
-    document.body.classList.toggle("sheet-scroll-chain", detailOpen && !orderOpen);
+    document.body.classList.toggle("basket-detail-open", detailOpen);
+    document.body.classList.toggle("sheet-open", orderOpen);
+    document.body.classList.remove("sheet-scroll-chain");
   }
 
   function showSheet(id) {
@@ -406,6 +407,15 @@
       $("lookup-message").textContent = "Buscaremos o cadastro e o endereço já registrado.";
     }
   }
+
+  document.addEventListener("click", (event) => {
+    const navigation = event.target instanceof Element
+      ? event.target.closest("[data-experiment-nav]")
+      : null;
+    if (navigation && navigation.dataset.experimentNav !== "basket" && !$("detail-sheet").hidden) {
+      closeSheet("detail-sheet");
+    }
+  }, true);
 
   let basket = null;
 
@@ -458,7 +468,7 @@
         const optionName = alt.name || selected && selected.name || "Produto";
         const optionPrice = alt.price_cents == null ? "Preço indisponível" : money(alt.price_cents);
         return '<div class="product-choice' + (quantity > 0 ? ' is-selected' : '') + '" data-option-card="' + esc(productId) + '">' +
-          '<img src="' + esc(alt.image_url || "../img/logoantonia5.png") + '" alt="" width="64" height="64" loading="lazy" decoding="async">' +
+          '<img src="' + esc(alt.image_url || "../img/logoantonia5.png") + '" alt="" width="76" height="76" loading="lazy" decoding="async">' +
           '<span class="product-choice-copy"><strong>' + esc(optionName) + '</strong><small>' + esc(optionPrice) + '</small></span>' +
           '<span class="product-option-stepper" role="group" aria-label="Quantidade de ' + esc(optionName) + '">' +
             '<button class="quantity-button option-quantity-button" type="button" data-adjust-option data-adjust-position="' + esc(item.position_id) + '" data-adjust-product="' + esc(productId) + '" data-delta="-1" aria-label="Diminuir ' + esc(optionName) + '"' + (disabled || quantity <= 0 ? ' disabled' : '') + '>−</button>' +
@@ -507,17 +517,16 @@
 
   function renderDetailPreservingScroll(positionId) {
     const content = $("detail-content");
-    const scrollTop = content.scrollTop;
-    const viewport = content.getBoundingClientRect();
     const rows = Array.from(content.querySelectorAll("[data-product-row]"));
+    const viewportBottom = window.innerHeight || document.documentElement.clientHeight;
     const anchor = (positionId
       ? rows.find((row) => row.dataset.productRow === String(positionId))
       : null) || rows.find((row) => {
         const rect = row.getBoundingClientRect();
-        return rect.bottom > viewport.top && rect.top < viewport.bottom;
+        return rect.bottom > 0 && rect.top < viewportBottom;
       }) || rows[0];
     const anchorId = anchor && anchor.dataset.productRow;
-    const anchorOffset = anchor ? anchor.getBoundingClientRect().top - viewport.top : null;
+    const anchorOffset = anchor ? anchor.getBoundingClientRect().top : null;
     const active = document.activeElement;
     const focusPosition = active && content.contains(active) && active.matches("[data-adjust-option]")
       ? active.dataset.adjustPosition : "";
@@ -529,13 +538,11 @@
     const nextAnchor = anchorId
       ? Array.from(content.querySelectorAll("[data-product-row]")).find((row) => row.dataset.productRow === anchorId)
       : null;
-    let targetScrollTop = scrollTop;
     if (nextAnchor && anchorOffset != null) {
-      const nextViewportTop = content.getBoundingClientRect().top;
-      const nextOffset = nextAnchor.getBoundingClientRect().top - nextViewportTop;
-      targetScrollTop = Math.max(0, scrollTop + nextOffset - anchorOffset);
+      const nextOffset = nextAnchor.getBoundingClientRect().top;
+      const targetScrollTop = Math.max(0, window.scrollY + nextOffset - anchorOffset);
+      window.scrollTo(window.scrollX || 0, targetScrollTop);
     }
-    content.scrollTop = targetScrollTop;
 
     if (focusPosition) {
       const focusTarget = Array.from(content.querySelectorAll("[data-adjust-option]")).find((button) =>
@@ -545,19 +552,35 @@
       );
       if (focusTarget) focusTarget.focus({ preventScroll: true });
     }
-    content.scrollTop = targetScrollTop;
+  }
+
+  function activateBasketNavigation(sizeKey, data) {
+    const basketName = keyOf(data && (data.basket && data.basket.name || data.summary && data.summary.name) || sizeKey);
+    const links = Array.from(document.querySelectorAll('.experiment-nav-link[data-experiment-nav="basket"]'));
+    const target = links.find((link) => {
+      const label = keyOf(link.dataset.size || "");
+      return basketName === label || basketName.endsWith(" " + label);
+    });
+    if (!target) return;
+    document.querySelectorAll(".experiment-nav-link").forEach((link) => {
+      const active = link === target;
+      link.classList.toggle("is-active", active);
+      if (active) link.setAttribute("aria-current", "page");
+      else link.removeAttribute("aria-current");
+    });
   }
 
   function openDetail(sizeKey) {
     const data = state.baskets.get(sizeKey);
     if (!data) return;
+    activateBasketNavigation(sizeKey, data);
     state.activeKey = sizeKey;
     if (typeof state.updateSidebarCheckoutCount === "function") state.updateSidebarCheckoutCount();
-    $("detail-content").scrollTop = 0;
     if (data.error) data.error = false;
     attachHomeSelections(data);
     renderDetail();
     showSheet("detail-sheet");
+    window.scrollTo(0, 0);
     if (data.detailLoaded || data.detailPromise) return;
     data.detailPromise = basketForSize(sizeKey).then((detail) => {
       Object.assign(data, detail, { summary: data.summary, detailLoaded: true, error: false });
