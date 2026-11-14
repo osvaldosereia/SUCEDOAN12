@@ -869,6 +869,68 @@ async function productList(url:URL){
   }
   return {ok:true,products:publicRows,next_offset:cursor<ordered.length?cursor:null};
 }
+
+async function basketExtraProducts(themeIdValue:string,offsetValue:any,limitValue:any){
+  const themeId=uid(themeIdValue);
+  if(!themeId)return {error:"extra_section_invalid_id",status:400};
+  const offset=Math.floor(clamp(offsetValue,0,5000));
+  const limit=Math.floor(clamp(limitValue||15,1,36));
+  const themeQ=await db.from("basket_extra_themes")
+    .select("id,search_terms,sales_categories,is_active")
+    .eq("id",themeId).eq("is_active",true).maybeSingle();
+  if(themeQ.error)throw themeQ.error;
+  const theme=themeQ.data;
+  if(!theme)return {ok:true,products:[],next_offset:null};
+
+  const fold=(value:any)=>String(value||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLocaleLowerCase("pt-BR").replace(/[^a-z0-9]+/g," ").trim();
+  const terms=(Array.isArray(theme.search_terms)?theme.search_terms:[])
+    .slice(0,20)
+    .map((value:any)=>({query:fold(txt(value,80)),tokens:fold(txt(value,80)).split(/\\s+/).filter(Boolean)}))
+    .filter((term:any)=>term.query&&term.tokens.length);
+  const allowedCategories=new Set(CATEGORIES.map((category:any)=>category.key));
+  const categories=[...new Set((Array.isArray(theme.sales_categories)?theme.sales_categories:[])
+    .map((value:any)=>txt(value,48).toLocaleLowerCase("pt-BR"))
+    .filter((value:string)=>allowedCategories.has(value)))];
+  if(!terms.length||!categories.length)return {ok:true,products:[],next_offset:null};
+
+  const selection="id,sku,gtin,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit,is_active,sales_category";
+  const categoryRows=await Promise.all(categories.map((category:string)=>activeProductRows(selection,category)));
+  const productsById=new Map<string,any>();
+  for(const rows of categoryRows)for(const product of rows)productsById.set(String(product.id),product);
+
+  const ranked:any[]=[];
+  for(const product of productsById.values()){
+    const fields=[product.name,product.brand,product.gtin,product.sku,product.packaging].map(fold);
+    const name=fold(product.name),code=fold(String(product.gtin||"")+" "+String(product.sku||""));
+    let best:any=null;
+    for(let index=0;index<terms.length;index++){
+      const term=terms[index];
+      if(!term.tokens.every((token:string)=>fields.some((field:string)=>field.includes(token))))continue;
+      const relevance=name===term.query?0:name.startsWith(term.query)?1:name.includes(term.query)?2:
+        10+term.tokens.reduce((score:number,token:string)=>score+(name.startsWith(token)?0:name.includes(token)?1:fold(product.brand).includes(token)?2:code.includes(token)?3:4),0);
+      if(!best||index<best.termOrder||(index===best.termOrder&&relevance<best.relevance))best={termOrder:index,relevance};
+    }
+    if(best)ranked.push({product,termOrder:best.termOrder,relevance:best.relevance});
+  }
+  ranked.sort((a:any,b:any)=>a.termOrder-b.termOrder||a.relevance-b.relevance||
+    String(a.product.name||"").localeCompare(String(b.product.name||""),"pt-BR")||
+    String(a.product.id).localeCompare(String(b.product.id)));
+
+  const publicRows:any[]=[];
+  let cursor=offset;
+  while(cursor<ranked.length&&publicRows.length<limit){
+    const chunk=ranked.slice(cursor,cursor+Math.max(48,limit*4));
+    const stock=await orderableProductStockMap(chunk.map((row:any)=>String(row.product.id)));
+    for(const row of chunk){
+      cursor++;
+      const candidate=pub(row.product,stock.get(String(row.product.id))||0);
+      if(candidate.stock_quantity>0&&candidate.price_available)publicRows.push(candidate);
+      if(publicRows.length>=limit)break;
+    }
+  }
+  return {ok:true,products:publicRows,next_offset:cursor<ranked.length?cursor:null};
+}
+
 async function oneProduct(id:string){
   const {data:p,error}=await db.from("products").select("id,sku,gtin,name,description_short,description_long,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit,is_active").eq("id",id).maybeSingle();
   if(error)throw error;if(!p||p.is_active!==true)return null;
@@ -1327,7 +1389,7 @@ Deno.serve(async(req:Request)=>{
       const r=await moldPositionOptions(u.searchParams.get("basket_id")||"",Math.trunc(Number(u.searchParams.get("composition_number")||0)),u.searchParams.get("position_id")||"",u.searchParams.get("selected_product_ids")||u.searchParams.get("selected_product_id")||"",Math.trunc(Number(u.searchParams.get("quantity")||0)),Math.trunc(Number(u.searchParams.get("offset")||0)));
       return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,r,200,{"Cache-Control":"no-store"});
     }
-    if(req.method==="GET"&&action==="basket_extra_products"){const r=await basketExtraProducts(u.searchParams.get("basket_id")||"",u.searchParams.get("theme_id")||"",u.searchParams.get("offset")||0,u.searchParams.get("limit")||15);return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,r,200,{"Cache-Control":"no-store"})}
+    if(req.method==="GET"&&action==="basket_extra_products"){const r=await basketExtraProducts(u.searchParams.get("theme_id")||"",u.searchParams.get("offset")||0,u.searchParams.get("limit")||15);return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,r,200,{"Cache-Control":"no-store"})}
     if(req.method==="GET"&&action==="resolve_identity_code"){const r=await resolveCode(req,u.searchParams.get("code"));return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,{ok:true,...r},200,{"Cache-Control":"no-store"})}
     if(req.method==="GET"&&action==="resolve_identity_token"){const r=await resolveToken(u.searchParams.get("token"));return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,{ok:true,...r},200,{"Cache-Control":"no-store"})}
     if(req.method==="GET"&&action==="delivery_options")return json(req,{ok:true,options:deliveryOptions(),cutoff_hour:CUTOFF_HOUR,time_zone:TZ},200,{"Cache-Control":"no-store"});
