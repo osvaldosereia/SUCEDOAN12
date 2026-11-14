@@ -4,7 +4,7 @@ BEGIN
  d:=pg_get_functiondef('public.create_vitrine_cart_order_v3_base(text,text,jsonb,jsonb,jsonb)'::regprocedure);
  d:=replace(d,$x$if coalesce(v_line->>'type','product') not in ('product','basket','basket_mold') then raise exception 'invalid_item_type'; end if;$x$,$x$if coalesce(v_line->>'type','product') not in ('product','basket_mold') then raise exception 'invalid_item_type'; end if;$x$);
  a:=strpos(d,$x$    -- Compatibilidade transacional com lotes completos antigos.$x$);
- IF a=0 THEN RAISE EXCEPTION 'legacy basket branch missing'; END IF;
+ IF a=0 THEN RETURN; END IF;
  t:=substring(d from a); b:=strpos(t,$x$  end loop;
 
   if v_total<75$x$);
