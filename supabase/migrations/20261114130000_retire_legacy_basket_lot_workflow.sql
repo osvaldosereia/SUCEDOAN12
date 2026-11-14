@@ -203,7 +203,7 @@ begin
     'stock_source','products.stock','physical_stock_changed',true,'local_order_status',v_order_status,
     'missing_components',v_missing_components);
 end;
-$function$
+$function$;
 
 
 -- Keep marketing callers callable while explicitly retiring the old
