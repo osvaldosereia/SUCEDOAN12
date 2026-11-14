@@ -90,3 +90,26 @@ CREATE OR REPLACE VIEW public.ops2_loose_sellable_stock_v1 AS
     0::numeric AS basket_locked_quantity,
     GREATEST((0)::numeric, COALESCE(s.effective_sellable_stock, (0)::numeric)) AS loose_sellable_stock
    FROM public.ops2_sellable_stock_v1 s;
+
+-- Product and basket stock views now reserve only real open orders.
+CREATE OR REPLACE VIEW public.storefront_product_sellable_stock_v1 AS
+ SELECT p.id AS product_id,
+    COALESCE(p.stock, (0)::numeric) AS catalog_stock,
+    (0)::numeric AS basket_locked_quantity,
+    reservations.pending_order_quantity,
+    GREATEST((0)::numeric, COALESCE(p.stock, (0)::numeric) - reservations.pending_order_quantity) AS sellable_stock,
+    p.is_active,
+    p.is_whatsapp_active,
+    COALESCE(p.price, (0)::numeric) AS price,
+    p.validity_date
+   FROM public.products p
+   CROSS JOIN LATERAL (
+     SELECT COALESCE(public.supabase_stock_pending_reservations_v1(p.id, NULL::uuid), (0)::numeric) AS pending_order_quantity
+   ) reservations;
+
+-- Retain the legacy view name for compatibility, but no longer lock stock for old basket lots.
+CREATE OR REPLACE VIEW public.basket_locked_component_stock_v1 AS
+ SELECT product.id AS product_id,
+    0::numeric AS basket_locked_quantity
+   FROM public.products product
+  WHERE false;
