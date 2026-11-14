@@ -366,8 +366,8 @@
       const basket = initial.basket;
       const rawItems = Array.isArray(initial.items) ? initial.items : [];
       const publicExtraRows = Array.isArray(initial.extras) ? initial.extras : [];
-      const extraSectionsConfigured = initial.extras_configured === true || publicExtraRows.some((row) => row && row.search_enabled === true);
-      const extraCategories = extraSectionsConfigured
+      const extraCategoriesConfigured = initial.extras_configured === true || publicExtraRows.some((row) => row && row.search_enabled === true);
+      const extraCategories = extraCategoriesConfigured
         ? publicExtraRows.filter((row) => row && row.search_enabled === true).map((row) => ({
           key: String(row.id || ""), label: String(row.label || "Produtos extras"), searchEnabled: true,
           expanded: false, loaded: false, loading: false, error: false, products: [], nextOffset: 0, hasMore: true
