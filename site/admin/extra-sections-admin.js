@@ -17,6 +17,7 @@
   let sections = [];
   let bound = false;
   let loading = false;
+  let mutating = false;
 
   async function adminRequest(action, values) {
     if (!supabase || !publishableKey) throw new Error("A configuração do Admin está incompleta.");
@@ -35,6 +36,10 @@
       const messages = {
         admin_code_invalid: "O acesso ao Admin expirou. Entre novamente.",
         extra_section_name_required: "Informe o nome da seção.",
+        extra_section_invalid_id: "A seção selecionada não é válida.",
+        extra_section_not_found: "A seção já foi removida ou não existe mais.",
+        extra_section_order_invalid: "A ordem enviada não é válida.",
+        extra_section_order_stale: "A lista mudou em outro acesso. Atualize e tente ordenar novamente.",
         extra_section_terms_required: "Informe pelo menos uma palavra-chave.",
         extra_section_category_required: "Selecione pelo menos uma categoria do site.",
         extra_section_too_many_terms: "Use no máximo 20 palavras-chave.",
@@ -47,6 +52,14 @@
 
   function setStatus(message, isError) {
     const node = $("extra-section-status");
+    if (!node) return;
+    node.textContent = message || "";
+    node.classList.toggle("error", Boolean(isError));
+    node.classList.toggle("success", Boolean(message) && !isError);
+  }
+
+  function setListStatus(message, isError) {
+    const node = $("extra-section-list-status");
     if (!node) return;
     node.textContent = message || "";
     node.classList.toggle("error", Boolean(isError));
@@ -75,20 +88,29 @@
       host.innerHTML = '<p class="empty-state">Nenhuma seção cadastrada. Use “Nova seção” para criar a primeira.</p>';
       return;
     }
-    host.innerHTML = sections.map((section) => {
+    host.innerHTML = sections.map((section, index) => {
       const terms = Array.isArray(section.search_terms) ? section.search_terms : [];
       const labels = categoryLabels(section.sales_categories);
       const isActive = section.is_active !== false;
       const configured = terms.length > 0 && labels.length > 0;
       const badge = !isActive ? "Pausada" : configured ? "Ativa" : "Configurar";
+      const id = esc(section.id);
+      const name = esc(section.name || "Seção sem nome");
+      const accessibleName = esc(section.name || "seção");
       return '<article class="extra-section-card' + (isActive ? "" : " is-inactive") + (!configured && isActive ? " needs-config" : "") + '">' +
-        '<div class="extra-section-card-main"><div class="extra-section-card-heading"><h3>' + esc(section.name || "Seção sem nome") + '</h3>' +
+        '<div class="extra-section-card-main"><div class="extra-section-card-heading"><h3>' + name + '</h3>' +
         '<span class="extra-section-status-badge">' + badge + '</span></div>' +
         (!configured && isActive ? '<p class="extra-section-not-configured">Informe palavras-chave e categorias para mostrar esta seção no site.</p>' : '') +
         '<p><strong>Buscar:</strong> ' + esc(terms.length ? terms.join(" · ") : "palavras-chave ainda não configuradas") + '</p>' +
         '<p><strong>Categorias:</strong> ' + esc(labels.length ? labels.join(", ") : "nenhuma selecionada") + '</p></div>' +
-        '<div class="extra-section-card-actions"><button class="button button-outline" type="button" data-extra-section-edit="' + esc(section.id) + '">Editar</button>' +
-        '<button class="button button-outline" type="button" data-extra-section-toggle="' + esc(section.id) + '">' + (isActive ? "Pausar" : "Ativar") + '</button></div>' +
+        '<div class="extra-section-card-actions"><div class="extra-section-order" role="group" aria-label="Ordenar seção">' +
+        '<button class="extra-section-move" type="button" data-extra-section-id="' + id + '" data-extra-section-move="up" title="Mover ' + accessibleName + ' para cima" aria-label="Mover ' + accessibleName + ' para cima"' +
+        (index === 0 || mutating ? " disabled" : "") + '>↑</button>' +
+        '<button class="extra-section-move" type="button" data-extra-section-id="' + id + '" data-extra-section-move="down" title="Mover ' + accessibleName + ' para baixo" aria-label="Mover ' + accessibleName + ' para baixo"' +
+        (index === sections.length - 1 || mutating ? " disabled" : "") + '>↓</button></div>' +
+        '<button class="button button-outline" type="button" data-extra-section-edit="' + id + '"' + (mutating ? " disabled" : "") + '>Editar</button>' +
+        '<button class="button button-outline" type="button" data-extra-section-toggle="' + id + '"' + (mutating ? " disabled" : "") + '>' + (isActive ? "Pausar" : "Ativar") + '</button>' +
+        '<button class="button button-outline extra-section-delete" type="button" data-extra-section-delete="' + id + '"' + (mutating ? " disabled" : "") + '>Excluir</button></div>' +
         '</article>';
     }).join("");
   }
@@ -169,6 +191,57 @@
     }
   }
 
+  async function moveSection(section, direction) {
+    if (mutating) return;
+    const fromIndex = sections.findIndex((item) => String(item.id) === String(section.id));
+    const toIndex = fromIndex + (direction === "up" ? -1 : direction === "down" ? 1 : 0);
+    if (fromIndex < 0 || toIndex < 0 || toIndex >= sections.length || fromIndex === toIndex) return;
+
+    const next = sections.slice();
+    const moving = next.splice(fromIndex, 1)[0];
+    next.splice(toIndex, 0, moving);
+    mutating = true;
+    setListStatus("Salvando a ordem das seções…", false);
+    renderSections();
+    try {
+      const data = await adminRequest("extra_sections_reorder", {
+        ordered_ids: next.map((item) => String(item.id))
+      });
+      sections = Array.isArray(data.sections) ? data.sections : next;
+      setListStatus("Ordem atualizada.", false);
+      renderSections();
+    } catch (error) {
+      setListStatus(error instanceof Error ? error.message : "Não foi possível ordenar as seções.", true);
+      await load(true);
+    } finally {
+      mutating = false;
+      renderSections();
+    }
+  }
+
+  async function deleteSection(section) {
+    if (mutating) return;
+    const name = String(section.name || "esta seção");
+    const confirmed = window.confirm('Excluir a seção "' + name + '"? Os produtos continuarão cadastrados, mas os vínculos desta seção serão removidos.');
+    if (!confirmed) return;
+
+    mutating = true;
+    setListStatus("Excluindo seção…", false);
+    renderSections();
+    try {
+      await adminRequest("extra_section_delete", { id: String(section.id) });
+      sections = sections.filter((item) => String(item.id) !== String(section.id));
+      setListStatus("Seção excluída.", false);
+      renderSections();
+    } catch (error) {
+      setListStatus(error instanceof Error ? error.message : "Não foi possível excluir a seção.", true);
+      await load(true);
+    } finally {
+      mutating = false;
+      renderSections();
+    }
+  }
+
   function bind() {
     if (bound) return;
     const form = $("extra-section-form");
@@ -179,11 +252,17 @@
     $("extra-section-list").addEventListener("click", (event) => {
       const editButton = event.target.closest("[data-extra-section-edit]");
       const toggleButton = event.target.closest("[data-extra-section-toggle]");
-      const id = String((editButton || toggleButton || {}).dataset && (editButton || toggleButton).dataset.extraSectionEdit ||
-        (editButton || toggleButton || {}).dataset && (editButton || toggleButton).dataset.extraSectionToggle || "");
+      const deleteButton = event.target.closest("[data-extra-section-delete]");
+      const moveButton = event.target.closest("[data-extra-section-move]");
+      const id = String((editButton && editButton.dataset.extraSectionEdit) ||
+        (toggleButton && toggleButton.dataset.extraSectionToggle) ||
+        (deleteButton && deleteButton.dataset.extraSectionDelete) ||
+        (moveButton && moveButton.dataset.extraSectionId) || "");
       const section = sections.find((item) => String(item.id) === id);
-      if (!section) return;
+      if (!section || mutating) return;
       if (editButton) openForm(section);
+      else if (deleteButton) deleteSection(section);
+      else if (moveButton) moveSection(section, moveButton.dataset.extraSectionMove);
       else if (toggleButton && section.is_active === false &&
         (!(Array.isArray(section.search_terms) && section.search_terms.length) || !(Array.isArray(section.sales_categories) && section.sales_categories.length))) openForm(section);
       else if (toggleButton) toggleSection(section);
@@ -197,13 +276,17 @@
     if (!host) return;
     bind();
     loading = true;
-    if (!silent) host.innerHTML = '<p class="admin-muted">Carregando seções…</p>';
+    if (!silent) {
+      setListStatus("", false);
+      host.innerHTML = '<p class="admin-muted">Carregando seções…</p>';
+    }
     try {
       const data = await adminRequest("extra_sections_list");
       sections = Array.isArray(data.sections) ? data.sections : [];
       renderSections();
     } catch (error) {
       host.innerHTML = '<p class="form-message error">' + esc(error instanceof Error ? error.message : "Não foi possível carregar as seções.") + '</p>';
+      setListStatus(error instanceof Error ? error.message : "Não foi possível carregar as seções.", true);
     } finally {
       loading = false;
     }

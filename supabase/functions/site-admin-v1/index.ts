@@ -4885,6 +4885,45 @@ async function extraSectionsList() {
   return { sections: result.data || [], categories: BASKET_EXTRA_SECTION_CATEGORIES };
 }
 
+async function extraSectionDelete(input: any) {
+  const id = uuid(input.id);
+  if (!id) return { error: "extra_section_invalid_id", status: 400 };
+  const result = await db.from("basket_extra_themes").delete().eq("id", id).select("id").maybeSingle();
+  if (result.error) throw result.error;
+  if (!result.data) return { error: "extra_section_not_found", status: 404 };
+  return { id: result.data.id };
+}
+
+async function extraSectionsReorder(input: any) {
+  if (!Array.isArray(input.ordered_ids)) return { error: "extra_section_order_invalid", status: 400 };
+  const ids = input.ordered_ids.map((value: unknown) => uuid(value));
+  if (ids.some((id: string) => !id) || new Set(ids).size !== ids.length) {
+    return { error: "extra_section_order_invalid", status: 400 };
+  }
+
+  const columns = "id,name,sort_order,search_terms,sales_categories,is_active,created_at,updated_at";
+  const current = await db.from("basket_extra_themes").select(columns).order("sort_order").order("created_at");
+  if (current.error) throw current.error;
+  const existing = current.data || [];
+  const requestedIds = new Set(ids);
+  if (existing.length !== ids.length || existing.some((row: any) => !requestedIds.has(String(row.id)))) {
+    return { error: "extra_section_order_stale", status: 409 };
+  }
+  if (!ids.length) return { sections: [] };
+
+  const byId = new Map<string, any>(existing.map((row: any) => [String(row.id), row] as [string, any]));
+  const updatedAt = new Date().toISOString();
+  const rows = ids.map((id: string, index: number) => ({
+    ...byId.get(id),
+    sort_order: (index + 1) * 10,
+    updated_at: updatedAt,
+  }));
+  const result = await db.from("basket_extra_themes").upsert(rows, { onConflict: "id" })
+    .select(columns).order("sort_order").order("created_at");
+  if (result.error) throw result.error;
+  return { sections: result.data || [] };
+}
+
 async function extraSectionSave(input: any) {
   const id = input.id ? uuid(input.id) : "";
   if (input.id && !id) return { error: "extra_section_invalid_id", status: 400 };
@@ -5025,6 +5064,8 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "basket_grid_create") result = await basketGridCreate(input);
     else if (req.method === "POST" && action === "extra_sections_list") result = await extraSectionsList();
     else if (req.method === "POST" && action === "extra_section_save") result = await extraSectionSave(input);
+    else if (req.method === "POST" && action === "extra_section_delete") result = await extraSectionDelete(input);
+    else if (req.method === "POST" && action === "extra_sections_reorder") result = await extraSectionsReorder(input);
     else if (req.method === "POST" && action === "basket_set_active") result = await basketSetActive(input);
     else if (req.method === "GET" && action === "orders_list") result = await ordersList(input);
     else if (req.method === "GET" && action === "order_detail") result = await orderDetail(input);
