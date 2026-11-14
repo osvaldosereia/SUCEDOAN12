@@ -113,3 +113,5 @@ CREATE OR REPLACE VIEW public.basket_locked_component_stock_v1 AS
     0::numeric AS basket_locked_quantity
    FROM public.products product
   WHERE false;
+
+REVOKE EXECUTE ON FUNCTION public.activate_basket_kit_lot_draft_v1(uuid,text) FROM authenticated;
