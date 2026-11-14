@@ -62,3 +62,31 @@ $old$,'');
 
   EXECUTE d;
 END $$;
+
+-- Current product stock comes from products/ERP and real order reservations.
+-- Old assembled-basket lot allocations are historical and must not reduce sellable stock.
+CREATE OR REPLACE VIEW public.ops2_loose_sellable_stock_v1 AS
+ SELECT s.product_id,
+    s.name,
+    s.sku,
+    s.gtin,
+    s.is_active,
+    s.legacy_stock,
+    s.bling_product_id,
+    s.link_status,
+    s.bling_physical_total,
+    s.bling_virtual_total,
+    s.selected_deposit_id,
+    s.sellable_physical,
+    s.sellable_virtual,
+    s.mirror_observed_at,
+    s.source_event_id,
+    s.source_resource,
+    s.stock_authority,
+    s.stock_cutover_at,
+    s.bling_stock_ready,
+    s.effective_sellable_stock,
+    s.stock_source_reason,
+    0::numeric AS basket_locked_quantity,
+    GREATEST((0)::numeric, COALESCE(s.effective_sellable_stock, (0)::numeric)) AS loose_sellable_stock
+   FROM public.ops2_sellable_stock_v1 s;
