@@ -5,3 +5,18 @@ verify_jwt = false
 
 [functions.site-card-admin-v1]
 verify_jwt = false
+
+[functions.admin-basket-guided-v1]
+verify_jwt = true
+
+[functions.admin-store-baskets-v1]
+verify_jwt = true
+
+[functions.basket-lot-image-v1]
+verify_jwt = false
+
+[functions.admin-marketing-strategy-v1]
+verify_jwt = true
+
+[functions.admin-marketing-strategy-campaign-v1]
+verify_jwt = true
