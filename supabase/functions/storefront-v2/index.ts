@@ -100,6 +100,14 @@ async function moldDetailComposition(basketId:string){
   }
   return request;
 }
+function moldConfiguredDefaults(options:any[]):Map<string,string>{
+  const defaults=new Map<string,string>();
+  for(const option of options.slice().sort((a:any,b:any)=>Number(a.sort_order||0)-Number(b.sort_order||0)||String(a.product_id||"").localeCompare(String(b.product_id||"")))){
+    const positionId=String(option?.position_id||""),productId=String(option?.product_id||"");
+    if(positionId&&productId&&!defaults.has(positionId))defaults.set(positionId,productId);
+  }
+  return defaults;
+}
 async function moldDetail(basketId:string,compositionNumber:number,selections:any[]|null=null,includeAlternatives=true,allowUnavailablePreview=false){
   const [gate,mq,bq,pq]=await Promise.all([
     db.rpc("basket_mold_cutover_ready_v1",{p_basket_id:basketId}),
@@ -651,7 +659,7 @@ async function offerList(){
   const rows=(await activeProductRows("id,sku,gtin,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit,metadata,is_active"))
     .filter((p:any)=>p.is_offer===true&&p.offer_price!=null)
     .sort((a:any,b:any)=>String(a.name||"").localeCompare(String(b.name||""),"pt-BR")).slice(0,200);
-  const sm=await orderableProductStockMap(rows.map((p:any)=>p.id));
+  const sm=await sellableMap(rows.map((p:any)=>p.id));
   return {ok:true,offers:rows.map((p:any)=>({...pub(p,sm.get(p.id)||0),product_id:p.id,offer_priority:p.metadata?.offer_source==="auto_expiry"?0:1})).filter((p:any)=>p.stock_quantity>0&&p.price_available).sort((a:any,b:any)=>a.offer_priority-b.offer_priority||a.name.localeCompare(b.name,"pt-BR")).slice(0,160)};
 }
 async function activeProductRows(selection:string,category="",subcategory=""):Promise<any[]>{
@@ -708,7 +716,7 @@ async function productList(url:URL){
   let cursor=offset;
   while(cursor<ordered.length&&publicRows.length<limit){
     const chunk=ordered.slice(cursor,cursor+Math.max(24,limit+12));
-    const sm=await orderableProductStockMap(chunk);
+    const sm=await sellableMap(chunk);
     for(const id of chunk){
       cursor++;
       const p=byId.get(id);
@@ -723,7 +731,7 @@ async function productList(url:URL){
 async function oneProduct(id:string){
   const {data:p,error}=await db.from("products").select("id,sku,gtin,name,description_short,description_long,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit,is_active").eq("id",id).maybeSingle();
   if(error)throw error;if(!p||p.is_active!==true)return null;
-  const sm=await orderableProductStockMap([id]),o=pub(p,sm.get(id)||0);
+  const sm=await sellableMap([id]),o=pub(p,sm.get(id)||0);
   if(o.stock_quantity<=0||!o.price_available)return null;
   const characteristics=[["Marca",p.brand],["Embalagem",p.packaging],["Unidade",p.unit],["Categoria",p.category],["Subcategoria",p.subcategory],["Tipo",p.customer_subsubcategory||p.subsubcategory]].filter((x:any)=>txt(x[1],200)).map((x:any)=>({label:x[0],value:String(x[1])}));
   return {...o,sku:p.sku||"",gtin:p.gtin||"",description:p.description_long||p.description_short||"",characteristics};
