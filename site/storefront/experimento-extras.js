@@ -346,12 +346,34 @@
       if (!category || category.loading || !category.hasMore) return;
       category.loading = true;
       category.error = false;
-      const status = $("detail-content").querySelector('[data-extra-status="' + category.key + '"]');
-      const moreButton = listElement && listElement.closest("[data-extra-category-card]")?.querySelector("[data-extra-more]");
-      if (status) status.textContent = category.products.length ? "Carregando mais produtos…" : "Carregando produtos…";
-      if (moreButton) {
-        moreButton.disabled = true;
-        moreButton.textContent = "Carregando…";
+
+      const sameActiveBasket = () => {
+        const activeData = state.baskets.get(state.activeKey);
+        if (!activeData) return null;
+        const sourceId = String(data.basket && data.basket.id || "");
+        const activeId = String(activeData.basket && activeData.basket.id || "");
+        if (sourceId ? sourceId !== activeId : activeData !== data) return null;
+        const activeCategory = extraCategoriesFor(activeData).find((entry) => entry.key === String(category.key));
+        return activeCategory ? { data: activeData, category: activeCategory } : null;
+      };
+      const currentElements = () => {
+        const content = $("detail-content");
+        if (!content) return {};
+        const card = Array.from(content.querySelectorAll("[data-extra-category-card]"))
+          .find((element) => String(element.dataset.extraCategoryCard || "") === String(category.key));
+        return {
+          card,
+          list: card && card.querySelector("[data-extra-list]"),
+          status: card && card.querySelector("[data-extra-status]"),
+          more: card && card.querySelector("[data-extra-more]")
+        };
+      };
+
+      const initial = currentElements();
+      if (initial.status) initial.status.textContent = category.products.length ? "Carregando mais produtos…" : "Carregando produtos…";
+      if (initial.more) {
+        initial.more.disabled = true;
+        initial.more.textContent = "Carregando…";
       }
       try {
         let fetched = [];
@@ -377,31 +399,57 @@
         } while (!fetched.length && category.hasMore && pages < 8);
         category.products = category.products.concat(fetched);
         category.loaded = true;
-        if (listElement && listElement.isConnected && state.baskets.get(state.activeKey) === data && !$("detail-sheet").hidden) {
-          if (fetched.length) {
-            listElement.insertAdjacentHTML("beforeend", fetched.map((product) => extraProductMarkup(data, product)).join(""));
-            listElement.querySelectorAll("img").forEach((image) => image.addEventListener("error", () => { image.src = "../img/logoantonia5.png"; }, { once: true }));
-            bindExtraProductControls(listElement);
+
+        const active = sameActiveBasket();
+        if (active) {
+          if (active.category !== category) {
+            const merged = new Map();
+            for (const product of [...(active.category.products || []), ...(category.products || [])]) {
+              const id = String(product && product.id || "");
+              if (id) merged.set(id, product);
+            }
+            active.category.products = Array.from(merged.values());
+            active.category.nextOffset = category.nextOffset;
+            active.category.hasMore = category.hasMore;
+            active.category.loaded = category.loaded;
           }
-          const currentStatus = $("detail-content").querySelector('[data-extra-status="' + category.key + '"]');
-          if (currentStatus) currentStatus.textContent = !category.products.length ? "Nenhum produto disponível nesta categoria." : "";
+          const elements = currentElements();
+          if (elements.list && !$("detail-sheet").hidden) {
+            elements.list.innerHTML = active.category.products
+              .map((product) => extraProductMarkup(active.data, product)).join("");
+            elements.list.querySelectorAll("img").forEach((image) => image.addEventListener("error", () => {
+              image.src = "../img/logoantonia5.png";
+            }, { once: true }));
+            bindExtraProductControls(elements.list);
+            if (elements.status) elements.status.textContent = !active.category.products.length
+              ? "Nenhum produto disponível nesta categoria."
+              : "";
+          }
         }
       } catch (_) {
         category.error = true;
-        if (listElement && listElement.isConnected) {
-          const currentStatus = $("detail-content").querySelector('[data-extra-status="' + category.key + '"]');
-          if (currentStatus) currentStatus.textContent = "Não foi possível carregar. Tente novamente.";
+        const active = sameActiveBasket();
+        if (active) {
+          if (active.category !== category) active.category.error = true;
+          const elements = currentElements();
+          if (elements.status && !$("detail-sheet").hidden) {
+            elements.status.textContent = "Não foi possível carregar. Tente novamente.";
+          }
         }
       } finally {
         category.loading = false;
-        if (moreButton) {
-          moreButton.hidden = !(category.error || (category.loaded && category.hasMore));
-          moreButton.disabled = false;
-          moreButton.textContent = category.error ? "Tentar novamente" : "Carregar mais produtos";
+        const active = sameActiveBasket();
+        if (active) active.category.loading = false;
+        const elements = currentElements();
+        const currentCategory = active ? active.category : category;
+        if (elements.more) {
+          elements.more.hidden = !(currentCategory.error || (currentCategory.loaded && currentCategory.hasMore));
+          elements.more.disabled = false;
+          elements.more.textContent = currentCategory.error ? "Tentar novamente" : "Carregar mais produtos";
         }
       }
     }
-  
+
     function homeCategoriesFor() {
       if (!Array.isArray(state.homeExtraCategories)) {
         state.homeExtraCategories = EXTRA_CATEGORIES.map((category) => ({
