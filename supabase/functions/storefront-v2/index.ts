@@ -470,7 +470,7 @@ async function home(priorityOnly=false){
       .map((subcategory:any)=>({id:subcategory.id,category_id:subcategory.category_id,name:subcategory.name,sort_order:subcategory.sort_order}))
   }));
   return {
-    ok:true,version:"mold-basket-commerce-v2",priority:priorityOnly,split_kits:false,
+    ok:true,version:"mold-basket-commerce-v2",priority:priorityOnly,
     baskets:moldCards,categories:CATEGORIES,basket_categories:basketTaxonomy
   };
 }
