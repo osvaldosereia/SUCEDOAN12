@@ -152,7 +152,19 @@
       : null;
   }
 
+  function productSellableStock(product) {
+    if (product?.sellable_stock == null || product.sellable_stock === "") return null;
+    const value = Number(product.sellable_stock);
+    return Number.isFinite(value) ? Math.max(0, value) : 0;
+  }
+
+  function canSelectAsBasketDefault(product) {
+    const sellable = productSellableStock(product);
+    return product?.is_active !== false && (sellable === null || sellable > 0);
+  }
+
   function productStatus(product) {
+    if (product?.is_active === true && productSellableStock(product) === 0) return { text: "Sem saldo vendável", className: "is-no-stock" };
     if (product?.is_active === true) return { text: "Ativo", className: "is-active" };
     if (product?.is_active === false) return { text: "Inativo", className: "is-inactive" };
     return { text: "Status indisponível", className: "is-unknown" };
@@ -170,19 +182,20 @@
   function chooseDefaultOption(type, preferredId, referencePriceCents) {
     const options = Array.isArray(type.options) ? type.options : [];
     const preferred = options.find((option) => String(option.product_id) === String(preferredId || ""));
-    if (preferred && optionProduct(preferred).is_active !== false) return preferred;
-    const candidates = options.filter((option) => optionProduct(option).is_active !== false);
+    if (preferred && canSelectAsBasketDefault(optionProduct(preferred))) return preferred;
+    const candidates = options.filter((option) => canSelectAsBasketDefault(optionProduct(option)));
     candidates.sort((a, b) => {
       const aPrice = optionPriceCents(a);
       const bPrice = optionPriceCents(b);
       const aDelta = Number.isFinite(Number(referencePriceCents)) ? Math.abs(aPrice - Number(referencePriceCents)) : 0;
       const bDelta = Number.isFinite(Number(referencePriceCents)) ? Math.abs(bPrice - Number(referencePriceCents)) : 0;
-      const aStock = Number(optionProduct(a).stock || 0);
-      const bStock = Number(optionProduct(b).stock || 0);
+      const aStock = productSellableStock(optionProduct(a)) ?? Number(optionProduct(a).stock || 0);
+      const bStock = productSellableStock(optionProduct(b)) ?? Number(optionProduct(b).stock || 0);
       return aDelta - bDelta || bStock - aStock ||
         String(optionProduct(a).name || "").localeCompare(String(optionProduct(b).name || ""), "pt-BR");
     });
-    return candidates[0] || options[0] || null;
+    const activePreferred = preferred && optionProduct(preferred).is_active !== false ? preferred : null;
+    return candidates[0] || activePreferred || options.find((option) => optionProduct(option).is_active !== false) || options[0] || null;
   }
 
   function setTypeDefault(type, preferredId, referencePriceCents) {
@@ -205,14 +218,16 @@
       const product = optionProduct(option);
       const status = productStatus(product);
       const price = product.effective_price_cents ?? effectivePrice(product);
-      const stock = product.stock == null ? "Estoque não informado" : "Estoque " + quantityValue(product.stock);
+      const physicalStock = product.stock == null ? "Estoque físico não informado" : "Estoque físico " + quantityValue(product.stock);
+      const sellableStock = productSellableStock(product);
+      const stock = physicalStock + " · Vendável " + (sellableStock == null ? "não informado" : quantityValue(sellableStock));
       const costNumber = product.cost == null || product.cost === "" ? null : Number(product.cost);
       const costText = costNumber != null && Number.isFinite(costNumber) && costNumber >= 0
         ? "Custo " + money(Math.round(costNumber * 100))
         : "Custo não informado";
       const brand = product.brand ? " · " + esc(product.brand) : "";
       const isDefault = String(option.product_id) === defaultProductId;
-      const cannotSelectDefault = product.is_active === false && !isDefault;
+      const cannotSelectDefault = !canSelectAsBasketDefault(product);
       return '<div class="basket-grid-option">' +
         '<label class="basket-grid-option-default"><input type="radio" name="basket-default-' + esc(key) + '" data-default-option data-type-key="' + esc(key) + '" data-product-id="' + esc(option.product_id) + '"' + (isDefault ? " checked" : "") + (cannotSelectDefault ? " disabled" : "") + '><span>Padrão</span></label>' +
         '<div class="basket-grid-option-copy"><strong>' + esc(product.name || "Produto") + brand + '</strong><span>Venda: ' + money(price) + '/un. · ' + esc(stock) + '</span><span>' + esc(costText) + '</span><small class="basket-option-status ' + status.className + '">' + status.text + '</small></div>' +
@@ -506,9 +521,11 @@
       const rows = (data.products || []).map((product) => {
         const stockNumber = product.stock == null ? NaN : Number(product.stock);
         const stock = Number.isFinite(stockNumber) ? stockNumber.toLocaleString("pt-BR", { maximumFractionDigits: 3 }) : "—";
+        const sellableNumber = productSellableStock(product);
+        const sellable = sellableNumber == null ? "—" : sellableNumber.toLocaleString("pt-BR", { maximumFractionDigits: 3 });
         return '<label class="picker-product-row">' +
           '<input type="checkbox" value="' + esc(product.id) + '" data-picker-product ' + (state.pickerSelected.has(String(product.id)) ? "checked" : "") + '>' +
-          '<span><strong>' + esc(product.name) + '</strong><small>' + esc([product.brand, product.sku && ("SKU " + product.sku), product.is_active ? "Ativo" : "Inativo"].filter(Boolean).join(" · ")) + '</small><small class="picker-product-stock">Estoque: ' + esc(stock) + '</small></span><b>' + money(product.effective_price_cents ?? effectivePrice(product)) + '</b></label>';
+          '<span><strong>' + esc(product.name) + '</strong><small>' + esc([product.brand, product.sku && ("SKU " + product.sku), product.is_active ? "Ativo" : "Inativo"].filter(Boolean).join(" · ")) + '</small><small class="picker-product-stock">Estoque físico: ' + esc(stock) + ' · Vendável: ' + esc(sellable) + '</small></span><b>' + money(product.effective_price_cents ?? effectivePrice(product)) + '</b></label>';
       }).join("");
       if (reset) host.innerHTML = "";
       if (!(data.products || []).length && reset) host.innerHTML = '<p class="admin-muted">Nenhum produto encontrado.</p>';
@@ -656,7 +673,7 @@
       options.forEach((option) => {
         if (String(option.product_id) === productId) option.product = product;
       });
-      if (product.is_active === false && currentDefaultId === productId) {
+      if (!canSelectAsBasketDefault(product) && currentDefaultId === productId) {
         setTypeDefault(type, "", previousDefaultPrice);
         affectedDefaults.push(type);
       }
@@ -745,7 +762,7 @@
       const type = findType(input.dataset.typeKey);
       if (!type) return;
       const selected = type.options.find((option) => String(option.product_id) === String(input.dataset.productId));
-      if (!selected || optionProduct(selected).is_active === false) return;
+      if (!selected || !canSelectAsBasketDefault(optionProduct(selected))) return;
       setTypeDefault(type, input.dataset.productId);
       markDirty();
       renderGrid();

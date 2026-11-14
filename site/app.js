@@ -473,13 +473,14 @@
         const productId = String(alt.product_id || "");
         const selected = selectedById.get(productId);
         const quantity = Math.max(0, Math.trunc(Number(selected && selected.quantity || 0)));
-        const stock = Math.max(0, Math.trunc(Number(alt.stock_quantity || selected && selected.stock_quantity || 0)));
+        const stockValue = alt.stock_quantity != null ? alt.stock_quantity : selected && selected.stock_quantity;
+        const stock = Math.max(0, Math.trunc(Number(stockValue || 0)));
         const disabled = data.changing || item._optionsLoading;
         const optionName = alt.name || selected && selected.name || "Produto";
         const optionPrice = alt.price_cents == null ? "Preço indisponível" : money(alt.price_cents);
         return '<div class="product-choice' + (quantity > 0 ? ' is-selected' : '') + '" data-option-card="' + esc(productId) + '">' +
           '<img src="' + esc(alt.image_url || "../img/logoantonia5.png") + '" alt="" width="76" height="76" loading="lazy" decoding="async">' +
-          '<span class="product-choice-copy"><strong>' + esc(optionName) + '</strong><small>' + esc(optionPrice) + '</small></span>' +
+          '<span class="product-choice-copy"><strong>' + esc(optionName) + '</strong><small>' + esc(optionPrice) + '</small>' + (stock <= 0 ? '<small class="product-choice-stock">Sem estoque disponível</small>' : '') + '</span>' +
           '<span class="product-option-stepper" role="group" aria-label="Quantidade de ' + esc(optionName) + '">' +
             '<button class="quantity-button option-quantity-button" type="button" data-adjust-option data-adjust-position="' + esc(item.position_id) + '" data-adjust-product="' + esc(productId) + '" data-delta="-1" aria-label="Diminuir ' + esc(optionName) + '"' + (disabled || quantity <= 0 ? ' disabled' : '') + '>−</button>' +
             '<output class="product-option-quantity" data-option-quantity="' + esc(productId) + '" aria-live="polite">' + quantity + '</output>' +

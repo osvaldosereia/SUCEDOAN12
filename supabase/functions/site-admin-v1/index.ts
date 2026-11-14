@@ -495,7 +495,21 @@ async function productSearch(input: any) {
   else query = query.order("is_active", { ascending: false }).order("name", { ascending: true });
   const result = await query.range(offset, offset + limit - 1);
   if (result.error) throw result.error;
-  return { products: result.data || [], total: result.count || 0, offset, limit };
+  const products = result.data || [];
+  const productIds = products.map((product: any) => String(product.id));
+  const sellableById = new Map<string, number>();
+  if (productIds.length) {
+    const stockResult = await db.from("storefront_product_sellable_stock_v1")
+      .select("product_id,sellable_stock,is_active")
+      .in("product_id", productIds);
+    if (stockResult.error) throw stockResult.error;
+    (stockResult.data || []).forEach((row: any) => sellableById.set(String(row.product_id),
+      row.is_active === true ? Math.max(0, Number(row.sellable_stock || 0)) : 0));
+  }
+  return {
+    products: products.map((product: any) => ({ ...product, sellable_stock: sellableById.get(String(product.id)) || 0 })),
+    total: result.count || 0, offset, limit
+  };
 }
 async function adminProductMetadataForEdit(productId: string) {
   const result = await db.from("products").select("metadata").eq("id", productId).maybeSingle();
@@ -623,6 +637,17 @@ async function productSave(input: any) {
   const adjustment = deactivatingExistingProduct && gridBefore
     ? await reassignBasketDefaultsForInactiveProduct(id, gridBefore)
     : { changes: 0, warning: false };
+  const stockResult = await db.from("storefront_product_sellable_stock_v1")
+    .select("sellable_stock,is_active")
+    .eq("product_id", String(savedProduct.id))
+    .maybeSingle();
+  if (stockResult.error) throw stockResult.error;
+  savedProduct = {
+    ...savedProduct,
+    sellable_stock: stockResult.data?.is_active === true
+      ? Math.max(0, Number(stockResult.data.sellable_stock || 0))
+      : 0,
+  };
   return {
     product: savedProduct,
     default_product_changes: adjustment.changes,
@@ -701,7 +726,7 @@ async function reassignBasketDefaultsForInactiveProduct(id: string, gridBefore: 
       ? Number(sellableStock.get(String(option.product_id)) || 0)
       : Math.max(0, Number(option.product?.stock || 0));
     const inStock = alternatives.filter((option: any) => stockFor(option) > 0);
-    const candidates = (inStock.length ? inStock : alternatives).slice().sort((a: any, b: any) => {
+    const candidates = inStock.slice().sort((a: any, b: any) => {
       const aPrice = Number(a.product?.effective_price_cents ?? productPriceCents(a.product || {}));
       const bPrice = Number(b.product?.effective_price_cents ?? productPriceCents(b.product || {}));
       return Math.abs(aPrice - referencePrice) - Math.abs(bPrice - referencePrice)
@@ -909,10 +934,17 @@ async function basketGridList() {
   const productIds = [...new Set(optionRows.map((row: any) => String(row.product_id)))];
   const productById = new Map<string, any>();
   if (productIds.length) {
-    const productsResult = await db.from("products").select(PRODUCT_COLUMNS).in("id", productIds);
+    const [productsResult, stockResult] = await Promise.all([
+      db.from("products").select(PRODUCT_COLUMNS).in("id", productIds),
+      db.from("storefront_product_sellable_stock_v1").select("product_id,sellable_stock,is_active").in("product_id", productIds),
+    ]);
     if (productsResult.error) throw productsResult.error;
+    if (stockResult.error) throw stockResult.error;
+    const sellableById = new Map((stockResult.data || []).map((row: any) => [String(row.product_id),
+      row.is_active === true ? Math.max(0, Number(row.sellable_stock || 0)) : 0]));
     (productsResult.data || []).forEach((product: any) => productById.set(String(product.id), {
       ...product,
+      sellable_stock: sellableById.get(String(product.id)) || 0,
       effective_price_cents: productPriceCents(product),
     }));
   }

@@ -82,282 +82,6 @@ function pub(p:any,available?:number){
   return {id:p.id,sku:p.sku||"",gtin:p.gtin||"",name:p.name,image_url:p.image_url||"",price_cents:cents(price),price_available:Number(price||0)>0,regular_price_cents:offer?cents(p.price):null,packaging:p.packaging||"",subcategory:p.customer_subsubcategory||p.subcategory||"",stock_quantity:p.is_active===false?0:Math.max(0,available??Number(p.stock||0)),is_active:p.is_active!==false,brand:p.brand||"",category:p.category||"",subsubcategory:p.customer_subsubcategory||p.subsubcategory||"",unit:p.unit||""};
 }
 
-async function splitGlobalReady(){
-  const {data,error}=await db.from("basket_sales_runtime_v1").select("sales_mode").eq("id",1).maybeSingle();
-  if(error)throw error;
-  return data?.sales_mode==="split";
-}
-async function basketImageMap(lotIds:string[]){
-  const map=new Map<string,string>();if(!lotIds.length)return map;
-  const q=await db.from("basket_lot_images").select("lot_id,hygiene_lot_id,image_url,published_at").in("lot_id",lotIds).eq("status","published").order("published_at",{ascending:false});
-  if(q.error)throw q.error;
-  for(const row of q.data||[]){const key=row.lot_id+":"+(row.hygiene_lot_id||"");if(!map.has(key)&&row.image_url)map.set(key,row.image_url)}
-  return map;
-}
-async function basketLotImage(lotId:string,hygieneId:string|null,fallback:string){const images=await basketImageMap([lotId]);return images.get(lotId+":"+(hygieneId||""))||fallback||""}
-function basketTotalItems(items:any[]){
-  return items.reduce((total,item)=>{
-    const quantity=Number(item?.quantity);
-    return Number.isFinite(quantity)&&quantity>0?total+quantity:total;
-  },0);
-}
-async function basketCarouselItems(baskets:any[]){
-  const ids=[...new Set(baskets.flatMap((b:any)=>b.split_mode?[b.food_lot_id,...(b.uses_hygiene_kit&&b.hygiene_lot_id?[b.hygiene_lot_id]:[])]:[b.lot_id]).filter(Boolean))];
-  if(!ids.length)return baskets.map((b:any)=>({...b,carousel_items:[],total_item_count:0}));
-  const {data,error}=await db.from("basket_stock_lot_items").select("lot_id,product_id,quantity_per_basket,position_order,product:products(name,image_url,packaging)").in("lot_id",ids).order("position_order");
-  if(error)throw error;
-  const byLot=new Map<string,any[]>();
-  for(const row of data||[]){const rows=byLot.get(row.lot_id)||[];rows.push(row);byLot.set(row.lot_id,rows)}
-  return baskets.map((b:any)=>{
-    const lots=b.split_mode?[b.food_lot_id,...(b.uses_hygiene_kit&&b.hygiene_lot_id?[b.hygiene_lot_id]:[])]:[b.lot_id];
-    const items=new Map<string,any>();
-    for(const lot of lots)for(const row of byLot.get(lot)||[]){
-      const p=Array.isArray(row.product)?row.product[0]:row.product,quantity=Number(row.quantity_per_basket);
-      if(!p||!Number.isFinite(quantity)||quantity<=0)continue;
-      const previous=items.get(row.product_id);
-      if(previous)previous.quantity+=quantity;
-      else items.set(row.product_id,{product_id:row.product_id,name:p.name,image_url:p.image_url||"",packaging:p.packaging||"",quantity});
-    }
-    return {...b,carousel_items:[...items.values()].slice(0,6),total_item_count:basketTotalItems([...items.values()])};
-  });
-}
-function basketCategoryFields(b:any){const c=Array.isArray(b?.category)?b.category[0]:b?.category;return {category_name:c?.name||null,category_slug:c?.slug||null};}
-// R5_MOLD_STOREFRONT_V1
-async function moldAvailableStockMap(productIds:string[]){
-  const ids=[...new Set(productIds.filter(Boolean))];const out=new Map<string,number>();if(!ids.length)return out;
-  const {data,error}=await db.from("storefront_product_sellable_stock_v1")
-    .select("product_id,sellable_stock,is_active").in("product_id",ids);
-  if(error)throw error;
-  for(const r of data||[])out.set(String(r.product_id),r.is_active===true?Math.max(0,Number(r.sellable_stock||0)):0);
-  return out;
-}
-async function orderableProductStockMap(productIds:string[]){
-  const ids=[...new Set(productIds.filter(Boolean))];const out=new Map<string,number>();if(!ids.length)return out;
-  const [{data,error},{data:productRows,error:productError}]=await Promise.all([
-    db.from("storefront_ean_sellable_stock_v1")
-      .select("product_id,is_active,stock_authority,loose_sellable_stock,ean_sellable_stock").in("product_id",ids),
-    db.from("storefront_product_sellable_stock_v1")
-      .select("product_id,sellable_stock,is_active,price,validity_date").in("product_id",ids)
-  ]);
-  if(error)throw error;if(productError)throw productError;
-  const websiteStock=new Map<string,any>((productRows||[]).map((row:any)=>[String(row.product_id),row]));
-  const today=iso(local());
-  for(const r of data||[]){
-    const productId=String(r.product_id);
-    let stock:any;
-    if(r.stock_authority==="bling"){
-      stock=r.loose_sellable_stock;
-    }else if(r.stock_authority==="supabase"){
-      const row=websiteStock.get(productId);
-      const expiry=row?.validity_date?String(row.validity_date).slice(0,10):"";
-      const websiteEligible=row?.is_active===true&&Number(row.price||0)>0&&(!expiry||expiry>=today);
-      stock=websiteEligible?Math.floor(Number(row.sellable_stock||0)):0;
-    }else{
-      stock=r.ean_sellable_stock??r.loose_sellable_stock;
-    }
-    out.set(productId,r.is_active===true?Math.max(0,Number(stock||0)):0);
-  }
-  return out;
-}
-function moldEffectivePriceCents(p:any){const n=p?.is_offer===true&&p?.offer_price!=null&&Number(p.offer_price)>=0?Number(p.offer_price):Number(p?.price||0);return cents(n)}
-function moldConfiguredDefaults(options:any[]){
-  const defaults=new Map<string,string>();
-  for(const option of options||[]){const positionId=String(option.position_id||"");if(positionId&&!defaults.has(positionId))defaults.set(positionId,String(option.product_id||""))}
-  return defaults;
-}
-function moldConfiguredBase(mold:any,positions:any[],defaults:Map<string,string>,products:Map<string,any>){
-  let productTotalCents=0,conditionalPresent=false;
-  for(const position of positions||[]){
-    const positionId=String(position.id||""),productId=defaults.get(positionId)||"",product=products.get(productId),quantity=Number(position.quantity||0);
-    if(product)productTotalCents+=Math.round(moldEffectivePriceCents(product)*quantity);
-    if(mold?.conditional_hidden_enabled===true&&mold?.conditional_hidden_product_id&&Number(mold?.conditional_hidden_adjustment||0)>0&&productId===String(mold.conditional_hidden_product_id)&&quantity>0)conditionalPresent=true;
-  }
-  const conditionalAppliedCents=conditionalPresent?cents(mold.conditional_hidden_adjustment||0):0;
-  return {productTotalCents,conditionalAppliedCents,totalCents:Math.max(0,productTotalCents+cents(mold?.hidden_adjustment||0)+conditionalAppliedCents)};
-}
-function buildMoldSelectedOption(product:any,stock:number,quantity:number,allowUnavailablePreview:boolean){
-  if(!product||(stock<quantity&&!allowUnavailablePreview))return null;
-  return {product_id:product.id,name:product.name,brand:product.brand||"",sku:product.sku,gtin:product.gtin,image_url:product.image_url||"",packaging:product.packaging||"",stock_quantity:stock,price_cents:moldEffectivePriceCents(product)};
-}
-async function moldProductsMap(ids:string[]){const clean=[...new Set(ids.filter(Boolean))],out=new Map<string,any>();if(!clean.length)return out;const q=await db.from("products").select("id,name,brand,sku,gtin,image_url,packaging,price,offer_price,is_offer,is_active").in("id",clean);if(q.error)throw q.error;for(const p of q.data||[])out.set(String(p.id),p);return out}
-async function publicBasketExtraThemes(){
-  const themeQ=await db.from("basket_extra_themes")
-    .select("id,name,sort_order,search_terms,sales_categories,is_active")
-    .order("sort_order").order("created_at");
-  if(themeQ.error)throw themeQ.error;
-  const rows=themeQ.data||[];
-  const hasConfiguration=(row:any)=>
-    (Array.isArray(row?.search_terms)&&row.search_terms.some((term:any)=>txt(term,80)))||
-    (Array.isArray(row?.sales_categories)&&row.sales_categories.length>0);
-  const configured=rows.some(hasConfiguration);
-  const sections=rows.filter((row:any)=>row.is_active===true&&Array.isArray(row.search_terms)&&row.search_terms.some((term:any)=>txt(term,80))&&Array.isArray(row.sales_categories)&&row.sales_categories.length>0)
-    .map((row:any)=>({
-      id:String(row.id),label:String(row.name||"Produtos extras"),sort_order:Number(row.sort_order||0),
-      search_enabled:true,product_count:0,products:[],products_loaded:false
-    }));
-  return {sections,configured};
-}
-async function publicBasketExtras(legacyExtras:any[]=[],themeId:string){
-  const themeQ=await db.from("basket_extra_themes").select("id,name,sort_order,basket_extra_theme_products(product_id,sort_order)").eq("id",themeId).maybeSingle();
-  if(themeQ.error)throw themeQ.error;
-  const theme=themeQ.data?{...themeQ.data,items:Array.isArray(themeQ.data.basket_extra_theme_products)?themeQ.data.basket_extra_theme_products.slice().sort((a:any,b:any)=>Number(a.sort_order||0)-Number(b.sort_order||0)):[]}:null;
-  const legacy=legacyExtras.find((x:any,index:number)=>String(x?.id||"legacy-"+index)===String(themeId));
-  const rows=theme?[{id:String(theme.id),label:String(theme.name||"Produtos extras"),items:theme.items}]:legacy?[{id:String(legacy.id||themeId),label:String(legacy.label||"Produto adicional"),items:(Array.isArray(legacy.product_ids)?legacy.product_ids:[]).map((product_id:any)=>({product_id}))}]:[];
-  const ids=[...new Set(rows.flatMap((t:any)=>t.items.map((x:any)=>uid(x.product_id)).filter(Boolean)))];
-  const [products,stock]=await Promise.all([moldProductsMap(ids),orderableProductStockMap(ids)]);
-  const toProduct=(id:any)=>{
-    const p=products.get(String(id)),available=stock.get(String(id))||0,priceCents=p?moldEffectivePriceCents(p):0;
-    return p?.is_active===true&&available>0&&priceCents>0?{product_id:p.id,name:p.name,brand:p.brand||"",sku:p.sku,gtin:p.gtin,image_url:p.image_url||"",packaging:p.packaging||"",stock_quantity:available,price_cents:priceCents}:null;
-  };
-  return rows.map((t:any)=>({id:t.id,label:t.label,products:t.items.map((x:any)=>toProduct(x.product_id)).filter(Boolean),products_loaded:true})).filter((x:any)=>x.products.length>0);
-}
-async function publicBasketExtraSectionProducts(section:any,offsetValue:any=0,limitValue:any=15){
-  const allowedCategories=new Set(CATEGORIES.map((category:any)=>category.key));
-  const categories=[...new Set((Array.isArray(section?.sales_categories)?section.sales_categories:[])
-    .map((value:any)=>txt(value,48).toLocaleLowerCase("pt-BR"))
-    .filter((value:string)=>allowedCategories.has(value)))].slice(0,4);
-  const fold=(value:any)=>String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("pt-BR").replace(/[^a-z0-9]+/g," ").trim();
-  const searchTerms=(Array.isArray(section?.search_terms)?section.search_terms:[])
-    .map((term:any)=>fold(term).split(/\s+/).filter(Boolean).slice(0,6))
-    .filter((tokens:string[])=>tokens.length>0).slice(0,20);
-  const limit=Math.floor(clamp(limitValue||15,1,36)),offset=Math.floor(clamp(offsetValue||0,0,5000));
-  if(section?.is_active!==true||!categories.length||!searchTerms.length)return {ok:true,products:[],next_offset:null};
-  const fields="id,sku,gtin,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit,is_active,sales_category";
-  const rows=(await Promise.all(categories.map((category:string)=>activeProductRows(fields,category)))).flat();
-  const byId=new Map<string,any>();
-  for(const product of rows){
-    const values=[product.name,product.brand,product.gtin,product.sku,product.packaging].map(fold);
-    const matches=searchTerms.some((tokens:string[])=>tokens.every((token:string)=>values.some((value:string)=>value.includes(token))));
-    if(matches)byId.set(String(product.id),product);
-  }
-  const ordered=Array.from(byId.values()).sort((a:any,b:any)=>
-    String(a.name||"").localeCompare(String(b.name||""),"pt-BR")||String(a.id).localeCompare(String(b.id)));
-  const publicProducts:any[]=[];
-  let cursor=offset;
-  while(cursor<ordered.length&&publicProducts.length<limit){
-    const chunk=ordered.slice(cursor,cursor+Math.max(24,limit*2));
-    const stock=await orderableProductStockMap(chunk.map((product:any)=>String(product.id)));
-    for(const product of chunk){
-      cursor++;
-      const candidate=pub(product,stock.get(String(product.id))||0);
-      if(candidate.stock_quantity>0&&candidate.price_available)publicProducts.push(candidate);
-      if(publicProducts.length>=limit)break;
-    }
-  }
-  return {ok:true,products:publicProducts,next_offset:cursor<ordered.length?cursor:null};
-}
-async function basketExtraProducts(basketId:string,themeId:string,offsetValue:any=0,limitValue:any=15){
-  const id=uid(basketId),theme=txt(themeId,100);if(!id||!theme)return {error:"invalid_basket_extra_request",status:400};
-  const [basketQ,moldQ,legacyQ]=await Promise.all([
-    db.from("basket_templates").select("id,is_active").eq("id",id).maybeSingle(),
-    db.from("basket_molds").select("metadata").eq("basket_id",id).maybeSingle(),
-    db.from("basket_commercial_catalog_v1").select("commercial_id,model_active,category_active,public_lot_id,public_available").eq("source_kind","basket").eq("commercial_id",id).maybeSingle()
-  ]);
-  if(basketQ.error)throw basketQ.error;if(moldQ.error)throw moldQ.error;if(legacyQ.error)throw legacyQ.error;
-  const visibleTemplate=basketQ.data?.is_active===true,visibleLegacy=legacyQ.data?.model_active===true&&legacyQ.data?.category_active===true&&Boolean(legacyQ.data?.public_lot_id)&&Number(legacyQ.data?.public_available||0)>0;
-  if(!visibleTemplate&&!visibleLegacy)return {error:"basket_not_found",status:404};
-  const sectionQ=await db.from("basket_extra_themes").select("id,name,search_terms,sales_categories,is_active").eq("id",theme).maybeSingle();
-  if(sectionQ.error)throw sectionQ.error;
-  const section=sectionQ.data;
-  if(section){
-    if(section.is_active!==true)return {error:"extra_section_not_found",status:404};
-    if(Array.isArray(section.search_terms)&&section.search_terms.length&&Array.isArray(section.sales_categories)&&section.sales_categories.length){
-      return await publicBasketExtraSectionProducts(section,offsetValue,limitValue);
-    }
-  }
-  const legacy=Array.isArray(moldQ.data?.metadata?.optional_items)?moldQ.data.metadata.optional_items:[];
-  return {ok:true,extras:await publicBasketExtras(legacy,theme)};
-}
-async function moldPublicCompositions(basketIds:string[]){
-  const ids=[...new Set(basketIds.filter(Boolean))],out=new Map<string,any>(),now=Date.now();
-  const missing:string[]=[];
-  for(const id of ids){const cached=moldCompositionCache.get(id);if(cached&&cached.expiresAt>now)out.set(id,cached.data);else{moldCompositionCache.delete(id);missing.push(id)}}
-  if(missing.length){
-    const key=[...missing].sort().join(",");let request=moldCompositionInFlight.get(key);
-    if(!request){
-      request=db.rpc("basket_mold_public_compositions_batch_v1",{p_basket_ids:missing}).then((q:any)=>{if(q.error)throw q.error;return Array.isArray(q.data)?q.data:[]}).finally(()=>moldCompositionInFlight.delete(key));
-      moldCompositionInFlight.set(key,request);
-    }
-    const generated=await request;
-    for(const data of generated){const id=String(data?.basket_id||"");if(id){moldCompositionCache.set(id,{expiresAt:Date.now()+MOLD_COMPOSITION_CACHE_TTL_MS,data,createdAt:Date.now()});out.set(id,data)}}
-  }
-  return out;
-}
-async function moldHomeCards(priorityOnly=false){
-  const mq=await db.from("basket_molds").select("id,basket_id,hidden_adjustment,conditional_hidden_enabled,conditional_hidden_product_id,conditional_hidden_adjustment,public_composition_count,metadata");if(mq.error)throw mq.error;let molds=mq.data||[];if(!molds.length)return [];
-  if(priorityOnly){
-    const basketIds=[...new Set(molds.map((m:any)=>String(m.basket_id)))];
-    const [bq,cq,sq]=await Promise.all([
-      db.from("basket_templates").select("id,category_id,subcategory_id").in("id",basketIds),
-      db.from("basket_categories").select("id,slug").eq("is_active",true),
-      db.from("basket_subcategories").select("id,category_id,name").eq("is_active",true)
-    ]);if(bq.error)throw bq.error;if(cq.error)throw cq.error;if(sq.error)throw sq.error;
-    const complete=(cq.data||[]).find((c:any)=>c.slug==="cestas-completas"),largeIds=new Set((sq.data||[]).filter((s:any)=>String(s.category_id)===String(complete?.id)&&String(s.name||"").trim().toLocaleLowerCase("pt-BR")==="grande").map((s:any)=>String(s.id)));
-    const largeBasketIds=new Set((bq.data||[]).filter((b:any)=>String(b.category_id)===String(complete?.id)&&largeIds.has(String(b.subcategory_id))).map((b:any)=>String(b.id)));
-    molds=molds.filter((m:any)=>largeBasketIds.has(String(m.basket_id)));
-  }
-  if(!molds.length)return [];
-  const legacySourceIds=[...new Set(molds.flatMap((m:any)=>String(m?.metadata?.transition_mode||"")==="legacy_first"&&Array.isArray(m?.metadata?.legacy_source_basket_ids)?m.metadata.legacy_source_basket_ids.map((x:any)=>String(x)).filter(Boolean):[]))];
-  const legacyAvailable=new Set<string>();
-  if(legacySourceIds.length){const lq=await db.from("basket_commercial_catalog_v1").select("commercial_id,public_available").eq("source_kind","basket").in("commercial_id",legacySourceIds).gt("public_available",0);if(lq.error)throw lq.error;for(const row of lq.data||[])if(Number(row.public_available||0)>0)legacyAvailable.add(String(row.commercial_id))}
-  const visibleMolds=molds.filter((m:any)=>{if(String(m?.metadata?.transition_mode||"")!=="legacy_first")return true;const ids=Array.isArray(m?.metadata?.legacy_source_basket_ids)?m.metadata.legacy_source_basket_ids:[];return !ids.some((x:any)=>legacyAvailable.has(String(x)))});
-  if(!visibleMolds.length)return [];
-  const basketIds=visibleMolds.map((m:any)=>String(m.basket_id)),moldIds=visibleMolds.map((m:any)=>String(m.id));
-  const [bq,pq]=await Promise.all([
-    db.from("basket_templates").select("id,name,image_url,is_active,category_id,subcategory_id").in("id",basketIds),
-    db.from("basket_mold_positions").select("id,mold_id,quantity,sort_order").in("mold_id",moldIds)
-  ]);if(bq.error)throw bq.error;if(pq.error)throw pq.error;
-  const baskets=new Map((bq.data||[]).map((b:any)=>[String(b.id),b])),positionCounts=new Map<string,number>(),positionsByMold=new Map<string,any[]>();for(const p of pq.data||[]){const id=String(p.mold_id);positionCounts.set(id,(positionCounts.get(id)||0)+1);const rows=positionsByMold.get(id)||[];rows.push(p);positionsByMold.set(id,rows)}
-  const positionIds=(pq.data||[]).map((p:any)=>String(p.id)),optionsQ=positionIds.length?await db.from("basket_mold_position_options").select("position_id,product_id,sort_order").in("position_id",positionIds).order("sort_order").order("product_id"):({data:[],error:null} as any);if(optionsQ.error)throw optionsQ.error;
-  const optionsByPosition=new Map<string,any[]>();for(const o of optionsQ.data||[]){const id=String(o.position_id),rows=optionsByPosition.get(id)||[];rows.push(o);optionsByPosition.set(id,rows)}
-  const [categoryQ,subcategoryQ]=await Promise.all([
-    db.from("basket_categories").select("id,name,slug,sort_order,is_active").eq("is_active",true).order("sort_order"),
-    db.from("basket_subcategories").select("id,category_id,name,sort_order,is_active").eq("is_active",true).order("sort_order")
-  ]);if(categoryQ.error)throw categoryQ.error;if(subcategoryQ.error)throw subcategoryQ.error;
-  const categoryMap=new Map((categoryQ.data||[]).map((x:any)=>[String(x.id),x])),subcategoryMap=new Map((subcategoryQ.data||[]).map((x:any)=>[String(x.id),x]));
-  const compositionMap=await moldPublicCompositions(visibleMolds.map((m:any)=>String(m.basket_id)));
-  const generated=visibleMolds.map((m:any)=>({m,data:compositionMap.get(String(m.basket_id))||{}}));
-  const productIds:string[]=[...(optionsQ.data||[]).map((o:any)=>String(o.product_id))];for(const g of generated)for(const c of g.data?.compositions||[])for(const i of c.items||[])if(i.product_id)productIds.push(String(i.product_id));const [products,available]=await Promise.all([moldProductsMap(productIds),moldAvailableStockMap(productIds)]);
-  const configuredDefaults=moldConfiguredDefaults(optionsQ.data||[]),cards:any[]=[];
-  for(const {m,data} of generated){const b=baskets.get(String(m.basket_id));if(!b||b.is_active!==true)continue;const cat=b.category_id?categoryMap.get(String(b.category_id)):null;const sub=b.subcategory_id?subcategoryMap.get(String(b.subcategory_id)):null;if(!cat||!sub||String(sub.category_id)!==String(cat.id))continue;const expected=positionCounts.get(String(m.id))||0;if(!expected)continue;
-    const composition=(data.compositions||[]).find((row:any)=>Number(row.number||1)===1);
-    const generatedItems=new Map<string,any>((Array.isArray(composition?.items)?composition.items:[]).map((item:any)=>[String(item.position_id),item]));
-    const positionRows=(positionsByMold.get(String(m.id))||[]).slice().sort((a:any,b:any)=>Number(a.sort_order||0)-Number(b.sort_order||0)||String(a.id).localeCompare(String(b.id)));
-    if(positionRows.length!==expected)continue;
-    let capacity=30;const carousel:any[]=[];let valid=true,manualReplacementCount=0;
-    for(const position of positionRows){
-      const qty=Number(position.quantity||0),positionId=String(position.id),configuredOptions=optionsByPosition.get(positionId)||[];
-      if(!(qty>0)||!configuredOptions.length){valid=false;break}
-      const generatedItem=generatedItems.get(positionId) as any;
-      const choices=configuredOptions.map((option:any)=>{
-        const product=products.get(String(option.product_id)),stock=available.get(String(option.product_id))||0;
-        return product?{product,stock,price:moldEffectivePriceCents(product),sort_order:Number(option.sort_order||0)}:null;
-      }).filter(Boolean) as any[];
-      const availableChoices=choices.filter((choice:any)=>choice.product.is_active===true&&choice.stock>=qty);
-      const generatedProductId=String(generatedItem?.product_id||"");
-      let selected=availableChoices.find((choice:any)=>String(choice.product.id)===generatedProductId)||availableChoices[0];
-      let manualReplacementRequired=false;
-      if(!selected){
-        const activeChoices=choices.filter((choice:any)=>choice.product.is_active===true);
-        selected=activeChoices.find((choice:any)=>String(choice.product.id)===generatedProductId)||activeChoices[0]
-          ||choices.find((choice:any)=>String(choice.product.id)===generatedProductId)||choices[0];
-        manualReplacementRequired=true;
-      }
-      if(!selected){valid=false;break}
-      const p=selected.product,price=selected.price,stock=Number(selected.stock||0);
-      if(p.is_active!==true||stock<qty)manualReplacementRequired=true;
-      if(manualReplacementRequired)manualReplacementCount++;
-      else capacity=Math.min(capacity,Math.max(1,Math.floor(stock/qty)));
-      carousel.push({position_id:positionId,label:generatedItem?.label||position.label,product_id:p.id,name:p.name,brand:p.brand||"",sku:p.sku,gtin:p.gtin,image_url:p.image_url||generatedItem?.image_url||"",packaging:p.packaging||"",quantity:qty,stock_quantity:stock,price_cents:price,alternative_count:availableChoices.length,manual_replacement_required:manualReplacementRequired})
-    }
-    if(!valid)continue;
-    const configuredBase=moldConfiguredBase(m,positionRows,configuredDefaults,products);const conditionalHidden=configuredBase.conditionalAppliedCents;const total=configuredBase.totalCents,n=Number(composition?.number||1);
-    cards.push({id:String(b.id),card_key:String(b.id)+"@"+n,mold_mode:true,mold_id:String(m.id),composition_number:n,public_composition_count:Number(data.public_composition_count||1),name:String(sub.name||String(b.name).replace(/\s+Completa$/i,"")),model_name:String(sub.name||String(b.name).replace(/\s+Completa$/i,"")),display_price_cents:total,hidden_adjustment_cents:cents(m.hidden_adjustment??data.hidden_adjustment??0),conditional_hidden_enabled:m.conditional_hidden_enabled===true,conditional_hidden_product_id:m.conditional_hidden_product_id||null,conditional_hidden_adjustment_cents:cents(m.conditional_hidden_adjustment||0),conditional_hidden_applied_cents:conditionalHidden,image_url:b.image_url||"",stock_quantity:Math.max(1,capacity),manual_replacement_required:manualReplacementCount>0,manual_replacement_count:manualReplacementCount,category_id:cat.id,category_name:cat.name,category_slug:cat.slug,category_sort_order:Number(cat.sort_order||0),subcategory_id:sub.id,subcategory_name:sub.name,subcategory_sort_order:Number(sub.sort_order||0),total_item_count:basketTotalItems(carousel),carousel_items:carousel.slice(0,6)})
-  }
-  cards.sort((a,b)=>a.category_sort_order-b.category_sort_order||a.subcategory_sort_order-b.subcategory_sort_order||a.composition_number-b.composition_number||String(a.id).localeCompare(String(b.id)));return cards;
-}
-// Reuse the generator's recent choices, including compositions already loaded for home.
-// Do NOT cache final basket responses: prices and sellable stock remain real-time.
 async function moldDetailComposition(basketId:string){
   const now=Date.now(),cached=moldCompositionCache.get(basketId);
   if(cached&&cached.expiresAt>now&&Number.isFinite(cached.createdAt)&&now-cached.createdAt<MOLD_DETAIL_CACHE_MAX_AGE_MS)return cached.data;
@@ -573,7 +297,7 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
     const alternatives=includeAlternatives
       ?linkedOptions.map((option:any)=>{
         const product=products.get(String(option.product_id)),stock=Number(available.get(String(option.product_id))||0);
-        return product?.is_active===true&&(stock>0||quantitiesByProduct.has(String(product.id)))?{
+        return product?.is_active===true?{
           product_id:product.id,name:product.name,brand:product.brand||"",sku:product.sku,
           gtin:product.gtin,image_url:product.image_url||"",packaging:product.packaging||"",
           stock_quantity:stock,price_cents:moldEffectivePriceCents(product),is_active:true,sort_order:Number(option.sort_order||0)
@@ -657,7 +381,7 @@ async function moldPositionOptions(basketId:string,compositionNumber:number,posi
   const [products,stock]=await Promise.all([moldProductsMap(ids),moldAvailableStockMap(ids)]);
   const alternatives=(oq.data||[]).map((row:any)=>{
     const product=products.get(String(row.product_id)),available=stock.get(String(row.product_id))||0;
-    return product?.is_active===true&&(available>0||selectedIds.has(String(product.id)))?{
+    return product?.is_active===true?{
       product_id:product.id,name:product.name,brand:product.brand||"",sku:product.sku,gtin:product.gtin,
       image_url:product.image_url||"",packaging:product.packaging||"",stock_quantity:available,
       price_cents:moldEffectivePriceCents(product),sort_order:Number(row.sort_order||0)
@@ -705,7 +429,7 @@ async function moldPositionOptionsBatch(basketId:string,compositionNumber:number
   const positions=normalized.map((request:any)=>{
     const alternatives=(byPosition.get(request.position_id)||[]).map((option:any)=>{
       const product=products.get(String(option.product_id)),available=stock.get(String(option.product_id))||0;
-      return product?.is_active===true&&(available>0||request.selected_product_ids.includes(String(product.id)))?{
+      return product?.is_active===true?{
         product_id:product.id,name:product.name,sku:product.sku,gtin:product.gtin,
         image_url:product.image_url||"",packaging:product.packaging||"",
         stock_quantity:available,price_cents:moldEffectivePriceCents(product),is_active:true,sort_order:Number(option.sort_order||0)
@@ -726,56 +450,29 @@ async function moldQuote(payload:any){
   }catch(e:any){const code=txt(e?.message,100);return {error:["basket_mold_option_invalid","basket_mold_component_invalid"].includes(code)?code:"basket_mold_unavailable",status:409}}
 }
 
-// The catalog view computes lot availability for every basket. It is unnecessary when
-// every active basket is explicitly configured as a mold-only basket. Avoiding this
-// expensive view prevents PostgreSQL statement timeouts on public home requests.
-async function needsLegacyBasketCatalog():Promise<boolean>{
-  const [tq,mq]=await Promise.all([
-    db.from("basket_templates").select("id,category_id,subcategory_id").eq("is_active",true),
-    db.from("basket_molds").select("basket_id,metadata")
-  ]);
-  if(tq.error)throw tq.error;if(mq.error)throw mq.error;
-  const moldOnly=new Set((mq.data||[]).filter((m:any)=>String(m?.metadata?.transition_mode||"")==="mold_only").map((m:any)=>String(m.basket_id)));
-  return (tq.data||[]).some((t:any)=>Boolean(t.category_id&&t.subcategory_id)&&!moldOnly.has(String(t.id)));
-}
 async function home(priorityOnly=false){
-  const [moldCards,needsLegacy]=await Promise.all([moldHomeCards(priorityOnly),needsLegacyBasketCatalog()]);
-  const moldBasketIds=new Set(moldCards.map((x:any)=>String(x.id)));
-  const [catalogQ,categoriesQ,subcategoriesQ]=await Promise.all([
-    needsLegacy?db.from("basket_commercial_catalog_v1").select("*").eq("source_kind","basket").gt("public_available",0).order("category_sort_order").order("public_name"):Promise.resolve({data:[],error:null}),
+  const [moldCards,categoriesQ,subcategoriesQ]=await Promise.all([
+    moldHomeCards(priorityOnly),
     db.from("basket_categories").select("id,name,slug,sort_order,is_active").eq("is_active",true).order("sort_order"),
     db.from("basket_subcategories").select("id,category_id,name,sort_order,is_active").eq("is_active",true).order("sort_order")
   ]);
-  if(catalogQ.error)throw catalogQ.error;if(categoriesQ.error)throw categoriesQ.error;if(subcategoriesQ.error)throw subcategoriesQ.error;
-  const categories=categoriesQ.data||[],subcategories=subcategoriesQ.data||[],categoryMap=new Map(categories.map((x:any)=>[String(x.id),x])),subcategoryMap=new Map(subcategories.map((x:any)=>[String(x.id),x]));
-  const candidates=(catalogQ.data||[]).filter((x:any)=>x.model_active===true&&x.category_active===true&&x.public_lot_id&&Number(x.public_available||0)>0&&!moldBasketIds.has(String(x.commercial_id)));
-  const templateIds=[...new Set(candidates.map((x:any)=>String(x.basket_id||x.commercial_id)).filter(Boolean))];
-  const templatesQ=templateIds.length?await db.from("basket_templates").select("id,category_id,subcategory_id").in("id",templateIds):{data:[],error:null};
-  if(templatesQ.error)throw templatesQ.error;
-  const templateMap=new Map((templatesQ.data||[]).map((x:any)=>[String(x.id),x]));
-  const rows=candidates.filter((x:any)=>{const t=templateMap.get(String(x.basket_id||x.commercial_id));const c=categoryMap.get(String(t?.category_id||x.category_id||""));const sub=subcategoryMap.get(String(t?.subcategory_id||""));return Boolean(c&&sub&&String(sub.category_id)===String(c.id)&&(!priorityOnly||(c.slug==="cestas-completas"&&String(sub.name||"").trim().toLocaleLowerCase("pt-BR")==="grande")))});
-  const images=await basketImageMap(rows.map((x:any)=>String(x.public_lot_id||"")).filter(Boolean));
-  const baskets=rows.map((x:any)=>{
-    const t=templateMap.get(String(x.basket_id||x.commercial_id)),category=categoryMap.get(String(t?.category_id||x.category_id||"")),subcategory=subcategoryMap.get(String(t?.subcategory_id||""));
-    const linked=x.linked_lot_id||null,split=String(x.public_lot_kind||"")==="food"||Boolean(linked),lot=String(x.public_lot_id||"");
-    return {
-      id:x.commercial_id,source_kind:x.source_kind,name:x.public_name||x.model_name,
-      category_id:category.id,category_name:category.name,category_slug:category.slug,category_sort_order:Number(category.sort_order||0),
-      subcategory_id:subcategory.id,subcategory_name:subcategory.name,subcategory_sort_order:Number(subcategory.sort_order||0),
-      display_price_cents:cents(x.sale_price),image_url:images.get(lot+":"+(linked||""))||x.image_url||"",
-      stock_quantity:Number(x.public_available||0),availability_reason:x.availability_reason||"available",split_mode:split,
-      ...(split?{food_lot_id:lot,food_lot_code:x.public_lot_code||"",food_lot_quantity:Number(x.public_available||0),hygiene_lot_id:linked,hygiene_lot_code:"",hygiene_lot_quantity:Number(x.linked_available||0),uses_hygiene_kit:Boolean(linked)}:{lot_id:lot,lot_code:x.public_lot_code||x.public_internal_lot_code||""})
-    };
-  });
-  const basketTaxonomy=categories.map((c:any)=>({...c,subcategories:subcategories.filter((s:any)=>String(s.category_id)===String(c.id)).map((s:any)=>({id:s.id,category_id:s.category_id,name:s.name,sort_order:s.sort_order}))}));
-  const allBaskets=[...moldCards,...await basketCarouselItems(baskets)].sort((a:any,b:any)=>Number(a.category_sort_order||0)-Number(b.category_sort_order||0)||Number(a.subcategory_sort_order||0)-Number(b.subcategory_sort_order||0)||Number(a.composition_number||0)-Number(b.composition_number||0));
-  return {ok:true,version:"canonical-basket-commerce-v1",priority:priorityOnly,split_kits:baskets.some((b:any)=>b.split_mode===true),baskets:allBaskets,categories:CATEGORIES,basket_categories:basketTaxonomy};
+  if(categoriesQ.error)throw categoriesQ.error;if(subcategoriesQ.error)throw subcategoriesQ.error;
+  const categories=categoriesQ.data||[],subcategories=subcategoriesQ.data||[];
+  const basketTaxonomy=categories.map((category:any)=>({
+    ...category,
+    subcategories:subcategories.filter((subcategory:any)=>String(subcategory.category_id)===String(category.id))
+      .map((subcategory:any)=>({id:subcategory.id,category_id:subcategory.category_id,name:subcategory.name,sort_order:subcategory.sort_order}))
+  }));
+  return {
+    ok:true,version:"mold-basket-commerce-v2",priority:priorityOnly,split_kits:false,
+    baskets:moldCards,categories:CATEGORIES,basket_categories:basketTaxonomy
+  };
 }
 // R2: Persist a public, read-only catalog snapshot between Edge Function instances.
 // Never trust snapshot prices/stock when quoting a basket or submitting an order.
 function isValidPublicHome(value:any):boolean{
   // An empty current catalog is valid: it clears stale cards for baskets that cannot be sold.
-  return Boolean(value?.ok===true&&value?.priority!==true&&Array.isArray(value.baskets)&&Array.isArray(value.basket_categories));
+  return Boolean(value?.ok===true&&value?.version==="mold-basket-commerce-v2"&&value?.priority!==true&&Array.isArray(value.baskets)&&Array.isArray(value.basket_categories));
 }
 
 async function homeSizeCards(){
