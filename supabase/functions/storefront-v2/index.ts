@@ -893,7 +893,7 @@ async function basketExtraProducts(themeIdValue:string,offsetValue:any,limitValu
     .filter((value:string)=>allowedCategories.has(value)))];
   if(!terms.length||!categories.length)return {ok:true,products:[],next_offset:null};
 
-  const selection="id,sku,gtin,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit,is_active,sales_category";
+  const selection="id,sku,gtin,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit,is_active,sales_category";
   const categoryRows=await Promise.all(categories.map((category:string)=>activeProductRows(selection,category)));
   const productsById=new Map<string,any>();
   for(const rows of categoryRows)for(const product of rows)productsById.set(String(product.id),product);
