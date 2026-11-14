@@ -11,6 +11,82 @@ DROP VIEW IF EXISTS public.basket_current_lot_v1;
 DROP VIEW IF EXISTS public.basket_lot_public_availability_v1;
 DROP VIEW IF EXISTS public.basket_locked_component_stock_v1;
 
+-- Current order stock consumption uses only vitrine_stock_reservations.
+-- A basket with no loose-product reservations has nothing to consume here; actual
+-- separated quantities are applied by ops2_apply_order_separation_stock_v2.
+CREATE OR REPLACE FUNCTION public.consume_vitrine_order_stock_v1(p_order_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+declare
+  r record;
+  v_count integer;
+  v_consumed integer;
+  v_released integer;
+  v_stock numeric;
+begin
+  if p_order_id is null then
+    return jsonb_build_object('ok',false,'error','invalid_order_id');
+  end if;
+
+  select count(*),count(*) filter(where status='consumed'),count(*) filter(where status='released')
+    into v_count,v_consumed,v_released
+  from public.vitrine_stock_reservations
+  where order_id=p_order_id;
+
+  if v_count=0 then
+    return jsonb_build_object('ok',true,'status','no_reservations',
+      'local_consume_skipped',true,'reservations_consumed',true,'physical_stock_changed',false);
+  end if;
+  if v_consumed=v_count then
+    return jsonb_build_object('ok',true,'status','consumed','already_consumed',true,
+      'local_consume_skipped',false,'reservations_consumed',true);
+  end if;
+  if v_released>0 then
+    return jsonb_build_object('ok',false,'error','stock_reservation_released');
+  end if;
+
+  for r in
+    select product_id,quantity
+    from public.vitrine_stock_reservations
+    where order_id=p_order_id and status='reserved'
+    order by product_id
+    for update
+  loop
+    select stock into v_stock
+    from public.products
+    where id=r.product_id and is_active=true
+    for update;
+    if not found then
+      return jsonb_build_object('ok',false,'error','product_unavailable','product_id',r.product_id);
+    end if;
+    if coalesce(v_stock,0)<r.quantity then
+      return jsonb_build_object('ok',false,'error','insufficient_physical_stock',
+        'product_id',r.product_id,'available',coalesce(v_stock,0),'requested',r.quantity);
+    end if;
+  end loop;
+
+  for r in
+    select product_id,quantity
+    from public.vitrine_stock_reservations
+    where order_id=p_order_id and status='reserved'
+    order by product_id
+  loop
+    update public.products
+    set stock=coalesce(stock,0)-r.quantity,updated_at=now()
+    where id=r.product_id;
+  end loop;
+
+  update public.vitrine_stock_reservations
+  set status='consumed',consumed_at=now(),released_at=null,updated_at=now()
+  where order_id=p_order_id and status='reserved';
+
+  return jsonb_build_object('ok',true,'status','consumed','already_consumed',false,
+    'stock_source','supabase_products_stock','physical_stock_changed',true);
+end;
+$function$;
+
 -- Keep separation idempotent and preserve the product-stock workflow for
 -- current and already-open orders, without writing to the retired allocation table.
 CREATE OR REPLACE FUNCTION public.ops2_apply_order_separation_stock_v2(p_order_id uuid)
@@ -130,6 +206,19 @@ end;
 $function$
 
 
+-- Keep marketing callers callable while explicitly retiring the old
+-- lot-based commercial catalog that they used for basket offers.
+CREATE OR REPLACE FUNCTION public.marketing_strategy_revalidate_commercial_v1(p_strategy_id uuid)
+ RETURNS jsonb
+ LANGUAGE sql
+ STABLE
+ SECURITY INVOKER
+ SET search_path TO ''
+AS $function$
+  select jsonb_build_object('ok',false,'error','legacy_commercial_basket_flow_retired',
+    'strategy_id',p_strategy_id);
+$function$;
+
 -- Retire every public routine belonging to the old lot/recipe flow. The active
 -- basket-mold APIs and marketing attribution remain in place.
 DO $retire_legacy_basket_lot_functions$
@@ -142,14 +231,14 @@ BEGIN
     JOIN pg_namespace n ON n.oid=p.pronamespace
     WHERE n.nspname='public'
       AND p.prokind='f'
-      AND p.proname NOT IN ('ops2_apply_order_separation_stock_v2','marketing_attribute_order_v1')
+      AND p.proname NOT IN ('ops2_apply_order_separation_stock_v2','marketing_attribute_order_v1','consume_vitrine_order_stock_v1','marketing_strategy_revalidate_commercial_v1')
       AND (
         p.proname ILIKE '%basket%lot%'
         OR p.proname ILIKE '%lot%basket%'
         OR position('store_basket_' IN p.proname)>0
         OR position('basket_kit_template' IN p.proname)>0
         OR position('basket_commercial' IN p.proname)>0
-        OR p.proname IN ('papoai_resolve_basket_intent_v1','create_vitrine_cart_order_v1','consume_vitrine_order_stock_v1')
+        OR p.proname IN ('papoai_resolve_basket_intent_v1','papoai_prepare_basket_draft_v1','create_vitrine_cart_order_v1','create_canonical_cart_order_v2_base')
         OR position('basket_stock_lots' IN pg_get_functiondef(p.oid))>0
         OR position('basket_stock_lot_items' IN pg_get_functiondef(p.oid))>0
         OR position('basket_stock_allocations' IN pg_get_functiondef(p.oid))>0
