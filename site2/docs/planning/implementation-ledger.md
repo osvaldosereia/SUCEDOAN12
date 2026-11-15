@@ -1233,3 +1233,9 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 - O branch e o ledger locais/remotos continuam sincronizados. A última leitura agregada bem-sucedida permanece em 15/11/2026 04:13 UTC: 5 cestas, 118 posições, 96 prontas, 22 pendentes e zero bindings do Flow.
 - A nova consulta somente leitura ao projeto canônico falhou antes de retornar dados com o erro exato `Failed to resolve project for permission check`. Portanto, não há confirmação do estado do banco após 04:13 UTC. Nenhum valor de secret foi lido ou exposto.
 - Bloqueio externo para esta rodada: o conector Supabase não resolveu a permissão do projeto; precisa de correção/reautenticação da conexão antes da próxima leitura. Nenhuma mensagem, publicação de Flow, alteração de catálogo/estoque, escrita Bling ou emissão fiscal foi realizada.
+
+## Rechecagem após falha temporária do conector (15/11/2026 05:43 UTC)
+
+- A conexão canônica voltou a responder: `SELECT 1` e a leitura agregada somente leitura foram concluídos. A falha de resolução de permissão registrada às 05:13 UTC foi transitória; não foi necessária reautenticação nesta tentativa.
+- O agregado permanece em 5 cestas ativas para WhatsApp, 118 posições, 96 prontas, 22 pendentes e zero bindings do Flow. Desde 05:13 UTC não há novos eventos de auditoria nos tipos consultados.
+- Nenhum valor de secret foi lido ou exposto. Nenhuma mensagem foi enviada, Flow publicado, catálogo/estoque alterado, escrita Bling realizada ou NF-e emitida.
