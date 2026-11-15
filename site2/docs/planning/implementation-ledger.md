@@ -1221,3 +1221,9 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 - A leitura agregada ao Supabase canônico mantém 5 cestas ativas para WhatsApp e 118 posições: 96 prontas, 22 pendentes; permanecem zero bindings do Flow.
 - Desde 12/11 06:34 UTC, `admin_audit_logs` registra cinco eventos: três `delivery.order_assigned` e dois `smart_delivery.route_reordered`. Foram consultados apenas os tipos e as contagens, sem IDs, endereços, clientes, pedidos ou detalhes de rota.
 - Não houve mudança na prontidão WhatsApp nem evidência de validação ou binding dos WABAs. Nenhuma mensagem, publicação de Flow, mutação de catálogo/estoque, escrita Bling ou emissão fiscal ocorreu nesta leitura.
+
+## Rechecagem de entregas e prontidão (15/11/2026 01:44 UTC)
+
+- A leitura agregada ao Supabase canônico mantém 5 cestas ativas para WhatsApp e 118 posições: 96 prontas, 22 pendentes; permanecem zero bindings do Flow.
+- Desde 14/11/2026 10:44 UTC, `admin_audit_logs` registra dois eventos agregados `delivery.order_assigned` (`order`). Foram consultados apenas tipo e contagem, sem IDs, clientes, endereços ou detalhes dos pedidos.
+- Esses eventos de atribuição de entrega não validam WABAs nem comprovam um pedido pela jornada WhatsApp. Não há mudança registrada nessa prontidão. Nenhuma mensagem foi enviada, Flow publicado, catálogo/estoque alterado, escrita Bling realizada ou NF-e emitida nesta leitura.
