@@ -1227,3 +1227,9 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 - A leitura agregada ao Supabase canônico mantém 5 cestas ativas para WhatsApp e 118 posições: 96 prontas, 22 pendentes; permanecem zero bindings do Flow.
 - Desde 14/11/2026 10:44 UTC, `admin_audit_logs` registra dois eventos agregados `delivery.order_assigned` (`order`). Foram consultados apenas tipo e contagem, sem IDs, clientes, endereços ou detalhes dos pedidos.
 - Esses eventos de atribuição de entrega não validam WABAs nem comprovam um pedido pela jornada WhatsApp. Não há mudança registrada nessa prontidão. Nenhuma mensagem foi enviada, Flow publicado, catálogo/estoque alterado, escrita Bling realizada ou NF-e emitida nesta leitura.
+
+## Bloqueio de rechecagem do Supabase (15/11/2026 05:13 UTC)
+
+- O branch e o ledger locais/remotos continuam sincronizados. A última leitura agregada bem-sucedida permanece em 15/11/2026 04:13 UTC: 5 cestas, 118 posições, 96 prontas, 22 pendentes e zero bindings do Flow.
+- A nova consulta somente leitura ao projeto canônico falhou antes de retornar dados com o erro exato `Failed to resolve project for permission check`. Portanto, não há confirmação do estado do banco após 04:13 UTC. Nenhum valor de secret foi lido ou exposto.
+- Bloqueio externo para esta rodada: o conector Supabase não resolveu a permissão do projeto; precisa de correção/reautenticação da conexão antes da próxima leitura. Nenhuma mensagem, publicação de Flow, alteração de catálogo/estoque, escrita Bling ou emissão fiscal foi realizada.
