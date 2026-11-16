@@ -885,10 +885,10 @@ async function basketExtraProducts(themeIdValue:string,offsetValue:any,limitValu
   const theme=themeQ.data;
   if(!theme)return {ok:true,products:[],next_offset:null};
 
-  const fold=(value:any)=>String(value||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLocaleLowerCase("pt-BR").replace(/[^a-z0-9]+/g," ").trim();
+  const fold=(value:any)=>String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("pt-BR").replace(/[^a-z0-9]+/g," ").trim();
   const terms=(Array.isArray(theme.search_terms)?theme.search_terms:[])
     .slice(0,20)
-    .map((value:any)=>({query:fold(txt(value,80)),tokens:fold(txt(value,80)).split(/\\s+/).filter(Boolean)}))
+    .map((value:any)=>({query:fold(txt(value,80)),tokens:fold(txt(value,80)).split(/\s+/).filter(Boolean)}))
     .filter((term:any)=>term.query&&term.tokens.length);
   const allowedCategories=new Set(CATEGORIES.map((category:any)=>category.key));
   const categories=[...new Set((Array.isArray(theme.sales_categories)?theme.sales_categories:[])
@@ -903,14 +903,12 @@ async function basketExtraProducts(themeIdValue:string,offsetValue:any,limitValu
 
   const ranked:any[]=[];
   for(const product of productsById.values()){
-    const fields=[product.name,product.brand,product.gtin,product.sku,product.packaging].map(fold);
-    const name=fold(product.name),code=fold(String(product.gtin||"")+" "+String(product.sku||""));
+    const name=fold(product.name);
     let best:any=null;
     for(let index=0;index<terms.length;index++){
       const term=terms[index];
-      if(!term.tokens.every((token:string)=>fields.some((field:string)=>field.includes(token))))continue;
-      const relevance=name===term.query?0:name.startsWith(term.query)?1:name.includes(term.query)?2:
-        10+term.tokens.reduce((score:number,token:string)=>score+(name.startsWith(token)?0:name.includes(token)?1:fold(product.brand).includes(token)?2:code.includes(token)?3:4),0);
+      if(!term.tokens.every((token:string)=>name.includes(token)))continue;
+      const relevance=name===term.query?0:name.startsWith(term.query)?1:name.includes(term.query)?2:3;
       if(!best||index<best.termOrder||(index===best.termOrder&&relevance<best.relevance))best={termOrder:index,relevance};
     }
     if(best)ranked.push({product,termOrder:best.termOrder,relevance:best.relevance});
