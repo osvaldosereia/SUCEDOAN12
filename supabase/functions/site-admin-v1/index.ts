@@ -265,6 +265,11 @@ function cents(value: unknown) {
   return Number.isFinite(number) ? Math.round(number * 100) : 0;
 }
 
+function basketFixedPriceCents(metadata: any): number | null {
+  const value = metadata?.site_admin_default_price_cents;
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null;
+}
+
 function productPriceCents(product: any) {
   const price = product?.is_offer === true && product?.offer_price != null && Number(product.offer_price) >= 0
     ? Number(product.offer_price)
@@ -808,14 +813,21 @@ async function basketList(status = "active") {
   else if (status === "inactive") templateQuery.eq("is_active", false);
   const templates = await templateQuery;
   if (templates.error) throw templates.error;
-  const [categoriesResult, sharedItemsResult] = await Promise.all([
+  const basketIds = (templates.data || []).map((basket: any) => String(basket.id));
+  const moldMetadataPromise = basketIds.length
+    ? db.from("basket_molds").select("basket_id,metadata").in("basket_id", basketIds)
+    : Promise.resolve({ data: [], error: null } as any);
+  const [categoriesResult, sharedItemsResult, moldMetadataResult] = await Promise.all([
     db.from("basket_categories").select("id,slug"),
     db.from("basket_mold_shared_items").select("id,label").eq("scope", "cestas-completas"),
+    moldMetadataPromise,
   ]);
   if (categoriesResult.error) throw categoriesResult.error;
   if (sharedItemsResult.error) throw sharedItemsResult.error;
+  if (moldMetadataResult.error) throw moldMetadataResult.error;
   const categorySlugById = new Map((categoriesResult.data || []).map((category: any) => [String(category.id), String(category.slug || "")]));
   const sharedItemByLabel = new Map((sharedItemsResult.data || []).map((item: any) => [String(item.label), item]));
+  const moldMetadataByBasket = new Map((moldMetadataResult.data || []).map((mold: any) => [String(mold.basket_id), mold.metadata || {}]));
   const editors = await mapLimit(templates.data || [], 5, async (basket: any) => {
     const result = await db.rpc("basket_mold_editor_v1", { p_basket_id: basket.id });
     return { basket, editor: result.error ? null : result.data };
@@ -887,7 +899,8 @@ async function basketList(status = "active") {
       conditional_hidden_enabled: editor.conditional_hidden_enabled === true,
       conditional_hidden_product_id: editor.conditional_hidden_product_id || null,
       conditional_hidden_adjustment_cents: cents(editor.conditional_hidden_adjustment),
-      display_price_cents: Math.max(0, productTotal + hiddenAdjustment + conditionalApplied),
+      display_price_cents: basketFixedPriceCents(moldMetadataByBasket.get(String(basket.id)))
+        ?? Math.max(0, productTotal + hiddenAdjustment + conditionalApplied),
       positions,
     };
   });
@@ -1001,7 +1014,7 @@ async function basketGridList() {
       )
       ? cents(mold.conditional_hidden_adjustment)
       : 0;
-    const defaultPriceCents = Math.max(0,
+    const defaultPriceCents = basketFixedPriceCents(mold.metadata) ?? Math.max(0,
       productTotalCents + cents(mold.hidden_adjustment) + conditionalApplied
     );
     return {
@@ -1129,7 +1142,7 @@ async function basketGridSave(input: any) {
     basketPrices[String(basket.id).toLowerCase()],
   ]));
 
-  const saved = await db.rpc("site_admin_save_basket_grid_with_prices_v1", {
+  const saved = await db.rpc("site_admin_save_basket_grid_with_prices_v2", {
     p_rows: activeRows,
     p_basket_prices: activePrices,
     p_operator: "Admin site Dona Antônia",
@@ -1515,13 +1528,14 @@ async function basketSave(input: any) {
   ) ? cents(editor.conditional_hidden_adjustment) : 0;
   const hiddenAdjustment = (targetPriceCents - productTotal - conditionalApplied) / 100;
 
-  const saved = await db.rpc("site_admin_save_basket_mold_shared_v1", {
+  const saved = await db.rpc("site_admin_save_basket_mold_shared_with_fixed_price_v1", {
     p_basket_id: basketId,
     p_hidden_adjustment: hiddenAdjustment,
     p_public_composition_count: publicCount,
     p_positions: normalized,
     p_operator: "Admin site Dona Antônia",
     p_share_changes: normalizedShareChanges,
+    p_default_price_cents: targetPriceCents,
   });
   if (saved.error) throw saved.error;
   const savedData = saved.data || {};

@@ -678,7 +678,10 @@ function moldConfiguredBase(mold:any,positions:any[],defaults:Map<string,string>
     if(mold?.conditional_hidden_enabled===true&&mold?.conditional_hidden_product_id&&Number(mold?.conditional_hidden_adjustment||0)>0&&productId===String(mold.conditional_hidden_product_id)&&quantity>0)conditionalPresent=true;
   }
   const conditionalAppliedCents=conditionalPresent?cents(mold.conditional_hidden_adjustment||0):0;
-  return {productTotalCents,conditionalAppliedCents,totalCents:Math.max(0,productTotalCents+cents(mold?.hidden_adjustment||0)+conditionalAppliedCents)};
+  const fixedDefaultPriceCents=mold?.metadata?.site_admin_default_price_cents;
+  const hasFixedDefaultPrice=typeof fixedDefaultPriceCents==="number"&&Number.isSafeInteger(fixedDefaultPriceCents)&&fixedDefaultPriceCents>=0;
+  const fallbackTotalCents=Math.max(0,productTotalCents+cents(mold?.hidden_adjustment||0)+conditionalAppliedCents);
+  return {productTotalCents,conditionalAppliedCents,totalCents:hasFixedDefaultPrice?fixedDefaultPriceCents:fallbackTotalCents};
 }
 
 async function moldProductsMap(ids:string[]){const clean=[...new Set(ids.filter(Boolean))],out=new Map<string,any>();if(!clean.length)return out;const q=await db.from("products").select("id,name,brand,sku,gtin,image_url,packaging,price,offer_price,is_offer,is_active").in("id",clean);if(q.error)throw q.error;for(const p of q.data||[])out.set(String(p.id),p);return out}
