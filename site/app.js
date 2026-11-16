@@ -11,6 +11,45 @@
   const plain = (value) => String(value == null ? "" : value).replace(/\s+/g, " ").trim();
   const money = (cents) => (Number(cents || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+  function productChoiceMarkup(product, options = {}) {
+    const id = String(options.id || product.id || product.product_id || "");
+    const name = String(options.name || product.name || "Produto");
+    const quantity = Math.max(0, Math.trunc(Number(options.quantity || 0)));
+    const tag = options.tag === "article" ? "article" : "div";
+    const attributes = (values) => Object.entries(values || {}).map(([key, value]) => {
+      if (!/^(?:data|aria)-[a-z0-9-]+$|^title$/.test(key)) return "";
+      if (value == null) return " " + key;
+      if (value === false) return "";
+      return " " + key + '="' + esc(value) + '"';
+    }).join("");
+    const role = options.role ? ' role="' + esc(options.role) + '"' : "";
+    const stockNote = options.stockNote
+      ? '<small class="product-choice-stock">' + esc(options.stockNote) + '</small>'
+      : "";
+    const detailsButton = options.details
+      ? '<button class="product-choice-open" type="button"' + attributes({
+        "data-home-extra-open": id,
+        "aria-label": "Ver detalhes de " + name,
+        title: name
+      }) + '></button>'
+      : "";
+    const controls = (delta, label) => attributes(Object.assign({}, options.adjustAttributes, {
+      "data-delta": String(delta),
+      "aria-label": label
+    }));
+    const stepper = '<span class="product-option-stepper" role="group" aria-label="Quantidade de ' + esc(name) + '">' +
+      '<button class="quantity-button option-quantity-button" type="button"' + controls(-1, "Diminuir " + name) + (options.decreaseDisabled ? " disabled" : "") + '>−</button>' +
+      '<output class="product-option-quantity"' + attributes(options.quantityAttributes) + ' aria-live="polite">' + quantity + '</output>' +
+      '<button class="quantity-button option-quantity-button" type="button"' + controls(1, "Adicionar " + name) + (options.increaseDisabled ? " disabled" : "") + '>+</button></span>';
+    const className = "product-choice" + (quantity > 0 ? " is-selected" : "");
+    const price = options.priceText == null ? money(product.price_cents) : options.priceText;
+    return '<' + tag + ' class="' + className + '"' + role + attributes(options.attributes) + '>' +
+      '<img src="' + esc(product.image_url || "../img/logoantonia5.png") + '" alt="" width="76" height="76" loading="lazy" fetchpriority="low" decoding="async">' +
+      '<span class="product-choice-copy"><strong>' + esc(name) + '</strong><small>' + esc(price) + '</small>' + stockNote + '</span>' +
+      detailsButton + stepper + '</' + tag + '>';
+  }
+
+
   // Salva os itens do carrinho, sem dados pessoais ou do checkout.
   const CART_STORAGE_KEY = "dona-antonia:storefront-cart:v1";
   const CART_STORAGE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -478,15 +517,21 @@
         const disabled = data.changing || item._optionsLoading;
         const optionName = alt.name || selected && selected.name || "Produto";
         const optionPrice = alt.price_cents == null ? "Preço indisponível" : money(alt.price_cents);
-        return '<div class="product-choice' + (quantity > 0 ? ' is-selected' : '') + '" data-option-card="' + esc(productId) + '">' +
-          '<img src="' + esc(alt.image_url || "../img/logoantonia5.png") + '" alt="" width="76" height="76" loading="lazy" decoding="async">' +
-          '<span class="product-choice-copy"><strong>' + esc(optionName) + '</strong><small>' + esc(optionPrice) + '</small>' + (stock <= 0 ? '<small class="product-choice-stock">Sem estoque disponível</small>' : '') + '</span>' +
-          '<span class="product-option-stepper" role="group" aria-label="Quantidade de ' + esc(optionName) + '">' +
-            '<button class="quantity-button option-quantity-button" type="button" data-adjust-option data-adjust-position="' + esc(item.position_id) + '" data-adjust-product="' + esc(productId) + '" data-delta="-1" aria-label="Diminuir ' + esc(optionName) + '"' + (disabled || quantity <= 0 ? ' disabled' : '') + '>−</button>' +
-            '<output class="product-option-quantity" data-option-quantity="' + esc(productId) + '" aria-live="polite">' + quantity + '</output>' +
-            '<button class="quantity-button option-quantity-button" type="button" data-adjust-option data-adjust-position="' + esc(item.position_id) + '" data-adjust-product="' + esc(productId) + '" data-delta="1" aria-label="Adicionar ' + esc(optionName) + '"' + (disabled || quantity >= stock || itemQuantityAtLimit(item) ? ' disabled' : '') + '>+</button>' +
-          '</span>' +
-        '</div>';
+        return productChoiceMarkup(alt, {
+          name: optionName,
+          quantity,
+          priceText: optionPrice,
+          stockNote: stock <= 0 ? "Sem estoque disponível" : "",
+          attributes: { "data-option-card": productId },
+          quantityAttributes: { "data-option-quantity": productId },
+          adjustAttributes: {
+            "data-adjust-option": null,
+            "data-adjust-position": item.position_id,
+            "data-adjust-product": productId
+          },
+          decreaseDisabled: disabled || quantity <= 0,
+          increaseDisabled: disabled || quantity >= stock || itemQuantityAtLimit(item)
+        });
       };
       const selectedChoice = optionChoices.find((option) => String(option.product_id) === fallbackId)
         || selectedOptions[0]
@@ -653,7 +698,7 @@
     });
   }
 
-  const extras = window.DonaStorefrontExtras.create({ state, $, esc, money, request, toast });
+  const extras = window.DonaStorefrontExtras.create({ state, $, esc, money, request, toast, productChoiceMarkup });
   basket = window.DonaStorefrontBasket.create({
     state, $, request, toast, renderDetailPreservingScroll, quantityOf, money,
     displayedTotalCents: extras.displayedTotalCents

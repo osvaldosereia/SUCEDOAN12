@@ -15,7 +15,7 @@
     { key: "casa_pet", label: "Casa e pet" }
   ];
 
-  function create({ state, $, esc, money, request, toast }) {
+  function create({ state, $, esc, money, request, toast, productChoiceMarkup }) {
     let homeExtraObserver = null;
     let activeHomeExtraProductId = "";
     let homeExtraProductTrigger = null;
@@ -257,15 +257,15 @@
       const selected = data.extraSelections.get(id);
       const quantity = selected ? Number(selected.quantity || 0) : 0;
       const stock = Math.max(0, Number(product.stock_quantity || 0));
-      const name = product.name || "Produto";
-      return '<div class="product-choice extra-product-card' + (quantity > 0 ? ' is-selected' : '') + '" role="listitem" data-extra-product="' + esc(id) + '">' +
-        '<img src="' + esc(product.image_url || "../img/logoantonia5.png") + '" alt="" width="96" height="96" loading="lazy" decoding="async">' +
-        '<span class="product-choice-copy"><strong>' + esc(name) + '</strong><small>' + esc(money(product.price_cents)) + '</small></span>' +
-        '<span class="product-option-stepper" role="group" aria-label="Quantidade de ' + esc(name) + '">' +
-        '<button class="quantity-button option-quantity-button" type="button" data-extra-adjust="' + esc(id) + '" data-delta="-1" aria-label="Diminuir ' + esc(name) + '"' + (quantity <= 0 ? " disabled" : "") + '>−</button>' +
-        '<output class="product-option-quantity" data-extra-quantity="' + esc(id) + '" aria-live="polite">' + quantity + '</output>' +
-        '<button class="quantity-button option-quantity-button" type="button" data-extra-adjust="' + esc(id) + '" data-delta="1" aria-label="Adicionar ' + esc(name) + '"' + (quantity >= stock ? " disabled" : "") + '>+</button>' +
-        '</span></div>';
+      return productChoiceMarkup(product, {
+        role: "listitem",
+        quantity,
+        attributes: { "data-extra-product": id },
+        quantityAttributes: { "data-extra-quantity": id },
+        adjustAttributes: { "data-extra-adjust": id },
+        decreaseDisabled: quantity <= 0,
+        increaseDisabled: quantity >= stock
+      });
     }
   
     function extraCategoriesMarkup(data) {
@@ -475,19 +475,20 @@
 
     function homeExtraProductMarkup(product) {
       const id = String(product.id || "");
-      const name = product.name || "Produto";
       const selection = state.homeExtraSelections.get(id);
       const quantity = Number(selection && selection.quantity || 0);
       const stock = Math.max(0, Number(product.stock_quantity || 0));
-      return '<article class="product-choice home-extra-card' + (quantity > 0 ? ' is-selected' : '') + '" role="listitem" data-home-extra-product="' + esc(id) + '">' +
-        '<img class="home-extra-photo" src="' + esc(product.image_url || "../img/logoantonia5.png") + '" alt="" width="96" height="96" loading="lazy" fetchpriority="low" decoding="async">' +
-        '<span class="product-choice-copy"><strong>' + esc(name) + '</strong><small>' + esc(money(product.price_cents)) + '</small></span>' +
-        '<button class="home-extra-open" type="button" data-home-extra-open="' + esc(id) + '" aria-label="Ver detalhes de ' + esc(name) + '" title="' + esc(name) + '"></button>' +
-        '<span class="product-option-stepper" role="group" aria-label="Quantidade de ' + esc(name) + '">' +
-        '<button class="quantity-button option-quantity-button" type="button" data-home-extra-adjust="' + esc(id) + '" data-delta="-1" aria-label="Diminuir ' + esc(name) + '"' + (quantity <= 0 ? " disabled" : "") + '>−</button>' +
-        '<output class="product-option-quantity" data-home-extra-quantity="' + esc(id) + '" aria-live="polite">' + quantity + '</output>' +
-        '<button class="quantity-button option-quantity-button" type="button" data-home-extra-adjust="' + esc(id) + '" data-delta="1" aria-label="Adicionar ' + esc(name) + '"' + (quantity >= stock ? " disabled" : "") + '>+</button>' +
-        '</span></article>';
+      return productChoiceMarkup(product, {
+        tag: "article",
+        role: "listitem",
+        quantity,
+        details: true,
+        attributes: { "data-home-extra-product": id },
+        quantityAttributes: { "data-home-extra-quantity": id },
+        adjustAttributes: { "data-home-extra-adjust": id },
+        decreaseDisabled: quantity <= 0,
+        increaseDisabled: quantity >= stock
+      });
     }
 
     function updateHomeExtraProductDialog(productId) {
@@ -591,7 +592,7 @@
           : category.loaded && !category.products.length ? "Nenhum produto disponível nesta categoria."
             : "";
       const placeholders = !category.loaded && !category.error
-        ? Array.from({ length: HOME_EXTRA_INITIAL_PAGE_SIZE }, () => '<div class="home-extra-skeleton" aria-hidden="true"><span></span><i></i><small></small><b></b><em></em></div>').join("")
+        ? Array.from({ length: HOME_EXTRA_INITIAL_PAGE_SIZE }, () => '<div class="home-extra-skeleton" aria-hidden="true"><span></span><i></i><small></small><em></em></div>').join("")
         : "";
       const loadMore = category.error
         ? '<button class="button button-outline home-extra-more" type="button" data-home-extra-retry="' + esc(category.key) + '">Tentar novamente</button>'

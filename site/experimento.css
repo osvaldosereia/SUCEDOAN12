@@ -185,10 +185,6 @@ body {
   font-size: clamp(.72rem, 2vw, .9rem);
 }
 
-.experiment-page .home-extra-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
 .experiment-page .home-extra-category {
   scroll-margin-top: 14px;
 }
@@ -399,15 +395,13 @@ body {
 }
 
 @media (min-width: 900px) {
-  .experiment-page #basket-grid,
-  .experiment-page .home-extra-grid {
+  .experiment-page #basket-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1440px) {
-  .experiment-page #basket-grid,
-  .experiment-page .home-extra-grid {
+  .experiment-page #basket-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
