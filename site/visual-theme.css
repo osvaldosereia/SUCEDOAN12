@@ -1247,3 +1247,85 @@ body.basket-detail-open .experiment-page main > :not(#detail-sheet) {
     font-size: .84rem;
   }
 }
+
+
+/* Resultados da busca: linhas horizontais no padrão dos produtos das cestas. */
+.experiment-page #home-extra-product-search-results .product-search-results-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.experiment-page #home-extra-product-search-results .home-extra-card {
+  grid-template-columns: 76px minmax(0, 1fr) auto;
+  grid-template-rows: minmax(64px, auto);
+  align-items: center;
+  gap: 8px 10px;
+  min-height: 80px;
+  padding: 8px 10px;
+}
+
+.experiment-page #home-extra-product-search-results .home-extra-card > .home-extra-photo {
+  grid-column: 1;
+  grid-row: 1;
+  width: 76px;
+  height: 76px;
+}
+
+.experiment-page #home-extra-product-search-results .home-extra-card > .product-choice-copy {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+}
+
+.experiment-page #home-extra-product-search-results .home-extra-card > .product-choice-copy strong {
+  font-size: .88rem;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.experiment-page #home-extra-product-search-results .home-extra-card > .home-extra-open {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+.experiment-page #home-extra-product-search-results .home-extra-card > .product-option-stepper {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+  align-self: center;
+}
+
+@media (max-width: 420px) {
+  .experiment-page #home-extra-product-search-results .home-extra-card {
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    grid-template-rows: minmax(52px, auto);
+    gap: 6px;
+    min-height: 64px;
+    padding: 6px;
+  }
+
+  .experiment-page #home-extra-product-search-results .home-extra-card > .home-extra-photo {
+    width: 52px;
+    height: 52px;
+  }
+
+  .experiment-page #home-extra-product-search-results .home-extra-card > .product-choice-copy strong {
+    font-size: .78rem;
+  }
+
+  .experiment-page #home-extra-product-search-results .home-extra-card > .product-option-stepper {
+    gap: 3px;
+  }
+
+  .experiment-page #home-extra-product-search-results .home-extra-card .option-quantity-button {
+    flex-basis: 30px;
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
+  }
+
+  .experiment-page #home-extra-product-search-results .home-extra-card .product-option-quantity {
+    min-width: 16px;
+    font-size: .8rem;
+  }
+}
