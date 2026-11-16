@@ -8,6 +8,7 @@
   <title>Admin · Dona Antônia</title>
   <link rel="stylesheet" href="../styles.css?v=5">
   <link rel="stylesheet" href="admin.css?v=57">
+  <link rel="stylesheet" href="daily-offers-admin.css?v=1">
   <link rel="stylesheet" href="taxonomy-admin.css?v=1">
   <link rel="stylesheet" href="papoai-guard-admin.css?v=1">
   <link rel="stylesheet" href="baskets-admin.css?v=8">
@@ -22,6 +23,7 @@
   <script src="../ean-camera.js?v=2" defer></script>
   <script src="admin-auth.js?v=2" defer></script>
   <script src="catalog-admin.js?v=20" defer></script>
+  <script src="daily-offers-admin.js?v=1" defer></script>
   <script src="taxonomy-admin.js?v=1" defer></script>
   <script src="papoai-guard-admin.js?v=1" defer></script>
   <script src="baskets-admin.js?v=15" defer></script>
@@ -238,6 +240,7 @@
 
       <section class="admin-view" data-panel="products" hidden>
         <div class="section-title"><div><h2>Produtos</h2><p>Edite os campos do cadastro existente no Supabase.</p></div><div class="product-section-actions"><button id="manage-product-taxonomy" class="button button-outline" type="button">Gerenciar classificações</button><button id="new-product" class="button button-primary" type="button">Novo produto</button></div></div>
+        <div id="daily-offers-admin-root" class="daily-offers-admin-root" aria-live="polite"><p class="admin-muted">Abra esta seção para carregar as ofertas do dia.</p></div>
         <form id="product-search" class="customer-search product-admin-search">
           <label for="product-query">Buscar por nome, marca, SKU ou GTIN</label>
           <div class="product-search-controls">

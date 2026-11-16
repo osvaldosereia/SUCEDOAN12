@@ -561,6 +561,39 @@ function decodeProductImageUpload(input: any) {
   return { bytes, contentType };
 }
 
+async function dailyOffers(input: any) {
+  const operation = clean(input.operation || "get", 24);
+  if (!["get", "save", "generate", "remove"].includes(operation)) {
+    return { status: 400, error: "daily_offer_action_invalid", message: "Ação de oferta diária inválida." };
+  }
+  const payload: Record<string, unknown> = {};
+  if (operation === "save") {
+    const dailyProductCount = integer(input.daily_product_count, 1, 100);
+    const minDiscountPercent = integer(input.min_discount_percent, 5, 15);
+    const maxDiscountPercent = integer(input.max_discount_percent, 5, 15);
+    const minimumGrossMarginPercent = numeric(input.min_gross_margin_percent, 0, 50);
+    if (dailyProductCount === null || minDiscountPercent === null || maxDiscountPercent === null
+      || minimumGrossMarginPercent === null || minDiscountPercent > maxDiscountPercent) {
+      return { status: 400, error: "daily_offer_settings_invalid", message: "Confira quantidade, descontos e margem mínima." };
+    }
+    payload.enabled = input.enabled === true || String(input.enabled).toLowerCase() === "true";
+    payload.daily_product_count = dailyProductCount;
+    payload.min_discount_percent = minDiscountPercent;
+    payload.max_discount_percent = maxDiscountPercent;
+    payload.min_gross_margin_percent = minimumGrossMarginPercent;
+  } else if (operation === "remove") {
+    const productId = uuid(input.product_id);
+    if (!productId) return { status: 400, error: "invalid_product_id", message: "Produto inválido." };
+    payload.product_id = productId;
+  }
+  const { data, error } = await db.rpc("da_offer_rotation_admin_v1", {
+    p_action: operation,
+    p_payload: payload,
+  });
+  if (error) throw error;
+  return data && typeof data === "object" ? data : {};
+}
+
 async function productSave(input: any) {
   const id = input.id ? uuid(input.id) : "";
   if (input.id && !id) return { status: 400, error: "invalid_product_id", message: "Produto inválido." };
@@ -593,6 +626,37 @@ async function productSave(input: any) {
   if (id) {
     const metadata = await adminProductMetadataForEdit(id);
     if (!metadata) return { status: 404, error: "product_not_found", message: "Produto não encontrado." };
+    if (metadata.offer_source === "auto_rotation") {
+      const previous = await db.from("products").select("price,cost,is_offer,offer_price").eq("id", id).maybeSingle();
+      if (previous.error) throw previous.error;
+      const current = previous.data;
+      if (current) {
+        const fieldCents = (value: unknown) => Math.round(Number(value || 0) * 100);
+        const offerChanged = payload.is_offer !== (current.is_offer === true)
+          || fieldCents(payload.offer_price) !== fieldCents(current.offer_price);
+        const baseChanged = fieldCents(payload.price) !== fieldCents(current.price)
+          || fieldCents(payload.cost) !== fieldCents(current.cost);
+        const clearRotationMetadata = () => {
+          delete metadata.offer_source;
+          delete metadata.offer_discount_percent;
+          delete metadata.offer_starts_at;
+          delete metadata.offer_ends_at;
+          delete metadata.offer_rotation_date;
+        };
+        if (offerChanged && payload.is_offer === true && payload.offer_price != null
+          && Number(payload.offer_price) < Number(payload.price || 0)) {
+          metadata.offer_source = "manual";
+          delete metadata.offer_discount_percent;
+          delete metadata.offer_starts_at;
+          delete metadata.offer_ends_at;
+          delete metadata.offer_rotation_date;
+        } else if (offerChanged || baseChanged) {
+          payload.is_offer = false;
+          payload.offer_price = null;
+          clearRotationMetadata();
+        }
+      }
+    }
     payload.metadata = metadata;
   } else {
     payload.metadata = { admin_last_edited_at: new Date().toISOString() };
@@ -5101,6 +5165,7 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "quick_balance_save") result = await quickBalanceSave(input);
     else if (req.method === "GET" && action === "products") result = await productSearch(input);
     else if (req.method === "POST" && action === "product_save") result = await productSave(input);
+    else if (req.method === "POST" && action === "daily_offers") result = await dailyOffers(input);
     else if (req.method === "POST" && action === "product_set_active") result = await productSetActive(input);
     else if (req.method === "POST" && action === "product_set_most_sold") result = await productSetMostSold(input);
     else if (req.method === "POST" && action === "basket_save") result = await basketSave(input);

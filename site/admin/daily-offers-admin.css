@@ -1,0 +1,38 @@
+.daily-offers-admin-root { margin: 0 0 20px; }
+.daily-offers-admin { padding: 18px; border: 1px solid #e8d6c4; border-radius: 16px; background: #fff; }
+.daily-offers-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; margin-bottom: 14px; }
+.daily-offers-heading h3 { margin: 0; color: #302820; font-size: 1.05rem; }
+.daily-offers-heading p { margin: 5px 0 0; color: #796e63; font-size: .82rem; line-height: 1.5; }
+.daily-offers-pill { flex: 0 0 auto; padding: 5px 10px; border-radius: 999px; background: #f2eee8; color: #6f6256; font-size: .72rem; font-weight: 800; }
+.daily-offers-pill.is-active { background: #e7f3e9; color: #287349; }
+.daily-offers-form { display: grid; grid-template-columns: minmax(220px,1.4fr) repeat(4,minmax(120px,1fr)); gap: 12px; align-items: end; }
+.daily-offers-form label { display: grid; gap: 5px; color: #6f6256; font-size: .75rem; font-weight: 750; }
+.daily-offers-form input[type="number"] { width: 100%; min-height: 42px; padding: 0 10px; border: 1px solid #ddcbbb; border-radius: 10px; background: #fff; color: #302820; font: inherit; }
+.daily-offers-toggle { display: flex !important; align-items: center; align-self: center; gap: 9px !important; min-height: 42px; color: #302820 !important; font-size: .85rem !important; }
+.daily-offers-toggle input { width: 18px; height: 18px; accent-color: #82342d; }
+.daily-offers-help { margin: 10px 0 0; color: #81766c; font-size: .76rem; line-height: 1.45; }
+.daily-offers-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 9px; margin-top: 14px; }
+.daily-offers-summary { margin: 15px 0 9px; padding: 11px 13px; border-radius: 10px; background: #f8f4ee; color: #61574d; font-size: .8rem; }
+.daily-offers-summary strong { color: #342b24; }
+.daily-offers-summary span { display: block; margin-top: 4px; color: #807469; font-size: .72rem; }
+.daily-offers-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; max-height: 520px; overflow: auto; padding-right: 3px; }
+.daily-offer-row { display: flex; min-width: 0; align-items: center; gap: 10px; padding: 9px; border: 1px solid #eee3d8; border-radius: 12px; background: #fffdfa; }
+.daily-offer-row img { width: 48px; height: 48px; flex: 0 0 auto; border-radius: 9px; object-fit: contain; background: #f4eee7; }
+.daily-offer-info { display: grid; min-width: 0; flex: 1; gap: 3px; }
+.daily-offer-info strong { overflow: hidden; color: #302820; font-size: .78rem; text-overflow: ellipsis; white-space: nowrap; }
+.daily-offer-info span { color: #776a5e; font-size: .7rem; line-height: 1.35; }
+.daily-offer-info b { color: #96372e; }
+.daily-offer-row .button { min-height: 34px; padding: 0 9px; font-size: .72rem; }
+.daily-offers-empty { grid-column: 1/-1; padding: 15px; border: 1px dashed #decab7; border-radius: 12px; color: #756a5f; font-size: .82rem; text-align: center; }
+.daily-offers-error { margin: 10px 0 0; color: #9b3329; font-size: .8rem; }
+@media (max-width: 900px) {
+  .daily-offers-form { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .daily-offers-toggle { grid-column: 1/-1; }
+}
+@media (max-width: 600px) {
+  .daily-offers-admin { padding: 13px; }
+  .daily-offers-heading { display: grid; }
+  .daily-offers-form { grid-template-columns: 1fr 1fr; }
+  .daily-offers-list { grid-template-columns: 1fr; max-height: 440px; }
+}
+.daily-offer-row .product-image-placeholder { width: 48px; height: 48px; flex: 0 0 auto; border-radius: 9px; background: #f4eee7; }
