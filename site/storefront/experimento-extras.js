@@ -5,6 +5,8 @@
   const HOME_EXTRA_MORE_PAGE_SIZE = 12;
   const BASKET_EXTRA_INITIAL_PAGE_SIZE = 3;
   const BASKET_EXTRA_MORE_PAGE_SIZE = 12;
+  const OFFER_INITIAL_PAGE_SIZE = 3;
+  const OFFER_MORE_PAGE_SIZE = 12;
   const HOME_EXTRA_PREFETCH_MARGIN = "140px 0px";
 
   const EXTRA_CATEGORIES = [
@@ -268,6 +270,31 @@
       });
     }
   
+    function offerStatusText(data) {
+      if (data.offersLoading) return "Carregando ofertas…";
+      if (data.offersError) return "Não foi possível carregar as ofertas.";
+      if (data.offersLoaded && !(data.offerProducts || []).length) return "Nenhum produto em oferta disponível no momento.";
+      return "";
+    }
+
+    function offerCategoryMarkup(data) {
+      const products = Array.isArray(data.offerProducts) ? data.offerProducts : [];
+      const visibleCount = Math.max(OFFER_INITIAL_PAGE_SIZE, Math.trunc(Number(data.offerVisibleCount || OFFER_INITIAL_PAGE_SIZE)));
+      const visible = products.slice(0, visibleCount);
+      const expanded = data.offersExpanded === true;
+      const status = offerStatusText(data);
+      return '<section class="extra-category" data-extra-offers-card>' +
+        '<button class="extra-category-toggle" type="button" data-offers-toggle aria-expanded="' + String(expanded) + '" aria-controls="extra-panel-offers">' +
+        '<span>Ofertas</span><span class="variation-chevron" aria-hidden="true">' + (expanded ? "−" : "+") + '</span></button>' +
+        '<div class="extra-category-panel" id="extra-panel-offers"' + (expanded ? "" : " hidden") + '>' +
+        '<div class="extra-product-list" data-offers-list role="list" aria-label="Produtos em oferta">' +
+        visible.map((product) => extraProductMarkup(data, product)).join("") + '</div>' +
+        '<p class="extra-product-status" data-offers-status role="status">' + esc(status) + '</p>' +
+        '<button class="button button-outline extra-product-more" type="button" data-offers-more' + (products.length > visible.length ? "" : " hidden") + (data.offersLoading ? " disabled" : "") + '>Carregar mais ofertas</button>' +
+        '<button class="button button-outline extra-product-more" type="button" data-offers-retry' + (data.offersError ? "" : " hidden") + '>Tentar novamente</button>' +
+        '</div></section>';
+    }
+
     function extraCategoriesMarkup(data) {
       const categories = extraCategoriesFor(data);
       const search = productSearchStateFor("basket-extras", data);
@@ -277,7 +304,7 @@
         ? '<p class="extra-sections-empty">Nenhuma seção extra está ativa no momento.</p>'
         : "";
       return '<section class="extras-section" aria-labelledby="extras-title"><h3 id="extras-title">Produtos Extras</h3>' + searchPanel + emptyMessage + '<div class="extra-category-list" data-extra-category-list' + (activeSearch ? " hidden" : "") + '>' +
-        categories.map((category) => {
+        offerCategoryMarkup(data) + categories.map((category) => {
           const panelId = "extra-panel-" + category.key;
           const status = category.loading
             ? category.products.length ? "Carregando mais produtos…" : "Carregando produtos…"
@@ -302,6 +329,22 @@
       if (!container || container.closest?.("[data-extra-controls-bound='true']")) return;
       container.dataset.extraControlsBound = "true";
       container.addEventListener("click", (event) => {
+        const offersToggle = event.target?.closest?.("[data-offers-toggle]");
+        if (offersToggle && container.contains(offersToggle)) {
+          toggleOffers();
+          return;
+        }
+        const offersMore = event.target?.closest?.("[data-offers-more]");
+        if (offersMore && container.contains(offersMore) && !offersMore.disabled) {
+          showMoreOffers();
+          return;
+        }
+        const offersRetry = event.target?.closest?.("[data-offers-retry]");
+        if (offersRetry && container.contains(offersRetry) && !offersRetry.disabled) {
+          const data = state.baskets.get(state.activeKey);
+          if (data) loadOffers(data);
+          return;
+        }
         const moreButton = event.target?.closest?.("[data-extra-more]");
         if (moreButton && container.contains(moreButton) && !moreButton.disabled) {
           const categoryCard = moreButton.closest("[data-extra-category-card]");
@@ -334,6 +377,76 @@
       }
     }
   
+    function updateOffersPanel(data) {
+      const content = $("detail-content");
+      if (!data || state.baskets.get(state.activeKey) !== data || !content) return;
+      const card = content.querySelector("[data-extra-offers-card]");
+      if (!card) return;
+      const products = Array.isArray(data.offerProducts) ? data.offerProducts : [];
+      const visibleCount = Math.max(OFFER_INITIAL_PAGE_SIZE, Math.trunc(Number(data.offerVisibleCount || OFFER_INITIAL_PAGE_SIZE)));
+      const visible = products.slice(0, visibleCount);
+      const list = card.querySelector("[data-offers-list]");
+      const status = card.querySelector("[data-offers-status]");
+      const more = card.querySelector("[data-offers-more]");
+      const retry = card.querySelector("[data-offers-retry]");
+      const button = card.querySelector("[data-offers-toggle]");
+      const panel = card.querySelector("#extra-panel-offers");
+      if (list) list.innerHTML = visible.map((product) => extraProductMarkup(data, product)).join("");
+      if (status) status.textContent = offerStatusText(data);
+      if (more) {
+        more.hidden = products.length <= visible.length;
+        more.disabled = data.offersLoading === true;
+      }
+      if (retry) retry.hidden = data.offersError !== true;
+      if (button) button.setAttribute("aria-expanded", String(data.offersExpanded === true));
+      if (panel) panel.hidden = data.offersExpanded !== true;
+    }
+
+    async function loadOffers(data) {
+      if (!data || data.offersLoading || (data.offersLoaded && !data.offersError)) return;
+      data.offersLoading = true;
+      data.offersError = false;
+      updateOffersPanel(data);
+      try {
+        const result = await request("offers");
+        const products = Array.isArray(result.offers) ? result.offers : [];
+        const unique = new Map();
+        products.forEach((product) => {
+          const id = String(product && (product.id || product.product_id) || "");
+          if (!id || product.is_offer !== true || Number(product.stock_quantity || 0) <= 0 || product.price_available === false) return;
+          unique.set(id, Object.assign({}, product, { id }));
+        });
+        data.offerProducts = Array.from(unique.values());
+        data.offerVisibleCount = Math.min(OFFER_INITIAL_PAGE_SIZE, data.offerProducts.length);
+        data.offersLoaded = true;
+        data.offersError = false;
+      } catch (_) {
+        data.offersError = true;
+        data.offersLoaded = false;
+      } finally {
+        data.offersLoading = false;
+        updateOffersPanel(data);
+      }
+    }
+
+    function toggleOffers() {
+      const data = state.baskets.get(state.activeKey);
+      if (!data) return;
+      data.offersExpanded = data.offersExpanded !== true;
+      updateOffersPanel(data);
+      if (data.offersExpanded && (!data.offersLoaded || data.offersError)) loadOffers(data);
+    }
+
+    function showMoreOffers() {
+      const data = state.baskets.get(state.activeKey);
+      if (!data || data.offersLoading || !data.offersLoaded) return;
+      data.offerVisibleCount = Math.min(
+        data.offerProducts.length,
+        Math.max(OFFER_INITIAL_PAGE_SIZE, Number(data.offerVisibleCount || OFFER_INITIAL_PAGE_SIZE)) + OFFER_MORE_PAGE_SIZE
+      );
+      updateOffersPanel(data);
+    }
+
     function loadMoreExtraProducts(categoryKey, listElement) {
       const data = state.baskets.get(state.activeKey);
       const category = data && extraCategoriesFor(data).find((entry) => entry.key === String(categoryKey));
@@ -984,8 +1097,11 @@
       const searched = data.extraProductSearch && Array.isArray(data.extraProductSearch.products)
         ? data.extraProductSearch.products.find((entry) => String(entry.id) === String(productId))
         : null;
+      const offer = Array.isArray(data.offerProducts)
+        ? data.offerProducts.find((entry) => String(entry.id) === String(productId))
+        : null;
       const product = (category && category.products.find((entry) => String(entry.id) === String(productId))) ||
-        searched || state.homeExtraProducts.get(String(productId));
+        searched || offer || state.homeExtraProducts.get(String(productId));
       if (!product) return;
       const current = data.extraSelections.get(String(productId));
       const currentQuantity = Number(current && current.quantity || 0);
