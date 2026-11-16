@@ -43,8 +43,11 @@
       '<button class="quantity-button option-quantity-button" type="button"' + controls(1, "Adicionar " + name) + (options.increaseDisabled ? " disabled" : "") + '>+</button></span>';
     const className = "product-choice" + (quantity > 0 ? " is-selected" : "");
     const price = options.priceText == null ? money(product.price_cents) : options.priceText;
+    const isOffer = product.is_offer === true || product.regular_price_cents != null;
+    const offerBadge = isOffer ? '<span class="product-choice-offer">OFERTA</span>' : "";
     return '<' + tag + ' class="' + className + '"' + role + attributes(options.attributes) + '>' +
       '<img src="' + esc(product.image_url || "../img/logoantonia5.png") + '" alt="" width="104" height="104" loading="lazy" fetchpriority="low" decoding="async">' +
+      offerBadge +
       '<span class="product-choice-copy"><strong>' + esc(name) + '</strong>' +
       '<span class="product-choice-meta"><small class="product-choice-price">' + esc(price) + '</small>' + stepper + '</span>' +
       stockNote + '</span>' + detailsButton + '</' + tag + '>';
@@ -496,7 +499,7 @@
         choiceById.set(fallbackId, {
           product_id: fallbackId, name: item.name, image_url: item.image_url,
           price_cents: item.price_cents, stock_quantity: item.stock_quantity,
-          is_active: item.is_active, packaging: item.packaging
+          is_active: item.is_active, is_offer: item.is_offer, packaging: item.packaging
         });
       }
       const defaultId = String(item.default_product_id || item.product_id || "");
@@ -537,7 +540,7 @@
       const selectedChoice = optionChoices.find((option) => String(option.product_id) === fallbackId)
         || selectedOptions[0]
         || optionChoices[0]
-        || { product_id: fallbackId, name: item.name, image_url: item.image_url, price_cents: item.price_cents, stock_quantity: item.stock_quantity };
+        || { product_id: fallbackId, name: item.name, image_url: item.image_url, price_cents: item.price_cents, stock_quantity: item.stock_quantity, is_offer: item.is_offer };
       const selectedChoices = optionChoices.filter((option) => {
         const selected = selectedById.get(String(option.product_id));
         return Number(selected && selected.quantity || 0) > 0;

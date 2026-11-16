@@ -75,9 +75,10 @@ function selectedDelivery(value:any,now=new Date()){
   return deliveryOptions(now).find((x:any)=>x.date===requested)||null;
 }
 
+function isProductOffer(p:any){return p?.is_offer===true&&p?.offer_price!=null&&Number(p.offer_price)>=0}
 function pub(p:any,available?:number){
-  const offer=p?.is_offer===true&&p?.offer_price!=null&&Number(p.offer_price)>=0,price=offer?p.offer_price:p.price;
-  return {id:p.id,sku:p.sku||"",gtin:p.gtin||"",name:p.name,image_url:p.image_url||"",price_cents:cents(price),price_available:Number(price||0)>0,regular_price_cents:offer?cents(p.price):null,packaging:p.packaging||"",subcategory:p.customer_subsubcategory||p.subcategory||"",stock_quantity:p.is_active===false?0:Math.max(0,available??Number(p.stock||0)),is_active:p.is_active!==false,brand:p.brand||"",category:p.category||"",subsubcategory:p.customer_subsubcategory||p.subsubcategory||"",unit:p.unit||""};
+  const offer=isProductOffer(p),price=offer?p.offer_price:p.price;
+  return {id:p.id,sku:p.sku||"",gtin:p.gtin||"",name:p.name,image_url:p.image_url||"",price_cents:cents(price),price_available:Number(price||0)>0,regular_price_cents:offer?cents(p.price):null,is_offer:offer,packaging:p.packaging||"",subcategory:p.customer_subsubcategory||p.subcategory||"",stock_quantity:p.is_active===false?0:Math.max(0,available??Number(p.stock||0)),is_active:p.is_active!==false,brand:p.brand||"",category:p.category||"",subsubcategory:p.customer_subsubcategory||p.subsubcategory||"",unit:p.unit||""};
 }
 
 async function moldDetailComposition(basketId:string){
@@ -294,7 +295,7 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
       selectedOptions.push({
         product_id:product.id,quantity,name:product.name,brand:product.brand||"",
         sku:product.sku,gtin:product.gtin,image_url:product.image_url||"",
-        packaging:product.packaging||"",stock_quantity:stock,price_cents:price,
+        packaging:product.packaging||"",stock_quantity:stock,price_cents:price,is_offer:isProductOffer(product),
         is_active:product.is_active===true,
         sort_order:Number(configuredOption?.sort_order||0)
       });
@@ -306,7 +307,7 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
         return product?.is_active===true?{
           product_id:product.id,name:product.name,brand:product.brand||"",sku:product.sku,
           gtin:product.gtin,image_url:product.image_url||"",packaging:product.packaging||"",
-          stock_quantity:stock,price_cents:moldEffectivePriceCents(product),is_active:true,sort_order:Number(option.sort_order||0)
+          stock_quantity:stock,price_cents:moldEffectivePriceCents(product),is_active:true,is_offer:isProductOffer(product),sort_order:Number(option.sort_order||0)
         }:null;
       }).filter(Boolean).sort(compareMoldPositionOptionOrder)
       :[];
@@ -328,7 +329,7 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
       stock_quantity:Number(selectedForDisplay?.stock_quantity||0),
       base_quantity:baseQuantity,quantity:totalQuantity,
       selected_options:selectedOptions,
-      price_cents:Number(selectedForDisplay?.price_cents||0),
+      price_cents:Number(selectedForDisplay?.price_cents||0),is_offer:selectedForDisplay?.is_offer===true,
       alternative_count:includeAlternatives?alternatives.length:linkedOptions.length,
       alternatives_loaded:includeAlternatives,alternatives:publicAlternatives,
       manual_replacement_required:manualReplacementRequired
@@ -390,7 +391,7 @@ async function moldPositionOptions(basketId:string,compositionNumber:number,posi
     return product?.is_active===true?{
       product_id:product.id,name:product.name,brand:product.brand||"",sku:product.sku,gtin:product.gtin,
       image_url:product.image_url||"",packaging:product.packaging||"",stock_quantity:available,
-      price_cents:moldEffectivePriceCents(product),sort_order:Number(row.sort_order||0)
+      price_cents:moldEffectivePriceCents(product),is_offer:isProductOffer(product),sort_order:Number(row.sort_order||0)
     }:null;
   }).filter(Boolean) as any[];
   alternatives.sort(compareMoldPositionOptionOrder);
@@ -438,7 +439,7 @@ async function moldPositionOptionsBatch(basketId:string,compositionNumber:number
       return product?.is_active===true?{
         product_id:product.id,name:product.name,sku:product.sku,gtin:product.gtin,
         image_url:product.image_url||"",packaging:product.packaging||"",
-        stock_quantity:available,price_cents:moldEffectivePriceCents(product),is_active:true,sort_order:Number(option.sort_order||0)
+        stock_quantity:available,price_cents:moldEffectivePriceCents(product),is_active:true,is_offer:isProductOffer(product),sort_order:Number(option.sort_order||0)
       }:null;
     }).filter(Boolean) as any[];
     alternatives.sort(compareMoldPositionOptionOrder);
@@ -668,7 +669,7 @@ async function orderableProductStockMap(productIds:string[]){
   return out;
 }
 
-function moldEffectivePriceCents(p:any){const n=p?.is_offer===true&&p?.offer_price!=null&&Number(p.offer_price)>=0?Number(p.offer_price):Number(p?.price||0);return cents(n)}
+function moldEffectivePriceCents(p:any){const n=isProductOffer(p)?Number(p.offer_price):Number(p?.price||0);return cents(n)}
 
 function moldConfiguredBase(mold:any,positions:any[],defaults:Map<string,string>,products:Map<string,any>){
   let productTotalCents=0,conditionalPresent=false;
