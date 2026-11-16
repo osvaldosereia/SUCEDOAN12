@@ -44,9 +44,10 @@
     const className = "product-choice" + (quantity > 0 ? " is-selected" : "");
     const price = options.priceText == null ? money(product.price_cents) : options.priceText;
     return '<' + tag + ' class="' + className + '"' + role + attributes(options.attributes) + '>' +
-      '<img src="' + esc(product.image_url || "../img/logoantonia5.png") + '" alt="" width="76" height="76" loading="lazy" fetchpriority="low" decoding="async">' +
-      '<span class="product-choice-copy"><strong>' + esc(name) + '</strong><small>' + esc(price) + '</small>' + stockNote + '</span>' +
-      detailsButton + stepper + '</' + tag + '>';
+      '<img src="' + esc(product.image_url || "../img/logoantonia5.png") + '" alt="" width="104" height="104" loading="lazy" fetchpriority="low" decoding="async">' +
+      '<span class="product-choice-copy"><strong>' + esc(name) + '</strong>' +
+      '<span class="product-choice-meta"><small class="product-choice-price">' + esc(price) + '</small>' + stepper + '</span>' +
+      stockNote + '</span>' + detailsButton + '</' + tag + '>';
   }
 
 

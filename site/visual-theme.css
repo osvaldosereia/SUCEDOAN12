@@ -550,10 +550,6 @@ body {
 }
 
 .product-choice {
-  grid-template-columns: 76px minmax(0, 1fr) auto;
-  gap: 12px;
-  min-height: 92px;
-  padding: 8px 10px;
   border-color: #eee6db;
   border-radius: 13px;
   background: #fff;
@@ -573,14 +569,11 @@ body {
 }
 
 .product-choice img {
-  width: 76px;
-  height: 76px;
   border-radius: 10px;
   background: #f7f2eb;
 }
 
 .product-choice-copy strong {
-  min-height: 0;
   font-size: .91rem;
   line-height: 1.3;
 }
@@ -588,30 +581,6 @@ body {
 .product-choice-copy small {
   font-size: .83rem;
 }
-
-
-.experiment-page .product-choice-open {
-  grid-column: 1 / 3;
-  grid-row: 1;
-  z-index: 1;
-  display: block;
-  width: 100%;
-  height: 100%;
-  min-width: 0;
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
-  color: transparent;
-  font-size: 0;
-  cursor: pointer;
-}
-.experiment-page .product-choice-open:focus-visible {
-  outline: 3px solid rgba(126, 48, 41, .3);
-  outline-offset: 2px;
-}
-.experiment-page .product-choice > .product-option-stepper { z-index: 2; }
 
 .product-choice-check {
   display: grid;
@@ -875,25 +844,6 @@ body {
     min-height: 50px;
   }
 
-  .product-choice {
-    grid-template-columns: clamp(48px, 12vw, 64px) minmax(0, 1fr) auto;
-    grid-template-rows: minmax(48px, auto);
-    gap: 8px;
-    min-height: 64px;
-    padding: 8px;
-  }
-
-  .product-choice img {
-    grid-column: 1;
-    grid-row: 1;
-    width: clamp(48px, 12vw, 64px);
-    height: clamp(48px, 12vw, 64px);
-  }
-
-  .product-choice-copy { grid-column: 2; grid-row: 1; }
-  .product-option-stepper { grid-column: 3; grid-row: 1; gap: 4px; }
-  .option-quantity-button { flex-basis: 36px; width: 36px; min-width: 36px; height: 36px; }
-
   .home-extra-product-dialog {
     inset: auto 0 0;
     width: 100%;
@@ -989,26 +939,6 @@ body {
     padding-left: 6px;
     font-size: .68rem;
   }
-
-  .product-choice {
-    grid-template-columns: 48px minmax(0, 1fr) auto;
-    grid-template-rows: minmax(48px, auto);
-    gap: 6px;
-    min-height: 60px;
-    padding: 6px;
-  }
-
-  .product-choice img {
-    grid-column: 1;
-    grid-row: 1;
-    width: 48px;
-    height: 48px;
-  }
-
-  .product-choice-copy strong { font-size: .8rem; }
-  .product-option-stepper { grid-column: 3; grid-row: 1; gap: 3px; }
-  .option-quantity-button { flex-basis: 30px; width: 30px; min-width: 30px; height: 30px; }
-  .product-option-quantity { min-width: 16px; font-size: .8rem; }
 
   .home-extra-product-detail {
     grid-template-columns: 96px minmax(0, 1fr);
