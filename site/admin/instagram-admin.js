@@ -76,10 +76,12 @@
   function jobMarkup(job) {
     const items = Array.isArray(job.items) ? job.items : [];
     const itemList = items.length ? '<ol class="ig-job-items">' + items.map((item) => '<li>' + esc(item.item_number) + '. ' + esc(item.product_name || "Produto") + ' ' + badge(item.status) + (item.last_error ? '<small>' + esc(item.last_error) + '</small>' : '') + '</li>').join("") + '</ol>' : "";
+    const events = Array.isArray(job.events) ? job.events : [];
+    const eventList = events.length ? '<ol class="ig-events">' + events.map((event) => '<li><time>' + dateTime(event.created_at) + '</time><span>' + esc(String(event.event_type || "").replace(/_/g, " ")) + '</span><p>' + esc(event.message) + '</p></li>').join("") + '</ol>' : "";
     const retry = job.status === "failed" ? '<button class="button button-outline" type="button" data-action="retry" data-id="' + esc(job.id) + '">Tentar novamente</button>' : "";
     return '<details class="ig-job"><summary><span>' + esc(job.automation_name) + ' · ' + esc(labels[job.content_format] || job.content_format) + '</span><span>' + dateTime(job.scheduled_for) + '</span>' + badge(job.status) + '</summary>'
       + '<div class="ig-job-content"><p>' + (job.published_at ? 'Publicado em ' + dateTime(job.published_at) : 'Criado em ' + dateTime(job.created_at)) + (job.run_kind === "manual" ? ' · Execução manual' : '') + '</p>'
-      + (job.last_error ? '<p class="ig-error">' + esc(job.last_error) + '</p>' : '') + itemList + retry + '</div></details>';
+      + (job.last_error ? '<p class="ig-error">' + esc(job.last_error) + '</p>' : '') + itemList + (eventList ? '<h4>Etapas registradas</h4>' + eventList : '') + retry + '</div></details>';
   }
   function storyHistoryMarkup(rows) {
     const list = (rows || []).slice(0, 30);
