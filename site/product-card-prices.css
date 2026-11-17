@@ -1,0 +1,14 @@
+/* Shared storefront product cards: make prices easier to spot and read. */
+.product-choice-copy .product-choice-price {
+  color: var(--brand) !important;
+  font-size: 1rem !important;
+  font-weight: 850;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+@media (max-width: 480px) {
+  .product-choice-copy .product-choice-price {
+    font-size: 0.96rem !important;
+  }
+}
