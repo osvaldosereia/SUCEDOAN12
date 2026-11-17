@@ -70,8 +70,15 @@
   justify-content: flex-end;
   gap: 8px;
 }
-.daily-offer-images-download {
+.daily-offer-images-downloads {
+  display: flex;
+  flex: 1 0 100%;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.daily-offer-image-download {
   text-decoration: none;
+  white-space: nowrap;
 }
 @media (max-width: 720px) {
   .daily-offer-images {
