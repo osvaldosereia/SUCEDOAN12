@@ -139,7 +139,7 @@ async function graphRequest(method: "GET" | "POST", path: string, token: string,
   return { ok: response.ok, status: response.status, data, error: safeText(data?.error?.message || "A API do Instagram não retornou uma resposta válida.", 300) };
 }
 async function getPublishingQuota(token: string) {
-  const response = await graphRequest("GET", IG_USER_ID + "/content_publishing_limit", token);
+  const response = await graphRequest("GET", IG_USER_ID + "/content_publishing_limit", token, { fields: "quota_usage,config" });
   if (!response.ok) throw new Error("Não foi possível consultar o limite atual de publicações do Instagram: " + response.error);
   const entry = Array.isArray(response.data?.data) ? response.data.data[0] : null;
   const quota = entry?.config || entry || {};
