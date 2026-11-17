@@ -1,6 +1,7 @@
 name: Dona Antonia - agendador Instagram
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: "1-59/5 * * * *"
       timezone: "America/Cuiaba"
