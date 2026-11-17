@@ -97,7 +97,7 @@
       + '<div class="ig-metrics"><div><strong>' + esc(counts.active || 0) + '</strong><span>Automações ativas</span></div><div><strong>' + esc(counts.pending || 0) + '</strong><span>Na fila</span></div><div><strong>' + esc(counts.published_7d || 0) + '</strong><span>Publicadas em 7 dias</span></div><div><strong>' + esc(counts.attention || 0) + '</strong><span>Precisam de atenção</span></div></div>'
       + accountMarkup(data.account, data.offer_count)
       + '<section class="ig-panel"><div class="ig-section-heading"><div><h2>Automações</h2><p>Crie rotinas separadas para Stories, Feed ou carrossel.</p></div><button class="button button-primary" type="button" data-action="new">Nova automação</button></div>'
-      + automations.map(automationCard).join("") || '<p class="ig-empty">Nenhuma automação cadastrada.</p>'
+      + (automations.length ? automations.map(automationCard).join("") : '<p class="ig-empty">Nenhuma automação cadastrada.</p>')
       + (state.editing ? formMarkup() : '')
       + '</section>'
       + '<section class="ig-panel"><div class="ig-section-heading"><div><h2>Histórico de execuções</h2><p>Últimas 100 execuções; abra uma linha para ver produtos, erros e opção de nova tentativa.</p></div><button class="button button-outline" type="button" data-action="refresh">Atualizar</button></div>'
