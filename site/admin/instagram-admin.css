@@ -1,0 +1,77 @@
+.instagram-admin-root { min-width: 0; }
+.ig-manager { display:grid; gap:18px; }
+.ig-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+.ig-metrics > div,.ig-account-card,.ig-panel,.ig-automation-card,.ig-form { background:#fffdfa; border:1px solid #e9ded1; border-radius:16px; }
+.ig-metrics > div { padding:16px; display:grid; gap:4px; }
+.ig-metrics strong { color:#7e3029; font-size:1.55rem; line-height:1.1; }
+.ig-metrics span,.ig-muted,.ig-account-card p,.ig-account-card small,.ig-section-heading p,.ig-automation-main p,.ig-form-note,.ig-form small,.ig-job-content p,.ig-job-items small,.ig-story-history small { color:#746c63; font-size:.88rem; }
+.ig-account-card { display:flex; justify-content:space-between; align-items:center; gap:20px; padding:18px 20px; background:#f8f1e9; }
+.ig-account-card h3,.ig-card-title h3,.ig-form h3 { margin:2px 0 5px; color:#302b27; }
+.ig-account-card p { margin:5px 0; }
+.ig-account-card small { display:block; }
+.ig-eyebrow { color:#8a4a3f!important; font-weight:800; letter-spacing:.08em; font-size:.72rem!important; margin:0; }
+.ig-panel { padding:18px; }
+.ig-section-heading,.ig-form-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+.ig-section-heading h2,.ig-section-heading p,.ig-form-heading h3,.ig-form-heading p { margin:0; }
+.ig-section-heading p,.ig-form-heading p { margin-top:4px; }
+.ig-automation-card { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:16px; margin-top:10px; }
+.ig-automation-main { min-width:0; }
+.ig-automation-main p { margin:5px 0 0; }
+.ig-card-title { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.ig-card-title h3 { margin:0; font-size:1.02rem; }
+.ig-card-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:7px; }
+.ig-status { display:inline-flex; padding:4px 9px; border-radius:99px; background:#eee7df; color:#65574b; font-size:.75rem; font-weight:700; white-space:nowrap; }
+.ig-status-active,.ig-status-published { background:#e2f2e7; color:#27623a; }
+.ig-status-paused,.ig-status-queued,.ig-status-pending,.ig-status-assets_ready,.ig-status-container_created { background:#fff0d3; color:#805918; }
+.ig-status-failed,.ig-status-needs_review { background:#fae5e1; color:#982e23; }
+.ig-caption-preview { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:580px; }
+.ig-form { padding:18px; margin-top:14px; }
+.ig-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.ig-form-grid > label,.ig-caption { display:grid; gap:6px; color:#4d433c; font-size:.9rem; font-weight:650; }
+.ig-form input:not([type=checkbox]),.ig-form select,.ig-form textarea { width:100%; min-width:0; padding:10px 12px; border:1px solid #d9c8b7; border-radius:9px; background:white; color:#292521; font:inherit; }
+.ig-form textarea { resize:vertical; }
+.ig-carousel-count[hidden] { display:none; }
+.ig-days { border:1px solid #e5d8ca; border-radius:10px; padding:10px 12px; }
+.ig-days legend { color:#4d433c; font-weight:650; font-size:.9rem; padding:0 4px; }
+.ig-days > div { display:flex; flex-wrap:wrap; gap:7px; }
+.ig-day { position:relative; }
+.ig-day input { position:absolute; opacity:0; }
+.ig-day span { display:block; padding:7px 10px; border:1px solid #ded1c4; border-radius:8px; color:#594f47; cursor:pointer; }
+.ig-day input:checked + span { background:#7e3029; border-color:#7e3029; color:white; }
+.ig-active { display:flex!important; align-items:center; gap:8px; }
+.ig-active input { accent-color:#7e3029; }
+.ig-caption { grid-column:1/-1; }
+.ig-form-note { padding:10px 12px; background:#f8f3ed; border-radius:9px; }
+.ig-form-actions { display:flex; justify-content:flex-end; }
+.ig-job { border-top:1px solid #eee5dc; padding:11px 0; }
+.ig-job summary { display:flex; align-items:center; gap:12px; cursor:pointer; list-style:none; }
+.ig-job summary::-webkit-details-marker { display:none; }
+.ig-job summary > span:first-child { flex:1; font-weight:650; }
+.ig-job-content { padding:10px 12px; background:#faf6f1; border-radius:10px; margin-top:9px; }
+.ig-job-content p { margin:4px 0 9px; }
+.ig-job-items { padding-left:24px; }
+.ig-job-items li { margin:8px 0; }
+.ig-job-items small { display:block; margin-top:3px; color:#a12e23; }
+.ig-error { color:#9c2d23; background:#fff0ed; padding:10px 12px; border-radius:9px; }
+.ig-success { color:#246238; background:#e9f6ed; padding:10px 12px; border-radius:9px; }
+.ig-empty { color:#746c63; padding:12px 2px; }
+.ig-story-history { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 14px; }
+.ig-story-history > div { display:flex; align-items:center; gap:8px; border-bottom:1px solid #eee5dc; padding:9px 0; flex-wrap:wrap; }
+.ig-story-history strong { font-size:.86rem; }
+.ig-story-history small { width:100%; }
+@media (max-width:900px) {
+  .ig-automation-card { align-items:flex-start; flex-direction:column; }
+  .ig-card-actions { justify-content:flex-start; }
+  .ig-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (max-width:600px) {
+  .ig-panel,.ig-form { padding:14px; }
+  .ig-section-heading,.ig-form-heading { align-items:flex-start; }
+  .ig-section-heading { flex-direction:column; }
+  .ig-form-grid { grid-template-columns:1fr; }
+  .ig-caption { grid-column:auto; }
+  .ig-account-card { align-items:flex-start; }
+  .ig-job summary { align-items:flex-start; flex-wrap:wrap; }
+  .ig-job summary > span:first-child { flex-basis:100%; }
+  .ig-story-history { grid-template-columns:1fr; }
+}
