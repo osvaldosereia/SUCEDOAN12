@@ -1,0 +1,57 @@
+name: Dona Antonia - publicar Stories das ofertas
+
+on:
+  schedule:
+    - cron: "5 7 * * 1-6"
+      timezone: "America/Cuiaba"
+    - cron: "20 7 * * 1-6"
+      timezone: "America/Cuiaba"
+    - cron: "35 7 * * 1-6"
+      timezone: "America/Cuiaba"
+
+permissions:
+  id-token: write
+  contents: none
+
+concurrency:
+  group: dona-antonia-instagram-stories
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Publicar imagens do dia no Instagram
+        env:
+          SUPABASE_FUNCTION_URL: https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/publish-daily-offer-instagram-stories-v1
+          OIDC_AUDIENCE: dona-antonia-instagram-stories
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ] || [ -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]; then
+            echo "GitHub OIDC não está disponível."
+            exit 1
+          fi
+
+          oidc_url="$ACTIONS_ID_TOKEN_REQUEST_URL"
+          case "$oidc_url" in
+            *\?*) oidc_url="$oidc_url&audience=$OIDC_AUDIENCE" ;;
+            *) oidc_url="$oidc_url?audience=$OIDC_AUDIENCE" ;;
+          esac
+
+          oidc_response="$(curl --fail --silent --show-error \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$oidc_url")"
+          oidc_token="$(printf '%s' "$oidc_response" | jq -er '.value')"
+          unset oidc_response
+
+          response="$(curl --fail-with-body --silent --show-error --max-time 240 \
+            -X POST "$SUPABASE_FUNCTION_URL" \
+            -H "Authorization: Bearer $oidc_token" \
+            -H "Content-Type: application/json" \
+            --data '{"action":"publish"}')"
+          unset oidc_token
+
+          printf '%s' "$response" | jq '{ok,date,error,current_status,product_count,image_count,unpictured_count,expected_images,published_count,skipped_count,pending_count,failed_count,review_count,items}'
+          printf '%s' "$response" | jq -e '.ok == true' >/dev/null
