@@ -2,9 +2,9 @@
   "use strict";
   const root = document.getElementById("instagram-admin-root");
   if (!root) return;
-  const state = { data: null, editing: null, loading: false, busy: false, error: "", message: "" };
+  const state = { data: null, editing: null, loading: false, busy: false, error: "", message: "", creativeForm: { phrase:"", theme:"", extra_info:"" } };
   const days = [[1,"Seg"],[2,"Ter"],[3,"Qua"],[4,"Qui"],[5,"Sex"],[6,"Sáb"],[7,"Dom"]];
-  const labels = { story:"Stories", feed:"Feed", carousel:"Carrossel", active:"Ativa", paused:"Pausada", archived:"Arquivada", queued:"Na fila", running:"Processando", pending:"Aguardando", assets_ready:"Preparada", container_created:"Preparando mídia", publishing:"Publicando", published:"Publicada", failed:"Falhou", needs_review:"Revisar no Instagram", skipped:"Ignorada", asset_ready:"Imagem pronta" };
+  const labels = { story:"Stories", feed:"Feed", carousel:"Carrossel", active:"Ativa", paused:"Pausada", archived:"Arquivada", queued:"Na fila", running:"Processando", pending:"Aguardando", assets_ready:"Preparada", container_created:"Preparando mídia", publishing:"Publicando", published:"Publicada", failed:"Falhou", needs_review:"Verificar no Instagram", skipped:"Ignorada", asset_ready:"Imagem pronta", generating:"Gerando", ready:"Pronta para aprovar", publishing:"Enviando" };
   const esc = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (ch) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[ch]);
   const dateTime = (value) => {
     if (!value) return "—";
@@ -28,6 +28,24 @@
     }
     return result;
   }
+
+  async function requestDownload(id) {
+    const config = window.DONA_SITE_CONFIG || {};
+    const url = String(config.supabaseUrl || "").replace(/\/$/, "");
+    const code = typeof window.DonaAdminAuth?.getCode === "function" ? window.DonaAdminAuth.getCode() : "";
+    if (!url || !config.publishableKey || !code) throw new Error("Entre novamente no admin para baixar a arte.");
+    const response = await fetch(url + "/functions/v1/instagram-automation-manager-v1", {
+      method:"POST", cache:"no-store",
+      headers:{ "Content-Type":"application/json", apikey:config.publishableKey, "x-admin-code":code },
+      body:JSON.stringify({ action:"download_story", id })
+    });
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      throw new Error(result.message || result.error || "Não foi possível baixar a arte.");
+    }
+    return await response.blob();
+  }
+
   function badge(value) {
     const key = String(value || "");
     return '<span class="ig-status ig-status-' + esc(key) + '">' + esc(labels[key] || key || "—") + '</span>';
@@ -51,7 +69,7 @@
       + (item.caption_template ? '<p class="ig-caption-preview">' + esc(item.caption_template) + '</p>' : '') + '</div>'
       + '<div class="ig-card-actions">'
       + '<button class="button button-outline" type="button" data-action="edit" data-id="' + id + '">Editar</button>'
-      + '<button class="button button-outline" type="button" data-action="run" data-id="' + id + '">Enviar à fila</button>'
+      + '<button class="button button-outline" type="button" data-action="run" data-id="' + id + '">' + (item.content_format === "story" ? "Enfileirar 8 Stories" : "Enviar à fila") + '</button>'
       + '<button class="button button-outline" type="button" data-action="toggle" data-active="' + (item.status !== "active") + '" data-id="' + id + '">' + (item.status === "active" ? "Pausar" : "Ativar") + '</button>'
       + '<button class="button button-quiet" type="button" data-action="archive" data-id="' + id + '">Arquivar</button></div></article>';
   }
@@ -88,6 +106,46 @@
     if (!list.length) return '<p class="ig-empty">Ainda não há registros do publicador de Stories.</p>';
     return '<div class="ig-story-history">' + list.map((row) => '<div><strong>' + esc(row.offer_date) + ' · imagem ' + esc(row.image_number) + '</strong>' + badge(row.status) + '<small>' + (row.published_at ? 'Publicado ' + dateTime(row.published_at) : esc(row.last_error || row.updated_at || "")) + '</small></div>').join("") + '</div>';
   }
+
+  function storyCreativeCard(item) {
+    const disabled = state.busy ? " disabled" : "";
+    const preview = item.preview_url
+      ? '<img src="' + esc(item.preview_url) + '" alt="Prévia do Story: ' + esc(item.phrase) + '" loading="lazy">'
+      : '<div class="ig-creative-placeholder">' + esc(labels[item.status] || item.status) + '</div>';
+    const size = Number(item.image_size_bytes || 0);
+    const cost = Number(item.estimated_cost_usd || 0.005).toFixed(3).replace(".", ",");
+    const publish = item.status === "ready"
+      ? '<button class="button button-primary" type="button" data-action="publish" data-id="' + esc(item.id) + '"' + disabled + '>Aprovar e publicar no Stories</button>'
+      : "";
+    const download = item.preview_url
+      ? '<button class="button button-outline" type="button" data-action="download" data-id="' + esc(item.id) + '"' + disabled + '>Baixar JPG</button>'
+      : "";
+    return '<article class="ig-creative-card">' + preview
+      + '<div class="ig-creative-details"><div class="ig-card-title"><h3>' + esc(item.theme) + '</h3>' + badge(item.status) + '</div>'
+      + '<p class="ig-creative-phrase">“' + esc(item.phrase) + '”</p>'
+      + (item.extra_info ? '<p class="ig-muted">' + esc(item.extra_info) + '</p>' : '')
+      + '<small>' + dateTime(item.created_at) + ' · ' + esc(item.model) + ' / low'
+      + (size ? ' · ' + Math.ceil(size / 1024) + ' KB' : '')
+      + ' · estimativa US$ ' + cost + '</small>'
+      + (item.last_error ? '<p class="ig-error">' + esc(item.last_error) + '</p>' : '')
+      + '<div class="ig-creative-actions">' + download + publish + '</div></div></article>';
+  }
+  function storyStudioMarkup(rows) {
+    const list = Array.isArray(rows) ? rows : [];
+    const form = state.creativeForm || {};
+    const disabled = state.busy ? " disabled" : "";
+    return '<section class="ig-panel ig-story-studio"><div class="ig-section-heading"><div><h2>Criar e testar um Story</h2><p>Escreva a frase e o tema. Confira a prévia, baixe no celular ou aprove a publicação.</p></div></div>'
+      + '<p class="ig-form-note">Cada clique gera uma imagem vertical com GPT-Image-2 em qualidade low. A logo e os textos são aplicados pela loja para ficarem legíveis. Referência de custo: cerca de US$ 0,005 por imagem vertical padrão; pode variar com as dimensões. A arte final é comprimida para até 100 KB.</p>'
+      + '<form id="instagram-story-creative-form" class="ig-story-creative-form">'
+      + '<label>Frase da arte<textarea name="phrase" rows="2" maxlength="112" required placeholder="Ex.: Cuidar da casa também é cuidar de quem você ama.">' + esc(form.phrase || "") + '</textarea><small>Até 112 caracteres.</small></label>'
+      + '<label>Tema visual<input name="theme" maxlength="60" required value="' + esc(form.theme || "") + '" placeholder="Ex.: casa acolhedora, café da manhã, economia"></label>'
+      + '<label>Informação adicional (opcional)<textarea name="extra_info" rows="2" maxlength="160" placeholder="Detalhe que deve aparecer na arte">' + esc(form.extra_info || "") + '</textarea><small>Até 160 caracteres.</small></label>'
+      + '<button class="button button-primary" type="submit"' + disabled + '>Gerar prévia da arte</button></form>'
+      + '<div class="ig-creative-history"><h3>Prévia e histórico de artes</h3>'
+      + (list.length ? list.map(storyCreativeCard).join("") : '<p class="ig-empty">Nenhuma arte criada ainda. Gerar a prévia não publica no Instagram.</p>')
+      + '</div></section>';
+  }
+
   function render() {
     const data = state.data || {};
     const counts = data.counts || {};
@@ -98,6 +156,7 @@
       + (state.message ? '<p class="ig-success" role="status">' + esc(state.message) + '</p>' : '')
       + '<div class="ig-metrics"><div><strong>' + esc(counts.active || 0) + '</strong><span>Automações ativas</span></div><div><strong>' + esc(counts.pending || 0) + '</strong><span>Na fila</span></div><div><strong>' + esc(counts.published_7d || 0) + '</strong><span>Publicadas em 7 dias</span></div><div><strong>' + esc(counts.attention || 0) + '</strong><span>Precisam de atenção</span></div></div>'
       + accountMarkup(data.account, data.offer_count)
+      + storyStudioMarkup(data.story_creatives)
       + '<section class="ig-panel"><div class="ig-section-heading"><div><h2>Automações</h2><p>Crie rotinas separadas para Stories, Feed ou carrossel.</p></div><button class="button button-primary" type="button" data-action="new">Nova automação</button></div>'
       + (automations.length ? automations.map(automationCard).join("") : '<p class="ig-empty">Nenhuma automação cadastrada.</p>')
       + (state.editing ? formMarkup() : '')
@@ -112,6 +171,14 @@
     if (count) count.hidden = format.value !== "carousel";
     if (format) format.addEventListener("change", () => { if (count) count.hidden = format.value !== "carousel"; });
     if (form) form.addEventListener("submit", saveForm);
+    const creativeForm = root.querySelector("#instagram-story-creative-form");
+    if (creativeForm) {
+      creativeForm.addEventListener("input", (event) => {
+        const field = event.target;
+        if (field.name in state.creativeForm) state.creativeForm[field.name] = field.value;
+      });
+      creativeForm.addEventListener("submit", generateStory);
+    }
   }
   async function load() {
     if (state.loading) return;
@@ -143,8 +210,49 @@
     } catch (error) { state.error = error.message || "Não foi possível salvar a automação."; }
     finally { state.busy = false; render(); }
   }
+  async function generateStory(event) {
+    event.preventDefault();
+    if (state.busy) return;
+    const form = event.currentTarget;
+    const values = new FormData(form);
+    const payload = { phrase:values.get("phrase"), theme:values.get("theme"), extra_info:values.get("extra_info") || "" };
+    state.creativeForm = payload;
+    state.busy = true; state.error = ""; state.message = "Gerando a imagem. Isso pode levar um pouco…"; render();
+    try {
+      await request("generate_story", payload);
+      state.data = await request("dashboard");
+      state.error = ""; state.message = "Prévia pronta. Revise a arte e aprove a publicação somente se estiver correta.";
+    } catch (error) {
+      state.error = error.message || "Não foi possível gerar a arte.";
+      try { state.data = await request("dashboard"); } catch {}
+    } finally { state.busy = false; render(); }
+  }
+  async function downloadStory(id) {
+    if (state.busy) return;
+    state.busy = true; state.error = ""; state.message = ""; render();
+    try {
+      const blob = await requestDownload(id);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url; link.download = "dona-antonia-story-" + id.slice(0, 8) + ".jpg";
+      document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+      state.message = "Download iniciado. No celular, procure o JPG em Downloads ou no app Arquivos.";
+    } catch (error) { state.error = error.message || "Não foi possível baixar a arte."; }
+    finally { state.busy = false; render(); }
+  }
   async function runAction(button) {
     const action = button.dataset.action, id = button.dataset.id;
+    if (action === "publish") {
+      if (!window.confirm("Aprovar e publicar esta arte agora nos Stories do Instagram?")) return;
+      state.busy = true; state.error = ""; state.message = "Enviando o Story aprovado…"; render();
+      try {
+        await request("publish_story", { id });
+        state.message = "Story publicado no Instagram.";
+      } catch (error) { state.error = error.message || "Não foi possível confirmar a publicação."; }
+      try { state.data = await request("dashboard"); } catch {}
+      state.busy = false; render(); return;
+    }
     if (action === "new") { state.editing = { name:"", content_format:"feed", products_per_post:5, schedule_days:[1,2,3,4,5,6], schedule_times:["07:05"], status:"active", caption_template:"" }; render(); return; }
     if (action === "cancel") { state.editing = null; render(); return; }
     if (action === "edit") { state.editing = state.data.automations.find((row) => row.id === id) || null; render(); return; }
@@ -162,7 +270,10 @@
   }
   root.addEventListener("click", (event) => {
     const button = event.target.closest("[data-action]");
-    if (button && !state.busy) runAction(button);
+    if (button && !state.busy) {
+      if (button.dataset.action === "download") downloadStory(button.dataset.id);
+      else runAction(button);
+    }
   });
   window.DonaInstagramAdmin = { load };
 })();
