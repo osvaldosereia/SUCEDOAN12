@@ -85,7 +85,7 @@ async function verifyGitHubOidcToken(token: string): Promise<boolean> {
     if (claims.iss !== OIDC_ISSUER || !audiences.includes(OIDC_AUDIENCE)) return false;
     if (expiresAt < now || notBefore > now + 30 || issuedAt > now + 30 || now - issuedAt > 900) return false;
     if (claims.repository !== GITHUB_REPOSITORY || String(claims.repository_id || "") !== GITHUB_REPOSITORY_ID) return false;
-    if (claims.ref !== GITHUB_REF || claims.workflow_ref !== GITHUB_WORKFLOW_REF || claims.event_name !== "schedule") return false;
+    if (claims.ref !== GITHUB_REF || claims.workflow_ref !== GITHUB_WORKFLOW_REF || !["schedule", "workflow_dispatch"].includes(String(claims.event_name || ""))) return false;
     const keyResponse = await fetch(OIDC_JWKS_URL, { signal: AbortSignal.timeout(10000) });
     if (!keyResponse.ok) return false;
     const keySet = await keyResponse.json();
