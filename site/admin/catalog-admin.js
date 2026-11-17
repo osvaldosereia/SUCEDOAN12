@@ -173,11 +173,18 @@
     const offset = reset ? 0 : state.productsOffset;
     loadProductBasketMetadata().catch(() => {});
     try {
-      const data = await request("products", { params: { q: state.productsQuery, status: state.productsStatus, segment: state.productsSegment, offset, limit: 5 } });
+      const data = await request("products", { params: { q: state.productsQuery, status: state.productsStatus, segment: state.productsSegment, offset, limit: state.productsSegment === "on_offer" ? 50 : 5 } });
       if (requestId !== state.productsRequestId) return;
       state.productsTotal = Number(data.total || 0);
       (data.products || []).forEach((product) => state.productCache.set(String(product.id), product));
       renderProducts(data.products || [], !reset);
+      if (reset && state.productsSegment === "on_offer") {
+        const summary = document.createElement("p");
+        summary.className = "admin-muted";
+        const total = state.productsTotal;
+        summary.textContent = total + (total === 1 ? " produto com oferta ativa." : " produtos com oferta ativa.");
+        $("products-result").prepend(summary);
+      }
       state.productsOffset = offset + (data.products || []).length;
       $("products-more").hidden = state.productsOffset >= state.productsTotal;
     } catch (error) {

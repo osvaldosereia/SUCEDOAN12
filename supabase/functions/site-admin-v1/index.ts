@@ -470,10 +470,78 @@ async function productSearch(input: any) {
   const limit = integer(input.limit ?? 24, 1, 50) || 24;
   const offset = integer(input.offset ?? 0, 0, 100000) || 0;
   const status = ["active", "inactive"].includes(input.status) ? input.status : "all";
-  const segment = ["no_photo", "zero_stock", "recently_edited", "recently_added", "no_ean", "no_ncm", "substitution"].includes(input.segment)
+  const segment = ["no_photo", "zero_stock", "recently_edited", "recently_added", "no_ean", "no_ncm", "substitution", "on_offer"].includes(input.segment)
     ? input.segment
     : "all";
   const queryText = clean(input.q, 80).replace(/[^\p{L}\p{N}\s._-]/gu, " ").replace(/\s+/g, " ").trim();
+  if (segment === "on_offer") {
+    const now = Date.now();
+    const pageSize = 500;
+    const matchingIds: string[] = [];
+    const isCurrentOffer = (product: any) => {
+      const regularPrice = Number(product.price);
+      const offerPrice = Number(product.offer_price);
+      if (product.is_offer !== true || product.offer_price == null
+        || !Number.isFinite(regularPrice) || !Number.isFinite(offerPrice)
+        || offerPrice < 0 || offerPrice >= regularPrice) return false;
+      if (product.metadata?.offer_source === "auto_rotation") {
+        const startsAt = Date.parse(String(product.metadata.offer_starts_at || ""));
+        const endsAt = Date.parse(String(product.metadata.offer_ends_at || ""));
+        return Number.isFinite(startsAt) && Number.isFinite(endsAt)
+          && startsAt <= now && endsAt > now;
+      }
+      return true;
+    };
+    for (let from = 0; from < 100000; from += pageSize) {
+      let offerQuery: any = db.from("products")
+        .select("id,price,offer_price,is_offer,is_active,metadata")
+        .eq("is_offer", true)
+        .not("offer_price", "is", null);
+      if (status === "active") offerQuery = offerQuery.eq("is_active", true);
+      if (status === "inactive") offerQuery = offerQuery.eq("is_active", false);
+      if (queryText) {
+        const pattern = `*${queryText}*`;
+        offerQuery = offerQuery.or(`name.ilike.${pattern},sku.ilike.${pattern},brand.ilike.${pattern},gtin.ilike.${pattern}`);
+      }
+      const { data, error } = await offerQuery
+        .order("is_active", { ascending: false })
+        .order("name", { ascending: true })
+        .range(from, from + pageSize - 1);
+      if (error) throw error;
+      const page = data || [];
+      page.forEach((product: any) => {
+        if (isCurrentOffer(product)) matchingIds.push(String(product.id));
+      });
+      if (page.length < pageSize) break;
+    }
+
+    const selectedIds = matchingIds.slice(offset, offset + limit);
+    let products: any[] = [];
+    if (selectedIds.length) {
+      const details = await db.from("products").select(PRODUCT_COLUMNS).in("id", selectedIds);
+      if (details.error) throw details.error;
+      const byId = new Map((details.data || []).map((product: any) => [String(product.id), product]));
+      products = selectedIds.map((id) => byId.get(id)).filter(Boolean);
+    }
+    const sellableById = new Map<string, number>();
+    if (selectedIds.length) {
+      const stockResult = await db.from("storefront_product_sellable_stock_v1")
+        .select("product_id,sellable_stock,is_active")
+        .in("product_id", selectedIds);
+      if (stockResult.error) throw stockResult.error;
+      (stockResult.data || []).forEach((row: any) => sellableById.set(String(row.product_id),
+        row.is_active === true ? Math.max(0, Number(row.sellable_stock || 0)) : 0));
+    }
+    return {
+      products: products.map((product: any) => ({
+        ...product,
+        sellable_stock: sellableById.get(String(product.id)) || 0,
+      })),
+      total: matchingIds.length,
+      offset,
+      limit,
+    };
+  }
   let query = db.from("products").select(PRODUCT_COLUMNS, { count: "exact" });
   if (status === "active") query = query.eq("is_active", true);
   if (status === "inactive") query = query.eq("is_active", false);
