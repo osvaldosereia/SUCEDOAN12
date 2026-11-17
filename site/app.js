@@ -402,7 +402,7 @@
     $("basket-grid").setAttribute("aria-busy", "true");
     state.baskets.clear();
     try {
-      const result = await request("home_size_cards");
+      const result = await request("home_size_cards", { params: { card_version: 2 } });
       state.cards = Array.isArray(result.baskets) ? result.baskets : [];
       if (!state.cards.length) throw new Error("Nenhuma cesta disponível no momento.");
       state.cards.forEach((card) => {
