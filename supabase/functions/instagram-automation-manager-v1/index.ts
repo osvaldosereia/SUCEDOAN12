@@ -11,6 +11,10 @@ const JOBS = "da_instagram_jobs_v1";
 const ITEMS = "da_instagram_job_items_v1";
 const EVENTS = "da_instagram_job_events_v1";
 const STORY_JOBS = "da_offer_story_publications_v1";
+const STORY_CREATIVES = "da_instagram_story_creatives_v1";
+const STORY_MODEL = "gpt-image-2";
+const STORY_ESTIMATED_COST_USD = 0.005;
+const STORY_MAX_BYTES = 100000;
 const IG_USER_ID = "17841451162237654";
 const GRAPH_VERSION = "v27.0";
 const OIDC_AUDIENCE = "dona-antonia-instagram-stories";
@@ -286,6 +290,225 @@ async function signedAsset(path: string) {
   if (error || !data?.signedUrl) throw new Error("Não foi possível liberar a imagem para o Instagram.");
   return data.signedUrl;
 }
+
+async function getOpenAiKey(): Promise<string> {
+  let key = Deno.env.get("OPENAI_API_KEY") || "";
+  if (!key) {
+    try {
+      const result = await db.rpc("get_conversation_worker_provider_secret_v1");
+      if (typeof result.data === "string") key = result.data;
+    } catch { /* optional Vault fallback */ }
+  }
+  return key.trim();
+}
+function storyPrompt(theme: string, extraInfo: string) {
+  return [
+    "Create a polished, original, vertical 2:3 background illustration for an Instagram Story campaign for a neighborhood supermarket in Cuiabá, Brazil.",
+    "The visual subject is inspired by this theme: " + theme + ".",
+    extraInfo ? "Additional visual context: " + extraInfo + "." : "",
+    "Warm cream, burgundy, terracotta and soft beige palette. Friendly, elegant, contemporary, clean, premium commercial art direction, natural soft light, detailed but uncluttered composition.",
+    "Do not include any letters, words, numbers, logos, watermarks, labels, signs, packaging text, or typography.",
+    "Keep the center area calm and low-detail so exact text can be placed over it later. Leave the top and bottom edges visually quiet. One cohesive background image, no collage, no frame."
+  ].filter(Boolean).join(" ");
+}
+async function renderStoryArtwork(phrase: string, theme: string, extraInfo: string, backgroundBytes: Uint8Array, logoBytes: Uint8Array, fontBytes: Uint8Array) {
+  const themeLines = wrapName(theme, 32, 2);
+  const phraseLines = wrapName(phrase, 28, 4);
+  const detailLines = extraInfo ? wrapName(extraInfo, 40, 4) : [];
+  const themeMarkup = themeLines.map((line, index) =>
+    '<text x="540" y="' + (540 + index * 48) + '" text-anchor="middle" font-family="Roboto, Arial, sans-serif" font-size="35" font-weight="700" fill="#8a382f">' + xml(line) + "</text>"
+  ).join("");
+  const phraseMarkup = phraseLines.map((line, index) =>
+    '<text x="540" y="' + (760 + index * 82) + '" text-anchor="middle" font-family="Roboto, Arial, sans-serif" font-size="58" font-weight="800" fill="#492e24">' + xml(line) + "</text>"
+  ).join("");
+  const detailMarkup = detailLines.map((line, index) =>
+    '<text x="540" y="' + (1180 + index * 48) + '" text-anchor="middle" font-family="Roboto, Arial, sans-serif" font-size="28" font-weight="500" fill="#5e5148">' + xml(line) + "</text>"
+  ).join("");
+  const svg = [
+    '<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">',
+    '<image href="background.jpg" x="0" y="0" width="1080" height="1920" preserveAspectRatio="xMidYMid slice"/>',
+    '<rect width="1080" height="1920" fill="#f4eee5" fill-opacity="0.12"/>',
+    '<image href="brand.png" x="295" y="55" width="490" height="108" preserveAspectRatio="xMidYMid meet"/>',
+    '<rect x="52" y="280" width="976" height="1170" rx="54" fill="#fffaf4" fill-opacity="0.93" stroke="#ead8c7" stroke-width="4"/>',
+    '<text x="540" y="450" text-anchor="middle" font-family="Roboto, Arial, sans-serif" font-size="21" font-weight="800" letter-spacing="4" fill="#b34a3f">TEMA</text>',
+    themeMarkup,
+    '<line x1="382" y1="640" x2="698" y2="640" stroke="#c83a31" stroke-width="5" stroke-linecap="round"/>',
+    phraseMarkup,
+    '<line x1="430" y1="1085" x2="650" y2="1085" stroke="#e1cdbb" stroke-width="3"/>',
+    detailMarkup,
+    '<rect x="0" y="1615" width="1080" height="305" fill="#793129"/>',
+    '<text x="540" y="1690" text-anchor="middle" font-family="Roboto, Arial, sans-serif" font-size="27" font-weight="600" fill="#f8eee4">Faça seu pedido pelo WhatsApp</text>',
+    '<text x="540" y="1760" text-anchor="middle" font-family="Roboto, Arial, sans-serif" font-size="44" font-weight="800" fill="#ffffff">65 99815-0975</text>',
+    '<text x="540" y="1830" text-anchor="middle" font-family="Roboto, Arial, sans-serif" font-size="28" font-weight="600" fill="#f8eee4">Entrega grátis a partir de R$ 75</text>',
+    "</svg>",
+  ].join("");
+  const artwork = await Image.renderSVG(svg, { images: { "background.jpg": backgroundBytes, "brand.png": logoBytes }, fonts: [fontBytes] });
+  for (const width of [720, 640]) {
+    const resized = await artwork.resize({ width });
+    for (const quality of [76, 68, 60, 52, 44]) {
+      const bytes = await resized.encodeJPEG({ quality });
+      if (bytes.length > 0 && bytes.length <= STORY_MAX_BYTES) return bytes;
+    }
+  }
+  throw new Error("Não foi possível comprimir a arte para até 100 KB mantendo o formato vertical.");
+}
+async function createStoryDraft(input: any) {
+  const phrase = safeText(input.phrase, 112);
+  const theme = safeText(input.theme, 60);
+  const extraInfo = safeText(input.extra_info, 160);
+  if (!phrase || phrase.length > 112) throw new Error("A frase deve ter até 112 caracteres.");
+  if (theme.length < 2 || theme.length > 60) throw new Error("Informe um tema com até 60 caracteres.");
+  if (extraInfo.length > 160) throw new Error("A informação adicional deve ter até 160 caracteres.");
+  const { data: draft, error: insertError } = await db.from(STORY_CREATIVES).insert({
+    phrase, theme, extra_info: extraInfo, status: "generating", model: STORY_MODEL,
+    quality: "low", estimated_cost_usd: STORY_ESTIMATED_COST_USD,
+  }).select("*").single();
+  if (insertError || !draft) throw new Error("Não foi possível registrar o rascunho do Story.");
+  try {
+    const key = await getOpenAiKey();
+    if (!key || key.length < 20) throw new Error("A chave da OpenAI não está configurada no servidor.");
+    const [logoBytes, fontBytes] = await Promise.all([
+      fetchBytes(LOGO_URL, ALLOWED_IMAGE_HOSTS, 2 * 1024 * 1024, "image"),
+      fetchBytes(FONT_URL, ALLOWED_IMAGE_HOSTS, 2 * 1024 * 1024, "font"),
+    ]);
+    const prompt = storyPrompt(theme, extraInfo);
+    const response = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + key, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: STORY_MODEL, prompt, size: "1024x1536", quality: "low", n: 1,
+        output_format: "jpeg", output_compression: 75,
+      }),
+      signal: AbortSignal.timeout(120000),
+    });
+    const payload: any = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(safeText(payload?.error?.message || "A OpenAI não conseguiu gerar o fundo da arte.", 260));
+    const encoded = payload?.data?.[0]?.b64_json;
+    if (typeof encoded !== "string" || encoded.length < 100) throw new Error("A OpenAI não retornou a imagem.");
+    const backgroundBytes = Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0));
+    if (!backgroundBytes.length || backgroundBytes.length > 20 * 1024 * 1024) throw new Error("A imagem gerada ultrapassou o tamanho permitido.");
+    const bytes = await renderStoryArtwork(phrase, theme, extraInfo, backgroundBytes, logoBytes, fontBytes);
+    const path = "instagram-manual/" + draft.id + "/story.jpg";
+    const { error: uploadError } = await db.storage.from(BUCKET).upload(path, bytes, {
+      contentType: "image/jpeg", upsert: false, cacheControl: "3600",
+    });
+    if (uploadError) throw new Error("Não foi possível salvar a arte gerada.");
+    const { data: ready, error: updateError } = await db.from(STORY_CREATIVES).update({
+      status: "ready", image_path: path, image_size_bytes: bytes.length, last_error: null, updated_at: new Date().toISOString(),
+    }).eq("id", draft.id).select("*").single();
+    if (updateError || !ready) throw new Error("A arte foi criada, mas não foi possível registrar a prévia.");
+    return { ok: true, creative: { ...ready, preview_url: await signedAsset(path) } };
+  } catch (error) {
+    const message = safeText(error instanceof Error ? error.message : "Falha ao criar o Story.", 300);
+    await db.from(STORY_CREATIVES).update({
+      status: "failed", last_error: message, updated_at: new Date().toISOString(),
+    }).eq("id", draft.id);
+    throw new Error(message);
+  }
+}
+async function publishStoryDraft(input: any) {
+  const id = safeText(input.id, 36);
+  if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error("Identificador de Story inválido.");
+  const { data: current, error: lookupError } = await db.from(STORY_CREATIVES).select("*").eq("id", id).maybeSingle();
+  if (lookupError || !current) throw new Error("Arte não encontrada.");
+  if (current.status !== "ready" || !current.image_path) throw new Error("Somente uma arte pronta e ainda não publicada pode ser aprovada.");
+  const { data: claimed, error: claimError } = await db.from(STORY_CREATIVES).update({
+    status: "publishing", last_error: null, meta_creation_id: null, updated_at: new Date().toISOString(),
+  }).eq("id", id).eq("status", "ready").select("*").maybeSingle();
+  if (claimError || !claimed) throw new Error("Esta arte já está sendo processada ou foi publicada.");
+  let publishRequestStarted = false;
+  try {
+    const token = await getInstagramToken();
+    const quota = await getPublishingQuota(token);
+    if (quota.remaining < 1) {
+      await db.from(STORY_CREATIVES).update({
+        status: "ready", last_error: "A cota diária de publicação da Meta está cheia.", updated_at: new Date().toISOString(),
+      }).eq("id", id).eq("status", "publishing");
+      throw new Error("A cota de publicação da Meta está cheia; a arte continua pronta para tentar mais tarde.");
+    }
+    const imageUrl = await signedAsset(claimed.image_path);
+    const created = await graphRequest("POST", IG_USER_ID + "/media", token, {
+      image_url: imageUrl, media_type: "STORIES", is_ai_generated: "true",
+    });
+    if (!created.ok) throw new Error("A Meta não criou a mídia: " + created.error);
+    const creationId = safeText(created.data?.id, 80);
+    if (!creationId) throw new Error("A Meta não retornou o identificador do Story.");
+    await db.from(STORY_CREATIVES).update({
+      meta_creation_id: creationId, updated_at: new Date().toISOString(),
+    }).eq("id", id).eq("status", "publishing");
+    const containerStatus = await pollContainer(creationId, token);
+    if (containerStatus !== "FINISHED") {
+      const message = containerStatus === "ERROR"
+        ? "A Meta não conseguiu processar a imagem. Nenhum Story foi publicado."
+        : "A Meta ainda não confirmou o processamento. Nenhum Story foi publicado; você pode tentar novamente.";
+      await db.from(STORY_CREATIVES).update({
+        status: "ready", last_error: message, updated_at: new Date().toISOString(),
+      }).eq("id", id).eq("status", "publishing");
+      return { ok: false, status: "ready", message };
+    }
+    publishRequestStarted = true;
+    const published = await graphRequest("POST", IG_USER_ID + "/media_publish", token, { creation_id: creationId });
+    if (!published.ok) {
+      const message = "A Meta não confirmou o resultado da publicação. Verifique os Stories do Instagram antes de tentar novamente.";
+      await db.from(STORY_CREATIVES).update({
+        status: "needs_review", last_error: message, updated_at: new Date().toISOString(),
+      }).eq("id", id).eq("status", "publishing");
+      return { ok: false, status: "needs_review", message };
+    }
+    const mediaId = safeText(published.data?.id, 80);
+    if (!mediaId) {
+      const message = "A Meta aceitou a solicitação sem retornar o ID. Verifique o Instagram antes de repetir.";
+      await db.from(STORY_CREATIVES).update({
+        status: "needs_review", last_error: message, updated_at: new Date().toISOString(),
+      }).eq("id", id).eq("status", "publishing");
+      return { ok: false, status: "needs_review", message };
+    }
+    const { data: done, error: doneError } = await db.from(STORY_CREATIVES).update({
+      status: "published", meta_media_id: mediaId, last_error: null,
+      published_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+    }).eq("id", id).eq("status", "publishing").select("*").maybeSingle();
+    if (doneError || !done) {
+      return { ok: false, status: "needs_review", message: "A Meta publicou a arte, mas o painel não conseguiu confirmar o registro. Verifique o Instagram." };
+    }
+    return { ok: true, status: "published", media_id: mediaId };
+  } catch (error) {
+    const message = safeText(error instanceof Error ? error.message : "Falha na publicação.", 300);
+    if (publishRequestStarted) {
+      await db.from(STORY_CREATIVES).update({
+        status: "needs_review", last_error: "A chamada ficou sem confirmação; verifique o Instagram antes de tentar novamente.", updated_at: new Date().toISOString(),
+      }).eq("id", id).eq("status", "publishing");
+      return { ok: false, status: "needs_review", message: "A solicitação ficou sem confirmação. Verifique o Instagram antes de tentar novamente." };
+    }
+    await db.from(STORY_CREATIVES).update({
+      status: "ready", last_error: message, updated_at: new Date().toISOString(),
+    }).eq("id", id).eq("status", "publishing");
+    throw new Error(message);
+  }
+}
+async function downloadStoryDraft(req: Request, input: any): Promise<Response> {
+  const id = safeText(input.id, 36);
+  if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error("Identificador de Story inválido.");
+  const { data: draft, error: lookupError } = await db.from(STORY_CREATIVES).select("image_path").eq("id", id).maybeSingle();
+  if (lookupError || !draft?.image_path) throw new Error("O arquivo desta arte não está disponível.");
+  const { data, error } = await db.storage.from(BUCKET).download(draft.image_path);
+  if (error || !data) throw new Error("Não foi possível baixar a arte.");
+  const origin = req.headers.get("origin") || "";
+  return new Response(data, {
+    status: 200,
+    headers: {
+      "Content-Type": "image/jpeg",
+      "Content-Disposition": 'attachment; filename="dona-antonia-story-' + id.slice(0, 8) + '.jpg"',
+      "Content-Length": String(data.size),
+      "Cache-Control": "no-store",
+      "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin) ? origin : "https://donaantonia.com.br",
+      "Access-Control-Allow-Headers": "apikey, authorization, content-type, x-admin-code",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Expose-Headers": "Content-Disposition",
+      "Vary": "Origin",
+    },
+  });
+}
+
 async function pollContainer(creationId: string, token: string) {
   for (let attempt = 0; attempt < 6; attempt += 1) {
     const status = await graphRequest("GET", creationId, token, { fields: "status_code" });
@@ -591,12 +814,14 @@ function parseTimes(value: unknown) {
   return times;
 }
 async function getDashboard() {
-  const [automationResult, jobsResult, offerResult, storyResult] = await Promise.all([
+  const [automationResult, jobsResult, offerResult, storyResult, creativeResult] = await Promise.all([
     db.from(AUTOMATIONS).select("*").neq("status", "archived").order("created_at", { ascending: true }),
     db.from(JOBS).select("*").order("scheduled_for", { ascending: false }).limit(100),
     db.rpc("da_offer_rotation_admin_v1", { p_action: "get", p_payload: {} }),
     db.from(STORY_JOBS).select("offer_date,image_number,status,story_id,last_error,published_at,updated_at")
       .gte("offer_date", addDays(dateInCuiaba(), -30)).order("offer_date", { ascending: false }).order("image_number"),
+    db.from(STORY_CREATIVES).select("id,phrase,theme,extra_info,status,image_path,image_size_bytes,model,quality,estimated_cost_usd,meta_media_id,last_error,created_at,published_at")
+      .order("created_at", { ascending: false }).limit(30),
   ]);
   if (automationResult.error || jobsResult.error) throw new Error("Não foi possível carregar o gerenciador do Instagram.");
   const jobs = jobsResult.data || [];
@@ -629,11 +854,16 @@ async function getDashboard() {
     attention: jobs.filter((job: any) => ["failed", "needs_review"].includes(job.status)).length,
   };
   const offers = offerResult.error ? [] : (Array.isArray(offerResult.data?.offers) ? offerResult.data.offers : []);
+  const storyCreatives = await Promise.all((creativeResult.data || []).map(async (item: any) => ({
+    ...item,
+    preview_url: item.image_path ? await signedAsset(item.image_path).catch(() => "") : "",
+  })));
   return {
     ok: true,
     automations: automationResult.data || [],
     jobs: jobsWithItems,
     story_history: storyResult.error ? [] : (storyResult.data || []),
+    story_creatives: creativeResult.error ? [] : storyCreatives,
     counts,
     offer_count: offers.filter((item: any) => item && item.image_url && Number(item.offer_price) > 0).length,
     account: await getAccountHealth(),
@@ -752,6 +982,8 @@ async function manage(req: Request, input: any) {
   if (action === "archive_automation") return await archiveAutomation(input);
   if (action === "run_now") return await runNow(input);
   if (action === "retry_job") return await retryJob(input);
+  if (action === "generate_story") return await createStoryDraft(input);
+  if (action === "publish_story") return await publishStoryDraft(input);
   throw new Error("Ação do gerenciador não reconhecida.");
 }
 Deno.serve(async (req: Request) => {
@@ -771,6 +1003,10 @@ Deno.serve(async (req: Request) => {
   if (origin && !ALLOWED_ORIGINS.has(origin)) return json(req, { ok: false, error: "origin_not_allowed" }, 403);
   const auth = verifyAdminCode(req.headers.get("x-admin-code"));
   if (auth !== "valid") return json(req, { ok: false, error: auth === "not_configured" ? "admin_auth_not_configured" : "admin_code_invalid" }, auth === "not_configured" ? 503 : 401);
+  if (action === "download_story") {
+    try { return await downloadStoryDraft(req, input); }
+    catch (error) { return json(req, { ok: false, error: safeText(error instanceof Error ? error.message : "Falha ao baixar a arte.", 300) }, 400); }
+  }
   try { return json(req, await manage(req, input)); }
   catch (error) { return json(req, { ok: false, error: safeText(error instanceof Error ? error.message : "Falha ao processar a solicitação.", 300) }, 400); }
 });
