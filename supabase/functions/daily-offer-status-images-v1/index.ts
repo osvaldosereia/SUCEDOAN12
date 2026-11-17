@@ -128,30 +128,21 @@ async function fetchFont() {
 
 
 async function encodeCompactJpeg(image: Image) {
-  const widths = [720, 640, 540, 480, 432];
-  const qualities = [78, 70, 62, 54, 46];
-  let best: { bytes: Uint8Array; score: number; width: number } | null = null;
-
-  for (const width of widths) {
-    const resized = image.clone().resize({ width });
-    for (const quality of qualities) {
-      const bytes = await resized.encodeJPEG({ quality });
-      if (bytes.byteLength <= MAX_IMAGE_BYTES) {
-        const score = quality * width / 720;
-        if (!best || score > best.score || (score === best.score && width > best.width)) {
-          best = { bytes, score, width };
-        }
-        break;
-      }
-    }
-    if (best && 78 * width / 720 <= best.score) break;
+  const candidates = [
+    { width: 720, quality: 54 },
+    { width: 600, quality: 48 },
+    { width: 480, quality: 40 },
+  ];
+  for (const candidate of candidates) {
+    const resized = image.clone().resize({ width: candidate.width });
+    const bytes = await resized.encodeJPEG({ quality: candidate.quality });
+    if (bytes.byteLength <= MAX_IMAGE_BYTES) return bytes;
   }
-
-  if (!best) throw new Error("Uma montagem ultrapassou 100 KB mesmo após a compressão.");
-  return best.bytes;
+  throw new Error("Uma montagem ultrapassou 100 KB mesmo após a compressão.");
 }
 
 async function renderOfferStory(products: any[], logoBytes: Uint8Array, fontBytes: Uint8Array, date: string) {
+
   const imageBytes = await Promise.all(products.map(async (product) => {
     try {
       return await fetchImage(product.image_url);
@@ -247,6 +238,34 @@ async function statusToday() {
   return responseFor(date, await getRow(date));
 }
 
+async function generatePage(input: any) {
+  const date = safeText(input?.date, 10);
+  const pageNumber = Number(input?.page_number || 0);
+  const products = Array.isArray(input?.products) ? input.products : [];
+  if (date !== todayInCuiaba() || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error("A data da montagem não é válida.");
+  }
+  if (!Number.isInteger(pageNumber) || pageNumber < 1 || pageNumber > 8 || products.length !== 6) {
+    throw new Error("A montagem deve conter uma página com seis produtos.");
+  }
+
+  const [logoBytes, fontBytes] = await Promise.all([fetchImage(LOGO_URL), fetchFont()]);
+  const jpeg = await renderOfferStory(products, logoBytes, fontBytes, date);
+  if (!jpeg.byteLength || jpeg.byteLength > MAX_IMAGE_BYTES) {
+    throw new Error("A montagem excedeu o limite de 100 KB.");
+  }
+
+  const imageNumber = String(pageNumber).padStart(2, "0");
+  const path = date + "/ofertas-" + imageNumber + ".jpg";
+  const { error } = await db.storage.from(BUCKET).upload(path, jpeg, {
+    contentType: "image/jpeg",
+    upsert: true,
+    cacheControl: "3600",
+  });
+  if (error) throw error;
+  return { ok: true, image: { number: pageNumber, path, size_bytes: jpeg.byteLength } };
+}
+
 async function generateToday() {
   const { data: snapshot, error: snapshotError } = await db.rpc("da_offer_rotation_admin_v1", {
     p_action: "get", p_payload: {},
@@ -259,7 +278,7 @@ async function generateToday() {
       && Number(product.price) > 0 && Number(product.offer_price) > 0
       && Number(product.offer_price) < Number(product.price)
   );
-  const pageCount = Math.floor(offers.length / 6);
+  const pageCount = Math.min(8, Math.floor(offers.length / 6));
   const unpictured = Math.max(0, rawOffers.length - pageCount * 6);
 
   const existing = await getRow(date);
@@ -304,25 +323,62 @@ async function generateToday() {
 
   const uploadedPaths: string[] = [];
   try {
-    const [logoBytes, fontBytes] = await Promise.all([fetchImage(LOGO_URL), fetchFont()]);
     const groups = Array.from({ length: pageCount }, (_, page) => offers.slice(page * 6, page * 6 + 6));
-    const jpegImages: Uint8Array[] = [];
-    for (const group of groups) jpegImages.push(await renderOfferStory(group, logoBytes, fontBytes, date));
-
     const imageEntries: Array<{ path: string; size_bytes: number }> = [];
-    for (let i = 0; i < jpegImages.length; i++) {
-      const imageNumber = String(i + 1).padStart(2, "0");
-      const path = date + "/ofertas-" + imageNumber + ".jpg";
-      const { error } = await db.storage.from(BUCKET).upload(path, jpegImages[i], {
-        contentType: "image/jpeg", upsert: true, cacheControl: "3600",
-      });
-      if (error) throw error;
-      uploadedPaths.push(path);
-      imageEntries.push({ path, size_bytes: jpegImages[i].byteLength });
+    const workerErrors: string[] = [];
+    const workerUrl = SUPABASE_URL.replace(/\/$/, "") + "/functions/v1/daily-offer-status-images-v1";
+
+    for (let offset = 0; offset < groups.length; offset += 4) {
+      const batch = groups.slice(offset, offset + 4);
+      const settled = await Promise.allSettled(batch.map(async (group, batchIndex) => {
+        const pageNumber = offset + batchIndex + 1;
+        const response = await fetch(workerUrl, {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + SERVICE_ROLE_KEY,
+            apikey: SERVICE_ROLE_KEY,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            action: "generate_page",
+            date,
+            page_number: pageNumber,
+            products: group,
+          }),
+          signal: AbortSignal.timeout(90000),
+        });
+        const bodyText = await response.text();
+        let result: any = {};
+        try {
+          result = bodyText ? JSON.parse(bodyText) : {};
+        } catch {
+          result = {};
+        }
+        if (!response.ok || result?.ok !== true || !result?.image?.path) {
+          throw new Error("Imagem " + pageNumber + ": " + safeText(result?.message || result?.error || ("HTTP " + response.status), 240));
+        }
+        const sizeBytes = Number(result.image.size_bytes || 0);
+        if (sizeBytes < 1 || sizeBytes > MAX_IMAGE_BYTES) {
+          throw new Error("Imagem " + pageNumber + " fora do limite de 100 KB.");
+        }
+        return { number: pageNumber, path: safeText(result.image.path, 300), size_bytes: sizeBytes };
+      }));
+
+      for (const result of settled) {
+        if (result.status === "fulfilled") {
+          uploadedPaths.push(result.value.path);
+          imageEntries.push({ path: result.value.path, size_bytes: result.value.size_bytes });
+        } else {
+          const reason = result.reason instanceof Error ? result.reason.message : "Falha ao renderizar uma imagem.";
+          workerErrors.push(safeText(reason, 300));
+        }
+      }
     }
 
+    if (workerErrors.length) throw new Error(workerErrors.join("; "));
+    imageEntries.sort((a, b) => a.path.localeCompare(b.path));
     const row = {
-      offer_date: date, status: "ready", product_count: offers.length, image_count: jpegImages.length,
+      offer_date: date, status: "ready", product_count: offers.length, image_count: imageEntries.length,
       unpictured_count: unpictured, image_paths: imageEntries,
       zip_path: null, generated_at: new Date().toISOString(), error_message: null,
       updated_at: new Date().toISOString(),
@@ -342,7 +398,6 @@ async function generateToday() {
     return responseFor(date, failedRow);
   }
 }
-
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(req) });
   if (req.method !== "POST") return json(req, { ok: false, error: "method_not_allowed" }, 405);
@@ -371,6 +426,10 @@ Deno.serve(async (req: Request) => {
     const input = await req.json();
     const action = safeText(input?.action || "status", 20).toLowerCase();
     if (action === "status") return json(req, await statusToday());
+    if (action === "generate_page") {
+      if (!serviceAuthorized) return json(req, { ok: false, error: "service_role_required" }, 403);
+      return json(req, await generatePage(input));
+    }
     if (action === "generate") return json(req, await generateToday());
     return json(req, { ok: false, error: "invalid_action" }, 400);
   } catch (error) {
@@ -381,3 +440,4 @@ Deno.serve(async (req: Request) => {
     }, 500);
   }
 });
+
