@@ -696,6 +696,16 @@ async function runNow(input: any) {
 async function toggleAutomation(input: any) {
   const id = safeText(input.id, 36);
   const status = input.active === true ? "active" : "paused";
+  const { data: current, error: lookupError } = await db.from(AUTOMATIONS).select("*").eq("id", id).neq("status", "archived").maybeSingle();
+  if (lookupError || !current) throw new Error("Automação não encontrada.");
+  if (status === "active" && current.content_format === "story") {
+    if ((current.schedule_days || []).includes(7)) throw new Error("Os Stories diários de ofertas não são publicados aos domingos.");
+    if ((current.schedule_times || []).length !== 1) throw new Error("Escolha somente um horário para o conjunto diário de 8 Stories.");
+    const { data: otherStories, error: activeError } = await db.from(AUTOMATIONS).select("id")
+      .eq("content_format", "story").eq("status", "active").neq("id", id).limit(1);
+    if (activeError) throw new Error("Não foi possível validar outra automação de Stories ativa.");
+    if (otherStories?.length) throw new Error("Mantenha apenas uma automação ativa para os 8 Stories das ofertas do dia.");
+  }
   const { data, error } = await db.from(AUTOMATIONS).update({ status, updated_at: new Date().toISOString() }).eq("id", id).neq("status", "archived").select("*").maybeSingle();
   if (error || !data) throw new Error("Não foi possível atualizar o status.");
   return { ok: true, automation: data };
