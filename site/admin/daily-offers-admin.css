@@ -36,3 +36,49 @@
   .daily-offers-list { grid-template-columns: 1fr; max-height: 440px; }
 }
 .daily-offer-row .product-image-placeholder { width: 48px; height: 48px; flex: 0 0 auto; border-radius: 9px; background: #f4eee7; }
+
+
+.daily-offer-images {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid #e8d6c4;
+  border-radius: 14px;
+  background: #fffaf4;
+}
+.daily-offer-images-copy {
+  min-width: 0;
+}
+.daily-offer-images h4 {
+  margin: 0 0 5px;
+}
+.daily-offer-images p {
+  margin: 4px 0;
+  color: #74675c;
+}
+.daily-offer-images-status {
+  color: #332b24 !important;
+  font-weight: 700;
+}
+.daily-offer-images-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.daily-offer-images-download {
+  text-decoration: none;
+}
+@media (max-width: 720px) {
+  .daily-offer-images {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .daily-offer-images-actions {
+    justify-content: flex-start;
+  }
+}

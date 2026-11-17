@@ -23,6 +23,11 @@
     let homeExtraProductTrigger = null;
     let homeExtraProductDialogBound = false;
     let homeExtraLoadQueue = Promise.resolve();
+    let publicOffersPromise = null;
+    let publicOffersLoaded = false;
+    let publicOffersLoading = false;
+    let publicOffersError = false;
+    let publicOfferProducts = [];
     function extraTotalCents(data) {
       const selections = data && data.extraSelections instanceof Map ? data.extraSelections : new Map();
       return Array.from(selections.values()).reduce((total, item) =>
@@ -604,6 +609,84 @@
       });
     }
 
+    function publicOffersStatusText() {
+      if (publicOffersLoading) return "Carregando ofertas de hoje…";
+      if (publicOffersError) return "Não foi possível carregar as ofertas. Tente novamente.";
+      if (!publicOfferProducts.length) return "Nenhum produto em oferta disponível no momento.";
+      return publicOfferProducts.length + (publicOfferProducts.length === 1 ? " produto em oferta hoje." : " produtos em oferta hoje.");
+    }
+
+    function renderPublicOffers() {
+      const host = $("public-offers-products");
+      const status = $("public-offers-status");
+      const retry = $("public-offers-retry");
+      if (!host || !status) return;
+      status.textContent = publicOffersStatusText();
+      status.dataset.error = String(publicOffersError);
+      if (retry) {
+        retry.hidden = !publicOffersError;
+        retry.disabled = publicOffersLoading;
+      }
+      host.innerHTML = publicOfferProducts.map(homeExtraProductMarkup).join("");
+      host.querySelectorAll("[data-home-extra-open]").forEach((button) => {
+        button.addEventListener("click", () => openHomeExtraProductDialog(button.dataset.homeExtraOpen, button));
+      });
+      host.querySelectorAll("[data-home-extra-adjust]").forEach((button) => {
+        button.addEventListener("click", () => changeHomeExtraQuantity(button.dataset.homeExtraAdjust, Number(button.dataset.delta || 0)));
+      });
+      host.querySelectorAll("img").forEach((image) => image.addEventListener("error", () => {
+        image.src = "../img/logoantonia5.png";
+      }, { once: true }));
+    }
+
+    async function loadPublicOffers(force = false) {
+      if (publicOffersLoading && publicOffersPromise) return publicOffersPromise;
+      if (publicOffersLoaded && !publicOffersError && !force) return publicOfferProducts;
+      publicOffersLoading = true;
+      publicOffersError = false;
+      homeCategoriesFor();
+      renderPublicOffers();
+      publicOffersPromise = (async () => {
+        try {
+          const result = await request("offers");
+          const unique = new Map();
+          (Array.isArray(result.offers) ? result.offers : []).forEach((product) => {
+            const id = String(product && (product.id || product.product_id) || "");
+            if (!id || product.is_offer !== true || Number(product.stock_quantity || 0) <= 0 || product.price_available === false) return;
+            unique.set(id, Object.assign({}, product, { id }));
+          });
+          publicOfferProducts = Array.from(unique.values());
+          publicOfferProducts.forEach((product) => state.homeExtraProducts.set(String(product.id), product));
+          publicOffersLoaded = true;
+          publicOffersError = false;
+          return publicOfferProducts;
+        } catch (_) {
+          publicOffersError = true;
+          publicOffersLoaded = false;
+          publicOfferProducts = [];
+          return [];
+        } finally {
+          publicOffersLoading = false;
+          renderPublicOffers();
+        }
+      })();
+      return publicOffersPromise;
+    }
+
+    function initPublicOffers() {
+      const host = $("public-offers-products");
+      const retry = $("public-offers-retry");
+      if (!host) return;
+      homeCategoriesFor();
+      bindHomeExtraProductDialog();
+      if (retry && retry.dataset.bound !== "true") {
+        retry.dataset.bound = "true";
+        retry.addEventListener("click", () => { loadPublicOffers(true); });
+      }
+      renderPublicOffers();
+      loadPublicOffers();
+    }
+
     function updateHomeExtraProductDialog(productId) {
       if (!activeHomeExtraProductId || (productId != null && String(productId) !== activeHomeExtraProductId)) return;
       const product = state.homeExtraProducts.get(activeHomeExtraProductId);
@@ -713,7 +796,7 @@
           ? '<button class="button button-outline home-extra-more" type="button" data-home-extra-more="' + esc(category.key) + '"' + (category.loading ? " disabled" : "") + '>' + (category.loading ? "Carregando produtos…" : category.products.length ? "Carregar mais produtos" : "Carregar produtos") + '</button>'
           : "";
       return '<section class="home-extra-category" data-home-extra-section="' + esc(category.key) + '" aria-labelledby="' + esc(panelId) + '-title">' +
-        '<div class="home-extra-category-heading"><h3 id="' + esc(panelId) + '-title">' + esc(category.label) + '</h3></div>' +
+        '<div class="home-extra-category-heading"><h3 id="' + esc(panelId) + '-title"><a class="home-extra-category-link" href="' + (category.key === "mais_vendidos" ? "#mais-vendidos" : "#categoria/" + encodeURIComponent(category.key)) + '">' + esc(category.label) + '</a></h3></div>' +
         '<div class="home-extra-grid" data-home-extra-grid="' + esc(category.key) + '" role="list" aria-label="Produtos de ' + esc(category.label) + '">' +
         (category.products.length ? category.products.map(homeExtraProductMarkup).join("") : placeholders) + '</div>' +
         (status ? '<p class="home-extra-status" role="status">' + esc(status) + '</p>' : '') + loadMore + '</section>';
@@ -818,7 +901,7 @@
       const id = String(productId);
       const selection = state.homeExtraSelections.get(id);
       const quantity = Number(selection && selection.quantity || 0);
-      const hosts = ["home-extra-categories", "home-extra-product-search-results"]
+      const hosts = ["home-extra-categories", "home-extra-product-search-results", "public-offers-products"]
         .map((hostId) => $(hostId)).filter(Boolean);
       hosts.forEach((host) => host.querySelectorAll("[data-home-extra-product]").forEach((card) => {
         if (card.dataset.homeExtraProduct !== id) return;
@@ -989,7 +1072,9 @@
     }
 
     function loadHomeExtraCategory(category) {
-      if (!category || category.loading || !category.hasMore) return Promise.resolve();
+      if (!category) return Promise.resolve(false);
+      if (category.loading && category.loadPromise) return category.loadPromise;
+      if (category.loading || !category.hasMore) return Promise.resolve(category.loaded);
       category.loading = true;
       category.error = false;
       renderHomeExtras();
@@ -1025,6 +1110,7 @@
         }
       };
       const pending = homeExtraLoadQueue.then(load, load);
+      category.loadPromise = pending;
       homeExtraLoadQueue = pending.catch(() => {});
       return pending;
     }
@@ -1048,10 +1134,18 @@
       if (typeof state.updateSidebarCheckoutCount === "function") state.updateSidebarCheckoutCount();
     }
 
+    function ensureHomeCategory(key) {
+      const category = homeCategoriesFor().find((entry) => String(entry.key) === String(key));
+      if (!category) return Promise.resolve(false);
+      if (category.loaded) return Promise.resolve(true);
+      return loadHomeExtraCategory(category).then(() => category.loaded && !category.error);
+    }
+
     function initHomeExtras() {
       const host = $("home-extra-categories");
       if (!host) return;
       bindProductSearch();
+      initPublicOffers();
       if (state.homeExtraStarted) return;
       const categories = homeCategoriesFor();
       state.homeExtraStarted = true;
@@ -1126,6 +1220,9 @@
       bindExtraProductControls,
       toggleExtraCategory,
       initHomeExtras,
+      initPublicOffers,
+      loadPublicOffers,
+      ensureHomeCategory,
       clearHomeExtraSelections,
       syncHomeExtraSelection,
       homeSelectionReviewMarkup,

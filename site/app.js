@@ -703,6 +703,11 @@
   }
 
   const extras = window.DonaStorefrontExtras.create({ state, $, esc, money, request, toast, productChoiceMarkup });
+  window.DonaStorefrontPublicNavigation = Object.freeze({
+    ensureHomeCategory: (key) => extras.ensureHomeCategory(key),
+    loadPublicOffers: extras.loadPublicOffers
+  });
+  extras.initPublicOffers();
   basket = window.DonaStorefrontBasket.create({
     state, $, request, toast, renderDetailPreservingScroll, quantityOf, money,
     displayedTotalCents: extras.displayedTotalCents

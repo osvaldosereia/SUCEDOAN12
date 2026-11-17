@@ -6,6 +6,10 @@
   let loading = false;
   let loaded = false;
   let busy = false;
+  let imageBusy = false;
+  let imagePollTimer = 0;
+  let imagePollAttempts = 0;
+  let imageState = { status: "pending", product_count: 0, image_count: 0, unpictured_count: 0, download_url: "" };
 
   const bridge = () => window.DonaAdminProductBridge;
   const esc = (value) => bridge()?.esc?.(value) || String(value == null ? "" : value).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
@@ -16,6 +20,90 @@
     const api = bridge();
     if (!api?.request) throw new Error("A sessão do admin ainda não está pronta.");
     return api.request("daily_offers", { method: "POST", body: { operation, ...payload } });
+  }
+
+  async function requestImages(action) {
+    const config = window.DONA_SITE_CONFIG || {};
+    const supabaseUrl = String(config.supabaseUrl || "").replace(/\/$/, "");
+    const adminCode = typeof window.DonaAdminAuth?.getCode === "function" ? window.DonaAdminAuth.getCode() : "";
+    if (!supabaseUrl || !config.publishableKey || !adminCode) throw new Error("Entre novamente no admin para consultar as imagens.");
+    const response = await fetch(supabaseUrl + "/functions/v1/daily-offer-status-images-v1", {
+      method: "POST",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": config.publishableKey,
+        "x-admin-code": adminCode
+      },
+      body: JSON.stringify({ action })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.ok === false) {
+      throw new Error(data.message || (data.error === "unauthorized" ? "Sessão do admin expirada. Entre novamente." : "Não foi possível consultar as imagens de hoje."));
+    }
+    return data;
+  }
+
+  function imageStatusMarkup() {
+    const state = imageState || {};
+    const status = String(state.status || "pending");
+    let message = "As imagens de hoje ainda não foram geradas.";
+    if (status === "generating") message = "Gerando as imagens de hoje…";
+    else if (status === "ready") {
+      message = number(state.product_count) + " produtos organizados em " + number(state.image_count) + " imagens.";
+      if (Number(state.unpictured_count || 0) > 0) message += " " + number(state.unpictured_count) + " oferta(s) sem imagem completa ficaram fora das montagens.";
+      if (state.generated_at) message += " Atualizadas em " + new Date(state.generated_at).toLocaleString("pt-BR", { timeZone: "America/Cuiaba", dateStyle: "short", timeStyle: "short" }) + ".";
+    } else if (status === "empty") message = "Não há ofertas automáticas ativas para montar hoje.";
+    else if (status === "failed") message = state.error_message || "Não foi possível montar as imagens de hoje.";
+    else if (status === "unavailable") message = state.error_message || "Não foi possível consultar o estado das imagens.";
+    const download = status === "ready" && state.download_url
+      ? '<a class="button button-primary daily-offer-images-download" href="' + esc(state.download_url) + '" download="Ofertas-Dona-Antonia-' + esc(state.date || "") + '.zip">Baixar imagens de hoje (.zip)</a>'
+      : "";
+    return '<section class="daily-offer-images" aria-labelledby="daily-offer-images-title">'
+      + '<div class="daily-offer-images-copy"><h4 id="daily-offer-images-title">Imagens para o Status do WhatsApp</h4>'
+      + '<p>Montagens verticais com seis produtos, preços de/por, logo, entrega grátis a partir de R$ 75 e WhatsApp 65 99815-0975.</p>'
+      + '<p class="daily-offer-images-status" role="status" aria-live="polite">' + esc(message) + '</p></div>'
+      + '<div class="daily-offer-images-actions">' + download
+      + '<button class="button button-outline" type="button" data-daily-offer-images-refresh' + (imageBusy ? " disabled" : "") + '>Atualizar estado</button>'
+      + '<button class="button button-outline" type="button" data-daily-offer-images-generate' + (imageBusy ? " disabled" : "") + '>' + (imageBusy ? "Gerando…" : "Gerar imagens agora") + '</button></div>'
+      + '</section>';
+  }
+
+  function renderImagePanel() {
+    const host = root.querySelector("#daily-offer-images-root");
+    if (host) host.innerHTML = imageStatusMarkup();
+  }
+
+  async function refreshImageStatus() {
+    if (imageBusy) return;
+    try {
+      imageState = await requestImages("status");
+      imagePollAttempts = 0;
+    } catch (error) {
+      imageState = { status: "unavailable", error_message: error.message || "Não foi possível consultar as imagens." };
+    }
+    renderImagePanel();
+    if (imagePollTimer) window.clearTimeout(imagePollTimer);
+    if (imageState.status === "generating" && imagePollAttempts < 40) {
+      imagePollAttempts += 1;
+      imagePollTimer = window.setTimeout(refreshImageStatus, 3000);
+    }
+  }
+
+  async function generateImages() {
+    if (imageBusy) return;
+    imageBusy = true;
+    imageState = Object.assign({}, imageState, { status: "generating", error_message: "" });
+    renderImagePanel();
+    try {
+      imageState = await requestImages("generate");
+    } catch (error) {
+      imageState = { status: "failed", error_message: error.message || "Não foi possível gerar as imagens." };
+    } finally {
+      imageBusy = false;
+      renderImagePanel();
+      if (imageState.status === "generating") refreshImageStatus();
+    }
   }
 
   function offerMarkup(offer) {
@@ -56,11 +144,13 @@
       + '<div class="daily-offers-actions"><button id="daily-offers-save" class="button button-outline" type="button">Salvar regra</button>'
       + '<button id="daily-offers-generate" class="button button-primary" type="button"' + (!active ? ' disabled' : '') + '>Gerar novamente hoje</button></div>'
       + '<div class="daily-offers-summary">' + runText + (rotatedToday && lastRun ? '<span>Última execução: ' + esc(lastRun) + '</span>' : '') + '</div>'
+      + '<div id="daily-offer-images-root"></div>'
       + '<div class="daily-offers-list">' + (offers.length ? offers.map(offerMarkup).join("") : '<p class="daily-offers-empty">Nenhuma oferta automática ativa agora. As ofertas manuais continuam aparecendo normalmente.</p>') + '</div>'
       + '</section>';
     root.querySelector("#daily-offers-save").disabled = busy;
     root.querySelector("#daily-offers-generate").disabled = busy || !active;
     root.querySelectorAll("[data-daily-offer-remove]").forEach((button) => { button.disabled = busy; });
+    renderImagePanel();
   }
 
   async function load(force = false) {
@@ -71,10 +161,12 @@
       render(await request("get"));
       loaded = true;
     } catch (error) {
-      root.innerHTML = '<section class="daily-offers-admin"><h3>Ofertas do dia</h3><p class="daily-offers-error">' + esc(error.message || "Não foi possível carregar as ofertas.") + '</p><button class="button button-outline" type="button" data-daily-offer-retry>Tentar novamente</button></section>';
+      root.innerHTML = '<section class="daily-offers-admin"><h3>Ofertas do dia</h3><p class="daily-offers-error">' + esc(error.message || "Não foi possível carregar as ofertas.") + '</p><button class="button button-outline" type="button" data-daily-offer-retry>Tentar novamente</button><div id="daily-offer-images-root"></div></section>';
+      renderImagePanel();
     } finally {
       loading = false;
     }
+    await refreshImageStatus();
   }
 
   async function mutate(operation, payload) {
@@ -85,6 +177,7 @@
       await request(operation, payload);
       loaded = false;
       await load(true);
+      if (["remove", "save", "generate"].includes(operation)) await generateImages();
       bridge()?.toast?.(operation === "remove" ? "Oferta retirada de hoje." : operation === "save" ? "Regra das ofertas salva." : "Ofertas de hoje atualizadas.");
     } catch (error) {
       bridge()?.toast?.(error.message || "Não foi possível atualizar as ofertas.");
@@ -98,6 +191,8 @@
   }
 
   root.addEventListener("click", async (event) => {
+    if (event.target.closest("[data-daily-offer-images-refresh]")) { await refreshImageStatus(); return; }
+    if (event.target.closest("[data-daily-offer-images-generate]")) { await generateImages(); return; }
     const retry = event.target.closest("[data-daily-offer-retry]");
     if (retry) { loaded = false; await load(true); return; }
     const remove = event.target.closest("[data-daily-offer-remove]");

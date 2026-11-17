@@ -405,3 +405,65 @@ body {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
+
+
+/* A seção de ofertas fica destacada no menu e usa os mesmos cards de produto. */
+.experiment-nav-link.experiment-nav-offers {
+  color: #fff;
+  background: #842f28;
+  border-color: #842f28;
+  font-weight: 800;
+}
+.experiment-nav-link.experiment-nav-offers .experiment-icon {
+  color: #fff;
+}
+.experiment-nav-link.experiment-nav-offers .experiment-icon svg {
+  stroke: currentColor;
+}
+.experiment-nav-link.experiment-nav-offers:hover,
+.experiment-nav-link.experiment-nav-offers:focus-visible {
+  background: #69221d;
+  border-color: #69221d;
+}
+.experiment-section-link,
+.home-extra-category-link {
+  color: inherit;
+  text-decoration: none;
+}
+.experiment-section-link:hover,
+.home-extra-category-link:hover {
+  color: #842f28;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.public-offers {
+  scroll-margin-top: 18px;
+  margin: 0 0 28px;
+  padding: clamp(16px, 3vw, 28px);
+  border: 1px solid #e8d8c7;
+  border-radius: 18px;
+  background: #fffdf9;
+}
+.public-offers-heading {
+  margin-bottom: 14px;
+}
+.public-offers-heading h2 {
+  margin: 0 0 8px;
+}
+.public-offers-heading p:last-child {
+  margin: 0;
+}
+.public-offers-status {
+  margin: 10px 0 14px;
+}
+.public-offers-status[data-error="true"] {
+  color: #842f28;
+}
+.public-offers-grid {
+  margin-top: 14px;
+}
+#catalog,
+#home-extras,
+[data-home-extra-section] {
+  scroll-margin-top: 18px;
+}
