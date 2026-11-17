@@ -602,14 +602,26 @@ async function getDashboard() {
   const jobs = jobsResult.data || [];
   const jobIds = jobs.map((job: any) => job.id);
   let items: any[] = [];
+  let events: any[] = [];
   if (jobIds.length) {
-    const itemResult = await db.from(ITEMS).select("job_id,item_number,product_name,asset_path,meta_media_id,status,last_error,published_at")
-      .in("job_id", jobIds).order("item_number");
+    const [itemResult, eventResult] = await Promise.all([
+      db.from(ITEMS).select("job_id,item_number,product_name,asset_path,meta_media_id,status,last_error,published_at")
+        .in("job_id", jobIds).order("item_number"),
+      db.from(EVENTS).select("job_id,event_type,message,created_at")
+        .in("job_id", jobIds).order("created_at", { ascending: true }).limit(1000),
+    ]);
     if (!itemResult.error) items = itemResult.data || [];
+    if (!eventResult.error) events = eventResult.data || [];
   }
   const itemsByJob: Record<string, any[]> = {};
+  const eventsByJob: Record<string, any[]> = {};
   for (const item of items) (itemsByJob[item.job_id] ||= []).push(item);
-  const jobsWithItems = jobs.map((job: any) => ({ ...job, items: itemsByJob[job.id] || [] }));
+  for (const event of events) (eventsByJob[event.job_id] ||= []).push(event);
+  const jobsWithItems = jobs.map((job: any) => ({
+    ...job,
+    items: itemsByJob[job.id] || [],
+    events: eventsByJob[job.id] || [],
+  }));
   const counts = {
     active: (automationResult.data || []).filter((item: any) => item.status === "active").length,
     published_7d: jobs.filter((job: any) => job.status === "published" && Date.now() - new Date(job.published_at || job.updated_at).getTime() <= 7 * 86400000).length,
