@@ -1,13 +1,14 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { Image } from "jsr:@matmen/imagescript@3.20.3";
-import { zipSync } from "npm:fflate@0.8.2";
+
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const DONA_ADMIN_CODE = (Deno.env.get("DONA_ADMIN_CODE") || "").trim();
 const BUCKET = "daily-offer-status";
 const TABLE = "da_offer_status_images_v1";
+const MAX_IMAGE_BYTES = 100_000;
 const LOGO_URL = "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/img/logoantonia5.png";
 const FONT_URL = "https://raw.githubusercontent.com/google/fonts/7af0d90b4d532ffa4b041937b560c6df4e7b1e95/ofl/roboto/Roboto%5Bwdth%2Cwght%5D.ttf";
 const ALLOWED_IMAGE_HOSTS = new Set(["raw.githubusercontent.com", "ssbesxgaijknwsjbsbcz.supabase.co"]);
@@ -125,6 +126,31 @@ async function fetchFont() {
   return bytes;
 }
 
+
+async function encodeCompactJpeg(image: Image) {
+  const widths = [720, 640, 540, 480, 432];
+  const qualities = [78, 70, 62, 54, 46];
+  let best: { bytes: Uint8Array; score: number; width: number } | null = null;
+
+  for (const width of widths) {
+    const resized = image.clone().resize({ width });
+    for (const quality of qualities) {
+      const bytes = await resized.encodeJPEG({ quality });
+      if (bytes.byteLength <= MAX_IMAGE_BYTES) {
+        const score = quality * width / 720;
+        if (!best || score > best.score || (score === best.score && width > best.width)) {
+          best = { bytes, score, width };
+        }
+        break;
+      }
+    }
+    if (best && 78 * width / 720 <= best.score) break;
+  }
+
+  if (!best) throw new Error("Uma montagem ultrapassou 100 KB mesmo após a compressão.");
+  return best.bytes;
+}
+
 async function renderOfferStory(products: any[], logoBytes: Uint8Array, fontBytes: Uint8Array, date: string) {
   const imageBytes = await Promise.all(products.map(async (product) => {
     try {
@@ -176,7 +202,7 @@ async function renderOfferStory(products: any[], logoBytes: Uint8Array, fontByte
     "</svg>",
   ].join("");
   const image = await Image.renderSVG(svg, { images, fonts: [fontBytes] });
-  return new Uint8Array(await image.encodePNG());
+  return await encodeCompactJpeg(image);
 }
 
 async function getRow(date: string) {
@@ -186,23 +212,33 @@ async function getRow(date: string) {
 }
 
 async function responseFor(date: string, row: any) {
-  let downloadUrl = "";
-  if (row?.status === "ready" && row.zip_path) {
-    const { data, error } = await db.storage.from(BUCKET).createSignedUrl(
-      row.zip_path, 3600, { download: "Ofertas-Dona-Antonia-" + date + ".zip" },
-    );
-    if (!error) downloadUrl = String(data?.signedUrl || "");
-  }
+  const storedImages = Array.isArray(row?.image_paths) ? row.image_paths : [];
+  const images = await Promise.all(storedImages.map(async (entry: any, index: number) => {
+    const path = typeof entry === "string" ? entry : safeText(entry?.path || "", 300);
+    const sizeBytes = typeof entry === "object" && entry !== null ? Number(entry.size_bytes || 0) : 0;
+    const imageNumber = index + 1;
+    const fileName = "Ofertas-Dona-Antonia-" + date + "-" + String(imageNumber).padStart(2, "0") + ".jpg";
+    const withinLimit = path.toLowerCase().endsWith(".jpg") && sizeBytes > 0 && sizeBytes <= MAX_IMAGE_BYTES;
+    let downloadUrl = "";
+    if (row?.status === "ready" && withinLimit) {
+      const { data, error } = await db.storage.from(BUCKET).createSignedUrl(path, 3600, { download: fileName });
+      if (!error) downloadUrl = String(data?.signedUrl || "");
+    }
+    return {
+      number: imageNumber, file_name: fileName, size_bytes: sizeBytes,
+      size_kb: Math.round(sizeBytes / 1024 * 10) / 10,
+      download_url: downloadUrl, within_limit: withinLimit && Boolean(downloadUrl),
+    };
+  }));
+  const needsRegeneration = row?.status === "ready" && (
+    images.length !== Number(row?.image_count || 0) || images.some((image) => !image.within_limit)
+  );
   return {
-    ok: true,
-    date,
-    status: String(row?.status || "pending"),
-    product_count: Number(row?.product_count || 0),
-    image_count: Number(row?.image_count || 0),
-    unpictured_count: Number(row?.unpictured_count || 0),
-    generated_at: row?.generated_at || null,
+    ok: true, date, status: String(row?.status || "pending"),
+    product_count: Number(row?.product_count || 0), image_count: Number(row?.image_count || 0),
+    unpictured_count: Number(row?.unpictured_count || 0), generated_at: row?.generated_at || null,
     error_message: safeText(row?.error_message || "", 500),
-    download_url: downloadUrl,
+    images, needs_regeneration: needsRegeneration, max_image_bytes: MAX_IMAGE_BYTES,
   };
 }
 
@@ -227,10 +263,11 @@ async function generateToday() {
   const unpictured = Math.max(0, rawOffers.length - pageCount * 6);
 
   const existing = await getRow(date);
-  const oldPaths = [
-    ...(Array.isArray(existing?.image_paths) ? existing.image_paths : []),
-    ...(existing?.zip_path ? [existing.zip_path] : []),
-  ].filter(Boolean);
+  const oldImagePaths = Array.isArray(existing?.image_paths)
+    ? existing.image_paths.map((entry: any) => typeof entry === "string" ? entry : safeText(entry?.path || "", 300))
+    : [];
+  const oldPaths = [...oldImagePaths, existing?.zip_path]
+    .filter((path): path is string => typeof path === "string" && path.length > 0);
   if (oldPaths.length) await db.storage.from(BUCKET).remove(oldPaths);
 
   if (!offers.length) {
@@ -269,30 +306,25 @@ async function generateToday() {
   try {
     const [logoBytes, fontBytes] = await Promise.all([fetchImage(LOGO_URL), fetchFont()]);
     const groups = Array.from({ length: pageCount }, (_, page) => offers.slice(page * 6, page * 6 + 6));
-    const pngs: Uint8Array[] = [];
-    for (const group of groups) pngs.push(await renderOfferStory(group, logoBytes, fontBytes, date));
+    const jpegImages: Uint8Array[] = [];
+    for (const group of groups) jpegImages.push(await renderOfferStory(group, logoBytes, fontBytes, date));
 
-    const zipFiles: Record<string, Uint8Array> = {};
-    for (let i = 0; i < pngs.length; i++) {
-      const path = date + "/ofertas-" + String(i + 1).padStart(2, "0") + ".png";
-      const { error } = await db.storage.from(BUCKET).upload(path, pngs[i], {
-        contentType: "image/png", upsert: true, cacheControl: "3600",
+    const imageEntries: Array<{ path: string; size_bytes: number }> = [];
+    for (let i = 0; i < jpegImages.length; i++) {
+      const imageNumber = String(i + 1).padStart(2, "0");
+      const path = date + "/ofertas-" + imageNumber + ".jpg";
+      const { error } = await db.storage.from(BUCKET).upload(path, jpegImages[i], {
+        contentType: "image/jpeg", upsert: true, cacheControl: "3600",
       });
       if (error) throw error;
       uploadedPaths.push(path);
-      zipFiles["Ofertas-Dona-Antonia-" + date + "-" + String(i + 1).padStart(2, "0") + ".png"] = pngs[i];
+      imageEntries.push({ path, size_bytes: jpegImages[i].byteLength });
     }
-    const zipPath = date + "/ofertas-do-dia.zip";
-    const { error: zipError } = await db.storage.from(BUCKET).upload(zipPath, zipSync(zipFiles, { level: 6 }), {
-      contentType: "application/zip", upsert: true, cacheControl: "3600",
-    });
-    if (zipError) throw zipError;
-    uploadedPaths.push(zipPath);
 
     const row = {
-      offer_date: date, status: "ready", product_count: offers.length, image_count: pngs.length,
-      unpictured_count: unpictured, image_paths: uploadedPaths.filter((path) => path !== zipPath),
-      zip_path: zipPath, generated_at: new Date().toISOString(), error_message: null,
+      offer_date: date, status: "ready", product_count: offers.length, image_count: jpegImages.length,
+      unpictured_count: unpictured, image_paths: imageEntries,
+      zip_path: null, generated_at: new Date().toISOString(), error_message: null,
       updated_at: new Date().toISOString(),
     };
     const { error } = await db.from(TABLE).upsert(row, { onConflict: "offer_date" });
