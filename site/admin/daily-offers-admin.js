@@ -9,6 +9,7 @@
   let imageBusy = false;
   let imagePollTimer = 0;
   let imagePollAttempts = 0;
+  let expectedImageProductCount = 0;
   let imageState = { status: "pending", product_count: 0, image_count: 0, unpictured_count: 0, images: [], needs_regeneration: false };
 
   const bridge = () => window.DonaAdminProductBridge;
@@ -47,8 +48,10 @@
   function imageStatusMarkup() {
     const state = imageState || {};
     const status = String(state.status || "pending");
+    const stale = status === "ready" && expectedImageProductCount > 0 && Number(state.product_count || 0) !== expectedImageProductCount;
     let message = "As imagens de hoje ainda não foram geradas.";
     if (status === "generating") message = "Gerando as imagens de hoje…";
+    else if (stale) message = "As ofertas mudaram para " + number(expectedImageProductCount) + " produtos; atualizando " + number(Math.floor(expectedImageProductCount / 6)) + " imagens.";
     else if (status === "ready") {
       message = number(state.product_count) + " produtos organizados em " + number(state.image_count) + " imagens individuais.";
       if (Number(state.unpictured_count || 0) > 0) message += " " + number(state.unpictured_count) + " oferta(s) sem imagem completa ficaram fora das montagens.";
@@ -57,15 +60,15 @@
     } else if (status === "empty") message = "Não há ofertas automáticas ativas para montar hoje.";
     else if (status === "failed") message = state.error_message || "Não foi possível montar as imagens de hoje.";
     else if (status === "unavailable") message = state.error_message || "Não foi possível consultar o estado das imagens.";
-    const images = status === "ready" && !state.needs_regeneration && Array.isArray(state.images)
+    const images = status === "ready" && !stale && !state.needs_regeneration && Array.isArray(state.images)
       ? '<div class="daily-offer-images-downloads">' + state.images.map((image) =>
         '<a class="button button-primary daily-offer-image-download" href="' + esc(image.download_url) + '" download="' + esc(image.file_name) + '">Baixar imagem ' + number(image.number) + ' · ' + number(image.size_kb, 1) + ' KB</a>'
       ).join("") + '</div>'
       : "";
-    const generateLabel = imageBusy ? "Gerando…" : (state.needs_regeneration ? "Gerar imagens leves" : "Gerar imagens agora");
+    const generateLabel = imageBusy ? "Gerando…" : (state.needs_regeneration || stale ? "Gerar imagens atualizadas" : "Gerar imagens agora");
     return '<section class="daily-offer-images" aria-labelledby="daily-offer-images-title">'
       + '<div class="daily-offer-images-copy"><h4 id="daily-offer-images-title">Imagens para o Status do WhatsApp</h4>'
-      + '<p>Montagens verticais com seis produtos, preços de/por, logo, entrega grátis a partir de R$ 75 e WhatsApp 65 99815-0975. JPEG individual, até 100 KB por imagem.</p>'
+      + '<p>Montagens verticais com seis produtos, preços de/por, logo, entrega grátis a partir de R$ 75 e WhatsApp 65 99815-0975. Com 48 ofertas, são 8 imagens individuais. JPEG até 100 KB por imagem.</p>'
       + '<p class="daily-offer-images-status" role="status" aria-live="polite">' + esc(message) + '</p></div>'
       + '<div class="daily-offer-images-actions">' + images
       + '<button class="button button-outline" type="button" data-daily-offer-images-refresh' + (imageBusy ? " disabled" : "") + '>Atualizar estado</button>'
@@ -78,7 +81,7 @@
     if (host) host.innerHTML = imageStatusMarkup();
   }
 
-  async function refreshImageStatus() {
+  async function refreshImageStatus(autoRegenerateStale = true) {
     if (imageBusy) return;
     try {
       imageState = await requestImages("status");
@@ -86,8 +89,11 @@
     } catch (error) {
       imageState = { status: "unavailable", error_message: error.message || "Não foi possível consultar as imagens." };
     }
+    const stale = imageState.status === "ready" && expectedImageProductCount > 0 && Number(imageState.product_count || 0) !== expectedImageProductCount;
+    if (stale) imageState = Object.assign({}, imageState, { needs_regeneration: true });
     renderImagePanel();
     if (imagePollTimer) window.clearTimeout(imagePollTimer);
+    if (stale && autoRegenerateStale) { await generateImages(); return; }
     if (imageState.status === "generating" && imagePollAttempts < 40) {
       imagePollAttempts += 1;
       imagePollTimer = window.setTimeout(refreshImageStatus, 3000);
@@ -122,8 +128,9 @@
   function render(data) {
     const config = data.config || {};
     const offers = Array.isArray(data.offers) ? data.offers : [];
+    expectedImageProductCount = offers.length;
     const active = config.enabled === true;
-    const target = Number(config.daily_product_count || 30);
+    const target = Number(config.daily_product_count || 48);
     const today = String(config.today || "");
     const rotatedToday = String(config.last_rotation_date || "") === today;
     const lastRun = config.last_rotation_at
@@ -157,7 +164,7 @@
     renderImagePanel();
   }
 
-  async function load(force = false) {
+  async function load(force = false, autoRegenerateStale = true) {
     if (loading || (loaded && !force)) return;
     loading = true;
     root.innerHTML = '<p class="admin-muted">Carregando ofertas do dia…</p>';
@@ -170,7 +177,7 @@
     } finally {
       loading = false;
     }
-    await refreshImageStatus();
+    await refreshImageStatus(autoRegenerateStale);
   }
 
   async function mutate(operation, payload) {
@@ -180,7 +187,7 @@
     try {
       await request(operation, payload);
       loaded = false;
-      await load(true);
+      await load(true, false);
       if (["remove", "save", "generate"].includes(operation)) await generateImages();
       bridge()?.toast?.(operation === "remove" ? "Oferta retirada de hoje." : operation === "save" ? "Regra das ofertas salva." : "Ofertas de hoje atualizadas.");
     } catch (error) {
