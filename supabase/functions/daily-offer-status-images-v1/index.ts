@@ -9,6 +9,7 @@ const DONA_ADMIN_CODE = (Deno.env.get("DONA_ADMIN_CODE") || "").trim();
 const BUCKET = "daily-offer-status";
 const TABLE = "da_offer_status_images_v1";
 const LOGO_URL = "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/img/logoantonia5.png";
+const FONT_URL = "https://raw.githubusercontent.com/google/fonts/7af0d90b4d532ffa4b041937b560c6df4e7b1e95/ofl/roboto/Roboto%5Bwdth%2Cwght%5D.ttf";
 const ALLOWED_IMAGE_HOSTS = new Set(["raw.githubusercontent.com", "ssbesxgaijknwsjbsbcz.supabase.co"]);
 const ALLOWED_ORIGINS = new Set(["https://donaantonia.com.br", "https://www.donaantonia.com.br"]);
 const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
@@ -106,7 +107,25 @@ async function fetchImage(urlValue: unknown) {
   return bytes;
 }
 
-async function renderOfferStory(products: any[], logoBytes: Uint8Array, date: string) {
+async function fetchFont() {
+  const url = new URL(FONT_URL);
+  if (url.protocol !== "https:" || url.hostname.toLowerCase() !== "raw.githubusercontent.com") {
+    throw new Error("A origem da fonte de texto não é permitida.");
+  }
+  const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
+  if (!response.ok) throw new Error("A fonte de texto está indisponível (HTTP " + response.status + ").");
+  const finalUrl = new URL(response.url || url.toString());
+  if (finalUrl.protocol !== "https:" || finalUrl.hostname.toLowerCase() !== "raw.githubusercontent.com") {
+    throw new Error("A origem da fonte foi redirecionada para um endereço não permitido.");
+  }
+  const contentLength = Number(response.headers.get("content-length") || 0);
+  if (contentLength > 2 * 1024 * 1024) throw new Error("A fonte de texto ultrapassa o limite de 2 MB.");
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  if (!bytes.length || bytes.length > 2 * 1024 * 1024) throw new Error("A fonte de texto está vazia ou é grande demais.");
+  return bytes;
+}
+
+async function renderOfferStory(products: any[], logoBytes: Uint8Array, fontBytes: Uint8Array, date: string) {
   const imageBytes = await Promise.all(products.map(async (product) => {
     try {
       return await fetchImage(product.image_url);
@@ -128,17 +147,17 @@ async function renderOfferStory(products: any[], logoBytes: Uint8Array, date: st
     images[imageKey] = imageBytes[index];
     const nameLines = wrapName(product.name);
     const nameSvg = nameLines.map((line, lineIndex) =>
-      '<text x="' + (x + 220) + '" y="' + (y + 137 + lineIndex * 34) + '" font-size="25" font-weight="700" fill="#302820">' + xmlText(line) + "</text>"
+      '<text x="' + (x + 220) + '" y="' + (y + 137 + lineIndex * 34) + '" font-family="Roboto, Arial, sans-serif" font-size="25" font-weight="700" fill="#302820">' + xmlText(line) + "</text>"
     ).join("");
     return '<g><rect x="' + x + '" y="' + y + '" width="492" height="410" rx="24" fill="#fffdf9" stroke="#e7d7c5" stroke-width="3"/>'
       + '<rect x="' + (x + 20) + '" y="' + (y + 20) + '" width="142" height="42" rx="12" fill="#c9382f"/>'
-      + '<text x="' + (x + 91) + '" y="' + (y + 49) + '" text-anchor="middle" font-size="22" font-weight="800" fill="#ffffff">OFERTA ' + discount + '%</text>'
+      + '<text x="' + (x + 91) + '" y="' + (y + 49) + '" text-anchor="middle" font-family="Roboto, Arial, sans-serif" font-size="22" font-weight="800" fill="#ffffff">OFERTA ' + discount + '%</text>'
       + '<rect x="' + (x + 19) + '" y="' + (y + 79) + '" width="184" height="204" rx="20" fill="#f5f0e9"/>'
       + '<image href="' + imageKey + '" x="' + (x + 28) + '" y="' + (y + 88) + '" width="166" height="186" preserveAspectRatio="xMidYMid meet"/>'
       + nameSvg
-      + '<text x="' + (x + 220) + '" y="' + (y + 310) + '" font-size="21" fill="#796e63">De ' + xmlText(money(original)) + '</text>'
+      + '<text x="' + (x + 220) + '" y="' + (y + 310) + '" font-family="Roboto, Arial, sans-serif" font-size="21" fill="#796e63">De ' + xmlText(money(original)) + '</text>'
       + '<line x1="' + (x + 220) + '" y1="' + (y + 302) + '" x2="' + (x + 405) + '" y2="' + (y + 302) + '" stroke="#c9382f" stroke-width="3"/>'
-      + '<text x="' + (x + 220) + '" y="' + (y + 362) + '" font-size="34" font-weight="800" fill="#842f28">Por ' + xmlText(money(offer)) + "</text></g>";
+      + '<text x="' + (x + 220) + '" y="' + (y + 362) + '" font-family="Roboto, Arial, sans-serif" font-size="34" font-weight="800" fill="#842f28">Por ' + xmlText(money(offer)) + "</text></g>";
   }).join("");
   const dateLabel = new Intl.DateTimeFormat("pt-BR", {
     timeZone: "America/Cuiaba", day: "2-digit", month: "2-digit", year: "numeric",
@@ -147,16 +166,16 @@ async function renderOfferStory(products: any[], logoBytes: Uint8Array, date: st
     '<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">',
     '<rect width="1080" height="1920" fill="#f4eee5"/>',
     '<image href="brand.png" x="380" y="36" width="320" height="70" preserveAspectRatio="xMidYMid meet"/>',
-    '<text x="540" y="160" text-anchor="middle" font-family="Arial, sans-serif" font-size="52" font-weight="800" fill="#7e3029">OFERTAS DO DIA</text>',
-    '<text x="540" y="205" text-anchor="middle" font-family="Arial, sans-serif" font-size="23" fill="#71665b">' + xmlText(dateLabel) + '</text>',
+    '<text x="540" y="160" text-anchor="middle" font-family="Roboto, Arial, sans-serif" font-size="52" font-weight="800" fill="#7e3029">OFERTAS DO DIA</text>',
+    '<text x="540" y="205" text-anchor="middle" font-family="Roboto, Arial, sans-serif" font-size="23" fill="#71665b">' + xmlText(dateLabel) + '</text>',
     cards,
     '<rect x="34" y="1604" width="1012" height="260" rx="28" fill="#7e3029"/>',
-    '<text x="540" y="1680" text-anchor="middle" font-family="Arial, sans-serif" font-size="40" font-weight="800" fill="#ffffff">Pedidos a partir de R$ 75</text>',
-    '<text x="540" y="1733" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" font-weight="700" fill="#ffffff">com entrega grátis</text>',
-    '<text x="540" y="1812" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#ffffff">WhatsApp 65 99815-0975</text>',
+    '<text x="540" y="1680" text-anchor="middle" font-family="Roboto, Arial, sans-serif" font-size="40" font-weight="800" fill="#ffffff">Pedidos a partir de R$ 75</text>',
+    '<text x="540" y="1733" text-anchor="middle" font-family="Roboto, Arial, sans-serif" font-size="32" font-weight="700" fill="#ffffff">com entrega grátis</text>',
+    '<text x="540" y="1812" text-anchor="middle" font-family="Roboto, Arial, sans-serif" font-size="30" font-weight="700" fill="#ffffff">WhatsApp 65 99815-0975</text>',
     "</svg>",
   ].join("");
-  const image = await Image.renderSVG(svg, { images });
+  const image = await Image.renderSVG(svg, { images, fonts: [fontBytes] });
   return new Uint8Array(await image.encodePNG());
 }
 
@@ -248,10 +267,10 @@ async function generateToday() {
 
   const uploadedPaths: string[] = [];
   try {
-    const logoBytes = await fetchImage(LOGO_URL);
+    const [logoBytes, fontBytes] = await Promise.all([fetchImage(LOGO_URL), fetchFont()]);
     const groups = Array.from({ length: pageCount }, (_, page) => offers.slice(page * 6, page * 6 + 6));
     const pngs: Uint8Array[] = [];
-    for (const group of groups) pngs.push(await renderOfferStory(group, logoBytes, date));
+    for (const group of groups) pngs.push(await renderOfferStory(group, logoBytes, fontBytes, date));
 
     const zipFiles: Record<string, Uint8Array> = {};
     for (let i = 0; i < pngs.length; i++) {
