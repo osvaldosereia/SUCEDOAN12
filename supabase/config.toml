@@ -20,3 +20,9 @@ verify_jwt = true
 
 [functions.admin-marketing-strategy-campaign-v1]
 verify_jwt = true
+
+[functions.daily-offer-status-images-v1]
+verify_jwt = false
+
+[functions.publish-daily-offer-instagram-stories-v1]
+verify_jwt = false
