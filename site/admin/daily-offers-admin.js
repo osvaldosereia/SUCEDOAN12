@@ -9,7 +9,7 @@
   let imageBusy = false;
   let imagePollTimer = 0;
   let imagePollAttempts = 0;
-  let imageState = { status: "pending", product_count: 0, image_count: 0, unpictured_count: 0, download_url: "" };
+  let imageState = { status: "pending", product_count: 0, image_count: 0, unpictured_count: 0, images: [], needs_regeneration: false };
 
   const bridge = () => window.DonaAdminProductBridge;
   const esc = (value) => bridge()?.esc?.(value) || String(value == null ? "" : value).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
@@ -50,22 +50,26 @@
     let message = "As imagens de hoje ainda não foram geradas.";
     if (status === "generating") message = "Gerando as imagens de hoje…";
     else if (status === "ready") {
-      message = number(state.product_count) + " produtos organizados em " + number(state.image_count) + " imagens.";
+      message = number(state.product_count) + " produtos organizados em " + number(state.image_count) + " imagens individuais.";
       if (Number(state.unpictured_count || 0) > 0) message += " " + number(state.unpictured_count) + " oferta(s) sem imagem completa ficaram fora das montagens.";
+      if (state.needs_regeneration) message += " Gere novamente para baixar cada imagem em JPEG com até 100 KB.";
       if (state.generated_at) message += " Atualizadas em " + new Date(state.generated_at).toLocaleString("pt-BR", { timeZone: "America/Cuiaba", dateStyle: "short", timeStyle: "short" }) + ".";
     } else if (status === "empty") message = "Não há ofertas automáticas ativas para montar hoje.";
     else if (status === "failed") message = state.error_message || "Não foi possível montar as imagens de hoje.";
     else if (status === "unavailable") message = state.error_message || "Não foi possível consultar o estado das imagens.";
-    const download = status === "ready" && state.download_url
-      ? '<a class="button button-primary daily-offer-images-download" href="' + esc(state.download_url) + '" download="Ofertas-Dona-Antonia-' + esc(state.date || "") + '.zip">Baixar imagens de hoje (.zip)</a>'
+    const images = status === "ready" && !state.needs_regeneration && Array.isArray(state.images)
+      ? '<div class="daily-offer-images-downloads">' + state.images.map((image) =>
+        '<a class="button button-primary daily-offer-image-download" href="' + esc(image.download_url) + '" download="' + esc(image.file_name) + '">Baixar imagem ' + number(image.number) + ' · ' + number(image.size_kb, 1) + ' KB</a>'
+      ).join("") + '</div>'
       : "";
+    const generateLabel = imageBusy ? "Gerando…" : (state.needs_regeneration ? "Gerar imagens leves" : "Gerar imagens agora");
     return '<section class="daily-offer-images" aria-labelledby="daily-offer-images-title">'
       + '<div class="daily-offer-images-copy"><h4 id="daily-offer-images-title">Imagens para o Status do WhatsApp</h4>'
-      + '<p>Montagens verticais com seis produtos, preços de/por, logo, entrega grátis a partir de R$ 75 e WhatsApp 65 99815-0975.</p>'
+      + '<p>Montagens verticais com seis produtos, preços de/por, logo, entrega grátis a partir de R$ 75 e WhatsApp 65 99815-0975. JPEG individual, até 100 KB por imagem.</p>'
       + '<p class="daily-offer-images-status" role="status" aria-live="polite">' + esc(message) + '</p></div>'
-      + '<div class="daily-offer-images-actions">' + download
+      + '<div class="daily-offer-images-actions">' + images
       + '<button class="button button-outline" type="button" data-daily-offer-images-refresh' + (imageBusy ? " disabled" : "") + '>Atualizar estado</button>'
-      + '<button class="button button-outline" type="button" data-daily-offer-images-generate' + (imageBusy ? " disabled" : "") + '>' + (imageBusy ? "Gerando…" : "Gerar imagens agora") + '</button></div>'
+      + '<button class="button button-outline" type="button" data-daily-offer-images-generate' + (imageBusy ? " disabled" : "") + '>' + generateLabel + '</button></div>'
       + '</section>';
   }
 
