@@ -144,7 +144,8 @@
     if (name === "delivery") window.DonaDeliveryAdmin?.load();
     if (name === "quick-balance") window.DonaQuickBalanceAdmin?.open();
     if (name === "cards") window.DonaCardsAdmin?.load();
-    if (name === "whatsapp") loadWhatsAppSection();\n    if (name === "instagram") window.DonaInstagramAdmin?.load();
+    if (name === "whatsapp") loadWhatsAppSection();
+    if (name === "instagram") window.DonaInstagramAdmin?.load();
   }
 
   document.querySelectorAll("[data-whatsapp-tab]").forEach((button) => {
