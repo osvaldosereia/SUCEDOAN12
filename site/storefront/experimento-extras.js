@@ -1,8 +1,8 @@
 (() => {
   "use strict";
 
-  const HOME_EXTRA_INITIAL_PAGE_SIZE = 4;
-  const HOME_EXTRA_MORE_PAGE_SIZE = 12;
+  const HOME_EXTRA_INITIAL_PAGE_SIZE = 6;
+  const HOME_EXTRA_MORE_PAGE_SIZE = 6;
   const BASKET_EXTRA_INITIAL_PAGE_SIZE = 3;
   const BASKET_EXTRA_MORE_PAGE_SIZE = 12;
   const OFFER_INITIAL_PAGE_SIZE = 3;
@@ -29,6 +29,7 @@
     let publicOffersLoading = false;
     let publicOffersError = false;
     let publicOfferProducts = [];
+    let publicOfferVisibleCount = 0;
     let homeBuilderCategoriesPromise = null;
     function extraTotalCents(data) {
       const selections = data && data.extraSelections instanceof Map ? data.extraSelections : new Map();
@@ -92,7 +93,7 @@
       const action = search.error
         ? '<button class="button button-outline product-search-more" type="button" data-product-search-retry="' + esc(scope) + '">Tentar novamente</button>'
         : search.hasMore && !search.loading
-          ? '<button class="button button-outline product-search-more" type="button" data-product-search-more="' + esc(scope) + '">Carregar mais resultados</button>'
+          ? '<button class="button button-outline product-search-more" type="button" data-product-search-more="' + esc(scope) + '">Ver mais produtos</button>'
           : "";
       return list + action;
     }
@@ -148,7 +149,7 @@
       search.lastOffset = offset;
       renderProductSearch(scope, data);
       try {
-        const params = { q: search.query, limit: 12, offset };
+        const params = { q: search.query, limit: scope === "home-extras" ? 6 : 12, offset };
         const result = await request("products", { params });
         if (search.sequence !== sequence || (scope === "basket-extras" && state.baskets.get(state.activeKey) !== data)) return;
         const fetched = Array.isArray(result.products) ? result.products : [];
@@ -654,7 +655,13 @@
         retry.hidden = !publicOffersError;
         retry.disabled = publicOffersLoading;
       }
-      host.innerHTML = publicOfferProducts.map(homeExtraProductMarkup).join("");
+      const visibleProducts = publicOfferProducts.slice(0, publicOfferVisibleCount);
+      host.innerHTML = visibleProducts.map(homeExtraProductMarkup).join("");
+      const more = $("public-offers-more");
+      if (more) {
+        more.hidden = publicOfferProducts.length <= visibleProducts.length;
+        more.disabled = publicOffersLoading;
+      }
       host.querySelectorAll("[data-home-extra-open]").forEach((button) => {
         button.addEventListener("click", () => openHomeExtraProductDialog(button.dataset.homeExtraOpen, button));
       });
@@ -666,11 +673,17 @@
       }, { once: true }));
     }
 
+    function showMorePublicOffers() {
+      publicOfferVisibleCount = Math.min(publicOfferProducts.length, publicOfferVisibleCount + 6);
+      renderPublicOffers();
+    }
+
     async function loadPublicOffers(force = false) {
       if (publicOffersLoading && publicOffersPromise) return publicOffersPromise;
       if (publicOffersLoaded && !publicOffersError && !force) return publicOfferProducts;
       publicOffersLoading = true;
       publicOffersError = false;
+      if (force) publicOfferVisibleCount = Math.min(6, publicOfferProducts.length);
       homeCategoriesFor();
       renderPublicOffers();
       publicOffersPromise = (async () => {
@@ -683,6 +696,7 @@
             unique.set(id, Object.assign({}, product, { id }));
           });
           publicOfferProducts = Array.from(unique.values());
+          publicOfferVisibleCount = Math.min(6, publicOfferProducts.length);
           publicOfferProducts.forEach((product) => state.homeExtraProducts.set(String(product.id), product));
           publicOffersLoaded = true;
           publicOffersError = false;
@@ -691,6 +705,7 @@
           publicOffersError = true;
           publicOffersLoaded = false;
           publicOfferProducts = [];
+          publicOfferVisibleCount = 0;
           return [];
         } finally {
           publicOffersLoading = false;
@@ -703,12 +718,17 @@
     function initPublicOffers() {
       const host = $("public-offers-products");
       const retry = $("public-offers-retry");
+      const more = $("public-offers-more");
       if (!host) return;
       homeCategoriesFor();
       bindHomeExtraProductDialog();
       if (retry && retry.dataset.bound !== "true") {
         retry.dataset.bound = "true";
         retry.addEventListener("click", () => { loadPublicOffers(true); });
+      }
+      if (more && more.dataset.bound !== "true") {
+        more.dataset.bound = "true";
+        more.addEventListener("click", showMorePublicOffers);
       }
       renderPublicOffers();
       loadPublicOffers();
@@ -820,7 +840,7 @@
       const loadMore = category.error
         ? '<button class="button button-outline home-extra-more" type="button" data-home-extra-retry="' + esc(category.key) + '">Tentar novamente</button>'
         : category.loaded && category.hasMore
-          ? '<button class="button button-outline home-extra-more" type="button" data-home-extra-more="' + esc(category.key) + '"' + (category.loading ? " disabled" : "") + '>' + (category.loading ? "Carregando produtos…" : category.products.length ? "Carregar mais produtos" : "Carregar produtos") + '</button>' : "";
+          ? '<button class="button button-outline home-extra-more" type="button" data-home-extra-more="' + esc(category.key) + '"' + (category.loading ? " disabled" : "") + '>' + (category.loading ? "Carregando produtos…" : category.products.length ? "Ver mais produtos" : "Carregar produtos") + '</button>' : "";
       return '<section class="home-extra-category" data-home-extra-section="' + esc(category.key) + '" aria-labelledby="' + esc(panelId) + '-title">' +
         '<div class="home-extra-category-heading"><h3 id="' + esc(panelId) + '-title"><a class="home-extra-category-link" href="' + href + '"' + navAttrs + '>' + esc(category.label) + '</a></h3></div>' +
         '<div class="home-extra-grid" data-home-extra-grid="' + esc(category.key) + '" role="list" aria-label="Produtos de ' + esc(category.label) + '">' +
@@ -832,7 +852,7 @@
       const host = $("home-extra-category-tabs"); if (!host) return;
       const hash = String(window.location.hash || "").replace(/^#/, "");
       const tabs = [
-        { nav: "popular", label: "Mais vendidos", href: "#mais-vendidos", active: hash === "mais-vendidos" },
+        { nav: "popular", label: "Mais vendidos", href: "#mais-vendidos", active: hash === "" || hash === "monte-sua-cesta" || hash === "mais-vendidos" },
         { nav: "offers", label: "Ofertas", href: "#ofertas", active: hash === "ofertas" },
         ...categories.map((category) => ({ nav: "category", key: category.key, label: category.label, href: "#categoria/" + encodeURIComponent(category.key), active: hash === "categoria/" + category.key }))
       ];

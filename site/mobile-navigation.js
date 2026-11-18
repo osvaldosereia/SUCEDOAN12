@@ -12,6 +12,8 @@
   const drawerCount = document.getElementById("mobile-navigation-count");
   const basketGroup = document.getElementById("mobile-basket-menu");
   const appNavigation = document.getElementById("mobile-app-nav");
+  const bottomCheckout = document.getElementById("mobile-app-checkout");
+  const bottomCount = document.getElementById("mobile-app-checkout-count");
 
   if (!dialog || !menuToggle) return;
 
@@ -56,7 +58,7 @@
     if (!sourceCount) return;
     const visible = !sourceCount.hidden;
     const count = String(sourceCount.textContent || "0").trim() || "0";
-    [headerCount, drawerCount].forEach((node) => {
+    [headerCount, drawerCount, bottomCount].forEach((node) => {
       if (!node) return;
       node.textContent = count;
       node.hidden = !visible;
@@ -66,6 +68,9 @@
     }
     if (drawerCheckout) {
       drawerCheckout.setAttribute("aria-label", visible ? "Abrir sacola com " + count + " produtos" : "Abrir sacola");
+    }
+    if (bottomCheckout) {
+      bottomCheckout.setAttribute("aria-label", visible ? "Abrir sacola com " + count + " produtos" : "Abrir sacola");
     }
   }
 
@@ -104,7 +109,7 @@
 
     document.querySelectorAll(".home-extra-category-tab").forEach((link) => {
       const tab = link.dataset.experimentNav;
-      const active = (tab === "popular" && hash === "mais-vendidos") || (tab === "offers" && hash === "ofertas") || (tab === "category" && hash === "categoria/" + (link.dataset.categoryKey || ""));
+      const active = (tab === "popular" && (hash === "" || hash === "monte-sua-cesta" || hash === "mais-vendidos")) || (tab === "offers" && hash === "ofertas") || (tab === "category" && hash === "categoria/" + (link.dataset.categoryKey || ""));
       link.classList.toggle("is-active", active);
       if (active) link.setAttribute("aria-current", "page");
       else link.removeAttribute("aria-current");
@@ -132,6 +137,7 @@
   if (menuClose) menuClose.addEventListener("click", () => closeMenu());
   if (headerCheckout) headerCheckout.addEventListener("click", openExistingCheckout);
   if (drawerCheckout) drawerCheckout.addEventListener("click", openExistingCheckout);
+  if (bottomCheckout) bottomCheckout.addEventListener("click", openExistingCheckout);
 
   dialog.addEventListener("click", (event) => {
     if (event.target === dialog) closeMenu();

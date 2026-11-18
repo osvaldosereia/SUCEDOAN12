@@ -13,14 +13,14 @@
   <link rel="stylesheet" href="experimento.css?v=14">
   <link rel="stylesheet" href="visual-theme.css?v=11">
   <link rel="stylesheet" href="product-card-prices.css?v=1">
-  <link rel="stylesheet" href="mobile-responsive.css?v=3">
+  <link rel="stylesheet" href="mobile-responsive.css?v=4">
   <script src="config.js?v=2" defer></script>
-  <script src="storefront/experimento-extras.js?v=18" defer></script>
+  <script src="storefront/experimento-extras.js?v=19" defer></script>
   <script src="storefront/basket.js?v=14" defer></script>
-  <script src="storefront/checkout.js?v=21" defer></script>
+  <script src="storefront/checkout.js?v=22" defer></script>
   <script src="app.js?v=53" defer></script>
   <script src="experimento.js?v=9" defer></script>
-  <script src="mobile-navigation.js?v=4" defer></script>
+  <script src="mobile-navigation.js?v=5" defer></script>
 </head>
 <body data-mobile-page="home">
   <header class="mobile-store-header">
@@ -235,6 +235,7 @@
       <p id="public-offers-status" class="public-offers-status" role="status" aria-live="polite">Carregando ofertas…</p>
       <div id="public-offers-products" class="home-extra-grid public-offers-grid" role="list" aria-label="Produtos em oferta"></div>
       <button id="public-offers-retry" class="button button-outline" type="button" hidden>Atualizar ofertas</button>
+      <button id="public-offers-more" class="button button-outline public-offers-more" type="button" hidden>Ver mais produtos</button>
     </section>
 
     <section id="home-extras" class="home-extras" aria-labelledby="home-extras-title">
@@ -254,16 +255,17 @@
       </div>
     </section>
 
+    <nav id="home-extra-category-tabs" class="home-extra-category-tabs" aria-label="Seções para montar sua cesta">
+      <span class="home-extra-category-tabs-status" role="status">Carregando categorias…</span>
+    </nav>
+
     <section id="home-extra-popular-panel" class="home-extra-category-group" aria-label="Produtos mais vendidos">
       <div id="home-extra-popular" class="home-extra-categories"></div>
     </section>
 
     <section id="home-extra-categories-panel" class="home-extra-category-group" aria-labelledby="home-extra-categories-title">
       <div class="home-extra-category-group-heading"><h3 id="home-extra-categories-title">Categorias</h3></div>
-      <nav id="home-extra-category-tabs" class="home-extra-category-tabs" aria-label="Seções para montar sua cesta">
-        <span class="home-extra-category-tabs-status" role="status">Carregando categorias…</span>
-      </nav>
-        <div id="home-extra-categories" class="home-extra-categories"></div>
+      <div id="home-extra-categories" class="home-extra-categories"></div>
     </section>
 
     <dialog id="home-extra-product-dialog" class="home-extra-product-dialog" aria-labelledby="home-extra-product-title">
@@ -304,6 +306,11 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16l-1.5 12h-13z"/><path d="m8 8 4-5 4 5M12 11v6m-3-3h6"/></svg>
       <span>MONTE SUA CESTA</span>
     </a>
+    <button id="mobile-app-checkout" class="mobile-app-nav-link mobile-app-nav-checkout" type="button" aria-label="Abrir sacola">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h18l-1.8 12H4.8L3 8Z"/><path d="M8 8V6a4 4 0 0 1 8 0v2"/></svg>
+      <span>SACOLA</span>
+      <span id="mobile-app-checkout-count" class="mobile-app-nav-count" aria-hidden="true" hidden>0</span>
+    </button>
     <a class="mobile-app-nav-link mobile-app-nav-whatsapp" href="https://wa.me/5565998150975?text=Ol%C3%A1%2C%20gostaria%20de%20falar%20com%20a%20Dona%20Ant%C3%B4nia." target="_blank" rel="noopener noreferrer">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 11.7a8.4 8.4 0 0 1-12.4 7.4L4 20l.9-4A8.4 8.4 0 1 1 20.5 11.7Z"/><path d="M9 8.4c.2-.5.5-.5.8-.5h.5c.2 0 .4.1.5.4l.7 1.7c.1.2.1.4 0 .6l-.5.7c-.2.2-.2.4 0 .7.5.8 1.2 1.5 2.1 1.9.2.1.5.1.7-.1l.7-.8c.2-.2.4-.3.7-.2l1.6.8c.3.1.4.3.4.5 0 .4-.2 1.2-.7 1.6-.5.4-1.1.6-1.8.5-1-.1-2.2-.7-3.5-1.8-1.5-1.3-2.5-2.9-2.8-4-.2-.8 0-1.6.4-2Z"/></svg>
       <span>WHATSAPP</span>

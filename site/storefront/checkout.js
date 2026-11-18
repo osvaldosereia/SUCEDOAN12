@@ -380,6 +380,8 @@
       const orderContent = document.querySelector("#order-sheet .sheet-content");
       if (orderContent) orderContent.scrollTop = 0;
       showSheet("order-sheet");
+      const closeButton = document.querySelector('#order-sheet [data-close="order"]');
+      if (closeButton) closeButton.focus({ preventScroll: true });
       loadDeliveryOptions();
       if (state.catalogCode && !state.identityLookupStarted) {
         state.identityLookupStarted = true;
@@ -396,10 +398,8 @@
           await lookupCustomer();
         } catch (_) {
           $("lookup-message").textContent = "Não foi possível identificar pelo link. Digite seu telefone para continuar.";
-          $("customer-phone").focus({ preventScroll: true });
         }
       } else {
-        $("customer-phone").focus({ preventScroll: true });
       }
     }
 
