@@ -13,14 +13,14 @@
   <link rel="stylesheet" href="experimento.css?v=14">
   <link rel="stylesheet" href="visual-theme.css?v=11">
   <link rel="stylesheet" href="product-card-prices.css?v=1">
-  <link rel="stylesheet" href="mobile-responsive.css?v=1">
+  <link rel="stylesheet" href="mobile-responsive.css?v=2">
   <script src="config.js?v=2" defer></script>
-  <script src="storefront/experimento-extras.js?v=15" defer></script>
+  <script src="storefront/experimento-extras.js?v=16" defer></script>
   <script src="storefront/basket.js?v=14" defer></script>
   <script src="storefront/checkout.js?v=21" defer></script>
-  <script src="app.js?v=51" defer></script>
-  <script src="experimento.js?v=5" defer></script>
-  <script src="mobile-navigation.js?v=1" defer></script>
+  <script src="app.js?v=52" defer></script>
+  <script src="experimento.js?v=6" defer></script>
+  <script src="mobile-navigation.js?v=2" defer></script>
 </head>
 <body>
   <header class="mobile-store-header">
@@ -166,9 +166,9 @@
       </div>
     </section>
     <section id="inicio" class="welcome" aria-labelledby="welcome-title">
-      <p class="eyebrow">Praticidade para sua casa</p>
-      <h1 id="welcome-title">Início</h1>
-      <p>Encontre sua cesta e navegue pelas sessões da loja.</p>
+      <p class="eyebrow">Cestas Dona Antônia</p>
+      <h1 id="welcome-title">Escolha sua cesta</h1>
+      <p>Cestas prontas para facilitar suas compras.</p>
     </section>
       <div id="home-extra-summary" class="home-extra-summary" hidden aria-live="polite">
         <div class="home-extra-summary-copy">
@@ -212,7 +212,7 @@
     <section id="detail-sheet" class="basket-detail-view" hidden aria-labelledby="detail-title">
       <header class="basket-detail-header">
         <button class="basket-back-link" type="button" data-close="detail">
-          <span aria-hidden="true">←</span><span>Voltar às cestas</span>
+          <span aria-hidden="true">←</span><span>Voltar à página inicial</span>
         </button>
         <div class="basket-detail-heading">
           <p class="eyebrow">Sua escolha</p>
@@ -252,6 +252,17 @@
         <p id="home-extra-product-search-status" class="product-search-status" data-product-search-status="home-extras" role="status" aria-live="polite"></p>
         <div id="home-extra-product-search-results" class="product-search-results" data-product-search-results="home-extras" hidden></div>
       </div>
+      <nav id="home-extra-category-tabs" class="home-extra-category-tabs" aria-label="Seções para montar sua cesta">
+        <span class="home-extra-category-tabs-status" role="status">Carregando categorias…</span>
+      </nav>
+    </section>
+
+    <section id="home-extra-popular-panel" class="home-extra-category-group" aria-label="Produtos mais vendidos">
+      <div id="home-extra-popular" class="home-extra-categories"></div>
+    </section>
+
+    <section id="home-extra-categories-panel" class="home-extra-category-group" aria-labelledby="home-extra-categories-title">
+      <div class="home-extra-category-group-heading"><h3 id="home-extra-categories-title">Categorias</h3></div>
       <div id="home-extra-categories" class="home-extra-categories"></div>
     </section>
 
@@ -283,6 +294,21 @@
 
     <aside class="privacy-note">Seu pedido será registrado para a equipe da Dona Antônia. A loja dará sequência ao atendimento.</aside>
   </main>
+
+  <nav id="mobile-app-nav" class="mobile-app-nav" aria-label="Navegação principal">
+    <a class="mobile-app-nav-link" href="#inicio" data-experiment-nav="home" data-mobile-nav="home">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></svg>
+      <span>CESTAS</span>
+    </a>
+    <a class="mobile-app-nav-link" href="#monte-sua-cesta" data-experiment-nav="builder" data-mobile-nav="builder">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16l-1.5 12h-13z"/><path d="m8 8 4-5 4 5M12 11v6m-3-3h6"/></svg>
+      <span>MONTE SUA CESTA</span>
+    </a>
+    <a class="mobile-app-nav-link mobile-app-nav-whatsapp" href="https://wa.me/5565998150975?text=Ol%C3%A1%2C%20gostaria%20de%20falar%20com%20a%20Dona%20Ant%C3%B4nia." target="_blank" rel="noopener noreferrer">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 11.7a8.4 8.4 0 0 1-12.4 7.4L4 20l.9-4A8.4 8.4 0 1 1 20.5 11.7Z"/><path d="M9 8.4c.2-.5.5-.5.8-.5h.5c.2 0 .4.1.5.4l.7 1.7c.1.2.1.4 0 .6l-.5.7c-.2.2-.2.4 0 .7.5.8 1.2 1.5 2.1 1.9.2.1.5.1.7-.1l.7-.8c.2-.2.4-.3.7-.2l1.6.8c.3.1.4.3.4.5 0 .4-.2 1.2-.7 1.6-.5.4-1.1.6-1.8.5-1-.1-2.2-.7-3.5-1.8-1.5-1.3-2.5-2.9-2.8-4-.2-.8 0-1.6.4-2Z"/></svg>
+      <span>WHATSAPP</span>
+    </a>
+  </nav>
 
   <div id="order-sheet" class="sheet-backdrop" hidden>
     <section class="sheet order-sheet" role="dialog" aria-modal="true" aria-labelledby="order-title">
