@@ -194,14 +194,14 @@
   }
 
   function loadWhatsAppSection() {
-    const selected = document.querySelector("[data-whatsapp-section][aria-selected=\\\"true\\\"]")?.dataset.whatsappSection || "overview";
+    const selected = document.querySelector("[data-whatsapp-section][aria-selected=\"true\"]")?.dataset.whatsappSection || "overview";
     if (selected === "conversations") {
       if (window.DonaWhatsAppConversations?.load) window.DonaWhatsAppConversations.load();
       else if ($("whatsapp-conversations-status")) $("whatsapp-conversations-status").textContent = "O módulo de conversas não carregou. Atualize a página.";
       return;
     }
     if (selected === "messages") {
-      const inner = document.querySelector("[data-whatsapp-tab][aria-selected=\\\"true\\\"]")?.dataset.whatsappTab || "confirmation";
+      const inner = document.querySelector("[data-whatsapp-tab][aria-selected=\"true\"]")?.dataset.whatsappTab || "confirmation";
       const module = inner === "separation" ? window.DonaOrderSeparationMessageAdmin : window.DonaOrderMessageAdmin;
       if (module?.load) module.load();
       else if ($("order-message-status")) $("order-message-status").textContent = "O módulo de mensagens não carregou. Atualize a página.";
