@@ -12,7 +12,6 @@
   const money = (cents) => (Number(cents || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
   function productChoiceMarkup(product, options = {}) {
-    const id = String(options.id || product.id || product.product_id || "");
     const name = String(options.name || product.name || "Produto");
     const quantity = Math.max(0, Math.trunc(Number(options.quantity || 0)));
     const tag = options.tag === "article" ? "article" : "div";
@@ -26,13 +25,6 @@
     const stockNote = options.stockNote
       ? '<small class="product-choice-stock">' + esc(options.stockNote) + '</small>'
       : "";
-    const detailsButton = options.details
-      ? '<button class="product-choice-open" type="button"' + attributes({
-        "data-home-extra-open": id,
-        "aria-label": "Ver detalhes de " + name,
-        title: name
-      }) + '></button>'
-      : "";
     const controls = (delta, label) => attributes(Object.assign({}, options.adjustAttributes, {
       "data-delta": String(delta),
       "aria-label": label
@@ -42,15 +34,16 @@
       '<output class="product-option-quantity"' + attributes(options.quantityAttributes) + ' aria-live="polite">' + quantity + '</output>' +
       '<button class="quantity-button option-quantity-button" type="button"' + controls(1, "Adicionar " + name) + (options.increaseDisabled ? " disabled" : "") + '>+</button></span>';
     const className = "product-choice" + (quantity > 0 ? " is-selected" : "");
+    const selectedLabel = '<span class="product-choice-selected-label"' + (quantity > 0 ? "" : " hidden") + ' aria-hidden="true">Na cesta: ' + quantity + '</span>';
     const price = options.priceText == null ? money(product.price_cents) : options.priceText;
     const isOffer = product.is_offer === true || product.regular_price_cents != null;
     const offerBadge = isOffer ? '<span class="product-choice-offer">OFERTA</span>' : "";
     return '<' + tag + ' class="' + className + '"' + role + attributes(options.attributes) + '>' +
       '<img src="' + esc(product.image_url || "../img/logoantonia5.png") + '" alt="" width="104" height="104" loading="lazy" fetchpriority="low" decoding="async">' +
       offerBadge +
-      '<span class="product-choice-copy"><strong>' + esc(name) + '</strong>' +
+      '<span class="product-choice-copy">' + selectedLabel + '<strong>' + esc(name) + '</strong>' +
       '<span class="product-choice-meta"><small class="product-choice-price">' + esc(price) + '</small>' + stepper + '</span>' +
-      stockNote + '</span>' + detailsButton + '</' + tag + '>';
+      stockNote + '</span></' + tag + '>';
   }
 
 

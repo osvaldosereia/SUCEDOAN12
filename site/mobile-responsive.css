@@ -582,10 +582,6 @@
     font-size: .95rem;
   }
 
-  .experiment-page .product-choice-open {
-    z-index: 1;
-  }
-
   .experiment-page .product-choice-offer {
     top: 8px;
     left: 8px;
@@ -813,7 +809,7 @@
  body[data-mobile-page="home"] .experiment-page main>:not(#inicio):not(#catalog):not(#order-receipt),
  body[data-mobile-page="detail"] .experiment-page main>:not(#detail-sheet):not(#order-receipt),
  body[data-mobile-page="builder"] .experiment-page main>:not(#home-extras):not(#home-extra-category-tabs):not(#home-extra-popular-panel):not(#ofertas):not(#home-extra-categories-panel):not(#home-extra-summary):not(#order-receipt),
- body[data-mobile-page="offers"] .experiment-page main>:not(#ofertas):not(#order-receipt){display:none!important}
+ body[data-mobile-page="offers"] .experiment-page main>:not(#home-extra-category-tabs):not(#ofertas):not(#order-receipt){display:none!important}
  .experiment-page main>#order-receipt:not([hidden]){display:block;order:-1}
  body[data-mobile-page="builder"] .experiment-page main{padding-bottom:calc(218px + env(safe-area-inset-bottom))}
  body[data-mobile-page="detail"] .experiment-page main,body.basket-detail-open .experiment-page main{padding-bottom:calc(220px + env(safe-area-inset-bottom))}
@@ -849,6 +845,7 @@
  .experiment-page .product-choice img{width:100%;height:auto}
  .experiment-page .product-choice-meta{display:flex;flex-wrap:wrap}.experiment-page .product-choice-price{white-space:nowrap}
  .mobile-app-nav-link{font-size:.56rem}
+ .mobile-app-nav-checkout > span:not(.mobile-app-nav-count){font-size:.55rem}
 }
 
 /* Ajustes de respiro, navegação fixa e sacola inferior no mobile */
@@ -878,7 +875,8 @@
 
   body[data-mobile-page="builder"] #home-extra-popular-panel,
   body[data-mobile-page="builder"] #ofertas,
-  body[data-mobile-page="builder"] #home-extra-categories-panel {
+  body[data-mobile-page="builder"] #home-extra-categories-panel,
+  body[data-mobile-page="offers"] #ofertas {
     scroll-margin-top: calc(132px + env(safe-area-inset-top));
   }
 
@@ -919,7 +917,7 @@
     position: relative;
     justify-self: center;
     align-self: center;
-    width: min(100%, 64px);
+    width: min(100%, 74px);
     min-height: 58px;
     border: 0;
     border-radius: 15px;
@@ -947,6 +945,7 @@
     font-weight: 800;
     line-height: 1;
   }
+  .mobile-app-nav-checkout > span:not(.mobile-app-nav-count) { font-size: .6rem; line-height: 1; letter-spacing: .02em; }
   .mobile-app-nav-count[hidden] { display: none !important; }
 }
 
