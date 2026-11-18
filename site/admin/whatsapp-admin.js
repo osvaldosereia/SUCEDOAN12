@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 30606)
+Total output lines: 1764
+
 (() => {
   "use strict";
   const config = window.DONA_SITE_CONFIG || {};
@@ -10,7 +13,7 @@
   const $ = (id) => document.getElementById(id);
   const esc = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
   let loaded = false;
-  let overviewPromise = null;
+  let loading = false;
   let lastOverview = null;
   let latestAnaDryRunDetails = null;
   let campaignVariablePreviewRequest = 0;
@@ -905,7 +908,7 @@
   async function loadTemplateAdminCatalog(sync) {
     if (templateAdminBusy) return;
     const root = $("whatsapp-templates-content");
-    const status = root?.querySelector("[data-template-admin-status]") || $("whatsapp-templates-status");
+    const status = root?.querySelector("[data-template-admin-status]");
     const requestedAccountId = templateAdminAccountId;
     if (!root || !requestedAccountId) return;
     templateAdminBusy = true;
@@ -1311,52 +1314,31 @@
   }
 
   async function loadOverview(force) {
-    if (overviewPromise) return overviewPromise;
-    if (loaded && !force) return true;
+    if (loading || (loaded && !force)) return;
     const status = $("whatsapp-overview-status");
-    const statusNodes = Array.from(document.querySelectorAll("[data-whatsapp-overview-status]"));
-    if (!status) return false;
-    if (!supabase || !publishableKey) {
-      const message = "A conexão do Admin com o Supabase não foi configurada. Atualize a página para tentar novamente.";
-      statusNodes.forEach((node) => { node.textContent = message; });
-      return false;
-    }
-    statusNodes.forEach((node) => { node.textContent = "Consultando dados do WhatsApp…"; });
-    const request = (async () => {
-      const controller = new AbortController();
-      const timeout = window.setTimeout(() => controller.abort(), 20000);
-      try {
-        const response = await fetch(`${supabase}/functions/v1/site-admin-v1`, {
-          method: "POST",
-          headers: {
-            apikey: publishableKey,
-            "x-admin-code": window.DonaAdminAuth?.getCode?.() || "",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ action: "whatsapp_overview" }),
-          cache: "no-store",
-          signal: controller.signal,
-        });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok || data.ok === false) throw new Error(data.message || data.error || "Não foi possível carregar os dados do WhatsApp.");
-        render(data);
-        loaded = true;
-        return true;
-      } catch (error) {
-        const message = error instanceof Error && error.name === "AbortError"
-          ? "Tempo limite ao consultar o WhatsApp. Clique em Atualizar para tentar novamente."
-          : error instanceof Error ? error.message : "Não foi possível carregar os dados do WhatsApp.";
-        statusNodes.forEach((node) => { node.textContent = message; });
-        return false;
-      } finally {
-        window.clearTimeout(timeout);
-      }
-    })();
-    overviewPromise = request;
+    if (!status || !supabase || !publishableKey) return;
+    loading = true;
+    for (const node of document.querySelectorAll("[data-whatsapp-overview-status]")) node.textContent = "Consultando dados do WhatsApp…";
     try {
-      return await request;
+      const response = await fetch(`${supabase}/functions/v1/site-admin-v1`, {
+        method: "POST",
+        headers: {
+          apikey: publishableKey,
+          "x-admin-code": window.DonaAdminAuth?.getCode?.() || "",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ action: "whatsapp_overview" }),
+        cache: "no-store",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok === false) throw new Error(data.message || data.error || "Não foi possível carregar os dados do WhatsApp.");
+      render(data);
+      loaded = true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Não foi possível carregar os dados do WhatsApp.";
+      for (const node of document.querySelectorAll("[data-whatsapp-overview-status]")) node.textContent = message;
     } finally {
-      if (overviewPromise === request) overviewPromise = null;
+      loading = false;
     }
   }
 
@@ -1644,24 +1626,6 @@
     }
   }
 
-  async function loadSection(section, force = false) {
-    const selected = String(section || "overview");
-    if (selected === "ana") return loadAnaStatus(force);
-    const ready = await loadOverview(force);
-    if (!ready) return false;
-    if (selected === "templates") {
-      if (!templateAdminAccountId) {
-        const status = $("whatsapp-templates-status");
-        if (status) status.textContent = "Nenhum canal WhatsApp está disponível para consultar os modelos.";
-        return false;
-      }
-      if (force || templateAdminLoadedAccountId !== templateAdminAccountId) {
-        await loadTemplateAdminCatalog(false);
-      }
-    }
-    return true;
-  }
-
   $("whatsapp-campaigns-content")?.addEventListener("click", (event) => {
     const target = event.target instanceof Element ? event.target : null;
     const actionButton = target?.closest("[data-campaign-action]");
@@ -1702,10 +1666,7 @@
     event.preventDefault();
     submitCampaignDraft(form);
   });
-  document.querySelectorAll("[data-whatsapp-overview-refresh]").forEach((button) => button.addEventListener("click", () => {
-    const section = document.querySelector("[data-whatsapp-section][aria-selected=\"true\"]")?.dataset.whatsappSection || "overview";
-    void loadSection(section, true);
-  }));
+  document.querySelectorAll("[data-whatsapp-overview-refresh]").forEach((button) => button.addEventListener("click", () => loadOverview(true)));
   $("whatsapp-ana-content")?.addEventListener("click", (event) => {
     const target = event.target instanceof Element ? event.target : null;
     const testButton = target?.closest("[data-ana-test]");
@@ -1783,5 +1744,5 @@
     if (button) rollbackAnaVersion(button);
   });
   $("whatsapp-ana-refresh")?.addEventListener("click", () => loadAnaStatus(true));
-  window.DonaWhatsAppAdmin = { loadOverview, loadAnaStatus, loadSection };
+  window.DonaWhatsAppAdmin = { loadOverview, loadAnaStatus };
 })();
