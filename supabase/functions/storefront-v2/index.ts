@@ -837,6 +837,17 @@ async function subcats(url:URL){
   const m=new Map<string,number>();for(const p of data){const n=txt(p.customer_subsubcategory||p.subcategory,100);if(n)m.set(n,(m.get(n)||0)+1)}
   return {ok:true,subcategories:[...m.entries()].map(([name,count])=>({name,count})).sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name,"pt-BR"))};
 }
+async function builderCategoryList(){
+  const result=await db.from("storefront_builder_categories_v1").select("category_key,label,sort_order").eq("is_active",true).order("sort_order",{ascending:true}).order("category_key",{ascending:true});
+  if(result.error)throw result.error;
+  const allowed=new Map(CATEGORIES.map(category=>[category.key,category]));
+  const categories=(result.data||[]).filter((row:any)=>allowed.has(String(row.category_key||""))).map((row:any)=>{
+    const fallback=allowed.get(String(row.category_key))!;
+    return {category_key:fallback.key,label:txt(row.label,80)||fallback.label,sort_order:Number(row.sort_order||0)};
+  });
+  return {ok:true,categories};
+}
+
 async function productList(url:URL){
   const c=txt(url.searchParams.get("category"),48),sc=txt(url.searchParams.get("subcategory"),100),rawQuery=safeQ(url.searchParams.get("q")),limit=Math.floor(clamp(url.searchParams.get("limit")||24,1,36)),offset=Math.floor(clamp(url.searchParams.get("offset")||0,0,5000));
   const fold=(value:any)=>String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("pt-BR").replace(/[^a-z0-9]+/g," ").trim();
@@ -1373,7 +1384,7 @@ Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
   try{
     const u=new URL(req.url),action=txt(u.searchParams.get("action")||(req.method==="GET"?"home":""),60);
-    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:82},200,{"Cache-Control":"no-store"});
+    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:83},200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="home_catalog_cards")return json(req,await homeCatalogCards(),200,{"Cache-Control":"public, max-age=30, stale-while-revalidate=180"});
     if(req.method==="GET"&&action==="home_size_cards")return json(req,await homeSizeCards(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
 
@@ -1381,6 +1392,7 @@ Deno.serve(async(req:Request)=>{
     if(req.method==="GET"&&action==="home")return json(req,await cachedHome(),200,{"Cache-Control":"public, max-age=30, stale-while-revalidate=120"});
     if(req.method==="GET"&&action==="home_priority")return json(req,await cachedHomePriority(),200,{"Cache-Control":"public, max-age=30, stale-while-revalidate=120"});
     if(req.method==="GET"&&action==="offers")return json(req,await offerList(),200,{"Cache-Control":"no-store"});
+    if(req.method==="GET"&&action==="builder_categories")return json(req,await builderCategoryList(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
     if(req.method==="GET"&&action==="subcategories")return json(req,await subcats(u),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
     if(req.method==="GET"&&action==="products")return json(req,await productList(u),200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="product"){const id=uid(u.searchParams.get("product_id"));if(!id)return json(req,{ok:false,error:"invalid_product"},400);const p=await oneProduct(id);return p?json(req,{ok:true,product:p},200,{"Cache-Control":"no-store"}):json(req,{ok:false,error:"product_not_found"},404)}

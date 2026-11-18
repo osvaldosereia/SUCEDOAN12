@@ -382,7 +382,7 @@
       return '<article class="basket-card">' +
         '<img class="basket-photo" src="' + esc(imageForBasket(card, sizeKey)) + '" alt="Cesta ' + esc(title) + '" width="420" height="420" loading="' + loading + '" fetchpriority="' + priority + '" decoding="async">' +
         '<div class="basket-body"><h3 class="basket-title">' + esc(title) + '</h3>' + priceMarkup +
-        '<button class="button button-primary card-button" type="button" data-open-basket="' + esc(sizeKey) + '">Abrir</button></div></article>';
+        '<button class="button button-primary card-button" type="button" data-open-basket="' + esc(sizeKey) + '">Ver cesta</button></div></article>';
     }).join("");
     host.querySelectorAll("[data-open-basket]").forEach((button) => button.addEventListener("click", () => openDetail(button.dataset.openBasket)));
   }

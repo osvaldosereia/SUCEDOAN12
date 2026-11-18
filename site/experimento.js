@@ -46,17 +46,34 @@
     });
   }
 
+  function setMobileNavActive(section) {
+    const mobileSection = section === "basket" ? "home"
+      : section === "popular" || section === "offers" || section === "category" ? "builder"
+        : section;
+    document.querySelectorAll("#mobile-app-nav [data-mobile-nav]").forEach((item) => {
+      const active = item.dataset.mobileNav === mobileSection;
+      item.classList.toggle("is-active", active);
+      if (active) item.setAttribute("aria-current", "page");
+      else item.removeAttribute("aria-current");
+    });
+  }
+
   function setActiveBySection(section, key) {
     const link = Array.from(document.querySelectorAll(".experiment-nav-link"))
       .find((item) => item.dataset.experimentNav === section &&
         (!key || item.dataset.sizeKey === key));
     setActive(link || null);
+    setMobileNavActive(section);
   }
 
   function scrollToNode(node) {
     if (!node) return false;
     node.scrollIntoView({ behavior: "smooth", block: "start" });
     return true;
+  }
+
+  function setMobilePage(page) {
+    if (document.body) document.body.dataset.mobilePage = page;
   }
 
   function closeBasketDetail() {
@@ -96,6 +113,7 @@
   }
 
   function openCategory(key, sequence) {
+    setMobilePage("builder");
     const normalizedKey = String(key || "").toLowerCase();
     if (normalizedKey === "mais_vendidos" || normalizedKey === "mais-vendidos") {
       setActiveBySection("popular");
@@ -111,6 +129,7 @@
       return;
     }
     setActive(null);
+    setMobileNavActive("builder");
     const api = window.DonaStorefrontPublicNavigation;
     const load = api && typeof api.ensureHomeCategory === "function"
       ? api.ensureHomeCategory(normalizedKey)
@@ -129,18 +148,21 @@
     routedHash = hash;
     const sequence = ++routeSequence;
     if (!hash || hash === "inicio") {
+      setMobilePage("home");
       closeBasketDetail();
       setActiveBySection("home");
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
     if (hash === "cestas" || hash === "catalog") {
+      setMobilePage("home");
       closeBasketDetail();
       setActive(null);
       scrollToNode(document.getElementById("catalog"));
       return;
     }
     if (hash.startsWith("cesta/")) {
+      setMobilePage("detail");
       openBasket(hash.slice("cesta/".length), sequence);
       return;
     }
@@ -149,6 +171,7 @@
       return;
     }
     if (hash === "ofertas") {
+      setMobilePage("offers");
       closeBasketDetail();
       setActiveBySection("offers");
       const api = window.DonaStorefrontPublicNavigation;
@@ -157,12 +180,14 @@
       return;
     }
     if (hash === "monte-sua-cesta") {
+      setMobilePage("builder");
       closeBasketDetail();
       setActiveBySection("builder");
       scrollToNode(document.getElementById("home-extras"));
       return;
     }
     if (hash.startsWith("categoria/")) {
+      setMobilePage("builder");
       closeBasketDetail();
       openCategory(hash.slice("categoria/".length), sequence);
       return;
@@ -185,6 +210,7 @@
       else if (section === "popular") navigate("mais-vendidos");
       else if (section === "builder") navigate("monte-sua-cesta");
       else if (section === "offers") navigate("ofertas");
+      else if (section === "category") navigate("categoria/" + (target.dataset.categoryKey || ""));
       return;
     }
 
@@ -192,6 +218,7 @@
     if (basketButton && !basketButton.disabled) {
       const key = normalize(basketButton.dataset.openBasket || "");
       if (basketOrder.includes(key)) {
+        setMobilePage("detail");
         setHash("cesta/" + key);
         routedHash = "cesta/" + key;
       }
@@ -200,8 +227,9 @@
 
     const back = event.target instanceof Element ? event.target.closest('#detail-sheet [data-close="detail"]') : null;
     if (back && !suppressDetailHash) {
-      setHash("cestas", true);
-      routedHash = "cestas";
+      setHash("inicio", true);
+      routedHash = "inicio";
+      setMobilePage("home");
     }
   });
 
