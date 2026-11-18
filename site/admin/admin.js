@@ -166,26 +166,67 @@
     });
   });
 
+  let whatsappTemplatesAutoLoaded = false;
+
+  function loadTemplateCatalogAfterOverview(overviewPromise) {
+    if (whatsappTemplatesAutoLoaded) return;
+    whatsappTemplatesAutoLoaded = true;
+    const root = $("whatsapp-templates-content");
+    const clickLoadButton = () => {
+      const button = root?.querySelector("[data-template-load]");
+      if (!button || button.disabled) return false;
+      button.click();
+      return true;
+    };
+    Promise.resolve(overviewPromise).then(() => {
+      if (clickLoadButton() || !root) return;
+      const observer = new MutationObserver(() => {
+        if (clickLoadButton()) observer.disconnect();
+      });
+      observer.observe(root, { childList: true, subtree: true });
+      window.setTimeout(() => {
+        observer.disconnect();
+        if (!root.querySelector("[data-template-load]")) whatsappTemplatesAutoLoaded = false;
+      }, 15000);
+    }).catch(() => {
+      whatsappTemplatesAutoLoaded = false;
+    });
+  }
+
   function loadWhatsAppSection() {
-    const selected = document.querySelector("[data-whatsapp-section][aria-selected=\"true\"]")?.dataset.whatsappSection || "overview";
+    const selected = document.querySelector("[data-whatsapp-section][aria-selected=\\\"true\\\"]")?.dataset.whatsappSection || "overview";
     if (selected === "conversations") {
       if (window.DonaWhatsAppConversations?.load) window.DonaWhatsAppConversations.load();
       else if ($("whatsapp-conversations-status")) $("whatsapp-conversations-status").textContent = "O módulo de conversas não carregou. Atualize a página.";
       return;
     }
     if (selected === "messages") {
-      const inner = document.querySelector("[data-whatsapp-tab][aria-selected=\"true\"]")?.dataset.whatsappTab || "confirmation";
+      const inner = document.querySelector("[data-whatsapp-tab][aria-selected=\\\"true\\\"]")?.dataset.whatsappTab || "confirmation";
       const module = inner === "separation" ? window.DonaOrderSeparationMessageAdmin : window.DonaOrderMessageAdmin;
       if (module?.load) module.load();
       else if ($("order-message-status")) $("order-message-status").textContent = "O módulo de mensagens não carregou. Atualize a página.";
       return;
     }
-    if (window.DonaWhatsAppAdmin?.loadSection) {
-      void window.DonaWhatsAppAdmin.loadSection(selected);
+
+    const whatsappAdmin = window.DonaWhatsAppAdmin;
+    if (!whatsappAdmin) {
+      const status = $((selected === "overview" ? "whatsapp-overview" : "whatsapp-" + selected) + "-status");
+      if (status) status.textContent = "O módulo do WhatsApp não carregou. Atualize esta página.";
       return;
     }
-    const status = $((selected === "overview" ? "whatsapp-overview" : "whatsapp-" + selected) + "-status");
-    if (status) status.textContent = "O módulo do WhatsApp não carregou. Atualize esta página.";
+    if (selected === "ana") {
+      if (typeof whatsappAdmin.loadAnaStatus === "function") whatsappAdmin.loadAnaStatus();
+      else if ($("whatsapp-ana-status")) $("whatsapp-ana-status").textContent = "A tela da ANA não carregou. Atualize a página.";
+      return;
+    }
+    if (typeof whatsappAdmin.loadOverview !== "function") {
+      const status = $((selected === "overview" ? "whatsapp-overview" : "whatsapp-" + selected) + "-status");
+      if (status) status.textContent = "O carregamento do WhatsApp não está disponível. Atualize a página.";
+      return;
+    }
+
+    const overviewPromise = whatsappAdmin.loadOverview();
+    if (selected === "templates") loadTemplateCatalogAfterOverview(overviewPromise);
   }
 
   document.querySelectorAll("[data-whatsapp-section]").forEach((button) => {
