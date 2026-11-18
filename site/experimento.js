@@ -58,12 +58,25 @@
     });
   }
 
+  function setBuilderTabActive(section, key) {
+    document.querySelectorAll(".home-extra-category-tab").forEach((link) => {
+      const tab = link.dataset.experimentNav;
+      const active = (section === "offers" && tab === "offers") ||
+        (section === "category" && tab === "category" && String(link.dataset.categoryKey || "") === String(key || "")) ||
+        ((section === "builder" || section === "popular") && tab === "popular");
+      link.classList.toggle("is-active", active);
+      if (active) link.setAttribute("aria-current", "page");
+      else link.removeAttribute("aria-current");
+    });
+  }
+
   function setActiveBySection(section, key) {
     const link = Array.from(document.querySelectorAll(".experiment-nav-link"))
       .find((item) => item.dataset.experimentNav === section &&
         (!key || item.dataset.sizeKey === key));
     setActive(link || null);
     setMobileNavActive(section);
+    setBuilderTabActive(section, key);
   }
 
   function scrollToNode(node) {
@@ -130,6 +143,7 @@
     }
     setActive(null);
     setMobileNavActive("builder");
+    setBuilderTabActive("category", normalizedKey);
     const api = window.DonaStorefrontPublicNavigation;
     const load = api && typeof api.ensureHomeCategory === "function"
       ? api.ensureHomeCategory(normalizedKey)
