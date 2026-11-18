@@ -797,7 +797,9 @@
         activeHomeExtraProductId = "";
         if (trigger && trigger.isConnected) trigger.focus({ preventScroll: true });
         else if (id) {
-          const opener = Array.from($("home-extra-categories").querySelectorAll("[data-home-extra-open]"))
+          const opener = ["home-extra-popular", "home-extra-categories", "home-extra-product-search-results", "public-offers-products"]
+            .map((hostId) => $(hostId)).filter(Boolean)
+            .flatMap((host) => Array.from(host.querySelectorAll("[data-home-extra-open]")))
             .find((button) => button.dataset.homeExtraOpen === id);
           if (opener) opener.focus({ preventScroll: true });
         }

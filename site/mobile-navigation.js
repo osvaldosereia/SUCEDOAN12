@@ -102,6 +102,14 @@
       else link.removeAttribute("aria-current");
     });
 
+    document.querySelectorAll(".home-extra-category-tab").forEach((link) => {
+      const tab = link.dataset.experimentNav;
+      const active = (tab === "popular" && hash === "mais-vendidos") || (tab === "offers" && hash === "ofertas") || (tab === "category" && hash === "categoria/" + (link.dataset.categoryKey || ""));
+      link.classList.toggle("is-active", active);
+      if (active) link.setAttribute("aria-current", "page");
+      else link.removeAttribute("aria-current");
+    });
+
     if (appNavigation) {
       const appSection = ["popular", "builder", "offers", "category"].includes(section) ? "builder" : "home";
       appNavigation.querySelectorAll("[data-mobile-nav]").forEach((link) => {
