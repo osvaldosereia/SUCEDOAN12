@@ -66,7 +66,7 @@
   async function verifyAccessCode(code) {
     if (!supabaseUrl || !publishableKey) throw new Error("A configuração do admin está incompleta.");
     const url = new URL(supabaseUrl + "/functions/v1/site-admin-v1");
-    url.searchParams.set("action", "baskets");
+    url.searchParams.set("action", "admin_auth_check");
     const response = await fetch(url.toString(), {
       headers: { apikey: publishableKey, "x-admin-code": code },
       cache: "no-store",
