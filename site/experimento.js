@@ -46,11 +46,24 @@
     });
   }
 
+  function setMobileNavActive(section) {
+    const mobileSection = section === "basket" ? "home"
+      : section === "popular" || section === "category" ? "builder"
+        : section;
+    document.querySelectorAll("#mobile-app-nav [data-mobile-nav]").forEach((item) => {
+      const active = item.dataset.mobileNav === mobileSection;
+      item.classList.toggle("is-active", active);
+      if (active) item.setAttribute("aria-current", "page");
+      else item.removeAttribute("aria-current");
+    });
+  }
+
   function setActiveBySection(section, key) {
     const link = Array.from(document.querySelectorAll(".experiment-nav-link"))
       .find((item) => item.dataset.experimentNav === section &&
         (!key || item.dataset.sizeKey === key));
     setActive(link || null);
+    setMobileNavActive(section);
   }
 
   function scrollToNode(node) {
@@ -116,6 +129,7 @@
       return;
     }
     setActive(null);
+    setMobileNavActive("builder");
     const api = window.DonaStorefrontPublicNavigation;
     const load = api && typeof api.ensureHomeCategory === "function"
       ? api.ensureHomeCategory(normalizedKey)
