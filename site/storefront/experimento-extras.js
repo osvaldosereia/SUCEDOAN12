@@ -913,6 +913,11 @@
         const minus = card.querySelector('[data-extra-adjust][data-delta="-1"]');
         const plus = card.querySelector('[data-extra-adjust][data-delta="1"]');
         if (output) output.textContent = String(quantity);
+        const selectedLabel = card.querySelector(".product-choice-selected-label");
+        if (selectedLabel) {
+          selectedLabel.textContent = "Na cesta: " + quantity;
+          selectedLabel.hidden = Number(quantity) <= 0;
+        }
         card.classList.toggle("is-selected", Number(quantity) > 0);
         if (minus) minus.disabled = quantity <= 0;
         if (plus) plus.disabled = quantity >= stock;

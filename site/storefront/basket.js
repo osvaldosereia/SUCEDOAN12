@@ -574,6 +574,11 @@
         card.classList.toggle("is-selected", quantity > 0);
         const output = Array.from(card.querySelectorAll("[data-option-quantity]")).find((node) => String(node.dataset.optionQuantity) === productId);
         if (output) output.textContent = String(quantity);
+        const selectedLabel = card.querySelector(".product-choice-selected-label");
+        if (selectedLabel) {
+          selectedLabel.textContent = "Na cesta: " + quantity;
+          selectedLabel.hidden = quantity <= 0;
+        }
       });
       row.querySelectorAll("[data-adjust-option]").forEach((button) => {
         const option = selected.get(String(button.dataset.adjustProduct || ""));
