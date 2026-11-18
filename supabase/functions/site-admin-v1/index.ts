@@ -968,9 +968,13 @@ async function basketList(status = "active") {
   const ids = [...new Set(valid.flatMap(({ editor }) => (editor?.positions || []).flatMap((position: any) => (position.options || []).map((option: any) => option.product_id))))];
   let productById = new Map<string, any>();
   if (ids.length) {
-    const result = await db.from("products").select(PRODUCT_COLUMNS).in("id", ids);
-    if (result.error) throw result.error;
-    productById = new Map((result.data || []).map((product: any) => [String(product.id), product]));
+    const batches = Array.from({ length: Math.ceil(ids.length / 100) }, (_, index) => ids.slice(index * 100, (index + 1) * 100));
+    const productRows = await mapLimit(batches, 5, async (batch: string[]) => {
+      const result = await db.from("products").select(PRODUCT_COLUMNS).in("id", batch);
+      if (result.error) throw result.error;
+      return result.data || [];
+    });
+    productById = new Map(productRows.flat().map((product: any) => [String(product.id), product]));
   }
   const manualReviewResult = await db.rpc("basket_mold_manual_replacement_review_v1", {
     p_basket_ids: (templates.data || []).map((basket: any) => basket.id),
@@ -5053,6 +5057,38 @@ const BASKET_EXTRA_SECTION_CATEGORIES = [
 ];
 const BASKET_EXTRA_SECTION_CATEGORY_KEYS = new Set(BASKET_EXTRA_SECTION_CATEGORIES.map((category) => category.key));
 
+async function builderCategoriesAdminList() {
+  const result = await db.from("storefront_builder_categories_v1").select("id,category_key,label,sort_order,is_active,updated_at")
+    .order("sort_order", { ascending: true }).order("category_key", { ascending: true });
+  if (result.error) throw result.error;
+  return { categories: result.data || [] };
+}
+
+async function builderCategoriesAdminSave(input: any) {
+  if (!Array.isArray(input.categories)) return { error: "builder_categories_invalid", status: 400 };
+  const current = await db.from("storefront_builder_categories_v1").select("id,category_key,label,sort_order,is_active,updated_at")
+    .order("sort_order", { ascending: true }).order("category_key", { ascending: true });
+  if (current.error) throw current.error;
+  const existing = current.data || [], rows = input.categories;
+  if (rows.length !== existing.length) return { error: "builder_categories_stale", status: 409 };
+  const byId = new Map<string, any>(existing.map((row: any) => [String(row.id), row] as [string, any]));
+  const seenIds = new Set<string>(), seenKeys = new Set<string>(), updatedAt = new Date().toISOString(), normalized: any[] = [];
+  for (let index = 0; index < rows.length; index++) {
+    const inputRow = rows[index] || {}, id = uuid(inputRow.id), original = id ? byId.get(id) : null;
+    const key = clean(inputRow.category_key, 48).toLocaleLowerCase("pt-BR"), label = clean(inputRow.label, 80);
+    if (!original || seenIds.has(id) || !key || key !== String(original.category_key) || seenKeys.has(key)) return { error: "builder_categories_invalid", status: 400 };
+    if (label.length < 2) return { error: "builder_category_label_required", status: 400 };
+    seenIds.add(id); seenKeys.add(key);
+    normalized.push({ id, category_key:key, label, sort_order:(index+1)*10, is_active:inputRow.is_active===true, updated_at:updatedAt });
+  }
+  if (existing.some((row: any) => !seenIds.has(String(row.id)))) return { error: "builder_categories_stale", status: 409 };
+  if (!normalized.length) return { categories:[] };
+  const saved = await db.from("storefront_builder_categories_v1").upsert(normalized,{onConflict:"id"})
+    .select("id,category_key,label,sort_order,is_active,updated_at").order("sort_order",{ascending:true}).order("category_key",{ascending:true});
+  if (saved.error) throw saved.error;
+  return { categories:saved.data||[] };
+}
+
 async function extraSectionsList() {
   const result = await db.from("basket_extra_themes")
     .select("id,name,sort_order,search_terms,sales_categories,is_active,created_at,updated_at")
@@ -5240,6 +5276,8 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "basket_grid_save") result = await basketGridSave(input);
     else if (req.method === "POST" && action === "basket_grid_create") result = await basketGridCreate(input);
     else if (req.method === "POST" && action === "extra_sections_list") result = await extraSectionsList();
+    else if (req.method === "POST" && action === "builder_categories_admin_list") result = await builderCategoriesAdminList();
+    else if (req.method === "POST" && action === "builder_categories_admin_save") result = await builderCategoriesAdminSave(input);
     else if (req.method === "POST" && action === "extra_section_save") result = await extraSectionSave(input);
     else if (req.method === "POST" && action === "extra_section_delete") result = await extraSectionDelete(input);
     else if (req.method === "POST" && action === "extra_sections_reorder") result = await extraSectionsReorder(input);
