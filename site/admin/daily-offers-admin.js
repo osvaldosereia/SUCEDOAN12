@@ -234,9 +234,43 @@
     }
   });
 
+  function activateProductTab(name, shouldLoadOffers = true, focusTab = false) {
+    const selected = name === "offers" ? "offers" : "products";
+    const tabs = [...document.querySelectorAll("[data-product-tab]")];
+    tabs.forEach((tab) => {
+      const active = tab.dataset.productTab === selected;
+      tab.classList.toggle("active", active);
+      tab.setAttribute("aria-selected", String(active));
+      tab.tabIndex = active ? 0 : -1;
+    });
+    document.querySelectorAll("[data-product-tab-panel]").forEach((panel) => {
+      panel.hidden = panel.dataset.productTabPanel !== selected;
+    });
+    if (focusTab) tabs.find((tab) => tab.dataset.productTab === selected)?.focus();
+    if (selected === "offers" && shouldLoadOffers) window.setTimeout(() => load(true), 0);
+  }
+
   document.addEventListener("click", (event) => {
-    if (event.target.closest('[data-view="products"], [data-go="products"]')) {
-      window.setTimeout(() => load(true), 0);
+    const target = event.target instanceof Element ? event.target : null;
+    const tab = target?.closest("[data-product-tab]");
+    if (tab) {
+      activateProductTab(tab.dataset.productTab);
+      return;
     }
+    if (target?.closest('[data-view="products"], [data-go="products"]')) {
+      activateProductTab("products", false);
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    const current = event.target instanceof Element ? event.target.closest("[data-product-tab]") : null;
+    if (!current || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const tabs = [...document.querySelectorAll("[data-product-tab]")];
+    const index = tabs.indexOf(current);
+    const nextIndex = event.key === "Home" ? 0
+      : event.key === "End" ? tabs.length - 1
+      : (index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length;
+    activateProductTab(tabs[nextIndex]?.dataset.productTab, true, true);
   });
 })();
