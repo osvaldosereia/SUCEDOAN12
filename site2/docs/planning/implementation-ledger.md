@@ -1239,3 +1239,8 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 - A conexão canônica voltou a responder: `SELECT 1` e a leitura agregada somente leitura foram concluídos. A falha de resolução de permissão registrada às 05:13 UTC foi transitória; não foi necessária reautenticação nesta tentativa.
 - O agregado permanece em 5 cestas ativas para WhatsApp, 118 posições, 96 prontas, 22 pendentes e zero bindings do Flow. Desde 05:13 UTC não há novos eventos de auditoria nos tipos consultados.
 - Nenhum valor de secret foi lido ou exposto. Nenhuma mensagem foi enviada, Flow publicado, catálogo/estoque alterado, escrita Bling realizada ou NF-e emitida.
+
+## Rechecagem de prontidão de cestas (18/11/2026 01:40 UTC)
+
+- A consulta agregada somente leitura ao Supabase canônico encontrou 5 cestas ativas para WhatsApp e 118 posições: 101 prontas, 17 pendentes e zero bindings greenfield do Flow. São cinco posições prontas a mais que na leitura anterior (96/22); a causa dessa mudança não foi determinada.
+- Não houve eventos agrupados de auditoria desde 18/11/2026 01:09 UTC nos tipos consultados. Nenhum ID, segredo ou dado de cliente foi lido. Nenhuma mensagem, publicação de Flow, alteração de catálogo/estoque, escrita Bling ou emissão de NF-e foi realizada.
