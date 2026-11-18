@@ -8,7 +8,7 @@
   <title>Admin · Dona Antônia</title>
   <link rel="stylesheet" href="../styles.css?v=5">
   <link rel="stylesheet" href="admin.css?v=57">
-  <link rel="stylesheet" href="daily-offers-admin.css?v=3">
+  <link rel="stylesheet" href="daily-offers-admin.css?v=4">
   <link rel="stylesheet" href="instagram-admin.css?v=3">
   <link rel="stylesheet" href="taxonomy-admin.css?v=1">
   <link rel="stylesheet" href="papoai-guard-admin.css?v=1">
@@ -24,7 +24,7 @@
   <script src="../ean-camera.js?v=2" defer></script>
   <script src="admin-auth.js?v=3" defer></script>
   <script src="catalog-admin.js?v=21" defer></script>
-  <script src="daily-offers-admin.js?v=4" defer></script>
+  <script src="daily-offers-admin.js?v=5" defer></script>
   <script src="instagram-admin.js?v=3" defer></script>
   <script src="taxonomy-admin.js?v=1" defer></script>
   <script src="papoai-guard-admin.js?v=1" defer></script>
@@ -244,8 +244,12 @@
       </section>
 
       <section class="admin-view" data-panel="products" hidden>
+        <div class="product-admin-tabs" role="tablist" aria-label="Produtos e ofertas">
+          <button id="product-admin-tab-products" class="product-admin-tab active" type="button" role="tab" aria-selected="true" aria-controls="product-admin-panel-products" data-product-tab="products">Produtos</button>
+          <button id="product-admin-tab-offers" class="product-admin-tab" type="button" role="tab" aria-selected="false" aria-controls="product-admin-panel-offers" data-product-tab="offers" tabindex="-1">Ofertas</button>
+        </div>
+        <div id="product-admin-panel-products" class="product-admin-tab-panel" role="tabpanel" aria-labelledby="product-admin-tab-products" data-product-tab-panel="products">
         <div class="section-title"><div><h2>Produtos</h2><p>Edite os campos do cadastro existente no Supabase.</p></div><div class="product-section-actions"><button id="manage-product-taxonomy" class="button button-outline" type="button">Gerenciar classificações</button><button id="new-product" class="button button-primary" type="button">Novo produto</button></div></div>
-        <div id="daily-offers-admin-root" class="daily-offers-admin-root" aria-live="polite"><p class="admin-muted">Abra esta seção para carregar as ofertas do dia.</p></div>
         <form id="product-search" class="customer-search product-admin-search">
           <label for="product-query">Buscar por nome, marca, SKU ou GTIN</label>
           <div class="product-search-controls">
@@ -273,6 +277,10 @@
         <div class="edit-notice">
           <strong>Remoção de produtos</strong>
           <span>Para tirar um produto da cesta, remova-o das variações. Para manter o histórico do banco, o cadastro de produto é desativado em vez de apagado.</span>
+        </div>
+        </div>
+        <div id="product-admin-panel-offers" class="product-admin-tab-panel" role="tabpanel" aria-labelledby="product-admin-tab-offers" data-product-tab-panel="offers" hidden>
+        <div id="daily-offers-admin-root" class="daily-offers-admin-root" aria-live="polite"><p class="admin-muted">Abra esta seção para carregar as ofertas do dia.</p></div>
         </div>
       </section>
 
