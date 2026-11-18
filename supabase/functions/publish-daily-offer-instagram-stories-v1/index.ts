@@ -43,6 +43,12 @@ function decodeJwtPart(value: string): Record<string, unknown> {
   return JSON.parse(new TextDecoder().decode(decodeBase64Url(value)));
 }
 
+async function verifySupabaseCronToken(token: string): Promise<boolean> {
+  if (token.length < 32 || token.length > 256) return false;
+  const { data, error } = await db.rpc("da_instagram_automation_cron_authorized_v1", { p_token: token });
+  return !error && data === true;
+}
+
 async function verifyGitHubOidcToken(token: string): Promise<boolean> {
   try {
     const parts = token.split(".");
@@ -63,7 +69,7 @@ async function verifyGitHubOidcToken(token: string): Promise<boolean> {
     if (claims.repository !== GITHUB_REPOSITORY) return false;
     if (String(claims.repository_id || "") !== GITHUB_REPOSITORY_ID) return false;
     if (claims.ref !== GITHUB_REF || claims.workflow_ref !== GITHUB_WORKFLOW_REF) return false;
-    if (claims.event_name !== "schedule") return false;
+    if (!["schedule", "workflow_dispatch"].includes(String(claims.event_name || ""))) return false;
 
     const keyResponse = await fetch(OIDC_JWKS_URL, { signal: AbortSignal.timeout(10000) });
     if (!keyResponse.ok) return false;
@@ -435,9 +441,11 @@ Deno.serve(async (req: Request) => {
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) return json({ ok: false, error: "server_config" }, 500);
 
   const bearer = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
-  if (!bearer || !(await verifyGitHubOidcToken(bearer))) {
-    return json({ ok: false, error: "github_oidc_unauthorized" }, 401);
-  }
+  const cronToken = (req.headers.get("x-da-instagram-cron-key") || "").trim();
+  const authorized = bearer
+    ? await verifyGitHubOidcToken(bearer)
+    : cronToken ? await verifySupabaseCronToken(cronToken) : false;
+  if (!authorized) return json({ ok: false, error: "scheduler_unauthorized" }, 401);
 
   try {
     const input = await req.json();
