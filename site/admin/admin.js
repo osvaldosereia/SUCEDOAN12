@@ -168,13 +168,24 @@
 
   function loadWhatsAppSection() {
     const selected = document.querySelector("[data-whatsapp-section][aria-selected=\"true\"]")?.dataset.whatsappSection || "overview";
-    if (selected === "conversations") window.DonaWhatsAppConversations?.load();
-    else if (selected === "messages") {
+    if (selected === "conversations") {
+      if (window.DonaWhatsAppConversations?.load) window.DonaWhatsAppConversations.load();
+      else if ($("whatsapp-conversations-status")) $("whatsapp-conversations-status").textContent = "O módulo de conversas não carregou. Atualize a página.";
+      return;
+    }
+    if (selected === "messages") {
       const inner = document.querySelector("[data-whatsapp-tab][aria-selected=\"true\"]")?.dataset.whatsappTab || "confirmation";
-      if (inner === "separation") window.DonaOrderSeparationMessageAdmin?.load();
-      else window.DonaOrderMessageAdmin?.load();
-    } else if (selected === "ana") window.DonaWhatsAppAdmin?.loadAnaStatus();
-    else window.DonaWhatsAppAdmin?.loadOverview();
+      const module = inner === "separation" ? window.DonaOrderSeparationMessageAdmin : window.DonaOrderMessageAdmin;
+      if (module?.load) module.load();
+      else if ($("order-message-status")) $("order-message-status").textContent = "O módulo de mensagens não carregou. Atualize a página.";
+      return;
+    }
+    if (window.DonaWhatsAppAdmin?.loadSection) {
+      void window.DonaWhatsAppAdmin.loadSection(selected);
+      return;
+    }
+    const status = $((selected === "overview" ? "whatsapp-overview" : "whatsapp-" + selected) + "-status");
+    if (status) status.textContent = "O módulo do WhatsApp não carregou. Atualize esta página.";
   }
 
   document.querySelectorAll("[data-whatsapp-section]").forEach((button) => {
