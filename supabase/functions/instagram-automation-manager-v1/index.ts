@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { Image } from "jsr:@matmen/imagescript@3.20.3";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const ADMIN_CODE = (Deno.env.get("DONA_ADMIN_CODE") || "").trim();
 const BUCKET = "daily-offer-status";
@@ -50,7 +51,7 @@ function json(req: Request, body: unknown, status = 200) {
       "Content-Type": "application/json; charset=utf-8",
       "Cache-Control": "no-store",
       "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin) ? origin : "https://donaantonia.com.br",
-      "Access-Control-Allow-Headers": "apikey, authorization, content-type, x-admin-code",
+      "Access-Control-Allow-Headers": "apikey, authorization, content-type, x-admin-code, x-da-instagram-cron-key",
       "Access-Control-Allow-Methods": "POST, OPTIONS",
       "Vary": "Origin",
     },
@@ -73,6 +74,12 @@ function decodeBase64Url(value: string): Uint8Array {
 }
 function decodeJwtPart(value: string): Record<string, unknown> {
   return JSON.parse(new TextDecoder().decode(decodeBase64Url(value)));
+}
+type SchedulerAuth = { kind: "github_oidc"; token: string } | { kind: "supabase_cron"; token: string };
+async function verifySupabaseCronToken(token: string): Promise<boolean> {
+  if (token.length < 32 || token.length > 256) return false;
+  const { data, error } = await db.rpc("da_instagram_automation_cron_authorized_v1", { p_token: token });
+  return !error && data === true;
 }
 async function verifyGitHubOidcToken(token: string): Promise<boolean> {
   try {
@@ -501,7 +508,7 @@ async function downloadStoryDraft(req: Request, input: any): Promise<Response> {
       "Content-Length": String(data.size),
       "Cache-Control": "no-store",
       "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin) ? origin : "https://donaantonia.com.br",
-      "Access-Control-Allow-Headers": "apikey, authorization, content-type, x-admin-code",
+      "Access-Control-Allow-Headers": "apikey, authorization, content-type, x-admin-code, x-da-instagram-cron-key",
       "Access-Control-Allow-Methods": "POST, OPTIONS",
       "Access-Control-Expose-Headers": "Content-Disposition",
       "Vary": "Origin",
@@ -682,7 +689,7 @@ async function postFeedOrCarousel(job: any, token: string) {
   await addEvent(job.id, "published", job.content_format === "carousel" ? "Carrossel publicado no Instagram." : "Imagem publicada no Feed do Instagram.", { media_id: mediaId });
   return "published";
 }
-async function postStories(job: any, oidcToken: string, token: string) {
+async function postStories(job: any, runnerAuth: SchedulerAuth, token: string) {
   const quota = await getPublishingQuota(token);
   if (quota.remaining < 8) {
     await updateJob(job.id, { status: "pending", last_error: "A cota atual não comporta as oito imagens de Stories.", result: { quota_usage: quota.usage, quota_total: quota.total } });
@@ -691,7 +698,9 @@ async function postStories(job: any, oidcToken: string, token: string) {
   }
   const response = await fetch(SUPABASE_URL + "/functions/v1/publish-daily-offer-instagram-stories-v1", {
     method: "POST",
-    headers: { Authorization: "Bearer " + oidcToken, "Content-Type": "application/json" },
+    headers: runnerAuth.kind === "github_oidc"
+      ? { Authorization: "Bearer " + runnerAuth.token, "Content-Type": "application/json" }
+      : { apikey: SUPABASE_PUBLISHABLE_KEY, "x-da-instagram-cron-key": runnerAuth.token, "Content-Type": "application/json" },
     body: JSON.stringify({ action: "publish" }),
     signal: AbortSignal.timeout(240000),
   });
@@ -738,16 +747,16 @@ async function postStories(job: any, oidcToken: string, token: string) {
   await addEvent(job.id, status, status === "published" ? "As oito imagens de Stories foram publicadas ou já estavam publicadas." : "Resultado do envio dos Stories.", { date, published_count: publishedCount, skipped_count: skippedCount, pending_count: pendingCount, failed_count: failedCount, review_count: reviewCount });
   return status;
 }
-async function processClaimedJob(job: any, oidcToken: string, token: string) {
+async function processClaimedJob(job: any, runnerAuth: SchedulerAuth, token: string) {
   if (Number(job.attempt_count || 0) > 12) {
     await updateJob(job.id, { status: "failed", last_error: "A execução ultrapassou o limite de tentativas." });
     await addEvent(job.id, "failed", "A execução ultrapassou o limite de tentativas.");
     return "failed";
   }
-  if (job.content_format === "story") return await postStories(job, oidcToken, token);
+  if (job.content_format === "story") return await postStories(job, runnerAuth, token);
   return await postFeedOrCarousel(job, token);
 }
-async function runScheduled(oidcToken: string) {
+async function runScheduled(runnerAuth: SchedulerAuth) {
   const { data: materialized, error: materializeError } = await db.rpc("da_instagram_materialize_due_v1", { p_now: new Date().toISOString() });
   if (materializeError) throw new Error("Não foi possível localizar os horários de publicação.");
   const staleBefore = new Date(Date.now() - 10 * 60 * 1000).toISOString();
@@ -780,7 +789,7 @@ async function runScheduled(oidcToken: string) {
     await addEvent(claimed.id, "started", "A automação começou a processar esta publicação.", { run_kind: claimed.run_kind });
     try {
       const token = await getInstagramToken();
-      const status = await processClaimedJob(claimed, oidcToken, token);
+      const status = await processClaimedJob(claimed, runnerAuth, token);
       output.push({ job_id: claimed.id, status });
     } catch (error) {
       const message = safeText(error instanceof Error ? error.message : "Falha ao processar a publicação.", 300);
@@ -995,8 +1004,15 @@ Deno.serve(async (req: Request) => {
   const action = safeText(input?.action, 40);
   if (action === "run_scheduled") {
     const bearer = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
-    if (!bearer || !(await verifyGitHubOidcToken(bearer))) return json(req, { ok: false, error: "github_oidc_unauthorized" }, 401);
-    try { return json(req, await runScheduled(bearer)); }
+    const cronToken = (req.headers.get("x-da-instagram-cron-key") || "").trim();
+    let runnerAuth: SchedulerAuth | null = null;
+    if (bearer) {
+      if (await verifyGitHubOidcToken(bearer)) runnerAuth = { kind: "github_oidc", token: bearer };
+    } else if (cronToken && await verifySupabaseCronToken(cronToken)) {
+      runnerAuth = { kind: "supabase_cron", token: cronToken };
+    }
+    if (!runnerAuth) return json(req, { ok: false, error: "scheduler_unauthorized" }, 401);
+    try { return json(req, await runScheduled(runnerAuth)); }
     catch (error) { return json(req, { ok: false, error: safeText(error instanceof Error ? error.message : "Falha no agendador.", 300) }, 500); }
   }
   const origin = req.headers.get("origin") || "";
