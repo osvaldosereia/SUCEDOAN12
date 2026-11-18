@@ -1244,3 +1244,8 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 
 - A consulta agregada somente leitura ao Supabase canônico encontrou 5 cestas ativas para WhatsApp e 118 posições: 101 prontas, 17 pendentes e zero bindings greenfield do Flow. São cinco posições prontas a mais que na leitura anterior (96/22); a causa dessa mudança não foi determinada.
 - Não houve eventos agrupados de auditoria desde 18/11/2026 01:09 UTC nos tipos consultados. Nenhum ID, segredo ou dado de cliente foi lido. Nenhuma mensagem, publicação de Flow, alteração de catálogo/estoque, escrita Bling ou emissão de NF-e foi realizada.
+
+## Rechecagem de prontidão de cestas (18/11/2026 14:57 UTC)
+
+- A consulta agregada somente leitura ao Supabase canônico encontrou 5 cestas ativas para WhatsApp e 118 posições: 106 prontas, 12 pendentes e zero bindings greenfield do Flow. São cinco posições prontas a mais que na leitura de 18/11 01:40 UTC (101/17); a causa da mudança não foi determinada.
+- Não houve eventos agrupados em `admin_audit_logs` desde 18/11/2026 09:09 UTC nos tipos consultados. Nenhum ID, segredo ou dado de cliente foi lido. Esta leitura não valida WABAs, Flow nem a jornada de pedido.
