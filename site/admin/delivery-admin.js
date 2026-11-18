@@ -269,7 +269,8 @@ import { buildMapsHref, deliveryStopCapabilities, isValidDeliveryRescheduleDate,
     const addressTools = isNext
       ? `<button class="button button-outline" type="button" data-open-address="${esc(stopId)}">Confirmar local e foto da fachada</button>`
       : "";
-    const extras = [items, unpaid, location, addressDetails, addressTools, stopManagement].filter(Boolean).join("");
+    const controls = [unpaid, location, addressTools].filter(Boolean).join("");
+    const extras = [items, addressDetails, stopManagement].filter(Boolean).join("");
     const moreOptions = extras ? `<div class="delivery-card-secondary">${extras}</div>` : "";
     const status = done ? `<span class="delivery-stop-status is-delivered">ENTREGUE</span>`
       : failed ? `<span class="delivery-stop-status is-failed">NÃO ENTREGUE</span>`
@@ -281,31 +282,36 @@ import { buildMapsHref, deliveryStopCapabilities, isValidDeliveryRescheduleDate,
       : "";
     const orderTotal = order.total ?? (Number(stop.total_cents || 0) / 100);
     return `<article class="delivery-stop-card ${done ? "is-delivered" : ""} ${failed ? "is-failed" : ""} ${cancelled ? "is-cancelled" : ""} ${isNext ? "is-next" : ""}" data-delivery-order-card="${esc(order.id)}" data-delivery-route-date="${esc(run.service_date || "")}">
-      <header class="delivery-stop-heading">
-        <div class="delivery-stop-main">
-          <div class="delivery-stop-rank">
-            <span class="delivery-stop-sequence">${displayIndex + 1}</span>
-            ${movement}
-          </div>
-          <div class="delivery-stop-copy">
-            <div class="delivery-stop-title-row"><strong>Pedido ${esc(orderNumber(order))}</strong>${status}</div>
-            <strong class="delivery-customer-name">${esc(customerName(order))}</strong>
-            ${dateLabel}
-            <span class="delivery-stop-address">${esc(addressText(order))}</span>
-            <div class="delivery-stop-meta">
-              <span class="delivery-stop-phone">${phone ? esc(phone) : "Telefone não informado"}</span>
-              <strong class="delivery-stop-total">${money(orderTotal)}</strong>
+      <div class="delivery-stop-info">
+        <header class="delivery-stop-heading">
+          <div class="delivery-stop-main">
+            <div class="delivery-stop-rank">
+              <span class="delivery-stop-sequence">${displayIndex + 1}</span>
+              ${movement}
             </div>
-            ${paid
-              ? `<span class="delivery-prepaid-badge">PAGO ADIANTADO · NÃO COBRAR</span>`
-              : `<span class="delivery-stop-payment">Pagamento: ${esc(order.payment_display || stop.payment_method || "A confirmar")}</span>`}
+            <div class="delivery-stop-copy">
+              <div class="delivery-stop-title-row"><strong>Pedido ${esc(orderNumber(order))}</strong>${status}</div>
+              <strong class="delivery-customer-name">${esc(customerName(order))}</strong>
+              ${dateLabel}
+              <span class="delivery-stop-address">${esc(addressText(order))}</span>
+              <div class="delivery-stop-meta">
+                <span class="delivery-stop-phone">${phone ? esc(phone) : "Telefone não informado"}</span>
+                <strong class="delivery-stop-total">${money(orderTotal)}</strong>
+              </div>
+              ${paid
+                ? `<span class="delivery-prepaid-badge">PAGO ADIANTADO · NÃO COBRAR</span>`
+                : `<span class="delivery-stop-payment">Pagamento: ${esc(order.payment_display || stop.payment_method || "A confirmar")}</span>`}
+              ${currentStopLabel}
+            </div>
           </div>
-        </div>
-        ${currentStopLabel}
-      </header>
-      <div class="delivery-stop-actions">${contact}${map}${viewOrder}</div>
-      ${eta}
-      ${complete}
+        </header>
+        <div class="delivery-stop-actions">${contact}${map}${viewOrder}</div>
+      </div>
+      <div class="delivery-stop-controls">
+        ${eta}
+        ${complete}
+        ${controls}
+      </div>
       ${moreOptions}
     </article>`;
   }
