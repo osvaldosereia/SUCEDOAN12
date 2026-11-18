@@ -238,3 +238,46 @@
   .delivery-location-preview .button{width:100%;min-height:36px}
   .delivery-card-secondary .delivery-address-reference-photo{align-items:flex-start}
 }
+
+/* Two-column desktop cards keep the customer summary beside the visible actions. */
+.delivery-stop-card{grid-template-columns:minmax(0,1.25fr) minmax(330px,.9fr);align-items:start;column-gap:14px;row-gap:7px}
+.delivery-stop-info,.delivery-stop-controls{display:grid;align-content:start;gap:6px;min-width:0}
+.delivery-stop-heading{align-items:flex-start}
+.delivery-stop-main{align-items:flex-start}
+.delivery-stop-copy{gap:3px}
+.delivery-stop-controls .delivery-stop-complete{grid-template-columns:minmax(0,1fr) minmax(0,1fr);max-width:none}
+.delivery-stop-controls .delivery-stop-complete .delivery-stop-field{grid-column:1/-1}
+.delivery-stop-controls .delivery-eta-box{grid-template-columns:76px minmax(0,1fr);max-width:none}
+.delivery-stop-controls .delivery-route-start{min-height:36px;padding:5px 8px;font-size:.72rem}
+.delivery-stop-controls .delivery-prepaid-control{grid-template-columns:minmax(0,1fr) minmax(105px,.65fr) auto}
+.delivery-stop-controls .delivery-prepaid-control select,.delivery-stop-controls .delivery-prepaid-control input,.delivery-stop-controls .delivery-prepaid-control .button{grid-column:auto;min-width:0}
+.delivery-stop-controls .delivery-location-preview{grid-template-columns:minmax(0,1fr) auto;align-items:center}
+.delivery-stop-controls .delivery-location-preview strong{grid-column:1}
+.delivery-stop-controls .delivery-location-preview span{grid-column:1}
+.delivery-stop-controls .delivery-location-preview .button{grid-column:2;grid-row:1/3}
+.delivery-card-secondary{grid-column:1/-1;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
+.delivery-card-secondary>.delivery-stop-management{grid-column:1/-1;grid-template-columns:minmax(180px,1.2fr) auto minmax(150px,1fr) auto auto}
+@media(max-width:1100px){
+  .delivery-stop-card{grid-template-columns:minmax(0,1fr)}
+  .delivery-stop-info,.delivery-stop-controls,.delivery-card-secondary{grid-column:1}
+  .delivery-stop-controls .delivery-stop-complete{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .delivery-stop-controls .delivery-stop-management,.delivery-card-secondary>.delivery-stop-management{grid-template-columns:minmax(150px,1.1fr) auto minmax(120px,.85fr) auto auto}
+}
+@media(max-width:640px){
+  .delivery-stop-info,.delivery-stop-controls{gap:5px}
+  .delivery-stop-heading{display:flex;align-items:flex-start}
+  .delivery-stop-main{align-items:flex-start}
+  .delivery-stop-copy{gap:3px}
+  .delivery-stop-controls .delivery-stop-complete{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .delivery-stop-controls .delivery-stop-complete .delivery-stop-field{grid-column:1/-1}
+  .delivery-stop-controls .delivery-eta-box{grid-template-columns:78px minmax(0,1fr)}
+  .delivery-stop-controls .delivery-prepaid-control{grid-template-columns:minmax(0,1fr) auto}
+  .delivery-stop-controls .delivery-prepaid-control select{grid-column:1/-1}
+  .delivery-stop-controls .delivery-prepaid-control input{grid-column:1}
+  .delivery-stop-controls .delivery-prepaid-control .button{grid-column:2}
+  .delivery-stop-controls .delivery-location-preview{grid-template-columns:minmax(0,1fr)}
+  .delivery-stop-controls .delivery-location-preview strong,.delivery-stop-controls .delivery-location-preview span,.delivery-stop-controls .delivery-location-preview .button{grid-column:1;grid-row:auto}
+  .delivery-card-secondary{grid-template-columns:minmax(0,1fr)}
+  .delivery-card-secondary>.delivery-stop-management{grid-column:1;grid-template-columns:minmax(0,1fr) minmax(92px,.55fr)}
+  .delivery-card-secondary>.delivery-stop-management .button-danger{grid-column:1/-1}
+}
