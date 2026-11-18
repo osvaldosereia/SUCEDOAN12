@@ -11,6 +11,7 @@
   const headerCount = document.getElementById("mobile-checkout-count");
   const drawerCount = document.getElementById("mobile-navigation-count");
   const basketGroup = document.getElementById("mobile-basket-menu");
+  const appNavigation = document.getElementById("mobile-app-nav");
 
   if (!dialog || !menuToggle) return;
 
@@ -86,6 +87,9 @@
     } else if (hash === "ofertas") {
       section = "offers";
       if (basketGroup) basketGroup.open = false;
+    } else if (hash.indexOf("categoria/") === 0) {
+      section = "category";
+      if (basketGroup) basketGroup.open = false;
     } else if (basketGroup) {
       basketGroup.open = false;
     }
@@ -98,6 +102,15 @@
       else link.removeAttribute("aria-current");
     });
 
+    if (appNavigation) {
+      const appSection = ["popular", "builder", "offers", "category"].includes(section) ? "builder" : "home";
+      appNavigation.querySelectorAll("[data-mobile-nav]").forEach((link) => {
+        const active = link.dataset.mobileNav === appSection;
+        link.classList.toggle("is-active", active);
+        if (active) link.setAttribute("aria-current", "page");
+        else link.removeAttribute("aria-current");
+      });
+    }
     const summary = dialog.querySelector(".mobile-nav-summary");
     if (summary) {
       const activeBasket = section === "basket";

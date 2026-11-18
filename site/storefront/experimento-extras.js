@@ -10,12 +10,13 @@
   const HOME_EXTRA_PREFETCH_MARGIN = "140px 0px";
 
   const EXTRA_CATEGORIES = [
-    { key: "mais_vendidos", label: "Mais Vendidos", special: true },
+    { key: "mais_vendidos", label: "Mais vendidos", special: true },
     { key: "mercearia", label: "Mercearia" },
     { key: "limpeza_lavanderia", label: "Limpeza e lavanderia" },
     { key: "higiene_beleza", label: "Higiene e beleza" },
     { key: "casa_pet", label: "Casa e pet" }
   ];
+  const BUILDER_CATEGORY_DEFAULTS = EXTRA_CATEGORIES.filter((category) => category.key !== "mais_vendidos");
 
   function create({ state, $, esc, money, request, toast, productChoiceMarkup }) {
     let homeExtraObserver = null;
@@ -28,6 +29,7 @@
     let publicOffersLoading = false;
     let publicOffersError = false;
     let publicOfferProducts = [];
+    let homeBuilderCategoriesPromise = null;
     function extraTotalCents(data) {
       const selections = data && data.extraSelections instanceof Map ? data.extraSelections : new Map();
       return Array.from(selections.values()).reduce((total, item) =>
@@ -568,16 +570,41 @@
       }
     }
 
+    function freshHomeCategory(category) {
+      return { key: category.key, label: category.label, products: [], loaded: false, loading: false, error: false, nextOffset: 0, hasMore: true };
+    }
+
     function homeCategoriesFor() {
-      if (!Array.isArray(state.homeExtraCategories)) {
-        state.homeExtraCategories = EXTRA_CATEGORIES.map((category) => ({
-          key: category.key, label: category.label, products: [], loaded: false,
-          loading: false, error: false, nextOffset: 0, hasMore: true
-        }));
-      }
+      if (!Array.isArray(state.homeExtraCategories)) state.homeExtraCategories = [EXTRA_CATEGORIES[0], ...BUILDER_CATEGORY_DEFAULTS].map(freshHomeCategory);
+      if (!state.homeExtraCategories.some((category) => category.key === "mais_vendidos")) state.homeExtraCategories.unshift(freshHomeCategory(EXTRA_CATEGORIES[0]));
       if (!(state.homeExtraSelections instanceof Map)) state.homeExtraSelections = new Map();
       if (!(state.homeExtraProducts instanceof Map)) state.homeExtraProducts = new Map();
       return state.homeExtraCategories;
+    }
+
+    function applyBuilderCategories(rows) {
+      const current = new Map(homeCategoriesFor().map((category) => [String(category.key), category]));
+      const allowed = new Map(BUILDER_CATEGORY_DEFAULTS.map((category) => [category.key, category]));
+      const popular = current.get("mais_vendidos") || freshHomeCategory(EXTRA_CATEGORIES[0]);
+      const configured = rows.map((row) => {
+        const key = String(row && (row.category_key || row.key) || "").trim(), fallback = allowed.get(key);
+        if (!fallback) return null;
+        const category = current.get(key) || freshHomeCategory(fallback);
+        category.key = key; category.label = String(row.label || fallback.label).trim().slice(0, 80) || fallback.label;
+        return category;
+      }).filter(Boolean);
+      state.homeExtraCategories = [popular, ...configured];
+      return state.homeExtraCategories;
+    }
+
+    function loadBuilderCategories() {
+      if (!homeBuilderCategoriesPromise) {
+        homeBuilderCategoriesPromise = request("builder_categories").then((result) => {
+          if (!Array.isArray(result.categories)) throw new Error("invalid categories");
+          return applyBuilderCategories(result.categories);
+        }).catch(() => applyBuilderCategories(BUILDER_CATEGORY_DEFAULTS.map((category) => ({ category_key: category.key, label: category.label }))));
+      }
+      return homeBuilderCategoriesPromise;
     }
 
     function homeProductSelection(product, quantity) {
@@ -781,25 +808,35 @@
     }
 
     function homeExtraCategoryMarkup(category) {
-      const panelId = "home-extra-" + category.key;
-      const status = category.loading
-        ? category.products.length ? "Carregando mais produtos…" : "Carregando produtos…"
-        : category.error ? "Não foi possível carregar os produtos."
-          : category.loaded && !category.products.length ? "Nenhum produto disponível nesta categoria."
-            : "";
+      const panelId = "home-extra-" + category.key, popular = category.key === "mais_vendidos";
+      const href = popular ? "#mais-vendidos" : "#categoria/" + encodeURIComponent(category.key);
+      const navAttrs = popular ? ' data-experiment-nav="popular"' : ' data-experiment-nav="category" data-category-key="' + esc(category.key) + '"';
+      const status = category.loading ? (category.products.length ? "Carregando mais produtos…" : "Carregando produtos…")
+        : category.error ? "Não foi possível carregar os produtos." : category.loaded && !category.products.length ? "Nenhum produto disponível nesta categoria." : "";
       const placeholders = !category.loaded && !category.error
-        ? Array.from({ length: HOME_EXTRA_INITIAL_PAGE_SIZE }, () => '<div class="home-extra-skeleton" aria-hidden="true"><span></span><i></i><small></small><em></em></div>').join("")
-        : "";
+        ? Array.from({ length: HOME_EXTRA_INITIAL_PAGE_SIZE }, () => '<div class="home-extra-skeleton" aria-hidden="true"><span></span><i></i><small></small><em></em></div>').join("") : "";
       const loadMore = category.error
         ? '<button class="button button-outline home-extra-more" type="button" data-home-extra-retry="' + esc(category.key) + '">Tentar novamente</button>'
         : category.loaded && category.hasMore
-          ? '<button class="button button-outline home-extra-more" type="button" data-home-extra-more="' + esc(category.key) + '"' + (category.loading ? " disabled" : "") + '>' + (category.loading ? "Carregando produtos…" : category.products.length ? "Carregar mais produtos" : "Carregar produtos") + '</button>'
-          : "";
+          ? '<button class="button button-outline home-extra-more" type="button" data-home-extra-more="' + esc(category.key) + '"' + (category.loading ? " disabled" : "") + '>' + (category.loading ? "Carregando produtos…" : category.products.length ? "Carregar mais produtos" : "Carregar produtos") + '</button>' : "";
       return '<section class="home-extra-category" data-home-extra-section="' + esc(category.key) + '" aria-labelledby="' + esc(panelId) + '-title">' +
-        '<div class="home-extra-category-heading"><h3 id="' + esc(panelId) + '-title"><a class="home-extra-category-link" href="' + (category.key === "mais_vendidos" ? "#mais-vendidos" : "#categoria/" + encodeURIComponent(category.key)) + '">' + esc(category.label) + '</a></h3></div>' +
+        '<div class="home-extra-category-heading"><h3 id="' + esc(panelId) + '-title"><a class="home-extra-category-link" href="' + href + '"' + navAttrs + '>' + esc(category.label) + '</a></h3></div>' +
         '<div class="home-extra-grid" data-home-extra-grid="' + esc(category.key) + '" role="list" aria-label="Produtos de ' + esc(category.label) + '">' +
         (category.products.length ? category.products.map(homeExtraProductMarkup).join("") : placeholders) + '</div>' +
         (status ? '<p class="home-extra-status" role="status">' + esc(status) + '</p>' : '') + loadMore + '</section>';
+    }
+
+    function renderBuilderTabs(categories) {
+      const host = $("home-extra-category-tabs"); if (!host) return;
+      const hash = String(window.location.hash || "").replace(/^#/, "");
+      const tabs = [
+        { nav: "popular", label: "Mais vendidos", href: "#mais-vendidos", active: hash === "mais-vendidos" },
+        { nav: "offers", label: "Ofertas", href: "#ofertas", active: hash === "ofertas" },
+        ...categories.map((category) => ({ nav: "category", key: category.key, label: category.label, href: "#categoria/" + encodeURIComponent(category.key), active: hash === "categoria/" + category.key }))
+      ];
+      host.innerHTML = tabs.map((tab) => '<a class="home-extra-category-tab' + (tab.active ? " is-active" : "") + '" href="' + esc(tab.href) +
+        '" data-experiment-nav="' + tab.nav + '"' + (tab.key ? ' data-category-key="' + esc(tab.key) + '"' : "") +
+        (tab.active ? ' aria-current="page"' : "") + '>' + esc(tab.label) + '</a>').join("");
     }
 
     function homeFocusSnapshot(host) {
@@ -841,41 +878,29 @@
     }
 
     function renderHomeExtras() {
-      const host = $("home-extra-categories");
-      if (!host) return;
-      const focus = homeFocusSnapshot(host);
+      const all = homeCategoriesFor(), popular = all.filter((category) => category.key === "mais_vendidos"), categories = all.filter((category) => category.key !== "mais_vendidos");
       if (homeExtraObserver) homeExtraObserver.disconnect();
-      const categories = homeCategoriesFor();
-      host.innerHTML = categories.map(homeExtraCategoryMarkup).join("");
-      host.querySelectorAll("[data-home-extra-open]").forEach((button) => {
-        button.addEventListener("click", () => openHomeExtraProductDialog(button.dataset.homeExtraOpen, button));
+      [{ node: $("home-extra-popular"), items: popular }, { node: $("home-extra-categories"), items: categories }].forEach(({ node, items }) => {
+        if (!node) return;
+        const focus = homeFocusSnapshot(node);
+        node.innerHTML = items.length ? items.map(homeExtraCategoryMarkup).join("") : '<p class="home-extra-empty">Nenhuma categoria está ativa no momento.</p>';
+        node.querySelectorAll("[data-home-extra-open]").forEach((button) => button.addEventListener("click", () => openHomeExtraProductDialog(button.dataset.homeExtraOpen, button)));
+        node.querySelectorAll("[data-home-extra-adjust]").forEach((button) => button.addEventListener("click", () => changeHomeExtraQuantity(button.dataset.homeExtraAdjust, Number(button.dataset.delta || 0))));
+        node.querySelectorAll("[data-home-extra-more]").forEach((button) => button.addEventListener("click", () => {
+          const category = all.find((entry) => entry.key === button.dataset.homeExtraMore); if (category) loadHomeExtraCategory(category);
+        }));
+        node.querySelectorAll("[data-home-extra-retry]").forEach((button) => button.addEventListener("click", () => {
+          const category = all.find((entry) => entry.key === button.dataset.homeExtraRetry); if (category) loadHomeExtraCategory(category);
+        }));
+        node.querySelectorAll("img").forEach((image) => image.addEventListener("error", () => { image.src = "../img/logoantonia5.png"; }, { once: true }));
+        restoreHomeFocus(node, focus);
       });
-      host.querySelectorAll("[data-home-extra-adjust]").forEach((button) => {
-        button.addEventListener("click", () => changeHomeExtraQuantity(button.dataset.homeExtraAdjust, Number(button.dataset.delta || 0)));
-      });
-      host.querySelectorAll("[data-home-extra-more]").forEach((button) => {
-        button.addEventListener("click", () => {
-          const category = categories.find((entry) => entry.key === button.dataset.homeExtraMore);
-          if (category) loadHomeExtraCategory(category);
-        });
-      });
-      host.querySelectorAll("[data-home-extra-retry]").forEach((button) => {
-        button.addEventListener("click", () => {
-          const category = categories.find((entry) => entry.key === button.dataset.homeExtraRetry);
-          if (category) loadHomeExtraCategory(category);
-        });
-      });
-      host.querySelectorAll("img").forEach((image) => image.addEventListener("error", () => {
-        image.src = "../img/logoantonia5.png";
-      }, { once: true }));
-      restoreHomeFocus(host, focus);
+      renderBuilderTabs(categories);
       renderHomeExtraSummary();
-      if (homeExtraObserver) {
-        host.querySelectorAll("[data-home-extra-section]").forEach((section) => {
-          const category = categories.find((entry) => entry.key === section.dataset.homeExtraSection);
-          if (category && !category.loaded && !category.loading && !category.error) homeExtraObserver.observe(section);
-        });
-      }
+      if (homeExtraObserver) document.querySelectorAll("#home-extra-popular [data-home-extra-section], #home-extra-categories [data-home-extra-section]").forEach((section) => {
+        const category = all.find((entry) => entry.key === section.dataset.homeExtraSection);
+        if (category && !category.loaded && !category.loading && !category.error) homeExtraObserver.observe(section);
+      });
     }
 
     function renderHomeExtraSummary() {
@@ -901,7 +926,7 @@
       const id = String(productId);
       const selection = state.homeExtraSelections.get(id);
       const quantity = Number(selection && selection.quantity || 0);
-      const hosts = ["home-extra-categories", "home-extra-product-search-results", "public-offers-products"]
+      const hosts = ["home-extra-popular", "home-extra-categories", "home-extra-product-search-results", "public-offers-products"]
         .map((hostId) => $(hostId)).filter(Boolean);
       hosts.forEach((host) => host.querySelectorAll("[data-home-extra-product]").forEach((card) => {
         if (card.dataset.homeExtraProduct !== id) return;
@@ -1144,27 +1169,22 @@
     function initHomeExtras() {
       const host = $("home-extra-categories");
       if (!host) return;
-      bindProductSearch();
-      initPublicOffers();
+      bindProductSearch(); initPublicOffers();
       if (state.homeExtraStarted) return;
-      const categories = homeCategoriesFor();
-      state.homeExtraStarted = true;
-      bindHomeExtraProductDialog();
+      state.homeExtraStarted = true; bindHomeExtraProductDialog();
       if (typeof window.IntersectionObserver === "function") {
-        homeExtraObserver = new IntersectionObserver((entries) => {
-          entries.filter((entry) => entry.isIntersecting)
-            .sort((first, second) => first.boundingClientRect.top - second.boundingClientRect.top)
-            .forEach((entry) => {
-              const category = categories.find((item) => item.key === entry.target.dataset.homeExtraSection);
-              homeExtraObserver.unobserve(entry.target);
-              if (category && !category.loaded && !category.loading && !category.error) loadHomeExtraCategory(category);
-            });
-        }, { rootMargin: HOME_EXTRA_PREFETCH_MARGIN });
+        homeExtraObserver = new IntersectionObserver((entries) => entries.filter((entry) => entry.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top).forEach((entry) => {
+            const category = homeCategoriesFor().find((item) => item.key === entry.target.dataset.homeExtraSection);
+            homeExtraObserver.unobserve(entry.target);
+            if (category && !category.loaded && !category.loading && !category.error) loadHomeExtraCategory(category);
+          }), { rootMargin: HOME_EXTRA_PREFETCH_MARGIN });
       }
       renderHomeExtras();
-      if (!homeExtraObserver) {
-        categories.reduce((queue, category) => queue.then(() => loadHomeExtraCategory(category)), Promise.resolve());
-      }
+      loadBuilderCategories().then(() => {
+        renderHomeExtras();
+        if (!homeExtraObserver) homeCategoriesFor().reduce((queue, category) => queue.then(() => loadHomeExtraCategory(category)), Promise.resolve());
+      });
     }
 
     function attachHomeSelections(data) {
