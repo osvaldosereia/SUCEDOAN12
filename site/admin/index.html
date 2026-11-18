@@ -498,3 +498,260 @@
                 <button id="whatsapp-conversation-ana-toggle" class="button button-outline whatsapp-conversation-ana-toggle" type="button" aria-pressed="false" hidden>Desligar ANA</button>
               </header>
               <details id="whatsapp-conversation-label-editor" class="whatsapp-conversation-label-editor" hidden>
+                <summary id="whatsapp-conversation-label-summary">Etiquetas da conversa · 0</summary>
+                <div id="whatsapp-conversation-label-options" class="whatsapp-conversation-label-options" role="group" aria-label="Etiquetas da conversa"></div>
+                <p id="whatsapp-conversation-label-status" class="admin-muted" role="status" aria-live="polite"></p>
+              </details>
+              <div id="whatsapp-conversation-empty" class="whatsapp-conversation-empty"><strong>Selecione uma conversa</strong><span>O histórico aparecerá aqui.</span></div>
+              <button id="whatsapp-conversation-older" class="button button-outline" type="button" hidden>Carregar mensagens anteriores</button>
+              <div id="whatsapp-conversation-messages" class="whatsapp-conversation-messages" aria-live="polite"></div>
+              <form id="whatsapp-conversation-compose" class="whatsapp-conversation-compose" hidden>
+                <label class="whatsapp-compose-field" for="whatsapp-conversation-draft">
+                  <span>Responder ou adicionar legenda</span>
+                  <textarea id="whatsapp-conversation-draft" rows="3" maxlength="4000" placeholder="Escreva uma mensagem…" autocomplete="off"></textarea>
+                </label>
+                <div class="whatsapp-compose-attachment">
+                  <label class="button button-outline whatsapp-compose-attach" for="whatsapp-conversation-file">Adicionar anexo</label>
+                  <input id="whatsapp-conversation-file" class="whatsapp-compose-file-input" type="file" accept="image/jpeg,image/png,audio/aac,audio/amr,audio/mpeg,audio/mp4,audio/ogg,video/mp4,video/3gpp,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,.jpg,.jpeg,.png,.aac,.amr,.mp3,.m4a,.ogg,.mp4,.3gp,.pdf,.txt,.doc,.docx,.xls,.xlsx,.ppt,.pptx">
+                  <span id="whatsapp-conversation-file-name" class="whatsapp-compose-file-name">Nenhum arquivo selecionado</span>
+                  <button id="whatsapp-conversation-remove-file" class="button button-outline whatsapp-compose-remove" type="button" hidden>Remover</button>
+                  <button id="whatsapp-conversation-send-media" class="button button-outline" type="button" disabled>Enviar anexo</button>
+                </div>
+                <div class="whatsapp-compose-footer">
+                  <p id="whatsapp-conversation-compose-status" data-tone="neutral" role="status" aria-live="polite">Texto e anexos permitidos quando a janela de atendimento está aberta.</p>
+                  <div><small id="whatsapp-conversation-compose-count">0 / 4000</small><button id="whatsapp-conversation-check-send" class="button button-outline" type="button" hidden>Verificar envio</button><button id="whatsapp-conversation-send" class="button button-primary" type="submit" disabled>Enviar texto</button></div>
+                </div>
+              </form>
+            </section>
+          </div>
+        </section>
+        <section id="whatsapp-section-messages" class="whatsapp-section-panel" role="tabpanel" aria-labelledby="whatsapp-section-tab-messages" data-whatsapp-section-panel="messages" hidden>
+        <nav class="whatsapp-tabs" aria-label="Mensagens do WhatsApp" role="tablist">
+          <button class="whatsapp-tab active" id="whatsapp-tab-confirmation" type="button" role="tab" aria-selected="true" aria-controls="whatsapp-panel-confirmation" data-whatsapp-tab="confirmation">Pedido recebido</button>
+          <button class="whatsapp-tab" id="whatsapp-tab-separation" type="button" role="tab" aria-selected="false" aria-controls="whatsapp-panel-separation" data-whatsapp-tab="separation">Após a separação</button>
+        </nav>
+
+        <div id="whatsapp-panel-confirmation" class="whatsapp-tab-panel active" role="tabpanel" aria-labelledby="whatsapp-tab-confirmation" data-whatsapp-panel="confirmation">
+          <div class="section-title">
+            <div><h2>Mensagem enviada quando o pedido é criado</h2><p>Esta é a mensagem imediata que o cliente recebe ao finalizar a compra.</p></div>
+            <button id="order-message-refresh" class="button button-outline" type="button">Consultar status na Meta</button>
+          </div>
+          <div class="message-editor">
+            <p class="message-help">Você está editando a mensagem do pedido recebido. A mensagem da aba “Após a separação” é um envio diferente.</p>
+            <label for="order-message-body">Texto da mensagem</label>
+            <textarea id="order-message-body" rows="14" maxlength="1024" spellcheck="false" aria-describedby="order-message-meta-status order-message-draft-state"></textarea>
+            <p id="order-message-meta-status" class="admin-muted" role="status">Carregando a conexão com a Meta…</p>
+            <p id="order-message-draft-state" class="message-draft-state" role="status"></p>
+            <div class="message-actions">
+              <button id="order-message-save" class="button button-outline" type="button">Salvar rascunho</button>
+              <button id="order-message-submit" class="button button-primary" type="button">Enviar para análise da Meta</button>
+            </div>
+            <p class="message-help">Salvar texto guarda apenas um rascunho e não envia à Meta. Depois da aprovação, ative a nova versão para usá-la nos próximos pedidos. Até lá, o modelo indicado como “Em uso agora” continua sendo enviado.</p>
+          </div>
+          <div id="order-message-channels" class="order-message-channels" aria-live="polite"></div>
+          <p id="order-message-status" class="admin-muted" role="status" aria-live="polite"></p>
+        </div>
+
+        <div id="whatsapp-panel-separation" class="whatsapp-tab-panel" role="tabpanel" aria-labelledby="whatsapp-tab-separation" data-whatsapp-panel="separation" hidden>
+          <div class="section-title">
+            <div><h2>Mensagem após conferência da separação</h2><p>Este aviso é enviado depois que a equipe confere os produtos do pedido.</p></div>
+            <button id="separation-message-refresh" class="button button-outline" type="button">Consultar status na Meta</button>
+          </div>
+          <nav class="message-type-tabs" aria-label="Resultado da separação" role="tablist">
+            <button class="message-type-tab active" type="button" role="tab" aria-selected="true" data-separation-kind="prepared_ok">Todos os produtos encontrados</button>
+            <button class="message-type-tab" type="button" role="tab" aria-selected="false" data-separation-kind="prepared_adjusted">Com produtos em falta</button>
+            <button class="message-type-tab" type="button" role="tab" aria-selected="false" data-separation-kind="driver_next_stop">Aviso da próxima entrega</button>
+          </nav>
+          <p class="message-help">Os novos avisos de pedido separado terão os botões “Conferir pedido” e “Acompanhar entrega”. O aviso da próxima entrega não terá botões e só será usado depois da aprovação da Meta e da ativação aqui.</p>
+          <div class="message-editor">
+            <label for="separation-message-body">Texto da mensagem</label>
+            <textarea id="separation-message-body" rows="14" maxlength="1024" spellcheck="false" aria-describedby="separation-message-variables separation-message-meta-status separation-message-draft-state"></textarea>
+            <p id="separation-message-variables" class="message-help"></p>
+            <p id="separation-message-meta-status" class="admin-muted" role="status">Carregando a conexão com a Meta…</p>
+            <p id="separation-message-draft-state" class="message-draft-state" role="status"></p>
+            <div class="message-actions">
+              <button id="separation-message-save" class="button button-outline" type="button">Salvar rascunho</button>
+              <button id="separation-message-submit" class="button button-primary" type="button">Enviar para análise da Meta</button>
+            </div>
+            <p class="message-help">O cliente recebe o link da lista do pedido, com cada produto marcado como encontrado ou em falta. Quando há faltas, a mensagem também informa o abatimento e o novo total. Salvar texto guarda apenas um rascunho e não envia à Meta. Depois da aprovação, ative a nova versão para usá-la nos próximos pedidos. Até lá, o modelo indicado como “Em uso agora” continua sendo enviado.</p>
+          </div>
+          <div id="separation-message-channels" class="order-message-channels" aria-live="polite"></div>
+          <p id="separation-message-status" class="admin-muted" role="status" aria-live="polite"></p>
+        </div>
+        </section>
+      </section>
+    </section>
+    </main>
+  </div>
+
+  <dialog id="order-detail-dialog" class="orders-dialog">
+    <section class="orders-dialog-body">
+      <header class="orders-dialog-heading"><div><p class="eyebrow">Detalhes do pedido</p><h2 id="order-detail-title">Pedido</h2></div><button class="icon-button" type="button" data-orders-close="order-detail-dialog" aria-label="Fechar">×</button></header>
+      <div id="order-detail-summary" class="order-detail-summary"></div>
+      <div id="order-detail-items" class="order-detail-items"></div>
+      <footer class="orders-dialog-actions"><button class="button button-outline" type="button" data-orders-close="order-detail-dialog">Fechar</button></footer>
+    </section>
+  </dialog>
+
+  <dialog id="order-separation-dialog" class="orders-dialog separation-sheet">
+    <section class="orders-dialog-body">
+      <header class="orders-dialog-heading"><div><p class="eyebrow">Separação do pedido</p><h2 id="separation-title">Pedido</h2></div><button class="icon-button" type="button" data-orders-close="order-separation-dialog" aria-label="Fechar">×</button></header>
+      <label class="separator-field" for="order-separator">Separador responsável
+        <select id="order-separator" required>
+          <option value="">Selecione o separador</option>
+          <option value="jose">José</option>
+          <option value="claudio">Cláudio</option>
+          <option value="jovenil">Jovenil</option>
+          <option value="kelly">Kelly</option>
+        </select>
+      </label>
+      <p id="separation-progress" class="separation-progress" aria-live="polite"></p>
+      <p id="separation-assignment-hint" class="separation-assignment-hint" role="status"></p>
+      <p id="separation-message" class="form-message" role="status" aria-live="polite"></p>
+      <div id="separation-items" class="separation-items"></div>
+      <div class="separation-footer">
+        <div class="separation-total"><span>Total atualizado</span><strong id="separation-total-value">—</strong></div>
+        <footer class="orders-dialog-actions"><button class="button button-outline" type="button" data-orders-close="order-separation-dialog">Fechar</button><button id="confirm-separation" class="button button-primary" type="button" disabled>Confirmar separação</button></footer>
+      </div>
+    </section>
+  </dialog>
+
+  <dialog id="taxonomy-dialog" class="catalog-dialog taxonomy-dialog" aria-labelledby="taxonomy-title">
+    <div class="dialog-form">
+      <header class="dialog-heading"><div><p class="eyebrow">Cadastro de produtos</p><h2 id="taxonomy-title">Gerenciar classificações</h2></div><button id="taxonomy-close" class="icon-button" type="button" aria-label="Fechar">×</button></header>
+      <p class="dialog-hint">Crie e renomeie categorias, subcategorias, marcas e gôndolas. Renomear atualiza todos os produtos vinculados, sem alterar o estoque ou preço.</p>
+      <div class="taxonomy-tabs" role="tablist" aria-label="Tipo de classificação">
+        <button class="active" role="tab" type="button" aria-selected="true" data-taxonomy-kind="category">Categorias</button>
+        <button role="tab" type="button" aria-selected="false" data-taxonomy-kind="subcategory">Subcategorias</button>
+        <button role="tab" type="button" aria-selected="false" data-taxonomy-kind="brand">Marcas</button>
+        <button role="tab" type="button" aria-selected="false" data-taxonomy-kind="gondola">Gôndolas</button>
+      </div>
+      <div class="taxonomy-toolbar"><input id="taxonomy-search" type="search" aria-label="Buscar classificação" placeholder="Buscar..."><button id="taxonomy-new" class="button button-primary" type="button">Adicionar</button></div>
+      <p id="taxonomy-total" class="taxonomy-total"></p>
+      <div id="taxonomy-list" class="taxonomy-list" aria-live="polite"></div>
+      <form id="taxonomy-form" class="taxonomy-form" hidden>
+        <h3 id="taxonomy-form-title">Adicionar classificação</h3>
+        <label>Nome<input id="taxonomy-name" name="name" required maxlength="100" autocomplete="off"></label>
+        <label id="taxonomy-parent-wrap" hidden>Categoria vinculada<select id="taxonomy-parent" name="parent_id"></select><p id="taxonomy-parent-help" hidden>Para mudar a categoria vinculada, crie uma nova subcategoria e ajuste os produtos.</p></label>
+        <div class="taxonomy-form-actions"><button id="taxonomy-cancel" type="button" class="button button-outline">Cancelar</button><button id="taxonomy-save" type="submit" class="button button-primary">Salvar</button></div>
+      </form>
+      <p id="taxonomy-status" class="taxonomy-status" role="status" aria-live="polite"></p>
+      <p class="dialog-hint">Só é permitido excluir classificações sem produtos vinculados. A edição individual de um produto continua disponível no seu cadastro.</p>
+    </div>
+  </dialog>
+
+  <dialog id="product-dialog" class="catalog-dialog product-dialog">
+    <form id="product-form" class="dialog-form">
+      <header class="dialog-heading"><div><p class="eyebrow">Cadastro do Supabase</p><h2 id="product-dialog-title">Novo produto</h2></div><button class="icon-button" type="button" data-dialog-close="product-dialog" aria-label="Fechar">×</button></header>
+      <p id="product-clone-note" class="dialog-hint" role="status" hidden>Os dados do produto foram copiados. Foto e EAN ficaram em branco; ajuste o que mudou e salve como novo cadastro.</p>
+      <input id="product-id" type="hidden">
+      <div class="editor-grid product-fields">
+        <label class="full-width">Nome<input name="name" maxlength="240" required></label>
+        <label>Marca<input name="brand"></label><label>SKU<input name="sku"></label>
+        <label>GTIN<input name="gtin" inputmode="numeric"></label><label class="ncm-search-field">NCM<div class="ncm-search-row"><input name="ncm"><button id="product-ncm-google-search" class="button button-outline ncm-search-button" type="button" title="Pesquisar o NCM deste produto no Google" aria-label="Pesquisar o NCM deste produto no Google"><svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg><span>Buscar NCM</span></button></div></label>
+        <label>Preço (R$)<input name="price" type="number" min="0" step="0.01"></label><label>Preço de oferta (R$)<input name="offer_price" type="number" min="0" step="0.01"></label>
+        <label>Custo (R$)<input name="cost" type="number" min="0" step="0.01"></label><label>Estoque no Supabase<input name="stock" type="number" min="0" step="0.01"></label>
+        <label>Estoque mínimo<input name="min_stock" type="number" min="0" step="0.01"></label><label>Embalagem<input name="packaging"></label>
+        <label>Unidade<input name="unit"></label><label>Fornecedor<input name="supplier"></label>
+        <label>Categoria<input name="category"></label><label>Subcategoria<input name="subcategory"></label>
+        <label>Subcategoria detalhada<input name="subsubcategory"></label><label>Categoria da vitrine<input name="storefront_category"></label>
+        <label>Categoria de vendas<input name="sales_category"></label><label>Validade<input name="validity_date" type="date"></label>
+        <label>Gôndola<input name="gondola"></label><label>Prateleira<input name="shelf"></label>
+        <label>Ordem<input name="sort_order" type="number" min="0" step="1"></label><label>Tags (separadas por vírgula)<input name="tags"></label>
+        <div class="full-width product-image-editor">
+          <div class="product-image-preview-card">
+            <img id="product-image-preview" alt="Prévia da imagem do produto" hidden>
+            <span id="product-image-empty">Sem imagem</span>
+          </div>
+          <div class="product-image-actions">
+            <div class="product-image-buttons">
+              <button id="product-image-select" class="button button-outline" type="button">Enviar ou trocar imagem</button>
+              <input id="product-image-file" type="file" accept="image/jpeg,image/png,image/webp,image/avif,image/gif,image/bmp" hidden>
+              <button id="product-image-google-search" class="button button-outline" type="button">Pesquisar no Google Imagens</button>
+              <button id="product-image-ai" class="button button-outline product-image-ai-button" type="button" disabled>Gerar PNG transparente com OpenAI</button>
+            </div>
+            <p class="product-image-ai-note">A nova foto só substitui a atual depois de aprovada. A imagem original permanece preservada.</p>
+            <p id="product-image-status" role="status" aria-live="polite">Selecione uma imagem para compactar em até 50 KB.</p>
+          </div>
+        </div>
+        <label class="full-width">Imagem (URL)<input name="image_url" type="url"></label>
+        <label class="full-width">Descrição curta<input name="description_short"></label>
+        <label class="full-width">Descrição completa<textarea name="description_long" rows="3"></textarea></label>
+        <label>Categoria cliente<input name="customer_category"></label><label>Subcategoria cliente<input name="customer_subcategory"></label>
+        <label class="full-width">Subcategoria detalhada do cliente<input name="customer_subsubcategory"></label>
+      </div>
+      <div class="product-flags">
+        <label><input name="is_active" type="checkbox" checked> Ativo no catálogo</label>
+        <label><input name="is_offer" type="checkbox"> Usar preço de oferta</label>
+        
+        <label><input name="is_upsell" type="checkbox"> Produto adicional</label>
+        <label><input name="storefront_featured" type="checkbox"> Exibir em Mais Vendidos</label>
+        <small class="product-featured-help">Este seletor aplica a palavra-chave reservada “mais-vendidos”.</small>
+      </div>
+      <p id="product-save-message" class="form-message" role="status"></p>
+      <footer class="dialog-actions"><button class="button button-outline" type="button" data-dialog-close="product-dialog">Cancelar</button><button id="save-product" class="button button-primary" type="submit">Salvar produto</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="basket-create-dialog" class="catalog-dialog basket-create-dialog">
+    <form id="basket-create-form" class="dialog-form">
+      <header class="dialog-heading"><div><p class="eyebrow">Nova modalidade</p><h2>Criar cesta</h2></div><button class="icon-button" type="button" data-dialog-close="basket-create-dialog" aria-label="Fechar">×</button></header>
+      <p class="dialog-hint">A composição e o preço são copiados da cesta escolhida. O novo rascunho fica fora da loja até você revisar e ativar.</p>
+      <label class="basket-create-field" for="basket-new-name"><span>Nome da nova cesta</span><input id="basket-new-name" type="text" maxlength="120" required placeholder="Ex.: Cesta Família"></label>
+      <label class="basket-create-field" for="basket-source-template"><span>Copiar composição de</span><select id="basket-source-template" required></select></label>
+      <footer class="dialog-actions"><button class="button button-outline" type="button" data-dialog-close="basket-create-dialog">Cancelar</button><button id="create-basket-submit" class="button button-primary" type="submit">Criar rascunho</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="product-picker-dialog" class="catalog-dialog picker-dialog">
+    <div class="dialog-form">
+      <header class="dialog-heading"><div><p class="eyebrow">Buscar e marcar</p><h2>Produtos e variações</h2></div><button class="icon-button" type="button" data-dialog-close="product-picker-dialog" aria-label="Fechar">×</button></header>
+      <form id="picker-search" class="customer-search"><label for="picker-query">Nome, marca, SKU ou GTIN</label><div class="product-search-controls"><input id="picker-query" type="search" data-ean-camera-input placeholder="Digite para buscar"><button class="button button-primary" type="submit">Buscar</button></div></form>
+      <p class="dialog-hint">Marque as opções deste tipo. A ordem da lista na tabela define a sequência de substituição.</p>
+      <div id="picker-results" class="picker-results"><p class="admin-muted">Busque os produtos para começar.</p></div>
+      <button id="picker-more" class="button button-outline button-wide" type="button" hidden>Carregar mais resultados</button>
+      <footer class="dialog-actions"><button class="button button-outline" type="button" data-dialog-close="product-picker-dialog">Cancelar</button><button id="apply-picker-products" class="button button-primary" type="button">Aplicar seleção</button></footer>
+    </div>
+  </dialog>
+  <dialog id="whatsapp-label-manager-dialog" class="whatsapp-label-manager-dialog" aria-labelledby="whatsapp-label-manager-title">
+    <section class="whatsapp-label-manager-panel">
+      <header class="whatsapp-label-manager-header">
+        <div><p class="eyebrow">Atendimento WhatsApp</p><h2 id="whatsapp-label-manager-title">Gerenciar etiquetas</h2></div>
+        <button id="whatsapp-label-manager-close" class="icon-button" type="button" aria-label="Fechar etiquetas">×</button>
+      </header>
+      <p class="whatsapp-label-shared-note">As etiquetas ficam disponíveis nos dois canais, 0975 e 1018. Etiquetas automáticas são protegidas contra edição e exclusão para manter as regras do sistema.</p>
+      <form id="whatsapp-label-form" class="whatsapp-label-form">
+        <input id="whatsapp-label-id" type="hidden">
+        <label class="whatsapp-label-name-field">Nome da etiqueta
+          <input id="whatsapp-label-name" type="text" maxlength="60" autocomplete="off" required>
+          <small id="whatsapp-label-name-help" hidden>O nome é usado por uma automação e não pode ser alterado.</small>
+        </label>
+        <label class="whatsapp-label-color-field">Cor
+          <input id="whatsapp-label-color" type="color" value="#7e3029" aria-label="Cor da etiqueta">
+        </label>
+        <div class="whatsapp-label-form-actions">
+          <p id="whatsapp-label-manager-status" role="status" aria-live="polite"></p>
+          <button id="whatsapp-label-cancel" class="button button-outline" type="button" hidden>Cancelar edição</button>
+          <button id="whatsapp-label-save" class="button button-primary" type="submit">Criar etiqueta</button>
+        </div>
+      </form>
+      <div class="whatsapp-label-manager-list-heading"><h3>Etiquetas disponíveis</h3><span>Compartilhadas entre os canais</span></div>
+      <div id="whatsapp-label-manager-list" class="whatsapp-label-manager-list" aria-live="polite"></div>
+    </section>
+  </dialog>
+  <dialog id="order-conversation-sheet" class="order-conversation-sheet" aria-labelledby="order-conversation-sheet-title" aria-describedby="order-conversation-sheet-subtitle">
+    <header class="order-conversation-sheet-header">
+      <span class="order-conversation-sheet-handle" aria-hidden="true"></span>
+      <div>
+        <p class="eyebrow">Mensagens do WhatsApp</p>
+        <h2 id="order-conversation-sheet-title">Conversa do pedido</h2>
+        <p id="order-conversation-sheet-subtitle" class="admin-muted"></p>
+      </div>
+      <button class="icon-button" type="button" data-order-conversation-close aria-label="Fechar conversa">×</button>
+    </header>
+    <div id="order-conversation-sheet-slot" class="order-conversation-sheet-slot"></div>
+  </dialog>
+  <div id="admin-toast" class="toast" role="status" aria-live="polite"></div>
+  </div>
+</body>
+</html>
