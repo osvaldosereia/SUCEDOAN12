@@ -277,7 +277,7 @@ function productPriceCents(product: any) {
   return cents(price);
 }
 
-function errorResponse(error: any) {
+function errorResponse(error: any, action = "") {
   const code = String(error?.code || "");
   if (code === "23505") return { status: 409, error: "duplicate_product_identifier", message: "SKU ou GTIN já cadastrado em outro produto." };
   const detail = clean(error?.message || error, 400);
@@ -295,6 +295,7 @@ function errorResponse(error: any) {
   if (detail.includes("basket_mold_position_options_required")) return { status: 400, error: "basket_options_required", message: "Cada produto precisa ter ao menos uma opção." };
   if (detail.includes("basket_mold_duplicate_option")) return { status: 400, error: "duplicate_basket_option", message: "Remova marcas repetidas da mesma posição." };
   if (detail.includes("basket_mold_product_not_found")) return { status: 404, error: "product_not_found", message: "Um produto selecionado não existe mais." };
+  if (action === "basket_grid") return { status: 503, error: "basket_grid_unavailable", message: "Não foi possível carregar a grade de cestas. Tente novamente em instantes." };
   return { status: 500, error: "catalog_operation_failed", message: "Não foi possível salvar. Confira os campos e tente novamente." };
 }
 
@@ -968,9 +969,16 @@ async function basketList(status = "active") {
   const ids = [...new Set(valid.flatMap(({ editor }) => (editor?.positions || []).flatMap((position: any) => (position.options || []).map((option: any) => option.product_id))))];
   let productById = new Map<string, any>();
   if (ids.length) {
-    const result = await db.from("products").select(PRODUCT_COLUMNS).in("id", ids);
-    if (result.error) throw result.error;
-    productById = new Map((result.data || []).map((product: any) => [String(product.id), product]));
+    const productIdBatches = Array.from(
+      { length: Math.ceil(ids.length / 80) },
+      (_, index) => ids.slice(index * 80, (index + 1) * 80),
+    );
+    const productRowsByBatch = await mapLimit(productIdBatches, 4, async (batch: string[]) => {
+      const result = await db.from("products").select(PRODUCT_COLUMNS).in("id", batch);
+      if (result.error) throw result.error;
+      return result.data || [];
+    });
+    productById = new Map(productRowsByBatch.flat().map((product: any) => [String(product.id), product]));
   }
   const manualReviewResult = await db.rpc("basket_mold_manual_replacement_review_v1", {
     p_basket_ids: (templates.data || []).map((basket: any) => basket.id),
@@ -1079,15 +1087,28 @@ async function basketGridList() {
   const productIds = [...new Set(optionRows.map((row: any) => String(row.product_id)))];
   const productById = new Map<string, any>();
   if (productIds.length) {
-    const [productsResult, stockResult] = await Promise.all([
-      db.from("products").select(PRODUCT_COLUMNS).in("id", productIds),
-      db.from("storefront_product_sellable_stock_v1").select("product_id,sellable_stock,is_active").in("product_id", productIds),
+    // Keep PostgREST request URLs short when the basket grid has many options.
+    const productIdBatches = Array.from(
+      { length: Math.ceil(productIds.length / 80) },
+      (_, index) => productIds.slice(index * 80, (index + 1) * 80),
+    );
+    const [productsByBatch, stockByBatch] = await Promise.all([
+      mapLimit(productIdBatches, 4, async (batch: string[]) => {
+        const result = await db.from("products").select(PRODUCT_COLUMNS).in("id", batch);
+        if (result.error) throw result.error;
+        return result.data || [];
+      }),
+      mapLimit(productIdBatches, 4, async (batch: string[]) => {
+        const result = await db.from("storefront_product_sellable_stock_v1")
+          .select("product_id,sellable_stock,is_active")
+          .in("product_id", batch);
+        if (result.error) throw result.error;
+        return result.data || [];
+      }),
     ]);
-    if (productsResult.error) throw productsResult.error;
-    if (stockResult.error) throw stockResult.error;
-    const sellableById = new Map((stockResult.data || []).map((row: any) => [String(row.product_id),
+    const sellableById = new Map(stockByBatch.flat().map((row: any) => [String(row.product_id),
       row.is_active === true ? Math.max(0, Number(row.sellable_stock || 0)) : 0]));
-    (productsResult.data || []).forEach((product: any) => productById.set(String(product.id), {
+    productsByBatch.flat().forEach((product: any) => productById.set(String(product.id), {
       ...product,
       sellable_stock: sellableById.get(String(product.id)) || 0,
       effective_price_cents: productPriceCents(product),
@@ -5187,6 +5208,7 @@ Deno.serve(async (req: Request) => {
     }
     const input = { ...Object.fromEntries(url.searchParams.entries()), ...body };
     const action = clean(input.action, 40);
+    if (req.method === "GET" && action === "admin_auth_check") return json(req, { ok: true });
     let result: any;
     if (req.method === "POST" && action === "whatsapp_overview") result = await whatsappOverview();
     else if (req.method === "POST" && action === "whatsapp_conversation_list") result = await whatsappConversationList(input);
@@ -5259,7 +5281,7 @@ Deno.serve(async (req: Request) => {
     return json(req, { ok: true, ...result });
   } catch (error) {
     console.error("site-admin-v1", error);
-    const response = errorResponse(error);
+    const response = errorResponse(error, action);
     return json(req, { ok: false, ...response }, response.status);
   }
 });
