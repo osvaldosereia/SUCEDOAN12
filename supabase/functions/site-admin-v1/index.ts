@@ -968,9 +968,21 @@ async function basketList(status = "active") {
   const ids = [...new Set(valid.flatMap(({ editor }) => (editor?.positions || []).flatMap((position: any) => (position.options || []).map((option: any) => option.product_id))))];
   let productById = new Map<string, any>();
   if (ids.length) {
-    const result = await db.from("products").select(PRODUCT_COLUMNS).in("id", ids);
-    if (result.error) throw result.error;
-    productById = new Map((result.data || []).map((product: any) => [String(product.id), product]));
+    // Keep PostgREST URLs below proxy limits when a basket catalog has many options.
+    const idBatches: string[][] = [];
+    for (let offset = 0; offset < ids.length; offset += 100) {
+      idBatches.push(ids.slice(offset, offset + 100));
+    }
+    const productBatches = await mapLimit(idBatches, 5, async (batch) => {
+      const result = await db.from("products").select(PRODUCT_COLUMNS).in("id", batch);
+      if (result.error) throw result.error;
+      return result.data || [];
+    });
+    const productEntries: Array<[string, any]> = productBatches.flat().map((product: any) => [
+      String(product.id),
+      product,
+    ]);
+    productById = new Map(productEntries);
   }
   const manualReviewResult = await db.rpc("basket_mold_manual_replacement_review_v1", {
     p_basket_ids: (templates.data || []).map((basket: any) => basket.id),
