@@ -4874,7 +4874,13 @@ async function blingHubVitrineDispatchFiscalAutoProcess(sb:any,limitRaw:any=1){
     updated_at:resultNow,
     ...(terminal&&job.status!=="authorized"
       ?{status:"review_required",error_code:"fiscal_auto_requires_review",
-        error_detail:clean(JSON.stringify({error:response?.error||null,blockers}),1600)}
+        error_detail:clean(JSON.stringify({
+          error:response?.error||null,
+          detail:response?.detail||response?.message||null,
+          provider_details:Array.isArray(response?.provider_details)?response.provider_details:[],
+          provider_error:response?.provider_error||null,
+          blockers
+        }),1600)}
       :{})
   }).eq("id",job.id);
   if(jobUpdate.error)throw jobUpdate.error;
