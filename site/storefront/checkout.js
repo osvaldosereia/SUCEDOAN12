@@ -212,12 +212,11 @@
           const positionId = String(item.position_id || "");
           const variants = (Array.isArray(item.selected_options) ? item.selected_options : [])
             .filter((option) => option && Number(option.quantity || 0) > 0)
-            .map((option) => String(option.name || "Produto") + " × " + Math.trunc(Number(option.quantity || 0)));
+            .map((option) => String(option.name || "Produto"));
           entries.push({
             kind: "basket",
             positionId,
-            name: String(item.label || item.name || "Produto"),
-            description: variants.join(" · ") || "Quantidade no pedido",
+            name: variants.join(" · ") || String(item.name || "Produto"),
             imageUrl: (item.selected_options || []).find((option) => Number(option.quantity || 0) > 0)?.image_url || item.image_url || item.image,
             quantity: Math.max(0, Math.trunc(Number(quantityOf(item) || 0))),
             maxQuantity: 1000
@@ -301,7 +300,7 @@
         const plusDisabled = unavailable || item.quantity >= item.maxQuantity;
         return '<li class="order-review-item">' +
           '<img class="order-review-item-photo" src="' + esc(orderReviewImageUrl(item.imageUrl)) + '" alt="" width="72" height="72" loading="lazy" decoding="async">' +
-          '<div class="order-review-item-copy"><strong>' + name + '</strong><span>' + esc(item.description || "Quantidade no pedido") + '</span></div>' +
+          '<div class="order-review-item-copy"><strong>' + name + '</strong></div>' +
           '<div class="order-review-quantity" role="group" aria-label="Quantidade de ' + name + '">' +
             '<button type="button" data-order-review-adjust data-kind="' + item.kind + '"' + targetData + ' data-delta="-1" aria-label="Diminuir quantidade de ' + name + '"' + (minusDisabled ? " disabled" : "") + '>−</button>' +
             '<output aria-live="polite">' + item.quantity + '</output>' +
