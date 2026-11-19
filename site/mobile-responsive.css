@@ -414,7 +414,7 @@
 
   .experiment-page main {
     box-sizing: border-box;
-    width: calc(100% - 20px);
+    width: calc(100% - 32px);
     max-width: 1180px;
     margin: 0 auto;
     padding: 14px 0 calc(26px + env(safe-area-inset-bottom));
@@ -585,7 +585,7 @@
   .experiment-page .product-choice-offer {
     top: 8px;
     left: 8px;
-    max-width: calc(100% - 16px);
+    max-width: calc(100% - 32px);
     overflow: hidden;
     text-overflow: ellipsis;
   }
@@ -619,7 +619,7 @@
   }
 
   body.basket-detail-open .experiment-page main {
-    width: calc(100% - 20px);
+    width: calc(100% - 32px);
     max-width: 1180px;
     padding-top: 12px;
     padding-bottom: calc(116px + env(safe-area-inset-bottom));
