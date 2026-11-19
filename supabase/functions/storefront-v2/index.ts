@@ -373,7 +373,7 @@ function compareMoldPositionOptionOrder(a:any,b:any){
   const aOrder=Number(a.sort_order||0),bOrder=Number(b.sort_order||0);
   const aDefault=aOrder===0?0:1,bDefault=bOrder===0?0:1;
   return aDefault-bDefault
-    ||Number(b.stock_quantity||0)-Number(a.stock_quantity||0)
+    ||String(a.name||"").localeCompare(String(b.name||""),"pt-BR",{sensitivity:"base",numeric:true})
     ||aOrder-bOrder
     ||String(a.product_id||"").localeCompare(String(b.product_id||""));
 }

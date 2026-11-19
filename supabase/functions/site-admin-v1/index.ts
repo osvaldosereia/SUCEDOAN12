@@ -663,6 +663,24 @@ async function dailyOffers(input: any) {
   return data && typeof data === "object" ? data : {};
 }
 
+async function productRename(input: any) {
+  const id = uuid(input.id ?? input.product_id);
+  const name = clean(input.name, 240);
+  if (!id) return { status: 400, error: "invalid_product_id", message: "Produto inválido." };
+  if (!name) return { status: 400, error: "product_name_required", message: "Informe o nome do produto." };
+
+  const metadata = await adminProductMetadataForEdit(id);
+  if (!metadata) return { status: 404, error: "product_not_found", message: "Produto não encontrado." };
+  const result = await db.from("products")
+    .update({ name, metadata })
+    .eq("id", id)
+    .select(PRODUCT_COLUMNS)
+    .maybeSingle();
+  if (result.error) throw result.error;
+  if (!result.data) return { status: 404, error: "product_not_found", message: "Produto não encontrado." };
+  return { product: result.data };
+}
+
 async function productSave(input: any) {
   const id = input.id ? uuid(input.id) : "";
   if (input.id && !id) return { status: 400, error: "invalid_product_id", message: "Produto inválido." };
@@ -5286,6 +5304,7 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "quick_balance_save") result = await quickBalanceSave(input);
     else if (req.method === "GET" && action === "products") result = await productSearch(input);
     else if (req.method === "POST" && action === "product_save") result = await productSave(input);
+    else if (req.method === "POST" && action === "product_rename") result = await productRename(input);
     else if (req.method === "POST" && action === "daily_offers") result = await dailyOffers(input);
     else if (req.method === "POST" && action === "product_set_active") result = await productSetActive(input);
     else if (req.method === "POST" && action === "product_set_most_sold") result = await productSetMostSold(input);
