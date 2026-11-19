@@ -964,3 +964,14 @@
   font-size: .92rem;
   font-weight: 800;
 }
+
+/* Nomes dos produtos no checkout: legíveis e limitados a quatro linhas */
+.order-review-item-copy strong {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  font-size: 1.05rem;
+  line-height: 1.25;
+}
