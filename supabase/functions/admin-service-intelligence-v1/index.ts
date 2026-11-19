@@ -5010,7 +5010,7 @@ async function blingHubVitrineDispatchFiscalAutoProcess(sb:any,limitRaw:any=1){
 
 async function blingHubFiscalOfficialNcmCodes(sb:any){
   const table="bling_official_ncm_catalog_cache_v1";
-  const base="https://portalunico.siscomex.gov.br/classif/api/publico/nomenclatura/download/json";
+  const base="https://portalunico.siscomex.gov.br/classif/api/publico/nomenclatura/download/json?perfil=PUBLICO";
   const now=Date.now();
   const cachedResult=await sb.from(table)
     .select("source_url,source_revision,codes,code_count,fetched_at,last_error")
