@@ -10520,9 +10520,6 @@ Deno.serve(async(req:Request)=>{
         return json(result,result.ok?200:Number(result.status||500));
       }
 
-        const result=await blingHubVitrineDispatchFiscalAutoExecute(sb,body?.source_order_id);
-        return json(result,result.ok?200:Number(result.status||409));
-      }
       if(subaction==="fiscal_dispatch_canary_human_execute"){
         const result=await blingHubVitrineDispatchFiscalHumanExecute(sb,body?.source_order_id,body?.confirmation);
         return json(result,result.ok?200:Number(result.status||409));
