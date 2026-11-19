@@ -4098,120 +4098,17 @@ async function blingHubVitrineDispatchFiscalPreview(sb:any,sourceOrderIdRaw:any)
   }
 
   const alreadyAuthorized=invoice?.situation?.authorized===true;
+  // NCM validation is delegated to Bling when it generates the NF-e.
+  // Local catalog outages or NCM issues must not block the sale-to-invoice request.
   const fiscalItemBlockers:any[]=[];
-  const fiscalProducts:any[]=[];
   let fiscalItemCount=0;
   if(!alreadyAuthorized){
     const fiscalLinesResult=await sb.from("order_items")
-      .select("id,product_id,name_snapshot,sku_snapshot,metadata")
+      .select("id")
       .eq("order_id",order.id);
     if(fiscalLinesResult.error)throw fiscalLinesResult.error;
-    const fiscalLines=Array.isArray(fiscalLinesResult.data)?fiscalLinesResult.data:[];
-    fiscalItemCount=fiscalLines.length;
-    if(!fiscalLines.length)fiscalItemBlockers.push({reason:"order_items_missing"});
-
-    const localProductIds=[...new Set(fiscalLines.map((x:any)=>uuid(x?.product_id)).filter(Boolean))] as string[];
-    const localProducts=localProductIds.length
-      ? await sb.from("products").select("id,ncm").in("id",localProductIds)
-      : {data:[],error:null};
-    if(localProducts.error)throw localProducts.error;
-    const localProductMap=new Map<string,any>((localProducts.data||[]).map((x:any)=>[String(x.id),x]));
-
-    for(const line of fiscalLines){
-      const productId=uuid(line?.product_id);
-      const name=clean(line?.name_snapshot,220)||"Item do pedido";
-      if(!productId){
-        const historyKind=String(line?.metadata?.history_kind||"");
-        const isBasketAggregate=["basket","basket_mold"].includes(historyKind);
-        if(isBasketAggregate){
-          const basketId=line?.metadata?.basket_id==null?"":String(line.metadata.basket_id);
-          const basketNameValue=line?.metadata?.basket_name!=null&&String(line.metadata.basket_name)!==""
-            ? String(line.metadata.basket_name) : String(line?.name_snapshot||"");
-          const basketName=basketNameValue.trim().toLowerCase();
-          const hasExpandedComponents=fiscalLines.some((component:any)=>{
-            const componentKind=String(component?.metadata?.history_kind||"");
-            if(!["basket_component","basket_mold_component"].includes(componentKind))return false;
-            const componentBasketId=component?.metadata?.basket_id==null?"":String(component.metadata.basket_id);
-            const componentBasketNameValue=component?.metadata?.basket_name!=null&&String(component.metadata.basket_name)!==""
-              ? String(component.metadata.basket_name)
-              : (component?.metadata?.parent_basket_name!=null&&String(component.metadata.parent_basket_name)!==""
-                ? String(component.metadata.parent_basket_name) : "");
-            const componentBasketName=componentBasketNameValue.trim().toLowerCase();
-            return (basketId!==""&&componentBasketId===basketId)||componentBasketName===basketName;
-          });
-          if(hasExpandedComponents)continue;
-        }
-        const basket=Array.isArray(line?.metadata?.component_snapshot)
-          ||isBasketAggregate;
-        fiscalItemBlockers.push({
-          order_item_id:line?.id||null,
-          name,
-          reason:basket?"basket_composite_requires_invoice_itemization":"product_id_missing"
-        });
-        continue;
-      }
-      const product=localProductMap.get(productId);
-      if(!product){
-        fiscalItemBlockers.push({product_id:productId,name,reason:"supabase_product_not_found"});
-        continue;
-      }
-      const ncm=blingHubDigits(product?.ncm);
-      if(!/^\d{8}$/.test(ncm)){
-        fiscalItemBlockers.push({product_id:productId,name,reason:"supabase_ncm_missing_or_invalid"});
-        continue;
-      }
-      fiscalProducts.push({product_id:productId,name,ncm});
-    }
-
-    if(fiscalProducts.length){
-      let officialNcmCodes:Set<string>|null=null;
-      try{
-        officialNcmCodes=await blingHubOfficialNcmCodesCached(sb);
-      }catch(error){
-        fiscalItemBlockers.push({reason:"official_ncm_catalog_unavailable",detail:clean((error as Error)?.message||error,300)});
-      }
-      if(officialNcmCodes){
-        for(const item of fiscalProducts){
-          if(!officialNcmCodes.has(item.ncm)){
-            fiscalItemBlockers.push({product_id:item.product_id,name:item.name,ncm:item.ncm,reason:"ncm_not_in_official_classification"});
-          }
-        }
-      }
-    }
-
-    if(!fiscalItemBlockers.length&&blingOrderId&&fiscalProducts.length){
-      const productLinks=await sb.from("bling_hub_entity_links_v2")
-        .select("source_id,bling_id,status")
-        .eq("source_system","vitrine_qx")
-        .eq("entity_type","product")
-        .in("source_id",fiscalProducts.map((x:any)=>x.product_id));
-      if(productLinks.error)throw productLinks.error;
-      const productLinkMap=new Map<string,any>((productLinks.data||[]).map((x:any)=>[String(x.source_id),x]));
-      if(fiscalProducts.length>60){
-        fiscalItemBlockers.push({reason:"invoice_product_tax_validation_limit_exceeded",product_count:fiscalProducts.length});
-      }else{
-        if(!fiscalToken)fiscalToken=await blingHubOauth(sb);
-        for(const item of fiscalProducts){
-          const productLink=productLinkMap.get(item.product_id);
-          const blingProductId=Number(productLink?.bling_id||0)||0;
-          if(productLink?.status!=="matched"||!blingProductId){
-            fiscalItemBlockers.push({product_id:item.product_id,name:item.name,reason:"bling_product_not_linked"});
-            continue;
-          }
-          const detail=await blingHubGet(sb,fiscalToken,"/produtos/"+encodeURIComponent(String(blingProductId)));
-          if(!detail.ok){
-            fiscalItemBlockers.push({product_id:item.product_id,name:item.name,reason:"bling_product_tax_read_failed",http_status:detail.status});
-            continue;
-          }
-          const remoteNcm=blingHubDigits(detail.data?.data?.tributacao?.ncm??detail.data?.data?.ncm);
-          if(remoteNcm!==item.ncm){
-            fiscalItemBlockers.push({product_id:item.product_id,name:item.name,ncm:item.ncm,bling_ncm:remoteNcm||null,reason:"bling_product_ncm_out_of_sync"});
-          }
-        }
-      }
-    }
+    fiscalItemCount=Array.isArray(fiscalLinesResult.data)?fiscalLinesResult.data.length:0;
   }
-
   const hardBlockers:string[]=[];
   if(fiscalItemBlockers.length&&!alreadyAuthorized)hardBlockers.push("invoice_item_tax_classification_incomplete");
   const hubMeta=hubRuntime.data?.metadata||{};
@@ -4273,10 +4170,11 @@ async function blingHubVitrineDispatchFiscalPreview(sb:any,sourceOrderIdRaw:any)
     job:existingJob,
     dispatch_gate:dispatchGate.data||null,
     fiscal_item_classification:{
-      checked:!alreadyAuthorized,
-      ready:fiscalItemBlockers.length===0,
+      checked:false,
+      ready:true,
       item_count:fiscalItemCount,
-      blockers:fiscalItemBlockers
+      blockers:[],
+      validation_mode:"delegated_to_bling"
     },
     config:{
       enabled:Boolean(f.enabled),
