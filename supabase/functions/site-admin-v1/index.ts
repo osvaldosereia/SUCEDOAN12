@@ -1195,8 +1195,11 @@ async function basketGridSave(input: any) {
     const title = clean(type?.title, 180);
     const rawOptionInput = Array.isArray(type?.options) ? type.options : null;
     const rawQuantities = type?.quantities && typeof type.quantities === "object" && !Array.isArray(type.quantities) ? type.quantities : null;
-    if (!typeId || !title || !rawOptionInput || rawOptionInput.length > 40 || !rawQuantities) {
+    if (!typeId || !title || !rawOptionInput || !rawQuantities) {
       return { status: 400, error: "invalid_basket_grid_type", message: "Revise os títulos, as quantidades e as variações da grade." };
+    }
+    if (rawOptionInput.length > 100) {
+      return { status: 400, error: "basket_grid_too_many_options", message: "Cada tipo de produto pode ter até 100 variações." };
     }
     if (typeIds.has(typeId)) return { status: 400, error: "duplicate_basket_grid_type", message: "Há tipos repetidos na grade." };
     typeIds.add(typeId);
