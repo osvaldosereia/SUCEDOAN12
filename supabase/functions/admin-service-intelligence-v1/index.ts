@@ -5387,6 +5387,17 @@ async function blingHubVitrineDispatchFiscalCanary(sb:any,sourceOrderIdRaw:any){
           invoiceId=Number(recovery.match?.id||0)||null;
         }
         if(!invoiceId){
+          // Bling can create/link the invoice to the sale while returning an
+          // inconclusive generation response. Re-read the sale before marking
+          // the attempt unresolved, so we never create a duplicate NF-e.
+          const saleRecovery=await blingHubVitrineDispatchFiscalPreview(sb,sourceOrderId);
+          const saleInvoiceId=Number(saleRecovery?.invoice_id||0)||null;
+          if(saleInvoiceId){
+            invoiceId=saleInvoiceId;
+            invoice=saleRecovery.invoice||null;
+          }
+        }
+        if(!invoiceId){
           const providerDetails=Array.isArray(generated.provider_details)?generated.provider_details:[];
           const providerError=clean(JSON.stringify(generated.data?.error||generated.data||{}),1600);
           const providerSummary=providerDetails
