@@ -2156,34 +2156,33 @@ async function runSeparationFiscalIntegration(orderId: string) {
     try {
       await markSeparationFiscalMetadata(orderId, {
         bling_verified: false, bling_verify_error: reason, bling_verify_failed_at: new Date().toISOString(),
+        fiscal_auto_retry_pending: true, external_integrations_pending: true,
       });
     } catch {}
     await openSeparationFiscalAttention(orderId, "order_bling_verified_pending",
       "Separação concluída; sincronização Verificado no Bling está pendente.",
-      "Revise a integração do pedido com o Bling. A separação física já foi concluída.", blingVerified);
-    return { bling_verified: blingVerified, fiscal_auto: { attempted: false, ok: false, error: "bling_not_verified" } };
+      "Revise a integração do pedido com o Bling. A separação física já foi concluída; a fila automática tentará novamente.", blingVerified);
   }
 
   const fiscalConfig = await db.from("fiscal_runtime_config")
-    .select("enabled,execution_mode,bling_invoice_send_enabled")
+    .select("enabled,execution_mode,bling_invoice_send_enabled,dispatch_fiscal_auto_issue_enabled")
     .eq("id", 1).maybeSingle();
   const invoiceSendingEnabled = !fiscalConfig.error
     && fiscalConfig.data?.enabled === true
     && String(fiscalConfig.data?.execution_mode || "").toLowerCase() === "live"
-    && fiscalConfig.data?.bling_invoice_send_enabled === true;
+    && fiscalConfig.data?.bling_invoice_send_enabled === true
+    && fiscalConfig.data?.dispatch_fiscal_auto_issue_enabled === true;
   if (!invoiceSendingEnabled) {
-    const reason = fiscalConfig.error ? "fiscal_send_config_unavailable" : "fiscal_invoice_sending_disabled";
-    let fiscal: any = { attempted: false, ok: false, authorized: false, skipped: true, stage: "paused", error: reason };
+    const reason = fiscalConfig.error ? "fiscal_send_config_unavailable" : "fiscal_auto_issue_not_enabled";
+    const fiscal: any = { attempted: false, ok: false, authorized: false, skipped: true, stage: "paused", error: reason };
     try {
       await markSeparationFiscalMetadata(orderId, {
-        bling_verified: true, bling_order_id: blingVerified.bling_order_id || null,
+        bling_verified: blingVerified.ok === true, bling_order_id: blingVerified.bling_order_id || null,
         fiscal_auto_attempted: false, fiscal_auto_ok: false, fiscal_auto_authorized: false,
         fiscal_auto_skipped: true, fiscal_auto_stage: "paused", fiscal_auto_error: reason,
-        fiscal_auto_at: new Date().toISOString(), external_integrations_pending: true,
+        fiscal_auto_retry_pending: true, fiscal_auto_at: new Date().toISOString(), external_integrations_pending: true,
       });
-    } catch (error) {
-      fiscal = { ...fiscal, metadata_persisted: false, metadata_error: clean((error as Error)?.message || error, 240) };
-    }
+    } catch {}
     return { bling_verified: blingVerified, fiscal_auto: fiscal };
   }
 
@@ -2195,63 +2194,60 @@ async function runSeparationFiscalIntegration(orderId: string) {
     } else if (preflight.data?.ready !== true) {
       fiscal = { attempted: false, ok: false, error: "fiscal_preflight_blocked", blockers: preflight.data?.blockers || [] };
     } else {
-      const preview = await separationFiscalHubCall("fiscal_dispatch_preview", { source_order_id: orderId });
-      if (preview.error || preview.data?.ok !== true) {
-        fiscal = { attempted: false, ok: false, error: String(preview.error || preview.data?.error || "fiscal_dispatch_preview_unavailable") };
-      } else if (preview.data?.already_authorized === true || preview.data?.invoice?.situation?.authorized === true) {
-        fiscal = { attempted: false, ok: true, authorized: true, stage: "authorized", idempotent_replay: true };
-      } else if (Array.isArray(preview.data?.hard_blockers) && preview.data.hard_blockers.length) {
-        fiscal = { attempted: false, ok: false, error: "fiscal_dispatch_not_eligible", blockers: preview.data.hard_blockers };
-      } else if (preview.data?.config?.human_issue_enabled !== true || preview.data?.config?.dispatch_gate_mode !== "enforce") {
-        fiscal = { attempted: false, ok: false, error: "fiscal_auto_issue_not_enabled" };
+      const issued = await separationFiscalHubCall("fiscal_dispatch_auto_execute", { source_order_id: orderId });
+      if (issued.error || issued.data?.ok !== true) {
+        fiscal = {
+          attempted: false, ok: false, error: String(issued.error || issued.data?.error || "fiscal_issue_failed"),
+          detail: issued.detail || null, blockers: issued.data?.blockers || [],
+          retry_pending: true,
+        };
       } else {
-        const issued = await separationFiscalHubCall("fiscal_dispatch_canary_human_execute", {
-          source_order_id: orderId, confirmation: "EMITIR_NFE",
-        });
-        if (issued.error || issued.data?.ok !== true) {
-          fiscal = { attempted: true, ok: false, error: String(issued.error || issued.data?.error || "fiscal_issue_failed"), detail: issued.detail || null };
-        } else {
-          const invoice = issued.data?.invoice || null;
-          const authorized = issued.data?.authorized === true || invoice?.situation?.authorized === true;
-          const jobStatus = String(issued.data?.job?.status || "").toLowerCase();
-          const failed = invoice?.situation?.failed === true || ["failed", "error", "review_required", "rejected"].includes(jobStatus);
-          const processing = issued.data?.pending === true || issued.data?.generated === true
-            || Number(issued.data?.invoice_id || invoice?.id || 0) > 0
-            || ["generating", "generated", "authorizing", "processing"].includes(jobStatus);
-          const accepted = authorized || (!failed && processing);
-          fiscal = {
-            attempted: true, ok: accepted, authorized,
-            stage: authorized ? "authorized" : accepted ? "processing" : "blocked",
-            error: accepted ? null : String(issued.data?.error || "fiscal_result_not_confirmed"),
-            invoice_id: Number(issued.data?.invoice_id || invoice?.id || 0) || null,
-            invoice_number: invoice?.numero || null,
-          };
+        const invoice = issued.data?.invoice || null;
+        const authorized = issued.data?.authorized === true || invoice?.situation?.authorized === true;
+        const jobStatus = String(issued.data?.job?.status || "").toLowerCase();
+        const failed = invoice?.situation?.failed === true || ["failed", "error", "review_required", "rejected"].includes(jobStatus);
+        const processing = issued.data?.pending === true || issued.data?.generated === true
+          || Number(issued.data?.invoice_id || invoice?.id || 0) > 0
+          || ["generating", "generated", "authorizing", "processing"].includes(jobStatus);
+        const accepted = authorized || (!failed && processing);
+        fiscal = {
+          attempted: true, ok: accepted, authorized,
+          stage: authorized ? "authorized" : accepted ? "processing" : "blocked",
+          error: accepted ? null : String(issued.data?.error || "fiscal_result_not_confirmed"),
+          invoice_id: Number(issued.data?.invoice_id || invoice?.id || 0) || null,
+          invoice_number: invoice?.numero || null,
+          retry_pending: !authorized,
+        };
+        if (Number(issued.data?.bling_order_id || 0) > 0) {
+          blingVerified = { attempted: true, ok: true, bling_order_id: issued.data.bling_order_id };
         }
       }
     }
   } catch (error) {
-    fiscal = { attempted: true, ok: false, error: clean((error as Error)?.message || error, 300) || "fiscal_issue_failed" };
+    fiscal = { attempted: true, ok: false, error: clean((error as Error)?.message || error, 300) || "fiscal_issue_failed", retry_pending: true };
   }
 
   try {
     await markSeparationFiscalMetadata(orderId, {
-      bling_verified: true, bling_order_id: blingVerified.bling_order_id || null,
+      bling_verified: blingVerified.ok === true, bling_order_id: blingVerified.bling_order_id || null,
       fiscal_auto_attempted: fiscal?.attempted === true, fiscal_auto_ok: fiscal?.ok === true,
       fiscal_auto_authorized: fiscal?.authorized === true, fiscal_auto_stage: fiscal?.stage || null,
       fiscal_auto_error: fiscal?.ok === true ? null : String(fiscal?.error || "fiscal_issue_failed"),
-      fiscal_auto_at: new Date().toISOString(), external_integrations_pending: fiscal?.ok !== true,
+      fiscal_auto_retry_pending: fiscal?.authorized !== true, fiscal_auto_at: new Date().toISOString(),
+      external_integrations_pending: fiscal?.authorized !== true,
     });
   } catch (error) {
     fiscal = { ...fiscal, metadata_persisted: false, metadata_error: clean((error as Error)?.message || error, 240) };
   }
 
-  if (fiscal?.ok !== true) {
+  if (fiscal?.authorized !== true) {
     await openSeparationFiscalAttention(orderId, "order_fiscal_auto_issue_pending",
-      "Pedido separado; a NF-e automática precisa de atenção.",
-      "Abra o pedido e revise a pendência fiscal antes de liberar a expedição.", fiscal);
+      "Pedido separado; a emissão automática da NF-e está na fila ou precisa de revisão.",
+      "A fila fiscal verificará novamente a integração. Se houver bloqueio tributário, revise o cadastro antes de liberar a emissão.", fiscal);
   }
   return { bling_verified: blingVerified, fiscal_auto: fiscal };
 }
+
 
 async function completeOrderSeparation(input: any) {
   const id = uuid(input.order_id);
