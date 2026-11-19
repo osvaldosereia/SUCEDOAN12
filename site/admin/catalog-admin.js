@@ -145,7 +145,7 @@
       const stock = Number.isFinite(stockNumber) ? stockNumber.toLocaleString("pt-BR", { maximumFractionDigits: 3 }) : "—";
       return `<article class="admin-product-card">
         ${product.image_url ? `<img src="${esc(product.image_url)}" alt="" width="64" height="64" loading="lazy" decoding="async">` : '<span class="product-image-placeholder">DA</span>'}
-        <div class="admin-product-info"><strong>${esc(product.name)}</strong><span>${esc([product.brand, product.sku && `SKU ${product.sku}`].filter(Boolean).join(" · "))}</span><span class="product-stock">Estoque: ${esc(stock)}</span><b>${money(effectivePrice(product))}${product.is_offer ? " · oferta" : ""}</b></div>
+        <div class="admin-product-info"><div class="product-name-inline"><input class="product-name-input" type="text" maxlength="240" autocomplete="off" data-product-name-input="${esc(product.id)}" value="${esc(product.name)}" aria-label="Nome do produto: ${esc(product.name)}"><button class="button button-outline product-name-save" type="button" data-save-product-name="${esc(product.id)}" disabled>Salvar</button></div><span>${esc([product.brand, product.sku && `SKU ${product.sku}`].filter(Boolean).join(" · "))}</span><span class="product-stock">Estoque: ${esc(stock)}</span><b>${money(effectivePrice(product))}${product.is_offer ? " · oferta" : ""}</b></div>
         <div class="admin-product-actions"><label class="product-active-toggle"><input type="checkbox" data-toggle-product="${esc(product.id)}" aria-label="Ativar ${esc(product.name)} no catálogo" ${product.is_active === true ? "checked" : ""}><span class="product-switch" aria-hidden="true"></span><span>${product.is_active === true ? "Ativo" : "Inativo"}</span></label><label class="product-active-toggle product-most-sold-toggle"><input type="checkbox" data-toggle-most-sold="${esc(product.id)}" aria-label="Exibir ${esc(product.name)} em Mais Vendidos" ${isMostSoldProduct(product) ? "checked" : ""}><span class="product-switch" aria-hidden="true"></span><span>Mais Vendidos</span></label>${productBasketTypeSelect(product)}<button class="button button-outline" type="button" data-edit-product="${esc(product.id)}">Editar</button><button class="button button-outline" type="button" data-clone-product="${esc(product.id)}">Clonar</button></div>
       </article>`;
     }).join("");
@@ -231,6 +231,71 @@
       toast(error.message || "Não foi possível alterar o vínculo do produto.");
     } finally {
       refreshProductBasketSelectors();
+    }
+  }
+
+  function updateProductNameSaveState(input) {
+    const card = input.closest(".admin-product-card");
+    const saveButton = card?.querySelector("[data-save-product-name]");
+    if (!saveButton) return;
+    const product = state.productCache.get(String(input.dataset.productNameInput));
+    const value = String(input.value || "").trim();
+    saveButton.disabled = input.disabled || !value || value === String(product?.name || "").trim();
+  }
+
+  async function saveProductName(button) {
+    const productId = String(button.dataset.saveProductName || "");
+    const card = button.closest(".admin-product-card");
+    const input = card?.querySelector("[data-product-name-input]");
+    const cached = state.productCache.get(productId);
+    if (!productId || !card || !input || !cached) return;
+    const name = String(input.value || "").trim();
+    if (!name) {
+      toast("Informe o nome do produto.");
+      input.focus();
+      return;
+    }
+    if (name === String(cached.name || "").trim()) {
+      updateProductNameSaveState(input);
+      return;
+    }
+
+    button.disabled = true;
+    button.textContent = "Salvando…";
+    input.disabled = true;
+    card.setAttribute("aria-busy", "true");
+    try {
+      const result = await request("product_rename", { method: "POST", body: { id: productId, name } });
+      if (!result?.product || String(result.product.id) !== productId) {
+        throw new Error("O servidor não confirmou a alteração do nome.");
+      }
+      const product = Object.assign({}, cached, result.product, {
+        effective_price_cents: effectivePrice(result.product)
+      });
+      state.productCache.set(productId, product);
+      input.value = product.name;
+      input.setAttribute("aria-label", "Nome do produto: " + product.name);
+      const activeToggle = card.querySelector("[data-toggle-product]");
+      if (activeToggle) activeToggle.setAttribute("aria-label", "Ativar " + product.name + " no catálogo");
+      const mostSoldToggle = card.querySelector("[data-toggle-most-sold]");
+      if (mostSoldToggle) mostSoldToggle.setAttribute("aria-label", "Exibir " + product.name + " em Mais Vendidos");
+      input.disabled = false;
+      button.textContent = "Salvo";
+      button.disabled = true;
+      card.removeAttribute("aria-busy");
+      const basketUpdate = window.DonaBasketAdmin?.productSaved?.(product);
+      if (basketUpdate && typeof basketUpdate.then === "function") basketUpdate.catch(() => {});
+      window.setTimeout(() => {
+        if (button.isConnected && button.textContent === "Salvo") button.textContent = "Salvar";
+      }, 1400);
+      toast("Nome do produto salvo.");
+    } catch (error) {
+      input.disabled = false;
+      button.textContent = "Salvar";
+      card.removeAttribute("aria-busy");
+      updateProductNameSaveState(input);
+      toast(error.message || "Não foi possível salvar o nome do produto.");
+      input.focus();
     }
   }
 
@@ -720,7 +785,23 @@
     $("products-result").addEventListener("change", setProductActive);
     $("products-result").addEventListener("change", setProductMostSold);
     $("products-result").addEventListener("change", setProductBasketType);
+    $("products-result").addEventListener("input", (event) => {
+      const input = event.target.closest("[data-product-name-input]");
+      if (input) updateProductNameSaveState(input);
+    });
+    $("products-result").addEventListener("keydown", (event) => {
+      const input = event.target.closest("[data-product-name-input]");
+      if (!input || event.key !== "Enter") return;
+      event.preventDefault();
+      const saveButton = input.closest(".admin-product-card")?.querySelector("[data-save-product-name]");
+      if (saveButton && !saveButton.disabled) saveProductName(saveButton);
+    });
     $("products-result").addEventListener("click", (event) => {
+      const saveNameButton = event.target.closest("[data-save-product-name]");
+      if (saveNameButton) {
+        saveProductName(saveNameButton);
+        return;
+      }
       const cloneButton = event.target.closest("[data-clone-product]");
       if (cloneButton) {
         cloneProduct(state.productCache.get(String(cloneButton.dataset.cloneProduct)));

@@ -502,8 +502,8 @@
       const defaultId = String(item.default_product_id || item.product_id || "");
       const optionChoices = Array.from(choiceById.values()).sort((a, b) =>
         (String(a.product_id) === defaultId ? -1 : 0) - (String(b.product_id) === defaultId ? -1 : 0) ||
-        Number(b.stock_quantity || 0) - Number(a.stock_quantity || 0) ||
-        Number(a.sort_order || 0) - Number(b.sort_order || 0)
+        String(a.name || "").localeCompare(String(b.name || ""), "pt-BR", { sensitivity: "base", numeric: true }) ||
+        String(a.product_id || "").localeCompare(String(b.product_id || ""))
       );
       const optionCount = Math.max(Number(item.alternative_count || 0), optionChoices.length);
       const changingThisItem = String(data.changingPosition || "") === String(item.position_id);

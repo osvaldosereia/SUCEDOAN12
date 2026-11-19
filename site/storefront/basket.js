@@ -140,9 +140,8 @@
       const defaultId = String(item.default_product_id || item.product_id || "");
       return Array.from(unique.values()).sort((a, b) =>
         (String(a.product_id) === defaultId ? -1 : 0) - (String(b.product_id) === defaultId ? -1 : 0) ||
-        Number(b.stock_quantity || 0) - Number(a.stock_quantity || 0) ||
-        Number(a.sort_order || 0) - Number(b.sort_order || 0) ||
-        String(a.name || "").localeCompare(String(b.name || ""), "pt-BR")
+        String(a.name || "").localeCompare(String(b.name || ""), "pt-BR", { sensitivity: "base", numeric: true }) ||
+        String(a.product_id || "").localeCompare(String(b.product_id || ""))
       );
     }
 
