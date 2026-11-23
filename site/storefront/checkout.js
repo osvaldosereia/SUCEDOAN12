@@ -92,7 +92,7 @@
       $("customer-postal-code").value = address.postal_code || "";
       $("customer-reference").value = address.reference || "";
       $("customer-address-label").value = existingAddressMode ? "Outro endereço" : "Casa";
-      $("cancel-customer-address").hidden = !existingAddressMode || !customer;
+      $("cancel-customer-address").hidden = !existingAddressMode || !state.customer;
       if (existingAddressMode && state.customer) {
         previousCheckoutAddressId = state.customer.address && state.customer.address.id || "";
         state.customer.address = null;
