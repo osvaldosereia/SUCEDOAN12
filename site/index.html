@@ -14,10 +14,11 @@
   <link rel="stylesheet" href="visual-theme.css?v=12">
   <link rel="stylesheet" href="product-card-prices.css?v=1">
   <link rel="stylesheet" href="mobile-responsive.css?v=10">
+  <link rel="stylesheet" href="customer-address.css?v=1">
   <script src="config.js?v=2" defer></script>
   <script src="storefront/experimento-extras.js?v=21" defer></script>
   <script src="storefront/basket.js?v=16" defer></script>
-  <script src="storefront/checkout.js?v=23" defer></script>
+  <script src="storefront/checkout.js?v=24" defer></script>
   <script src="app.js?v=55" defer></script>
   <script src="experimento.js?v=10" defer></script>
   <script src="mobile-navigation.js?v=5" defer></script>
@@ -316,12 +317,28 @@
         </div>
         <p id="customer-phone-hint" class="helper">Digite com ou sem DDD. Buscamos pelos 8 dígitos finais; sem DDD, o padrão é 65.</p>
         <p id="lookup-message" class="helper" role="status" aria-live="polite">Vamos buscar seu cadastro pelo telefone.</p>
-        <div id="customer-card" class="customer-card" hidden></div>
+
+        <form id="customer-verification" class="registration-panel customer-verification-panel" hidden>
+          <h3>Confirme seu cadastro</h3>
+          <p class="helper">Para proteger seus dados, confirme o CPF/CNPJ antes de consultar os endereços salvos.</p>
+          <label class="registration-field registration-field-wide" for="customer-document-last4">Quatro últimos números do CPF/CNPJ
+            <input id="customer-document-last4" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]{4}" placeholder="Ex.: 1234">
+          </label>
+          <div id="customer-document-full-field" class="registration-field registration-field-wide" hidden>
+            <label for="customer-document-full">CPF ou CNPJ completo</label>
+            <input id="customer-document-full" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="Somente números">
+          </div>
+          <p id="customer-verification-message" class="helper registration-message" data-tone="neutral" role="status" aria-live="polite"></p>
+          <button id="verify-customer-button" class="button button-primary button-wide" type="submit">Confirmar cadastro</button>
+        </form>
+
+        <div id="customer-card" class="customer-card customer-address-book" hidden></div>
+
         <form id="customer-registration" class="registration-panel" hidden>
           <h3 id="registration-title">Cadastre seus dados para continuar</h3>
           <p id="registration-message" class="helper registration-message" data-tone="neutral" role="status" aria-live="polite"></p>
           <div class="registration-grid">
-            <label class="registration-field registration-field-wide" for="customer-name">Nome completo *
+            <label id="customer-name-field" class="registration-field registration-field-wide" for="customer-name">Nome completo *
               <input id="customer-name" name="name" autocomplete="name" maxlength="180" required>
             </label>
             <div id="customer-document-field" class="registration-field registration-field-wide">
@@ -329,6 +346,9 @@
               <input id="customer-document" name="document" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="Somente para cadastro">
             </div>
             <p id="customer-document-note" class="registration-document-note registration-field-wide" hidden></p>
+            <label id="customer-address-label-field" class="registration-field registration-field-wide" for="customer-address-label" hidden>Nome do endereço *
+              <input id="customer-address-label" name="address_label" maxlength="60" placeholder="Ex.: Casa, Trabalho">
+            </label>
             <label class="registration-field registration-field-wide" for="customer-street">Rua ou avenida *
               <input id="customer-street" name="street" autocomplete="address-line1" maxlength="180" required>
             </label>
@@ -355,12 +375,15 @@
               <input id="customer-reference" name="reference" maxlength="220" placeholder="Opcional">
             </label>
           </div>
-          <p class="helper registration-help">O endereço de entrega é obrigatório. Atendemos Cuiabá e Várzea Grande.</p>
-          <label class="customer-marketing-consent">
+          <p id="registration-help" class="helper registration-help">O endereço de entrega é obrigatório. Atendemos Cuiabá e Várzea Grande.</p>
+          <label id="customer-marketing-consent" class="customer-marketing-consent">
             <input id="customer-marketing-opt-in" type="checkbox" name="marketing_opt_in" value="1">
             <span>Aceito receber ofertas e novidades da Dona Antônia pelo WhatsApp no número informado. Posso cancelar quando quiser.</span>
           </label>
-          <button id="register-customer-button" class="button button-primary button-wide" type="submit">Salvar cadastro e continuar</button>
+          <div class="registration-form-actions">
+            <button id="cancel-customer-address" class="button button-outline" type="button" hidden>Cancelar</button>
+            <button id="register-customer-button" class="button button-primary button-wide" type="submit">Salvar cadastro e continuar</button>
+          </div>
         </form>
         <div class="delivery-date-field">
           <label class="field-label" for="delivery-date">Data de entrega</label>

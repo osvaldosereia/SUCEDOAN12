@@ -944,3 +944,29 @@ dialog.whatsapp-label-manager-dialog::backdrop { background:#211511b8; backdrop-
   .ncm-search-field { grid-column: 1 / -1; }
   .ncm-search-button { padding-inline: 12px; }
 }
+
+
+/* Customer address book */
+.customer-addresses-panel { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line); }
+.customer-address-list { display: grid; gap: 10px; margin: 12px 0 20px; }
+.customer-address-empty { padding: 16px; border: 1px dashed var(--line); border-radius: 12px; color: var(--muted); background: var(--cream); }
+.customer-address-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.customer-address-row.is-inactive { opacity: .72; background: #f7f5f2; }
+.customer-address-row-copy { min-width: 0; }
+.customer-address-row-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.customer-address-row-heading strong { color: var(--ink); }
+.customer-address-row-copy p { margin: 7px 0 0; color: var(--muted); font-size: .86rem; line-height: 1.5; overflow-wrap: anywhere; }
+.customer-address-badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 999px; background: #f4e8df; color: #7e3029; font-size: .72rem; font-weight: 700; }
+.customer-address-badge.is-inactive { background: #ebe7e2; color: #766f68; }
+.customer-address-row-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.customer-address-row-actions .button { min-height: 36px; padding: 7px 10px; font-size: .78rem; }
+.customer-address-remove { color: #8b3028; }
+.customer-address-form { padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--cream); }
+.customer-address-form h4 { margin: 0; }
+.customer-address-form .editor-grid select { width: 100%; min-height: 42px; padding: 0 12px; border: 1px solid #d8cfc3; border-radius: 10px; background: #fff; color: var(--ink); font: inherit; }
+.customer-address-form-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 640px) {
+  .customer-address-row { flex-direction: column; }
+  .customer-address-row-actions { justify-content: flex-start; }
+  .customer-address-form-actions > .button { flex: 1 1 100%; }
+}

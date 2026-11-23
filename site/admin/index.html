@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Admin · Dona Antônia</title>
   <link rel="stylesheet" href="../styles.css?v=5">
-  <link rel="stylesheet" href="admin.css?v=58">
+  <link rel="stylesheet" href="admin.css?v=59">
   <link rel="stylesheet" href="daily-offers-admin.css?v=4">
   <link rel="stylesheet" href="instagram-admin.css?v=3">
   <link rel="stylesheet" href="taxonomy-admin.css?v=1">
@@ -42,7 +42,7 @@
   <script src="whatsapp-conversations.js?v=22" defer></script>
   <script src="quick-balance-admin.js?v=7" defer></script>
   <script src="cards-admin.js?v=3" defer></script>
-  <script src="admin.js?v=31" defer></script>
+  <script src="admin.js?v=32" defer></script>
 </head>
 <body class="admin-page">
   <main id="admin-login" class="admin-login-main">
@@ -183,31 +183,54 @@
         <div id="customer-result" class="customer-result empty-result">Digite o telefone ou CPF/CNPJ para consultar o cadastro.</div>
         <div class="edit-notice">
           <strong>Edição segura do cadastro</strong>
-          <span>Edite nome, telefone, CPF/CNPJ e endereço. As alterações são registradas no histórico administrativo.</span>
+          <span>Edite os dados da pessoa e mantenha os endereços cadastrados separadamente. Cada pedido poderá usar um endereço diferente.</span>
         </div>
         <form id="customer-editor" class="customer-editor" hidden>
-          <div class="section-title"><div><h3>Dados do cadastro</h3><p>Confira os campos antes de salvar.</p></div></div>
+          <div class="section-title"><div><h3>Dados da pessoa</h3><p>Telefone e CPF/CNPJ identificam o mesmo cliente, mesmo com vários endereços.</p></div></div>
           <input name="customer_id" type="hidden">
           <input name="customer_updated_at" type="hidden">
-          <input name="address_id" type="hidden">
-          <input name="address_updated_at" type="hidden">
           <div class="editor-grid">
             <label>Nome<input name="name" maxlength="180" required></label>
             <label>Telefone<input name="phone" inputmode="tel" autocomplete="off" maxlength="18" placeholder="(65) 99999-9999" required></label>
             <label>CPF/CNPJ<input name="document" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="Somente números"></label>
-            <label>Rua<input name="street" maxlength="180"></label>
-            <label>Número<input name="number" maxlength="40"></label>
-            <label>Complemento<input name="complement" maxlength="140"></label>
-            <label>Bairro<input name="neighborhood" maxlength="140"></label>
-            <label>Cidade<input name="city" maxlength="120"></label>
-            <label>Estado<input name="state" maxlength="2"></label>
-            <label>CEP<input name="postal_code" maxlength="20"></label>
-            <label class="full-width">Referência<input name="reference" maxlength="220"></label>
           </div>
           <p id="customer-save-status" class="form-message" role="status" aria-live="polite"></p>
           <button id="save-customer" class="button button-primary button-wide" type="submit">Salvar alterações</button>
           <button id="delete-customer" class="button button-outline button-wide customer-delete-button" type="button">Excluir cadastro</button>
         </form>
+        <section id="customer-addresses-panel" class="customer-addresses-panel" hidden>
+          <div class="section-title">
+            <div><h3>Endereços de entrega</h3><p>Edite, escolha o endereço principal ou remova endereços antigos.</p></div>
+            <span id="customer-address-count" class="admin-muted"></span>
+          </div>
+          <div id="customer-address-list" class="customer-address-list" aria-live="polite">
+            <p class="admin-muted">Carregando endereços…</p>
+          </div>
+          <form id="customer-address-form" class="customer-address-form">
+            <input name="customer_id" type="hidden">
+            <input name="address_id" type="hidden">
+            <input name="address_updated_at" type="hidden">
+            <div class="section-title"><div><h4 id="customer-address-form-title">Novo endereço</h4><p>Os pedidos antigos mantêm o endereço usado naquele pedido.</p></div></div>
+            <div class="editor-grid">
+              <label class="full-width">Identificação<input name="label" maxlength="60" placeholder="Ex.: Casa, Trabalho, Mãe" required></label>
+              <label>Rua<input name="street" maxlength="180" required></label>
+              <label>Número<input name="number" maxlength="40" required></label>
+              <label>Complemento<input name="complement" maxlength="180"></label>
+              <label>Bairro<input name="neighborhood" maxlength="120" required></label>
+              <label>Cidade
+                <select name="city" required><option value="">Selecione</option><option value="Cuiabá">Cuiabá</option><option value="Várzea Grande">Várzea Grande</option></select>
+              </label>
+              <label>Estado<select name="state" required><option value="MT">MT</option></select></label>
+              <label>CEP<input name="postal_code" inputmode="numeric" maxlength="12"></label>
+              <label class="full-width">Referência<input name="reference" maxlength="220"></label>
+            </div>
+            <p id="customer-address-status" class="form-message" role="status" aria-live="polite"></p>
+            <div class="customer-address-form-actions">
+              <button id="customer-address-cancel" class="button button-outline" type="button" hidden>Cancelar edição</button>
+              <button id="customer-address-save" class="button button-primary" type="submit">Adicionar endereço</button>
+            </div>
+          </form>
+        </section>
       </section>
 
       <section class="admin-view" data-panel="baskets" hidden>

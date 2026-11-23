@@ -6,6 +6,8 @@
   const $ = (id) => document.getElementById(id);
   const esc = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
   let toastTimer = 0;
+  let customerAddressRows = [];
+  let currentCustomerId = "";
 
   async function adminRequest(action, params) {
     const response = await fetch(`${supabase}/functions/v1/site-admin-v1`, {
@@ -267,38 +269,180 @@
   }
 
   function fillCustomer(customer) {
-    const address = customer.address || {};
     const form = $("customer-editor");
     const values = {
       customer_id: customer.id || "",
       customer_updated_at: customer.updated_at || "",
-      address_id: address.id || "",
-      address_updated_at: address.updated_at || "",
-      name: customer.display_name || "", phone: displayPhone(customer.phone),
+      name: customer.display_name || "",
+      phone: displayPhone(customer.phone),
       document: customer.document || "",
-      street: address.street || "", number: address.number || "", complement: address.complement || "",
-      neighborhood: address.neighborhood || "", city: address.city || "", state: address.state || "",
-      postal_code: address.postal_code || "", reference: address.reference || "",
     };
     Object.entries(values).forEach(([name, value]) => { form.elements[name].value = value; });
     form.hidden = false;
+    $("customer-addresses-panel").hidden = false;
+    $("customer-address-form").elements.customer_id.value = customer.id || "";
     $("customer-save-status").textContent = "";
+    resetCustomerAddressForm(customer.id || "");
   }
 
   function customerResultHtml(customer) {
-    const address = formatAddress(customer.address);
-    return `<strong>${esc(customer.display_name || "Cliente")}</strong><span>${esc(displayPhone(customer.phone))}</span><br>${address.length ? address.map(esc).join("<br>") : "Sem endereço ativo cadastrado."}`;
+    return "<strong>" + esc(customer.display_name || "Cliente") + "</strong>" +
+      "<span>" + esc(displayPhone(customer.phone)) + "</span><br>Cadastro encontrado. Carregando endereços…";
   }
+
+  function customerAddressText(address) {
+    return formatAddress(address).map(esc).join("<br>") || "Endereço sem detalhes.";
+  }
+
+  function renderCustomerAddresses(addresses) {
+    const host = $("customer-address-list");
+    const activeCount = addresses.filter((address) => address.is_active === true).length;
+    $("customer-address-count").textContent = activeCount + (activeCount === 1 ? " endereço ativo" : " endereços ativos");
+    if (!addresses.length) {
+      host.innerHTML = '<div class="customer-address-empty">Nenhum endereço cadastrado. Use o formulário abaixo para adicionar o primeiro.</div>';
+      return;
+    }
+    host.innerHTML = addresses.map((address) => {
+      const active = address.is_active === true;
+      const badges = [
+        address.is_default && active ? '<span class="customer-address-badge">Principal</span>' : "",
+        !active ? '<span class="customer-address-badge is-inactive">Inativo</span>' : ""
+      ].filter(Boolean).join("");
+      const actions = active ? '<div class="customer-address-row-actions">' +
+        '<button type="button" class="button button-outline" data-customer-address-action="edit" data-address-id="' + esc(address.id) + '">Editar</button>' +
+        (address.is_default ? "" : '<button type="button" class="button button-outline" data-customer-address-action="set_default" data-address-id="' + esc(address.id) + '">Tornar principal</button>') +
+        '<button type="button" class="button button-outline customer-address-remove" data-customer-address-action="deactivate" data-address-id="' + esc(address.id) + '">Remover</button>' +
+        '</div>' : "";
+      return '<article class="customer-address-row' + (active ? "" : " is-inactive") + '">' +
+        '<div class="customer-address-row-copy"><div class="customer-address-row-heading"><strong>' + esc(address.label || "Endereço") + "</strong>" + badges +
+        '</div><p>' + customerAddressText(address) + "</p></div>" + actions + "</article>";
+    }).join("");
+  }
+
+  function resetCustomerAddressForm(customerId) {
+    const form = $("customer-address-form");
+    form.reset();
+    form.elements["customer_id"].value = customerId || currentCustomerId || "";
+    form.elements["address_id"].value = "";
+    form.elements["address_updated_at"].value = "";
+    form.elements["state"].value = "MT";
+    $("customer-address-form-title").textContent = "Novo endereço";
+    $("customer-address-save").textContent = "Adicionar endereço";
+    $("customer-address-cancel").hidden = true;
+    $("customer-address-status").textContent = "";
+  }
+
+  function fillCustomerAddress(address) {
+    const form = $("customer-address-form");
+    const values = {
+      customer_id: currentCustomerId, address_id: address.id, address_updated_at: address.updated_at || "",
+      label: address.label || "", street: address.street || "", number: address.number || "",
+      complement: address.complement || "", neighborhood: address.neighborhood || "",
+      city: address.city || "", state: address.state || "MT", postal_code: address.postal_code || "",
+      reference: address.reference || "",
+    };
+    Object.entries(values).forEach(([name, value]) => { form.elements[name].value = value; });
+    $("customer-address-form-title").textContent = "Editar endereço";
+    $("customer-address-save").textContent = "Salvar endereço";
+    $("customer-address-cancel").hidden = false;
+    $("customer-address-status").textContent = "";
+    form.elements["label"].focus();
+  }
+
+  async function loadCustomerAddresses(customerId) {
+    const id = String(customerId || "");
+    currentCustomerId = id;
+    customerAddressRows = [];
+    $("customer-address-list").innerHTML = '<p class="admin-muted">Carregando endereços…</p>';
+    $("customer-address-count").textContent = "";
+    $("customer-address-form").elements.customer_id.value = id;
+    try {
+      const data = await adminRequest("customer_addresses_list", { customer_id: id });
+      if (currentCustomerId !== id) return;
+      customerAddressRows = Array.isArray(data.addresses) ? data.addresses : [];
+      renderCustomerAddresses(customerAddressRows);
+    } catch (_) {
+      if (currentCustomerId !== id) return;
+      $("customer-address-list").innerHTML = '<div class="customer-address-empty">Não foi possível carregar os endereços. Tente novamente.</div>';
+    }
+  }
+
+  async function saveCustomerAddress(event) {
+    event.preventDefault();
+    const form = $("customer-address-form");
+    const button = $("customer-address-save");
+    const status = $("customer-address-status");
+    if (button.disabled || !form.reportValidity()) return;
+    const value = (name) => form.elements[name].value.trim();
+    const addressId = value("address_id");
+    const action = addressId ? "update" : "create";
+    button.disabled = true;
+    button.textContent = "Salvando…";
+    status.textContent = "Salvando endereço…";
+    try {
+      const saved = await adminRequest("customer_address_manage", {
+        action, customer_id: currentCustomerId, address_id: addressId || null,
+        expected_updated_at: value("address_updated_at") || null,
+        label: value("label"),
+        address: {
+          street: value("street"), number: value("number"), complement: value("complement"),
+          neighborhood: value("neighborhood"), city: value("city"), state: value("state"),
+          postal_code: value("postal_code"), reference: value("reference")
+        }
+      });
+      await loadCustomerAddresses(currentCustomerId);
+      resetCustomerAddressForm(currentCustomerId);
+      const duplicate = action === "create" && saved.created === false;
+      status.textContent = duplicate ? "Este endereço já estava cadastrado." : "Endereço salvo.";
+      toast(duplicate ? "Este endereço já estava cadastrado." :
+        action === "create" ? "Endereço adicionado ao cadastro." : "Endereço atualizado.");
+    } catch (error) {
+      const messages = {
+        address_changed: "Este endereço mudou em outra sessão. Atualize a lista e tente novamente.",
+        customer_address_not_found: "Este endereço não está mais ativo. Atualize a lista.",
+        unsupported_city: "Atendemos somente Cuiabá e Várzea Grande.",
+        invalid_customer_address: "Confira rua, número, bairro, cidade e estado."
+      };
+      status.textContent = messages[error.message] || "Não foi possível salvar o endereço. Confira os campos e tente novamente.";
+    } finally {
+      button.disabled = false;
+      button.textContent = form.elements["address_id"].value ? "Salvar endereço" : "Adicionar endereço";
+    }
+  }
+
+  async function runCustomerAddressAction(action, addressId) {
+    const address = customerAddressRows.find((item) => String(item.id) === String(addressId));
+    if (!address || !currentCustomerId) return;
+    if (action === "edit") { fillCustomerAddress(address); return; }
+    if (action === "deactivate" && !window.confirm("Remover o endereço “" + (address.label || "Endereço") + "”? Os pedidos anteriores continuam com o endereço usado.")) return;
+    try {
+      await adminRequest("customer_address_manage", { action, customer_id: currentCustomerId, address_id: address.id });
+      await loadCustomerAddresses(currentCustomerId);
+      if (String($("customer-address-form").elements.address_id.value) === String(address.id)) resetCustomerAddressForm(currentCustomerId);
+      toast(action === "set_default" ? "Endereço principal atualizado." : "Endereço removido.");
+    } catch (_) {
+      $("customer-address-status").textContent = "Não foi possível atualizar este endereço. Atualize a lista e tente novamente.";
+    }
+  }
+
+  $("customer-address-list").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-customer-address-action]");
+    if (button) runCustomerAddressAction(button.dataset.customerAddressAction, button.dataset.addressId);
+  });
+  $("customer-address-form").addEventListener("submit", saveCustomerAddress);
+  $("customer-address-cancel").addEventListener("click", () => resetCustomerAddressForm(currentCustomerId));
 
   async function openCustomer(customerId) {
     const result = $("customer-result");
     $("customer-editor").hidden = true;
+    $("customer-addresses-panel").hidden = true;
     result.textContent = "Abrindo cadastro…";
     try {
       const data = await adminRequest("customer_lookup", { customer_id: customerId });
       if (!data.found || !data.customer) throw new Error("not_found");
       result.innerHTML = customerResultHtml(data.customer);
       fillCustomer(data.customer);
+      await loadCustomerAddresses(data.customer.id);
     } catch (_) {
       result.textContent = "Não foi possível abrir o cadastro. Busque novamente.";
     }
@@ -312,6 +456,7 @@
     const button = $("customer-search-button");
     const result = $("customer-result");
     $("customer-editor").hidden = true;
+    $("customer-addresses-panel").hidden = true;
     if (by === "name" ? query.length < 2 :
         by === "document" ? ![11, 14].includes(query.length) :
         (query.length < 8 || query.length > 13)) {
@@ -353,6 +498,7 @@
       }
       result.innerHTML = customerResultHtml(data.customer);
       fillCustomer(data.customer);
+      await loadCustomerAddresses(data.customer.id);
     } catch (_) {
       result.className = "customer-result empty-result";
       result.textContent = "Não foi possível consultar o cadastro. Tente novamente.";
@@ -391,24 +537,15 @@
       await adminRequest("customer_save", {
         customer_id: value("customer_id"),
         customer_updated_at: value("customer_updated_at"),
-        address_id: value("address_id"),
-        address_updated_at: value("address_updated_at"),
         name: value("name"),
         document: customerDocument,
         phone: newPhone,
-        address: {
-          street: value("street"),
-          number: value("number"),
-          complement: value("complement"),
-          neighborhood: value("neighborhood"),
-          city: value("city"),
-          state: value("state"),
-          postal_code: value("postal_code"),
-          reference: value("reference"),
-        },
       });
       const refreshed = await adminRequest("customer_lookup", { customer_id: value("customer_id") });
-      if (refreshed.found && refreshed.customer) fillCustomer(refreshed.customer);
+      if (refreshed.found && refreshed.customer) {
+        fillCustomer(refreshed.customer);
+        await loadCustomerAddresses(refreshed.customer.id);
+      }
       status.textContent = "Cadastro atualizado.";
       $("customer-result").textContent = "Cadastro atualizado com sucesso.";
       toast("Cadastro do cliente atualizado.");
@@ -453,6 +590,8 @@
       });
       form.reset();
       form.hidden = true;
+      $("customer-addresses-panel").hidden = true;
+      currentCustomerId = "";
       $("customer-result").className = "customer-result empty-result";
       $("customer-result").textContent = "Cadastro excluído. Pesquise outro cliente para continuar.";
       $("customer-phone").value = "";
@@ -480,6 +619,7 @@
     input.inputMode = mode === "name" ? "text" : "numeric";
     input.maxLength = mode === "name" ? 120 : 18;
     $("customer-editor").hidden = true;
+    $("customer-addresses-panel").hidden = true;
     $("customer-result").textContent = mode === "name" ? "Digite o nome." :
       mode === "document" ? "Digite o CPF ou CNPJ." : "Digite o telefone com ou sem DDD.";
   });

@@ -1,0 +1,80 @@
+.customer-verification-panel[hidden],
+.customer-verification-panel [hidden],
+.customer-registration[hidden],
+.customer-registration [hidden] { display: none !important; }
+
+.customer-verification-panel {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0;
+  padding: 16px;
+  border: 1px solid #e4d8ca;
+  border-radius: 16px;
+  background: #fffdf9;
+}
+.customer-verification-panel h3,
+.customer-address-book strong { margin: 0; color: #3a2925; }
+.customer-verification-panel .registration-field { display: grid; gap: 7px; font-weight: 650; }
+.customer-verification-panel input:not([type="checkbox"]),
+.customer-registration input:not([type="checkbox"]),
+.customer-registration select {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid #d9cbbd;
+  border-radius: 11px;
+  background: #fff;
+  color: #332722;
+  font: inherit;
+}
+.customer-address-book {
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid #e4d8ca;
+  border-radius: 16px;
+  background: #fffdf9;
+}
+.customer-address-book > strong { display: block; font-size: 1.02rem; }
+.customer-address-book > .muted-line { display: block; margin-top: 3px; color: #73675f; }
+.customer-address-prompt { margin: 14px 0 9px; font-weight: 650; }
+.customer-address-options { display: grid; gap: 9px; }
+.customer-address-option {
+  display: grid;
+  grid-template-columns: 20px minmax(0,1fr);
+  align-items: start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e5dbcf;
+  border-radius: 13px;
+  background: #fff;
+  cursor: pointer;
+}
+.customer-address-option:has(input:checked) {
+  border-color: #7e3029;
+  box-shadow: 0 0 0 2px rgba(126,48,41,.12);
+  background: #fffaf6;
+}
+.customer-address-option input { margin: 3px 0 0; accent-color: #7e3029; }
+.customer-address-option-copy { display: grid; gap: 5px; min-width: 0; }
+.customer-address-option-copy > strong { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.customer-address-option-copy > small { color: #64584f; line-height: 1.45; overflow-wrap: anywhere; }
+.customer-address-default {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #f4e8df;
+  color: #7e3029;
+  font-size: .72rem;
+  font-weight: 700;
+}
+.customer-add-address { margin-top: 12px; min-height: 42px; padding-inline: 16px; }
+.customer-registration { margin-top: 16px; }
+.customer-registration .registration-help { margin: 6px 0 12px; }
+@media (max-width: 560px) {
+  .customer-verification-panel, .customer-address-book { padding: 13px; }
+  .customer-address-option { padding: 10px; }
+  .customer-add-address { width: 100%; }
+}
+
+.registration-form-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.registration-form-actions #register-customer-button { flex: 1 1 240px; }
+.registration-form-actions [hidden] { display: none !important; }
