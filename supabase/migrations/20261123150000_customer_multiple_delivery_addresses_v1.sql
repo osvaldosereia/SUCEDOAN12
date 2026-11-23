@@ -432,7 +432,7 @@ begin
   if length(v_label) < 1 then v_label := 'Casa'; end if;
 
   perform pg_advisory_xact_lock(hashtextextended('ops3:registration-phone:' || v_phone, 0));
-  perform pg_advisory_xact_lock(hashtextextended('ops3:registration-document:' || v_document, 0));
+  perform pg_advisory_xact_lock(hashtextextended('ops3:customer-document:' || v_document, 0));
 
   if exists (
     select 1 from public.customer_ids_by_phone_variants_v1(v_phone) x
