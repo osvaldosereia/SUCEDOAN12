@@ -170,6 +170,56 @@ async function customerSearchName(input: any) {
   })) };
 }
 
+async function customerAddressesList(input: any) {
+  const customerId = uuid(input.customer_id);
+  if (!customerId) return { error: "invalid_customer_id", status: 400 };
+  const result = await db.from("customer_addresses")
+    .select("id,customer_id,label,street,number,complement,neighborhood,city,state,postal_code,reference,is_default,is_active,updated_at,created_at")
+    .eq("customer_id", customerId)
+    .order("is_active", { ascending: false })
+    .order("is_default", { ascending: false })
+    .order("created_at", { ascending: true })
+    .limit(100);
+  if (result.error) throw result.error;
+  return { ok: true, addresses: result.data || [] };
+}
+
+async function customerAddressManage(input: any) {
+  const customerId = uuid(input.customer_id);
+  const action = clean(input.action, 30).toLowerCase();
+  const addressId = uuid(input.address_id);
+  const address = input.address && typeof input.address === "object" ? input.address : {};
+  if (!customerId) return { error: "invalid_customer_id", status: 400 };
+  if (!["create", "update", "set_default", "deactivate"].includes(action)) {
+    return { error: "invalid_address_action", status: 400 };
+  }
+  const saved = await db.rpc("ops3_site_admin_customer_address_manage_v1", {
+    p_action: action,
+    p_customer_id: customerId,
+    p_address_id: addressId,
+    p_expected_updated_at: clean(input.expected_updated_at, 80) || null,
+    p_label: clean(input.label, 60) || null,
+    p_address: {
+      street: clean(address.street, 180),
+      number: clean(address.number, 40),
+      complement: clean(address.complement, 180),
+      neighborhood: clean(address.neighborhood, 120),
+      city: clean(address.city, 100),
+      state: clean(address.state, 2) || "MT",
+      postal_code: clean(address.postal_code, 20),
+      reference: clean(address.reference, 220),
+    },
+  });
+  if (saved.error) throw saved.error;
+  if (saved.data?.ok !== true) {
+    const code = clean(saved.data?.error, 80) || "address_save_failed";
+    const status = code === "customer_not_found" || code === "customer_address_not_found" ? 404
+      : code === "address_changed" ? 409 : 400;
+    return { error: code, status };
+  }
+  return { ok: true, created: saved.data.created === true, address: saved.data.address || null };
+}
+
 async function customerSave(input: any) {
   const customerId = uuid(input.customer_id);
   const expectedCustomerUpdatedAt = clean(input.customer_updated_at, 80);
@@ -5296,6 +5346,8 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "whatsapp_ana_pause_channel") result = await whatsappAnaPauseChannel(input);
     else if (req.method === "POST" && action === "whatsapp_ana_admin_status") result = await whatsappAnaAdminStatus();
     else if (req.method === "POST" && action === "customer_search_name") result = await customerSearchName(input);
+    else if (req.method === "POST" && action === "customer_addresses_list") result = await customerAddressesList(input);
+    else if (req.method === "POST" && action === "customer_address_manage") result = await customerAddressManage(input);
     else if (req.method === "POST" && action === "customer_lookup") result = await customerLookup(input);
     else if (req.method === "POST" && action === "customer_save") result = await customerSave(input);
     else if (req.method === "POST" && action === "customer_delete") result = await customerDelete(input);
