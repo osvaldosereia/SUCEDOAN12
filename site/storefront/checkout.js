@@ -16,7 +16,7 @@
 
     let lookupSequence = 0;
     let checkoutPhone = "";
-    let checkoutDocumentLast4 = "";
+
     let previousCheckoutAddressId = "";
     let registrationMode = "new";
     let stockConflictItems = [];
@@ -55,16 +55,13 @@
       lookupSequence += 1;
       state.customer = null;
       checkoutPhone = "";
-      checkoutDocumentLast4 = "";
+
       previousCheckoutAddressId = "";
       registrationMode = "new";
       $("customer-card").hidden = true;
       $("customer-card").textContent = "";
-      $("customer-verification").hidden = true;
-      $("customer-verification").reset();
-      $("customer-document-full-field").hidden = true;
-      $("customer-document-full").required = false;
-      $("customer-document-full").value = "";
+
+
       $("customer-registration").hidden = true;
       $("customer-registration").reset();
       $("customer-document-field").hidden = false;
@@ -125,7 +122,7 @@
         : "Salvar cadastro e continuar";
       $("registration-message").dataset.tone = "neutral";
       $("registration-message").textContent = "";
-      $("customer-verification").hidden = true;
+
       $("customer-registration").hidden = false;
     }
 
@@ -159,7 +156,7 @@
         (options || '<p class="helper">Cadastre um endereço para continuar.</p>') + "</div>" +
         '<button id="add-customer-address" class="button button-outline customer-add-address" type="button">Adicionar outro endereço</button>';
       $("customer-card").hidden = false;
-      $("customer-verification").hidden = true;
+
       $("customer-registration").hidden = true;
       $("payment-options").disabled = false;
       updateConfirmOrderAvailability();
@@ -545,27 +542,35 @@
         ? "Sem DDD, usaremos o DDD 65. Consultando cadastro…"
         : "Consultando cadastro…";
       try {
-        const result = await request("customer_lookup", {
-          method: "POST",
-          body: { phone: normalized.phone }
-        });
+        const result = await request("customer_lookup", { params: { phone: $("customer-phone").value } });
         if (requestId !== lookupSequence) return;
+        const customer = result.customer;
         if (result.ambiguous) {
           $("lookup-message").textContent = "Mais de um cadastro usa este final de telefone. Informe o DDD e o número completo para continuar.";
           return;
         }
-        if (!result.found) {
+        if (!result.found || !customer) {
           showRegistrationForm(null, "new");
           $("lookup-message").textContent = normalized.assumedLocalDdd
             ? "Cadastro não encontrado. Usamos o DDD 65; informe o DDD correto antes de cadastrar, se necessário."
             : "Cadastro não encontrado. Preencha os dados abaixo.";
           return;
         }
-        $("customer-verification").hidden = false;
-        $("customer-document-last4").value = "";
-        $("customer-document-full-field").hidden = true;
-        $("customer-document-full").value = "";
-        $("lookup-message").textContent = "Cadastro encontrado. Confirme o CPF/CNPJ para ver e escolher os endereços salvos.";
+        if (!customerHasCheckoutAddress(customer)) {
+          checkoutPhone = customer.phone || normalized.phone;
+          showRegistrationForm(customer, "add_address");
+          if (!Array.isArray(customer.addresses) || !customer.addresses.length) {
+            $("customer-address-label").value = "Casa";
+            $("registration-title").textContent = "Adicionar endereço";
+            $("registration-help").textContent = "Seu cadastro foi localizado pelo telefone. Informe o endereço para receber este pedido.";
+          }
+          $("lookup-message").textContent = "Cadastro encontrado pelo telefone. Complete o endereço de entrega.";
+          return;
+        }
+        setConfirmedCustomer(customer, customer.phone || normalized.phone);
+        $("lookup-message").textContent = normalized.assumedLocalDdd
+          ? "Cadastro localizado pelo telefone. Confira os endereços e escolha a entrega."
+          : "Cadastro e endereços encontrados. Escolha o endereço, a data e o pagamento.";
       } catch (error) {
         if (requestId !== lookupSequence) return;
         $("lookup-message").textContent = error.message === "rate_limited"
@@ -576,55 +581,6 @@
           $("lookup-button").disabled = false;
           $("lookup-button").textContent = "Buscar";
         }
-      }
-    }
-
-    async function verifyExistingCustomer(event) {
-      event.preventDefault();
-      if (!checkoutPhone) return;
-      const button = $("verify-customer-button");
-      button.disabled = true;
-      button.textContent = "Conferindo…";
-      $("customer-verification-message").dataset.tone = "pending";
-      $("customer-verification-message").textContent = "Validando os dados…";
-      const last4 = phoneDigits($("customer-document-last4").value).slice(-4);
-      const fullDocument = phoneDigits($("customer-document-full").value);
-      try {
-        const result = await request("customer_address_lookup", {
-          method: "POST",
-          body: { phone: checkoutPhone, document_last4: last4, document: fullDocument }
-        });
-        const customer = result.customer;
-        if (!customer || !customer.id) throw new Error("customer_lookup_unavailable");
-        checkoutDocumentLast4 = last4 || fullDocument.slice(-4);
-        $("customer-verification").hidden = true;
-        $("customer-document-full").required = false;
-        if (Array.isArray(customer.addresses) && customer.addresses.length) {
-          setConfirmedCustomer(customer, checkoutPhone);
-          $("lookup-message").textContent = "Endereços encontrados. Escolha onde deseja receber este pedido.";
-        } else {
-          showRegistrationForm(customer, "add_address");
-          $("lookup-message").textContent = "Cadastro confirmado. Informe o primeiro endereço de entrega.";
-        }
-      } catch (error) {
-        const reason = String(error && error.message || "");
-        if (reason === "document_missing") {
-          $("customer-document-full-field").hidden = false;
-          $("customer-document-full").required = true;
-          $("customer-verification-message").dataset.tone = "neutral";
-          $("customer-verification-message").textContent = "Não há CPF/CNPJ confirmado neste cadastro. Informe o documento completo para continuar.";
-        } else {
-          $("customer-verification-message").dataset.tone = "error";
-          $("customer-verification-message").textContent =
-            reason === "document_mismatch" ? "Os números não conferem. Confira os últimos quatro dígitos do CPF/CNPJ."
-            : reason === "rate_limited" ? "Muitas tentativas. Aguarde alguns minutos."
-            : reason === "ambiguous_phone" ? "Há mais de um cadastro com esses números. Informe o telefone completo com DDD."
-            : reason === "document_already_in_use" ? "Esse CPF/CNPJ já está associado a outro cadastro. Fale com a loja para corrigir."
-            : "Não foi possível confirmar agora. Confira os dados e tente novamente.";
-        }
-      } finally {
-        button.disabled = false;
-        button.textContent = "Confirmar cadastro";
       }
     }
 
@@ -659,7 +615,7 @@
             method: "POST",
             body: {
               phone,
-              document_last4: checkoutDocumentLast4,
+
               label: $("customer-address-label").value.trim(),
               ...address
             }
@@ -694,7 +650,7 @@
           document_already_in_use: "CPF/CNPJ já está em outro cadastro. Confira o telefone com DDD e toque em Buscar.",
           document_mismatch: "CPF/CNPJ não confere com este telefone. Confira os dados e o DDD.",
           identity_mismatch: "Nome diferente do cadastro. Confira o nome ou o telefone com DDD.",
-          existing_customer_requires_verification: "Cadastro já existente. Busque o telefone e confirme o CPF/CNPJ para adicionar outro endereço.",
+          existing_customer_requires_verification: "Cadastro já existente. Busque pelo telefone para escolher ou adicionar um endereço.",
           ambiguous_phone: "Mais de um cadastro encontrado. Informe o telefone com DDD.",
           invalid_phone: "Telefone inválido. Informe o DDD junto ao número.",
           rate_limited: "Muitas tentativas. Aguarde alguns minutos.",
@@ -1022,7 +978,7 @@
         setConfirmedCustomer(state.customer, checkoutPhone, previous);
         $("lookup-message").textContent = "Endereço anterior mantido. Escolha onde deseja receber o pedido.";
       });
-      $("customer-verification").addEventListener("submit", verifyExistingCustomer);
+
       $("customer-card").addEventListener("change", (event) => {
         const input = event.target;
         if (!input || input.name !== "checkout-delivery-address") return;

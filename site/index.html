@@ -14,11 +14,11 @@
   <link rel="stylesheet" href="visual-theme.css?v=12">
   <link rel="stylesheet" href="product-card-prices.css?v=1">
   <link rel="stylesheet" href="mobile-responsive.css?v=10">
-  <link rel="stylesheet" href="customer-address.css?v=1">
+  <link rel="stylesheet" href="customer-address.css?v=2">
   <script src="config.js?v=2" defer></script>
   <script src="storefront/experimento-extras.js?v=21" defer></script>
   <script src="storefront/basket.js?v=16" defer></script>
-  <script src="storefront/checkout.js?v=24" defer></script>
+  <script src="storefront/checkout.js?v=25" defer></script>
   <script src="app.js?v=55" defer></script>
   <script src="experimento.js?v=10" defer></script>
   <script src="mobile-navigation.js?v=5" defer></script>
@@ -318,20 +318,7 @@
         <p id="customer-phone-hint" class="helper">Digite com ou sem DDD. Buscamos pelos 8 dígitos finais; sem DDD, o padrão é 65.</p>
         <p id="lookup-message" class="helper" role="status" aria-live="polite">Vamos buscar seu cadastro pelo telefone.</p>
 
-        <form id="customer-verification" class="registration-panel customer-verification-panel" hidden>
-          <h3>Confirme seu cadastro</h3>
-          <p class="helper">Para proteger seus dados, confirme o CPF/CNPJ antes de consultar os endereços salvos.</p>
-          <label class="registration-field registration-field-wide" for="customer-document-last4">Quatro últimos números do CPF/CNPJ
-            <input id="customer-document-last4" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]{4}" placeholder="Ex.: 1234">
-          </label>
-          <div id="customer-document-full-field" class="registration-field registration-field-wide" hidden>
-            <label for="customer-document-full">CPF ou CNPJ completo</label>
-            <input id="customer-document-full" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="Somente números">
-          </div>
-          <p id="customer-verification-message" class="helper registration-message" data-tone="neutral" role="status" aria-live="polite"></p>
-          <button id="verify-customer-button" class="button button-primary button-wide" type="submit">Confirmar cadastro</button>
-        </form>
-
+        
         <div id="customer-card" class="customer-card customer-address-book" hidden></div>
 
         <form id="customer-registration" class="registration-panel" hidden>

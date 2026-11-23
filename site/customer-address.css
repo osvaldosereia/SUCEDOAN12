@@ -1,21 +1,7 @@
-.customer-verification-panel[hidden],
-.customer-verification-panel [hidden],
 .customer-registration[hidden],
 .customer-registration [hidden] { display: none !important; }
 
-.customer-verification-panel {
-  display: grid;
-  gap: 12px;
-  margin: 18px 0;
-  padding: 16px;
-  border: 1px solid #e4d8ca;
-  border-radius: 16px;
-  background: #fffdf9;
-}
-.customer-verification-panel h3,
 .customer-address-book strong { margin: 0; color: #3a2925; }
-.customer-verification-panel .registration-field { display: grid; gap: 7px; font-weight: 650; }
-.customer-verification-panel input:not([type="checkbox"]),
 .customer-registration input:not([type="checkbox"]),
 .customer-registration select {
   width: 100%;
@@ -70,7 +56,7 @@
 .customer-registration { margin-top: 16px; }
 .customer-registration .registration-help { margin: 6px 0 12px; }
 @media (max-width: 560px) {
-  .customer-verification-panel, .customer-address-book { padding: 13px; }
+  .customer-address-book { padding: 13px; }
   .customer-address-option { padding: 10px; }
   .customer-add-address { width: 100%; }
 }
