@@ -642,12 +642,26 @@ async function cachedHomePriority(){
   // Both public endpoints share the same snapshot and cold-build promise.
   return priorityFromPublicHome(await cachedHome());
 }
+const MOLD_PRODUCT_READ_CHUNK_SIZE=128;
+function moldProductIdChunks(ids:string[]){
+  const chunks:string[][]=[];
+  for(let index=0;index<ids.length;index+=MOLD_PRODUCT_READ_CHUNK_SIZE){
+    chunks.push(ids.slice(index,index+MOLD_PRODUCT_READ_CHUNK_SIZE));
+  }
+  return chunks;
+}
 async function moldAvailableStockMap(productIds:string[]){
-  const ids=[...new Set(productIds.filter(Boolean))];const out=new Map<string,number>();if(!ids.length)return out;
-  const {data,error}=await db.from("storefront_product_sellable_stock_v1")
-    .select("product_id,sellable_stock,is_active").in("product_id",ids);
-  if(error)throw error;
-  for(const r of data||[])out.set(String(r.product_id),r.is_active===true?Math.max(0,Number(r.sellable_stock||0)):0);
+  const ids=[...new Set(productIds.filter(Boolean))],out=new Map<string,number>();
+  if(!ids.length)return out;
+  const batches=await Promise.all(moldProductIdChunks(ids).map(async(chunk:string[])=>{
+    const {data,error}=await db.from("storefront_product_sellable_stock_v1")
+      .select("product_id,sellable_stock,is_active").in("product_id",chunk);
+    if(error)throw error;
+    return data||[];
+  }));
+  for(const rows of batches)for(const r of rows){
+    out.set(String(r.product_id),r.is_active===true?Math.max(0,Number(r.sellable_stock||0)):0);
+  }
   return out;
 }
 
@@ -696,7 +710,19 @@ function moldConfiguredBase(mold:any,positions:any[],defaults:Map<string,string>
   return {productTotalCents,conditionalAppliedCents,totalCents:hasFixedDefaultPrice?fixedDefaultPriceCents:fallbackTotalCents};
 }
 
-async function moldProductsMap(ids:string[]){const clean=[...new Set(ids.filter(Boolean))],out=new Map<string,any>();if(!clean.length)return out;const q=await db.from("products").select("id,name,brand,sku,gtin,image_url,packaging,price,offer_price,is_offer,is_active,metadata").in("id",clean);if(q.error)throw q.error;for(const p of q.data||[])out.set(String(p.id),p);return out}
+async function moldProductsMap(ids:string[]){
+  const clean=[...new Set(ids.filter(Boolean))],out=new Map<string,any>();
+  if(!clean.length)return out;
+  const batches=await Promise.all(moldProductIdChunks(clean).map(async(chunk:string[])=>{
+    const q=await db.from("products")
+      .select("id,name,brand,sku,gtin,image_url,packaging,price,offer_price,is_offer,is_active,metadata")
+      .in("id",chunk);
+    if(q.error)throw q.error;
+    return q.data||[];
+  }));
+  for(const rows of batches)for(const p of rows)out.set(String(p.id),p);
+  return out
+}
 
 async function publicBasketExtraThemes(){
   const themeQ=await db.from("basket_extra_themes")
