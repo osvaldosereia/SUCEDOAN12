@@ -55,6 +55,25 @@ function safeImageParameter(parameter) {
   if (url.protocol !== 'https:' || url.username || url.password) throw invalidRequest();
   return { type: 'image', image: { link: url.toString() } };
 }
+function safeTemplateHeaderParameter(component) {
+  const type = String(component?.type ?? "").toLowerCase();
+  const parameters = component?.parameters ?? [];
+  if (!["image", "video"].includes(type) || !Array.isArray(parameters) || parameters.length !== 1) throw invalidRequest();
+  const parameter = parameters[0];
+  if (!parameter || typeof parameter !== "object" || String(parameter.type ?? "").toLowerCase() !== type) throw invalidRequest();
+  const media = parameter[type];
+  if (!media || typeof media !== "object" || Array.isArray(media)) throw invalidRequest();
+  const id = typeof media.id === "string" ? media.id.trim() : "";
+  if (id && /^\d{5,30}$/.test(id)) return { type, parameters: [{ type, [type]: { id } }] };
+  const link = typeof media.link === "string" ? media.link.trim() : "";
+  if (!link || link.length > 2000 || /[\u0000-\u001f\u007f]/.test(link)) throw invalidRequest();
+  let url;
+  try { url = new URL(link); } catch { throw invalidRequest(); }
+  const trustedStorage = url.hostname === "ssbesxgaijknwsjbsbcz.supabase.co"
+    && url.pathname.startsWith("/storage/v1/object/public/marketing-campaign-media-v1/");
+  if (url.protocol !== "https:" || url.username || url.password || !trustedStorage) throw invalidRequest();
+  return { type, parameters: [{ type, [type]: { link: url.toString() } }] };
+}
 function safeQuickReplyButton(component) {
   const subType = String(component?.sub_type ?? '').toLowerCase();
   const index = String(component?.index ?? '');
@@ -136,6 +155,7 @@ function validateTemplateRequest({ accessToken, phoneNumberId, toE164, templateN
       }
       return safeQuickReplyButton(component);
     }
+    if (type === 'header') return safeTemplateHeaderParameter(component);
     if (type === 'carousel') return safeCarouselComponent(component);
 
     throw invalidRequest();

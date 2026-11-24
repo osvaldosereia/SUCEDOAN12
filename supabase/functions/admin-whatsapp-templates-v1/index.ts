@@ -12,6 +12,7 @@ const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_KEY=(()=>{try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}").default||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||""}})();
 const META_WHATSAPP_ACCESS_TOKEN=(Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||"").trim();
 const META_WHATSAPP_GRAPH_VERSION=(Deno.env.get("META_WHATSAPP_GRAPH_VERSION")||"").trim();
+const META_WHATSAPP_APP_ID=(Deno.env.get("META_WHATSAPP_APP_ID")||"").trim();
 const DA_FLOW_1018_RSA_PKCS8=(Deno.env.get("DA_FLOW_1018_RSA_PKCS8")||"").trim();
 const META_WHATSAPP_APP_SECRET=(Deno.env.get("META_WHATSAPP_APP_SECRET")||"").trim();
 const FLOW_FUNCTION_PATH="/functions/v1/whatsapp-1018-basket-flow-v1";
@@ -50,6 +51,87 @@ async function accountById(accountId:string){
   const q=await db.from("whatsapp_accounts").select("id,slug,display_name,waba_id,phone_number_id,is_active").eq("id",accountId).eq("is_active",true).maybeSingle();
   if(q.error)throw q.error;
   return q.data||null;
+}
+
+const CAMPAIGN_MEDIA_BUCKET="marketing-campaign-media-v1";
+const MAX_IMAGE_BYTES=5*1024*1024;
+const MAX_VIDEO_BYTES=16*1024*1024;
+
+function normalizeMarketingUpload(file:File){
+  const mime=String(file.type||"").toLowerCase();
+  const isImage=["image/jpeg","image/png"].includes(mime);
+  const isVideo=mime==="video/mp4";
+  if((!isImage&&!isVideo)||!file.size||file.size>(isImage?MAX_IMAGE_BYTES:MAX_VIDEO_BYTES))return null;
+  const extension=mime==="image/jpeg"?"jpg":mime==="image/png"?"png":"mp4";
+  return {mime,extension,type:isVideo?"VIDEO":"IMAGE"};
+}
+
+async function uploadMetaTemplateSample(account:any,file:File){
+  if(!metaReady())return {ok:false,error:"meta_transport_not_configured",status:503};
+  if(!/^\d{5,30}$/.test(String(META_WHATSAPP_APP_ID||"")))return {ok:false,error:"meta_app_id_not_configured",status:503};
+  const normalized=normalizeMarketingUpload(file);
+  if(!normalized)return {ok:false,error:"meta_media_file_invalid",status:400};
+  if(!/^\d{5,30}$/.test(String(account?.waba_id||"")))return {ok:false,error:"waba_not_configured",status:409};
+  const filename=clean(file.name||`marketing-header.${normalized.extension}`,180).replace(/[^A-Za-z0-9._-]/g,"_")||`marketing-header.${normalized.extension}`;
+  const sessionUrl=new URL(`https://graph.facebook.com/${META_WHATSAPP_GRAPH_VERSION}/${META_WHATSAPP_APP_ID}/uploads`);
+  sessionUrl.searchParams.set("file_length",String(file.size));
+  sessionUrl.searchParams.set("file_type",normalized.mime);
+  sessionUrl.searchParams.set("file_name",filename);
+  sessionUrl.searchParams.set("access_token",META_WHATSAPP_ACCESS_TOKEN);
+  let sessionResponse:Response;
+  try{
+    sessionResponse=await fetch(sessionUrl,{method:"POST",signal:AbortSignal.timeout(30000)});
+  }catch{return {ok:false,error:"meta_media_upload_failed",status:502};}
+  const sessionPayload=await sessionResponse.json().catch(()=>({}));
+  const uploadId=clean(sessionPayload?.id,180);
+  if(!sessionResponse.ok||!uploadId||!/^upload:[A-Za-z0-9_-]+$/.test(uploadId))return {ok:false,error:"meta_media_upload_failed",status:502};
+  let uploadResponse:Response;
+  try{
+    uploadResponse=await fetch(`https://graph.facebook.com/${META_WHATSAPP_GRAPH_VERSION}/${encodeURIComponent(uploadId)}`,{
+      method:"POST",
+      headers:{Authorization:`OAuth ${META_WHATSAPP_ACCESS_TOKEN}`,file_offset:"0","Content-Type":"application/octet-stream"},
+      body:await file.arrayBuffer(),
+      signal:AbortSignal.timeout(60000),
+    });
+  }catch{return {ok:false,error:"meta_media_upload_failed",status:502};}
+  const uploadPayload=await uploadResponse.json().catch(()=>({}));
+  const headerHandle=clean(uploadPayload?.h,4096);
+  if(!uploadResponse.ok||!headerHandle)return {ok:false,error:"meta_media_upload_failed",status:502};
+  return {ok:true,header_handle:headerHandle,type:normalized.type,mime_type:normalized.mime,file_name:filename};
+}
+
+async function uploadCampaignMedia(account:any,file:File){
+  if(!account||!account.id)return {ok:false,error:"account_not_found",status:404};
+  const normalized=normalizeMarketingUpload(file);
+  if(!normalized)return {ok:false,error:"meta_media_file_invalid",status:400};
+  const path=`${account.id}/${crypto.randomUUID()}.${normalized.extension}`;
+  const uploaded=await db.storage.from(CAMPAIGN_MEDIA_BUCKET).upload(path,file,{contentType:normalized.mime,cacheControl:"31536000",upsert:false});
+  if(uploaded.error)return {ok:false,error:"campaign_media_storage_failed",status:503};
+  const publicResult=db.storage.from(CAMPAIGN_MEDIA_BUCKET).getPublicUrl(path);
+  const mediaUrl=String(publicResult?.data?.publicUrl||"");
+  if(!mediaUrl)return {ok:false,error:"campaign_media_storage_failed",status:503};
+  return {ok:true,type:normalized.type,media_url:mediaUrl,mime_type:normalized.mime,file_name:clean(file.name||`marketing-header.${normalized.extension}`,240),whatsapp_account_id:account.id};
+}
+
+async function handleMediaUpload(req:Request,url:URL,auth:any){
+  if(!["owner","template_editor"].includes(String(auth.role||"")))return json(req,{ok:false,error:"forbidden"},403);
+  const action=String(url.searchParams.get("action")||"");
+  const contentLength=Number(req.headers.get("content-length")||0);
+  if(Number.isFinite(contentLength)&&contentLength>MAX_VIDEO_BYTES+512*1024)return json(req,{ok:false,error:"meta_media_file_invalid"},413);
+  let form:FormData;
+  try{form=await req.formData();}catch{return json(req,{ok:false,error:"invalid_multipart"},400);}
+  const file=form.get("file");
+  if(!(file instanceof File))return json(req,{ok:false,error:"meta_media_file_invalid"},400);
+  const accountId=validUuid(url.searchParams.get("account_id"));
+  if(!accountId)return json(req,{ok:false,error:"invalid_account_id"},400);
+  const account=await accountById(accountId);
+  if(!account)return json(req,{ok:false,error:"account_not_found"},404);
+  const result=action==="template_sample_upload"
+    ? await uploadMetaTemplateSample(account,file)
+    : await uploadCampaignMedia(account,file);
+  const status=Number(result.status)|| (result.ok?200:502);
+  const {status:_status,...payload}=result;
+  return json(req,payload,status);
 }
 
 async function templateRowById(templateId:string){
@@ -109,6 +191,19 @@ function mutationFieldsBlocked(body:any,action:string){
   if(action!=="create"&&body?.account_id!==undefined)return true;
   if(action==="create"&&body?.template_id!==undefined)return true;
   return false;
+}
+
+function marketingTemplateDraftError(draft:any){
+  if(String(draft?.category||"").toUpperCase()!=="MARKETING")return "";
+  const components=Array.isArray(draft?.components)?draft.components:[];
+  const header=components.find((component:any)=>String(component?.type||"").toUpperCase()==="HEADER");
+  const body=components.find((component:any)=>String(component?.type||"").toUpperCase()==="BODY");
+  const buttons=components.find((component:any)=>String(component?.type||"").toUpperCase()==="BUTTONS");
+  if(!["IMAGE","VIDEO"].includes(String(header?.format||"").toUpperCase()))return "marketing_header_media_required";
+  if(!Array.isArray(header?.example?.header_handle)||!String(header.example.header_handle[0]||"").trim())return "marketing_header_sample_required";
+  if(!String(body?.text||"").trim())return "meta_template_body_required";
+  if(!Array.isArray(buttons?.buttons)||buttons.buttons.length===0)return "marketing_button_required";
+  return "";
 }
 
 
@@ -385,8 +480,12 @@ Deno.serve(async(req:Request)=>{
     if(auth.role==="template_editor"){
       const allowed=req.method==="GET"
         ? ["list","sync"].includes(action)
-        : req.method==="POST"&&["create","edit"].includes(action);
+        : req.method==="POST"&&["create","edit","template_sample_upload","campaign_media_upload"].includes(action);
       if(!allowed)return json(req,{ok:false,error:"forbidden"},403);
+    }
+
+    if(req.method==="POST"&&["template_sample_upload","campaign_media_upload"].includes(action)){
+      return await handleMediaUpload(req,url,auth);
     }
 
     if(req.method==="POST"){
@@ -440,6 +539,8 @@ Deno.serve(async(req:Request)=>{
         if(action==="create"){
           const accountId=validUuid(body?.account_id);if(!accountId)return json(req,{ok:false,error:"invalid_account_id"},400);
           const account=await accountById(accountId);if(!account)return json(req,{ok:false,error:"account_not_found"},404);
+        const marketingDraftError=marketingTemplateDraftError(body?.draft);
+        if(marketingDraftError)return json(req,{ok:false,error:marketingDraftError},400);
           const remote=await createTemplateViaMeta({accessToken:META_WHATSAPP_ACCESS_TOKEN,wabaId:account.waba_id,graphVersion:META_WHATSAPP_GRAPH_VERSION,template:body?.draft,timeoutMs:15000});
           return json(req,await mutationResult(account,"create",remote),200);
         }

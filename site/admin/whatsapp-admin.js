@@ -103,15 +103,10 @@
       ? "Snapshot vigente"
       : "Snapshot da revisão " + (snapshot.campaign_revision || "anterior") + " · campanha na revisão " + (item.revision || "atual");
     const template = [snapshot.template_name, snapshot.template_language, human(snapshot.template_category)].filter(Boolean).join(" · ");
-    const currentEvidenceCount = snapshot.currently_verified_consent_count == null ? Number.NaN : Number(snapshot.currently_verified_consent_count);
-    const evidenceStatus = Number.isFinite(currentEvidenceCount)
-      ? currentEvidenceCount + " opt-ins com evidência individual verificada agora"
-      : "Evidência individual atual indisponível";
     return [
       revision,
       (snapshot.eligible_count || 0) + " elegíveis de " + (snapshot.found_count || 0) + " encontrados",
       (snapshot.excluded_count || 0) + " excluídos",
-      evidenceStatus,
       template ? "Modelo: " + template : "",
       "Congelado em " + dateLabel(snapshot.created_at),
     ].filter(Boolean).join(" · ");
@@ -127,7 +122,7 @@
     const count = (value) => String(Math.max(0, Math.trunc(Number(value) || 0)));
     const reasons = [
       ["Opt-out", details.opted_out_count],
-      ["Sem evidência individual", details.consent_evidence_unverified_count],
+      ["Declaração de autorização pendente", details.consent_evidence_unverified_count],
       ["Sem consentimento", details.no_consent_count],
       ["Cadastro inativo", details.inactive_customer_count],
       ["Telefone inválido", details.invalid_phone_count],
@@ -140,7 +135,7 @@
         : '<small class="whatsapp-campaign-exclusion-muted">Nenhuma exclusão neste snapshot.</small>';
     }
     const chips = reasons.map(([label, value]) => {
-      const suppressed = ["Opt-out", "Sem evidência individual"].includes(label) && Number(value) > 0;
+      const suppressed = ["Opt-out", "Declaração de autorização pendente"].includes(label) && Number(value) > 0;
       return '<span class="whatsapp-campaign-exclusion-chip' + (suppressed ? " is-suppressed" : "") + '">' + esc(label) + ": " + count(value) + "</span>";
     }).join("");
     return '<div class="whatsapp-campaign-exclusions" aria-label="Motivos de exclusão">' + chips + '</div><small class="whatsapp-campaign-exclusion-muted">Os motivos podem se sobrepor.</small>';
@@ -191,22 +186,16 @@
       actions.push(campaignActionButton(item, "draft", "Voltar ao rascunho"));
     }
     const canExecute = item.campaigns_enabled === true && item.send_enabled === true && String(item.execution_mode || "off") !== "off";
-    const currentEvidenceCount = Number(item.snapshot?.currently_verified_consent_count);
-    const hasCurrentEvidence = Number.isFinite(currentEvidenceCount) && currentEvidenceCount > 0;
-    if (status === "approved" && currentSnapshot && canExecute && hasCurrentEvidence) {
-      actions.push(campaignActionButton(item, "manual_batch", "Enviar lote de até 10"));
+    if (status === "approved" && currentSnapshot && canExecute) {
+      actions.push(campaignActionButton(item, "manual_batch", "Iniciar agora em ritmo gradual", "button-primary"));
       const min = campaignLocalDateTimeValue(Date.now() + 5 * 60 * 1000);
       actions.push(
-        '<label class="whatsapp-campaign-schedule"><span>Agendar a partir de</span><input type="datetime-local" data-campaign-schedule-time data-campaign-id="' + esc(item.id) + '" data-campaign-revision="' + esc(revision) + '" min="' + esc(min) + '"></label>'
-        + campaignActionButton(item, "schedule", "Agendar campanha", "button-primary")
+        '<label class="whatsapp-campaign-schedule"><span>Agendar início</span><input type="datetime-local" data-campaign-schedule-time data-campaign-id="' + esc(item.id) + '" data-campaign-revision="' + esc(revision) + '" min="' + esc(min) + '"></label>'
+        + campaignActionButton(item, "schedule", "Agendar campanha", "button-outline")
       );
-    } else if (status === "approved" && currentSnapshot && canExecute) {
-      actions.push('<p class="whatsapp-campaign-send-blocked" role="note">Envio bloqueado: o snapshot vigente não tem consentimentos individuais verificados.</p>');
     }
-    if (status === "paused" && item.manual_batch_mode === true && canExecute && hasCurrentEvidence) {
-      actions.push(campaignActionButton(item, "manual_batch", "Enviar próximo lote (até 10)", "button-primary"));
-    } else if (status === "paused" && item.manual_batch_mode === true && canExecute) {
-      actions.push('<p class="whatsapp-campaign-send-blocked" role="note">Próximo lote bloqueado: o snapshot vigente não tem consentimentos individuais verificados.</p>');
+    if (status === "paused" && canExecute) {
+      actions.push(campaignActionButton(item, "manual_batch", "Retomar em ritmo gradual", "button-primary"));
     }
     if (["scheduled", "running"].includes(status)) actions.push(campaignActionButton(item, "pause", "Pausar"));
     if (["draft", "ready_for_review", "approved", "scheduled", "running", "paused"].includes(status)) {
@@ -231,7 +220,7 @@
     if (action === "snapshot") {
       requestAction = "whatsapp_campaign_snapshot";
       payload.idempotency_key = campaignDraftIdempotencyKey();
-      confirmation = "Isso congela os filtros atuais e grava a lista e as referências dos destinatários no banco de campanhas. Não envia mensagens. Continue somente depois de revisar a prévia e a evidência de consentimento.";
+      confirmation = "Isso congela os filtros e a lista de destinatários para revisão. Nenhuma mensagem será enviada nesta etapa. Opt-outs explícitos, cadastros inativos e telefones inválidos continuam excluídos.";
     } else if (action === "review") {
       requestAction = "whatsapp_campaign_transition";
       payload.to_status = "ready_for_review";
@@ -242,7 +231,7 @@
       const campaign = (lastOverview?.campaigns?.recent || []).find((item) => item.id === campaignId) || {};
       const eligible = Math.max(0, Math.trunc(Number(campaign.snapshot?.eligible_count) || 0)).toLocaleString("pt-BR");
       const excluded = Math.max(0, Math.trunc(Number(campaign.snapshot?.excluded_count) || 0)).toLocaleString("pt-BR");
-      confirmation = "Aprovar " + (campaign.name || "esta audiência") + " (" + eligible + " elegíveis; " + excluded + " excluídos) para que possa ser agendada depois? A aprovação não agenda nem envia. O snapshot só considera opt-ins com evidência individual verificável; declarações administrativas ficam excluídas. Revise a origem e as contagens antes de aprovar.";
+      confirmation = "Aprovar " + (campaign.name || "esta audiência") + " (" + eligible + " elegíveis; " + excluded + " excluídos) para que possa ser agendada depois? A aprovação não agenda nem envia. Opt-outs explícitos, cadastros inativos e telefones inválidos permanecem excluídos.";
     } else if (action === "draft") {
       requestAction = "whatsapp_campaign_transition";
       payload.to_status = "draft";
@@ -258,7 +247,7 @@
       payload.scheduled_for = new Date(scheduledAt).toISOString();
       const campaign = (lastOverview?.campaigns?.recent || []).find((item) => item.id === campaignId) || {};
       const eligible = Math.max(0, Math.trunc(Number(campaign.snapshot?.eligible_count) || 0)).toLocaleString("pt-BR");
-      confirmation = "Agendar " + (campaign.name || "esta campanha") + " para " + new Date(scheduledAt).toLocaleString("pt-BR") + " no canal " + (campaign.channel || "selecionado") + ". O snapshot tem " + eligible + " destinatários aptos. A execução poderá enviar mensagens reais pelo WhatsApp no horário escolhido. O snapshot só envia contatos com evidência individual verificável; confira a origem e o modelo Meta antes de confirmar.";
+      confirmation = "Agendar " + (campaign.name || "esta campanha") + " para " + new Date(scheduledAt).toLocaleString("pt-BR") + " no canal " + (campaign.channel || "selecionado") + ". O snapshot tem " + eligible + " destinatários aptos. Depois do horário escolhido, o envio será gradual: até 8 mensagens por dia no total, com pelo menos 60 minutos entre elas, de segunda a sábado, das 9h às 18h (horário de Cuiabá).";
     } else if (action === "manual_batch") {
       requestAction = "whatsapp_campaign_manual_batch";
       payload.idempotency_key = button.dataset.campaignIdempotencyKey || campaignDraftIdempotencyKey();
@@ -267,7 +256,7 @@
       const modeWarning = mode === "canary"
         ? " O modo canário restringe os destinatários aos telefones de canário autorizados."
         : " O modo atual pode enviar mensagens a clientes elegíveis.";
-      confirmation = "Este lote envia imediatamente até 10 mensagens reais pelo modelo Meta para destinatários aptos do snapshot congelado." + modeWarning + " Mensagens aceitas pela Meta não podem ser recolhidas. Cada destinatário será revalidado por evidência individual antes do envio. Confira a origem e confirme apenas se deseja iniciar agora.";
+      confirmation = "Colocar " + (campaign.name || "esta campanha") + " na fila de envio gradual? Nenhuma mensagem será enviada imediatamente. A campanha enviará até 8 mensagens por dia no total, uma por vez, com pelo menos 60 minutos de intervalo, de segunda a sábado, das 9h às 18h (horário de Cuiabá). Opt-outs explícitos, cadastros inativos e telefones inválidos serão respeitados." + modeWarning;
     } else if (action === "pause") {
       requestAction = "whatsapp_campaign_pause";
       confirmation = "Pausar a campanha? Isso interrompe os próximos despachos; mensagens já aceitas pela Meta não podem ser recolhidas.";
@@ -292,7 +281,7 @@
         if (updatedStatus) {
           if (result.already_processed) updatedStatus.textContent = "Este lote já foi processado; confira os status no histórico.";
           else if (result.status === "no_work") updatedStatus.textContent = "Não havia destinatários aptos pendentes no snapshot.";
-          else updatedStatus.textContent = result.claimed_count + " reservados; " + result.accepted_count + " aceitos pela API da Meta; " + result.failed_count + " falhas; " + result.uncertain_count + " incertos.";
+          else updatedStatus.textContent = "Campanha na fila gradual. O worker enviará no próximo horário disponível, respeitando o limite diário e o intervalo global.";
         }
       }
     } catch (error) {
@@ -308,15 +297,12 @@
       + (item.scheduled_for ? " · Agendada para " + dateLabel(item.scheduled_for) : "");
     const when = item.scheduled_for || item.started_at || item.created_at;
     const canShowReport = Boolean(item.id) && !["draft", "ready_for_review"].includes(String(item.status || "").toLowerCase());
-    const requiresConsentReview = ["approved", "scheduled", "running", "paused"].includes(String(item.status || "").toLowerCase())
-      && item.snapshot?.is_current_revision === true;
     return '<article class="whatsapp-record-row whatsapp-campaign-row"><div class="whatsapp-record-main">'
       + '<h3>' + esc(item.name || "Campanha") + "</h3><p>" + esc(subtitle) + "</p>"
       + campaignDeliveryMarkup(item)
       + (canShowReport ? '<button class="button button-outline whatsapp-campaign-report-button" type="button" data-campaign-report="' + esc(item.id) + '" aria-expanded="false">Ver resultado</button><div class="whatsapp-campaign-report-host" data-campaign-report-result hidden></div>' : "")
       + '<small class="whatsapp-campaign-snapshot">' + esc(campaignSnapshotLabel(item)) + "</small>"
       + campaignExclusionMarkup(item)
-      + (requiresConsentReview ? '<p class="whatsapp-campaign-consent-warning" role="note"><strong>O envio exige opt-in individual verificável.</strong> Declarações administrativas não comprovam adesão e ficam excluídas. Confira a origem e as contagens antes de aprovar.</p>' : "")
       + (item.id ? '<button class="button button-outline whatsapp-campaign-preview-button" type="button" data-campaign-preview="' + esc(item.id) + '" aria-expanded="false">Prévia do público</button><div class="whatsapp-campaign-preview" data-campaign-preview-result hidden role="status" aria-live="polite"></div>' : "")
       + (item.id ? '<button class="button button-outline whatsapp-campaign-preview-button" type="button" data-campaign-content-preview="' + esc(item.id) + '" aria-expanded="false">Ver conteúdo do modelo</button><div class="whatsapp-campaign-preview whatsapp-campaign-content-preview" data-campaign-content-result hidden role="status" aria-live="polite"></div>' : "")
       + (item.status === "draft" && item.draft_editable ? '<button class="button button-outline whatsapp-campaign-edit-button" type="button" data-campaign-edit="' + esc(item.id) + '">Editar rascunho</button>' : "")
@@ -381,7 +367,7 @@
       const formatCount = (value) => Math.max(0, Math.trunc(Number(value) || 0)).toLocaleString("pt-BR");
       const reasons = [
         ["Opt-out", exclusions.opted_out_count],
-        ["Sem evidência individual", exclusions.consent_evidence_unverified_count],
+        ["Declaração de autorização pendente", exclusions.consent_evidence_unverified_count],
         ["Sem consentimento", exclusions.no_consent_count],
         ["Cadastro inativo", exclusions.inactive_customer_count],
         ["Telefone inválido", exclusions.invalid_phone_count],
@@ -396,7 +382,7 @@
         + '<span>' + formatCount(preview.excluded_count) + ' excluídos de ' + formatCount(preview.found_count) + ' encontrados pelos filtros</span>'
         + '</div><div class="whatsapp-campaign-preview-reasons">' + reasons + '</div>'
         + '<small class="whatsapp-campaign-preview-template">' + esc(templateText) + '</small>'
-        + '<p>Prévia somente de contagens: não congela a lista nem envia mensagens. Motivos podem se sobrepor. As flags atuais não substituem evidência individual; revise as origens antes de uma campanha ampla.</p>';
+        + '<p>Prévia somente de contagens: não congela a lista nem envia mensagens. Motivos podem se sobrepor. A autorização da base fica registrada por declaração administrativa, sem inventar as datas individuais originais. Opt-outs explícitos, cadastros inativos e telefones inválidos são excluídos.</p>';
     } catch (error) {
       panel.textContent = error instanceof Error ? error.message : "Não foi possível calcular a prévia.";
     } finally {
@@ -420,8 +406,11 @@
     if (!response.ok || data.ok === false) {
       const messages = {
         campaign_filter_required: "Informe ao menos um filtro de público.",
-        no_eligible_recipients: "Envio bloqueado: nenhum destinatário do snapshot tem consentimento individual verificado.",
-        consent_evidence_unverified: "O consentimento atual não tem evidência individual verificada.",
+        no_eligible_recipients: "Nenhum destinatário elegível para este snapshot. Confira os filtros, opt-outs, cadastros ativos e telefones válidos.",
+        consent_evidence_unverified: "A declaração de autorização da base ainda não foi registrada no banco.",
+        campaign_media_required: "Este modelo exige uma foto ou vídeo para o cabeçalho da campanha.",
+        campaign_media_invalid: "A mídia não corresponde ao tipo ou ao canal deste modelo. Envie novamente a foto ou o vídeo.",
+        template_media_required: "Este modelo exige uma foto ou vídeo antes de agendar o envio.",
         campaign_filters_not_editable: "Este rascunho usa filtros avançados que ainda não podem ser editados nesta tela.",
         revision_conflict: "A campanha mudou em outra sessão. Atualize os dados antes de tentar novamente.",
         snapshot_stale: "O snapshot não corresponde à revisão atual da campanha.",
@@ -509,16 +498,17 @@
       + '<div class="whatsapp-campaign-editor-head"><div><h3 id="whatsapp-campaign-editor-title">' + (editing ? "Editar rascunho" : "Novo rascunho") + '</h3>'
       + '<p class="admin-muted">Salva a configuração como rascunho. Não congela a audiência, agenda nem envia mensagens.</p></div>'
       + '<button class="button button-outline" type="button" data-campaign-editor-close>Fechar</button></div>'
-      + '<form data-campaign-draft-form data-mode="' + (editing ? "edit" : "create") + '" data-audience-reset-required="' + (audienceNeedsReset ? "true" : "false") + '" data-campaign-id="' + esc(campaign?.id || "") + '" data-revision="' + esc(campaign?.revision || 0) + '" data-idempotency-key="' + esc(campaignDraftIdempotencyKey()) + '">'
+      + '<form data-campaign-draft-form data-mode="' + (editing ? "edit" : "create") + '" data-audience-reset-required="' + (audienceNeedsReset ? "true" : "false") + '" data-campaign-id="' + esc(campaign?.id || "") + '" data-revision="' + esc(campaign?.revision || 0) + '" data-idempotency-key="' + esc(campaignDraftIdempotencyKey()) + '" data-existing-template-media="' + esc(JSON.stringify(campaign?.template_media || {})) + '">'
       + '<div class="whatsapp-campaign-form-grid">'
       + '<label class="whatsapp-campaign-field"><span>Nome da campanha</span><input type="text" name="name" maxlength="140" required value="' + esc(campaign?.name || "") + '"></label>'
       + '<label class="whatsapp-campaign-field"><span>Número de envio</span><select name="whatsapp_account_id" required>' + channelOptions + '</select></label>'
       + '<label class="whatsapp-campaign-field whatsapp-campaign-field-wide"><span>Modelo Meta aprovado · Marketing</span><select name="template_id" required><option value="">Selecione o modelo</option>' + templateOptions + '</select></label>'
       + '<section class="whatsapp-campaign-variable-editor whatsapp-campaign-field-wide" data-campaign-variable-editor data-state="loading"><h4>Personalização do modelo</h4><p data-campaign-variable-status class="admin-muted" role="status" aria-live="polite">Carregando variáveis do modelo aprovado…</p><div data-campaign-variable-fields></div><div data-campaign-template-example></div></section>'
-      + '<div class="whatsapp-campaign-field-wide"><h4>Filtros da audiência</h4><p class="admin-muted">As faixas consideram a última compra. Clientes sem compra aparecem em “Todos os clientes”. Opt-outs, falta de consentimento, cadastros inativos e telefones inválidos continuam excluídos.</p></div>'
+      + '<div class="whatsapp-campaign-media-editor whatsapp-campaign-field-wide" data-campaign-media-editor hidden><h4>Mídia desta campanha</h4><p class="admin-muted" data-campaign-media-status role="status" aria-live="polite"></p><label class="whatsapp-campaign-field"><span>Enviar foto ou vídeo para o cabeçalho</span><input type="file" data-campaign-media-file accept="image/jpeg,image/png,video/mp4"></label></div>'
+      + '<div class="whatsapp-campaign-field-wide"><h4>Filtros da audiência</h4><p class="admin-muted">As faixas consideram a última compra. Clientes sem compra aparecem em “Todos os clientes”. A autorização da base é registrada por declaração administrativa; opt-outs explícitos, cadastros inativos e telefones inválidos continuam excluídos.</p></div>'
       + audienceResetNotice
       + audienceInput
-      + '</div><p class="whatsapp-campaign-editor-note">Antes de qualquer campanha ampla, confira a evidência individual de consentimento. Este formulário só salva rascunhos.</p>'
+      + '</div><p class="whatsapp-campaign-editor-note">Este formulário só salva rascunhos. O início ou agendamento do envio fica separado e respeita os limites de ritmo configurados.</p>'
       + '<div class="whatsapp-campaign-editor-actions"><p data-campaign-draft-status class="admin-muted" role="status" aria-live="polite"></p>'
       + '<button class="button button-primary" type="submit">' + (editing ? "Salvar rascunho" : "Criar rascunho") + '</button></div></form></section>';
     host.hidden = false;
@@ -562,6 +552,34 @@
     return values;
   }
 
+  function renderCampaignMediaEditor(form, template) {
+    const panel = form?.querySelector("[data-campaign-media-editor]");
+    const status = panel?.querySelector("[data-campaign-media-status]");
+    const file = panel?.querySelector("[data-campaign-media-file]");
+    if (!panel || !file) return;
+    const format = String(template?.header_format || "").toUpperCase();
+    const priorFormat = String(form.dataset.campaignMediaFormat || "");
+    if (priorFormat && priorFormat !== format) file.value = "";
+    form.dataset.campaignMediaFormat = format;
+    const existing = (() => { try { return JSON.parse(form.dataset.existingTemplateMedia || "{}"); } catch { return {}; } })();
+    if (!(["IMAGE", "VIDEO"].includes(format))) {
+      panel.hidden = true;
+      file.required = false;
+      file.value = "";
+      form.dataset.templateMedia = "{}";
+      return;
+    }
+    panel.hidden = false;
+    file.accept = format === "IMAGE" ? "image/jpeg,image/png" : "video/mp4";
+    const sameType = String(existing.type || "").toUpperCase() === format
+      && String(existing.whatsapp_account_id || "") === String(form.elements.namedItem("whatsapp_account_id")?.value || "");
+    file.required = !sameType;
+    form.dataset.templateMedia = sameType ? JSON.stringify(existing) : "{}";
+    if (status) status.textContent = sameType
+      ? "Mídia atual preservada. Selecione um arquivo para substituí-la."
+      : (format === "IMAGE" ? "Este modelo exige uma imagem. JPEG ou PNG até 5 MB." : "Este modelo exige um vídeo MP4 até 16 MB.");
+  }
+
   function renderCampaignTemplateExample(form) {
     const editor = form?.querySelector("[data-campaign-variable-editor]");
     const preview = editor?.querySelector("[data-campaign-template-example]");
@@ -575,6 +593,7 @@
       return token;
     });
     const parts = Array.isArray(template.parts) ? template.parts : [];
+    renderCampaignMediaEditor(form, template);
     preview.innerHTML = '<div class="whatsapp-campaign-template-example"><strong>Exemplo fictício</strong>'
       + parts.map((part) => '<section><small>' + esc(part.label || "Conteúdo") + '</small><pre>' + esc(replaceVariables(part.text)) + '</pre></section>').join("")
       + '<p class="admin-muted">Usa o nome fictício “Maria”; não consulta destinatários nem envia mensagens.</p></div>';
@@ -677,6 +696,7 @@
       template_id: String(template?.value || ""),
       filters,
       variable_values: variableValues,
+      template_media: (() => { try { return JSON.parse(form.dataset.templateMedia || "{}"); } catch { return {}; } })(),
     };
     if (isEdit) {
       payload.campaign_id = form.dataset.campaignId || "";
@@ -688,6 +708,16 @@
     if (submit) submit.disabled = true;
     if (status) status.textContent = "Salvando rascunho…";
     try {
+      const mediaInput = form.querySelector("[data-campaign-media-file]");
+      const mediaFile = mediaInput?.files?.[0];
+      if (mediaFile) {
+        if (status) status.textContent = "Enviando a mídia ao WhatsApp…";
+        payload.template_media = await uploadWhatsAppMedia("campaign_media_upload", mediaFile, payload.whatsapp_account_id);
+      }
+      const mediaFormat = String(variableEditor?._campaignTemplate?.header_format || "").toUpperCase();
+      if (["IMAGE", "VIDEO"].includes(mediaFormat) && String(payload.template_media?.type || "").toUpperCase() !== mediaFormat) {
+        throw new Error(mediaFormat === "IMAGE" ? "Envie uma imagem para o cabeçalho deste modelo." : "Envie um vídeo MP4 para o cabeçalho deste modelo.");
+      }
       await campaignAdminRequest(isEdit ? "whatsapp_campaign_draft_update" : "whatsapp_campaign_draft_create", payload);
       if (status) status.textContent = "Rascunho salvo.";
       const host = $("whatsapp-campaign-editor");
@@ -911,8 +941,38 @@
         meta_template_examples_required: "Preencha um exemplo para cada variável {{n}}.",
         meta_template_buttons_invalid: "Revise os botões. Links dinâmicos devem usar o endereço oficial de pedido ou ofertas com a variável {{1}} no final.",
         meta_template_body_required: "Informe o texto principal do modelo.",
+        marketing_header_media_required: "Para um modelo de marketing, escolha foto ou vídeo no cabeçalho.",
+        marketing_header_sample_required: "Envie o arquivo de exemplo do cabeçalho para a Meta antes de criar o modelo.",
+        marketing_button_required: "Inclua pelo menos um botão no modelo de marketing.",
       };
       throw new Error(messages[data.error] || data.message || data.error || "Não foi possível carregar os modelos.");
+    }
+    return data;
+  }
+
+  async function uploadWhatsAppMedia(action, file, accountId) {
+    if (!supabase || !publishableKey || !accountId || !(file instanceof File)) throw new Error("Selecione um arquivo e um canal WhatsApp.");
+    const url = new URL(supabase + "/functions/v1/admin-whatsapp-templates-v1");
+    url.searchParams.set("action", action);
+    url.searchParams.set("account_id", accountId);
+    const form = new FormData();
+    form.append("file", file, file.name || "midia");
+    const response = await fetch(url.toString(), {
+      method: "POST",
+      headers: { apikey: publishableKey, "x-admin-code": window.DonaAdminAuth?.getCode?.() || "" },
+      body: form,
+      cache: "no-store",
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.ok === false) {
+      const messages = {
+        meta_app_id_not_configured: "Configure o ID do aplicativo Meta antes de enviar a amostra do modelo.",
+        meta_media_file_invalid: "Use JPEG/PNG até 5 MB ou MP4 até 16 MB.",
+        meta_media_upload_failed: "A Meta não aceitou o arquivo. Revise o formato e tente novamente.",
+        campaign_media_storage_failed: "Não foi possível guardar a mídia da campanha. Tente novamente.",
+        campaign_media_invalid: "A mídia não corresponde ao tipo ou ao canal deste modelo. Envie novamente a foto ou o vídeo.",
+      };
+      throw new Error(messages[data.error] || data.message || data.error || "Não foi possível enviar a mídia à Meta.");
     }
     return data;
   }
@@ -968,7 +1028,11 @@
       && items.every((item) => {
         const type = String(item?.type || "").toUpperCase();
         if (type === "BODY" || type === "FOOTER") return true;
-        if (type === "HEADER") return String(item?.format || "").toUpperCase() === "TEXT";
+        if (type === "HEADER") {
+          const format = String(item?.format || "").toUpperCase();
+          return format === "TEXT" || (["IMAGE", "VIDEO"].includes(format)
+            && Array.isArray(item?.example?.header_handle) && Boolean(item.example.header_handle[0]));
+        }
         if (type === "BUTTONS") return Array.isArray(item.buttons) && item.buttons.every((button) => ["URL", "QUICK_REPLY", "CATALOG"].includes(String(button?.type || "").toUpperCase()));
         return false;
       });
@@ -977,7 +1041,7 @@
   const TEMPLATE_BUTTON_EXAMPLE = "0123456789abcdef".repeat(4);
 
   function templateButtonMarkup(button = {}) {
-    const type = String(button?.type || "QUICK_REPLY").toUpperCase();
+    const type = String(button?.type || "URL").toUpperCase();
     const dynamicUrl = String(button?.url || "").endsWith("{{1}}");
     const example = Array.isArray(button?.example) && /^[a-f0-9]{64}$/i.test(String(button.example[0] || ""))
       ? String(button.example[0])
@@ -1025,7 +1089,18 @@
     const footer = templateComponent(components, "FOOTER");
     const buttons = templateComponent(components, "BUTTONS")?.buttons || [];
     const headerText = header && String(header.format || "").toUpperCase() === "TEXT" ? header.text || "" : "";
+    const headerFormat = String(header?.format || "").toUpperCase();
+    const mediaHeader = ["IMAGE", "VIDEO"].includes(headerFormat);
     const headerExample = Array.isArray(header?.example?.header_text) ? header.example.header_text.join(" | ") : "";
+    const headerFieldsMarkup = editing
+      ? mediaHeader
+        ? '<div class="whatsapp-template-editor-wide whatsapp-template-media-preserved"><strong>Cabeçalho de mídia preservado</strong><p class="admin-muted">Este modelo usa ' + esc(headerFormat === "IMAGE" ? "imagem" : "vídeo") + ' de exemplo aprovado pela Meta. O conteúdo do cabeçalho não pode ser trocado nesta edição.</p></div>'
+        : '<label class="whatsapp-template-editor-wide">Cabeçalho opcional<input name="header" data-template-header maxlength="60" value="' + esc(headerText) + '"' + (header && !headerText ? " readonly" : "") + '></label>'
+          + '<label class="whatsapp-template-editor-wide">Exemplo do cabeçalho<textarea name="header_examples" rows="2" placeholder="Maria | amanhã">' + esc(headerExample) + '</textarea><small>Use somente se o cabeçalho tiver variáveis.</small></label>'
+      : '<label class="whatsapp-template-editor-wide">Cabeçalho<select name="header_format" data-template-header-format><option value="IMAGE" selected>Foto</option><option value="VIDEO">Vídeo</option><option value="">Sem cabeçalho</option><option value="TEXT">Texto</option></select></label>'
+        + '<label class="whatsapp-template-editor-wide" data-template-header-text-fields hidden>Cabeçalho de texto<input name="header" data-template-header maxlength="60" value="" placeholder="Ex.: Oferta especial"></label>'
+        + '<label class="whatsapp-template-editor-wide" data-template-header-text-example hidden>Exemplo do cabeçalho<textarea name="header_examples" rows="2" placeholder="Exemplo da variável"></textarea><small>Preencha se usar variáveis no cabeçalho.</small></label>'
+        + '<div class="whatsapp-template-editor-wide" data-template-header-media-fields hidden><label>Arquivo de exemplo para a análise da Meta<input type="file" data-template-header-media accept="image/jpeg,image/png,video/mp4"></label><small>JPEG/PNG até 5 MB ou MP4 até 16 MB. O cabeçalho aprovado define se a campanha usará foto ou vídeo.</small></div>';
     const bodyExampleRows = Array.isArray(body?.example?.body_text) ? body.example.body_text : [];
     const bodyExample = Array.isArray(bodyExampleRows[0]) ? bodyExampleRows[0].join(" | ") : "";
     const category = String(item?.category || "").toUpperCase();
@@ -1041,9 +1116,8 @@
       + '<label>Idioma<input name="language" maxlength="20" value="' + esc(item?.language || "pt_BR") + '"' + (editing ? " readonly" : " required") + '></label>'
       + (editing
         ? '<div class="whatsapp-template-readonly"><span>Tipo classificado pela Meta</span><strong>' + esc(human(item?.category || "Aguardando classificação")) + '</strong></div>'
-        : '<label>Tipo solicitado<select name="category"><option value="UTILITY">Utilidade</option><option value="MARKETING">Marketing</option></select></label>')
-      + '<label class="whatsapp-template-editor-wide">Cabeçalho opcional<input name="header" data-template-header maxlength="60" value="' + esc(headerText) + '"' + (header && !headerText ? " readonly" : "") + '></label>'
-      + '<label class="whatsapp-template-editor-wide">Exemplo do cabeçalho<textarea name="header_examples" rows="2" placeholder="Maria | amanhã">' + esc(headerExample) + '</textarea><small>Use somente se o cabeçalho tiver variáveis.</small></label>'
+        : '<label>Tipo solicitado<select name="category"><option value="MARKETING" selected>Marketing</option><option value="UTILITY">Utilidade</option></select></label>')
+      + headerFieldsMarkup
       + '<label class="whatsapp-template-editor-wide">Texto principal<textarea name="body" data-template-body rows="5" maxlength="1024" required>' + esc(body?.text || "") + '</textarea></label>'
       + '<label class="whatsapp-template-editor-wide">Exemplos das variáveis<textarea name="body_examples" rows="2" placeholder="Maria | amanhã">' + esc(bodyExample) + '</textarea><small>Use um exemplo para cada variável {{1}}, {{2}} e assim por diante, separados por |.</small></label>'
       + '<label class="whatsapp-template-editor-wide">Rodapé opcional<input name="footer" maxlength="60" value="' + esc(footer?.text || "") + '"></label>'
@@ -1054,6 +1128,24 @@
       + '<p class="admin-muted" data-template-editor-status role="status" aria-live="polite"></p><div class="whatsapp-template-editor-actions"><button class="button button-primary" type="submit"' + (!editable ? " disabled" : "") + '>' + (editing ? "Enviar alteração à Meta" : "Enviar para análise da Meta") + '</button></div></form></section>';
   }
 
+  function syncTemplateHeaderFields(form) {
+    if (!form) return;
+    const format = String(form.querySelector("[data-template-header-format]")?.value || "").toUpperCase();
+    const textFields = form.querySelector("[data-template-header-text-fields]");
+    const textExample = form.querySelector("[data-template-header-text-example]");
+    const mediaFields = form.querySelector("[data-template-header-media-fields]");
+    const headerText = form.querySelector("[data-template-header]");
+    const file = form.querySelector("[data-template-header-media]");
+    if (textFields) textFields.hidden = format !== "TEXT";
+    if (textExample) textExample.hidden = format !== "TEXT";
+    if (mediaFields) mediaFields.hidden = !["IMAGE", "VIDEO"].includes(format);
+    if (headerText) headerText.required = format === "TEXT";
+    if (file) {
+      file.required = ["IMAGE", "VIDEO"].includes(format);
+      file.accept = format === "VIDEO" ? "video/mp4" : "image/jpeg,image/png";
+    }
+  }
+
   async function openTemplateEditor(templateId) {
     const root = $("whatsapp-templates-content");
     const host = root?.querySelector("[data-template-editor-host]");
@@ -1061,6 +1153,7 @@
     if (!templateId) {
       host.innerHTML = templateEditorMarkup(null);
       syncTemplateButtonControls(host);
+      syncTemplateHeaderFields(host.querySelector("[data-template-editor-form]"));
       root.querySelector('[data-template-editor-form] [name="category"]')?.focus();
       return;
     }
@@ -1076,6 +1169,7 @@
     }
     host.innerHTML = templateEditorMarkup(item);
     syncTemplateButtonControls(host);
+    syncTemplateHeaderFields(host.querySelector("[data-template-editor-form]"));
     host.querySelector('[data-template-editor-form] [data-template-body]')?.focus();
   }
 
@@ -1083,6 +1177,10 @@
     const components = existing ? JSON.parse(JSON.stringify(existing.components || [])) : [];
     const headerField = form.querySelector("[data-template-header]");
     const headerValue = headerField && !headerField.readOnly ? headerField.value.trim() : "";
+    const existingHeader = templateComponent(components, "HEADER");
+    const headerFormat = String(form.querySelector("[data-template-header-format]")?.value || (existing ? existingHeader?.format : "")).toUpperCase();
+    const headerMediaFile = !existing && ["IMAGE", "VIDEO"].includes(headerFormat)
+      ? form.querySelector("[data-template-header-media]")?.files?.[0] || null : null;
     const bodyValue = form.querySelector("[data-template-body]")?.value.trim() || "";
     const footerValue = form.querySelector('[name="footer"]')?.value.trim() || "";
     const examplesRaw = form.querySelector('[name="body_examples"]')?.value || "";
@@ -1118,6 +1216,7 @@
       return type === "header" ? { header_text: values.slice(0, indexes.length) } : { body_text: [values.slice(0, indexes.length)] };
     };
     if (!bodyValue) throw new Error("Informe o texto principal do modelo.");
+    if (!existing && ["IMAGE", "VIDEO"].includes(headerFormat) && !headerMediaFile) throw new Error("Escolha a foto ou o vídeo de exemplo para enviar o modelo à Meta.");
     const bodyExample = buildExample(bodyValue, examplesRaw, "do texto");
     if (existing) {
       const bodyIndex = components.findIndex((item) => String(item?.type || "").toUpperCase() === "BODY");
@@ -1143,11 +1242,13 @@
       } else if (footerIndex >= 0) components.splice(footerIndex, 1);
     } else {
       const headerExampleRaw = form.querySelector('[name="header_examples"]')?.value || "";
-      if (headerValue) {
+      if (headerFormat === "TEXT" && headerValue) {
         const headerExample = buildExample(headerValue, headerExampleRaw, "do cabeçalho");
         const headerComponent = { type: "HEADER", format: "TEXT", text: headerValue };
         if (headerExample) headerComponent.example = headerExample;
         components.push(headerComponent);
+      } else if (["IMAGE", "VIDEO"].includes(headerFormat)) {
+        components.push({ type: "HEADER", format: headerFormat, example: { header_handle: ["pending_upload"] } });
       }
       const bodyComponent = { type: "BODY", text: bodyValue };
       if (bodyExample) bodyComponent.example = bodyExample;
@@ -1161,11 +1262,18 @@
       else components.push(buttonComponent);
     } else if (buttonsIndex >= 0) components.splice(buttonsIndex, 1);
     const category = existing ? existing.category : form.querySelector('[name="category"]')?.value;
+    if (!existing && String(category || "").toUpperCase() === "MARKETING") {
+      if (!["IMAGE", "VIDEO"].includes(headerFormat)) throw new Error("Para um modelo de marketing, escolha foto ou vídeo no cabeçalho.");
+      if (buttons.length === 0) throw new Error("Inclua pelo menos um botão no modelo de marketing.");
+    }
     return {
-      name: existing ? existing.name : form.querySelector('[name="name"]')?.value.trim(),
-      language: existing ? existing.language : form.querySelector('[name="language"]')?.value.trim(),
-      category: String(category || "UTILITY").toUpperCase(),
-      components,
+      template: {
+        name: existing ? existing.name : form.querySelector('[name="name"]')?.value.trim(),
+        language: existing ? existing.language : form.querySelector('[name="language"]')?.value.trim(),
+        category: String(category || "UTILITY").toUpperCase(),
+        components,
+      },
+      mediaFile: headerMediaFile,
     };
   }
 
@@ -1179,7 +1287,12 @@
       return;
     }
     let draft;
-    try { draft = templateDraftFromForm(form, existing); }
+    let mediaFile = null;
+    try {
+      const built = templateDraftFromForm(form, existing);
+      draft = built.template;
+      mediaFile = built.mediaFile;
+    }
     catch (error) {
       const status = form.querySelector("[data-template-editor-status]");
       if (status) status.textContent = error instanceof Error ? error.message : "Revise o conteúdo do modelo.";
@@ -1199,9 +1312,17 @@
     if (submit) submit.disabled = true;
     if (status) status.textContent = "Enviando para a Meta…";
     try {
+      if (mediaFile) {
+        if (status) status.textContent = "Enviando o arquivo de exemplo à Meta…";
+        const uploaded = await uploadWhatsAppMedia("template_sample_upload", mediaFile, templateAdminAccountId);
+        const header = draft.components.find((component) => String(component?.type || "").toUpperCase() === "HEADER");
+        if (!header || !uploaded.header_handle) throw new Error("A Meta não retornou o identificador da amostra de mídia.");
+        header.example = { header_handle: [uploaded.header_handle] };
+      }
       const payload = { draft, confirmed: true };
       if (existing) payload.template_id = existing.id;
       else payload.account_id = templateAdminAccountId;
+      if (status) status.textContent = "Enviando para análise da Meta…";
       const data = await templateAdminRequest(action, { method: "POST", payload });
       templateAdminItems = Array.isArray(data.items) ? data.items : [];
       templateAdminLoadedAccountId = templateAdminAccountId;
@@ -1273,9 +1394,9 @@
           <span>Declaração administrativa: <strong>${esc(consentSummary.merchant_owner_attestation_count || 0)}</strong></span>
           <span>Declaração histórica: <strong>${esc(consentSummary.historical_merchant_attestation_count || 0)}</strong></span>
           <span>Outra origem ou sem origem: <strong>${esc(consentSummary.other_opt_in_source_count || 0)}</strong></span>
-          <span class="is-unverified">Evidência individual: <strong>Não verificada</strong></span>
+          <span class="is-unverified">Data individual original: <strong>Não registrada</strong></span>
         </div>
-        <p class="whatsapp-consent-notice"><strong>Evidência individual recuperada: não verificada neste resumo.</strong> As origens administrativas são declarações registradas, e “outra origem” também precisa ser auditada. Confira a fonte original antes de campanhas amplas. Estes totais não são a prévia da campanha; a audiência também aplica cadastro ativo, telefone válido e filtros.</p>
+        <p class="whatsapp-consent-notice"><strong>A declaração administrativa confirma a autorização da base informada pelo responsável.</strong> A data original de cada autorização não foi registrada. Opt-outs explícitos, cadastros inativos e telefones inválidos permanecem excluídos. Estes totais não são a prévia da campanha; a audiência também aplica os filtros escolhidos.</p>
       </section>` : `
       <section class="whatsapp-overview-card whatsapp-consent-audit">
         <h3>Consentimento registrado</h3>
@@ -1710,6 +1831,8 @@
       syncTemplateButtonRow(buttonType.closest("[data-template-button-row]"));
       return;
     }
+    const headerFormat = event.target instanceof HTMLSelectElement ? event.target.closest("[data-template-header-format]") : null;
+    if (headerFormat) { syncTemplateHeaderFields(headerFormat.closest("[data-template-editor-form]")); return; }
     const select = event.target instanceof HTMLSelectElement ? event.target.closest("[data-template-account]") : null;
     if (!select) return;
     templateAdminAccountId = select.value;
