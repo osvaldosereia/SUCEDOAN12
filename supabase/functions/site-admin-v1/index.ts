@@ -3745,7 +3745,7 @@ async function validateMarketingCampaignTemplate(accountId: string, templateId: 
   return null;
 }
 
-async function marketingCampaignTemplateVariableIndices(accountId: string, templateId: string): Promise<{ error?: string; status?: number; indices?: number[] }> {
+async function marketingCampaignTemplateVariableIndices(accountId: string, templateId: string): Promise<{ error?: string; status?: number; indices?: number[]; header_format?: string }> {
   const result = await db.rpc("marketing_campaign_template_snapshot_v1", {
     p_whatsapp_account_id: accountId,
     p_template_id: templateId,
@@ -3763,7 +3763,9 @@ async function marketingCampaignTemplateVariableIndices(accountId: string, templ
   const indices = Array.from(new Set(Array.from(text.matchAll(/{{\s*(\d{1,3})\s*}}/g), (match: any) => Number(match[1]))))
     .filter((index: number) => Number.isInteger(index) && index > 0 && index <= 999)
     .sort((a: number, b: number) => a - b);
-  return { indices };
+  const header = (Array.isArray(template.components) ? template.components : [])
+    .find((component: any) => clean(component?.type, 24).toUpperCase() === "HEADER");
+  return { indices, header_format: clean(header?.format, 24).toUpperCase() || "" };
 }
 
 function normalizeCampaignTemplateVariables(input: any, indices: number[], requireAll = true): { error?: string; values?: Record<string, unknown> } {
@@ -3799,11 +3801,42 @@ function normalizeCampaignTemplateVariables(input: any, indices: number[], requi
   return { values };
 }
 
+function normalizeCampaignTemplateMedia(input: any, accountId: string, headerFormat: string): { error?: string; media?: Record<string, string> } {
+  const format = clean(headerFormat, 24).toUpperCase();
+  if (!["IMAGE", "VIDEO"].includes(format)) return { media: {} };
+  if (!input || typeof input !== "object" || Array.isArray(input)) return { error: "campaign_media_required" };
+  const type = clean(input.type, 24).toUpperCase();
+  const mediaUrl = clean(input.media_url, 2048);
+  const mimeType = clean(input.mime_type, 80).toLowerCase();
+  const fileName = clean(input.file_name, 240);
+  if (type !== format || String(input.whatsapp_account_id || "") !== accountId || !mediaUrl || !fileName) return { error: "campaign_media_required" };
+  let url: URL;
+  try { url = new URL(mediaUrl); } catch { return { error: "campaign_media_invalid" }; }
+  const extension = format === "IMAGE" ? /\.(jpg|jpeg|png)$/i : /\.mp4$/i;
+  const expectedMime = format === "IMAGE" ? ["image/jpeg", "image/png"] : ["video/mp4"];
+  const expectedPath = new RegExp("^/storage/v1/object/public/marketing-campaign-media-v1/" + accountId + "/[0-9a-f-]{36}\\." + (format === "IMAGE" ? "(jpg|jpeg|png)" : "mp4") + "$", "i");
+  if (url.protocol !== "https:" || url.hostname !== "ssbesxgaijknwsjbsbcz.supabase.co" || url.username || url.password || url.search || url.hash
+      || !expectedPath.test(url.pathname) || !extension.test(url.pathname) || !expectedMime.includes(mimeType)) return { error: "campaign_media_invalid" };
+  return { media: { type, media_url: url.toString(), mime_type: mimeType, file_name: fileName, whatsapp_account_id: accountId } };
+}
+
+async function persistCampaignTemplateMedia(campaignId: string, expectedRevision: number, media: Record<string, string>) {
+  const result = await db.rpc("marketing_campaign_set_template_media_v1", {
+    p_campaign_id: campaignId,
+    p_expected_revision: expectedRevision,
+    p_template_media: media,
+  });
+  if (result.error) throw result.error;
+  const saved: any = result.data || {};
+  if (saved.ok !== true) return { error: clean(saved.error || "campaign_media_save_failed", 100), status: 409 };
+  return { revision: Number(saved.revision) || expectedRevision, semantic_changed: saved.semantic_changed === true };
+}
+
 async function whatsappCampaignDraftLoad(input: any) {
   const campaignId = uuid(input.campaign_id);
   if (!campaignId) return { error: "invalid_campaign_id", status: 400 };
   const result = await db.from("marketing_campaigns_v1")
-    .select("id,name,status,revision,filters,variable_values,whatsapp_account_id,template_id")
+    .select("id,name,status,revision,filters,variable_values,whatsapp_account_id,template_id,template_media")
     .eq("id", campaignId)
     .maybeSingle();
   if (result.error) throw result.error;
@@ -3827,6 +3860,7 @@ async function whatsappCampaignDraftLoad(input: any) {
       whatsapp_account_id: uuid(campaign.whatsapp_account_id),
       template_id: uuid(campaign.template_id),
       variable_values: variableValues.values || {},
+      template_media: campaign.template_media && typeof campaign.template_media === "object" ? campaign.template_media : {},
       filters: requiresAudienceReset ? {} : normalized.filters,
       requires_audience_reset: requiresAudienceReset,
     },
@@ -3852,6 +3886,8 @@ async function whatsappCampaignDraftCreate(input: any) {
   if (variableIndices.error) return variableIndices;
   const variableValues = normalizeCampaignTemplateVariables(input.variable_values, variableIndices.indices || [], true);
   if (variableValues.error) return { error: variableValues.error, status: 400, message: "Preencha todas as variáveis do modelo aprovado." };
+  const templateMedia = normalizeCampaignTemplateMedia(input.template_media || {}, accountId, variableIndices.header_format || "");
+  if (templateMedia.error) return { error: templateMedia.error, status: 400, message: "Envie a mídia exigida pelo cabeçalho do modelo." };
   const result = await db.rpc("marketing_create_campaign_v1", {
     p_name: name,
     p_whatsapp_account_id: accountId,
@@ -3864,9 +3900,13 @@ async function whatsappCampaignDraftCreate(input: any) {
   if (result.error) throw result.error;
   const saved = result.data || {};
   if (saved.ok !== true) return { error: clean(saved.error || "campaign_create_failed", 100), status: 409 };
+  const campaignId = uuid(saved.campaign_id);
+  if (!campaignId) return { error: "campaign_create_failed", status: 409 };
+  const mediaSaved = await persistCampaignTemplateMedia(campaignId, Number(saved.revision) || 1, templateMedia.media || {});
+  if (mediaSaved.error) return mediaSaved;
   return {
-    campaign_id: uuid(saved.campaign_id),
-    revision: Number(saved.revision) || 0,
+    campaign_id: campaignId,
+    revision: mediaSaved.revision,
     status: clean(saved.status || "draft", 40),
     idempotent: saved.idempotent === true,
   };
@@ -3893,6 +3933,8 @@ async function whatsappCampaignDraftUpdate(input: any) {
   if (variableIndices.error) return variableIndices;
   const variableValues = normalizeCampaignTemplateVariables(input.variable_values, variableIndices.indices || [], true);
   if (variableValues.error) return { error: variableValues.error, status: 400, message: "Preencha todas as variáveis do modelo aprovado." };
+  const templateMedia = normalizeCampaignTemplateMedia(input.template_media || {}, accountId, variableIndices.header_format || "");
+  if (templateMedia.error) return { error: templateMedia.error, status: 400, message: "Envie a mídia exigida pelo cabeçalho do modelo." };
   const result = await db.rpc("marketing_update_campaign_draft_v1", {
     p_campaign_id: campaignId,
     p_expected_revision: revision,
@@ -3907,11 +3949,13 @@ async function whatsappCampaignDraftUpdate(input: any) {
   if (result.error) throw result.error;
   const saved = result.data || {};
   if (saved.ok !== true) return { error: clean(saved.error || "campaign_update_failed", 100), status: 409 };
+  const mediaSaved = await persistCampaignTemplateMedia(campaignId, Number(saved.revision) || revision, templateMedia.media || {});
+  if (mediaSaved.error) return mediaSaved;
   return {
     campaign_id: campaignId,
-    revision: Number(saved.revision) || 0,
+    revision: mediaSaved.revision,
     status: clean(saved.status || "draft", 40),
-    semantic_changed: saved.semantic_changed === true,
+    semantic_changed: saved.semantic_changed === true || mediaSaved.semantic_changed,
   };
 }
 
@@ -4060,6 +4104,7 @@ async function whatsappCampaignContentPreview(input: any) {
       name: clean(template.name, 160),
       language: clean(template.language, 24),
       category: clean(template.category, 40),
+      header_format: clean((Array.isArray(template.components) ? template.components : []).find((component: any) => clean(component?.type, 24).toUpperCase() === "HEADER")?.format, 24).toUpperCase(),
       parts,
       variable_count: variableIndices.length,
       variable_indices: variableIndices,
@@ -4226,10 +4271,10 @@ async function whatsappCampaignManualBatch(input: any) {
   const revision = Number(input.revision);
   const idempotencyKey = uuid(input.idempotency_key);
   if (!campaignId || !Number.isInteger(revision) || revision < 0 || !idempotencyKey) {
-    return { error: "invalid_manual_batch", message: "Dados inválidos para iniciar o lote.", status: 400 };
+    return { error: "invalid_campaign_start", message: "Dados inválidos para iniciar a campanha.", status: 400 };
   }
   const current = await db.from("marketing_campaigns_v1")
-    .select("revision,status,manual_batch_mode")
+    .select("revision,status")
     .eq("id", campaignId)
     .maybeSingle();
   if (current.error) throw current.error;
@@ -4238,80 +4283,25 @@ async function whatsappCampaignManualBatch(input: any) {
     return { error: "revision_conflict", message: "A campanha mudou em outra sessão. Atualize a lista e tente novamente.", status: 409 };
   }
   const status = clean(current.data.status, 32).toLowerCase();
-  const allowed = status === "approved" || (status === "paused" && current.data.manual_batch_mode === true);
-  if (!allowed) {
-    return { error: "campaign_invalid_transition", message: "O lote manual exige campanha aprovada ou lote pausado.", status: 409 };
+  const now = new Date().toISOString();
+  const rpcName = status === "paused" ? "marketing_resume_campaign_v1" : "marketing_schedule_campaign_v1";
+  if (status !== "approved" && status !== "paused") {
+    return { error: "campaign_invalid_transition", message: "Somente campanhas aprovadas ou pausadas podem entrar na fila gradual.", status: 409 };
   }
-
-  const begun: any = await campaignAdminRpc("marketing_begin_manual_campaign_batch_v1", {
-    p_campaign_id: campaignId,
-    p_expected_revision: revision,
-    p_idempotency_key: idempotencyKey,
-    p_limit: 10,
-  }, "manual_batch_start_failed");
-  if (begun.error) return begun;
-  const batchId = uuid(begun.batch_id);
-  if (!batchId) return { error: "manual_batch_start_failed", message: "Não foi possível identificar o lote iniciado.", status: 409 };
-  if (begun.status === "no_work") {
-    return { campaign_id: campaignId, status: "no_work", claimed_count: 0, accepted_count: 0, mode: clean(begun.mode, 24) };
-  }
-  if (begun.worker_started_at) {
-    if (begun.replayed && ["completed", "no_work"].includes(clean(begun.status, 24))) {
-      return { campaign_id: campaignId, status: clean(begun.status, 24), already_processed: true, claimed_count: campaignAdminCount(begun.claimed_count), accepted_count: 0 };
-    }
-    return { error: "manual_batch_result_uncertain", message: "Este lote já foi adquirido pelo worker. Confira o resultado no histórico antes de tentar outro.", status: 409 };
-  }
-
-  const workerKeyResult = await db.rpc("marketing_campaign_worker_internal_key_v1");
-  if (workerKeyResult.error) throw workerKeyResult.error;
-  const workerKey = typeof workerKeyResult.data === "string" ? workerKeyResult.data : "";
-  if (!workerKey) {
-    return { error: "manual_batch_worker_unavailable", message: "O worker de campanhas não está disponível.", status: 503 };
-  }
-
-  let workerResponse: Response;
-  try {
-    workerResponse = await fetch(SUPABASE_URL.replace(/\/+$/, "") + "/functions/v1/whatsapp-marketing-worker-v1", {
-      method: "POST",
-      headers: {
-        apikey: SERVICE_ROLE_KEY,
-        "x-dona-antonia-marketing-worker-key": workerKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ manual_batch_id: batchId }),
-      signal: AbortSignal.timeout(130000),
-    });
-  } catch {
-    return { error: "manual_batch_result_uncertain", message: "O worker não confirmou o resultado do lote. Confira o histórico antes de tentar novamente.", status: 409 };
-  }
-
-  const workerData: any = await workerResponse.json().catch(() => ({}));
-  if (!workerResponse.ok || workerData?.ok !== true) {
-    return { error: "manual_batch_result_uncertain", message: "O worker não confirmou o resultado do lote. Confira o histórico antes de tentar novamente.", status: 409 };
-  }
-  const results = Array.isArray(workerData.results) ? workerData.results : [];
-  const countOutcome = (outcome: string) => results.filter((item: any) => item?.status === outcome).length;
+  const args = status === "paused"
+    ? { p_campaign_id: campaignId, p_scheduled_for: now }
+    : { p_campaign_id: campaignId, p_expected_revision: revision, p_scheduled_for: now };
+  const saved: any = await campaignAdminRpc(rpcName, args, "campaign_start_failed");
+  if (saved.error) return saved;
   return {
     campaign_id: campaignId,
-    status: clean(workerData.campaign_status || workerData.status || "processed", 32),
-    mode: clean(workerData.mode, 24),
-    claimed_count: campaignAdminCount(workerData.claimed),
-    processed_count: campaignAdminCount(workerData.processed),
-    accepted_count: countOutcome("accepted"),
-    failed_count: countOutcome("failed"),
-    retry_count: countOutcome("retry"),
-    uncertain_count: countOutcome("uncertain"),
-    skipped_count: countOutcome("skipped"),
+    revision: campaignAdminCount(saved.revision || revision),
+    status: clean(saved.status || "scheduled", 32),
+    scheduled_for: saved.scheduled_for || now,
+    gradual: true,
+    message: "Campanha colocada na fila gradual; nenhuma mensagem foi enviada nesta solicitação.",
+    mode: clean(saved.mode, 24),
   };
-}
-
-function anaOutputText(data: any) {
-  return (Array.isArray(data?.output) ? data.output : [])
-    .flatMap((item: any) => Array.isArray(item?.content) ? item.content : [])
-    .filter((item: any) => item?.type === "output_text")
-    .map((item: any) => String(item?.text || ""))
-    .join("")
-    .trim();
 }
 
 async function anaOpenAiKey() {
