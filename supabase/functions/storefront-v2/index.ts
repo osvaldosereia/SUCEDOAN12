@@ -167,7 +167,8 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
     moldProductsMap(readIds),moldAvailableStockMap(readIds),publicBasketExtraThemes()
   ]);
   if(!includeAlternatives){
-    const needsFallbackRead=positions.some((position:any)=>{
+    const fallbackPositionIds=new Set<string>();
+    for(const position of positions){
       const positionId=String(position.id),productId=configuredDefaults.get(positionId)||"";
       const requestRow=requested.get(positionId);
       const requestedQuantity=Array.isArray(requestRow?.options)
@@ -175,10 +176,15 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
         :Number(requestRow?.quantity??position.quantity??0);
       const requiredQuantity=Math.max(1,Number(position.quantity||0),requestedQuantity);
       const product=products.get(productId);
-      return product?.is_active!==true||Number(available.get(productId)||0)<requiredQuantity;
-    });
-    if(needsFallbackRead){
-      const candidateIds=[...new Set(options.map((option:any)=>String(option.product_id||"")).filter(Boolean))]
+      if(product?.is_active!==true||Number(available.get(productId)||0)<requiredQuantity){
+        fallbackPositionIds.add(positionId);
+      }
+    }
+    if(fallbackPositionIds.size){
+      const candidateIds=[...new Set(options
+        .filter((option:any)=>fallbackPositionIds.has(String(option.position_id||"")))
+        .map((option:any)=>String(option.product_id||""))
+        .filter(Boolean))]
         .filter((productId:string)=>!readIds.includes(productId));
       if(candidateIds.length){
         const [replacementProducts,replacementStock]=await Promise.all([
