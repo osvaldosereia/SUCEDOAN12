@@ -99,7 +99,7 @@
     button.textContent = "Conectando…";
     try {
       if (!supabase || !publishableKey) throw new Error("A configuração do Admin está incompleta.");
-      const endpoint = new URL(supabase + "/functions/v1/admin-products-live-v1");
+      const endpoint = new URL(supabase + "/functions/v1/site-admin-v1");
       endpoint.searchParams.set("action", "bling_oauth_begin");
       endpoint.searchParams.set("return_to", "site_admin");
       const response = await fetch(endpoint.toString(), {
