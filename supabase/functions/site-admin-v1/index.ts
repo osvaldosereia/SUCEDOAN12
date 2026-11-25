@@ -5347,7 +5347,7 @@ Deno.serve(async (req: Request) => {
     if (req.method === "GET" && action === "admin_auth_check") return json(req, { ok: true });
     let result: any;
     if (req.method === "POST" && action === "bling_oauth_begin") result = await beginBlingOauth();
-    if (req.method === "POST" && action === "whatsapp_overview") result = await whatsappOverview();
+    else if (req.method === "POST" && action === "whatsapp_overview") result = await whatsappOverview();
     else if (req.method === "POST" && action === "whatsapp_conversation_list") result = await whatsappConversationList(input);
     else if (req.method === "POST" && action === "whatsapp_labels_list") result = await whatsappLabelsList();
     else if (req.method === "POST" && action === "whatsapp_label_save") result = await whatsappLabelSave(input);
