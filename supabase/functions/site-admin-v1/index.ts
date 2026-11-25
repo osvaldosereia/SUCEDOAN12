@@ -5276,6 +5276,39 @@ async function extraSectionSave(input: any) {
   return { section: result.data };
 }
 
+async function beginBlingOauth() {
+  const creds = await db.rpc("get_bling_api_credentials_v1");
+  if (creds.error) return { error: "credentials_lookup_failed", status: 500 };
+  const clientId = clean(creds.data?.client_id, 500);
+  if (!clientId) return { error: "bling_client_id_missing", status: 409 };
+
+  const state = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+  const nonceSha256 = await sha256Hex(new TextEncoder().encode(state));
+  const saved = await db.rpc("merge_bling_hub_runtime_metadata_v2", {
+    p_patch: {
+      oauth_exchange_v1: {
+        expires_at: expiresAt,
+        consumed_at: null,
+        last_result: "pending",
+        nonce_sha256: nonceSha256,
+        return_to: "site_admin",
+      },
+    },
+  });
+  if (saved.error) return { error: "oauth_state_persist_failed", status: 500 };
+
+  const authorization = new URL("https://www.bling.com.br/Api/v3/oauth/authorize");
+  authorization.searchParams.set("response_type", "code");
+  authorization.searchParams.set("client_id", clientId);
+  authorization.searchParams.set("state", state);
+  return {
+    authorization_url: authorization.toString(),
+    expires_at: expiresAt,
+    redirect_url: "https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-service-intelligence-v1",
+  };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
   if (!["GET", "POST"].includes(req.method)) return json(req, { ok: false, error: "method_not_allowed" }, 405);
@@ -5313,6 +5346,7 @@ Deno.serve(async (req: Request) => {
     const action = clean(input.action, 40);
     if (req.method === "GET" && action === "admin_auth_check") return json(req, { ok: true });
     let result: any;
+    if (req.method === "POST" && action === "bling_oauth_begin") result = await beginBlingOauth();
     if (req.method === "POST" && action === "whatsapp_overview") result = await whatsappOverview();
     else if (req.method === "POST" && action === "whatsapp_conversation_list") result = await whatsappConversationList(input);
     else if (req.method === "POST" && action === "whatsapp_labels_list") result = await whatsappLabelsList();
