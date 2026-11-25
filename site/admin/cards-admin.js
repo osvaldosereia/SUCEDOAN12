@@ -24,6 +24,10 @@
   let pendingTransaction = null;
   let editingCardId = "";
   let archivedExpanded = false;
+  let searchQuery = "";
+  let sortField = "name";
+  let sortOrder = "asc";
+  const cardsCollator = new Intl.Collator("pt-BR", { sensitivity: "base", numeric: true });
   let createAttemptKey = "";
   const openHistory = new Set();
   const editDrafts = new Map();
@@ -229,25 +233,109 @@
       </article>`;
   }
 
+  function normalizeCardSearch(value) {
+    return String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLocaleLowerCase("pt-BR");
+  }
+
+  function filteredSortedCards(source) {
+    const query = normalizeCardSearch(searchQuery);
+    return (Array.isArray(source) ? source : [])
+      .filter((card) => !query || normalizeCardSearch(card.name).includes(query))
+      .sort((a, b) => {
+        let comparison = 0;
+        if (sortField === "balance") {
+          comparison = (Number(a.current_balance) || 0) - (Number(b.current_balance) || 0);
+        } else if (sortField === "brand") {
+          comparison = cardsCollator.compare(String(a.brand || ""), String(b.brand || ""));
+        } else {
+          comparison = cardsCollator.compare(String(a.name || ""), String(b.name || ""));
+        }
+        if (sortOrder === "desc") comparison *= -1;
+        if (comparison) return comparison;
+        const nameComparison = cardsCollator.compare(String(a.name || ""), String(b.name || ""));
+        return nameComparison || String(a.id || "").localeCompare(String(b.id || ""), "pt-BR");
+      });
+  }
+
+  function sortOrderText() {
+    if (sortField === "balance") return sortOrder === "desc" ? "Maior saldo ↓" : "Menor saldo ↑";
+    return sortOrder === "desc" ? "Z–A ↓" : "A–Z ↑";
+  }
+
+  function sortOrderAriaLabel() {
+    const field = sortField === "balance" ? "saldo disponível" : sortField === "brand" ? "bandeira" : "nome";
+    const order = sortOrder === "desc" ? "decrescente" : "crescente";
+    return "Inverter ordenação por " + field + "; ordem atual " + order;
+  }
+
+  function cardsResultCount() {
+    const total = cards.length;
+    const visible = filteredSortedCards(cards).length;
+    return searchQuery.trim()
+      ? visible + " de " + total + " cartões encontrados"
+      : total + " " + (total === 1 ? "cartão cadastrado" : "cartões cadastrados");
+  }
+
+  function activeCardListMarkup() {
+    if (loading) return '<p class="cards-empty">Carregando cartões…</p>';
+    if (loadError) return '<p class="cards-empty is-error">' + escapeHtml(loadError) + "</p>";
+    if (!cards.length) return '<div class="cards-empty"><strong>Nenhum cartão cadastrado</strong><span>Cadastre o primeiro cartão pelo formulário ao lado.</span></div>';
+    const visible = filteredSortedCards(cards);
+    if (!visible.length) return '<div class="cards-empty"><strong>Nenhum cartão encontrado</strong><span>Ajuste ou limpe o campo de busca.</span></div>';
+    return visible.map((card) => cardMarkup(card)).join("");
+  }
+
+  function archivedCardListMarkup() {
+    const visible = filteredSortedCards(archivedCards);
+    if (!visible.length) return '<div class="cards-empty"><strong>Nenhum cartão excluído corresponde à busca.</strong></div>';
+    return visible.map((card) => cardMarkup(card, true)).join("");
+  }
+
+  function listToolsMarkup() {
+    return [
+      '<div class="cards-list-tools">',
+      '<label class="cards-search-field"><span>Buscar por nome</span><input type="search" data-card-search maxlength="120" value="' + escapeHtml(searchQuery) + '" placeholder="Digite o nome do cartão" autocomplete="off" aria-label="Buscar cartões pelo nome"></label>',
+      '<label class="cards-sort-field"><span>Ordenar por</span><select data-card-sort aria-label="Ordenar cartões por">',
+      '<option value="name"' + (sortField === "name" ? " selected" : "") + '>Nome</option>',
+      '<option value="balance"' + (sortField === "balance" ? " selected" : "") + '>Saldo disponível</option>',
+      '<option value="brand"' + (sortField === "brand" ? " selected" : "") + '>Bandeira</option>',
+      '</select></label>',
+      '<button class="button button-outline cards-sort-direction" type="button" data-card-action="toggle-sort-order" aria-label="' + escapeHtml(sortOrderAriaLabel()) + '">' + escapeHtml(sortOrderText()) + "</button>",
+      "</div>",
+      '<p id="cards-results-count" class="cards-results-count" aria-live="polite">' + escapeHtml(cardsResultCount()) + "</p>",
+    ].join("");
+  }
+
+  function refreshCardListView() {
+    const activeList = $("#cards-active-list");
+    if (activeList) activeList.innerHTML = activeCardListMarkup();
+    const archiveList = $("#cards-archive-list");
+    if (archiveList) archiveList.innerHTML = archivedCardListMarkup();
+    const count = $("#cards-results-count");
+    if (count) count.textContent = cardsResultCount();
+    const orderButton = $('[data-card-action="toggle-sort-order"]');
+    if (orderButton) {
+      orderButton.textContent = sortOrderText();
+      orderButton.setAttribute("aria-label", sortOrderAriaLabel());
+    }
+  }
+
   function render() {
     if (!root) return;
     const total = cards.reduce((sum, card) => sum + (Number(card.current_balance) || 0), 0);
     const message = notice
       ? `<p class="cards-notice ${noticeKind === "error" ? "is-error" : "is-success"}" role="status">${escapeHtml(notice)}</p>`
       : "";
-    const list = loading
-      ? '<p class="cards-empty">Carregando cartões…</p>'
-      : loadError
-        ? `<p class="cards-empty is-error">${escapeHtml(loadError)}</p>`
-        : cards.length
-          ? `<div class="cards-ledger-list">${cards.map((card) => cardMarkup(card)).join("")}</div>`
-          : '<div class="cards-empty"><strong>Nenhum cartão cadastrado</strong><span>Cadastre o primeiro cartão pelo formulário ao lado.</span></div>';
+    const list = listToolsMarkup()
+      + '<div class="cards-ledger-list" id="cards-active-list">'
+      + activeCardListMarkup()
+      + "</div>";
     const archive = archivedCards.length
       ? `<section class="cards-archive-panel">
           <button class="cards-archive-toggle" type="button" data-card-action="toggle-archive" aria-expanded="${archivedExpanded}">
             <span>Cartões excluídos</span><strong>${archivedCards.length}</strong><span aria-hidden="true">${archivedExpanded ? "−" : "+"}</span>
           </button>
-          ${archivedExpanded ? `<div class="cards-ledger-list">${archivedCards.map((card) => cardMarkup(card, true)).join("")}</div>` : ""}
+          ${archivedExpanded ? `<div class="cards-ledger-list" id="cards-archive-list">${archivedCardListMarkup()}</div>` : ""}
         </section>`
       : "";
 
@@ -482,6 +570,13 @@
   }
 
   root?.addEventListener("input", (event) => {
+    const searchInput = event.target.closest("[data-card-search]");
+    if (searchInput) {
+      searchQuery = searchInput.value;
+      refreshCardListView();
+      return;
+    }
+
     const createForm = event.target.closest("#cards-create-form");
     if (createForm) {
       const values = new FormData(createForm);
@@ -521,6 +616,16 @@
   });
 
   root?.addEventListener("change", (event) => {
+    const sortSelect = event.target.closest("[data-card-sort]");
+    if (sortSelect) {
+      const nextSortField = sortSelect.value;
+      if (!["name", "balance", "brand"].includes(nextSortField)) return;
+      sortField = nextSortField;
+      sortOrder = sortField === "balance" ? "desc" : "asc";
+      refreshCardListView();
+      return;
+    }
+
     const transactionCard = event.target.closest("[data-card-id]");
     if (transactionCard && event.target.matches("[data-transaction-location]")) {
       const cardId = transactionCard.dataset.cardId;
@@ -559,6 +664,11 @@
     const button = event.target.closest("[data-card-action]");
     if (!button || !root.contains(button)) return;
     const action = button.dataset.cardAction;
+    if (action === "toggle-sort-order") {
+      sortOrder = sortOrder === "asc" ? "desc" : "asc";
+      refreshCardListView();
+      return;
+    }
     const cardElement = button.closest("[data-card-id]");
     const cardId = cardElement?.dataset.cardId || "";
 

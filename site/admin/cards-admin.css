@@ -25,6 +25,12 @@
 .cards-submit { width: 100%; justify-content: center; margin-top: 2px; }
 .cards-form-note { margin: 12px 0 0; color: #7a858c; font-size: .75rem; line-height: 1.45; }
 .cards-list-heading { align-items: center; justify-content: space-between; }
+.cards-list-tools { display: grid; grid-template-columns: minmax(180px,1fr) minmax(150px,.7fr) auto; align-items: end; gap: 10px; margin: 0 0 8px; }
+.cards-search-field, .cards-sort-field { display: grid; min-width: 0; gap: 6px; color: #39444d; font-size: .76rem; font-weight: 600; }
+.cards-search-field input, .cards-sort-field select { box-sizing: border-box; width: 100%; min-width: 0; min-height: 40px; padding: 9px 11px; border: 1px solid #dce1e4; border-radius: 9px; color: #202b34; background: #fff; font: inherit; font-weight: 400; }
+.cards-search-field input:focus, .cards-sort-field select:focus { outline: 3px solid rgba(35,104,75,.13); border-color: #4c8d6b; }
+.cards-sort-direction { min-height: 40px; justify-content: center; white-space: nowrap; }
+.cards-results-count { margin: 0 0 12px; color: #76818a; font-size: .75rem; }
 .cards-ledger-list { display: grid; gap: 12px; }
 .cards-ledger-card { min-width: 0; padding: 16px; border: 1px solid #e6eaec; border-radius: 12px; background: #fff; }
 .cards-ledger-card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
@@ -72,6 +78,9 @@
   .cards-password { width: 100%; justify-content: start; }
   .cards-password-value { text-align: left; }
   .cards-list-heading { align-items: flex-start; flex-direction: column; }
+  .cards-list-tools { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+  .cards-search-field { grid-column: 1 / -1; }
+  .cards-sort-direction { width: 100%; }
   .cards-list-heading > .button { width: 100%; justify-content: center; }
   .cards-actions > .button { flex: 1 1 100%; justify-content: center; }
 }
