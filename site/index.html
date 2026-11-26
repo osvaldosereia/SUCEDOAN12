@@ -17,9 +17,9 @@
   <link rel="stylesheet" href="customer-address.css?v=2">
   <script src="config.js?v=2" defer></script>
   <script src="storefront/experimento-extras.js?v=21" defer></script>
-  <script src="storefront/basket.js?v=16" defer></script>
-  <script src="storefront/checkout.js?v=25" defer></script>
-  <script src="app.js?v=56" defer></script>
+  <script src="storefront/basket.js?v=17" defer></script>
+  <script src="storefront/checkout.js?v=26" defer></script>
+  <script src="app.js?v=57" defer></script>
   <script src="experimento.js?v=10" defer></script>
   <script src="mobile-navigation.js?v=5" defer></script>
 </head>
@@ -228,14 +228,15 @@
           <span aria-hidden="true">←</span><span>Voltar à página inicial</span>
         </button>
         <div class="basket-detail-heading">
-          <p class="eyebrow">Sua escolha</p>
+          <p class="eyebrow">Prévia da cesta</p>
           <h2 id="detail-title">Produtos da cesta</h2>
+          <p class="helper" id="detail-cart-status" role="status">Prévia da cesta: ela ainda não está no carrinho.</p>
         </div>
       </header>
       <div id="detail-content" class="basket-detail-content"></div>
       <footer class="basket-detail-actions">
-        <div class="total-line"><span>Total do pedido</span><strong id="detail-total" aria-live="polite">—</strong></div>
-        <button id="order-button" class="button button-primary button-wide" type="button">Concluir</button>
+        <div class="total-line"><span id="detail-total-label">Total ao adicionar esta cesta</span><strong id="detail-total" aria-live="polite">—</strong></div>
+        <button id="order-button" class="button button-primary button-wide" type="button">Adicionar cesta ao pedido</button>
       </footer>
     </section>
 

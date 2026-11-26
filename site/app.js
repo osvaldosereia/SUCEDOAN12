@@ -5,7 +5,7 @@
   const root = String(config.supabaseUrl || "").replace(/\/$/, "") + "/functions/v1/" + (config.storefrontFunction || "storefront-v2");
   const key = config.publishableKey || "";
   const catalogCode = new URLSearchParams(window.location.search).get("catalog_code") || "";
-  const state = { cards: [], baskets: new Map(), expandedOptionGroups: new Set(), activeKey: "", customer: null, toastTimer: 0, deliveryOptions: [], deliveryPromise: null, submittingOrder: false, catalogCode: /^\d{4}$/.test(catalogCode) ? catalogCode : "", identityLookupStarted: false };
+  const state = { cards: [], baskets: new Map(), expandedOptionGroups: new Set(), activeKey: "", cartKey: "", cartRestoring: false, cartRestorePromise: null, customer: null, toastTimer: 0, deliveryOptions: [], deliveryPromise: null, submittingOrder: false, catalogCode: /^\d{4}$/.test(catalogCode) ? catalogCode : "", identityLookupStarted: false };
   const $ = (id) => document.getElementById(id);
   const esc = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
   const plain = (value) => String(value == null ? "" : value).replace(/\s+/g, " ").trim();
@@ -131,8 +131,9 @@
 
   function persistCartSnapshot() {
     if (!cartPersistenceReady) return;
-    const data = state.baskets.get(state.activeKey);
-    if (state.activeKey && data && data.customOrder !== true && !data.detailLoaded) return;
+    const data = state.baskets.get(state.cartKey);
+    if (state.cartKey && data && data.customOrder !== true && !data.detailLoaded) return;
+    if (data && typeof extras.attachHomeSelections === "function") extras.attachHomeSelections(data);
 
     const basketData = data && data.customOrder !== true && data.detailLoaded && data.basket ? data : null;
     const items = basketData ? basketData.items.map((item) => ({
@@ -168,7 +169,7 @@
     const snapshot = {
       version: 1,
       saved_at: Date.now(),
-      size_key: basketData ? String(state.activeKey) : "",
+      size_key: basketData ? String(state.cartKey) : "",
       custom: Boolean(data && data.customOrder === true),
       items,
       extras,
@@ -184,6 +185,7 @@
     if (!pendingCartSnapshot || !state.cards.length) return;
     if (cartRestorePromise) return cartRestorePromise;
     const saved = pendingCartSnapshot;
+    state.cartRestoring = true;
     cartRestorePromise = (async () => {
       const productRows = new Map();
       const uniqueProducts = new Map();
@@ -244,12 +246,12 @@
           data.extraSelections = loadSelections(saved.extras);
           data.homeExtraProductIds = new Set(Array.from(homeSelections.keys()));
           extras.attachHomeSelections(data);
-          state.activeKey = sizeKey;
+          state.cartKey = sizeKey;
           restoredBasket = true;
           restoredQuoteRefreshed = restored.cartQuoteRefreshed !== false;
           basketConfigurationChanged = restored.cartConfigurationChanged === true;
         } catch (_) {
-          state.activeKey = "";
+          state.cartKey = "";
           basketRestoreFailed = true;
         }
       } else if (sizeKey && saved.custom !== true) {
@@ -268,7 +270,7 @@
             extraSelections: customSelections,
             homeExtraProductIds: new Set(Array.from(homeSelections.keys()))
           });
-          state.activeKey = customKey;
+          state.cartKey = customKey;
         }
       }
 
@@ -284,7 +286,7 @@
       const unavailableProducts = Array.from(uniqueProducts.keys()).filter((id) => !productRows.has(id)).length;
       if (basketRestoreFailed) {
         toast("Não foi possível atualizar a cesta agora; mantivemos o carrinho salvo. Tente novamente.");
-      } else if (restoredBasket || state.activeKey === "__custom_products__" || homeSelections.size) {
+      } else if (restoredBasket || state.cartKey === "__custom_products__" || homeSelections.size) {
         const usedFallbackPrice = loadedProducts.some((product) => product && product._cartPriceMayBeStale);
         const message = unavailableProducts
           ? "Atualizamos o carrinho; alguns produtos não estão mais disponíveis e foram removidos."
@@ -302,7 +304,10 @@
       cartPersistenceReady = true;
     }).finally(() => {
       cartRestorePromise = null;
+      state.cartRestorePromise = null;
+      state.cartRestoring = false;
     });
+    state.cartRestorePromise = cartRestorePromise;
     return cartRestorePromise;
   }
 
@@ -466,9 +471,27 @@
 
   function renderDetail() {
     const data = state.baskets.get(state.activeKey);
+    const cartData = state.baskets.get(state.cartKey);
+    const currentBasketInCart = Boolean(data && state.cartKey && state.activeKey === state.cartKey && data.customOrder !== true);
+    const differentBasketInCart = Boolean(data && state.cartKey && state.cartKey !== state.activeKey && cartData && cartData.customOrder !== true);
+    const status = $("detail-cart-status");
+    const totalLabel = $("detail-total-label");
+    const orderButton = $("order-button");
+    if (status) status.textContent = currentBasketInCart
+      ? "Esta cesta já está no carrinho."
+      : differentBasketInCart
+        ? "Prévia da cesta. Seu carrinho continua com " + plain(cartData.basket?.name || cartData.summary?.name || "outra cesta") + "."
+        : "Prévia da cesta: ela ainda não está no carrinho.";
+    if (totalLabel) totalLabel.textContent = currentBasketInCart ? "Total do pedido" : "Total ao adicionar esta cesta";
+    if (orderButton) orderButton.textContent = currentBasketInCart
+      ? "Continuar para checkout"
+      : differentBasketInCart
+        ? "Trocar cesta do pedido"
+        : "Adicionar cesta ao pedido";
     if (!data || data.error) {
       $("detail-content").innerHTML = '<div class="empty-state">Não foi possível carregar os produtos. Tente novamente.</div>';
       $("detail-total").textContent = "—";
+      $("order-button").disabled = true;
       return;
     }
     if (!data.detailLoaded) {
@@ -593,7 +616,7 @@
       : "";
     $("detail-content").innerHTML = note + manualReplacementNote + '<div class="product-list">' + rows + "</div>" +
       '<div data-home-extra-review-mount>' + homeSelectionReviewMarkup(data) + "</div>" + extraCategoriesMarkup(data);
-    $("order-button").disabled = !data.orderable;
+    $("order-button").disabled = !data.orderable || data.changing === true;
     $("detail-content").querySelectorAll("[data-retry-position]").forEach((button) => button.addEventListener("click", () => retryItemOptions(button.dataset.retryPosition)));
     $("detail-content").querySelectorAll("[data-toggle-options]").forEach((button) => {
       button.addEventListener("click", () => {

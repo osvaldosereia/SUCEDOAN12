@@ -164,7 +164,7 @@
     function updateConfirmOrderAvailability() {
       const select = $("delivery-date");
       const payment = document.querySelector('input[name="payment"]:checked');
-      const data = state.baskets.get(state.activeKey);
+      const data = state.baskets.get(state.cartKey);
       const orderItemsAvailable = Boolean(data && (data.customOrder
         ? selectedExtraEntries(data).length > 0
         : data.orderable === true));
@@ -298,15 +298,15 @@
       const badge = $("sidebar-checkout-count");
       if (!button || !badge) return 0;
 
-      const data = state.baskets.get(state.activeKey);
+      const data = state.baskets.get(state.cartKey);
       let count = 0;
       const extras = new Map();
 
-      if (data && data.customOrder !== true) {
+      if (data) {
+        if (data.customOrder !== true && data.basket) count = 1;
         orderReviewEntries(data).forEach((entry) => {
           const quantity = Math.max(0, Math.trunc(Number(entry.quantity || 0)));
-          if (entry.kind === "basket") count += quantity;
-          else if (entry.kind === "extra" && entry.id && quantity > 0) extras.set(String(entry.id), quantity);
+          if (entry.kind === "extra" && entry.id && quantity > 0) extras.set(String(entry.id), quantity);
         });
       }
 
@@ -391,14 +391,14 @@
     }
 
     function clearOrderCart() {
-      const activeKey = state.activeKey;
-      const data = state.baskets.get(activeKey);
-      if (!data || data.changing === true || state.submittingOrder) return;
+      const cartKey = state.cartKey;
+      const data = state.baskets.get(cartKey);
+      if (!cartKey || !data || data.changing === true || state.submittingOrder) return;
 
       const extraIds = data.extraSelections instanceof Map ? Array.from(data.extraSelections.keys()) : [];
       if (data.extraSelections instanceof Map) data.extraSelections.clear();
       if (data.customOrder === true) {
-        state.baskets.delete(activeKey);
+        state.baskets.delete(cartKey);
       } else {
         data.items = [];
         data.totalCents = 0;
@@ -408,22 +408,23 @@
         data.error = false;
       }
 
+      state.cartKey = "";
+      if (state.activeKey === cartKey) state.activeKey = "";
       if (typeof onCustomOrderSubmitted === "function") onCustomOrderSubmitted();
       extraIds.forEach((id) => {
         if (typeof onHomeExtraQuantityChanged === "function") onHomeExtraQuantityChanged(String(id));
       });
-      state.activeKey = "";
       if (typeof onCartCleared === "function") onCartCleared();
       renderOrderReview(null);
       toast("Carrinho limpo.");
     }
 
     async function openOrderSheet(isCustomOrder) {
-      const activeKey = state.activeKey;
-      const data = state.baskets.get(activeKey);
-      if (!data || (isCustomOrder && data.customOrder !== true)) return;
+      const cartKey = state.cartKey;
+      const data = state.baskets.get(cartKey);
+      if (!cartKey || !data || (isCustomOrder && data.customOrder !== true)) return;
       if (data.changePromise) await data.changePromise;
-      if (state.activeKey !== activeKey) return;
+      if (state.cartKey !== cartKey) return;
       setOrderSubmitMessage("", "");
       renderStockConflictItems([]);
       $("order-title").textContent = isCustomOrder ? "Pedido personalizado" : "Encomendar cesta";
@@ -460,17 +461,57 @@
     }
 
     async function openSidebarCheckout() {
-      const data = state.baskets.get(state.activeKey);
-      if (data && data.customOrder !== true) {
+      if (state.cartRestoring && state.cartRestorePromise) await state.cartRestorePromise;
+      let data = state.baskets.get(state.cartKey);
+      if (data && typeof attachHomeSelections === "function") attachHomeSelections(data);
+      if (data && data.customOrder === true) {
+        if (selectedExtraEntries(data).length) return openOrderSheet(true);
+        state.baskets.delete(state.cartKey);
+        state.cartKey = "";
+        data = null;
+      }
+      if (data) {
         if (data.orderable !== true) {
-          toast("A cesta selecionada ainda está carregando ou indisponível. Tente novamente em instantes.");
+          toast("A cesta do carrinho ainda está carregando ou indisponível. Tente novamente em instantes.");
           return;
         }
-        if (hasHomeExtraSelection() && typeof attachHomeSelections === "function") attachHomeSelections(data);
         return openOrderSheet(false);
       }
       if (hasHomeExtraSelection()) return startCustomOrder();
       toast("Escolha uma cesta ou selecione produtos em “Monte sua Cesta” antes de continuar.");
+    }
+
+    async function addBasketToCart(sizeKey, data) {
+      if (state.cartRestoring && state.cartRestorePromise) await state.cartRestorePromise;
+      if (state.activeKey !== sizeKey || $("detail-sheet").hidden || !data ||
+          data.detailLoaded !== true || data.orderable !== true) return false;
+
+      const previousKey = String(state.cartKey || "");
+      const previous = state.baskets.get(previousKey);
+      if (previousKey && previousKey !== sizeKey && previous && previous.customOrder !== true) {
+        const previousName = String(previous.basket && previous.basket.name || previous.summary && previous.summary.name || "outra cesta");
+        const nextName = String(data.basket && data.basket.name || data.summary && data.summary.name || "esta cesta");
+        if (!window.confirm("Seu carrinho já contém " + previousName + ". Deseja trocar por " + nextName + "? Os produtos extras serão mantidos.")) return false;
+      }
+
+      if (previousKey && previousKey !== sizeKey && previous && previous.extraSelections instanceof Map) {
+        const managedHomeExtras = previous.homeExtraProductIds instanceof Set ? previous.homeExtraProductIds : new Set();
+        if (!(data.extraSelections instanceof Map)) data.extraSelections = new Map();
+        previous.extraSelections.forEach((item, id) => {
+          const productId = String(id || item && item.id || "");
+          if (!productId || (managedHomeExtras.has(productId) &&
+              !(state.homeExtraSelections instanceof Map && state.homeExtraSelections.has(productId)))) return;
+          if (!data.extraSelections.has(productId)) {
+            data.extraSelections.set(productId, Object.assign({}, item, { id: productId }));
+          }
+        });
+      }
+
+      state.cartKey = sizeKey;
+      if (typeof attachHomeSelections === "function") attachHomeSelections(data);
+      if (previousKey === customOrderKey && previousKey !== sizeKey) state.baskets.delete(previousKey);
+      updateSidebarCheckoutCount();
+      return true;
     }
 
     function startCustomOrder() {
@@ -492,9 +533,10 @@
         items: [],
         totalCents: 0,
         orderable: true,
-        extraSelections
+        extraSelections,
+        homeExtraProductIds: new Set(Array.from(extraSelections.keys()))
       });
-      state.activeKey = customOrderKey;
+      state.cartKey = customOrderKey;
       updateSidebarCheckoutCount();
       return openOrderSheet(true);
     }
@@ -694,7 +736,7 @@
 
       const list = document.createElement("ul");
       list.className = "order-stock-conflict-list";
-      const data = state.baskets.get(state.activeKey);
+      const data = state.baskets.get(state.cartKey);
       stockConflictItems.forEach((item) => {
         const id = String(item.id || "");
         const name = String(item.name || "Produto");
@@ -740,8 +782,8 @@
 
     function removeStockConflictProduct(productId) {
       const id = String(productId || "");
-      const activeKey = state.activeKey;
-      const data = state.baskets.get(activeKey);
+      const cartKey = state.cartKey;
+      const data = state.baskets.get(cartKey);
       const item = data && data.extraSelections instanceof Map ? data.extraSelections.get(id) : null;
       if (!data || !item || data.changing === true || state.submittingOrder) return;
 
@@ -767,7 +809,7 @@
     }
 
     async function confirmOrder() {
-      const data = state.baskets.get(state.activeKey);
+      const data = state.baskets.get(state.cartKey);
       const customer = state.customer;
       const payment = document.querySelector('input[name="payment"]:checked');
       const deliveryDate = $("delivery-date").value;
@@ -848,8 +890,22 @@
           receipt.focus({ preventScroll: true });
           receipt.scrollIntoView({ behavior: "smooth", block: "start" });
         });
-        if (data.customOrder && typeof onCustomOrderSubmitted === "function") onCustomOrderSubmitted();
+        const submittedCartKey = state.cartKey;
+        state.cartKey = "";
+        if (state.activeKey === submittedCartKey) state.activeKey = "";
+        if (data.extraSelections instanceof Map) data.extraSelections.clear();
+        if (data.customOrder) {
+          state.baskets.delete(submittedCartKey);
+        } else {
+          data.items = [];
+          data.totalCents = 0;
+          data.orderable = false;
+          data.detailLoaded = false;
+          data.detailPromise = null;
+        }
+        if (typeof onCustomOrderSubmitted === "function") onCustomOrderSubmitted();
         if (typeof onOrderSubmitted === "function") onOrderSubmitted();
+        updateSidebarCheckoutCount();
         const orderLabel = publicOrderCode ? "Pedido " + publicOrderCode : "Pedido";
         toast(result.stock_adjustment
           ? orderLabel + " recebido com ajuste de estoque."
@@ -908,16 +964,18 @@
 
     function init() {
       $("order-button").addEventListener("click", async () => {
+        if (state.cartRestoring && state.cartRestorePromise) await state.cartRestorePromise;
         const sizeKey = state.activeKey;
         const basket = state.baskets.get(sizeKey);
-        if (!basket || !basket.orderable) return;
+        if (!basket || basket.customOrder === true || !basket.orderable || basket.detailLoaded !== true) return;
         const pendingChange = basket.changePromise;
         if (pendingChange) await pendingChange;
         if (state.activeKey !== sizeKey || $("detail-sheet").hidden || !basket.orderable) return;
+        if (!await addBasketToCart(sizeKey, basket)) return;
         closeSheet("detail-sheet");
         await openOrderSheet(false);
       });
-      $("home-extra-checkout").addEventListener("click", startCustomOrder);
+      $("home-extra-checkout").addEventListener("click", openSidebarCheckout);
       const sidebarCheckout = $("sidebar-checkout");
       if (sidebarCheckout) sidebarCheckout.addEventListener("click", openSidebarCheckout);
       $("clear-order-cart").addEventListener("click", clearOrderCart);
@@ -932,8 +990,8 @@
         const button = event.target instanceof Element ? event.target.closest("[data-order-review-adjust]") : null;
         if (!button) return;
         event.preventDefault();
-        const activeKey = state.activeKey;
-        const data = state.baskets.get(activeKey);
+        const cartKey = state.cartKey;
+        const data = state.baskets.get(cartKey);
         const delta = Math.trunc(Number(button.dataset.delta || 0));
         if (!data || (delta !== -1 && delta !== 1) || data.changing === true) return;
 
@@ -942,7 +1000,7 @@
           const itemsHost = $("order-review-items");
           itemsHost.setAttribute("aria-busy", "true");
           itemsHost.querySelectorAll("[data-order-review-adjust]").forEach((control) => { control.disabled = true; });
-          await changeBasketItemQuantity(button.dataset.positionId, delta);
+          await changeBasketItemQuantity(button.dataset.positionId, delta, cartKey);
         } else if (button.dataset.kind === "extra") {
           const item = data.extraSelections instanceof Map ? data.extraSelections.get(button.dataset.extraId) : null;
           if (!item) return;
@@ -961,8 +1019,8 @@
           }
         }
 
-        const current = state.baskets.get(activeKey);
-        if (current && state.activeKey === activeKey) renderOrderReview(current);
+        const current = state.baskets.get(cartKey);
+        if (current && state.cartKey === cartKey) renderOrderReview(current);
       });
       $("lookup-button").addEventListener("click", lookupCustomer);
       $("customer-phone").addEventListener("input", () => {

@@ -106,8 +106,8 @@
       return await update;
     }
 
-    async function changeBasketItemQuantity(positionId, delta) {
-      const sizeKey = state.activeKey;
+    async function changeBasketItemQuantity(positionId, delta, sizeKeyOverride) {
+      const sizeKey = sizeKeyOverride == null ? state.activeKey : String(sizeKeyOverride);
       const data = state.baskets.get(sizeKey);
       if (!data || data.changing || (delta !== -1 && delta !== 1)) return;
       const current = data.items.find((row) => String(row.position_id) === String(positionId));
