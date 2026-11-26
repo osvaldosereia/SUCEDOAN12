@@ -37,9 +37,9 @@ Deno.serve(async(req:Request)=>{
   const tokenHash=await hash(token);
   const url=new URL(req.url);
   const action=clean(url.searchParams.get("action"),32)||"session";
-  if(!["session","addon_session","confirm"].includes(action))return response(req,{ok:false,error:"invalid_action"},400);
-  if(req.method==="GET"&&action!=="session")return response(req,{ok:false,error:"method_not_allowed"},405);
-  if(req.method==="POST"&&action==="session")return response(req,{ok:false,error:"method_not_allowed"},405);
+  if(!["session","history","order_session","addon_session","confirm"].includes(action))return response(req,{ok:false,error:"invalid_action"},400);
+  if(req.method==="GET"&&!["session","history","order_session"].includes(action))return response(req,{ok:false,error:"method_not_allowed"},405);
+  if(req.method==="POST"&&["session","history","order_session"].includes(action))return response(req,{ok:false,error:"method_not_allowed"},405);
   try{
     const bucket=action==="confirm"?"order_customer_confirm_v1":"order_customer_read_v1";
     const gate=await db.rpc("consume_public_rate_limit",{
@@ -60,6 +60,20 @@ Deno.serve(async(req:Request)=>{
         add_offers_until:!eligibility.error&&eligibility.data?.eligible===true
           ?eligibility.data.expires_at:null
       },200);
+    }
+    if(action==="history"){
+      const history=await db.rpc("ops3_customer_order_history_v1",{p_token_hash:tokenHash});
+      if(history.error)throw history.error;
+      return response(req,history.data||{ok:false,error:"history_unavailable"},history.data?.ok===true?200:404);
+    }
+    if(action==="order_session"){
+      const orderId=clean(url.searchParams.get("order_id"),80);
+      if(!/^[0-9a-f-]{36}$/i.test(orderId))return response(req,{ok:false,error:"invalid_order_id"},400);
+      const selected=await db.rpc("ops3_customer_order_session_v1",{p_token_hash:tokenHash,p_order_id:orderId});
+      if(selected.error)throw selected.error;
+      const result=selected.data||{ok:false,error:"order_unavailable"};
+      const status=result.error==="access_denied"?403:result.ok===true?200:404;
+      return response(req,result,status);
     }
     if(action==="addon_session"){
       if(current.can_confirm!==true)return response(req,{ok:false,error:"order_not_editable"},409);
