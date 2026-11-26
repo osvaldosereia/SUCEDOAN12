@@ -276,6 +276,25 @@
     return { totalCents, missingProducts };
   }
 
+  function basketPriceCostMarkup(basketId, rawPrice) {
+    const cost = basketProductsCostSummary(basketId);
+    const priceCents = parsePriceCents(rawPrice);
+    if (cost.missingProducts) return { state: "incomplete", value: "Não calculável" };
+    if (priceCents == null) return { state: "unavailable", value: "Informe o preço" };
+    if (cost.totalCents <= 0) return { state: "unavailable", value: "Custo zerado" };
+
+    const differencePercent = ((priceCents - cost.totalCents) / cost.totalCents) * 100;
+    const formatted = Math.abs(differencePercent).toLocaleString("pt-BR", {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    });
+    const sign = differencePercent > 0 ? "+" : differencePercent < 0 ? "−" : "";
+    return {
+      state: differencePercent > 0 ? "positive" : differencePercent < 0 ? "negative" : "neutral",
+      value: sign + formatted + "%",
+    };
+  }
+
   function updateBasketProductSums() {
     document.querySelectorAll("[data-basket-product-sum]").forEach((summary) => {
       const value = summary.querySelector("strong");
@@ -293,6 +312,14 @@
         : "";
       summary.dataset.incomplete = cost.missingProducts ? "true" : "false";
     });
+    document.querySelectorAll("[data-basket-price-markup]").forEach((summary) => {
+      const card = summary.closest("[data-basket-card]");
+      const input = card?.querySelector("[data-basket-price]");
+      const markup = basketPriceCostMarkup(summary.dataset.basketPriceMarkup, input?.value);
+      const value = summary.querySelector("strong");
+      if (value) value.textContent = markup.value;
+      summary.dataset.state = markup.state;
+    });
   }
 
   function renderGrid() {
@@ -304,13 +331,15 @@
       '<div class="basket-default-prices-heading"><h3 id="basket-default-prices-title">Valores padrão das cestas</h3><p>Preço exibido inicialmente no site. As variações podem alterar o total.</p></div>' +
       '<div class="basket-default-prices-grid">' + baskets.map((basket) => {
         const cost = basketProductsCostSummary(basket.id);
+        const defaultPrice = priceInputValue(basket.default_price_value ?? basket.default_price_cents);
+        const markup = basketPriceCostMarkup(basket.id, defaultPrice);
         const basketIsActive = basket.is_active !== false;
         const status = basketIsActive
           ? '<span class="basket-state-badge is-live">Ativa na loja</span>'
           : '<span class="basket-state-badge is-draft">Rascunho · fora da loja</span>';
         const activateButton = basketIsActive ? ""
           : '<button class="button button-outline basket-activate-button" type="button" data-activate-basket="' + esc(basket.id) + '">Ativar na loja</button>';
-        return '<div class="basket-default-price" data-basket-card="' + esc(basket.id) + '"><div class="basket-default-price-heading"><span>' + esc(basket.name) + '</span>' + status + '</div><label class="basket-default-price-input"><span>R$</span><input type="number" min="0" max="1000000" step="0.01" inputmode="decimal" value="' + esc(priceInputValue(basket.default_price_value ?? basket.default_price_cents)) + '" data-basket-price="' + esc(basket.id) + '" aria-label="Valor padrão da cesta ' + esc(basket.name) + '"></label><small class="basket-default-price-sum" data-basket-product-sum="' + esc(basket.id) + '" aria-live="polite">Soma de venda: <strong>' + money(basketProductsSumCents(basket.id)) + '</strong></small><small class="basket-default-price-sum basket-default-price-cost" data-basket-product-cost="' + esc(basket.id) + '" data-incomplete="' + (cost.missingProducts ? "true" : "false") + '" aria-live="polite"><span class="basket-default-price-cost-label">' + (cost.missingProducts ? "Custo parcial:" : "Soma de custo:") + '</span><strong>' + money(cost.totalCents) + '</strong><span class="basket-default-price-cost-note">' + (cost.missingProducts ? " · " + cost.missingProducts + (cost.missingProducts === 1 ? " produto sem custo" : " produtos sem custo") : "") + '</span></small>' + activateButton + '</div>';
+        return '<div class="basket-default-price" data-basket-card="' + esc(basket.id) + '"><div class="basket-default-price-heading"><span>' + esc(basket.name) + '</span>' + status + '</div><label class="basket-default-price-input"><span>R$</span><input type="number" min="0" max="1000000" step="0.01" inputmode="decimal" value="' + esc(defaultPrice) + '" data-basket-price="' + esc(basket.id) + '" aria-label="Valor padrão da cesta ' + esc(basket.name) + '"></label><small class="basket-default-price-sum" data-basket-product-sum="' + esc(basket.id) + '" aria-live="polite">Soma de venda: <strong>' + money(basketProductsSumCents(basket.id)) + '</strong></small><small class="basket-default-price-sum basket-default-price-cost" data-basket-product-cost="' + esc(basket.id) + '" data-incomplete="' + (cost.missingProducts ? "true" : "false") + '" aria-live="polite"><span class="basket-default-price-cost-label">' + (cost.missingProducts ? "Custo parcial:" : "Soma de custo:") + '</span><strong>' + money(cost.totalCents) + '</strong><span class="basket-default-price-cost-note">' + (cost.missingProducts ? " · " + cost.missingProducts + (cost.missingProducts === 1 ? " produto sem custo" : " produtos sem custo") : "") + '</span></small><small class="basket-default-price-sum basket-default-price-markup" data-basket-price-markup="' + esc(basket.id) + '" data-state="' + markup.state + '" aria-live="polite" title="(preço manual − custo total) ÷ custo total × 100">Diferença sobre custo: <strong>' + esc(markup.value) + '</strong></small>' + activateButton + '</div>';
       }).join("") + '</div></section>';
     if (!types.length) {
       host.innerHTML = prices + '<p class="admin-muted basket-grid-empty">Nenhum tipo cadastrado. Adicione um tipo para começar a montar as cestas.</p>';
@@ -772,6 +801,7 @@
       if (event.target.dataset.basketPrice != null) {
         const basket = state.baskets.find((item) => String(item.id) === String(event.target.dataset.basketPrice));
         if (basket) basket.default_price_value = event.target.value;
+        updateBasketProductSums();
         markDirty();
         return;
       }
