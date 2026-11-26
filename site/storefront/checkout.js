@@ -1,6 +1,29 @@
 (() => {
   "use strict";
 
+  function migrateSavedCartSnapshot(snapshot) {
+    if (!snapshot || typeof snapshot !== "object") return snapshot;
+    const version = Number(snapshot.version);
+    if (version === 2 || version !== 1) return snapshot;
+
+    const migrated = Object.assign({}, snapshot, { version: 2 });
+    const sizeKey = String(snapshot.size_key || "").trim();
+    const hasExtraProducts =
+      (Array.isArray(snapshot.extras) && snapshot.extras.length > 0) ||
+      (Array.isArray(snapshot.home_extras) && snapshot.home_extras.length > 0);
+
+    if (sizeKey && snapshot.custom !== true) {
+      migrated.size_key = "";
+      migrated.custom = true;
+      migrated.items = [];
+      migrated.legacy_basket_preview = true;
+    } else if (!sizeKey && snapshot.custom !== true && hasExtraProducts) {
+      migrated.custom = true;
+    }
+
+    return migrated;
+  }
+
   function create({ state, $, esc, phoneDigits, money, toast, request, whatsappNumber, quantityOf, closeSheet, showSheet, changeBasketItemQuantity, attachHomeSelections, onHomeExtraQuantityChanged, onCustomOrderSubmitted, onCartCleared, onOrderSubmitted }) {
     const customOrderKey = "__custom_products__";
     const minimumOrderCents = 7500;
@@ -876,15 +899,30 @@
           if (url.protocol === "https:" &&
             ["donaantonia.com.br", "www.donaantonia.com.br"].includes(url.hostname) &&
             url.pathname === "/p/" &&
-            Boolean(url.searchParams.get("k"))) safeTrackingUrl = url.href;
+            /^[a-f0-9]{16}$/i.test(String(url.searchParams.get("k") || ""))) safeTrackingUrl = url.href;
         } catch {}
         trackingLink.href = safeTrackingUrl;
         trackingLink.hidden = !safeTrackingUrl;
+
+        const editLink = $("order-receipt-edit-link");
+        let safeEditUrl = "";
+        try {
+          const url = new URL(String(result.customer_action_url || ""));
+          if (url.protocol === "https:" &&
+            ["donaantonia.com.br", "www.donaantonia.com.br"].includes(url.hostname) &&
+            url.pathname === "/pedido/" &&
+            /^[a-f0-9]{64}$/i.test(String(url.searchParams.get("c") || ""))) safeEditUrl = url.href;
+        } catch {}
+        editLink.href = safeEditUrl;
+        editLink.hidden = !safeEditUrl;
+
         $("order-receipt-followup").textContent = result.basket_configuration_refreshed
-          ? "A cesta mudou durante o envio e foi atualizada automaticamente. A loja confirmará os itens e o total pelo WhatsApp."
-          : safeTrackingUrl
-            ? "No acompanhamento, você verá os produtos e o status atualizado do pedido."
-            : "O link de acompanhamento não ficou disponível. Se precisar, fale com a loja pelo WhatsApp.";
+          ? "A cesta mudou durante o envio e foi atualizada automaticamente. Confira o novo total e use o link seguro para acompanhar ou editar o pedido antes do início da separação."
+          : safeEditUrl
+            ? "Acompanhe o pedido ou abra o link seguro para alterar produtos, endereço, entrega e pagamento enquanto a separação não tiver começado."
+            : safeTrackingUrl
+              ? "No acompanhamento, você verá os produtos e o status atualizado. O botão “Ver meu Pedido” no WhatsApp permite editar enquanto a separação não tiver começado."
+              : "Os links do pedido não ficaram disponíveis. Se precisar, fale com a loja pelo WhatsApp.";
         receipt.hidden = false;
         window.requestAnimationFrame(() => {
           receipt.focus({ preventScroll: true });
@@ -1073,5 +1111,5 @@
     return { init, loadDeliveryOptions, lookupCustomer, confirmOrder, startCustomOrder, updateSidebarCheckoutCount };
   }
 
-  window.DonaStorefrontCheckout = { create };
+  window.DonaStorefrontCheckout = { create, migrateSavedCartSnapshot };
 })();
