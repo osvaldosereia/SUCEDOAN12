@@ -39,7 +39,7 @@ const moldCompositionCache=new Map<string,{expiresAt:number,data:any,createdAt:n
 const moldCompositionInFlight=new Map<string,Promise<any[]>>();
 const moldDetailCompositionInFlight=new Map<string,Promise<any>>();
 const ALLOWED_ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
-const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {"Access-Control-Allow-Origin":ALLOWED_ORIGINS.has(origin)?origin:"https://donaantonia.com.br","Vary":"Origin","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"GET, POST, OPTIONS"}};
+const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {"Access-Control-Allow-Origin":ALLOWED_ORIGINS.has(origin)?origin:"https://donaantonia.com.br","Vary":"Origin","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type, x-customer-action-token","Access-Control-Allow-Methods":"GET, POST, OPTIONS"}};
 const json=(req:Request,v:any,s=200,h:Record<string,string>={})=>new Response(JSON.stringify(v),{status:s,headers:{...cors(req),"Content-Type":"application/json; charset=utf-8",...h}});
 const txt=(v:any,n=180)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,n);
 const uid=(v:any)=>{const s=txt(v,80);return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)?s:""};
@@ -48,6 +48,7 @@ const cents=(v:any)=>Math.round(Number(v||0)*100);
 const phone=(v:any)=>{let d=String(v??"").replace(/\D+/g,"");if(d.startsWith("00"))d=d.slice(2);let local="";if(d.startsWith("55")&&(d.length===12||d.length===13))local=d.slice(2);else if(d.length===10||d.length===11)local=d;else if(d.length===8||d.length===9)local="65"+d;else return "";if(local.length===10&&/[6-9]/.test(local.charAt(2)))local=local.slice(0,2)+"9"+local.slice(2);return "+55"+local};
 const safeQ=(v:any)=>txt(v,100).replace(/[,%()]/g," ").trim();
 async function sha(v:string){const x=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(v));return [...new Uint8Array(x)].map(b=>b.toString(16).padStart(2,"0")).join("")}
+function customerActionToken(){const b=crypto.getRandomValues(new Uint8Array(32));return [...b].map(x=>x.toString(16).padStart(2,"0")).join("")}
 function ip(req:Request){for(const v of [req.headers.get("cf-connecting-ip"),String(req.headers.get("x-forwarded-for")||"").split(",")[0],req.headers.get("x-real-ip")]){const s=String(v||"").trim();if(s)return s.slice(0,120)}return ""}
 function code4(){const a=new Uint16Array(1);do{crypto.getRandomValues(a)}while(a[0]>=60000);return String(a[0]%10000).padStart(4,"0")}
 
@@ -1361,6 +1362,89 @@ async function stockConflictDetailsFromError(error:any,rawItems:any[]){
   }];
 }
 
+async function editCustomerOrder(req:Request,p:any){
+  const token=txt(req.headers.get("x-customer-action-token"),128);
+  if(!/^[a-f0-9]{64}$/i.test(token))return {error:"invalid_token",status:404};
+  const tokenHash=await sha(token);
+  const gate=await db.rpc("consume_public_rate_limit",{
+    p_rate_key:"order-customer-edit:"+tokenHash.slice(0,32),
+    p_bucket:"order_customer_edit_v1",
+    p_limit:20,
+    p_window_seconds:300
+  });
+  if(gate.error)return {error:"rate_limit_unavailable",status:503};
+  if(gate.data!==true)return {error:"rate_limited",status:429,retry_after_seconds:300};
+
+  const orderId=uid(p?.order_id);
+  const expectedUpdatedAt=txt(p?.expected_updated_at,80);
+  const items=Array.isArray(p?.items)?p.items.slice(0,80):[];
+  if(!orderId||!Number.isFinite(Date.parse(expectedUpdatedAt)))return {error:"invalid_customer_edit_request",status:400};
+  if(!items.length)return {error:"cart_empty",status:400};
+
+  const access=await db.rpc("ops3_customer_order_session_v1",{p_token_hash:tokenHash,p_order_id:orderId});
+  if(access.error)return {error:"service_unavailable",status:503};
+  if(access.data?.ok!==true)return {error:txt(access.data?.error,80)||"order_not_found",status:404};
+  if(access.data?.can_edit!==true)return {error:"order_not_editable",status:409};
+
+  const payment=txt(p?.payment_method,80);
+  if(!["Dinheiro","PIX","Cartão de crédito","Cartão alimentação/refeição"].includes(payment))
+    return {error:"invalid_payment",status:400};
+
+  const addressInput=p?.address&&typeof p.address==="object"?p.address:{};
+  const address={
+    street:txt(addressInput.street,180),
+    number:txt(addressInput.number,40),
+    complement:txt(addressInput.complement,140),
+    district:txt(addressInput.district,140),
+    postal_code:txt(addressInput.postal_code,20),
+    reference:txt(addressInput.reference,220)
+  };
+  const missing=["street","number","district"].filter((key)=>!String((address as any)[key]||"").trim());
+  if(missing.length)return {error:"delivery_details_required",missing_fields:missing,status:400};
+
+  const requestedDate=txt(p?.delivery_date,10);
+  let delivery=requestedDate?selectedDelivery(requestedDate):null;
+  const existingDate=txt(access.data?.delivery?.delivery_date,10);
+  if(!delivery&&requestedDate&&requestedDate===existingDate){
+    delivery={
+      date:existingDate,
+      label:txt(access.data?.delivery?.delivery_label,80)||existingDate,
+      reason:"existing_order",
+      time_zone:TZ,
+      cutoff_hour:CUTOFF_HOUR
+    };
+  }
+  if(!delivery)return {error:"delivery_date_unavailable",status:409};
+
+  const updated=await db.rpc("ops3_update_customer_order_v1",{
+    p_token_hash:tokenHash,
+    p_order_id:orderId,
+    p_expected_updated_at:expectedUpdatedAt,
+    p_items:items,
+    p_payment_method:payment,
+    p_address:address,
+    p_delivery:delivery
+  });
+  if(updated.error){
+    const raw=txt(updated.error.message,200).split("\n")[0];
+    const code=raw.split(":")[0].trim().toLowerCase();
+    const known=new Set([
+      "order_not_editable","order_changed","delivery_details_required","delivery_date_unavailable",
+      "invalid_payment","cart_empty","minimum_order","product_unavailable","insufficient_stock",
+      "basket_mold_unavailable","basket_mold_composition_invalid","basket_mold_component_invalid",
+      "basket_mold_components_required","basket_mold_option_invalid","invalid_quantity",
+      "invalid_basket_quantity","customer_edit_stock_unavailable","customer_order_access_denied",
+      "customer_order_not_found","invalid_customer_action","too_many_items"
+    ]);
+    const status=["order_not_editable","order_changed","delivery_date_unavailable","product_unavailable",
+      "insufficient_stock","basket_mold_unavailable","basket_mold_composition_invalid",
+      "basket_mold_component_invalid","customer_order_access_denied","customer_edit_stock_unavailable"].includes(code)?409:400;
+    console.error("customer_order_edit_failed",{error_code:known.has(code)?code:"edit_failed"});
+    return {error:known.has(code)?code:"edit_failed",status};
+  }
+  return updated.data||{ok:false,error:"edit_unavailable",status:503};
+}
+
 async function submit(req:Request,p:any){
   const pay=txt(p?.payment_method,80),rawPhone=txt(p?.whatsapp_phone,40),ph=phone(rawPhone),requestedItems=Array.isArray(p?.items)?p.items.slice(0,80):[],whatsappOriginRaw=txt(p?.whatsapp_origin,4),whatsappOrigin=['0975','1018'].includes(whatsappOriginRaw)?whatsappOriginRaw:'';
   if(!ph)return {error:"invalid_whatsapp_phone",status:400};
@@ -1508,11 +1592,22 @@ async function submit(req:Request,p:any){
       if(!storedOrder.error&&storedOrder.data?.order_number)canonicalOrderNumber=storedOrder.data.order_number;
     }catch(e){console.error("order_public_identity",txt((e as any)?.message,180))}
   }
+  let customerActionUrl:string|null=null;
+  if(orderId){
+    try{
+      const secret=customerActionToken();
+      const issued=await db.rpc("ops3_issue_customer_order_action_v1",{
+        p_order_id:orderId,p_token_hash:await sha(secret)
+      });
+      if(!issued.error&&issued.data?.ok===true)customerActionUrl="https://donaantonia.com.br/pedido/?c="+secret;
+      else console.error("customer_action_link_issue_failed",issued.error?.code||issued.data?.error||"unknown");
+    }catch(e){console.error("customer_action_link_issue_failed",txt((e as any)?.message,120))}
+  }
   if(orderId&&ph)kickWhatsappOrderOutbound(orderId);
   const customerStatus=customer?.registration_complete===true?"registered":"pending_registration";
   await recordOpsEvent("order.received","Pedido recebido pelo site e aguardando confirmação.",orderId,{source:"vitrine",customer_status:customerStatus,payment_method:pay||null,delivery_date:deliveryDate||null,stock_reserved:created.data?.stock_reserved===true,reservation_timing:created.data?.reservation_timing||null,reservation_status:created.data?.reservation_status||null,papoai_conversation_linked:Boolean(papoaiLink?.linked),stock_adjustment:stockAdjustment,adjusted_items:adjustedItems,basket_configuration_refreshed:basketConfigurationRefreshed},"order-received:"+orderId);
   const orderCode=publicOrderLink?.public_code||canonicalOrderNumber||created.data?.order_number||null;
-  return {...created.data,order_number:orderCode,order_public_url:publicOrderLink?.public_url||null,order_public_code:orderCode,phone_attached:Boolean(ph),customer_status:customerStatus,registration_complete:customer?.registration_complete===true,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,customer:customer||null,history_synced:Boolean(customer),papoai_conversation_linked:Boolean(papoaiLink?.linked),stock_adjustment:stockAdjustment,adjusted_items:adjustedItems,basket_configuration_refreshed:basketConfigurationRefreshed};
+  return {...created.data,order_number:orderCode,order_public_url:publicOrderLink?.public_url||null,customer_action_url:customerActionUrl,order_public_code:orderCode,phone_attached:Boolean(ph),customer_status:customerStatus,registration_complete:customer?.registration_complete===true,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,customer:customer||null,history_synced:Boolean(customer),papoai_conversation_linked:Boolean(papoaiLink?.linked),stock_adjustment:stockAdjustment,adjusted_items:adjustedItems,basket_configuration_refreshed:basketConfigurationRefreshed};
 }
 
 async function basketBySize(sizeKey:string,lightweight=false){
@@ -1530,7 +1625,7 @@ Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
   try{
     const u=new URL(req.url),action=txt(u.searchParams.get("action")||(req.method==="GET"?"home":""),60);
-    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:83},200,{"Cache-Control":"no-store"});
+    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:84},200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="home_catalog_cards")return json(req,await homeCatalogCards(),200,{"Cache-Control":"public, max-age=30, stale-while-revalidate=180"});
     if(req.method==="GET"&&action==="home_size_cards")return json(req,await homeSizeCards(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
 
@@ -1579,6 +1674,7 @@ Deno.serve(async(req:Request)=>{
     if(req.method==="POST"&&action==="basket_mold_quote"){const r=await moldQuote(body);return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,r,200,{"Cache-Control":"no-store"})}
 
 
+    if(req.method==="POST"&&action==="edit_order"){const r=await editCustomerOrder(req,body);return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,r,200,{"Cache-Control":"no-store"})}
     if(req.method==="POST"&&action==="submit_order"){const r=await submit(req,body);const headers={"Cache-Control":"no-store",...(r.retry_after_seconds?{"Retry-After":String(r.retry_after_seconds)}:{})};return r.error?json(req,{ok:false,...r},r.status||400,headers):json(req,{ok:true,...r},200,headers)}
     if(req.method==="POST"&&action==="issue_identity_link")return json(req,{ok:false,error:"retired"},410)
     if(req.method==="POST"&&action==="reconcile_customer")return json(req,{ok:false,error:"retired"},410)
