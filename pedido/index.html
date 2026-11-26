@@ -7,9 +7,9 @@
   <meta name="referrer" content="no-referrer">
   <meta name="theme-color" content="#7e3029">
   <title>Meu pedido · Dona Antônia</title>
-  <link rel="stylesheet" href="../site/pedido.css?v=3">
+  <link rel="stylesheet" href="../site/pedido.css?v=4">
   <script src="../site/config.js?v=3" defer></script>
-  <script src="../site/pedido.js?v=5" defer></script>
+  <script src="../site/pedido.js?v=6" defer></script>
 </head>
 <body>
   <main class="order-page">
@@ -25,6 +25,7 @@
         <p class="eyebrow">Detalhes do pedido</p>
         <h1 id="order-code">Seu pedido</h1>
         <p id="order-status" class="order-status"></p>
+        <p id="order-notice" class="order-notice" role="status" aria-live="polite" hidden></p>
       </header>
       <section class="order-customer" aria-label="Dados do cliente e endereço de entrega">
         <div class="order-customer-fields">
@@ -46,6 +47,84 @@
       <p id="order-delivery" class="order-delivery"></p>
       <div id="order-items" class="order-items"></div>
       <div class="order-total"><span>Total</span><strong id="order-total">—</strong></div>
+      <p id="order-payment" class="order-payment"></p>
+      <div class="order-edit-status">
+        <button id="order-edit-open" class="order-action-button order-action-primary" type="button" hidden>Editar pedido</button>
+        <p id="order-edit-locked" class="order-edit-locked" hidden>A separação já começou. Este pedido fica disponível somente para consulta.</p>
+      </div>
+      <section id="order-edit-panel" class="order-edit-panel" hidden aria-labelledby="order-edit-title">
+        <div class="order-edit-heading">
+          <p class="eyebrow">Autoatendimento</p>
+          <h2 id="order-edit-title">Alterar pedido</h2>
+          <p>Você pode salvar alterações enquanto a separação não tiver começado. O valor será recalculado com os preços e estoques atuais.</p>
+        </div>
+        <form id="order-edit-form">
+          <fieldset class="order-edit-fieldset">
+            <legend>Produtos e quantidades</legend>
+            <div id="order-edit-items" class="order-edit-items"></div>
+            <div class="order-product-add">
+              <label for="order-product-query">Adicionar produto</label>
+              <div class="order-product-search">
+                <input id="order-product-query" type="search" maxlength="100" autocomplete="off" placeholder="Digite o nome do produto">
+                <button id="order-product-search-button" class="order-action-button" type="button">Buscar</button>
+              </div>
+              <div id="order-product-results" class="order-product-results" aria-live="polite"></div>
+            </div>
+          </fieldset>
+          <fieldset class="order-edit-fieldset">
+            <legend>Entrega e pagamento</legend>
+            <div class="order-edit-grid">
+              <label class="order-edit-field">Rua
+                <input id="order-edit-street" maxlength="180" required autocomplete="street-address">
+              </label>
+              <label class="order-edit-field">Número
+                <input id="order-edit-number" maxlength="40" required autocomplete="address-line2">
+              </label>
+              <label class="order-edit-field">Bairro
+                <input id="order-edit-district" maxlength="140" required>
+              </label>
+              <label class="order-edit-field">Complemento
+                <input id="order-edit-complement" maxlength="140">
+              </label>
+              <label class="order-edit-field">CEP
+                <input id="order-edit-postal-code" maxlength="20" inputmode="numeric" autocomplete="postal-code">
+              </label>
+              <label class="order-edit-field">Referência
+                <input id="order-edit-reference" maxlength="220">
+              </label>
+              <label class="order-edit-field">Cidade e estado
+                <input id="order-edit-city-state" disabled>
+              </label>
+              <label class="order-edit-field">Data de entrega
+                <select id="order-edit-date" required></select>
+              </label>
+              <label class="order-edit-field">Forma de pagamento
+                <select id="order-edit-payment" required>
+                  <option value="Dinheiro">Dinheiro</option>
+                  <option value="PIX">Pix</option>
+                  <option value="Cartão de crédito">Cartão de crédito</option>
+                  <option value="Cartão alimentação/refeição">Cartão alimentação/refeição</option>
+                </select>
+              </label>
+            </div>
+          </fieldset>
+          <p id="order-edit-message" class="order-edit-message" role="status" aria-live="polite"></p>
+          <div class="order-edit-actions">
+            <button id="order-edit-save" class="order-action-button order-action-primary" type="submit">Salvar alterações</button>
+            <button id="order-edit-cancel" class="order-action-button" type="button">Cancelar</button>
+          </div>
+        </form>
+      </section>
+    </section>
+    <section id="order-history" class="order-card order-history" hidden aria-labelledby="order-history-title">
+      <div class="order-history-heading">
+        <div>
+          <p class="eyebrow">Conta do cliente</p>
+          <h2 id="order-history-title">Histórico de pedidos</h2>
+        </div>
+      </div>
+      <p class="order-history-help">Pedidos em separação ou concluídos podem ser consultados aqui. Não há opção para comprar novamente.</p>
+      <div id="order-history-list" class="order-history-list" aria-live="polite"></div>
     </section>
     <a class="back-to-store" href="../site/">Voltar à loja</a>
   </main>
