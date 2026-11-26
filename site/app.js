@@ -380,17 +380,15 @@
     host.querySelectorAll("[data-open-basket]").forEach((button) => button.addEventListener("click", () => openDetail(button.dataset.openBasket)));
   }
 
-  function showEmpty(message, canRetry) {
+  function showEmpty(message) {
     $("basket-grid").setAttribute("aria-busy", "false");
     const contact = "https://wa.me/5565998150975?text=" + encodeURIComponent("Olá, gostaria de consultar as cestas básicas da Dona Antônia.");
     $("basket-grid").innerHTML = '<div class="empty-state" role="alert"><p>' + esc(message) +
       '</p><a class="button button-primary" href="' + esc(contact) + '" target="_blank" rel="noopener noreferrer">Consultar cestas pelo WhatsApp</a></div>';
-    $("catalog-status").textContent = canRetry ? "Não carregou" : "";
-    $("retry-catalog").hidden = !canRetry;
+    $("catalog-status").textContent = "Não carregou";
   }
 
   async function loadCatalog() {
-    $("retry-catalog").hidden = true;
     $("catalog-status").textContent = "Carregando cestas…";
     $("basket-grid").setAttribute("aria-busy", "true");
     state.baskets.clear();
@@ -418,7 +416,7 @@
       restoreCartSnapshot();
     } catch (error) {
       $("home-extras").hidden = true;
-      showEmpty("O catálogo está temporariamente indisponível. Você ainda pode consultar nossas cestas pelo WhatsApp.", true);
+      showEmpty("O catálogo está temporariamente indisponível. Você ainda pode consultar nossas cestas pelo WhatsApp.");
     }
   }
 
@@ -732,6 +730,5 @@
   const { basketForSize, retryItemOptions, changeBasketItemQuantity } = basket;
 
   checkout.init();
-  $("retry-catalog").addEventListener("click", loadCatalog);
   loadCatalog();
 })();
