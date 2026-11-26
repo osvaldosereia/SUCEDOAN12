@@ -76,7 +76,8 @@
       if (!raw) return null;
       const saved = JSON.parse(raw);
       const savedAt = Number(saved && saved.saved_at || 0);
-      if (!saved || saved.version !== 1 || !Number.isFinite(savedAt) ||
+      const version = Number(saved && saved.version);
+      if (!saved || ![1, 2].includes(version) || !Number.isFinite(savedAt) ||
           savedAt <= 0 || Date.now() - savedAt > CART_STORAGE_MAX_AGE_MS ||
           savedAt > Date.now() + 60000) {
         window.localStorage.removeItem(CART_STORAGE_KEY);
@@ -97,8 +98,8 @@
           options
         };
       }).filter(Boolean);
-      return {
-        version: 1,
+      const snapshot = {
+        version,
         saved_at: savedAt,
         size_key: String(saved.size_key || "").slice(0, 40),
         custom: saved.custom === true,
@@ -106,6 +107,7 @@
         extras: storedProductRows(saved.extras),
         home_extras: storedProductRows(saved.home_extras)
       };
+      return window.DonaStorefrontCheckout.migrateSavedCartSnapshot(snapshot);
     } catch (_) {
       return null;
     }
@@ -167,7 +169,7 @@
     }
 
     const snapshot = {
-      version: 1,
+      version: 2,
       saved_at: Date.now(),
       size_key: basketData ? String(state.cartKey) : "",
       custom: Boolean(data && data.customOrder === true),
@@ -286,6 +288,10 @@
       const unavailableProducts = Array.from(uniqueProducts.keys()).filter((id) => !productRows.has(id)).length;
       if (basketRestoreFailed) {
         toast("Não foi possível atualizar a cesta agora; mantivemos o carrinho salvo. Tente novamente.");
+      } else if (saved.legacy_basket_preview === true) {
+        toast(unavailableProducts
+          ? "Carrinho atualizado: a cesta salva pela versão anterior foi removida; extras indisponíveis também foram retirados."
+          : "Carrinho atualizado: a cesta salva pela versão anterior foi removida para evitar inclusão sem confirmação; os produtos extras foram mantidos.");
       } else if (restoredBasket || state.cartKey === "__custom_products__" || homeSelections.size) {
         const usedFallbackPrice = loadedProducts.some((product) => product && product._cartPriceMayBeStale);
         const message = unavailableProducts
