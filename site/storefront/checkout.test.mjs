@@ -78,3 +78,36 @@ test("legacy basket previews migrate to an extras-only cart", async () => {
   assert.equal(legacy.home_extras[0].id, "soap");
   assert.equal(legacy.legacy_basket_preview, true);
 });
+
+test("legacy custom carts keep their products during migration", async () => {
+  const source = await readFile(new URL("./checkout.js", import.meta.url), "utf8");
+  const window = {};
+  runInNewContext(source, { window, Map, Set, Number, String, Math, Array, Object, URL, Date, RegExp });
+  const migrated = window.DonaStorefrontCheckout.migrateSavedCartSnapshot({
+    version: 1, size_key: "", custom: true, items: [],
+    extras: [{ id: "rice", quantity: 2 }], home_extras: []
+  });
+
+  assert.equal(migrated.version, 2);
+  assert.equal(migrated.custom, true);
+  assert.equal(migrated.extras[0].id, "rice");
+  assert.equal(migrated.legacy_basket_preview, undefined);
+});
+
+test("confirmed version 2 baskets remain in the cart during migration", async () => {
+  const source = await readFile(new URL("./checkout.js", import.meta.url), "utf8");
+  const window = {};
+  runInNewContext(source, { window, Map, Set, Number, String, Math, Array, Object, URL, Date, RegExp });
+  const saved = {
+    version: 2, size_key: "media", custom: false,
+    items: [{ position_id: "rice", product_id: "rice", quantity: 3 }],
+    extras: [], home_extras: []
+  };
+  const migrated = window.DonaStorefrontCheckout.migrateSavedCartSnapshot(saved);
+
+  assert.equal(migrated.version, 2);
+  assert.equal(migrated.size_key, "media");
+  assert.equal(migrated.custom, false);
+  assert.equal(migrated.items.length, 1);
+  assert.equal(migrated.legacy_basket_preview, undefined);
+});
