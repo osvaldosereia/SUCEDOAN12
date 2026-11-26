@@ -1,6 +1,29 @@
 (() => {
   "use strict";
 
+  function migrateSavedCartSnapshot(snapshot) {
+    if (!snapshot || typeof snapshot !== "object") return snapshot;
+    const version = Number(snapshot.version);
+    if (version === 2 || version !== 1) return snapshot;
+
+    const migrated = Object.assign({}, snapshot, { version: 2 });
+    const sizeKey = String(snapshot.size_key || "").trim();
+    const hasExtraProducts =
+      (Array.isArray(snapshot.extras) && snapshot.extras.length > 0) ||
+      (Array.isArray(snapshot.home_extras) && snapshot.home_extras.length > 0);
+
+    if (sizeKey && snapshot.custom !== true) {
+      migrated.size_key = "";
+      migrated.custom = true;
+      migrated.items = [];
+      migrated.legacy_basket_preview = true;
+    } else if (!sizeKey && snapshot.custom !== true && hasExtraProducts) {
+      migrated.custom = true;
+    }
+
+    return migrated;
+  }
+
   function create({ state, $, esc, phoneDigits, money, toast, request, whatsappNumber, quantityOf, closeSheet, showSheet, changeBasketItemQuantity, attachHomeSelections, onHomeExtraQuantityChanged, onCustomOrderSubmitted, onCartCleared, onOrderSubmitted }) {
     const customOrderKey = "__custom_products__";
     const minimumOrderCents = 7500;
@@ -1073,5 +1096,5 @@
     return { init, loadDeliveryOptions, lookupCustomer, confirmOrder, startCustomOrder, updateSidebarCheckoutCount };
   }
 
-  window.DonaStorefrontCheckout = { create };
+  window.DonaStorefrontCheckout = { create, migrateSavedCartSnapshot };
 })();
