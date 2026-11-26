@@ -53,3 +53,28 @@ test("viewing a basket keeps it out of the cart until it is added", async () => 
   assert.equal(api.updateSidebarCheckoutCount(), 6);
   assert.equal(badge.textContent, "6");
 });
+
+test("legacy basket previews migrate to an extras-only cart", async () => {
+  const source = await readFile(new URL("./checkout.js", import.meta.url), "utf8");
+  const window = {};
+  runInNewContext(source, { window, Map, Set, Number, String, Math, Array, Object, URL, Date, RegExp });
+  const migrate = window.DonaStorefrontCheckout.migrateSavedCartSnapshot;
+  assert.equal(typeof migrate, "function");
+
+  const legacy = migrate({
+    version: 1,
+    size_key: "grande",
+    custom: false,
+    items: [{ position_id: "rice", product_id: "rice", quantity: 4 }],
+    extras: [{ id: "soap", quantity: 2 }],
+    home_extras: [{ id: "soap", quantity: 2 }]
+  });
+
+  assert.equal(legacy.version, 2);
+  assert.equal(legacy.size_key, "");
+  assert.equal(legacy.custom, true);
+  assert.equal(legacy.items.length, 0);
+  assert.equal(legacy.extras[0].id, "soap");
+  assert.equal(legacy.home_extras[0].id, "soap");
+  assert.equal(legacy.legacy_basket_preview, true);
+});
