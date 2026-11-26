@@ -119,6 +119,16 @@
   font-size: .72rem;
   font-weight: 800;
 }
+.basket-default-price-markup strong {
+  color: #27624f;
+}
+.basket-default-price-markup[data-state="negative"] strong {
+  color: #a6382b;
+}
+.basket-default-price-markup[data-state="incomplete"] strong,
+.basket-default-price-markup[data-state="unavailable"] strong {
+  color: var(--muted);
+}
 .basket-grid-table-wrap {
   max-width: 100%;
   overflow: auto;
