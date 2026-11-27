@@ -582,14 +582,18 @@
           : "";
       const carouselClass = optionCount <= 1 ? " is-single-option" : "";
       const carouselHint = optionCount > 1 ? '. Deslize horizontalmente para ver as opções.' : '';
+      const optionsCollapsed = item._optionsCollapsed === true;
+      const optionsPanelId = "item-options-" + esc(item.position_id);
       const carouselMarkup = '<div class="product-option-picker basket-option-carousel' + carouselClass + '" data-option-carousel data-option-position="' + esc(item.position_id) + '" tabindex="0" role="group" aria-label="Opções de produtos para ' + esc(title) + carouselHint + '">' +
         carouselChoices.map(renderChoice).join("") + '</div>';
-      const optionPicker = '<div class="variation-disclosure"><div class="variation-panel option-carousel-panel" id="item-options-' + esc(item.position_id) + '" aria-busy="' + String(Boolean(item._optionsLoading || item._optionsPageLoading || changingThisItem)) + '">' +
+      const toggle = '<button class="extra-category-toggle" type="button" data-basket-position-toggle="' + esc(item.position_id) + '" aria-expanded="' + String(!optionsCollapsed) + '" aria-controls="' + optionsPanelId + '">' +
+        '<span>' + esc(title) + '</span><span class="variation-chevron" aria-hidden="true">' + (optionsCollapsed ? "+" : "−") + '</span></button>';
+      const optionPicker = '<div class="extra-category-panel variation-panel option-carousel-panel" id="' + optionsPanelId + '" data-basket-position-panel aria-busy="' + String(Boolean(item._optionsLoading || item._optionsPageLoading || changingThisItem)) + '"' + (optionsCollapsed ? " hidden" : "") + '>' +
         carouselMarkup +
         optionStatus +
         moreOptionsStatus +
-        '</div></div>';
-      return '<article class="product-row" data-product-row="' + esc(item.position_id) + '"><div class="product-row-main"><h3 class="product-name">' + esc(title) + '</h3></div>' +
+        '</div>';
+      return '<article class="product-row" data-product-row="' + esc(item.position_id) + '"><div class="product-row-main">' + toggle + '</div>' +
         optionPicker + "</article>";
     }).join("");
     const note = data.orderable ? "" : '<p class="helper stock-note">Esta composição está sem estoque disponível no momento.</p>';
@@ -602,6 +606,18 @@
     $("detail-content").querySelectorAll("[data-retry-position]").forEach((button) => button.addEventListener("click", () => retryItemOptions(button.dataset.retryPosition)));
     $("detail-content").querySelectorAll("[data-adjust-option]").forEach((button) => button.addEventListener("click", () => basket.changeProductQuantity(button.dataset.adjustPosition, button.dataset.adjustProduct, Number(button.dataset.delta || 0))));
     $("detail-content").querySelectorAll("[data-adjust-position]:not([data-adjust-option])").forEach((button) => button.addEventListener("click", () => changeBasketItemQuantity(button.dataset.adjustPosition, Number(button.dataset.delta || 0))));
+    $("detail-content").querySelectorAll("[data-basket-position-toggle]").forEach((button) => button.addEventListener("click", () => {
+      const item = data.items.find((entry) => String(entry.position_id) === String(button.dataset.basketPositionToggle));
+      const panel = document.getElementById(button.getAttribute("aria-controls"));
+      if (!item || !panel) return;
+      const expanded = panel.hidden;
+      item._optionsCollapsed = !expanded;
+      panel.hidden = !expanded;
+      button.setAttribute("aria-expanded", String(expanded));
+      const icon = button.querySelector(".variation-chevron");
+      if (icon) icon.textContent = expanded ? "−" : "+";
+      if (expanded && basket) basket.queuePendingOptions();
+    }));
     $("detail-content").querySelectorAll("[data-extra-category]").forEach((button) => button.addEventListener("click", () => toggleExtraCategory(button.dataset.extraCategory)));
     bindExtraProductControls($("detail-content"));
     bindHomeSelectionControls($("detail-content"), data);

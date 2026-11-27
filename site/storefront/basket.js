@@ -85,7 +85,8 @@
               _optionsNextOffset: Number(previous._optionsNextOffset ?? row._optionsNextOffset ?? 0),
               _optionsMoreLoading: previous._optionsMoreLoading === true,
               _optionsPageLoading: previous._optionsPageLoading === true,
-              _optionsPageError: previous._optionsPageError === true
+              _optionsPageError: previous._optionsPageError === true,
+              _optionsCollapsed: previous._optionsCollapsed === true
             }) : row;
           });
           Object.assign(data, quote, { orderable: true, detailLoaded: true });
@@ -196,6 +197,8 @@
           const row = item && rowsByPosition.get(String(item.position_id || ""));
           if (!row || count <= 1) return null;
           const carousel = row.querySelector("[data-option-carousel]");
+          const panel = carousel && carousel.closest("[data-basket-position-panel]");
+          if (panel && panel.hidden) return null;
           const rect = row.getBoundingClientRect();
           if (rect.bottom <= -viewportHeight * 0.18 || rect.top >= viewportHeight * 1.45) return null;
           const visible = rect.bottom > 0 && rect.top < viewportHeight;
