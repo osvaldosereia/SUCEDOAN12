@@ -1494,3 +1494,26 @@
     padding: 2px 0;
   }
 }
+
+/* Keep product image and fallback in the same square. */
+.basket-grid-option-photo,
+.basket-picker-photo {
+  display: grid;
+  overflow: hidden;
+  place-items: center;
+  border-radius: 8px;
+  background: #f5f0e9;
+}
+.basket-grid-option-photo img,
+.basket-grid-option-photo .basket-product-photo-placeholder,
+.basket-picker-photo img,
+.basket-picker-photo .basket-product-photo-placeholder {
+  grid-area: 1 / 1;
+}
+.basket-grid-option-photo img,
+.basket-picker-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
