@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="instagram-admin.css?v=3">
   <link rel="stylesheet" href="taxonomy-admin.css?v=1">
   <link rel="stylesheet" href="papoai-guard-admin.css?v=1">
-  <link rel="stylesheet" href="baskets-admin.css?v=9">
+  <link rel="stylesheet" href="baskets-admin.css?v=10">
   <link rel="stylesheet" href="extra-sections-admin.css?v=2">
   <link rel="stylesheet" href="builder-categories-admin.css?v=1">
   <link rel="stylesheet" href="whatsapp-campaign-report.css?v=1">
@@ -29,7 +29,7 @@
   <script src="instagram-admin.js?v=3" defer></script>
   <script src="taxonomy-admin.js?v=1" defer></script>
   <script src="papoai-guard-admin.js?v=1" defer></script>
-  <script src="baskets-admin.js?v=16" defer></script>
+  <script src="baskets-admin.js?v=17" defer></script>
   <script src="extra-sections-admin.js?v=2" defer></script>
   <script src="builder-categories-admin.js?v=1" defer></script>
   <script src="orders-admin.js?v=17" defer></script>
@@ -235,7 +235,20 @@
 
       <section class="admin-view" data-panel="baskets" hidden>
         <div class="section-title basket-grid-heading"><div><h2>Cestas</h2><p>Edite os itens e valores das cestas. “Adicionar item” altera a composição; “Nova cesta” cria outra modalidade a partir de uma cesta existente.</p></div><div class="basket-admin-controls"><button id="add-basket-template" class="button button-outline" type="button" hidden>Nova cesta</button><button id="add-basket-type" class="button button-outline" type="button" aria-label="Adicionar item à composição das cestas">Adicionar item</button><button id="reload-baskets" class="button button-outline" type="button">Atualizar</button><span id="basket-dirty-state" class="basket-dirty-state" role="status" hidden>Alterações não salvas</span><button id="save-basket-grid" class="button button-primary" type="button">Salvar alterações</button></div></div>
-        <div id="admin-baskets" class="admin-basket-grid"><p class="admin-muted">Carregando…</p></div>
+        <div id="basket-default-prices"></div>
+        <div class="basket-editor-workspace">
+          <div class="basket-editor-composition">
+            <div id="admin-baskets" class="admin-basket-grid"><p class="admin-muted">Carregando…</p></div>
+          </div>
+          <aside id="basket-product-picker" class="basket-product-picker" aria-labelledby="basket-picker-title">
+            <header class="basket-picker-heading"><div><p class="eyebrow">Catálogo</p><h3 id="basket-picker-title">Adicionar produtos</h3><p>Busque e inclua ou mova produtos para a posição selecionada.</p></div><span id="picker-result-count" class="basket-picker-result-count" aria-live="polite">0 produtos</span></header>
+            <label class="basket-picker-field" for="picker-type-select"><span>Adicionar à posição</span><select id="picker-type-select"></select></label>
+            <form id="picker-search" class="basket-picker-search-form"><label for="picker-query">Nome, marca, SKU ou EAN</label><div class="basket-picker-search-controls"><input id="picker-query" type="search" data-ean-camera-input autocomplete="off" placeholder="Ex.: arroz 5 kg"><button class="button button-primary" type="submit" aria-label="Buscar produtos">Buscar</button></div></form>
+            <div class="basket-picker-filters"><label class="basket-picker-field"><span>Situação</span><select id="picker-status"><option value="all">Todos</option><option value="active">Ativos</option><option value="inactive">Inativos</option></select></label><label class="basket-picker-stock-filter"><input id="picker-stock-only" type="checkbox"><span><strong>Com saldo físico</strong><small>Filtra produtos com saldo acima de zero</small></span></label></div>
+            <div id="picker-results" class="basket-picker-results"><p class="admin-muted">Carregando produtos…</p></div>
+            <button id="picker-more" class="button button-outline button-wide basket-picker-more" type="button" hidden>Carregar mais produtos</button>
+          </aside>
+        </div>
         <div class="edit-notice basket-grid-note">
           <strong>Como funciona a substituição</strong>
           <span>As opções são avaliadas na ordem. Com mais de uma opção, uma opção inativa ou sem estoque suficiente é substituída pela próxima. Se houver uma única opção, ela continua vendável mesmo com estoque zero ou negativo. Uma nova cesta começa como rascunho, fora da loja, e só entra à venda quando você ativá-la.</span>
@@ -737,16 +750,6 @@
     </form>
   </dialog>
 
-  <dialog id="product-picker-dialog" class="catalog-dialog picker-dialog">
-    <div class="dialog-form">
-      <header class="dialog-heading"><div><p class="eyebrow">Buscar e marcar</p><h2>Produtos e variações</h2></div><button class="icon-button" type="button" data-dialog-close="product-picker-dialog" aria-label="Fechar">×</button></header>
-      <form id="picker-search" class="customer-search"><label for="picker-query">Nome, marca, SKU ou GTIN</label><div class="product-search-controls"><input id="picker-query" type="search" data-ean-camera-input placeholder="Digite para buscar"><button class="button button-primary" type="submit">Buscar</button></div></form>
-      <p class="dialog-hint">Marque as opções deste tipo. A ordem da lista na tabela define a sequência de substituição.</p>
-      <div id="picker-results" class="picker-results"><p class="admin-muted">Busque os produtos para começar.</p></div>
-      <button id="picker-more" class="button button-outline button-wide" type="button" hidden>Carregar mais resultados</button>
-      <footer class="dialog-actions"><button class="button button-outline" type="button" data-dialog-close="product-picker-dialog">Cancelar</button><button id="apply-picker-products" class="button button-primary" type="button">Aplicar seleção</button></footer>
-    </div>
-  </dialog>
   <dialog id="whatsapp-label-manager-dialog" class="whatsapp-label-manager-dialog" aria-labelledby="whatsapp-label-manager-title">
     <section class="whatsapp-label-manager-panel">
       <header class="whatsapp-label-manager-header">
