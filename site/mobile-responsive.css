@@ -975,3 +975,209 @@
   font-size: 1.05rem;
   line-height: 1.25;
 }
+
+/* Opções da cesta e listas de produtos extras em carrossel. */
+.experiment-page .basket-option-carousel {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  padding: 4px 2px 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  scroll-padding-inline: 2px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.experiment-page .basket-option-carousel .product-choice {
+  display: flex;
+  flex: 0 0 218px;
+  flex-direction: column;
+  align-items: stretch;
+  box-sizing: border-box;
+  width: 218px;
+  max-width: none;
+  min-width: 0;
+  min-height: 330px;
+  gap: 8px;
+  padding: 10px;
+  overflow: hidden;
+  scroll-snap-align: start;
+}
+
+.experiment-page .basket-option-carousel .product-choice.is-selected {
+  border: 2px solid var(--brand);
+  background: #f9e9e2;
+  box-shadow: 0 0 0 2px rgba(126, 48, 41, .16), 0 5px 14px rgba(93, 33, 29, .13);
+}
+
+.experiment-page .basket-option-carousel .product-choice img {
+  display: block;
+  flex: 0 0 auto;
+  grid-column: auto;
+  grid-row: auto;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
+.experiment-page .basket-option-carousel .product-choice-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.experiment-page .basket-option-carousel .product-choice-copy strong {
+  display: -webkit-box;
+  min-width: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.experiment-page .basket-option-carousel .product-choice-selected-label[hidden] {
+  display: block !important;
+  visibility: hidden;
+}
+
+.experiment-page .basket-option-carousel .product-choice-meta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  justify-items: stretch;
+  gap: 7px;
+  margin-top: auto;
+}
+
+.experiment-page .basket-option-carousel .product-choice-price {
+  font-size: .86rem !important;
+  font-weight: 850;
+}
+
+.experiment-page .basket-option-carousel .product-option-stepper {
+  display: grid;
+  grid-template-columns: minmax(30px, 1fr) auto minmax(30px, 1fr);
+  align-items: center;
+  justify-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.experiment-page .basket-option-carousel .option-quantity-button {
+  flex: 0 0 auto;
+  width: 36px;
+  min-width: 30px;
+  height: 36px;
+}
+
+.experiment-page .basket-option-carousel.is-single-option {
+  overflow: visible;
+  scroll-snap-type: none;
+}
+
+.experiment-page .basket-option-carousel.is-single-option .product-choice {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: clamp(76px, 20vw, 104px) minmax(0, 1fr);
+  align-items: center;
+  width: 100%;
+  min-height: 120px;
+  padding: 10px 12px;
+  overflow: visible;
+}
+
+.experiment-page .basket-option-carousel.is-single-option .product-choice img {
+  grid-column: 1;
+  grid-row: 1;
+  width: clamp(76px, 20vw, 104px);
+  height: clamp(76px, 20vw, 104px);
+}
+
+.experiment-page .basket-option-carousel.is-single-option .product-choice-copy {
+  display: flex;
+  grid-column: 2;
+  grid-row: 1;
+  min-height: 0;
+}
+
+.experiment-page .basket-option-carousel.is-single-option .product-choice-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-items: initial;
+  gap: 8px;
+}
+
+.experiment-page .basket-option-carousel.is-single-option .product-option-stepper {
+  display: inline-flex;
+  width: auto;
+}
+
+@media (max-width: 820px) {
+  .experiment-page .basket-option-carousel .product-choice {
+    flex-basis: calc((100% - 20px) / 2.7);
+    width: auto;
+    min-height: 286px;
+    padding: 8px;
+  }
+
+  .experiment-page .basket-option-carousel .product-choice-copy {
+    gap: 7px;
+  }
+
+  .experiment-page .basket-option-carousel .product-choice-copy strong {
+    min-height: calc(4 * 1.2em);
+    font-size: clamp(.76rem, 3.3vw, .9rem);
+    line-height: 1.2;
+  }
+
+  .experiment-page .basket-option-carousel .product-choice-selected-label {
+    width: fit-content;
+    max-width: 100%;
+    padding: 3px 5px;
+    font-size: clamp(.54rem, 2.3vw, .65rem);
+  }
+
+  .experiment-page .basket-option-carousel .product-choice-meta {
+    gap: 6px;
+  }
+
+  .experiment-page .basket-option-carousel .product-choice-price {
+    font-size: clamp(.72rem, 3vw, .84rem) !important;
+  }
+
+  .experiment-page .basket-option-carousel .product-option-stepper {
+    grid-template-columns: minmax(24px, 1fr) auto minmax(24px, 1fr);
+    gap: 2px;
+  }
+
+  .experiment-page .basket-option-carousel .option-quantity-button {
+    width: clamp(24px, 7.6vw, 32px);
+    min-width: 24px;
+    height: 32px;
+  }
+
+  .experiment-page .basket-option-carousel.is-single-option .product-choice {
+    grid-template-columns: clamp(82px, 25vw, 112px) minmax(0, 1fr);
+    min-height: 138px;
+    padding: 10px;
+  }
+
+  .experiment-page .basket-option-carousel.is-single-option .product-choice img {
+    width: 100%;
+    height: auto;
+  }
+}

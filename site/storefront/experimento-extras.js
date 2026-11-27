@@ -84,7 +84,7 @@
         : products.map(homeExtraProductMarkup).join("");
       const list = cards
         ? (scope === "basket-extras"
-          ? '<div class="product-search-results-list" role="list" aria-label="Resultados dos produtos extras">' + cards + "</div>"
+          ? '<div class="product-search-results-list basket-option-carousel" tabindex="0" role="list" aria-label="Resultados dos produtos extras. Deslize horizontalmente para ver os produtos.">' + cards + "</div>"
           : '<div class="home-extra-grid product-search-results-grid" role="list" aria-label="Resultados da busca">' + cards + "</div>")
         : "";
       const action = search.error
@@ -289,7 +289,7 @@
         '<button class="extra-category-toggle" type="button" data-offers-toggle aria-expanded="' + String(expanded) + '" aria-controls="extra-panel-offers">' +
         '<span>Ofertas</span><span class="variation-chevron" aria-hidden="true">' + (expanded ? "−" : "+") + '</span></button>' +
         '<div class="extra-category-panel" id="extra-panel-offers"' + (expanded ? "" : " hidden") + '>' +
-        '<div class="extra-product-list" data-offers-list role="list" aria-label="Produtos em oferta">' +
+        '<div class="extra-product-list basket-option-carousel" data-offers-list tabindex="0" role="list" aria-label="Produtos em oferta. Deslize horizontalmente para ver os produtos">' +
         visible.map((product) => extraProductMarkup(data, product)).join("") + '</div>' +
         '<p class="extra-product-status" data-offers-status role="status">' + esc(status) + '</p>' +
         '<button class="button button-outline extra-product-more" type="button" data-offers-more' + (products.length > visible.length ? "" : " hidden") + (data.offersLoading ? " disabled" : "") + '>Carregar mais ofertas</button>' +
@@ -320,7 +320,7 @@
             '<button class="extra-category-toggle" type="button" data-extra-category="' + esc(category.key) + '" aria-expanded="' + String(category.expanded) + '" aria-controls="' + esc(panelId) + '">' +
             '<span>' + esc(category.label) + '</span><span class="variation-chevron" aria-hidden="true">' + (category.expanded ? "−" : "+") + '</span></button>' +
             '<div class="extra-category-panel" id="' + esc(panelId) + '"' + (category.expanded ? "" : " hidden") + '>' +
-            '<div class="extra-product-list" data-extra-list="' + esc(category.key) + '" role="list" aria-label="Produtos de ' + esc(category.label) + '">' + products + '</div>' +
+            '<div class="extra-product-list basket-option-carousel" data-extra-list="' + esc(category.key) + '" tabindex="0" role="list" aria-label="Produtos de ' + esc(category.label) + '. Deslize horizontalmente para ver os produtos.">' + products + '</div>' +
             '<p class="extra-product-status" data-extra-status="' + esc(category.key) + '" role="status">' + esc(status) + '</p>' +
             '<button class="button button-outline extra-product-more" type="button" data-extra-more="' + esc(category.key) + '"' + (showMore ? "" : " hidden") + (category.loading ? " disabled" : "") + '>' + esc(moreLabel) + '</button></div></section>';
         }).join("") + '</div></section>';

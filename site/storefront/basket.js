@@ -195,11 +195,17 @@
           const count = Math.max(Number(item && item.alternative_count || 0), item && Array.isArray(item._alternatives) ? item._alternatives.length : 0);
           const row = item && rowsByPosition.get(String(item.position_id || ""));
           if (!row || count <= 1) return null;
+          const carousel = row.querySelector("[data-option-carousel]");
           const rect = row.getBoundingClientRect();
           if (rect.bottom <= -viewportHeight * 0.18 || rect.top >= viewportHeight * 1.45) return null;
           const visible = rect.bottom > 0 && rect.top < viewportHeight;
           const distance = visible ? Math.max(0, rect.top) : rect.top >= viewportHeight ? rect.top - viewportHeight : Math.abs(rect.bottom);
-          return { item, visible, distance, top: rect.top };
+          const remainingScroll = carousel
+            ? carousel.scrollWidth - carousel.clientWidth - carousel.scrollLeft
+            : Infinity;
+          const nearCarouselEnd = Boolean(carousel && carousel.clientWidth > 0 &&
+            remainingScroll <= Math.max(36, carousel.clientWidth * 0.35));
+          return { item, visible, distance, top: rect.top, nearCarouselEnd };
         }).filter(Boolean).sort((a, b) =>
           Number(b.visible) - Number(a.visible) || a.distance - b.distance || a.top - b.top
         );
@@ -213,11 +219,9 @@
           return;
         }
 
-        const expandedOptionGroups = state.expandedOptionGroups instanceof Set ? state.expandedOptionGroups : null;
-        const nextPage = candidates.find(({ item }) => {
-          const optionGroupKey = String(sizeKey || "") + ":" + String(item.position_id || "");
-          return Boolean(expandedOptionGroups && expandedOptionGroups.has(optionGroupKey)) &&
-            item._optionsLoaded && item._optionsMoreLoading && !item._optionsPageLoading && !item._optionsPageError;
+        const nextPage = candidates.find(({ item, nearCarouselEnd }) => {
+          return nearCarouselEnd && item._optionsLoaded && item._optionsMoreLoading &&
+            !item._optionsPageLoading && !item._optionsPageError;
         });
         if (nextPage) loadNextOptionsPage(sizeKey, data, nextPage.item);
       });
