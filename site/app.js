@@ -5,7 +5,7 @@
   const root = String(config.supabaseUrl || "").replace(/\/$/, "") + "/functions/v1/" + (config.storefrontFunction || "storefront-v2");
   const key = config.publishableKey || "";
   const catalogCode = new URLSearchParams(window.location.search).get("catalog_code") || "";
-  const state = { cards: [], baskets: new Map(), expandedOptionGroups: new Set(), activeKey: "", cartKey: "", cartRestoring: false, cartRestorePromise: null, customer: null, toastTimer: 0, deliveryOptions: [], deliveryPromise: null, submittingOrder: false, catalogCode: /^\d{4}$/.test(catalogCode) ? catalogCode : "", identityLookupStarted: false };
+  const state = { cards: [], baskets: new Map(), activeKey: "", cartKey: "", cartRestoring: false, cartRestorePromise: null, customer: null, toastTimer: 0, deliveryOptions: [], deliveryPromise: null, submittingOrder: false, catalogCode: /^\d{4}$/.test(catalogCode) ? catalogCode : "", identityLookupStarted: false };
   const $ = (id) => document.getElementById(id);
   const esc = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
   const plain = (value) => String(value == null ? "" : value).replace(/\s+/g, " ").trim();
@@ -561,57 +561,33 @@
           increaseDisabled: disabled || quantity >= stock || itemQuantityAtLimit(item)
         });
       };
-      const selectedChoice = optionChoices.find((option) => String(option.product_id) === fallbackId)
-        || selectedOptions[0]
-        || optionChoices[0]
-        || { product_id: fallbackId, name: item.name, image_url: item.image_url, price_cents: item.price_cents, stock_quantity: item.stock_quantity, is_offer: item.is_offer };
-      const selectedChoices = optionChoices.filter((option) => {
-        const selected = selectedById.get(String(option.product_id));
-        return Number(selected && selected.quantity || 0) > 0;
+      const choiceOrder = new Map(optionChoices.map((option, index) => [String(option.product_id), index]));
+      const carouselChoices = optionChoices.slice().sort((a, b) => {
+        const aSelected = Number((selectedById.get(String(a.product_id)) || {}).quantity || 0) > 0;
+        const bSelected = Number((selectedById.get(String(b.product_id)) || {}).quantity || 0) > 0;
+        return Number(bSelected) - Number(aSelected) ||
+          (choiceOrder.get(String(a.product_id)) || 0) - (choiceOrder.get(String(b.product_id)) || 0);
       });
-      const primaryChoices = selectedChoices.length
-        ? selectedChoices
-        : selectedChoice && selectedChoice.product_id ? [selectedChoice] : [];
-      const primaryChoiceIds = new Set(primaryChoices.map((option) => String(option.product_id || "")));
-      const otherChoices = optionChoices.filter((option) => !primaryChoiceIds.has(String(option.product_id || "")));
-      const hiddenOptionCount = Math.max(0, optionCount - primaryChoices.length);
-      const optionGroupKey = String(state.activeKey || "") + ":" + String(item.position_id || "");
-      const expandedOptionGroups = state.expandedOptionGroups instanceof Set ? state.expandedOptionGroups : new Set();
-      const optionsExpanded = expandedOptionGroups.has(optionGroupKey);
-      const primaryChoicesMarkup = primaryChoices.length
-        ? '<div class="product-option-picker" role="group" aria-label="Opções selecionadas para ' + esc(title) + '">' +
-          primaryChoices.map(renderChoice).join("") + '</div>'
+      const moreOptionsStatus = item._optionsMoreLoading
+        ? item._optionsPageError
+          ? '<p class="variation-status" role="alert">Não foi possível carregar mais opções.</p><button class="button button-outline variation-retry" type="button" data-retry-position="' + esc(item.position_id) + '">Tentar novamente</button>'
+          : item._optionsPageLoading
+            ? '<p class="variation-status" role="status">Carregando mais opções…</p>'
+            : ""
         : "";
-      const moreOptionsStatus = !optionsExpanded
-        ? ""
-        : item._optionsMoreLoading
-          ? item._optionsPageError
-            ? '<p class="variation-status" role="alert">Não foi possível carregar as demais opções.</p><button class="button button-outline variation-retry" type="button" data-retry-position="' + esc(item.position_id) + '">Tentar novamente</button>'
-            : item._optionsPageLoading
-              ? '<p class="variation-status" role="status">Carregando mais opções…</p>'
-              : '<p class="variation-status">As próximas opções serão carregadas ao chegar aqui.</p>'
-          : "";
       const optionStatus = item._optionsError
         ? '<p class="variation-status" role="alert">Não foi possível carregar outras opções.</p><button class="button button-outline variation-retry" type="button" data-retry-position="' + esc(item.position_id) + '">Tentar novamente</button>'
         : !item._optionsLoaded && optionCount > 1
           ? '<p class="variation-status" role="status">Carregando opções disponíveis…</p>'
           : "";
-      const showOptionsToggle = !item._optionsError && item._optionsLoaded && hiddenOptionCount > 0;
-      const toggleLabel = optionsExpanded
-        ? "Ocultar outras opções"
-        : "Ver " + hiddenOptionCount + (hiddenOptionCount === 1 ? " outra opção" : " outras opções");
-      const optionsToggle = showOptionsToggle
-        ? '<button class="variation-toggle product-variations-toggle" type="button" data-toggle-options data-option-group="' + esc(optionGroupKey) + '" data-option-position="' + esc(item.position_id) + '" aria-expanded="' + String(optionsExpanded) + '" aria-controls="item-variation-list-' + esc(item.position_id) + '"><span>' + esc(toggleLabel) + '</span><span class="variation-chevron" aria-hidden="true">' + (optionsExpanded ? "⌃" : "⌄") + '</span></button>'
-        : "";
-      const alternativesPanel = hiddenOptionCount > 0
-        ? '<div class="product-option-picker variation-option-list" id="item-variation-list-' + esc(item.position_id) + '" role="group" aria-label="Outras opções para ' + esc(title) + '"' + (optionsExpanded ? "" : " hidden") + '>' +
-          (optionsExpanded ? otherChoices.map(renderChoice).join("") + moreOptionsStatus : "") + '</div>'
-        : "";
-      const optionPicker = '<div class="variation-disclosure"><div class="variation-panel" id="item-options-' + esc(item.position_id) + '" aria-busy="' + String(Boolean(item._optionsLoading || item._optionsPageLoading || changingThisItem)) + '">' +
-        primaryChoicesMarkup +
+      const carouselClass = optionCount <= 1 ? " is-single-option" : "";
+      const carouselHint = optionCount > 1 ? '. Deslize horizontalmente para ver as opções.' : '';
+      const carouselMarkup = '<div class="product-option-picker basket-option-carousel' + carouselClass + '" data-option-carousel data-option-position="' + esc(item.position_id) + '" tabindex="0" role="group" aria-label="Opções de produtos para ' + esc(title) + carouselHint + '">' +
+        carouselChoices.map(renderChoice).join("") + '</div>';
+      const optionPicker = '<div class="variation-disclosure"><div class="variation-panel option-carousel-panel" id="item-options-' + esc(item.position_id) + '" aria-busy="' + String(Boolean(item._optionsLoading || item._optionsPageLoading || changingThisItem)) + '">' +
+        carouselMarkup +
         optionStatus +
-        optionsToggle +
-        alternativesPanel +
+        moreOptionsStatus +
         '</div></div>';
       return '<article class="product-row" data-product-row="' + esc(item.position_id) + '"><div class="product-row-main"><h3 class="product-name">' + esc(title) + '</h3></div>' +
         optionPicker + "</article>";
@@ -624,27 +600,18 @@
       '<div data-home-extra-review-mount>' + homeSelectionReviewMarkup(data) + "</div>" + extraCategoriesMarkup(data);
     $("order-button").disabled = !data.orderable || data.changing === true;
     $("detail-content").querySelectorAll("[data-retry-position]").forEach((button) => button.addEventListener("click", () => retryItemOptions(button.dataset.retryPosition)));
-    $("detail-content").querySelectorAll("[data-toggle-options]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const groupKey = String(button.dataset.optionGroup || "");
-        if (!groupKey) return;
-        if (!(state.expandedOptionGroups instanceof Set)) state.expandedOptionGroups = new Set();
-        if (state.expandedOptionGroups.has(groupKey)) state.expandedOptionGroups.delete(groupKey);
-        else state.expandedOptionGroups.add(groupKey);
-        const positionId = String(button.dataset.optionPosition || "");
-        renderDetailPreservingScroll(positionId);
-        const focusTarget = Array.from($("detail-content").querySelectorAll("[data-toggle-options]"))
-          .find((candidate) => candidate.dataset.optionGroup === groupKey);
-        if (focusTarget) focusTarget.focus({ preventScroll: true });
-      });
-    });
     $("detail-content").querySelectorAll("[data-adjust-option]").forEach((button) => button.addEventListener("click", () => basket.changeProductQuantity(button.dataset.adjustPosition, button.dataset.adjustProduct, Number(button.dataset.delta || 0))));
     $("detail-content").querySelectorAll("[data-adjust-position]:not([data-adjust-option])").forEach((button) => button.addEventListener("click", () => changeBasketItemQuantity(button.dataset.adjustPosition, Number(button.dataset.delta || 0))));
     $("detail-content").querySelectorAll("[data-extra-category]").forEach((button) => button.addEventListener("click", () => toggleExtraCategory(button.dataset.extraCategory)));
     bindExtraProductControls($("detail-content"));
     bindHomeSelectionControls($("detail-content"), data);
     $("detail-content").querySelectorAll("img").forEach((image) => image.addEventListener("error", () => { image.src = "../img/logoantonia5.png"; }, { once: true }));
-    if (basket) basket.queuePendingOptions();
+    if (basket) {
+      $("detail-content").querySelectorAll("[data-option-carousel]").forEach((carousel) => {
+        carousel.addEventListener("scroll", basket.queuePendingOptions, { passive: true });
+      });
+      basket.queuePendingOptions();
+    }
   }
 
   function renderDetailPreservingScroll(positionId) {
@@ -664,8 +631,16 @@
       ? active.dataset.adjustPosition : "";
     const focusProduct = focusPosition ? active.dataset.adjustProduct : "";
     const focusDelta = focusPosition ? active.dataset.delta : "";
+    const carouselScroll = new Map(Array.from(content.querySelectorAll("[data-option-carousel]"))
+      .map((carousel) => [String(carousel.dataset.optionPosition || ""), carousel.scrollLeft]));
 
     renderDetail();
+
+    carouselScroll.forEach((scrollLeft, optionPosition) => {
+      const nextCarousel = Array.from(content.querySelectorAll("[data-option-carousel]"))
+        .find((carousel) => String(carousel.dataset.optionPosition || "") === optionPosition);
+      if (nextCarousel) nextCarousel.scrollLeft = scrollLeft;
+    });
 
     const nextAnchor = anchorId
       ? Array.from(content.querySelectorAll("[data-product-row]")).find((row) => row.dataset.productRow === anchorId)
@@ -703,7 +678,6 @@
   function openDetail(sizeKey) {
     const data = state.baskets.get(sizeKey);
     if (!data) return;
-    if (state.activeKey !== sizeKey) state.expandedOptionGroups.clear();
     activateBasketNavigation(sizeKey, data);
     state.activeKey = sizeKey;
     if (typeof state.updateSidebarCheckoutCount === "function") state.updateSidebarCheckoutCount();
