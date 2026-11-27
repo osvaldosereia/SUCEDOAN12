@@ -377,10 +377,7 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
 // Read the available brands of one basket position only when requested by the customer.
 function compareMoldPositionOptionOrder(a:any,b:any){
   const aOrder=Number(a.sort_order||0),bOrder=Number(b.sort_order||0);
-  const aDefault=aOrder===0?0:1,bDefault=bOrder===0?0:1;
-  return aDefault-bDefault
-    ||String(a.name||"").localeCompare(String(b.name||""),"pt-BR",{sensitivity:"base",numeric:true})
-    ||aOrder-bOrder
+  return aOrder-bOrder
     ||String(a.product_id||"").localeCompare(String(b.product_id||""));
 }
 async function moldPositionOptions(basketId:string,compositionNumber:number,positionId:string,selectedProductIdsRaw:string,requestedQuantity:number,offset:number){

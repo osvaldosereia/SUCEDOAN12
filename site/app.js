@@ -526,12 +526,7 @@
           is_active: item.is_active, is_offer: item.is_offer, packaging: item.packaging
         });
       }
-      const defaultId = String(item.default_product_id || item.product_id || "");
-      const optionChoices = Array.from(choiceById.values()).sort((a, b) =>
-        (String(a.product_id) === defaultId ? -1 : 0) - (String(b.product_id) === defaultId ? -1 : 0) ||
-        String(a.name || "").localeCompare(String(b.name || ""), "pt-BR", { sensitivity: "base", numeric: true }) ||
-        String(a.product_id || "").localeCompare(String(b.product_id || ""))
-      );
+      const optionChoices = Array.from(choiceById.values());
       const optionCount = Math.max(Number(item.alternative_count || 0), optionChoices.length);
       const changingThisItem = String(data.changingPosition || "") === String(item.position_id);
       const title = item.label || "Produto";
@@ -561,13 +556,7 @@
           increaseDisabled: disabled || quantity >= stock || itemQuantityAtLimit(item)
         });
       };
-      const choiceOrder = new Map(optionChoices.map((option, index) => [String(option.product_id), index]));
-      const carouselChoices = optionChoices.slice().sort((a, b) => {
-        const aSelected = Number((selectedById.get(String(a.product_id)) || {}).quantity || 0) > 0;
-        const bSelected = Number((selectedById.get(String(b.product_id)) || {}).quantity || 0) > 0;
-        return Number(bSelected) - Number(aSelected) ||
-          (choiceOrder.get(String(a.product_id)) || 0) - (choiceOrder.get(String(b.product_id)) || 0);
-      });
+      const carouselChoices = optionChoices;
       const moreOptionsStatus = item._optionsMoreLoading
         ? item._optionsPageError
           ? '<p class="variation-status" role="alert">Não foi possível carregar mais opções.</p><button class="button button-outline variation-retry" type="button" data-retry-position="' + esc(item.position_id) + '">Tentar novamente</button>'
