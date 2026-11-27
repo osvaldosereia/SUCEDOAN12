@@ -714,7 +714,7 @@
       if (oldDefault?.id === id) setTypeDefault(type, "", oldDefault.price);
     });
     const nextTarget = nextTypes[targetIndex];
-    nextTarget.options.push(previousOption || { product_id: id, product, metadata: {} });
+    nextTarget.options.push(previousOption ? { ...previousOption, product } : { product_id: id, product, metadata: {} });
     if (nextTarget.options.length === 1) setTypeDefault(nextTarget, id);
     state.types = nextTypes;
     state.expandedTypeKey = state.pickerTypeKey;
@@ -843,6 +843,7 @@
     const productId = String(product.id);
     const wasDirty = state.dirty;
     productCache.set(productId, product);
+    state.pickerProducts = state.pickerProducts.map((item) => String(item.id) === productId ? product : item);
 
     const affectedDefaults = [];
     state.types.forEach((type) => {
@@ -995,6 +996,7 @@
 
     $("picker-search").addEventListener("submit", (event) => {
       event.preventDefault();
+      window.clearTimeout(state.pickerDebounce);
       state.pickerQuery = $("picker-query").value.trim();
       loadPickerProducts(true);
     });
