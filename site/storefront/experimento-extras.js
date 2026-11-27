@@ -3,7 +3,7 @@
 
   const HOME_EXTRA_INITIAL_PAGE_SIZE = 6;
   const HOME_EXTRA_MORE_PAGE_SIZE = 6;
-  const BASKET_EXTRA_INITIAL_PAGE_SIZE = 3;
+  const BASKET_EXTRA_INITIAL_PAGE_SIZE = 8;
   const BASKET_EXTRA_MORE_PAGE_SIZE = 12;
   const OFFER_INITIAL_PAGE_SIZE = 3;
   const OFFER_MORE_PAGE_SIZE = 12;
@@ -313,8 +313,6 @@
             : category.error ? "Não foi possível carregar. Tente novamente."
               : category.loaded && !category.products.length ? "Nenhum produto disponível nesta categoria."
                 : "";
-          const showMore = category.error || (category.loaded && category.hasMore);
-          const moreLabel = category.error ? "Tentar novamente" : "Carregar mais produtos";
           const products = category.products.map((product) => extraProductMarkup(data, product)).join("");
           return '<section class="extra-category" data-extra-category-card="' + esc(category.key) + '">' +
             '<button class="extra-category-toggle" type="button" data-extra-category="' + esc(category.key) + '" aria-expanded="' + String(category.expanded) + '" aria-controls="' + esc(panelId) + '">' +
@@ -322,13 +320,25 @@
             '<div class="extra-category-panel" id="' + esc(panelId) + '"' + (category.expanded ? "" : " hidden") + '>' +
             '<div class="extra-product-list basket-option-carousel" data-extra-list="' + esc(category.key) + '" tabindex="0" role="list" aria-label="Produtos de ' + esc(category.label) + '. Deslize horizontalmente para ver os produtos.">' + products + '</div>' +
             '<p class="extra-product-status" data-extra-status="' + esc(category.key) + '" role="status">' + esc(status) + '</p>' +
-            '<button class="button button-outline extra-product-more" type="button" data-extra-more="' + esc(category.key) + '"' + (showMore ? "" : " hidden") + (category.loading ? " disabled" : "") + '>' + esc(moreLabel) + '</button></div></section>';
+            '<button class="button button-outline extra-product-more" type="button" data-extra-retry="' + esc(category.key) + '"' + (category.error ? "" : " hidden") + (category.loading ? " disabled" : "") + '>Tentar novamente</button></div></section>';
         }).join("") + '</div></section>';
     }
   
   
     function bindExtraProductControls(container) {
-      if (!container || container.closest?.("[data-extra-controls-bound='true']")) return;
+      if (!container) return;
+      container.querySelectorAll("[data-extra-list]").forEach((listElement) => {
+        if (listElement.dataset.autoLoadBound === "true") return;
+        listElement.dataset.autoLoadBound = "true";
+        listElement.addEventListener("scroll", () => {
+          if (listElement._extraLoadFrame) return;
+          listElement._extraLoadFrame = window.requestAnimationFrame(() => {
+            listElement._extraLoadFrame = 0;
+            loadMoreExtraProducts(listElement);
+          });
+        }, { passive: true });
+      });
+      if (container.closest?.("[data-extra-controls-bound='true']")) return;
       container.dataset.extraControlsBound = "true";
       container.addEventListener("click", (event) => {
         const offersToggle = event.target?.closest?.("[data-offers-toggle]");
@@ -347,11 +357,13 @@
           if (data) loadOffers(data);
           return;
         }
-        const moreButton = event.target?.closest?.("[data-extra-more]");
-        if (moreButton && container.contains(moreButton) && !moreButton.disabled) {
-          const categoryCard = moreButton.closest("[data-extra-category-card]");
+        const retryButton = event.target?.closest?.("[data-extra-retry]");
+        if (retryButton && container.contains(retryButton) && !retryButton.disabled) {
+          const categoryCard = retryButton.closest("[data-extra-category-card]");
           const listElement = categoryCard && categoryCard.querySelector("[data-extra-list]");
-          if (listElement) loadMoreExtraProducts(moreButton.dataset.extraMore, listElement);
+          const data = state.baskets.get(state.activeKey);
+          const category = data && extraCategoriesFor(data).find((entry) => entry.key === String(retryButton.dataset.extraRetry));
+          if (data && category && listElement) loadExtraCategory(data, category, listElement);
           return;
         }
         const button = event.target?.closest?.("[data-extra-adjust]");
@@ -449,10 +461,17 @@
       updateOffersPanel(data);
     }
 
-    function loadMoreExtraProducts(categoryKey, listElement) {
+    function loadMoreExtraProducts(listElement) {
+      if (!listElement || !listElement.isConnected || $("detail-sheet").hidden) return;
       const data = state.baskets.get(state.activeKey);
-      const category = data && extraCategoriesFor(data).find((entry) => entry.key === String(categoryKey));
-      if (category && category.expanded && category.loaded && category.hasMore) {
+      const categoryKey = String(listElement.dataset.extraList || "");
+      const category = data && extraCategoriesFor(data).find((entry) => entry.key === categoryKey);
+      const panel = listElement.closest(".extra-category-panel");
+      if (!category || !category.expanded || (panel && panel.hidden) || !category.loaded ||
+          !category.hasMore || category.loading || category.error || listElement.clientWidth <= 0) return;
+      const remaining = Math.max(0, listElement.scrollWidth - listElement.clientWidth - listElement.scrollLeft);
+      const prefetchDistance = Math.max(320, Math.round(listElement.clientWidth * 0.35));
+      if (remaining <= prefetchDistance) {
         loadExtraCategory(data, category, listElement);
       }
     }
@@ -471,6 +490,8 @@
         const activeCategory = extraCategoriesFor(activeData).find((entry) => entry.key === String(category.key));
         return activeCategory ? { data: activeData, category: activeCategory } : null;
       };
+      const activeAtStart = sameActiveBasket();
+      if (activeAtStart && activeAtStart.category !== category) activeAtStart.category.loading = true;
       const currentElements = () => {
         const content = $("detail-content");
         if (!content) return {};
@@ -480,15 +501,15 @@
           card,
           list: card && card.querySelector("[data-extra-list]"),
           status: card && card.querySelector("[data-extra-status]"),
-          more: card && card.querySelector("[data-extra-more]")
+          retry: card && card.querySelector("[data-extra-retry]")
         };
       };
 
       const initial = currentElements();
       if (initial.status) initial.status.textContent = category.products.length ? "Carregando mais produtos…" : "Carregando produtos…";
-      if (initial.more) {
-        initial.more.disabled = true;
-        initial.more.textContent = "Carregando…";
+      if (initial.retry) {
+        initial.retry.disabled = true;
+        initial.retry.textContent = "Tentando novamente…";
       }
       try {
         let fetched = [];
@@ -512,30 +533,47 @@
           category.hasMore = result.next_offset != null;
           pages += 1;
         } while (!fetched.length && category.hasMore && pages < 8);
-        category.products = category.products.concat(fetched);
+        const mergeProducts = (current, incoming) => {
+          const merged = new Map();
+          for (const product of [...(current || []), ...(incoming || [])]) {
+            const id = String(product && product.id || "");
+            if (id) merged.set(id, product);
+          }
+          return Array.from(merged.values());
+        };
+        category.products = mergeProducts(category.products, fetched);
         category.loaded = true;
 
         const active = sameActiveBasket();
         if (active) {
           if (active.category !== category) {
-            const merged = new Map();
-            for (const product of [...(active.category.products || []), ...(category.products || [])]) {
-              const id = String(product && product.id || "");
-              if (id) merged.set(id, product);
-            }
-            active.category.products = Array.from(merged.values());
+            active.category.products = mergeProducts(active.category.products, category.products);
             active.category.nextOffset = category.nextOffset;
             active.category.hasMore = category.hasMore;
             active.category.loaded = category.loaded;
+            active.category.error = false;
           }
           const elements = currentElements();
           if (elements.list && !$("detail-sheet").hidden) {
-            elements.list.innerHTML = active.category.products
-              .map((product) => extraProductMarkup(active.data, product)).join("");
-            elements.list.querySelectorAll("img").forEach((image) => image.addEventListener("error", () => {
-              image.src = "../img/logoantonia5.png";
-            }, { once: true }));
-            bindExtraProductControls(elements.list);
+            const renderedIds = new Set(Array.from(elements.list.querySelectorAll("[data-extra-product]"))
+              .map((card) => String(card.dataset.extraProduct || "")));
+            const additions = active.category.products.filter((product) => {
+              const id = String(product && product.id || "");
+              if (!id || renderedIds.has(id)) return false;
+              renderedIds.add(id);
+              return true;
+            });
+            if (additions.length) {
+              const firstAddedChild = elements.list.children.length;
+              elements.list.insertAdjacentHTML("beforeend", additions
+                .map((product) => extraProductMarkup(active.data, product)).join(""));
+              Array.from(elements.list.children).slice(firstAddedChild).forEach((card) => {
+                const image = card.querySelector("img");
+                if (image) image.addEventListener("error", () => {
+                  image.src = "../img/logoantonia5.png";
+                }, { once: true });
+              });
+            }
             if (elements.status) elements.status.textContent = !active.category.products.length
               ? "Nenhum produto disponível nesta categoria."
               : "";
@@ -557,10 +595,10 @@
         if (active) active.category.loading = false;
         const elements = currentElements();
         const currentCategory = active ? active.category : category;
-        if (elements.more) {
-          elements.more.hidden = !(currentCategory.error || (currentCategory.loaded && currentCategory.hasMore));
-          elements.more.disabled = false;
-          elements.more.textContent = currentCategory.error ? "Tentar novamente" : "Carregar mais produtos";
+        if (elements.retry) {
+          elements.retry.hidden = currentCategory.error !== true;
+          elements.retry.disabled = false;
+          elements.retry.textContent = "Tentar novamente";
         }
       }
     }
