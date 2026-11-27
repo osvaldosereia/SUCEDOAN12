@@ -138,12 +138,7 @@
       rows.forEach((option) => {
         if (option && option.product_id && option.is_active !== false) unique.set(String(option.product_id), option);
       });
-      const defaultId = String(item.default_product_id || item.product_id || "");
-      return Array.from(unique.values()).sort((a, b) =>
-        (String(a.product_id) === defaultId ? -1 : 0) - (String(b.product_id) === defaultId ? -1 : 0) ||
-        String(a.name || "").localeCompare(String(b.name || ""), "pt-BR", { sensitivity: "base", numeric: true }) ||
-        String(a.product_id || "").localeCompare(String(b.product_id || ""))
-      );
+      return Array.from(unique.values());
     }
 
     function optionsPageForItem(basket, item, offset) {
