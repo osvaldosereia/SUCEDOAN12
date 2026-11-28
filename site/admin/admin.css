@@ -970,3 +970,22 @@ dialog.whatsapp-label-manager-dialog::backdrop { background:#211511b8; backdrop-
   .customer-address-row-actions { justify-content: flex-start; }
   .customer-address-form-actions > .button { flex: 1 1 100%; }
 }
+
+
+/* Storefront maintenance control */
+.storefront-maintenance-control { display:flex; align-items:center; justify-content:space-between; gap:22px; margin:0 0 20px; padding:18px 20px; border:1px solid #e8d2bf; border-radius:14px; background:#fff9f2; }
+.storefront-maintenance-copy { min-width:0; }
+.storefront-maintenance-copy .eyebrow { margin:0 0 5px; color:#927963; font-size:.7rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+.storefront-maintenance-copy h2 { margin:0 0 5px; color:#332f2b; font-size:1.06rem; }
+.storefront-maintenance-copy > p:not(.eyebrow) { margin:0; max-width:680px; color:#6f6962; font-size:.84rem; line-height:1.5; }
+.storefront-maintenance-copy .storefront-maintenance-note { margin-top:7px !important; font-size:.78rem !important; }
+.storefront-maintenance-actions { display:flex; flex:0 0 auto; align-items:center; justify-content:flex-end; gap:10px; }
+.storefront-maintenance-status { display:inline-flex; align-items:center; min-height:30px; padding:5px 10px; border-radius:999px; background:#e9f4ec; color:#28633b; font-size:.75rem; font-weight:800; white-space:nowrap; }
+.storefront-maintenance-status.is-active { background:#fae8e5; color:#983d32; }
+.storefront-maintenance-status.is-unavailable { background:#f1eeea; color:#746b63; }
+.storefront-maintenance-actions .button { min-height:40px; white-space:nowrap; }
+@media (max-width:640px) {
+  .storefront-maintenance-control { align-items:flex-start; flex-direction:column; gap:14px; padding:16px; }
+  .storefront-maintenance-actions { width:100%; justify-content:space-between; }
+  .storefront-maintenance-actions .button { flex:1 1 auto; }
+}
