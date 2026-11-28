@@ -592,6 +592,7 @@ async function driverForAdminStop(stopId: string) {
 async function adminNextNotice(input: JsonRecord) {
   const stopId = uuid(input.stop_id);
   if (!stopId) throw new ApiFailure("invalid_stop");
+  normalizeEta(input.eta_minutes);
   await ensureAdminStopDispatched(stopId);
   return await notifyNextStop(await driverForAdminStop(stopId), input);
 }

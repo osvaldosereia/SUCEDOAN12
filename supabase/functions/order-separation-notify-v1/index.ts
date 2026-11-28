@@ -164,7 +164,9 @@ Deno.serve(async(req:Request)=>{
     const templateApproved=messageEnabled&&activeApproved&&Boolean(components);
 
     const payload={public_code:publicCode,order_url:orderUrl,missing_items:missingItems,missing_items_text:missingText,original_total:originalTotal,missing_subtotal:missingSubtotal,final_total:finalTotal,template_name:templateName,components};
-    const initialStatus=!messageEnabled?"suppressed":templateApproved?"sending":"pending";
+    const sendBlocked=!messageEnabled?{status:"suppressed",reason:"message_paused"}:
+      !templateApproved?{status:"pending",reason:"template_pending_approval"}:null;
+    const initialStatus=sendBlocked?.status||"sending";
     const insert=await db.from("order_separation_customer_notifications_v1").insert({
       order_id:orderId,notification_kind:kind,status:initialStatus,whatsapp_account_id:account.id,
       conversation_id:uuid(route.conversation_id)||uuid(order.conversation_id)||null,customer_id:order.customer_id||null,
@@ -179,8 +181,8 @@ Deno.serve(async(req:Request)=>{
       if(existing.data?.status==="accepted")return respond({ok:true,status:"accepted",duplicate:true,notification_id:existing.data.id,provider_message_id:existing.data.provider_message_id,public_code:publicCode});
       if(existing.data?.status==="suppressed")return respond({ok:true,status:"suppressed",duplicate:true,notification_id:existing.data.id,public_code:publicCode});
       if(existing.data?.status==="sending"||existing.data?.status==="uncertain")return respond({ok:false,error:"notification_not_retryable",status:existing.data.status,notification_id:existing.data.id},409);
-      if(existing.data?.status==="pending"&&!templateApproved)return respond({ok:true,status:"pending",reason:"template_pending_approval",notification_id:existing.data.id,template_name:templateName,public_code:publicCode},202);
-      const automaticPendingClaim=existing.data?.status==="pending"&&templateApproved;
+      if(sendBlocked)return respond({ok:true,...sendBlocked,notification_id:existing.data?.id||null,template_name:templateName,public_code:publicCode},202);
+      const automaticPendingClaim=existing.data?.status==="pending";
       if(!automaticPendingClaim&&body?.retry!==true)return respond({ok:false,error:"notification_requires_explicit_retry",status:existing.data?.status||"failed",notification_id:existing.data?.id||null},409);
       const claimable=automaticPendingClaim?["pending"]:["retry","failed"];
       const claimed=await db.from("order_separation_customer_notifications_v1").update({status:"sending",last_error:null,attempt_count:automaticPendingClaim?1:2,updated_at:new Date().toISOString(),payload}).eq("id",existing.data.id).in("status",claimable).select("id,status,provider_message_id").maybeSingle();
@@ -188,8 +190,7 @@ Deno.serve(async(req:Request)=>{
       notification=claimed.data;
     }
 
-    if(!messageEnabled)return respond({ok:true,status:"suppressed",reason:"message_paused",notification_id:notification?.id||null,template_name:templateName,public_code:publicCode},202);
-    if(!templateApproved)return respond({ok:true,status:"pending",reason:"template_pending_approval",notification_id:notification?.id||null,template_name:templateName,public_code:publicCode},202);
+    if(sendBlocked)return respond({ok:true,...sendBlocked,notification_id:notification?.id||null,template_name:templateName,public_code:publicCode},202);
 
     let result:any=null;
     for(let attempt=1;attempt<=2;attempt++){
@@ -215,16 +216,32 @@ Deno.serve(async(req:Request)=>{
     }
 
     if(!result?.providerMessageId)return respond({ok:false,error:"meta_invalid_response"},502);
+    const providerMessageId=String(result.providerMessageId);
     const acceptedAt=new Date().toISOString();
-    const conversationId=await canonicalConversation({...route,phone_e164:routePhone},order,account);
-    const saved=await db.from("order_separation_customer_notifications_v1").update({
-      status:"accepted",provider_message_id:result.providerMessageId,accepted_at:acceptedAt,conversation_id:conversationId,
-      last_error:null,updated_at:acceptedAt,payload:{...payload,provider:"meta",meta_accepted_at:acceptedAt}
-    }).eq("id",notification.id).eq("status","sending");
-    if(saved.error)throw saved.error;
-    await persistCanonicalMessage({notificationId:notification.id,order,route:{...route,phone_e164:routePhone},account,conversationId,providerMessageId:result.providerMessageId,templateName,acceptedAt});
+    let conversationId:string|null=null;
+    try{conversationId=await canonicalConversation({...route,phone_e164:routePhone},order,account)}catch(error){
+      console.error("order_separation_notify_conversation",clean((error as Error)?.message||error,220));
+    }
+    const acceptance={provider_message_id:providerMessageId,accepted_at:acceptedAt,conversation_id:conversationId,
+      updated_at:acceptedAt,payload:{...payload,provider:"meta",meta_accepted_at:acceptedAt}};
+    try{
+      const saved=await db.from("order_separation_customer_notifications_v1").update({...acceptance,status:"accepted",last_error:null})
+        .eq("id",notification.id).eq("status","sending").select("id").maybeSingle();
+      if(saved.error||!saved.data)throw saved.error||new Error("notification_acceptance_not_claimed");
+    }catch{
+      // The provider already accepted this message. Keep it ineligible for another send.
+      try{
+        const uncertain=await db.from("order_separation_customer_notifications_v1").update({...acceptance,status:"uncertain",last_error:"accepted_state_write_failed"})
+          .eq("id",notification.id).eq("status","sending");
+        if(uncertain.error)throw uncertain.error;
+      }catch(error){
+        console.error("order_separation_notify_reconcile",notification.id,providerMessageId,clean((error as Error)?.message||error,220));
+      }
+      return respond({ok:false,error:"meta_send_uncertain",uncertain:true,notification_id:notification.id,provider_message_id:providerMessageId},502);
+    }
+    await persistCanonicalMessage({notificationId:notification.id,order,route:{...route,phone_e164:routePhone},account,conversationId,providerMessageId,templateName,acceptedAt});
 
-    return respond({ok:true,status:"accepted",notification_id:notification.id,notification_kind:kind,public_code:publicCode,channel_origin:channel,template_name:templateName,provider_message_id:result.providerMessageId});
+    return respond({ok:true,status:"accepted",notification_id:notification.id,notification_kind:kind,public_code:publicCode,channel_origin:channel,template_name:templateName,provider_message_id:providerMessageId});
   }catch(error){
     console.error("order-separation-notify-v1",clean((error as Error)?.message||error,300));
     return respond({ok:false,error:"notification_backend_error"},500);
