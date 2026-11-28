@@ -196,7 +196,7 @@ async function customerAddressManage(input: any) {
   const saved = await db.rpc("ops3_site_admin_customer_address_manage_v1", {
     p_action: action,
     p_customer_id: customerId,
-    p_address_id: addressId,
+    p_address_id: addressId || null,
     p_expected_updated_at: clean(input.expected_updated_at, 80) || null,
     p_label: clean(input.label, 60) || null,
     p_address: {

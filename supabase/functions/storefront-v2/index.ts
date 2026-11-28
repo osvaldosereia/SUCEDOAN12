@@ -575,13 +575,30 @@ async function moldAvailableStockMap(productIds:string[]){
   const ids=[...new Set(productIds.filter(Boolean))],out=new Map<string,number>();
   if(!ids.length)return out;
   const batches=await Promise.all(moldProductIdChunks(ids).map(async(chunk:string[])=>{
-    const {data,error}=await db.from("storefront_product_sellable_stock_v1")
-      .select("product_id,sellable_stock,is_active").in("product_id",chunk);
-    if(error)throw error;
-    return data||[];
+    const [website,checkout]=await Promise.all([
+      db.from("storefront_product_sellable_stock_v1")
+        .select("product_id,sellable_stock,is_active,price,validity_date").in("product_id",chunk),
+      db.from("storefront_ean_sellable_stock_v1")
+        .select("product_id,is_active,stock_authority,loose_sellable_stock,ean_sellable_stock").in("product_id",chunk)
+    ]);
+    if(website.error)throw website.error;
+    if(checkout.error)throw checkout.error;
+    return {website:website.data||[],checkout:checkout.data||[]};
   }));
-  for(const rows of batches)for(const r of rows){
-    out.set(String(r.product_id),r.is_active===true?Math.max(0,Number(r.sellable_stock||0)):0);
+  const today=iso(local());
+  for(const batch of batches){
+    const checkoutById=new Map<string,any>(batch.checkout.map((row:any)=>[String(row.product_id),row]));
+    for(const row of batch.website){
+      const id=String(row.product_id),checkout=checkoutById.get(id);
+      const expiry=row.validity_date?String(row.validity_date).slice(0,10):"";
+      const websiteEligible=row.is_active===true&&Number(row.price||0)>0&&(!expiry||expiry>=today);
+      const checkoutStock=checkout?.stock_authority==="bling"
+        ?checkout.loose_sellable_stock
+        :checkout?.ean_sellable_stock??checkout?.loose_sellable_stock;
+      const available=websiteEligible&&checkout?.is_active===true
+        ?Math.min(Number(row.sellable_stock||0),Number(checkoutStock||0)):0;
+      out.set(id,Number.isFinite(available)?Math.max(0,Math.floor(available)):0);
+    }
   }
   return out;
 }

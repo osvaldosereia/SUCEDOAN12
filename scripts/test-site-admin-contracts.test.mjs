@@ -78,6 +78,7 @@ test("admin routes customer creation, editing and addresses to distinct validate
   assert.equal(admin.calls[0].args.p_payload.phone, "+5565900000000");
   assert.equal(admin.calls[1].args.p_expected_customer_updated_at, stamp);
   assert.equal(admin.calls[2].args.p_address.state, "MT");
+  assert.equal(admin.calls[2].args.p_address_id, null, "new addresses must send a SQL NULL UUID");
 });
 
 test("admin basket grid returns each variant quantity and the configured basket total", async () => {

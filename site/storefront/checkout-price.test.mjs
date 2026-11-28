@@ -5,7 +5,7 @@ import { runInNewContext } from "node:vm";
 
 const source = readFileSync(new URL("./checkout.js", import.meta.url), "utf8");
 
-function checkoutFixture(request) {
+function checkoutFixture(request, refreshBasketQuote) {
   const window = {};
   const fields = new Map();
   const $ = (id) => {
@@ -30,7 +30,8 @@ function checkoutFixture(request) {
   const document = { querySelector: () => ({ value: "PIX" }) };
   runInNewContext(source, { window, document, Map, Set, Number, String, Math, Array, Object, URL });
   const api = window.DonaStorefrontCheckout.create({
-    state, $, request, esc: String, money: String, whatsappNumber: String, toast() {},
+    state, $, request, esc: String, money: String, whatsappNumber: String, quantityOf: item => item.quantity, toast() {},
+    refreshBasketQuote,
     closeSheet() { assert.fail("a conflict must keep checkout open"); },
   });
   return { api, $, state, product };
@@ -93,4 +94,29 @@ test("checkout does not submit while the basket is being recalculated", async ()
   await api.confirmOrder();
   assert.equal(calls, 0);
   assert.equal(state.cartKey, "cart");
+});
+
+test("a stock refresh keeps the cart and asks the customer to review its new total", async () => {
+  let refreshes = 0;
+  let data;
+  const { api, $, state } = checkoutFixture(async () => ({}), async () => {
+    refreshes++;
+    data.items[0].quantity = 0;
+    data.items[0].selected_options = [];
+    data.totalCents = 8811;
+    return true;
+  });
+  data = state.baskets.get("cart");
+  data.customOrder = false;
+  data.basket = { id: "basket", name: "Econômica" };
+  data.items = [{ position_id: "p", product_id: "a", name: "Produto", quantity: 1,
+    selected_options: [{ product_id: "a", quantity: 1 }] }];
+  data.totalCents = 8990;
+  data.extraSelections.clear();
+  data.orderable = true;
+  assert.equal(await api.refreshBasketStock(), true);
+  assert.equal(refreshes, 1);
+  assert.equal(state.cartKey, "cart");
+  assert.equal($("order-review-total").textContent, "8811");
+  assert.match($("order-submit-message").textContent, /confira/i);
 });

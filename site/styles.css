@@ -485,7 +485,7 @@ body.sheet-open.sheet-scroll-chain { overflow-x: hidden; overflow-y: auto; }
 .order-stock-conflict-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .order-stock-conflict {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
   gap: 8px 12px;
   padding: 10px 12px;
@@ -500,6 +500,10 @@ body.sheet-open.sheet-scroll-chain { overflow-x: hidden; overflow-y: auto; }
 .order-stock-conflict-note { color: var(--muted); font-size: .82rem; line-height: 1.35; }
 .order-stock-conflict-remove { min-height: 40px; white-space: nowrap; }
 .order-stock-conflicts[hidden] { display: none !important; }
+
+#order-sheet .sheet-actions { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+#order-sheet .sheet-actions > * { min-width: 0; }
+#order-sheet .order-submit-message, #order-sheet .order-stock-conflicts { margin: 0; }
 
 @media (max-width: 520px) {
   .order-stock-conflict { grid-template-columns: minmax(0, 1fr); }

@@ -771,6 +771,7 @@
     state, $, esc, phoneDigits, money, toast, request, whatsappNumber, quantityOf, closeSheet, showSheet,
     changeBasketItemQuantity: basket.changeBasketItemQuantity,
     changeBasketProductQuantity: basket.changeProductQuantity,
+    refreshBasketQuote: basket.refreshBasketQuote,
     attachHomeSelections: extras.attachHomeSelections,
     onHomeExtraQuantityChanged: extras.syncHomeExtraSelection,
     onCustomOrderSubmitted: extras.clearHomeExtraSelections,

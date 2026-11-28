@@ -24,7 +24,7 @@
     return migrated;
   }
 
-  function create({ state, $, esc, phoneDigits, money, toast, request, whatsappNumber, quantityOf, closeSheet, showSheet, changeBasketItemQuantity, changeBasketProductQuantity, attachHomeSelections, onHomeExtraQuantityChanged, onCustomOrderSubmitted, onCartCleared, onOrderSubmitted }) {
+  function create({ state, $, esc, phoneDigits, money, toast, request, whatsappNumber, quantityOf, closeSheet, showSheet, changeBasketItemQuantity, changeBasketProductQuantity, refreshBasketQuote, attachHomeSelections, onHomeExtraQuantityChanged, onCustomOrderSubmitted, onCartCleared, onOrderSubmitted }) {
     const customOrderKey = "__custom_products__";
     const minimumOrderCents = 7500;
     function addressLines(address) {
@@ -830,13 +830,43 @@
         } else if (item.kind === "basket_mold_component") {
           const note = document.createElement("span");
           note.className = "order-stock-conflict-note";
-          note.textContent = "Volte à cesta para trocar a opção.";
+          note.textContent = "Atualize a cesta para conferir os itens disponíveis.";
           row.appendChild(note);
         }
         list.appendChild(row);
       });
       host.appendChild(list);
+      if (stockConflictItems.some((item) => item.kind === "basket_mold_component") &&
+          data && data.customOrder !== true && typeof refreshBasketQuote === "function") {
+        const refresh = document.createElement("button");
+        refresh.type = "button";
+        refresh.className = "button button-outline order-stock-conflict-remove";
+        refresh.dataset.stockConflictRefresh = "true";
+        refresh.textContent = "Atualizar cesta";
+        host.appendChild(refresh);
+      }
       host.hidden = false;
+    }
+
+    async function refreshBasketStock() {
+      const cartKey = state.cartKey;
+      const data = state.baskets.get(cartKey);
+      if (!data || data.customOrder === true || state.submittingOrder || data.changing === true ||
+          typeof refreshBasketQuote !== "function") return false;
+      const operation = refreshBasketQuote(cartKey);
+      updateConfirmOrderAvailability();
+      const refreshed = await operation;
+      if (state.cartKey !== cartKey || state.baskets.get(cartKey) !== data) return false;
+      if (!refreshed) {
+        setOrderSubmitMessage("Não foi possível atualizar a cesta. Tente novamente; seu carrinho foi mantido.", "error");
+        updateConfirmOrderAvailability();
+        return false;
+      }
+      revisedPrice = null;
+      renderStockConflictItems([]);
+      renderOrderReview(data);
+      setOrderSubmitMessage("Cesta atualizada. Confira os produtos e o total antes de confirmar novamente.", "warning");
+      return true;
     }
 
     function removeStockConflictProduct(productId) {
@@ -1014,11 +1044,14 @@
           invalid_whatsapp_phone: "O telefone do cadastro não está em um formato válido.",
           invalid_payment: "A forma de pagamento não foi reconhecida. Selecione novamente e tente outra vez."
         };
-        const reportedConflicts = Array.isArray(responseData.stock_conflict_items)
+        let reportedConflicts = Array.isArray(responseData.stock_conflict_items)
           ? responseData.stock_conflict_items
           : Array.isArray(responseData.adjusted_items)
             ? responseData.adjusted_items
             : [];
+        if (reason === "checkout_stock_changed" && !reportedConflicts.length && data.customOrder !== true) {
+          reportedConflicts = [{ id: "basket", name: "Produtos da cesta", kind: "basket_mold_component" }];
+        }
         renderStockConflictItems(reportedConflicts);
         const conflictNames = stockConflictItems.map((item) => String(item.name || "Produto"));
         const canRemoveConflict = (item) => item.kind === "product" &&
@@ -1028,7 +1061,7 @@
         const message = conflictNames.length === 1
           ? removableConflictCount
             ? "“" + conflictNames[0] + "” ficou indisponível. Remova-o abaixo para continuar; os outros itens serão mantidos."
-            : "“" + conflictNames[0] + "” ficou indisponível na cesta. Volte à cesta para escolher outra opção; seu pedido foi mantido."
+            : "“" + conflictNames[0] + "” ficou indisponível na cesta. Atualize a cesta para conferir os produtos; seu pedido foi mantido."
           : conflictNames.length > 1
             ? removableConflictCount === stockConflictItems.length
               ? "Alguns produtos ficaram indisponíveis. Remova os itens indicados abaixo; os demais serão mantidos."
@@ -1066,6 +1099,12 @@
       $("clear-order-cart").addEventListener("click", clearOrderCart);
       const stockConflictsHost = $("order-stock-conflicts");
       if (stockConflictsHost) stockConflictsHost.addEventListener("click", (event) => {
+        const refresh = event.target instanceof Element ? event.target.closest("[data-stock-conflict-refresh]") : null;
+        if (refresh) {
+          event.preventDefault();
+          void refreshBasketStock();
+          return;
+        }
         const button = event.target instanceof Element ? event.target.closest("[data-stock-conflict-remove]") : null;
         if (!button) return;
         event.preventDefault();
@@ -1164,7 +1203,7 @@
       updateSidebarCheckoutCount();
     }
 
-    return { init, loadDeliveryOptions, lookupCustomer, confirmOrder, startCustomOrder, updateSidebarCheckoutCount };
+    return { init, loadDeliveryOptions, lookupCustomer, confirmOrder, refreshBasketStock, startCustomOrder, updateSidebarCheckoutCount };
   }
 
   window.DonaStorefrontCheckout = { create, migrateSavedCartSnapshot };

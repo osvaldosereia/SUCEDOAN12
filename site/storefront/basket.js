@@ -361,6 +361,30 @@
       });
       return { basket: quoted.basket, items, totalCents: Number(quoted.total_cents || quoted.basket && quoted.basket.display_price_cents || 0) };
     }
+
+    async function refreshBasketQuote(sizeKey) {
+      const data = state.baskets.get(String(sizeKey || ""));
+      if (!data || data.customOrder === true || data.changing === true || !data.basket) return false;
+      const selectedItems = cloneBasketItems(data.items || []);
+      data.changing = true;
+      const operation = quoteBasket(data.basket, selectedItems.map(quoteSelectionForItem), selectedItems)
+        .then((quote) => {
+          if (state.baskets.get(String(sizeKey)) !== data) return false;
+          Object.assign(data, quote, {
+            orderable: Number(quote.basket && quote.basket.stock_quantity || 0) > 0,
+            detailLoaded: true,
+          });
+          return true;
+        })
+        .catch(() => false)
+        .finally(() => {
+          data.changing = false;
+          if (data.changePromise === operation) data.changePromise = null;
+          if (typeof state.updateSidebarCheckoutCount === "function") state.updateSidebarCheckoutCount();
+        });
+      data.changePromise = operation;
+      return await operation;
+    }
   
     async function basketForSize(sizeKey) {
       const initial = await request("basket_by_size", { params: { size_key: sizeKey, lightweight: "1" } });
@@ -659,6 +683,7 @@
 
     return {
       basketForSize,
+      refreshBasketQuote,
       restoreBasketSelections,
       retryItemOptions,
       queuePendingOptions,
