@@ -6,6 +6,20 @@
   <meta name="theme-color" content="#7e3029">
   <meta name="description" content="Escolha sua cesta básica Dona Antônia de forma rápida e simples.">
   <title>Cestas Dona Antônia</title>
+  <script>document.documentElement.classList.add("storefront-maintenance-checking");</script>
+  <style>
+    html.storefront-maintenance-checking body > :not(#storefront-maintenance-screen),
+    html.storefront-maintenance-active body > :not(#storefront-maintenance-screen) { display:none !important; }
+    #storefront-maintenance-screen { display:none; }
+    html.storefront-maintenance-checking #storefront-maintenance-screen,
+    html.storefront-maintenance-active #storefront-maintenance-screen { display:grid !important; }
+    .storefront-maintenance-screen { position:fixed; inset:0; z-index:2147483647; place-items:center; overflow:auto; padding:max(24px,env(safe-area-inset-top)) 20px max(24px,env(safe-area-inset-bottom)); background:#f7f5ef; color:#332f2b; text-align:center; }
+    .storefront-maintenance-card { width:min(100%,480px); padding:clamp(24px,6vw,42px); border:1px solid #eee7dd; border-radius:20px; background:#fff; box-shadow:0 12px 40px rgba(50,40,28,.08); }
+    .storefront-maintenance-card img { display:block; width:min(190px,70%); height:auto; margin:0 auto 20px; }
+    .storefront-maintenance-card p { margin:0; color:#766c61; font-size:1rem; line-height:1.65; }
+    .storefront-maintenance-card .storefront-maintenance-kicker { margin-bottom:8px; color:#8a473f; font-size:.76rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+    .storefront-maintenance-card h1 { margin:0 0 10px; color:#493b34; font-size:clamp(1.65rem,6vw,2.2rem); line-height:1.2; }
+  </style>
   <link rel="preload" as="image" href="../img/logoantonia5.png">
   <link rel="preload" as="image" href="assets/cestas/cesta-economica.jpg" fetchpriority="high">
   <link rel="preconnect" href="https://ssbesxgaijknwsjbsbcz.supabase.co" crossorigin>
@@ -16,6 +30,7 @@
   <link rel="stylesheet" href="mobile-responsive.css?v=11">
   <link rel="stylesheet" href="customer-address.css?v=2">
   <script src="config.js?v=2" defer></script>
+  <script src="maintenance.js?v=1" defer></script>
   <script src="storefront/experimento-extras.js?v=23" defer></script>
   <script src="storefront/basket.js?v=20" defer></script>
   <script src="storefront/checkout.js?v=27" defer></script>
@@ -24,6 +39,14 @@
   <script src="mobile-navigation.js?v=5" defer></script>
 </head>
 <body data-mobile-page="home">
+  <main id="storefront-maintenance-screen" class="storefront-maintenance-screen" role="status" aria-live="polite" hidden>
+    <div class="storefront-maintenance-card">
+      <img src="../img/logoantonia5.png" alt="Dona Antônia">
+      <p class="storefront-maintenance-kicker">Dona Antônia</p>
+      <h1 id="storefront-maintenance-title">Verificando a loja…</h1>
+      <p id="storefront-maintenance-copy">Um instante, estamos conferindo a disponibilidade.</p>
+    </div>
+  </main>
   <header class="mobile-store-header">
     <div class="mobile-store-header-inner">
       <button id="mobile-menu-toggle" class="mobile-header-button" type="button" aria-label="Abrir menu da loja" aria-expanded="false" aria-controls="mobile-navigation">

@@ -8,6 +8,10 @@
   let toastTimer = 0;
   let customerAddressRows = [];
   let currentCustomerId = "";
+  let storefrontMaintenanceEnabled = false;
+  let storefrontMaintenanceLoaded = false;
+  let storefrontMaintenanceBusy = false;
+  let storefrontMaintenanceNote = "";
 
   async function adminRequest(action, params) {
     const response = await fetch(`${supabase}/functions/v1/site-admin-v1`, {
@@ -23,6 +27,102 @@
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data.ok === false) throw new Error(data.error || "Não foi possível consultar.");
     return data;
+  }
+
+  async function storefrontMaintenanceRequest(action, params) {
+    if (!supabase || !publishableKey) throw new Error("A configuração do Admin está incompleta.");
+    const response = await fetch(supabase + "/functions/v1/site-maintenance-v1", {
+      method: "POST",
+      headers: {
+        apikey: publishableKey,
+        "x-admin-code": window.DonaAdminAuth?.getCode?.() || "",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ action, ...(params || {}) }),
+      cache: "no-store",
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.ok === false) throw new Error(data.error || "Não foi possível atualizar a disponibilidade da loja.");
+    return data;
+  }
+
+  function renderStorefrontMaintenanceControl() {
+    const root = $("storefront-maintenance-control");
+    const status = $("storefront-maintenance-status");
+    const button = $("storefront-maintenance-toggle");
+    const note = $("storefront-maintenance-note");
+    if (!root || !status || !button || !note) return;
+
+    root.dataset.enabled = String(storefrontMaintenanceEnabled);
+    root.dataset.loaded = String(storefrontMaintenanceLoaded);
+    root.dataset.busy = String(storefrontMaintenanceBusy);
+    status.classList.toggle("is-active", storefrontMaintenanceLoaded && storefrontMaintenanceEnabled);
+    status.classList.toggle("is-unavailable", !storefrontMaintenanceLoaded);
+    status.textContent = storefrontMaintenanceBusy && !storefrontMaintenanceLoaded
+      ? "Consultando…"
+      : !storefrontMaintenanceLoaded
+      ? "Status indisponível"
+      : storefrontMaintenanceEnabled
+      ? "Em manutenção"
+      : "Loja aberta";
+    button.disabled = storefrontMaintenanceBusy;
+    button.textContent = storefrontMaintenanceBusy
+      ? storefrontMaintenanceLoaded ? "Salvando…" : "Consultando…"
+      : !storefrontMaintenanceLoaded
+      ? "Tentar novamente"
+      : storefrontMaintenanceEnabled
+      ? "Reabrir o site"
+      : "Ativar manutenção";
+    button.setAttribute("aria-pressed", String(storefrontMaintenanceEnabled));
+    note.textContent = storefrontMaintenanceNote || (storefrontMaintenanceEnabled
+      ? "A loja pública está fechada para clientes. O Admin permanece disponível."
+      : "A loja está disponível aos clientes.");
+  }
+
+  async function loadStorefrontMaintenanceState() {
+    if (storefrontMaintenanceBusy) return;
+    storefrontMaintenanceBusy = true;
+    storefrontMaintenanceNote = "Consultando a disponibilidade da loja…";
+    renderStorefrontMaintenanceControl();
+    try {
+      const data = await storefrontMaintenanceRequest("status");
+      if (typeof data.enabled !== "boolean") throw new Error("Resposta de status inválida.");
+      storefrontMaintenanceEnabled = data.enabled;
+      storefrontMaintenanceLoaded = true;
+      storefrontMaintenanceNote = "";
+    } catch (_) {
+      storefrontMaintenanceLoaded = false;
+      storefrontMaintenanceNote = "Não foi possível consultar o estado. Verifique a conexão e tente novamente.";
+    } finally {
+      storefrontMaintenanceBusy = false;
+      renderStorefrontMaintenanceControl();
+    }
+  }
+
+  async function toggleStorefrontMaintenance() {
+    if (!storefrontMaintenanceLoaded) return loadStorefrontMaintenanceState();
+    if (storefrontMaintenanceBusy) return;
+    const enabled = !storefrontMaintenanceEnabled;
+    if (enabled && !window.confirm("Ativar o modo de manutenção? Os clientes não poderão acessar o catálogo nem fazer pedidos até você reabrir o site pelo Admin.")) return;
+
+    storefrontMaintenanceBusy = true;
+    storefrontMaintenanceNote = "Salvando a disponibilidade da loja…";
+    renderStorefrontMaintenanceControl();
+    try {
+      const data = await storefrontMaintenanceRequest("set", { enabled });
+      if (typeof data.enabled !== "boolean") throw new Error("Resposta de atualização inválida.");
+      storefrontMaintenanceEnabled = data.enabled;
+      storefrontMaintenanceLoaded = true;
+      storefrontMaintenanceNote = "";
+      toast(data.enabled ? "Modo de manutenção ativado." : "A loja voltou a ficar disponível.");
+    } catch (_) {
+      storefrontMaintenanceLoaded = false;
+      storefrontMaintenanceNote = "Não foi possível salvar. Tente consultar o estado e repetir a ação.";
+      toast("Não foi possível atualizar a disponibilidade da loja.");
+    } finally {
+      storefrontMaintenanceBusy = false;
+      renderStorefrontMaintenanceControl();
+    }
   }
 
   function toast(message) {
@@ -632,6 +732,24 @@
   window.DonaAdminSetView = setView;
   const blingReauthorizeButton = $("bling-reauthorize");
   if (blingReauthorizeButton) blingReauthorizeButton.addEventListener("click", reauthorizeBling);
+  const storefrontMaintenanceToggle = $("storefront-maintenance-toggle");
+  if (storefrontMaintenanceToggle) {
+    storefrontMaintenanceToggle.addEventListener("click", () => {
+      if (storefrontMaintenanceLoaded) void toggleStorefrontMaintenance();
+      else void loadStorefrontMaintenanceState();
+    });
+  }
+  const adminAppForMaintenance = $("admin-app");
+  if (adminAppForMaintenance) {
+    const maintenanceLoginObserver = new MutationObserver(() => {
+      if (!adminAppForMaintenance.hidden) {
+        void loadStorefrontMaintenanceState();
+        maintenanceLoginObserver.disconnect();
+      }
+    });
+    if (adminAppForMaintenance.hidden) maintenanceLoginObserver.observe(adminAppForMaintenance, { attributes: true, attributeFilter: ["hidden"] });
+    else void loadStorefrontMaintenanceState();
+  }
   handleBlingOauthReturn();
 
 })();
