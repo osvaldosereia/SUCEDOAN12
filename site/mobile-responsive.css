@@ -1181,3 +1181,18 @@
     height: auto;
   }
 }
+
+
+/* Mobile: sessão da cesta mais ampla e cards maiores (aprox. 2,2 visíveis). */
+@media (max-width: 820px) {
+  .experiment-page #detail-content {
+    width: calc(100% + 20px);
+    margin-inline: -10px;
+    padding-inline: 6px;
+  }
+
+  .experiment-page .basket-option-carousel:not(.is-single-option) .product-choice {
+    flex-basis: calc((100% - 10px) / 2.2);
+    padding: 6px;
+  }
+}
