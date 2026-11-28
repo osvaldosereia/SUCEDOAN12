@@ -9,6 +9,7 @@ const ALLOWED_ORIGINS = new Set([
   "http://localhost:3000",
   "http://127.0.0.1:3000",
 ]);
+const VALID_LOCATIONS = new Set(["Assaí", "Fort", "Atacadão"]);
 
 const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -44,6 +45,19 @@ function uuid(value: unknown) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(text) ? text : "";
 }
 
+function validDateOnly(value: unknown) {
+  const text = clean(value, 10);
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
+  if (!match) return "";
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
+    ? text
+    : "";
+}
+
 function verifyAdminCode(supplied: string | null) {
   if (EXPECTED_ADMIN_CODE.length < 13 || EXPECTED_ADMIN_CODE.length > 128) return "not_configured";
   if (typeof supplied !== "string" || supplied.length !== EXPECTED_ADMIN_CODE.length) return "invalid";
@@ -65,6 +79,37 @@ function parseMoney(value: unknown) {
 
 function errorResponse(req: Request, error: string, message: string, status: number) {
   return json(req, { ok: false, error, message }, status);
+}
+
+function adminCard(card: Record<string, unknown> | null) {
+  if (!card) return null;
+  return {
+    id: card.id,
+    name: card.name,
+    brand: card.brand,
+    initial_value: card.initial_value,
+    current_balance: card.current_balance,
+    credit_added_on: card.credit_added_on,
+    deleted_at: card.deleted_at,
+    created_at: card.created_at,
+    updated_at: card.updated_at,
+  };
+}
+
+function messageForRpcError(error: { message?: string }, req: Request, fallback: string) {
+  const detail = String(error.message || "");
+  if (detail.includes("insufficient_balance")) return errorResponse(req, "insufficient_balance", "Valor maior que o saldo disponível.", 409);
+  if (detail.includes("card_not_found")) return errorResponse(req, "card_not_found", "Cartão não encontrado ou já removido.", 404);
+  if (detail.includes("idempotency_key_conflict")) return errorResponse(req, "idempotency_key_conflict", "Esta operação já foi enviada com outros dados. Atualize a lista.", 409);
+  if (detail.includes("initial_value_has_history")) return errorResponse(req, "initial_value_has_history", "O valor inicial não pode ser alterado depois de movimentações. Registre uma entrada ou saída para ajustar o saldo.", 409);
+  if (detail.includes("invalid_location")) return errorResponse(req, "invalid_location", "Selecione Assaí, Fort ou Atacadão para registrar uma saída.", 400);
+  if (detail.includes("invalid_transaction_type")) return errorResponse(req, "invalid_transaction_type", "Selecione entrada ou saída.", 400);
+  if (detail.includes("invalid_amount")) return errorResponse(req, "invalid_amount", "Informe um valor válido, com até duas casas decimais.", 400);
+  if (detail.includes("invalid_idempotency_key")) return errorResponse(req, "invalid_idempotency_key", "A chave da operação é inválida. Tente novamente.", 400);
+  if (detail.includes("balance_limit_exceeded")) return errorResponse(req, "balance_limit_exceeded", "O saldo ultrapassaria o limite suportado.", 409);
+  if (detail.includes("invalid_card")) return errorResponse(req, "invalid_card", "Confira nome, bandeira, data, valor e senha do cartão.", 400);
+  if (detail.includes("idempotency_key_conflict")) return errorResponse(req, "idempotency_key_conflict", "Esta tentativa já foi processada com outros dados. Atualize a lista antes de tentar novamente.", 409);
+  return errorResponse(req, fallback, "Não foi possível concluir a operação.", 500);
 }
 
 Deno.serve(async (req: Request) => {
@@ -102,31 +147,36 @@ Deno.serve(async (req: Request) => {
     if (action === "list") {
       const { data: cardRows, error: cardsError } = await db
         .from("admin_saved_cards_v1")
-        .select("id,name,brand,initial_value,current_balance,created_at,updated_at")
+        .select("id,name,brand,initial_value,current_balance,credit_added_on,deleted_at,created_at,updated_at")
         .order("created_at", { ascending: false });
       if (cardsError) return errorResponse(req, "cards_load_failed", "Não foi possível carregar os cartões.", 500);
 
-      const cards = cardRows || [];
-      if (!cards.length) return json(req, { ok: true, cards: [] });
+      const rows = cardRows || [];
+      if (!rows.length) return json(req, { ok: true, cards: [], archived_cards: [] });
 
-      const ids = cards.map((card) => card.id);
-      const { data: useRows, error: usesError } = await db
+      const ids = rows.map((card) => card.id);
+      const { data: movementRows, error: movementError } = await db
         .from("admin_saved_card_uses_v1")
-        .select("id,card_id,amount,used_at")
+        .select("id,card_id,amount,transaction_type,transaction_origin,location,used_at")
         .in("card_id", ids)
         .order("used_at", { ascending: false })
         .limit(5000);
-      if (usesError) return errorResponse(req, "cards_history_load_failed", "Não foi possível carregar o histórico.", 500);
+      if (movementError) return errorResponse(req, "cards_history_load_failed", "Não foi possível carregar o histórico.", 500);
 
-      const usesByCard = new Map<string, Array<Record<string, unknown>>>();
-      for (const use of useRows || []) {
-        const list = usesByCard.get(use.card_id) || [];
-        list.push(use);
-        usesByCard.set(use.card_id, list);
+      const movementsByCard = new Map<string, Array<Record<string, unknown>>>();
+      for (const movement of movementRows || []) {
+        const list = movementsByCard.get(movement.card_id) || [];
+        list.push(movement);
+        movementsByCard.set(movement.card_id, list);
       }
+      const withHistory = rows.map((card) => ({
+        ...card,
+        uses: movementsByCard.get(card.id) || [],
+      }));
       return json(req, {
         ok: true,
-        cards: cards.map((card) => ({ ...card, uses: usesByCard.get(card.id) || [] })),
+        cards: withHistory.filter((card) => !card.deleted_at),
+        archived_cards: withHistory.filter((card) => Boolean(card.deleted_at)),
       });
     }
 
@@ -135,23 +185,55 @@ Deno.serve(async (req: Request) => {
       const brand = clean(body.brand, 60);
       const password = String(body.password ?? "").trim().slice(0, 120);
       const initialValue = parseMoney(body.value);
-      if (!name || !brand || !password || initialValue === null) {
-        return errorResponse(req, "invalid_card", "Preencha nome, bandeira, valor e senha com dados válidos.", 400);
+      const creditAddedOn = validDateOnly(body.credit_added_on);
+      const idempotencyKey = uuid(body.idempotency_key);
+      if (!name || !brand || !password || initialValue === null || !creditAddedOn || !idempotencyKey) {
+        return errorResponse(req, "invalid_card", "Preencha os dados do cartão e a data de inclusão do crédito.", 400);
       }
 
-      const { data, error } = await db
-        .from("admin_saved_cards_v1")
-        .insert({
-          name,
-          brand,
-          initial_value: initialValue,
-          current_balance: initialValue,
-          card_password: password,
-        })
-        .select("id,name,brand,initial_value,current_balance,created_at,updated_at")
-        .single();
-      if (error) return errorResponse(req, "card_create_failed", "Não foi possível cadastrar o cartão.", 500);
-      return json(req, { ok: true, card: data }, 201);
+      const { data, error } = await db.rpc("create_admin_saved_card_v1", {
+        p_name: name,
+        p_brand: brand,
+        p_initial_value: initialValue,
+        p_credit_added_on: creditAddedOn,
+        p_card_password: password,
+        p_idempotency_key: idempotencyKey,
+      });
+      if (error) return messageForRpcError(error, req, "card_create_failed");
+      const card = Array.isArray(data) ? data[0] : data;
+      return json(req, { ok: true, card: adminCard(card) }, 201);
+    }
+
+    if (action === "update") {
+      const cardId = uuid(body.card_id);
+      const name = clean(body.name, 120);
+      const brand = clean(body.brand, 60);
+      const initialValue = parseMoney(body.value);
+      const creditAddedOn = validDateOnly(body.credit_added_on);
+      const password = String(body.password ?? "").trim().slice(0, 120) || null;
+      if (!cardId || !name || !brand || initialValue === null || !creditAddedOn) {
+        return errorResponse(req, "invalid_card", "Confira nome, bandeira, data e valor inicial do cartão.", 400);
+      }
+
+      const { data, error } = await db.rpc("update_admin_saved_card_v1", {
+        p_card_id: cardId,
+        p_name: name,
+        p_brand: brand,
+        p_initial_value: initialValue,
+        p_credit_added_on: creditAddedOn,
+        p_card_password: password,
+      });
+      if (error) return messageForRpcError(error, req, "card_update_failed");
+      const card = Array.isArray(data) ? data[0] : data;
+      return json(req, { ok: true, card: adminCard(card) });
+    }
+
+    if (action === "delete") {
+      const cardId = uuid(body.card_id);
+      if (!cardId) return errorResponse(req, "invalid_card", "Cartão inválido.", 400);
+      const { data, error } = await db.rpc("delete_admin_saved_card_v1", { p_card_id: cardId });
+      if (error) return messageForRpcError(error, req, "card_delete_failed");
+      return json(req, { ok: true, card_id: Array.isArray(data) ? data[0] : data });
     }
 
     if (action === "reveal_password") {
@@ -161,35 +243,41 @@ Deno.serve(async (req: Request) => {
         .from("admin_saved_cards_v1")
         .select("card_password")
         .eq("id", cardId)
+        .is("deleted_at", null)
         .maybeSingle();
       if (error) return errorResponse(req, "card_read_failed", "Não foi possível carregar a senha.", 500);
-      if (!data) return errorResponse(req, "card_not_found", "Cartão não encontrado.", 404);
+      if (!data) return errorResponse(req, "card_not_found", "Cartão não encontrado ou já removido.", 404);
       return json(req, { ok: true, password: data.card_password });
     }
 
-    if (action === "register_use") {
+    if (action === "register_transaction" || action === "register_use") {
       const cardId = uuid(body.card_id);
+      const transactionType = action === "register_use" ? "exit" : clean(body.transaction_type, 12);
       const amount = parseMoney(body.amount);
+      const location = body.location == null || body.location === "" ? null : clean(body.location, 40);
       const idempotencyKey = uuid(body.idempotency_key);
+
       if (!cardId) return errorResponse(req, "invalid_card", "Cartão inválido.", 400);
       if (amount === null) return errorResponse(req, "invalid_amount", "Informe um valor maior que zero.", 400);
       if (!idempotencyKey) return errorResponse(req, "invalid_idempotency_key", "Chave da operação inválida.", 400);
+      if (!["entry", "exit"].includes(transactionType)) return errorResponse(req, "invalid_transaction_type", "Selecione entrada ou saída.", 400);
+      if (transactionType === "exit" && !VALID_LOCATIONS.has(String(location))) {
+        return errorResponse(req, "invalid_location", "Selecione Assaí, Fort ou Atacadão para registrar uma saída.", 400);
+      }
+      if (transactionType === "entry" && location !== null) {
+        return errorResponse(req, "invalid_location", "A entrada não precisa de local de uso.", 400);
+      }
 
-      const { data, error } = await db.rpc("register_admin_saved_card_use_v1", {
+      const { data, error } = await db.rpc("register_admin_saved_card_transaction_v1", {
         p_card_id: cardId,
+        p_transaction_type: transactionType,
         p_amount: amount,
+        p_location: location,
         p_idempotency_key: idempotencyKey,
       });
-      if (error) {
-        const detail = String(error.message || "");
-        if (detail.includes("insufficient_balance")) return errorResponse(req, "insufficient_balance", "Valor maior que o saldo disponível.", 409);
-        if (detail.includes("card_not_found")) return errorResponse(req, "card_not_found", "Cartão não encontrado.", 404);
-        if (detail.includes("idempotency_key_conflict")) return errorResponse(req, "idempotency_key_conflict", "Operação já usada com outros dados. Atualize a página.", 409);
-        if (detail.includes("invalid_amount")) return errorResponse(req, "invalid_amount", "Informe um valor válido, com até duas casas decimais.", 400);
-        return errorResponse(req, "card_use_failed", "Não foi possível registrar o uso.", 500);
-      }
-      const usage = Array.isArray(data) ? data[0] : data;
-      return json(req, { ok: true, usage });
+      if (error) return messageForRpcError(error, req, "card_transaction_failed");
+      const transaction = Array.isArray(data) ? data[0] : data;
+      return json(req, { ok: true, transaction });
     }
 
     return errorResponse(req, "unknown_action", "Operação desconhecida.", 400);

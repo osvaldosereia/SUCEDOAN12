@@ -1,0 +1,2876 @@
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { corsHeaders as supabaseCorsHeaders } from "@supabase/supabase-js/cors";
+
+const TABLE = "caneca_studio_jobs";
+const BUCKET = "caneca-studio-assets";
+const IMAGE_MODEL = "gpt-image-2.5-flare";
+const IMAGE_QUALITY = "low";
+const REVIEW_MODEL = "gpt-6.1-terra";
+const ART_SIZE = "2400x960";
+const ARTWORK_RETENTION_DAYS = 15;
+const ARTWORK_RETENTION_MS = ARTWORK_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+const SIGNED_URL_TTL = 900;
+const STYLE_MODEL_URL_TTL = 3600;
+const MODEL_CATALOG_PATH = "style-models/catalog.json";
+const MAX_STYLE_MODEL_IMAGE_BYTES = 100_000;
+const MAX_STYLE_MODEL_BATCH = 20;
+const MAX_REFERENCE_BYTES = 8 * 1024 * 1024;
+const PUBLIC_VARIANT_COUNT = 3;
+const PUBLIC_ART_STYLES = [
+  { label: "Aquarela delicada", direction: "A hand-painted watercolor storybook illustration, soft transparent washes, subtle paper texture, elegant organic contours and gentle luminous color." },
+  { label: "Cartoon de traço limpo", direction: "A polished original clean-line cartoon illustration, expressive confident outlines, simplified readable shapes, balanced cel shading and cheerful editorial character design." },
+  { label: "Lápis de cor texturizado", direction: "A refined colored-pencil illustration with visible layered pencil strokes, tactile paper grain, delicate crosshatching and warm hand-drawn texture." },
+] as const;
+const PUBLIC_APP_ORIGIN = "https://osvaldosereia.github.io";
+const PUBLIC_APP_ORIGINS = new Set([
+  PUBLIC_APP_ORIGIN,
+  "https://www.canecafacil.com.br",
+  "https://canecafacil.com.br",
+]);
+const PUBLIC_START_LIMIT = 5;
+const ADMIN_LINK_TOKEN_SHA256 = "a6cca6fb0ba184203861554acea0ec1cc612508d554555d1ee33a599a388b2a2";
+const OPEN_ADMIN_LINK_TOKEN_SHA256 = "b6aab65096d0a49fcad30062b3fbd6cdb8ede24999b1a1874c04cae5fccf7627";
+const SESSION_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+type AdminClient = SupabaseClient<any, "public">;
+const corsHeaders = {
+  ...supabaseCorsHeaders,
+  "Access-Control-Allow-Origin": PUBLIC_APP_ORIGIN,
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-studio-session, x-caneca-admin-link",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Vary": "Origin",
+};
+
+type CreationMode = "reference" | "from_scratch";
+type Side = "left" | "right";
+type GenerationSide = Side | "both";
+type SideSize = { left: number; right: number };
+type SavedPromptCommand = { id: string; title: string; instruction: string; categoryId: string | null };
+type SavedCreationConfiguration = {
+  title: string;
+  creationMode: CreationMode;
+  artDescription: string;
+  generationSide: GenerationSide;
+  mandatoryText: string[];
+  selectedCommands: SavedPromptCommand[];
+  sizeBySide: SideSize;
+  referenceUsed: boolean;
+  imageModel: string;
+  imageQuality: string;
+  imageSize: string;
+  compiledPrompt: string;
+};
+type StudioInput = {
+  title: string;
+  creationMode: CreationMode;
+  artDescription?: string;
+  generationSide?: GenerationSide;
+  mandatoryText?: string[];
+  selectedCommands?: SavedPromptCommand[];
+  sizeBySide?: SideSize;
+  // Legacy fields remain readable so existing jobs can still be revised.
+  occasion?: string | null;
+  recipient?: string | null;
+  mainTheme?: string;
+  desiredStyle?: string | null;
+  colorPreferences?: string[];
+  mandatoryElements?: string[];
+  forbiddenElements?: string[];
+  compositionNotes?: string | null;
+  latestEditInstruction?: string | null;
+  customerContact?: { name: string; email: string; whatsapp: string; customerId?: string | null } | null;
+  publicRequest?: {
+    theme?: string;
+    mugName?: string;
+    text?: string;
+    kind?: "name" | "phrase";
+    name?: string;
+    phrase?: string;
+    autoPhrase?: boolean;
+    generatedPhrase?: string;
+    generatedTheme?: string;
+    referenceId?: string;
+    referenceTitle?: string;
+    referenceCategory?: string;
+    styleModelId?: string;
+    styleModelName?: string;
+    styleModelCategory?: string;
+    styleModelCategoryId?: string;
+  } | null;
+  styleReferencePath?: string | null;
+  styleReferenceDeletedAt?: string | null;
+  publicGeneration?: { phase: "art" | "mockup"; variantIndex: number } | null;
+  customerSavedVersion?: number | null;
+  customerSavedAt?: string | null;
+  orderStatus?: string | null;
+  adminNotes?: string | null;
+  reviewRequested?: boolean;
+  pendingEdit?: { baseVersion: number; instruction: string; side?: GenerationSide } | null;
+  mockupTargetVersion?: number | null;
+  mockupReferencePaths?: { version: number; leftPath: string; rightPath: string; createdAt?: string; deletedAt?: string | null } | null;
+  referenceDeletedAt?: string | null;
+  assetsRetentionCompletedAt?: string | null;
+  assetsRetentionLastCheckedAt?: string | null;
+  printing?: PrintState;
+  printHistory?: PrintState[];
+};
+type ReferenceImage = { bytes: Uint8Array; fileName: string; mimeType: string };
+type QualityReview = {
+  approved: boolean;
+  score: number;
+  blocking_issues: string[];
+  warnings: string[];
+  exact_text_ok: boolean | null;
+  brief_ok: boolean;
+  edges_ok: boolean;
+  recommendation: "approve" | "regenerate" | "manual_review";
+  concise_note: string;
+};
+type ArtVersion = {
+  version: number;
+  variantIndex?: number;
+  styleStrategy?: string;
+  path: string;
+  source?: "initial" | "operator_edit" | "quality_gate" | "operator_upload";
+  parentVersion?: number | null;
+  instruction?: string | null;
+  createdAt?: string;
+  archivedAt?: string | null;
+  deletedAt?: string | null;
+  generationSide?: GenerationSide;
+  updatedSides?: Side[];
+  configuration?: SavedCreationConfiguration;
+};
+type MockupAsset = { version: number; side: Side | "front" | "back" | "pair"; path: string; createdAt?: string; deletedAt?: string | null };
+type PrintState = {
+  approvedVersion: number | null;
+  quantity: number;
+  completed: number;
+  status: "not_queued" | "ready" | "printed";
+  approvedAt?: string | null;
+  reprints: Array<{ version: number; reason: string; createdAt: string }>;
+};
+type JobRow = {
+  id: string;
+  created_by: string | null;
+  guest_session_id: string | null;
+  title: string;
+  input: StudioInput;
+  reference_path: string | null;
+  status: string;
+  processing: boolean;
+  processing_started_at: string | null;
+  correction_count: number;
+  art_versions: ArtVersion[];
+  mockups: MockupAsset[];
+  validation: QualityReview | null;
+  error_code: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+function emptyPrintState(): PrintState {
+  return {
+    approvedVersion: null,
+    quantity: 1,
+    completed: 0,
+    status: "not_queued",
+    reprints: [],
+  };
+}
+
+function printState(input: StudioInput): PrintState {
+  const value = input.printing;
+  if (!value || !Number.isInteger(value.approvedVersion) || !Number.isInteger(value.quantity) ||
+    !Number.isInteger(value.completed) || !Array.isArray(value.reprints)) return emptyPrintState();
+  return value;
+}
+
+function archivePrintState(input: StudioInput): StudioInput {
+  const printing = printState(input);
+  const history = Array.isArray(input.printHistory) ? [...input.printHistory] : [];
+  if (printing.approvedVersion !== null) history.push({ ...printing, reprints: [...printing.reprints] });
+  return { ...input, printing: emptyPrintState(), printHistory: history };
+}
+
+function isValidJobId(value: unknown): value is string {
+  return typeof value === "string" && SESSION_ID_PATTERN.test(value);
+}
+
+function json(payload: unknown, status = 200): Response {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function readText(form: FormData, name: string, maxLength: number, required = false): string | null {
+  const value = form.get(name);
+  if (value === null) {
+    if (required) throw new Error("invalid_studio_input");
+    return null;
+  }
+  if (typeof value !== "string") throw new Error("invalid_studio_input");
+  const result = value.trim();
+  if (result.length > maxLength || (required && !result)) throw new Error("invalid_studio_input");
+  return result || null;
+}
+
+function readActionText(form: FormData, name: string, maxLength: number): string | null {
+  try {
+    return readText(form, name, maxLength, true);
+  } catch {
+    return null;
+  }
+}
+
+function readList(form: FormData, name: string, maxItems = 12): string[] {
+  const text = readText(form, name, 3000) || "";
+  const list = text.split("\n").map((item) => item.trim()).filter(Boolean);
+  if (list.length > maxItems || list.some((item) => item.length > 200)) {
+    throw new Error("invalid_studio_input");
+  }
+  return list;
+}
+
+function readSelectedCommands(form: FormData): SavedPromptCommand[] {
+  const raw = readText(form, "selectedCommands", 16000);
+  if (!raw) return [];
+  let value: unknown;
+  try {
+    value = JSON.parse(raw);
+  } catch {
+    throw new Error("invalid_studio_input");
+  }
+  if (!Array.isArray(value) || value.length > 40) throw new Error("invalid_studio_input");
+  return value.map((item) => {
+    if (!item || typeof item !== "object") throw new Error("invalid_studio_input");
+    const command = item as Record<string, unknown>;
+    const id = typeof command.id === "string" ? command.id.trim() : "";
+    const title = typeof command.title === "string" ? command.title.trim() : "";
+    const instruction = typeof command.instruction === "string" ? command.instruction.trim() : "";
+    const categoryId = command.categoryId === null || command.categoryId === undefined
+      ? null
+      : typeof command.categoryId === "string" ? command.categoryId.trim() : undefined;
+    if (!id || id.length > 200 || !title || title.length > 120 || !instruction ||
+      instruction.length > 1200 || categoryId === undefined || (categoryId !== null && categoryId.length > 200)) {
+      throw new Error("invalid_studio_input");
+    }
+    return { id, title, instruction, categoryId };
+  });
+}
+
+function isValidSideSize(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 50 && value <= 150 && value % 5 === 0;
+}
+
+function validSizeBySide(value: unknown): value is SideSize {
+  if (!value || typeof value !== "object") return false;
+  const sizes = value as Record<string, unknown>;
+  return isValidSideSize(sizes.left) && isValidSideSize(sizes.right);
+}
+
+function creationConfiguration(
+  input: StudioInput,
+  compiledPrompt: string,
+  referenceUsed: boolean,
+  generationSide: GenerationSide = input.generationSide || "both",
+  sizeBySide: SideSize = input.sizeBySide || { left: 100, right: 100 },
+): SavedCreationConfiguration {
+  return {
+    title: input.title,
+    creationMode: input.creationMode,
+    artDescription: input.artDescription || input.mainTheme || "",
+    generationSide,
+    mandatoryText: Array.isArray(input.mandatoryText) ? [...input.mandatoryText] : [],
+    selectedCommands: Array.isArray(input.selectedCommands) ? input.selectedCommands.map((command) => ({ ...command })) : [],
+    sizeBySide: { ...sizeBySide },
+    referenceUsed,
+    imageModel: IMAGE_MODEL,
+    imageQuality: IMAGE_QUALITY,
+    imageSize: ART_SIZE,
+    compiledPrompt,
+  };
+}
+
+function detectImageMime(bytes: Uint8Array): string | null {
+  if (
+    bytes.length >= 8 &&
+    bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47 &&
+    bytes[4] === 0x0d && bytes[5] === 0x0a && bytes[6] === 0x1a && bytes[7] === 0x0a
+  ) return "image/png";
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
+  if (
+    bytes.length >= 12 &&
+    String.fromCharCode(...bytes.slice(0, 4)) === "RIFF" &&
+    String.fromCharCode(...bytes.slice(8, 12)) === "WEBP"
+  ) return "image/webp";
+  return null;
+}
+
+function imageDimensions(bytes: Uint8Array, mimeType: string): { width: number; height: number } | null {
+  if (mimeType === "image/png" && bytes.length >= 24) {
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    return { width: view.getUint32(16), height: view.getUint32(20) };
+  }
+
+  if (mimeType === "image/webp" && bytes.length >= 30) {
+    const readAscii = (start: number, end: number) => String.fromCharCode(...bytes.slice(start, end));
+    let offset = 12;
+    while (offset + 8 <= bytes.length) {
+      const chunk = readAscii(offset, offset + 4);
+      const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      const size = view.getUint32(offset + 4, true);
+      const data = offset + 8;
+      if (chunk === "VP8X" && data + 10 <= bytes.length) {
+        const width = 1 + bytes[data + 4] + (bytes[data + 5] << 8) + (bytes[data + 6] << 16);
+        const height = 1 + bytes[data + 7] + (bytes[data + 8] << 8) + (bytes[data + 9] << 16);
+        return { width, height };
+      }
+      if (chunk === "VP8L" && data + 5 <= bytes.length && bytes[data] === 0x2f) {
+        const b1 = bytes[data + 1];
+        const b2 = bytes[data + 2];
+        const b3 = bytes[data + 3];
+        const b4 = bytes[data + 4];
+        const width = 1 + (((b2 & 0x3f) << 8) | b1);
+        const height = 1 + (((b4 & 0x0f) << 10) | (b3 << 2) | ((b2 & 0xc0) >> 6));
+        return { width, height };
+      }
+      if (chunk === "VP8 " && data + 10 <= bytes.length &&
+        bytes[data + 3] === 0x9d && bytes[data + 4] === 0x01 && bytes[data + 5] === 0x2a) {
+        const width = ((bytes[data + 7] & 0x3f) << 8) | bytes[data + 6];
+        const height = ((bytes[data + 9] & 0x3f) << 8) | bytes[data + 8];
+        return { width, height };
+      }
+      offset = data + size + (size & 1);
+    }
+  }
+
+  if (mimeType === "image/jpeg" && bytes.length >= 4 && bytes[0] === 0xff && bytes[1] === 0xd8) {
+    const sof = new Set([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf]);
+    let offset = 2;
+    while (offset + 8 < bytes.length) {
+      if (bytes[offset] !== 0xff) { offset++; continue; }
+      while (bytes[offset] === 0xff) offset++;
+      const marker = bytes[offset++];
+      if (marker === 0xd9 || marker === 0xda) break;
+      if (offset + 2 > bytes.length) break;
+      const length = (bytes[offset] << 8) | bytes[offset + 1];
+      if (sof.has(marker) && offset + 7 < bytes.length) {
+        const height = (bytes[offset + 3] << 8) | bytes[offset + 4];
+        const width = (bytes[offset + 5] << 8) | bytes[offset + 6];
+        return { width, height };
+      }
+      if (length < 2) break;
+      offset += length;
+    }
+  }
+
+  return null;
+}
+
+async function readUploadedImage(
+  form: FormData,
+  name: string,
+  expectedWidth: number,
+  expectedHeight: number,
+): Promise<ReferenceImage> {
+  const value = form.get(name);
+  if (!(value instanceof File) || value.size <= 0 || value.size > MAX_REFERENCE_BYTES ||
+    !["image/png", "image/jpeg", "image/webp"].includes(value.type)) {
+    throw new Error("invalid_studio_input");
+  }
+  const bytes = new Uint8Array(await value.arrayBuffer());
+  const mimeType = detectImageMime(bytes);
+  if (!mimeType || mimeType !== value.type) throw new Error("invalid_studio_input");
+  const dimensions = imageDimensions(bytes, mimeType);
+  if (!dimensions || dimensions.width !== expectedWidth || dimensions.height !== expectedHeight) {
+    throw new Error("invalid_studio_input");
+  }
+  return { bytes, fileName: value.name || name + "." + safeExtension(mimeType), mimeType };
+}
+
+async function parseInput(form: FormData): Promise<{ input: StudioInput; reference: ReferenceImage | null; styleReference: ReferenceImage | null }> {
+  const creationMode = readText(form, "creationMode", 20, true);
+  // Accept the previous Pages form during its rolling deployment; the new UI sends only artDescription.
+  const legacyMainTheme = readText(form, "mainTheme", 500);
+  const artDescription = readText(form, "artDescription", 1200) || legacyMainTheme;
+  const generationSide = readText(form, "generationSide", 8) || "both";
+  if (!artDescription || (creationMode !== "reference" && creationMode !== "from_scratch") ||
+    (generationSide !== "left" && generationSide !== "right" && generationSide !== "both")) {
+    throw new Error("invalid_studio_input");
+  }
+
+  const fileEntry = form.get("reference");
+  let reference: ReferenceImage | null = null;
+  if (fileEntry !== null && fileEntry !== "") {
+    if (!(fileEntry instanceof File)) throw new Error("invalid_studio_input");
+    if (fileEntry.size <= 0 || fileEntry.size > MAX_REFERENCE_BYTES ||
+      !["image/png", "image/jpeg", "image/webp"].includes(fileEntry.type)) {
+      throw new Error("invalid_studio_input");
+    }
+    const bytes = new Uint8Array(await fileEntry.arrayBuffer());
+    if (detectImageMime(bytes) !== fileEntry.type) throw new Error("invalid_studio_input");
+    reference = { bytes, fileName: fileEntry.name || "customer-photo", mimeType: fileEntry.type };
+  }
+
+  const styleEntry = form.get("styleReference");
+  let styleReference: ReferenceImage | null = null;
+  if (styleEntry !== null && styleEntry !== "") {
+    if (!(styleEntry instanceof File) || styleEntry.size <= 0 || styleEntry.size > 100_000 ||
+      !["image/png", "image/jpeg", "image/webp"].includes(styleEntry.type)) {
+      throw new Error("invalid_studio_input");
+    }
+    const bytes = new Uint8Array(await styleEntry.arrayBuffer());
+    if (detectImageMime(bytes) !== styleEntry.type) throw new Error("invalid_studio_input");
+    styleReference = { bytes, fileName: styleEntry.name || "art-style-model", mimeType: styleEntry.type };
+  }
+
+  if ((creationMode === "reference") !== Boolean(reference)) throw new Error("invalid_studio_input");
+
+  const title = readText(form, "title", 100) || ("Caneca - " + artDescription.slice(0, 80));
+  const selectedCommands = readSelectedCommands(form);
+  const publicRequestText = readText(form, "publicRequest", 1600);
+  let publicRequest: StudioInput["publicRequest"] = null;
+  if (publicRequestText) {
+    try {
+      const value = JSON.parse(publicRequestText) as Record<string, unknown>;
+      const isNewFormat = value.theme !== undefined || value.mugName !== undefined || value.styleModelId !== undefined;
+      if (isNewFormat) {
+        const theme = typeof value.theme === "string" ? value.theme.trim() : "";
+        const mugName = typeof value.mugName === "string" ? value.mugName.trim() : "";
+        const name = typeof value.name === "string" ? value.name.trim() : mugName;
+        const phrase = typeof value.phrase === "string" ? value.phrase.trim() : "";
+        const modelId = typeof value.styleModelId === "string" ? value.styleModelId.trim() : "";
+        const modelCategory = typeof value.styleModelCategory === "string" ? value.styleModelCategory.trim() : "";
+        const modelCategoryId = typeof value.styleModelCategoryId === "string" ? value.styleModelCategoryId.trim() : "";
+        if ((value.name !== undefined && typeof value.name !== "string") ||
+          (value.phrase !== undefined && typeof value.phrase !== "string") ||
+          (value.mugName !== undefined && typeof value.mugName !== "string") ||
+          (value.styleModelCategory !== undefined && typeof value.styleModelCategory !== "string") ||
+          !/^[a-f0-9-]{36}$/i.test(modelCategoryId) ||
+          !/^[a-f0-9-]{36}$/i.test(modelId) || modelCategory.length > 80 ||
+          !["Pet", "Família", "Amigo"].includes(theme) || (!name && !phrase) ||
+          name.length > 80 || phrase.length > 120) {
+          throw new Error("invalid_studio_input");
+        }
+        publicRequest = {
+          theme,
+          mugName: name || undefined,
+          name: name || undefined,
+          phrase: phrase || undefined,
+          text: [name, phrase].filter(Boolean).join(" · "),
+          kind: name ? "name" : "phrase",
+          styleModelId: modelId,
+          styleModelCategory: modelCategory || undefined,
+          styleModelCategoryId: modelCategoryId || undefined,
+        };
+      } else {
+        const text = typeof value.text === "string" ? value.text.trim() : "";
+        const name = typeof value.name === "string" ? value.name.trim() : "";
+        const phrase = typeof value.phrase === "string" ? value.phrase.trim() : "";
+        if ((value.text !== undefined && typeof value.text !== "string") || text.length > 260 ||
+          (value.name !== undefined && typeof value.name !== "string") || name.length > 80 ||
+          (value.phrase !== undefined && typeof value.phrase !== "string") || phrase.length > 120 ||
+          (value.autoPhrase !== undefined && typeof value.autoPhrase !== "boolean") ||
+          (value.kind !== "name" && value.kind !== "phrase") || typeof value.referenceId !== "string" ||
+          typeof value.referenceTitle !== "string" || typeof value.referenceCategory !== "string") {
+          throw new Error("invalid_studio_input");
+        }
+        publicRequest = {
+          text,
+          kind: value.kind,
+          name: typeof value.name === "string" ? name : undefined,
+          phrase: typeof value.phrase === "string" ? phrase : undefined,
+          autoPhrase: value.autoPhrase === true,
+          referenceId: value.referenceId.slice(0, 80),
+          referenceTitle: value.referenceTitle.trim().slice(0, 120),
+          referenceCategory: value.referenceCategory.trim().slice(0, 80),
+        };
+      }
+    } catch {
+      throw new Error("invalid_studio_input");
+    }
+  }
+  if (styleReference && !publicRequest?.styleModelId) throw new Error("invalid_studio_input");
+
+  return {
+    input: {
+      title,
+      creationMode,
+      artDescription,
+      generationSide,
+      mandatoryText: readList(form, "mandatoryText"),
+      publicRequest,
+      selectedCommands,
+      sizeBySide: { left: 100, right: 100 },
+      occasion: readText(form, "occasion", 120),
+      recipient: readText(form, "recipient", 120),
+      mainTheme: legacyMainTheme || undefined,
+      desiredStyle: readText(form, "desiredStyle", 200),
+      colorPreferences: readList(form, "colorPreferences"),
+      mandatoryElements: readList(form, "mandatoryElements"),
+      forbiddenElements: readList(form, "forbiddenElements"),
+      compositionNotes: readText(form, "compositionNotes", 1000),
+    },
+    reference,
+    styleReference,
+  };
+}
+
+async function resolveOpenAiKey(adminClient: AdminClient): Promise<string> {
+  const { data, error } = await adminClient.rpc("get_conversation_worker_provider_secret_v1");
+  if (error) {
+    console.error("[caneca-studio] existing OpenAI provider secret lookup failed");
+    return "";
+  }
+  return typeof data === "string" ? data.trim() : "";
+}
+
+async function authorize(request: Request): Promise<{
+  sessionId: string;
+  adminClient: AdminClient;
+  url: string;
+} | Response> {
+  const sessionId = request.headers.get("x-studio-session")?.trim() || "";
+  if (!SESSION_ID_PATTERN.test(sessionId)) {
+    return json({ error: "studio_session_required" }, 400);
+  }
+
+  let clients: ReturnType<typeof serviceClients>;
+  try {
+    clients = serviceClients();
+  } catch {
+    return json({ error: "studio_job_lookup_failed" }, 503);
+  }
+
+  return {
+    sessionId,
+    adminClient: clients.adminClient,
+    url: clients.url,
+  };
+}
+
+function safeExtension(mimeType: string): string {
+  if (mimeType === "image/jpeg") return "jpg";
+  if (mimeType === "image/webp") return "webp";
+  return "png";
+}
+
+function makeArtPrompt(input: StudioInput): string {
+  const generationSide = input.pendingEdit?.side || input.generationSide || "both";
+  const description = input.artDescription?.trim() || input.mainTheme?.trim() || "Arte decorativa personalizada para uma caneca.";
+  const sideInstruction = input.pendingEdit && generationSide !== "both"
+    ? generationSide === "left"
+      ? "This is a revision of an existing wrap: change only the LEFT HALF (x=0 to 1199). Preserve the RIGHT HALF (x=1200 to 2399) exactly as it appears in the reference; do not blank, redraw, or shift it."
+      : "This is a revision of an existing wrap: change only the RIGHT HALF (x=1200 to 2399). Preserve the LEFT HALF (x=0 to 1199) exactly as it appears in the reference; do not blank, redraw, or shift it."
+    : generationSide === "left"
+    ? "The requested new art belongs only on the LEFT HALF (x=0 to 1199). Keep the RIGHT HALF (x=1200 to 2399) completely plain white with no artwork, lettering, shadows, or decoration."
+    : generationSide === "right"
+    ? "The requested new art belongs only on the RIGHT HALF (x=1200 to 2399). Keep the LEFT HALF (x=0 to 1199) completely plain white with no artwork, lettering, shadows, or decoration."
+    : "Create one coordinated wrap design across both halves. Treat the left half (x=0 to 1199) and right half (x=1200 to 2399) as separate print panels, and center each side's composition within its own half.";
+  const edgeInstruction = generationSide === "both"
+    ? "For a full wrap, finish the two outer edges deliberately: carry the matching background to x=0 and x=2399, and let decorative forms taper naturally or blend softly into that background. Keep each half's composition centered in its own panel. Avoid cut-off subjects, letters, leaves, abrupt color breaks, straight vertical borders, and rectangular frame edges."
+    : "For this single-side design, make the selected 1200 x 960 half look complete on its own. Carry its matching background cleanly to both vertical boundaries of that half and taper decorative forms naturally before those boundaries. Do not cut off subjects, letters, leaves, or other important elements. Keep the opposite half exactly as instructed, plain white.";
+  const lines = [
+    "Create only the flat 2D artwork for printing as a wrap on a ceramic mug. Never draw a mug, product mockup, hands, table, or room.",
+    "Final landscape canvas: " + ART_SIZE + " pixels; physical target approximately 24 x 9.5 cm.",
+    "The center split is exactly x=1200 px: left-side artwork is the first half of the file; right-side artwork is the second half. Do not mirror or swap the halves.",
+    "For each side being newly created or revised, center its complete composition in its own 1200 x 960 px half. Target artwork occupying about 80% of that half's area, roughly a centered 1080 x 864 px box (90% of each dimension), leaving about 5% margin on all sides. Keep key subjects and lettering inside that area; do not cross x=1200 or touch the outer canvas edge. Preserve any opposite half exactly when instructed.",
+    "Use a clean plain-white background. Keep the outer corners at both ends clear, preserve safe space around important content, and never let text or key motifs touch or cross a canvas edge.",
+    "Keep important text and artwork comfortably inside the top and bottom print-safe area. Preserve the full canvas and do not stretch, crop, or compress the design.",
+    sideInstruction,
+    edgeInstruction,
+    "Do not invent lettering, names, dates, or random text. Include only exact wording supplied below.",
+    "Art description: " + description,
+  ];
+  if (!input.pendingEdit && input.creationMode === "reference") {
+    lines.push(
+      "Use the supplied reference only as broad inspiration for its general subject, mood, and compatible visual language. Create a substantially original design with a new composition, arrangement, shapes, and illustrative details; never trace, copy, closely imitate, or recreate the reference.",
+      "Do not reproduce or retain any signature, artist name, watermark, logo, brand, copyright notice, website name, URL, social handle, QR code, or other source attribution visible in the reference. Omit those marks completely from the new artwork. Do not edit or present the reference itself as the result.",
+    );
+    lines.push(
+      "This request returns exactly one standalone print-art file: one complete 2400 x 960 design, never a contact sheet, three-panel sheet, collage, or alternate-options layout.",
+    );
+  }
+  if (!input.pendingEdit && generationSide === "both" && input.creationMode === "reference" && input.mandatoryText?.length) {
+    lines.push(
+      "Place the exact supplied name or phrase in the center of the LEFT HALF. Place the original reference-inspired illustration in the center of the RIGHT HALF. Keep the outer left and right corner areas clear, and keep a clean white background.",
+    );
+  }
+  if (input.occasion) lines.push("Occasion: " + input.occasion);
+  if (input.recipient) lines.push("Made for: " + input.recipient);
+  if (input.desiredStyle) lines.push("Visual style: " + input.desiredStyle);
+  if (input.colorPreferences?.length) lines.push("Color palette: " + input.colorPreferences.join(", "));
+  if (input.mandatoryText?.length) {
+    lines.push("Required exact text, preserving accents, spelling, and punctuation: " +
+      input.mandatoryText.map((item) => '"' + item + '"').join("; "));
+  }
+  if (input.mandatoryElements?.length) lines.push("Required visual elements: " + input.mandatoryElements.join("; "));
+  if (input.forbiddenElements?.length) lines.push("Elements to avoid: " + input.forbiddenElements.join("; "));
+  if (input.compositionNotes) lines.push("Composition notes: " + input.compositionNotes);
+  if (input.latestEditInstruction) lines.push("Latest requested refinement: " + input.latestEditInstruction);
+  if (input.pendingEdit) {
+    const target = input.pendingEdit.side || generationSide;
+    const targetLabel = target === "both" ? "the entire wrap" : "only the " + target + " half";
+    lines.push("Operator edit request: " + input.pendingEdit.instruction + ". Change " + targetLabel +
+      " only. Preserve the opposite half exactly as it appears in the reference artwork.");
+  }
+  lines.push("Create a polished, balanced proposal for human review before production. Do not add watermarks or unrelated lettering.");
+  return lines.join("\n");
+}
+
+function makePublicArtPrompt(input: StudioInput, variantIndex: number): string {
+  const request = input.publicRequest;
+  const name = request?.name || request?.mugName || "";
+  const phrase = request?.phrase || "";
+  const exactText = [name, phrase].filter(Boolean);
+  const style = PUBLIC_ART_STYLES[Math.max(0, Math.min(PUBLIC_VARIANT_COUNT - 1, variantIndex - 1))];
+  const modelCategory = request?.styleModelCategory || "";
+  if (!request?.theme || !exactText.length || !request.styleModelId) throw new Error("invalid_studio_input");
+  const lines = [
+    "You are an expert professional illustrator who creates original, print-ready mug artwork.",
+    "Image 1 is the customer's uploaded personal photo. Analyze its subject, recognizable features, pose, mood, and relevant context. Use this photo as the source of the person or pet being illustrated.",
+    "Draw a newly composed illustration based on the customer's photo. Do not paste the photo into the result, trace it, recreate its pixels, or copy its exact composition. The result must clearly look like an original drawing, not a photograph.",
+    "Image 2 is the artwork model selected by the customer. Use this image only as a visual reference for drawing technique, line character, texture, color treatment, and finish. Keep the subject from image 1. Do not copy the model image's person, animal, objects, identity, pose, or composition.",
+    modelCategory ? "Artwork model category: " + modelCategory + ". Treat this as context only, not text to include in the design." : "",
+    "Gift theme selected by the customer: " + request.theme + ". Let this theme guide the mood and only add supporting details that fit the customer's photo.",
+    "Distinct drawing strategy for this variation: " + style.direction,
+    "Create only a flat horizontal 2D print design, exactly " + ART_SIZE + " pixels. Do not draw a mug, mockup, hands, table, room, or product scene.",
+    "The canvas is split exactly in the middle at x=1200. The LEFT half (x=0–1199) is reserved for the customer's exact name and/or phrase. The RIGHT half (x=1200–2399) contains the original illustration based on the customer's photo.",
+    name
+      ? "Write this exact name, preserving spelling and accents: " + JSON.stringify(name) + ". Center it in the LEFT half and make it the primary text. Do not put it on the right half."
+      : "The customer supplied no name. Do not invent a name.",
+    phrase
+      ? "Write this exact phrase, preserving spelling, accents, and punctuation: " + JSON.stringify(phrase) + ". Place it below the name in the LEFT half when a name is supplied; otherwise center the phrase in the LEFT half. Do not put it on the right half."
+      : "The customer supplied no phrase. Do not invent a phrase.",
+    "Do not add any other words, dates, captions, initials, or decorative lettering. Center the complete text arrangement inside its own left 1200 x 960 panel. Center the full illustration inside its own right 1200 x 960 panel. Each composition should occupy about 80% of its panel area, remain separate, and never cross the center split.",
+    "Use a clean pure-white background. Keep about 5% clear margin around each panel, especially all four corners. No part of the name, phrase, or important subject may be cropped by the canvas or end abruptly at either outer edge; let minor decorative strokes taper naturally into white.",
+    "The three options must use visibly distinct drawing techniques and compositions. Do not make a contact sheet or combine multiple styles in one output.",
+    "Do not reproduce any signature, artist name, watermark, logo, brand, copyright notice, website name, URL, social handle, QR code, or source attribution visible in either supplied image. Omit those marks completely.",
+    "Keep the artwork clean, balanced, legible, original, and suitable for high-resolution sublimation printing on a white ceramic mug.",
+  ];
+  return lines.filter(Boolean).join("\n");
+}
+
+function makeMockupPrompt(side: Side): string {
+  const sideDescription = side === "left"
+    ? "Show one white ceramic mug with its handle clearly pointing to the LEFT side of the image. Print only the supplied LEFT-HALF artwork on the visible mug surface."
+    : "Show one white ceramic mug with its handle clearly pointing to the RIGHT side of the image. Print only the supplied RIGHT-HALF artwork on the visible mug surface.";
+  return [
+    "Create a clean commercial product photograph of exactly one white ceramic mug using the supplied side-only artwork as its printed design.",
+    "Treat the supplied image as the complete print region for this side, not as a rectangular sticker. Preserve its central composition, colors, exact text, symbols, orientation, and proportions; do not mirror, flip, rotate, swap, or redesign them.",
+    "At both vertical ends, continue the matching background cleanly to the edge and finish any decorative shapes with a natural taper or soft blend into that same background. Do not show a hard crop, a straight vertical border, an abrupt background change, or a cut-off subject or letter. Do not add a blank white strip unless white is already the artwork's background.",
+    sideDescription,
+    "Use soft natural studio lighting, a simple warm neutral background, and a realistic ceramic finish.",
+    "Do not add extra logos, text, props that cover the mug, or additional mugs.",
+  ].join(" ");
+}
+
+function makePairMockupPrompt(): string {
+  return [
+    "Create exactly one square 1024 x 1024 realistic product image containing two separate views of the same white ceramic mug, arranged vertically: one view in the TOP half and one view in the BOTTOM half. The combined result is one square image, not two separate files.",
+    "The first supplied print image is the LEFT HALF of the wrap. In the TOP view, show one mug with its handle clearly pointing LEFT and print only that first image on the visible side, in its original left-side position and orientation.",
+    "The second supplied print image is the RIGHT HALF of the wrap. In the BOTTOM view, show one mug with its handle clearly pointing RIGHT and print only that second image on the visible side, in its original right-side position and orientation.",
+    "Keep both printed designs faithful to their supplied artwork: do not mirror, flip, rotate, swap, rewrite text, replace symbols, or move the design to the wrong side. Show the full mug clearly in each half, with a small clean separation between the two views and no overlap.",
+    "Use a simple light neutral studio background and soft natural lighting. Add no labels, captions, logos, watermarks, extra mugs, hands, props, or decorative borders.",
+  ].join(" ");
+}
+
+function makePublicPairMockupPrompt(): string {
+  return [
+    "Create exactly one square 1024 x 1024 commercial product image with two separate views of the same white ceramic mug, arranged vertically: one view in the TOP half and one in the BOTTOM half.",
+    "The supplied image is a horizontal print file split at its exact center. It contains the mug name on its LEFT half and an original illustration on its RIGHT half. Use the artwork itself as the print source; do not add, rewrite, mirror, redraw, or invent text or symbols.",
+    "TOP mug view: display the LEFT half of the print, the side with the exact name, and orient the mug handle clearly toward the LEFT. Place the design on the visible side of the mug in its correct left-side position.",
+    "BOTTOM mug view: display the RIGHT half of the print, the illustration side, and orient the mug handle clearly toward the RIGHT. Place the design on the visible side in its correct right-side position.",
+    "The top and bottom mugs represent the actual two sides of one printed mug. Keep the left-side name on top and the right-side illustration on bottom. Never swap or mirror them.",
+    "Show exactly two complete mugs, one in each half of the square. Use a clean light neutral studio background, soft natural lighting, and realistic white ceramic.",
+    "No extra text, labels, logos, watermarks, hands, props, borders, or additional mugs.",
+  ].join(" ");
+}
+
+function manualReview(note: string): QualityReview {
+  return {
+    approved: false,
+    score: 0,
+    blocking_issues: [],
+    warnings: ["A revisão visual não ficou disponível nesta tentativa."],
+    exact_text_ok: null,
+    brief_ok: false,
+    edges_ok: false,
+    recommendation: "manual_review",
+    concise_note: note,
+  };
+}
+
+function stringList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim().slice(0, 300)).filter(Boolean).slice(0, 8);
+}
+
+function parseQualityReview(text: string): QualityReview {
+  try {
+    const value = JSON.parse(text) as Record<string, unknown>;
+    const blocking = stringList(value.blocking_issues);
+    const warnings = stringList(value.warnings);
+    const score = typeof value.score === "number" && Number.isFinite(value.score)
+      ? Math.max(0, Math.min(100, Math.round(value.score))) : 0;
+    const recommendation = value.recommendation === "approve" || value.recommendation === "regenerate" ||
+      value.recommendation === "manual_review" ? value.recommendation : "manual_review";
+    const exactText = typeof value.exact_text_ok === "boolean" ? value.exact_text_ok : null;
+    const briefOk = value.brief_ok === true;
+    const edgesOk = value.edges_ok === true;
+    const approved = value.approved === true && blocking.length === 0 &&
+      exactText !== false && briefOk && edgesOk;
+    return {
+      approved,
+      score,
+      blocking_issues: blocking,
+      warnings,
+      exact_text_ok: exactText,
+      brief_ok: briefOk,
+      edges_ok: edgesOk,
+      recommendation: approved ? "approve" : recommendation,
+      concise_note: typeof value.concise_note === "string"
+        ? value.concise_note.trim().slice(0, 500)
+        : "Confira a arte manualmente antes de produzir.",
+    };
+  } catch {
+    return manualReview("A revisão visual não retornou um resultado legível. Confira a arte manualmente.");
+  }
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+  }
+  return btoa(binary);
+}
+
+function base64ToBytes(value: string): Uint8Array {
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
+  return bytes;
+}
+
+async function openAIImages(
+  apiKey: string,
+  prompt: string,
+  size: string,
+  image?: ReferenceImage | ReferenceImage[],
+  count = 1,
+): Promise<Uint8Array[]> {
+  const references = image ? Array.isArray(image) ? image : [image] : [];
+  let response: Response;
+  if (references.length) {
+    const form = new FormData();
+    form.set("model", IMAGE_MODEL);
+    form.set("prompt", prompt);
+    form.set("size", size);
+    form.set("quality", IMAGE_QUALITY);
+    form.set("output_format", "webp");
+    form.set("background", "opaque");
+    form.set("n", String(count));
+    for (const reference of references) {
+      const imageCopy = new Uint8Array(reference.bytes.byteLength);
+      imageCopy.set(reference.bytes);
+      form.append("image[]", new File([imageCopy.buffer as ArrayBuffer], reference.fileName, { type: reference.mimeType }));
+    }
+    response = await fetch("https://api.openai.com/v1/images/edits", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + apiKey },
+      body: form,
+    });
+  } else {
+    response = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: IMAGE_MODEL,
+        prompt,
+        size,
+        quality: IMAGE_QUALITY,
+        output_format: "webp",
+        background: "opaque",
+        n: count,
+      }),
+    });
+  }
+
+  const requestId = response.headers.get("x-request-id");
+  const payload = await response.json().catch(() => ({})) as {
+    data?: Array<{ b64_json?: string | null }>;
+  };
+  if (!response.ok) {
+    console.error("[caneca-studio] image request failed", { status: response.status, requestId });
+    throw new Error("studio_image_generation_failed");
+  }
+  const results = (payload.data || []).map((item) => item.b64_json).filter((item): item is string => Boolean(item));
+  if (results.length !== count) throw new Error("studio_image_generation_failed");
+  return results.map(base64ToBytes);
+}
+
+async function openAIImage(
+  apiKey: string,
+  prompt: string,
+  size: string,
+  image?: ReferenceImage | ReferenceImage[],
+): Promise<Uint8Array> {
+  const results = await openAIImages(apiKey, prompt, size, image, 1);
+  return results[0];
+}
+
+async function reviewArtwork(apiKey: string, bytes: Uint8Array, input: StudioInput): Promise<QualityReview> {
+  const reviewerPrompt = [
+    "Você é o assistente de revisão visual da CanecaFácil. A equipe solicitou esta revisão.",
+    "A arte já está disponível para conferência humana. Seja rigoroso com erros objetivos, mas não reprove por preferência estética subjetiva.",
+    "Compare a imagem com a descrição e com o texto exato quando houver. Verifique o formato horizontal para impressão, a correspondência do conteúdo com o lado solicitado, a divisão no centro e erros visuais evidentes.",
+    "Não invente detalhes sobre a imagem. Se não conseguir verificar algo, marque como incerto e recomende revisão manual.",
+    "Aprovação automática só quando brief_ok e edges_ok forem true, exact_text_ok não for false, e não houver blocking_issues.",
+    "Retorne apenas JSON válido com: approved (boolean), score (0-100), blocking_issues (array), warnings (array), exact_text_ok (boolean|null), brief_ok (boolean), edges_ok (boolean), recommendation (approve|regenerate|manual_review), concise_note (string).",
+  ].join(" ");
+  const expectedBrief = {
+    title: input.title,
+    description: input.artDescription || input.mainTheme || null,
+    requested_side: input.generationSide || "both",
+    exact_text: input.mandatoryText || [],
+    latest_edit_instruction: input.latestEditInstruction || null,
+    canvas: ART_SIZE,
+    reference_image_supplied: input.creationMode === "reference",
+  };
+
+  try {
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: REVIEW_MODEL,
+        reasoning: { effort: "low" },
+        store: false,
+        max_output_tokens: 1200,
+        text: { format: { type: "json_object" } },
+        input: [
+          { role: "developer", content: reviewerPrompt },
+          {
+            role: "user",
+            content: [
+              {
+                type: "input_text",
+                text: "BRIEFING ESPERADO (JSON):\n" + JSON.stringify(expectedBrief) +
+                  "\n\nA imagem anexada é a arte final a revisar.",
+              },
+              {
+                type: "input_image",
+                image_url: "data:image/webp;base64," + bytesToBase64(bytes),
+                detail: "high",
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    const payload = await response.json().catch(() => ({})) as {
+      output_text?: string;
+      output?: Array<{ content?: Array<{ type?: string; text?: string }> }>;
+    };
+    if (!response.ok) {
+      console.error("[caneca-studio] quality review failed", {
+        status: response.status,
+        requestId: response.headers.get("x-request-id"),
+      });
+      return manualReview("Não foi possível concluir a revisão visual. Confira a arte manualmente.");
+    }
+    const outputText = payload.output_text || payload.output?.flatMap((item) => item.content || [])
+      .find((item) => item.type === "output_text")?.text || "";
+    return parseQualityReview(outputText);
+  } catch {
+    return manualReview("Não foi possível concluir a revisão visual. Confira a arte manualmente.");
+  }
+}
+
+function normalizeSignedUrl(projectUrl: string, signedUrl: string): string {
+  return signedUrl.startsWith("http") ? signedUrl : projectUrl + "/storage/v1" + signedUrl;
+}
+
+function latestArt(job: JobRow): ArtVersion | null {
+  const versions = Array.isArray(job.art_versions) ? job.art_versions : [];
+  return versions.length ? versions[versions.length - 1] : null;
+}
+
+async function downloadPrivate(adminClient: AdminClient, path: string): Promise<Uint8Array> {
+  const { data, error } = await adminClient.storage.from(BUCKET).download(path);
+  if (error || !data) throw new Error("studio_asset_lookup_failed");
+  return new Uint8Array(await data.arrayBuffer());
+}
+
+async function uploadPrivate(
+  adminClient: AdminClient,
+  path: string,
+  bytes: Uint8Array,
+  mimeType: string,
+): Promise<void> {
+  const { error } = await adminClient.storage.from(BUCKET).upload(path, bytes, {
+    contentType: mimeType,
+    upsert: false,
+  });
+  if (error) throw new Error("studio_asset_upload_failed");
+}
+
+type StyleModelTheme = "Pet" | "Família" | "Amigo";
+type StyleModelCategory = { id: string; theme: StyleModelTheme; name: string; createdAt: string };
+type StyleModelAsset = { id: string; categoryId: string; path: string; createdAt: string };
+type StyleModelCatalog = { version: 1; categories: StyleModelCategory[]; models: StyleModelAsset[] };
+
+function validStyleModelId(value: unknown): value is string {
+  return typeof value === "string" && /^[a-f0-9-]{36}$/i.test(value);
+}
+
+function validStyleModelTheme(value: unknown): value is StyleModelTheme {
+  return value === "Pet" || value === "Família" || value === "Amigo";
+}
+
+function isNotFoundStorageError(message: string): boolean {
+  return /not found|does not exist|404/i.test(message);
+}
+
+async function readStyleModelCatalog(adminClient: AdminClient): Promise<StyleModelCatalog> {
+  const { data, error } = await adminClient.storage.from(BUCKET).download(MODEL_CATALOG_PATH);
+  if (error || !data) {
+    if (error && isNotFoundStorageError(error.message)) return { version: 1, categories: [], models: [] };
+    throw new Error("style_model_catalog_lookup_failed");
+  }
+  let value: unknown;
+  try { value = JSON.parse(await data.text()); } catch { throw new Error("style_model_catalog_invalid"); }
+  if (!value || typeof value !== "object") throw new Error("style_model_catalog_invalid");
+  const record = value as Record<string, unknown>;
+  if (!Array.isArray(record.categories) || !Array.isArray(record.models)) {
+    throw new Error("style_model_catalog_invalid");
+  }
+  const categories = record.categories.filter((item): item is StyleModelCategory => {
+    if (!item || typeof item !== "object") return false;
+    const category = item as Record<string, unknown>;
+    return validStyleModelId(category.id) && validStyleModelTheme(category.theme) &&
+      typeof category.name === "string" && category.name.trim().length > 0 &&
+      typeof category.createdAt === "string";
+  });
+  const categoryIds = new Set(categories.map((category) => category.id));
+  const models = record.models.filter((item): item is StyleModelAsset => {
+    if (!item || typeof item !== "object") return false;
+    const model = item as Record<string, unknown>;
+    return validStyleModelId(model.id) && typeof model.categoryId === "string" &&
+      categoryIds.has(model.categoryId) && typeof model.path === "string" &&
+      model.path === "style-models/" + model.id + ".webp" && typeof model.createdAt === "string";
+  });
+  return { version: 1, categories, models };
+}
+
+async function writeStyleModelCatalog(adminClient: AdminClient, catalog: StyleModelCatalog): Promise<void> {
+  const blob = new Blob([JSON.stringify(catalog)], { type: "application/json" });
+  const { error } = await adminClient.storage.from(BUCKET).upload(MODEL_CATALOG_PATH, blob, {
+    contentType: "application/json",
+    upsert: true,
+  });
+  if (error) throw new Error("style_model_catalog_save_failed");
+}
+
+async function styleModelListing(
+  adminClient: AdminClient,
+  projectUrl: string,
+  options: { theme?: StyleModelTheme; categoryId?: string; includeEmptyCategories: boolean },
+): Promise<{ categories: Array<StyleModelCategory & { imageCount: number }>; models: Array<{ id: string; categoryId: string; url: string; createdAt: string }> }> {
+  const catalog = await readStyleModelCatalog(adminClient);
+  const themeCategories = catalog.categories.filter((category) => !options.theme || category.theme === options.theme);
+  const categoriesWithCounts = themeCategories.map((category) => ({
+    ...category,
+    imageCount: catalog.models.filter((model) => model.categoryId === category.id).length,
+  }));
+  const visibleCategories = categoriesWithCounts.filter((category) =>
+    options.includeEmptyCategories || category.imageCount > 0);
+  const categoryIds = new Set(visibleCategories.map((category) => category.id));
+  const selectedCategoryId = options.categoryId;
+  if (selectedCategoryId && !categoryIds.has(selectedCategoryId)) throw new Error("style_model_category_not_found");
+  const assets = selectedCategoryId
+    ? catalog.models.filter((model) => model.categoryId === selectedCategoryId)
+    : [];
+  const models = await Promise.all(assets.map(async (model) => {
+    const { data, error } = await adminClient.storage.from(BUCKET)
+      .createSignedUrl(model.path, STYLE_MODEL_URL_TTL);
+    if (error || !data?.signedUrl) throw new Error("style_model_image_lookup_failed");
+    return {
+      id: model.id,
+      categoryId: model.categoryId,
+      url: normalizeSignedUrl(projectUrl, data.signedUrl),
+      createdAt: model.createdAt,
+    };
+  }));
+  return { categories: visibleCategories, models };
+}
+
+async function writeJob(
+  adminClient: AdminClient,
+  jobId: string,
+  sessionId: string,
+  patch: Record<string, unknown>,
+  expectedUpdatedAt?: string,
+): Promise<JobRow> {
+  let query = adminClient.from(TABLE)
+    .update({ ...patch, processing: false, processing_started_at: null, updated_at: new Date().toISOString() })
+    .eq("id", jobId)
+    .eq("guest_session_id", sessionId)
+    .is("created_by", null);
+  if (expectedUpdatedAt) query = query.eq("updated_at", expectedUpdatedAt);
+  const { data, error } = await query.select("*").maybeSingle();
+  if (error || !data) throw new Error("studio_job_lookup_failed");
+  return data as JobRow;
+}
+
+async function jobSnapshot(
+  adminClient: AdminClient,
+  url: string,
+  job: JobRow | null,
+  includeReference = false,
+): Promise<Record<string, unknown> | null> {
+  if (!job) return null;
+  const artVersion = latestArt(job);
+  let referenceUrl: string | null = null;
+  if (includeReference && job.reference_path) {
+    const { data, error } = await adminClient.storage.from(BUCKET)
+      .createSignedUrl(job.reference_path, SIGNED_URL_TTL);
+    if (!error && data?.signedUrl) referenceUrl = normalizeSignedUrl(url, data.signedUrl);
+  }
+  const artVersions = await Promise.all((Array.isArray(job.art_versions) ? job.art_versions : []).map(async (version) => {
+    const { data, error } = await adminClient.storage.from(BUCKET)
+      .createSignedUrl(version.path, SIGNED_URL_TTL);
+    return {
+      version: version.version,
+      variantIndex: version.variantIndex,
+      styleStrategy: version.styleStrategy || null,
+      source: version.source || "initial",
+      parentVersion: version.parentVersion ?? null,
+      instruction: version.instruction ?? null,
+      createdAt: version.createdAt ?? null,
+      archivedAt: version.archivedAt ?? null,
+      deletedAt: version.deletedAt ?? null,
+      generationSide: version.generationSide || job.input?.generationSide || "both",
+      updatedSides: version.updatedSides || [],
+      configuration: version.configuration || {
+        ...creationConfiguration(
+          job.input,
+          makeArtPrompt(job.input),
+          job.input?.creationMode === "reference",
+          version.generationSide || job.input?.generationSide || "both",
+          job.input?.sizeBySide || { left: 100, right: 100 },
+        ),
+        imageModel: "Não registrado nesta versão antiga",
+        imageQuality: "Não registrada",
+      },
+      url: !error && data?.signedUrl ? normalizeSignedUrl(url, data.signedUrl) : null,
+    };
+  }));
+  const signedLatest = artVersion ? artVersions.find((version) => version.version === artVersion.version) : null;
+  const art = signedLatest ? { version: signedLatest.version, url: signedLatest.url } : null;
+  const mockups = await Promise.all((Array.isArray(job.mockups) ? job.mockups : []).map(async (asset) => {
+    const { data, error } = await adminClient.storage.from(BUCKET)
+      .createSignedUrl(asset.path, SIGNED_URL_TTL);
+    const side = asset.side === "left" || asset.side === "front" ? "left" : "right";
+    const outputSide = asset.side === "pair" ? "pair" : side;
+    return {
+      version: asset.version,
+      side: outputSide,
+      createdAt: asset.createdAt ?? null,
+      deletedAt: asset.deletedAt ?? null,
+      url: !error && data?.signedUrl ? normalizeSignedUrl(url, data.signedUrl) : null,
+    };
+  }));
+  return {
+    projectId: job.id,
+    title: job.title,
+    status: job.status,
+    generationSide: job.input?.generationSide || "both",
+    customerContact: job.input?.customerContact || null,
+    customerSavedVersion: job.input?.customerSavedVersion || null,
+    customerSavedAt: job.input?.customerSavedAt || null,
+    orderStatus: job.input?.orderStatus || null,
+    adminNotes: job.input?.adminNotes || null,
+    publicRequest: job.input?.publicRequest || null,
+    mandatoryText: Array.isArray(job.input?.mandatoryText) ? job.input.mandatoryText : [],
+    referenceUrl,
+    processing: job.processing,
+    art,
+    artVersions,
+    validation: job.validation,
+    mockups,
+    printing: job.input?.printing || emptyPrintState(),
+    printHistory: Array.isArray(job.input?.printHistory) ? job.input.printHistory : [],
+    createdAt: job.created_at,
+  };
+}
+
+async function registerPublicCustomer(
+  adminClient: AdminClient,
+  name: string,
+  email: string,
+  whatsappDigits = "",
+): Promise<string | null> {
+  const normalizedEmail = email.trim().toLowerCase();
+  const digits = whatsappDigits.replace(/\D/g, "");
+  const whatsappE164 = digits ? (digits.length <= 11 ? "+55" + digits : "+" + digits) : null;
+  try {
+    let customer: { id: string; name: string | null; primary_whatsapp_e164: string | null } | null = null;
+    const linkedEmail = await adminClient.from("customer_emails")
+      .select("customer_id")
+      .eq("email_normalized", normalizedEmail)
+      .limit(1)
+      .maybeSingle();
+    if (linkedEmail.error) throw linkedEmail.error;
+    if (linkedEmail.data?.customer_id) {
+      const existing = await adminClient.from("customers")
+        .select("id,name,primary_whatsapp_e164")
+        .eq("id", linkedEmail.data.customer_id)
+        .maybeSingle();
+      if (existing.error) throw existing.error;
+      customer = existing.data;
+    }
+
+    if (!customer && whatsappE164) {
+      const existing = await adminClient.from("customers")
+        .select("id,name,primary_whatsapp_e164")
+        .eq("primary_whatsapp_e164", whatsappE164)
+        .maybeSingle();
+      if (existing.error) throw existing.error;
+      customer = existing.data;
+    }
+
+    if (!customer) {
+      const inserted = await adminClient.from("customers")
+        .insert({ name, primary_whatsapp_e164: whatsappE164 })
+        .select("id,name,primary_whatsapp_e164")
+        .single();
+      if (inserted.error || !inserted.data) {
+        if (whatsappE164) {
+          const retry = await adminClient.from("customers")
+            .select("id,name,primary_whatsapp_e164")
+            .eq("primary_whatsapp_e164", whatsappE164)
+            .maybeSingle();
+          if (!retry.error && retry.data) customer = retry.data;
+        }
+        if (!customer) throw inserted.error || new Error("customer_insert_failed");
+      } else {
+        customer = inserted.data;
+      }
+    }
+
+    if (!linkedEmail.data) {
+      const insertedEmail = await adminClient.from("customer_emails").insert({
+        customer_id: customer.id,
+        email: email.trim(),
+        email_normalized: normalizedEmail,
+        verification_status: "observed",
+        is_primary: false,
+        source: "observed",
+        evidence: { origin: "canecafacil_public" },
+      });
+      if (insertedEmail.error) {
+        const retry = await adminClient.from("customer_emails")
+          .select("customer_id")
+          .eq("email_normalized", normalizedEmail)
+          .limit(1)
+          .maybeSingle();
+        if (retry.error || !retry.data?.customer_id) throw insertedEmail.error;
+        const owner = await adminClient.from("customers")
+          .select("id,name,primary_whatsapp_e164")
+          .eq("id", retry.data.customer_id)
+          .maybeSingle();
+        if (owner.error || !owner.data) throw insertedEmail.error;
+        customer = owner.data;
+      }
+    }
+
+    if (whatsappE164 && customer && !customer.primary_whatsapp_e164) {
+      await adminClient.from("customers").update({ primary_whatsapp_e164: whatsappE164 })
+        .eq("id", customer.id)
+        .is("primary_whatsapp_e164", null);
+    }
+    return customer.id;
+  } catch {
+    console.error("[caneca-studio] customer contact could not be linked to the existing registry");
+    return null;
+  }
+}
+
+async function getJob(
+  adminClient: AdminClient,
+  jobId: string,
+  sessionId: string,
+): Promise<JobRow | null> {
+  const { data, error } = await adminClient.from(TABLE).select("*")
+    .eq("id", jobId)
+    .eq("guest_session_id", sessionId)
+    .is("created_by", null)
+    .maybeSingle();
+  if (error) throw new Error("studio_job_lookup_failed");
+  return data as JobRow | null;
+}
+
+async function getAdminJob(adminClient: AdminClient, jobId: string): Promise<JobRow | null> {
+  const { data, error } = await adminClient.from(TABLE).select("*")
+    .eq("id", jobId)
+    .is("created_by", null)
+    .maybeSingle();
+  if (error) throw new Error("studio_job_lookup_failed");
+  return data as JobRow | null;
+}
+
+async function writeAdminJob(
+  adminClient: AdminClient,
+  jobId: string,
+  patch: Record<string, unknown>,
+  expectedUpdatedAt?: string,
+): Promise<JobRow> {
+  let query = adminClient.from(TABLE)
+    .update({ ...patch, processing: false, processing_started_at: null, updated_at: new Date().toISOString() })
+    .eq("id", jobId)
+    .is("created_by", null);
+  if (expectedUpdatedAt) query = query.eq("updated_at", expectedUpdatedAt);
+  const { data, error } = await query.select("*").maybeSingle();
+  if (error || !data) throw new Error("studio_job_lookup_failed");
+  return data as JobRow;
+}
+
+async function cleanupExpiredPublicAssets(
+  adminClient: AdminClient,
+  offset = 0,
+): Promise<{ deletedFiles: number; processedJobs: number; hasMore: boolean; offset: number; retentionDays: number }> {
+  const pageSize = 50;
+  const safeOffset = Math.max(0, Math.min(1000000, Math.floor(offset / pageSize) * pageSize));
+  const cutoff = Date.now() - ARTWORK_RETENTION_MS;
+  const { data, error } = await adminClient.from(TABLE)
+    .select("id,created_at,updated_at,input,reference_path,art_versions,mockups")
+    .is("created_by", null)
+    .lt("created_at", new Date(cutoff).toISOString())
+    .order("created_at", { ascending: true })
+    .range(safeOffset, safeOffset + pageSize - 1);
+  if (error) throw new Error("studio_asset_retention_lookup_failed");
+
+  let deletedFiles = 0;
+  let processedJobs = 0;
+  for (const row of (data || []) as JobRow[]) {
+    if (!row.input?.publicRequest) continue;
+    const versions = Array.isArray(row.art_versions) ? row.art_versions : [];
+    const mockups = Array.isArray(row.mockups) ? row.mockups : [];
+    const expiredVersions = new Set(versions.filter((item) =>
+      !item.deletedAt && Date.parse(item.createdAt || row.created_at) < cutoff
+    ).map((item) => item.version));
+    const expiredMockups = new Set(mockups.filter((item) =>
+      !item.deletedAt && Date.parse(item.createdAt || row.created_at) < cutoff
+    ).map((item) => item.path));
+    const referenceExpired = Boolean(row.reference_path && !row.input.referenceDeletedAt &&
+      Date.parse(row.created_at) < cutoff);
+    const styleReferencePath = row.input.styleReferencePath;
+    const styleReferenceExpired = Boolean(styleReferencePath && !row.input.styleReferenceDeletedAt &&
+      Date.parse(row.created_at) < cutoff);
+    const mockupReferences = row.input.mockupReferencePaths;
+    const mockupReferencesExpired = Boolean(mockupReferences && !mockupReferences.deletedAt &&
+      Date.parse(mockupReferences.createdAt || row.created_at) < cutoff);
+    const paths = [...new Set([
+      ...versions.filter((item) => expiredVersions.has(item.version)).map((item) => item.path),
+      ...mockups.filter((item) => expiredMockups.has(item.path)).map((item) => item.path),
+      ...(referenceExpired && row.reference_path ? [row.reference_path] : []),
+      ...(styleReferenceExpired && styleReferencePath ? [styleReferencePath] : []),
+      ...(mockupReferencesExpired && mockupReferences
+        ? [mockupReferences.leftPath, mockupReferences.rightPath]
+        : []),
+    ].filter((path): path is string => Boolean(path)))];
+    if (!paths.length) continue;
+
+    const { error: removeError } = await adminClient.storage.from(BUCKET).remove(paths);
+    if (removeError) {
+      console.error("[caneca-studio] expired artwork removal failed", { jobId: row.id });
+      continue;
+    }
+
+    const deletedAt = new Date().toISOString();
+    const nextVersions = versions.map((item) =>
+      expiredVersions.has(item.version) ? { ...item, deletedAt } : item
+    );
+    const nextMockups = mockups.map((item) =>
+      expiredMockups.has(item.path) ? { ...item, deletedAt } : item
+    );
+    const input: StudioInput = {
+      ...row.input,
+      ...(referenceExpired ? { referenceDeletedAt: deletedAt } : {}),
+      ...(styleReferenceExpired ? { styleReferencePath: null, styleReferenceDeletedAt: deletedAt } : {}),
+      ...(mockupReferencesExpired && mockupReferences
+        ? { mockupReferencePaths: { ...mockupReferences, deletedAt } }
+        : {}),
+      assetsRetentionLastCheckedAt: deletedAt,
+    };
+    const allArtworkExpired = nextVersions.every((item) =>
+      item.deletedAt || Date.parse(item.createdAt || row.created_at) < cutoff
+    );
+    const allMockupsExpired = nextMockups.every((item) =>
+      item.deletedAt || Date.parse(item.createdAt || row.created_at) < cutoff
+    );
+    const sourceExpired = (!row.reference_path || referenceExpired || input.referenceDeletedAt) &&
+      (!styleReferencePath || styleReferenceExpired || input.styleReferenceDeletedAt);
+    const mockupSourcesExpired = !input.mockupReferencePaths || input.mockupReferencePaths.deletedAt ||
+      Date.parse(input.mockupReferencePaths.createdAt || row.created_at) < cutoff;
+    if (allArtworkExpired && allMockupsExpired && sourceExpired && mockupSourcesExpired) {
+      input.assetsRetentionCompletedAt = deletedAt;
+    }
+    const { error: updateError } = await adminClient.from(TABLE)
+      .update({
+        art_versions: nextVersions,
+        mockups: nextMockups,
+        input,
+        ...(referenceExpired ? { reference_path: null } : {}),
+        updated_at: deletedAt,
+      })
+      .eq("id", row.id)
+      .eq("updated_at", row.updated_at);
+    if (updateError) {
+      console.error("[caneca-studio] expired artwork metadata update failed", { jobId: row.id });
+      continue;
+    }
+    deletedFiles += paths.length;
+    processedJobs += 1;
+  }
+
+  return {
+    deletedFiles,
+    processedJobs,
+    hasMore: (data || []).length === pageSize,
+    offset: safeOffset,
+    retentionDays: ARTWORK_RETENTION_DAYS,
+  };
+}
+
+async function startJob(
+  adminClient: AdminClient,
+  url: string,
+  sessionId: string,
+  form: FormData,
+): Promise<Response> {
+  const parsed = await parseInput(form);
+  const { input, reference } = parsed;
+  let styleReference = parsed.styleReference;
+  const publicRequest = input.publicRequest;
+  if (publicRequest?.styleModelId) {
+    try {
+      const catalog = await readStyleModelCatalog(adminClient);
+      const model = catalog.models.find((item) => item.id === publicRequest.styleModelId);
+      const category = model ? catalog.categories.find((item) => item.id === model.categoryId) : undefined;
+      if (!model || !category || category.theme !== publicRequest.theme ||
+        category.id !== publicRequest.styleModelCategoryId) {
+        return json({ error: "style_model_not_found" }, 404);
+      }
+      const modelBytes = await downloadPrivate(adminClient, model.path);
+      if (detectImageMime(modelBytes) !== "image/webp") throw new Error("style_model_image_invalid");
+      publicRequest.styleModelCategory = category.name;
+      styleReference = {
+        bytes: modelBytes,
+        fileName: "selected-art-model.webp",
+        mimeType: "image/webp",
+      };
+    } catch {
+      return json({ error: "style_model_catalog_lookup_failed" }, 503);
+    }
+  }
+  if (publicRequest?.theme && !styleReference) {
+    return json({ error: "style_model_not_found" }, 404);
+  }
+  if (input.publicRequest) {
+    let customerName = "";
+    let customerEmail = "";
+    try {
+      customerName = readText(form, "customerName", 120, true) || "";
+      customerEmail = readText(form, "customerEmail", 254, true) || "";
+    } catch {
+      return json({ error: "invalid_studio_input" }, 400);
+    }
+    if (!customerName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+      return json({ error: "invalid_studio_input" }, 400);
+    }
+    const customerId = await registerPublicCustomer(adminClient, customerName, customerEmail);
+    input.customerContact = { name: customerName, email: customerEmail, whatsapp: "", customerId };
+    if (input.publicRequest.theme) {
+      input.publicGeneration = { phase: "art", variantIndex: 1 };
+      input.mandatoryText = [input.publicRequest.name || input.publicRequest.mugName, input.publicRequest.phrase]
+        .filter((text): text is string => Boolean(text?.trim()));
+    }
+  }
+  const { data, error } = await adminClient.from(TABLE).insert({
+    created_by: null,
+    guest_session_id: sessionId,
+    title: input.title,
+    creation_mode: input.creationMode,
+    input,
+    status: "art_pending",
+    reference_path: null,
+  }).select("*").single();
+  if (error || !data) {
+    console.error("[caneca-studio] job insert failed");
+    return json({ error: "studio_job_start_failed" }, 500);
+  }
+  let job = data as JobRow;
+  const uploadedPaths: string[] = [];
+  let referencePath: string | null = null;
+
+  if (reference) {
+    const path = job.id + "/reference." + safeExtension(reference.mimeType);
+    const { error: uploadError } = await adminClient.storage.from(BUCKET).upload(path, reference.bytes, {
+      contentType: reference.mimeType,
+      upsert: false,
+    });
+    if (uploadError) {
+      await adminClient.from(TABLE).update({
+        status: "failed",
+        error_code: "studio_reference_upload_failed",
+        updated_at: new Date().toISOString(),
+      }).eq("id", job.id);
+      return json({ error: "studio_job_start_failed" }, 500);
+    }
+    referencePath = path;
+    uploadedPaths.push(path);
+  }
+
+  if (styleReference) {
+    const path = job.id + "/style-reference." + safeExtension(styleReference.mimeType);
+    const { error: uploadError } = await adminClient.storage.from(BUCKET).upload(path, styleReference.bytes, {
+      contentType: styleReference.mimeType,
+      upsert: false,
+    });
+    if (uploadError) {
+      if (uploadedPaths.length) await adminClient.storage.from(BUCKET).remove(uploadedPaths);
+      await adminClient.from(TABLE).update({
+        status: "failed",
+        error_code: "studio_style_reference_upload_failed",
+        updated_at: new Date().toISOString(),
+      }).eq("id", job.id);
+      return json({ error: "studio_job_start_failed" }, 500);
+    }
+    input.styleReferencePath = path;
+    uploadedPaths.push(path);
+  }
+
+  if (uploadedPaths.length) {
+    const { data: updated, error: updateError } = await adminClient.from(TABLE)
+      .update({
+        ...(referencePath ? { reference_path: referencePath } : {}),
+        input,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", job.id)
+      .select("*")
+      .single();
+    if (updateError || !updated) {
+      await adminClient.storage.from(BUCKET).remove(uploadedPaths);
+      return json({ error: "studio_job_start_failed" }, 500);
+    }
+    job = updated as JobRow;
+  }
+
+  const snapshot = await jobSnapshot(adminClient, url, job);
+  return json(snapshot, 202);
+}
+
+async function advanceJob(
+  adminClient: AdminClient,
+  url: string,
+  sessionId: string,
+  jobId: string,
+): Promise<Response> {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(jobId)) {
+    return json({ error: "studio_job_not_found" }, 404);
+  }
+  const staleBefore = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+  const { data: claimed, error: claimError } = await adminClient.from(TABLE)
+    .update({ processing: true, processing_started_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq("id", jobId)
+    .eq("guest_session_id", sessionId)
+    .is("created_by", null)
+    .or("processing.eq.false,processing_started_at.lt." + staleBefore)
+    .not("status", "in", "(\"needs_review\",\"failed\")")
+    .select("*")
+    .maybeSingle();
+
+  if (claimError) return json({ error: "studio_job_lookup_failed" }, 500);
+  if (!claimed) {
+    const current = await getJob(adminClient, jobId, sessionId);
+    if (!current) return json({ error: "studio_job_not_found" }, 404);
+    return json(await jobSnapshot(adminClient, url, current));
+  }
+
+  const job = claimed as JobRow;
+  if (job.status === "needs_review" || job.status === "failed") {
+    try {
+      return json(await jobSnapshot(adminClient, url, await writeJob(adminClient, job.id, sessionId, {
+        status: job.status,
+        processing: false,
+      }, job.updated_at)));
+    } catch {
+      const current = await getJob(adminClient, jobId, sessionId);
+      if (!current) return json({ error: "studio_job_not_found" }, 404);
+      return json(await jobSnapshot(adminClient, url, current));
+    }
+  }
+
+  if (job.status === "review_pending" && job.input?.reviewRequested !== true) {
+    return json(await jobSnapshot(adminClient, url, await writeJob(adminClient, job.id, sessionId, {
+      input: { ...job.input, reviewRequested: false },
+      status: "needs_review",
+    })));
+  }
+
+  if (job.status === "correction_pending" && !job.input?.pendingEdit) {
+    return json(await jobSnapshot(adminClient, url, await writeJob(adminClient, job.id, sessionId, {
+      input: { ...job.input, reviewRequested: false },
+      status: "needs_review",
+    })));
+  }
+
+  const apiKey = await resolveOpenAiKey(adminClient);
+  if (!apiKey) {
+    if (job.status === "review_pending") {
+      return json(await jobSnapshot(adminClient, url, await writeJob(adminClient, job.id, sessionId, {
+        input: { ...job.input, reviewRequested: false },
+        validation: manualReview("A revisão visual não ficou disponível. Você ainda pode conferir e ajustar a arte manualmente."),
+        status: "needs_review",
+        error_code: "openai_provider_secret_unavailable",
+      })));
+    }
+    try {
+      await writeJob(adminClient, job.id, sessionId, { status: job.status, error_code: "openai_provider_secret_unavailable" });
+    } catch { /* The next request can reclaim a stale processing claim. */ }
+    return json({ error: "openai_provider_secret_unavailable" }, 503);
+  }
+
+  try {
+    if (job.status === "art_pending") {
+      if (job.input?.publicRequest?.theme && job.input.publicGeneration?.phase === "art") {
+        const variantIndex = Math.max(1, Math.min(PUBLIC_VARIANT_COUNT, job.input.publicGeneration.variantIndex || 1));
+        const style = PUBLIC_ART_STYLES[variantIndex - 1] || PUBLIC_ART_STYLES[0];
+        if (!job.reference_path) throw new Error("studio_reference_missing");
+        const referenceMime = job.reference_path.endsWith(".jpg") ? "image/jpeg"
+          : job.reference_path.endsWith(".webp") ? "image/webp" : "image/png";
+        const imageReferences: ReferenceImage[] = [{
+          bytes: await downloadPrivate(adminClient, job.reference_path),
+          fileName: "foto-do-cliente." + job.reference_path.split(".").pop(),
+          mimeType: referenceMime,
+        }];
+        if (job.input.styleReferencePath) {
+          const path = job.input.styleReferencePath;
+          const styleMime = path.endsWith(".jpg") || path.endsWith(".jpeg") ? "image/jpeg"
+            : path.endsWith(".png") ? "image/png" : "image/webp";
+          imageReferences.push({
+            bytes: await downloadPrivate(adminClient, path),
+            fileName: "modelo-visual." + path.split(".").pop(),
+            mimeType: styleMime,
+          });
+        }
+        const imagePrompt = makePublicArtPrompt(job.input, variantIndex);
+        const generated = await openAIImage(apiKey, imagePrompt, ART_SIZE, imageReferences);
+        const version = variantIndex;
+        const path = job.id + "/art-v" + version + ".webp";
+        await uploadPrivate(adminClient, path, generated, "image/webp");
+        const artVersions = [
+          ...(Array.isArray(job.art_versions) ? job.art_versions : []).filter((item) => item.version !== version),
+          {
+            version,
+            variantIndex,
+            styleStrategy: style.label,
+            path,
+            source: "initial" as const,
+            parentVersion: null,
+            createdAt: new Date().toISOString(),
+            generationSide: "both" as const,
+            configuration: creationConfiguration(
+              job.input,
+              imagePrompt,
+              true,
+              "both",
+              job.input.sizeBySide || { left: 100, right: 100 },
+            ),
+          },
+        ].sort((a, b) => a.version - b.version);
+        const allArtCreated = variantIndex >= PUBLIC_VARIANT_COUNT;
+        const input: StudioInput = {
+          ...job.input,
+          publicGeneration: allArtCreated
+            ? { phase: "mockup", variantIndex: 1 }
+            : { phase: "art", variantIndex: variantIndex + 1 },
+        };
+        const updated = await writeJob(adminClient, job.id, sessionId, {
+          input,
+          art_versions: artVersions,
+          status: allArtCreated ? "mockup_pair_pending" : "art_pending",
+          error_code: null,
+        });
+        return json(await jobSnapshot(adminClient, url, updated));
+      }
+
+      const imagePrompt = makeArtPrompt(job.input);
+      let reference: ReferenceImage | undefined;
+      if (job.reference_path) {
+        reference = {
+          bytes: await downloadPrivate(adminClient, job.reference_path),
+          fileName: "reference." + job.reference_path.split(".").pop(),
+          mimeType: job.reference_path.endsWith(".jpg") ? "image/jpeg"
+            : job.reference_path.endsWith(".webp") ? "image/webp" : "image/png",
+        };
+      }
+      const generated = await openAIImages(apiKey, imagePrompt, ART_SIZE, reference, 1);
+      const createdAt = new Date().toISOString();
+      const artVersions: ArtVersion[] = [];
+      try {
+        for (let index = 0; index < generated.length; index++) {
+          const version = index + 1;
+          const path = job.id + "/art-v" + version + ".webp";
+          await uploadPrivate(adminClient, path, generated[index], "image/webp");
+          artVersions.push({
+            version,
+            variantIndex: index + 1,
+            path,
+            source: "initial",
+            parentVersion: null,
+            createdAt,
+            generationSide: job.input?.generationSide || "both",
+            configuration: creationConfiguration(job.input, imagePrompt, job.input?.creationMode === "reference"),
+          });
+        }
+      } catch (error) {
+        const uploadedPaths = artVersions.map((item) => item.path);
+        if (uploadedPaths.length) await adminClient.storage.from(BUCKET).remove(uploadedPaths);
+        throw error;
+      }
+      return json(await jobSnapshot(adminClient, url, await writeJob(adminClient, job.id, sessionId, {
+        status: "needs_review",
+        art_versions: artVersions,
+        error_code: null,
+      })));
+    }
+
+    if (job.status === "review_pending") {
+      const art = latestArt(job);
+      if (!art) throw new Error("studio_art_missing");
+      const bytes = await downloadPrivate(adminClient, art.path);
+      const validation = await reviewArtwork(apiKey, bytes, job.input);
+      return json(await jobSnapshot(adminClient, url, await writeJob(adminClient, job.id, sessionId, {
+        input: { ...job.input, reviewRequested: false },
+        validation,
+        status: "needs_review",
+        error_code: null,
+      })));
+    }
+
+    if (job.status === "correction_pending") {
+      const versions = Array.isArray(job.art_versions) ? job.art_versions : [];
+      const nextVersion = versions.reduce((max, item) => Math.max(max, item.version), 0) + 1;
+      const pendingEdit = job.input?.pendingEdit;
+      if (pendingEdit) {
+        const base = versions.find((item) => item.version === pendingEdit.baseVersion);
+        if (!base) throw new Error("studio_art_missing");
+        const previous = await downloadPrivate(adminClient, base.path);
+        const generationSide = pendingEdit.side || job.input?.generationSide || "both";
+        const prompt = makeArtPrompt(job.input) +
+          "\nApply only the requested change. Keep all other artwork, spelling, proportions, and placement from the reference unchanged.";
+        const bytes = await openAIImage(apiKey, prompt, ART_SIZE, {
+          bytes: previous,
+          fileName: "caneca-facil-arte-v" + base.version + ".webp",
+          mimeType: "image/webp",
+        });
+        const path = job.id + "/art-v" + nextVersion + ".webp";
+        await uploadPrivate(adminClient, path, bytes, "image/webp");
+        const nextInput = { ...job.input, pendingEdit: null };
+        const nextVersions = [...versions, {
+          version: nextVersion,
+          path,
+          source: "operator_edit",
+          parentVersion: base.version,
+          instruction: pendingEdit.instruction,
+          createdAt: new Date().toISOString(),
+          generationSide,
+          configuration: creationConfiguration(
+            { ...job.input, creationMode: "reference" },
+            prompt,
+            true,
+            generationSide,
+            base.configuration?.sizeBySide || job.input?.sizeBySide || { left: 100, right: 100 },
+          ),
+        }];
+        return json(await jobSnapshot(adminClient, url, await writeJob(adminClient, job.id, sessionId, {
+          input: nextInput,
+          art_versions: nextVersions,
+          validation: null,
+          status: "needs_review",
+          error_code: null,
+        })));
+      }
+      return json(await jobSnapshot(adminClient, url, await writeJob(adminClient, job.id, sessionId, {
+        input: { ...job.input, reviewRequested: false },
+        status: "needs_review",
+      })));
+    }
+
+    if (job.status === "mockup_pair_pending") {
+      if (job.input?.publicRequest?.theme && job.input.publicGeneration?.phase === "mockup") {
+        const variantIndex = Math.max(1, Math.min(PUBLIC_VARIANT_COUNT, job.input.publicGeneration.variantIndex || 1));
+        const art = (Array.isArray(job.art_versions) ? job.art_versions : [])
+          .find((item) => item.variantIndex === variantIndex);
+        if (!art) throw new Error("studio_art_missing");
+        const mimeType = art.path.endsWith(".jpg") ? "image/jpeg"
+          : art.path.endsWith(".png") ? "image/png" : "image/webp";
+        const artReference: ReferenceImage = {
+          bytes: await downloadPrivate(adminClient, art.path),
+          fileName: "arte-horizontal-v" + art.version + "." + safeExtension(mimeType),
+          mimeType,
+        };
+        const bytes = await openAIImage(apiKey, makePublicPairMockupPrompt(), "1024x1024", artReference);
+        const path = job.id + "/mockup-v" + art.version + "-pair-" + Date.now() + ".webp";
+        await uploadPrivate(adminClient, path, bytes, "image/webp");
+        const mockups = [
+          ...(Array.isArray(job.mockups) ? job.mockups : [])
+            .filter((asset) => asset.version !== art.version || asset.side !== "pair"),
+          { version: art.version, side: "pair" as const, path, createdAt: new Date().toISOString() },
+        ];
+        const allMockupsCreated = variantIndex >= PUBLIC_VARIANT_COUNT;
+        const input: StudioInput = {
+          ...job.input,
+          publicGeneration: allMockupsCreated
+            ? null
+            : { phase: "mockup", variantIndex: variantIndex + 1 },
+        };
+        const updated = await writeJob(adminClient, job.id, sessionId, {
+          input,
+          mockups,
+          status: allMockupsCreated ? "needs_review" : "mockup_pair_pending",
+          error_code: null,
+        });
+        return json(await jobSnapshot(adminClient, url, updated));
+      }
+
+      const targetVersion = job.input?.mockupTargetVersion;
+      const art = (Array.isArray(job.art_versions) ? job.art_versions : [])
+        .find((item) => item.version === targetVersion) || latestArt(job);
+      const references = job.input?.mockupReferencePaths;
+      if (!art || !references || references.version !== targetVersion) throw new Error("studio_mockup_reference_missing");
+      const [leftBytes, rightBytes] = await Promise.all([
+        downloadPrivate(adminClient, references.leftPath),
+        downloadPrivate(adminClient, references.rightPath),
+      ]);
+      const leftMime = references.leftPath.endsWith(".jpg") ? "image/jpeg"
+        : references.leftPath.endsWith(".webp") ? "image/webp" : "image/png";
+      const rightMime = references.rightPath.endsWith(".jpg") ? "image/jpeg"
+        : references.rightPath.endsWith(".webp") ? "image/webp" : "image/png";
+      const bytes = await openAIImage(apiKey, makePairMockupPrompt(), "1024x1024", [
+        { bytes: leftBytes, fileName: "arte-lado-esquerdo." + safeExtension(leftMime), mimeType: leftMime },
+        { bytes: rightBytes, fileName: "arte-lado-direito." + safeExtension(rightMime), mimeType: rightMime },
+      ]);
+      const path = job.id + "/mockup-v" + art.version + "-pair-" + Date.now() + ".webp";
+      await uploadPrivate(adminClient, path, bytes, "image/webp");
+      const mockups = [
+        ...(Array.isArray(job.mockups) ? job.mockups : []).filter((asset) => asset.version !== art.version),
+        { version: art.version, side: "pair" as const, path, createdAt: new Date().toISOString() },
+      ];
+      const updated = await writeJob(adminClient, job.id, sessionId, {
+        mockups,
+        status: "needs_review",
+        input: { ...job.input, mockupTargetVersion: null, mockupReferencePaths: null },
+        error_code: null,
+      });
+      await adminClient.storage.from(BUCKET).remove([references.leftPath, references.rightPath]);
+      return json(await jobSnapshot(adminClient, url, updated));
+    }
+
+    if (["mockup_left_pending", "mockup_right_pending", "mockup_front_pending", "mockup_back_pending"].includes(job.status)) {
+      const side: Side = job.status === "mockup_left_pending" || job.status === "mockup_front_pending" ? "left" : "right";
+      const targetVersion = job.input?.mockupTargetVersion;
+      const art = (Array.isArray(job.art_versions) ? job.art_versions : [])
+        .find((item) => item.version === targetVersion) || latestArt(job);
+      if (!art) throw new Error("studio_art_missing");
+      const references = job.input?.mockupReferencePaths;
+      const referencePath = references?.version === targetVersion
+        ? side === "left" ? references.leftPath : references.rightPath
+        : art.path;
+      const referenceBytes = await downloadPrivate(adminClient, referencePath);
+      const referenceMime = referencePath.endsWith(".png") ? "image/png"
+        : referencePath.endsWith(".jpg") || referencePath.endsWith(".jpeg") ? "image/jpeg" : "image/webp";
+      const bytes = await openAIImage(apiKey, makeMockupPrompt(side), "1024x1024", {
+        bytes: referenceBytes,
+        fileName: "caneca-referencia-lado-" + side + "." + safeExtension(referenceMime),
+        mimeType: referenceMime,
+      });
+      const version = art.version;
+      const path = job.id + "/mockup-v" + version + "-" + side + "-" + Date.now() + ".webp";
+      await uploadPrivate(adminClient, path, bytes, "image/webp");
+      const mockups = [...(Array.isArray(job.mockups) ? job.mockups : []), { version, side, path, createdAt: new Date().toISOString() }];
+      const isLast = side === "right";
+      const nextInput = isLast
+        ? { ...job.input, mockupTargetVersion: null, mockupReferencePaths: null }
+        : job.input;
+      const updated = await writeJob(adminClient, job.id, sessionId, {
+        mockups,
+        status: isLast ? "needs_review" : "mockup_right_pending",
+        input: nextInput,
+        error_code: null,
+      });
+      if (isLast && references?.version === targetVersion) {
+        await adminClient.storage.from(BUCKET).remove([references.leftPath, references.rightPath]);
+      }
+      return json(await jobSnapshot(adminClient, url, updated));
+    }
+
+    throw new Error("studio_job_step_failed");
+  } catch {
+    console.error("[caneca-studio] generation step failed", { jobId: job.id, status: job.status });
+    try {
+      const failed = await writeJob(adminClient, job.id, sessionId, {
+        status: "failed",
+        error_code: "studio_job_step_failed",
+      });
+      const references = job.input?.mockupReferencePaths;
+      if (references) await adminClient.storage.from(BUCKET).remove([references.leftPath, references.rightPath]);
+      return json(await jobSnapshot(adminClient, url, failed));
+    } catch {
+      return json({ error: "studio_job_step_failed" }, 500);
+    }
+  }
+}
+
+type PublicRateDecision = "allowed" | "limited" | "unavailable";
+
+async function checkPublicStartLimit(
+  adminClient: AdminClient,
+  request: Request,
+): Promise<PublicRateDecision> {
+  const clientIp = request.headers.get("cf-connecting-ip")?.trim();
+  if (!clientIp) return "unavailable";
+
+  try {
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(clientIp));
+    const ipHash = Array.from(new Uint8Array(digest))
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("");
+    const { data, error } = await adminClient.rpc("consume_caneca_studio_public_limit_v1", {
+      p_client_ip_hash: ipHash,
+      p_limit: PUBLIC_START_LIMIT,
+    });
+    if (error) {
+      console.error("[caneca-studio] public rate-limit check failed");
+      return "unavailable";
+    }
+    return data === true ? "allowed" : "limited";
+  } catch {
+    console.error("[caneca-studio] public rate-limit check failed");
+    return "unavailable";
+  }
+}
+
+async function authorizeAdminRequest(request: Request, adminClient: AdminClient): Promise<Response | null> {
+  const adminLinkToken = request.headers.get("x-caneca-admin-link") || "";
+  if (/^[a-f0-9]{64}$/i.test(adminLinkToken)) {
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(adminLinkToken));
+    const actualHash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+    for (const expectedHash of [ADMIN_LINK_TOKEN_SHA256, OPEN_ADMIN_LINK_TOKEN_SHA256]) {
+      let difference = actualHash.length ^ expectedHash.length;
+      for (let index = 0; index < Math.min(actualHash.length, expectedHash.length); index++) {
+        difference |= actualHash.charCodeAt(index) ^ expectedHash.charCodeAt(index);
+      }
+      if (difference === 0) return null;
+    }
+  }
+
+  const token = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) return json({ error: "admin_auth_required" }, 401);
+  const { data, error } = await adminClient.auth.getUser(token);
+  if (error || !data.user) return json({ error: "admin_auth_required" }, 401);
+  const membership = await adminClient.from("admin_users")
+    .select("user_id")
+    .eq("user_id", data.user.id)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (membership.error) return json({ error: "admin_access_unavailable" }, 503);
+  if (!membership.data) return json({ error: "admin_access_required" }, 403);
+  return null;
+}
+
+async function getAdminPublicJobs(adminClient: AdminClient, maxRows = 500): Promise<JobRow[]> {
+  const pageSize = 500;
+  const limit = Math.max(pageSize, Math.min(10000, maxRows));
+  const jobs: JobRow[] = [];
+  for (let offset = 0; offset < limit; offset += pageSize) {
+    const pageLimit = Math.min(pageSize, limit - offset);
+    const { data, error } = await adminClient.from(TABLE).select("*")
+      .is("created_by", null)
+      .order("updated_at", { ascending: false })
+      .range(offset, offset + pageLimit - 1);
+    if (error) throw new Error("studio_job_lookup_failed");
+    const rows = (data || []).map((item) => item as JobRow);
+    jobs.push(...rows);
+    if (rows.length < pageLimit) break;
+  }
+  return jobs;
+}
+
+function savedPublicJobs(jobs: JobRow[]): JobRow[] {
+  return jobs.filter((job) => Number.isInteger(job.input?.customerSavedVersion) && Number(job.input?.customerSavedVersion) > 0);
+}
+
+async function handleAdminAction(
+  request: Request,
+  action: string,
+  body: Record<string, unknown>,
+  form: FormData | null,
+): Promise<Response> {
+  let clients: ReturnType<typeof serviceClients>;
+  try { clients = serviceClients(); } catch { return json({ error: "studio_job_lookup_failed" }, 503); }
+  const { adminClient, url } = clients;
+  const denied = await authorizeAdminRequest(request, adminClient);
+  if (denied) return denied;
+
+  if (action === "admin_models_list") {
+    try {
+      const categoryId = typeof body.categoryId === "string" ? body.categoryId : undefined;
+      if (categoryId && !validStyleModelId(categoryId)) return json({ error: "invalid_studio_input" }, 400);
+      return json(await styleModelListing(adminClient, url, { includeEmptyCategories: true, categoryId }));
+    } catch {
+      return json({ error: "style_model_catalog_lookup_failed" }, 500);
+    }
+  }
+
+  if (action === "admin_model_category_create") {
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+    const theme = body.theme;
+    if (!validStyleModelTheme(theme) || name.length < 2 || name.length > 60) {
+      return json({ error: "invalid_studio_input" }, 400);
+    }
+    try {
+      const catalog = await readStyleModelCatalog(adminClient);
+      if (catalog.categories.some((category) => category.theme === theme &&
+        category.name.toLocaleLowerCase() === name.toLocaleLowerCase())) {
+        return json({ error: "style_model_category_exists" }, 409);
+      }
+      const category: StyleModelCategory = { id: crypto.randomUUID(), theme, name, createdAt: new Date().toISOString() };
+      catalog.categories.push(category);
+      await writeStyleModelCatalog(adminClient, catalog);
+      return json({ category });
+    } catch {
+      return json({ error: "style_model_catalog_save_failed" }, 500);
+    }
+  }
+
+  if (action === "admin_model_category_delete") {
+    const categoryId = typeof body.categoryId === "string" ? body.categoryId : "";
+    if (!validStyleModelId(categoryId)) return json({ error: "invalid_studio_input" }, 400);
+    try {
+      const catalog = await readStyleModelCatalog(adminClient);
+      if (catalog.models.some((model) => model.categoryId === categoryId)) {
+        return json({ error: "style_model_category_not_empty" }, 409);
+      }
+      const categories = catalog.categories.filter((category) => category.id !== categoryId);
+      if (categories.length === catalog.categories.length) return json({ error: "style_model_category_not_found" }, 404);
+      catalog.categories = categories;
+      await writeStyleModelCatalog(adminClient, catalog);
+      return json({ deleted: true });
+    } catch {
+      return json({ error: "style_model_catalog_save_failed" }, 500);
+    }
+  }
+
+  if (action === "admin_model_gallery_upload") {
+    if (!form) return json({ error: "invalid_studio_input" }, 400);
+    const categoryEntry = form.get("categoryId");
+    const categoryId = typeof categoryEntry === "string" ? categoryEntry.trim() : "";
+    const files = form.getAll("modelImages");
+    if (!validStyleModelId(categoryId) || files.length < 1 || files.length > MAX_STYLE_MODEL_BATCH) {
+      return json({ error: "invalid_studio_input" }, 400);
+    }
+    const uploadedPaths: string[] = [];
+    try {
+      const catalog = await readStyleModelCatalog(adminClient);
+      if (!catalog.categories.some((category) => category.id === categoryId)) {
+        return json({ error: "style_model_category_not_found" }, 404);
+      }
+      const added: StyleModelAsset[] = [];
+      for (const file of files) {
+        if (!(file instanceof File) || file.size <= 0 || file.size > MAX_STYLE_MODEL_IMAGE_BYTES ||
+          file.type !== "image/webp") throw new Error("invalid_studio_input");
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        if (detectImageMime(bytes) !== "image/webp") throw new Error("invalid_studio_input");
+        const id = crypto.randomUUID();
+        const path = "style-models/" + id + ".webp";
+        const { error } = await adminClient.storage.from(BUCKET).upload(path, bytes, {
+          contentType: "image/webp",
+          upsert: false,
+        });
+        if (error) throw new Error("style_model_image_upload_failed");
+        uploadedPaths.push(path);
+        added.push({ id, categoryId, path, createdAt: new Date().toISOString() });
+      }
+      catalog.models.push(...added);
+      await writeStyleModelCatalog(adminClient, catalog);
+      return json({ added: added.length });
+    } catch (error) {
+      if (uploadedPaths.length) await adminClient.storage.from(BUCKET).remove(uploadedPaths);
+      const code = error instanceof Error ? error.message : "";
+      if (code === "invalid_studio_input") return json({ error: code }, 400);
+      return json({ error: "style_model_image_upload_failed" }, 500);
+    }
+  }
+
+  if (action === "admin_model_delete") {
+    const modelId = typeof body.modelId === "string" ? body.modelId : "";
+    if (!validStyleModelId(modelId)) return json({ error: "invalid_studio_input" }, 400);
+    try {
+      const catalog = await readStyleModelCatalog(adminClient);
+      const model = catalog.models.find((item) => item.id === modelId);
+      if (!model) return json({ error: "style_model_not_found" }, 404);
+      catalog.models = catalog.models.filter((item) => item.id !== modelId);
+      await writeStyleModelCatalog(adminClient, catalog);
+      await adminClient.storage.from(BUCKET).remove([model.path]);
+      return json({ deleted: true });
+    } catch {
+      return json({ error: "style_model_delete_failed" }, 500);
+    }
+  }
+
+  if (action === "admin_users_list") {
+    const { data, error } = await adminClient.from("admin_users")
+      .select("user_id,role,is_active,display_name,email,created_at,last_login_at")
+      .order("created_at", { ascending: true });
+    if (error) return json({ error: "admin_user_lookup_failed" }, 500);
+    return json({ users: data || [] });
+  }
+
+  if (action === "admin_user_create") {
+    const displayName = typeof body.displayName === "string" ? body.displayName.trim() : "";
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const password = typeof body.password === "string" ? body.password : "";
+    if (displayName.length < 2 || displayName.length > 120) return json({ error: "admin_user_name_invalid" }, 400);
+    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: "admin_user_email_invalid" }, 400);
+    if (password.length < 10 || password.length > 128) return json({ error: "admin_user_password_invalid" }, 400);
+
+    const { data: created, error: createError } = await adminClient.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { display_name: displayName },
+    });
+    if (createError || !created.user) {
+      const duplicateEmail = createError?.code === "email_exists";
+      return json({ error: duplicateEmail ? "admin_user_email_exists" : "admin_user_create_failed" }, duplicateEmail ? 409 : 400);
+    }
+
+    const { error: membershipError } = await adminClient.from("admin_users").insert({
+      user_id: created.user.id,
+      role: "operator",
+      is_active: true,
+      display_name: displayName,
+      email,
+    });
+    if (membershipError) {
+      await adminClient.auth.admin.deleteUser(created.user.id);
+      return json({ error: "admin_user_create_failed" }, 500);
+    }
+    return json({ user: {
+      user_id: created.user.id,
+      role: "operator",
+      is_active: true,
+      display_name: displayName,
+      email,
+      created_at: new Date().toISOString(),
+      last_login_at: null,
+    } }, 201);
+  }
+
+  if (action === "admin_user_set_password") {
+    const userId = typeof body.userId === "string" ? body.userId : "";
+    const password = typeof body.password === "string" ? body.password : "";
+    if (!SESSION_ID_PATTERN.test(userId)) return json({ error: "admin_user_not_found" }, 404);
+    if (password.length < 10 || password.length > 128) return json({ error: "admin_user_password_invalid" }, 400);
+    const { data: user, error: lookupError } = await adminClient.from("admin_users")
+      .select("user_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (lookupError) return json({ error: "admin_user_lookup_failed" }, 500);
+    if (!user) return json({ error: "admin_user_not_found" }, 404);
+    const { error } = await adminClient.auth.admin.updateUserById(userId, { password });
+    if (error) return json({ error: "admin_user_password_update_failed" }, 500);
+    return json({ updated: true });
+  }
+
+  if (action === "admin_user_set_active") {
+    const userId = typeof body.userId === "string" ? body.userId : "";
+    const isActive = body.isActive;
+    if (!SESSION_ID_PATTERN.test(userId) || typeof isActive !== "boolean") {
+      return json({ error: "invalid_studio_input" }, 400);
+    }
+    const { data: user, error: lookupError } = await adminClient.from("admin_users")
+      .select("user_id,role,is_active")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (lookupError) return json({ error: "admin_user_lookup_failed" }, 500);
+    if (!user) return json({ error: "admin_user_not_found" }, 404);
+    if (!isActive && user.role === "owner" && user.is_active) {
+      const { count, error } = await adminClient.from("admin_users")
+        .select("user_id", { count: "exact", head: true })
+        .eq("role", "owner")
+        .eq("is_active", true);
+      if (error) return json({ error: "admin_user_lookup_failed" }, 500);
+      if ((count || 0) <= 1) return json({ error: "admin_user_last_owner" }, 409);
+    }
+    const { error } = await adminClient.from("admin_users")
+      .update({ is_active: isActive, updated_at: new Date().toISOString() })
+      .eq("user_id", userId);
+    if (error) return json({ error: "admin_user_update_failed" }, 500);
+    return json({ updated: true, isActive });
+  }
+
+  if (action === "admin_orders") {
+    try {
+      const jobs = savedPublicJobs(await getAdminPublicJobs(adminClient));
+      const orders = await Promise.all(jobs.slice(0, 150).map((job) => jobSnapshot(adminClient, url, job, true)));
+      return json({ orders });
+    } catch {
+      return json({ error: "studio_job_lookup_failed" }, 500);
+    }
+  }
+
+  if (action === "admin_customers") {
+    try {
+      const jobs = await getAdminPublicJobs(adminClient, 10000);
+      const publicJobs = jobs.filter((job) => job.input?.publicRequest && job.input?.customerContact?.email?.trim());
+      const byEmail = new Map<string, {
+        id: string | null;
+        name: string;
+        email: string;
+        whatsapp: string;
+        orderCount: number;
+        creationCount: number;
+        artworkCount: number;
+        lastOrderAt: string;
+      }>();
+      for (let index = 0; index < publicJobs.length; index++) {
+        const job = publicJobs[index];
+        const contact = job.input.customerContact!;
+        const normalizedEmail = contact.email.trim().toLowerCase();
+        if (!normalizedEmail) continue;
+        const createdAt = job.created_at;
+        const current = byEmail.get(normalizedEmail) || {
+          id: contact.customerId || null,
+          name: contact.name,
+          email: contact.email.trim(),
+          whatsapp: contact.whatsapp || "",
+          orderCount: 0,
+          creationCount: 0,
+          artworkCount: 0,
+          lastOrderAt: createdAt,
+        };
+        current.creationCount += 1;
+        current.artworkCount += Array.isArray(job.art_versions) ? job.art_versions.length : 0;
+        if (Number.isInteger(job.input.customerSavedVersion) && Number(job.input.customerSavedVersion) > 0) current.orderCount += 1;
+        if (Date.parse(createdAt) > Date.parse(current.lastOrderAt)) current.lastOrderAt = createdAt;
+        byEmail.set(normalizedEmail, current);
+      }
+      const entries = Array.from(byEmail.values());
+      const ids = [...new Set(entries.map((item) => item.id).filter((id): id is string => Boolean(id)))];
+      if (ids.length) {
+        const { data: profiles, error } = await adminClient.from("customers")
+          .select("id,name,primary_whatsapp_e164,is_active")
+          .in("id", ids);
+        if (error) throw error;
+        const profilesById = new Map((profiles || []).map((item: any) => [item.id, item]));
+        for (const entry of entries) {
+          const profile = entry.id ? profilesById.get(entry.id) : null;
+          if (profile) {
+            entry.name = profile.name || entry.name;
+            entry.whatsapp = profile.primary_whatsapp_e164 || entry.whatsapp;
+          }
+        }
+      }
+      return json({ customers: entries.sort((a, b) => Date.parse(b.lastOrderAt) - Date.parse(a.lastOrderAt)) });
+    } catch {
+      return json({ error: "studio_customer_lookup_failed" }, 500);
+    }
+  }
+
+  if (action === "admin_customer_artworks") {
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const offset = Number.isInteger(body.offset) ? Number(body.offset) : 0;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || offset < 0 || offset > 1000000) {
+      return json({ error: "invalid_studio_input" }, 400);
+    }
+    try {
+      const jobs = await getAdminPublicJobs(adminClient, 10000);
+      const matching = jobs.filter((job) =>
+        job.input?.publicRequest &&
+        job.input?.customerContact?.email?.trim().toLowerCase() === email
+      ).sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+      const pageSize = 20;
+      const page = matching.slice(offset, offset + pageSize);
+      const creations: Array<Record<string, unknown>> = [];
+      for (let index = 0; index < page.length; index += 10) {
+        const batch = await Promise.all(page.slice(index, index + 10).map((job) => jobSnapshot(adminClient, url, job)));
+        for (let itemIndex = 0; itemIndex < batch.length; itemIndex++) {
+          const job = page[index + itemIndex];
+          creations.push({
+            projectId: job.id,
+            title: job.title,
+            status: job.status,
+            createdAt: job.created_at,
+            publicRequest: job.input.publicRequest,
+            artVersions: batch[itemIndex]?.artVersions || [],
+            mockups: batch[itemIndex]?.mockups || [],
+          });
+        }
+      }
+      return json({
+        creations,
+        total: matching.length,
+        hasMore: offset + creations.length < matching.length,
+        nextOffset: offset + creations.length,
+      });
+    } catch {
+      return json({ error: "studio_customer_lookup_failed" }, 500);
+    }
+  }
+
+  if (action === "admin_update_customer") {
+    const customerId = typeof body.customerId === "string" ? body.customerId : "";
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+    if (!isValidJobId(customerId) || name.length < 2 || name.length > 120) return json({ error: "invalid_studio_input" }, 400);
+    const { data, error } = await adminClient.from("customers").update({ name, updated_at: new Date().toISOString() })
+      .eq("id", customerId).select("id,name,primary_whatsapp_e164").maybeSingle();
+    if (error || !data) return json({ error: "studio_customer_update_failed" }, 500);
+    try {
+      const jobs = await getAdminPublicJobs(adminClient, 10000);
+      await Promise.all(jobs.filter((job) => job.input?.customerContact?.customerId === customerId).map((job) =>
+        adminClient.from(TABLE).update({
+          input: { ...job.input, customerContact: { ...job.input.customerContact, name } },
+          updated_at: new Date().toISOString(),
+        }).eq("id", job.id).is("created_by", null),
+      ));
+    } catch { /* The customer record remains authoritative if old job snapshots cannot be refreshed. */ }
+    return json({ customer: data });
+  }
+
+  if (action === "admin_update_order") {
+    const jobId = typeof body.jobId === "string" ? body.jobId : "";
+    const orderStatus = typeof body.orderStatus === "string" ? body.orderStatus : "";
+    const adminNotes = typeof body.adminNotes === "string" ? body.adminNotes.trim() : "";
+    const allowedStatuses = ["new", "contacted", "confirmed", "in_production", "ready", "cancelled"];
+    if (!isValidJobId(jobId) || !allowedStatuses.includes(orderStatus) || adminNotes.length > 1000) {
+      return json({ error: "invalid_studio_input" }, 400);
+    }
+    const job = await getAdminJob(adminClient, jobId);
+    if (!job || !job.input?.customerSavedVersion) return json({ error: "studio_job_not_found" }, 404);
+    try {
+      const updated = await writeAdminJob(adminClient, job.id, {
+        input: { ...job.input, orderStatus, adminNotes },
+      }, job.updated_at);
+      return json(await jobSnapshot(adminClient, url, updated, true));
+    } catch { return json({ error: "studio_job_conflict" }, 409); }
+  }
+
+  if (action === "admin_approve_print") {
+    const jobId = typeof body.jobId === "string" ? body.jobId : "";
+    const job = isValidJobId(jobId) ? await getAdminJob(adminClient, jobId) : null;
+    if (!job || !job.input?.customerSavedVersion) return json({ error: "studio_job_not_found" }, 404);
+    const version = Number(body.version || job.input.customerSavedVersion);
+    const quantity = Number(body.quantity || 1);
+    if (version !== job.input.customerSavedVersion || !Number.isInteger(quantity) || quantity < 1 || quantity > 500 ||
+      job.status !== "needs_review" || !job.art_versions.some((item) => item.version === version)) {
+      return json({ error: "invalid_studio_input" }, 400);
+    }
+    const nextInput = archivePrintState(job.input);
+    nextInput.printing = { approvedVersion: version, quantity, completed: 0, status: "ready", approvedAt: new Date().toISOString(), reprints: [] };
+    try {
+      const updated = await writeAdminJob(adminClient, job.id, { input: nextInput }, job.updated_at);
+      return json(await jobSnapshot(adminClient, url, updated, true));
+    } catch { return json({ error: "studio_job_conflict" }, 409); }
+  }
+
+  if (action === "admin_record_print") {
+    const jobId = typeof body.jobId === "string" ? body.jobId : "";
+    const job = isValidJobId(jobId) ? await getAdminJob(adminClient, jobId) : null;
+    if (!job || !job.input?.customerSavedVersion) return json({ error: "studio_job_not_found" }, 404);
+    const printing = printState(job.input);
+    if (printing.approvedVersion !== job.input.customerSavedVersion || printing.status !== "ready" || printing.completed >= printing.quantity) {
+      return json({ error: "studio_print_not_approved" }, 409);
+    }
+    const completed = printing.completed + 1;
+    const nextPrinting: PrintState = { ...printing, completed, status: completed >= printing.quantity ? "printed" : "ready" };
+    try {
+      const updated = await writeAdminJob(adminClient, job.id, { input: { ...job.input, printing: nextPrinting } }, job.updated_at);
+      return json(await jobSnapshot(adminClient, url, updated, true));
+    } catch { return json({ error: "studio_job_conflict" }, 409); }
+  }
+
+
+  return json({ error: "invalid_studio_input" }, 400);
+}
+
+async function handleRequestContent(request: Request): Promise<Response> {
+  if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+
+  const contentType = request.headers.get("content-type") || "";
+  let action: string | null = null;
+  let form: FormData | null = null;
+  let body: Record<string, unknown> = {};
+  try {
+    if (contentType.includes("multipart/form-data")) {
+      form = await request.formData();
+      action = typeof form.get("action") === "string" ? String(form.get("action")) : null;
+    } else {
+      body = await request.json() as Record<string, unknown>;
+      action = typeof body.action === "string" ? body.action : null;
+    }
+  } catch {
+    return json({ error: "invalid_studio_input" }, 400);
+  }
+
+  if (!action) return json({ error: "invalid_studio_input" }, 400);
+  if (action === "retention_cleanup") {
+    let clients: ReturnType<typeof serviceClients>;
+    try { clients = serviceClients(); } catch { return json({ error: "studio_job_lookup_failed" }, 503); }
+    try {
+      return json(await cleanupExpiredPublicAssets(
+        clients.adminClient,
+        typeof body.offset === "number" ? body.offset : 0,
+      ));
+    } catch {
+      return json({ error: "studio_asset_retention_failed" }, 500);
+    }
+  }
+  if (action.startsWith("admin_")) return await handleAdminAction(request, action, body, form);
+
+  const authorization = await authorize(request);
+  if (authorization instanceof Response) return authorization;
+  const { sessionId, adminClient, url } = authorization;
+
+  // Existing public actions are handled below.
+  return await handlePublicAction(request, action, body, form, sessionId, adminClient, url);
+}
+
+async function handleRequest(request: Request): Promise<Response> {
+  const origin = request.headers.get("origin") || "";
+  if (!PUBLIC_APP_ORIGINS.has(origin)) {
+    return json({ error: "studio_origin_not_allowed" }, 403);
+  }
+  if (request.method === "OPTIONS") {
+    return new Response("ok", {
+      headers: { ...corsHeaders, "Access-Control-Allow-Origin": origin, "Vary": "Origin" },
+    });
+  }
+
+  const response = await handleRequestContent(request);
+  response.headers.set("Access-Control-Allow-Origin", origin);
+  response.headers.set("Vary", "Origin");
+  return response;
+}
+
+async function handlePublicAction(
+  request: Request,
+  action: string,
+  body: Record<string, unknown>,
+  form: FormData | null,
+  sessionId: string,
+  adminClient: AdminClient,
+  url: string,
+): Promise<Response> {
+
+  if (action === "public_models_list") {
+    const theme = validStyleModelTheme(body.theme) ? body.theme : undefined;
+    const categoryId = typeof body.categoryId === "string" ? body.categoryId : undefined;
+    if (!theme || (categoryId && !validStyleModelId(categoryId))) {
+      return json({ error: "invalid_studio_input" }, 400);
+    }
+    try {
+      return json(await styleModelListing(adminClient, url, { theme, categoryId, includeEmptyCategories: false }));
+    } catch {
+      return json({ error: "style_model_catalog_lookup_failed" }, 500);
+    }
+  }
+
+  if (action === "latest") {
+    const { data, error } = await adminClient.from(TABLE).select("*")
+      .eq("guest_session_id", sessionId)
+      .is("created_by", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) return json({ error: "studio_job_lookup_failed" }, 500);
+    const snapshot = await jobSnapshot(adminClient, url, data as JobRow | null, true);
+    return json({ job: snapshot });
+  }
+
+  if (action === "history") {
+    const { data, error } = await adminClient.from(TABLE)
+      .select("id,title,status,created_at,updated_at,art_versions")
+      .eq("guest_session_id", sessionId)
+      .is("created_by", null)
+      .order("updated_at", { ascending: false })
+      .limit(20);
+    if (error) return json({ error: "studio_job_lookup_failed" }, 500);
+    const jobs = (data || []).map((row) => {
+      const versions = Array.isArray(row.art_versions) ? row.art_versions as ArtVersion[] : [];
+      return {
+        projectId: row.id,
+        title: row.title,
+        status: row.status,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        latestVersion: versions.at(-1)?.version || null,
+      };
+    });
+    return json({ jobs });
+  }
+
+  if (action === "load") {
+    if (!isValidJobId(body.jobId)) return json({ error: "studio_job_not_found" }, 404);
+    const job = await getJob(adminClient, body.jobId, sessionId);
+    if (!job) return json({ error: "studio_job_not_found" }, 404);
+    return json(await jobSnapshot(adminClient, url, job, true));
+  }
+
+  if (action === "save_design") {
+    if (!isValidJobId(body.jobId)) return json({ error: "studio_job_not_found" }, 404);
+    const version = Number(body.version);
+    if (!Number.isInteger(version) || version < 1) return json({ error: "invalid_studio_input" }, 400);
+    const job = await getJob(adminClient, body.jobId, sessionId);
+    if (!job) return json({ error: "studio_job_not_found" }, 404);
+    const hasArt = Array.isArray(job.art_versions) && job.art_versions.some((item) => item.version === version);
+    const hasPairMockup = Array.isArray(job.mockups) && job.mockups.some((item) => item.version === version && item.side === "pair");
+    const whatsapp = typeof body.customerWhatsapp === "string" ? body.customerWhatsapp.replace(/\D/g, "") : "";
+    if (!hasArt || !hasPairMockup || !job.input?.customerContact || job.status !== "needs_review" || job.processing) {
+      return json({ error: "studio_job_conflict" }, 409);
+    }
+    if (whatsapp.length < 10 || whatsapp.length > 15) return json({ error: "invalid_studio_input" }, 400);
+    const savedContact = job.input.customerContact;
+    const customerId = await registerPublicCustomer(adminClient, savedContact.name, savedContact.email, whatsapp);
+    try {
+      const updated = await writeJob(adminClient, job.id, sessionId, {
+        input: {
+          ...job.input,
+          customerContact: { ...savedContact, whatsapp, customerId: customerId || savedContact.customerId || null },
+          customerSavedVersion: version,
+          customerSavedAt: new Date().toISOString(),
+          orderStatus: job.input.customerSavedVersion ? job.input.orderStatus || "new" : "new",
+        },
+      }, job.updated_at);
+      return json(await jobSnapshot(adminClient, url, updated, true));
+    } catch { return json({ error: "studio_job_conflict" }, 409); }
+  }
+
+  if (action === "start") {
+    if (!form) return json({ error: "invalid_studio_input" }, 400);
+    try {
+      return await startJob(adminClient, url, sessionId, form);
+    } catch (error) {
+      if (error instanceof Error && error.message === "invalid_studio_input") {
+        return json({ error: "invalid_studio_input" }, 400);
+      }
+      console.error("[caneca-studio] could not start job");
+      return json({ error: "studio_job_start_failed" }, 500);
+    }
+  }
+
+  if (action === "review") {
+    if (!isValidJobId(body.jobId)) return json({ error: "studio_job_not_found" }, 404);
+    const job = await getJob(adminClient, body.jobId, sessionId);
+    if (!job) return json({ error: "studio_job_not_found" }, 404);
+    if (job.status !== "needs_review" || job.processing || !latestArt(job)) {
+      return json({ error: "studio_job_conflict" }, 409);
+    }
+    const rateDecision = await checkPublicStartLimit(adminClient, request);
+    if (rateDecision === "limited") return json({ error: "studio_rate_limited" }, 429);
+    if (rateDecision === "unavailable") return json({ error: "studio_rate_limit_unavailable" }, 503);
+    try {
+      const updated = await writeJob(adminClient, job.id, sessionId, {
+        input: { ...job.input, reviewRequested: true },
+        validation: null,
+        status: "review_pending",
+        error_code: null,
+      }, job.updated_at);
+      return json(await jobSnapshot(adminClient, url, updated), 202);
+    } catch {
+      return json({ error: "studio_job_conflict" }, 409);
+    }
+  }
+
+  if (action === "upload_art") {
+    if (!form) return json({ error: "invalid_studio_input" }, 400);
+    const jobId = readActionText(form, "jobId", 36) || "";
+    const version = Number(readActionText(form, "version", 12) || "");
+    const sidesText = readActionText(form, "sides", 20) || readActionText(form, "side", 8) || "";
+    const selectedSides = sidesText.split(",").filter((side): side is Side => side === "left" || side === "right");
+    if (!isValidJobId(jobId) || !Number.isInteger(version) || version < 1 ||
+      selectedSides.length < 1 || new Set(selectedSides).size !== selectedSides.length ||
+      selectedSides.length !== sidesText.split(",").length) {
+      return json({ error: "invalid_studio_input" }, 400);
+    }
+
+    let artwork: ReferenceImage;
+    try {
+      artwork = await readUploadedImage(form, "artwork", 2400, 960);
+    } catch {
+      return json({ error: "invalid_studio_input" }, 400);
+    }
+
+    const job = await getJob(adminClient, jobId, sessionId);
+    if (!job) return json({ error: "studio_job_not_found" }, 404);
+    const versions = Array.isArray(job.art_versions) ? job.art_versions : [];
+    const base = versions.find((item) => item.version === version);
+    if (!base || job.status !== "needs_review" || job.processing) {
+      return json({ error: "studio_job_conflict" }, 409);
+    }
+
+    const previousSize = base.configuration?.sizeBySide || job.input.sizeBySide || { left: 100, right: 100 };
+    const sizeText = readActionText(form, "sizeBySide", 100);
+    let sizeBySide: SideSize = { ...previousSize };
+    if (sizeText) {
+      try {
+        const parsed = JSON.parse(sizeText) as unknown;
+        if (!validSizeBySide(parsed)) return json({ error: "invalid_studio_input" }, 400);
+        sizeBySide = { ...parsed };
+      } catch {
+        return json({ error: "invalid_studio_input" }, 400);
+      }
+    } else {
+      for (const side of selectedSides) sizeBySide[side] = 100;
+    }
+
+    const nextVersion = versions.reduce((max, item) => Math.max(max, item.version), 0) + 1;
+    const path = job.id + "/art-v" + nextVersion + "-" + crypto.randomUUID() + ".webp";
+    let updated: JobRow;
+    try {
+      await uploadPrivate(adminClient, path, artwork.bytes, artwork.mimeType);
+      const generationSide: GenerationSide = selectedSides.length === 2 ? "both" : selectedSides[0];
+      const baseConfiguration = base.configuration;
+      const nextInput = archivePrintState({
+        ...job.input,
+        title: baseConfiguration?.title || job.input.title,
+        creationMode: baseConfiguration?.creationMode || job.input.creationMode,
+        artDescription: baseConfiguration?.artDescription || job.input.artDescription,
+        mandatoryText: baseConfiguration?.mandatoryText || job.input.mandatoryText,
+        selectedCommands: baseConfiguration?.selectedCommands || job.input.selectedCommands,
+        generationSide,
+        sizeBySide,
+      });
+      nextInput.pendingEdit = null;
+      nextInput.latestEditInstruction = null;
+      nextInput.mockupTargetVersion = null;
+      nextInput.mockupReferencePaths = null;
+      const nextVersions = [...versions, {
+        version: nextVersion,
+        path,
+        source: "operator_upload" as const,
+        parentVersion: base.version,
+        instruction: "Arte e tamanho aplicados nos lados: " + selectedSides.join(" e ") + ".",
+        createdAt: new Date().toISOString(),
+        generationSide,
+        updatedSides: selectedSides,
+        configuration: creationConfiguration(
+          nextInput,
+          baseConfiguration?.compiledPrompt || makeArtPrompt(nextInput),
+          baseConfiguration?.referenceUsed ?? (job.input.creationMode === "reference"),
+          generationSide,
+          sizeBySide,
+        ),
+      }];
+      updated = await writeJob(adminClient, job.id, sessionId, {
+        input: nextInput,
+        art_versions: nextVersions,
+        validation: null,
+        mockups: [],
+        status: "needs_review",
+        error_code: null,
+      }, job.updated_at);
+    } catch {
+      await adminClient.storage.from(BUCKET).remove([path]);
+      return json({ error: "studio_job_conflict" }, 409);
+    }
+    const oldMockups = (Array.isArray(job.mockups) ? job.mockups : []).map((asset) => asset.path);
+    const oldReferences = job.input.mockupReferencePaths;
+    const removePaths = [
+      ...oldMockups,
+      ...(oldReferences ? [oldReferences.leftPath, oldReferences.rightPath] : []),
+    ];
+    if (removePaths.length) await adminClient.storage.from(BUCKET).remove(removePaths);
+    return json(await jobSnapshot(adminClient, url, updated));
+  }
+
+  if (action === "edit") {
+    if (!isValidJobId(body.jobId)) return json({ error: "studio_job_not_found" }, 404);
+    const version = Number(body.version);
+    const instruction = typeof body.instruction === "string" ? body.instruction.trim() : "";
+    const side = body.side === undefined ? "both" : body.side;
+    if (!Number.isInteger(version) || version < 1 || instruction.length < 3 || instruction.length > 800) {
+      return json({ error: "invalid_studio_input" }, 400);
+    }
+    if (side !== "left" && side !== "right" && side !== "both") {
+      return json({ error: "invalid_studio_input" }, 400);
+    }
+    const job = await getJob(adminClient, body.jobId, sessionId);
+    if (!job) return json({ error: "studio_job_not_found" }, 404);
+    const versions = Array.isArray(job.art_versions) ? job.art_versions : [];
+    const base = versions.find((item) => item.version === version);
+    if (!base || job.status !== "needs_review" || job.processing) {
+      return json({ error: "studio_job_conflict" }, 409);
+    }
+    try {
+      const baseConfiguration = base.configuration;
+      const nextInput = archivePrintState({
+        ...job.input,
+        title: baseConfiguration?.title || job.input.title,
+        creationMode: baseConfiguration?.creationMode || job.input.creationMode,
+        artDescription: baseConfiguration?.artDescription || job.input.artDescription,
+        mandatoryText: baseConfiguration?.mandatoryText || job.input.mandatoryText,
+        selectedCommands: baseConfiguration?.selectedCommands || job.input.selectedCommands,
+        sizeBySide: baseConfiguration?.sizeBySide || job.input.sizeBySide || { left: 100, right: 100 },
+      });
+      nextInput.generationSide = side as GenerationSide;
+      nextInput.pendingEdit = { baseVersion: version, instruction, side: side as GenerationSide };
+      nextInput.latestEditInstruction = instruction;
+      nextInput.reviewRequested = false;
+      const updated = await writeJob(adminClient, job.id, sessionId, {
+        input: nextInput,
+        validation: null,
+        mockups: [],
+        status: "correction_pending",
+        error_code: null,
+      }, job.updated_at);
+      const oldMockups = Array.isArray(job.mockups) ? job.mockups.map((asset) => asset.path) : [];
+      if (oldMockups.length) await adminClient.storage.from(BUCKET).remove(oldMockups);
+      return json(await jobSnapshot(adminClient, url, updated), 202);
+    } catch {
+      return json({ error: "studio_job_conflict" }, 409);
+    }
+  }
+
+  if (action === "mockups") {
+    if (!form) return json({ error: "invalid_studio_input" }, 400);
+    const jobId = readActionText(form, "jobId", 36) || "";
+    const version = Number(readActionText(form, "version", 12) || "");
+    const customerName = readActionText(form, "customerName", 120) || "";
+    const customerEmail = readActionText(form, "customerEmail", 254) || "";
+    const customerWhatsappInput = readActionText(form, "customerWhatsapp", 40) || "";
+    const customerWhatsapp = customerWhatsappInput.replace(/\D/g, "");
+    if (!isValidJobId(jobId) || !Number.isInteger(version) || version < 1) {
+      return json({ error: "invalid_studio_input" }, 400);
+    }
+    if (!customerName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail) ||
+      customerWhatsapp.length < 10 || customerWhatsapp.length > 15) {
+      return json({ error: "invalid_studio_input" }, 400);
+    }
+    let job = await getJob(adminClient, jobId, sessionId);
+    if (!job) return json({ error: "studio_job_not_found" }, 404);
+    const hasVersion = (candidate: JobRow) => Array.isArray(candidate.art_versions) &&
+      candidate.art_versions.some((item) => item.version === version);
+    const alreadyQueued = (candidate: JobRow) =>
+      ["mockup_pair_pending", "mockup_left_pending", "mockup_right_pending"].includes(candidate.status) &&
+      candidate.input?.mockupTargetVersion === version &&
+      candidate.input?.mockupReferencePaths?.version === version;
+    if (!hasVersion(job)) return json({ error: "studio_art_version_not_found" }, 409);
+    if (alreadyQueued(job)) return json(await jobSnapshot(adminClient, url, job), 202);
+    if (job.status !== "needs_review") return json({ error: "studio_job_conflict" }, 409);
+    const customerId = await registerPublicCustomer(adminClient, customerName, customerEmail, customerWhatsapp);
+    // A request already finishing the old terminal-state poll can briefly mark
+    // this completed job as processing. Let it settle before rejecting mockups.
+    for (let attempt = 0; job.processing && attempt < 6; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      const current = await getJob(adminClient, jobId, sessionId);
+      if (!current) return json({ error: "studio_job_not_found" }, 404);
+      job = current;
+      if (alreadyQueued(job)) return json(await jobSnapshot(adminClient, url, job), 202);
+      if (job.status !== "needs_review") return json({ error: "studio_job_conflict" }, 409);
+    }
+    if (job.processing) {
+      const { data: released, error: releaseError } = await adminClient.from(TABLE)
+        .update({ processing: false, processing_started_at: null, updated_at: new Date().toISOString() })
+        .eq("id", job.id)
+        .eq("guest_session_id", sessionId)
+        .eq("updated_at", job.updated_at)
+        .eq("status", "needs_review")
+        .eq("processing", true)
+        .select("*")
+        .maybeSingle();
+      if (releaseError) return json({ error: "studio_job_lookup_failed" }, 503);
+      if (released) {
+        job = released as JobRow;
+      } else {
+        const current = await getJob(adminClient, jobId, sessionId);
+        if (!current) return json({ error: "studio_job_not_found" }, 404);
+        job = current;
+      }
+      if (alreadyQueued(job)) return json(await jobSnapshot(adminClient, url, job), 202);
+      if (job.status !== "needs_review") return json({ error: "studio_job_conflict" }, 409);
+      if (!hasVersion(job)) return json({ error: "studio_art_version_not_found" }, 409);
+    }
+    if (job.processing) return json({ error: "studio_mockup_job_busy" }, 409);
+
+    let leftReference: ReferenceImage;
+    let rightReference: ReferenceImage;
+    try {
+      leftReference = await readUploadedImage(form, "leftReference", 1200, 960);
+      rightReference = await readUploadedImage(form, "rightReference", 1200, 960);
+    } catch {
+      return json({ error: "invalid_studio_input" }, 400);
+    }
+    const stamp = Date.now() + "-" + crypto.randomUUID();
+    const leftPath = job.id + "/mockup-reference-v" + version + "-left-" + stamp + ".webp";
+    const rightPath = job.id + "/mockup-reference-v" + version + "-right-" + stamp + ".webp";
+    let leftUploaded = false;
+    try {
+      await uploadPrivate(adminClient, leftPath, leftReference.bytes, leftReference.mimeType);
+      leftUploaded = true;
+      await uploadPrivate(adminClient, rightPath, rightReference.bytes, rightReference.mimeType);
+    } catch (error) {
+      await adminClient.storage.from(BUCKET).remove(leftUploaded ? [leftPath, rightPath] : [leftPath]);
+      console.error("[caneca-studio] mockup reference upload failed", {
+        jobId,
+        reason: error instanceof Error ? error.message : "unknown",
+      });
+      return json({ error: "studio_asset_upload_failed" }, 503);
+    }
+
+    let currentJob = job;
+    let updated: JobRow | null = null;
+    let oldMockups: string[] = [];
+    let oldReferences: { leftPath: string; rightPath: string } | null = null;
+    try {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        if (alreadyQueued(currentJob)) {
+          await adminClient.storage.from(BUCKET).remove([leftPath, rightPath]);
+          return json(await jobSnapshot(adminClient, url, currentJob), 202);
+        }
+        if (currentJob.status !== "needs_review" || currentJob.processing || !hasVersion(currentJob)) {
+          throw new Error("studio_job_conflict");
+        }
+        const currentReferences = currentJob.input.mockupReferencePaths;
+        try {
+          updated = await writeJob(adminClient, job.id, sessionId, {
+            input: {
+              ...currentJob.input,
+              customerContact: { name: customerName, email: customerEmail, whatsapp: customerWhatsapp, customerId },
+              mockupTargetVersion: version,
+              mockupReferencePaths: { version, leftPath, rightPath, createdAt: new Date().toISOString() },
+            },
+            mockups: (Array.isArray(currentJob.mockups) ? currentJob.mockups : [])
+              .filter((asset) => asset.version !== version),
+            status: "mockup_pair_pending",
+            error_code: null,
+          }, currentJob.updated_at);
+          oldMockups = (Array.isArray(currentJob.mockups) ? currentJob.mockups : [])
+            .filter((asset) => asset.version === version).map((asset) => asset.path);
+          oldReferences = currentReferences
+            ? { leftPath: currentReferences.leftPath, rightPath: currentReferences.rightPath }
+            : null;
+          break;
+        } catch (error) {
+          if (attempt > 0) throw error;
+          const latest = await getJob(adminClient, jobId, sessionId);
+          if (!latest) throw new Error("studio_job_conflict");
+          if (alreadyQueued(latest)) {
+            await adminClient.storage.from(BUCKET).remove([leftPath, rightPath]);
+            return json(await jobSnapshot(adminClient, url, latest), 202);
+          }
+          if (latest.status !== "needs_review" || latest.processing || !hasVersion(latest)) {
+            throw new Error("studio_job_conflict");
+          }
+          currentJob = latest;
+        }
+      }
+    } catch (error) {
+      await adminClient.storage.from(BUCKET).remove([leftPath, rightPath]);
+      console.error("[caneca-studio] mockups could not be queued", {
+        jobId,
+        reason: error instanceof Error ? error.message : "unknown",
+      });
+      return json({ error: error instanceof Error && error.message === "studio_job_conflict"
+        ? "studio_job_conflict"
+        : "studio_job_lookup_failed" }, error instanceof Error && error.message === "studio_job_conflict" ? 409 : 500);
+    }
+    if (!updated) {
+      await adminClient.storage.from(BUCKET).remove([leftPath, rightPath]);
+      return json({ error: "studio_job_conflict" }, 409);
+    }
+    const removePaths = [...oldMockups, ...(oldReferences ? [oldReferences.leftPath, oldReferences.rightPath] : [])];
+    if (removePaths.length) await adminClient.storage.from(BUCKET).remove(removePaths);
+    return json(await jobSnapshot(adminClient, url, updated), 202);
+  }
+
+  if (action === "approve") {
+    if (!isValidJobId(body.jobId)) return json({ error: "studio_job_not_found" }, 404);
+    const version = Number(body.version);
+    const quantity = Number(body.quantity);
+    if (!Number.isInteger(version) || version < 1 || !Number.isInteger(quantity) || quantity < 1 || quantity > 500) {
+      return json({ error: "invalid_studio_input" }, 400);
+    }
+    const job = await getJob(adminClient, body.jobId, sessionId);
+    if (!job) return json({ error: "studio_job_not_found" }, 404);
+    const versions = Array.isArray(job.art_versions) ? job.art_versions : [];
+    if (!versions.some((item) => item.version === version) || job.status !== "needs_review" || job.processing) {
+      return json({ error: "studio_job_conflict" }, 409);
+    }
+    const nextInput = archivePrintState(job.input);
+    nextInput.printing = {
+      approvedVersion: version,
+      quantity,
+      completed: 0,
+      status: "ready",
+      approvedAt: new Date().toISOString(),
+      reprints: [],
+    };
+    try {
+      const updated = await writeJob(adminClient, job.id, sessionId, { input: nextInput }, job.updated_at);
+      return json(await jobSnapshot(adminClient, url, updated));
+    } catch {
+      return json({ error: "studio_job_conflict" }, 409);
+    }
+  }
+
+  if (action === "record_print") {
+    if (!isValidJobId(body.jobId)) return json({ error: "studio_job_not_found" }, 404);
+    const reprint = body.reprint === true;
+    const reason = typeof body.reason === "string" ? body.reason.trim() : "";
+    if (reprint && (reason.length < 3 || reason.length > 300)) return json({ error: "invalid_studio_input" }, 400);
+    const job = await getJob(adminClient, body.jobId, sessionId);
+    if (!job) return json({ error: "studio_job_not_found" }, 404);
+    const printing = printState(job.input);
+    if (job.status !== "needs_review" || job.processing || printing.approvedVersion === null ||
+      !Array.isArray(job.art_versions) || !job.art_versions.some((item) => item.version === printing.approvedVersion)) {
+      return json({ error: "studio_print_not_approved" }, 409);
+    }
+    if (!reprint && (printing.status !== "ready" || printing.completed >= printing.quantity)) {
+      return json({ error: "studio_print_quantity_complete" }, 409);
+    }
+    const nextPrinting: PrintState = reprint
+      ? { ...printing, reprints: [...printing.reprints, { version: printing.approvedVersion, reason, createdAt: new Date().toISOString() }] }
+      : {
+        ...printing,
+        completed: printing.completed + 1,
+        status: printing.completed + 1 >= printing.quantity ? "printed" : "ready",
+      };
+    try {
+      const updated = await writeJob(adminClient, job.id, sessionId, {
+        input: { ...job.input, printing: nextPrinting },
+      }, job.updated_at);
+      return json(await jobSnapshot(adminClient, url, updated));
+    } catch {
+      return json({ error: "studio_job_conflict" }, 409);
+    }
+  }
+
+  if (action === "advance") {
+    if (!isValidJobId(body.jobId)) return json({ error: "studio_job_not_found" }, 404);
+    return await advanceJob(adminClient, url, sessionId, body.jobId);
+  }
+
+  return json({ error: "invalid_studio_input" }, 400);
+}
+
+Deno.serve(handleRequest);
+
