@@ -5,12 +5,14 @@ const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const KEY=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
 const db=createClient(SUPABASE_URL,KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 const MINIMUM_ORDER_CENTS=7500;
+const MAXIMUM_ORDER_CENTS=99_999_999_999_999;
 const STOCK_CONFLICT_CODES=new Set<string>([
   "insufficient_stock","product_unavailable","basket_unavailable"
 ]);
 const ORDER_CONFLICT_CODES=new Set<string>([
   ...STOCK_CONFLICT_CODES,"basket_mold_unavailable","basket_mold_not_configured",
-  "basket_mold_component_invalid","basket_mold_option_invalid","basket_mold_composition_invalid"
+  "basket_mold_component_invalid","basket_mold_option_invalid","basket_mold_composition_invalid",
+  "checkout_price_changed","checkout_stock_changed"
 ]);
 const STALE_BASKET_CONFIGURATION_CODES=new Set<string>([
   "basket_mold_component_invalid","basket_mold_option_invalid","basket_mold_composition_invalid"
@@ -1426,10 +1428,22 @@ async function stockConflictDetailsFromError(error:any,rawItems:any[]){
 }
 
 async function submit(req:Request,p:any){
-  const pay=txt(p?.payment_method,80),rawPhone=txt(p?.whatsapp_phone,40),ph=phone(rawPhone),requestedItems=Array.isArray(p?.items)?p.items.slice(0,80):[],whatsappOriginRaw=txt(p?.whatsapp_origin,4),whatsappOrigin=['0975','1018'].includes(whatsappOriginRaw)?whatsappOriginRaw:'';
+  const pay=txt(p?.payment_method,80),rawPhone=txt(p?.whatsapp_phone,40),ph=phone(rawPhone),requestedItems=Array.isArray(p?.items)?p.items:[],whatsappOriginRaw=txt(p?.whatsapp_origin,4),whatsappOrigin=['0975','1018'].includes(whatsappOriginRaw)?whatsappOriginRaw:'';
   if(!ph)return {error:"invalid_whatsapp_phone",status:400};
   if(!requestedItems.length)return {error:"empty_cart",status:400};
+  if(requestedItems.length>80)return {error:"too_many_items",status:400};
   if(requestedItems.some((item:any)=>!["product","basket_mold"].includes(String(item?.type||"product"))))return {error:"invalid_item_type",status:400};
+  const expectedTotal=p?.expected_total_cents;
+  const hasReviewedTotal=expectedTotal!==undefined;
+  if(hasReviewedTotal&&(!Number.isSafeInteger(expectedTotal)||expectedTotal<0||expectedTotal>MAXIMUM_ORDER_CENTS)){
+    return {error:"checkout_confirmation_invalid",status:400};
+  }
+  if(hasReviewedTotal&&requestedItems.some((item:any)=>!Number.isInteger(item?.qty)||item.qty<1||item.qty>30)){
+    return {error:"invalid_quantity",status:400};
+  }
+  const deliveryDate=txt(p?.delivery_date,10),del=selectedDelivery(deliveryDate);
+  if(!del)return {error:"delivery_date_unavailable",status:409};
+  if(!pay)return {error:"invalid_payment",status:400};
   const stock=await reconcileOrderItemsForStock(requestedItems);
   let items=stock.items;
   let stockAdjustment=stock.stock_adjustment;
@@ -1437,7 +1451,6 @@ async function submit(req:Request,p:any){
   const productConflicts=adjustedItems.filter((item:StockAdjustment)=>item.kind==="product");
   if(productConflicts.length)return {error:"stock_conflict",status:409,stock_adjustment:true,adjusted_items:adjustedItems,stock_conflict_items:productConflicts,minimum_order_cents:MINIMUM_ORDER_CENTS};
   if(!items.length)return {error:"all_items_unavailable",status:409,stock_adjustment:true,adjusted_items:adjustedItems,stock_conflict_items:adjustedItems,minimum_order_cents:MINIMUM_ORDER_CENTS};
-  const deliveryDate=txt(p?.delivery_date,10),del=deliveryDate?selectedDelivery(deliveryDate):null;
   async function allowOrderAttempt(rateKey:string,limit:number,scope:string){
     try{
       const gate=await db.rpc("consume_public_rate_limit",{p_rate_key:rateKey,p_bucket:"create_order",p_limit:limit,p_window_seconds:60});
@@ -1502,6 +1515,7 @@ async function submit(req:Request,p:any){
     ...(canonicalAddress?.id?{delivery_customer_address_id:canonicalAddress.id}:{}),
     ...(whatsappOrigin?{whatsapp_origin:whatsappOrigin}:{}),
     ...(marketingCampaign?{marketing_campaign:marketingCampaign}:{}),
+    ...(hasReviewedTotal?{expected_total_cents:expectedTotal}:{}),
     ...(stockAdjustment?{stock_adjusted_retry:true,stock_adjustments:adjustedItems}:{}),
     ...(stockRetryAttempted?{stock_retry_attempted:true}:{}),
     ...(basketConfigurationRefreshed?{basket_configuration_refreshed:true}:{})
@@ -1510,7 +1524,7 @@ async function submit(req:Request,p:any){
   let created=await createOrderAttempt();
   if(created.error){
     const firstError=txt(created.error.message,160).split("\n")[0];
-    if(STALE_BASKET_CONFIGURATION_CODES.has(firstError)){
+    if(!hasReviewedTotal&&STALE_BASKET_CONFIGURATION_CODES.has(firstError)){
       try{
         const refreshed=await refreshBasketMoldOrderItems(items);
         if(refreshed){
@@ -1534,7 +1548,7 @@ async function submit(req:Request,p:any){
   }
   if(created.error){
     const firstError=txt(created.error.message,160).split("\n")[0];
-    if(STOCK_CONFLICT_CODES.has(firstError)){
+    if(!hasReviewedTotal&&STOCK_CONFLICT_CODES.has(firstError)){
       stockRetryAttempted=true;
       console.warn("storefront_stock_conflict_retry",{error_code:firstError,item_count:items.length});
       const refreshed=await reconcileOrderItemsForStock(items);
@@ -1556,6 +1570,12 @@ async function submit(req:Request,p:any){
   }
   if(created.error){
     const e=txt(created.error.message,160).split("\n")[0];
+    if(e==="checkout_price_changed"){
+      let actualTotal;
+      try{actualTotal=JSON.parse(String(created.error.details||"")).actual_total_cents}catch{}
+      return {error:e,status:409,
+        ...(Number.isSafeInteger(actualTotal)&&actualTotal>=0&&actualTotal<=MAXIMUM_ORDER_CENTS?{actual_total_cents:actualTotal}:{})};
+    }
     console.error("storefront_order_rejected",{error_code:e||"order_failed",stock_retry_attempted:stockRetryAttempted});
     const stockConflictItems=STOCK_CONFLICT_CODES.has(e)?await stockConflictDetailsFromError(created.error,items):[];
     return {error:e||"order_failed",status:ORDER_CONFLICT_CODES.has(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS,stock_adjustment:stockAdjustment,adjusted_items:adjustedItems,stock_conflict_items:stockConflictItems.length?stockConflictItems:adjustedItems}
@@ -1594,7 +1614,7 @@ Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
   try{
     const u=new URL(req.url),action=txt(u.searchParams.get("action")||(req.method==="GET"?"home":""),60);
-    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:83},200,{"Cache-Control":"no-store"});
+    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:84},200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="home_catalog_cards")return json(req,await homeCatalogCards(),200,{"Cache-Control":"public, max-age=30, stale-while-revalidate=180"});
     if(req.method==="GET"&&action==="home_size_cards")return json(req,await homeSizeCards(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
 

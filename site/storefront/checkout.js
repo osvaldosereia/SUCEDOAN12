@@ -43,6 +43,7 @@
     let previousCheckoutAddressId = "";
     let registrationMode = "new";
     let stockConflictItems = [];
+    let revisedPrice = null;
 
     function normalizeCheckoutPhone(value) {
       let digits = phoneDigits(value);
@@ -191,11 +192,12 @@
       const orderItemsAvailable = Boolean(data && (data.customOrder
         ? selectedExtraEntries(data).length > 0
         : data.orderable === true));
-      const subtotal = data && data.customOrder ? customOrderSubtotalCents(data) : 0;
-      const minimumSatisfied = !data || !data.customOrder || subtotal >= minimumOrderCents;
+      const subtotal = data ? orderReviewTotalCents(data) : 0;
+      const minimumSatisfied = !data || subtotal >= minimumOrderCents;
       const customerConfirmed = customerHasCheckoutAddress(state.customer);
       const selectedDateIsAvailable = Boolean(select && !select.disabled && state.deliveryOptions.some((option) => option.date === select.value));
-      const cannotConfirm = state.submittingOrder || !orderItemsAvailable ||
+      const calculating = Boolean(data && (data.changing === true || data.changePromise));
+      const cannotConfirm = state.submittingOrder || calculating || !orderItemsAvailable ||
         !minimumSatisfied || !customerConfirmed || !payment || !selectedDateIsAvailable;
       const confirmationButton = $("confirm-order");
       confirmationButton.disabled = cannotConfirm;
@@ -204,7 +206,8 @@
       // bottom of the checkout even when the product list is scrolled away.
       let reason = "";
       if (!state.submittingOrder) {
-        if (!orderItemsAvailable) reason = "Escolha pelo menos um produto disponível para continuar.";
+        if (calculating) reason = "Atualizando itens e total do pedido…";
+        else if (!orderItemsAvailable) reason = "Escolha pelo menos um produto disponível para continuar.";
         else if (!minimumSatisfied) reason = "Pedido mínimo de " + money(minimumOrderCents) +
           ". Faltam " + money(minimumOrderCents - subtotal) + " em produtos para liberar a confirmação.";
         else if (!customerConfirmed) reason = "Busque seu cadastro pelo telefone para continuar.";
@@ -374,12 +377,20 @@
       return count;
     }
 
-    function orderReviewTotalCents(data) {
-      const extras = selectedExtraEntries(data).reduce((sum, item) =>
-        sum + Math.max(0, Number(item.price_cents || 0)) * Math.max(0, Math.trunc(Number(item.quantity || 0))), 0);
+    function localOrderTotalCents(data) {
+      const extras = customOrderSubtotalCents(data);
       return data && data.customOrder === true
         ? extras
         : Math.max(0, Number(data && data.totalCents || 0)) + extras;
+    }
+
+    function orderReviewTotalCents(data, items) {
+      const localTotal = localOrderTotalCents(data);
+      if (revisedPrice && revisedPrice.cart === data && revisedPrice.localTotal === localTotal &&
+          revisedPrice.items === JSON.stringify(items || itemsForOrder(data))) {
+        return revisedPrice.total;
+      }
+      return localTotal;
     }
 
     function renderOrderReview(data) {
@@ -418,13 +429,13 @@
             (selectedExtraEntries(data).length ? " e produtos extras selecionados." : ".");
       $("order-review-empty").textContent = entries.length ? "" : "Seu carrinho está vazio. Escolha uma cesta ou adicione produtos para continuar.";
       $("order-review-empty").hidden = entries.length > 0;
-      $("order-review-total").textContent = data ? money(orderReviewTotalCents(data)) : money(0);
+      const total = data ? orderReviewTotalCents(data) : 0;
+      $("order-review-total").textContent = money(total);
 
       const minimumMessage = $("order-review-minimum-message");
-      if (data && data.customOrder === true) {
-        const subtotal = customOrderSubtotalCents(data);
-        minimumMessage.textContent = subtotal < minimumOrderCents
-          ? "Pedido mínimo de " + money(minimumOrderCents) + ". Faltam " + money(minimumOrderCents - subtotal) + "."
+      if (data && (data.customOrder === true || total < minimumOrderCents)) {
+        minimumMessage.textContent = total < minimumOrderCents
+          ? "Pedido mínimo de " + money(minimumOrderCents) + ". Faltam " + money(minimumOrderCents - total) + "."
           : "Pedido mínimo atingido.";
         minimumMessage.hidden = false;
       } else {
@@ -857,14 +868,19 @@
     }
 
     async function confirmOrder() {
+      if (state.submittingOrder) return;
       const data = state.baskets.get(state.cartKey);
       const customer = state.customer;
       const payment = document.querySelector('input[name="payment"]:checked');
       const deliveryDate = $("delivery-date").value;
       const dateIsAvailable = state.deliveryOptions.some((option) => option.date === deliveryDate);
-      if (!data || !customerHasCheckoutAddress(customer) || !payment || !dateIsAvailable) return;
-      if (data.customOrder && customOrderSubtotalCents(data) < minimumOrderCents) {
-        toast("O pedido personalizado precisa atingir o mínimo de " + money(minimumOrderCents) + ".");
+      if (!data || data.changing === true || data.changePromise ||
+          !customerHasCheckoutAddress(customer) || !payment || !dateIsAvailable) return;
+      const items = itemsForOrder(data);
+      const expectedTotal = orderReviewTotalCents(data, items);
+      const localTotal = localOrderTotalCents(data);
+      if (expectedTotal < minimumOrderCents) {
+        toast("O pedido precisa atingir o mínimo de " + money(minimumOrderCents) + ".");
         return;
       }
       const recipient = whatsappNumber(customer.phone || $("customer-phone").value);
@@ -885,6 +901,7 @@
             whatsapp_phone: customer.phone || $("customer-phone").value,
             delivery_date: deliveryDate,
             payment_method: payment.value,
+            expected_total_cents: expectedTotal,
             customer_details: {
               name: customer.display_name || "",
               address_id: customer.address && customer.address.id || "",
@@ -901,7 +918,7 @@
                 reference: customer.address && customer.address.reference || ""
               }
             },
-            items: itemsForOrder(data)
+            items
           }
         });
         closeSheet("order-sheet");
@@ -911,7 +928,7 @@
         const serverTotalCents = result && result.total_cents;
         const finalTotalCents = serverTotalCents !== null && serverTotalCents !== undefined && Number.isFinite(Number(serverTotalCents))
           ? Number(serverTotalCents)
-          : orderReviewTotalCents(data);
+          : expectedTotal;
         $("order-receipt-total").textContent = money(finalTotalCents);
         const deliveryOption = state.deliveryOptions.find((option) => option.date === deliveryDate);
         $("order-receipt-delivery").textContent = deliveryOption && deliveryOption.label || deliveryDate;
@@ -939,6 +956,7 @@
           receipt.scrollIntoView({ behavior: "smooth", block: "start" });
         });
         const submittedCartKey = state.cartKey;
+        revisedPrice = null;
         state.cartKey = "";
         if (state.activeKey === submittedCartKey) state.activeKey = "";
         if (data.extraSelections instanceof Map) data.extraSelections.clear();
@@ -960,7 +978,26 @@
           : orderLabel + " recebido com sucesso.");
       } catch (error) {
         const reason = String(error && error.message || "");
+        const responseData = error && error.data && typeof error.data === "object" ? error.data : {};
+        const actualTotal = responseData.actual_total_cents;
+        if (reason === "checkout_price_changed" && Number.isSafeInteger(actualTotal) && actualTotal >= 0 &&
+            actualTotal !== expectedTotal) {
+          revisedPrice = { cart: data, items: JSON.stringify(items), localTotal, total: actualTotal };
+          renderOrderReview(data);
+          const message = "O total mudou de " + money(expectedTotal) + " para " + money(actualTotal) +
+            ". Nenhum pedido foi registrado. Confira o novo valor antes de confirmar novamente.";
+          setOrderSubmitMessage(message, "warning");
+          toast(message);
+          return;
+        }
+        if (reason === "delivery_date_unavailable") await loadDeliveryOptions();
         const messages = {
+          checkout_price_changed: "O total mudou. Atualize a página para revisar os preços. Seu carrinho foi mantido.",
+          checkout_stock_changed: "O estoque mudou durante a confirmação. Atualize a página para conferir os itens. Seu carrinho foi mantido.",
+          checkout_confirmation_invalid: "Atualize a página para revisar o total antes de confirmar.",
+          delivery_date_unavailable: "A data de entrega não está mais disponível. Escolha uma nova data para confirmar.",
+          too_many_items: "O pedido tem mais de 80 produtos diferentes. Divida a compra ou fale com a loja pelo WhatsApp.",
+          invalid_quantity: "Revise as quantidades dos produtos avulsos. O limite é 30 unidades por produto.",
           delivery_details_required: "Complete o endereço de entrega antes de concluir o pedido.",
           required_checkout_data: "A data de entrega é obrigatória. Reabra o checkout para carregar as datas disponíveis e tente novamente.",
           customer_name_required: "O cadastro precisa ter o nome do cliente.",
@@ -969,14 +1006,14 @@
           insufficient_stock: "O estoque de um produto mudou. Atualize a cesta e tente novamente.",
           basket_unavailable: "Esta cesta não está mais disponível. Atualize a página e escolha outra cesta.",
           basket_mold_unavailable: "Esta cesta não está mais disponível. Atualize a página e escolha outra cesta.",
-          basket_mold_composition_invalid: "A composição da cesta foi atualizada. Volte à cesta e tente novamente.",
-          basket_mold_component_invalid: "Os itens da cesta foram atualizados. Volte à cesta e tente novamente.",
+          basket_mold_composition_invalid: "A composição da cesta mudou. Atualize a página para conferir os itens antes de confirmar.",
+          basket_mold_component_invalid: "Os itens da cesta mudaram. Atualize a página para conferir a cesta antes de confirmar.",
+          basket_mold_option_invalid: "Uma opção da cesta mudou. Atualize a página para conferir os itens antes de confirmar.",
           basket_mold_components_required: "Não foi possível carregar os itens da cesta. Atualize a página e tente novamente.",
           minimum_order: "O pedido mínimo é R$ 75,00. Acrescente produtos e tente novamente.",
           invalid_whatsapp_phone: "O telefone do cadastro não está em um formato válido.",
           invalid_payment: "A forma de pagamento não foi reconhecida. Selecione novamente e tente outra vez."
         };
-        const responseData = error && error.data && typeof error.data === "object" ? error.data : {};
         const reportedConflicts = Array.isArray(responseData.stock_conflict_items)
           ? responseData.stock_conflict_items
           : Array.isArray(responseData.adjusted_items)
@@ -1041,20 +1078,23 @@
         const cartKey = state.cartKey;
         const data = state.baskets.get(cartKey);
         const delta = Math.trunc(Number(button.dataset.delta || 0));
-        if (!data || (delta !== -1 && delta !== 1) || data.changing === true) return;
+        if (!data || state.submittingOrder || (delta !== -1 && delta !== 1) || data.changing === true) return;
 
         if (button.dataset.kind === "basket" || button.dataset.kind === "basket_option") {
           if (!button.dataset.positionId) return;
           const itemsHost = $("order-review-items");
           itemsHost.setAttribute("aria-busy", "true");
           itemsHost.querySelectorAll("[data-order-review-adjust]").forEach((control) => { control.disabled = true; });
+          let change;
           if (button.dataset.kind === "basket_option") {
             if (!button.dataset.productId || typeof changeBasketProductQuantity !== "function") return;
-            await changeBasketProductQuantity(button.dataset.positionId, button.dataset.productId, delta, cartKey);
+            change = changeBasketProductQuantity(button.dataset.positionId, button.dataset.productId, delta, cartKey);
           } else {
             if (typeof changeBasketItemQuantity !== "function") return;
-            await changeBasketItemQuantity(button.dataset.positionId, delta, cartKey);
+            change = changeBasketItemQuantity(button.dataset.positionId, delta, cartKey);
           }
+          updateConfirmOrderAvailability();
+          await change;
         } else if (button.dataset.kind === "extra") {
           const item = data.extraSelections instanceof Map ? data.extraSelections.get(button.dataset.extraId) : null;
           if (!item) return;
