@@ -127,7 +127,7 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
   const mold=mq.data,basket=bq.data;
   if(!mold||!basket||basket.is_active!==true)return null;
   if(compositionNumber<1||compositionNumber>Number(mold.public_composition_count||1))return null;
-  const posq=await db.from("basket_mold_positions").select("id,label,quantity,sort_order").eq("mold_id",mold.id).order("sort_order");
+  const posq=await db.from("basket_mold_positions").select("id,label,quantity,sort_order,metadata").eq("mold_id",mold.id).order("sort_order");
   if(posq.error)throw posq.error;
   const positions=posq.data||[];
   if(!positions.length)return null;
@@ -333,8 +333,11 @@ async function moldDetail(basketId:string,compositionNumber:number,selections:an
       }
     }
     publicAlternatives.sort(compareMoldPositionOptionOrder);
+    const sessionId=String(position.metadata?.site_basket_product_session_id||positionId);
+    const slotOrder=Math.max(1,Math.trunc(Number(position.metadata?.site_basket_product_slot_order||1)));
+    const cleanLabel=String(position.label||"").replace(/\s+·\s+Padrão\s+\d+$/i,"");
     items.push({
-      position_id:positionId,label:position.label,
+      position_id:positionId,session_id:sessionId,slot_order:slotOrder,label:cleanLabel,
       product_id:selectedForDisplay?.product_id||defaultSelected.get(positionId)||"",
       default_product_id:configuredDefaults.get(positionId)||"",
       is_active:selectedForDisplay?.is_active===true,
