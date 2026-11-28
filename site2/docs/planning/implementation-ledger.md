@@ -1260,3 +1260,9 @@ Este registro supersede as notas anteriores que diziam que o JSON não existia o
 - A consulta agregada somente leitura ao Supabase canônico encontrou 5 cestas ativas para WhatsApp e 118 posições: 110 prontas, 8 pendentes e zero bindings greenfield do Flow. São quatro posições prontas a mais que na leitura de 18/11 15:27 UTC (106/12); a causa não foi determinada.
 - Desde 18/11/2026 15:27 UTC, foram vistos somente dois pares ação/tipo de entidade em `admin_audit_logs`: um `customer_update_admin_code` e um `customer_delete_admin_code`, ambos para `customer`. Essa contagem não expõe nem permite inferir os registros afetados e não explica a mudança de prontidão.
 - Nenhum identificador, conteúdo de cliente ou segredo foi consultado. Esta leitura não valida WABAs, Flow nem a jornada de pedido.
+
+## Rechecagem de prontidão e atividade administrativa (28/11/2026 00:34 UTC)
+
+- A consulta agregada somente leitura ao Supabase canônico encontrou 5 cestas ativas para WhatsApp e 118 posições: 111 prontas, 7 pendentes e zero bindings greenfield do Flow. Uma posição passou a atender aos critérios de prontidão desde a leitura de 24/11 00:13 UTC (110/8); a causa não foi determinada.
+- Desde 24/11/2026 00:13 UTC, foram vistos apenas oito pares ação/tipo em `admin_audit_logs`: sete `customer_address_create` (`customer_address`) e um `customer_delete_admin_code` (`customer`). Foram consultados somente ação e tipo de entidade, sem IDs, conteúdo de endereço ou dados de cliente.
+- Esta rechecagem não valida WABAs nem a jornada de pedido; nenhum Flow foi publicado ou associado. Nenhum segredo foi lido ou exposto.
