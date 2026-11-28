@@ -1253,9 +1253,8 @@ async function basketGridList() {
 
 
 async function basketGridSave(input: any) {
-  const inputTypes = Array.isArray(input.types) ? input.types.slice(0, 80) : null;
+  const inputTypes = Array.isArray(input.types) ? input.types : null;
   if (!inputTypes?.length) return { status: 400, error: "basket_grid_types_required", message: "Adicione pelo menos um tipo de produto." };
-  if (Array.isArray(input.types) && input.types.length > 80) return { status: 400, error: "basket_grid_too_many_types", message: "A grade aceita até 80 tipos de produto." };
 
   const normalized = [] as Array<Record<string, any>>;
   const typeIds = new Set<string>();
@@ -1265,7 +1264,7 @@ async function basketGridSave(input: any) {
     const title = clean(type?.title, 180);
     const rawSessionId = type?.session_id;
     const sessionId = rawSessionId == null || rawSessionId === "" ? typeId : uuid(rawSessionId);
-    const slotOrder = integer(type?.slot_order ?? 1, 1, 3);
+    const slotOrder = integer(type?.slot_order ?? 1, 1, 2147483647);
     const rawOptionInput = Array.isArray(type?.options) ? type.options : null;
     const rawQuantities = type?.quantities && typeof type.quantities === "object" && !Array.isArray(type.quantities) ? type.quantities : null;
     if (!typeId || !sessionId || slotOrder === null || !title || !rawOptionInput || !rawQuantities) {
@@ -1322,9 +1321,9 @@ async function basketGridSave(input: any) {
   });
   for (const slots of slotsBySession.values()) {
     const slotOrders = slots.map((slot) => Number(slot.slot_order)).sort((a, b) => a - b);
-    if (slots.length > 3 || new Set(slots.map((slot) => slot.title)).size !== 1
+    if (new Set(slots.map((slot) => slot.title)).size !== 1
       || slotOrders.some((order, index) => order !== index + 1)) {
-      return { status: 400, error: "invalid_basket_grid_session", message: "Cada sessão pode ter até três padrões, com o mesmo título e numeração contínua." };
+      return { status: 400, error: "invalid_basket_grid_session", message: "Os produtos padrão de cada sessão precisam ter o mesmo título e numeração contínua." };
     }
   }
 
@@ -1361,9 +1360,8 @@ async function basketGridSave(input: any) {
     const positions = normalized.flatMap((type, positionIndex) => {
       const quantity = Number(type.quantities?.[basket.id] || 0);
       if (quantity <= 0) return [];
-      const groupSize = slotsBySession.get(type.session_id)?.length || 1;
       return [{
-        label: groupSize > 1 ? type.title + " · Padrão " + type.slot_order : type.title,
+        label: type.title,
         quantity,
         sort_order: positionIndex,
         metadata: {
@@ -1700,7 +1698,7 @@ async function basketSetActive(input: any) {
 async function basketSave(input: any) {
   const basketId = uuid(input.basket_id);
   const targetPriceCents = integer(input.target_price_cents, 0, 100000000);
-  const positions = Array.isArray(input.positions) ? input.positions.slice(0, 80) : null;
+  const positions = Array.isArray(input.positions) ? input.positions : null;
   const shareChangesInput = input.share_changes == null ? [] : input.share_changes;
   if (!basketId) return { status: 400, error: "invalid_basket_id", message: "Cesta inválida." };
   if (targetPriceCents === null) return { status: 400, error: "invalid_basket_price", message: "Informe um valor válido para a cesta." };

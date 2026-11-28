@@ -150,6 +150,12 @@
     return state.types.filter((row, index) => sessionKey(row, index) === sessionId);
   }
 
+  function typeTitleField(key) {
+    const host = $("admin-baskets");
+    return host && Array.from(host.querySelectorAll("[data-type-title]"))
+      .find((field) => field.dataset.typeTitle === String(key)) || null;
+  }
+
   function normalizeSessionSlots() {
     const nextBySession = new Map();
     state.types.forEach((type, index) => {
@@ -282,6 +288,12 @@
       const productId = String(option.product_id);
       const brand = [product.brand, product.sku && ("SKU " + product.sku)].filter(Boolean).join(" · ");
       const isDefault = String(option.product_id) === defaultProductId;
+      const defaultQuantityMarkup = isDefault
+        ? '<div class="basket-default-product-quantities"><strong>Quantidade deste padrão em cada cesta</strong><div class="basket-type-quantity-grid">' + (state.baskets || []).map((basket) => {
+          const value = quantityValue(type.quantities?.[basket.id]);
+          return '<label class="basket-type-quantity"><span title="' + esc(basket.name) + '">' + esc(basket.name) + '</span><input type="number" min="0" max="999" step="1" value="' + esc(value) + '" data-type-quantity="' + esc(key) + '" data-basket-id="' + esc(basket.id) + '" aria-label="Quantidade do padrão ' + Number(type.slot_order || 1) + ' na cesta ' + esc(basket.name) + '"></label>';
+        }).join("") + '</div></div>'
+        : "";
       const cannotSelectDefault = !canSelectAsBasketDefault(product);
       const isDraggable = !isDefault;
       const moveUpDisabled = isDefault || index <= 1;
@@ -297,7 +309,7 @@
           '<button class="text-button" type="button" data-move-option="-1" data-type-key="' + esc(key) + '" data-product-id="' + esc(productId) + '" aria-label="Mover ' + esc(product.name || "produto") + ' para cima"' + (moveUpDisabled ? " disabled" : "") + '>↑</button>' +
           '<button class="text-button" type="button" data-move-option="1" data-type-key="' + esc(key) + '" data-product-id="' + esc(productId) + '" aria-label="Mover ' + esc(product.name || "produto") + ' para baixo"' + (moveDownDisabled ? " disabled" : "") + '>↓</button>' +
         '</div><button class="text-button product-edit-mini" type="button" data-edit-product="' + esc(productId) + '">Editar</button>' +
-        '<button class="text-button danger-text" type="button" data-remove-option="true" data-type-key="' + esc(key) + '" data-product-id="' + esc(productId) + '" aria-label="Remover ' + esc(product.name || "Produto") + '">×</button></div></article>';
+        '<button class="text-button danger-text" type="button" data-remove-option="true" data-type-key="' + esc(key) + '" data-product-id="' + esc(productId) + '" aria-label="Remover ' + esc(product.name || "Produto") + '">×</button></div>' + defaultQuantityMarkup + '</article>';
     }).join("");
     return '<div class="basket-grid-products-heading"><div><h4>Produtos no carrossel</h4><p>Arraste para ordenar como aparece no site. O produto padrão permanece em primeiro.</p></div><button class="button button-outline basket-grid-add-option" type="button" data-add-variation="' + esc(key) + '">Adicionar produtos</button></div>' +
       '<div class="basket-grid-options" role="list" aria-label="Produtos do carrossel de ' + esc(type.title || "tipo") + '">' + (list || '<p class="admin-muted basket-grid-empty-options">Nenhum produto nesta posição. Busque e adicione produtos no painel ao lado.</p>') + '</div>';
@@ -464,7 +476,7 @@
     const types = state.types || [];
     if (pricesHost) pricesHost.innerHTML = basketPriceCardsMarkup(baskets);
     if (!types.length) {
-      host.innerHTML = '<p class="admin-muted basket-grid-empty">Nenhum tipo cadastrado. Adicione um tipo para começar a montar as cestas.</p>';
+      host.innerHTML = '<p class="admin-muted basket-grid-empty">Nenhum tipo cadastrado. Adicione uma sessão para começar a montar as cestas.</p>';
       syncPickerTypeSelect();
       renderPickerResults();
       return;
@@ -475,43 +487,39 @@
       const sessionId = sessionKey(type, index);
       let group = groupBySession.get(sessionId);
       if (!group) {
-        group = { sessionId, title: type.title || "", slots: [], firstIndex: index };
+        group = { sessionId, title: type.title || "", slots: [] };
         groupBySession.set(sessionId, group);
         groups.push(group);
       }
       group.slots.push({ type, index });
     });
-    const rows = types.map((type, index) => {
-      const key = typeKey(type, index);
-      const quantities = type.quantities || {};
-      const expanded = state.expandedTypeKey === key;
-      const optionCount = (type.options || []).length;
-      const sessionId = sessionKey(type, index);
-      const group = groupBySession.get(sessionId);
-      const slotPosition = group.slots.findIndex((entry) => entry.type === type) + 1;
-      const slotNumber = Number(type.slot_order || slotPosition);
-      const groupIndex = groups.indexOf(group);
-      const firstSlot = slotPosition === 1;
-      const quantityCards = baskets.map((basket) => {
-        const value = quantityValue(quantities[basket.id]);
-        return '<label class="basket-type-quantity"><span title="' + esc(basket.name) + '">' + esc(basket.name) + '</span><input type="number" min="0" max="999" step="1" value="' + esc(value) + '" data-type-quantity="' + esc(key) + '" data-basket-id="' + esc(basket.id) + '" aria-label="Quantidade do padrão ' + slotNumber + ' de ' + esc(type.title || "tipo") + ' na cesta ' + esc(basket.name) + '"></label>';
+    const sessions = groups.map((group, groupIndex) => {
+      const firstEntry = group.slots[0];
+      const firstKey = typeKey(firstEntry.type, firstEntry.index);
+      const titleField = '<label class="basket-session-title-field"><span>Título da sessão exibido no site</span><input type="text" maxlength="180" placeholder="Ex.: Arroz" value="' + esc(group.title) + '" data-type-title="' + esc(firstKey) + '"></label>';
+      const orderButtons = '<div class="basket-grid-order"><button class="text-button" type="button" data-move-type="-1" data-type-key="' + esc(firstKey) + '" aria-label="Subir sessão ' + esc(group.title || "sem título") + '"' + (groupIndex === 0 ? " disabled" : "") + '>↑</button><button class="text-button" type="button" data-move-type="1" data-type-key="' + esc(firstKey) + '" aria-label="Descer sessão ' + esc(group.title || "sem título") + '"' + (groupIndex === groups.length - 1 ? " disabled" : "") + '>↓</button></div>';
+      const addPatternButton = '<button class="text-button" type="button" data-add-pattern="' + esc(firstKey) + '" aria-label="Adicionar produto padrão à sessão ' + esc(group.title || "sem título") + '">+ Padrão</button>';
+      const patternMarkup = group.slots.map((entry, slotIndex) => {
+        const type = entry.type;
+        const key = typeKey(type, entry.index);
+        const slotNumber = Number(type.slot_order || slotIndex + 1);
+        const expanded = state.expandedTypeKey === key;
+        const options = Array.isArray(type.options) ? type.options : [];
+        const defaultId = String(type.default_product_id || options[0]?.product_id || "");
+        const defaultOption = options.find((option) => String(option.product_id) === defaultId) || options[0];
+        const defaultProductName = defaultOption ? optionProduct(defaultOption).name : "Produto padrão ainda não definido";
+        const optionCount = options.length;
+        const patternSummary = defaultProductName + " · " + optionCount + (optionCount === 1 ? " produto no carrossel" : " produtos no carrossel");
+        return '<article class="basket-type-card basket-default-slot' + (expanded ? " is-expanded" : "") + '" id="basket-type-' + esc(key) + '" data-type-card="' + esc(key) + '"><div class="basket-type-summary"><button class="basket-type-toggle" type="button" data-toggle-type="' + esc(key) + '" aria-expanded="' + (expanded ? "true" : "false") + '" aria-controls="basket-type-details-' + esc(key) + '"><span class="basket-type-chevron" aria-hidden="true">' + (expanded ? "−" : "+") + '</span><span class="basket-type-summary-copy"><strong>Padrão ' + slotNumber + '</strong><small>' + esc(patternSummary) + '</small></span></button><div class="basket-type-actions"><button class="text-button danger-text" type="button" data-delete-type="' + esc(key) + '" aria-label="Excluir padrão ' + slotNumber + ' da sessão ' + esc(group.title || "sem título") + '">Excluir</button></div></div><div class="basket-type-details" id="basket-type-details-' + esc(key) + '"' + (expanded ? "" : " hidden") + '><div class="basket-grid-variations">' + renderOptions(type, key) + '</div></div></article>';
       }).join("");
-      const orderButtons = firstSlot
-        ? '<div class="basket-grid-order"><button class="text-button" type="button" data-move-type="-1" data-type-key="' + esc(key) + '" aria-label="Subir sessão ' + esc(type.title || "sem título") + '"' + (groupIndex === 0 ? " disabled" : "") + '>↑</button><button class="text-button" type="button" data-move-type="1" data-type-key="' + esc(key) + '" aria-label="Descer sessão ' + esc(type.title || "sem título") + '"' + (groupIndex === groups.length - 1 ? " disabled" : "") + '>↓</button></div>'
-        : "";
-      const addPatternButton = firstSlot && group.slots.length < 3
-        ? '<button class="text-button" type="button" data-add-pattern="' + esc(key) + '" aria-label="Adicionar outro produto padrão à sessão ' + esc(type.title || "sem título") + '">+ Padrão</button>'
-        : "";
-      const patternSummary = 'Padrão ' + slotNumber + ' de ' + group.slots.length + ' · ' + optionCount + (optionCount === 1 ? ' produto na lista' : ' produtos na lista');
-      const titleField = firstSlot
-        ? '<label class="basket-grid-title-field"><span>Título da sessão exibido no site</span><input type="text" maxlength="180" placeholder="Ex.: Arroz" value="' + esc(type.title || "") + '" data-type-title="' + esc(key) + '"></label>'
-        : '<div class="basket-grid-title-field"><span>Sessão</span><strong data-type-heading="' + esc(key) + '">' + esc(type.title || "Novo tipo") + '</strong></div>';
-      return '<article class="basket-type-card basket-default-slot' + (expanded ? " is-expanded" : "") + '" id="basket-type-' + esc(key) + '" data-type-card="' + esc(key) + '"><div class="basket-type-summary"><button class="basket-type-toggle" type="button" data-toggle-type="' + esc(key) + '" aria-expanded="' + (expanded ? "true" : "false") + '" aria-controls="basket-type-details-' + esc(key) + '"><span class="basket-type-chevron" aria-hidden="true">' + (expanded ? "−" : "+") + '</span><span class="basket-type-summary-copy"><strong data-type-heading="' + esc(key) + '">' + esc(type.title || "Novo tipo") + '</strong><small>' + esc(patternSummary) + '</small></span></button><div class="basket-type-quantity-grid">' + quantityCards + '</div><div class="basket-type-actions">' + orderButtons + addPatternButton + '<button class="text-button danger-text" type="button" data-delete-type="' + esc(key) + '" aria-label="Excluir padrão ' + slotNumber + ' de ' + esc(type.title || "sem título") + '">Excluir</button></div></div><div class="basket-type-details" id="basket-type-details-' + esc(key) + '"' + (expanded ? "" : " hidden") + '>' + titleField + '<div class="basket-grid-variations">' + renderOptions(type, key) + '</div></div></article>';
+      const patternCount = group.slots.length;
+      return '<section class="basket-session-group" data-session-group="' + esc(group.sessionId) + '"><div class="basket-session-heading">' + titleField + '<div class="basket-session-actions">' + orderButtons + addPatternButton + '</div></div><div class="basket-session-patterns">' + patternMarkup + '</div><p class="basket-session-caption">' + patternCount + (patternCount === 1 ? " produto padrão nesta sessão." : " produtos padrão nesta sessão.") + ' A quantidade é definida no cartão de cada produto padrão.</p></section>';
     }).join("");
-    host.innerHTML = '<div class="basket-type-list-heading"><div><strong>Composição por sessão e produto padrão</strong><span>Cada padrão tem quantidades e substitutos próprios. O total da sessão é a soma dos padrões.</span></div><span>' + groups.length + (groups.length === 1 ? " sessão" : " sessões") + ' · ' + types.length + (types.length === 1 ? " padrão" : " padrões") + '</span></div><div class="basket-type-list">' + rows + '</div>';
+    host.innerHTML = '<div class="basket-type-list-heading"><div><strong>Composição por sessão</strong><span>Uma sessão pode ter quantos produtos padrão precisar. Cada padrão mantém suas próprias opções e quantidades por cesta.</span></div><span>' + groups.length + (groups.length === 1 ? " sessão" : " sessões") + ' · ' + types.length + (types.length === 1 ? " padrão" : " padrões") + '</span></div><div class="basket-session-list">' + sessions + '</div>';
     syncPickerTypeSelect();
     renderPickerResults();
   }
+
 
   async function loadBaskets() {
     const host = $("admin-baskets");
@@ -667,10 +675,6 @@
   }
 
   function addType() {
-    if (state.types.length >= 80) {
-      toast("A grade aceita até 80 padrões de produto.");
-      return;
-    }
     const key = "new-" + Date.now().toString(36) + "-" + state.types.length;
     state.types.push({
       id: null,
@@ -688,7 +692,7 @@
     renderGrid();
     const row = document.getElementById("basket-type-" + key);
     row?.scrollIntoView({ behavior: "smooth", block: "center" });
-    row?.querySelector("[data-type-title]")?.focus();
+    typeTitleField(key)?.focus();
     if (!state.pickerProducts.length && !state.pickerLoading) loadPickerProducts(true);
   }
 
@@ -696,14 +700,6 @@
     const source = findType(key);
     if (!source) return;
     const siblings = sessionSiblings(source);
-    if (siblings.length >= 3) {
-      toast("Cada sessão pode ter até três produtos padrão.");
-      return;
-    }
-    if (state.types.length >= 80) {
-      toast("A grade aceita até 80 padrões de produto.");
-      return;
-    }
     const sessionId = sessionKey(source);
     const newKey = "new-" + Date.now().toString(36) + "-" + state.types.length;
     const newSlot = {
@@ -889,7 +885,7 @@
       const title = String(type.title || "").trim();
       if (!title) {
         toast("Informe o título de cada tipo de produto.");
-        document.getElementById("basket-type-" + typeKey(type, index))?.querySelector("[data-type-title]")?.focus();
+        typeTitleField(typeKey(type, index))?.focus();
         return false;
       }
       const quantities = {};

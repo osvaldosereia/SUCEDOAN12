@@ -34,6 +34,7 @@
       '<output class="product-option-quantity"' + attributes(options.quantityAttributes) + ' aria-live="polite">' + quantity + '</output>' +
       '<button class="quantity-button option-quantity-button" type="button"' + controls(1, "Adicionar " + name) + (options.increaseDisabled ? " disabled" : "") + '>+</button></span>';
     const className = "product-choice" + (quantity > 0 ? " is-selected" : "");
+    const standardLabel = options.standardLabel ? '<span class="product-choice-standard-label">' + esc(options.standardLabel) + '</span>' : "";
     const selectedLabel = '<span class="product-choice-selected-label"' + (quantity > 0 ? "" : " hidden") + ' aria-hidden="true">Na cesta: ' + quantity + '</span>';
     const price = options.priceText == null ? money(product.price_cents) : options.priceText;
     const isOffer = product.is_offer === true || product.regular_price_cents != null;
@@ -41,7 +42,7 @@
     return '<' + tag + ' class="' + className + '"' + role + attributes(options.attributes) + '>' +
       '<img src="' + esc(product.image_url || "../img/logoantonia5.png") + '" alt="" width="104" height="104" loading="lazy" fetchpriority="low" decoding="async">' +
       offerBadge +
-      '<span class="product-choice-copy">' + selectedLabel + '<strong>' + esc(name) + '</strong>' +
+      '<span class="product-choice-copy">' + standardLabel + selectedLabel + '<strong>' + esc(name) + '</strong>' +
       '<span class="product-choice-meta"><small class="product-choice-price">' + esc(price) + '</small>' + stepper + '</span>' +
       stockNote + '</span></' + tag + '>';
   }
@@ -509,81 +510,105 @@
     }
     $("detail-title").textContent = data.basket.name || "Produtos da cesta";
     $("detail-total").textContent = money(displayedTotalCents(data));
-    const rows = data.items.map((item) => {
-      const alternatives = item._alternatives || [];
-      const selectedOptions = (Array.isArray(item.selected_options) ? item.selected_options : [])
-        .filter((option) => option && option.product_id && option.is_active !== false && Number(option.quantity || 0) > 0);
-      const selectedById = new Map(selectedOptions.map((option) => [String(option.product_id), option]));
-      const choiceById = new Map(alternatives.filter((option) => option && option.product_id && option.is_active !== false).map((option) => [String(option.product_id), option]));
-      selectedOptions.forEach((option) => {
-        if (!choiceById.has(String(option.product_id))) choiceById.set(String(option.product_id), option);
-      });
-      const fallbackId = String(item.product_id || "");
-      if (fallbackId && item.is_active !== false && !choiceById.has(fallbackId)) {
-        choiceById.set(fallbackId, {
-          product_id: fallbackId, name: item.name, image_url: item.image_url,
-          price_cents: item.price_cents, stock_quantity: item.stock_quantity,
-          is_active: item.is_active, is_offer: item.is_offer, packaging: item.packaging
-        });
+    const groupedItems = [];
+    const groupBySession = new Map();
+    data.items.forEach((item, index) => {
+      const sessionId = String(item.session_id || item.position_id || "session-" + index);
+      let group = groupBySession.get(sessionId);
+      if (!group) {
+        group = { sessionId, items: [] };
+        groupBySession.set(sessionId, group);
+        groupedItems.push(group);
       }
-      const optionChoices = Array.from(choiceById.values());
-      const optionCount = Math.max(Number(item.alternative_count || 0), optionChoices.length);
-      const changingThisItem = String(data.changingPosition || "") === String(item.position_id);
-      const title = item.label || "Produto";
-      const itemQuantityAtLimit = (row) => quantityOf(row) >= 1000;
-      const renderChoice = (alt) => {
-        const productId = String(alt.product_id || "");
-        const selected = selectedById.get(productId);
-        const quantity = Math.max(0, Math.trunc(Number(selected && selected.quantity || 0)));
-        const stockValue = alt.stock_quantity != null ? alt.stock_quantity : selected && selected.stock_quantity;
-        const stock = Math.max(0, Math.trunc(Number(stockValue || 0)));
-        const disabled = data.changing || item._optionsLoading;
-        const optionName = alt.name || selected && selected.name || "Produto";
-        const optionPrice = alt.price_cents == null ? "Preço indisponível" : money(alt.price_cents);
-        return productChoiceMarkup(alt, {
-          name: optionName,
-          quantity,
-          priceText: optionPrice,
-          stockNote: stock <= 0 ? "Sem estoque disponível" : "",
-          attributes: { "data-option-card": productId },
-          quantityAttributes: { "data-option-quantity": productId },
-          adjustAttributes: {
-            "data-adjust-option": null,
-            "data-adjust-position": item.position_id,
-            "data-adjust-product": productId
-          },
-          decreaseDisabled: disabled || quantity <= 0,
-          increaseDisabled: disabled || quantity >= stock || itemQuantityAtLimit(item)
+      group.items.push({ item, index });
+    });
+    const rows = groupedItems.map((group) => {
+      const groupItems = group.items.slice().sort((left, right) =>
+        Number(left.item.slot_order || left.index + 1) - Number(right.item.slot_order || right.index + 1) || left.index - right.index
+      );
+      const firstItem = groupItems[0].item;
+      const title = String(firstItem.label || "Produtos da cesta").replace(/\s+·\s+Padrão\s+\d+$/i, "").trim() || "Produtos da cesta";
+      const isCollapsed = groupItems.every(({ item }) => item._optionsCollapsed === true);
+      const panelId = "basket-session-panel-" + String(firstItem.position_id || group.sessionId).replace(/[^a-zA-Z0-9_-]/g, "");
+      const patterns = groupItems.map(({ item, index }) => {
+        const alternatives = item._alternatives || [];
+        const selectedOptions = (Array.isArray(item.selected_options) ? item.selected_options : [])
+          .filter((option) => option && option.product_id && option.is_active !== false && Number(option.quantity || 0) > 0);
+        const selectedById = new Map(selectedOptions.map((option) => [String(option.product_id), option]));
+        const choiceById = new Map(alternatives.filter((option) => option && option.product_id && option.is_active !== false).map((option) => [String(option.product_id), option]));
+        selectedOptions.forEach((option) => {
+          if (!choiceById.has(String(option.product_id))) choiceById.set(String(option.product_id), option);
         });
-      };
-      const carouselChoices = optionChoices;
-      const moreOptionsStatus = item._optionsMoreLoading
-        ? item._optionsPageError
-          ? '<p class="variation-status" role="alert">Não foi possível carregar mais opções.</p><button class="button button-outline variation-retry" type="button" data-retry-position="' + esc(item.position_id) + '">Tentar novamente</button>'
-          : item._optionsPageLoading
-            ? '<p class="variation-status" role="status">Carregando mais opções…</p>'
-            : ""
-        : "";
-      const optionStatus = item._optionsError
-        ? '<p class="variation-status" role="alert">Não foi possível carregar outras opções.</p><button class="button button-outline variation-retry" type="button" data-retry-position="' + esc(item.position_id) + '">Tentar novamente</button>'
-        : !item._optionsLoaded && optionCount > 1
-          ? '<p class="variation-status" role="status">Carregando opções disponíveis…</p>'
+        const fallbackId = String(item.product_id || "");
+        if (fallbackId && item.is_active !== false && !choiceById.has(fallbackId)) {
+          choiceById.set(fallbackId, {
+            product_id: fallbackId, name: item.name, image_url: item.image_url,
+            price_cents: item.price_cents, stock_quantity: item.stock_quantity,
+            is_active: item.is_active, is_offer: item.is_offer, packaging: item.packaging
+          });
+        }
+        const optionChoices = Array.from(choiceById.values());
+        const optionCount = Math.max(Number(item.alternative_count || 0), optionChoices.length);
+        const changingThisItem = String(data.changingPosition || "") === String(item.position_id);
+        const itemQuantityAtLimit = (row) => quantityOf(row) >= 1000;
+        const baseQuantity = Math.max(0, Math.trunc(Number(item.base_quantity || 0)));
+        const defaultProductId = String(item.default_product_id || item.product_id || optionChoices[0]?.product_id || "");
+        const renderChoice = (alt) => {
+          const productId = String(alt.product_id || "");
+          const selected = selectedById.get(productId);
+          const quantity = Math.max(0, Math.trunc(Number(selected && selected.quantity || 0)));
+          const stockValue = alt.stock_quantity != null ? alt.stock_quantity : selected && selected.stock_quantity;
+          const stock = Math.max(0, Math.trunc(Number(stockValue || 0)));
+          const disabled = data.changing || item._optionsLoading;
+          const optionName = alt.name || selected && selected.name || "Produto";
+          const optionPrice = alt.price_cents == null ? "Preço indisponível" : money(alt.price_cents);
+          const isDefault = productId === defaultProductId;
+          const standardLabel = isDefault && baseQuantity > 0
+            ? "Padrão · " + baseQuantity + " un. " + (baseQuantity === 1 ? "incluída" : "incluídas")
+            : "";
+          return productChoiceMarkup(alt, {
+            name: optionName,
+            quantity,
+            standardLabel,
+            priceText: optionPrice,
+            stockNote: stock <= 0 ? "Sem estoque disponível" : "",
+            attributes: { "data-option-card": productId },
+            quantityAttributes: { "data-option-quantity": productId },
+            adjustAttributes: {
+              "data-adjust-option": null,
+              "data-adjust-position": item.position_id,
+              "data-adjust-product": productId
+            },
+            decreaseDisabled: disabled || quantity <= 0,
+            increaseDisabled: disabled || quantity >= stock || itemQuantityAtLimit(item)
+          });
+        };
+        const carouselChoices = optionChoices;
+        const moreOptionsStatus = item._optionsMoreLoading
+          ? item._optionsPageError
+            ? '<p class="variation-status" role="alert">Não foi possível carregar mais opções.</p><button class="button button-outline variation-retry" type="button" data-retry-position="' + esc(item.position_id) + '">Tentar novamente</button>'
+            : item._optionsPageLoading
+              ? '<p class="variation-status" role="status">Carregando mais opções…</p>'
+              : ""
           : "";
-      const carouselClass = optionCount <= 1 ? " is-single-option" : "";
-      const carouselHint = optionCount > 1 ? '. Deslize horizontalmente para ver as opções.' : '';
-      const optionsCollapsed = item._optionsCollapsed === true;
-      const optionsPanelId = "item-options-" + esc(item.position_id);
-      const carouselMarkup = '<div class="product-option-picker basket-option-carousel' + carouselClass + '" data-option-carousel data-option-position="' + esc(item.position_id) + '" tabindex="0" role="group" aria-label="Opções de produtos para ' + esc(title) + carouselHint + '">' +
-        carouselChoices.map(renderChoice).join("") + '</div>';
-      const toggle = '<button class="extra-category-toggle" type="button" data-basket-position-toggle="' + esc(item.position_id) + '" aria-expanded="' + String(!optionsCollapsed) + '" aria-controls="' + optionsPanelId + '">' +
-        '<span>' + esc(title) + '</span><span class="variation-chevron" aria-hidden="true">' + (optionsCollapsed ? "+" : "−") + '</span></button>';
-      const optionPicker = '<div class="extra-category-panel variation-panel option-carousel-panel" id="' + optionsPanelId + '" data-basket-position-panel aria-busy="' + String(Boolean(item._optionsLoading || item._optionsPageLoading || changingThisItem)) + '"' + (optionsCollapsed ? " hidden" : "") + '>' +
-        carouselMarkup +
-        optionStatus +
-        moreOptionsStatus +
-        '</div>';
-      return '<article class="product-row" data-product-row="' + esc(item.position_id) + '"><div class="product-row-main">' + toggle + '</div>' +
-        optionPicker + "</article>";
+        const optionStatus = item._optionsError
+          ? '<p class="variation-status" role="alert">Não foi possível carregar outras opções.</p><button class="button button-outline variation-retry" type="button" data-retry-position="' + esc(item.position_id) + '">Tentar novamente</button>'
+          : !item._optionsLoaded && optionCount > 1
+            ? '<p class="variation-status" role="status">Carregando opções disponíveis…</p>'
+            : "";
+        const carouselClass = optionCount <= 1 ? " is-single-option" : "";
+        const carouselHint = optionCount > 1 ? ". Deslize horizontalmente para ver as opções." : "";
+        const carouselMarkup = '<div class="product-option-picker basket-option-carousel' + carouselClass + '" data-option-carousel data-option-position="' + esc(item.position_id) + '" tabindex="0" role="group" aria-label="Opções para padrão ' + Number(item.slot_order || index + 1) + ' de ' + esc(title) + carouselHint + '">' +
+          carouselChoices.map(renderChoice).join("") + '</div>';
+        return '<section class="basket-session-pattern" data-product-row="' + esc(item.position_id) + '"><h3 class="basket-session-pattern-heading">Padrão ' + Number(item.slot_order || index + 1) + '</h3>' +
+          carouselMarkup + optionStatus + moreOptionsStatus + '</section>';
+      }).join("");
+      const count = groupItems.length;
+      const summary = count + (count === 1 ? " padrão" : " padrões");
+      const toggle = '<button class="extra-category-toggle basket-session-toggle" type="button" data-basket-session-toggle="' + esc(group.sessionId) + '" aria-expanded="' + String(!isCollapsed) + '" aria-controls="' + esc(panelId) + '">' +
+        '<span class="basket-session-title">' + esc(title) + '</span><span class="basket-session-summary">' + summary + '</span><span class="variation-chevron" aria-hidden="true">' + (isCollapsed ? "+" : "−") + '</span></button>';
+      return '<article class="product-row basket-session-row"><div class="product-row-main">' + toggle + '</div>' +
+        '<div class="extra-category-panel basket-session-panel" id="' + esc(panelId) + '" data-basket-session-panel' + (isCollapsed ? " hidden" : "") + '>' + patterns + '</div></article>';
     }).join("");
     const note = data.orderable ? "" : '<p class="helper stock-note">Esta composição está sem estoque disponível no momento.</p>';
     const manualReplacementNote = data.items.some((item) => item.manual_replacement_required === true)
@@ -595,12 +620,13 @@
     $("detail-content").querySelectorAll("[data-retry-position]").forEach((button) => button.addEventListener("click", () => retryItemOptions(button.dataset.retryPosition)));
     $("detail-content").querySelectorAll("[data-adjust-option]").forEach((button) => button.addEventListener("click", () => basket.changeProductQuantity(button.dataset.adjustPosition, button.dataset.adjustProduct, Number(button.dataset.delta || 0))));
     $("detail-content").querySelectorAll("[data-adjust-position]:not([data-adjust-option])").forEach((button) => button.addEventListener("click", () => changeBasketItemQuantity(button.dataset.adjustPosition, Number(button.dataset.delta || 0))));
-    $("detail-content").querySelectorAll("[data-basket-position-toggle]").forEach((button) => button.addEventListener("click", () => {
-      const item = data.items.find((entry) => String(entry.position_id) === String(button.dataset.basketPositionToggle));
+    $("detail-content").querySelectorAll("[data-basket-session-toggle]").forEach((button) => button.addEventListener("click", () => {
+      const sessionId = String(button.dataset.basketSessionToggle || "");
+      const items = data.items.filter((entry) => String(entry.session_id || entry.position_id) === sessionId);
       const panel = document.getElementById(button.getAttribute("aria-controls"));
-      if (!item || !panel) return;
+      if (!items.length || !panel) return;
       const expanded = panel.hidden;
-      item._optionsCollapsed = !expanded;
+      items.forEach((item) => { item._optionsCollapsed = !expanded; });
       panel.hidden = !expanded;
       button.setAttribute("aria-expanded", String(expanded));
       const icon = button.querySelector(".variation-chevron");

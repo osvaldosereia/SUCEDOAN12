@@ -529,3 +529,22 @@ body.sheet-open.sheet-scroll-chain { overflow-x: hidden; overflow-y: auto; }
   .option-quantity-button { flex-basis: 30px; width: 30px; min-width: 30px; height: 30px; }
   .product-option-quantity { min-width: 15px; font-size: .8rem; }
 }
+
+
+/* Uma única sessão pública agrupa todos os padrões e suas opções. */
+.basket-session-row { gap: 0; border-color: #d9c8b6; }
+.basket-session-toggle { gap: 10px; }
+.basket-session-title { min-width: 0; overflow-wrap: anywhere; }
+.basket-session-summary { margin-left: auto; color: var(--muted); font-size: .73rem; font-weight: 750; white-space: nowrap; }
+.basket-session-panel { gap: 13px; padding: 12px 2px 2px; }
+.basket-session-pattern { display: grid; gap: 8px; min-width: 0; padding: 0 0 13px; border-bottom: 1px solid var(--line); }
+.basket-session-pattern:last-child { padding-bottom: 0; border-bottom: 0; }
+.basket-session-pattern-heading { margin: 0; color: var(--brand-dark); font-size: .86rem; font-weight: 800; }
+.product-choice-standard-label { align-self: flex-start; max-width: 100%; padding: 3px 7px; border: 1px solid rgba(82, 103, 71, .24); border-radius: 999px; background: #edf4eb; color: #3d5c39; font-size: .68rem; font-weight: 800; line-height: 1.2; white-space: normal; }
+@media (max-width: 639px) {
+  .basket-session-row { padding: 10px; }
+  .basket-session-toggle { gap: 7px; padding: 9px; }
+  .basket-session-summary { font-size: .68rem; }
+  .basket-session-panel { gap: 10px; padding-top: 10px; }
+  .basket-session-pattern { padding-bottom: 10px; }
+}
