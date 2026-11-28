@@ -11,27 +11,52 @@
   const plain = (value) => String(value == null ? "" : value).replace(/\s+/g, " ").trim();
   const money = (cents) => (Number(cents || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-  function productChoiceMarkup(product, options = {}) {
-    const name = String(options.name || product.name || "Produto");
-    const quantity = Math.max(0, Math.trunc(Number(options.quantity || 0)));
-    const tag = options.tag === "article" ? "article" : "div";
-    const attributes = (values) => Object.entries(values || {}).map(([key, value]) => {
+  function productAttributesMarkup(values) {
+    return Object.entries(values || {}).map(([key, value]) => {
       if (!/^(?:data|aria)-[a-z0-9-]+$|^title$/.test(key)) return "";
       if (value == null) return " " + key;
       if (value === false) return "";
       return " " + key + '="' + esc(value) + '"';
     }).join("");
+  }
+
+  function productCarouselClassName(itemCount, extraClass = "", singleOption) {
+    const isSingle = singleOption == null
+      ? Math.max(0, Math.trunc(Number(itemCount || 0))) <= 1
+      : singleOption === true;
+    const extraClasses = String(extraClass || "").split(/\s+/).filter(Boolean);
+    return ["product-carousel", "basket-option-carousel", ...extraClasses, isSingle ? "is-single-option" : ""]
+      .filter(Boolean).join(" ");
+  }
+
+  function productCarouselMarkup(items, options = {}) {
+    const rows = Array.isArray(items) ? items : [];
+    const renderItem = typeof options.renderItem === "function"
+      ? options.renderItem
+      : (item) => String(item || "");
+    const role = options.role ? ' role="' + esc(options.role) + '"' : "";
+    const ariaLabel = options.ariaLabel ? ' aria-label="' + esc(options.ariaLabel) + '"' : "";
+    const tabindex = options.tabIndex === false ? "" : ' tabindex="' + esc(options.tabIndex == null ? "0" : options.tabIndex) + '"';
+    return '<div class="' + esc(productCarouselClassName(rows.length, options.className, options.singleOption)) + '"' +
+      productAttributesMarkup(options.attributes) + tabindex + role + ariaLabel + '>' +
+      rows.map(renderItem).join("") + '</div>';
+  }
+
+  function productChoiceMarkup(product, options = {}) {
+    const name = String(options.name || product.name || "Produto");
+    const quantity = Math.max(0, Math.trunc(Number(options.quantity || 0)));
+    const tag = options.tag === "article" ? "article" : "div";
     const role = options.role ? ' role="' + esc(options.role) + '"' : "";
     const stockNote = options.stockNote
       ? '<small class="product-choice-stock">' + esc(options.stockNote) + '</small>'
       : "";
-    const controls = (delta, label) => attributes(Object.assign({}, options.adjustAttributes, {
+    const controls = (delta, label) => productAttributesMarkup(Object.assign({}, options.adjustAttributes, {
       "data-delta": String(delta),
       "aria-label": label
     }));
     const stepper = '<span class="product-option-stepper" role="group" aria-label="Quantidade de ' + esc(name) + '">' +
       '<button class="quantity-button option-quantity-button" type="button"' + controls(-1, "Diminuir " + name) + (options.decreaseDisabled ? " disabled" : "") + '>−</button>' +
-      '<output class="product-option-quantity"' + attributes(options.quantityAttributes) + ' aria-live="polite">' + quantity + '</output>' +
+      '<output class="product-option-quantity"' + productAttributesMarkup(options.quantityAttributes) + ' aria-live="polite">' + quantity + '</output>' +
       '<button class="quantity-button option-quantity-button" type="button"' + controls(1, "Adicionar " + name) + (options.increaseDisabled ? " disabled" : "") + '>+</button></span>';
     const className = "product-choice" + (quantity > 0 ? " is-selected" : "");
     const standardLabel = options.standardLabel ? '<span class="product-choice-standard-label">' + esc(options.standardLabel) + '</span>' : "";
@@ -39,7 +64,7 @@
     const price = options.priceText == null ? money(product.price_cents) : options.priceText;
     const isOffer = product.is_offer === true || product.regular_price_cents != null;
     const offerBadge = isOffer ? '<span class="product-choice-offer">OFERTA</span>' : "";
-    return '<' + tag + ' class="' + className + '"' + role + attributes(options.attributes) + '>' +
+    return '<' + tag + ' class="' + className + '"' + role + productAttributesMarkup(options.attributes) + '>' +
       '<img src="' + esc(product.image_url || "../img/logoantonia5.png") + '" alt="" width="104" height="104" loading="lazy" fetchpriority="low" decoding="async">' +
       offerBadge +
       '<span class="product-choice-copy">' + standardLabel + selectedLabel + '<strong>' + esc(name) + '</strong>' +
@@ -590,10 +615,15 @@
           : !item._optionsLoaded && optionCount > 1
             ? '<p class="variation-status" role="status">Carregando opções disponíveis…</p>'
             : "";
-        const carouselClass = optionCount <= 1 ? " is-single-option" : "";
         const carouselHint = optionCount > 1 ? ". Deslize horizontalmente para ver as opções." : "";
-        const carouselMarkup = '<div class="product-option-picker basket-option-carousel' + carouselClass + '" data-option-carousel data-option-position="' + esc(item.position_id) + '" tabindex="0" role="group" aria-label="Produtos da sessão ' + esc(title) + carouselHint + '">' +
-          carouselChoices.map(renderChoice).join("") + '</div>';
+        const carouselMarkup = productCarouselMarkup(carouselChoices, {
+          className: "product-option-picker",
+          attributes: { "data-option-carousel": null, "data-option-position": item.position_id },
+          role: "group",
+          ariaLabel: "Produtos da sessão " + title + carouselHint,
+          singleOption: optionCount <= 1,
+          renderItem: renderChoice
+        });
         return '<section class="basket-session-pattern" data-product-row="' + esc(item.position_id) + '">' +
           carouselMarkup + optionStatus + moreOptionsStatus + '</section>';
       }).join("");
@@ -727,7 +757,7 @@
     });
   }
 
-  const extras = window.DonaStorefrontExtras.create({ state, $, esc, money, request, toast, productChoiceMarkup });
+  const extras = window.DonaStorefrontExtras.create({ state, $, esc, money, request, toast, productChoiceMarkup, productCarouselMarkup, productCarouselClassName });
   window.DonaStorefrontPublicNavigation = Object.freeze({
     ensureHomeCategory: (key) => extras.ensureHomeCategory(key),
     loadPublicOffers: extras.loadPublicOffers

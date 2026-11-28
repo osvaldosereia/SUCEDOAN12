@@ -976,7 +976,7 @@
   line-height: 1.25;
 }
 
-/* Opções da cesta e listas de produtos extras em carrossel. */
+/* Carrosséis horizontais compartilhados pela vitrine e pelas cestas. */
 .experiment-page .basket-option-carousel {
   display: flex;
   align-items: stretch;
@@ -1126,6 +1126,14 @@
   width: auto;
 }
 
+.experiment-page .basket-option-carousel .home-extra-skeleton {
+  flex: 0 0 218px;
+  box-sizing: border-box;
+  width: 218px;
+  min-height: 330px;
+  scroll-snap-align: start;
+}
+
 @media (max-width: 820px) {
   .experiment-page .basket-option-carousel .product-choice {
     flex-basis: calc((100% - 20px) / 2.7);
@@ -1182,6 +1190,15 @@
   }
 }
 
+
+@media (max-width: 820px) {
+  .experiment-page .basket-option-carousel .home-extra-skeleton {
+    flex-basis: calc((100% - 10px) / 2.2);
+    width: auto;
+    min-height: 286px;
+    padding: 6px;
+  }
+}
 
 /* Mobile: sessão da cesta mais ampla e cards maiores (aprox. 2,2 visíveis). */
 @media (max-width: 820px) {

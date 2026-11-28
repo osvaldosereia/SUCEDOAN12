@@ -18,7 +18,7 @@
   ];
   const BUILDER_CATEGORY_DEFAULTS = EXTRA_CATEGORIES.filter((category) => category.key !== "mais_vendidos");
 
-  function create({ state, $, esc, money, request, toast, productChoiceMarkup }) {
+  function create({ state, $, esc, money, request, toast, productChoiceMarkup, productCarouselMarkup, productCarouselClassName }) {
     let homeExtraObserver = null;
     let homeExtraLoadQueue = Promise.resolve();
     let publicOffersPromise = null;
@@ -79,13 +79,17 @@
 
     function productSearchResultsMarkup(scope, search, data) {
       const products = Array.isArray(search.products) ? search.products : [];
-      const cards = scope === "basket-extras"
-        ? products.map((product) => extraProductMarkup(data, product)).join("")
-        : products.map(homeExtraProductMarkup).join("");
-      const list = cards
-        ? (scope === "basket-extras"
-          ? '<div class="product-search-results-list basket-option-carousel" tabindex="0" role="list" aria-label="Resultados dos produtos extras. Deslize horizontalmente para ver os produtos.">' + cards + "</div>"
-          : '<div class="home-extra-grid product-search-results-grid" role="list" aria-label="Resultados da busca">' + cards + "</div>")
+      const list = products.length
+        ? productCarouselMarkup(products, {
+          className: "product-search-results-carousel",
+          role: "list",
+          ariaLabel: scope === "basket-extras"
+            ? "Resultados dos produtos extras. Deslize horizontalmente para ver os produtos."
+            : "Resultados da busca. Deslize horizontalmente para ver os produtos.",
+          renderItem: (product) => scope === "basket-extras"
+            ? extraProductMarkup(data, product)
+            : homeExtraProductMarkup(product)
+        })
         : "";
       const action = search.error
         ? '<button class="button button-outline product-search-more" type="button" data-product-search-retry="' + esc(scope) + '">Tentar novamente</button>'
@@ -289,8 +293,13 @@
         '<button class="extra-category-toggle" type="button" data-offers-toggle aria-expanded="' + String(expanded) + '" aria-controls="extra-panel-offers">' +
         '<span>Ofertas</span><span class="variation-chevron" aria-hidden="true">' + (expanded ? "−" : "+") + '</span></button>' +
         '<div class="extra-category-panel" id="extra-panel-offers"' + (expanded ? "" : " hidden") + '>' +
-        '<div class="extra-product-list basket-option-carousel" data-offers-list tabindex="0" role="list" aria-label="Produtos em oferta. Deslize horizontalmente para ver os produtos">' +
-        visible.map((product) => extraProductMarkup(data, product)).join("") + '</div>' +
+        productCarouselMarkup(visible, {
+          className: "extra-product-list",
+          attributes: { "data-offers-list": null },
+          role: "list",
+          ariaLabel: "Produtos em oferta. Deslize horizontalmente para ver os produtos.",
+          renderItem: (product) => extraProductMarkup(data, product)
+        }) +
         '<p class="extra-product-status" data-offers-status role="status">' + esc(status) + '</p>' +
         '<button class="button button-outline extra-product-more" type="button" data-offers-more' + (products.length > visible.length ? "" : " hidden") + (data.offersLoading ? " disabled" : "") + '>Carregar mais ofertas</button>' +
         '<button class="button button-outline extra-product-more" type="button" data-offers-retry' + (data.offersError ? "" : " hidden") + '>Tentar novamente</button>' +
@@ -313,12 +322,18 @@
             : category.error ? "Não foi possível carregar. Tente novamente."
               : category.loaded && !category.products.length ? "Nenhum produto disponível nesta categoria."
                 : "";
-          const products = category.products.map((product) => extraProductMarkup(data, product)).join("");
+          const products = productCarouselMarkup(category.products, {
+            className: "extra-product-list",
+            attributes: { "data-extra-list": category.key },
+            role: "list",
+            ariaLabel: "Produtos de " + category.label + ". Deslize horizontalmente para ver os produtos.",
+            renderItem: (product) => extraProductMarkup(data, product)
+          });
           return '<section class="extra-category" data-extra-category-card="' + esc(category.key) + '">' +
             '<button class="extra-category-toggle" type="button" data-extra-category="' + esc(category.key) + '" aria-expanded="' + String(category.expanded) + '" aria-controls="' + esc(panelId) + '">' +
             '<span>' + esc(category.label) + '</span><span class="variation-chevron" aria-hidden="true">' + (category.expanded ? "−" : "+") + '</span></button>' +
             '<div class="extra-category-panel" id="' + esc(panelId) + '"' + (category.expanded ? "" : " hidden") + '>' +
-            '<div class="extra-product-list basket-option-carousel" data-extra-list="' + esc(category.key) + '" tabindex="0" role="list" aria-label="Produtos de ' + esc(category.label) + '. Deslize horizontalmente para ver os produtos.">' + products + '</div>' +
+            products +
             '<p class="extra-product-status" data-extra-status="' + esc(category.key) + '" role="status">' + esc(status) + '</p>' +
             '<button class="button button-outline extra-product-more" type="button" data-extra-retry="' + esc(category.key) + '"' + (category.error ? "" : " hidden") + (category.loading ? " disabled" : "") + '>Tentar novamente</button></div></section>';
         }).join("") + '</div></section>';
@@ -687,6 +702,7 @@
         retry.disabled = publicOffersLoading;
       }
       const visibleProducts = publicOfferProducts.slice(0, publicOfferVisibleCount);
+      host.className = productCarouselClassName(visibleProducts.length, "public-offers-grid");
       host.innerHTML = visibleProducts.map(homeExtraProductMarkup).join("");
       const more = $("public-offers-more");
       if (more) {
@@ -768,15 +784,26 @@
       const status = category.loading ? (category.products.length ? "Carregando mais produtos…" : "Carregando produtos…")
         : category.error ? "Não foi possível carregar os produtos." : category.loaded && !category.products.length ? "Nenhum produto disponível nesta categoria." : "";
       const placeholders = !category.loaded && !category.error
-        ? Array.from({ length: HOME_EXTRA_INITIAL_PAGE_SIZE }, () => '<div class="home-extra-skeleton" aria-hidden="true"><span></span><i></i><small></small><em></em></div>').join("") : "";
+        ? Array.from({ length: HOME_EXTRA_INITIAL_PAGE_SIZE }, () => null)
+        : [];
+      const carouselItems = category.products.length ? category.products : placeholders;
+      const carouselHint = carouselItems.length > 1 ? ". Deslize horizontalmente para ver os produtos." : "";
+      const productsMarkup = productCarouselMarkup(carouselItems, {
+        className: "home-extra-product-carousel",
+        attributes: { "data-home-extra-grid": category.key },
+        role: "list",
+        ariaLabel: "Produtos de " + category.label + carouselHint,
+        renderItem: (product) => product
+          ? homeExtraProductMarkup(product)
+          : '<div class="home-extra-skeleton" aria-hidden="true"><span></span><i></i><small></small><em></em></div>'
+      });
       const loadMore = category.error
         ? '<button class="button button-outline home-extra-more" type="button" data-home-extra-retry="' + esc(category.key) + '">Tentar novamente</button>'
         : category.loaded && category.hasMore
           ? '<button class="button button-outline home-extra-more" type="button" data-home-extra-more="' + esc(category.key) + '"' + (category.loading ? " disabled" : "") + '>' + (category.loading ? "Carregando produtos…" : category.products.length ? "Ver mais produtos" : "Carregar produtos") + '</button>' : "";
       return '<section class="home-extra-category" data-home-extra-section="' + esc(category.key) + '" aria-labelledby="' + esc(panelId) + '-title">' +
         '<div class="home-extra-category-heading"><h3 id="' + esc(panelId) + '-title"><a class="home-extra-category-link" href="' + href + '"' + navAttrs + '>' + esc(category.label) + '</a></h3></div>' +
-        '<div class="home-extra-grid" data-home-extra-grid="' + esc(category.key) + '" role="list" aria-label="Produtos de ' + esc(category.label) + '">' +
-        (category.products.length ? category.products.map(homeExtraProductMarkup).join("") : placeholders) + '</div>' +
+        productsMarkup +
         (status ? '<p class="home-extra-status" role="status">' + esc(status) + '</p>' : '') + loadMore + '</section>';
     }
 
