@@ -21,7 +21,7 @@
         "x-admin-code": window.DonaAdminAuth?.getCode?.() || "",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ action, ...(params || {}) }),
+      body: JSON.stringify({ ...(params || {}), action }),
       cache: "no-store",
     });
     const data = await response.json().catch(() => ({}));
@@ -506,7 +506,7 @@
     status.textContent = "Salvando endereço…";
     try {
       const saved = await adminRequest("customer_address_manage", {
-        action, customer_id: currentCustomerId, address_id: addressId || null,
+        address_action: action, customer_id: currentCustomerId, address_id: addressId || null,
         expected_updated_at: value("address_updated_at") || null,
         label: value("label"),
         address: {
@@ -544,7 +544,7 @@
     if (action === "edit") { fillCustomerAddress(address); return; }
     if (action === "deactivate" && !window.confirm("Remover o endereço “" + (address.label || "Endereço") + "”? Os pedidos anteriores continuam com o endereço usado.")) return;
     try {
-      await adminRequest("customer_address_manage", { action, customer_id: currentCustomerId, address_id: address.id });
+      await adminRequest("customer_address_manage", { address_action: action, customer_id: currentCustomerId, address_id: address.id });
       await loadCustomerAddresses(currentCustomerId);
       if (String($("customer-address-form").elements.address_id.value) === String(address.id)) resetCustomerAddressForm(currentCustomerId);
       toast(action === "set_default" ? "Endereço principal atualizado." : "Endereço removido.");
