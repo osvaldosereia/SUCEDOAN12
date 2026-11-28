@@ -28,4 +28,26 @@ A base de uma cesta usa a quantidade configurada de cada variante. O banco aplic
 
 Rode `node --test` com Node.js 24 antes de publicar. Os testes simulam as fronteiras com o banco e com as integrações. A verificação desta rodada consultou as funções publicadas e exercitou o cálculo do Postgres sem registrar pedidos reais. A criação de cadastro e endereço no Admin foi verificada por contrato com dados de teste. O pedido de ponta a ponta em homologação, incluindo notificações e Bling, ainda depende de um ambiente separado.
 
-O inventário encontrou 1.354 versões no histórico aplicado do Supabase e 75 arquivos versionados no GitHub, com 37 identificadores de versão em comum. Algumas migrações foram registradas com identificadores diferentes. Antes de usar esse histórico para recriar o banco, conferir as equivalências por nome e conteúdo, preparar uma referência de esquema e validar a restauração longe da produção. As novas migrações desta rodada já usam o mesmo identificador no banco e no GitHub.
+### Reconciliação das migrações
+
+O Supabase tem 1.354 entradas no histórico aplicado e o GitHub, 75 arquivos. A comparação por versão, nome e SHA-256 associou 72 arquivos: 68 com SQL idêntico e 4 com texto diferente. Ficaram 3 arquivos do GitHub sem correspondência e 1.282 entradas no Supabase sem arquivo associado. Diferença textual pode ser formatação ou mudança de comportamento; a comparação não executa nem reaplica as migrações. As três migrações do checkout desta rodada têm versão e conteúdo idênticos nos dois lados.
+
+Os quatro arquivos com texto diferente tratam da base de preço, automação do Instagram, exclusão de cliente e busca de produtos extras. Entre os três arquivos sem associação, o catálogo atual contém a busca de cliente por documento, a edição de cliente v3, a função de consentimento e as duas visões de estoque. A visão de lotes antigos já não existe. Esses fatos não comprovam que as versões antigas possam ser reaplicadas.
+
+Para repetir a conferência, exporte o resultado da consulta abaixo como lista JSON fora do repositório e execute `node scripts/migration-inventory.mjs /caminho/inventario.json`. A consulta retorna somente nomes, versões e hashes.
+
+~~~sql
+select version, coalesce(name, '') as name,
+  case when coalesce(cardinality(statements), 0) > 0 then
+    encode(sha256(convert_to(btrim(replace(array_to_string(statements, E'\n'), E'\r\n', E'\n'), E' \t\n\r'), 'UTF8')), 'hex')
+  end as digest
+from supabase_migrations.schema_migrations
+order by version;
+~~~
+
+### Critérios para liberar a homologação
+
+1. Preparar a referência do esquema atual e validar sua restauração em um banco separado; manter o histórico antigo em produção.
+2. Usar produtos, clientes e endereços fictícios. Desligar rotinas de publicação e reservar credenciais próprias para os testes de Bling e WhatsApp.
+3. Registrar uma cesta de R$ 410,00 e conferir o mesmo valor na vitrine, no recibo, no Admin e no banco. Repetir com estoque insuficiente, desconto e alteração de preço antes da confirmação.
+4. Criar e editar um cliente e dois endereços. Confirmar separação, retirada, entrega e acompanhamento. Conferir reenvio e prevenção de duplicação com serviços de teste.
