@@ -6,7 +6,12 @@
   <meta name="theme-color" content="#7e3029">
   <meta name="description" content="Escolha sua cesta básica Dona Antônia de forma rápida e simples.">
   <title>Cestas Dona Antônia</title>
-  <script>document.documentElement.classList.add("storefront-maintenance-checking");</script>
+  <script>
+    document.documentElement.classList.add("storefront-maintenance-checking");
+    window.setTimeout(() => {
+      document.documentElement.classList.remove("storefront-maintenance-checking");
+    }, 10000);
+  </script>
   <style>
     html.storefront-maintenance-checking body > :not(#storefront-maintenance-screen),
     html.storefront-maintenance-active body > :not(#storefront-maintenance-screen) { display:none !important; }
@@ -30,7 +35,7 @@
   <link rel="stylesheet" href="mobile-responsive.css?v=11">
   <link rel="stylesheet" href="customer-address.css?v=2">
   <script src="config.js?v=2" defer></script>
-  <script src="maintenance.js?v=1" defer></script>
+  <script src="maintenance.js?v=1" defer onerror="document.documentElement.classList.remove('storefront-maintenance-checking')"></script>
   <script src="storefront/experimento-extras.js?v=23" defer></script>
   <script src="storefront/basket.js?v=20" defer></script>
   <script src="storefront/checkout.js?v=27" defer></script>
