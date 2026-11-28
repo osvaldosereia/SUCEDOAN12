@@ -594,6 +594,20 @@
         const delta = Number(button.dataset.delta || 0);
         button.disabled = Boolean(data.changing || item._optionsLoading || (delta < 0 ? quantityOf(item) <= 0 : quantityOf(item) >= 1000));
       });
+      const sessionId = String(item.session_id || item.position_id || "");
+      const sessionItems = data.items.filter((entry) =>
+        String(entry.session_id || entry.position_id || "") === sessionId
+      );
+      const selectedProductCount = sessionItems.reduce((sum, entry) => sum + (Array.isArray(entry.selected_options)
+        ? entry.selected_options.filter((option) => option && option.product_id && Number(option.quantity || 0) > 0).length
+        : (Number(quantityOf(entry) || 0) > 0 ? 1 : 0)), 0);
+      const sessionPanel = row.closest("[data-basket-session-panel]");
+      const sessionSummary = sessionPanel && sessionPanel.previousElementSibling &&
+        sessionPanel.previousElementSibling.querySelector(".basket-session-summary");
+      if (sessionSummary) {
+        sessionSummary.textContent = selectedProductCount +
+          (selectedProductCount === 1 ? " produto incluído" : " produtos incluídos");
+      }
       $("detail-total").textContent = money(displayedTotalCents(data));
     }
 
@@ -623,8 +637,8 @@
         "Essa troca não está disponível agora. A escolha anterior foi mantida.");
     }
 
-    async function changeProductQuantity(positionId, productId, delta) {
-      const sizeKey = state.activeKey;
+    async function changeProductQuantity(positionId, productId, delta, sizeKeyOverride) {
+      const sizeKey = sizeKeyOverride == null ? state.activeKey : String(sizeKeyOverride);
       const data = state.baskets.get(sizeKey);
       if (!data || data.changing || (delta !== -1 && delta !== 1)) return;
       if (data.items.some((row) => row._optionsLoading)) return;
