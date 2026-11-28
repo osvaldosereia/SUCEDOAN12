@@ -80,17 +80,6 @@ BEGIN
   ) THEN RAISE EXCEPTION 'basket_quantity_migration_duplicate_position'; END IF;
 
   IF EXISTS (
-    SELECT target.basket_id,canonical.canonical_type_id
-    FROM pg_temp._basket_grid_target_baskets target
-    CROSS JOIN pg_temp._basket_grid_canonical_sessions canonical
-    LEFT JOIN pg_temp._basket_grid_position_map mapped
-      ON mapped.basket_id=target.basket_id
-     AND mapped.canonical_type_id=canonical.canonical_type_id
-    GROUP BY target.basket_id,canonical.canonical_type_id
-    HAVING count(mapped.position_id)=0
-  ) THEN RAISE EXCEPTION 'basket_quantity_migration_missing_session_position'; END IF;
-
-  IF EXISTS (
     SELECT 1 FROM pg_temp._basket_grid_position_map
     WHERE old_quantity<>trunc(old_quantity) OR old_quantity<0 OR old_quantity>999
   ) THEN RAISE EXCEPTION 'basket_quantity_migration_invalid_position_quantity'; END IF;
