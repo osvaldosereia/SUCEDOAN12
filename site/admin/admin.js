@@ -382,7 +382,28 @@
     $("customer-addresses-panel").hidden = false;
     $("customer-address-form").elements.customer_id.value = customer.id || "";
     $("customer-save-status").textContent = "";
+    $("save-customer").textContent = "Salvar alterações";
+    $("delete-customer").hidden = false;
     resetCustomerAddressForm(customer.id || "");
+  }
+
+  function startNewCustomer() {
+    if ($("save-customer").disabled) return;
+    const form = $("customer-editor");
+    currentCustomerId = "";
+    customerAddressRows = [];
+    form.reset();
+    form.elements.customer_id.value = "";
+    form.elements.customer_updated_at.value = "";
+    form.hidden = false;
+    $("customer-addresses-panel").hidden = true;
+    $("delete-customer").hidden = true;
+    $("save-customer").textContent = "Criar cadastro";
+    $("customer-save-status").textContent = "Nome e telefone são obrigatórios. CPF/CNPJ é opcional.";
+    $("customer-result").className = "customer-result";
+    $("customer-result").textContent = "Novo cliente: salve o cadastro para liberar a inclusão de endereços.";
+    resetCustomerAddressForm("");
+    form.elements.name.focus();
   }
 
   function customerResultHtml(customer) {
@@ -473,6 +494,10 @@
     const button = $("customer-address-save");
     const status = $("customer-address-status");
     if (button.disabled || !form.reportValidity()) return;
+    if (!currentCustomerId) {
+      status.textContent = "Salve ou localize o cadastro do cliente antes de adicionar um endereço.";
+      return;
+    }
     const value = (name) => form.elements[name].value.trim();
     const addressId = value("address_id");
     const action = addressId ? "update" : "create";
@@ -501,7 +526,10 @@
         address_changed: "Este endereço mudou em outra sessão. Atualize a lista e tente novamente.",
         customer_address_not_found: "Este endereço não está mais ativo. Atualize a lista.",
         unsupported_city: "Atendemos somente Cuiabá e Várzea Grande.",
-        invalid_customer_address: "Confira rua, número, bairro, cidade e estado."
+        invalid_customer_address: "Confira rua, número, bairro, cidade e estado.",
+        invalid_customer_id: "Salve ou busque um cliente antes de adicionar o endereço.",
+        customer_not_found: "O cadastro do cliente não foi localizado. Busque novamente.",
+        invalid_address_snapshot: "Atualize o endereço antes de salvar novamente."
       };
       status.textContent = messages[error.message] || "Não foi possível salvar o endereço. Confira os campos e tente novamente.";
     } finally {
@@ -525,6 +553,9 @@
     }
   }
 
+  $("customer-new-button").addEventListener("click", startNewCustomer);
+  $("customer-search-type").addEventListener("change", syncCustomerSearchInput);
+  $("customer-search-type").dispatchEvent(new Event("change"));
   $("customer-address-list").addEventListener("click", (event) => {
     const button = event.target.closest("[data-customer-address-action]");
     if (button) runCustomerAddressAction(button.dataset.customerAddressAction, button.dataset.addressId);
@@ -546,6 +577,16 @@
     } catch (_) {
       result.textContent = "Não foi possível abrir o cadastro. Busque novamente.";
     }
+  }
+
+  function syncCustomerSearchInput() {
+    const type = $("customer-search-type").value;
+    const input = $("customer-phone");
+    input.inputMode = type === "name" ? "text" : type === "document" ? "numeric" : "tel";
+    input.autocomplete = type === "name" ? "name" : "off";
+    input.placeholder = type === "name" ? "Nome do cliente" :
+      type === "document" ? "CPF/CNPJ (opcional no cadastro)" : "Telefone com DDD";
+    input.value = "";
   }
 
   async function searchCustomer(event) {
@@ -613,53 +654,81 @@
     const form = $("customer-editor");
     const button = $("save-customer");
     const status = $("customer-save-status");
-    if (button.disabled) return;
+    if (button.disabled || !form.reportValidity()) return;
 
-    button.disabled = true;
-    button.textContent = "Salvando…";
-    status.textContent = "Salvando as alterações com segurança…";
     const value = (name) => form.elements[name].value.trim();
+    const customerId = value("customer_id");
+    const creating = !customerId;
     const customerDocument = digits(value("document"));
     const newPhone = normalizeAdminPhone(value("phone"));
+    if (!value("name") || value("name").length < 2) {
+      status.textContent = "Informe o nome do cliente.";
+      return;
+    }
     if (!newPhone) {
       status.textContent = "Informe um telefone válido, com ou sem DDD (padrão 65).";
-      button.disabled = false;
-      button.textContent = "Salvar alterações";
       return;
     }
     if (value("document") && ![11, 14].includes(customerDocument.length)) {
-      status.textContent = "Informe um CPF com 11 dígitos ou CNPJ com 14 dígitos.";
-      button.disabled = false;
-      button.textContent = "Salvar alterações";
+      status.textContent = "CPF/CNPJ é opcional. Se preenchido, informe 11 ou 14 dígitos.";
       return;
     }
+
+    button.disabled = true;
+    button.textContent = creating ? "Criando…" : "Salvando…";
+    status.textContent = creating ? "Criando cadastro do cliente…" : "Salvando alterações…";
     try {
-      await adminRequest("customer_save", {
-        customer_id: value("customer_id"),
-        customer_updated_at: value("customer_updated_at"),
-        name: value("name"),
-        document: customerDocument,
-        phone: newPhone,
-      });
-      const refreshed = await adminRequest("customer_lookup", { customer_id: value("customer_id") });
-      if (refreshed.found && refreshed.customer) {
+      if (creating) {
+        const created = await adminRequest("customer_create", {
+          name: value("name"),
+          document: customerDocument,
+          phone: newPhone,
+        });
+        const createdId = String(created.customer_id || "");
+        if (!createdId) throw new Error("customer_create_failed");
+        form.elements["customer_id"].value = createdId;
+        const refreshed = await adminRequest("customer_lookup", { customer_id: createdId });
+        if (!refreshed.found || !refreshed.customer) throw new Error("customer_lookup_after_create_failed");
         fillCustomer(refreshed.customer);
         await loadCustomerAddresses(refreshed.customer.id);
+        status.textContent = "Cadastro criado. Agora você pode adicionar um endereço.";
+        $("customer-result").textContent = "Cliente cadastrado. Inclua um ou mais endereços abaixo.";
+        toast("Cadastro do cliente criado.");
+      } else {
+        await adminRequest("customer_save", {
+          customer_id: customerId,
+          customer_updated_at: value("customer_updated_at"),
+          name: value("name"),
+          document: customerDocument,
+          phone: newPhone,
+        });
+        const refreshed = await adminRequest("customer_lookup", { customer_id: customerId });
+        if (!refreshed.found || !refreshed.customer) throw new Error("customer_not_found");
+        fillCustomer(refreshed.customer);
+        await loadCustomerAddresses(refreshed.customer.id);
+        status.textContent = "Cadastro atualizado.";
+        $("customer-result").textContent = "Cadastro atualizado com sucesso.";
+        toast("Cadastro do cliente atualizado.");
       }
-      status.textContent = "Cadastro atualizado.";
-      $("customer-result").textContent = "Cadastro atualizado com sucesso.";
-      toast("Cadastro do cliente atualizado.");
     } catch (error) {
-      status.textContent = error.message === "customer_changed"
-        ? "Este cadastro mudou em outra sessão. Busque o cliente novamente antes de salvar."
-        : error.message === "invalid_document" ? "CPF/CNPJ inválido. Confira os dígitos."
-        : error.message === "document_already_in_use" ? "CPF/CNPJ já cadastrado em outro cliente."
-        : error.message === "phone_already_in_use" || error.message === "phone_or_document_already_in_use" ? "Telefone ou CPF/CNPJ já cadastrado em outro cliente."
-        : error.message === "invalid_phone" ? "Telefone inválido."
-        : "Não foi possível salvar. Confira os dados e tente novamente.";
+      const messages = {
+        customer_changed: "Este cadastro mudou em outra sessão. Busque o cliente novamente antes de salvar.",
+        invalid_customer_snapshot: "Atualize o cadastro antes de salvar. Busque o cliente novamente.",
+        customer_name_required: "Informe o nome do cliente.",
+        invalid_document: "CPF/CNPJ inválido. Confira os dígitos.",
+        document_already_in_use: "CPF/CNPJ já cadastrado em outro cliente.",
+        cpf_already_in_use: "CPF/CNPJ já cadastrado em outro cliente.",
+        phone_already_in_use: creating ? "Já existe um cadastro com esse telefone. Busque o cliente para editar ou adicionar endereço." : "Telefone já cadastrado em outro cliente.",
+        phone_or_document_already_in_use: "Telefone ou CPF/CNPJ já cadastrado em outro cliente.",
+        duplicate_customer_identity: "Já existe um cadastro com esse telefone ou CPF/CNPJ. Busque o cliente para editar.",
+        invalid_phone: "Telefone inválido.",
+        customer_lookup_after_create_failed: "O cadastro foi criado, mas não carregou na tela. Busque pelo telefone para continuar.",
+        customer_not_found: "Cadastro não encontrado. Busque pelo telefone e tente novamente.",
+      };
+      status.textContent = messages[error.message] || "Não foi possível salvar. Confira os dados e tente novamente.";
     } finally {
       button.disabled = false;
-      button.textContent = "Salvar alterações";
+      button.textContent = form.elements["customer_id"].value ? "Salvar alterações" : "Criar cadastro";
     }
   }
 
