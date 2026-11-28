@@ -24,7 +24,7 @@
     return migrated;
   }
 
-  function create({ state, $, esc, phoneDigits, money, toast, request, whatsappNumber, quantityOf, closeSheet, showSheet, changeBasketItemQuantity, attachHomeSelections, onHomeExtraQuantityChanged, onCustomOrderSubmitted, onCartCleared, onOrderSubmitted }) {
+  function create({ state, $, esc, phoneDigits, money, toast, request, whatsappNumber, quantityOf, closeSheet, showSheet, changeBasketItemQuantity, changeBasketProductQuantity, attachHomeSelections, onHomeExtraQuantityChanged, onCustomOrderSubmitted, onCartCleared, onOrderSubmitted }) {
     const customOrderKey = "__custom_products__";
     const minimumOrderCents = 7500;
     function addressLines(address) {
@@ -285,15 +285,39 @@
       if (data && data.customOrder !== true && Array.isArray(data.items)) {
         data.items.forEach((item) => {
           const positionId = String(item.position_id || "");
-          const variants = (Array.isArray(item.selected_options) ? item.selected_options : [])
-            .filter((option) => option && Number(option.quantity || 0) > 0)
-            .map((option) => String(option.name || "Produto"));
+          const selectedOptions = (Array.isArray(item.selected_options) ? item.selected_options : [])
+            .filter((option) => option && option.product_id && Number(option.quantity || 0) > 0);
+          if (selectedOptions.length) {
+            selectedOptions.forEach((option) => {
+              const productId = String(option.product_id);
+              const quantity = Math.max(0, Math.min(1000, Math.trunc(Number(option.quantity || 0))));
+              if (!quantity) return;
+              const alternative = (item._alternatives || []).find((row) => String(row.product_id || "") === productId);
+              const stockValue = option.stock_quantity ?? (alternative && alternative.stock_quantity);
+              const knownStock = stockValue == null || !Number.isFinite(Number(stockValue))
+                ? quantity
+                : Math.max(0, Math.min(1000, Math.trunc(Number(stockValue))));
+              entries.push({
+                kind: "basket_option",
+                positionId,
+                productId,
+                name: String(option.name || "Produto"),
+                imageUrl: option.image_url || option.image || item.image_url || item.image,
+                quantity,
+                maxQuantity: Math.max(quantity, knownStock)
+              });
+            });
+            return;
+          }
+
+          const quantity = Math.max(0, Math.min(1000, Math.trunc(Number(quantityOf(item) || 0))));
+          if (!quantity) return;
           entries.push({
             kind: "basket",
             positionId,
-            name: variants.join(" · ") || String(item.name || "Produto"),
-            imageUrl: (item.selected_options || []).find((option) => Number(option.quantity || 0) > 0)?.image_url || item.image_url || item.image,
-            quantity: Math.max(0, Math.trunc(Number(quantityOf(item) || 0))),
+            name: String(item.name || "Produto"),
+            imageUrl: item.image_url || item.image,
+            quantity,
             maxQuantity: 1000
           });
         });
@@ -315,7 +339,6 @@
       });
       return entries;
     }
-
     function updateSidebarCheckoutCount() {
       const button = $("sidebar-checkout");
       const badge = $("sidebar-checkout-count");
@@ -367,10 +390,13 @@
       clearButton.disabled = entries.length === 0 || Boolean(data && (data.changing === true || state.submittingOrder));
       itemsHost.innerHTML = entries.map((item) => {
         const name = esc(item.name);
-        const targetData = item.kind === "basket"
-          ? ' data-position-id="' + esc(item.positionId) + '"'
+        const isBasketEntry = item.kind === "basket" || item.kind === "basket_option";
+        const targetData = isBasketEntry
+          ? ' data-position-id="' + esc(item.positionId) + '"' +
+            (item.kind === "basket_option" ? ' data-product-id="' + esc(item.productId) + '"' : "")
           : ' data-extra-id="' + esc(item.id) + '"';
-        const unavailable = data.changing === true || (item.kind === "basket" && !item.positionId);
+        const unavailable = data.changing === true ||
+          (isBasketEntry && (!item.positionId || (item.kind === "basket_option" && !item.productId)));
         const minusDisabled = unavailable || item.quantity <= 0;
         const plusDisabled = unavailable || item.quantity >= item.maxQuantity;
         return '<li class="order-review-item">' +
@@ -1018,12 +1044,18 @@
         const delta = Math.trunc(Number(button.dataset.delta || 0));
         if (!data || (delta !== -1 && delta !== 1) || data.changing === true) return;
 
-        if (button.dataset.kind === "basket") {
-          if (!button.dataset.positionId || typeof changeBasketItemQuantity !== "function") return;
+        if (button.dataset.kind === "basket" || button.dataset.kind === "basket_option") {
+          if (!button.dataset.positionId) return;
           const itemsHost = $("order-review-items");
           itemsHost.setAttribute("aria-busy", "true");
           itemsHost.querySelectorAll("[data-order-review-adjust]").forEach((control) => { control.disabled = true; });
-          await changeBasketItemQuantity(button.dataset.positionId, delta, cartKey);
+          if (button.dataset.kind === "basket_option") {
+            if (!button.dataset.productId || typeof changeBasketProductQuantity !== "function") return;
+            await changeBasketProductQuantity(button.dataset.positionId, button.dataset.productId, delta, cartKey);
+          } else {
+            if (typeof changeBasketItemQuantity !== "function") return;
+            await changeBasketItemQuantity(button.dataset.positionId, delta, cartKey);
+          }
         } else if (button.dataset.kind === "extra") {
           const item = data.extraSelections instanceof Map ? data.extraSelections.get(button.dataset.extraId) : null;
           if (!item) return;
