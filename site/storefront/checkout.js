@@ -676,21 +676,6 @@
           $("lookup-message").textContent = "Cadastro localizado. Confirme o CPF/CNPJ para acessar seus endereços.";
           return;
         }
-        if (!customerHasCheckoutAddress(customer)) {
-          checkoutPhone = customer.phone || normalized.phone;
-          showRegistrationForm(customer, "add_address");
-          if (!Array.isArray(customer.addresses) || !customer.addresses.length) {
-            $("customer-address-label").value = "Casa";
-            $("registration-title").textContent = "Adicionar endereço";
-            $("registration-help").textContent = "Seu cadastro foi localizado pelo telefone. Informe o endereço para receber este pedido.";
-          }
-          $("lookup-message").textContent = "Cadastro encontrado pelo telefone. Complete o endereço de entrega.";
-          return;
-        }
-        setConfirmedCustomer(customer, customer.phone || normalized.phone);
-        $("lookup-message").textContent = normalized.assumedLocalDdd
-          ? "Cadastro localizado pelo telefone. Confira os endereços e escolha a entrega."
-          : "Cadastro e endereços encontrados. Escolha o endereço, a data e o pagamento.";
       } catch (error) {
         if (requestId !== lookupSequence) return;
         $("lookup-message").textContent = error.message === "rate_limited"
