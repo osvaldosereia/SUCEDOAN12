@@ -828,8 +828,45 @@
     return Number.isInteger(number) ? number : null;
   }
 
+  function syncOptionQuantitiesFromInputs() {
+    const host = $("admin-baskets");
+    if (!host) return { ok: false, message: "Não encontrei a lista de produtos para salvar." };
+    let changed = false;
+
+    for (const input of host.querySelectorAll("[data-option-quantity]")) {
+      const row = input.closest(".basket-grid-option");
+      const type = findType(row?.dataset.typeKey || input.dataset.optionQuantity);
+      const productId = String(input.dataset.productId || "");
+      const basketId = String(input.dataset.basketId || "");
+      const option = (type?.options || []).find((item) => String(item.product_id) === productId);
+      if (!type || !option || !state.baskets.some((basket) => String(basket.id) === basketId)) {
+        return { ok: false, message: "Não consegui identificar um produto ou uma cesta alterada. Atualize a grade e tente novamente." };
+      }
+
+      const quantity = parseQuantity(input.value);
+      if (quantity == null || quantity < 0 || quantity > 999) {
+        return { ok: false, message: "Informe uma quantidade inteira de 0 a 999." };
+      }
+      option.quantities ||= {};
+      if (Number(option.quantities[basketId] || 0) !== quantity) changed = true;
+      option.quantities[basketId] = quantity;
+    }
+
+    recalculateAllTypeQuantities();
+    if (changed) {
+      updateBasketProductSums();
+      markDirty();
+    }
+    return { ok: true };
+  }
+
   async function saveGrid() {
     if (state.saving) return false;
+    const syncedQuantities = syncOptionQuantitiesFromInputs();
+    if (!syncedQuantities.ok) {
+      toast(syncedQuantities.message);
+      return false;
+    }
     const button = $("save-basket-grid");
     const payload = [];
     for (const [index, type] of state.types.entries()) {
