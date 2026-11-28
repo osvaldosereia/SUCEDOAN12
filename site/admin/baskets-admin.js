@@ -239,41 +239,8 @@
     return Number(product.effective_price_cents ?? effectivePrice(product)) || 0;
   }
 
-  function chooseDefaultOption(type, preferredId, referencePriceCents) {
-    const options = Array.isArray(type.options) ? type.options : [];
-    const preferred = options.find((option) => String(option.product_id) === String(preferredId || ""));
-    if (preferred && canSelectAsBasketDefault(optionProduct(preferred))) return preferred;
-    const candidates = options.filter((option) => canSelectAsBasketDefault(optionProduct(option)));
-    candidates.sort((a, b) => {
-      const aPrice = optionPriceCents(a);
-      const bPrice = optionPriceCents(b);
-      const aDelta = Number.isFinite(Number(referencePriceCents)) ? Math.abs(aPrice - Number(referencePriceCents)) : 0;
-      const bDelta = Number.isFinite(Number(referencePriceCents)) ? Math.abs(bPrice - Number(referencePriceCents)) : 0;
-      const aStock = productSellableStock(optionProduct(a)) ?? Number(optionProduct(a).stock || 0);
-      const bStock = productSellableStock(optionProduct(b)) ?? Number(optionProduct(b).stock || 0);
-      return aDelta - bDelta || bStock - aStock ||
-        String(optionProduct(a).name || "").localeCompare(String(optionProduct(b).name || ""), "pt-BR");
-    });
-    const activePreferred = preferred && optionProduct(preferred).is_active !== false ? preferred : null;
-    return candidates[0] || activePreferred || options.find((option) => optionProduct(option).is_active !== false) || options[0] || null;
-  }
-
-  function setTypeDefault(type, preferredId, referencePriceCents) {
-    const options = Array.isArray(type.options) ? type.options : [];
-    const chosen = chooseDefaultOption(type, preferredId, referencePriceCents);
-    type.default_product_id = String(chosen?.product_id || "");
-    if (chosen) type.options = [chosen, ...options.filter((option) => option !== chosen)];
-    return chosen;
-  }
-
   function renderOptions(type, key) {
     const options = Array.isArray(type.options) ? type.options : [];
-    const defaultProductId = String(
-      type.default_product_id ||
-      options.find((option) => option.metadata?.preferred === true)?.product_id ||
-      options[0]?.product_id ||
-      ""
-    );
     const list = options.map((option, index) => {
       const product = optionProduct(option);
       const status = productStatus(product);
@@ -287,44 +254,36 @@
         : "Custo não informado";
       const productId = String(option.product_id);
       const brand = [product.brand, product.sku && ("SKU " + product.sku)].filter(Boolean).join(" · ");
-      const isDefault = String(option.product_id) === defaultProductId;
-      const defaultQuantityMarkup = isDefault
-        ? '<div class="basket-default-product-quantities"><strong>Quantidade deste padrão em cada cesta</strong><div class="basket-type-quantity-grid">' + (state.baskets || []).map((basket) => {
-          const value = quantityValue(type.quantities?.[basket.id]);
-          return '<label class="basket-type-quantity"><span title="' + esc(basket.name) + '">' + esc(basket.name) + '</span><input type="number" min="0" max="999" step="1" value="' + esc(value) + '" data-type-quantity="' + esc(key) + '" data-basket-id="' + esc(basket.id) + '" aria-label="Quantidade do padrão ' + Number(type.slot_order || 1) + ' na cesta ' + esc(basket.name) + '"></label>';
-        }).join("") + '</div></div>'
-        : "";
-      const cannotSelectDefault = !canSelectAsBasketDefault(product);
-      const isDraggable = !isDefault;
-      const moveUpDisabled = isDefault || index <= 1;
-      const moveDownDisabled = isDefault || index >= options.length - 1;
-      return '<article class="basket-grid-option' + (isDefault ? " is-default" : "") + '" role="listitem" data-option-id="' + esc(productId) + '" data-type-key="' + esc(key) + '" data-is-default="' + (isDefault ? "true" : "false") + '" draggable="' + (isDraggable ? "true" : "false") + '" aria-label="Posição ' + (index + 1) + ': ' + esc(product.name || "Produto") + '">' +
+      const included = Object.values(option.quantities || {}).some((quantity) => Number(quantity || 0) > 0);
+      const quantitiesMarkup = '<div class="basket-default-product-quantities basket-option-quantities"><strong>Quantidade deste produto em cada cesta</strong><div class="basket-type-quantity-grid">' + (state.baskets || []).map((basket) => {
+        const value = quantityValue(option.quantities?.[basket.id] ?? 0);
+        return '<label class="basket-type-quantity"><span title="' + esc(basket.name) + '">' + esc(basket.name) + '</span><input type="number" min="0" max="999" step="1" value="' + esc(value) + '" data-option-quantity="' + esc(key) + '" data-product-id="' + esc(productId) + '" data-basket-id="' + esc(basket.id) + '" aria-label="Quantidade de ' + esc(product.name || "produto") + ' na cesta ' + esc(basket.name) + '"></label>';
+      }).join("") + '</div></div>';
+      return '<article class="basket-grid-option' + (included ? " is-included" : "") + '" role="listitem" data-option-id="' + esc(productId) + '" data-type-key="' + esc(key) + '" draggable="true" aria-label="Posição ' + (index + 1) + ': ' + esc(product.name || "Produto") + '">' +
         '<div class="basket-grid-option-order"><span class="basket-option-drag-grip" aria-hidden="true">⠿</span><span class="basket-option-rank">' + (index + 1) + '</span></div>' +
         productImageMarkup(product, "basket-grid-option-photo") +
         '<div class="basket-grid-option-copy"><strong>' + esc(product.name || "Produto") + '</strong><span>' + esc(brand || "Marca e SKU não informados") + '</span><small>' + esc(physicalStock) + ' · ' + esc(costText) + '</small></div>' +
         '<div class="basket-grid-option-price"><small>Venda / unidade</small><strong>' + money(price) + '</strong><small>' + esc(stock) + '</small></div>' +
         '<small class="basket-option-status ' + status.className + '">' + status.text + '</small>' +
-        '<label class="basket-grid-option-default" title="' + (isDefault ? "Produto padrão do tipo" : "Definir como produto padrão") + '"><input type="radio" name="basket-default-' + esc(key) + '" data-default-option data-type-key="' + esc(key) + '" data-product-id="' + esc(productId) + '"' + (isDefault ? " checked" : "") + (cannotSelectDefault ? " disabled" : "") + '><span>' + (isDefault ? "Padrão" : "Definir padrão") + '</span></label>' +
         '<div class="basket-grid-option-actions"><div class="basket-option-move-buttons">' +
-          '<button class="text-button" type="button" data-move-option="-1" data-type-key="' + esc(key) + '" data-product-id="' + esc(productId) + '" aria-label="Mover ' + esc(product.name || "produto") + ' para cima"' + (moveUpDisabled ? " disabled" : "") + '>↑</button>' +
-          '<button class="text-button" type="button" data-move-option="1" data-type-key="' + esc(key) + '" data-product-id="' + esc(productId) + '" aria-label="Mover ' + esc(product.name || "produto") + ' para baixo"' + (moveDownDisabled ? " disabled" : "") + '>↓</button>' +
+          '<button class="text-button" type="button" data-move-option="-1" data-type-key="' + esc(key) + '" data-product-id="' + esc(productId) + '" aria-label="Mover ' + esc(product.name || "produto") + ' para cima"' + (index === 0 ? " disabled" : "") + '>↑</button>' +
+          '<button class="text-button" type="button" data-move-option="1" data-type-key="' + esc(key) + '" data-product-id="' + esc(productId) + '" aria-label="Mover ' + esc(product.name || "produto") + ' para baixo"' + (index === options.length - 1 ? " disabled" : "") + '>↓</button>' +
         '</div><button class="text-button product-edit-mini" type="button" data-edit-product="' + esc(productId) + '">Editar</button>' +
-        '<button class="text-button danger-text" type="button" data-remove-option="true" data-type-key="' + esc(key) + '" data-product-id="' + esc(productId) + '" aria-label="Remover ' + esc(product.name || "Produto") + '">×</button></div>' + defaultQuantityMarkup + '</article>';
+        '<button class="text-button danger-text" type="button" data-remove-option="true" data-type-key="' + esc(key) + '" data-product-id="' + esc(productId) + '" aria-label="Remover ' + esc(product.name || "produto") + '">×</button></div>' + quantitiesMarkup + '</article>';
     }).join("");
-    return '<div class="basket-grid-products-heading"><div><h4>Produtos no carrossel</h4><p>Arraste para ordenar como aparece no site. O produto padrão permanece em primeiro.</p></div><button class="button button-outline basket-grid-add-option" type="button" data-add-variation="' + esc(key) + '">Adicionar produtos</button></div>' +
-      '<div class="basket-grid-options" role="list" aria-label="Produtos do carrossel de ' + esc(type.title || "tipo") + '">' + (list || '<p class="admin-muted basket-grid-empty-options">Nenhum produto nesta posição. Busque e adicione produtos no painel ao lado.</p>') + '</div>';
+    return '<div class="basket-grid-products-heading"><div><h4>Produtos da sessão</h4><p>Defina a quantidade de cada produto em cada cesta. Zero mantém o produto disponível no carrossel sem incluí-lo inicialmente. Arraste para ordenar.</p></div><button class="button button-outline basket-grid-add-option" type="button" data-add-variation="' + esc(key) + '">Adicionar produtos</button></div>' +
+      '<div class="basket-grid-options" role="list" aria-label="Produtos da sessão ' + esc(type.title || "tipo") + '">' + (list || '<p class="admin-muted basket-grid-empty-options">Nenhum produto nesta sessão. Busque e adicione produtos no painel ao lado.</p>') + '</div>';
   }
 
   function basketProductsSumCents(basketId) {
     return state.types.reduce((total, type) => {
-      const quantity = Number(type.quantities?.[basketId] || 0);
-      if (!Number.isFinite(quantity) || quantity <= 0) return total;
-      const option = Array.isArray(type.options) ? type.options[0] : null;
-      if (!option) return total;
-      const product = option.product || productCache.get(String(option.product_id)) || {};
-      const unitPrice = Number(product.effective_price_cents ?? effectivePrice(product));
-      if (!Number.isFinite(unitPrice) || unitPrice < 0) return total;
-      return total + Math.round(unitPrice) * quantity;
+      return total + (type.options || []).reduce((subtotal, option) => {
+        const quantity = Number(option.quantities?.[basketId] || 0);
+        const product = option.product || productCache.get(String(option.product_id)) || {};
+        const unitPrice = Number(product.effective_price_cents ?? effectivePrice(product));
+        if (!Number.isFinite(quantity) || quantity <= 0 || !Number.isFinite(unitPrice) || unitPrice < 0) return subtotal;
+        return subtotal + Math.round(unitPrice) * quantity;
+      }, 0);
     }, 0);
   }
 
@@ -332,21 +291,22 @@
     let totalCents = 0;
     let missingProducts = 0;
     state.types.forEach((type) => {
-      const quantity = Number(type.quantities?.[basketId] || 0);
-      if (!Number.isFinite(quantity) || quantity <= 0) return;
-      const option = Array.isArray(type.options) ? type.options[0] : null;
-      const product = option?.product || (option ? productCache.get(String(option.product_id)) : null);
-      const rawCost = product?.cost;
-      if (rawCost == null || String(rawCost).trim() === "") {
-        missingProducts += 1;
-        return;
-      }
-      const unitCost = Number(rawCost);
-      if (!Number.isFinite(unitCost) || unitCost < 0) {
-        missingProducts += 1;
-        return;
-      }
-      totalCents += Math.round((unitCost * quantity + Number.EPSILON) * 100);
+      (type.options || []).forEach((option) => {
+        const quantity = Number(option.quantities?.[basketId] || 0);
+        if (!Number.isFinite(quantity) || quantity <= 0) return;
+        const product = option.product || productCache.get(String(option.product_id)) || {};
+        const rawCost = product.cost;
+        if (rawCost == null || String(rawCost).trim() === "") {
+          missingProducts += 1;
+          return;
+        }
+        const unitCost = Number(rawCost);
+        if (!Number.isFinite(unitCost) || unitCost < 0) {
+          missingProducts += 1;
+          return;
+        }
+        totalCents += Math.round((unitCost * quantity + Number.EPSILON) * 100);
+      });
     });
     return { totalCents, missingProducts };
   }
@@ -421,7 +381,7 @@
     select.innerHTML = state.types.map((type, index) => {
       const key = typeKey(type, index);
       const label = String(type.title || "Novo tipo").trim() || "Novo tipo";
-      return '<option value="' + esc(key) + '">' + esc(label + " · Padrão " + Number(type.slot_order || 1)) + '</option>';
+      return '<option value="' + esc(key) + '">' + esc(label) + '</option>';
     }).join("");
     if (state.types.some((type, index) => typeKey(type, index) === current)) select.value = current;
     else if (state.types.length) {
@@ -476,7 +436,7 @@
     const types = state.types || [];
     if (pricesHost) pricesHost.innerHTML = basketPriceCardsMarkup(baskets);
     if (!types.length) {
-      host.innerHTML = '<p class="admin-muted basket-grid-empty">Nenhum tipo cadastrado. Adicione uma sessão para começar a montar as cestas.</p>';
+      host.innerHTML = '<p class="admin-muted basket-grid-empty">Nenhuma sessão cadastrada. Adicione uma sessão para começar a montar as cestas.</p>';
       syncPickerTypeSelect();
       renderPickerResults();
       return;
@@ -494,32 +454,20 @@
       group.slots.push({ type, index });
     });
     const sessions = groups.map((group, groupIndex) => {
-      const firstEntry = group.slots[0];
-      const firstKey = typeKey(firstEntry.type, firstEntry.index);
-      const titleField = '<label class="basket-session-title-field"><span>Título da sessão exibido no site</span><input type="text" maxlength="180" placeholder="Ex.: Arroz" value="' + esc(group.title) + '" data-type-title="' + esc(firstKey) + '"></label>';
-      const orderButtons = '<div class="basket-grid-order"><button class="text-button" type="button" data-move-type="-1" data-type-key="' + esc(firstKey) + '" aria-label="Subir sessão ' + esc(group.title || "sem título") + '"' + (groupIndex === 0 ? " disabled" : "") + '>↑</button><button class="text-button" type="button" data-move-type="1" data-type-key="' + esc(firstKey) + '" aria-label="Descer sessão ' + esc(group.title || "sem título") + '"' + (groupIndex === groups.length - 1 ? " disabled" : "") + '>↓</button></div>';
-      const addPatternButton = '<button class="text-button" type="button" data-add-pattern="' + esc(firstKey) + '" aria-label="Adicionar produto padrão à sessão ' + esc(group.title || "sem título") + '">+ Padrão</button>';
-      const patternMarkup = group.slots.map((entry, slotIndex) => {
-        const type = entry.type;
-        const key = typeKey(type, entry.index);
-        const slotNumber = Number(type.slot_order || slotIndex + 1);
-        const expanded = state.expandedTypeKey === key;
-        const options = Array.isArray(type.options) ? type.options : [];
-        const defaultId = String(type.default_product_id || options[0]?.product_id || "");
-        const defaultOption = options.find((option) => String(option.product_id) === defaultId) || options[0];
-        const defaultProductName = defaultOption ? optionProduct(defaultOption).name : "Produto padrão ainda não definido";
-        const optionCount = options.length;
-        const patternSummary = defaultProductName + " · " + optionCount + (optionCount === 1 ? " produto no carrossel" : " produtos no carrossel");
-        return '<article class="basket-type-card basket-default-slot' + (expanded ? " is-expanded" : "") + '" id="basket-type-' + esc(key) + '" data-type-card="' + esc(key) + '"><div class="basket-type-summary"><button class="basket-type-toggle" type="button" data-toggle-type="' + esc(key) + '" aria-expanded="' + (expanded ? "true" : "false") + '" aria-controls="basket-type-details-' + esc(key) + '"><span class="basket-type-chevron" aria-hidden="true">' + (expanded ? "−" : "+") + '</span><span class="basket-type-summary-copy"><strong>Padrão ' + slotNumber + '</strong><small>' + esc(patternSummary) + '</small></span></button><div class="basket-type-actions"><button class="text-button danger-text" type="button" data-delete-type="' + esc(key) + '" aria-label="Excluir padrão ' + slotNumber + ' da sessão ' + esc(group.title || "sem título") + '">Excluir</button></div></div><div class="basket-type-details" id="basket-type-details-' + esc(key) + '"' + (expanded ? "" : " hidden") + '><div class="basket-grid-variations">' + renderOptions(type, key) + '</div></div></article>';
-      }).join("");
-      const patternCount = group.slots.length;
-      return '<section class="basket-session-group" data-session-group="' + esc(group.sessionId) + '"><div class="basket-session-heading">' + titleField + '<div class="basket-session-actions">' + orderButtons + addPatternButton + '</div></div><div class="basket-session-patterns">' + patternMarkup + '</div><p class="basket-session-caption">' + patternCount + (patternCount === 1 ? " produto padrão nesta sessão." : " produtos padrão nesta sessão.") + ' A quantidade é definida no cartão de cada produto padrão.</p></section>';
+      const entry = group.slots[0];
+      const type = entry.type;
+      const key = typeKey(type, entry.index);
+      const expanded = state.expandedTypeKey === key;
+      const titleField = '<label class="basket-session-title-field"><span>Título da sessão exibido no site</span><input type="text" maxlength="180" placeholder="Ex.: Arroz" value="' + esc(group.title) + '" data-type-title="' + esc(key) + '"></label>';
+      const orderButtons = '<div class="basket-grid-order"><button class="text-button" type="button" data-move-type="-1" data-type-key="' + esc(key) + '" aria-label="Subir sessão ' + esc(group.title || "sem título") + '"' + (groupIndex === 0 ? " disabled" : "") + '>↑</button><button class="text-button" type="button" data-move-type="1" data-type-key="' + esc(key) + '" aria-label="Descer sessão ' + esc(group.title || "sem título") + '"' + (groupIndex === groups.length - 1 ? " disabled" : "") + '>↓</button></div>';
+      const toggle = '<button class="basket-type-toggle" type="button" data-toggle-type="' + esc(key) + '" aria-expanded="' + (expanded ? "true" : "false") + '" aria-controls="basket-type-details-' + esc(key) + '"><span class="basket-type-chevron" aria-hidden="true">' + (expanded ? "−" : "+") + '</span><span class="basket-type-summary-copy"><strong>Produtos da sessão</strong><small>' + (type.options || []).length + ((type.options || []).length === 1 ? " produto" : " produtos") + '</small></span></button>'
+      const deleteButton = '<button class="text-button danger-text" type="button" data-delete-type="' + esc(key) + '" aria-label="Excluir sessão ' + esc(group.title || "sem título") + '">Excluir sessão</button>';
+      return '<section class="basket-session-group" data-session-group="' + esc(group.sessionId) + '"><div class="basket-session-heading"><div class="basket-session-title-row">' + titleField + '<div class="basket-session-actions">' + orderButtons + deleteButton + '</div></div>' + toggle + '</div><div class="basket-type-details basket-session-details" id="basket-type-details-' + esc(key) + '"' + (expanded ? "" : " hidden") + '><div class="basket-grid-variations">' + renderOptions(type, key) + '</div></div><p class="basket-session-caption">Cada produto tem uma quantidade independente em cada cesta. Quantidade 0 significa que o produto não entra inicialmente, mas continua disponível no carrossel do site.</p></section>';
     }).join("");
-    host.innerHTML = '<div class="basket-type-list-heading"><div><strong>Composição por sessão</strong><span>Uma sessão pode ter quantos produtos padrão precisar. Cada padrão mantém suas próprias opções e quantidades por cesta.</span></div><span>' + groups.length + (groups.length === 1 ? " sessão" : " sessões") + ' · ' + types.length + (types.length === 1 ? " padrão" : " padrões") + '</span></div><div class="basket-session-list">' + sessions + '</div>';
+    host.innerHTML = '<div class="basket-type-list-heading"><div><strong>Composição por sessão</strong><span>Defina a quantidade de cada produto em cada cesta. Os valores começam em 0.</span></div><span>' + groups.length + (groups.length === 1 ? " sessão" : " sessões") + ' · ' + types.reduce((sum, type) => sum + (type.options || []).length, 0) + ' produtos</span></div><div class="basket-session-list">' + sessions + '</div>';
     syncPickerTypeSelect();
     renderPickerResults();
   }
-
 
   async function loadBaskets() {
     const host = $("admin-baskets");
@@ -541,18 +489,16 @@
           _key: type.id || ("loaded-" + index),
           session_id: type.session_id || type.id || ("legacy-session-" + index),
           slot_order: Number(type.slot_order || 1),
-          default_product_id: type.default_product_id || (type.options || []).find((option) => option.metadata?.preferred === true)?.product_id || type.options?.[0]?.product_id || "",
           options: (type.options || []).map((option) => {
             if (option.product) productCache.set(String(option.product_id), option.product);
-            return option;
+            return {
+              ...option,
+              quantities: Object.fromEntries(state.baskets.map((basket) => [basket.id, Number(option.quantities?.[basket.id] || 0)])),
+            };
           }),
           quantities: Object.fromEntries(state.baskets.map((basket) => [basket.id, Number(type.quantities?.[basket.id] || 0)])),
         }));
-        state.types.forEach((type) => {
-          const defaultId = String(type.default_product_id || type.options[0]?.product_id || "");
-          const defaultOption = type.options.find((option) => String(option.product_id) === defaultId);
-          if (defaultOption) type.options = [defaultOption, ...type.options.filter((option) => option !== defaultOption)];
-        });
+        recalculateAllTypeQuantities();
         const hasExpandedType = state.types.some((type, index) => typeKey(type, index) === state.expandedTypeKey);
         if (!hasExpandedType) state.expandedTypeKey = state.types.length ? typeKey(state.types[0], 0) : "";
         const hasPickerType = state.types.some((type, index) => typeKey(type, index) === state.pickerTypeKey);
@@ -637,7 +583,8 @@
       target.options.push(existingTarget || previousOption || {
         product_id: id,
         product: product || productCache.get(id) || {},
-        metadata: {}
+        metadata: {},
+        quantities: Object.fromEntries(state.baskets.map((basket) => [basket.id, 0]))
       });
     }
     const emptiedRequiredType = nextTypes.find((type) =>
@@ -650,6 +597,7 @@
 
     const previousTypes = state.types;
     state.types = nextTypes;
+    recalculateAllTypeQuantities();
     markDirty();
     renderGrid();
     const saved = await saveGrid();
@@ -693,33 +641,6 @@
     const row = document.getElementById("basket-type-" + key);
     row?.scrollIntoView({ behavior: "smooth", block: "center" });
     typeTitleField(key)?.focus();
-    if (!state.pickerProducts.length && !state.pickerLoading) loadPickerProducts(true);
-  }
-
-  function addPattern(key) {
-    const source = findType(key);
-    if (!source) return;
-    const siblings = sessionSiblings(source);
-    const sessionId = sessionKey(source);
-    const newKey = "new-" + Date.now().toString(36) + "-" + state.types.length;
-    const newSlot = {
-      id: null,
-      _key: newKey,
-      session_id: sessionId,
-      slot_order: siblings.length + 1,
-      title: source.title || "",
-      sort_order: state.types.length,
-      options: [],
-      quantities: Object.fromEntries(state.baskets.map((basket) => [basket.id, 0])),
-    };
-    const lastIndex = state.types.reduce((last, row, index) => sessionKey(row, index) === sessionId ? index : last, -1);
-    state.types.splice(lastIndex + 1, 0, newSlot);
-    normalizeSessionSlots();
-    state.expandedTypeKey = newKey;
-    state.pickerTypeKey = newKey;
-    markDirty();
-    renderGrid();
-    openPicker(newKey);
     if (!state.pickerProducts.length && !state.pickerLoading) loadPickerProducts(true);
   }
 
@@ -775,6 +696,17 @@
     });
   }
 
+  function recalculateTypeQuantities(type) {
+    type.quantities = Object.fromEntries((state.baskets || []).map((basket) => [
+      basket.id,
+      (type.options || []).reduce((sum, option) => sum + Math.max(0, Number(option.quantities?.[basket.id] || 0)), 0),
+    ]));
+  }
+
+  function recalculateAllTypeQuantities() {
+    state.types.forEach(recalculateTypeQuantities);
+  }
+
   function addPickerProduct(productId) {
     const id = String(productId || "");
     const targetIndex = state.types.findIndex((type, index) => typeKey(type, index) === state.pickerTypeKey);
@@ -785,11 +717,6 @@
     const previousOption = state.types.flatMap((type) => type.options || []).find((option) => String(option.product_id) === id);
     const product = productCache.get(id) || previousOption?.product || {};
     const nextTypes = state.types.map((type) => ({ ...type, options: (type.options || []).slice() }));
-    const previousDefaults = new Map(nextTypes.map((type) => {
-      const defaultId = String(type.default_product_id || type.options[0]?.product_id || "");
-      const defaultOption = type.options.find((option) => String(option.product_id) === defaultId);
-      return [type, { id: defaultId, price: defaultOption ? optionPriceCents(defaultOption) : null }];
-    }));
     nextTypes.forEach((type) => {
       type.options = type.options.filter((option) => String(option.product_id) !== id);
     });
@@ -797,31 +724,28 @@
       (type.options || []).length === 0 && Object.values(type.quantities || {}).some((quantity) => Number(quantity || 0) > 0)
     );
     if (emptiedRequiredType) {
-      toast("Não é possível mover o último produto da posição “" + (emptiedRequiredType.title || "sem título") + "” enquanto ela estiver incluída em uma cesta. Adicione outra opção primeiro.");
+      toast("Não é possível mover o último produto com quantidade configurada da sessão “" + (emptiedRequiredType.title || "sem título") + "”. Ajuste as quantidades ou adicione outro produto antes.");
       return;
     }
-    nextTypes.forEach((type) => {
-      const oldDefault = previousDefaults.get(type);
-      if (oldDefault?.id === id) setTypeDefault(type, "", oldDefault.price);
-    });
     const nextTarget = nextTypes[targetIndex];
-    nextTarget.options.push(previousOption ? { ...previousOption, product } : { product_id: id, product, metadata: {} });
-    if (nextTarget.options.length === 1) setTypeDefault(nextTarget, id);
+    nextTarget.options.push(previousOption
+      ? { ...previousOption, product, quantities: { ...(previousOption.quantities || {}) } }
+      : { product_id: id, product, metadata: {}, quantities: Object.fromEntries(state.baskets.map((basket) => [basket.id, 0])) });
     state.types = nextTypes;
+    recalculateAllTypeQuantities();
     state.expandedTypeKey = state.pickerTypeKey;
     markDirty();
     renderGrid();
-    toast("Produto adicionado ao carrossel.");
+    toast("Produto adicionado à sessão.");
   }
 
   function moveOption(typeKeyValue, productId, delta) {
     const type = findType(typeKeyValue);
     if (!type) return;
     const options = type.options || [];
-    const defaultId = String(type.default_product_id || options[0]?.product_id || "");
     const index = options.findIndex((option) => String(option.product_id) === String(productId));
     const nextIndex = index + delta;
-    if (index <= 0 || String(productId) === defaultId || nextIndex <= 0 || nextIndex >= options.length) return;
+    if (index < 0 || nextIndex < 0 || nextIndex >= options.length) return;
     [options[index], options[nextIndex]] = [options[nextIndex], options[index]];
     state.expandedTypeKey = String(typeKeyValue);
     markDirty();
@@ -832,11 +756,10 @@
     const type = findType(typeKeyValue);
     if (!type) return;
     const options = type.options || [];
-    const defaultId = String(type.default_product_id || options[0]?.product_id || "");
-    if (String(productId) === defaultId || String(targetProductId) === defaultId || String(productId) === String(targetProductId)) return;
+    if (String(productId) === String(targetProductId)) return;
     const from = options.findIndex((option) => String(option.product_id) === String(productId));
     const to = options.findIndex((option) => String(option.product_id) === String(targetProductId));
-    if (from <= 0 || to <= 0) return;
+    if (from < 0 || to < 0) return;
     const [item] = options.splice(from, 1);
     const targetIndex = options.findIndex((option) => String(option.product_id) === String(targetProductId));
     options.splice(targetIndex, 0, item);
@@ -884,36 +807,47 @@
     for (const [index, type] of state.types.entries()) {
       const title = String(type.title || "").trim();
       if (!title) {
-        toast("Informe o título de cada tipo de produto.");
+        toast("Informe o título de cada sessão de produtos.");
         typeTitleField(typeKey(type, index))?.focus();
         return false;
       }
-      const quantities = {};
-      for (const basket of state.baskets) {
-        const value = parseQuantity(type.quantities?.[basket.id]);
-        if (value == null || value < 0 || value > 999) {
-          toast("Informe uma quantidade inteira de 0 a 999 para " + title + " na cesta " + basket.name + ".");
-          return false;
+      const options = [];
+      for (const option of type.options || []) {
+        const quantities = {};
+        for (const basket of state.baskets) {
+          const value = parseQuantity(option.quantities?.[basket.id] ?? 0);
+          if (value == null || value < 0 || value > 999) {
+            toast("Informe uma quantidade inteira de 0 a 999 para " + (optionProduct(option).name || "o produto") + " na cesta " + basket.name + ".");
+            return false;
+          }
+          quantities[basket.id] = value;
         }
-        quantities[basket.id] = value;
+        options.push({ product_id: option.product_id, metadata: option.metadata || {}, quantities });
       }
-      if (Object.values(quantities).some((quantity) => quantity > 0) && !type.options?.length) {
-        toast("Adicione uma variação para “" + title + "” ou deixe sua quantidade em zero em todas as cestas.");
+      const quantities = Object.fromEntries(state.baskets.map((basket) => [
+        basket.id,
+        options.reduce((sum, option) => sum + Number(option.quantities[basket.id] || 0), 0),
+      ]));
+      if (Object.values(quantities).some((quantity) => quantity > 999)) {
+        toast("A soma dos produtos da sessão “" + title + "” não pode ultrapassar 999 unidades em uma cesta.");
+        return false;
+      }
+      if (!options.length && Object.values(quantities).some((quantity) => quantity > 0)) {
+        toast("Adicione produtos à sessão “" + title + "” ou deixe as quantidades em zero.");
         document.getElementById("basket-type-" + typeKey(type, index))?.scrollIntoView({ behavior: "smooth", block: "center" });
         return false;
       }
       payload.push({
         id: type.id || null,
         session_id: sessionKey(type, index),
-        slot_order: Number(type.slot_order || 1),
+        slot_order: 1,
         title,
         quantities,
-        default_product_id: type.default_product_id || type.options[0]?.product_id || null,
-        options: type.options.map((option) => ({ product_id: option.product_id, metadata: option.metadata || {} })),
+        options,
       });
     }
     if (!payload.length) {
-      toast("Adicione pelo menos um tipo de produto.");
+      toast("Adicione pelo menos uma sessão de produtos.");
       return false;
     }
     const basketPrices = {};
@@ -933,11 +867,11 @@
     }
     try {
       await request("basket_grid_save", { method: "POST", body: { types: payload, basket_prices: basketPrices } });
-      toast("Grade de cestas salva.");
+      toast("Composição das cestas salva.");
       if (!await loadBaskets()) return false;
       return true;
     } catch (error) {
-      toast(error.message || "Não foi possível salvar a grade de cestas.");
+      toast(error.message || "Não foi possível salvar a composição das cestas.");
       return false;
     } finally {
       state.saving = false;
@@ -950,44 +884,15 @@
 
   async function productSaved(product) {
     const productId = String(product.id);
-    const wasDirty = state.dirty;
     productCache.set(productId, product);
     state.pickerProducts = state.pickerProducts.map((item) => String(item.id) === productId ? product : item);
 
-    const affectedDefaults = [];
     state.types.forEach((type) => {
-      const options = type.options || [];
-      const currentDefaultId = String(type.default_product_id || options[0]?.product_id || "");
-      const currentDefault = options.find((option) => String(option.product_id) === currentDefaultId);
-      const previousDefaultPrice = currentDefault ? optionPriceCents(currentDefault) : null;
-      if (!options.some((option) => String(option.product_id) === productId)) return;
-      options.forEach((option) => {
+      (type.options || []).forEach((option) => {
         if (String(option.product_id) === productId) option.product = product;
       });
-      if (!canSelectAsBasketDefault(product) && currentDefaultId === productId) {
-        setTypeDefault(type, "", previousDefaultPrice);
-        affectedDefaults.push(type);
-      }
     });
-
-    let defaultsSynced = affectedDefaults.length === 0;
-    if (affectedDefaults.length && !wasDirty) {
-      try {
-        const currentGrid = await request("basket_grid", { params: {} });
-        const remoteTypes = new Map((currentGrid.types || []).map((type) => [String(type.id), type]));
-        defaultsSynced = affectedDefaults.every((type) => {
-          const remote = remoteTypes.get(String(type.id));
-          const remoteId = String(remote?.default_product_id || "");
-          const option = type.options.find((item) => String(item.product_id) === remoteId);
-          if (!option || optionProduct(option).is_active === false) return false;
-          setTypeDefault(type, remoteId);
-          return true;
-        });
-      } catch (_) {
-        defaultsSynced = false;
-      }
-    }
-    if (affectedDefaults.length && (wasDirty || !defaultsSynced)) markDirty();
+    recalculateAllTypeQuantities();
 
     state.types.forEach((type, index) => {
       const row = document.getElementById("basket-type-" + typeKey(type, index));
@@ -1024,7 +929,6 @@
         renderGrid();
         return;
       }
-      if (target.dataset.addPattern != null) { addPattern(target.dataset.addPattern); return; }
       if (target.dataset.addVariation != null) { openPicker(target.dataset.addVariation); return; }
       if (target.dataset.addPickerProduct != null) { addPickerProduct(target.dataset.addPickerProduct); return; }
       if (target.dataset.moveOption != null) { moveOption(target.dataset.typeKey, target.dataset.productId, Number(target.dataset.moveOption)); return; }
@@ -1033,15 +937,12 @@
         const type = findType(target.dataset.typeKey);
         if (!type) return;
         const productId = String(target.dataset.productId);
-        if (type.options.length === 1 && Object.values(type.quantities || {}).some((quantity) => Number(quantity || 0) > 0)) {
-          toast("Esta é a única opção de “" + (type.title || "sem título") + "” usada nas cestas. Adicione uma alternativa antes de removê-la.");
-          return;
-        }
-        const currentDefault = String(type.default_product_id || type.options[0]?.product_id || "");
-        const oldOption = type.options.find((option) => String(option.product_id) === currentDefault);
-        const oldPrice = oldOption ? optionPriceCents(oldOption) : null;
-        type.options = type.options.filter((option) => String(option.product_id) !== productId);
-        if (productId === currentDefault) setTypeDefault(type, "", oldPrice);
+        const option = type.options.find((item) => String(item.product_id) === productId);
+        if (!option) return;
+        const hasConfiguredQuantity = Object.values(option.quantities || {}).some((quantity) => Number(quantity || 0) > 0);
+        if (hasConfiguredQuantity && !window.confirm("Remover este produto da sessão e zerar suas quantidades em todas as cestas?")) return;
+        type.options = type.options.filter((item) => String(item.product_id) !== productId);
+        recalculateAllTypeQuantities();
         markDirty();
         renderGrid();
         return;
@@ -1049,13 +950,10 @@
       if (target.dataset.deleteType != null) {
         const type = findType(target.dataset.deleteType);
         if (!type) return;
-        const siblings = sessionSiblings(type);
-        const confirmText = siblings.length > 1
-          ? "Excluir o Padrão " + Number(type.slot_order || 1) + " de “" + (type.title || "sem título") + "” e removê-lo das cestas?"
-          : "Excluir a sessão “" + (type.title || "sem título") + "” e removê-la das cestas?";
-        if (!window.confirm(confirmText)) return;
+        if (!window.confirm("Excluir a sessão “" + (type.title || "sem título") + "” e removê-la das cestas?")) return;
         state.types = state.types.filter((item, index) => typeKey(item, index) !== target.dataset.deleteType);
         normalizeSessionSlots();
+        recalculateAllTypeQuantities();
         if (state.expandedTypeKey === target.dataset.deleteType) state.expandedTypeKey = state.types[0] ? typeKey(state.types[0], 0) : "";
         if (state.pickerTypeKey === target.dataset.deleteType) state.pickerTypeKey = state.expandedTypeKey;
         markDirty();
@@ -1067,21 +965,8 @@
       if (target.dataset.dialogClose === "basket-create-dialog") $("basket-create-dialog").close();
     });
 
-    $("admin-baskets").addEventListener("change", (event) => {
-      const input = event.target;
-      if (!(input instanceof HTMLInputElement) || !input.matches("[data-default-option]") || !input.checked) return;
-      const type = findType(input.dataset.typeKey);
-      if (!type) return;
-      const selected = type.options.find((option) => String(option.product_id) === String(input.dataset.productId));
-      if (!selected || !canSelectAsBasketDefault(optionProduct(selected))) return;
-      setTypeDefault(type, input.dataset.productId);
-      state.expandedTypeKey = input.dataset.typeKey;
-      markDirty();
-      renderGrid();
-    });
-
     $("admin-baskets").addEventListener("input", (event) => {
-      const key = event.target.dataset.typeTitle || event.target.dataset.typeQuantity;
+      const key = event.target.dataset.typeTitle || event.target.dataset.optionQuantity;
       if (!key) return;
       const type = findType(key);
       if (!type) return;
@@ -1102,9 +987,15 @@
         syncPickerTypeSelect();
       }
       markDirty();
-      if (event.target.dataset.typeQuantity != null) {
+      if (event.target.dataset.optionQuantity != null) {
+        const productId = String(event.target.dataset.productId || "");
+        const option = (type.options || []).find((row) => String(row.product_id) === productId);
+        if (!option) return;
+        option.quantities ||= {};
         const quantity = parseQuantity(event.target.value);
-        type.quantities[event.target.dataset.basketId] = quantity == null ? event.target.value : quantity;
+        option.quantities[event.target.dataset.basketId] = quantity == null ? event.target.value : quantity;
+        recalculateTypeQuantities(type);
+        event.target.closest(".basket-grid-option")?.classList.toggle("is-included", Number(quantity || 0) > 0 || Object.values(option.quantities).some((value) => Number(value || 0) > 0));
         updateBasketProductSums();
       }
     });
@@ -1146,7 +1037,7 @@
     const list = $("admin-baskets");
     list.addEventListener("dragstart", (event) => {
       const card = event.target.closest(".basket-grid-option[draggable=" + CSS.escape("true") + "]");
-      if (!card || card.dataset.isDefault === "true") { event.preventDefault(); return; }
+      if (!card) { event.preventDefault(); return; }
       state.draggedOption = { typeKey: card.dataset.typeKey, productId: card.dataset.optionId };
       card.classList.add("is-dragging");
       event.dataTransfer.effectAllowed = "move";
@@ -1154,7 +1045,7 @@
     });
     list.addEventListener("dragover", (event) => {
       const card = event.target.closest(".basket-grid-option");
-      if (!state.draggedOption || !card || card.dataset.typeKey !== state.draggedOption.typeKey || card.dataset.isDefault === "true") return;
+      if (!state.draggedOption || !card || card.dataset.typeKey !== state.draggedOption.typeKey  ) return;
       event.preventDefault();
       card.classList.add("is-drop-target");
     });
