@@ -39,3 +39,37 @@ jobs:
           node-version: '24'
           package-manager-cache: false
       - run: node --test
+
+  customer-database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: fixture-only
+          POSTGRES_DB: dona_test
+        options: >-
+          --health-cmd "pg_isready -U postgres -d dona_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /scripts/homologation/customer-update.test.sql
+            /supabase/migrations/20261029123000_site_admin_customer_phone_full_edit_v3.sql
+            /supabase/migrations/20261128195700_site_admin_customer_phone_source_and_first_address_v1.sql
+      - name: Conferir gravação e atualização de cliente no PostgreSQL
+        shell: bash
+        run: |
+          set -euo pipefail
+          db_container="${{ job.services.postgres.id }}"
+          docker exec "$db_container" mkdir -p /fixture/scripts/homologation /fixture/supabase/migrations
+          docker cp scripts/homologation/customer-update.test.sql "$db_container:/fixture/scripts/homologation/"
+          docker cp supabase/migrations/20261029123000_site_admin_customer_phone_full_edit_v3.sql "$db_container:/fixture/supabase/migrations/"
+          docker cp supabase/migrations/20261128195700_site_admin_customer_phone_source_and_first_address_v1.sql "$db_container:/fixture/supabase/migrations/"
+          docker exec "$db_container" psql -X -v ON_ERROR_STOP=1 -U postgres -d dona_test -f /fixture/scripts/homologation/customer-update.test.sql
