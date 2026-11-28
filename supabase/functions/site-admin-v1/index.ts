@@ -220,6 +220,37 @@ async function customerAddressManage(input: any) {
   return { ok: true, created: saved.data.created === true, address: saved.data.address || null };
 }
 
+async function customerCreate(input: any) {
+  const name = clean(input.name, 180);
+  const normalizedPhone = normalizeBrazilPhone(input.phone);
+  const documentRaw = clean(input.document, 22);
+  const document = documentRaw.replace(/\\D/g, "");
+  if (name.length < 2) return { error: "customer_name_required", status: 400 };
+  if (!normalizedPhone) return { error: "invalid_phone", status: 400 };
+  if (documentRaw && ![11, 14].includes(document.length)) {
+    return { error: "invalid_document", status: 400 };
+  }
+
+  const created = await db.rpc("ops2_admin_customer_save_v2", {
+    p_payload: {
+      display_name: name,
+      phone: normalizedPhone,
+      cpf: document,
+      status: "active",
+    },
+  });
+  if (created.error?.code === "23505") return { error: "duplicate_customer_identity", status: 409 };
+  if (created.error) throw created.error;
+  if (created.data?.ok !== true) {
+    const code = clean(created.data?.error, 80) || "customer_create_failed";
+    const status = ["phone_already_in_use", "cpf_already_in_use", "duplicate_customer_identity"].includes(code) ? 409 : 400;
+    return { error: code, status };
+  }
+  const customerId = uuid(created.data?.customer_id);
+  if (!customerId) return { error: "customer_create_failed", status: 500 };
+  return { customer_id: customerId };
+}
+
 async function customerSave(input: any) {
   const customerId = uuid(input.customer_id);
   const expectedCustomerUpdatedAt = clean(input.customer_updated_at, 80);
@@ -5483,7 +5514,7 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "customer_addresses_list") result = await customerAddressesList(input);
     else if (req.method === "POST" && action === "customer_address_manage") result = await customerAddressManage(input);
     else if (req.method === "POST" && action === "customer_lookup") result = await customerLookup(input);
-    else if (req.method === "POST" && action === "customer_save") result = await customerSave(input);
+    else if (req.method === "POST" && action === "customer_create") result = await customerCreate(input);\n    else if (req.method === "POST" && action === "customer_save") result = await customerSave(input);
     else if (req.method === "POST" && action === "customer_delete") result = await customerDelete(input);
     else if (req.method === "GET" && action === "baskets") {
       const status = ["active", "inactive", "all"].includes(input.status) ? input.status : "active";
