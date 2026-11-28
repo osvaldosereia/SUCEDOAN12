@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { stripTypeScriptTypes } from "node:module";
 import test from "node:test";
 import { runInNewContext } from "node:vm";
+import { basketSellableStock, todayInCuiaba } from "../supabase/functions/_shared/basket-sellable-stock-v1.mjs";
 
 const source = stripTypeScriptTypes(
   readFileSync(new URL("../supabase/functions/storefront-v2/index.ts", import.meta.url), "utf8")
@@ -32,7 +33,7 @@ function storefrontFixture(orderResult) {
   };
   runInNewContext(source, {
     Deno: { env: { get() { return "test"; } }, serve(fn) { handle = fn; } },
-    createClient: () => db, Request, Response, URL, TextEncoder, crypto,
+    createClient: () => db, Request, Response, URL, TextEncoder, crypto, basketSellableStock, todayInCuiaba,
     console: { error() {}, warn() {} },
   });
   const endpoint = (action) => "https://fixture.test/functions/v1/storefront-v2?action=" + action;

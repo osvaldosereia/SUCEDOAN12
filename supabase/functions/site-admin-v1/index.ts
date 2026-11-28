@@ -6,6 +6,7 @@ import { cacheInboundMetaMedia } from "../_shared/whatsapp-inbound-media-cache-v
 import { ANA_DRY_RUN_INSTRUCTIONS, ANA_DRY_RUN_SCHEMA, buildAnaDryRunInput, normalizeAnaDryRunResult, isSimpleAnaGreeting } from "../_shared/ana-policy-v1.mjs";
 import { validateAnaConfiguration, buildAnaRuntimeInstructions, routeAnaMessage } from "../_shared/ana-admin-config-v1.mjs";
 import { shouldSendAnaLiveReply } from "../_shared/ana-live-policy-v1.mjs";
+import { basketSellableStock, todayInCuiaba } from "../_shared/basket-sellable-stock-v1.mjs";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
@@ -1212,7 +1213,7 @@ async function basketGridList() {
       { length: Math.ceil(productIds.length / 80) },
       (_, index) => productIds.slice(index * 80, (index + 1) * 80),
     );
-    const [productsByBatch, stockByBatch] = await Promise.all([
+    const [productsByBatch, stockByBatch, checkoutStockByBatch] = await Promise.all([
       mapLimit(productIdBatches, 4, async (batch: string[]) => {
         const result = await db.from("products").select(PRODUCT_COLUMNS).in("id", batch);
         if (result.error) throw result.error;
@@ -1220,19 +1221,28 @@ async function basketGridList() {
       }),
       mapLimit(productIdBatches, 4, async (batch: string[]) => {
         const result = await db.from("storefront_product_sellable_stock_v1")
-          .select("product_id,sellable_stock,is_active")
+          .select("product_id,sellable_stock,is_active,price,validity_date")
+          .in("product_id", batch);
+        if (result.error) throw result.error;
+        return result.data || [];
+      }),
+      mapLimit(productIdBatches, 4, async (batch: string[]) => {
+        const result = await db.from("storefront_ean_sellable_stock_v1")
+          .select("product_id,is_active,stock_authority,loose_sellable_stock,ean_sellable_stock")
           .in("product_id", batch);
         if (result.error) throw result.error;
         return result.data || [];
       }),
     ]);
-    const sellableById = new Map(stockByBatch.flat().map((row: any) => [String(row.product_id),
-      row.is_active === true ? Math.max(0, Number(row.sellable_stock || 0)) : 0]));
-    productsByBatch.flat().forEach((product: any) => productById.set(String(product.id), {
-      ...product,
-      sellable_stock: sellableById.get(String(product.id)) || 0,
-      effective_price_cents: productPriceCents(product),
-    }));
+    const websiteById = new Map(stockByBatch.flat().map((row: any) => [String(row.product_id), row]));
+    const checkoutById = new Map(checkoutStockByBatch.flat().map((row: any) => [String(row.product_id), row]));
+    const today = todayInCuiaba();
+    productsByBatch.flat().forEach((product: any) => {
+      const id = String(product.id);
+      const availability = basketSellableStock(websiteById.get(id), checkoutById.get(id), today);
+      productById.set(id, { ...product, sellable_stock: availability.quantity,
+        basket_stock_reason: availability.reason, effective_price_cents: productPriceCents(product) });
+    });
   }
 
   const optionQuantitiesByProduct = new Map<string, Record<string, number>>();

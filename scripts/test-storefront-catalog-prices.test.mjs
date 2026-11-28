@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { stripTypeScriptTypes } from "node:module";
 import test from "node:test";
 import { runInNewContext } from "node:vm";
+import { basketSellableStock, todayInCuiaba } from "../supabase/functions/_shared/basket-sellable-stock-v1.mjs";
 
 const source = stripTypeScriptTypes(
   readFileSync(new URL("../supabase/functions/storefront-v2/index.ts", import.meta.url), "utf8")
@@ -61,7 +62,7 @@ function fixture() {
   let handle;
   runInNewContext(source, {
     Deno: { env: { get() { return "fixture"; } }, serve(fn) { handle = fn; } },
-    createClient: () => db, Date, Intl, Request, Response, URL, TextEncoder, crypto, console,
+    createClient: () => db, Date, Intl, Request, Response, URL, TextEncoder, crypto, console, basketSellableStock, todayInCuiaba,
   });
   return async (action, params = {}) => {
     const url = new URL("https://fixture.test/");

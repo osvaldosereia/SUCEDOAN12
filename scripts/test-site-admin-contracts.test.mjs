@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { stripTypeScriptTypes } from "node:module";
 import test from "node:test";
 import { runInNewContext } from "node:vm";
+import { basketSellableStock, todayInCuiaba } from "../supabase/functions/_shared/basket-sellable-stock-v1.mjs";
 
 const read = (path) => readFileSync(new URL("../" + path, import.meta.url), "utf8");
 const source = stripTypeScriptTypes(
@@ -36,7 +37,7 @@ function fixture(tables, rpcResults) {
   };
   runInNewContext(source, {
     Deno: { env: { get: (key) => key === "DONA_ADMIN_CODE" ? testCode : "fixture" }, serve(fn) { handler = fn; } },
-    createClient: () => db, URL, Request, Response, console: { error() {} },
+    createClient: () => db, URL, Request, Response, basketSellableStock, todayInCuiaba, console: { error() {} },
   });
   return {
     calls,
@@ -97,8 +98,12 @@ test("admin basket grid returns each variant quantity and the configured basket 
     ],
     products: [{ id: "salt", price: 3.29 }, { id: "pepper", price: 3.43 }],
     storefront_product_sellable_stock_v1: [
-      { product_id: "salt", sellable_stock: 7, is_active: true },
-      { product_id: "pepper", sellable_stock: 4, is_active: true },
+      { product_id: "salt", sellable_stock: 7, is_active: true, price: 3.29, validity_date: "2099-01-01" },
+      { product_id: "pepper", sellable_stock: 4, is_active: true, price: 3.43, validity_date: "2020-01-01" },
+    ],
+    storefront_ean_sellable_stock_v1: [
+      { product_id: "salt", is_active: true, stock_authority: "supabase", ean_sellable_stock: 7 },
+      { product_id: "pepper", is_active: true, stock_authority: "supabase", ean_sellable_stock: 0 },
     ],
   }, {});
   const response = await admin.request("basket_grid");
@@ -106,5 +111,6 @@ test("admin basket grid returns each variant quantity and the configured basket 
   const data = await response.json();
   assert.equal(data.baskets[0].default_price_cents, 41000);
   assert.deepEqual(data.types[0].options.map((option) => option.quantities.basket), [1, 2]);
-  assert.deepEqual(data.types[0].options.map((option) => option.product.sellable_stock), [7, 4]);
+  assert.deepEqual(data.types[0].options.map((option) => option.product.sellable_stock), [7, 0]);
+  assert.equal(data.types[0].options[1].product.basket_stock_reason, "expired");
 });

@@ -6,6 +6,7 @@ import test from "node:test";
 import { Script } from "node:vm";
 import { buildOrderSeparationComponents } from "../supabase/functions/_shared/order-separation-components-v1.mjs";
 import { MetaTransportError, sendTemplateViaMeta } from "../supabase/functions/_shared/whatsapp-meta-transport-v1.mjs";
+import { basketSellableStock, todayInCuiaba } from "../supabase/functions/_shared/basket-sellable-stock-v1.mjs";
 
 const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const orderId = id(1);
@@ -234,7 +235,7 @@ function integrationFixture(t, options = {}) {
       EdgeRuntime: { waitUntil: (task) => tasks.push(task) },
       Request, Response, URL, AbortSignal, TextEncoder, crypto, setTimeout,
       createClient: () => db, fetch: fetchOffline,
-      buildOrderSeparationComponents, MetaTransportError,
+      buildOrderSeparationComponents, MetaTransportError, basketSellableStock, todayInCuiaba,
       sendTemplateViaMeta: (args) => sendTemplateViaMeta({ ...args, fetchImpl: fetchOffline }),
       console: { error(...args) { calls.errors.push(args.map(String).join(" ")); }, warn() {} },
     });

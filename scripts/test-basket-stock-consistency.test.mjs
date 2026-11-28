@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { stripTypeScriptTypes } from "node:module";
 import test from "node:test";
 import { runInNewContext } from "node:vm";
+import { basketSellableStock, todayInCuiaba } from "../supabase/functions/_shared/basket-sellable-stock-v1.mjs";
 
 const source = stripTypeScriptTypes(
   readFileSync(new URL("../supabase/functions/storefront-v2/index.ts", import.meta.url), "utf8")
@@ -29,7 +30,7 @@ test("basket availability excludes expired stock and matches the server stock ba
   } };
   const sandbox = {
     Deno: { env: { get() { return "fixture"; } }, serve() {} }, createClient: () => db,
-    Date, Intl, URL, TextEncoder, crypto, console
+    Date, Intl, URL, TextEncoder, crypto, console, basketSellableStock, todayInCuiaba
   };
   runInNewContext(source + "\nglobalThis.fixtureStock = moldAvailableStockMap;", sandbox);
   const out = await sandbox.fixtureStock(website.map(row => row.product_id));
@@ -48,7 +49,7 @@ test("a missing server stock row cannot be offered as a basket product", async (
           ? [{ product_id: "missing", is_active: true, sellable_stock: 9, price: 2, validity_date: null }]
           : [], error: null }); }
     }) }),
-    Date, Intl, URL, TextEncoder, crypto, console
+    Date, Intl, URL, TextEncoder, crypto, console, basketSellableStock, todayInCuiaba
   };
   runInNewContext(source + "\nglobalThis.fixtureStock = moldAvailableStockMap;", sandbox);
   const out = await sandbox.fixtureStock(["missing"]);

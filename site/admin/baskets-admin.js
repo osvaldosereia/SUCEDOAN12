@@ -206,6 +206,9 @@
   }
 
   function productStatus(product) {
+    if (product?.basket_stock_reason === "expired") return { text: "Validade vencida", className: "is-no-stock" };
+    if (product?.basket_stock_reason === "price_unavailable") return { text: "Sem preço válido", className: "is-no-stock" };
+    if (product?.basket_stock_reason === "stock_unavailable") return { text: "Saldo indisponível", className: "is-no-stock" };
     if (product?.is_active === true && productSellableStock(product) === 0) return { text: "Sem saldo vendável", className: "is-no-stock" };
     if (product?.is_active === true) return { text: "Ativo", className: "is-active" };
     if (product?.is_active === false) return { text: "Inativo", className: "is-inactive" };

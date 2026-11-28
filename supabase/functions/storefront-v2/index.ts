@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
+import { basketSellableStock, todayInCuiaba } from "../_shared/basket-sellable-stock-v1.mjs";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const KEY=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
@@ -579,19 +580,12 @@ async function moldAvailableStockMap(productIds:string[]){
     if(checkout.error)throw checkout.error;
     return {website:website.data||[],checkout:checkout.data||[]};
   }));
-  const today=iso(local());
+  const today=todayInCuiaba();
   for(const batch of batches){
     const checkoutById=new Map<string,any>(batch.checkout.map((row:any)=>[String(row.product_id),row]));
     for(const row of batch.website){
       const id=String(row.product_id),checkout=checkoutById.get(id);
-      const expiry=row.validity_date?String(row.validity_date).slice(0,10):"";
-      const websiteEligible=row.is_active===true&&Number(row.price||0)>0&&(!expiry||expiry>=today);
-      const checkoutStock=checkout?.stock_authority==="bling"
-        ?checkout.loose_sellable_stock
-        :checkout?.ean_sellable_stock??checkout?.loose_sellable_stock;
-      const available=websiteEligible&&checkout?.is_active===true
-        ?Math.min(Number(row.sellable_stock||0),Number(checkoutStock||0)):0;
-      out.set(id,Number.isFinite(available)?Math.max(0,Math.floor(available)):0);
+      out.set(id,basketSellableStock(row,checkout,today).quantity);
     }
   }
   return out;
