@@ -1105,14 +1105,42 @@ async function lookupCustomer(v:any){
   const customer=await loadCustomerForCheckout(id);
   return {ok:true,found:Boolean(customer),customer};
 }
+function publicCheckoutCustomer(customer:any){
+  if(!customer||typeof customer!=="object")return null;
+  const cleanAddress=(address:any)=>{
+    if(!address||typeof address!=="object")return null;
+    const id=uid(address.id);
+    if(!id)return null;
+    return {
+      id,label:txt(address.label,60)||"Endereço",
+      street:txt(address.street,180),number:txt(address.number,40),
+      complement:txt(address.complement,180),
+      neighborhood:txt(address.neighborhood??address.district,120),
+      district:txt(address.district??address.neighborhood,120),
+      city:txt(address.city,100),state:(txt(address.state,2)||"MT").toUpperCase(),
+      postal_code:txt(address.postal_code,12),reference:txt(address.reference,220),
+      is_default:address.is_default===true
+    };
+  };
+  const addresses=(Array.isArray(customer.addresses)?customer.addresses:[])
+    .map(cleanAddress).filter(Boolean);
+  const active=cleanAddress(customer.address);
+  if(active&&!addresses.some((address:any)=>address.id===active.id))addresses.unshift(active);
+  return {
+    display_name:txt(customer.display_name,180),phone:txt(customer.phone,32),
+    registration_complete:customer.registration_complete===true,
+    addresses,address:active||addresses[0]||null
+  };
+}
 async function publicCustomerLookup(req:Request,raw:any){
   const ph=phone(raw),rk=await sha(ph||ip(req)||"unknown");
   const gate=await db.rpc("consume_public_rate_limit",{p_rate_key:"storefront-v2:customer-lookup:"+rk,p_bucket:"lookup_customer",p_limit:20,p_window_seconds:300});
   if(gate.error)return {error:"rate_limit_unavailable",status:503};
   if(gate.data!==true)return {error:"rate_limited",status:429};
   const result=await lookupCustomer(raw);
-  return {ok:true,found:result?.found===true,ambiguous:result?.ambiguous===true,
-    requires_document_confirmation:result?.found===true};
+  const found=result?.found===true&&Boolean(result?.customer);
+  return {ok:true,found,ambiguous:result?.ambiguous===true,
+    customer:found?publicCheckoutCustomer(result.customer):null};
 }
 async function allowCustomerAddressAttempts(req:Request,ph:string){
   const [ipKey,phoneKey]=await Promise.all([sha(ip(req)||"unknown"),sha(ph)]);
@@ -1173,15 +1201,22 @@ async function customerAddressLookup(req:Request,input:any){
   return {ok:true,found:true,customer:verified.customer};
 }
 async function customerAddressAdd(req:Request,input:any){
-  const verified=await verifyCheckoutCustomerDocument(req,input);
-  if(verified.error)return verified;
+  const ph=phone(input?.phone);
+  if(!ph)return {error:"invalid_phone",status:400};
+  const gate=await allowCustomerAddressAttempts(req,ph);
+  if(gate.error)return gate;
+  const found=await lookupCustomer(ph);
+  if(found?.ambiguous)return {error:"ambiguous_phone",status:409};
+  if(!found?.found||!found?.customer?.id)return {error:"customer_not_found",status:404};
+  const customer=found.customer;
   const address={
     street:txt(input?.street,180),number:txt(input?.number,40),complement:txt(input?.complement,180),
     neighborhood:txt(input?.neighborhood,120),city:txt(input?.city,100),state:"MT",
     postal_code:txt(input?.postal_code,12),reference:txt(input?.reference,220)
   };
   const result=await db.rpc("ops3_storefront_customer_address_add_v1",{
-    p_customer_id:verified.customer.id,p_phone:verified.phone,p_document_last4:verified.document_last4,
+    p_customer_id:customer.id,p_phone:ph,
+    p_document_last4:String(customer.document_last4||"").replace(/\D/g,"").slice(-4),
     p_label:txt(input?.label,60)||"Outro endereço",p_address:address
   });
   if(result.error)return {error:"address_save_unavailable",status:503};
@@ -1190,9 +1225,9 @@ async function customerAddressAdd(req:Request,input:any){
     const status=code==="document_mismatch"?403:code==="customer_not_found"?404:code==="unsupported_city"?400:400;
     return {error:code,status};
   }
-  const customer=await loadCustomerForCheckout(verified.customer.id);
+  const updatedCustomer=publicCheckoutCustomer(await loadCustomerForCheckout(customer.id));
   return {ok:true,created:result.data.created===true,address:result.data.address||null,
-    address_id:result.data.address?.id||null,customer};
+    address_id:result.data.address?.id||null,customer:updatedCustomer};
 }
 async function registerCustomer(req:Request,p:any){
   const ph=phone(p?.phone);if(!ph)return {error:"invalid_phone",status:400};
@@ -1622,5 +1657,6 @@ Deno.serve(async(req:Request)=>{
     return json(req,{ok:false,error:"unknown_action"},400);
   }catch(e){console.error("storefront-v2 canonical-vitrine",e);return json(req,{ok:false,error:"service_unavailable",detail:txt((e as any)?.message,180)},500,{"Cache-Control":"no-store"})}
 });
+
 
 
