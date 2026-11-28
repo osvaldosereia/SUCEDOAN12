@@ -945,11 +945,9 @@
         } catch {}
         trackingLink.href = safeTrackingUrl;
         trackingLink.hidden = !safeTrackingUrl;
-        $("order-receipt-followup").textContent = result.basket_configuration_refreshed
-          ? "A cesta mudou durante o envio e foi atualizada automaticamente. A loja confirmará os itens e o total pelo WhatsApp."
-          : safeTrackingUrl
-            ? "No acompanhamento, você verá os produtos e o status atualizado do pedido."
-            : "O link de acompanhamento não ficou disponível. Se precisar, fale com a loja pelo WhatsApp.";
+        $("order-receipt-followup").textContent = safeTrackingUrl
+          ? "No acompanhamento, você verá os produtos e o status atualizado do pedido."
+          : "O link de acompanhamento não ficou disponível. Se precisar, fale com a loja pelo WhatsApp.";
         receipt.hidden = false;
         window.requestAnimationFrame(() => {
           receipt.focus({ preventScroll: true });
@@ -994,7 +992,9 @@
         const messages = {
           checkout_price_changed: "O total mudou. Atualize a página para revisar os preços. Seu carrinho foi mantido.",
           checkout_stock_changed: "O estoque mudou durante a confirmação. Atualize a página para conferir os itens. Seu carrinho foi mantido.",
+          checkout_confirmation_required: "Atualize a página para revisar o total antes de confirmar. Seu carrinho foi mantido.",
           checkout_confirmation_invalid: "Atualize a página para revisar o total antes de confirmar.",
+          invalid_item_id: "Um item não está mais disponível. Atualize a página para revisar o carrinho.",
           delivery_date_unavailable: "A data de entrega não está mais disponível. Escolha uma nova data para confirmar.",
           too_many_items: "O pedido tem mais de 80 produtos diferentes. Divida a compra ou fale com a loja pelo WhatsApp.",
           invalid_quantity: "Revise as quantidades dos produtos avulsos. O limite é 30 unidades por produto.",

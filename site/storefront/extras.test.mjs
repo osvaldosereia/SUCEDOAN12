@@ -3,8 +3,9 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { runInNewContext } from "node:vm";
 
-test("binding extra-product controls twice keeps one click handler", async () => {
-  const source = await readFile(new URL("./extras.js", import.meta.url), "utf8");
+for (const module of ["extras.js", "experimento-extras.js"]) {
+test(module + " binds extra-product controls once", async () => {
+  const source = await readFile(new URL("./" + module, import.meta.url), "utf8");
   const window = {};
   const document = { activeElement: null };
   runInNewContext(source, { window, document, Map, Set, Number, String, Math, Array });
@@ -13,6 +14,7 @@ test("binding extra-product controls twice keeps one click handler", async () =>
   const output = { textContent: "0" };
   const card = {
     dataset: { extraProduct: "product-1" },
+    classList: { toggle() {} },
     contains() { return false; },
     querySelector(selector) {
       if (selector.includes("data-extra-quantity")) return output;
@@ -32,12 +34,14 @@ test("binding extra-product controls twice keeps one click handler", async () =>
     dataset: {},
     handlers: [],
     closest(selector) { return selector === "[data-extra-controls-bound='true']" && this.dataset.extraControlsBound === "true" ? this : null; },
+    querySelectorAll() { return []; },
     contains(button) { return button === productButton; },
     addEventListener(type, handler) { this.handlers.push({ type, handler }); },
   };
   const scrollContainer = {
     dataset: {},
     handlers: [],
+    querySelectorAll() { return []; },
     closest(selector) {
       if (selector !== "[data-extra-controls-bound='true']") return null;
       if (this.dataset.extraControlsBound === "true") return this;
@@ -61,8 +65,9 @@ test("binding extra-product controls twice keeps one click handler", async () =>
   assert.equal(container.handlers.filter((item) => item.type === "click").length, 1);
   assert.equal(scrollContainer.handlers.filter((item) => item.type === "click").length, 0);
   assert.equal(productButton.handlers.length, 0);
-  const click = { target: { closest: () => productButton } };
+  const click = { target: { closest: (selector) => selector === "[data-extra-adjust]" ? productButton : null } };
   scrollContainer.handlers.filter((item) => item.type === "click").forEach((item) => item.handler(click));
   container.handlers.filter((item) => item.type === "click").forEach((item) => item.handler(click));
   assert.equal(data.extraSelections.get("product-1").quantity, 1);
 });
+}

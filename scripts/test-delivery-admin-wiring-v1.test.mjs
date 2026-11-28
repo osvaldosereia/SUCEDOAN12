@@ -13,15 +13,12 @@ test("admin delivery script is loaded as a module", () => {
   assert.ok(/<script\s+type="module"\s+src="delivery-admin\.js\?v=\d+"><\/script>/.test(html), "delivery-admin.js must load with type=module");
 });
 
-test("changed admin scripts use fresh cache versions", () => {
+test("admin delivery scripts and styles have cache versions", () => {
   const html = read("site/admin/index.html");
-  assert.ok(/src="admin\.js\?v=25"/.test(html), "admin navigation code must bypass the previously cached script");
-  assert.ok(/src="orders-admin\.js\?v=10"/.test(html), "delivery order detail access must bypass the cached order script");
-  assert.ok(/href="orders-admin\.css\?v=10"/.test(html), "order details styling must bypass the cached stylesheet");
-  assert.ok(/src="separation-message-admin\.js\?v=4"/.test(html), "new template controls must bypass the old script");
-  assert.ok(/src="delivery-admin\.js\?v=5"/.test(html), "delivery admin imports must bypass cached modules");
-  assert.ok(/href="delivery-admin\.css\?v=4"/.test(html), "delivery controls must bypass cached styles");
-  assert.ok(/src="driver\.js\?v=3"/.test(read("site/entregador/index.html")), "driver portal imports must bypass cached modules");
+  for (const asset of ["admin.js", "orders-admin.js", "orders-admin.css", "separation-message-admin.js", "delivery-admin.js", "delivery-admin.css"]) {
+    const escaped = asset.replace(".", "\\.");
+    assert.match(html, new RegExp('(?:src|href)="' + escaped + '\\?v=[1-9]\\d*"'), asset);
+  }
 });
 
 test("delivery function delegates bearer authentication to its handler", () => {
@@ -33,25 +30,22 @@ test("delivery function delegates bearer authentication to its handler", () => {
   assert.ok(/\.gt\("expires_at", new Date\(\)\.toISOString\(\)\)/.test(source), "handler must reject expired driver access tokens");
 });
 
-test("admin delivery queue uses the service date and only renders today's orders", () => {
-  const html = read("site/admin/index.html");
+test("admin shows today's and scheduled routes separately for each driver", () => {
   const admin = read("site/admin/delivery-admin.js");
-  const domain = read("site/admin/delivery-domain.mjs");
-  assert.ok(/delivery-admin\.js\?v=5/.test(html), "the delivery module must use a fresh cache version");
-  assert.ok(/partitionDeliveryOrders\(/.test(admin), "the ready queue must be partitioned by service date");
   const edge = read("supabase/functions/delivery-ops-v1/index.ts");
-  assert.ok(/const serviceDate = serviceDateInCuiaba\(\)/.test(edge), "the API must use Cuiabá's service date");
-  assert.ok(/service_date:\s*serviceDate/.test(edge), "the API must return its service date to the admin");
-  assert.ok(/export function partitionDeliveryOrders\(/.test(domain), "the queue partition must be covered by the tested domain module");
+  assert.match(admin, /allRoutes\.filter\(\(run\) => \(run\.driver_id \|\| run\.driver\?\.id\) === state\.activeDriverId\)/);
+  assert.match(admin, /run\.service_date === state\.data\?\.service_date \? "Pronta para entrega" : "Agendada"/);
+  assert.match(edge, /const serviceDate = serviceDateInCuiaba\(\)/);
+  assert.match(edge, /service_date:\s*serviceDate/);
 });
 
-test("route management exposes driver portal, order details, and safe stop actions", () => {
+test("route management is in the admin with order details and safe stop actions", () => {
   const html = read("site/admin/index.html");
   const admin = read("site/admin/delivery-admin.js");
   const orders = read("site/admin/orders-admin.js");
   const edge = read("supabase/functions/delivery-ops-v1/index.ts");
   const migration = read("supabase/migrations/20261106021520_delivery_route_admin_actions_v1.sql");
-  assert.match(html, /href="\.\.\/entregador\/"/);
+  assert.match(html, /id="delivery-routes-list"/);
   assert.match(admin, /data-view-delivery-order/);
   assert.match(orders, /DonaOrdersAdmin\s*=\s*\{[^}]*openOrder/);
   assert.match(orders, /Endereço de entrega/);

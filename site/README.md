@@ -4,14 +4,15 @@ O catálogo público fica em `/site/`; o painel administrativo fica em `/site/ad
 
 ## Loja
 
-- `site/app.js` coordena a vitrine. As áreas de extras, cesta e checkout ficam separadas em `site/storefront/extras.js`, `basket.js` e `checkout.js`.
+- `site/app.js` coordena a vitrine. A página principal carrega `site/storefront/experimento-extras.js`, `basket.js` e `checkout.js`. A página de compatibilidade `versao-anterior.html` usa `extras.js`.
 - A vitrine carrega fotos sob demanda e consulta o preço, a composição e a disponibilidade quando a pessoa abre uma cesta.
 - O pedido é criado no servidor por `storefront-v2`; o acesso privilegiado ao Supabase não é enviado ao navegador.
+- O checkout envia o total apresentado em centavos. Uma mudança de preço exige nova confirmação e o banco valida esse total antes de gravar o pedido.
 - Os novos pedidos usam um único código curto no formato duas letras e três números. O mesmo código aparece no pedido, no admin e na lista pública. Os códigos históricos não são regravados.
 
 ## Administração
 
-- O painel usa um único código de acesso, sem login de usuário e senha. O valor fica em memória apenas durante a sessão do navegador.
+- O painel usa um único código de acesso. O operador pode escolher manter o acesso no aparelho por até 30 dias.
 - Configure um código de acesso forte de 13 a 128 caracteres com o nome `DONA_ADMIN_CODE` nas Edge Functions do Supabase. Não coloque o valor no HTML, JavaScript, configuração pública ou GitHub.
 - A seção **Cartão** usa `site-card-admin-v1` e as migrações `20261106144304_admin_saved_card_ledger_v1` e `20261106144413_admin_saved_card_service_role_policies_v1`; ela reutiliza o mesmo código de acesso do admin.
 - Em **Clientes**, é possível buscar por nome, telefone ou CPF/CNPJ e editar nome, telefone, CPF/CNPJ e endereço. O telefone é exibido sem o prefixo +55; o banco armazena o padrão E.164 para integrações. A gravação é feita no servidor, valida se outro operador atualizou o cadastro e registra uma linha no histórico administrativo.
@@ -24,3 +25,8 @@ O catálogo público fica em `/site/`; o painel administrativo fica em `/site/ad
 A mudança de banco fica em `supabase/migrations/20261028050000_site_customer_edit_and_order_codes_v1.sql`. A migração precisa ser aplicada antes de publicar as funções que a utilizam. Configure `DONA_ADMIN_CODE` antes de publicar as funções administrativas.
 
 - Em **Clientes**, **Excluir cadastro** desativa o registro, remove os identificadores de contato ativos (telefone, CPF/CNPJ e e-mails vinculados) e o retira das buscas. A operação exige confirmação, preserva pedidos/conversas e registra histórico administrativo. Não apaga pedidos nem documentos fiscais.
+
+## Verificação
+
+- Rode `node --test` na raiz do repositório com Node.js 24. Os testes usam dados fictícios e não enviam pedidos nem mensagens.
+- Confira as rotas e os contratos de publicação em [Estabilidade do site e do Admin](../docs/estabilidade-site-admin-20261128.md).

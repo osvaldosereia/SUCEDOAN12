@@ -974,18 +974,21 @@
       });
   }
 
-  const TEMPLATE_BUTTON_EXAMPLE = "0123456789abcdef".repeat(4);
+  const TEMPLATE_BUTTON_SUPPORT = window.DonaTemplateButtonSupport;
+
+  function templateButtonExample(url, current) {
+    return TEMPLATE_BUTTON_SUPPORT.isValidExample(url, current) ? current : TEMPLATE_BUTTON_SUPPORT.exampleForUrl(url);
+  }
 
   function templateButtonMarkup(button = {}) {
     const type = String(button?.type || "QUICK_REPLY").toUpperCase();
-    const dynamicUrl = String(button?.url || "").endsWith("{{1}}");
-    const example = Array.isArray(button?.example) && /^[a-f0-9]{64}$/i.test(String(button.example[0] || ""))
-      ? String(button.example[0])
-      : TEMPLATE_BUTTON_EXAMPLE;
+    const url = String(button?.url || "").trim();
+    const currentExample = Array.isArray(button?.example) ? String(button.example[0] || "") : "";
+    const example = templateButtonExample(url, currentExample);
     return '<div class="whatsapp-template-button-row" data-template-button-row>'
       + '<label>Tipo<select data-template-button-type><option value="QUICK_REPLY"' + (type === "QUICK_REPLY" ? " selected" : "") + '>Resposta rápida</option><option value="URL"' + (type === "URL" ? " selected" : "") + '>Link</option><option value="CATALOG"' + (type === "CATALOG" ? " selected" : "") + '>Catálogo</option></select></label>'
       + '<label>Texto do botão<input data-template-button-text maxlength="25" value="' + esc(button?.text || "") + '" placeholder="Ex.: Ver pedido"></label>'
-      + '<label data-template-button-url-label' + (type === "URL" ? "" : " hidden") + '>Endereço do link<input data-template-button-url maxlength="2000" value="' + esc(button?.url || "") + '" placeholder="https://donaantonia.com.br/pedido/?c={{1}}"></label>'
+      + '<label data-template-button-url-label' + (type === "URL" ? "" : " hidden") + '>Endereço do link<input data-template-button-url maxlength="2000" value="' + esc(url) + '" placeholder="https://donaantonia.com.br/p/?k={{1}}"></label>'
       + '<input type="hidden" data-template-button-example value="' + esc(example) + '">'
       + '<button class="button button-outline" type="button" data-template-button-remove aria-label="Remover botão">Remover</button>'
       + '</div>';
@@ -996,15 +999,15 @@
     const type = row.querySelector("[data-template-button-type]")?.value || "QUICK_REPLY";
     const text = row.querySelector("[data-template-button-text]");
     const urlLabel = row.querySelector("[data-template-button-url-label]");
-    const url = row.querySelector("[data-template-button-url]")?.value || "";
+    const url = row.querySelector("[data-template-button-url]")?.value.trim() || "";
     if (text) {
       text.required = type !== "CATALOG";
       text.placeholder = type === "CATALOG" ? "Opcional" : "Ex.: Ver pedido";
     }
     if (urlLabel) urlLabel.hidden = type !== "URL";
     const example = row.querySelector("[data-template-button-example]");
-    if (example && type === "URL" && url.endsWith("{{1}}") && !/^[a-f0-9]{64}$/i.test(example.value)) {
-      example.value = TEMPLATE_BUTTON_EXAMPLE;
+    if (example && type === "URL" && url.endsWith("{{1}}")) {
+      example.value = templateButtonExample(url, example.value);
     }
   }
 
@@ -1100,8 +1103,7 @@
       if (!url) throw new Error("Informe o endereço do botão de link.");
       if (/\{\{\d+\}\}/.test(url) && !url.endsWith("{{1}}")) throw new Error("O link dinâmico deve terminar com {{1}}.");
       if (url.endsWith("{{1}}")) {
-        const example = row.querySelector("[data-template-button-example]")?.value || TEMPLATE_BUTTON_EXAMPLE;
-        if (!/^[a-f0-9]{64}$/i.test(example)) throw new Error("Exemplo de link inválido. Sincronize os modelos e tente novamente.");
+        const example = templateButtonExample(url, row.querySelector("[data-template-button-example]")?.value);
         return { type, text, url, example: [example] };
       }
       return { type, text, url };
@@ -1705,9 +1707,9 @@
   });
   const templateRoot = $("whatsapp-templates-content");
   templateRoot?.addEventListener("change", (event) => {
-    const buttonType = event.target instanceof HTMLSelectElement ? event.target.closest("[data-template-button-type]") : null;
-    if (buttonType) {
-      syncTemplateButtonRow(buttonType.closest("[data-template-button-row]"));
+    const buttonField = event.target instanceof Element ? event.target.closest("[data-template-button-type], [data-template-button-url]") : null;
+    if (buttonField) {
+      syncTemplateButtonRow(buttonField.closest("[data-template-button-row]"));
       return;
     }
     const select = event.target instanceof HTMLSelectElement ? event.target.closest("[data-template-account]") : null;

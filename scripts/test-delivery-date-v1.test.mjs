@@ -36,11 +36,12 @@ test("server guard only accepts orders scheduled for the route service date", ()
   assert.equal(deliveryDate.isScheduledForDate({ checkout_snapshot: {} }, "2026-11-05"), false);
 });
 
-test("route API applies the delivery-date guard before creating or merging a route", () => {
-  const start = edgeSource.indexOf("async function planRun(input: JsonRecord)");
-  const end = edgeSource.indexOf("async function assignRun", start);
-  const planRun = edgeSource.slice(start, end);
-  const guard = planRun.indexOf("isScheduledForDate");
-  const createRoute = planRun.indexOf('db.rpc("smart_delivery_plan_run_v1"');
-  assert.ok(guard >= 0 && createRoute > guard, "the API must reject past and future orders before invoking the route RPC");
+test("assignment blocks overdue orders and Sundays before invoking a route mutation", () => {
+  const start = edgeSource.indexOf("async function assignOrder(input: JsonRecord)");
+  const end = edgeSource.indexOf("async function adminReleaseStop", start);
+  const assignOrder = edgeSource.slice(start, end);
+  const pastDate = assignOrder.indexOf("if (serviceDate < today)");
+  const sunday = assignOrder.indexOf("delivery_not_available_sunday");
+  const firstMutation = assignOrder.indexOf("await db.rpc(");
+  assert.ok(pastDate >= 0 && sunday >= 0 && firstMutation > pastDate && firstMutation > sunday);
 });

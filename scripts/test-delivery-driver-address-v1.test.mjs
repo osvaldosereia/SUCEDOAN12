@@ -48,18 +48,11 @@ test("facade photo validation accepts supported images up to the private bucket 
   assert.throws(() => capture.validateAddressPhoto({ type: "image/svg+xml", size: 1000 }), /address_photo_type_invalid/);
 });
 
-test("driver address capture controls exist in the mobile portal markup", async () => {
-  const [script, html] = await Promise.all([
-    readFile(new URL("../site/entregador/driver.js", import.meta.url), "utf8"),
-    readFile(new URL("../site/entregador/index.html", import.meta.url), "utf8"),
-  ]);
-  const ids = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]));
-  const referenced = new Set([...script.matchAll(/\$\("([^"]+)"\)/g)].map((match) => match[1]));
-  for (const id of referenced) assert.ok(ids.has(id), `missing driver portal element #${id}`);
-  assert.match(html, /capture="environment"/);
-  assert.match(html, /id="driver-address-dialog"/);
-  assert.match(script, /driver_save_location/);
-  assert.match(script, /driver_upload_address_photo/);
+test("the retired driver portal forwards old bookmarks to deliveries in the admin", async () => {
+  const html = await readFile(new URL("../site/entregador/index.html", import.meta.url), "utf8");
+  assert.match(html, /http-equiv="refresh" content="0;url=\/site\/admin\/\?view=delivery"/);
+  assert.match(html, /href="\/site\/admin\/\?view=delivery"/);
+  assert.doesNotMatch(html, /(?:src|href)="[^"]*driver\.(?:js|css)/);
 });
 
 test("driver-only address RPCs and private photo metadata are restricted to the server role", async () => {

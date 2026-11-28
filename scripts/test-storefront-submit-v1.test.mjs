@@ -66,6 +66,14 @@ test("the Edge Function passes the confirmed total to SQL and returns the revisi
   assert.equal(fixture.orderAttempts[0].p_customer_snapshot.expected_total_cents, 41000);
 });
 
+test("a stale checkout without a reviewed amount cannot register an order", async () => {
+  const fixture = storefrontFixture({ error: { message: "unexpected_write" } });
+  const response = await fixture.request("submit_order", await fixture.orderBody({ expected_total_cents: undefined }));
+  assert.equal(response.status, 409);
+  assert.equal((await response.json()).error, "checkout_confirmation_required");
+  assert.equal(fixture.orderAttempts.length, 0);
+});
+
 test("an invalid or outdated delivery date reaches no checkout write", async () => {
   const fixture = storefrontFixture({ error: { message: "unexpected_write" } });
   const response = await fixture.request("submit_order", await fixture.orderBody({ delivery_date: "2099-01-01" }));
