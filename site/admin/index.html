@@ -42,7 +42,7 @@
   <script src="whatsapp-conversations.js?v=22" defer></script>
   <script src="quick-balance-admin.js?v=7" defer></script>
   <script src="cards-admin.js?v=3" defer></script>
-  <script src="admin.js?v=34" defer></script>
+  <script src="admin.js?v=35" defer></script>
 </head>
 <body class="admin-page">
   <main id="admin-login" class="admin-login-main">
@@ -183,28 +183,31 @@
       </section>
 
       <section class="admin-view" data-panel="customers" hidden>
-        <div class="section-title"><div><h2>Clientes</h2><p>Encontre um cadastro pelo nome, telefone ou CPF/CNPJ.</p></div></div>
+        <div class="section-title">
+          <div><h2>Clientes</h2><p>Encontre pelo nome ou telefone, ou crie um novo cadastro.</p></div>
+          <button id="customer-new-button" class="button button-primary" type="button">Novo cadastro</button>
+        </div>
         <form id="customer-search" class="customer-search">
           <label for="customer-phone">Buscar cliente</label>
           <div class="search-row">
             <select id="customer-search-type" aria-label="Buscar por"><option value="phone">Telefone</option><option value="document">CPF/CNPJ</option><option value="name">Nome</option></select>
-            <input id="customer-phone" inputmode="numeric" autocomplete="off" placeholder="Telefone com DDD" maxlength="18" required>
+            <input id="customer-phone" inputmode="numeric" autocomplete="off" placeholder="Telefone com DDD" maxlength="80" required>
             <button id="customer-search-button" class="button button-primary" type="submit">Buscar</button>
           </div>
         </form>
-        <div id="customer-result" class="customer-result empty-result">Digite o telefone ou CPF/CNPJ para consultar o cadastro.</div>
+        <div id="customer-result" class="customer-result empty-result">Digite o nome, telefone ou CPF/CNPJ para consultar o cadastro.</div>
         <div class="edit-notice">
           <strong>Edição segura do cadastro</strong>
           <span>Edite os dados da pessoa e mantenha os endereços cadastrados separadamente. Cada pedido poderá usar um endereço diferente.</span>
         </div>
         <form id="customer-editor" class="customer-editor" hidden>
-          <div class="section-title"><div><h3>Dados da pessoa</h3><p>Telefone e CPF/CNPJ identificam o mesmo cliente, mesmo com vários endereços.</p></div></div>
+          <div class="section-title"><div><h3>Dados da pessoa</h3><p>Telefone identifica o cliente. CPF/CNPJ é opcional; os endereços ficam separados.</p></div></div>
           <input name="customer_id" type="hidden">
           <input name="customer_updated_at" type="hidden">
           <div class="editor-grid">
             <label>Nome<input name="name" maxlength="180" required></label>
             <label>Telefone<input name="phone" inputmode="tel" autocomplete="off" maxlength="18" placeholder="(65) 99999-9999" required></label>
-            <label>CPF/CNPJ<input name="document" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="Somente números"></label>
+            <label>CPF/CNPJ (opcional)<input name="document" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="Somente números"></label>
           </div>
           <p id="customer-save-status" class="form-message" role="status" aria-live="polite"></p>
           <button id="save-customer" class="button button-primary button-wide" type="submit">Salvar alterações</button>
