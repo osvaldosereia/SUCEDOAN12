@@ -446,19 +446,13 @@ async function homeSizeCards(){
 
 
 async function homeCatalogCards(){
-  const shell=await homeSizeCards();
-  const baskets=await Promise.all((shell.baskets||[]).map(async(card:any)=>{
+  const [shell,calculated]=await Promise.all([homeSizeCards(),moldHomeCards()]);
+  const byId=new Map<string,any>(calculated.map((card:any)=>[String(card.id),card]));
+  const baskets=(shell.baskets||[]).map((card:any)=>{
     const base={id:String(card.id),name:String(card.name||"Cesta básica"),size_key:String(card.size_key||""),image_url:String(card.image_url||"")};
-    const match=String(card.card_key||"").match(/^([0-9a-f-]{36})@([1-6])$/i);
-    if(!match)return {...base,display_price_cents:null,stock_quantity:0};
-    try{
-      const detail=await moldDetail(match[1],Number(match[2]),null,false,true);
-      return {...base,display_price_cents:detail?.basket?.display_price_cents??null,stock_quantity:Number(detail?.basket?.stock_quantity||0)};
-    }catch(error){
-      console.error("home_catalog_card",String(card.size_key||""),txt((error as any)?.message,120));
-      return {...base,display_price_cents:null,stock_quantity:0};
-    }
-  }));
+    const calculatedCard=byId.get(base.id);
+    return {...base,display_price_cents:calculatedCard?.display_price_cents??null,stock_quantity:Number(calculatedCard?.stock_quantity||0)};
+  });
   return {ok:true,version:"home-catalog-cards-v1",baskets};
 }
 
@@ -1443,7 +1437,7 @@ Deno.serve(async(req:Request)=>{
   try{
     const u=new URL(req.url),action=txt(u.searchParams.get("action")||(req.method==="GET"?"home":""),60);
     if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:85},200,{"Cache-Control":"no-store"});
-    if(req.method==="GET"&&action==="home_catalog_cards")return json(req,await homeCatalogCards(),200,{"Cache-Control":"public, max-age=30, stale-while-revalidate=180"});
+    if(req.method==="GET"&&action==="home_catalog_cards")return json(req,await homeCatalogCards(),200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="home_size_cards")return json(req,await homeSizeCards(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
 
 

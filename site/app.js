@@ -363,7 +363,7 @@
     url.searchParams.set("action", action);
     Object.keys(opts.params || {}).forEach((name) => url.searchParams.set(name, String(opts.params[name] == null ? "" : opts.params[name])));
     const headers = { apikey: key };
-    const init = { method: opts.method || "GET", headers, cache: "default" };
+    const init = { method: opts.method || "GET", headers, cache: opts.noCache ? "no-store" : "default" };
     if (opts.body !== undefined) {
       headers["Content-Type"] = "application/json";
       init.body = JSON.stringify(opts.body);
@@ -397,6 +397,27 @@
     return "assets/cestas/cesta-" + keyName + ".jpg";
   }
 
+  function prepareCatalogCards(cards) {
+    return (Array.isArray(cards) ? cards : []).map((card) => Object.assign({}, card, {
+      display_price_cents: null, price_loading: true
+    }));
+  }
+
+  async function loadCatalogPrices(cards) {
+    let prices = new Map();
+    try {
+      const result = await request("home_catalog_cards", { noCache: true });
+      prices = new Map((Array.isArray(result.baskets) ? result.baskets : []).map((card) => [String(card.id), card]));
+    } catch (_) {}
+    if (state.cards !== cards) return;
+    cards.forEach((card) => {
+      const price = prices.get(String(card.id))?.display_price_cents;
+      card.display_price_cents = typeof price === "number" && Number.isSafeInteger(price) && price >= 0 ? price : null;
+      card.price_loading = false;
+    });
+    renderCards();
+  }
+
   function renderCards() {
     const host = $("basket-grid");
     host.setAttribute("aria-busy", "false");
@@ -408,7 +429,8 @@
       const priceCents = card.display_price_cents;
       const priceMarkup = typeof priceCents === "number" && Number.isSafeInteger(priceCents) && priceCents >= 0
         ? '<p class="basket-price">' + esc(money(priceCents)) + '</p>'
-        : "";
+        : '<p class="basket-price basket-price-pending">' +
+          (card.price_loading ? "Carregando preço…" : "Confira o valor na cesta") + "</p>";
       return '<article class="basket-card">' +
         '<img class="basket-photo" src="' + esc(imageForBasket(card, sizeKey)) + '" alt="Cesta ' + esc(title) + '" width="420" height="420" loading="' + loading + '" fetchpriority="' + priority + '" decoding="async">' +
         '<div class="basket-body"><h3 class="basket-title">' + esc(title) + '</h3>' + priceMarkup +
@@ -431,7 +453,7 @@
     state.baskets.clear();
     try {
       const result = await request("home_size_cards", { params: { card_version: 2 } });
-      state.cards = Array.isArray(result.baskets) ? result.baskets : [];
+      state.cards = prepareCatalogCards(result.baskets);
       if (!state.cards.length) throw new Error("Nenhuma cesta disponível no momento.");
       state.cards.forEach((card) => {
         const sizeKey = card.size_key || keyOf(card.name);
@@ -447,6 +469,7 @@
         });
       });
       renderCards();
+      void loadCatalogPrices(state.cards);
       $("catalog-status").textContent = state.cards.length + " tamanhos";
       $("home-extras").hidden = false;
       initHomeExtras();
