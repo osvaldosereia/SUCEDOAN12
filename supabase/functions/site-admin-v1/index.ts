@@ -224,7 +224,7 @@ async function customerCreate(input: any) {
   const name = clean(input.name, 180);
   const normalizedPhone = normalizeBrazilPhone(input.phone);
   const documentRaw = clean(input.document, 22);
-  const document = documentRaw.replace(/\\D/g, "");
+  const document = documentRaw.replace(/\D/g, "");
   if (name.length < 2) return { error: "customer_name_required", status: 400 };
   if (!normalizedPhone) return { error: "invalid_phone", status: 400 };
   if (documentRaw && ![11, 14].includes(document.length)) {
@@ -5514,7 +5514,8 @@ Deno.serve(async (req: Request) => {
     else if (req.method === "POST" && action === "customer_addresses_list") result = await customerAddressesList(input);
     else if (req.method === "POST" && action === "customer_address_manage") result = await customerAddressManage(input);
     else if (req.method === "POST" && action === "customer_lookup") result = await customerLookup(input);
-    else if (req.method === "POST" && action === "customer_create") result = await customerCreate(input);\n    else if (req.method === "POST" && action === "customer_save") result = await customerSave(input);
+    else if (req.method === "POST" && action === "customer_create") result = await customerCreate(input);
+    else if (req.method === "POST" && action === "customer_save") result = await customerSave(input);
     else if (req.method === "POST" && action === "customer_delete") result = await customerDelete(input);
     else if (req.method === "GET" && action === "baskets") {
       const status = ["active", "inactive", "all"].includes(input.status) ? input.status : "active";
