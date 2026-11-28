@@ -1,0 +1,8 @@
+-- trigger: whatsapp_ana_admin_events_v1.whatsapp_ana_admin_events_immutable_v1
+CREATE TRIGGER whatsapp_ana_admin_events_immutable_v1 BEFORE DELETE OR UPDATE ON private.whatsapp_ana_admin_events_v1 FOR EACH ROW EXECUTE FUNCTION private.whatsapp_ana_admin_immutable_v1();
+
+-- trigger: whatsapp_ana_admin_test_runs_v1.whatsapp_ana_admin_test_runs_immutable_v1
+CREATE TRIGGER whatsapp_ana_admin_test_runs_immutable_v1 BEFORE DELETE OR UPDATE ON private.whatsapp_ana_admin_test_runs_v1 FOR EACH ROW EXECUTE FUNCTION private.whatsapp_ana_admin_immutable_v1();
+
+-- trigger: whatsapp_ana_admin_versions_v1.whatsapp_ana_admin_versions_immutable_v1
+CREATE TRIGGER whatsapp_ana_admin_versions_immutable_v1 BEFORE DELETE OR UPDATE ON private.whatsapp_ana_admin_versions_v1 FOR EACH ROW EXECUTE FUNCTION private.whatsapp_ana_admin_immutable_v1();

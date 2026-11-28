@@ -1,0 +1,35 @@
+-- index: meta_catalog_product_links_product_idx
+CREATE INDEX meta_catalog_product_links_product_idx ON whatsapp_ordering_private.meta_catalog_product_links_v1 USING btree (product_id);
+
+-- index: whatsapp_flow_send_attempt_conversation_recent_idx
+CREATE INDEX whatsapp_flow_send_attempt_conversation_recent_idx ON whatsapp_ordering_private.whatsapp_flow_send_attempts_v1 USING btree (conversation_id, created_at DESC);
+
+-- index: whatsapp_flow_sessions_v2_account_phone_expiry_idx
+CREATE INDEX whatsapp_flow_sessions_v2_account_phone_expiry_idx ON whatsapp_ordering_private.whatsapp_flow_sessions_v2 USING btree (whatsapp_account_id, sender_phone_e164, expires_at DESC) WHERE (revoked_at IS NULL);
+
+-- index: whatsapp_identity_review_states_reviewed_by_idx
+CREATE INDEX whatsapp_identity_review_states_reviewed_by_idx ON whatsapp_ordering_private.whatsapp_identity_review_states_v1 USING btree (reviewed_by);
+
+-- index: whatsapp_order_confirmation_events_intent_created_idx
+CREATE INDEX whatsapp_order_confirmation_events_intent_created_idx ON whatsapp_ordering_private.whatsapp_order_confirmation_events_v1 USING btree (order_intent_id, created_at DESC);
+
+-- index: whatsapp_order_flow_binding_one_enabled_per_account_uidx
+CREATE UNIQUE INDEX whatsapp_order_flow_binding_one_enabled_per_account_uidx ON whatsapp_ordering_private.whatsapp_order_flow_bindings_v1 USING btree (whatsapp_account_id) WHERE is_send_enabled;
+
+-- index: whatsapp_order_flow_binding_one_enabled_revision_per_flow_uidx
+CREATE UNIQUE INDEX whatsapp_order_flow_binding_one_enabled_revision_per_flow_uidx ON whatsapp_ordering_private.whatsapp_order_flow_bindings_v1 USING btree (whatsapp_account_id, meta_flow_id) WHERE is_send_enabled;
+
+-- index: whatsapp_order_intents_account_message_uidx
+CREATE UNIQUE INDEX whatsapp_order_intents_account_message_uidx ON whatsapp_ordering_private.whatsapp_order_intents_v1 USING btree (whatsapp_account_id, meta_message_id);
+
+-- index: whatsapp_order_intents_confirmation_message_uidx
+CREATE UNIQUE INDEX whatsapp_order_intents_confirmation_message_uidx ON whatsapp_ordering_private.whatsapp_order_intents_v1 USING btree (whatsapp_account_id, confirmation_message_id) WHERE (confirmation_message_id IS NOT NULL);
+
+-- index: whatsapp_order_intents_confirmation_token_uidx
+CREATE UNIQUE INDEX whatsapp_order_intents_confirmation_token_uidx ON whatsapp_ordering_private.whatsapp_order_intents_v1 USING btree (confirmation_token_hash) WHERE (confirmation_token_hash IS NOT NULL);
+
+-- index: whatsapp_order_intents_conversation_created_idx
+CREATE INDEX whatsapp_order_intents_conversation_created_idx ON whatsapp_ordering_private.whatsapp_order_intents_v1 USING btree (whatsapp_account_id, conversation_id, created_at DESC) WHERE (conversation_id IS NOT NULL);
+
+-- index: whatsapp_order_intents_status_created_idx
+CREATE INDEX whatsapp_order_intents_status_created_idx ON whatsapp_ordering_private.whatsapp_order_intents_v1 USING btree (status, created_at DESC);
