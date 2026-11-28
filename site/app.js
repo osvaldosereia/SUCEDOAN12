@@ -150,7 +150,7 @@
           quantity: Math.max(0, Math.min(1000, Math.trunc(Number(option.quantity || 0))))
         }))
     })).filter((item) => item.position_id && item.product_id) : [];
-    const extras = selectionsForStorage(data && data.extraSelections);
+    const extraRows = selectionsForStorage(data && data.extraSelections);
     const homeExtras = selectionsForStorage(state.homeExtraSelections);
     if (pendingCartSnapshot && pendingCartSnapshot.size_key && !basketData && !(data && data.customOrder === true)) {
       const preserved = Object.assign({}, pendingCartSnapshot, {
@@ -164,7 +164,7 @@
       return;
     }
     const hasBasketItems = items.some((item) => item.quantity > 0);
-    if (!hasBasketItems && !extras.length && !homeExtras.length) {
+    if (!hasBasketItems && !extraRows.length && !homeExtras.length) {
       clearPersistedCart();
       return;
     }
@@ -175,7 +175,7 @@
       size_key: basketData ? String(state.cartKey) : "",
       custom: Boolean(data && data.customOrder === true),
       items,
-      extras,
+      extras: extraRows,
       home_extras: homeExtras
     };
     try {
@@ -740,6 +740,7 @@
   const checkout = window.DonaStorefrontCheckout.create({
     state, $, esc, phoneDigits, money, toast, request, whatsappNumber, quantityOf, closeSheet, showSheet,
     changeBasketItemQuantity: basket.changeBasketItemQuantity,
+    changeBasketProductQuantity: basket.changeProductQuantity,
     attachHomeSelections: extras.attachHomeSelections,
     onHomeExtraQuantityChanged: extras.syncHomeExtraSelection,
     onCustomOrderSubmitted: extras.clearHomeExtraSelections,
