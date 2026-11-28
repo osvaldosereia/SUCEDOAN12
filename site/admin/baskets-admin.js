@@ -411,7 +411,10 @@
       const elsewhere = memberships.some((type) => type !== targetType);
       const status = productStatus(product);
       const stock = productSellableStock(product);
-      const actionText = sameType ? "Já adicionado" : (elsewhere ? "Mover para cá" : "Adicionar");
+      const protectedElsewhere = memberships.some((type) => type !== targetType
+        && (type.options || []).length === 1
+        && Object.values((type.options || []).find((option) => String(option.product_id) === id)?.quantities || {}).some((quantity) => Number(quantity || 0) > 0));
+      const actionText = sameType ? "Já adicionado" : (elsewhere ? (protectedElsewhere ? "Adicionar cópia" : "Mover para cá") : "Adicionar");
       return '<article class="basket-picker-product"><div class="basket-picker-product-photo">' + productImageMarkup(product, "basket-picker-photo") + '</div><div class="basket-picker-product-info"><strong>' + esc(product.name || "Produto sem nome") + '</strong><small>' + esc([product.brand, product.sku && ("SKU " + product.sku), product.gtin && ("EAN " + product.gtin)].filter(Boolean).join(" · ") || "Marca e código não informados") + '</small><span class="basket-picker-product-meta"><b>' + money(product.effective_price_cents ?? effectivePrice(product)) + '</b><small>' + (stock == null ? "Saldo não informado" : "Vendável " + quantityValue(stock)) + '</small></span><span class="basket-option-status ' + status.className + '">' + status.text + '</span></div><button class="button ' + (sameType ? "button-outline" : "button-primary") + ' basket-picker-add" type="button" data-add-picker-product="' + esc(id) + '"' + (sameType ? " disabled" : "") + '>' + actionText + '</button></article>';
     }).join("");
     if (rows) host.innerHTML = rows + (state.pickerLoading ? '<p class="basket-picker-loading">Buscando mais produtos…</p>' : "");
@@ -710,33 +713,58 @@
   function addPickerProduct(productId) {
     const id = String(productId || "");
     const targetIndex = state.types.findIndex((type, index) => typeKey(type, index) === state.pickerTypeKey);
-    if (!id || targetIndex < 0) return;
-    const target = state.types[targetIndex];
-    if ((target.options || []).some((option) => String(option.product_id) === id)) return;
-
-    const previousOption = state.types.flatMap((type) => type.options || []).find((option) => String(option.product_id) === id);
-    const product = productCache.get(id) || previousOption?.product || {};
-    const nextTypes = state.types.map((type) => ({ ...type, options: (type.options || []).slice() }));
-    nextTypes.forEach((type) => {
-      type.options = type.options.filter((option) => String(option.product_id) !== id);
-    });
-    const emptiedRequiredType = nextTypes.find((type) =>
-      (type.options || []).length === 0 && Object.values(type.quantities || {}).some((quantity) => Number(quantity || 0) > 0)
-    );
-    if (emptiedRequiredType) {
-      toast("Não é possível mover o último produto com quantidade configurada da sessão “" + (emptiedRequiredType.title || "sem título") + "”. Ajuste as quantidades ou adicione outro produto antes.");
+    if (!id) return;
+    if (targetIndex < 0) {
+      toast("Selecione a sessão onde deseja adicionar o produto.");
       return;
     }
+    const target = state.types[targetIndex];
+    if ((target.options || []).some((option) => String(option.product_id) === id)) {
+      toast("Este produto já está nesta sessão.");
+      return;
+    }
+
+    const previousEntries = state.types.flatMap((type, index) =>
+      (type.options || []).filter((option) => String(option.product_id) === id)
+        .map((option) => ({ type, index, option }))
+    );
+    const previousOption = previousEntries[0]?.option || null;
+    const product = productCache.get(id) || previousOption?.product || {};
+    const preserveExistingComposition = previousEntries.some(({ type, option }) =>
+      type !== target
+      && (type.options || []).length === 1
+      && Object.values(option.quantities || {}).some((quantity) => Number(quantity || 0) > 0)
+    );
+    const nextTypes = state.types.map((type) => ({ ...type, options: (type.options || []).slice() }));
+
+    if (!preserveExistingComposition) {
+      nextTypes.forEach((type) => {
+        type.options = type.options.filter((option) => String(option.product_id) !== id);
+      });
+    }
+
     const nextTarget = nextTypes[targetIndex];
+    const zeroQuantities = Object.fromEntries((state.baskets || []).map((basket) => [basket.id, 0]));
     nextTarget.options.push(previousOption
-      ? { ...previousOption, product, quantities: { ...(previousOption.quantities || {}) } }
-      : { product_id: id, product, metadata: {}, quantities: Object.fromEntries(state.baskets.map((basket) => [basket.id, 0])) });
+      ? {
+          ...previousOption,
+          product,
+          quantities: preserveExistingComposition
+            ? zeroQuantities
+            : { ...(previousOption.quantities || {}) },
+        }
+      : { product_id: id, product, metadata: {}, quantities: zeroQuantities });
+
     state.types = nextTypes;
     recalculateAllTypeQuantities();
     state.expandedTypeKey = state.pickerTypeKey;
     markDirty();
     renderGrid();
-    toast("Produto adicionado à sessão.");
+    toast(preserveExistingComposition
+      ? "Produto adicionado nesta sessão; a quantidade da outra cesta foi mantida."
+      : previousOption
+        ? "Produto movido para a sessão."
+        : "Produto adicionado à sessão.");
   }
 
   function moveOption(typeKeyValue, productId, delta) {
