@@ -186,7 +186,7 @@ async function customerAddressesList(input: any) {
 
 async function customerAddressManage(input: any) {
   const customerId = uuid(input.customer_id);
-  const action = clean(input.action, 30).toLowerCase();
+  const action = clean(input.address_action, 30).toLowerCase();
   const addressId = uuid(input.address_id);
   const address = input.address && typeof input.address === "object" ? input.address : {};
   if (!customerId) return { error: "invalid_customer_id", status: 400 };
