@@ -1544,3 +1544,36 @@
   .basket-default-slot .basket-type-summary { grid-template-columns: minmax(0, 1fr) auto; }
   .basket-default-product-quantities .basket-type-quantity-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* Quantidades independentes por produto e cesta */
+.basket-session-heading { display: grid; grid-template-columns: minmax(0, 1fr); align-items: stretch; gap: 10px; }
+.basket-session-title-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 12px; }
+.basket-session-heading .basket-type-toggle { width: 100%; }
+.basket-grid-options { max-height: 680px; }
+.basket-grid-option { grid-template-columns: 30px 58px minmax(170px, 1fr) minmax(92px, auto) auto auto; align-items: center; }
+.basket-grid-option.is-included { border-color: #9b4b3e; background: #fff5f1; box-shadow: 0 0 0 1px rgba(135, 59, 50, .12); }
+.basket-grid-option .basket-grid-option-order { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.basket-grid-option .basket-grid-option-price { display: grid; gap: 2px; min-width: 88px; text-align: right; }
+.basket-grid-option .basket-grid-option-price small { color: #7b6d61; font-size: .66rem; }
+.basket-grid-option .basket-grid-option-price strong { color: #873b32; font-size: .78rem; }
+.basket-grid-option .basket-option-status { white-space: nowrap; }
+.basket-grid-option .basket-grid-option-actions { flex-wrap: nowrap; }
+.basket-grid-option .basket-option-quantities { grid-column: 1 / -1; margin-top: 4px; }
+.basket-grid-option .basket-option-quantities .basket-type-quantity-grid { grid-template-columns: repeat(5, minmax(78px, 1fr)); }
+@media (max-width: 1100px) {
+  .basket-grid-option { grid-template-columns: 26px 50px minmax(0, 1fr) auto; }
+  .basket-grid-option .basket-grid-option-price { grid-column: 4; grid-row: 1; min-width: 70px; }
+  .basket-grid-option .basket-option-status { grid-column: 3; grid-row: 2; }
+  .basket-grid-option .basket-grid-option-actions { grid-column: 4; grid-row: 2; }
+  .basket-grid-option .basket-option-quantities .basket-type-quantity-grid { grid-template-columns: repeat(auto-fit, minmax(74px, 1fr)); }
+}
+@media (max-width: 760px) {
+  .basket-session-title-row { grid-template-columns: minmax(0, 1fr); align-items: start; }
+  .basket-session-actions { justify-content: flex-start; }
+  .basket-grid-option { grid-template-columns: 24px 46px minmax(0, 1fr); }
+  .basket-grid-option .basket-grid-option-price { grid-column: 2 / 3; grid-row: 2; text-align: left; }
+  .basket-grid-option .basket-option-status { grid-column: 3; grid-row: 2; }
+  .basket-grid-option .basket-grid-option-actions { grid-column: 3; grid-row: 3; justify-content: flex-end; }
+  .basket-grid-option .basket-option-quantities { grid-column: 1 / -1; }
+  .basket-grid-option .basket-option-quantities .basket-type-quantity-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
