@@ -39,6 +39,7 @@
 
     let lookupSequence = 0;
     let checkoutPhone = "";
+    let checkoutDocumentLast4 = "";
 
     let previousCheckoutAddressId = "";
     let registrationMode = "new";
@@ -78,11 +79,14 @@
       lookupSequence += 1;
       state.customer = null;
       checkoutPhone = "";
+      checkoutDocumentLast4 = "";
 
       previousCheckoutAddressId = "";
       registrationMode = "new";
       $("customer-card").hidden = true;
       $("customer-card").textContent = "";
+      $("customer-identity-confirmation").hidden = true;
+      $("customer-identity-confirmation").reset();
 
 
       $("customer-registration").hidden = true;
@@ -102,6 +106,7 @@
       registrationMode = mode || (customer ? "add_address" : "new");
       const existingAddressMode = registrationMode === "add_address";
       const address = existingAddressMode ? {} : customer && customer.address || {};
+      $("customer-identity-confirmation").hidden = true;
       $("customer-registration").reset();
       $("customer-name").value = customer && customer.display_name || "";
       $("customer-street").value = address.street || "";
@@ -149,6 +154,19 @@
       $("customer-registration").hidden = false;
     }
 
+    function showCustomerIdentityConfirmation() {
+      const form = $("customer-identity-confirmation");
+      form.reset();
+      $("customer-identity-message").dataset.tone = "neutral";
+      $("customer-identity-message").textContent = "";
+      form.hidden = false;
+      $("customer-registration").hidden = true;
+      $("customer-card").hidden = true;
+      $("payment-options").disabled = true;
+      updateConfirmOrderAvailability();
+      $("customer-document-last4").focus({ preventScroll: true });
+    }
+
     function setConfirmedCustomer(customer, phone, selectedAddress) {
       const addresses = Array.isArray(customer.addresses)
         ? customer.addresses.filter((address) => address && address.id)
@@ -162,6 +180,8 @@
       state.customer = customer;
       previousCheckoutAddressId = "";
       checkoutPhone = phone;
+      $("customer-identity-confirmation").hidden = true;
+      $("customer-document-last4").value = "";
       const options = addresses.map((address) => {
         const lines = addressLines(address).join(" · ");
         return '<label class="customer-address-option">' +
@@ -640,6 +660,11 @@
           $("lookup-message").textContent = "Mais de um cadastro usa este final de telefone. Informe o DDD e o número completo para continuar.";
           return;
         }
+        if (result.found && (result.requires_document_confirmation || !customer)) {
+          showCustomerIdentityConfirmation();
+          $("lookup-message").textContent = "Cadastro localizado. Confirme os dados do CPF ou CNPJ para carregar seus endereços.";
+          return;
+        }
         if (!result.found || !customer) {
           showRegistrationForm(null, "new");
           $("lookup-message").textContent = normalized.assumedLocalDdd
@@ -675,6 +700,76 @@
       }
     }
 
+    async function confirmCustomerIdentity(event) {
+      event.preventDefault();
+      const phone = checkoutPhone;
+      const requestId = lookupSequence;
+      const digits = phoneDigits($("customer-document-last4").value);
+      const message = $("customer-identity-message");
+      const button = $("confirm-customer-identity");
+      if (!phone) {
+        message.dataset.tone = "error";
+        message.textContent = "Busque seu cadastro pelo telefone novamente.";
+        return;
+      }
+      if (digits.length !== 4 && digits.length !== 11 && digits.length !== 14) {
+        message.dataset.tone = "error";
+        message.textContent = "Informe os 4 últimos dígitos do documento ou o CPF/CNPJ completo.";
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Confirmando…";
+      message.dataset.tone = "pending";
+      message.textContent = "Confirmando cadastro…";
+      try {
+        const result = await request("customer_address_lookup", {
+          method: "POST",
+          body: {
+            phone,
+            document_last4: digits.length === 4 ? digits : digits.slice(-4),
+            ...(digits.length > 4 ? { document: digits } : {})
+          }
+        });
+        if (requestId !== lookupSequence || phone !== checkoutPhone) return;
+        const customer = result.customer;
+        if (!result.found || !customer) throw new Error("customer_not_found");
+        checkoutDocumentLast4 = digits.slice(-4);
+        if (!customerHasCheckoutAddress(customer)) {
+          showRegistrationForm(customer, "add_address");
+          if (!Array.isArray(customer.addresses) || !customer.addresses.length) {
+            $("customer-address-label").value = "Casa";
+            $("registration-title").textContent = "Adicionar endereço";
+            $("registration-help").textContent = "Cadastro confirmado. Informe o endereço de entrega para continuar.";
+          }
+          $("lookup-message").textContent = "Cadastro confirmado. Complete o endereço de entrega.";
+          return;
+        }
+        setConfirmedCustomer(customer, customer.phone || phone);
+        $("lookup-message").textContent = "Cadastro confirmado. Escolha o endereço, a data e o pagamento.";
+      } catch (error) {
+        if (requestId !== lookupSequence) return;
+        const messages = {
+          document_mismatch: "Os dígitos informados não conferem com o cadastro. Confira o CPF/CNPJ e tente novamente.",
+          document_missing: "Informe o CPF/CNPJ completo para confirmar este cadastro.",
+          invalid_document: "CPF/CNPJ inválido. Confira os números.",
+          invalid_phone: "Telefone inválido. Busque novamente com DDD e número.",
+          ambiguous_phone: "Mais de um cadastro encontrado. Informe o telefone com DDD.",
+          customer_not_found: "Não foi possível confirmar esse cadastro. Confira o telefone e tente novamente.",
+          rate_limited: "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
+          rate_limit_unavailable: "Não foi possível validar agora. Tente novamente em instantes."
+        };
+        message.dataset.tone = "error";
+        message.textContent = messages[String(error && error.message || "")] ||
+          "Não foi possível confirmar o cadastro agora. Confira os dados e tente novamente.";
+      } finally {
+        if (requestId === lookupSequence) {
+          button.disabled = false;
+          button.textContent = "Confirmar e continuar";
+        }
+      }
+    }
+
     async function saveCustomerRegistration(event) {
       event.preventDefault();
       const form = $("customer-registration");
@@ -706,6 +801,7 @@
             method: "POST",
             body: {
               phone,
+              document_last4: checkoutDocumentLast4,
 
               label: $("customer-address-label").value.trim(),
               ...address
@@ -1084,6 +1180,7 @@
           : "Informe seu WhatsApp para buscar o cadastro ou criar um novo.");
       });
       $("customer-phone").addEventListener("keydown", (event) => { if (event.key === "Enter") lookupCustomer(); });
+      $("customer-identity-confirmation").addEventListener("submit", confirmCustomerIdentity);
       $("customer-registration").addEventListener("submit", saveCustomerRegistration);
       $("cancel-customer-address").addEventListener("click", () => {
         if (!state.customer) return;
@@ -1130,3 +1227,4 @@
 
   window.DonaStorefrontCheckout = { create, migrateSavedCartSnapshot };
 })();
+
