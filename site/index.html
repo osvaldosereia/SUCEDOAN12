@@ -38,7 +38,7 @@
   <script src="maintenance.js?v=1" defer onerror="document.documentElement.classList.remove('storefront-maintenance-checking')"></script>
   <script src="storefront/experimento-extras.js?v=23" defer></script>
   <script src="storefront/basket.js?v=21" defer></script>
-  <script src="storefront/checkout.js?v=28" defer></script>
+  <script src="storefront/checkout.js?v=29" defer></script>
   <script src="app.js?v=64" defer></script>
   <script src="experimento.js?v=10" defer></script>
   <script src="mobile-navigation.js?v=5" defer></script>
@@ -362,6 +362,16 @@
         
         <div id="customer-card" class="customer-card customer-address-book" hidden></div>
 
+        <form id="customer-identity-confirmation" class="registration-panel" hidden>
+          <h3>Confirme seu cadastro</h3>
+          <p class="helper">Por segurança, digite os 4 últimos dígitos do CPF/CNPJ. Se o cadastro ainda não tiver esse documento, informe o CPF/CNPJ completo.</p>
+          <label class="registration-field" for="customer-document-last4">CPF/CNPJ
+            <input id="customer-document-last4" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="4 últimos dígitos ou documento completo" required>
+          </label>
+          <p id="customer-identity-message" class="helper registration-message" data-tone="neutral" role="status" aria-live="polite"></p>
+          <button id="confirm-customer-identity" class="button button-primary button-wide" type="submit">Confirmar e continuar</button>
+        </form>
+
         <form id="customer-registration" class="registration-panel" hidden>
           <h3 id="registration-title">Cadastre seus dados para continuar</h3>
           <p id="registration-message" class="helper registration-message" data-tone="neutral" role="status" aria-live="polite"></p>
@@ -441,3 +451,4 @@
   </div>
 </body>
 </html>
+
