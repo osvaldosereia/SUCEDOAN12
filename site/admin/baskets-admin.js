@@ -257,7 +257,7 @@
       const included = Object.values(option.quantities || {}).some((quantity) => Number(quantity || 0) > 0);
       const quantitiesMarkup = '<div class="basket-default-product-quantities basket-option-quantities"><strong>Quantidade deste produto em cada cesta</strong><div class="basket-type-quantity-grid">' + (state.baskets || []).map((basket) => {
         const value = quantityValue(option.quantities?.[basket.id] ?? 0);
-        return '<label class="basket-type-quantity"><span title="' + esc(basket.name) + '">' + esc(basket.name) + '</span><input type="number" min="0" max="999" step="1" value="' + esc(value) + '" data-option-quantity="' + esc(key) + '" data-product-id="' + esc(productId) + '" data-basket-id="' + esc(basket.id) + '" aria-label="Quantidade de ' + esc(product.name || "produto") + ' na cesta ' + esc(basket.name) + '"></label>';
+        return '<label class="basket-type-quantity"><span title="' + esc(basket.name) + '">' + esc(basket.name) + '</span><input type="number" min="0" max="999" step="1" value="' + esc(value) + '" data-option-quantity="' + esc(key) + '" data-type-key="' + esc(key) + '" data-product-id="' + esc(productId) + '" data-basket-id="' + esc(basket.id) + '" aria-label="Quantidade de ' + esc(product.name || "produto") + ' na cesta ' + esc(basket.name) + '"></label>';
       }).join("") + '</div></div>';
       return '<article class="basket-grid-option' + (included ? " is-included" : "") + '" role="listitem" data-option-id="' + esc(productId) + '" data-type-key="' + esc(key) + '" draggable="true" aria-label="Posição ' + (index + 1) + ': ' + esc(product.name || "Produto") + '">' +
         '<div class="basket-grid-option-order"><span class="basket-option-drag-grip" aria-hidden="true">⠿</span><span class="basket-option-rank">' + (index + 1) + '</span></div>' +
@@ -828,20 +828,43 @@
     return Number.isInteger(number) ? number : null;
   }
 
+  function quantityFieldKey(typeKeyValue, productId, basketId) {
+    return [String(typeKeyValue || ""), String(productId || ""), String(basketId || "")].join("|");
+  }
+
   function syncOptionQuantitiesFromInputs() {
     const host = $("admin-baskets");
     if (!host) return { ok: false, message: "Não encontrei a lista de produtos para salvar." };
-    let changed = false;
+    const inputs = Array.from(document.querySelectorAll("[data-option-quantity]"));
+    const expectedInputCount = state.types.reduce(
+      (count, type) => count + (type.options || []).length * state.baskets.length,
+      0
+    );
+    if (inputs.length !== expectedInputCount) {
+      return {
+        ok: false,
+        message: "A lista de quantidades está incompleta na tela (" + inputs.length + " de " + expectedInputCount + "). Atualize o editor antes de salvar; nada foi enviado.",
+      };
+    }
 
-    for (const input of host.querySelectorAll("[data-option-quantity]")) {
+    const seen = new Set();
+    let changed = false;
+    for (const input of inputs) {
       const row = input.closest(".basket-grid-option");
-      const type = findType(row?.dataset.typeKey || input.dataset.optionQuantity);
+      const typeKeyValue = input.dataset.typeKey || row?.dataset.typeKey || input.dataset.optionQuantity;
+      const type = findType(typeKeyValue);
       const productId = String(input.dataset.productId || "");
       const basketId = String(input.dataset.basketId || "");
       const option = (type?.options || []).find((item) => String(item.product_id) === productId);
       if (!type || !option || !state.baskets.some((basket) => String(basket.id) === basketId)) {
-        return { ok: false, message: "Não consegui identificar um produto ou uma cesta alterada. Atualize a grade e tente novamente." };
+        return { ok: false, message: "Não consegui identificar um produto ou uma cesta alterada. Atualize a grade e tente novamente; nada foi enviado." };
       }
+
+      const fieldKey = quantityFieldKey(typeKey(type), productId, basketId);
+      if (seen.has(fieldKey)) {
+        return { ok: false, message: "Encontrei campos duplicados para uma quantidade. Atualize a grade antes de salvar; nada foi enviado." };
+      }
+      seen.add(fieldKey);
 
       const quantity = parseQuantity(input.value);
       if (quantity == null || quantity < 0 || quantity > 999) {
@@ -852,6 +875,17 @@
       option.quantities[basketId] = quantity;
     }
 
+    for (const [index, type] of state.types.entries()) {
+      const key = typeKey(type, index);
+      for (const option of type.options || []) {
+        for (const basket of state.baskets) {
+          if (!seen.has(quantityFieldKey(key, option.product_id, basket.id))) {
+            return { ok: false, message: "Faltou um campo da sessão “" + (type.title || "sem título") + "”. Atualize o editor antes de salvar; nada foi enviado." };
+          }
+        }
+      }
+    }
+
     recalculateAllTypeQuantities();
     if (changed) {
       updateBasketProductSums();
@@ -860,6 +894,67 @@
     return { ok: true };
   }
 
+  function snapshotSubmittedQuantities() {
+    return state.types.map((type, index) => ({
+      id: type.id ? String(type.id) : "",
+      session_id: sessionKey(type, index),
+      title: String(type.title || "Sessão"),
+      options: (type.options || []).map((option) => ({
+        product_id: String(option.product_id),
+        product_name: String(optionProduct(option).name || "Produto"),
+        quantities: Object.fromEntries(state.baskets.map((basket) => [
+          String(basket.id),
+          Number(option.quantities?.[basket.id] || 0),
+        ])),
+      })),
+    }));
+  }
+
+  function compareSavedQuantities(submitted) {
+    const mismatches = [];
+    for (const row of submitted) {
+      const type = state.types.find((item, index) =>
+        (row.id && String(item.id || "") === row.id)
+        || sessionKey(item, index) === String(row.session_id)
+      );
+      if (!type) {
+        mismatches.push({ session: row.title, product: "sessão ausente", basket: "", expected: "presente", actual: "ausente" });
+        continue;
+      }
+      for (const item of row.options) {
+        const option = (type.options || []).find((candidate) => String(candidate.product_id) === item.product_id);
+        if (!option) {
+          mismatches.push({ session: row.title, product: item.product_name, basket: "", expected: "presente", actual: "ausente" });
+          continue;
+        }
+        for (const basket of state.baskets) {
+          const expected = Number(item.quantities[String(basket.id)] || 0);
+          const actual = Number(option.quantities?.[basket.id] || 0);
+          if (actual !== expected) {
+            mismatches.push({ session: row.title, product: item.product_name, basket: basket.name, expected, actual });
+          }
+        }
+      }
+    }
+    return mismatches;
+  }
+
+  function restoreSubmittedQuantities(submitted) {
+    for (const row of submitted) {
+      const type = state.types.find((item, index) =>
+        (row.id && String(item.id || "") === row.id)
+        || sessionKey(item, index) === String(row.session_id)
+      );
+      if (!type) continue;
+      for (const item of row.options) {
+        const option = (type.options || []).find((candidate) => String(candidate.product_id) === item.product_id);
+        if (option) option.quantities = { ...item.quantities };
+      }
+    }
+    recalculateAllTypeQuantities();
+    renderGrid();
+    markDirty();
+  }
   async function saveGrid() {
     if (state.saving) return false;
     const syncedQuantities = syncOptionQuantitiesFromInputs();
@@ -931,9 +1026,22 @@
       button.textContent = "Salvando…";
     }
     try {
+      const submittedQuantities = snapshotSubmittedQuantities();
       await request("basket_grid_save", { method: "POST", body: { types: payload, basket_prices: basketPrices } });
-      toast("Composição das cestas salva.");
-      if (!await loadBaskets()) return false;
+      if (!await loadBaskets()) {
+        toast("O envio foi aceito, mas não consegui conferir o resultado. Os valores continuam disponíveis na tela.");
+        return false;
+      }
+      const mismatches = compareSavedQuantities(submittedQuantities);
+      if (mismatches.length) {
+        restoreSubmittedQuantities(submittedQuantities);
+        const first = mismatches.slice(0, 2).map((item) =>
+          item.product + (item.basket ? " / " + item.basket : "") + ": esperado " + item.expected + ", recebido " + item.actual
+        ).join("; ");
+        toast("A conferência encontrou diferença e mantive os números na tela. " + first);
+        return false;
+      }
+      toast("Composição das cestas salva e conferida.");
       return true;
     } catch (error) {
       toast(error.message || "Não foi possível salvar a composição das cestas.");
