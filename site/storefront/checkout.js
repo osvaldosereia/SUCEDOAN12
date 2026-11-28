@@ -207,7 +207,7 @@
         if (!orderItemsAvailable) reason = "Escolha pelo menos um produto disponível para continuar.";
         else if (!minimumSatisfied) reason = "Pedido mínimo de " + money(minimumOrderCents) +
           ". Faltam " + money(minimumOrderCents - subtotal) + " em produtos para liberar a confirmação.";
-        else if (!customerConfirmed) reason = "Busque e confirme seu cadastro para continuar.";
+        else if (!customerConfirmed) reason = "Busque seu cadastro pelo telefone para continuar.";
         else if (!selectedDateIsAvailable) reason = "Selecione uma data de entrega disponível.";
         else if (!payment) reason = "Escolha a forma de pagamento para confirmar o pedido.";
       }
@@ -1079,7 +1079,7 @@
       $("lookup-button").addEventListener("click", lookupCustomer);
       $("customer-phone").addEventListener("input", () => {
         resetCustomerState($("customer-phone").value.trim()
-          ? "O telefone mudou. Busque novamente para confirmar o cadastro."
+          ? "O telefone mudou. Busque novamente."
           : "Informe seu WhatsApp para buscar o cadastro ou criar um novo.");
       });
       $("customer-phone").addEventListener("keydown", (event) => { if (event.key === "Enter") lookupCustomer(); });
