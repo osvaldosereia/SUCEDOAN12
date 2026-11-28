@@ -1141,27 +1141,39 @@ async function basketGridList() {
   const basketIds = baskets.map((row: any) => String(row.id));
   if (!basketIds.length) return { baskets: [], types: [], basket_drafts_enabled: true };
 
-  const [typesResult, optionsResult, quantitiesResult, optionQuantitiesResult] = await Promise.all([
+  const pageSize = 500;
+  const readAllPages = async (buildPage: (from: number, to: number) => any) => {
+    const rows: any[] = [];
+    for (let from = 0; ; from += pageSize) {
+      const result = await buildPage(from, from + pageSize - 1);
+      if (result.error) throw result.error;
+      const page = result.data || [];
+      rows.push(...page);
+      if (page.length < pageSize) return rows;
+    }
+  };
+  const [typesResult, optionRows, quantitiesResult, optionQuantityPages] = await Promise.all([
     db.from("site_basket_product_types").select("id,title,session_id,slot_order,sort_order").order("sort_order", { ascending: true }).order("title", { ascending: true }),
-    db.from("site_basket_product_type_options").select("product_type_id,product_id,sort_order,metadata").order("sort_order", { ascending: true }),
+    readAllPages((from, to) => db.from("site_basket_product_type_options")
+      .select("product_type_id,product_id,sort_order,metadata")
+      .order("product_type_id", { ascending: true })
+      .order("sort_order", { ascending: true })
+      .order("product_id", { ascending: true })
+      .range(from, to)),
     db.from("site_basket_product_type_quantities").select("product_type_id,basket_id,quantity").in("basket_id", basketIds),
-    db.from("site_basket_product_type_option_quantities").select("product_type_id,product_id,basket_id,quantity").in("basket_id", basketIds),
+    Promise.all(basketIds.map((basketId: string) => readAllPages((from, to) => db
+      .from("site_basket_product_type_option_quantities")
+      .select("product_type_id,product_id,basket_id,quantity")
+      .eq("basket_id", basketId)
+      .order("product_type_id", { ascending: true })
+      .order("product_id", { ascending: true })
+      .range(from, to)))),
   ]);
   if (typesResult.error) throw typesResult.error;
-  if (optionsResult.error) throw optionsResult.error;
   if (quantitiesResult.error) throw quantitiesResult.error;
-  if (optionQuantitiesResult.error) throw optionQuantitiesResult.error;
 
-  const optionRows = optionsResult.data || [];
   const quantityRows = quantitiesResult.data || [];
-  const optionQuantityRows = optionQuantitiesResult.data || [];
-  const optionQuantitiesByProduct = new Map<string, Record<string, number>>();
-  optionQuantityRows.forEach((row: any) => {
-    const key = String(row.product_type_id) + ":" + String(row.product_id);
-    const quantities = optionQuantitiesByProduct.get(key) || {};
-    quantities[String(row.basket_id)] = Number(row.quantity || 0);
-    optionQuantitiesByProduct.set(key, quantities);
-  });
+  const optionQuantityRows = optionQuantityPages.flat();
   const productIds = [...new Set(optionRows.map((row: any) => String(row.product_id)))];
   const productById = new Map<string, any>();
   if (productIds.length) {
