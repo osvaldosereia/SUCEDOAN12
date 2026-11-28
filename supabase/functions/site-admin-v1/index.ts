@@ -1204,6 +1204,14 @@ async function basketGridList() {
     }));
   }
 
+  const optionQuantitiesByProduct = new Map<string, Record<string, number>>();
+  optionQuantityRows.forEach((row: any) => {
+    const key = String(row.product_type_id) + ":" + String(row.product_id);
+    const quantities = optionQuantitiesByProduct.get(key) || {};
+    quantities[String(row.basket_id)] = Number(row.quantity || 0);
+    optionQuantitiesByProduct.set(key, quantities);
+  });
+
   const optionsByType = new Map<string, any[]>();
   optionRows.forEach((row: any) => {
     const typeId = String(row.product_type_id);
@@ -5410,6 +5418,7 @@ Deno.serve(async (req: Request) => {
   if (adminCodeStatus === "not_configured") return json(req, { ok: false, error: "admin_auth_not_configured" }, 503);
   if (adminCodeStatus !== "valid") return json(req, { ok: false, error: "admin_code_invalid" }, 401);
 
+  let action = "";
   try {
     const url = new URL(req.url);
     const urlAction = clean(url.searchParams.get("action"), 40);
@@ -5434,7 +5443,7 @@ Deno.serve(async (req: Request) => {
       catch { return json(req, { ok: false, error: "invalid_json" }, 400); }
     }
     const input = { ...Object.fromEntries(url.searchParams.entries()), ...body };
-    const action = clean(input.action, 40);
+    action = clean(input.action, 40);
     if (req.method === "GET" && action === "admin_auth_check") return json(req, { ok: true });
     let result: any;
     if (req.method === "POST" && action === "bling_oauth_begin") result = await beginBlingOauth();
