@@ -1141,21 +1141,30 @@ async function basketGridList() {
   const basketIds = baskets.map((row: any) => String(row.id));
   if (!basketIds.length) return { baskets: [], types: [], basket_drafts_enabled: true };
 
-  const [typesResult, optionsResult, quantitiesResult] = await Promise.all([
+  const [typesResult, optionsResult, quantitiesResult, optionQuantitiesResult] = await Promise.all([
     db.from("site_basket_product_types").select("id,title,session_id,slot_order,sort_order").order("sort_order", { ascending: true }).order("title", { ascending: true }),
     db.from("site_basket_product_type_options").select("product_type_id,product_id,sort_order,metadata").order("sort_order", { ascending: true }),
     db.from("site_basket_product_type_quantities").select("product_type_id,basket_id,quantity").in("basket_id", basketIds),
+    db.from("site_basket_product_type_option_quantities").select("product_type_id,product_id,basket_id,quantity").in("basket_id", basketIds),
   ]);
   if (typesResult.error) throw typesResult.error;
   if (optionsResult.error) throw optionsResult.error;
   if (quantitiesResult.error) throw quantitiesResult.error;
+  if (optionQuantitiesResult.error) throw optionQuantitiesResult.error;
 
   const optionRows = optionsResult.data || [];
   const quantityRows = quantitiesResult.data || [];
+  const optionQuantityRows = optionQuantitiesResult.data || [];
+  const optionQuantitiesByProduct = new Map<string, Record<string, number>>();
+  optionQuantityRows.forEach((row: any) => {
+    const key = String(row.product_type_id) + ":" + String(row.product_id);
+    const quantities = optionQuantitiesByProduct.get(key) || {};
+    quantities[String(row.basket_id)] = Number(row.quantity || 0);
+    optionQuantitiesByProduct.set(key, quantities);
+  });
   const productIds = [...new Set(optionRows.map((row: any) => String(row.product_id)))];
   const productById = new Map<string, any>();
   if (productIds.length) {
-    // Keep PostgREST request URLs short when the basket grid has many options.
     const productIdBatches = Array.from(
       { length: Math.ceil(productIds.length / 80) },
       (_, index) => productIds.slice(index * 80, (index + 1) * 80),
@@ -1187,10 +1196,12 @@ async function basketGridList() {
   optionRows.forEach((row: any) => {
     const typeId = String(row.product_type_id);
     const options = optionsByType.get(typeId) || [];
+    const quantities = optionQuantitiesByProduct.get(typeId + ":" + String(row.product_id)) || {};
     options.push({
       product_id: String(row.product_id),
       sort_order: Number(row.sort_order || 0),
       metadata: row.metadata || {},
+      quantities,
       product: productById.get(String(row.product_id)) || {},
     });
     optionsByType.set(typeId, options);
@@ -1202,39 +1213,28 @@ async function basketGridList() {
     quantities[String(row.basket_id)] = Number(row.quantity || 0);
     quantitiesByType.set(typeId, quantities);
   });
-  const types = (typesResult.data || []).map((row: any) => {
-    const options = optionsByType.get(String(row.id)) || [];
-    const preferred = options.find((option: any) => option.metadata?.preferred === true)
-      || options.find((option: any) => Number(option.sort_order || 0) === 0)
-      || options[0]
-      || null;
-    const orderedOptions = preferred
-      ? [preferred, ...options.filter((option: any) => option !== preferred)]
-      : options;
-    return {
-      id: String(row.id),
-      title: String(row.title || ""),
-      session_id: String(row.session_id || row.id),
-      slot_order: Number(row.slot_order || 1),
-      sort_order: Number(row.sort_order || 0),
-      default_product_id: preferred ? String(preferred.product_id) : "",
-      options: orderedOptions,
-      quantities: quantitiesByType.get(String(row.id)) || {},
-    };
-  });
+  const types = (typesResult.data || []).map((row: any) => ({
+    id: String(row.id),
+    title: String(row.title || ""),
+    session_id: String(row.session_id || row.id),
+    slot_order: Number(row.slot_order || 1),
+    sort_order: Number(row.sort_order || 0),
+    options: optionsByType.get(String(row.id)) || [],
+    quantities: quantitiesByType.get(String(row.id)) || {},
+  }));
   const basketsWithPrices = baskets.map((row: any) => {
     const mold: any = moldByBasket.get(String(row.id)) || {};
-    const productTotalCents = types.reduce((total: number, type: any) => {
-      const quantity = Number(type.quantities?.[String(row.id)] || 0);
-      const defaultProduct = type.options?.[0]?.product;
-      return total + Math.round(Number(defaultProduct?.effective_price_cents || 0) * quantity);
-    }, 0);
+    const productTotalCents = types.reduce((total: number, type: any) => total + (type.options || []).reduce((subtotal: number, option: any) => {
+      const quantity = Number(option.quantities?.[String(row.id)] || 0);
+      const price = Number(option.product?.effective_price_cents || 0);
+      return subtotal + (quantity > 0 ? Math.round(price * quantity) : 0);
+    }, 0), 0);
     const conditionalApplied = mold.conditional_hidden_enabled === true
       && mold.conditional_hidden_product_id
-      && types.some((type: any) =>
-        Number(type.quantities?.[String(row.id)] || 0) > 0
-        && String(type.options?.[0]?.product_id) === String(mold.conditional_hidden_product_id)
-      )
+      && types.some((type: any) => (type.options || []).some((option: any) =>
+        Number(option.quantities?.[String(row.id)] || 0) > 0
+        && String(option.product_id) === String(mold.conditional_hidden_product_id)
+      ))
       ? cents(mold.conditional_hidden_adjustment)
       : 0;
     const defaultPriceCents = basketFixedPriceCents(mold.metadata) ?? Math.max(0,
@@ -1254,134 +1254,136 @@ async function basketGridList() {
 
 async function basketGridSave(input: any) {
   const inputTypes = Array.isArray(input.types) ? input.types : null;
-  if (!inputTypes?.length) return { status: 400, error: "basket_grid_types_required", message: "Adicione pelo menos um tipo de produto." };
+  if (!inputTypes?.length) return { status: 400, error: "basket_grid_types_required", message: "Adicione pelo menos uma sessão de produtos." };
+
+  const grid = await basketGridList();
+  const knownBasketIds = new Set(grid.baskets.map((basket: any) => String(basket.id).toLowerCase()));
+  const basketIdByKey = new Map(grid.baskets.map((basket: any) => [String(basket.id).toLowerCase(), String(basket.id)]));
+  if (!knownBasketIds.size) return { status: 409, error: "basket_grid_baskets_missing", message: "Não há cestas configuradas para editar." };
 
   const normalized = [] as Array<Record<string, any>>;
   const typeIds = new Set<string>();
+  const sessionIds = new Set<string>();
   for (const type of inputTypes) {
     const rawId = type?.id;
     const typeId = rawId == null || rawId === "" ? crypto.randomUUID() : uuid(rawId);
     const title = clean(type?.title, 180);
     const rawSessionId = type?.session_id;
     const sessionId = rawSessionId == null || rawSessionId === "" ? typeId : uuid(rawSessionId);
-    const slotOrder = integer(type?.slot_order ?? 1, 1, 2147483647);
     const rawOptionInput = Array.isArray(type?.options) ? type.options : null;
-    const rawQuantities = type?.quantities && typeof type.quantities === "object" && !Array.isArray(type.quantities) ? type.quantities : null;
-    if (!typeId || !sessionId || slotOrder === null || !title || !rawOptionInput || !rawQuantities) {
-      return { status: 400, error: "invalid_basket_grid_type", message: "Revise os títulos, os padrões, as quantidades e as variações da grade." };
+    const rawQuantities = type?.quantities && typeof type.quantities === "object" && !Array.isArray(type.quantities) ? type.quantities : {};
+    if (!typeId || !sessionId || !title || !rawOptionInput) {
+      return { status: 400, error: "invalid_basket_grid_type", message: "Revise os títulos, as quantidades e os produtos de cada sessão." };
     }
-    if (rawOptionInput.length > 100) {
-      return { status: 400, error: "basket_grid_too_many_options", message: "Cada tipo de produto pode ter até 100 variações." };
-    }
-    if (typeIds.has(typeId)) return { status: 400, error: "duplicate_basket_grid_type", message: "Há tipos repetidos na grade." };
+    if (rawOptionInput.length > 500) return { status: 400, error: "basket_grid_too_many_options", message: "Uma sessão pode ter até 500 produtos." };
+    if (typeIds.has(typeId)) return { status: 400, error: "duplicate_basket_grid_type", message: "Há sessões repetidas na grade." };
+    if (sessionIds.has(sessionId)) return { status: 400, error: "duplicate_basket_grid_session", message: "Cada sessão deve aparecer uma única vez. Atualize a grade antes de salvar." };
     typeIds.add(typeId);
-    const options: Array<Record<string, any>> = [];
+    sessionIds.add(sessionId);
+
+    const optionInputs: Array<Record<string, any>> = [];
     const productIds = new Set<string>();
     for (const option of rawOptionInput) {
       const productId = uuid(option?.product_id);
       if (!productId || productIds.has(productId)) {
-        return { status: 400, error: "invalid_basket_grid_option", message: "Remova variações inválidas ou repetidas." };
+        return { status: 400, error: "invalid_basket_grid_option", message: "Remova produtos inválidos ou repetidos da sessão." };
       }
       productIds.add(productId);
-      const metadata = option?.metadata && typeof option.metadata === "object" && !Array.isArray(option.metadata) ? option.metadata : {};
-      options.push({ product_id: productId, metadata });
+      const rawMetadata = option?.metadata && typeof option.metadata === "object" && !Array.isArray(option.metadata) ? option.metadata : {};
+      const metadata = { ...rawMetadata };
+      delete metadata.preferred;
+      delete metadata.base_quantity;
+      delete metadata.quantities;
+      delete metadata.basket_quantities;
+      optionInputs.push({ product_id: productId, metadata });
     }
-    const rawDefaultId = type?.default_product_id;
-    const explicitDefaultId = rawDefaultId == null || rawDefaultId === "" ? null : uuid(rawDefaultId);
-    if (rawDefaultId != null && rawDefaultId !== "" && !explicitDefaultId) {
-      return { status: 400, error: "invalid_basket_grid_default", message: "Selecione um produto padrão válido." };
+    if (!optionInputs.length) return { status: 400, error: "basket_grid_session_products_required", message: "Cada sessão precisa ter ao menos um produto cadastrado." };
+
+    const legacyDefault = uuid(type?.default_product_id)
+      || optionInputs[0]?.product_id;
+    let optionQuantityError = "";
+    const options = optionInputs.map((option: any, index: number) => {
+      const source = rawOptionInput[index];
+      const rawOptionQuantities = source?.quantities && typeof source.quantities === "object" && !Array.isArray(source.quantities)
+        ? source.quantities
+        : null;
+      const quantities: Record<string, number> = {};
+      for (const [basketKey, basketId] of basketIdByKey) {
+        let value: unknown = rawOptionQuantities
+          ? (rawOptionQuantities[basketId] ?? rawOptionQuantities[basketKey] ?? 0)
+          : (option.product_id === legacyDefault ? rawQuantities[basketId] ?? rawQuantities[basketKey] ?? 0 : 0);
+        const quantity = integer(value, 0, 999);
+        if (quantity === null) {
+          optionQuantityError = "invalid_option_quantity";
+          quantities[basketId] = 0;
+        } else {
+          quantities[basketId] = quantity;
+        }
+      }
+      if (rawOptionQuantities) {
+        const keys = Object.keys(rawOptionQuantities).map((key) => key.toLowerCase());
+        if (keys.length !== knownBasketIds.size || keys.some((key) => !knownBasketIds.has(key))) {
+          optionQuantityError = "invalid_option_quantity_map";
+        }
+      }
+      return { ...option, quantities };
+    });
+    if (optionQuantityError) {
+      return { status: 400, error: optionQuantityError, message: "Informe uma quantidade inteira de 0 a 999 para cada produto e cesta." };
     }
-    const metadataDefault = options.find((option: any) => option.metadata?.preferred === true)?.product_id;
-    const defaultProductId = explicitDefaultId || metadataDefault || options[0]?.product_id || null;
-    if (defaultProductId && !productIds.has(String(defaultProductId))) {
-      return { status: 400, error: "invalid_basket_grid_default", message: "O produto padrão precisa estar entre as opções desta posição." };
-    }
-    const orderedOptions = defaultProductId
-      ? [options.find((option: any) => option.product_id === defaultProductId)!, ...options.filter((option: any) => option.product_id !== defaultProductId)]
-      : options;
-    for (const option of orderedOptions) {
-      option.metadata = { ...(option.metadata || {}), preferred: option.product_id === defaultProductId };
-    }
+
     const quantities: Record<string, number> = {};
-    for (const [basketId, value] of Object.entries(rawQuantities)) {
-      const quantity = integer(value, 0, 999);
-      if (!uuid(basketId) || quantity === null) {
-        return { status: 400, error: "invalid_basket_grid_quantity", message: "Informe quantidades inteiras iguais ou maiores que zero." };
+    for (const basket of grid.baskets) {
+      const basketId = String(basket.id);
+      const quantity = options.reduce((sum: number, option: any) => sum + Number(option.quantities[basketId] || 0), 0);
+      if (!Number.isInteger(quantity) || quantity < 0 || quantity > 999) {
+        return { status: 400, error: "invalid_basket_grid_quantity", message: "A soma das quantidades por sessão deve ficar entre 0 e 999 em cada cesta." };
+      }
+      const rawValue = rawQuantities[basketId] ?? rawQuantities[basketId.toLowerCase()];
+      if (rawValue != null) {
+        const declared = integer(rawValue, 0, 999);
+        if (declared === null || declared !== quantity) {
+          return { status: 400, error: "basket_grid_quantity_mismatch", message: "A quantidade total da sessão não corresponde à soma dos produtos. Atualize a página e tente novamente." };
+        }
       }
       quantities[basketId] = quantity;
     }
-    normalized.push({ id: typeId, session_id: sessionId, slot_order: slotOrder, title, default_product_id: defaultProductId, options: orderedOptions, quantities });
-  }
-
-  const slotsBySession = new Map<string, Array<Record<string, any>>>();
-  normalized.forEach((type) => {
-    const slots = slotsBySession.get(type.session_id) || [];
-    slots.push(type);
-    slotsBySession.set(type.session_id, slots);
-  });
-  for (const slots of slotsBySession.values()) {
-    const slotOrders = slots.map((slot) => Number(slot.slot_order)).sort((a, b) => a - b);
-    if (new Set(slots.map((slot) => slot.title)).size !== 1
-      || slotOrders.some((order, index) => order !== index + 1)) {
-      return { status: 400, error: "invalid_basket_grid_session", message: "Os produtos padrão de cada sessão precisam ter o mesmo título e numeração contínua." };
-    }
+    normalized.push({ id: typeId, session_id: sessionId, slot_order: 1, title, options, quantities });
   }
 
   const basketPricesInput = input.basket_prices && typeof input.basket_prices === "object" && !Array.isArray(input.basket_prices)
     ? input.basket_prices
     : null;
-  if (!basketPricesInput) {
-    return { status: 400, error: "basket_grid_price_invalid", message: "Informe um valor padrão válido para cada cesta." };
-  }
+  if (!basketPricesInput) return { status: 400, error: "basket_grid_price_invalid", message: "Informe um valor válido para cada cesta." };
   const basketPrices: Record<string, number> = {};
   for (const [basketId, value] of Object.entries(basketPricesInput)) {
     const normalizedBasketId = uuid(basketId);
     const priceCents = integer(value, 0, 100000000);
     if (!normalizedBasketId || priceCents === null) {
-      return { status: 400, error: "basket_grid_price_invalid", message: "Informe um valor padrão válido para cada cesta." };
+      return { status: 400, error: "basket_grid_price_invalid", message: "Informe um valor válido para cada cesta." };
     }
     basketPrices[normalizedBasketId.toLowerCase()] = priceCents;
-  }
-
-  const grid = await basketGridList();
-  const activeBaskets = grid.baskets.filter((basket: any) => basket.is_active === true);
-  const draftBaskets = grid.baskets.filter((basket: any) => basket.is_active !== true);
-  const knownBasketIds = new Set(grid.baskets.map((basket: any) => String(basket.id).toLowerCase()));
-  if (!activeBaskets.length) {
-    return { status: 409, error: "active_baskets_missing", message: "É preciso ter ao menos uma cesta ativa para salvar a composição." };
   }
   if (Object.keys(basketPrices).length !== knownBasketIds.size
     || Object.keys(basketPrices).some((id) => !knownBasketIds.has(id.toLowerCase()))) {
     return { status: 400, error: "basket_grid_price_invalid", message: "Informe o preço de cada cesta exibida na grade." };
   }
 
-  const draftUpdates = [] as Array<{ basket: any; positions: Array<Record<string, any>> }>;
-  for (const basket of draftBaskets) {
-    const positions = normalized.flatMap((type, positionIndex) => {
-      const quantity = Number(type.quantities?.[basket.id] || 0);
-      if (quantity <= 0) return [];
-      return [{
-        label: type.title,
-        quantity,
-        sort_order: positionIndex,
-        metadata: {
-          site_basket_product_type_id: type.id,
-          site_basket_product_session_id: type.session_id,
-          site_basket_product_slot_order: type.slot_order,
-        },
-        options: type.options.map((option: any) => ({ product_id: option.product_id, metadata: option.metadata || {} })),
-      }];
-    });
-    if (!positions.length) {
-      return { status: 400, error: "basket_grid_empty_draft", message: "Informe ao menos um item com quantidade maior que zero para a cesta “" + basket.name + "”." };
-    }
-    draftUpdates.push({ basket, positions });
+  const activeBaskets = grid.baskets.filter((basket: any) => basket.is_active === true);
+  const draftBaskets = grid.baskets.filter((basket: any) => basket.is_active !== true);
+  if (!activeBaskets.length) {
+    return { status: 409, error: "active_baskets_missing", message: "É preciso ter ao menos uma cesta ativa para salvar a composição." };
   }
 
   const activeIds = activeBaskets.map((basket: any) => String(basket.id));
   const activeRows = normalized.map((type) => ({
     ...type,
     quantities: Object.fromEntries(activeIds.map((id) => [id, Number(type.quantities?.[id] || 0)])),
+    options: type.options.map((option: any) => ({
+      product_id: option.product_id,
+      metadata: option.metadata || {},
+      quantities: Object.fromEntries(activeIds.map((id) => [id, Number(option.quantities?.[id] || 0)])),
+    })),
   }));
   const activePrices = Object.fromEntries(activeBaskets.map((basket: any) => [
     String(basket.id).toLowerCase(),
@@ -1395,20 +1397,34 @@ async function basketGridSave(input: any) {
   });
   if (saved.error) throw saved.error;
 
-  for (const draft of draftUpdates) {
+  for (const basket of draftBaskets) {
+    const positions = normalized.map((type, positionIndex) => ({
+      label: type.title,
+      quantity: Number(type.quantities?.[basket.id] || 0),
+      sort_order: positionIndex,
+      metadata: {
+        site_basket_product_type_id: type.id,
+        site_basket_product_session_id: type.session_id,
+        site_basket_product_slot_order: 1,
+      },
+      options: type.options.map((option: any) => ({
+        product_id: option.product_id,
+        metadata: { ...(option.metadata || {}), base_quantity: Number(option.quantities?.[basket.id] || 0) },
+      })),
+    }));
     const result = await basketSave({
-      basket_id: draft.basket.id,
-      target_price_cents: basketPrices[String(draft.basket.id).toLowerCase()],
-      positions: draft.positions,
+      basket_id: basket.id,
+      target_price_cents: basketPrices[String(basket.id).toLowerCase()],
+      positions,
       share_changes: [],
     });
     if (result?.error) {
-      return { ...result, partial_save: true, message: result.message || "A composição das cestas ativas foi salva, mas houve erro ao salvar o rascunho “" + draft.basket.name + "”." };
+      return { ...result, partial_save: true, message: result.message || "A composição das cestas ativas foi salva, mas houve erro ao salvar o rascunho “" + basket.name + "”." };
     }
   }
 
-  if (draftUpdates.length) {
-    const quantityRows = draftUpdates.flatMap(({ basket }) => normalized.map((type) => ({
+  if (draftBaskets.length) {
+    const quantityRows = draftBaskets.flatMap((basket: any) => normalized.map((type) => ({
       product_type_id: type.id,
       basket_id: basket.id,
       quantity: Number(type.quantities?.[basket.id] || 0),
@@ -1417,13 +1433,26 @@ async function basketGridSave(input: any) {
     const quantitiesSaved = await db.from("site_basket_product_type_quantities")
       .upsert(quantityRows, { onConflict: "product_type_id,basket_id" });
     if (quantitiesSaved.error) throw quantitiesSaved.error;
+    const optionQuantityRows = draftBaskets.flatMap((basket: any) => normalized.flatMap((type) => type.options.map((option: any) => ({
+      product_type_id: type.id,
+      product_id: option.product_id,
+      basket_id: basket.id,
+      quantity: Number(option.quantities?.[basket.id] || 0),
+      updated_at: new Date().toISOString(),
+    }))));
+    if (optionQuantityRows.length) {
+      const optionQuantitiesSaved = await db.from("site_basket_product_type_option_quantities")
+        .upsert(optionQuantityRows, { onConflict: "product_type_id,product_id,basket_id" });
+      if (optionQuantitiesSaved.error) throw optionQuantitiesSaved.error;
+    }
   }
 
   return {
     saved: true,
-    result: { ...(saved.data || {}), draft_baskets_saved: draftUpdates.length },
+    result: { ...(saved.data || {}), draft_baskets_saved: draftBaskets.length },
   };
 }
+
 
 async function cleanupBasketGridDraft(basketId: string) {
   const moldResult = await db.from("basket_molds").select("id").eq("basket_id", basketId);
@@ -1496,9 +1525,10 @@ async function basketGridCreate(input: any) {
   if (!moldResult.data) return { status: 400, error: "invalid_basket_source", message: "A cesta escolhida não possui composição para copiar." };
   const sourceMold = moldResult.data;
 
-  const [positionsResult, quantitiesResult, itemsResult] = await Promise.all([
+  const [positionsResult, quantitiesResult, optionQuantitiesResult, itemsResult] = await Promise.all([
     db.from("basket_mold_positions").select("id,label,quantity,sort_order,metadata").eq("mold_id", sourceMold.id).order("sort_order", { ascending: true }),
     db.from("site_basket_product_type_quantities").select("product_type_id,quantity").eq("basket_id", sourceBasketId),
+    db.from("site_basket_product_type_option_quantities").select("product_type_id,product_id,quantity").eq("basket_id", sourceBasketId),
     db.from("basket_template_items")
       .select("id,product_id,quantity,removable,quantity_editable,min_quantity,max_quantity,substitution_group,pricing_rule,sort_order,remove_unit_delta,add_unit_delta")
       .eq("basket_id", sourceBasketId)
@@ -1506,6 +1536,7 @@ async function basketGridCreate(input: any) {
   ]);
   if (positionsResult.error) throw positionsResult.error;
   if (quantitiesResult.error) throw quantitiesResult.error;
+  if (optionQuantitiesResult.error) throw optionQuantitiesResult.error;
   if (itemsResult.error) throw itemsResult.error;
   const sourcePositions = positionsResult.data || [];
   const sourceItems = itemsResult.data || [];
@@ -1556,7 +1587,7 @@ async function basketGridCreate(input: any) {
     const newMoldResult = await db.from("basket_molds").insert({
       basket_id: newBasketId,
       hidden_adjustment: sourceMold.hidden_adjustment,
-      public_composition_count: sourceMold.public_composition_count,
+      public_composition_count: 1,
       metadata: newMoldMetadata,
       conditional_hidden_enabled: sourceMold.conditional_hidden_enabled,
       conditional_hidden_product_id: sourceMold.conditional_hidden_product_id,
@@ -1600,6 +1631,16 @@ async function basketGridCreate(input: any) {
     if (newQuantities.length) {
       const insertQuantities = await db.from("site_basket_product_type_quantities").insert(newQuantities);
       if (insertQuantities.error) throw insertQuantities.error;
+    }
+    const newOptionQuantities = (optionQuantitiesResult.data || []).map((row: any) => ({
+      product_type_id: row.product_type_id,
+      product_id: row.product_id,
+      basket_id: newBasketId,
+      quantity: row.quantity,
+    }));
+    if (newOptionQuantities.length) {
+      const insertOptionQuantities = await db.from("site_basket_product_type_option_quantities").insert(newOptionQuantities);
+      if (insertOptionQuantities.error) throw insertOptionQuantities.error;
     }
 
     const itemMap = new Map<string, string>();
@@ -1676,6 +1717,7 @@ async function basketSetActive(input: any) {
           options: (type.options || []).map((option: any) => ({
             product_id: option.product_id,
             metadata: option.metadata || {},
+            quantities: option.quantities || {},
           })),
           quantities: type.quantities || {},
         })),
@@ -1717,8 +1759,9 @@ async function basketSave(input: any) {
   const productIds = new Set<string>();
   for (const [positionIndex, position] of positions.entries()) {
     const label = clean(position.label, 180);
-    const quantity = numeric(position.quantity, 0.01, 999);
-    const options = Array.isArray(position.options) ? position.options.slice(0, 40) : [];
+    const quantity = numeric(position.quantity, 0, 999);
+    const options = Array.isArray(position.options) ? position.options.slice(0, 500) : [];
+    if (Array.isArray(position.options) && position.options.length > 500) return { status: 400, error: "basket_too_many_options", message: "Cada sessão pode ter até 500 produtos." };
     if (!label || quantity === null || !options.length) return { status: 400, error: "invalid_basket_position", message: "Cada posição precisa de nome, quantidade e pelo menos uma marca." };
     const normalizedOptions = [];
     const seen = new Set<string>();
@@ -1765,13 +1808,27 @@ async function basketSave(input: any) {
   if (productById.size !== productIds.size) return { status: 404, error: "product_not_found", message: "Um produto escolhido não existe mais." };
 
   let productTotal = 0;
+  let conditionalProductPresent = false;
   for (const position of normalized as any[]) {
-    const defaultProduct = productById.get(String(position.options[0].product_id));
-    productTotal += Math.round(productPriceCents(defaultProduct) * Number(position.quantity));
+    for (const [optionIndex, option] of position.options.entries()) {
+      const product = productById.get(String(option.product_id));
+      const configuredQuantity = option.metadata?.base_quantity == null
+        ? (optionIndex === 0 ? Number(position.quantity) : 0)
+        : Math.max(0, Number(option.metadata.base_quantity || 0));
+      if (!Number.isFinite(configuredQuantity) || configuredQuantity > 999) {
+        return { status: 400, error: "invalid_basket_option_quantity", message: "Informe uma quantidade válida para cada produto." };
+      }
+      productTotal += Math.round(productPriceCents(product) * configuredQuantity);
+      if (configuredQuantity > 0 && String(option.product_id) === String(editor.conditional_hidden_product_id)) {
+        conditionalProductPresent = true;
+      }
+    }
   }
-  const conditionalApplied = editor.conditional_hidden_enabled && editor.conditional_hidden_product_id && normalized.some((position: any) =>
-    String(position.options[0]?.product_id) === String(editor.conditional_hidden_product_id) && Number(position.quantity) > 0
-  ) ? cents(editor.conditional_hidden_adjustment) : 0;
+  const conditionalApplied = editor.conditional_hidden_enabled
+    && editor.conditional_hidden_product_id
+    && conditionalProductPresent
+    ? cents(editor.conditional_hidden_adjustment)
+    : 0;
   const hiddenAdjustment = (targetPriceCents - productTotal - conditionalApplied) / 100;
 
   const saved = await db.rpc("site_admin_save_basket_mold_shared_with_fixed_price_v1", {

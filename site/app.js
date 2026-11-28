@@ -551,8 +551,6 @@
         const optionCount = Math.max(Number(item.alternative_count || 0), optionChoices.length);
         const changingThisItem = String(data.changingPosition || "") === String(item.position_id);
         const itemQuantityAtLimit = (row) => quantityOf(row) >= 1000;
-        const baseQuantity = Math.max(0, Math.trunc(Number(item.base_quantity || 0)));
-        const defaultProductId = String(item.default_product_id || item.product_id || optionChoices[0]?.product_id || "");
         const renderChoice = (alt) => {
           const productId = String(alt.product_id || "");
           const selected = selectedById.get(productId);
@@ -562,14 +560,10 @@
           const disabled = data.changing || item._optionsLoading;
           const optionName = alt.name || selected && selected.name || "Produto";
           const optionPrice = alt.price_cents == null ? "Preço indisponível" : money(alt.price_cents);
-          const isDefault = productId === defaultProductId;
-          const standardLabel = isDefault && baseQuantity > 0
-            ? "Padrão · " + baseQuantity + " un. " + (baseQuantity === 1 ? "incluída" : "incluídas")
-            : "";
           return productChoiceMarkup(alt, {
             name: optionName,
             quantity,
-            standardLabel,
+            standardLabel: "",
             priceText: optionPrice,
             stockNote: stock <= 0 ? "Sem estoque disponível" : "",
             attributes: { "data-option-card": productId },
@@ -598,13 +592,15 @@
             : "";
         const carouselClass = optionCount <= 1 ? " is-single-option" : "";
         const carouselHint = optionCount > 1 ? ". Deslize horizontalmente para ver as opções." : "";
-        const carouselMarkup = '<div class="product-option-picker basket-option-carousel' + carouselClass + '" data-option-carousel data-option-position="' + esc(item.position_id) + '" tabindex="0" role="group" aria-label="Opções para padrão ' + Number(item.slot_order || index + 1) + ' de ' + esc(title) + carouselHint + '">' +
+        const carouselMarkup = '<div class="product-option-picker basket-option-carousel' + carouselClass + '" data-option-carousel data-option-position="' + esc(item.position_id) + '" tabindex="0" role="group" aria-label="Produtos da sessão ' + esc(title) + carouselHint + '">' +
           carouselChoices.map(renderChoice).join("") + '</div>';
-        return '<section class="basket-session-pattern" data-product-row="' + esc(item.position_id) + '"><h3 class="basket-session-pattern-heading">Padrão ' + Number(item.slot_order || index + 1) + '</h3>' +
+        return '<section class="basket-session-pattern" data-product-row="' + esc(item.position_id) + '">' +
           carouselMarkup + optionStatus + moreOptionsStatus + '</section>';
       }).join("");
-      const count = groupItems.length;
-      const summary = count + (count === 1 ? " padrão" : " padrões");
+      const selectedProductCount = groupItems.reduce((sum, entry) => sum + (Array.isArray(entry.item.selected_options)
+        ? entry.item.selected_options.filter((option) => option && Number(option.quantity || 0) > 0).length
+        : (Number(entry.item.quantity || 0) > 0 ? 1 : 0)), 0);
+      const summary = selectedProductCount + (selectedProductCount === 1 ? " produto incluído" : " produtos incluídos");
       const toggle = '<button class="extra-category-toggle basket-session-toggle" type="button" data-basket-session-toggle="' + esc(group.sessionId) + '" aria-expanded="' + String(!isCollapsed) + '" aria-controls="' + esc(panelId) + '">' +
         '<span class="basket-session-title">' + esc(title) + '</span><span class="basket-session-summary">' + summary + '</span><span class="variation-chevron" aria-hidden="true">' + (isCollapsed ? "+" : "−") + '</span></button>';
       return '<article class="product-row basket-session-row"><div class="product-row-main">' + toggle + '</div>' +
@@ -612,7 +608,7 @@
     }).join("");
     const note = data.orderable ? "" : '<p class="helper stock-note">Esta composição está sem estoque disponível no momento.</p>';
     const manualReplacementNote = data.items.some((item) => item.manual_replacement_required === true)
-      ? '<p class="helper stock-note">Alguns itens podem ser substituídos durante a separação do pedido.</p>'
+      ? '<p class="helper stock-note">Produtos configurados indisponíveis foram retirados da composição e o valor da cesta foi ajustado.</p>'
       : "";
     $("detail-content").innerHTML = note + manualReplacementNote + '<div class="product-list">' + rows + "</div>" +
       '<div data-home-extra-review-mount>' + homeSelectionReviewMarkup(data) + "</div>" + extraCategoriesMarkup(data);
