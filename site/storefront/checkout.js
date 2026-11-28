@@ -39,6 +39,7 @@
 
     let lookupSequence = 0;
     let checkoutPhone = "";
+    let verifiedCustomerDocumentLast4 = "";
 
     let previousCheckoutAddressId = "";
     let registrationMode = "new";
@@ -79,6 +80,7 @@
       lookupSequence += 1;
       state.customer = null;
       checkoutPhone = "";
+      verifiedCustomerDocumentLast4 = "";
 
       previousCheckoutAddressId = "";
       registrationMode = "new";
@@ -88,6 +90,9 @@
 
       $("customer-registration").hidden = true;
       $("customer-registration").reset();
+      $("customer-document-verification").hidden = true;
+      $("customer-document-last4").value = "";
+      $("customer-document-verification-message").textContent = "";
       $("customer-document-field").hidden = false;
       $("customer-document").required = true;
       $("customer-document-note").hidden = true;
@@ -148,6 +153,7 @@
       $("registration-message").textContent = "";
 
       $("customer-registration").hidden = false;
+      $("customer-document-verification").hidden = true;
     }
 
     function setConfirmedCustomer(customer, phone, selectedAddress) {
@@ -182,6 +188,8 @@
       $("customer-card").hidden = false;
 
       $("customer-registration").hidden = true;
+      $("customer-document-verification").hidden = true;
+      $("customer-document-last4").value = "";
       $("payment-options").disabled = false;
       updateConfirmOrderAvailability();
     }
@@ -658,6 +666,16 @@
             : "Cadastro não encontrado. Preencha os dados abaixo.";
           return;
         }
+        if (result.found === true) {
+          checkoutPhone = normalized.phone;
+          $("customer-document-verification").hidden = false;
+          $("customer-document-last4").value = "";
+          $("customer-document-verification-message").textContent = "";
+          $("customer-registration").hidden = true;
+          $("customer-card").hidden = true;
+          $("lookup-message").textContent = "Cadastro localizado. Confirme o CPF/CNPJ para acessar seus endereços.";
+          return;
+        }
         if (!customerHasCheckoutAddress(customer)) {
           checkoutPhone = customer.phone || normalized.phone;
           showRegistrationForm(customer, "add_address");
@@ -682,6 +700,61 @@
         if (requestId === lookupSequence) {
           $("lookup-button").disabled = false;
           $("lookup-button").textContent = "Buscar";
+        }
+      }
+    }
+
+    async function verifyCustomerDocument() {
+      const requestId = lookupSequence;
+      const phone = checkoutPhone;
+      const documentDigits = phoneDigits($("customer-document-last4").value);
+      const message = $("customer-document-verification-message");
+      if (!phone) {
+        message.textContent = "Busque o cadastro pelo WhatsApp antes de confirmar o documento.";
+        return;
+      }
+      if (![4, 11, 14].includes(documentDigits.length)) {
+        message.textContent = "Informe os 4 últimos números ou o CPF/CNPJ completo.";
+        return;
+      }
+      const button = $("verify-customer-document");
+      button.disabled = true;
+      button.textContent = "Confirmando…";
+      message.textContent = "Validando o cadastro…";
+      try {
+        const body = documentDigits.length === 4
+          ? { phone, document_last4: documentDigits }
+          : { phone, document: documentDigits };
+        const result = await request("customer_address_lookup", { method: "POST", body });
+        if (requestId !== lookupSequence || phone !== checkoutPhone) return;
+        const customer = result.customer;
+        if (!result.found || !customer) throw new Error("customer_not_found");
+        verifiedCustomerDocumentLast4 = documentDigits.slice(-4);
+        $("customer-document-verification").hidden = true;
+        message.textContent = "";
+        if (!customerHasCheckoutAddress(customer)) {
+          showRegistrationForm(customer, "add_address");
+          $("lookup-message").textContent = "Cadastro confirmado. Complete o endereço para este pedido.";
+          return;
+        }
+        setConfirmedCustomer(customer, customer.phone || phone);
+        $("lookup-message").textContent = "Cadastro confirmado. Escolha o endereço, a data e o pagamento.";
+      } catch (error) {
+        if (requestId !== lookupSequence) return;
+        const messages = {
+          document_mismatch: "Os dados não conferem com o cadastro. Confira o CPF/CNPJ.",
+          document_missing: "Informe um CPF/CNPJ válido para confirmar o cadastro.",
+          customer_not_found: "Não foi possível localizar o cadastro com esses dados.",
+          ambiguous_phone: "Mais de um cadastro usa este telefone. Informe o DDD e o número completo.",
+          rate_limited: "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
+          rate_limit_unavailable: "Não foi possível validar agora. Tente novamente em instantes.",
+          document_confirmation_unavailable: "Não foi possível confirmar o documento agora. Tente novamente."
+        };
+        message.textContent = messages[String(error && error.message || "")] || "Não foi possível confirmar o cadastro. Confira os dados e tente novamente.";
+      } finally {
+        if (requestId === lookupSequence) {
+          button.disabled = false;
+          button.textContent = "Confirmar cadastro";
         }
       }
     }
@@ -717,6 +790,7 @@
             method: "POST",
             body: {
               phone,
+              document_last4: verifiedCustomerDocumentLast4,
               label: $("customer-address-label").value.trim(),
               ...address
             }
@@ -1156,6 +1230,8 @@
         if (current && state.cartKey === cartKey) renderOrderReview(current);
       });
       $("lookup-button").addEventListener("click", lookupCustomer);
+      $("verify-customer-document").addEventListener("click", verifyCustomerDocument);
+      $("customer-document-last4").addEventListener("keydown", (event) => { if (event.key === "Enter") verifyCustomerDocument(); });
       $("customer-phone").addEventListener("input", () => {
         resetCustomerState($("customer-phone").value.trim()
           ? "O telefone mudou. Busque novamente."

@@ -1086,14 +1086,22 @@ function publicCheckoutCustomer(customer:any){
   };
 }
 async function publicCustomerLookup(req:Request,raw:any){
-  const ph=phone(raw),rk=await sha(ph||ip(req)||"unknown");
-  const gate=await db.rpc("consume_public_rate_limit",{p_rate_key:"storefront-v2:customer-lookup:"+rk,p_bucket:"lookup_customer",p_limit:20,p_window_seconds:300});
-  if(gate.error)return {error:"rate_limit_unavailable",status:503};
-  if(gate.data!==true)return {error:"rate_limited",status:429};
+  const ph=phone(raw);
+  const [phoneKey,ipKey]=await Promise.all([sha(ph||"invalid"),sha(ip(req)||"unknown")]);
+  const [phoneGate,ipGate]=await Promise.all([
+    db.rpc("consume_public_rate_limit",{p_rate_key:"storefront-v2:customer-lookup:phone:"+phoneKey,p_bucket:"lookup_customer",p_limit:20,p_window_seconds:300}),
+    db.rpc("consume_public_rate_limit",{p_rate_key:"storefront-v2:customer-lookup:ip:"+ipKey,p_bucket:"lookup_customer",p_limit:60,p_window_seconds:900})
+  ]);
+  if(phoneGate.error||ipGate.error)return {error:"rate_limit_unavailable",status:503};
+  if(phoneGate.data!==true||ipGate.data!==true)return {error:"rate_limited",status:429};
   const result=await lookupCustomer(raw);
   const found=result?.found===true&&Boolean(result?.customer);
-  return {ok:true,found,ambiguous:result?.ambiguous===true,
-    customer:found?publicCheckoutCustomer(result.customer):null};
+  return publicCustomerLookupResponse(found,result?.ambiguous===true);
+}
+function publicCustomerLookupResponse(found,ambiguous){
+  const matched=found===true;
+  return {ok:true,found:matched,ambiguous:ambiguous===true,
+    customer:matched?{requires_document_verification:true}:null};
 }
 async function allowCustomerAddressAttempts(req:Request,ph:string){
   const [ipKey,phoneKey]=await Promise.all([sha(ip(req)||"unknown"),sha(ph)]);
@@ -1132,7 +1140,11 @@ async function verifyCheckoutCustomerDocument(req:Request,input:any){
   const storedDocument=String(stored.data?.cpf_cnpj||"").replace(/\D/g,"");
   let last4=String(input?.document_last4||"").replace(/\D/g,"");
   if(storedDocument.length===11||storedDocument.length===14){
-    if(last4.length!==4||last4!==storedDocument.slice(-4))return {error:"document_mismatch",status:403};
+    const fullDocument=String(input?.document||"").replace(/\D/g,"");
+    const matchesLast4=last4.length===4&&last4===storedDocument.slice(-4);
+    const matchesFullDocument=validBrazilDocument(fullDocument)&&fullDocument===storedDocument;
+    if(!matchesLast4&&!matchesFullDocument)return {error:"document_mismatch",status:403};
+    last4=storedDocument.slice(-4);
   }else{
     const fullDocument=String(input?.document||"").replace(/\D/g,"");
     if(!validBrazilDocument(fullDocument))return {error:"document_missing",status:400};
@@ -1151,17 +1163,13 @@ async function verifyCheckoutCustomerDocument(req:Request,input:any){
 async function customerAddressLookup(req:Request,input:any){
   const verified=await verifyCheckoutCustomerDocument(req,input);
   if(verified.error)return verified;
-  return {ok:true,found:true,customer:verified.customer};
+  return {ok:true,found:true,customer:publicCheckoutCustomer(verified.customer)};
 }
 async function customerAddressAdd(req:Request,input:any){
-  const ph=phone(input?.phone);
-  if(!ph)return {error:"invalid_phone",status:400};
-  const gate=await allowCustomerAddressAttempts(req,ph);
-  if(gate.error)return gate;
-  const found=await lookupCustomer(ph);
-  if(found?.ambiguous)return {error:"ambiguous_phone",status:409};
-  if(!found?.found||!found?.customer?.id)return {error:"customer_not_found",status:404};
-  const customer=found.customer;
+  const verified=await verifyCheckoutCustomerDocument(req,input);
+  if(verified.error)return verified;
+  const ph=verified.phone;
+  const customer=verified.customer;
   const address={
     street:txt(input?.street,180),number:txt(input?.number,40),complement:txt(input?.complement,180),
     neighborhood:txt(input?.neighborhood,120),city:txt(input?.city,100),state:"MT",
@@ -1169,7 +1177,7 @@ async function customerAddressAdd(req:Request,input:any){
   };
   const result=await db.rpc("ops3_storefront_customer_address_add_v1",{
     p_customer_id:customer.id,p_phone:ph,
-    p_document_last4:String(customer.document_last4||"").replace(/\D/g,"").slice(-4),
+    p_document_last4:verified.document_last4,
     p_label:txt(input?.label,60)||"Outro endereço",p_address:address
   });
   if(result.error)return {error:"address_save_unavailable",status:503};

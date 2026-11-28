@@ -10,14 +10,14 @@
   <link rel="preload" as="image" href="../img/logoantonia5.png">
   <link rel="preload" as="image" href="assets/cestas/cesta-economica.jpg" fetchpriority="high">
   <link rel="preconnect" href="https://ssbesxgaijknwsjbsbcz.supabase.co" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=53">
+  <link rel="stylesheet" href="styles.css?v=54">
   <link rel="stylesheet" href="experimento.css?v=14">
   <link rel="stylesheet" href="visual-theme.css?v=11">
   <link rel="stylesheet" href="product-card-prices.css?v=1">
   <script src="config.js?v=2" defer></script>
   <script src="storefront/experimento-extras.js?v=13" defer></script>
   <script src="storefront/basket.js?v=22" defer></script>
-  <script src="storefront/checkout.js?v=34" defer></script>
+  <script src="storefront/checkout.js?v=35" defer></script>
   <script src="app.js?v=67" defer></script>
   <script src="experimento.js?v=5" defer></script>
 </head>
@@ -195,6 +195,15 @@
         </div>
         <p id="customer-phone-hint" class="helper">Digite com ou sem DDD. Buscamos pelos 8 dígitos finais; sem DDD, o padrão é 65.</p>
         <p id="lookup-message" class="helper" role="status" aria-live="polite">Vamos buscar seu cadastro pelo telefone.</p>
+        <section id="customer-document-verification" class="registration-panel customer-document-verification" aria-labelledby="customer-document-verification-title" hidden>
+          <h3 id="customer-document-verification-title">Confirme seu cadastro</h3>
+          <p class="helper">Para proteger seus endereços, informe os 4 últimos números do CPF/CNPJ cadastrado. Se o cadastro ainda não tiver documento, digite o CPF/CNPJ completo.</p>
+          <label class="registration-field" for="customer-document-last4">CPF/CNPJ *
+            <input id="customer-document-last4" inputmode="numeric" autocomplete="off" maxlength="18" aria-describedby="customer-document-verification-message">
+          </label>
+          <button id="verify-customer-document" class="button button-primary" type="button">Confirmar cadastro</button>
+          <p id="customer-document-verification-message" class="helper" role="status" aria-live="polite"></p>
+        </section>
         <div id="customer-card" class="customer-card" hidden></div>
         <form id="customer-registration" class="registration-panel" hidden>
           <h3 id="registration-title">Cadastre seus dados para continuar</h3>
