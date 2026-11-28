@@ -1142,7 +1142,7 @@ async function basketGridList() {
   if (!basketIds.length) return { baskets: [], types: [], basket_drafts_enabled: true };
 
   const [typesResult, optionsResult, quantitiesResult] = await Promise.all([
-    db.from("site_basket_product_types").select("id,title,sort_order").order("sort_order", { ascending: true }).order("title", { ascending: true }),
+    db.from("site_basket_product_types").select("id,title,session_id,slot_order,sort_order").order("sort_order", { ascending: true }).order("title", { ascending: true }),
     db.from("site_basket_product_type_options").select("product_type_id,product_id,sort_order,metadata").order("sort_order", { ascending: true }),
     db.from("site_basket_product_type_quantities").select("product_type_id,basket_id,quantity").in("basket_id", basketIds),
   ]);
@@ -1214,6 +1214,8 @@ async function basketGridList() {
     return {
       id: String(row.id),
       title: String(row.title || ""),
+      session_id: String(row.session_id || row.id),
+      slot_order: Number(row.slot_order || 1),
       sort_order: Number(row.sort_order || 0),
       default_product_id: preferred ? String(preferred.product_id) : "",
       options: orderedOptions,
@@ -1261,10 +1263,13 @@ async function basketGridSave(input: any) {
     const rawId = type?.id;
     const typeId = rawId == null || rawId === "" ? crypto.randomUUID() : uuid(rawId);
     const title = clean(type?.title, 180);
+    const rawSessionId = type?.session_id;
+    const sessionId = rawSessionId == null || rawSessionId === "" ? typeId : uuid(rawSessionId);
+    const slotOrder = integer(type?.slot_order ?? 1, 1, 3);
     const rawOptionInput = Array.isArray(type?.options) ? type.options : null;
     const rawQuantities = type?.quantities && typeof type.quantities === "object" && !Array.isArray(type.quantities) ? type.quantities : null;
-    if (!typeId || !title || !rawOptionInput || !rawQuantities) {
-      return { status: 400, error: "invalid_basket_grid_type", message: "Revise os títulos, as quantidades e as variações da grade." };
+    if (!typeId || !sessionId || slotOrder === null || !title || !rawOptionInput || !rawQuantities) {
+      return { status: 400, error: "invalid_basket_grid_type", message: "Revise os títulos, os padrões, as quantidades e as variações da grade." };
     }
     if (rawOptionInput.length > 100) {
       return { status: 400, error: "basket_grid_too_many_options", message: "Cada tipo de produto pode ter até 100 variações." };
@@ -1306,7 +1311,21 @@ async function basketGridSave(input: any) {
       }
       quantities[basketId] = quantity;
     }
-    normalized.push({ id: typeId, title, default_product_id: defaultProductId, options: orderedOptions, quantities });
+    normalized.push({ id: typeId, session_id: sessionId, slot_order: slotOrder, title, default_product_id: defaultProductId, options: orderedOptions, quantities });
+  }
+
+  const slotsBySession = new Map<string, Array<Record<string, any>>>();
+  normalized.forEach((type) => {
+    const slots = slotsBySession.get(type.session_id) || [];
+    slots.push(type);
+    slotsBySession.set(type.session_id, slots);
+  });
+  for (const slots of slotsBySession.values()) {
+    const slotOrders = slots.map((slot) => Number(slot.slot_order)).sort((a, b) => a - b);
+    if (slots.length > 3 || new Set(slots.map((slot) => slot.title)).size !== 1
+      || slotOrders.some((order, index) => order !== index + 1)) {
+      return { status: 400, error: "invalid_basket_grid_session", message: "Cada sessão pode ter até três padrões, com o mesmo título e numeração contínua." };
+    }
   }
 
   const basketPricesInput = input.basket_prices && typeof input.basket_prices === "object" && !Array.isArray(input.basket_prices)
@@ -1342,11 +1361,16 @@ async function basketGridSave(input: any) {
     const positions = normalized.flatMap((type, positionIndex) => {
       const quantity = Number(type.quantities?.[basket.id] || 0);
       if (quantity <= 0) return [];
+      const groupSize = slotsBySession.get(type.session_id)?.length || 1;
       return [{
-        label: type.title,
+        label: groupSize > 1 ? type.title + " · Padrão " + type.slot_order : type.title,
         quantity,
         sort_order: positionIndex,
-        metadata: { site_basket_product_type_id: type.id },
+        metadata: {
+          site_basket_product_type_id: type.id,
+          site_basket_product_session_id: type.session_id,
+          site_basket_product_slot_order: type.slot_order,
+        },
         options: type.options.map((option: any) => ({ product_id: option.product_id, metadata: option.metadata || {} })),
       }];
     });

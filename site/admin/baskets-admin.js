@@ -141,6 +141,34 @@
     return state.types.find((type, index) => typeKey(type, index) === String(key));
   }
 
+  function sessionKey(type, index = 0) {
+    return String(type.session_id || type.id || type._key || ("session-" + index));
+  }
+
+  function sessionSiblings(type) {
+    const sessionId = sessionKey(type);
+    return state.types.filter((row, index) => sessionKey(row, index) === sessionId);
+  }
+
+  function normalizeSessionSlots() {
+    const nextBySession = new Map();
+    state.types.forEach((type, index) => {
+      const id = sessionKey(type, index);
+      type.session_id = id;
+      const next = (nextBySession.get(id) || 0) + 1;
+      nextBySession.set(id, next);
+      type.slot_order = next;
+    });
+  }
+
+  function newUuid() {
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
+      const random = Math.random() * 16 | 0;
+      return (char === "x" ? random : (random & 3 | 8)).toString(16);
+    });
+  }
+
   function quantityValue(value) {
     const number = Number(value || 0);
     return Number.isFinite(number) ? String(number) : "0";
@@ -381,7 +409,7 @@
     select.innerHTML = state.types.map((type, index) => {
       const key = typeKey(type, index);
       const label = String(type.title || "Novo tipo").trim() || "Novo tipo";
-      return '<option value="' + esc(key) + '">' + esc(label) + '</option>';
+      return '<option value="' + esc(key) + '">' + esc(label + " · Padrão " + Number(type.slot_order || 1)) + '</option>';
     }).join("");
     if (state.types.some((type, index) => typeKey(type, index) === current)) select.value = current;
     else if (state.types.length) {
@@ -441,18 +469,46 @@
       renderPickerResults();
       return;
     }
+    const groups = [];
+    const groupBySession = new Map();
+    types.forEach((type, index) => {
+      const sessionId = sessionKey(type, index);
+      let group = groupBySession.get(sessionId);
+      if (!group) {
+        group = { sessionId, title: type.title || "", slots: [], firstIndex: index };
+        groupBySession.set(sessionId, group);
+        groups.push(group);
+      }
+      group.slots.push({ type, index });
+    });
     const rows = types.map((type, index) => {
       const key = typeKey(type, index);
       const quantities = type.quantities || {};
       const expanded = state.expandedTypeKey === key;
       const optionCount = (type.options || []).length;
+      const sessionId = sessionKey(type, index);
+      const group = groupBySession.get(sessionId);
+      const slotPosition = group.slots.findIndex((entry) => entry.type === type) + 1;
+      const slotNumber = Number(type.slot_order || slotPosition);
+      const groupIndex = groups.indexOf(group);
+      const firstSlot = slotPosition === 1;
       const quantityCards = baskets.map((basket) => {
         const value = quantityValue(quantities[basket.id]);
-        return '<label class="basket-type-quantity"><span title="' + esc(basket.name) + '">' + esc(basket.name) + '</span><input type="number" min="0" max="999" step="1" value="' + esc(value) + '" data-type-quantity="' + esc(key) + '" data-basket-id="' + esc(basket.id) + '" aria-label="Quantidade de ' + esc(type.title || "tipo") + ' na cesta ' + esc(basket.name) + '"></label>';
+        return '<label class="basket-type-quantity"><span title="' + esc(basket.name) + '">' + esc(basket.name) + '</span><input type="number" min="0" max="999" step="1" value="' + esc(value) + '" data-type-quantity="' + esc(key) + '" data-basket-id="' + esc(basket.id) + '" aria-label="Quantidade do padrão ' + slotNumber + ' de ' + esc(type.title || "tipo") + ' na cesta ' + esc(basket.name) + '"></label>';
       }).join("");
-      return '<article class="basket-type-card' + (expanded ? " is-expanded" : "") + '" id="basket-type-' + esc(key) + '" data-type-card="' + esc(key) + '"><div class="basket-type-summary"><button class="basket-type-toggle" type="button" data-toggle-type="' + esc(key) + '" aria-expanded="' + (expanded ? "true" : "false") + '" aria-controls="basket-type-details-' + esc(key) + '"><span class="basket-type-chevron" aria-hidden="true">' + (expanded ? "−" : "+") + '</span><span class="basket-type-summary-copy"><strong data-type-heading="' + esc(key) + '">' + esc(type.title || "Novo tipo") + '</strong><small>' + optionCount + (optionCount === 1 ? " produto no carrossel" : " produtos no carrossel") + '</small></span></button><div class="basket-type-quantity-grid">' + quantityCards + '</div><div class="basket-type-actions"><div class="basket-grid-order"><button class="text-button" type="button" data-move-type="-1" data-type-key="' + esc(key) + '" aria-label="Subir tipo"' + (index === 0 ? " disabled" : "") + '>↑</button><button class="text-button" type="button" data-move-type="1" data-type-key="' + esc(key) + '" aria-label="Descer tipo"' + (index === types.length - 1 ? " disabled" : "") + '>↓</button></div><button class="text-button danger-text" type="button" data-delete-type="' + esc(key) + '" aria-label="Excluir tipo ' + esc(type.title || "sem título") + '">Excluir</button></div></div><div class="basket-type-details" id="basket-type-details-' + esc(key) + '"' + (expanded ? "" : " hidden") + '><label class="basket-grid-title-field"><span>Título exibido no site</span><input type="text" maxlength="180" placeholder="Ex.: Arroz" value="' + esc(type.title || "") + '" data-type-title="' + esc(key) + '"></label><div class="basket-grid-variations">' + renderOptions(type, key) + '</div></div></article>';
+      const orderButtons = firstSlot
+        ? '<div class="basket-grid-order"><button class="text-button" type="button" data-move-type="-1" data-type-key="' + esc(key) + '" aria-label="Subir sessão ' + esc(type.title || "sem título") + '"' + (groupIndex === 0 ? " disabled" : "") + '>↑</button><button class="text-button" type="button" data-move-type="1" data-type-key="' + esc(key) + '" aria-label="Descer sessão ' + esc(type.title || "sem título") + '"' + (groupIndex === groups.length - 1 ? " disabled" : "") + '>↓</button></div>'
+        : "";
+      const addPatternButton = firstSlot && group.slots.length < 3
+        ? '<button class="text-button" type="button" data-add-pattern="' + esc(key) + '" aria-label="Adicionar outro produto padrão à sessão ' + esc(type.title || "sem título") + '">+ Padrão</button>'
+        : "";
+      const patternSummary = 'Padrão ' + slotNumber + ' de ' + group.slots.length + ' · ' + optionCount + (optionCount === 1 ? ' produto na lista' : ' produtos na lista');
+      const titleField = firstSlot
+        ? '<label class="basket-grid-title-field"><span>Título da sessão exibido no site</span><input type="text" maxlength="180" placeholder="Ex.: Arroz" value="' + esc(type.title || "") + '" data-type-title="' + esc(key) + '"></label>'
+        : '<div class="basket-grid-title-field"><span>Sessão</span><strong data-type-heading="' + esc(key) + '">' + esc(type.title || "Novo tipo") + '</strong></div>';
+      return '<article class="basket-type-card basket-default-slot' + (expanded ? " is-expanded" : "") + '" id="basket-type-' + esc(key) + '" data-type-card="' + esc(key) + '"><div class="basket-type-summary"><button class="basket-type-toggle" type="button" data-toggle-type="' + esc(key) + '" aria-expanded="' + (expanded ? "true" : "false") + '" aria-controls="basket-type-details-' + esc(key) + '"><span class="basket-type-chevron" aria-hidden="true">' + (expanded ? "−" : "+") + '</span><span class="basket-type-summary-copy"><strong data-type-heading="' + esc(key) + '">' + esc(type.title || "Novo tipo") + '</strong><small>' + esc(patternSummary) + '</small></span></button><div class="basket-type-quantity-grid">' + quantityCards + '</div><div class="basket-type-actions">' + orderButtons + addPatternButton + '<button class="text-button danger-text" type="button" data-delete-type="' + esc(key) + '" aria-label="Excluir padrão ' + slotNumber + ' de ' + esc(type.title || "sem título") + '">Excluir</button></div></div><div class="basket-type-details" id="basket-type-details-' + esc(key) + '"' + (expanded ? "" : " hidden") + '>' + titleField + '<div class="basket-grid-variations">' + renderOptions(type, key) + '</div></div></article>';
     }).join("");
-    host.innerHTML = '<div class="basket-type-list-heading"><div><strong>Composição por tipo de produto</strong><span>O primeiro produto é o padrão; as alternativas seguem a ordem do carrossel.</span></div><span>' + types.length + (types.length === 1 ? " tipo" : " tipos") + '</span></div><div class="basket-type-list">' + rows + '</div>';
+    host.innerHTML = '<div class="basket-type-list-heading"><div><strong>Composição por sessão e produto padrão</strong><span>Cada padrão tem quantidades e substitutos próprios. O total da sessão é a soma dos padrões.</span></div><span>' + groups.length + (groups.length === 1 ? " sessão" : " sessões") + ' · ' + types.length + (types.length === 1 ? " padrão" : " padrões") + '</span></div><div class="basket-type-list">' + rows + '</div>';
     syncPickerTypeSelect();
     renderPickerResults();
   }
@@ -475,6 +531,8 @@
         state.types = (data.types || []).map((type, index) => ({
           ...type,
           _key: type.id || ("loaded-" + index),
+          session_id: type.session_id || type.id || ("legacy-session-" + index),
+          slot_order: Number(type.slot_order || 1),
           default_product_id: type.default_product_id || (type.options || []).find((option) => option.metadata?.preferred === true)?.product_id || type.options?.[0]?.product_id || "",
           options: (type.options || []).map((option) => {
             if (option.product) productCache.set(String(option.product_id), option.product);
@@ -610,13 +668,15 @@
 
   function addType() {
     if (state.types.length >= 80) {
-      toast("A grade aceita até 80 tipos de produto.");
+      toast("A grade aceita até 80 padrões de produto.");
       return;
     }
     const key = "new-" + Date.now().toString(36) + "-" + state.types.length;
     state.types.push({
       id: null,
       _key: key,
+      session_id: newUuid(),
+      slot_order: 1,
       title: "",
       sort_order: state.types.length,
       options: [],
@@ -629,6 +689,41 @@
     const row = document.getElementById("basket-type-" + key);
     row?.scrollIntoView({ behavior: "smooth", block: "center" });
     row?.querySelector("[data-type-title]")?.focus();
+    if (!state.pickerProducts.length && !state.pickerLoading) loadPickerProducts(true);
+  }
+
+  function addPattern(key) {
+    const source = findType(key);
+    if (!source) return;
+    const siblings = sessionSiblings(source);
+    if (siblings.length >= 3) {
+      toast("Cada sessão pode ter até três produtos padrão.");
+      return;
+    }
+    if (state.types.length >= 80) {
+      toast("A grade aceita até 80 padrões de produto.");
+      return;
+    }
+    const sessionId = sessionKey(source);
+    const newKey = "new-" + Date.now().toString(36) + "-" + state.types.length;
+    const newSlot = {
+      id: null,
+      _key: newKey,
+      session_id: sessionId,
+      slot_order: siblings.length + 1,
+      title: source.title || "",
+      sort_order: state.types.length,
+      options: [],
+      quantities: Object.fromEntries(state.baskets.map((basket) => [basket.id, 0])),
+    };
+    const lastIndex = state.types.reduce((last, row, index) => sessionKey(row, index) === sessionId ? index : last, -1);
+    state.types.splice(lastIndex + 1, 0, newSlot);
+    normalizeSessionSlots();
+    state.expandedTypeKey = newKey;
+    state.pickerTypeKey = newKey;
+    markDirty();
+    renderGrid();
+    openPicker(newKey);
     if (!state.pickerProducts.length && !state.pickerLoading) loadPickerProducts(true);
   }
 
@@ -755,11 +850,27 @@
   }
 
   function moveType(key, delta) {
-    const index = state.types.findIndex((type, itemIndex) => typeKey(type, itemIndex) === String(key));
-    const next = index + delta;
-    if (index < 0 || next < 0 || next >= state.types.length) return;
-    const item = state.types.splice(index, 1)[0];
-    state.types.splice(next, 0, item);
+    const selected = findType(key);
+    if (!selected) return;
+    const groups = [];
+    const groupMap = new Map();
+    state.types.forEach((type, index) => {
+      const id = sessionKey(type, index);
+      let group = groupMap.get(id);
+      if (!group) {
+        group = { id, rows: [] };
+        groupMap.set(id, group);
+        groups.push(group);
+      }
+      group.rows.push(type);
+    });
+    const current = groups.findIndex((group) => group.id === sessionKey(selected));
+    const next = current + delta;
+    if (current < 0 || next < 0 || next >= groups.length) return;
+    const [moved] = groups.splice(current, 1);
+    groups.splice(next, 0, moved);
+    state.types = groups.flatMap((group) => group.rows);
+    normalizeSessionSlots();
     markDirty();
     renderGrid();
   }
@@ -797,6 +908,8 @@
       }
       payload.push({
         id: type.id || null,
+        session_id: sessionKey(type, index),
+        slot_order: Number(type.slot_order || 1),
         title,
         quantities,
         default_product_id: type.default_product_id || type.options[0]?.product_id || null,
@@ -915,6 +1028,7 @@
         renderGrid();
         return;
       }
+      if (target.dataset.addPattern != null) { addPattern(target.dataset.addPattern); return; }
       if (target.dataset.addVariation != null) { openPicker(target.dataset.addVariation); return; }
       if (target.dataset.addPickerProduct != null) { addPickerProduct(target.dataset.addPickerProduct); return; }
       if (target.dataset.moveOption != null) { moveOption(target.dataset.typeKey, target.dataset.productId, Number(target.dataset.moveOption)); return; }
@@ -939,8 +1053,13 @@
       if (target.dataset.deleteType != null) {
         const type = findType(target.dataset.deleteType);
         if (!type) return;
-        if (!window.confirm("Excluir o tipo “" + (type.title || "sem título") + "” e removê-lo das cestas?")) return;
+        const siblings = sessionSiblings(type);
+        const confirmText = siblings.length > 1
+          ? "Excluir o Padrão " + Number(type.slot_order || 1) + " de “" + (type.title || "sem título") + "” e removê-lo das cestas?"
+          : "Excluir a sessão “" + (type.title || "sem título") + "” e removê-la das cestas?";
+        if (!window.confirm(confirmText)) return;
         state.types = state.types.filter((item, index) => typeKey(item, index) !== target.dataset.deleteType);
+        normalizeSessionSlots();
         if (state.expandedTypeKey === target.dataset.deleteType) state.expandedTypeKey = state.types[0] ? typeKey(state.types[0], 0) : "";
         if (state.pickerTypeKey === target.dataset.deleteType) state.pickerTypeKey = state.expandedTypeKey;
         markDirty();
@@ -971,9 +1090,19 @@
       const type = findType(key);
       if (!type) return;
       if (event.target.dataset.typeTitle != null) {
-        type.title = event.target.value;
-        const heading = document.querySelector('[data-type-heading="' + CSS.escape(String(key)) + '"]');
-        if (heading) heading.textContent = type.title || "Novo tipo";
+        const title = event.target.value;
+        const sessionId = sessionKey(type);
+        state.types.forEach((sibling, index) => {
+          if (sessionKey(sibling, index) === sessionId) sibling.title = title;
+        });
+        document.querySelectorAll("[data-type-heading]").forEach((heading) => {
+          const sibling = findType(heading.dataset.typeHeading);
+          if (sibling && sessionKey(sibling) === sessionId) heading.textContent = title || "Novo tipo";
+        });
+        document.querySelectorAll("[data-type-title]").forEach((field) => {
+          const sibling = findType(field.dataset.typeTitle);
+          if (sibling && sessionKey(sibling) === sessionId && field !== event.target) field.value = title;
+        });
         syncPickerTypeSelect();
       }
       markDirty();
