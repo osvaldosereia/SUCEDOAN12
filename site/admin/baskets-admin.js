@@ -202,6 +202,7 @@
 
   function canSelectAsBasketDefault(product) {
     const sellable = productSellableStock(product);
+    if (product?.basket_stock_reason && product.basket_stock_reason !== "available") return false;
     return product?.is_active !== false && (sellable === null || sellable > 0);
   }
 
@@ -213,6 +214,19 @@
     if (product?.is_active === true) return { text: "Ativo", className: "is-active" };
     if (product?.is_active === false) return { text: "Inativo", className: "is-inactive" };
     return { text: "Status indisponível", className: "is-unknown" };
+  }
+
+  function basketDefaultAvailability(type) {
+    const unavailableProducts = new Set();
+    const affectedBaskets = new Set();
+    (type?.options || []).forEach((option, index) => {
+      const configured = Object.entries(option.quantities || {}).filter(([, quantity]) => Number(quantity || 0) > 0);
+      const product = option.product || productCache.get(String(option.product_id)) || {};
+      if (!configured.length || canSelectAsBasketDefault(product)) return;
+      unavailableProducts.add(String(option.product_id || product.id || "missing-" + index));
+      configured.forEach(([basketId]) => affectedBaskets.add(String(basketId)));
+    });
+    return { productCount: unavailableProducts.size, basketCount: affectedBaskets.size };
   }
 
   function optionProduct(option) {
@@ -464,11 +478,15 @@
       const type = entry.type;
       const key = typeKey(type, entry.index);
       const expanded = state.expandedTypeKey === key;
+      const unavailable = basketDefaultAvailability(type);
+      const warning = unavailable.productCount
+        ? (unavailable.productCount + (unavailable.productCount === 1 ? " produto configurado indisponível" : " produtos configurados indisponíveis") + " em " + unavailable.basketCount + (unavailable.basketCount === 1 ? " cesta." : " cestas."))
+        : "";
       const titleField = '<label class="basket-session-title-field"><span>Título da sessão exibido no site</span><input type="text" maxlength="180" placeholder="Ex.: Arroz" value="' + esc(group.title) + '" data-type-title="' + esc(key) + '"></label>';
       const orderButtons = '<div class="basket-grid-order"><button class="text-button" type="button" data-move-type="-1" data-type-key="' + esc(key) + '" aria-label="Subir sessão ' + esc(group.title || "sem título") + '"' + (groupIndex === 0 ? " disabled" : "") + '>↑</button><button class="text-button" type="button" data-move-type="1" data-type-key="' + esc(key) + '" aria-label="Descer sessão ' + esc(group.title || "sem título") + '"' + (groupIndex === groups.length - 1 ? " disabled" : "") + '>↓</button></div>';
       const toggle = '<button class="basket-type-toggle" type="button" data-toggle-type="' + esc(key) + '" aria-expanded="' + (expanded ? "true" : "false") + '" aria-controls="basket-type-details-' + esc(key) + '"><span class="basket-type-chevron" aria-hidden="true">' + (expanded ? "−" : "+") + '</span><span class="basket-type-summary-copy"><strong>Produtos da sessão</strong><small>' + (type.options || []).length + ((type.options || []).length === 1 ? " produto" : " produtos") + '</small></span></button>'
       const deleteButton = '<button class="text-button danger-text" type="button" data-delete-type="' + esc(key) + '" aria-label="Excluir sessão ' + esc(group.title || "sem título") + '">Excluir sessão</button>';
-      return '<section class="basket-session-group" data-session-group="' + esc(group.sessionId) + '"><div class="basket-session-heading"><div class="basket-session-title-row">' + titleField + '<div class="basket-session-actions">' + orderButtons + deleteButton + '</div></div>' + toggle + '</div><div class="basket-type-details basket-session-details" id="basket-type-details-' + esc(key) + '"' + (expanded ? "" : " hidden") + '><div class="basket-grid-variations">' + renderOptions(type, key) + '</div></div><p class="basket-session-caption">Cada produto tem uma quantidade independente em cada cesta. Quantidade 0 significa que o produto não entra inicialmente, mas continua disponível no carrossel do site.</p></section>';
+      return '<section class="basket-session-group" data-session-group="' + esc(group.sessionId) + '"><div class="basket-session-heading"><div class="basket-session-title-row">' + titleField + '<div class="basket-session-actions">' + orderButtons + deleteButton + '</div></div>' + (warning ? '<p class="basket-session-warning" role="status">⚠ ' + esc(warning) + '</p>' : '') + toggle + '</div><div class="basket-type-details basket-session-details" id="basket-type-details-' + esc(key) + '"' + (expanded ? "" : " hidden") + '><div class="basket-grid-variations">' + renderOptions(type, key) + '</div></div><p class="basket-session-caption">Cada produto tem uma quantidade independente em cada cesta. Quantidade 0 significa que o produto não entra inicialmente, mas continua disponível no carrossel do site.</p></section>';
     }).join("");
     host.innerHTML = '<div class="basket-type-list-heading"><div><strong>Composição por sessão</strong><span>Defina a quantidade de cada produto em cada cesta. Os valores começam em 0.</span></div><span>' + groups.length + (groups.length === 1 ? " sessão" : " sessões") + ' · ' + types.reduce((sum, type) => sum + (type.options || []).length, 0) + ' produtos</span></div><div class="basket-session-list">' + sessions + '</div>';
     syncPickerTypeSelect();

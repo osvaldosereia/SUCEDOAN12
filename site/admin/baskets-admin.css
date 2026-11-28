@@ -1548,6 +1548,7 @@
 /* Quantidades independentes por produto e cesta */
 .basket-session-heading { display: grid; grid-template-columns: minmax(0, 1fr); align-items: stretch; gap: 10px; }
 .basket-session-title-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 12px; }
+.basket-session-warning { margin: 0; padding: 8px 10px; border: 1px solid #efc1ad; border-radius: 9px; background: #fff3ee; color: #8b3028; font-size: .78rem; font-weight: 750; line-height: 1.4; }
 .basket-session-heading .basket-type-toggle { width: 100%; }
 .basket-grid-options { max-height: none; overflow: visible; }
 .basket-grid-option { grid-template-columns: 30px 58px minmax(170px, 1fr) minmax(92px, auto) auto auto; align-items: center; }
